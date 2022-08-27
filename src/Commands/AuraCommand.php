@@ -1,12 +1,12 @@
 <?php
 
-namespace VendorName\Skeleton\Commands;
+namespace Eminiarts\Aura\Commands;
 
 use Illuminate\Console\Command;
 
-class SkeletonCommand extends Command
+class AuraCommand extends Command
 {
-    public $signature = 'skeleton';
+    public $signature = 'aura';
 
     public $description = 'My command';
 
