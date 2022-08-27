@@ -2,8 +2,6 @@
 
 namespace Eminiarts\Aura\Traits;
 
-use Illuminate\Support\Arr;
-
 trait HasFields
 {
     public function getFieldsProperty()

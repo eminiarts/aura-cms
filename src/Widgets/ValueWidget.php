@@ -21,7 +21,6 @@ class ValueWidget extends Widget
     {
         $query = $model instanceof Builder ? $model : (new $model())->newQuery();
 
-
         $column = $column ?? $query->getModel()->getQualifiedKeyName();
         $dateColumn = $dateColumn ?? $query->getModel()->getQualifiedCreatedAtColumn();
 
@@ -33,7 +32,6 @@ class ValueWidget extends Widget
             'increase' => $previous ? ($current - $previous) / $previous * 100 : null,
         ];
     }
-
 
     public function count($model, $column = null, $dateColumn = null)
     {

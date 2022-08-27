@@ -21,7 +21,6 @@ class Taxonomy extends ModelsTaxonomy
 
     public static string $type = '';
 
-
     protected $table = 'taxonomies';
 
     public static $hierarchical = false;
@@ -47,15 +46,14 @@ class Taxonomy extends ModelsTaxonomy
     }
 
     /**
-    * Get the Meta Relation
-    *
-    * @return mixed
-    */
+     * Get the Meta Relation
+     *
+     * @return mixed
+     */
     public function meta()
     {
         return $this->hasMany(TaxonomyMeta::class, 'taxonomy_id');
     }
-
 
     protected $fillable = ['name', 'slug', 'taxonomy', 'description', 'parent', 'count'];
 
@@ -113,11 +111,11 @@ class Taxonomy extends ModelsTaxonomy
                 $taxonomy->description = '';
             }
 
-            if (!isset($taxonomy->slug) && $taxonomy->name) {
+            if (! isset($taxonomy->slug) && $taxonomy->name) {
                 $taxonomy->slug = str($taxonomy->name)->slug();
             }
 
-            if (!isset($taxonomy->taxonomy)) {
+            if (! isset($taxonomy->taxonomy)) {
                 $taxonomy->taxonomy = (new \ReflectionClass(new static()))->getShortName();
             }
 

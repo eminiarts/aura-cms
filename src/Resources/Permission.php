@@ -24,6 +24,7 @@ class Permission extends Post
     public function getTitleAttribute()
     {
         dd('heer');
+
         return $this->email;
     }
 
@@ -108,6 +109,6 @@ class Permission extends Post
 
     public static function getGroupChoices()
     {
-        return app('App\Aura')->resources()->mapWithKeys(fn ($item) => [ $item => $item])->toArray();
+        return app('App\Aura')->resources()->mapWithKeys(fn ($item) => [$item => $item])->toArray();
     }
 }

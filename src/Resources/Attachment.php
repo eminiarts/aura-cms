@@ -60,7 +60,7 @@ class Attachment extends Post
                 'on_forms' => true,
                 'in_view' => true,
             ],
-             'created-at' => [
+            'created-at' => [
                 'name' => 'Created at',
                 'slug' => 'created_at',
                 'type' => 'App\\Aura\\Fields\\Text',

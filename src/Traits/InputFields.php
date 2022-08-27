@@ -83,7 +83,7 @@ trait InputFields
 
     public function getDefaultColumns()
     {
-        return $this->getHeaders()->map(fn () => "1")->toArray();
+        return $this->getHeaders()->map(fn () => '1')->toArray();
     }
 
     public function inputFields()
@@ -186,8 +186,6 @@ trait InputFields
         if ($this->fieldClassBySlug($key)) {
             return optional($this->fieldClassBySlug($key))->display($this->fieldBySlug($key), $value);
         }
-
-
 
         return $value;
     }

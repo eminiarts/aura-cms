@@ -21,6 +21,7 @@ class ApplyLayoutFields implements Pipe
                 $layouts[] = $field;
                 $isTab = null;
                 $tabsKey = null;
+
                 continue;
             }
 
@@ -52,7 +53,7 @@ class ApplyLayoutFields implements Pipe
     }
 
     /**
-     * @param array $layouts
+     * @param  array  $layouts
      * @return array
      */
     public function createMainPanel(array $layouts): array
@@ -71,8 +72,8 @@ class ApplyLayoutFields implements Pipe
     }
 
     /**
-     * @param array $layouts
-     * @param int|string|null $lastKey
+     * @param  array  $layouts
+     * @param  int|string|null  $lastKey
      * @return array
      */
     public function createTabs(array $layouts, int|string|null $lastKey): array

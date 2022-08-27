@@ -15,7 +15,7 @@ class SelectRelation extends Field
 
     public function get($field, $value)
     {
-        if (!$value) {
+        if (! $value) {
             return;
         }
 
@@ -24,7 +24,7 @@ class SelectRelation extends Field
 
     public function display($field, $value)
     {
-        if (!$value) {
+        if (! $value) {
             return;
         }
 

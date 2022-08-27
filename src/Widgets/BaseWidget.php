@@ -2,8 +2,6 @@
 
 namespace Eminiarts\Aura\Widgets;
 
-use App\Models\Post;
-
 class BaseWidget extends Widget
 {
     use Concerns\CanPoll;

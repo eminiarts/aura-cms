@@ -14,7 +14,6 @@ trait RepeaterFields
 
         $last = Arr::last($this->post['fields'][$slug]);
 
-
         $keys = array_keys($last);
 
         $new = [];

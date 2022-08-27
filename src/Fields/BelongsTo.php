@@ -22,6 +22,7 @@ class BelongsTo extends Field
     public function get($field, $value)
     {
         dd('get');
+
         return json_decode($value, true);
     }
 
@@ -29,6 +30,6 @@ class BelongsTo extends Field
     {
         $model = User::find($value);
 
-        return "<a class='font-bold text-sky-500' href='/User/" . $model->id ."/edit'>" . $model->name ."</a>";
+        return "<a class='font-bold text-sky-500' href='/User/".$model->id."/edit'>".$model->name.'</a>';
     }
 }

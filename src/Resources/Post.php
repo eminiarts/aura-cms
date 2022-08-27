@@ -2,12 +2,10 @@
 
 namespace Eminiarts\Aura\Resources;
 
-use App\Aura\Widgets\PostChart;
-use App\Aura\Widgets\PostStats;
-use App\Aura\Widgets\TotalPosts;
-use App\Aura\Widgets\PostsPerDay;
 use App\Aura\Widgets\AvgPostsNumber;
+use App\Aura\Widgets\PostChart;
 use App\Aura\Widgets\SumPostsNumber;
+use App\Aura\Widgets\TotalPosts;
 use App\Models\Post as ModelsPost;
 
 class Post extends ModelsPost

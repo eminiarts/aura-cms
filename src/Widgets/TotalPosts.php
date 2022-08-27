@@ -2,7 +2,6 @@
 
 namespace Eminiarts\Aura\Widgets;
 
-use App\Models\User;
 use App\Aura\Resources\Post;
 
 class TotalPosts extends ValueWidget
@@ -10,7 +9,7 @@ class TotalPosts extends ValueWidget
     /**
      * @var string
      */
-    public $name = "Total Posts";
+    public $name = 'Total Posts';
 
     /**
      * Determine for how many minutes the metric should be cached.

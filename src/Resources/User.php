@@ -4,7 +4,6 @@ namespace Eminiarts\Aura\Resources;
 
 use App\Models\Post;
 use App\Models\UserMeta;
-use App\Aura\Resources\Resource;
 
 class User extends Post
 {
@@ -51,7 +50,7 @@ class User extends Post
                 'validation' => 'required|email',
                 'on_index' => true,
                 'display' => function ($value) {
-                    return "<a class='font-bold text-sky-500' href='mailto:" . $value ."'>" . $value ."</a>";
+                    return "<a class='font-bold text-sky-500' href='mailto:".$value."'>".$value.'</a>';
                 },
                 'slug' => 'email',
                 'style' => [
@@ -105,7 +104,7 @@ class User extends Post
     public function actions()
     {
         return [
-            'edit'
+            'edit',
         ];
     }
 
@@ -115,10 +114,10 @@ class User extends Post
     }
 
     /**
-    * The "booted" method of the model.
-    *
-    * @return void
-    */
+     * The "booted" method of the model.
+     *
+     * @return void
+     */
     protected static function booted()
     {
         static::saving(function ($user) {
@@ -142,7 +141,6 @@ class User extends Post
                 unset($user->attributes['fields']);
             }
 
-
             if (isset($user->attributes['terms'])) {
                 // $values = [];
 
@@ -161,7 +159,6 @@ class User extends Post
                 //     // Get the Correct Order
                 //     $values[] = collect($value)->mapWithKeys(fn ($i, $k) => [$i => ['order' => $k]])->toArray();
                 // }
-
 
                 // $values = collect($values)->mapWithKeys(function ($a) {
                 //     return $a;

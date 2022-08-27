@@ -10,8 +10,9 @@ use Illuminate\Database\Eloquent\Collection;
 class MetaCollection extends Collection
 {
     /**
-     * @param string $key
+     * @param  string  $key
      * @return mixed
+     *
      * @throws \Exception
      */
     public function __get($key)
@@ -33,7 +34,7 @@ class MetaCollection extends Collection
     }
 
     /**
-     * @param string $name
+     * @param  string  $name
      * @return bool
      */
     public function __isset($name)

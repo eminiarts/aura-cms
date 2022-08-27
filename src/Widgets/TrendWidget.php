@@ -2,16 +2,14 @@
 
 namespace Eminiarts\Aura\Widgets;
 
-use App\Models\Post;
+use App\Aura\Widgets\Widget;
 use Carbon\CarbonImmutable;
 use Carbon\CarbonInterface;
-use Illuminate\Support\Arr;
-use App\Aura\Widgets\Widget;
-use InvalidArgumentException;
+use Illuminate\Contracts\Database\Eloquent\Builder;
+use Illuminate\Database\Query\Expression;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Database\Query\Expression;
-use Illuminate\Contracts\Database\Eloquent\Builder;
+use InvalidArgumentException;
 
 class TrendWidget extends Widget
 {
@@ -39,7 +37,7 @@ class TrendWidget extends Widget
      * @param  string|null  $column
      * @return \Laravel\Nova\Metrics\TrendResult
      */
-    public function count($model, $unit, $dateColumn = null, $range)
+    public function count($model, $unit, $dateColumn, $range)
     {
         $resource = $model instanceof Builder ? $model->getModel() : new $model();
 
@@ -124,7 +122,7 @@ class TrendWidget extends Widget
         }
     }
 
-    protected function aggregate($model, $unit, $function, $column, $dateColumn = null, $range)
+    protected function aggregate($model, $unit, $function, $column, $dateColumn, $range)
     {
         $query = $model instanceof Builder ? $model : (new $model())->newQuery();
 
@@ -155,7 +153,7 @@ class TrendWidget extends Widget
                 ->orderBy('date_result')
                 ->get()->mapWithKeys(function ($item) {
                     // Rounding ? - round($result->aggregate, $this->roundingPrecision, $this->roundingMode)]
-                    return[ $item['date_result'] => $item['aggregate']];
+                    return[$item['date_result'] => $item['aggregate']];
                 })->all();
 
         $results = array_merge($possibleDateResults, $results);
@@ -192,14 +190,14 @@ class TrendWidget extends Widget
     }
 
     /**
-    * Get all of the possible date results for the given units.
-    *
-    * @param  \Carbon\CarbonInterface  $startingDate
-    * @param  \Carbon\CarbonInterface  $endingDate
-    * @param  string  $unit
-    * @param  bool  $twelveHourTime
-    * @return array<string, int>
-    */
+     * Get all of the possible date results for the given units.
+     *
+     * @param  \Carbon\CarbonInterface  $startingDate
+     * @param  \Carbon\CarbonInterface  $endingDate
+     * @param  string  $unit
+     * @param  bool  $twelveHourTime
+     * @return array<string, int>
+     */
     protected function getAllPossibleDateResults(
         CarbonInterface $startingDate,
         CarbonInterface $endingDate,

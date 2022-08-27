@@ -2,32 +2,31 @@
 
 namespace Eminiarts\Aura\Widgets;
 
-use App\Models\User;
 use App\Aura\Resources\Post;
 
 class SumPostsNumber extends ValueWidget
 {
     /**
-    * @var string
-    */
-    public $name = "Sum of Number";
+     * @var string
+     */
+    public $name = 'Sum of Number';
 
     /**
-    * Determine for how many minutes the metric should be cached.
-    *
-    * @return \DateTimeInterface|\DateInterval|float|int
-    */
+     * Determine for how many minutes the metric should be cached.
+     *
+     * @return \DateTimeInterface|\DateInterval|float|int
+     */
     public function cacheFor()
     {
         return now()->addMinutes(5);
     }
 
     /**
-    * Calculate the value of the metric.
-    *
-    * @param  \Laravel\Nova\Http\Requests\NovaRequest  $request
-    * @return mixed
-    */
+     * Calculate the value of the metric.
+     *
+     * @param  \Laravel\Nova\Http\Requests\NovaRequest  $request
+     * @return mixed
+     */
     public function getValueProperty()
     {
         return $this->cache(function () {
@@ -41,10 +40,10 @@ class SumPostsNumber extends ValueWidget
     }
 
     /**
-    * Get the ranges available for the metric.
-    *
-    * @return array
-    */
+     * Get the ranges available for the metric.
+     *
+     * @return array
+     */
     public function ranges()
     {
         return [
@@ -56,10 +55,10 @@ class SumPostsNumber extends ValueWidget
     }
 
     /**
-    * Get the URI key for the metric.
-    *
-    * @return string
-    */
+     * Get the URI key for the metric.
+     *
+     * @return string
+     */
     public function uriKey()
     {
         return 'sum-posts-number';

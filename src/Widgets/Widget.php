@@ -30,7 +30,6 @@ class Widget extends Component
         $this->settings = $settings;
     }
 
-
     public static function canView(): bool
     {
         return true;
@@ -38,12 +37,10 @@ class Widget extends Component
 
     public function cache($callback, $name = null)
     {
-        $key = ($this->uriKey() ?? $this->id) . '_' . $name . '_' . $this->range;
+        $key = ($this->uriKey() ?? $this->id).'_'.$name.'_'.$this->range;
 
         return cache()->remember($key, $this->cacheFor() ?? now()->addMinutes(5), $callback);
     }
-
-
 
     public function render(): View
     {
