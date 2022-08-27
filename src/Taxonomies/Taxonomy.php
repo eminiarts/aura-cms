@@ -2,7 +2,7 @@
 
 namespace Eminiarts\Aura\Taxonomies;
 
-use App\Aura\Traits\InputFields;
+use Eminiarts\Aura\Traits\InputFields;
 use App\Models\Scopes\TaxonomyScope;
 use App\Models\Taxonomy as ModelsTaxonomy;
 use App\Models\TaxonomyMeta;

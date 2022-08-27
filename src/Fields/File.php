@@ -2,7 +2,7 @@
 
 namespace Eminiarts\Aura\Fields;
 
-use App\Aura\Resources\Attachment;
+use Eminiarts\Aura\Resources\Attachment;
 
 class File extends Field
 {

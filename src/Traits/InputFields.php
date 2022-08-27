@@ -2,9 +2,9 @@
 
 namespace Eminiarts\Aura\Traits;
 
-use App\Aura\Pipeline\ApplyGroupedInputs;
-use App\Aura\Pipeline\ApplyLayoutFields;
-use App\Aura\Pipeline\ApplyTabs;
+use Eminiarts\Aura\Pipeline\ApplyGroupedInputs;
+use Eminiarts\Aura\Pipeline\ApplyLayoutFields;
+use Eminiarts\Aura\Pipeline\ApplyTabs;
 use Illuminate\Pipeline\Pipeline;
 
 trait InputFields

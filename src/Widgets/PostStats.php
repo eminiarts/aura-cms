@@ -2,7 +2,7 @@
 
 namespace Eminiarts\Aura\Widgets;
 
-use App\Aura\Resources\Post;
+use Eminiarts\Aura\Resources\Post;
 
 class PostStats extends BaseWidget
 {
