@@ -2,9 +2,9 @@
 
 namespace Eminiarts\Aura;
 
+use Eminiarts\Aura\Commands\AuraCommand;
 use Spatie\LaravelPackageTools\Package;
 use Spatie\LaravelPackageTools\PackageServiceProvider;
-use Eminiarts\Aura\Commands\AuraCommand;
 
 class AuraServiceProvider extends PackageServiceProvider
 {

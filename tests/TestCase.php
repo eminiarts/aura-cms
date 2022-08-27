@@ -2,9 +2,9 @@
 
 namespace Eminiarts\Aura\Tests;
 
+use Eminiarts\Aura\AuraServiceProvider;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Orchestra\Testbench\TestCase as Orchestra;
-use Eminiarts\Aura\AuraServiceProvider;
 
 class TestCase extends Orchestra
 {
