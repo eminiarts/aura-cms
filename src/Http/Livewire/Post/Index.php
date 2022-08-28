@@ -2,8 +2,8 @@
 
 namespace Eminiarts\Aura\Http\Livewire\Post;
 
-use Eminiarts\Aura;
 use Livewire\Component;
+use Eminiarts\Aura\Aura;
 
 class Index extends Component
 {

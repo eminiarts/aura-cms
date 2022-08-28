@@ -1,5 +1,7 @@
 <?php
 
+use Eminiarts\Aura\Http\Middleware\Authenticate;
+
 // config for Eminiarts/Aura
 return [
     /*
@@ -87,5 +89,35 @@ return [
     'livewire' => [
         'namespace' => 'App\\Aura',
         'path' => app_path('Aura'),
+    ],
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Middleware
+    |--------------------------------------------------------------------------
+    |
+    | You may customise the middleware stack that Filament uses to handle
+    | requests.
+    |
+    */
+
+    'middleware' => [
+        'admin' => [
+            'web',
+            'auth'
+        ],
+
+        // 'base' => [
+        //     EncryptCookies::class,
+        //     AddQueuedCookiesToResponse::class,
+        //     StartSession::class,
+        //     AuthenticateSession::class,
+        //     ShareErrorsFromSession::class,
+        //     VerifyCsrfToken::class,
+        //     SubstituteBindings::class,
+        //     DispatchServingFilamentEvent::class,
+        //     MirrorConfigToSubpackages::class,
+        // ],
     ],
 ];
