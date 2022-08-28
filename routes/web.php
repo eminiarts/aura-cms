@@ -10,11 +10,6 @@ use Illuminate\Support\Facades\Route;
 use Eminiarts\Aura\Http\Livewire\Taxonomy\Edit as TaxonomyEdit;
 use Eminiarts\Aura\Http\Livewire\Taxonomy\Index as TaxonomyIndex;
 
-Route::get('auro', function () {
-    return 'testtt';
-})->name('home');
-
-
 Route::middleware(['auth'])->prefix('aura')->group(function () {
     Route::get('/posttypes/{slug}', Posttype::class)->name('posttype.edit');
     Route::get('/taxonomies/{slug}', TaxonomyIndex::class)->name('taxonomy.index');
