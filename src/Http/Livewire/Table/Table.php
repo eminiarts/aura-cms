@@ -2,17 +2,16 @@
 
 namespace Eminiarts\Aura\Http\Livewire\Table;
 
-use App\Models\User;
-use Livewire\Component;
 use App\Http\Livewire\Table\Traits\BulkActions;
-use Illuminate\Contracts\Database\Eloquent\Builder;
 use App\Http\Livewire\Table\Traits\PerPagePagination;
+use App\Models\User;
+use Illuminate\Contracts\Database\Eloquent\Builder;
+use Livewire\Component;
 
 class Table extends Component
 {
     use BulkActions;
     use PerPagePagination;
-
 
     public $model;
 
@@ -77,8 +76,7 @@ class Table extends Component
             $item->{$action}();
         });
 
-        $this->notify('Erfolgreich: ' . $action);
-
+        $this->notify('Erfolgreich: '.$action);
 
         //dd('bulk', $action, $this->selected);
     }
@@ -121,7 +119,7 @@ class Table extends Component
         //dump('updated columns', $columns, $this->columns);
         // Save Columns per User
         if ($this->columns) {
-            auth()->user()->updateOption('columns.' . $this->model->getType(), $this->columns);
+            auth()->user()->updateOption('columns.'.$this->model->getType(), $this->columns);
         }
     }
 
@@ -142,23 +140,23 @@ class Table extends Component
             'starts_with' => '',
             'ends_with' => '',
             'is' => '==',
-            'greater_than'=> '>='
+            'greater_than' => '>=',
         ];
 
         if ($this->filters) {
             foreach ($this->filters as $filter) {
-                if (!$filter['name'] || !$filter['value']) {
+                if (! $filter['name'] || ! $filter['value']) {
                     continue;
                 }
                 $query->whereHas('meta', function (Builder $query) use ($filter) {
-                    $query->where('key', '=', $filter['name'])->where('value', 'like', $filter['value']. '%');
+                    $query->where('key', '=', $filter['name'])->where('value', 'like', $filter['value'].'%');
                 });
             }
         }
 
         // More advanced Search
         if ($this->search) {
-            $query->where('title', 'LIKE', $this->search . '%');
+            $query->where('title', 'LIKE', $this->search.'%');
         }
 
         // dd($this->model->paginate(5)->toArray());

@@ -5,7 +5,9 @@ namespace Eminiarts\Aura\Http\Livewire\Table\Traits;
 trait BulkActions
 {
     public $selectAll = false;
+
     public $selected = [];
+
     public $selectPage = false;
 
     public function getSelectedRowsQueryProperty()

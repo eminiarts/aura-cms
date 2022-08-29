@@ -2,10 +2,10 @@
 
 namespace Eminiarts\Aura\Taxonomies;
 
-use Eminiarts\Aura\Traits\InputFields;
 use App\Models\Scopes\TaxonomyScope;
 use App\Models\Taxonomy as ModelsTaxonomy;
 use App\Models\TaxonomyMeta;
+use Eminiarts\Aura\Traits\InputFields;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 

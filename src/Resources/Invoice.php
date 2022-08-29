@@ -2,8 +2,8 @@
 
 namespace Eminiarts\Aura\Resources;
 
-use Eminiarts\Aura\Widgets\PostStats;
 use App\Models\Post;
+use Eminiarts\Aura\Widgets\PostStats;
 
 class Invoice extends Post
 {

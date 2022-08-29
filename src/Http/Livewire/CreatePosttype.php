@@ -2,12 +2,10 @@
 
 namespace Eminiarts\Aura\Http\Livewire;
 
-use Livewire\Component;
-use Illuminate\Support\Arr;
-use Eminiarts\Aura\Traits\HasFields;
 use Eminiarts\Aura\Traits\InputFields;
-use LivewireUI\Modal\ModalComponent;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Artisan;
+use LivewireUI\Modal\ModalComponent;
 
 class CreatePosttype extends ModalComponent
 {
@@ -56,7 +54,7 @@ class CreatePosttype extends ModalComponent
         $this->validate();
 
         Artisan::call('make:posttype', [
-            'name' => $this->post['fields']['name']
+            'name' => $this->post['fields']['name'],
         ]);
 
         return $this->notify('Erfolgreich Erstellt.');

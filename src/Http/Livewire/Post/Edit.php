@@ -2,15 +2,15 @@
 
 namespace Eminiarts\Aura\Http\Livewire\Post;
 
-use Eminiarts\Aura;
 use App\Models\Post;
-use Livewire\Component;
-use Illuminate\Support\Arr;
-use Livewire\WithFileUploads;
-use Eminiarts\Aura\Traits\HasFields;
+use Eminiarts\Aura;
 use Eminiarts\Aura\Resources\Attachment;
+use Eminiarts\Aura\Traits\HasFields;
 use Eminiarts\Aura\Traits\RepeaterFields;
+use Illuminate\Support\Arr;
+use Livewire\Component;
 use Livewire\TemporaryUploadedFile;
+use Livewire\WithFileUploads;
 
 class Edit extends Component
 {

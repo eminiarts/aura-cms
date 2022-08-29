@@ -1,7 +1,5 @@
 <?php
 
-use Eminiarts\Aura\Http\Middleware\Authenticate;
-
 // config for Eminiarts/Aura
 return [
     /*
@@ -85,12 +83,10 @@ return [
     |
     */
 
-
     'livewire' => [
         'namespace' => 'App\\Aura',
         'path' => app_path('Aura'),
     ],
-
 
     /*
     |--------------------------------------------------------------------------
@@ -105,7 +101,7 @@ return [
     'middleware' => [
         'admin' => [
             'web',
-            'auth'
+            'auth',
         ],
 
         // 'base' => [

@@ -2,7 +2,6 @@
 
 namespace Eminiarts\Aura\Widgets;
 
-use Eminiarts\Aura\Widgets\Widget;
 use Carbon\CarbonImmutable;
 use Carbon\CarbonInterface;
 use Illuminate\Contracts\Database\Eloquent\Builder;
