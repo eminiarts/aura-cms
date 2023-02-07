@@ -5,7 +5,7 @@ namespace Eminiarts\Aura;
 use Spatie\LaravelPackageTools\Package;
 use Eminiarts\Aura\Commands\AuraCommand;
 use Spatie\LaravelPackageTools\PackageServiceProvider;
-use Illuminate\Database\Console\Migrations\InstallCommand;
+use Spatie\LaravelPackageTools\Commands\InstallCommand;
 
 class AuraServiceProvider extends PackageServiceProvider
 {
@@ -26,9 +26,9 @@ class AuraServiceProvider extends PackageServiceProvider
             ->hasCommand(AuraCommand::class)
             ->hasInstallCommand(function (InstallCommand $command) {
                 $command
-                ->startWith(function(InstallCommand $command) {
-                    $command->info('Hello, thank you for installing Aura!')
-                    })
+                ->startWith(function (InstallCommand $command) {
+                    $command->info('Hello, thank you for installing Aura!');
+                })
                     ->publishConfigFile()
                     ->publishMigrations()
                     ->askToRunMigrations()
