@@ -1,6 +1,6 @@
 <?php
 
-namespace Eminiarts\Aura\Aura\Taxonomies;
+namespace Eminiarts\Aura\Taxonomies;
 
 class Category extends Taxonomy
 {

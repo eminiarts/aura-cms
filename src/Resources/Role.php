@@ -1,6 +1,6 @@
 <?php
 
-namespace Eminiarts\Aura\Aura\Resources;
+namespace Eminiarts\Aura\Resources;
 
 use Eminiarts\Aura\Models\Meta;
 use Eminiarts\Aura\Models\Post;

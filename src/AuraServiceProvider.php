@@ -52,7 +52,7 @@ class AuraServiceProvider extends PackageServiceProvider
 
     public function boot()
     {
-        // parent::boot();
+        parent::boot();
 
         Component::macro('notify', function ($message) {
             $this->dispatchBrowserEvent('notify', $message);

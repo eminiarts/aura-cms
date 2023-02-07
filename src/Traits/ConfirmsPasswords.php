@@ -1,6 +1,6 @@
 <?php
 
-namespace Eminiarts\Aura\Aura\Traits;
+namespace Eminiarts\Aura\Traits;
 
 use Illuminate\Contracts\Auth\StatefulGuard;
 use Illuminate\Support\Facades\Auth;

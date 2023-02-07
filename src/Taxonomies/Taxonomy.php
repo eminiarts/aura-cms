@@ -1,6 +1,6 @@
 <?php
 
-namespace Eminiarts\Aura\Aura\Taxonomies;
+namespace Eminiarts\Aura\Taxonomies;
 
 use Eminiarts\Aura\Traits\InputFields;
 use Eminiarts\Aura\Traits\InteractsWithTable;

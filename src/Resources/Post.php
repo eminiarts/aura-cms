@@ -1,6 +1,6 @@
 <?php
 
-namespace Eminiarts\Aura\Aura\Resources;
+namespace Eminiarts\Aura\Resources;
 
 use Eminiarts\Aura\Widgets\AvgPostsNumber;
 use Eminiarts\Aura\Widgets\PostChart;

@@ -1,6 +1,6 @@
 <?php
 
-namespace Eminiarts\Aura\Aura\Resources;
+namespace Eminiarts\Aura\Resources;
 
 use Eminiarts\Aura\Traits\SaveFieldAttributes;
 use Eminiarts\Aura\Traits\SaveMetaFields;

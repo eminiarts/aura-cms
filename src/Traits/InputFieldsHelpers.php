@@ -1,6 +1,6 @@
 <?php
 
-namespace Eminiarts\Aura\Aura\Traits;
+namespace Eminiarts\Aura\Traits;
 
 use Eminiarts\Aura\Pipeline\ApplyGroupedInputs;
 use Illuminate\Pipeline\Pipeline;
