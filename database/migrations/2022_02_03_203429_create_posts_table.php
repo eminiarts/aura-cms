@@ -4,8 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class() extends Migration
-{
+return new class () extends Migration {
     /**
      * Reverse the migrations.
      *
@@ -14,6 +13,7 @@ return new class() extends Migration
     public function down()
     {
         Schema::dropIfExists('posts');
+        Schema::dropIfExists('post_meta');
     }
 
     /**
@@ -38,6 +38,14 @@ return new class() extends Migration
             $table->softDeletes();
 
             $table->index(['team_id', 'slug', 'type', 'status', 'created_at', 'id']);
+        });
+
+
+        Schema::create('post_meta', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('post_id');
+            $table->string('key')->nullable();
+            $table->longText('value')->nullable();
         });
     }
 };

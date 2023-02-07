@@ -4,8 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class() extends Migration
-{
+return new class () extends Migration {
     /**
      * Reverse the migrations.
      *
@@ -15,6 +14,8 @@ return new class() extends Migration
     {
         Schema::dropIfExists('flows');
         Schema::dropIfExists('flow_operations');
+        Schema::dropIfExists('flow_logs');
+        Schema::dropIfExists('operation_logs');
     }
 
     /**
@@ -56,9 +57,45 @@ return new class() extends Migration
             $table->foreignId('team_id')->constrained('teams')->onDelete('cascade')->nullable();
         });
 
-        // flows: operation_id is not yet created, so we need to constrain it manually
-        // Schema::table('flows', function (Blueprint $table) {
-        //     $table->foreign('operation_id')->references('id')->on('flow_operations')->onDelete('set null');
-        // });
+
+        Schema::create('flow_logs', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('flow_id')->constrained()->cascadeOnDelete();
+            $table->string('status')->nullable();
+
+            // startet_at and finished_at are nullable because the Flow might not be finished yet
+            $table->timestamp('started_at')->nullable();
+            $table->timestamp('finished_at')->nullable();
+
+            $table->json('request')->nullable();
+            $table->json('response')->nullable();
+            $table->json('options')->nullable();
+
+            $table->timestamps();
+
+            $table->foreignId('user_id')->constrained('users')->onDelete('cascade')->nullable();
+            $table->foreignId('team_id')->constrained('teams')->onDelete('cascade')->nullable();
+        });
+
+
+        Schema::create('flow_operation_logs', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('operation_id')->constrained('flow_operations')->cascadeOnDelete();
+            $table->unsignedBigInteger('flow_log_id')->cascadeOnDelete();
+            $table->string('status')->nullable();
+
+            // startet_at and finished_at are nullable because the Flow might not be finished yet
+            $table->timestamp('started_at')->nullable();
+            $table->timestamp('finished_at')->nullable();
+
+            $table->json('request')->nullable();
+            $table->json('response')->nullable();
+            $table->json('options')->nullable();
+
+            $table->timestamps();
+
+            $table->foreignId('user_id')->constrained('users')->onDelete('cascade')->nullable();
+            $table->foreignId('team_id')->constrained('teams')->onDelete('cascade')->nullable();
+        });
     }
 };
