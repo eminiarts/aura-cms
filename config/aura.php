@@ -1,9 +1,9 @@
 <?php
 
+use Eminiarts\Aura\Resources\Permission;
 use Eminiarts\Aura\Resources\Post;
 use Eminiarts\Aura\Resources\Role;
 use Eminiarts\Aura\Resources\User;
-use Eminiarts\Aura\Resources\Permission;
 
 // config for Eminiarts/Aura
 return [
@@ -56,8 +56,7 @@ return [
     'resources' => [
         'namespace' => 'App\\Aura\\Resources',
         'path' => app_path('Aura/Resources'),
-        'register' =>
-        [
+        'register' => [
             'User' => User::class,
             'Role' => Role::class,
             'Permission' => Permission::class,
@@ -116,15 +115,15 @@ return [
         ],
 
         // 'base' => [
-            //     EncryptCookies::class,
-            //     AddQueuedCookiesToResponse::class,
-            //     StartSession::class,
-            //     AuthenticateSession::class,
-            //     ShareErrorsFromSession::class,
-            //     VerifyCsrfToken::class,
-            //     SubstituteBindings::class,
-            //     DispatchServingFilamentEvent::class,
-            //     MirrorConfigToSubpackages::class,
-            // ],
-        ],
-    ];
+        //     EncryptCookies::class,
+        //     AddQueuedCookiesToResponse::class,
+        //     StartSession::class,
+        //     AuthenticateSession::class,
+        //     ShareErrorsFromSession::class,
+        //     VerifyCsrfToken::class,
+        //     SubstituteBindings::class,
+        //     DispatchServingFilamentEvent::class,
+        //     MirrorConfigToSubpackages::class,
+        // ],
+    ],
+];

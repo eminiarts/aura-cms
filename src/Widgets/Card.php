@@ -17,7 +17,7 @@ class Card extends Component implements Htmlable
 
     protected ?string $icon = null;
 
-    protected string | Htmlable | null $description = null;
+    protected string|Htmlable|null $description = null;
 
     protected ?string $descriptionIcon = null;
 
@@ -31,7 +31,7 @@ class Card extends Component implements Htmlable
 
     protected ?string $id = null;
 
-    protected string | Htmlable $label;
+    protected string|Htmlable $label;
 
     protected $value;
 
@@ -67,7 +67,7 @@ class Card extends Component implements Htmlable
         return $this;
     }
 
-    public function description(string | Htmlable | null $description): static
+    public function description(string|Htmlable|null $description): static
     {
         $this->description = $description;
 
@@ -117,7 +117,7 @@ class Card extends Component implements Htmlable
         return $this;
     }
 
-    public function label(string | Htmlable $label): static
+    public function label(string|Htmlable $label): static
     {
         $this->label = $label;
 
@@ -158,7 +158,7 @@ class Card extends Component implements Htmlable
         return $this->icon;
     }
 
-    public function getDescription(): string | Htmlable | null
+    public function getDescription(): string|Htmlable|null
     {
         return $this->description;
     }
@@ -188,7 +188,7 @@ class Card extends Component implements Htmlable
         return $this->shouldOpenUrlInNewTab;
     }
 
-    public function getLabel(): string | Htmlable
+    public function getLabel(): string|Htmlable
     {
         return $this->label;
     }

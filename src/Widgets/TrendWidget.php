@@ -18,7 +18,7 @@ class TrendWidget extends Widget
 
     protected ?array $cachedCards = null;
 
-    protected int | string | array $columnSpan = 'full';
+    protected int|string|array $columnSpan = 'full';
 
     protected static string $view = 'widgets.trend';
 

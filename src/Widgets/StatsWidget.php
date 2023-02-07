@@ -8,7 +8,7 @@ class StatsWidget
 
     protected ?array $cachedCards = null;
 
-    protected int | string | array $columnSpan = 'full';
+    protected int|string|array $columnSpan = 'full';
 
     protected static string $view = 'filament::widgets.stats-overview-widget';
 
