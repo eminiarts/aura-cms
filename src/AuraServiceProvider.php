@@ -49,33 +49,8 @@ class AuraServiceProvider extends PackageServiceProvider
         return config('aura.resources');
     }
 
-    public function packageRegistered()
+    public function packageBooted()
     {
-        parent::packageRegistered();
-
-
-        $this->app->scoped('aura', function (): Aura {
-            return new Aura();
-        });
-
-        Aura::registerResources([
-            \Eminiarts\Aura\Resources\Attachment::class,
-            \Eminiarts\Aura\Resources\Flow::class,
-            \Eminiarts\Aura\Resources\FlowLog::class,
-            \Eminiarts\Aura\Resources\Operation::class,
-            \Eminiarts\Aura\Resources\OperationLog::class,
-            \Eminiarts\Aura\Resources\Option::class,
-            \Eminiarts\Aura\Resources\Page::class,
-            \Eminiarts\Aura\Resources\Post::class,
-            \Eminiarts\Aura\Resources\Permission::class,
-            \Eminiarts\Aura\Resources\Role::class,
-            \Eminiarts\Aura\Resources\Team::class,
-            \Eminiarts\Aura\Resources\User::class,
-        ]);
-
-        dd('hier', app('aura')->resources());
-
-
         Component::macro('notify', function ($message) {
             $this->dispatchBrowserEvent('notify', $message);
         });
@@ -104,8 +79,35 @@ class AuraServiceProvider extends PackageServiceProvider
         Livewire::component('app.aura.widgets.avg-posts-number', \Eminiarts\Aura\Widgets\AvgPostsNumber::class);
 
         // Register the morph map for the resources
-        $resources = Aura::resources()->mapWithKeys(function ($resource) {
-            return [$resource => 'Eminiarts\Aura\Resources\\'.str($resource)->title];
-        })->toArray();
+        // $resources = Aura::resources()->mapWithKeys(function ($resource) {
+        //     return [$resource => 'Eminiarts\Aura\Resources\\'.str($resource)->title];
+        // })->toArray();
+    }
+
+    public function packageRegistered()
+    {
+        parent::packageRegistered();
+
+
+        $this->app->scoped('aura', function (): Aura {
+            return new Aura();
+        });
+
+        Facades\Aura::registerResources([
+            \Eminiarts\Aura\Resources\Attachment::class,
+            \Eminiarts\Aura\Resources\Flow::class,
+            \Eminiarts\Aura\Resources\FlowLog::class,
+            \Eminiarts\Aura\Resources\Operation::class,
+            \Eminiarts\Aura\Resources\OperationLog::class,
+            \Eminiarts\Aura\Resources\Option::class,
+            \Eminiarts\Aura\Resources\Page::class,
+            \Eminiarts\Aura\Resources\Post::class,
+            \Eminiarts\Aura\Resources\Permission::class,
+            \Eminiarts\Aura\Resources\Role::class,
+            \Eminiarts\Aura\Resources\Team::class,
+            \Eminiarts\Aura\Resources\User::class,
+        ]);
+
+        // dd('hier', app('aura'), Facades\Aura::getResources());
     }
 }
