@@ -1,0 +1,273 @@
+<?php
+
+namespace App\Models;
+
+use App\Aura;
+use App\Aura\Resource;
+use App\Aura\Resources\Flow;
+use App\Aura\Traits\InitialPostFields;
+use App\Aura\Traits\SaveFieldAttributes;
+use App\Aura\Traits\SaveMetaFields;
+use App\Aura\Traits\SaveTerms;
+use App\Jobs\TriggerFlowOnCreatePostEvent;
+use App\Jobs\TriggerFlowOnDeletedPostEvent;
+use App\Jobs\TriggerFlowOnUpdatePostEvent;
+use App\Models\Scopes\TeamScope;
+use App\Models\Scopes\TypeScope;
+use Illuminate\Database\Eloquent\Concerns\HasTimestamps;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Support\Str;
+
+class Post extends Resource
+{
+    use HasFactory;
+    use HasTimestamps;
+
+    // Aura
+    use InitialPostFields;
+    use SaveFieldAttributes;
+    use SaveMetaFields;
+    use SaveTerms;
+
+    protected $appends = ['fields'];
+
+    protected $fillable = ['title', 'content', 'type', 'status', 'slug', 'user_id', 'parent_id', 'order', 'fields', 'taxonomies', 'terms', 'team_id', 'first_taxonomy'];
+
+    /**
+     * The table associated with the model.
+     *
+     * @var string
+     */
+    protected $table = 'posts';
+
+    protected $with = ['meta'];
+
+    /**
+     * @param  string  $key
+     * @return mixed
+     */
+    public function __get($key)
+    {
+        // Title is a special case, for now
+        // if ($key == 'title') {
+        //     //dd('title', $this->attributes, $this->getAttributeValue($key));
+        //     return $this->getAttributeValue($key);
+        // }
+
+        $value = parent::__get($key);
+
+        //return $this->displayFieldValue($key);
+
+        // dump($key, $value);
+
+        // if (method_exists($this, $key)) {
+        //     dump('prop exists', $key, $value);
+        // }
+
+        if ($value) {
+            return $value;
+        }
+
+        // Not sure if this is the best way to do this
+        return $this->displayFieldValue($key, $value);
+
+        // For now
+        if ($value === null) {
+            return $this->displayFieldValue($key);
+
+            //return $this->meta->$key;
+        }
+
+        if ($value === null && ! property_exists($this, $key)) {
+            return $this->meta->$key;
+        }
+
+        return $value;
+    }
+
+    /**
+     * @return \Illuminate\Database\Eloquent\Relations\HasMany
+     */
+    public function attachment()
+    {
+        return $this->hasMany(self::class, 'post_parent')
+            ->where('post_type', 'attachment');
+    }
+
+    /**
+     * @return \Illuminate\Database\Eloquent\Relations\HasMany
+     */
+    public function children()
+    {
+        return $this->hasMany(self::class, 'post_parent');
+    }
+
+    public function getBulkActions()
+    {
+        // get all flows with type "manual"
+
+        // $flows = Flow::where('trigger', 'manual')
+        //     ->where('options->resource', $this->type)
+        //     ->get();
+
+        // foreach ($flows as $flow) {
+        //     $this->bulkActions['callManualFlow'] = $flow->name;
+        // }
+
+        // dd($this->bulkActions);
+        return $this->bulkActions;
+    }
+
+    /**
+     * @return string
+     */
+    // public function getContentAttribute()
+    // {
+    //     return $this->content;
+    //     return $this->stripShortcodes($this->content);
+    // }
+
+    /**
+     * @return string
+     */
+    public function getExcerptAttribute()
+    {
+        return $this->stripShortcodes($this->post_excerpt);
+    }
+
+    public function getFieldsAttribute()
+    {
+        //$this->load('meta');
+
+        // if $this->usesMeta is false, then we don't want to load the meta
+        if ($this->usesMeta() && optional($this)->meta) {
+            $meta = $this->meta->pluck('value', 'key');
+
+            // Cast Attributes
+            $meta = $meta->map(function ($meta, $key) {
+                $class = $this->fieldClassBySlug($key);
+
+                if ($class && method_exists($class, 'get')) {
+                    return $class->get($class, $meta);
+                }
+
+                // if (optional($this->fieldBySlug($key))['type']) {
+            //     return app($this->fieldBySlug($key)['type'])->get($meta);
+                // }
+
+                return $meta;
+            });
+        }
+
+        // This hydrates the models, is there a way without hydrating?
+        // $meta = $this->meta()->toBase()->get()->pluck('value', 'key');
+
+        $defaultValues = $this->getFieldSlugs()->mapWithKeys(fn ($value, $key) => [$value => null])->map(fn ($value, $key) => $meta[$key] ?? $value)->map(function ($value, $key) {
+            // if the value is in $this->hidden, set it to null
+            if (in_array($key, $this->hidden)) {
+                return;
+            }
+
+            // if there is a function get{Slug}Field on the model, use it
+            $method = 'get'.Str::studly($key).'Field';
+
+            if (method_exists($this, $method)) {
+                return $this->{$method}();
+            }
+
+            $class = $this->fieldClassBySlug($key);
+
+            if ($class && isset($this->{$key}) && method_exists($class, 'get')) {
+                return $class->get($class, $this->{$key});
+            }
+
+            // if $this->{$key} is set, then we want to use that
+            if (isset($this->{$key})) {
+                return $this->{$key};
+            }
+
+            // if $this->attributes[$key] is set, then we want to use that
+            if (isset($this->attributes[$key])) {
+                return $this->attributes[$key];
+            }
+        });
+
+        return $defaultValues->merge($meta ?? []);
+    }
+
+    /**
+     * Gets the featured image if any
+     * Looks in meta the _thumbnail_id field.
+     *
+     * @return string
+     */
+    public function getImageAttribute()
+    {
+        if ($this->thumbnail and $this->thumbnail->attachment) {
+            return $this->thumbnail->attachment->guid;
+        }
+    }
+
+    /**
+     * Get the jobs for the post.
+     */
+    public function jobs()
+    {
+        return $this->hasMany(PostJob::class, 'post_id');
+    }
+
+    /**
+     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
+     */
+    public function parent()
+    {
+        return $this->belongsTo(self::class, 'post_parent');
+    }
+
+    /**
+     * @return \Illuminate\Database\Eloquent\Relations\HasMany
+     */
+    public function revision()
+    {
+        return $this->hasMany(self::class, 'post_parent')
+            ->where('post_type', 'revision');
+    }
+
+    /**
+     * Get the User associated with the Content
+     *
+     * @return mixed
+     */
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
+
+    /**
+     * The "booted" method of the model.
+     *
+     * @return void
+     */
+    protected static function booted()
+    {
+        static::addGlobalScope(new TypeScope());
+
+        static::addGlobalScope(new TeamScope());
+
+        static::created(function ($post) {
+            dispatch(new TriggerFlowOnCreatePostEvent($post));
+        });
+
+        static::updated(function ($post) {
+            dispatch(new TriggerFlowOnUpdatePostEvent($post));
+        });
+
+        static::deleted(function ($post) {
+            dispatch(new TriggerFlowOnDeletedPostEvent($post));
+        });
+
+        // static::saving(function ($post) {
+        //     dd('da', $post);
+        // });
+    }
+}
