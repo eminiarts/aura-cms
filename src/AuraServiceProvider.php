@@ -50,9 +50,17 @@ class AuraServiceProvider extends PackageServiceProvider
         return config('aura.resources');
     }
 
-    public function boot()
+    public function packageRegistered()
     {
-        parent::boot();
+        parent::packageRegistered();
+
+
+        $this->app->scoped('aura', function (): Aura {
+            return new Aura();
+        });
+
+        dd('hier');
+
 
         Component::macro('notify', function ($message) {
             $this->dispatchBrowserEvent('notify', $message);
