@@ -59,6 +59,21 @@ class AuraServiceProvider extends PackageServiceProvider
             return new Aura();
         });
 
+        Aura::registerResources([
+            \Eminiarts\Aura\Resources\Attachment::class,
+            \Eminiarts\Aura\Resources\Flow::class,
+            \Eminiarts\Aura\Resources\FlowLog::class,
+            \Eminiarts\Aura\Resources\Operation::class,
+            \Eminiarts\Aura\Resources\OperationLog::class,
+            \Eminiarts\Aura\Resources\Option::class,
+            \Eminiarts\Aura\Resources\Page::class,
+            \Eminiarts\Aura\Resources\Post::class,
+            \Eminiarts\Aura\Resources\Permission::class,
+            \Eminiarts\Aura\Resources\Role::class,
+            \Eminiarts\Aura\Resources\Team::class,
+            \Eminiarts\Aura\Resources\User::class,
+        ]);
+
         dd('hier');
 
 
