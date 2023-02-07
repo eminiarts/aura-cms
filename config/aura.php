@@ -5,7 +5,6 @@ use Eminiarts\Aura\Resources\Post;
 use Eminiarts\Aura\Resources\Role;
 use Eminiarts\Aura\Resources\User;
 
-// config for Eminiarts/Aura
 return [
     /*
     |--------------------------------------------------------------------------
@@ -17,7 +16,7 @@ return [
     |
     */
 
-    'path' => env('AURA_PATH', 'admin'),
+    'path' => env('AURA_PATH', '/'),
 
     /*
     |--------------------------------------------------------------------------
