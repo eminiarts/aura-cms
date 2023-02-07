@@ -7,14 +7,9 @@ use Livewire\Component;
 
 class Index extends Component
 {
-    public $taxonomy;
-
     public $slug;
 
-    public function render()
-    {
-        return view('livewire.taxonomy.index');
-    }
+    public $taxonomy;
 
     public function mount($slug)
     {
@@ -25,5 +20,10 @@ class Index extends Component
 
         // Array instead of Eloquent Model
         // $this->post = $this->model->toArray();
+    }
+
+    public function render()
+    {
+        return view('livewire.taxonomy.index');
     }
 }

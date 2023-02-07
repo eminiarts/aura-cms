@@ -1,8 +1,8 @@
 <?php
 
-namespace App\Aura\Traits;
+namespace Eminiarts\Aura\Aura\Traits;
 
-use App\Aura\Pipeline\ApplyGroupedInputs;
+use Eminiarts\Aura\Pipeline\ApplyGroupedInputs;
 use Illuminate\Pipeline\Pipeline;
 
 trait InputFieldsHelpers

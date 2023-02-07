@@ -1,13 +1,13 @@
 <?php
 
-namespace App\Aura\Taxonomies;
+namespace Eminiarts\Aura\Aura\Taxonomies;
 
-use App\Aura\Traits\InputFields;
-use App\Aura\Traits\InteractsWithTable;
-use App\Models\Scopes\TaxonomyScope;
-use App\Models\Scopes\TeamScope;
-use App\Models\Taxonomy as ModelsTaxonomy;
-use App\Models\TaxonomyMeta;
+use Eminiarts\Aura\Traits\InputFields;
+use Eminiarts\Aura\Traits\InteractsWithTable;
+use Eminiarts\Aura\Models\Scopes\TaxonomyScope;
+use Eminiarts\Aura\Models\Scopes\TeamScope;
+use Eminiarts\Aura\Models\Taxonomy as ModelsTaxonomy;
+use Eminiarts\Aura\Models\TaxonomyMeta;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;

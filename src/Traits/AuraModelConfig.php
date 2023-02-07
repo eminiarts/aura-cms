@@ -1,9 +1,9 @@
 <?php
 
-namespace App\Aura\Traits;
+namespace Eminiarts\Aura\Aura\Traits;
 
-use App\ConditionalLogic;
-use App\Models\Meta;
+use Eminiarts\Aura\ConditionalLogic;
+use Eminiarts\Aura\Models\Meta;
 use Illuminate\Support\Str;
 
 trait AuraModelConfig

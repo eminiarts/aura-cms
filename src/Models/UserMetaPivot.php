@@ -1,8 +1,8 @@
 <?php
 
-namespace App\Models;
+namespace Eminiarts\Aura\Models;
 
-use App\Aura\Resources\Role;
+use Eminiarts\Aura\Resources\Role;
 use Illuminate\Database\Eloquent\Relations\Pivot;
 
 class UserMetaPivot extends Pivot

@@ -1,8 +1,8 @@
 <?php
 
-namespace App\Aura\Fields;
+namespace Eminiarts\Aura\Aura\Fields;
 
-use App\Aura\Traits\InputFields;
+use Eminiarts\Aura\Traits\InputFields;
 use Exception;
 use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Support\Traits\Macroable;

@@ -1,8 +1,8 @@
 <?php
 
-namespace App\Aura\Resources;
+namespace Eminiarts\Aura\Aura\Resources;
 
-use App\Models\Post;
+use Eminiarts\Aura\Models\Post;
 use Closure;
 use Filament\Facades\Filament;
 use Filament\Navigation\NavigationItem;

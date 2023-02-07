@@ -1,13 +1,13 @@
 <?php
 
-namespace App\Aura\Resources;
+namespace Eminiarts\Aura\Aura\Resources;
 
-use App\Aura\Traits\CustomTable;
-use App\Aura\Traits\SaveFieldAttributes;
-use App\Aura\Traits\SaveMetaFields;
-use App\Aura\Traits\SaveTerms;
-use App\Models\Post;
-use App\Models\TeamMeta;
+use Eminiarts\Aura\Traits\CustomTable;
+use Eminiarts\Aura\Traits\SaveFieldAttributes;
+use Eminiarts\Aura\Traits\SaveMetaFields;
+use Eminiarts\Aura\Traits\SaveTerms;
+use Eminiarts\Aura\Models\Post;
+use Eminiarts\Aura\Models\TeamMeta;
 use Database\Factories\TeamFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 

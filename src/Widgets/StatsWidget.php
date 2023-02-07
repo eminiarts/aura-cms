@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Aura\Widgets;
+namespace Eminiarts\Aura\Aura\Widgets;
 
 class StatsWidget
 {

@@ -2,22 +2,12 @@
 
 namespace Eminiarts\Aura\Http\Controllers;
 
-use App\Http\Requests\StoreMetaRequest;
-use App\Http\Requests\UpdateMetaRequest;
-use App\Models\Meta;
+use Eminiarts\Aura\Http\Requests\StoreMetaRequest;
+use Eminiarts\Aura\Http\Requests\UpdateMetaRequest;
+use Eminiarts\Aura\Models\Meta;
 
 class MetaController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     *
-     * @return \Illuminate\Http\Response
-     */
-    public function index()
-    {
-        //
-    }
-
     /**
      * Show the form for creating a new resource.
      *
@@ -29,23 +19,12 @@ class MetaController extends Controller
     }
 
     /**
-     * Store a newly created resource in storage.
-     *
-     * @param  \App\Http\Requests\StoreMetaRequest  $request
-     * @return \Illuminate\Http\Response
-     */
-    public function store(StoreMetaRequest $request)
-    {
-        //
-    }
-
-    /**
-     * Display the specified resource.
+     * Remove the specified resource from storage.
      *
      * @param  \App\Models\Meta  $meta
      * @return \Illuminate\Http\Response
      */
-    public function show(Meta $meta)
+    public function destroy(Meta $meta)
     {
         //
     }
@@ -62,6 +41,38 @@ class MetaController extends Controller
     }
 
     /**
+     * Display a listing of the resource.
+     *
+     * @return \Illuminate\Http\Response
+     */
+    public function index()
+    {
+        //
+    }
+
+    /**
+     * Display the specified resource.
+     *
+     * @param  \App\Models\Meta  $meta
+     * @return \Illuminate\Http\Response
+     */
+    public function show(Meta $meta)
+    {
+        //
+    }
+
+    /**
+     * Store a newly created resource in storage.
+     *
+     * @param  \App\Http\Requests\StoreMetaRequest  $request
+     * @return \Illuminate\Http\Response
+     */
+    public function store(StoreMetaRequest $request)
+    {
+        //
+    }
+
+    /**
      * Update the specified resource in storage.
      *
      * @param  \App\Http\Requests\UpdateMetaRequest  $request
@@ -69,17 +80,6 @@ class MetaController extends Controller
      * @return \Illuminate\Http\Response
      */
     public function update(UpdateMetaRequest $request, Meta $meta)
-    {
-        //
-    }
-
-    /**
-     * Remove the specified resource from storage.
-     *
-     * @param  \App\Models\Meta  $meta
-     * @return \Illuminate\Http\Response
-     */
-    public function destroy(Meta $meta)
     {
         //
     }

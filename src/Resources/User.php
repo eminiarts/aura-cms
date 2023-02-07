@@ -1,12 +1,12 @@
 <?php
 
-namespace App\Aura\Resources;
+namespace Eminiarts\Aura\Aura\Resources;
 
-use App\Aura\Traits\SaveFieldAttributes;
-use App\Aura\Traits\SaveMetaFields;
-use App\Aura\Traits\SaveTerms;
-use App\Models\User as UserModel;
-use App\Models\UserMeta;
+use Eminiarts\Aura\Traits\SaveFieldAttributes;
+use Eminiarts\Aura\Traits\SaveMetaFields;
+use Eminiarts\Aura\Traits\SaveTerms;
+use Eminiarts\Aura\Models\User as UserModel;
+use Eminiarts\Aura\Models\UserMeta;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
 

@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Aura\Widgets;
+namespace Eminiarts\Aura\Aura\Widgets;
 
 use Carbon\CarbonImmutable;
 use Carbon\CarbonInterface;
@@ -33,7 +33,7 @@ class TrendWidget extends Widget
      */
     public function count($model, $unit, $dateColumn, $range)
     {
-        $resource = $model instanceof Builder ? $model->getModel() : new $model;
+        $resource = $model instanceof Builder ? $model->getModel() : new $model();
 
         $dateColumn = $dateColumn ?? $resource->getQualifiedCreatedAtColumn();
 
@@ -75,7 +75,7 @@ class TrendWidget extends Widget
 
     protected function aggregate($model, $unit, $function, $column, $dateColumn, $range)
     {
-        $query = $model instanceof Builder ? $model : (new $model)->newQuery();
+        $query = $model instanceof Builder ? $model : (new $model())->newQuery();
 
         $dateColumn = $dateColumn ?? $query->getModel()->getQualifiedCreatedAtColumn();
 

@@ -1,11 +1,11 @@
 <?php
 
-namespace App\Aura\Resources;
+namespace Eminiarts\Aura\Aura\Resources;
 
-use App\Aura\Traits\CustomTable;
-use App\Jobs\RunOperation;
-use App\Models\Post;
-use App\Models\Scopes\TeamScope;
+use Eminiarts\Aura\Traits\CustomTable;
+use Eminiarts\Aura\Jobs\RunOperation;
+use Eminiarts\Aura\Models\Post;
+use Eminiarts\Aura\Models\Scopes\TeamScope;
 use Illuminate\Support\Facades\Log;
 
 class Operation extends Post

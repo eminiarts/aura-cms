@@ -13,6 +13,26 @@ class CreatePosttype extends ModalComponent
 
     public $post;
 
+    public static function getFields()
+    {
+        return [
+            [
+                'label' => 'Name',
+                'name' => 'name',
+                'type' => 'App\\Aura\\Fields\\Text',
+                'validation' => 'required',
+                'slug' => 'name',
+            ],
+        ];
+    }
+
+    public function getFieldsProperty()
+    {
+        $fields = collect($this->mappedFields());
+
+        return $this->fieldsForView($fields);
+    }
+
     public function render()
     {
         return view('livewire.create-posttype');
@@ -25,30 +45,6 @@ class CreatePosttype extends ModalComponent
         ]);
     }
 
-    public function getFieldsProperty()
-    {
-        $fields = collect($this->mappedFields());
-
-        return $this->fieldsForView($fields);
-    }
-
-    public static function getFields()
-    {
-        return [
-            'name' => [
-                'id' => 3,
-                'label' => 'Name',
-                'name' => 'name',
-                'type' => 'App\\Aura\\Fields\\Text',
-                'validation' => 'required',
-                'on_index' => true,
-                'has_conditional_logic' => false,
-                'slug' => 'name',
-
-            ],
-        ];
-    }
-
     public function save()
     {
         $this->validate();
@@ -57,6 +53,10 @@ class CreatePosttype extends ModalComponent
             'name' => $this->post['fields']['name'],
         ]);
 
-        return $this->notify('Erfolgreich Erstellt.');
+        Artisan::call('cache:clear');
+
+        $this->notify('Erfolgreich Erstellt.');
+
+        $this->emit('closeModal');
     }
 }

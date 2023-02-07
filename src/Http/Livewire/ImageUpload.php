@@ -11,11 +11,14 @@ class ImageUpload extends Component
 
     public $photos = [];
 
-    public function updatedPhoto()
+    public function remove($index)
     {
-        $this->validate([
-            'photo' => 'image|max:10240',
-        ]);
+        array_splice($this->photos, $index, 1);
+    }
+
+    public function render()
+    {
+        return view('livewire.image-upload');
     }
 
     public function save()
@@ -31,13 +34,10 @@ class ImageUpload extends Component
         session()->flash('message', 'File Uploaded !');
     }
 
-    public function remove($index)
+    public function updatedPhoto()
     {
-        array_splice($this->photos, $index, 1);
-    }
-
-    public function render()
-    {
-        return view('livewire.image-upload');
+        $this->validate([
+            'photo' => 'image|max:10240',
+        ]);
     }
 }

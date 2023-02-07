@@ -1,9 +1,9 @@
 <?php
 
-namespace App\Aura\Traits;
+namespace Eminiarts\Aura\Aura\Traits;
 
-use App\Aura;
-use App\Aura\Taxonomies\Taxonomy;
+use Eminiarts\Aura;
+use Eminiarts\Aura\Taxonomies\Taxonomy;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 

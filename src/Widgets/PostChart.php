@@ -1,8 +1,8 @@
 <?php
 
-namespace App\Aura\Widgets;
+namespace Eminiarts\Aura\Aura\Widgets;
 
-use App\Aura\Resources\Post;
+use Eminiarts\Aura\Resources\Post;
 
 class PostChart extends TrendWidget
 {

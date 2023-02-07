@@ -1,11 +1,11 @@
 <?php
 
-namespace App\Aura;
+namespace Eminiarts\Aura\Aura;
 
-use App\Aura\Traits\AuraModelConfig;
-use App\Aura\Traits\AuraTaxonomies;
-use App\Aura\Traits\InputFields;
-use App\Aura\Traits\InteractsWithTable;
+use Eminiarts\Aura\Traits\AuraModelConfig;
+use Eminiarts\Aura\Traits\AuraTaxonomies;
+use Eminiarts\Aura\Traits\InputFields;
+use Eminiarts\Aura\Traits\InteractsWithTable;
 use Illuminate\Database\Eloquent\Model;
 
 class Resource extends Model

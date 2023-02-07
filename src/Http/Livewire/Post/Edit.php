@@ -2,33 +2,99 @@
 
 namespace Eminiarts\Aura\Http\Livewire\Post;
 
-use App\Models\Post;
 use Eminiarts\Aura;
 use Eminiarts\Aura\Resources\Attachment;
-use Eminiarts\Aura\Traits\HasFields;
+use Eminiarts\Aura\Traits\InteractsWithFields;
 use Eminiarts\Aura\Traits\RepeaterFields;
+use Eminiarts\Aura\Models\Post;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Support\Arr;
+use Illuminate\Support\Str;
 use Livewire\Component;
-use Livewire\TemporaryUploadedFile;
-use Livewire\WithFileUploads;
 
 class Edit extends Component
 {
-    use HasFields;
+    use AuthorizesRequests;
+    use InteractsWithFields;
     use RepeaterFields;
-    use WithFileUploads;
+
+    public $inModal = false;
+
+    public $model;
 
     public $post;
 
     public $slug;
 
-    public $model;
-
     public $tax;
+
+    // Listen for selectedAttachment
+    protected $listeners = ['updateField' => 'updateField'];
+
+    public function getField($slug)
+    {
+        return $this->post['fields'][$slug];
+    }
+
+    public function getTaxonomiesProperty()
+    {
+        return $this->model->getTaxonomies();
+    }
+
+    public function mount($slug, $id)
+    {
+        $this->slug = $slug;
+        $this->model = app(Aura::class)->findResourceBySlug($slug)->find($id);
+
+        // Authorize
+        $this->authorize('update', $this->model);
+
+        // Array instead of Eloquent Model
+        $this->post = $this->model->attributesToArray();
+
+        // dd($this->post);
+
+        $this->post['terms'] = $this->model->terms;
+
+        //dd($this->post->taxonomies);
+        // dd($this->post, $this->model->terms);
+
+        // Set on model instead of here
+        // if $this->post['terms']['tag'] is not set, set it to null
+        $this->post['terms']['tag'] = $this->post['terms']['tag'] ?? null;
+        $this->post['terms']['category'] = $this->post['terms']['category'] ?? null;
+    }
+
+    public function removeMediaFromField($slug, $id)
+    {
+        $field = $this->getField($slug);
+
+        $field = collect($field)->filter(function ($value) use ($id) {
+            return $value != $id;
+        })->values()->toArray();
+
+        $this->updateField([
+            'slug' => $slug,
+            'value' => $field,
+        ]);
+    }
 
     public function render()
     {
         return view('livewire.post.edit');
+    }
+
+    public function reorderMedia($slug, $ids)
+    {
+        $ids = collect($ids)->map(function ($id) {
+            return Str::after($id, '_file_');
+        })->toArray();
+
+        // emit update Field
+        $this->updateField([
+            'slug' => $slug,
+            'value' => $ids,
+        ]);
     }
 
     public function rules()
@@ -39,74 +105,28 @@ class Edit extends Component
         ]);
     }
 
-    public function mount($slug, $id)
-    {
-        $this->slug = $slug;
-        $this->model = Aura::findResourceBySlug($slug)->find($id);
-
-        // Authorize
-
-        // Array instead of Eloquent Model
-        $this->post = $this->model->toArray();
-
-        // dd($this->post, $this->model->meta);
-
-        $this->post['terms'] = $this->model->terms;
-
-        //dd($this->post->taxonomies);
-        // dd($this->post, $this->model->terms);
-
-        // Set on model instead of here
-        // $this->post['taxonomies']['tag'] = '';
-        // $this->post['taxonomies']['category'] = '';
-
-        // dd($this->model);
-        // dd($this->model->taxonomies);
-        // $this->post['taxonomies']['tag'] = $this->model->taxonomies->pluck('id');
-    }
-
     public function save()
     {
-        //  dd($this->post);
-
+        // dump('saving', $this->post);
         // dd($this->rules(), $this->post);
 
         $this->validate();
 
-        // Upload Files
-        foreach ($this->post['fields'] as $key => $field) {
-            if ($field instanceof TemporaryUploadedFile) {
-                $this->post['fields'][$key] = $this->uploadFile($field);
-            }
-        }
-
         $this->model->update($this->post);
 
         $this->notify('Successfully updated.');
+
+        if ($this->inModal) {
+            $this->emit('closeModal');
+            $this->emit('refreshTable');
+        }
     }
 
-    public function getTaxonomiesProperty()
+    // Select Attachment
+    public function updateField($data)
     {
-        return $this->model->getTaxonomies();
-    }
+        $this->post['fields'][$data['slug']] = $data['value'];
 
-    public function uploadFile($field)
-    {
-        $url = $field->store('media');
-
-        $media = [
-            'title' => $field->getClientOriginalName(),
-            'content' => $url,
-            'fields' => [
-                'extension' => $field->extension(),
-                'mime_type' => $field->getClientMimeType(),
-                'size' => $field->getSize(),
-                'file' => $url,
-            ],
-        ];
-
-        $attachment = Attachment::create($media);
-
-        return $attachment->id;
+        $this->save();
     }
 }

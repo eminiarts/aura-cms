@@ -2,8 +2,8 @@
 
 namespace Database\Factories;
 
-use App\Aura\Resources\Team;
-use App\Models\User;
+use Eminiarts\Aura\Resources\Team;
+use Eminiarts\Aura\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 class TeamFactory extends Factory

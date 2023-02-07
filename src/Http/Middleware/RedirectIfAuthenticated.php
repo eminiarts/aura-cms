@@ -2,7 +2,7 @@
 
 namespace Eminiarts\Aura\Http\Middleware;
 
-use App\Providers\RouteServiceProvider;
+use Eminiarts\Aura\Providers\RouteServiceProvider;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;

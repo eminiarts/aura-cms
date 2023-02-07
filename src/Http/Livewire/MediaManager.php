@@ -1,0 +1,65 @@
+<?php
+
+namespace Eminiarts\Aura\Http\Livewire;
+
+use Eminiarts\Aura\Resources\Attachment;
+use LivewireUI\Modal\ModalComponent;
+
+class MediaManager extends ModalComponent
+{
+    public $fieldSlug;
+
+    public $selected = [];
+
+    // Listen for select Attachment
+    protected $listeners = ['selectedRows' => 'selectAttachment', 'tableMounted'];
+
+    public static function modalMaxWidth(): string
+    {
+        return '7xl';
+    }
+
+    public function mount($slug, $selected)
+    {
+        $this->selected = $selected;
+        $this->fieldSlug = $slug;
+    }
+
+    public function render()
+    {
+        return view('livewire.media-manager');
+    }
+
+    public function select()
+    {
+        // Emit update Field
+        $this->emit('updateField', [
+            'slug' => $this->fieldSlug,
+            'value' => $this->selected,
+        ]);
+
+        // If selected is deffered, emit event to table to update selected, then emit back to updateField
+
+        // Close Modal
+        $this->closeModal();
+    }
+
+    // Select Attachment
+    public function selectAttachment($ids)
+    {
+        // Add to selected array
+        $this->selected = $ids;
+    }
+
+    public function tableMounted()
+    {
+        if ($this->selected) {
+            $this->emit('selectedRows', $this->selected);
+        }
+    }
+
+    public function updated()
+    {
+        $this->emit('selectedRows', $this->selected);
+    }
+}

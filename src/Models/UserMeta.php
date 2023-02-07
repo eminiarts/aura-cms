@@ -1,9 +1,9 @@
 <?php
 
-namespace App\Models;
+namespace Eminiarts\Aura\Models;
 
-use App\Aura\Resources\Role;
-use App\Models\Scopes\TeamScope;
+use Eminiarts\Aura\Resources\Role;
+use Eminiarts\Aura\Models\Scopes\TeamScope;
 use Illuminate\Database\Eloquent\Model;
 
 class UserMeta extends Meta

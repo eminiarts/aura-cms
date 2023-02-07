@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Aura\Templates;
+namespace Eminiarts\Aura\Aura\Templates;
 
 class TabsWithPanels
 {
