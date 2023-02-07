@@ -16,6 +16,9 @@ Route::domain(config('aura.domain'))
         //     Route::get('/assets/{file}', AssetController::class)->where('file', '.*')->name('asset');
         // });
 
+        require __DIR__.'/auth.php';
+
+
         Route::prefix(config('aura.path'))->group(function () {
             Route::get('/', function () {
                 return 'dashboard coming soon';
