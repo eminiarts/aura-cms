@@ -5,7 +5,6 @@ namespace Eminiarts\Aura;
 use Livewire\Livewire;
 use Livewire\Component;
 use Illuminate\Support\Arr;
-use Eminiarts\Aura\Facades\Aura;
 use Illuminate\Support\Facades\Gate;
 use Spatie\LaravelPackageTools\Package;
 use Eminiarts\Aura\Commands\AuraCommand;
@@ -74,7 +73,7 @@ class AuraServiceProvider extends PackageServiceProvider
             \Eminiarts\Aura\Resources\User::class,
         ]);
 
-        dd('hier');
+        dd('hier', app('aura')->resources());
 
 
         Component::macro('notify', function ($message) {
