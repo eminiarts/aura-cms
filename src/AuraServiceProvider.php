@@ -2,9 +2,10 @@
 
 namespace Eminiarts\Aura;
 
-use Eminiarts\Aura\Commands\AuraCommand;
 use Spatie\LaravelPackageTools\Package;
+use Eminiarts\Aura\Commands\AuraCommand;
 use Spatie\LaravelPackageTools\PackageServiceProvider;
+use Illuminate\Database\Console\Migrations\InstallCommand;
 
 class AuraServiceProvider extends PackageServiceProvider
 {
@@ -22,7 +23,18 @@ class AuraServiceProvider extends PackageServiceProvider
             ->hasRoute('web')
             ->hasMigrations(['create_aura_tables', 'create_flows_table'])
             ->runsMigrations()
-            ->hasCommand(AuraCommand::class);
+            ->hasCommand(AuraCommand::class)
+            ->hasInstallCommand(function (InstallCommand $command) {
+                $command
+                ->startWith(function(InstallCommand $command) {
+                    $command->info('Hello, thank you for installing Aura!')
+                    })
+                    ->publishConfigFile()
+                    ->publishMigrations()
+                    ->askToRunMigrations()
+                    ->copyAndRegisterServiceProviderInApp()
+                    ->askToStarRepoOnGitHub('your-vendor/your-repo-name');
+            });
     }
 
     protected function getResources(): array
