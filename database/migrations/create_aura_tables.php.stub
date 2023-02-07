@@ -1,0 +1,214 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class () extends Migration {
+    /**
+     * Reverse the migrations.
+     *
+     * @return void
+     */
+    public function down()
+    {
+        Schema::dropIfExists('users');
+        Schema::dropIfExists('password_resets');
+        Schema::dropIfExists('sessions');
+        Schema::dropIfExists('failed_jobs');
+        Schema::dropIfExists('personal_access_tokens');
+        Schema::dropIfExists('teams');
+        Schema::dropIfExists('team_user');
+        Schema::dropIfExists('team_invitations');
+        Schema::dropIfExists('taxonomies');
+        Schema::dropIfExists('terms');
+        Schema::dropIfExists('taxonomy_relations');
+        Schema::dropIfExists('options');
+        Schema::dropIfExists('user_meta');
+        Schema::dropIfExists('team_meta');
+        Schema::dropIfExists('notifications');
+        Schema::dropIfExists('post_job');
+        Schema::dropIfExists('jobs');
+        Schema::dropIfExists('posts');
+        Schema::dropIfExists('post_meta');
+    }
+
+    public function up()
+    {
+        Schema::create('users', function (Blueprint $table) {
+            $table->id();
+            $table->string('name');
+            $table->string('email')->unique();
+            $table->timestamp('email_verified_at')->nullable();
+            $table->string('password');
+            $table->text('two_factor_secret')->nullable();
+            $table->text('two_factor_recovery_codes')->nullable();
+            $table->timestamp('two_factor_confirmed_at')->nullable();
+            $table->rememberToken();
+            $table->foreignId('current_team_id')->nullable();
+            $table->string('profile_photo_path', 2048)->nullable();
+            $table->timestamps();
+        });
+
+        Schema::create('password_resets', function (Blueprint $table) {
+            $table->string('email')->index();
+            $table->string('token');
+            $table->timestamp('created_at')->nullable();
+        });
+
+
+        Schema::create('failed_jobs', function (Blueprint $table) {
+            $table->id();
+            $table->string('uuid')->unique();
+            $table->text('connection');
+            $table->text('queue');
+            $table->longText('payload');
+            $table->longText('exception');
+            $table->timestamp('failed_at')->useCurrent();
+        });
+
+
+        Schema::create('personal_access_tokens', function (Blueprint $table) {
+            $table->bigIncrements('id');
+            $table->morphs('tokenable');
+            $table->string('name');
+            $table->string('token', 64)->unique();
+            $table->text('abilities')->nullable();
+            $table->timestamp('last_used_at')->nullable();
+            $table->timestamps();
+        });
+
+        Schema::create('teams', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('user_id')->index();
+            $table->string('name');
+            $table->boolean('personal_team');
+            $table->timestamps();
+        });
+
+        Schema::create('team_user', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('team_id');
+            $table->foreignId('user_id');
+            $table->string('role')->nullable();
+            $table->timestamps();
+            $table->unique(['team_id', 'user_id']);
+        });
+
+
+        Schema::create('team_invitations', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('team_id')->constrained()->cascadeOnDelete();
+            $table->string('email');
+            $table->string('role')->nullable();
+            $table->timestamps();
+
+            $table->unique(['team_id', 'email']);
+        });
+
+        Schema::create('posts', function (Blueprint $table) {
+            $table->id();
+            $table->text('title')->nullable();
+            $table->longText('content')->nullable();
+            $table->string('type', 20);
+            $table->string('status', 20)->default('publish');
+            $table->string('slug')->index();
+            $table->foreignId('user_id')->nullable()->index();
+            $table->foreignId('parent_id')->nullable()->index();
+            $table->integer('order')->nullable();
+            $table->foreignId('team_id')->index();
+            $table->timestamps();
+            $table->softDeletes();
+
+            $table->index(['team_id', 'slug', 'type', 'status', 'created_at', 'id']);
+        });
+
+        Schema::create('post_meta', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('post_id');
+            $table->string('key')->nullable();
+            $table->longText('value')->nullable();
+        });
+
+        Schema::create('taxonomy_meta', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('taxonomy_id');
+            $table->string('key');
+            $table->longText('value');
+        });
+
+        Schema::create('taxonomies', function (Blueprint $table) {
+            $table->id();
+            $table->string('name');
+            $table->string('slug');
+            $table->string('taxonomy');
+            $table->longtext('description');
+            $table->foreignId('parent');
+            $table->bigInteger('count');
+            $table->foreignId('team_id')->index();
+            $table->timestamps();
+            $table->softDeletes();
+        });
+
+        Schema::create('taxonomy_relations', function (Blueprint $table) {
+            $table->morphs('relatable');
+            $table->foreignId('taxonomy_id');
+            $table->integer('order');
+        });
+
+        Schema::create('options', function (Blueprint $table) {
+            $table->id();
+            $table->string('name');
+            $table->longText('value');
+            $table->foreignId('team_id');
+            $table->timestamps();
+
+            $table->index(['team_id', 'name']);
+        });
+
+        Schema::create('user_meta', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('user_id');
+            $table->string('key')->nullable();
+            $table->longText('value')->nullable();
+            $table->foreignId('team_id')->index();
+        });
+
+        Schema::create('team_meta', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('team_id');
+            $table->string('key')->nullable();
+            $table->longText('value')->nullable();
+        });
+
+
+        Schema::create('notifications', function (Blueprint $table) {
+            $table->uuid('id')->primary();
+            $table->string('type');
+            $table->morphs('notifiable');
+            $table->text('data');
+            $table->timestamp('read_at')->nullable();
+            $table->timestamps();
+        });
+
+
+        Schema::create('post_job', function (Blueprint $table) {
+            $table->id();
+            $table->unsignedBigInteger('post_id');
+            $table->string('job_id');
+            $table->string('job_status');
+            $table->timestamps();
+        });
+
+
+        Schema::create('jobs', function (Blueprint $table) {
+            $table->bigIncrements('id');
+            $table->string('queue')->index();
+            $table->longText('payload');
+            $table->unsignedTinyInteger('attempts');
+            $table->unsignedInteger('reserved_at')->nullable();
+            $table->unsignedInteger('available_at');
+            $table->unsignedInteger('created_at');
+        });
+    }
+};
