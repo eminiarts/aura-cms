@@ -1,0 +1,27 @@
+<?php
+
+namespace App\Aura\Templates;
+
+class Plain
+{
+    public string $name = 'Plain';
+
+    public function getFields()
+    {
+        return [
+            [
+                'name' => 'Text',
+                'type' => 'App\\Aura\\Fields\\Text',
+                'validation' => 'required',
+                'on_index' => true,
+                'has_conditional_logic' => false,
+                'conditional_logic' => [
+                ],
+                'slug' => 'title',
+                'style' => [
+                    'width' => '100',
+                ],
+            ],
+        ];
+    }
+}

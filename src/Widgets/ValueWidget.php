@@ -1,6 +1,6 @@
 <?php
 
-namespace Eminiarts\Aura\Widgets;
+namespace App\Aura\Widgets;
 
 use Carbon\CarbonImmutable;
 use Illuminate\Contracts\Database\Eloquent\Builder;
@@ -9,17 +9,17 @@ class ValueWidget extends Widget
 {
     use Concerns\CanPoll;
 
+    public $range;
+
     protected ?array $cachedCards = null;
 
     protected int|string|array $columnSpan = 'full';
 
     protected static string $view = 'widgets.value';
 
-    public $range;
-
     public function aggregate($model, $calculation, $column = null, $dateColumn = null)
     {
-        $query = $model instanceof Builder ? $model : (new $model())->newQuery();
+        $query = $model instanceof Builder ? $model : (new $model)->newQuery();
 
         $column = $column ?? $query->getModel()->getQualifiedKeyName();
         $dateColumn = $dateColumn ?? $query->getModel()->getQualifiedCreatedAtColumn();
@@ -33,29 +33,14 @@ class ValueWidget extends Widget
         ];
     }
 
-    public function count($model, $column = null, $dateColumn = null)
-    {
-        return $this->aggregate($model, 'count', $column, $dateColumn);
-    }
-
-    public function sum($model, $column = null, $dateColumn = null)
-    {
-        return $this->aggregate($model, 'sum', $column, $dateColumn);
-    }
-
-    public function max($model, $column = null, $dateColumn = null)
-    {
-        return $this->aggregate($model, 'max', $column, $dateColumn);
-    }
-
-    public function min($model, $column = null, $dateColumn = null)
-    {
-        return $this->aggregate($model, 'min', $column, $dateColumn);
-    }
-
     public function average($model, $column, $dateColumn = null)
     {
         return $this->aggregate($model, 'avg', $column, $dateColumn);
+    }
+
+    public function count($model, $column = null, $dateColumn = null)
+    {
+        return $this->aggregate($model, 'count', $column, $dateColumn);
     }
 
     public function getCurrentRangeProperty()
@@ -84,5 +69,20 @@ class ValueWidget extends Widget
             CarbonImmutable::now()->subDays($range * 2),
             CarbonImmutable::now()->subDays($range)->subSecond(),
         ];
+    }
+
+    public function max($model, $column = null, $dateColumn = null)
+    {
+        return $this->aggregate($model, 'max', $column, $dateColumn);
+    }
+
+    public function min($model, $column = null, $dateColumn = null)
+    {
+        return $this->aggregate($model, 'min', $column, $dateColumn);
+    }
+
+    public function sum($model, $column = null, $dateColumn = null)
+    {
+        return $this->aggregate($model, 'sum', $column, $dateColumn);
     }
 }

@@ -1,18 +1,16 @@
 <?php
 
-namespace Eminiarts\Aura\Taxonomies;
+namespace App\Aura\Taxonomies;
 
 class Category extends Taxonomy
 {
-    public static string $type = 'Category';
-
-    public static ?string $slug = 'category';
-
-    public static $hierarchical = true;
-
-    public static $fields = [];
-
     public static $attachTo = [
         'Project',
     ];
+
+    public static $hierarchical = true;
+
+    public static ?string $slug = 'category';
+
+    public static string $type = 'Category';
 }

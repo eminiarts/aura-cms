@@ -1,10 +1,16 @@
 <?php
 
-namespace Eminiarts\Aura\Fields;
+namespace App\Aura\Fields;
 
 class Text extends Field
 {
+    public string $component = 'fields.text';
+
     protected string $view = 'components.fields.text';
 
-    public string $component = 'fields.text';
+    public function getFields()
+    {
+        return array_merge(parent::getFields(), [
+        ]);
+    }
 }

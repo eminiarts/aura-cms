@@ -1,0 +1,174 @@
+<?php
+
+namespace App\Aura\Resources;
+
+use App\Aura\Traits\CustomTable;
+use App\Models\Post;
+use App\Models\Scopes\TeamScope;
+
+class FlowLog extends Post
+{
+    use CustomTable;
+
+    public array $bulkActions = [
+        'deleteSelected' => 'Delete',
+    ];
+
+    public static bool $showInNavigation = false;
+
+    public static ?string $slug = 'flowlog';
+
+    public static string $type = 'FlowLog';
+
+    protected static $dropdown = 'Flows';
+
+    // Fillable
+    protected $fillable = [
+        'flow_id', 'status', 'started_at', 'finished_at', 'request', 'response', 'options', 'user_id', 'team_id',
+    ];
+
+    protected $table = 'flow_logs';
+
+    public function deleteSelected()
+    {
+        $this->delete();
+    }
+
+    public static function getFields()
+    {
+        return [
+
+            [
+                'type' => 'App\\Aura\\Fields\\Tab',
+                'name' => 'FlowLog',
+                'slug' => 'status',
+                'global' => true,
+            ],
+
+            [
+                'name' => 'Finished_at',
+                'type' => 'App\\Aura\\Fields\\Text',
+                'validation' => '',
+                'conditional_logic' => [
+                ],
+                'slug' => 'finished_at',
+            ],
+            [
+                'name' => 'Started_at',
+                'type' => 'App\\Aura\\Fields\\Text',
+                'validation' => '',
+                'conditional_logic' => [
+                ],
+                'slug' => 'started_at',
+            ],
+            [
+                'name' => 'Flow',
+                'type' => 'App\\Aura\\Fields\\BelongsTo',
+                'validation' => '',
+                'on_index' => true,
+                'slug' => 'flow',
+                'model' => 'App\\Aura\\Resources\\Flow',
+                'style' => [
+                    'width' => '100',
+                ],
+            ],
+            [
+                'name' => 'Status',
+                'type' => 'App\\Aura\\Fields\\Text',
+                'validation' => '',
+                'conditional_logic' => [
+                ],
+                'slug' => 'status',
+            ],
+            [
+                'name' => 'Options',
+                'type' => 'App\\Aura\\Fields\\Code',
+                'on_index' => false,
+                'validation' => '',
+                'conditional_logic' => [
+                ],
+                'slug' => 'options',
+                'language' => 'json',
+            ],
+            [
+                'name' => 'Response',
+                'type' => 'App\\Aura\\Fields\\Code',
+                'on_index' => false,
+                'validation' => '',
+                'conditional_logic' => [
+                ],
+                'slug' => 'response',
+                'language' => 'json',
+            ],
+            [
+                'name' => 'Request',
+                'type' => 'App\\Aura\\Fields\\Code',
+                'on_index' => false,
+                'validation' => '',
+                'conditional_logic' => [
+                ],
+                'slug' => 'request',
+                'language' => 'json',
+            ],
+
+            [
+                'type' => 'App\\Aura\\Fields\\Tab',
+                'name' => 'OperationLogs',
+                'slug' => 'tab-OperationLogs',
+                'global' => true,
+            ],
+            [
+                'name' => 'OperationLogs',
+                'slug' => 'operation_logs',
+                'type' => 'App\\Aura\\Fields\\HasMany',
+                'posttype' => 'App\\Aura\\Resources\\OperationLog',
+                'validation' => '',
+                'conditional_logic' => '',
+                'has_conditional_logic' => false,
+                'wrapper' => '',
+                'on_index' => false,
+                'on_forms' => true,
+                'in_view' => true,
+                'style' => [
+                    'width' => '100',
+                ],
+            ],
+        ];
+    }
+
+    public function getIcon()
+    {
+        return '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M3 3V13.2C3 14.8802 3 15.7202 3.32698 16.362C3.6146 16.9265 4.07354 17.3854 4.63803 17.673C5.27976 18 6.11984 18 7.8 18H15M15 18C15 19.6569 16.3431 21 18 21C19.6569 21 21 19.6569 21 18C21 16.3431 19.6569 15 18 15C16.3431 15 15 16.3431 15 18ZM3 8L15 8M15 8C15 9.65686 16.3431 11 18 11C19.6569 11 21 9.65685 21 8C21 6.34315 19.6569 5 18 5C16.3431 5 15 6.34315 15 8Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+    }
+
+    public static function getWidgets(): array
+    {
+        return [];
+    }
+
+    /**
+     * The "booted" method of the model.
+     *
+     * @return void
+     */
+    protected static function booted()
+    {
+        static::addGlobalScope(new TeamScope());
+
+        static::saving(function ($post) {
+            if (! $post->team_id && auth()->user()) {
+                $post->team_id = auth()->user()->current_team_id;
+            }
+
+            if (! $post->user_id && auth()->user()) {
+                $post->user_id = auth()->user()->id;
+            }
+
+            // unset post attributes
+            unset($post->title);
+            unset($post->content);
+            unset($post->type);
+            // unset($post->team_id);
+        });
+    }
+}

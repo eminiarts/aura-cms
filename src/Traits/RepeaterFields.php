@@ -1,6 +1,6 @@
 <?php
 
-namespace Eminiarts\Aura\Traits;
+namespace App\Aura\Traits;
 
 use Illuminate\Support\Arr;
 
@@ -25,21 +25,6 @@ trait RepeaterFields
         $this->post['fields'][$slug][] = $new;
     }
 
-    public function moveRepeaterUp($slug, $key)
-    {
-        if ($key == 0) {
-            return;
-        }
-
-        $array = $this->post['fields'][$slug];
-
-        $item = $array[$key];
-        $array[$key] = $array[$key - 1];
-        $array[$key - 1] = $item;
-
-        $this->post['fields'][$slug] = $array;
-    }
-
     public function moveRepeaterDown($slug, $key)
     {
         $array = $this->post['fields'][$slug];
@@ -51,6 +36,21 @@ trait RepeaterFields
         $item = $array[$key];
         $array[$key] = $array[$key + 1];
         $array[$key + 1] = $item;
+
+        $this->post['fields'][$slug] = $array;
+    }
+
+    public function moveRepeaterUp($slug, $key)
+    {
+        if ($key == 0) {
+            return;
+        }
+
+        $array = $this->post['fields'][$slug];
+
+        $item = $array[$key];
+        $array[$key] = $array[$key - 1];
+        $array[$key - 1] = $item;
 
         $this->post['fields'][$slug] = $array;
     }

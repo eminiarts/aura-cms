@@ -1,11 +1,48 @@
 <?php
 
-namespace Eminiarts\Aura\Pipeline;
+namespace App\Aura\Pipeline;
 
 use Closure;
 
 class ApplyLayoutFields implements Pipe
 {
+    /**
+     * @param  array  $layouts
+     * @return array
+     */
+    public function createMainPanel(array $layouts): array
+    {
+        if (count($layouts) == 0) {
+            $layouts[] = [
+                'name' => 'Main Panel',
+                'slug' => 'main-panel',
+                'type' => 'App\Aura\Fields\Panel',
+                'field' => app('App\Aura\Fields\Panel'),
+                'field_type' => 'layout',
+            ];
+        }
+
+        return $layouts;
+    }
+
+    /**
+     * @param  array  $layouts
+     * @param  int|string|null  $lastKey
+     * @return array
+     */
+    public function createTabs(array $layouts, int|string|null $lastKey): array
+    {
+        $layouts[$lastKey]['fields'][] = [
+            'name' => 'Tabs',
+            'slug' => 'tabs',
+            'type' => 'App\Aura\Fields\Tabs',
+            'field' => app('App\Aura\Fields\Tabs'),
+            'field_type' => 'tabs',
+        ];
+
+        return $layouts;
+    }
+
     public function handle($fields, Closure $next)
     {
         $layouts = [];
@@ -50,42 +87,5 @@ class ApplyLayoutFields implements Pipe
         }
 
         return  $next($layouts);
-    }
-
-    /**
-     * @param  array  $layouts
-     * @return array
-     */
-    public function createMainPanel(array $layouts): array
-    {
-        if (count($layouts) == 0) {
-            $layouts[] = [
-                'name' => 'Main Panel',
-                'slug' => 'main-panel',
-                'type' => 'App\Aura\Fields\Panel',
-                'field' => app('App\Aura\Fields\Panel'),
-                'field_type' => 'layout',
-            ];
-        }
-
-        return $layouts;
-    }
-
-    /**
-     * @param  array  $layouts
-     * @param  int|string|null  $lastKey
-     * @return array
-     */
-    public function createTabs(array $layouts, int|string|null $lastKey): array
-    {
-        $layouts[$lastKey]['fields'][] = [
-            'name' => 'Tabs',
-            'slug' => 'tabs',
-            'type' => 'App\Aura\Fields\Tabs',
-            'field' => app('App\Aura\Fields\Tabs'),
-            'field_type' => 'tabs',
-        ];
-
-        return $layouts;
     }
 }

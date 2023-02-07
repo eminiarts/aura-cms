@@ -1,15 +1,61 @@
 <?php
 
-namespace Eminiarts\Aura\Pipeline;
+namespace App\Aura\Pipeline;
 
 use Closure;
 
 class ApplyTabs implements Pipe
 {
-    public function handle($content, Closure $next)
+    public function handle($fields, Closure $next)
     {
-        // Here you perform the task and return the updated $content
+        $tabsAdded = 0;
+        $added = false;
+        $currentParent = null;
+        $addedTabsToPanel = false;
+
+        foreach ($fields as $key => $field) {
+            if ($field['type'] === 'App\Aura\Fields\Panel') {
+                $currentParent = $field;
+                $addedTabsToPanel = false;
+            }
+
+            // Add it to first Tabs
+            if ($field['type'] === 'App\Aura\Fields\Tab' && ! $added) {
+                $fields->splice($key + $tabsAdded, 0, [
+                    [
+                        'label' => 'Tabs',
+                        'name' => 'Tabs',
+                        'global' => (bool) optional($field)['global'],
+                        'type' => 'App\\Aura\\Fields\\Tabs',
+                        'slug' => 'tabs',
+                        'style' => [],
+                    ],
+                ]);
+                $added = true;
+                $tabsAdded++;
+                $addedTabsToPanel = true;
+            }
+
+            // Add it to first Tabs in Panels
+            if ($currentParent && ! optional($field)['global']) {
+                if ($field['type'] === 'App\Aura\Fields\Tab' && ! $addedTabsToPanel) {
+                    $fields->splice($key + $tabsAdded, 0, [
+                        [
+                            'label' => 'Tabs',
+                            'name' => 'Tabs',
+                            'global' => (bool) optional($field)['global'],
+                            'type' => 'App\\Aura\\Fields\\Tabs',
+                            'slug' => 'tabs',
+                            'style' => [],
+                        ],
+                    ]);
+                    $addedTabsToPanel = true;
+                    $tabsAdded++;
+                }
+            }
+        }
+
         // to the next pipe
-        return  $next($content);
+        return  $next($fields);
     }
 }

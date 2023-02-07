@@ -1,8 +1,8 @@
 <?php
 
-namespace Eminiarts\Aura\Widgets;
+namespace App\Aura\Widgets;
 
-use Eminiarts\Aura\Resources\Post;
+use App\Aura\Resources\Post;
 
 class AvgPostsNumber extends ValueWidget
 {

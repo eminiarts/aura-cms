@@ -1,6 +1,6 @@
 <?php
 
-namespace Eminiarts\Aura\Widgets;
+namespace App\Aura\Widgets;
 
 use Carbon\CarbonImmutable;
 use Carbon\CarbonInterface;
@@ -22,11 +22,6 @@ class TrendWidget extends Widget
 
     protected static string $view = 'widgets.trend';
 
-    public function countByDays($model, $range, $column = null)
-    {
-        return $this->count($model, 'day', $column, $range);
-    }
-
     /**
      * Return a value result showing a count aggregate over time.
      *
@@ -38,11 +33,113 @@ class TrendWidget extends Widget
      */
     public function count($model, $unit, $dateColumn, $range)
     {
-        $resource = $model instanceof Builder ? $model->getModel() : new $model();
+        $resource = $model instanceof Builder ? $model->getModel() : new $model;
 
         $dateColumn = $dateColumn ?? $resource->getQualifiedCreatedAtColumn();
 
         return $this->aggregate($model, $unit, 'count', $resource->getQualifiedKeyName(), $dateColumn, $range);
+    }
+
+    public function countByDays($model, $range, $column = null)
+    {
+        return $this->count($model, 'day', $column, $range);
+    }
+
+    public function getCurrentRangeProperty()
+    {
+        if ($this->range) {
+            $range = $this->range;
+        } else {
+            $range = array_key_first($this->ranges());
+        }
+
+        return [
+            CarbonImmutable::now()->subDays($range),
+            CarbonImmutable::now()->subDays(),
+        ];
+    }
+
+    public function getPreviousRangeProperty()
+    {
+        if ($this->range) {
+            $range = $this->range;
+        } else {
+            $range = array_key_first($this->ranges());
+        }
+
+        return [
+            CarbonImmutable::now()->subDays($range * 2),
+            CarbonImmutable::now()->subDays($range)->subSecond(),
+        ];
+    }
+
+    protected function aggregate($model, $unit, $function, $column, $dateColumn, $range)
+    {
+        $query = $model instanceof Builder ? $model : (new $model)->newQuery();
+
+        $dateColumn = $dateColumn ?? $query->getModel()->getQualifiedCreatedAtColumn();
+
+        $wrappedColumn = $column instanceof Expression
+                ? (string) $column
+                : $query->getQuery()->getGrammar()->wrap($column);
+
+        $expression = "DATE({$dateColumn})";
+
+        // dd($dateColumn, $expression, $function, $wrappedColumn, $column);
+        $possibleDateResults = $this->getAllPossibleDateResults(
+            $range[0],
+            $range[1],
+            $unit
+        );
+
+        $results = $query
+                ->select(DB::raw("{$expression} as date_result, {$function}({$wrappedColumn}) as aggregate"))
+                ->tap(function ($query) {
+                    return $query;
+                    // Do we need Query Filters?
+                    // return $this->applyFilterQuery($query);
+                })
+                ->whereBetween($dateColumn, $range)
+                ->groupBy(DB::raw($expression))
+                ->orderBy('date_result')
+                ->get()->mapWithKeys(function ($item) {
+                    // Rounding ? - round($result->aggregate, $this->roundingPrecision, $this->roundingMode)]
+                    return[$item['date_result'] => $item['aggregate']];
+                })->all();
+
+        $results = array_merge($possibleDateResults, $results);
+
+        return collect($results);
+    }
+
+    /**
+     * Format the possible aggregate result date into a proper string.
+     *
+     * @param  \Carbon\CarbonInterface  $date
+     * @param  string  $unit
+     * @param  bool  $twelveHourTime
+     * @return string
+     */
+    protected function formatPossibleAggregateResultDate(CarbonInterface $date, $unit)
+    {
+        switch ($unit) {
+            case 'month':
+                return __($date->format('F')).' '.$date->format('Y');
+
+            case 'week':
+                return __($date->startOfWeek()->format('F')).' '.$date->startOfWeek()->format('j').' - '.
+                       __($date->endOfWeek()->format('F')).' '.$date->endOfWeek()->format('j');
+
+            case 'day':
+                return $date->toDateString();
+
+            case 'hour':
+                return  __($date->format('F')).' '.$date->format('j').' - '.$date->format('G:00');
+
+            case 'minute':
+            default:
+                return __($date->format('F')).' '.$date->format('j').' - '.$date->format('G:i');
+        }
     }
 
     /**
@@ -89,103 +186,6 @@ class TrendWidget extends Widget
             default:
                 throw new InvalidArgumentException('Invalid trend unit provided.');
         }
-    }
-
-    /**
-     * Format the possible aggregate result date into a proper string.
-     *
-     * @param  \Carbon\CarbonInterface  $date
-     * @param  string  $unit
-     * @param  bool  $twelveHourTime
-     * @return string
-     */
-    protected function formatPossibleAggregateResultDate(CarbonInterface $date, $unit)
-    {
-        switch ($unit) {
-            case 'month':
-                return __($date->format('F')).' '.$date->format('Y');
-
-            case 'week':
-                return __($date->startOfWeek()->format('F')).' '.$date->startOfWeek()->format('j').' - '.
-                       __($date->endOfWeek()->format('F')).' '.$date->endOfWeek()->format('j');
-
-            case 'day':
-                return $date->toDateString();
-
-            case 'hour':
-                return  __($date->format('F')).' '.$date->format('j').' - '.$date->format('G:00');
-
-            case 'minute':
-            default:
-                return __($date->format('F')).' '.$date->format('j').' - '.$date->format('G:i');
-        }
-    }
-
-    protected function aggregate($model, $unit, $function, $column, $dateColumn, $range)
-    {
-        $query = $model instanceof Builder ? $model : (new $model())->newQuery();
-
-        $dateColumn = $dateColumn ?? $query->getModel()->getQualifiedCreatedAtColumn();
-
-        $wrappedColumn = $column instanceof Expression
-                ? (string) $column
-                : $query->getQuery()->getGrammar()->wrap($column);
-
-        $expression = "DATE({$dateColumn})";
-
-        // dd($dateColumn, $expression, $function, $wrappedColumn, $column);
-        $possibleDateResults = $this->getAllPossibleDateResults(
-            $range[0],
-            $range[1],
-            $unit
-        );
-
-        $results = $query
-                ->select(DB::raw("{$expression} as date_result, {$function}({$wrappedColumn}) as aggregate"))
-                ->tap(function ($query) {
-                    return $query;
-                    // Do we need Query Filters?
-                    // return $this->applyFilterQuery($query);
-                })
-                ->whereBetween($dateColumn, $range)
-                ->groupBy(DB::raw($expression))
-                ->orderBy('date_result')
-                ->get()->mapWithKeys(function ($item) {
-                    // Rounding ? - round($result->aggregate, $this->roundingPrecision, $this->roundingMode)]
-                    return[$item['date_result'] => $item['aggregate']];
-                })->all();
-
-        $results = array_merge($possibleDateResults, $results);
-
-        return collect($results);
-    }
-
-    public function getCurrentRangeProperty()
-    {
-        if ($this->range) {
-            $range = $this->range;
-        } else {
-            $range = array_key_first($this->ranges());
-        }
-
-        return [
-            CarbonImmutable::now()->subDays($range),
-            CarbonImmutable::now()->subDays(),
-        ];
-    }
-
-    public function getPreviousRangeProperty()
-    {
-        if ($this->range) {
-            $range = $this->range;
-        } else {
-            $range = array_key_first($this->ranges());
-        }
-
-        return [
-            CarbonImmutable::now()->subDays($range * 2),
-            CarbonImmutable::now()->subDays($range)->subSecond(),
-        ];
     }
 
     /**

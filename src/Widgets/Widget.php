@@ -1,20 +1,13 @@
 <?php
 
-namespace Eminiarts\Aura\Widgets;
+namespace App\Aura\Widgets;
 
 use Illuminate\Contracts\View\View;
 use Livewire\Component;
 
 class Widget extends Component
 {
-    protected static string $view;
-
     public bool $loadData = false;
-
-    public function init()
-    {
-        $this->loadData = true;
-    }
 
     public $settings;
 
@@ -25,14 +18,11 @@ class Widget extends Component
      */
     public $width;
 
+    protected static string $view;
+
     public function __construct($settings)
     {
         $this->settings = $settings;
-    }
-
-    public static function canView(): bool
-    {
-        return true;
     }
 
     public function cache($callback, $name = null)
@@ -40,6 +30,16 @@ class Widget extends Component
         $key = ($this->uriKey() ?? $this->id).'_'.$name.'_'.$this->range;
 
         return cache()->remember($key, $this->cacheFor() ?? now()->addMinutes(5), $callback);
+    }
+
+    public static function canView(): bool
+    {
+        return true;
+    }
+
+    public function init()
+    {
+        $this->loadData = true;
     }
 
     public function render(): View

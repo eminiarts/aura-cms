@@ -1,24 +1,43 @@
 <?php
 
-namespace Eminiarts\Aura\Fields;
+namespace App\Aura\Fields;
 
 class HasMany extends Field
 {
-    protected string $view = 'components.fields.hasmany';
-
     public string $component = 'fields.hasmany';
 
     public bool $group = true;
 
-    public function queryFor($model)
-    {
-        // dd('hier');
-        // dd($model->id, $model);
+    public string $type = 'relation';
 
-        // User_id works,
-        // What do we do with other Post Types?
-        return function ($query) use ($model) {
+    protected string $view = 'components.fields.hasmany';
+
+    public function queryFor($model, $query)
+    {
+        if ($model instanceof \App\Aura\Resources\User) {
             return $query->where('user_id', $model->id);
-        };
+        }
+
+        if ($model instanceof \App\Aura\Resources\Team) {
+            return $query;
+        }
+
+        if ($model instanceof \App\Aura\Resources\Flow) {
+            return $query->where('flow_id', $model->id);
+        }
+
+        if ($model instanceof \App\Aura\Resources\Flow) {
+            return $query->where('flow_id', $model->id);
+        }
+
+        if ($model instanceof \App\Aura\Resources\Operation) {
+            return $query->where('operation_id', $model->id);
+        }
+
+        if ($model instanceof \App\Aura\Resources\FlowLog) {
+            return $query->where('flow_log_id', $model->id);
+        }
+
+        return $query->where('user_id', $model->id);
     }
 }

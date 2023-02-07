@@ -1,16 +1,46 @@
 <?php
 
-namespace Eminiarts\Aura\Fields;
+namespace App\Aura\Fields;
 
-use App\Models\User;
+use Illuminate\Support\Str;
 
 class BelongsTo extends Field
 {
-    protected string $view = 'components.fields.belongsto';
-
     public string $component = 'fields.belongsto';
 
-    public bool $group = true;
+    public bool $group = false;
+
+    protected string $view = 'components.fields.belongsto';
+
+    public function api($request)
+    {
+        // Get $searchable from $request->model
+        $searchableFields = app($request->model)->getSearchable();
+
+        return app($request->model)->searchIn($searchableFields, $request->search)->take(20)->get()->map(function ($item) {
+            return [
+                'id' => $item->id,
+                'title' => $item->title(),
+            ];
+        })->toArray();
+    }
+
+    public function display($field, $value, $model)
+    {
+        if ($field['model'] && $value) {
+            // Get Str after last backslash from $field['model']
+            $model = Str::afterLast($field['model'], '\\');
+
+            return "<a class='font-bold text-primary-500' href='/".$model.'/'.$value."/edit'>".app($field['model'])::find($value)->title().'</a>';
+        }
+
+        return $value;
+    }
+
+    public function get($field, $value)
+    {
+        return json_decode($value, true);
+    }
 
     public function queryFor($model)
     {
@@ -19,17 +49,19 @@ class BelongsTo extends Field
         };
     }
 
-    public function get($field, $value)
+     public function set($value)
+     {
+         // Set the value to the id of the model
+         return $value;
+     }
+
+    public function values($model)
     {
-        dd('get');
-
-        return json_decode($value, true);
-    }
-
-    public function display($field, $value)
-    {
-        $model = User::find($value);
-
-        return "<a class='font-bold text-sky-500' href='/User/".$model->id."/edit'>".$model->name.'</a>';
+        return app($model)->get()->map(function ($item) {
+            return [
+                'id' => $item->id,
+                'title' => $item->title(),
+            ];
+        })->toArray();
     }
 }
