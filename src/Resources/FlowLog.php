@@ -1,6 +1,6 @@
 <?php
 
-namespace Eminiarts\Aura\Aura\Resources;
+namespace Eminiarts\Aura\Resources;
 
 use Eminiarts\Aura\Traits\CustomTable;
 use Eminiarts\Aura\Models\Post;

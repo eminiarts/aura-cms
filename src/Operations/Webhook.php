@@ -1,6 +1,6 @@
 <?php
 
-namespace Eminiarts\Aura\Aura\Operations;
+namespace Eminiarts\Aura\Operations;
 
 use Eminiarts\Aura\Resources\Operation;
 

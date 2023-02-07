@@ -1,6 +1,6 @@
 <?php
 
-namespace Eminiarts\Aura\Aura\Fields;
+namespace Eminiarts\Aura\Fields;
 
 use Illuminate\Support\Facades\Hash;
 

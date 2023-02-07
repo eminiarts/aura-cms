@@ -1,6 +1,6 @@
 <?php
 
-namespace Eminiarts\Aura\Aura\Collection;
+namespace Eminiarts\Aura\Collection;
 
 use Illuminate\Database\Eloquent\Collection;
 

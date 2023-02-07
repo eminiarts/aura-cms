@@ -1,6 +1,6 @@
 <?php
 
-namespace Eminiarts\Aura\Aura\Pipeline;
+namespace Eminiarts\Aura\Pipeline;
 
 use Closure;
 

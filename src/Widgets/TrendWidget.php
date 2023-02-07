@@ -1,6 +1,6 @@
 <?php
 
-namespace Eminiarts\Aura\Aura\Widgets;
+namespace Eminiarts\Aura\Widgets;
 
 use Carbon\CarbonImmutable;
 use Carbon\CarbonInterface;

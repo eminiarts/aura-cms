@@ -1,6 +1,6 @@
 <?php
 
-namespace Eminiarts\Aura\Aura\Widgets;
+namespace Eminiarts\Aura\Widgets;
 
 class BaseWidget extends Widget
 {

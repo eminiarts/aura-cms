@@ -1,6 +1,6 @@
 <?php
 
-namespace Eminiarts\Aura\Aura\Widgets;
+namespace Eminiarts\Aura\Widgets;
 
 use Eminiarts\Aura\Resources\Post;
 
