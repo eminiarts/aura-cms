@@ -23,4 +23,9 @@ class AuraServiceProvider extends PackageServiceProvider
             ->hasMigration('create_aura_table')
             ->hasCommand(AuraCommand::class);
     }
+
+    protected function getResources(): array
+    {
+        return config('aura.resources');
+    }
 }

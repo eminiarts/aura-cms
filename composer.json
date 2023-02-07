@@ -1,20 +1,23 @@
 {
     "name": "eminiarts/aura",
-    "description": "Aura, the Laravel CMS (TALL Stack)",
+    "description": "Aura CMS for Laravel",
     "keywords": [
         "eminiarts",
         "laravel",
-        "aura"
+        "aura",
+        "TALL",
+        "TALL stack",
+        "TailwindCSS",
+        "AlpineJS",
+        "Livewire"
     ],
     "homepage": "https://github.com/eminiarts/aura",
     "license": "MIT",
-    "authors": [
-        {
-            "name": "Emini Arts",
-            "email": "support@eminiarts.ch",
-            "role": "Developer"
-        }
-    ],
+    "authors": [{
+        "name": "Emini Arts",
+        "email": "support@eminiarts.ch",
+        "role": "Developer"
+    }],
     "require": {
         "php": "^8.1",
         "illuminate/contracts": "^9.0",
