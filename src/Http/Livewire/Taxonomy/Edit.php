@@ -3,21 +3,19 @@
 namespace Eminiarts\Aura\Http\Livewire\Taxonomy;
 
 use Eminiarts\Aura;
-use Eminiarts\Aura\Traits\HasFields;
+use Eminiarts\Aura\Traits\InteractsWithFields;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
+use Illuminate\Support\Arr;
 use Livewire\Component;
 
 class Edit extends Component
 {
-    use HasFields;
-
-    public $taxonomy;
+    use AuthorizesRequests;
+    use InteractsWithFields;
 
     public $slug;
 
-    public function render()
-    {
-        return view('livewire.taxonomy.edit');
-    }
+    public $taxonomy;
 
     public function mount($slug, $id)
     {
@@ -31,6 +29,19 @@ class Edit extends Component
 
         // dd($this->post);
         $this->post['fields'] = $this->model->toArray();
+    }
+
+    public function render()
+    {
+        return view('livewire.taxonomy.edit');
+    }
+
+    public function rules()
+    {
+        return Arr::dot([
+            'post.terms' => '',
+            'post.fields' => $this->model->validationRules(),
+        ]);
     }
 
     public function save()

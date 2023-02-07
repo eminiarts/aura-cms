@@ -1,19 +1,19 @@
 <?php
 
-namespace App\Models;
+namespace Eminiarts\Aura\Models;
 
-use App\Aura;
-use App\Aura\Resource;
-use App\Aura\Resources\Flow;
-use App\Aura\Traits\InitialPostFields;
-use App\Aura\Traits\SaveFieldAttributes;
-use App\Aura\Traits\SaveMetaFields;
-use App\Aura\Traits\SaveTerms;
-use App\Jobs\TriggerFlowOnCreatePostEvent;
-use App\Jobs\TriggerFlowOnDeletedPostEvent;
-use App\Jobs\TriggerFlowOnUpdatePostEvent;
-use App\Models\Scopes\TeamScope;
-use App\Models\Scopes\TypeScope;
+use Eminiarts\Aura;
+use Eminiarts\Aura\Resource;
+use Eminiarts\Aura\Resources\Flow;
+use Eminiarts\Aura\Traits\InitialPostFields;
+use Eminiarts\Aura\Traits\SaveFieldAttributes;
+use Eminiarts\Aura\Traits\SaveMetaFields;
+use Eminiarts\Aura\Traits\SaveTerms;
+use Eminiarts\Aura\Jobs\TriggerFlowOnCreatePostEvent;
+use Eminiarts\Aura\Jobs\TriggerFlowOnDeletedPostEvent;
+use Eminiarts\Aura\Jobs\TriggerFlowOnUpdatePostEvent;
+use Eminiarts\Aura\Models\Scopes\TeamScope;
+use Eminiarts\Aura\Models\Scopes\TypeScope;
 use Illuminate\Database\Eloquent\Concerns\HasTimestamps;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Support\Str;

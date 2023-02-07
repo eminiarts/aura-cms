@@ -1,9 +1,9 @@
 <?php
 
-namespace App\Aura\Resources;
+namespace Eminiarts\Aura\Aura\Resources;
 
-use App\Aura\Widgets\PostStats;
-use App\Models\Post;
+use Eminiarts\Aura\Widgets\PostStats;
+use Eminiarts\Aura\Models\Post;
 
 class Invoice extends Post
 {

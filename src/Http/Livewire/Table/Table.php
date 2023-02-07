@@ -2,169 +2,355 @@
 
 namespace Eminiarts\Aura\Http\Livewire\Table;
 
-use App\Http\Livewire\Table\Traits\BulkActions;
-use App\Http\Livewire\Table\Traits\PerPagePagination;
-use App\Models\User;
-use Illuminate\Contracts\Database\Eloquent\Builder;
+use Eminiarts\Aura\Http\Livewire\Table\Traits\BulkActions;
+use Eminiarts\Aura\Http\Livewire\Table\Traits\Filters;
+use Eminiarts\Aura\Http\Livewire\Table\Traits\PerPagePagination;
+use Eminiarts\Aura\Http\Livewire\Table\Traits\QueryFilters;
+use Eminiarts\Aura\Http\Livewire\Table\Traits\Sorting;
+use Eminiarts\Aura\Models\User;
 use Livewire\Component;
+use Eminiarts\Aura\Resource;
 
+/**
+ * Class Table
+ */
 class Table extends Component
 {
     use BulkActions;
+    use Filters;
     use PerPagePagination;
+    use QueryFilters;
+    use Sorting;
 
-    public $model;
-
-    public $settings;
-
-    private $query;
-
-    public $filters = [];
-
+    /**
+     * List of table columns.
+     *
+     * @var array
+     */
     public $columns = [];
 
+    /**
+     * Indicates if the Create Component should be in a Modal.
+     *
+     * @var bool
+     */
+    public $createInModal = false;
+
+    /**
+     * Indicates if the Edit Component should be in a Modal.
+     *
+     * @var bool
+     */
+    public $editInModal = false;
+
+    /**
+     * The field of the parent.
+     *
+     * @var string
+     */
+    public $field;
+
+    /**
+     * The name of the filter.
+     *
+     * @var string
+     */
+    public $filterName;
+
+    /**
+     * The last clicked row.
+     *
+     * @var mixed
+     */
+    public $lastClickedRow;
+
+    /**
+     * The model of the table.
+     *
+     * @var \Illuminate\Database\Eloquent\Model
+     */
+    public $model;
+
+    /**
+     * The parent of the table.
+     *
+     * @var \Illuminate\Database\Eloquent\Model
+     */
+    public $parent;
+
+    /**
+     * Validation rules.
+     *
+     * @var array
+     */
+    public $rules = [
+        'filterName' => 'required',
+        'filters.custom.*.name' => 'required',
+        'filters.custom.*.operator' => 'required',
+        'filters.custom.*.value' => 'required',
+    ];
+
+    /**
+     * The search value.
+     *
+     * @var string
+     */
     public $search;
 
-    public function render()
+    /**
+     * The settings of the table.
+     *
+     * @var array
+     */
+    public $settings;
+
+    /**
+     * The view of the table.
+     *
+     * @var string
+     */
+    public $tableView;
+
+    /**
+     * List of events listened to by the component.
+     *
+     * @var array
+     */
+    protected $listeners = [
+        'refreshTable' => '$refresh',
+        'selectedRows' => 'selectRows',
+        'selectRowsRange' => 'selectRowsRange',
+    ];
+
+    /**
+     * Handle bulk action on the selected rows.
+     *
+     * @param  string  $action
+     */
+    public function bulkAction(string $action)
     {
-        return view('livewire.table.table');
+        $this->selectedRowsQuery->each(function ($item, $key) use ($action) {
+            if (str_starts_with($action, 'callFlow.')) {
+                $item->callFlow(explode('.', $action)[1]);
+            } elseif (method_exists($item, $action)) {
+                $item->{$action}();
+            }
+        });
+
+        $this->notify('Erfolgreich: '.$action);
     }
 
-    public function mount($query = null)
+    /**
+     * Get the available bulk actions.
+     *
+     * @return mixed
+     */
+    public function getBulkActionsProperty()
     {
-        // $test = User::query();
+        return $this->model->getBulkActions();
+    }
 
-        // $new = ($this->query)($test);
-
-        //dd($this->query);
-
-        // if ($this->query) {
-        //     dd($this->query);
-        // }
-
-        $this->query = $query;
-        // dump($query);
-        // dump($this->query);
-
-        // dd($this->settings, $new->get());
-        // $this->fields = $this->model->inputFields();
-
-        // dd($this->model, $this->model->first());
-        // dd($this->query);
-        // dd(($this->query)(User::query()));
-
-        if (auth()->user()->getColumns($this->model->getType())) {
-            $this->columns = auth()->user()->getColumns($this->model->getType());
-        } else {
-            $this->columns = $this->model->getDefaultColumns();
+    /**
+     * Get the create link.
+     *
+     * @return string
+     */
+    public function getCreateLinkProperty()
+    {
+        if ($this->parent) {
+            return route('post.create', [
+                'slug' => $this->model->getType(),
+                'for' => $this->parent->getType(),
+                'id' => $this->parent->id,
+            ]);
         }
+
+        return route('post.create', ['slug' => $this->model->getType()]);
     }
 
+    /**
+     * Get the input fields.
+     *
+     * @return mixed
+     */
     public function getFieldsProperty()
     {
         return $this->model->inputFields();
     }
 
-    public function getBulkActionsProperty()
-    {
-        return $this->model->bulkActions;
-    }
-
-    public function bulkAction($action)
-    {
-        $this->selectedRowsQuery->each(function ($item, $key) use ($action) {
-            $item->{$action}();
-        });
-
-        $this->notify('Erfolgreich: '.$action);
-
-        //dd('bulk', $action, $this->selected);
-    }
-
-    public function toggleColumn($column)
-    {
-        dd($column, $this->columns);
-    }
-
-    public function addFilter()
-    {
-        $this->filters[] = [
-            'name' => $this->fieldsForFilter->keys()->first(),
-            'operator' => null,
-            'value' => null,
-        ];
-    }
-
-    public function search()
-    {
-    }
-
-    public function getFieldsForFilterProperty()
-    {
-        return $this->fields->pluck('name', 'slug');
-    }
-
+    /**
+     * Get the table headers.
+     *
+     * @return mixed
+     */
     public function getHeadersProperty()
     {
-        return $this->model->getHeaders();
+        $headers = $this->model->getTableHeaders();
+
+        if ($sort = auth()->user()->getOption('columns_sort.'.$this->model->getType())) {
+            $headers = $headers->sortBy(function ($value, $key) use ($sort) {
+                return array_search($key, $sort);
+            });
+        }
+
+        return $headers;
     }
 
-    public function resetFilter()
+    /**
+     * Get the model columns.
+     *
+     * @return mixed
+     */
+    public function getModelColumnsProperty()
     {
-        $this->filters = [];
+        $columns = collect($this->model->getColumns());
+
+        if ($sort = auth()->user()->getOption('columns_sort.'.$this->model->getType())) {
+            $columns = $columns->sortBy(function ($value, $key) use ($sort) {
+                return array_search($key, $sort);
+            });
+        }
+
+        return $columns;
     }
 
+    /**
+     * Get the rows for the table.
+     *
+     * @return mixed
+     */
+    public function getRowsProperty()
+    {
+        return $this->rowsQuery->paginate($this->perPage);
+    }
+
+    /**
+     * Get query property for the table data
+     *
+     * @return \Illuminate\Database\Eloquent\Builder
+     */
+    public function getRowsQueryProperty()
+    {
+        $query = $this->model->query()
+        ->orderBy('id', 'desc');
+
+        if (method_exists(app($this->field), 'queryFor')) {
+            $query = app($this->field)->queryFor($this->parent, $query);
+        }
+
+        // when model is instance Post, eager load meta and taxonomies
+        if ($this->model instanceof Resource) {
+            $query = $query->with(['meta', 'taxonomies']);
+        }
+
+
+        if ($this->filters) {
+            $query = $this->applyTaxonomyFilter($query);
+            $query = $this->applyCustomFilter($query);
+        }
+
+        return $this->applySorting($query);
+    }
+
+    public function mount($query = null)
+    {
+        $this->emit('tableMounted');
+
+        $this->setTaxonomyFilters();
+
+        // dd($this->model);
+
+        $this->query = $query;
+
+        $this->tableView = $this->model->defaultTableView();
+
+        $this->perPage = $this->model->defaultPerPage();
+
+        if (auth()->user()->getOptionColumns($this->model->getType())) {
+            $this->columns = auth()->user()->getOptionColumns($this->model->getType());
+        } else {
+            $this->columns = $this->model->getDefaultColumns();
+        }
+    }
+
+    /**
+     * Render the component view.
+     *
+     * @return \Illuminate\View\View
+     */
+    public function render()
+    {
+        return view('livewire.table.table');
+    }
+
+    /**
+     * Reorder the table columns.
+     *
+     * @param $slugs array The new column order.
+     * @return void
+     */
+    public function reorder($slugs)
+    {
+        auth()->user()->updateOption('columns_sort.'.$this->model->getType(), $slugs);
+    }
+
+    /**
+     * Search for data in the table.
+     *
+     * @return void
+     */
+    public function search()
+    {
+        // Code to implement the search functionality.
+    }
+
+    /**
+     * Select a single row in the table.
+     *
+     * @param $id int The id of the row to select.
+     * @return void
+     */
+    public function selectRow($id)
+    {
+        $this->selected = $id;
+        $this->lastClickedRow = $id;
+    }
+
+    /**
+     * Select multiple rows in the table.
+     *
+     * @param $ids array The ids of the rows to select.
+     * @return void
+     */
+    public function selectRows($ids)
+    {
+        $this->selected = $ids;
+    }
+
+    /**
+     * Update the columns in the table.
+     *
+     * @param $columns array The new columns.
+     * @return void
+     */
     public function updatedColumns($columns)
     {
-        //dump('updated columns', $columns, $this->columns);
-        // Save Columns per User
+        // Save the columns for the current user.
         if ($this->columns) {
             auth()->user()->updateOption('columns.'.$this->model->getType(), $this->columns);
         }
     }
 
-    public function getRowsQueryProperty()
+    /**
+     * Update the selected rows in the table.
+     *
+     * @return void
+     */
+    public function updatedSelected()
     {
-        $query = $this->model->query()->with('meta');
+        $this->selectAll = false;
+        $this->selectPage = false;
 
-        if ($this->query) {
-            // dump('query here', $this->query);
-            $query = ($this->query)($query);
-        }
-
-        // dd($query, $this->query);
-
-        $operators = [
-            'conains' => '%LIKE%',
-            'does_not_contain' => '',
-            'starts_with' => '',
-            'ends_with' => '',
-            'is' => '==',
-            'greater_than' => '>=',
-        ];
-
-        if ($this->filters) {
-            foreach ($this->filters as $filter) {
-                if (! $filter['name'] || ! $filter['value']) {
-                    continue;
-                }
-                $query->whereHas('meta', function (Builder $query) use ($filter) {
-                    $query->where('key', '=', $filter['name'])->where('value', 'like', $filter['value'].'%');
-                });
-            }
-        }
-
-        // More advanced Search
-        if ($this->search) {
-            $query->where('title', 'LIKE', $this->search.'%');
-        }
-
-        // dd($this->model->paginate(5)->toArray());
-        return $query;
-    }
-
-    public function getRowsProperty()
-    {
-        return $this->rowsQuery->paginate(10);
+        $this->emit('selectedRows', $this->selected);
     }
 }

@@ -2,9 +2,9 @@
 
 namespace Eminiarts\Aura;
 
-use App\Aura\Resources\Attachment;
-use App\Aura\Resources\Option;
-use App\Aura\Traits\DefaultFields;
+use Eminiarts\Aura\Resources\Attachment;
+use Eminiarts\Aura\Resources\Option;
+use Eminiarts\Aura\Traits\DefaultFields;
 use Illuminate\Filesystem\Filesystem;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;

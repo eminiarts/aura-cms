@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Aura\Widgets;
+namespace Eminiarts\Aura\Aura\Widgets;
 
 use Carbon\CarbonImmutable;
 use Illuminate\Contracts\Database\Eloquent\Builder;
@@ -19,7 +19,7 @@ class ValueWidget extends Widget
 
     public function aggregate($model, $calculation, $column = null, $dateColumn = null)
     {
-        $query = $model instanceof Builder ? $model : (new $model)->newQuery();
+        $query = $model instanceof Builder ? $model : (new $model())->newQuery();
 
         $column = $column ?? $query->getModel()->getQualifiedKeyName();
         $dateColumn = $dateColumn ?? $query->getModel()->getQualifiedCreatedAtColumn();

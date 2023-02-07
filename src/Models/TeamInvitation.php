@@ -1,8 +1,8 @@
 <?php
 
-namespace App\Models;
+namespace Eminiarts\Aura\Models;
 
-use App\Aura\Resources\Team;
+use Eminiarts\Aura\Resources\Team;
 
 class TeamInvitation
 {

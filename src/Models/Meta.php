@@ -1,8 +1,8 @@
 <?php
 
-namespace App\Models;
+namespace Eminiarts\Aura\Models;
 
-use App\Aura\Collection\MetaCollection;
+use Eminiarts\Aura\Collection\MetaCollection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 

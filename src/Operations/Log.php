@@ -1,8 +1,8 @@
 <?php
 
-namespace App\Aura\Operations;
+namespace Eminiarts\Aura\Aura\Operations;
 
-use App\Aura\Resources\Operation;
+use Eminiarts\Aura\Resources\Operation;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\Log as LaravelLog;
 

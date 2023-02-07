@@ -2,25 +2,69 @@
 
 namespace Eminiarts\Aura\Http\Livewire\Post;
 
-use App\Models\Post;
 use Eminiarts\Aura;
-use Eminiarts\Aura\Traits\HasFields;
 use Eminiarts\Aura\Traits\RepeaterFields;
+use Eminiarts\Aura\Models\Post;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Support\Arr;
 use Livewire\Component;
 
 class Create extends Component
 {
-    use HasFields;
+    use Aura\Traits\InteractsWithFields;
+    use AuthorizesRequests;
     use RepeaterFields;
+
+    public $inModal = false;
+
+    public $model;
+
+    public $params;
 
     public $post;
 
     public $slug;
 
-    public $model;
-
     public $tax;
+
+    public function getTaxonomiesProperty()
+    {
+        return $this->model->getTaxonomies();
+    }
+
+    public function mount($slug)
+    {
+        $this->slug = $slug;
+
+        $this->model = app(Aura::class)->findResourceBySlug($slug);
+
+        // Authorize
+        $this->authorize('create', $this->model);
+
+        // Array instead of Eloquent Model
+        $this->post = $this->model->toArray();
+
+        $this->post['terms'] = $this->model->terms;
+
+        // get "for" and "id" params from url
+        $for = request()->get('for');
+        $id = request()->get('id');
+
+        // if params are set, set the post's "for" and "id" fields
+        if ($this->params) {
+            if ($this->params['for'] == 'User') {
+                $this->post['fields']['user_id'] = (int) $this->params['id'];
+            }
+        }
+
+        // If $for is "User", set the user_id to the $id
+        // This needs to be more dynamic, but it works for now
+        if ($for == 'User') {
+            $this->post['fields']['user_id'] = (int) $id;
+        }
+
+        // dd($this->post);
+    }
 
     public function render()
     {
@@ -35,45 +79,23 @@ class Create extends Component
         ]);
     }
 
-    public function mount($slug)
-    {
-        $this->slug = $slug;
-        $this->model = Aura::findResourceBySlug($slug);
-
-        // Authorize
-
-        // Array instead of Eloquent Model
-        $this->post = $this->model->toArray();
-
-        $this->post['terms'] = $this->model->terms;
-
-        //dd($this->post->taxonomies);
-        // dd($this->post, $this->model->terms);
-
-        // Set on model instead of here
-        // $this->post['taxonomies']['tag'] = '';
-        // $this->post['taxonomies']['category'] = '';
-
-        // dd($this->model);
-        // dd($this->model->taxonomies);
-        // $this->post['taxonomies']['tag'] = $this->model->taxonomies->pluck('id');
-    }
-
     public function save()
     {
+        // dd($this->rules());
         $this->validate();
 
-        // dd($this->post);
-
-        $this->model->save();
-
-        $this->model->update($this->post);
+        $this->model->create($this->post);
 
         $this->notify('Successfully created.');
+
+        if ($this->inModal) {
+            $this->emit('closeModal');
+            $this->emit('refreshTable');
+        }
     }
 
-    public function getTaxonomiesProperty()
+    public function setModel($model)
     {
-        return $this->model->getTaxonomies();
+        $this->model = $model;
     }
 }

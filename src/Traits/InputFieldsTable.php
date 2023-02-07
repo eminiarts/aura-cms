@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Aura\Traits;
+namespace Eminiarts\Aura\Aura\Traits;
 
 trait InputFieldsTable
 {

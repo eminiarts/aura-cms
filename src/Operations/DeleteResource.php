@@ -1,8 +1,8 @@
 <?php
 
-namespace App\Aura\Operations;
+namespace Eminiarts\Aura\Aura\Operations;
 
-use App\Aura\Resources\Operation;
+use Eminiarts\Aura\Resources\Operation;
 
 class DeleteResource extends BaseOperation
 {

@@ -1,8 +1,8 @@
 <?php
 
-namespace App\Aura\Traits;
+namespace Eminiarts\Aura\Aura\Traits;
 
-use App\Aura;
+use Eminiarts\Aura;
 
 trait SaveTerms
 {

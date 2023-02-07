@@ -1,9 +1,9 @@
 <?php
 
-namespace App\Aura\Resources;
+namespace Eminiarts\Aura\Aura\Resources;
 
-use App\Jobs\GenerateImageThumbnail;
-use App\Models\Post;
+use Eminiarts\Aura\Jobs\GenerateImageThumbnail;
+use Eminiarts\Aura\Models\Post;
 use Illuminate\Foundation\Bus\DispatchesJobs;
 
 class Attachment extends Post

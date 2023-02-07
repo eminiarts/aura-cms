@@ -1,8 +1,8 @@
 <?php
 
-namespace App\Aura\Fields;
+namespace Eminiarts\Aura\Aura\Fields;
 
-use App\Aura\Resources\Attachment;
+use Eminiarts\Aura\Resources\Attachment;
 
 class File extends Field
 {

@@ -1,10 +1,10 @@
 <?php
 
-namespace App\Aura\Operations;
+namespace Eminiarts\Aura\Aura\Operations;
 
-use App\Aura\Resources\Operation;
-use App\Aura\Resources\Role;
-use App\Models\User;
+use Eminiarts\Aura\Resources\Operation;
+use Eminiarts\Aura\Resources\Role;
+use Eminiarts\Aura\Models\User;
 use Illuminate\Support\Facades\Blade;
 
 class Notification extends BaseOperation

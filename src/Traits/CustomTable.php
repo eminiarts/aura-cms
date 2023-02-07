@@ -1,8 +1,8 @@
 <?php
 
-namespace App\Aura\Traits;
+namespace Eminiarts\Aura\Aura\Traits;
 
-use App\Models\Scopes\TypeScope;
+use Eminiarts\Aura\Models\Scopes\TypeScope;
 
 trait CustomTable
 {

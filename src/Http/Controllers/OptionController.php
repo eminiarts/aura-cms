@@ -2,22 +2,12 @@
 
 namespace Eminiarts\Aura\Http\Controllers;
 
-use App\Http\Requests\StoreOptionRequest;
-use App\Http\Requests\UpdateOptionRequest;
-use App\Models\Option;
+use Eminiarts\Aura\Http\Requests\StoreOptionRequest;
+use Eminiarts\Aura\Http\Requests\UpdateOptionRequest;
+use Eminiarts\Aura\Models\Option;
 
 class OptionController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     *
-     * @return \Illuminate\Http\Response
-     */
-    public function index()
-    {
-        //
-    }
-
     /**
      * Show the form for creating a new resource.
      *
@@ -29,23 +19,12 @@ class OptionController extends Controller
     }
 
     /**
-     * Store a newly created resource in storage.
-     *
-     * @param  \App\Http\Requests\StoreOptionRequest  $request
-     * @return \Illuminate\Http\Response
-     */
-    public function store(StoreOptionRequest $request)
-    {
-        //
-    }
-
-    /**
-     * Display the specified resource.
+     * Remove the specified resource from storage.
      *
      * @param  \App\Models\Option  $option
      * @return \Illuminate\Http\Response
      */
-    public function show(Option $option)
+    public function destroy(Option $option)
     {
         //
     }
@@ -62,6 +41,38 @@ class OptionController extends Controller
     }
 
     /**
+     * Display a listing of the resource.
+     *
+     * @return \Illuminate\Http\Response
+     */
+    public function index()
+    {
+        //
+    }
+
+    /**
+     * Display the specified resource.
+     *
+     * @param  \App\Models\Option  $option
+     * @return \Illuminate\Http\Response
+     */
+    public function show(Option $option)
+    {
+        //
+    }
+
+    /**
+     * Store a newly created resource in storage.
+     *
+     * @param  \App\Http\Requests\StoreOptionRequest  $request
+     * @return \Illuminate\Http\Response
+     */
+    public function store(StoreOptionRequest $request)
+    {
+        //
+    }
+
+    /**
      * Update the specified resource in storage.
      *
      * @param  \App\Http\Requests\UpdateOptionRequest  $request
@@ -69,17 +80,6 @@ class OptionController extends Controller
      * @return \Illuminate\Http\Response
      */
     public function update(UpdateOptionRequest $request, Option $option)
-    {
-        //
-    }
-
-    /**
-     * Remove the specified resource from storage.
-     *
-     * @param  \App\Models\Option  $option
-     * @return \Illuminate\Http\Response
-     */
-    public function destroy(Option $option)
     {
         //
     }

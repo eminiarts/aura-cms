@@ -1,14 +1,14 @@
 <?php
 
-namespace App\Aura\Traits;
+namespace Eminiarts\Aura\Aura\Traits;
 
-use App\Aura\Pipeline\AddIdsToFields;
-use App\Aura\Pipeline\ApplyParentConditionalLogic;
-use App\Aura\Pipeline\ApplyTabs;
-use App\Aura\Pipeline\BuildTreeFromFields;
-use App\Aura\Pipeline\MapFields;
-use App\Aura\Pipeline\TransformSlugs;
-use App\ConditionalLogic;
+use Eminiarts\Aura\Pipeline\AddIdsToFields;
+use Eminiarts\Aura\Pipeline\ApplyParentConditionalLogic;
+use Eminiarts\Aura\Pipeline\ApplyTabs;
+use Eminiarts\Aura\Pipeline\BuildTreeFromFields;
+use Eminiarts\Aura\Pipeline\MapFields;
+use Eminiarts\Aura\Pipeline\TransformSlugs;
+use Eminiarts\Aura\ConditionalLogic;
 
 trait InputFields
 {

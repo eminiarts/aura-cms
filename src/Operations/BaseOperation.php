@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Aura\Operations;
+namespace Eminiarts\Aura\Aura\Operations;
 
 class BaseOperation
 {

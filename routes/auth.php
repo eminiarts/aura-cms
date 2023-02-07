@@ -1,15 +1,15 @@
 <?php
 
-use App\Http\Controllers\Auth\AuthenticatedSessionController;
-use App\Http\Controllers\Auth\ConfirmablePasswordController;
-use App\Http\Controllers\Auth\EmailVerificationNotificationController;
-use App\Http\Controllers\Auth\EmailVerificationPromptController;
-use App\Http\Controllers\Auth\NewPasswordController;
-use App\Http\Controllers\Auth\PasswordController;
-use App\Http\Controllers\Auth\PasswordResetLinkController;
-use App\Http\Controllers\Auth\RegisteredUserController;
-use App\Http\Controllers\Auth\VerifyEmailController;
-use App\Http\Controllers\SwitchTeamController;
+use Eminiarts\Aura\Http\Controllers\Auth\AuthenticatedSessionController;
+use Eminiarts\Aura\Http\Controllers\Auth\ConfirmablePasswordController;
+use Eminiarts\Aura\Http\Controllers\Auth\EmailVerificationNotificationController;
+use Eminiarts\Aura\Http\Controllers\Auth\EmailVerificationPromptController;
+use Eminiarts\Aura\Http\Controllers\Auth\NewPasswordController;
+use Eminiarts\Aura\Http\Controllers\Auth\PasswordController;
+use Eminiarts\Aura\Http\Controllers\Auth\PasswordResetLinkController;
+use Eminiarts\Aura\Http\Controllers\Auth\RegisteredUserController;
+use Eminiarts\Aura\Http\Controllers\Auth\VerifyEmailController;
+use Eminiarts\Aura\Http\Controllers\SwitchTeamController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware('guest')->group(function () {

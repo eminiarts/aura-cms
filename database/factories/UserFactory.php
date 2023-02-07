@@ -2,8 +2,8 @@
 
 namespace Database\Factories;
 
-use App\Aura\Resources\Team;
-use App\Models\User;
+use Eminiarts\Aura\Resources\Team;
+use Eminiarts\Aura\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Str;
 use Laravel\Jetstream\Features;

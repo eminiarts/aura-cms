@@ -1,13 +1,13 @@
 <?php
 
-namespace App\Models;
+namespace Eminiarts\Aura\Models;
 
-use App\Aura\Resources\Option;
-use App\Aura\Resources\Team;
-use App\Aura\Traits\AuraModelConfig;
-use App\Aura\Traits\AuraTaxonomies;
-use App\Aura\Traits\InputFields;
-use App\Aura\Traits\InteractsWithTable;
+use Eminiarts\Aura\Resources\Option;
+use Eminiarts\Aura\Resources\Team;
+use Eminiarts\Aura\Traits\AuraModelConfig;
+use Eminiarts\Aura\Traits\AuraTaxonomies;
+use Eminiarts\Aura\Traits\InputFields;
+use Eminiarts\Aura\Traits\InteractsWithTable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;

@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Aura\Fields;
+namespace Eminiarts\Aura\Aura\Fields;
 
 class BelongsToMany extends Field
 {

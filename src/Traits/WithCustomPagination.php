@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Traits;
+namespace Eminiarts\Aura\Traits;
 
 use Illuminate\Pagination\Paginator;
 use Livewire\WithPagination;

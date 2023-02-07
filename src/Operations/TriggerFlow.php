@@ -1,9 +1,9 @@
 <?php
 
-namespace App\Aura\Operations;
+namespace Eminiarts\Aura\Aura\Operations;
 
-use App\Aura\Resources\Flow;
-use App\Aura\Resources\Operation;
+use Eminiarts\Aura\Resources\Flow;
+use Eminiarts\Aura\Resources\Operation;
 
 class TriggerFlow extends BaseOperation
 {
