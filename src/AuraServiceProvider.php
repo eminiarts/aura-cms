@@ -75,15 +75,15 @@ class AuraServiceProvider extends PackageServiceProvider
             });
         });
 
-        Livewire::component('app.aura.widgets.post-stats', \App\Aura\Widgets\PostStats::class);
-        Livewire::component('app.aura.widgets.total-posts', \App\Aura\Widgets\TotalPosts::class);
-        Livewire::component('app.aura.widgets.post-chart', \App\Aura\Widgets\PostChart::class);
-        Livewire::component('app.aura.widgets.sum-posts-number', \App\Aura\Widgets\SumPostsNumber::class);
-        Livewire::component('app.aura.widgets.avg-posts-number', \App\Aura\Widgets\AvgPostsNumber::class);
+        Livewire::component('app.aura.widgets.post-stats', \Eminiarts\Aura\Widgets\PostStats::class);
+        Livewire::component('app.aura.widgets.total-posts', \Eminiarts\Aura\Widgets\TotalPosts::class);
+        Livewire::component('app.aura.widgets.post-chart', \Eminiarts\Aura\Widgets\PostChart::class);
+        Livewire::component('app.aura.widgets.sum-posts-number', \Eminiarts\Aura\Widgets\SumPostsNumber::class);
+        Livewire::component('app.aura.widgets.avg-posts-number', \Eminiarts\Aura\Widgets\AvgPostsNumber::class);
 
         // Register the morph map for the resources
         $resources = Aura::resources()->mapWithKeys(function ($resource) {
-            return [$resource => 'App\Aura\Resources\\'.str($resource)->title];
+            return [$resource => 'Eminiarts\Aura\Resources\\'.str($resource)->title];
         })->toArray();
     }
 }

@@ -16,8 +16,8 @@ class ApplyLayoutFields implements Pipe
             $layouts[] = [
                 'name' => 'Main Panel',
                 'slug' => 'main-panel',
-                'type' => 'App\Aura\Fields\Panel',
-                'field' => app('App\Aura\Fields\Panel'),
+                'type' => 'Eminiarts\Aura\Fields\Panel',
+                'field' => app('Eminiarts\Aura\Fields\Panel'),
                 'field_type' => 'layout',
             ];
         }
@@ -35,8 +35,8 @@ class ApplyLayoutFields implements Pipe
         $layouts[$lastKey]['fields'][] = [
             'name' => 'Tabs',
             'slug' => 'tabs',
-            'type' => 'App\Aura\Fields\Tabs',
-            'field' => app('App\Aura\Fields\Tabs'),
+            'type' => 'Eminiarts\Aura\Fields\Tabs',
+            'field' => app('Eminiarts\Aura\Fields\Tabs'),
             'field_type' => 'tabs',
         ];
 

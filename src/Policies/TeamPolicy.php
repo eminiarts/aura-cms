@@ -14,7 +14,7 @@ class TeamPolicy
      * Determine whether the user can add team members.
      *
      * @param  \App\Models\User  $user
-     * @param  \App\Aura\Resources\Team  $team
+     * @param  \Eminiarts\Aura\Resources\Team  $team
      * @return mixed
      */
     public function addTeamMember(User $user, Team $team)
@@ -37,7 +37,7 @@ class TeamPolicy
      * Determine whether the user can delete the model.
      *
      * @param  \App\Models\User  $user
-     * @param  \App\Aura\Resources\Team  $team
+     * @param  \Eminiarts\Aura\Resources\Team  $team
      * @return mixed
      */
     public function delete(User $user, Team $team)
@@ -49,7 +49,7 @@ class TeamPolicy
      * Determine whether the user can remove team members.
      *
      * @param  \App\Models\User  $user
-     * @param  \App\Aura\Resources\Team  $team
+     * @param  \Eminiarts\Aura\Resources\Team  $team
      * @return mixed
      */
     public function removeTeamMember(User $user, Team $team)
@@ -61,7 +61,7 @@ class TeamPolicy
      * Determine whether the user can update the model.
      *
      * @param  \App\Models\User  $user
-     * @param  \App\Aura\Resources\Team  $team
+     * @param  \Eminiarts\Aura\Resources\Team  $team
      * @return mixed
      */
     public function update(User $user, Team $team)
@@ -73,7 +73,7 @@ class TeamPolicy
      * Determine whether the user can update team member permissions.
      *
      * @param  \App\Models\User  $user
-     * @param  \App\Aura\Resources\Team  $team
+     * @param  \Eminiarts\Aura\Resources\Team  $team
      * @return mixed
      */
     public function updateTeamMember(User $user, Team $team)
@@ -85,7 +85,7 @@ class TeamPolicy
      * Determine whether the user can view the model.
      *
      * @param  \App\Models\User  $user
-     * @param  \App\Aura\Resources\Team  $team
+     * @param  \Eminiarts\Aura\Resources\Team  $team
      * @return mixed
      */
     public function view(User $user, Team $team)

@@ -105,10 +105,10 @@ class Posttype extends Component
         $fields = collect($this->fieldsArray);
         // dd($fields);
 
-        // check if collection has an item with type = "App\Aura\Fields\Tab" and global = true
-        $hasGlobalTabs = $fields->where('type', 'App\Aura\Fields\Tab')->where('global', true)->count();
+        // check if collection has an item with type = "Eminiarts\Aura\Fields\Tab" and global = true
+        $hasGlobalTabs = $fields->where('type', 'Eminiarts\Aura\Fields\Tab')->where('global', true)->count();
         $globalTab = [
-            'type' => 'App\Aura\Fields\Tab',
+            'type' => 'Eminiarts\Aura\Fields\Tab',
             'name' => 'Tab',
             'label' => 'Tab',
             'slug' => 'tab-'.Str::random(4),
@@ -212,12 +212,12 @@ class Posttype extends Component
 
         $this->fieldsArray = $this->model->getFields();
 
-        if (count($this->mappedFields) > 0 && $this->mappedFields[0]['type'] == "App\Aura\Fields\Tab" && $this->mappedFields[0]['global']) {
+        if (count($this->mappedFields) > 0 && $this->mappedFields[0]['type'] == "Eminiarts\Aura\Fields\Tab" && $this->mappedFields[0]['global']) {
             $this->hasGlobalTabs = true;
 
             // Global Tabs
             collect($this->mappedFields)->each(function ($field) {
-                if ($field['type'] == "App\Aura\Fields\Tab" && $field['global']) {
+                if ($field['type'] == "Eminiarts\Aura\Fields\Tab" && $field['global']) {
                     $this->globalTabs[] = [
                         'slug' => $field['slug'],
                         'name' => $field['name'],
@@ -382,7 +382,7 @@ class Posttype extends Component
 
             // Global Tabs
             collect($this->newFields)->each(function ($field) {
-                if ($field['type'] == "App\Aura\Fields\Tab" && $field['global']) {
+                if ($field['type'] == "Eminiarts\Aura\Fields\Tab" && $field['global']) {
                     $this->globalTabs[] = [
                         'slug' => $field['slug'],
                         'name' => $field['name'],
