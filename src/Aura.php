@@ -1,6 +1,6 @@
 <?php
 
-namespace App;
+namespace Eminiarts\Aura;
 
 use App\Aura\Resources\Attachment;
 use App\Aura\Resources\Option;

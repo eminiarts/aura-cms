@@ -1,33 +1,60 @@
 <?php
 
-namespace Eminiarts\Aura\Traits;
+namespace App\Aura\Traits;
+
+use App\Aura\Pipeline\AddIdsToFields;
+use App\Aura\Pipeline\BuildTreeFromFields;
+use Illuminate\Pipeline\Pipeline;
 
 trait HasFields
 {
-    public function getFieldsProperty()
+    public function fieldsCollection()
     {
-        $fields = $this->model->mappedFields();
-
-        // dd($this->model->fieldsForView($fields));
-
-        return $this->model->fieldsForView($fields);
+        return collect($this->getFields());
     }
 
-    public function getEditFieldsProperty()
+    public function getFields()
     {
-        $fields = $this->model->editFields();
-
-        return $this->model->fieldsForView($fields);
+        return [];
     }
 
-    public function validationAttributes()
+    public function getGroupedFields()
     {
-        $attributes = [];
+        $fields = $this->mappedFields();
 
-        foreach ($this->model->inputFields() as $field) {
-            $attributes['post.fields.'.$field['slug']] = $field['slug'];
-        }
-
-        return $attributes;
+        return $this->sendThroughPipeline($fields, [
+            // ApplyGroupedInputs::class, // Enes
+            AddIdsToFields::class, // Bajram
+            BuildTreeFromFields::class, // Bajram
+        ]);
     }
+
+    public function mappedFields()
+    {
+        return $this->fieldsCollection()->map(function ($item) {
+            $item['field'] = app($item['type'])->field($item);
+            $item['field_type'] = app($item['type'])->type;
+
+            return $item;
+        });
+    }
+
+    public function sendThroughPipeline($fields, $pipes)
+    {
+        return app(Pipeline::class)
+        ->send($fields)
+        ->through($pipes)
+        ->thenReturn();
+    }
+
+     public function validationAttributes()
+     {
+         $attributes = [];
+
+         foreach ($this->model->inputFields() as $field) {
+             $attributes['post.fields.'.$field['slug']] = $field['slug'];
+         }
+
+         return $attributes;
+     }
 }

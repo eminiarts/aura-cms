@@ -1,12 +1,14 @@
 <?php
 
-namespace Eminiarts\Aura\Fields;
+namespace App\Aura\Fields;
 
 class Tabs extends Field
 {
-    protected string $view = 'components.fields.tabs';
-
     public string $component = 'fields.tabs';
 
-    public string $type = 'tab';
+    public bool $group = true;
+
+    public string $type = 'tabs';
+
+    protected string $view = 'components.fields.tabs';
 }

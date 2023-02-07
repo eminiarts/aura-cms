@@ -1,6 +1,6 @@
 <?php
 
-namespace Eminiarts\Aura\Widgets;
+namespace App\Aura\Widgets;
 
 class StatsWidget
 {
@@ -12,15 +12,6 @@ class StatsWidget
 
     protected static string $view = 'filament::widgets.stats-overview-widget';
 
-    protected function getColumns(): int
-    {
-        return match ($count = count($this->getCachedCards())) {
-            5, 6, 9, 11 => 3,
-            7, 8, 10, 12 => 4,
-            default => $count,
-        };
-    }
-
     protected function getCachedCards(): array
     {
         return $this->cachedCards ??= $this->getCards();
@@ -29,5 +20,14 @@ class StatsWidget
     protected function getCards(): array
     {
         return [];
+    }
+
+    protected function getColumns(): int
+    {
+        return match ($count = count($this->getCachedCards())) {
+            5, 6, 9, 11 => 3,
+            7, 8, 10, 12 => 4,
+            default => $count,
+        };
     }
 }

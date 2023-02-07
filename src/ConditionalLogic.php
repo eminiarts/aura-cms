@@ -1,6 +1,6 @@
 <?php
 
-namespace App;
+namespace Eminiarts\Aura
 
 class ConditionalLogic
 {

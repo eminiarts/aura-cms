@@ -1,17 +1,17 @@
 <?php
 
-namespace Eminiarts\Aura\Widgets;
+namespace App\Aura\Widgets;
 
-use Eminiarts\Aura\Resources\Post;
+use App\Aura\Resources\Post;
 
 class PostChart extends TrendWidget
 {
-    protected static string $view = 'widgets.chart';
-
     /**
      * @var string
      */
     public $name = 'Total Posts';
+
+    protected static string $view = 'widgets.chart';
 
     /**
      * Determine for how many minutes the metric should be cached.

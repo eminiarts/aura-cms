@@ -1,39 +1,116 @@
 <?php
 
-namespace Eminiarts\Aura\Resources;
+namespace App\Aura\Resources;
 
-use App\Models\Post;
+use App\Aura\Traits\SaveFieldAttributes;
+use App\Aura\Traits\SaveMetaFields;
+use App\Aura\Traits\SaveTerms;
+use App\Models\User as UserModel;
 use App\Models\UserMeta;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Str;
 
-class User extends Post
+class User extends UserModel
 {
-    protected $table = 'users';
-
-    public static string $type = 'User';
+    use SaveFieldAttributes;
+    use SaveMetaFields;
+    use SaveTerms;
 
     public static ?string $slug = 'user';
 
-    protected static ?string $group = 'Users';
+    public static ?int $sort = 6;
 
-    public static ?int $sort = 1;
+    public static string $type = 'User';
+
+    protected $appends = ['fields'];
+
+    /**
+     * The attributes that should be cast.
+     *
+     * @var array
+     */
+    protected $casts = [
+        'email_verified_at' => 'datetime',
+    ];
+
+    protected static $dropdown = 'Users';
+
+    /**
+     * The attributes that are mass assignable.
+     *
+     * @var string[]
+     */
+    protected $fillable = [
+        'name', 'email', 'password', 'fields', 'current_team_id',
+    ];
+
+    /**
+     * The attributes that should be hidden for serialization.
+     *
+     * @var array
+     */
+    protected $hidden = [
+        'password',
+        'remember_token',
+        'two_factor_recovery_codes',
+        'two_factor_secret',
+    ];
+
+    protected static array $searchable = ['name', 'email'];
+
+    protected $table = 'users';
 
     protected static bool $title = false;
 
-    public function getTitleAttribute()
+    protected $with = ['meta'];
+
+    public function actions()
     {
-        return $this->email;
+        return [
+            'edit',
+        ];
     }
 
-    public static function getWidgets(): array
+    public function getBulkActions()
     {
-        return [];
+        // get all flows with type "manual"
+
+        $flows = Flow::where('trigger', 'manual')
+            ->where('options->resource', $this->getType())
+            ->get();
+
+        foreach ($flows as $flow) {
+            $this->bulkActions['callFlow.'.$flow->id] = $flow->name;
+        }
+
+        // dd($this->bulkActions);
+        return $this->bulkActions;
+    }
+
+    public function getEmailField($value)
+    {
+        return "<a class='font-bold text-primary-500' href='mailto:".$value."'>".$value.'</a>';
     }
 
     public static function getFields()
     {
         return [
-            '.name' => [
-                'label' => 'Name',
+            [
+                'type' => 'App\\Aura\\Fields\\Tab',
+                'name' => 'User details',
+                'slug' => 'tab-user',
+                'global' => true,
+            ],
+            [
+                'name' => 'Personal Infos',
+                'type' => 'App\\Aura\\Fields\\Panel',
+                'validation' => 'required',
+                'slug' => 'user-details',
+                'style' => [
+                    'width' => '100',
+                ],
+            ],
+            [
                 'name' => 'Name',
                 'type' => 'App\\Aura\\Fields\\Text',
                 'validation' => 'required',
@@ -43,39 +120,21 @@ class User extends Post
                     'width' => '100',
                 ],
             ],
-            '.email' => [
-                'label' => 'Email',
+            [
                 'name' => 'Email',
                 'type' => 'App\\Aura\\Fields\\Text',
                 'validation' => 'required|email',
                 'on_index' => true,
-                'display' => function ($value) {
-                    return "<a class='font-bold text-sky-500' href='mailto:".$value."'>".$value.'</a>';
-                },
                 'slug' => 'email',
                 'style' => [
                     'width' => '100',
                 ],
             ],
-            '.roles' => [
+            [
                 'name' => 'Roles',
                 'slug' => 'roles',
-                'id' => 159,
                 'posttype' => 'App\\Aura\\Resources\\Role',
-                'type' => 'App\\Aura\\Fields\\SelectRelation',
-                'validation' => '',
-                'conditional_logic' => '',
-                'has_conditional_logic' => false,
-                'wrapper' => '',
-                'on_index' => true,
-                'on_forms' => true,
-                'in_view' => true,
-            ],
-            '.panel' => [
-                'name' => 'Posts',
-                'slug' => 'posts',
-                'id' => 155,
-                'type' => 'App\\Aura\\Fields\\Panel',
+                'type' => 'App\\Aura\\Fields\\SelectMany',
                 'validation' => '',
                 'conditional_logic' => '',
                 'has_conditional_logic' => false,
@@ -84,10 +143,67 @@ class User extends Post
                 'on_forms' => true,
                 'in_view' => true,
             ],
-            'posts' => [
+            [
+                'name' => 'Password',
+                'type' => 'App\\Aura\\Fields\\Password',
+                'validation' => '',
+                'conditional_logic' => [
+                ],
+                'slug' => 'password',
+                'on_index' => false,
+            ],
+            [
+                'name' => 'Send Welcome Email',
+                'type' => 'App\\Aura\\Fields\\Boolean',
+                'validation' => '',
+                'conditional_logic' => [
+                ],
+                'on_update' => false,
+                'in_view' => false,
+                'on_index' => false,
+                'slug' => 'send-welcome-email',
+                'instructions' => 'Do you want to inform the user about his account?',
+            ],
+            [
+                'type' => 'App\\Aura\\Fields\\Tab',
+                'name' => 'Notifications',
+                'slug' => 'tab-notifications',
+                'global' => true,
+            ],
+            [
+                'name' => 'Notifications',
+                'type' => 'App\\Aura\\Fields\\Panel',
+                'validation' => 'required',
+                'slug' => 'user-notifications-panel',
+                'style' => [
+                    'width' => '100',
+                ],
+            ],
+            [
+                'name' => 'Notifications via Email',
+                'type' => 'App\\Aura\\Fields\\Boolean',
+                'validation' => '',
+                'conditional_logic' => [
+                ],
+                'slug' => 'notifications_via_email',
+            ],
+            [
+                'name' => 'Notifications via SMS',
+                'type' => 'App\\Aura\\Fields\\Boolean',
+                'validation' => '',
+                'conditional_logic' => [
+                ],
+                'slug' => 'notifications_via_sms',
+            ],
+            [
+                'type' => 'App\\Aura\\Fields\\Tab',
+                'name' => 'Posts',
+                'slug' => 'tab-posts',
+                'global' => true,
+            ],
+            [
                 'name' => 'Posts',
                 'slug' => 'posts',
-                'id' => 149,
                 'type' => 'App\\Aura\\Fields\\HasMany',
                 'posttype' => 'App\\Aura\\Resources\\Post',
                 'validation' => '',
@@ -95,22 +211,210 @@ class User extends Post
                 'has_conditional_logic' => false,
                 'wrapper' => '',
                 'on_index' => false,
+                'on_forms' => true,
+                'in_view' => true,
+                'style' => [
+                    'width' => '100',
+                ],
+            ],
+            [
+                'type' => 'App\\Aura\\Fields\\Tab',
+                'name' => 'Teams',
+                'slug' => 'tab-Teams',
+                'global' => true,
+            ],
+            [
+                'name' => 'Teams',
+                'slug' => 'teams',
+                'type' => 'App\\Aura\\Fields\\BelongsToMany',
+                'posttype' => 'App\\Aura\\Resources\\Team',
+                'validation' => '',
+                'conditional_logic' => '',
+                'has_conditional_logic' => false,
+                'wrapper' => '',
+                'on_index' => false,
                 'on_forms' => false,
                 'in_view' => true,
+                'style' => [
+                    'width' => '100',
+                ],
+            ],
+            [
+                'type' => 'App\\Aura\\Fields\\Tab',
+                'name' => '2FA',
+                'label' => 'Tab',
+                'slug' => '2fa',
+                'global' => true,
+            ],
+            [
+                'name' => '2FA',
+                'type' => 'App\\Aura\\Fields\\LivewireComponent',
+                'component' => 'user.two-factor-authentication-form',
+                'validation' => '',
+                'conditional_logic' => [
+                ],
+                'slug' => '2fa',
             ],
         ];
     }
 
-    public function actions()
+    public function getFieldsAttribute()
     {
-        return [
-            'edit',
-        ];
+        $meta = $this->meta->pluck('value', 'key');
+
+        $defaultValues = $this->inputFields()->pluck('slug')->mapWithKeys(fn ($value, $key) => [$value => null])->map(fn ($value, $key) => $meta[$key] ?? $value)->map(function ($value, $key) {
+            // if the value is in $this->hidden, set it to null
+            if (in_array($key, $this->hidden)) {
+                return;
+            }
+
+            // If the value is set on the model, use it
+            if (isset($this->attributes[$key])) {
+                return $this->attributes[$key];
+            }
+        });
+
+        // Cast Attributes
+        $meta = $meta->map(function ($meta, $key) {
+            // if there is a function get{Slug}Field on the model, use it
+            $method = 'get'.Str::studly($key).'Field';
+
+            if (method_exists($this, $method)) {
+                return $this->{$method}();
+            }
+
+            $class = $this->fieldClassBySlug($key);
+
+            if ($class && method_exists($class, 'get')) {
+                return $class->get($class, $meta);
+            }
+
+            return $meta;
+        });
+
+        return $defaultValues->merge($meta);
     }
 
-    public function icon()
+    public function getIcon()
     {
         return '<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>';
+    }
+
+    public function getRolesField()
+    {
+        return $this->roles->pluck('id')->toArray();
+    }
+
+    public static function getWidgets(): array
+    {
+        return [];
+    }
+
+    public function hasPermissionTo($ability, $post): bool
+    {
+        $roles = $this->cachedRoles();
+
+        if (! $roles) {
+            return false;
+        }
+
+        foreach ($roles as $role) {
+            $permissions = $role->fields['permissions'];
+
+            if (empty($permissions)) {
+                continue;
+            }
+
+            foreach ($permissions as $permission => $value) {
+                if ($permission == $ability.'-'.$post::$slug && $value == true) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    public function hasRole(string $role): bool
+    {
+        $roles = $this->cachedRoles();
+
+        if (! $roles) {
+            return false;
+        }
+
+        foreach ($roles as $r) {
+            if ($r->slug == $role) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Returns true if the user has at least one role that is a super admin.
+     *
+     * @return bool
+     */
+    public function isSuperAdmin(): bool
+    {
+        $roles = $this->cachedRoles();
+
+        if (! $roles) {
+            return false;
+        }
+
+        foreach ($roles as $role) {
+            if ($role->super_admin) {
+                return true;
+            }
+        }
+
+        return false;
+
+        // Alternative way to do it, but it does a query
+
+        // get Role where meta.key = 'super_admin' and meta.value = '1'
+        $roles = $this->roles()->whereHas('meta', function ($query) {
+            $query->where('key', 'super_admin')->where('value', '1');
+        })->count();
+
+        // return true if $roles count > 0
+        return $roles > 0;
+    }
+
+    public function meta()
+    {
+        return $this->hasMany(UserMeta::class, 'user_id');
+    }
+
+    public function roles()
+    {
+        return $this->belongsToMany(Role::class, 'user_meta', 'user_id', 'value')
+        ->wherePivot('key', 'roles')->wherePivot('team_id', $this->current_team_id);
+    }
+
+    public function setRolesField($value)
+    {
+        // Save the roles
+        // $this->roles()->sync($value);
+
+        $this->roles()->syncWithPivotValues($value, ['key' => 'roles', 'team_id' => $this->current_team_id]);
+        // or auth()->user()->currentTeam->id ?
+
+        // Unset the roles field
+        unset($this->attributes['fields']['roles']);
+
+        // Clear Cache 'user.' . $this->id . '.roles'
+        Cache::forget('user.'.$this->id.'.roles');
+
+        return $this;
+    }
+
+    public function title()
+    {
+        return $this->name;
     }
 
     /**
@@ -121,8 +425,6 @@ class User extends Post
     protected static function booted()
     {
         static::saving(function ($user) {
-            // dd('saving', $user, $user->attributes);
-
             if (isset($user->attributes['fields'])) {
                 foreach ($user->attributes['fields'] as $key => $value) {
                     $class = $user->fieldClassBySlug($key);
@@ -134,7 +436,7 @@ class User extends Post
                     if (optional($user->attributes)[$key]) {
                         $user->{$key} = $value;
                     } else {
-                        $user->meta()->updateOrCreate(['key' => $key], ['value' => $value]);
+                        $user->meta()->updateOrCreate(['key' => $key, 'team_id' => $user->current_team_id], ['value' => $value]);
                     }
                 }
 
@@ -142,42 +444,18 @@ class User extends Post
             }
 
             if (isset($user->attributes['terms'])) {
-                // $values = [];
-
-                // foreach ($user->attributes['terms'] as $key => $value) {
-                //     if ($key == 'Tag') {
-                //         $values[] = str($value)->explode(',')
-                //         ->map(fn ($i) => trim($i))
-                //         ->map(function ($item) use ($key) {
-                //             return Aura::findTaxonomyBySlug($key)::firstOrCreate(['name' => $item])->id;
-                //         })->mapWithKeys(fn ($i, $k) => [$i => ['order' => $k]])->toArray()
-                //         ;
-
-                //         continue;
-                //     }
-
-                //     // Get the Correct Order
-                //     $values[] = collect($value)->mapWithKeys(fn ($i, $k) => [$i => ['order' => $k]])->toArray();
-                // }
-
-                // $values = collect($values)->mapWithKeys(function ($a) {
-                //     return $a;
-                // });
-
-                // $user->taxonomies()->sync($values);
-
                 unset($user->attributes['terms']);
             }
         });
     }
 
-    public function getHeaders()
+    /**
+     * @return mixed
+     */
+    protected function cachedRoles(): mixed
     {
-        return $this->indexFields()->pluck('name', 'slug');
-    }
-
-    public function meta()
-    {
-        return $this->hasMany(UserMeta::class, 'user_id');
+        return Cache::remember('user.'.$this->id.'.roles', now()->addMinutes(60), function () {
+            return $this->roles;
+        });
     }
 }

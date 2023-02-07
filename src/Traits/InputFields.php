@@ -1,45 +1,51 @@
 <?php
 
-namespace Eminiarts\Aura\Traits;
+namespace App\Aura\Traits;
 
-use Eminiarts\Aura\Pipeline\ApplyGroupedInputs;
-use Eminiarts\Aura\Pipeline\ApplyLayoutFields;
-use Eminiarts\Aura\Pipeline\ApplyTabs;
-use Illuminate\Pipeline\Pipeline;
+use App\Aura\Pipeline\AddIdsToFields;
+use App\Aura\Pipeline\ApplyParentConditionalLogic;
+use App\Aura\Pipeline\ApplyTabs;
+use App\Aura\Pipeline\BuildTreeFromFields;
+use App\Aura\Pipeline\MapFields;
+use App\Aura\Pipeline\TransformSlugs;
+use App\ConditionalLogic;
 
 trait InputFields
 {
-    public function fieldsForView($fields = null)
+    use InputFieldsHelpers;
+    use InputFieldsTable;
+    use InputFieldsValidation;
+
+    public function displayFieldValue($key, $value = null)
     {
-        if (! $fields) {
-            $fields = $this->mappedFields();
+        // Check Conditional Logic if the field should be displayed
+        if (! $this->shouldDisplayField($key)) {
+            return;
         }
 
-        $pipes = [
-            ApplyGroupedInputs::class,
-            //ApplyTabs::class,
-            ApplyLayoutFields::class,
-        ];
+        $studlyKey = str_replace(' ', '', ucwords(str_replace(['-', '_'], ' ', $key)));
 
-        return $this->sendThroughPipeline($fields, $pipes);
-    }
+        // If there is a get{key}Field() method, use that
+        if ($value && method_exists($this, 'get'.ucfirst($studlyKey).'Field')) {
+            return $this->{'get'.ucfirst($key).'Field'}($value);
+        }
 
-    public function sendThroughPipeline($fields, $pipes)
-    {
-        return app(Pipeline::class)
-        ->send($fields)
-        ->through($pipes)
-        ->thenReturn();
-    }
+        // Maybe delete this one?
+        if (optional($this->fieldBySlug($key))['display'] && $value) {
+            return $this->fieldBySlug($key)['display']($value);
+        }
 
-    public function mappedFields()
-    {
-        return $this->fieldsCollection()->map(function ($item) {
-            $item['field'] = app($item['type'])->field($item);
-            $item['field_type'] = app($item['type'])->type;
+        // ray('hier', $key, $value);
 
-            return $item;
-        });
+        if ($value === null) {
+            return optional($this->fieldClassBySlug($key))->display($this->fieldBySlug($key), $this->meta->$key, $this);
+        }
+
+        if ($this->fieldClassBySlug($key)) {
+            return optional($this->fieldClassBySlug($key))->display($this->fieldBySlug($key), $value, $this);
+        }
+
+        return $value;
     }
 
     public function editFields()
@@ -49,14 +55,8 @@ trait InputFields
                 return false;
             }
 
-            return true;
-        });
-    }
-
-    public function indexFields()
-    {
-        return $this->mappedFields()->filter(function ($field) {
-            if (optional($field)['on_index'] === false) {
+            // if there is a on_update = false, filter it out
+            if (optional($field)['on_update'] === false) {
                 return false;
             }
 
@@ -64,129 +64,183 @@ trait InputFields
         });
     }
 
-    public function fieldsCollection()
+    public function fieldBySlugWithDefaultValues($slug)
     {
-        return collect($this->getFields());
-    }
+        $field = $this->fieldBySlug($slug);
 
-    public function getHeaders()
-    {
-        return $this->inputFields()
-        ->pluck('name', 'slug')
-        ->prepend('ID', 'id');
-    }
+        if (! isset($field)) {
+            return;
+        }
 
-    public function getColumns()
-    {
-        return $this->getHeaders()->toArray();
-    }
+        $fieldFields = optional($this->mappedFieldBySlug($slug))['field']->getGroupedFields();
 
-    public function getDefaultColumns()
-    {
-        return $this->getHeaders()->map(fn () => '1')->toArray();
-    }
-
-    public function inputFields()
-    {
-        return $this->mappedFields()->filter(fn ($item) => $item['field_type'] == 'input');
-    }
-
-    public function validationRules()
-    {
-        $subFields = [];
-
-        $fields = $this->mappedFields()
-        ->filter(fn ($item) => in_array($item['field_type'], ['input', 'repeater']))
-        ->map(function ($item) use (&$subFields) {
-            if ($item['field_type'] == 'repeater') {
-                $subFields[] = $item['slug'];
-
-                return $this->groupedFieldBySlug($item['slug']);
+        foreach ($fieldFields as $key => $f) {
+            // if no key value pair is set, get the default value from the field
+            if (! isset($field[$f['slug']]) && isset($f['default'])) {
+                $field[$f['slug']] = $f['default'];
             }
+        }
 
-            return $item;
-        })
-        ->map(function ($item) {
-            return $this->mapIntoValidationFields($item);
-        })
-        ->mapWithKeys(function ($item, $key) use (&$subFields) {
-            foreach ($subFields as $exclude) {
-                if (str($key)->startsWith($exclude.'.')) {
-                    return [$exclude.'.*.'.$item['slug'] => $item['validation']];
-                }
-            }
-
-            return [$item['slug'] => $item['validation']];
-        })
-        ->toArray();
-
-        return $fields;
+        return $field;
     }
 
-    public function mapIntoValidationFields($item)
+    public function fieldsForView($fields = null)
     {
-        $map = [
-            'validation' => $item['validation'] ?? '',
-            'slug' => $item['slug'],
+        if (! $fields) {
+            $fields = $this->mappedFields();
+        }
+
+        $pipes = [
+            ApplyTabs::class,
+            MapFields::class,
+            AddIdsToFields::class,
+            // ApplyParentConditionalLogic::class,
+            BuildTreeFromFields::class,
         ];
 
-        if (isset($item['fields'])) {
-            $map['*'] = collect($item['fields'])->map(function ($item) {
-                return $this->mapIntoValidationFields($item);
+        return $this->sendThroughPipeline($fields, $pipes);
+    }
+
+    public function getAccessibleFieldKeys()
+    {
+        // Apply Conditional Logic of Parent Fields
+        $fields = $this->sendThroughPipeline($this->fieldsCollection(), [
+            ApplyTabs::class,
+            MapFields::class,
+            AddIdsToFields::class,
+            ApplyParentConditionalLogic::class,
+        ]);
+
+        // Get all input fields
+        return $fields
+            ->filter(function ($field) {
+                return $field['field']->isInputField();
+                // return in_array($field['field']->type, ['input', 'repeater', 'group']);
+            })
+            ->pluck('slug')
+            ->filter(function ($field) {
+                return $this->shouldDisplayField($field);
             })->toArray();
-        }
-
-        return $map;
     }
 
-    public function fieldBySlug($slug)
+    public function getFieldsBeforeTree($fields = null)
     {
-        return $this->fieldsCollection()->firstWhere('slug', $slug);
+        // If fields is set and is an array, create a collection
+        if ($fields && is_array($fields)) {
+            $fields = collect($fields);
+        }
+
+        if (! $fields) {
+            $fields = $this->fieldsCollection();
+        }
+
+        return $this->sendThroughPipeline($fields, [
+            MapFields::class,
+            AddIdsToFields::class,
+            TransformSlugs::class,
+            ApplyParentConditionalLogic::class,
+        ]);
     }
 
-    public function groupedFieldBySlug($slug)
+    public function getFieldsForEdit($fields = null)
     {
-        $fields = $this->sendThroughPipeline($this->mappedFields(), [ApplyGroupedInputs::class]);
-
-        if ($field = $fields->firstWhere('slug', $slug)) {
-            return $field;
+        if (! $fields) {
+            $fields = $this->mappedFields();
         }
 
-        // Test Repeater
+        $pipes = [
+            // ApplyTabs::class,
+            MapFields::class,
+            AddIdsToFields::class,
+            BuildTreeFromFields::class,
+        ];
 
-        return $fields->pluck('fields')->flatten(1)->firstWhere('slug', $slug); // Test this
+        return $this->sendThroughPipeline($fields, $pipes);
     }
 
-    public function fieldClassBySlug($slug)
+    /**
+     * This code is used to render the form fields in the correct order.
+     * It applies tabs to the fields, maps the fields, adds ids to the fields,
+     * applies the parent conditional logic to the fields, and builds a tree from the fields.
+     *
+     * @return array
+     */
+    public function getGroupedFields($fields = null): array
     {
-        if (optional($this->fieldBySlug($slug))['type']) {
-            return app($this->fieldBySlug($slug)['type']);
+        // If fields is set and is an array, create a collection
+        if ($fields && is_array($fields)) {
+            $fields = collect($fields);
         }
 
-        return false;
+        if (! $fields) {
+            $fields = $this->fieldsCollection();
+        }
+
+        return $this->sendThroughPipeline($fields, [
+            ApplyTabs::class,
+            MapFields::class,
+            AddIdsToFields::class,
+            TransformSlugs::class,
+            ApplyParentConditionalLogic::class,
+            BuildTreeFromFields::class,
+        ]);
     }
 
-    public function getFieldValue($key)
+    public function indexFields()
     {
-        return $this->fieldClassBySlug($key)->get($this->fieldBySlug($key), $this->meta->$key);
+        return $this->inputFields()->filter(function ($field) {
+            if (optional($field)['on_index'] === false) {
+                dd($field['on_index']);
+
+                return false;
+            }
+
+            return true;
+        });
     }
 
-    public function displayFieldValue($key, $value = null)
+    /**
+     * Map to Grouped Fields for the Posttype Builder / Edit Posttype.
+     *
+     * @param  array  $fields
+     * @return array
+     */
+    public function mapToGroupedFields($fields)
     {
-        // ray($this->fieldBySlug($key));
+        $fields = collect($fields)->map(function ($item) {
+            $item['field'] = app($item['type'])->field($item);
+            $item['field_type'] = app($item['type'])->type;
 
-        if (optional($this->fieldBySlug($key))['display'] && $value) {
-            return $this->fieldBySlug($key)['display']($value);
-        }
+            return $item;
+        });
 
-        if ($value === null) {
-            return optional($this->fieldClassBySlug($key))->display($this->fieldBySlug($key), $this->meta->$key);
-        }
-
-        if ($this->fieldClassBySlug($key)) {
-            return optional($this->fieldClassBySlug($key))->display($this->fieldBySlug($key), $value);
-        }
-
-        return $value;
+        return $this->sendThroughPipeline($fields, [
+            AddIdsToFields::class,
+            BuildTreeFromFields::class,
+        ]);
     }
+
+    public function shouldDisplayField($key)
+    {
+        // Check Conditional Logic if the field should be displayed
+        return ConditionalLogic::checkCondition($this, $this->fieldBySlug($key));
+    }
+
+    public function taxonomyFields()
+    {
+        return $this->mappedFields()->filter(function ($field) {
+            if ($field['field']->isTaxonomyField()) {
+                return true;
+            }
+
+            return false;
+        });
+    }
+
+    // Display the value of a field in the index view
+    // $this->displayEmailField()
+    // $this->getEmailField()
+    // $this->setEmailField()
+    // $this->getUsersFieldValues()
+    // alternative: $this->queryForUsersField()
 }

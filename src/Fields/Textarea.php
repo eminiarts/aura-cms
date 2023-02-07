@@ -1,10 +1,10 @@
 <?php
 
-namespace Eminiarts\Aura\Fields;
+namespace App\Aura\Fields;
 
 class Textarea extends Field
 {
-    protected string $view = 'components.fields.textarea';
-
     public string $component = 'fields.textarea';
+
+    protected string $view = 'components.fields.textarea';
 }

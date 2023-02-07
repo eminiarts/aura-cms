@@ -1,17 +1,22 @@
 <?php
 
-namespace Eminiarts\Aura\Fields;
+namespace App\Aura\Fields;
 
-use Eminiarts\Aura\Resources\Attachment;
+use App\Aura\Resources\Attachment;
 
 class File extends Field
 {
-    protected string $view = 'components.fields.file';
-
     public string $component = 'fields.file';
+
+    protected string $view = 'components.fields.file';
 
     public function get($field, $value)
     {
-        return Attachment::find($value);
+        return json_decode($value, true);
+    }
+
+    public function set($value)
+    {
+        return json_encode($value);
     }
 }

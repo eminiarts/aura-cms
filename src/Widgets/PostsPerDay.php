@@ -1,6 +1,6 @@
 <?php
 
-namespace Eminiarts\Aura\Widgets;
+namespace App\Aura\Widgets;
 
 class PostsPerDay extends TrendWidget
 {

@@ -1,28 +1,27 @@
 <?php
 
-namespace Eminiarts\Aura\Resources;
+namespace App\Aura\Resources;
 
+use App\Aura\Widgets\PostStats;
 use App\Models\Post;
-use Eminiarts\Aura\Widgets\PostStats;
 
 class Invoice extends Post
 {
-    public static string $type = 'Invoice';
-
-    public static ?string $slug = 'invoice';
-
-    public static $fields = [];
-
     public array $bulkActions = [
         'exportSelected' => 'Export',
         'deleteSelected' => 'Delete',
         'enableSelected' => 'Enable',
     ];
 
-    public function exportSelected()
-    {
-        dd('export');
-    }
+    public static array $fields = [];
+
+    public static $singularName = 'Invoice';
+
+    public static ?string $slug = 'invoice';
+
+    public static ?int $sort = 1;
+
+    public static string $type = 'Invoice';
 
     public function deleteSelected()
     {
@@ -36,10 +35,450 @@ class Invoice extends Post
         $this->save();
     }
 
-    public function rowView()
+    public function exportSelected()
     {
-        return 'invoices.row';
+        dd('export');
     }
+
+    public static function getFields()
+    {
+        return [
+    [
+        'type' => 'App\\Aura\\Fields\\Tab',
+        'name' => 'Invoice',
+        'slug' => 'tab-invoice',
+        'global' => true,
+    ],
+    [
+        'name' => 'Debtor',
+        'type' => 'App\\Aura\\Fields\\Panel',
+        'validation' => '',
+        'on_index' => true,
+        'has_conditional_logic' => false,
+        'conditional_logic' => [
+        ],
+        'slug' => 'panel-debtor',
+        'style' => [
+            'width' => '33',
+        ],
+    ],
+    [
+        'name' => 'User',
+        'slug' => 'user_id',
+        'type' => 'App\\Aura\\Fields\\BelongsTo',
+        'model' => 'App\\Aura\\Resources\\User',
+        'validation' => '',
+        'conditional_logic' => '',
+        'has_conditional_logic' => false,
+        'on_index' => true,
+        'on_forms' => true,
+        'in_view' => true,
+    ],
+    [
+        'name' => 'Infos',
+        'type' => 'App\\Aura\\Fields\\Panel',
+        'validation' => '',
+        'on_index' => true,
+        'has_conditional_logic' => false,
+        'conditional_logic' => [
+        ],
+        'slug' => 'panel-infos',
+        'style' => [
+            'width' => '66',
+        ],
+    ],
+    [
+        'name' => 'Invoice Date',
+        'slug' => 'date',
+        'type' => 'App\\Aura\\Fields\\Date',
+        'format' => 'd.m.Y',
+        'validation' => 'required',
+        'conditional_logic' => '',
+        'has_conditional_logic' => false,
+        'on_index' => true,
+        'on_forms' => true,
+        'in_view' => true,
+        'style' => [
+            'width' => '50',
+        ],
+    ],
+    [
+        'name' => 'Invoice Number',
+        'slug' => 'invoice_number',
+        'type' => 'App\\Aura\\Fields\\Text',
+        'validation' => '',
+        'conditional_logic' => '',
+        'has_conditional_logic' => false,
+        'on_index' => true,
+        'on_forms' => true,
+        'in_view' => true,
+        'style' => [
+            'width' => '50',
+        ],
+    ],
+    [
+        'name' => 'Due Date',
+        'slug' => 'due_date',
+        'type' => 'App\\Aura\\Fields\\Date',
+        'format' => 'd.m.Y',
+        'validation' => 'required',
+        'conditional_logic' => '',
+        'has_conditional_logic' => false,
+        'on_index' => true,
+        'on_forms' => true,
+        'in_view' => true,
+        'style' => [
+            'width' => '50',
+        ],
+    ],
+    [
+        'name' => 'Reference',
+        'slug' => 'reference',
+        'type' => 'App\\Aura\\Fields\\Text',
+        'validation' => '',
+        'conditional_logic' => '',
+        'has_conditional_logic' => false,
+        'on_index' => true,
+        'on_forms' => true,
+        'in_view' => true,
+        'style' => [
+            'width' => '50',
+        ],
+    ],
+    [
+        'name' => 'Delivery Date',
+        'slug' => 'delivery_date',
+        'type' => 'App\\Aura\\Fields\\Date',
+        'format' => 'd.m.Y',
+        'validation' => '',
+        'conditional_logic' => '',
+        'has_conditional_logic' => false,
+        'on_index' => true,
+        'on_forms' => true,
+        'in_view' => true,
+        'style' => [
+            'width' => '50',
+        ],
+    ],
+    [
+        'name' => 'Bank connection',
+        'slug' => 'bank',
+        'type' => 'App\\Aura\\Fields\\Text',
+        'validation' => '',
+        'conditional_logic' => '',
+        'has_conditional_logic' => false,
+        'on_index' => true,
+        'on_forms' => true,
+        'in_view' => true,
+        'style' => [
+            'width' => '50',
+        ],
+    ],
+    [
+        'name' => 'Title',
+        'type' => 'App\\Aura\\Fields\\Panel',
+        'validation' => '',
+        'on_index' => true,
+        'has_conditional_logic' => false,
+        'conditional_logic' => [
+        ],
+        'slug' => 'panel-title',
+        'style' => [
+            'width' => '100',
+        ],
+    ],
+    [
+        'name' => 'Title',
+        'slug' => 'title',
+        'type' => 'App\\Aura\\Fields\\Text',
+        'validation' => '',
+        'conditional_logic' => '',
+        'has_conditional_logic' => false,
+        'on_index' => true,
+        'on_forms' => true,
+        'in_view' => true,
+        'style' => [
+            'width' => '100',
+        ],
+    ],
+    [
+        'name' => 'Invoice Items',
+        'type' => 'App\\Aura\\Fields\\Panel',
+        'validation' => '',
+        'on_index' => true,
+        'has_conditional_logic' => false,
+        'conditional_logic' => [
+        ],
+        'slug' => 'panel-items',
+        'style' => [
+            'width' => '100',
+        ],
+    ],
+    [
+        'name' => 'Invoice Items',
+        'type' => 'App\\Aura\\Fields\\Repeater',
+        'validation' => '',
+        'on_index' => false,
+        'has_conditional_logic' => false,
+        'conditional_logic' => [
+        ],
+        'slug' => 'items-repeater',
+        'style' => [
+            'width' => '100',
+        ],
+    ],
+    [
+        'name' => 'Product',
+        'slug' => 'product',
+        'type' => 'App\\Aura\\Fields\\Text',
+        'validation' => '',
+        'on_index' => false,
+        'conditional_logic' => '',
+        'has_conditional_logic' => false,
+        'style' => [
+            'width' => '10',
+        ],
+    ],
+    [
+        'name' => 'Description',
+        'slug' => 'description',
+        'type' => 'App\\Aura\\Fields\\Text',
+        'validation' => '',
+        'on_index' => false,
+        'conditional_logic' => '',
+        'has_conditional_logic' => false,
+        'style' => [
+            'width' => '40',
+        ],
+    ],
+    [
+        'name' => 'Price',
+        'slug' => 'item_price',
+        'type' => 'App\\Aura\\Fields\\Text',
+        'suffix' => 'CHF',
+        'validation' => '',
+        'on_index' => false,
+        'conditional_logic' => '',
+        'has_conditional_logic' => false,
+        'style' => [
+            'width' => '10',
+        ],
+    ],
+    [
+        'name' => 'Quantity',
+        'slug' => 'quantity',
+        'type' => 'App\\Aura\\Fields\\Number',
+        'validation' => '',
+        'on_index' => false,
+        'conditional_logic' => '',
+        'has_conditional_logic' => false,
+        'style' => [
+            'width' => '10',
+        ],
+    ],
+    [
+        'name' => 'Type',
+        'slug' => 'Type',
+        'type' => 'App\\Aura\\Fields\\Select',
+        'options' => [
+            'hours' => 'Hours',
+            'days' => 'Days',
+            'pieces' => 'Pieces',
+        ],
+        'validation' => '',
+        'on_index' => false,
+        'conditional_logic' => '',
+        'has_conditional_logic' => false,
+        'style' => [
+            'width' => '10',
+        ],
+    ],
+    [
+        'name' => 'Tax',
+        'slug' => 'tax',
+        'type' => 'App\\Aura\\Fields\\Select',
+        'options' => [
+            '0%',
+            '2.5' => '2.5%',
+            '7.7' => '7.7%',
+        ],
+        'validation' => '',
+        'on_index' => false,
+        'conditional_logic' => '',
+        'has_conditional_logic' => false,
+        'style' => [
+            'width' => '10',
+        ],
+    ],
+    [
+        'name' => 'Sum',
+        'slug' => 'item_sum',
+        'type' => 'App\\Aura\\Fields\\Text',
+        'suffix' => 'CHF',
+        'validation' => '',
+        'on_index' => false,
+        'conditional_logic' => '',
+        'has_conditional_logic' => false,
+        'style' => [
+            'width' => '10',
+        ],
+    ],
+    [
+        'name' => 'Notes',
+        'type' => 'App\\Aura\\Fields\\Panel',
+        'validation' => '',
+        'on_index' => true,
+        'has_conditional_logic' => false,
+        'conditional_logic' => [
+        ],
+        'slug' => 'panel-notes',
+        'style' => [
+            'width' => '50',
+            'class' => '!bg-yellow-100',
+        ],
+    ],
+    [
+        'name' => 'Public Notes',
+        'slug' => 'public_notes',
+        'type' => 'App\\Aura\\Fields\\Textarea',
+        'validation' => '',
+        'conditional_logic' => '',
+        'has_conditional_logic' => false,
+        'style' => [
+            'width' => '100',
+        ],
+    ],
+    [
+        'name' => 'Foot Notes',
+        'slug' => 'foot_notes',
+        'type' => 'App\\Aura\\Fields\\Textarea',
+        'validation' => '',
+        'conditional_logic' => '',
+        'has_conditional_logic' => false,
+        'style' => [
+            'width' => '100',
+        ],
+    ],
+    [
+        'name' => 'Invoice Sum',
+        'type' => 'App\\Aura\\Fields\\Panel',
+        'validation' => '',
+        'on_index' => true,
+        'has_conditional_logic' => false,
+        'conditional_logic' => [
+        ],
+        'slug' => 'panel-sum',
+        'style' => [
+            'width' => '50',
+        ],
+    ],
+    [
+        'name' => 'Discount',
+        'slug' => 'discount',
+        'type' => 'App\\Aura\\Fields\\Number',
+        'validation' => '',
+        'conditional_logic' => '',
+        'has_conditional_logic' => false,
+        'style' => [
+            'width' => '50',
+        ],
+    ],
+    [
+        'name' => 'Discount Type',
+        'slug' => 'discount_type',
+        'type' => 'App\\Aura\\Fields\\Select',
+        'validation' => '',
+        'conditional_logic' => '',
+        'has_conditional_logic' => false,
+        'options' => [
+            'percent' => 'Percent',
+            'amount' => 'Amount',
+        ],
+        'style' => [
+            'width' => '50',
+        ],
+    ],
+    [
+        'name' => 'Invoice Sum',
+        'slug' => 'invoice_sum',
+        'type' => 'App\\Aura\\Fields\\Number',
+        'validation' => '',
+        'conditional_logic' => '',
+        'has_conditional_logic' => false,
+        'style' => [
+            'width' => '100',
+        ],
+    ],
+    [
+        'type' => 'App\\Aura\\Fields\\Tab',
+        'name' => 'Tab',
+        'slug' => 'tab-6PW8',
+        'global' => true,
+    ],
+    [
+        'name' => 'Sidebar',
+        'type' => 'App\\Aura\\Fields\\Panel',
+        'validation' => '',
+        'on_index' => true,
+        'has_conditional_logic' => false,
+        'conditional_logic' => [
+        ],
+        'slug' => 'sidebar',
+        'style' => [
+            'width' => '100',
+        ],
+    ],
+    [
+        'name' => 'Tags',
+        'slug' => 'tags',
+        'type' => 'App\\Aura\\Fields\\Tags',
+        'model' => 'App\\Aura\\Taxonomies\\Tag',
+        'create' => true,
+        'validation' => '',
+        'conditional_logic' => '',
+        'has_conditional_logic' => false,
+        'on_index' => true,
+        'on_forms' => true,
+        'in_view' => true,
+    ],
+    [
+        'name' => 'Categories',
+        'slug' => 'categories',
+        'type' => 'App\\Aura\\Fields\\Tags',
+        'model' => 'App\\Aura\\Taxonomies\\Category',
+        'create' => true,
+        'validation' => '',
+        'conditional_logic' => '',
+        'has_conditional_logic' => false,
+        'on_index' => true,
+        'on_forms' => true,
+        'in_view' => true,
+    ],
+    [
+        'name' => 'Panel 2',
+        'slug' => 'panel1',
+        'on_index' => false,
+        'type' => 'App\\Aura\\Fields\\Panel',
+        'validation' => '',
+        'conditional_logic' => [
+        ],
+        'has_conditional_logic' => false,
+    ],
+    [
+        'name' => 'Text Yy5q',
+        'type' => 'App\\Aura\\Fields\\Text',
+        'validation' => '',
+        'conditional_logic' => [
+        ],
+        'slug' => 'text_Yy5q',
+    ],
+];
+    }
+
+    // public function rowView()
+    // {
+    //     return 'invoices.row';
+    // }
 
     // public static function getWidgets(): array
     // {
@@ -48,9 +487,9 @@ class Invoice extends Post
     //     ];
     // }
 
-    public function icon()
+    public function getIcon()
     {
-        return '<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>';
+        return '<svg fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>';
     }
 
     public function getTotalAttribute()
@@ -58,127 +497,8 @@ class Invoice extends Post
         return $this->meta->total.' CHF';
     }
 
-    public static function getFields()
+    public function getUser_idField($value)
     {
-        return [
-            'tab1' => [
-                'name' => 'Tab 1',
-                'slug' => 'tab1',
-                'type' => 'App\\Aura\\Fields\\Tab',
-                'validation' => '',
-                'conditional_logic' => [
-                ],
-                'has_conditional_logic' => false,
-                'wrapper' => '',
-            ],
-            'tab1.boolean' => [
-                'name' => 'Enabled',
-                'slug' => 'enabled',
-                'type' => 'App\\Aura\\Fields\\Boolean',
-                'validation' => 'required',
-                'conditional_logic' => [
-                ],
-                'wrapper' => '',
-                'style' => [
-                    'width' => '50',
-                ],
-                'instructions' => 'Shows if it is enabled',
-            ],
-            'tab1.total' => [
-                'label' => 'Total',
-                'name' => 'Total',
-                'type' => 'App\\Aura\\Fields\\Text',
-                'validation' => 'numeric',
-                'conditional_logic' => [
-                ],
-                'slug' => 'total',
-            ],
-            'repeater' => [
-                'name' => 'Repeater',
-                'slug' => 'repeater',
-                'type' => 'App\\Aura\\Fields\\Repeater',
-                'validation' => '',
-                'on_index' => false,
-                'conditional_logic' => [
-                ],
-                'has_conditional_logic' => false,
-                'wrapper' => '',
-            ],
-            'repeater.description' => [
-                'label' => 'Text',
-                'name' => 'Beschreibung',
-                'type' => 'App\\Aura\\Fields\\Text',
-                'conditional_logic' => [
-                ],
-                'slug' => 'description',
-                'style' => [
-                    'width' => '50',
-                ],
-            ],
-            'repeater.number' => [
-                'label' => 'Number',
-                'name' => 'Number',
-                'on_index' => false,
-                'type' => 'App\\Aura\\Fields\\Number',
-                'validation' => 'required',
-                'conditional_logic' => [
-                ],
-                'slug' => 'number',
-                'style' => [
-                    'width' => '50',
-                ],
-            ],
-            'panel1' => [
-                'name' => 'Panel 2',
-                'slug' => 'panel1',
-                'on_index' => false,
-                'type' => 'App\\Aura\\Fields\\Panel',
-                'validation' => '',
-                'conditional_logic' => [
-                ],
-                'has_conditional_logic' => false,
-                'wrapper' => '',
-            ],
-            'panel1.description3' => [
-                'label' => 'Text',
-                'name' => 'Beschreibung',
-                'on_index' => false,
-                'type' => 'App\\Aura\\Fields\\Text',
-                'conditional_logic' => [
-                ],
-                'slug' => 'description3',
-            ],
-            'panel1.bild' => [
-                'label' => 'Image',
-                'name' => 'Bild',
-                'on_index' => false,
-                'type' => 'App\\Aura\\Fields\\Image',
-                'conditional_logic' => [
-                ],
-                'validation' => 'nullable',
-                'wrapper' => [
-                    'width' => '',
-                    'class' => 'custom-image',
-                    'id' => '',
-                ],
-                'slug' => 'bild',
-            ],
-
-            'panel1.file' => [
-                'label' => 'Image',
-                'name' => 'file',
-                'on_index' => false,
-                'type' => 'App\\Aura\\Fields\\File',
-                'conditional_logic' => [
-                ],
-                'validation' => 'nullable',
-                'wrapper' => [
-                    'width' => '',
-                    'class' => 'custom-image',
-                    'id' => '',
-                ],
-                'slug' => 'file',
-            ],
-        ];
+        return "<a class='font-bold text-primary-500' href='mailto:".$value."'>".$value.'</a>';
     }
 }

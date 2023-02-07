@@ -1,6 +1,6 @@
 <?php
 
-namespace Eminiarts\Aura\Collection;
+namespace App\Aura\Collection;
 
 use Illuminate\Database\Eloquent\Collection;
 
@@ -29,8 +29,6 @@ class MetaCollection extends Collection
 
             return $meta ? $meta->value : null;
         }
-
-        return null;
     }
 
     /**

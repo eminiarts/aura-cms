@@ -1,6 +1,6 @@
 <?php
 
-namespace Eminiarts\Aura\Resources;
+namespace App\Aura\Resources;
 
 use App\Models\Post;
 use Closure;
@@ -33,55 +33,13 @@ class Resource extends Post
 
     protected static ?int $navigationSort = null;
 
-    protected static bool $shouldRegisterNavigation = true;
-
     protected static ?string $pluralLabel = null;
 
     protected static ?string $recordTitleAttribute = null;
 
+    protected static bool $shouldRegisterNavigation = true;
+
     protected static ?string $slug = null;
-
-    public static function form(Form $form): Form
-    {
-        return $form;
-    }
-
-    public static function registerNavigationItems(): void
-    {
-        if (! static::shouldRegisterNavigation()) {
-            return;
-        }
-
-        if (! static::canViewAny()) {
-            return;
-        }
-
-        $routeBaseName = static::getRouteBaseName();
-
-        Filament::registerNavigationItems([
-            NavigationItem::make()
-                ->group(static::getNavigationGroup())
-                ->icon(static::getNavigationIcon())
-                ->isActiveWhen(fn () => request()->routeIs("{$routeBaseName}.*"))
-                ->label(static::getNavigationLabel())
-                ->sort(static::getNavigationSort())
-                ->url(static::getNavigationUrl()),
-        ]);
-    }
-
-    public static function table(Table $table): Table
-    {
-        return $table;
-    }
-
-    public static function resolveRecordRouteBinding($key): ?Model
-    {
-        $model = static::getModel();
-
-        return static::getEloquentQuery()
-            ->where(app($model)->getRouteKeyName(), $key)
-            ->first();
-    }
 
     public static function can(string $action, ?Model $record = null): bool
     {
@@ -94,19 +52,9 @@ class Resource extends Post
         return Gate::forUser(Filament::auth()->user())->check($action, $record ?? $model);
     }
 
-    public static function canViewAny(): bool
-    {
-        return static::can('viewAny');
-    }
-
     public static function canCreate(): bool
     {
         return static::hasPage('create') && static::can('create');
-    }
-
-    public static function canEdit(Model $record): bool
-    {
-        return static::hasPage('edit') && static::can('update', $record);
     }
 
     public static function canDelete(Model $record): bool
@@ -119,6 +67,11 @@ class Resource extends Post
         return static::can('deleteAny');
     }
 
+    public static function canEdit(Model $record): bool
+    {
+        return static::hasPage('edit') && static::can('update', $record);
+    }
+
     public static function canGloballySearch(): bool
     {
         return static::$isGloballySearchable && count(static::getGloballySearchableAttributes()) && static::canViewAny();
@@ -127,6 +80,16 @@ class Resource extends Post
     public static function canView(Model $record): bool
     {
         return static::hasPage('view') && static::can('view', $record);
+    }
+
+    public static function canViewAny(): bool
+    {
+        return static::can('viewAny');
+    }
+
+    public static function form(Form $form): Form
+    {
+        return $form;
     }
 
     public static function getBreadcrumb(): string
@@ -155,24 +118,6 @@ class Resource extends Post
         return [];
     }
 
-    public static function getGlobalSearchResultTitle(Model $record): string
-    {
-        return static::getRecordTitle($record);
-    }
-
-    public static function getGlobalSearchResultUrl(Model $record): ?string
-    {
-        if (static::canEdit($record)) {
-            return static::getUrl('edit', ['record' => $record]);
-        }
-
-        if (static::canView($record)) {
-            return static::getUrl('view', ['record' => $record]);
-        }
-
-        return null;
-    }
-
     public static function getGlobalSearchResults(string $searchQuery): Collection
     {
         $query = static::getGlobalSearchEloquentQuery();
@@ -195,6 +140,24 @@ class Resource extends Post
                 'title' => static::getGlobalSearchResultTitle($record),
                 'url' => static::getGlobalSearchResultUrl($record),
             ]);
+    }
+
+    public static function getGlobalSearchResultTitle(Model $record): string
+    {
+        return static::getRecordTitle($record);
+    }
+
+    public static function getGlobalSearchResultUrl(Model $record): ?string
+    {
+        if (static::canEdit($record)) {
+            return static::getUrl('edit', ['record' => $record]);
+        }
+
+        if (static::canView($record)) {
+            return static::getUrl('view', ['record' => $record]);
+        }
+
+        return null;
     }
 
     public static function getLabel(): string
@@ -221,29 +184,14 @@ class Resource extends Post
         return static::$pluralLabel ?? Str::plural(static::getLabel());
     }
 
-    public static function getRecordTitleAttribute(): ?string
-    {
-        return static::$recordTitleAttribute;
-    }
-
     public static function getRecordTitle(?Model $record): ?string
     {
         return $record?->getAttribute(static::getRecordTitleAttribute()) ?? $record?->getKey();
     }
 
-    // public static function getRelations(): array
-    // {
-    //     return [];
-    // }
-
-    public static function hasWidgets()
+    public static function getRecordTitleAttribute(): ?string
     {
-        return count(static::getWidgets()) > 0;
-    }
-
-    public static function getWidgets(): array
-    {
-        return [];
+        return static::$recordTitleAttribute;
     }
 
     public static function getRouteBaseName(): string
@@ -280,6 +228,11 @@ class Resource extends Post
         return route("{$routeBaseName}.{$name}", $params);
     }
 
+    public static function getWidgets(): array
+    {
+        return [];
+    }
+
     public static function hasPage($page): bool
     {
         return array_key_exists($page, static::getPages());
@@ -288,6 +241,53 @@ class Resource extends Post
     public static function hasRecordTitle(): bool
     {
         return static::getRecordTitleAttribute() !== null;
+    }
+
+    // public static function getRelations(): array
+    // {
+    //     return [];
+    // }
+
+    public static function hasWidgets()
+    {
+        return count(static::getWidgets()) > 0;
+    }
+
+    public static function registerNavigationItems(): void
+    {
+        if (! static::shouldRegisterNavigation()) {
+            return;
+        }
+
+        if (! static::canViewAny()) {
+            return;
+        }
+
+        $routeBaseName = static::getRouteBaseName();
+
+        Filament::registerNavigationItems([
+            NavigationItem::make()
+                ->group(static::getNavigationGroup())
+                ->icon(static::getNavigationIcon())
+                ->isActiveWhen(fn () => request()->routeIs("{$routeBaseName}.*"))
+                ->label(static::getNavigationLabel())
+                ->sort(static::getNavigationSort())
+                ->url(static::getNavigationUrl()),
+        ]);
+    }
+
+    public static function resolveRecordRouteBinding($key): ?Model
+    {
+        $model = static::getModel();
+
+        return static::getEloquentQuery()
+            ->where(app($model)->getRouteKeyName(), $key)
+            ->first();
+    }
+
+    public static function table(Table $table): Table
+    {
+        return $table;
     }
 
     protected static function applyGlobalSearchAttributeConstraint(Builder $query, array $searchAttributes, string $searchQuery, bool &$isFirst): Builder
