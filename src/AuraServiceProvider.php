@@ -20,7 +20,8 @@ class AuraServiceProvider extends PackageServiceProvider
             ->hasConfigFile()
             ->hasViews('aura')
             ->hasRoute('web')
-            ->hasMigration('create_aura_table')
+            ->hasMigrations(['create_aura_tables', 'create_flows_table'])
+            ->runsMigrations()
             ->hasCommand(AuraCommand::class);
     }
 
