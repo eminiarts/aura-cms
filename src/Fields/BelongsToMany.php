@@ -14,11 +14,11 @@ class BelongsToMany extends Field
 
     public function queryFor($model, $query)
     {
-        if ($model instanceof \App\Aura\Resources\User) {
+        if ($model instanceof \Eminiarts\Aura\Resources\User) {
             return $query->where('user_id', $model->id);
         }
 
-        if ($model instanceof \App\Aura\Resources\Team) {
+        if ($model instanceof \Eminiarts\Aura\Resources\Team) {
             return $query;
         }
 

@@ -18,11 +18,11 @@ class TeamScope implements Scope
     public function apply(Builder $builder, Model $model)
     {
         // If the Model is a Team Resource, don't apply the scope
-        if ($model instanceof \App\Aura\Resources\Team) {
+        if ($model instanceof \Eminiarts\Aura\Resources\Team) {
             return $builder->whereId(auth()->user()->current_team_id);
         }
 
-        if ($model instanceof \App\Aura\Resources\Role) {
+        if ($model instanceof \Eminiarts\Aura\Resources\Role) {
             // return $builder;
             return $builder->where('posts.team_id', auth()->user()->current_team_id);
         }

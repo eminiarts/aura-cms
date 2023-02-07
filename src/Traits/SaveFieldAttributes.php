@@ -29,7 +29,7 @@ trait SaveFieldAttributes
                     }
 
                     // Do not set password fields manually, since they would overwrite the hashed password
-                    if ($class instanceof \App\Aura\Fields\Password) {
+                    if ($class instanceof \Eminiarts\Aura\Fields\Password) {
                         return;
                     }
 

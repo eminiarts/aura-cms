@@ -69,7 +69,7 @@ class Role extends Post
             [
                 'name' => 'Super Admin',
                 'slug' => 'super_admin',
-                'type' => 'App\Aura\Fields\Boolean',
+                'type' => 'Eminiarts\Aura\Fields\Boolean',
                 'instructions' => 'Super Admins have access to all permission and can manage other users.',
                 'validation' => '',
                 'conditional_logic' => '',

@@ -27,18 +27,18 @@ class Aura
     {
         // Only return if resource exists
         if (in_array($slug, static::resources()->toArray())) {
-            return app('App\Aura\Resources\\'.$slug);
+            return app('Eminiarts\Aura\Resources\\'.$slug);
         }
     }
 
     public static function findTaxonomyBySlug($slug)
     {
-        return app('App\Aura\Taxonomies\\'.str($slug)->title);
+        return app('Eminiarts\Aura\Taxonomies\\'.str($slug)->title);
     }
 
     public static function findTemplateBySlug($slug)
     {
-        return app('App\Aura\Templates\\'.str($slug)->title);
+        return app('Eminiarts\Aura\Templates\\'.str($slug)->title);
     }
 
     public static function getOption($name)

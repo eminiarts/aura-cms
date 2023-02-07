@@ -14,13 +14,13 @@ class ApplyTabs implements Pipe
         $addedTabsToPanel = false;
 
         foreach ($fields as $key => $field) {
-            if ($field['type'] === 'App\Aura\Fields\Panel') {
+            if ($field['type'] === 'Eminiarts\Aura\Fields\Panel') {
                 $currentParent = $field;
                 $addedTabsToPanel = false;
             }
 
             // Add it to first Tabs
-            if ($field['type'] === 'App\Aura\Fields\Tab' && ! $added) {
+            if ($field['type'] === 'Eminiarts\Aura\Fields\Tab' && ! $added) {
                 $fields->splice($key + $tabsAdded, 0, [
                     [
                         'label' => 'Tabs',
@@ -38,7 +38,7 @@ class ApplyTabs implements Pipe
 
             // Add it to first Tabs in Panels
             if ($currentParent && ! optional($field)['global']) {
-                if ($field['type'] === 'App\Aura\Fields\Tab' && ! $addedTabsToPanel) {
+                if ($field['type'] === 'Eminiarts\Aura\Fields\Tab' && ! $addedTabsToPanel) {
                     $fields->splice($key + $tabsAdded, 0, [
                         [
                             'label' => 'Tabs',
