@@ -15,13 +15,13 @@ use Spatie\LaravelPackageTools\Commands\InstallCommand;
 
 class AuraServiceProvider extends PackageServiceProvider
 {
+    /*
+    * This class is a Package Service Provider
+    *
+    * More info: https://github.com/spatie/laravel-package-tools
+    */
     public function configurePackage(Package $package): void
     {
-        /*
-         * This class is a Package Service Provider
-         *
-         * More info: https://github.com/spatie/laravel-package-tools
-         */
         $package
             ->name('aura')
             ->hasConfigFile()
@@ -89,7 +89,6 @@ class AuraServiceProvider extends PackageServiceProvider
     public function packageRegistered()
     {
         parent::packageRegistered();
-
 
         $this->app->scoped('aura', function (): Aura {
             return new Aura();
