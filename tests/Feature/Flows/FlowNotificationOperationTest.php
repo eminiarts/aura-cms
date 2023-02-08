@@ -1,0 +1,151 @@
+<?php
+
+use App\Aura\Resources\Flow;
+use App\Aura\Resources\Post;
+use App\Aura\Resources\Role;
+use App\Models\User;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+
+uses(RefreshDatabase::class);
+
+uses()->group('flows');
+
+beforeEach(fn () => $this->actingAs($this->user = User::factory()->create()));
+
+test('flow gets triggered on create post and sends a notification to a user', function () {
+    createSuperAdmin();
+
+    // Create Flow
+    $flow = Flow::create([
+        'name' => 'Notification Flow',
+        'description' => 'Notification Flow Description',
+        'trigger' => 'post',
+        'options' => [
+            'resource' => 'Post',
+            'event' => 'created',
+        ],
+    ]);
+
+    // Create Operation and Attach to Flow
+    $flow->operations()->create([
+        'name' => 'Send Notification',
+        'key' => 'notification',
+        'type' => 'App\\Aura\\Operations\\Notification',
+        'options' => [
+            'x' => 2,
+            'y' => 2,
+            'message' => 'Post has been created',
+            'type' => 'user',
+            'user_id' => $this->user->id,
+        ],
+    ]);
+
+    // Attach Operation_id to flow
+    $flow->update(['operation_id' => $flow->operations()->first()->id]);
+
+    // Assert Flow has 1 Operation
+    $this->assertEquals(1, $flow->operations()->count());
+
+    // Assert Flow and Operation are in DB
+    $this->assertDatabaseHas('flows', ['name' => 'Notification Flow']);
+    $this->assertDatabaseHas('flow_operations', ['name' => 'Send Notification']);
+
+    // Test $flow->operation_id is $flow->operations()->first()->id
+    $this->assertEquals($flow->operation_id, $flow->operations()->first()->id);
+
+    // Create a Post
+    $post = Post::create([
+        'title' => 'Test Post',
+        'content' => 'Test Content',
+        'type' => 'Post',
+        'status' => 'publish',
+    ]);
+
+    // Assert Post is in DB
+    $this->assertDatabaseHas('posts', ['title' => 'Test Post']);
+
+    // Assert db notification  has one notification
+    $this->assertEquals(1, DB::table('notifications')->count());
+
+    $notification = DB::table('notifications')->first();
+
+    // Assert Notification has correct data
+    $this->assertEquals('Post has been created', json_decode($notification->data)->message);
+
+    // Assert Flow is triggered when Post is created
+    $this->assertDatabaseHas('flow_logs', ['flow_id' => $flow->id]);
+
+    // Assert Flow Operation is triggered when Post is created
+    $this->assertDatabaseHas('operation_logs', ['operation_id' => $flow->operation_id]);
+});
+
+test('flow gets triggered on create post and sends a notification to a role', function () {
+    createSuperAdmin();
+
+    // Create Flow
+    $flow = Flow::create([
+        'name' => 'Notification Flow',
+        'description' => 'Notification Flow Description',
+        'trigger' => 'post',
+        'options' => [
+            'resource' => 'Post',
+            'event' => 'created',
+        ],
+    ]);
+
+    // Create Operation and Attach to Flow
+    $flow->operations()->create([
+        'name' => 'Send Notification',
+        'key' => 'notification',
+        'type' => 'App\\Aura\\Operations\\Notification',
+        'options' => [
+            'x' => 2,
+            'y' => 2,
+            'message' => 'Post has been created',
+            'type' => 'role',
+            'role_id' => Role::first()->id,
+        ],
+    ]);
+
+    // Attach Operation_id to flow
+    $flow->update(['operation_id' => $flow->operations()->first()->id]);
+
+    // Assert Flow has 1 Operation
+    $this->assertEquals(1, $flow->operations()->count());
+
+    // Assert Flow and Operation are in DB
+    $this->assertDatabaseHas('flows', ['name' => 'Notification Flow']);
+    $this->assertDatabaseHas('flow_operations', ['name' => 'Send Notification']);
+
+    // Test $flow->operation_id is $flow->operations()->first()->id
+    $this->assertEquals($flow->operation_id, $flow->operations()->first()->id);
+
+    // Create a Post
+    $post = Post::create([
+        'title' => 'Test Post',
+        'content' => 'Test Content',
+        'type' => 'Post',
+        'status' => 'publish',
+    ]);
+
+    // Assert Post is in DB
+    $this->assertDatabaseHas('posts', ['title' => 'Test Post']);
+
+    // how many users with role of ID 1 are there?
+
+    // dd(Role::first()->users()->count(), DB::table('notifications')->count());
+
+    // Assert db notification  has one notification
+    $this->assertEquals(1, DB::table('notifications')->count());
+
+    $notification = DB::table('notifications')->first();
+
+    // Assert Notification has correct data
+    $this->assertEquals('Post has been created', json_decode($notification->data)->message);
+
+    // Assert Flow is triggered when Post is created
+    $this->assertDatabaseHas('flow_logs', ['flow_id' => $flow->id]);
+
+    // Assert Flow Operation is triggered when Post is created
+    $this->assertDatabaseHas('operation_logs', ['operation_id' => $flow->operation_id]);
+});

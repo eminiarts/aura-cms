@@ -1,0 +1,104 @@
+<?php
+
+namespace Tests\Feature\Livewire;
+
+use App\Aura;
+use App\Aura\Resources\Post;
+use App\AuraTest;
+use App\Http\Livewire\Post\Create;
+use App\Http\Livewire\Post\Edit;
+use App\Models\User;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Livewire\Livewire;
+
+uses(RefreshDatabase::class);
+
+beforeEach(fn () => $this->actingAs($this->user = User::factory()->create()));
+
+class DateFieldModel extends Post
+{
+    public static $singularName = 'Date Model';
+
+    public static ?string $slug = 'date-model';
+
+    public static string $type = 'DateModel';
+
+    public static function getFields()
+    {
+        return [
+            [
+                'name' => 'Date for Test',
+                'type' => 'App\\Aura\\Fields\\Date',
+                'validation' => '',
+                'format' => 'd.m.Y',
+                'conditional_logic' => [],
+                'slug' => 'date',
+            ],
+        ];
+    }
+}
+
+test('Date Field in Livewire Component', function () {
+    createSuperAdmin();
+
+    // Show all exceptions
+    // $this->withoutExceptionHandling();
+
+    $model = new DateFieldModel();
+
+    $component = Livewire::test(Create::class, ['slug' => 'Post'])
+        ->call('setModel', $model)
+        ->assertSee('Create Date Model')
+        ->assertSee('Date for Test')
+        ->assertSeeHtml('<svg class="w-5 h-5 text-gray-400"')
+        ->call('save')
+        ->assertHasNoErrors(['post.fields.date']);
+
+    // assert in db has post with type DateModel
+    $this->assertDatabaseHas('posts', ['type' => 'DateModel']);
+
+    $component->set('post.fields.date', '2021-01-01')
+        ->call('save')
+        ->assertHasNoErrors(['post.fields.date']);
+
+    // get the datemodel from db
+    $dateModel = DateFieldModel::orderBy('id', 'desc')->first();
+
+    // assert $datemodel->date is 2021-01-01
+    $this->assertEquals($dateModel->fields['date'], '2021-01-01');
+    $this->assertEquals($dateModel->date, '2021-01-01');
+
+    // If I call $dateModel->display('date'), it should return 01.01.2021
+    // $this->assertEquals($dateModel->display('date'), '01.01.2021');
+});
+
+test('Date Field in View', function () {
+    createSuperAdmin();
+
+    $model = new DateFieldModel();
+
+    // Mock Aura::findResourceBySlug($slug) and return $model
+    $slug = 'DateModel';
+
+    // Bind the mock to the container
+    // $this->app->bind(Aura::class, AuraTest::class);
+
+    // Mock Aura::findResourceBySlug($slug) and return $model
+    $this->mock(Aura::class)->shouldReceive('findResourceBySlug')->with($slug)->andReturn($model);
+
+    $this->actingAs($this->user)
+        ->get('/DateModel/create')
+        ->assertOk()
+        ->assertSee('Date for Test')
+        ->assertSeeLivewire('post.create');
+
+    // $a = Aura::findResourceBySlug('DateModel');
+    // dd($a);
+    // $editComponent = Livewire::test(Edit::class, ['slug' => 'Post', 'id' => $dateModel->id])
+    //     ->call('setModel', $model)
+    //     ->assertSee('Edit')
+    //     ->assertSee('Date for Test')
+    //     ->assertSee('01.01.2021')
+    //     ->call('save')
+    //     ->assertHasNoErrors(['post.fields.date']);
+});
