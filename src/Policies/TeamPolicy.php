@@ -2,8 +2,8 @@
 
 namespace Eminiarts\Aura\Policies;
 
-use Eminiarts\Aura\Resources\Team;
 use Eminiarts\Aura\Models\User;
+use Eminiarts\Aura\Resources\Team;
 use Illuminate\Auth\Access\HandlesAuthorization;
 
 class TeamPolicy

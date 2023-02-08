@@ -2,10 +2,10 @@
 
 namespace Eminiarts\Aura\Http\Livewire;
 
+use Eminiarts\Aura\Models\Scopes\TeamScope;
 use Eminiarts\Aura\Resources\Option;
 use Eminiarts\Aura\Traits\InputFields;
 use Eminiarts\Aura\Traits\RepeaterFields;
-use Eminiarts\Aura\Models\Scopes\TeamScope;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Str;
 use Livewire\Component;

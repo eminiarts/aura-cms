@@ -3,10 +3,10 @@
 namespace Tests\Feature;
 
 use Eminiarts\Aura\Providers\RouteServiceProvider;
+use Eminiarts\Aura\Tests\TestCase;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Fortify\Features;
 use Laravel\Jetstream\Jetstream;
-use Eminiarts\Aura\Tests\TestCase;
 
 class RegistrationTest extends TestCase
 {

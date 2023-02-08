@@ -2,8 +2,8 @@
 
 namespace Eminiarts\Aura\Models;
 
-use Eminiarts\Aura\Resources\Role;
 use Eminiarts\Aura\Models\Scopes\TeamScope;
+use Eminiarts\Aura\Resources\Role;
 use Illuminate\Database\Eloquent\Model;
 
 class UserMeta extends Meta

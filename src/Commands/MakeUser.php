@@ -2,10 +2,10 @@
 
 namespace Eminiarts\Aura\Commands;
 
-use Illuminate\Console\Command;
 use Eminiarts\Aura\Resources\Role;
 use Eminiarts\Aura\Resources\Team;
 use Eminiarts\Aura\Resources\User;
+use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 
 class MakeUser extends Command
@@ -16,7 +16,6 @@ class MakeUser extends Command
                             {--name= : The name of the user}
                             {--email= : A valid email address}
                             {--password= : The password for the user}';
-
 
     public function handle(): int
     {
@@ -53,7 +52,7 @@ class MakeUser extends Command
         // Create Role
         $role = Role::create(['type' => 'Role', 'title' => 'Super Admin', 'slug' => 'super_admin', 'name' => 'Super Admin', 'description' => 'Super Admin has can perform everything.', 'super_admin' => true, 'permissions' => [], 'team_id' => $team->id, 'user_id' => $user->id]);
 
-        $user->update(['fields' => ['roles' => [ $role->id ]]]);
+        $user->update(['fields' => ['roles' => [$role->id]]]);
 
         $this->info('User created successfully.');
 

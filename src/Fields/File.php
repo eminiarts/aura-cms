@@ -2,8 +2,6 @@
 
 namespace Eminiarts\Aura\Fields;
 
-use Eminiarts\Aura\Resources\Attachment;
-
 class File extends Field
 {
     public string $component = 'fields.file';

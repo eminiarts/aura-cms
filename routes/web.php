@@ -10,7 +10,6 @@ use Illuminate\Support\Facades\Route;
 
 require __DIR__.'/auth.php';
 
-
 Route::domain(config('aura.domain'))
     // ->middleware(config('aura.middleware.admin'))
     ->name('aura.')
@@ -23,6 +22,7 @@ Route::domain(config('aura.domain'))
 
         Route::get('/test', function () {
             dd(config('aura'));
+
             return config('aura.path');
         });
 

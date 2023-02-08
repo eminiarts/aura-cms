@@ -2,8 +2,8 @@
 
 namespace Eminiarts\Aura\Http\Middleware;
 
-use Eminiarts\Aura\Providers\RouteServiceProvider;
 use Closure;
+use Eminiarts\Aura\Providers\RouteServiceProvider;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 

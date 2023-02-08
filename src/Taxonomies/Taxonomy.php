@@ -2,12 +2,12 @@
 
 namespace Eminiarts\Aura\Taxonomies;
 
-use Eminiarts\Aura\Traits\InputFields;
-use Eminiarts\Aura\Traits\InteractsWithTable;
 use Eminiarts\Aura\Models\Scopes\TaxonomyScope;
 use Eminiarts\Aura\Models\Scopes\TeamScope;
 use Eminiarts\Aura\Models\Taxonomy as ModelsTaxonomy;
 use Eminiarts\Aura\Models\TaxonomyMeta;
+use Eminiarts\Aura\Traits\InputFields;
+use Eminiarts\Aura\Traits\InteractsWithTable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;

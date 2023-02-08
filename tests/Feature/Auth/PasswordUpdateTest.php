@@ -3,9 +3,9 @@
 namespace Tests\Feature\Auth;
 
 use Eminiarts\Aura\Models\User;
+use Eminiarts\Aura\Tests\TestCase;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
-use Eminiarts\Aura\Tests\TestCase;
 
 class PasswordUpdateTest extends TestCase
 {

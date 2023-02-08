@@ -3,8 +3,8 @@
 namespace Tests\Feature\Livewire;
 
 use Eminiarts\Aura\Http\Livewire\CreatePosttype;
-use Livewire\Livewire;
 use Eminiarts\Aura\Tests\TestCase;
+use Livewire\Livewire;
 
 class CreatePosttypeTest extends TestCase
 {

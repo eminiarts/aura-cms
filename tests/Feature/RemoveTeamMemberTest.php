@@ -3,10 +3,10 @@
 namespace Tests\Feature;
 
 use Eminiarts\Aura\Models\User;
+use Eminiarts\Aura\Tests\TestCase;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Jetstream\Http\Livewire\TeamMemberManager;
 use Livewire\Livewire;
-use Eminiarts\Aura\Tests\TestCase;
 
 class RemoveTeamMemberTest extends TestCase
 {

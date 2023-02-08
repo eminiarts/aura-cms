@@ -3,11 +3,11 @@
 namespace Tests\Feature;
 
 use Eminiarts\Aura\Models\User;
+use Eminiarts\Aura\Tests\TestCase;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Jetstream\Features;
 use Laravel\Jetstream\Http\Livewire\DeleteUserForm;
 use Livewire\Livewire;
-use Eminiarts\Aura\Tests\TestCase;
 
 class DeleteAccountTest extends TestCase
 {

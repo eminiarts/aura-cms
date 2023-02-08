@@ -2,9 +2,9 @@
 
 namespace Eminiarts\Aura\Operations;
 
+use Eminiarts\Aura\Models\User;
 use Eminiarts\Aura\Resources\Operation;
 use Eminiarts\Aura\Resources\Role;
-use Eminiarts\Aura\Models\User;
 use Illuminate\Support\Facades\Blade;
 
 class Notification extends BaseOperation
