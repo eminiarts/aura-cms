@@ -2,7 +2,7 @@
 
 namespace Eminiarts\Aura\Traits;
 
-use Eminiarts\Aura;
+use Eminiarts\Aura\Aura;
 use Eminiarts\Aura\Taxonomies\Taxonomy;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;

@@ -2,7 +2,7 @@
 
 namespace Eminiarts\Aura\Http\Livewire\Taxonomy;
 
-use Eminiarts\Aura;
+use Eminiarts\Aura\Aura;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Support\Arr;
 use LivewireUI\Modal\ModalComponent;

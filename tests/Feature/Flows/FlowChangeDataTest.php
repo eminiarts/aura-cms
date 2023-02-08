@@ -88,7 +88,7 @@ test('flow - a flow can change data and pass it to the next operation', function
     $this->assertDatabaseHas('flow_logs', ['flow_id' => $flow->id]);
 
     // Assert Flow 1 Operation 1  is triggered when Post is created
-    $this->assertDatabaseHas('operation_logs', ['operation_id' => $flow->operations()->first()->id]);
+    $this->assertDatabaseHas('flow_operation_logs', ['operation_id' => $flow->operations()->first()->id]);
 
     // Assert Operation 2 Log options message in DB is correct
     // dd last operation log
@@ -96,5 +96,5 @@ test('flow - a flow can change data and pass it to the next operation', function
     expect($log->response['message'])->toBe('Updated Title: Updated Title');
 
     // dd(OperationLog::orderBy('id', 'desc')->first());
-    $this->assertDatabaseHas('operation_logs', ['response->message' => 'Updated Title: Updated Title']);
+    $this->assertDatabaseHas('flow_operation_logs', ['response->message' => 'Updated Title: Updated Title']);
 });

@@ -2,7 +2,7 @@
 
 namespace Eminiarts\Aura\Http\Livewire\Post;
 
-use Eminiarts\Aura;
+use Eminiarts\Aura\Aura;
 use Eminiarts\Aura\Resources\Attachment;
 use Eminiarts\Aura\Traits\InteractsWithFields;
 use Eminiarts\Aura\Traits\RepeaterFields;

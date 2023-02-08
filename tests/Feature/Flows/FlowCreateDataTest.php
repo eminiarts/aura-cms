@@ -76,7 +76,7 @@ test('flow - create resource operation', function () {
     $this->assertDatabaseHas('flow_logs', ['flow_id' => $flow->id]);
 
     // Assert Flow Operation is triggered when Post is created
-    $this->assertDatabaseHas('operation_logs', ['operation_id' => $flow->operation_id]);
+    $this->assertDatabaseHas('flow_operation_logs', ['operation_id' => $flow->operation_id]);
 
     // dd($post->toArray(), $flow->toArray());
 });
@@ -162,13 +162,13 @@ test('flow - cannot create post of same type on create', function () {
     $this->assertDatabaseMissing('posts', ['title' => 'Post created by Flow', 'status' => 'draft', 'type' => 'Post']);
 
     // Assert Reject Operation is triggered when Post is created
-    $this->assertDatabaseHas('operation_logs', ['operation_id' => $rejectOperation->id]);
+    $this->assertDatabaseHas('flow_operation_logs', ['operation_id' => $rejectOperation->id]);
 
     // Assert Flow is triggered when Post is created
     $this->assertDatabaseHas('flow_logs', ['flow_id' => $flow->id]);
 
     // Assert Flow Operation is triggered when Post is created
-    $this->assertDatabaseHas('operation_logs', ['operation_id' => $flow->operation_id]);
+    $this->assertDatabaseHas('flow_operation_logs', ['operation_id' => $flow->operation_id]);
 
     // dd($post->toArray(), $flow->toArray());
 });

@@ -70,7 +70,8 @@
         "laravel": {
             "providers": [
                 "Eminiarts\\Aura\\AuraServiceProvider",
-                "Eminiarts\\Aura\\Providers\\FortifyServiceProvider"
+                "Eminiarts\\Aura\\Providers\\FortifyServiceProvider",
+                "Eminiarts\\Aura\\Providers\\PolicyServiceProvider"
             ],
             "aliases": {
                 "Aura": "Eminiarts\\Aura\\Facades\\Aura"

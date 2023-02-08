@@ -23,10 +23,13 @@ class Aura
         return ConditionalLogic::checkCondition($model, $field);
     }
 
-    public static function findResourceBySlug($slug)
+    public function findResourceBySlug($slug)
     {
         // Only return if resource exists
-        if (in_array($slug, static::resources()->toArray())) {
+
+        $name = Str::title($slug);
+
+        if (in_array("Eminiarts\Aura\Resources\\" . $name, $this->getResources())) {
             return app('Eminiarts\Aura\Resources\\'.$slug);
         }
     }

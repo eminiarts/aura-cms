@@ -2,16 +2,17 @@
 
 namespace Eminiarts\Aura\Http\Livewire\Post;
 
-use Eminiarts\Aura;
-use Eminiarts\Aura\Traits\RepeaterFields;
-use Eminiarts\Aura\Models\Post;
-use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
-use Illuminate\Support\Arr;
 use Livewire\Component;
+use Eminiarts\Aura\Aura;
+use Illuminate\Support\Arr;
+use Eminiarts\Aura\Models\Post;
+use Eminiarts\Aura\Traits\RepeaterFields;
+use Eminiarts\Aura\Traits\InteractsWithFields;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 
 class Create extends Component
 {
-    use Aura\Traits\InteractsWithFields;
+    use InteractsWithFields;
     use AuthorizesRequests;
     use RepeaterFields;
 

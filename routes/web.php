@@ -22,9 +22,9 @@ Route::domain(config('aura.domain'))
         //
 
         Route::get('/test', function () {
-            return 'test';
+            dd(config('aura'));
+            return config('aura.path');
         });
-
 
         Route::prefix(config('aura.path'))->group(function () {
             Route::get('/', function () {

@@ -2,7 +2,7 @@
 
 namespace Eminiarts\Aura\Traits;
 
-use Eminiarts\Aura;
+use Eminiarts\Aura\Aura;
 
 trait SaveTerms
 {

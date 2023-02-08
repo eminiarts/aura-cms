@@ -31,7 +31,7 @@ class OperationLog extends Post
         'operation_id', 'flow_log_id', 'status', 'started_at', 'finished_at', 'request', 'response', 'options', 'user_id', 'team_id',
     ];
 
-    protected $table = 'operation_logs';
+    protected $table = 'flow_operation_logs';
 
     protected static bool $title = false;
 

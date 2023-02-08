@@ -2,7 +2,7 @@
 
 namespace Eminiarts\Aura\Http\Livewire;
 
-use Eminiarts\Aura;
+use Eminiarts\Aura\Aura;
 use Eminiarts\Aura\Traits\SaveFields;
 use Illuminate\Support\Str;
 use Livewire\Component;

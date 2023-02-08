@@ -6,6 +6,7 @@ use Illuminate\Console\Command;
 use Eminiarts\Aura\Resources\Role;
 use Eminiarts\Aura\Resources\Team;
 use Eminiarts\Aura\Resources\User;
+use Illuminate\Support\Facades\DB;
 
 class MakeUser extends Command
 {
@@ -33,24 +34,26 @@ class MakeUser extends Command
             ],
         ]);
 
-        auth()->loginUsingId($user->id);
-
-
-        // Create Team
-        $team = Team::create([
+        DB::table('teams')->insert([
             'name' => $name,
             'user_id' => $user->id,
+            'personal_team' => 1,
+            'created_at' => now(),
+            'updated_at' => now(),
         ]);
 
+        $team = Team::first();
+
         $user->current_team_id = $team->id;
+
+        $user->save();
+
+        auth()->loginUsingId($user->id);
 
         // Create Role
         $role = Role::create(['type' => 'Role', 'title' => 'Super Admin', 'slug' => 'super_admin', 'name' => 'Super Admin', 'description' => 'Super Admin has can perform everything.', 'super_admin' => true, 'permissions' => [], 'team_id' => $team->id, 'user_id' => $user->id]);
 
-
         $user->update(['fields' => ['roles' => [ $role->id ]]]);
-
-
 
         $this->info('User created successfully.');
 

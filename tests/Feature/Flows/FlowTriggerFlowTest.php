@@ -105,7 +105,7 @@ test('flow - a flow can trigger another flow', function () {
     $this->assertDatabaseHas('flow_logs', ['flow_id' => $flow->id]);
 
     // Assert Flow 1 Operation 1  is triggered when Post is created
-    $this->assertDatabaseHas('operation_logs', ['operation_id' => $flow->operations()->first()->id]);
+    $this->assertDatabaseHas('flow_operation_logs', ['operation_id' => $flow->operations()->first()->id]);
 
     // Assert see in operation_logs response the message of Flow 1 Operation 1
     $operationLog1 = $flow->operations()->first()->logs()->first();
@@ -115,16 +115,16 @@ test('flow - a flow can trigger another flow', function () {
     $this->assertEquals($operationLog1->response, ['message' => 'Log triggered by Post']);
 
     // Assert Flow 1 Operation 2  is triggered when Post is created
-    $this->assertDatabaseHas('operation_logs', ['operation_id' => $flow->operations()->get()[1]->id]);
+    $this->assertDatabaseHas('flow_operation_logs', ['operation_id' => $flow->operations()->get()[1]->id]);
 
     // Assert Flow 2 is triggered when Post is created
     $this->assertDatabaseHas('flow_logs', ['flow_id' => $flow2->id]);
 
     // Assert Flow 2 Operation 1  is triggered when Post is created
-    $this->assertDatabaseHas('operation_logs', ['operation_id' => $flow2->operations()->first()->id]);
+    $this->assertDatabaseHas('flow_operation_logs', ['operation_id' => $flow2->operations()->first()->id]);
 
     // Assert see in logs message of Flow 2 Operation 1
-    $this->assertDatabaseHas('operation_logs', ['response' => json_encode(['message' => 'Log triggered by another Flow'])]);
+    $this->assertDatabaseHas('flow_operation_logs', ['response' => json_encode(['message' => 'Log triggered by another Flow'])]);
 
     // dd($post->toArray(), $flow->toArray());
 });
