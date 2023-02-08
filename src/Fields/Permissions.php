@@ -19,14 +19,14 @@ class Permissions extends Field
             [
                 'label' => 'Permissions',
                 'name' => 'Permissions',
-                'type' => 'App\\Aura\\Fields\\Tab',
+                'type' => 'Eminiarts\\Aura\\Fields\\Tab',
                 'slug' => 'select',
                 'style' => [],
             ],
             [
                 'label' => 'Posttype',
                 'name' => 'Posttype',
-                'type' => 'App\\Aura\\Fields\\Text',
+                'type' => 'Eminiarts\\Aura\\Fields\\Text',
                 'validation' => '',
                 'slug' => 'posttype',
             ],

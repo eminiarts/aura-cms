@@ -19,7 +19,7 @@ class Date extends Field
             [
                 'label' => 'Date',
                 'name' => 'Date',
-                'type' => 'App\\Aura\\Fields\\Tab',
+                'type' => 'Eminiarts\\Aura\\Fields\\Tab',
                 'slug' => 'date',
                 'style' => [],
             ],
@@ -27,7 +27,7 @@ class Date extends Field
                 'label' => 'Format',
                 'name' => 'Format',
 
-                'type' => 'App\\Aura\\Fields\\Text',
+                'type' => 'Eminiarts\\Aura\\Fields\\Text',
                 'validation' => '',
                 'slug' => 'format',
                 'default' => 'd.m.Y',
@@ -37,7 +37,7 @@ class Date extends Field
                 'label' => 'Enable Time',
                 'name' => 'Enable Time',
 
-                'type' => 'App\\Aura\\Fields\\Checkbox',
+                'type' => 'Eminiarts\\Aura\\Fields\\Checkbox',
                 'validation' => '',
                 'options' => [
                     'true' => 'Enable time',
@@ -50,7 +50,7 @@ class Date extends Field
                 'label' => 'Max Date',
                 'name' => 'Max Date',
 
-                'type' => 'App\\Aura\\Fields\\Number',
+                'type' => 'Eminiarts\\Aura\\Fields\\Number',
                 'validation' => 'numeric|min:0|max:365',
                 'slug' => 'maxDate',
                 'default' => false,
@@ -58,7 +58,7 @@ class Date extends Field
             ],
             [
                 'name' => 'Week starts on',
-                'type' => 'App\\Aura\\Fields\\Select',
+                'type' => 'Eminiarts\\Aura\\Fields\\Select',
                 'validation' => '',
                 'options' => [
                     '0' => 'Sunday',

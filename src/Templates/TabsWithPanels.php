@@ -11,7 +11,7 @@ class TabsWithPanels
         return [
             [
                 'name' => 'Tab 1',
-                'type' => 'App\\Aura\\Fields\\Tab',
+                'type' => 'Eminiarts\\Aura\\Fields\\Tab',
                 'validation' => '',
                 'on_index' => true,
                 'global' => true,
@@ -22,7 +22,7 @@ class TabsWithPanels
             ],
             [
                 'name' => 'Panel 1',
-                'type' => 'App\\Aura\\Fields\\Panel',
+                'type' => 'Eminiarts\\Aura\\Fields\\Panel',
                 'validation' => '',
                 'on_index' => true,
                 'has_conditional_logic' => false,
@@ -32,7 +32,7 @@ class TabsWithPanels
             ],
             [
                 'name' => 'Text 1',
-                'type' => 'App\\Aura\\Fields\\Text',
+                'type' => 'Eminiarts\\Aura\\Fields\\Text',
                 'validation' => 'required',
                 'on_index' => true,
                 'has_conditional_logic' => false,
@@ -45,7 +45,7 @@ class TabsWithPanels
             ],
             [
                 'name' => 'Tab 2',
-                'type' => 'App\\Aura\\Fields\\Tab',
+                'type' => 'Eminiarts\\Aura\\Fields\\Tab',
                 'validation' => '',
                 'on_index' => true,
                 'global' => true,
@@ -56,7 +56,7 @@ class TabsWithPanels
             ],
             [
                 'name' => 'Panel 2',
-                'type' => 'App\\Aura\\Fields\\Panel',
+                'type' => 'Eminiarts\\Aura\\Fields\\Panel',
                 'validation' => '',
                 'on_index' => true,
                 'has_conditional_logic' => false,
@@ -66,7 +66,7 @@ class TabsWithPanels
             ],
             [
                 'name' => 'Text 2',
-                'type' => 'App\\Aura\\Fields\\Text',
+                'type' => 'Eminiarts\\Aura\\Fields\\Text',
                 'validation' => 'required',
                 'on_index' => true,
                 'has_conditional_logic' => false,

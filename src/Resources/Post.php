@@ -72,7 +72,7 @@ class Post extends ModelsPost
          return [
              [
                  'name' => 'Tab',
-                 'type' => 'App\\Aura\\Fields\\Tab',
+                 'type' => 'Eminiarts\\Aura\\Fields\\Tab',
                  'validation' => '',
                  'on_index' => true,
                  'global' => true,
@@ -83,7 +83,7 @@ class Post extends ModelsPost
              ],
              [
                  'name' => 'Panel',
-                 'type' => 'App\\Aura\\Fields\\Panel',
+                 'type' => 'Eminiarts\\Aura\\Fields\\Panel',
                  'validation' => '',
                  'on_index' => true,
                  'has_conditional_logic' => false,
@@ -97,7 +97,7 @@ class Post extends ModelsPost
              [
                  'name' => 'Text',
                  'slug' => 'text',
-                 'type' => 'App\\Aura\\Fields\\Text',
+                 'type' => 'Eminiarts\\Aura\\Fields\\Text',
                  'validation' => '',
                  'conditional_logic' => '',
                  'has_conditional_logic' => false,
@@ -108,7 +108,7 @@ class Post extends ModelsPost
              ],
              [
                  'name' => 'Slug for Test',
-                 'type' => 'App\\Aura\\Fields\\Slug',
+                 'type' => 'Eminiarts\\Aura\\Fields\\Slug',
                  'validation' => 'required|alpha_dash',
                  'conditional_logic' => [
                  ],
@@ -117,7 +117,7 @@ class Post extends ModelsPost
              ],
              [
                  'name' => 'Bild',
-                 'type' => 'App\\Aura\\Fields\\Image',
+                 'type' => 'Eminiarts\\Aura\\Fields\\Image',
                  'validation' => '',
                  'conditional_logic' => [
                  ],
@@ -125,7 +125,7 @@ class Post extends ModelsPost
              ],
              [
                  'name' => 'Password for Test',
-                 'type' => 'App\\Aura\\Fields\\Password',
+                 'type' => 'Eminiarts\\Aura\\Fields\\Password',
                  'validation' => 'nullable|min:8',
                  'conditional_logic' => [
                  ],
@@ -136,7 +136,7 @@ class Post extends ModelsPost
              ],
              [
                  'name' => 'Number',
-                 'type' => 'App\\Aura\\Fields\\Number',
+                 'type' => 'Eminiarts\\Aura\\Fields\\Number',
                  'validation' => '',
                  'conditional_logic' => [
                  ],
@@ -147,7 +147,7 @@ class Post extends ModelsPost
              ],
              [
                  'name' => 'Date',
-                 'type' => 'App\\Aura\\Fields\\Date',
+                 'type' => 'Eminiarts\\Aura\\Fields\\Date',
                  'validation' => '',
                  'conditional_logic' => [
                  ],
@@ -156,7 +156,7 @@ class Post extends ModelsPost
              ],
              [
                  'name' => 'Description',
-                 'type' => 'App\\Aura\\Fields\\Textarea',
+                 'type' => 'Eminiarts\\Aura\\Fields\\Textarea',
                  'validation' => '',
                  'conditional_logic' => [
                  ],
@@ -170,7 +170,7 @@ class Post extends ModelsPost
              ],
              [
                  'name' => 'Color',
-                 'type' => 'App\\Aura\\Fields\\Color',
+                 'type' => 'Eminiarts\\Aura\\Fields\\Color',
                  'validation' => '',
                  'conditional_logic' => [
                  ],
@@ -182,7 +182,7 @@ class Post extends ModelsPost
              ],
              [
                  'name' => 'Sidebar',
-                 'type' => 'App\\Aura\\Fields\\Panel',
+                 'type' => 'Eminiarts\\Aura\\Fields\\Panel',
                  'validation' => '',
                  'on_index' => true,
                  'has_conditional_logic' => false,
@@ -196,8 +196,8 @@ class Post extends ModelsPost
              [
                  'name' => 'Tags',
                  'slug' => 'tags',
-                 'type' => 'App\\Aura\\Fields\\Tags',
-                 'model' => 'App\\Aura\\Taxonomies\\Tag',
+                 'type' => 'Eminiarts\\Aura\\Fields\\Tags',
+                 'model' => 'Eminiarts\\Aura\\Taxonomies\\Tag',
                  'create' => true,
                  'validation' => '',
                  'conditional_logic' => '',
@@ -210,8 +210,8 @@ class Post extends ModelsPost
              [
                  'name' => 'Categories',
                  'slug' => 'categories',
-                 'type' => 'App\\Aura\\Fields\\Tags',
-                 'model' => 'App\\Aura\\Taxonomies\\Category',
+                 'type' => 'Eminiarts\\Aura\\Fields\\Tags',
+                 'model' => 'Eminiarts\\Aura\\Taxonomies\\Category',
                  'create' => true,
                  'validation' => '',
                  'conditional_logic' => '',
@@ -224,8 +224,8 @@ class Post extends ModelsPost
              [
                  'name' => 'Team',
                  'slug' => 'team_id',
-                 'type' => 'App\\Aura\\Fields\\BelongsTo',
-                 'model' => 'App\\Aura\\Resources\\Team',
+                 'type' => 'Eminiarts\\Aura\\Fields\\BelongsTo',
+                 'model' => 'Eminiarts\\Aura\\Resources\\Team',
                  'validation' => '',
                  'conditional_logic' => [
                      [
@@ -243,8 +243,8 @@ class Post extends ModelsPost
              [
                  'name' => 'User',
                  'slug' => 'user_id',
-                 'type' => 'App\\Aura\\Fields\\BelongsTo',
-                 'model' => 'App\\Aura\\Resources\\User',
+                 'type' => 'Eminiarts\\Aura\\Fields\\BelongsTo',
+                 'model' => 'Eminiarts\\Aura\\Resources\\User',
                  'validation' => '',
                  'conditional_logic' => '',
                  'has_conditional_logic' => false,
@@ -256,7 +256,7 @@ class Post extends ModelsPost
              ],
              [
                  'name' => 'Attachments',
-                 'type' => 'App\\Aura\\Fields\\Tab',
+                 'type' => 'Eminiarts\\Aura\\Fields\\Tab',
                  'validation' => '',
                  'on_index' => true,
                  'global' => true,
@@ -268,8 +268,8 @@ class Post extends ModelsPost
              [
                  'name' => 'Attachments',
                  'slug' => 'attachments',
-                 'type' => 'App\\Aura\\Fields\\HasMany',
-                 'posttype' => 'App\\Aura\\Resources\\Attachment',
+                 'type' => 'Eminiarts\\Aura\\Fields\\HasMany',
+                 'posttype' => 'Eminiarts\\Aura\\Resources\\Attachment',
                  'validation' => '',
                  'conditional_logic' => '',
                  'has_conditional_logic' => false,

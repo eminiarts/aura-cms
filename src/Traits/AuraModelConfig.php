@@ -246,7 +246,7 @@ trait AuraModelConfig
 
     public function isNumberField($key)
     {
-        if ($this->fieldBySlug($key)['type'] == 'App\\Aura\\Fields\\Number') {
+        if ($this->fieldBySlug($key)['type'] == 'Eminiarts\\Aura\\Fields\\Number') {
             return true;
         }
 
@@ -265,12 +265,12 @@ trait AuraModelConfig
 
     public function isTaxonomyField($key)
     {
-        // Check if the Field is a taxonomy 'type' => 'App\\Aura\\Fields\\Tags',
+        // Check if the Field is a taxonomy 'type' => 'Eminiarts\\Aura\\Fields\\Tags',
         if (in_array($key, $this->getAccessibleFieldKeys())) {
             $field = $this->fieldBySlug($key);
 
             // Atm only tags, refactor later
-            if (isset($field['type']) && $field['type'] == 'App\\Aura\\Fields\\Tags') {
+            if (isset($field['type']) && $field['type'] == 'Eminiarts\\Aura\\Fields\\Tags') {
                 return true;
             }
         }

@@ -37,7 +37,7 @@ class Flow extends Post
     {
         return [
             [
-                'type' => 'App\\Aura\\Fields\\Tab',
+                'type' => 'Eminiarts\\Aura\\Fields\\Tab',
                 'name' => 'Flow',
                 'label' => 'Tab',
                 'slug' => 'flow-tab',
@@ -48,7 +48,7 @@ class Flow extends Post
             ],
             [
                 'name' => 'CreateFlow',
-                'type' => 'App\\Aura\\Fields\\LivewireComponent',
+                'type' => 'Eminiarts\\Aura\\Fields\\LivewireComponent',
                 'component' => 'create-flow',
                 'create' => false,
                 'on_index' => false,
@@ -61,14 +61,14 @@ class Flow extends Post
                 ],
             ],
             [
-                'type' => 'App\\Aura\\Fields\\Tab',
+                'type' => 'Eminiarts\\Aura\\Fields\\Tab',
                 'name' => 'Details',
                 'slug' => 'details-tab',
                 'global' => true,
             ],
             [
                 'name' => 'Flow Infos',
-                'type' => 'App\\Aura\\Fields\\Panel',
+                'type' => 'Eminiarts\\Aura\\Fields\\Panel',
                 'validation' => 'required',
                 'slug' => 'flow-infos',
                 'style' => [
@@ -77,7 +77,7 @@ class Flow extends Post
             ],
             [
                 'name' => 'Name',
-                'type' => 'App\\Aura\\Fields\\Text',
+                'type' => 'Eminiarts\\Aura\\Fields\\Text',
                 'validation' => 'required',
                 'on_index' => true,
                 'slug' => 'name',
@@ -87,7 +87,7 @@ class Flow extends Post
             ],
             [
                 'name' => 'Trigger',
-                'type' => 'App\\Aura\\Fields\\Select',
+                'type' => 'Eminiarts\\Aura\\Fields\\Select',
                 'validation' => '',
                 'conditional_logic' => [
                 ],
@@ -117,7 +117,7 @@ class Flow extends Post
             ],
             // [
             //     'name' => 'Options',
-            //     'type' => 'App\\Aura\\Fields\\Code',
+            //     'type' => 'Eminiarts\\Aura\\Fields\\Code',
             //     'validation' => '',
             //     'on_index' => false,
             //     'conditional_logic' => [
@@ -127,7 +127,7 @@ class Flow extends Post
             // ],
             [
                 'name' => 'Data',
-                'type' => 'App\\Aura\\Fields\\Code',
+                'type' => 'Eminiarts\\Aura\\Fields\\Code',
                 'on_index' => false,
                 'validation' => '',
                 'conditional_logic' => [
@@ -137,7 +137,7 @@ class Flow extends Post
             ],
             [
                 'name' => 'Options',
-                'type' => 'App\\Aura\\Fields\\Code',
+                'type' => 'Eminiarts\\Aura\\Fields\\Code',
                 'on_index' => false,
                 'validation' => '',
                 'conditional_logic' => [
@@ -148,7 +148,7 @@ class Flow extends Post
 
             [
                 'name' => 'Status',
-                'type' => 'App\\Aura\\Fields\\Select',
+                'type' => 'Eminiarts\\Aura\\Fields\\Select',
                 'validation' => 'required',
                 'conditional_logic' => [
                 ],
@@ -166,7 +166,7 @@ class Flow extends Post
             ],
             [
                 'name' => 'Operation_id',
-                'type' => 'App\\Aura\\Fields\\Number',
+                'type' => 'Eminiarts\\Aura\\Fields\\Number',
                 'validation' => '',
                 'conditional_logic' => [
                 ],
@@ -174,14 +174,14 @@ class Flow extends Post
             ],
             [
                 'name' => 'User_id',
-                'type' => 'App\\Aura\\Fields\\Number',
+                'type' => 'Eminiarts\\Aura\\Fields\\Number',
                 'validation' => '',
                 'conditional_logic' => [
                 ],
                 'slug' => 'user_id',
             ],
             [
-                'type' => 'App\\Aura\\Fields\\Tab',
+                'type' => 'Eminiarts\\Aura\\Fields\\Tab',
                 'name' => 'FlowLogs',
                 'slug' => 'tab-FlowLogs',
                 'global' => true,
@@ -189,8 +189,8 @@ class Flow extends Post
             [
                 'name' => 'FlowLogs',
                 'slug' => 'flowLogs',
-                'type' => 'App\\Aura\\Fields\\HasMany',
-                'posttype' => 'App\\Aura\\Resources\\FlowLog',
+                'type' => 'Eminiarts\\Aura\\Fields\\HasMany',
+                'posttype' => 'Eminiarts\\Aura\\Resources\\FlowLog',
                 'validation' => '',
                 'conditional_logic' => '',
                 'has_conditional_logic' => false,
@@ -236,7 +236,7 @@ class Flow extends Post
             'webhook' => [
                 [
                     'name' => 'Webhook',
-                    'type' => 'App\\Aura\\Fields\\Select',
+                    'type' => 'Eminiarts\\Aura\\Fields\\Select',
                     'validation' => '',
                     'conditional_logic' => [
                     ],
@@ -257,7 +257,7 @@ class Flow extends Post
             'manual' => [
                 [
                     'name' => 'Resource',
-                    'type' => 'App\\Aura\\Fields\\Text',
+                    'type' => 'Eminiarts\\Aura\\Fields\\Text',
                     'validation' => 'required',
                     'on_index' => true,
                     'slug' => 'name',

@@ -14,7 +14,7 @@ class Select extends Field
             [
                 'label' => 'Select',
                 'name' => 'Select',
-                'type' => 'App\\Aura\\Fields\\Tab',
+                'type' => 'Eminiarts\\Aura\\Fields\\Tab',
                 'slug' => 'select',
                 'style' => [],
             ],
@@ -22,14 +22,14 @@ class Select extends Field
             [
                 'label' => 'options',
                 'name' => 'options',
-                'type' => 'App\\Aura\\Fields\\Repeater',
+                'type' => 'Eminiarts\\Aura\\Fields\\Repeater',
                 'validation' => '',
                 'slug' => 'options',
             ],
             [
                 'label' => 'Key',
                 'name' => 'key',
-                'type' => 'App\\Aura\\Fields\\Text',
+                'type' => 'Eminiarts\\Aura\\Fields\\Text',
                 'validation' => '',
                 'slug' => 'key',
                 'style' => [
@@ -40,7 +40,7 @@ class Select extends Field
             [
                 'label' => 'Value',
                 'name' => 'value',
-                'type' => 'App\\Aura\\Fields\\Text',
+                'type' => 'Eminiarts\\Aura\\Fields\\Text',
                 'validation' => '',
                 'slug' => 'value',
                 'style' => [

@@ -45,7 +45,7 @@ class OperationLog extends Post
         return [
 
             [
-                'type' => 'App\\Aura\\Fields\\Tab',
+                'type' => 'Eminiarts\\Aura\\Fields\\Tab',
                 'name' => 'OperationLog',
                 'slug' => 'status',
                 'global' => true,
@@ -53,7 +53,7 @@ class OperationLog extends Post
 
             [
                 'name' => 'Finished_at',
-                'type' => 'App\\Aura\\Fields\\Text',
+                'type' => 'Eminiarts\\Aura\\Fields\\Text',
                 'validation' => '',
                 'conditional_logic' => [
                 ],
@@ -61,7 +61,7 @@ class OperationLog extends Post
             ],
             [
                 'name' => 'Started_at',
-                'type' => 'App\\Aura\\Fields\\Text',
+                'type' => 'Eminiarts\\Aura\\Fields\\Text',
                 'validation' => '',
                 'conditional_logic' => [
                 ],
@@ -69,18 +69,18 @@ class OperationLog extends Post
             ],
             [
                 'name' => 'Flow Log',
-                'type' => 'App\\Aura\\Fields\\Text',
+                'type' => 'Eminiarts\\Aura\\Fields\\Text',
                 'validation' => '',
                 'on_index' => true,
                 'slug' => 'flow_log_id',
-                'model' => 'App\\Aura\\Resources\\Flow',
+                'model' => 'Eminiarts\\Aura\\Resources\\Flow',
                 'style' => [
                     'width' => '100',
                 ],
             ],
             [
                 'name' => 'Status',
-                'type' => 'App\\Aura\\Fields\\Text',
+                'type' => 'Eminiarts\\Aura\\Fields\\Text',
                 'validation' => '',
                 'conditional_logic' => [
                 ],
@@ -88,7 +88,7 @@ class OperationLog extends Post
             ],
             [
                 'name' => 'Options',
-                'type' => 'App\\Aura\\Fields\\Code',
+                'type' => 'Eminiarts\\Aura\\Fields\\Code',
                 'on_index' => false,
                 'validation' => '',
                 'conditional_logic' => [
@@ -98,7 +98,7 @@ class OperationLog extends Post
             ],
             [
                 'name' => 'Response',
-                'type' => 'App\\Aura\\Fields\\Code',
+                'type' => 'Eminiarts\\Aura\\Fields\\Code',
                 'on_index' => false,
                 'validation' => '',
                 'conditional_logic' => [
@@ -108,7 +108,7 @@ class OperationLog extends Post
             ],
             [
                 'name' => 'Request',
-                'type' => 'App\\Aura\\Fields\\Code',
+                'type' => 'Eminiarts\\Aura\\Fields\\Code',
                 'on_index' => false,
                 'validation' => '',
                 'conditional_logic' => [

@@ -14,7 +14,7 @@ class Checkbox extends Field
             [
                 'label' => 'Checkbox',
                 'name' => 'Checkbox',
-                'type' => 'App\\Aura\\Fields\\Tab',
+                'type' => 'Eminiarts\\Aura\\Fields\\Tab',
                 'slug' => 'checkbox',
                 'style' => [],
             ],
@@ -22,7 +22,7 @@ class Checkbox extends Field
             [
                 'label' => 'options',
                 'name' => 'options',
-                'type' => 'App\\Aura\\Fields\\Repeater',
+                'type' => 'Eminiarts\\Aura\\Fields\\Repeater',
                 'validation' => '',
                 'slug' => 'options',
 
@@ -30,7 +30,7 @@ class Checkbox extends Field
             [
                 'label' => 'Key',
                 'name' => 'key',
-                'type' => 'App\\Aura\\Fields\\Text',
+                'type' => 'Eminiarts\\Aura\\Fields\\Text',
                 'validation' => '',
                 'slug' => 'key',
                 'style' => [
@@ -41,7 +41,7 @@ class Checkbox extends Field
             [
                 'label' => 'Value',
                 'name' => 'value',
-                'type' => 'App\\Aura\\Fields\\Text',
+                'type' => 'Eminiarts\\Aura\\Fields\\Text',
                 'validation' => '',
                 'slug' => 'value',
                 'style' => [

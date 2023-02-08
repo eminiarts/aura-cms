@@ -27,7 +27,7 @@ class Option extends Post
         return [
             [
                 'name' => 'Name',
-                'type' => 'App\\Aura\\Fields\\Text',
+                'type' => 'Eminiarts\\Aura\\Fields\\Text',
                 'validation' => 'required',
                 'on_index' => true,
                 'slug' => 'name',
@@ -37,7 +37,7 @@ class Option extends Post
             ],
             [
                 'name' => 'Value',
-                'type' => 'App\\Aura\\Fields\\Textarea',
+                'type' => 'Eminiarts\\Aura\\Fields\\Textarea',
                 'validation' => 'required',
                 'on_index' => false,
                 'slug' => 'value',

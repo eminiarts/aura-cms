@@ -19,7 +19,7 @@ class CreatePosttype extends ModalComponent
             [
                 'label' => 'Name',
                 'name' => 'name',
-                'type' => 'App\\Aura\\Fields\\Text',
+                'type' => 'Eminiarts\\Aura\\Fields\\Text',
                 'validation' => 'required',
                 'slug' => 'name',
             ],

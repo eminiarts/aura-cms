@@ -39,7 +39,7 @@ class Team extends Post
         return [
 
             [
-                'type' => 'App\\Aura\\Fields\\Tab',
+                'type' => 'Eminiarts\\Aura\\Fields\\Tab',
                 'name' => 'Team',
                 'slug' => 'tab-team',
                 'global' => true,
@@ -47,7 +47,7 @@ class Team extends Post
             [
                 'name' => 'Team',
                 'slug' => 'team-panel',
-                'type' => 'App\\Aura\\Fields\\Panel',
+                'type' => 'Eminiarts\\Aura\\Fields\\Panel',
                 'validation' => '',
                 'conditional_logic' => [
                 ],
@@ -55,7 +55,7 @@ class Team extends Post
             ],
             [
                 'name' => 'Name',
-                'type' => 'App\\Aura\\Fields\\Text',
+                'type' => 'Eminiarts\\Aura\\Fields\\Text',
                 'validation' => 'required',
                 'on_index' => true,
                 'slug' => 'name',
@@ -66,7 +66,7 @@ class Team extends Post
             ],
             [
                 'name' => 'Description',
-                'type' => 'App\\Aura\\Fields\\Text',
+                'type' => 'Eminiarts\\Aura\\Fields\\Text',
                 'validation' => '',
                 'on_index' => true,
                 'slug' => 'description',
@@ -76,7 +76,7 @@ class Team extends Post
                 ],
             ],
             [
-                'type' => 'App\\Aura\\Fields\\Tab',
+                'type' => 'Eminiarts\\Aura\\Fields\\Tab',
                 'name' => 'Users',
                 'slug' => 'tab-users',
                 'global' => true,
@@ -84,7 +84,7 @@ class Team extends Post
             [
                 'name' => 'Users',
                 'slug' => 'users',
-                'type' => 'App\\Aura\\Fields\\Panel',
+                'type' => 'Eminiarts\\Aura\\Fields\\Panel',
                 'validation' => '',
                 'conditional_logic' => [
                 ],
@@ -94,8 +94,8 @@ class Team extends Post
             [
                 'name' => 'Users',
                 'slug' => 'users',
-                'type' => 'App\\Aura\\Fields\\HasMany',
-                'posttype' => 'App\\Aura\\Resources\\User',
+                'type' => 'Eminiarts\\Aura\\Fields\\HasMany',
+                'posttype' => 'Eminiarts\\Aura\\Resources\\User',
                 'validation' => '',
                 'conditional_logic' => '',
                 'has_conditional_logic' => false,
@@ -163,4 +163,13 @@ class Team extends Post
     {
         return TeamFactory::new();
     }
+
+    // public static function create($fields)
+    // {
+    //     $model = new static();
+
+    //     $model->save($fields);
+
+    //     return $model;
+    // }
 }

@@ -1,6 +1,6 @@
 <?php
 
-namespace Eminiarts\Aura\Aura;
+namespace Eminiarts\Aura;
 
 use Eminiarts\Aura\Traits\AuraModelConfig;
 use Eminiarts\Aura\Traits\AuraTaxonomies;

@@ -39,7 +39,7 @@ class FlowLog extends Post
         return [
 
             [
-                'type' => 'App\\Aura\\Fields\\Tab',
+                'type' => 'Eminiarts\\Aura\\Fields\\Tab',
                 'name' => 'FlowLog',
                 'slug' => 'status',
                 'global' => true,
@@ -47,7 +47,7 @@ class FlowLog extends Post
 
             [
                 'name' => 'Finished_at',
-                'type' => 'App\\Aura\\Fields\\Text',
+                'type' => 'Eminiarts\\Aura\\Fields\\Text',
                 'validation' => '',
                 'conditional_logic' => [
                 ],
@@ -55,7 +55,7 @@ class FlowLog extends Post
             ],
             [
                 'name' => 'Started_at',
-                'type' => 'App\\Aura\\Fields\\Text',
+                'type' => 'Eminiarts\\Aura\\Fields\\Text',
                 'validation' => '',
                 'conditional_logic' => [
                 ],
@@ -63,18 +63,18 @@ class FlowLog extends Post
             ],
             [
                 'name' => 'Flow',
-                'type' => 'App\\Aura\\Fields\\BelongsTo',
+                'type' => 'Eminiarts\\Aura\\Fields\\BelongsTo',
                 'validation' => '',
                 'on_index' => true,
                 'slug' => 'flow',
-                'model' => 'App\\Aura\\Resources\\Flow',
+                'model' => 'Eminiarts\\Aura\\Resources\\Flow',
                 'style' => [
                     'width' => '100',
                 ],
             ],
             [
                 'name' => 'Status',
-                'type' => 'App\\Aura\\Fields\\Text',
+                'type' => 'Eminiarts\\Aura\\Fields\\Text',
                 'validation' => '',
                 'conditional_logic' => [
                 ],
@@ -82,7 +82,7 @@ class FlowLog extends Post
             ],
             [
                 'name' => 'Options',
-                'type' => 'App\\Aura\\Fields\\Code',
+                'type' => 'Eminiarts\\Aura\\Fields\\Code',
                 'on_index' => false,
                 'validation' => '',
                 'conditional_logic' => [
@@ -92,7 +92,7 @@ class FlowLog extends Post
             ],
             [
                 'name' => 'Response',
-                'type' => 'App\\Aura\\Fields\\Code',
+                'type' => 'Eminiarts\\Aura\\Fields\\Code',
                 'on_index' => false,
                 'validation' => '',
                 'conditional_logic' => [
@@ -102,7 +102,7 @@ class FlowLog extends Post
             ],
             [
                 'name' => 'Request',
-                'type' => 'App\\Aura\\Fields\\Code',
+                'type' => 'Eminiarts\\Aura\\Fields\\Code',
                 'on_index' => false,
                 'validation' => '',
                 'conditional_logic' => [
@@ -112,7 +112,7 @@ class FlowLog extends Post
             ],
 
             [
-                'type' => 'App\\Aura\\Fields\\Tab',
+                'type' => 'Eminiarts\\Aura\\Fields\\Tab',
                 'name' => 'OperationLogs',
                 'slug' => 'tab-OperationLogs',
                 'global' => true,
@@ -120,8 +120,8 @@ class FlowLog extends Post
             [
                 'name' => 'OperationLogs',
                 'slug' => 'operation_logs',
-                'type' => 'App\\Aura\\Fields\\HasMany',
-                'posttype' => 'App\\Aura\\Resources\\OperationLog',
+                'type' => 'Eminiarts\\Aura\\Fields\\HasMany',
+                'posttype' => 'Eminiarts\\Aura\\Resources\\OperationLog',
                 'validation' => '',
                 'conditional_logic' => '',
                 'has_conditional_logic' => false,

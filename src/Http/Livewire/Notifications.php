@@ -26,25 +26,25 @@ class Notifications extends Component
      {
          return [
              [
-                 'type' => 'App\\Aura\\Fields\\Tab',
+                 'type' => 'Eminiarts\\Aura\\Fields\\Tab',
                  'name' => 'Unread',
                  'slug' => 'tab-unread',
                  'global' => true,
              ],
              [
-                 'type' => 'App\\Aura\\Fields\\View',
+                 'type' => 'Eminiarts\\Aura\\Fields\\View',
                  'name' => 'Unread',
                  'slug' => 'view-unread',
                  'view' => 'livewire.notifications-unread',
              ],
              [
-                 'type' => 'App\\Aura\\Fields\\Tab',
+                 'type' => 'Eminiarts\\Aura\\Fields\\Tab',
                  'name' => 'Read',
                  'slug' => 'tab-read',
                  'global' => true,
              ],
              [
-                 'type' => 'App\\Aura\\Fields\\View',
+                 'type' => 'Eminiarts\\Aura\\Fields\\View',
                  'name' => 'read',
                  'slug' => 'view-unread',
                  'view' => 'livewire.notifications-read',

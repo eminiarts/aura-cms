@@ -14,13 +14,13 @@ class Number extends Field
             [
                 'label' => 'Number',
                 'name' => 'Number',
-                'type' => 'App\\Aura\\Fields\\Tab',
+                'type' => 'Eminiarts\\Aura\\Fields\\Tab',
                 'slug' => 'number',
                 'style' => [],
             ],
             [
                 'name' => 'Add on text',
-                'type' => 'App\\Aura\\Fields\\Text',
+                'type' => 'Eminiarts\\Aura\\Fields\\Text',
                 'validation' => '',
                 'slug' => 'test',
                 'conditional_logic' => [],
@@ -28,14 +28,14 @@ class Number extends Field
             ],
             // [
             //     'name' => 'Number',
-            //     'type' => 'App\\Aura\\Fields\\Tab',
+            //     'type' => 'Eminiarts\\Aura\\Fields\\Tab',
             //     'slug' => 'number-tab',
             //     'style' => [],
             // ],
             // [
             //     'name' => 'Add on',
 
-            //     'type' => 'App\\Aura\\Fields\\Radio',
+            //     'type' => 'Eminiarts\\Aura\\Fields\\Radio',
             //     'validation' => '',
             //     'slug' => 'number-add-on',
             //     'default' => 'none',
@@ -48,7 +48,7 @@ class Number extends Field
             // ],
             // [
             //     'name' => 'Add on text',
-            //     'type' => 'App\\Aura\\Fields\\Text',
+            //     'type' => 'Eminiarts\\Aura\\Fields\\Text',
             //     'validation' => '',
             //     'slug' => 'number-add-on-text',
             //     'conditional_logic' => [
