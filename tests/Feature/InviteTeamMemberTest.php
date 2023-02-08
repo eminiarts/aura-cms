@@ -2,13 +2,13 @@
 
 namespace Tests\Feature;
 
-use App\Models\User;
+use Eminiarts\Aura\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Mail;
 use Laravel\Jetstream\Http\Livewire\TeamMemberManager;
 use Laravel\Jetstream\Mail\TeamInvitation;
 use Livewire\Livewire;
-use Tests\TestCase;
+use Eminiarts\Aura\Tests\TestCase;
 
 class InviteTeamMemberTest extends TestCase
 {

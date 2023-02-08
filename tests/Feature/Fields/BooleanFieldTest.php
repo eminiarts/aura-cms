@@ -2,10 +2,10 @@
 
 namespace Tests\Feature\Livewire;
 
-use App\Aura\Resources\Post;
-use App\Aura\Resources\Team;
-use App\Http\Livewire\Post\Create;
-use App\Models\User;
+use Eminiarts\Aura\Aura\Resources\Post;
+use Eminiarts\Aura\Aura\Resources\Team;
+use Eminiarts\Aura\Http\Livewire\Post\Create;
+use Eminiarts\Aura\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
 

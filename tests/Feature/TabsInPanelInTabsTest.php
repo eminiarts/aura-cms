@@ -1,6 +1,6 @@
 <?php
 
-use App\Models\Post;
+use Eminiarts\Aura\Models\Post;
 
 class TabsInPanelInTabsTestModel extends Post
 {

@@ -1,10 +1,10 @@
 <?php
 
-use App\Aura\Resources\Attachment;
-use App\Aura\Resources\Post;
-use App\Http\Livewire\MediaUploader;
-use App\Http\Livewire\Table\Table;
-use App\Models\User;
+use Eminiarts\Aura\Aura\Resources\Attachment;
+use Eminiarts\Aura\Aura\Resources\Post;
+use Eminiarts\Aura\Http\Livewire\MediaUploader;
+use Eminiarts\Aura\Http\Livewire\Table\Table;
+use Eminiarts\Aura\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 

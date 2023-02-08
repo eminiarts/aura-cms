@@ -1,8 +1,8 @@
 <?php
 
-use App\Aura\Resources\Post;
-use App\Http\Livewire\Table\Table;
-use App\Models\User;
+use Eminiarts\Aura\Aura\Resources\Post;
+use Eminiarts\Aura\Http\Livewire\Table\Table;
+use Eminiarts\Aura\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);

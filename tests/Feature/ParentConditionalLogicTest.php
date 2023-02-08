@@ -1,13 +1,13 @@
 <?php
 
-use App\Aura;
-use App\Aura\Pipeline\AddIdsToFields;
-use App\Aura\Pipeline\ApplyParentConditionalLogic;
-use App\Aura\Pipeline\ApplyTabs;
-use App\Aura\Pipeline\MapFields;
-use App\Aura\Resources\Role;
-use App\Models\Post;
-use App\Models\User;
+use Eminiarts\Aura\Aura;
+use Eminiarts\Aura\Aura\Pipeline\AddIdsToFields;
+use Eminiarts\Aura\Aura\Pipeline\ApplyParentConditionalLogic;
+use Eminiarts\Aura\Aura\Pipeline\ApplyTabs;
+use Eminiarts\Aura\Aura\Pipeline\MapFields;
+use Eminiarts\Aura\Aura\Resources\Role;
+use Eminiarts\Aura\Models\Post;
+use Eminiarts\Aura\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);

@@ -1,9 +1,9 @@
 <?php
 
-use App\Aura\Resources\Post;
-use App\Aura\Taxonomies\Tag;
-use App\Http\Livewire\Table\Table;
-use App\Models\User;
+use Eminiarts\Aura\Aura\Resources\Post;
+use Eminiarts\Aura\Aura\Taxonomies\Tag;
+use Eminiarts\Aura\Http\Livewire\Table\Table;
+use Eminiarts\Aura\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);

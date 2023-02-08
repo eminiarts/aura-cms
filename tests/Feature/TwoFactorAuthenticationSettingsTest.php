@@ -2,11 +2,11 @@
 
 namespace Tests\Feature;
 
-use App\Models\User;
+use Eminiarts\Aura\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Jetstream\Http\Livewire\TwoFactorAuthenticationForm;
 use Livewire\Livewire;
-use Tests\TestCase;
+use Eminiarts\Aura\Tests\TestCase;
 
 class TwoFactorAuthenticationSettingsTest extends TestCase
 {

@@ -2,13 +2,13 @@
 
 namespace Tests\Feature\Auth;
 
-use App\Models\User;
-use App\Providers\RouteServiceProvider;
+use Eminiarts\Aura\Models\User;
+use Eminiarts\Aura\Providers\RouteServiceProvider;
 use Illuminate\Auth\Events\Verified;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\URL;
-use Tests\TestCase;
+use Eminiarts\Aura\Tests\TestCase;
 
 class EmailVerificationTest extends TestCase
 {

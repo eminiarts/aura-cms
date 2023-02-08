@@ -2,11 +2,11 @@
 
 namespace Tests\Feature\Livewire;
 
-use App\Aura\Resources\Option;
-use App\Aura\Resources\Role;
-use App\Aura\Resources\Team;
-use App\Http\Livewire\TeamSettings;
-use App\Models\User;
+use Eminiarts\Aura\Aura\Resources\Option;
+use Eminiarts\Aura\Aura\Resources\Role;
+use Eminiarts\Aura\Aura\Resources\Team;
+use Eminiarts\Aura\Http\Livewire\TeamSettings;
+use Eminiarts\Aura\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
 

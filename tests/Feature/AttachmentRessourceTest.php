@@ -1,7 +1,7 @@
 <?php
 
-use App\Aura\Resources\Attachment;
-use App\Models\User;
+use Eminiarts\Aura\Aura\Resources\Attachment;
+use Eminiarts\Aura\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 

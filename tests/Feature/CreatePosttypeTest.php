@@ -2,9 +2,9 @@
 
 namespace Tests\Feature\Livewire;
 
-use App\Http\Livewire\CreatePosttype;
+use Eminiarts\Aura\Http\Livewire\CreatePosttype;
 use Livewire\Livewire;
-use Tests\TestCase;
+use Eminiarts\Aura\Tests\TestCase;
 
 class CreatePosttypeTest extends TestCase
 {
