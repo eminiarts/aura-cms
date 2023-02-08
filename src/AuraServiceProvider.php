@@ -8,6 +8,7 @@ use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Gate;
 use Spatie\LaravelPackageTools\Package;
 use Eminiarts\Aura\Commands\AuraCommand;
+use Eminiarts\Aura\Commands\MakeUser;
 use Illuminate\Database\Eloquent\Builder;
 use Spatie\LaravelPackageTools\PackageServiceProvider;
 use Spatie\LaravelPackageTools\Commands\InstallCommand;
@@ -30,6 +31,7 @@ class AuraServiceProvider extends PackageServiceProvider
             ->hasMigrations(['create_aura_tables', 'create_flows_table'])
             ->runsMigrations()
             ->hasCommand(AuraCommand::class)
+            ->hasCommand(MakeUser::class)
             ->publishesServiceProvider('FortifyServiceProvider')
 
             ->hasInstallCommand(function (InstallCommand $command) {

@@ -1,6 +1,6 @@
 <?php
 
-namespace Eminiarts\Aura\Console\Commands;
+namespace Eminiarts\Aura\Commands;
 
 use Illuminate\Console\GeneratorCommand;
 
