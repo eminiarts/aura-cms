@@ -2,8 +2,8 @@
 
 namespace Eminiarts\Aura\Http\Livewire;
 
-use Eminiarts\Aura\Traits\InputFields;
 use Eminiarts\Aura\Models\Option;
+use Eminiarts\Aura\Traits\InputFields;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Str;

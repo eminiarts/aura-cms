@@ -3,10 +3,10 @@
 namespace Tests\Feature;
 
 use Eminiarts\Aura\Models\User;
+use Eminiarts\Aura\Tests\TestCase;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Jetstream\Http\Livewire\CreateTeamForm;
 use Livewire\Livewire;
-use Eminiarts\Aura\Tests\TestCase;
 
 class CreateTeamTest extends TestCase
 {

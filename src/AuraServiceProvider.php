@@ -2,22 +2,16 @@
 
 namespace Eminiarts\Aura;
 
-use Livewire\Livewire;
-use Livewire\Component;
-use Illuminate\Support\Arr;
-use Eminiarts\Aura\Resource;
-use Eminiarts\Aura\Resources\Team;
-use Eminiarts\Aura\Resources\User;
-use Illuminate\Support\Facades\Gate;
-use Eminiarts\Aura\Commands\MakeUser;
-use Eminiarts\Aura\Policies\PostPolicy;
-use Eminiarts\Aura\Policies\TeamPolicy;
-use Eminiarts\Aura\Policies\UserPolicy;
-use Spatie\LaravelPackageTools\Package;
 use Eminiarts\Aura\Commands\AuraCommand;
+use Eminiarts\Aura\Commands\MakeUser;
 use Illuminate\Database\Eloquent\Builder;
-use Spatie\LaravelPackageTools\PackageServiceProvider;
+use Illuminate\Support\Arr;
+use Illuminate\Support\Facades\Gate;
+use Livewire\Component;
+use Livewire\Livewire;
 use Spatie\LaravelPackageTools\Commands\InstallCommand;
+use Spatie\LaravelPackageTools\Package;
+use Spatie\LaravelPackageTools\PackageServiceProvider;
 
 class AuraServiceProvider extends PackageServiceProvider
 {
@@ -71,8 +65,6 @@ class AuraServiceProvider extends PackageServiceProvider
             $this->dispatchBrowserEvent('notify', $message);
         });
 
-
-
         // Search in multiple columns
         Builder::macro('searchIn', function ($columns, $search) {
             return $this->where(function ($query) use ($columns, $search) {
@@ -117,11 +109,6 @@ class AuraServiceProvider extends PackageServiceProvider
             \Eminiarts\Aura\Resources\Team::class,
             \Eminiarts\Aura\Resources\User::class,
         ]);
-
-
-
-
-
 
         // dd('hier', app('aura'), Facades\Aura::getResources());
     }

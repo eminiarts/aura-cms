@@ -3,8 +3,8 @@
 namespace Tests\Feature\Auth;
 
 use Eminiarts\Aura\Providers\RouteServiceProvider;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Eminiarts\Aura\Tests\TestCase;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 
 class RegistrationTest extends TestCase
 {

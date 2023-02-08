@@ -3,12 +3,12 @@
 namespace Tests\Feature;
 
 use Eminiarts\Aura\Models\User;
+use Eminiarts\Aura\Tests\TestCase;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Str;
 use Laravel\Jetstream\Features;
 use Laravel\Jetstream\Http\Livewire\ApiTokenManager;
 use Livewire\Livewire;
-use Eminiarts\Aura\Tests\TestCase;
 
 class DeleteApiTokenTest extends TestCase
 {

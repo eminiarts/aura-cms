@@ -2,11 +2,11 @@
 
 namespace Eminiarts\Aura\Resources;
 
+use Eminiarts\Aura\Models\User as UserModel;
+use Eminiarts\Aura\Models\UserMeta;
 use Eminiarts\Aura\Traits\SaveFieldAttributes;
 use Eminiarts\Aura\Traits\SaveMetaFields;
 use Eminiarts\Aura\Traits\SaveTerms;
-use Eminiarts\Aura\Models\User as UserModel;
-use Eminiarts\Aura\Models\UserMeta;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
 

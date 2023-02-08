@@ -3,10 +3,10 @@
 namespace Tests\Feature\Auth;
 
 use Eminiarts\Aura\Models\User;
+use Eminiarts\Aura\Tests\TestCase;
 use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Notification;
-use Eminiarts\Aura\Tests\TestCase;
 
 class PasswordResetTest extends TestCase
 {

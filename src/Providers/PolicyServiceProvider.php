@@ -2,14 +2,14 @@
 
 namespace Eminiarts\Aura\Providers;
 
-use Eminiarts\Aura\Resource;
-use Eminiarts\Aura\Resources\Team;
-use Eminiarts\Aura\Resources\User;
-use Illuminate\Support\Facades\Gate;
 use Eminiarts\Aura\Policies\PostPolicy;
 use Eminiarts\Aura\Policies\TeamPolicy;
 use Eminiarts\Aura\Policies\UserPolicy;
+use Eminiarts\Aura\Resource;
+use Eminiarts\Aura\Resources\Team;
+use Eminiarts\Aura\Resources\User;
 use Illuminate\Foundation\Support\Providers\AuthServiceProvider as ServiceProvider;
+use Illuminate\Support\Facades\Gate;
 
 class PolicyServiceProvider extends ServiceProvider
 {
@@ -37,9 +37,9 @@ class PolicyServiceProvider extends ServiceProvider
     {
         $this->registerPolicies();
 
-
         Gate::before(function ($user, $ability) {
             dd('before');
+
             return true;
             if ($user->resource->isSuperAdmin()) {
                 return true;

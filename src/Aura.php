@@ -29,7 +29,7 @@ class Aura
 
         $name = Str::title($slug);
 
-        if (in_array("Eminiarts\Aura\Resources\\" . $name, $this->getResources())) {
+        if (in_array("Eminiarts\Aura\Resources\\".$name, $this->getResources())) {
             return app('Eminiarts\Aura\Resources\\'.$slug);
         }
     }

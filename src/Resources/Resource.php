@@ -2,8 +2,8 @@
 
 namespace Eminiarts\Aura\Resources;
 
-use Eminiarts\Aura\Models\Post;
 use Closure;
+use Eminiarts\Aura\Models\Post;
 use Filament\Facades\Filament;
 use Filament\Navigation\NavigationItem;
 use Illuminate\Database\Connection;

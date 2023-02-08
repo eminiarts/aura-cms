@@ -8,8 +8,8 @@ use Eminiarts\Aura\Http\Livewire\Table\Traits\PerPagePagination;
 use Eminiarts\Aura\Http\Livewire\Table\Traits\QueryFilters;
 use Eminiarts\Aura\Http\Livewire\Table\Traits\Sorting;
 use Eminiarts\Aura\Models\User;
-use Livewire\Component;
 use Eminiarts\Aura\Resource;
+use Livewire\Component;
 
 /**
  * Class Table
@@ -242,7 +242,6 @@ class Table extends Component
         if ($this->model instanceof Resource) {
             $query = $query->with(['meta', 'taxonomies']);
         }
-
 
         if ($this->filters) {
             $query = $this->applyTaxonomyFilter($query);

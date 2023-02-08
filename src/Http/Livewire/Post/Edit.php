@@ -3,10 +3,10 @@
 namespace Eminiarts\Aura\Http\Livewire\Post;
 
 use Eminiarts\Aura\Aura;
+use Eminiarts\Aura\Models\Post;
 use Eminiarts\Aura\Resources\Attachment;
 use Eminiarts\Aura\Traits\InteractsWithFields;
 use Eminiarts\Aura\Traits\RepeaterFields;
-use Eminiarts\Aura\Models\Post;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Str;
