@@ -42,11 +42,7 @@ class MakeUser extends Command
             'user_id' => $user->id,
         ]);
 
-        dd($team->toArray);
-
         $user->current_team_id = $team->id;
-
-
 
         // Create Role
         $role = Role::create(['type' => 'Role', 'title' => 'Super Admin', 'slug' => 'super_admin', 'name' => 'Super Admin', 'description' => 'Super Admin has can perform everything.', 'super_admin' => true, 'permissions' => [], 'team_id' => $team->id, 'user_id' => $user->id]);
