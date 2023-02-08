@@ -1,6 +1,6 @@
 <?php
 
-use Eminiarts\Aura\Aura\Resources\Attachment;
+use Eminiarts\Aura\Resources\Attachment;
 use Eminiarts\Aura\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;

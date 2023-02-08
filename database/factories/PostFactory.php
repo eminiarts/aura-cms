@@ -1,6 +1,6 @@
 <?php
 
-namespace Database\Factories;
+namespace Eminiarts\Aura\Database\Factories;
 
 use Illuminate\Database\Eloquent\Factories\Factory;
 

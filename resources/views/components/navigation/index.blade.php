@@ -1,7 +1,7 @@
 
 
 @php
-use Eminiarts\Aura\Aura\Resources\Team;
+use Eminiarts\Aura\Resources\Team;
 $settings = App\Aura::getOption('team-settings');
 @endphp
 

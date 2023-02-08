@@ -1,6 +1,6 @@
 <?php
 
-use Eminiarts\Aura\Aura\Resources\Flow;
+use Eminiarts\Aura\Resources\Flow;
 use Eminiarts\Aura\Http\Livewire\CreateFlow;
 use Eminiarts\Aura\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;

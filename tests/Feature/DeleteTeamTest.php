@@ -2,7 +2,7 @@
 
 namespace Tests\Feature;
 
-use Eminiarts\Aura\Aura\Resources\Team;
+use Eminiarts\Aura\Resources\Team;
 use Eminiarts\Aura\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Jetstream\Http\Livewire\DeleteTeamForm;

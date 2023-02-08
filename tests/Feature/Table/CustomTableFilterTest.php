@@ -1,7 +1,7 @@
 <?php
 
-use Eminiarts\Aura\Aura\Resources\Post;
-use Eminiarts\Aura\Aura\Traits\CustomTable;
+use Eminiarts\Aura\Resources\Post;
+use Eminiarts\Aura\Traits\CustomTable;
 use Eminiarts\Aura\Http\Livewire\Table\Table;
 use Eminiarts\Aura\Models\Scopes\TeamScope;
 use Eminiarts\Aura\Models\User;
