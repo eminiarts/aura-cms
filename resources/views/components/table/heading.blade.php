@@ -5,12 +5,12 @@
 ])
 
 <th
-    {{ $attributes->merge(['class' => 'px-6 py-3 bg-gray-50 dark:bg-gray-800'])->only('class') }}
+    {{ $attributes->merge(['class' => 'px-aura::6 py-3 bg-gray-50 dark:bg-gray-800'])->only('class') }}
 >
     @unless ($sortable)
         <span class="text-xs font-semibold text-left text-gray-600 bg-gray-50 dark:bg-gray-800 dark:text-gray-400 whitespace-nowrap">{{ $slot }}</span>
     @else
-        <button {{ $attributes->except('class') }} class="flex items-center space-x-1 text-xs font-semibold leading-4 text-left text-gray-600 group focus:outline-none focus:underline bg-gray-50 dark:bg-gray-800 dark:text-gray-400 whitespace-nowrap">
+        <button {{ $attributes->except('class') }} class="flex items-center space-x-aura::1 text-xs font-semibold leading-4 text-left text-gray-600 group focus:outline-none focus:underline bg-gray-50 dark:bg-gray-800 dark:text-gray-400 whitespace-nowrap">
             <span>{{ $slot }}</span>
 
             <span class="relative flex items-center">

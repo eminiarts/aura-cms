@@ -5,9 +5,9 @@
     }
 @endphp
 
-<x-fields.wrapper :field="$field">
+<x-aura::fields.wrapper :field="$field">
     <div
-        x-data="{
+        x-aura::data="{
             value: $wire.entangle('post.fields.{{ optional($field)['slug'] }}').defer,
             custom: false,
 
@@ -61,24 +61,24 @@
             }
 
         }"
-        class="flex space-x-4"
+        class="flex space-x-aura::4"
     >
-        <div class="flex-1" wire:model.defer="post.fields.{{ optional($field)['slug'] }}">
-            <x-input.text type="text" x-bind:disabled="!custom" id="slug" @keyup="value = slugifyTyping($event.target.value)" x-model="value" />
+        <div class="flex-aura::1" wire:model.defer="post.fields.{{ optional($field)['slug'] }}">
+            <x-aura::input.text type="text" x-aura::bind:disabled="!custom" id="slug" @keyup="value = slugifyTyping($event.target.value)" x-aura::model="value" />
         </div>
 
-        <div class="flex flex-col">
-            <button x-ref="toggle" @click="custom = ! custom" type="button" role="switch" :aria-checked="custom"
+        <div class="flex flex-aura::col">
+            <button x-aura::ref="toggle" @click="custom = ! custom" type="button" role="switch" :aria-checked="custom"
                 :aria-labelledby="$id('boolean')"
                 :class="custom ? 'bg-primary-600 border border-white dark:border-gray-900' : 'bg-gray-300 shadow-inner border border-gray-500/30'"
-                class="relative inline-flex px-0 py-1 rounded-full w-14">
-                <span :class="custom ? 'bg-white translate-x-6' : 'bg-white translate-x-1'"
+                class="relative inline-flex px-aura::0 py-1 rounded-full w-14">
+                <span :class="custom ? 'bg-white translate-x-aura::6' : 'bg-white translate-x-aura::1'"
                     class="w-6 h-6 transition rounded-full" aria-hidden="true"></span>
             </button>
         </div>
     </div>
 
-</x-fields.wrapper>
+</x-aura::fields.wrapper>
 
 
 

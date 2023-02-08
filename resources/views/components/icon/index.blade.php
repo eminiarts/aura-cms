@@ -16,5 +16,5 @@
 @endphp
 
 <div {{ $attributes->class([]) }}>
-  <x-dynamic-component :component="$componentName" :class="$iconClass ?? $sizes[$size]" />
+  <x-aura::dynamic-component :component="$componentName" :class="$iconClass ?? $sizes[$size]" />
 </div>

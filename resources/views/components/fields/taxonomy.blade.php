@@ -5,7 +5,7 @@ $values = $taxonomy->pluck('name', 'id')->map(fn($name, $key) => ['value' => $ke
 <h3>{{ $taxonomy->title }}</h3>
 
 <div
-x-data="{
+x-aura::data="{
     multiple: true,
     value: $wire.entangle('post.terms.{{ $taxonomy->title }}').defer,
     options: {{ Js::from($values) }},
@@ -43,9 +43,9 @@ x-data="{
         })
     }
 }"
-class="max-w-sm mx-auto"
+class="max-aura::w-sm mx-aura::auto"
 >
-<select x-ref="select" :multiple="multiple" ></select>
+<select x-aura::ref="select" :multiple="multiple" ></select>
 
 @once
 @push('scripts')

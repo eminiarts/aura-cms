@@ -15,8 +15,8 @@
 
 hallo
 
-<x-fields.conditions :field="$field" :model="$model">
-<div class="w-full" x-data="{
+<x-aura::fields.conditions :field="$field" :model="$model">
+<div class="w-full" x-aura::data="{
     groups: @js($groups),
     field: @entangle($name).defer,
     init(){
@@ -53,12 +53,12 @@ hallo
         });
     },
 }">
-<x-fields.wrapper :field="$field">
+<x-aura::fields.wrapper :field="$field">
     @foreach($groups as $group => $items)
-        <div class="flex flex-row justify-between py-6">
+        <div class="flex flex-aura::row justify-between py-6">
             <div class="w-1/3 pr-1.5">
                 <h4 class="font-bold">{{ $group  }}</h4>
-                <div class="flex space-x-2">
+                <div class="flex space-x-aura::2">
                     <div class="text-sm text-gray-500 cursor-pointer" @click="selectAll('{{ $group }}')">Select all</div>
                     <span>|</span>
                     <div class="text-sm text-gray-500 cursor-pointer" @click="removeAll('{{ $group }}')">Remove all</div>
@@ -67,7 +67,7 @@ hallo
             <div class="w-2/3 pl-1.5">
                 @foreach($items as $item)
                     <div class="flex items-center mb-2 ">
-                        <input x-model="field['{{ $item['slug'] }}']" type="checkbox" id="permissions_{{ $item['slug'] }}" class="w-5 h-5 transition duration-150 ease-in-out bg-gray-100 border-gray-500/30 rounded cursor-pointer form-checkbox text-primary-600 focus:ring-primary-500">
+                        <input x-aura::model="field['{{ $item['slug'] }}']" type="checkbox" id="permissions_{{ $item['slug'] }}" class="w-5 h-5 transition duration-150 ease-in-out bg-gray-100 border-gray-500/30 rounded cursor-pointer form-checkbox text-primary-600 focus:ring-primary-500">
                         <label for="permissions_{{ $item['slug'] }}" class="block ml-3 text-sm leading-5 text-gray-700 cursor-pointer dark:text-gray-200">
                             {{ $item['name'] }}
                             <span class="block text-xs text-gray-400">{{ $item['description'] }}</span>
@@ -78,6 +78,6 @@ hallo
         </div>
         <hr>
     @endforeach
-</x-fields.wrapper>
+</x-aura::fields.wrapper>
 </div>
-</x-fields.conditions>
+</x-aura::fields.conditions>

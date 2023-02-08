@@ -2,7 +2,7 @@
 
   {{-- {{ $field['name']}} --}}
 
-  {{-- <x-fields.label :label="$field['name']" /> --}}
+  {{-- <x-aura::fields.label :label="$field['name']" /> --}}
 
   {{-- @dump(app($field['posttype'])) --}}
 

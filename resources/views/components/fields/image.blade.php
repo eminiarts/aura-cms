@@ -18,9 +18,9 @@ if($selected) {
 @endphp
 
 <div class="w-full">
-    <x-fields.wrapper :field="$field">
+    <x-aura::fields.wrapper :field="$field">
         @if(isset($files) && count($files) > 0)
-        <div x-data="orderMedia" x-ref="container" data-slug="{{ $field['slug'] }}" class="flex flex-wrap px-0 mt-0 draggable-container">
+        <div x-aura::data="orderMedia" x-aura::ref="container" data-slug="{{ $field['slug'] }}" class="flex flex-aura::wrap px-aura::0 mt-0 draggable-container">
             @foreach($files as $file)
             <div class="w-32 mb-1 mr-2 draggable-item"  wire:key="{{ $field['slug'] }}_file_{{ $file->id }}" id="{{ $field['slug'] }}_file_{{ $file->id }}">
 
@@ -42,7 +42,7 @@ if($selected) {
 
 
                     <div wire:click="removeMediaFromField('{{ $field['slug'] }}', '{{ $file->id }}')">
-                        <x-icon icon="close" size="xs" class="rounded-full bg-white text-gray-400 cursor-pointer hover:text-red-500" />
+                        <x-aura::icon icon="close" size="xs" class="rounded-full bg-white text-gray-400 cursor-pointer hover:text-red-500" />
                     </div>
 
                 </div>
@@ -53,14 +53,14 @@ if($selected) {
     </div>
     @endif
 
-    <x-button.light wire:click="$emit('openModal', 'media-manager', {{ json_encode(['slug' => $field['slug'], 'selected' => $selected]) }})">
-        <x-slot:icon>
-            <x-icon icon="media" class="" />
-        </x-slot>
+    <x-aura::button.light wire:click="$emit('openModal', 'media-manager', {{ json_encode(['slug' => $field['slug'], 'selected' => $selected]) }})">
+        <x-aura::slot:icon>
+            <x-aura::icon icon="media" class="" />
+        </x-aura::slot>
 
         <span>Media Manager</span>
-    </x-button.light>
-</x-fields.wrapper>
+    </x-aura::button.light>
+</x-aura::fields.wrapper>
 </div>
 
 

@@ -1,6 +1,6 @@
-<x-guest-layout>
+<x-aura::layout.guest>
     <!-- Session Status -->
-    <x-auth-session-status class="mb-4" :status="session('status')" />
+    <x-aura::auth-session-status class="mb-4" :status="session('status')" />
 
     <form method="POST" action="{{ route('login') }}">
         @csrf
@@ -12,22 +12,22 @@
 
         <!-- Email Address -->
         <div>
-            <x-input-label class="sr-only" for="email" :value="__('Email')" />
-            <x-input.text id="email" placeholder="Enter your email" class="block w-full mt-1" type="email" name="email" :value="old('email')" required autofocus />
-            <x-input-error :messages="$errors->get('email')" class="mt-2" />
+            <x-aura::input-label class="sr-only" for="email" :value="__('Email')" />
+            <x-aura::input.text id="email" placeholder="Enter your email" class="block w-full mt-1" type="email" name="email" :value="old('email')" required autofocus />
+            <x-aura::input-error :messages="$errors->get('email')" class="mt-2" />
         </div>
 
         <!-- Password -->
         <div class="mt-0">
-            <x-input-label class="sr-only" for="password" :value="__('Password')" />
+            <x-aura::input-label class="sr-only" for="password" :value="__('Password')" />
 
-            <x-input.text id="password" class="block w-full mt-1"
+            <x-aura::input.text id="password" class="block w-full mt-1"
                             type="password"
                             name="password"
                             placeholder="Enter your password"
                             required autocomplete="current-password" />
 
-            <x-input-error :messages="$errors->get('password')" class="mt-2" />
+            <x-aura::input-error :messages="$errors->get('password')" class="mt-2" />
         </div>
 
         <div class="flex justify-between">
@@ -50,13 +50,13 @@
         </div>
 
         <div class="flex items-center justify-end mt-4">
-            <x-button type="submit" block>{{ __('Log in') }}</x-button>
+            <x-aura::button type="submit" block>{{ __('Log in') }}</x-aura::button>
         </div>
         {{-- <div class="flex items-center justify-end mt-4">
-            <x-button.border type="submit" block>{{ __('Log in with Google') }}</x-button.border>
+            <x-aura::button.border type="submit" block>{{ __('Log in with Google') }}</x-aura::button.border>
         </div> --}}
         <div>
 
             </div>
     </form>
-</x-guest-layout>
+</x-aura::layout.guest>

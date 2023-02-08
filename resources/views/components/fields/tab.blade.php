@@ -1,2 +1,2 @@
 
-<x-fields.fields />
+<x-aura::fields.fields />

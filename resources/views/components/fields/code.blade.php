@@ -1,11 +1,11 @@
-<x-fields.wrapper :field="$field">
+<x-aura::fields.wrapper :field="$field">
     <div class="w-full overflow-hidden bg-white border border-gray-500/30 rounded-lg shadow-xs appearance-none focus:border-primary-300 focus:outline-none ring-gray-900/10 focus:ring focus:ring-primary-300  focus:ring-opacity-50 dark:focus:ring-primary-500 dark:focus:ring-opacity-50 dark:bg-gray-900">
     <div class="relative h-96 ">
-        <div x-data
-            x-ref="aceEditor"
+        <div x-aura::data
+            x-aura::ref="aceEditor"
             id="editor"
             wire:ignore
-            x-init="
+            x-aura::init="
             ace.config.set('basePath', 'https://cdnjs.cloudflare.com/ajax/libs/ace/1.14.0/');
                 editor = ace.edit($refs.aceEditor);
                 editor.setTheme('ace/theme/github');
@@ -30,7 +30,7 @@
         >{{ optional($this->post['fields'])[$field['slug']] }}</div>
     </div>
     </div>
-</x-fields.wrapper>
+</x-aura::fields.wrapper>
 
 
 {{-- border-gray-500/30 focus:border-primary-300 focus:ring focus:ring-primary-300  focus:ring-opacity-50 dark:focus:ring-primary-500 dark:focus:ring-opacity-50 rounded-md shadow-sm --}}

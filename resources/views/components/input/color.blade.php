@@ -2,7 +2,7 @@
   'class' => ''
 ])
 
-<x-input
+<x-aura::input
   {{$attributes->merge([
     'class' => $class . ' ',
   ])}}

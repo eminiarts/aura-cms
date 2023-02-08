@@ -29,10 +29,10 @@ $settings = App\Aura::getOption('team-settings');
   tabindex="0"
   @endif
   {{$attributes->merge([
-    'class' => 'group flex items-center rounded-lg transition ease-in-out duration-150' . (Request::fullUrlIs($route ? route($route, $id) : '') ? ' is-active bg-primary-600 hover:bg-primary-600 text-white' : ' bg-transparent dark:bg-gray-800 dark:hover:bg-gray-900 hover:bg-primary-600') . ' ' .  ($compact ? 'sidebar-item-compact px-2 h-8' : 'sidebar-item px-3 h-10'),
+    'class' => 'group flex items-center rounded-lg transition ease-in-out duration-150' . (Request::fullUrlIs($route ? route($route, $id) : '') ? ' is-active bg-primary-600 hover:bg-primary-600 text-white' : ' bg-transparent dark:bg-gray-800 dark:hover:bg-gray-900 hover:bg-primary-600') . ' ' .  ($compact ? 'sidebar-item-compact px-aura::2 h-8' : 'sidebar-item px-aura::3 h-10'),
     ])}}
 >
-  <div class="flex items-center ml-0 font-semibold {{ $compact ? 'space-x-2 text-sm' : 'space-x-3 text-base' }}">
+  <div class="flex items-center ml-0 font-semibold {{ $compact ? 'space-x-aura::2 text-sm' : 'space-x-aura::3 text-base' }}">
     {{ $slot }}
   </div>
 </a>
@@ -45,10 +45,10 @@ $settings = App\Aura::getOption('team-settings');
   tabindex="0"
   @endif
   {{$attributes->merge([
-    'class' => 'sidebar-item group flex items-center rounded-lg transition ease-in-out duration-150' . (Request::fullUrlIs($route ? route($route, $id) : '') ? ' is-active bg-gray-200 dark:bg-gray-900 dark:text-white hover:bg-gray-200 text-gray-900' : ' bg-gray-50 text-gray-900 dark:text-white dark:bg-gray-800 dark:hover:bg-gray-900 hover:bg-gray-200') . ' ' .  ($compact ? 'sidebar-item-compact px-2 h-8' : 'sidebar-item px-3 h-10'),
+    'class' => 'sidebar-item group flex items-center rounded-lg transition ease-in-out duration-150' . (Request::fullUrlIs($route ? route($route, $id) : '') ? ' is-active bg-gray-200 dark:bg-gray-900 dark:text-white hover:bg-gray-200 text-gray-900' : ' bg-gray-50 text-gray-900 dark:text-white dark:bg-gray-800 dark:hover:bg-gray-900 hover:bg-gray-200') . ' ' .  ($compact ? 'sidebar-item-compact px-aura::2 h-8' : 'sidebar-item px-aura::3 h-10'),
     ])}}
 >
-  <div class="flex items-center ml-0 font-semibold {{ $compact ? 'space-x-2 text-sm' : 'space-x-3 text-base' }}">
+  <div class="flex items-center ml-0 font-semibold {{ $compact ? 'space-x-aura::2 text-sm' : 'space-x-aura::3 text-base' }}">
     {{ $slot }}
   </div>
 </a>
@@ -63,10 +63,10 @@ $settings = App\Aura::getOption('team-settings');
   tabindex="1"
   @endif
   {{$attributes->merge([
-    'class' => 'sidebar-item group flex items-center rounded-lg transition ease-in-out duration-150' . (Request::fullUrlIs($route ? route($route, $id) : '') ? ' is-active bg-gray-900 hover:bg-gray-900 text-white' : ' bg-gray-800 hover:bg-gray-900') . ' ' .  ($compact ? 'sidebar-item-compact px-2 h-8' : 'sidebar-item px-3 h-10'),
+    'class' => 'sidebar-item group flex items-center rounded-lg transition ease-in-out duration-150' . (Request::fullUrlIs($route ? route($route, $id) : '') ? ' is-active bg-gray-900 hover:bg-gray-900 text-white' : ' bg-gray-800 hover:bg-gray-900') . ' ' .  ($compact ? 'sidebar-item-compact px-aura::2 h-8' : 'sidebar-item px-aura::3 h-10'),
     ])}}
 >
-  <div class="flex items-center ml-0 font-semibold {{ $compact ? 'space-x-2 text-sm' : 'space-x-3 text-base' }}">
+  <div class="flex items-center ml-0 font-semibold {{ $compact ? 'space-x-aura::2 text-sm' : 'space-x-aura::3 text-base' }}">
     {{ $slot }}
   </div>
 </a>

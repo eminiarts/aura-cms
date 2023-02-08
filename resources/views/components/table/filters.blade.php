@@ -4,7 +4,7 @@
 <div>
     <div>
         {{-- select dropdown with filters @foreach($this->userFilters as $userFilter)--}}
-        <select wire:model="selectedFilter" class="block w-full px-3 py-2 pl-3 pr-10 mt-1 text-base bg-white border-gray-500/30 rounded-lg shadow-xs appearance-none focus:border-primary-300 focus:outline-none ring-gray-900/10 focus:ring focus:ring-primary-300 focus:ring-opacity-50 dark:focus:ring-primary-500 dark:focus:ring-opacity-50 dark:bg-gray-900 dark:border-gray-700 sm:text-sm">
+        <select wire:model="selectedFilter" class="block w-full px-aura::3 py-2 pl-3 pr-10 mt-1 text-base bg-white border-gray-500/30 rounded-lg shadow-xs appearance-none focus:border-primary-300 focus:outline-none ring-gray-900/10 focus:ring focus:ring-primary-300 focus:ring-opacity-50 dark:focus:ring-primary-500 dark:focus:ring-opacity-50 dark:bg-gray-900 dark:border-gray-700 sm:text-sm">
             <option value="">Select a filter</option>
             @foreach($this->userFilters as $name => $userFilter)
             <option value="{{ $name }}">{{ $name }}</option>
@@ -15,9 +15,9 @@
         @if($this->selectedFilter)
         <div class="flex items-center justify-between my-4">
             <h4 class="font-semibold text-primary-600">Filter: {{ $this->selectedFilter }}</h4>
-            <x-button.transparent size="xs" wire:click="deleteFilter('{{ $this->selectedFilter }}')">
-            <x-icon icon="trash" size="xs"/> Delete Filter
-        </x-button.transparent>
+            <x-aura::button.transparent size="xs" wire:click="deleteFilter('{{ $this->selectedFilter }}')">
+            <x-aura::icon icon="trash" size="xs"/> Delete Filter
+        </x-aura::button.transparent>
         </div>
         @endif
 
@@ -30,10 +30,10 @@
 
     <div>
         <h4 class="my-4 font-semibold text-primary-600">{{ $field['name'] }}</h4>
-        <div class="flex flex-col space-y-2">
+        <div class="flex flex-aura::col space-y-2">
             @foreach (app($field['model'])->get() as $taxonomy)
             <div class="flex items-center">
-                <x-input.checkbox wire:model="filters.taxonomy.{{ $taxonomy->taxonomy }}" name="taxonomy_{{ $taxonomy->id }}" id="taxonomy_{{ $taxonomy->id }}" :label="$taxonomy->name" :value="$taxonomy->id" />
+                <x-aura::input.checkbox wire:model="filters.taxonomy.{{ $taxonomy->taxonomy }}" name="taxonomy_{{ $taxonomy->id }}" id="taxonomy_{{ $taxonomy->id }}" :label="$taxonomy->name" :value="$taxonomy->id" />
             </div>
             @endforeach
         </div>
@@ -56,9 +56,9 @@
                 <div class="py-1 text-base font-semibold">Filter #{{ $key }}</div>
 
                 <div>
-                    <x-button.transparent size="xs" wire:click="removeCustomFilter('{{ $key }}')">
-                        <x-icon class="text-red-600" icon="close" size="xs"/>
-                    </x-button.transparent>
+                    <x-aura::button.transparent size="xs" wire:click="removeCustomFilter('{{ $key }}')">
+                        <x-aura::icon class="text-red-600" icon="close" size="xs"/>
+                    </x-aura::button.transparent>
                 </div>
             </div>
 
@@ -83,7 +83,7 @@
 
             <div class="w-full mt-2 mb-0">
                 <div class="w-full">
-                    <x-input.wrapper placeholder="Value" wire:model.defer="filters.custom.{{ $key}}.value" error="filters.custom.{{ $key }}.value"></x-input.wrapper>
+                    <x-aura::input.wrapper placeholder="Value" wire:model.defer="filters.custom.{{ $key}}.value" error="filters.custom.{{ $key }}.value"></x-aura::input.wrapper>
                 </div>
             </div>
         </div>
@@ -92,33 +92,33 @@
 
         @endforelse
 
-        <x-button.light size="xs" wire:click="addFilter" class="mt-4">Add Filter</x-button.light>
+        <x-aura::button.light size="xs" wire:click="addFilter" class="mt-4">Add Filter</x-aura::button.light>
 
 
-        <x-button.transparent size="xs" wire:click="resetFilter" class="mt-4">Reset Filter</x-button.transparent>
+        <x-aura::button.transparent size="xs" wire:click="resetFilter" class="mt-4">Reset Filter</x-aura::button.transparent>
 
 
-        {{-- <x-button.transparent size="xs" wire:click="saveFilter" class="mt-4">Save as Template</x-button.transparent> --}}
+        {{-- <x-aura::button.transparent size="xs" wire:click="saveFilter" class="mt-4">Save as Template</x-aura::button.transparent> --}}
 
         {{-- Save Filter Modal Button --}}
-        <x-button.transparent size="xs" wire:click="$set('showSaveFilterModal', true)" class="mt-4">Save as Template</x-button.transparent>
+        <x-aura::button.transparent size="xs" wire:click="$set('showSaveFilterModal', true)" class="mt-4">Save as Template</x-aura::button.transparent>
 
         {{-- Ask for a name to save the filter --}}
-        <x-dialog-modal wire:model="showSaveFilterModal">
-            <x-slot name="title">
+        <x-aura::dialog-modal wire:model="showSaveFilterModal">
+            <x-aura::slot name="title">
                 Save Filter
-            </x-slot>
+            </x-aura::slot>
 
-            <x-slot name="content">
-                <x-input.text required wire:model.defer="filterName" error="filterName" placeholder="Enter a Name for the Filter"></x-input.text>
+            <x-aura::slot name="content">
+                <x-aura::input.text required wire:model.defer="filterName" error="filterName" placeholder="Enter a Name for the Filter"></x-aura::input.text>
 
-                <x-jet-input-error for="filterName" class="mt-2" />
-            </x-slot>
+                <x-aura::jet-input-error for="filterName" class="mt-2" />
+            </x-aura::slot>
 
-            <x-slot name="footer">
-                <x-button.primary wire:click="saveFilter">Save as Template</x-button.primary>
-            </x-slot>
-        </x-dialog-modal>
+            <x-aura::slot name="footer">
+                <x-aura::button.primary wire:click="saveFilter">Save as Template</x-aura::button.primary>
+            </x-aura::slot>
+        </x-aura::dialog-modal>
 
 
 
@@ -129,4 +129,4 @@
     </div>
 
 
-    <x-button.primary wire:click="search" class="mt-4">Search</x-button.primary>
+    <x-aura::button.primary wire:click="search" class="mt-4">Search</x-aura::button.primary>

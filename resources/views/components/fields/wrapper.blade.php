@@ -1,6 +1,6 @@
 @props([
 'field',
-'wrapperClass' => 'px-4',
+'wrapperClass' => 'px-aura::4',
 'showLabel' => true,
 ])
 
@@ -18,7 +18,7 @@
     width: {{ optional(optional($field)['style'])['width'] ?? '100' }}%;
   }
 
-  @media screen and (max-width: 768px) {
+  @media screen and (max-aura::width: 768px) {
     #post-field-{{ $slug }}-wrapper {
       width: 100%;
     }
@@ -28,15 +28,15 @@
         class="{{ $wrapperClass }}">
   <div class="flex items-center justify-between">
     @if ($label && $showLabel)
-      <x-fields.label :label="$label" />
+      <x-aura::fields.label :label="$label" />
     @endif
 
     @if($help)
 
     <div class="text-gray-300">
-      <x-tippy text="{{ $help }}" position="left" class="text-sm text-gray-400 bg-white">
-        <x-icon icon="info" size='sm' />
-      </x-tippy>
+      <x-aura::tippy text="{{ $help }}" position="left" class="text-sm text-gray-400 bg-white">
+        <x-aura::icon icon="info" size='sm' />
+      </x-aura::tippy>
     </div>
     @endif
   </div>
@@ -46,7 +46,7 @@
        {{ $slot }}
       @else
       NO SLOT DEFINED
-        <x-input.text :attributes="$attributes"></x-input.text>
+        <x-aura::input.text :attributes="$attributes"></x-aura::input.text>
       @endif
 
     @if($model)
