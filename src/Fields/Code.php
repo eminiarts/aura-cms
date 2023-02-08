@@ -19,14 +19,14 @@ class Code extends Field
             [
                 'label' => 'Code',
                 'name' => 'Code',
-                'type' => 'App\\Aura\\Fields\\Tab',
+                'type' => 'Eminiarts\\Aura\\Fields\\Tab',
                 'slug' => 'code',
                 'style' => [],
             ],
             [
                 'label' => 'Language',
                 'name' => 'Language',
-                'type' => 'App\\Aura\\Fields\\Select',
+                'type' => 'Eminiarts\\Aura\\Fields\\Select',
                 'validation' => 'required',
                 'slug' => 'language',
                 'options' => [

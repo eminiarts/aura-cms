@@ -71,7 +71,7 @@ class Taxonomy extends ModelsTaxonomy
         return [
             'name' => [
                 'name' => 'Name',
-                'type' => 'App\\Aura\\Fields\\Text',
+                'type' => 'Eminiarts\\Aura\\Fields\\Text',
                 'validation' => 'required',
                 'conditional_logic' => [
                 ],
@@ -81,14 +81,14 @@ class Taxonomy extends ModelsTaxonomy
             'description' => [
                 'label' => 'Text',
                 'name' => 'Beschreibung',
-                'type' => 'App\\Aura\\Fields\\Text',
+                'type' => 'Eminiarts\\Aura\\Fields\\Text',
                 'conditional_logic' => [
                 ],
                 'slug' => 'description',
             ],
             'slug' => [
                 'name' => 'Slug',
-                'type' => 'App\\Aura\\Fields\\Text',
+                'type' => 'Eminiarts\\Aura\\Fields\\Text',
                 'validation' => 'required',
                 'conditional_logic' => [
                 ],
@@ -96,7 +96,7 @@ class Taxonomy extends ModelsTaxonomy
             ],
             'count' => [
                 'name' => 'Count',
-                'type' => 'App\\Aura\\Fields\\Number',
+                'type' => 'Eminiarts\\Aura\\Fields\\Number',
                 'conditional_logic' => [
                 ],
                 'slug' => 'count',

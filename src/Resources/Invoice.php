@@ -44,14 +44,14 @@ class Invoice extends Post
     {
         return [
     [
-        'type' => 'App\\Aura\\Fields\\Tab',
+        'type' => 'Eminiarts\\Aura\\Fields\\Tab',
         'name' => 'Invoice',
         'slug' => 'tab-invoice',
         'global' => true,
     ],
     [
         'name' => 'Debtor',
-        'type' => 'App\\Aura\\Fields\\Panel',
+        'type' => 'Eminiarts\\Aura\\Fields\\Panel',
         'validation' => '',
         'on_index' => true,
         'has_conditional_logic' => false,
@@ -65,8 +65,8 @@ class Invoice extends Post
     [
         'name' => 'User',
         'slug' => 'user_id',
-        'type' => 'App\\Aura\\Fields\\BelongsTo',
-        'model' => 'App\\Aura\\Resources\\User',
+        'type' => 'Eminiarts\\Aura\\Fields\\BelongsTo',
+        'model' => 'Eminiarts\\Aura\\Resources\\User',
         'validation' => '',
         'conditional_logic' => '',
         'has_conditional_logic' => false,
@@ -76,7 +76,7 @@ class Invoice extends Post
     ],
     [
         'name' => 'Infos',
-        'type' => 'App\\Aura\\Fields\\Panel',
+        'type' => 'Eminiarts\\Aura\\Fields\\Panel',
         'validation' => '',
         'on_index' => true,
         'has_conditional_logic' => false,
@@ -90,7 +90,7 @@ class Invoice extends Post
     [
         'name' => 'Invoice Date',
         'slug' => 'date',
-        'type' => 'App\\Aura\\Fields\\Date',
+        'type' => 'Eminiarts\\Aura\\Fields\\Date',
         'format' => 'd.m.Y',
         'validation' => 'required',
         'conditional_logic' => '',
@@ -105,7 +105,7 @@ class Invoice extends Post
     [
         'name' => 'Invoice Number',
         'slug' => 'invoice_number',
-        'type' => 'App\\Aura\\Fields\\Text',
+        'type' => 'Eminiarts\\Aura\\Fields\\Text',
         'validation' => '',
         'conditional_logic' => '',
         'has_conditional_logic' => false,
@@ -119,7 +119,7 @@ class Invoice extends Post
     [
         'name' => 'Due Date',
         'slug' => 'due_date',
-        'type' => 'App\\Aura\\Fields\\Date',
+        'type' => 'Eminiarts\\Aura\\Fields\\Date',
         'format' => 'd.m.Y',
         'validation' => 'required',
         'conditional_logic' => '',
@@ -134,7 +134,7 @@ class Invoice extends Post
     [
         'name' => 'Reference',
         'slug' => 'reference',
-        'type' => 'App\\Aura\\Fields\\Text',
+        'type' => 'Eminiarts\\Aura\\Fields\\Text',
         'validation' => '',
         'conditional_logic' => '',
         'has_conditional_logic' => false,
@@ -148,7 +148,7 @@ class Invoice extends Post
     [
         'name' => 'Delivery Date',
         'slug' => 'delivery_date',
-        'type' => 'App\\Aura\\Fields\\Date',
+        'type' => 'Eminiarts\\Aura\\Fields\\Date',
         'format' => 'd.m.Y',
         'validation' => '',
         'conditional_logic' => '',
@@ -163,7 +163,7 @@ class Invoice extends Post
     [
         'name' => 'Bank connection',
         'slug' => 'bank',
-        'type' => 'App\\Aura\\Fields\\Text',
+        'type' => 'Eminiarts\\Aura\\Fields\\Text',
         'validation' => '',
         'conditional_logic' => '',
         'has_conditional_logic' => false,
@@ -176,7 +176,7 @@ class Invoice extends Post
     ],
     [
         'name' => 'Title',
-        'type' => 'App\\Aura\\Fields\\Panel',
+        'type' => 'Eminiarts\\Aura\\Fields\\Panel',
         'validation' => '',
         'on_index' => true,
         'has_conditional_logic' => false,
@@ -190,7 +190,7 @@ class Invoice extends Post
     [
         'name' => 'Title',
         'slug' => 'title',
-        'type' => 'App\\Aura\\Fields\\Text',
+        'type' => 'Eminiarts\\Aura\\Fields\\Text',
         'validation' => '',
         'conditional_logic' => '',
         'has_conditional_logic' => false,
@@ -203,7 +203,7 @@ class Invoice extends Post
     ],
     [
         'name' => 'Invoice Items',
-        'type' => 'App\\Aura\\Fields\\Panel',
+        'type' => 'Eminiarts\\Aura\\Fields\\Panel',
         'validation' => '',
         'on_index' => true,
         'has_conditional_logic' => false,
@@ -216,7 +216,7 @@ class Invoice extends Post
     ],
     [
         'name' => 'Invoice Items',
-        'type' => 'App\\Aura\\Fields\\Repeater',
+        'type' => 'Eminiarts\\Aura\\Fields\\Repeater',
         'validation' => '',
         'on_index' => false,
         'has_conditional_logic' => false,
@@ -230,7 +230,7 @@ class Invoice extends Post
     [
         'name' => 'Product',
         'slug' => 'product',
-        'type' => 'App\\Aura\\Fields\\Text',
+        'type' => 'Eminiarts\\Aura\\Fields\\Text',
         'validation' => '',
         'on_index' => false,
         'conditional_logic' => '',
@@ -242,7 +242,7 @@ class Invoice extends Post
     [
         'name' => 'Description',
         'slug' => 'description',
-        'type' => 'App\\Aura\\Fields\\Text',
+        'type' => 'Eminiarts\\Aura\\Fields\\Text',
         'validation' => '',
         'on_index' => false,
         'conditional_logic' => '',
@@ -254,7 +254,7 @@ class Invoice extends Post
     [
         'name' => 'Price',
         'slug' => 'item_price',
-        'type' => 'App\\Aura\\Fields\\Text',
+        'type' => 'Eminiarts\\Aura\\Fields\\Text',
         'suffix' => 'CHF',
         'validation' => '',
         'on_index' => false,
@@ -267,7 +267,7 @@ class Invoice extends Post
     [
         'name' => 'Quantity',
         'slug' => 'quantity',
-        'type' => 'App\\Aura\\Fields\\Number',
+        'type' => 'Eminiarts\\Aura\\Fields\\Number',
         'validation' => '',
         'on_index' => false,
         'conditional_logic' => '',
@@ -279,7 +279,7 @@ class Invoice extends Post
     [
         'name' => 'Type',
         'slug' => 'Type',
-        'type' => 'App\\Aura\\Fields\\Select',
+        'type' => 'Eminiarts\\Aura\\Fields\\Select',
         'options' => [
             'hours' => 'Hours',
             'days' => 'Days',
@@ -296,7 +296,7 @@ class Invoice extends Post
     [
         'name' => 'Tax',
         'slug' => 'tax',
-        'type' => 'App\\Aura\\Fields\\Select',
+        'type' => 'Eminiarts\\Aura\\Fields\\Select',
         'options' => [
             '0%',
             '2.5' => '2.5%',
@@ -313,7 +313,7 @@ class Invoice extends Post
     [
         'name' => 'Sum',
         'slug' => 'item_sum',
-        'type' => 'App\\Aura\\Fields\\Text',
+        'type' => 'Eminiarts\\Aura\\Fields\\Text',
         'suffix' => 'CHF',
         'validation' => '',
         'on_index' => false,
@@ -325,7 +325,7 @@ class Invoice extends Post
     ],
     [
         'name' => 'Notes',
-        'type' => 'App\\Aura\\Fields\\Panel',
+        'type' => 'Eminiarts\\Aura\\Fields\\Panel',
         'validation' => '',
         'on_index' => true,
         'has_conditional_logic' => false,
@@ -340,7 +340,7 @@ class Invoice extends Post
     [
         'name' => 'Public Notes',
         'slug' => 'public_notes',
-        'type' => 'App\\Aura\\Fields\\Textarea',
+        'type' => 'Eminiarts\\Aura\\Fields\\Textarea',
         'validation' => '',
         'conditional_logic' => '',
         'has_conditional_logic' => false,
@@ -351,7 +351,7 @@ class Invoice extends Post
     [
         'name' => 'Foot Notes',
         'slug' => 'foot_notes',
-        'type' => 'App\\Aura\\Fields\\Textarea',
+        'type' => 'Eminiarts\\Aura\\Fields\\Textarea',
         'validation' => '',
         'conditional_logic' => '',
         'has_conditional_logic' => false,
@@ -361,7 +361,7 @@ class Invoice extends Post
     ],
     [
         'name' => 'Invoice Sum',
-        'type' => 'App\\Aura\\Fields\\Panel',
+        'type' => 'Eminiarts\\Aura\\Fields\\Panel',
         'validation' => '',
         'on_index' => true,
         'has_conditional_logic' => false,
@@ -375,7 +375,7 @@ class Invoice extends Post
     [
         'name' => 'Discount',
         'slug' => 'discount',
-        'type' => 'App\\Aura\\Fields\\Number',
+        'type' => 'Eminiarts\\Aura\\Fields\\Number',
         'validation' => '',
         'conditional_logic' => '',
         'has_conditional_logic' => false,
@@ -386,7 +386,7 @@ class Invoice extends Post
     [
         'name' => 'Discount Type',
         'slug' => 'discount_type',
-        'type' => 'App\\Aura\\Fields\\Select',
+        'type' => 'Eminiarts\\Aura\\Fields\\Select',
         'validation' => '',
         'conditional_logic' => '',
         'has_conditional_logic' => false,
@@ -401,7 +401,7 @@ class Invoice extends Post
     [
         'name' => 'Invoice Sum',
         'slug' => 'invoice_sum',
-        'type' => 'App\\Aura\\Fields\\Number',
+        'type' => 'Eminiarts\\Aura\\Fields\\Number',
         'validation' => '',
         'conditional_logic' => '',
         'has_conditional_logic' => false,
@@ -410,14 +410,14 @@ class Invoice extends Post
         ],
     ],
     [
-        'type' => 'App\\Aura\\Fields\\Tab',
+        'type' => 'Eminiarts\\Aura\\Fields\\Tab',
         'name' => 'Tab',
         'slug' => 'tab-6PW8',
         'global' => true,
     ],
     [
         'name' => 'Sidebar',
-        'type' => 'App\\Aura\\Fields\\Panel',
+        'type' => 'Eminiarts\\Aura\\Fields\\Panel',
         'validation' => '',
         'on_index' => true,
         'has_conditional_logic' => false,
@@ -431,8 +431,8 @@ class Invoice extends Post
     [
         'name' => 'Tags',
         'slug' => 'tags',
-        'type' => 'App\\Aura\\Fields\\Tags',
-        'model' => 'App\\Aura\\Taxonomies\\Tag',
+        'type' => 'Eminiarts\\Aura\\Fields\\Tags',
+        'model' => 'Eminiarts\\Aura\\Taxonomies\\Tag',
         'create' => true,
         'validation' => '',
         'conditional_logic' => '',
@@ -444,8 +444,8 @@ class Invoice extends Post
     [
         'name' => 'Categories',
         'slug' => 'categories',
-        'type' => 'App\\Aura\\Fields\\Tags',
-        'model' => 'App\\Aura\\Taxonomies\\Category',
+        'type' => 'Eminiarts\\Aura\\Fields\\Tags',
+        'model' => 'Eminiarts\\Aura\\Taxonomies\\Category',
         'create' => true,
         'validation' => '',
         'conditional_logic' => '',
@@ -458,7 +458,7 @@ class Invoice extends Post
         'name' => 'Panel 2',
         'slug' => 'panel1',
         'on_index' => false,
-        'type' => 'App\\Aura\\Fields\\Panel',
+        'type' => 'Eminiarts\\Aura\\Fields\\Panel',
         'validation' => '',
         'conditional_logic' => [
         ],
@@ -466,7 +466,7 @@ class Invoice extends Post
     ],
     [
         'name' => 'Text Yy5q',
-        'type' => 'App\\Aura\\Fields\\Text',
+        'type' => 'Eminiarts\\Aura\\Fields\\Text',
         'validation' => '',
         'conditional_logic' => [
         ],

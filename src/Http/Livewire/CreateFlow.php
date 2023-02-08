@@ -62,7 +62,7 @@ class CreateFlow extends Component
             'name' => 'New Operation',
             'status' => 'active',
             'user_id' => auth()->id(),
-            'type' => 'App\\Aura\\Operations\\Log',
+            'type' => 'Eminiarts\\Aura\\Operations\\Log',
             'options' => [
                 'x' => $o['options']['x'] + $x,
                 'y' => $o['options']['y'] + $y,
@@ -84,7 +84,7 @@ class CreateFlow extends Component
             'name' => 'New Operation',
             'status' => 'active',
             'user_id' => auth()->id(),
-            'type' => 'App\\Aura\\Operations\\Log',
+            'type' => 'Eminiarts\\Aura\\Operations\\Log',
             'options' => [
                 'x' => 2 + 12,
                 'y' => 2 + 0,

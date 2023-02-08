@@ -11,21 +11,21 @@ class Mail extends BaseOperation
         return array_merge(parent::getFields(), [
             [
                 'name' => 'Subject',
-                'type' => 'App\\Aura\\Fields\\Text',
+                'type' => 'Eminiarts\\Aura\\Fields\\Text',
                 'instructions' => 'Subject of the Mail',
                 'validation' => 'required',
                 'slug' => 'subject',
             ],
             [
                 'name' => 'To',
-                'type' => 'App\\Aura\\Fields\\Text',
+                'type' => 'Eminiarts\\Aura\\Fields\\Text',
                 'instructions' => 'Recipient of the Mail',
                 'validation' => 'required|email',
                 'slug' => 'to',
             ],
             [
                 'name' => 'Body',
-                'type' => 'App\\Aura\\Fields\\Textarea',
+                'type' => 'Eminiarts\\Aura\\Fields\\Textarea',
                 'instructions' => 'Body of the Mail',
                 'validation' => 'required',
                 'slug' => 'body',

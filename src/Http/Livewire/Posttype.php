@@ -47,18 +47,18 @@ class Posttype extends Component
         // dd($id, $slug, $type, $children);
         $children = (int) $children;
         $str = Str::random(4);
-        if ($type == 'App\\Aura\\Fields\\Tab') {
+        if ($type == 'Eminiarts\\Aura\\Fields\\Tab') {
             $field = [
                 'name' => 'Tab '.$str,
-                'type' => 'App\\Aura\\Fields\\Text',
+                'type' => 'Eminiarts\\Aura\\Fields\\Text',
                 'validation' => '',
                 'conditional_logic' => [],
                 'slug' => 'tab'.'_'.$str,
             ];
-        } elseif ($type == 'App\\Aura\\Fields\\Panel') {
+        } elseif ($type == 'Eminiarts\\Aura\\Fields\\Panel') {
             $field = [
                 'name' => 'Panel '.$str,
-                'type' => 'App\\Aura\\Fields\\Panel',
+                'type' => 'Eminiarts\\Aura\\Fields\\Panel',
                 'validation' => '',
                 'conditional_logic' => [],
                 'slug' => 'panel'.'_'.$str,
@@ -66,7 +66,7 @@ class Posttype extends Component
         } else {
             $field = [
                 'name' => 'Text '.$str,
-                'type' => 'App\\Aura\\Fields\\Text',
+                'type' => 'Eminiarts\\Aura\\Fields\\Text',
                 'validation' => '',
                 'conditional_logic' => [],
                 'slug' => 'text'.'_'.$str,

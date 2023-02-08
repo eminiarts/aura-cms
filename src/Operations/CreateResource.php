@@ -11,21 +11,21 @@ class CreateResource extends BaseOperation
         return array_merge(parent::getFields(), [
             [
                 'name' => 'Resource',
-                'type' => 'App\\Aura\\Fields\\Text',
+                'type' => 'Eminiarts\\Aura\\Fields\\Text',
                 'instructions' => 'Class of the Resource',
                 'validation' => 'required',
                 'slug' => 'resource',
             ],
             [
                 'name' => 'Data Title',
-                'type' => 'App\\Aura\\Fields\\Text',
+                'type' => 'Eminiarts\\Aura\\Fields\\Text',
                 'instructions' => 'Title of the Resource',
                 'validation' => 'required',
                 'slug' => 'data.title',
             ],
             [
                 'name' => 'Data Status',
-                'type' => 'App\\Aura\\Fields\\Text',
+                'type' => 'Eminiarts\\Aura\\Fields\\Text',
                 'instructions' => 'Status of the Resource',
                 'validation' => 'required',
                 'slug' => 'data.status',
@@ -40,7 +40,7 @@ class CreateResource extends BaseOperation
         // if $post->type is the same as $operation->options['resource'] then throw expception
         // dd($post->type, $operation->options['resource']);
 
-        if ($operation->flow->options['event'] == 'created' && 'App\\Aura\\Resources\\'.$post->type == $operation->options['resource']) {
+        if ($operation->flow->options['event'] == 'created' && 'Eminiarts\\Aura\\Resources\\'.$post->type == $operation->options['resource']) {
             throw new \Exception('Cannot create post of same type');
         }
 

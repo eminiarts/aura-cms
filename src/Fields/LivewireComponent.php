@@ -13,13 +13,13 @@ class LivewireComponent extends Field
         return array_merge(parent::getFields(), [
             [
                 'name' => 'Component',
-                'type' => 'App\\Aura\\Fields\\Tab',
+                'type' => 'Eminiarts\\Aura\\Fields\\Tab',
                 'slug' => 'component-tab',
                 'style' => [],
             ],
             [
                 'name' => 'Component',
-                'type' => 'App\\Aura\\Fields\\Text',
+                'type' => 'Eminiarts\\Aura\\Fields\\Text',
                 'validation' => '',
                 'slug' => 'component',
             ],

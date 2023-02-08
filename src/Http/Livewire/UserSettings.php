@@ -26,14 +26,14 @@ class UserSettings extends Component
     {
         return [
             [
-                'type' => 'App\\Aura\\Fields\\Tab',
+                'type' => 'Eminiarts\\Aura\\Fields\\Tab',
                 'name' => 'General',
                 'label' => 'General',
                 'slug' => 'tab-general',
                 'global' => true,
             ],
             [
-                'type' => 'App\\Aura\\Fields\\Panel',
+                'type' => 'Eminiarts\\Aura\\Fields\\Panel',
                 'name' => 'Panel',
                 'label' => 'Panel',
                 'slug' => 'panel-DZzV',
@@ -41,7 +41,7 @@ class UserSettings extends Component
             [
                 'label' => 'Title',
                 'name' => 'Title',
-                'type' => 'App\\Aura\\Fields\\Text',
+                'type' => 'Eminiarts\\Aura\\Fields\\Text',
                 'validation' => 'required',
                 'slug' => 'title',
                 'style' => [

@@ -24,7 +24,7 @@ class Role extends Post
             //             [
             //                 'name' => 'Role',
             //                 'slug' => 'role',
-            //                 'type' => 'App\\Aura\\Fields\\Tab',
+            //                 'type' => 'Eminiarts\\Aura\\Fields\\Tab',
             //                 'validation' => '',
             //                 'conditional_logic' => '',
             //                 'has_conditional_logic' => false,
@@ -35,7 +35,7 @@ class Role extends Post
             [
                 'name' => 'Name',
                 'slug' => 'title',
-                'type' => 'App\\Aura\\Fields\\Text',
+                'type' => 'Eminiarts\\Aura\\Fields\\Text',
                 'validation' => '',
                 'conditional_logic' => '',
                 'has_conditional_logic' => false,
@@ -47,7 +47,7 @@ class Role extends Post
             [
                 'name' => 'Slug',
                 'slug' => 'name',
-                'type' => 'App\\Aura\\Fields\\Text',
+                'type' => 'Eminiarts\\Aura\\Fields\\Text',
                 'validation' => 'required',
                 'on_index' => false,
                 'style' => [
@@ -57,7 +57,7 @@ class Role extends Post
             [
                 'name' => 'Description',
                 'slug' => 'description',
-                'type' => 'App\\Aura\\Fields\\Textarea',
+                'type' => 'Eminiarts\\Aura\\Fields\\Textarea',
                 'validation' => '',
                 'conditional_logic' => '',
                 'has_conditional_logic' => false,
@@ -82,7 +82,7 @@ class Role extends Post
             [
                 'name' => 'Permissions',
                 'on_index' => false,
-                'type' => 'App\\Aura\\Fields\\Permissions',
+                'type' => 'Eminiarts\\Aura\\Fields\\Permissions',
                 'validation' => '',
                 'conditional_logic' => [
                     [
@@ -92,7 +92,7 @@ class Role extends Post
                     ],
                 ],
                 'slug' => 'permissions',
-                'posttype' => 'App\\Aura\\Resources\\Permission',
+                'posttype' => 'Eminiarts\\Aura\\Resources\\Permission',
             ],
         ];
     }

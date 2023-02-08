@@ -13,13 +13,13 @@ class View extends Field
         return array_merge(parent::getFields(), [
             [
                 'name' => 'View',
-                'type' => 'App\\Aura\\Fields\\Tab',
+                'type' => 'Eminiarts\\Aura\\Fields\\Tab',
                 'slug' => 'view-tab',
                 'style' => [],
             ],
             [
                 'name' => 'View',
-                'type' => 'App\\Aura\\Fields\\Text',
+                'type' => 'Eminiarts\\Aura\\Fields\\Text',
                 'validation' => '',
                 'slug' => 'view',
             ],

@@ -23,7 +23,7 @@ class Permission extends Post
             [
                 'name' => 'Name',
                 'slug' => 'name',
-                'type' => 'App\\Aura\\Fields\\Text',
+                'type' => 'Eminiarts\\Aura\\Fields\\Text',
                 'validation' => 'required',
                 'conditional_logic' => '',
                 'has_conditional_logic' => false,
@@ -34,7 +34,7 @@ class Permission extends Post
             ],
             [
                 'name' => 'Slug',
-                'type' => 'App\\Aura\\Fields\\Text',
+                'type' => 'Eminiarts\\Aura\\Fields\\Text',
                 'validation' => 'required',
                 'on_index' => true,
                 'slug' => 'slug',
@@ -45,7 +45,7 @@ class Permission extends Post
             [
                 'name' => 'Description',
                 'slug' => 'description',
-                'type' => 'App\\Aura\\Fields\\Textarea',
+                'type' => 'Eminiarts\\Aura\\Fields\\Textarea',
                 'validation' => '',
                 'conditional_logic' => '',
                 'has_conditional_logic' => false,
@@ -57,7 +57,7 @@ class Permission extends Post
             [
                 'name' => 'Group',
                 'slug' => 'group',
-                'type' => 'App\\Aura\\Fields\\Select',
+                'type' => 'Eminiarts\\Aura\\Fields\\Select',
                 'validation' => '',
                 'conditional_logic' => '',
                 'options' => [

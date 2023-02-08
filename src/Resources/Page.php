@@ -20,14 +20,14 @@ class Page extends Post
             [
                 'name' => 'Tab 1',
                 'global' => true,
-                'type' => 'App\\Aura\\Fields\\Tab',
+                'type' => 'Eminiarts\\Aura\\Fields\\Tab',
                 'slug' => 'tab-1',
                 'style' => [
                 ],
             ],
             [
                 'name' => 'Panel 1',
-                'type' => 'App\\Aura\\Fields\\Panel',
+                'type' => 'Eminiarts\\Aura\\Fields\\Panel',
                 'slug' => 'panel-1',
                 'style' => [
                     'width' => '70',
@@ -35,7 +35,7 @@ class Page extends Post
             ],
             [
                 'name' => 'Text',
-                'type' => 'App\\Aura\\Fields\\Text',
+                'type' => 'Eminiarts\\Aura\\Fields\\Text',
                 'validation' => '',
                 'conditional_logic' => [
                 ],
@@ -43,7 +43,7 @@ class Page extends Post
             ],
             [
                 'name' => 'Slug',
-                'type' => 'App\\Aura\\Fields\\Slug',
+                'type' => 'Eminiarts\\Aura\\Fields\\Slug',
                 'validation' => '',
                 'conditional_logic' => [
                 ],
@@ -52,7 +52,7 @@ class Page extends Post
             ],
             [
                 'name' => 'Panel Tab 1',
-                'type' => 'App\\Aura\\Fields\\Tab',
+                'type' => 'Eminiarts\\Aura\\Fields\\Tab',
                 'validation' => '',
                 'conditional_logic' => [
                 ],
@@ -60,7 +60,7 @@ class Page extends Post
             ],
             [
                 'name' => 'Boolean',
-                'type' => 'App\\Aura\\Fields\\Boolean',
+                'type' => 'Eminiarts\\Aura\\Fields\\Boolean',
                 'validation' => '',
                 'conditional_logic' => [
                 ],
@@ -68,7 +68,7 @@ class Page extends Post
             ],
             [
                 'name' => 'Color',
-                'type' => 'App\\Aura\\Fields\\Color',
+                'type' => 'Eminiarts\\Aura\\Fields\\Color',
                 'validation' => '',
                 'conditional_logic' => [
                 ],
@@ -76,7 +76,7 @@ class Page extends Post
             ],
             [
                 'name' => 'Date',
-                'type' => 'App\\Aura\\Fields\\Date',
+                'type' => 'Eminiarts\\Aura\\Fields\\Date',
                 'validation' => '',
                 'conditional_logic' => [
                 ],
@@ -87,7 +87,7 @@ class Page extends Post
             ],
             [
                 'name' => 'Textarea',
-                'type' => 'App\\Aura\\Fields\\Textarea',
+                'type' => 'Eminiarts\\Aura\\Fields\\Textarea',
                 'validation' => '',
                 'conditional_logic' => [
                 ],
@@ -95,7 +95,7 @@ class Page extends Post
             ],
             [
                 'name' => 'Phone',
-                'type' => 'App\\Aura\\Fields\\Phone',
+                'type' => 'Eminiarts\\Aura\\Fields\\Phone',
                 'validation' => '',
                 'conditional_logic' => [
                 ],
@@ -103,7 +103,7 @@ class Page extends Post
             ],
             [
                 'name' => 'Email',
-                'type' => 'App\\Aura\\Fields\\Email',
+                'type' => 'Eminiarts\\Aura\\Fields\\Email',
                 'validation' => '',
                 'conditional_logic' => [
                 ],
@@ -111,7 +111,7 @@ class Page extends Post
             ],
             [
                 'name' => 'Datetime',
-                'type' => 'App\\Aura\\Fields\\Datetime',
+                'type' => 'Eminiarts\\Aura\\Fields\\Datetime',
                 'validation' => '',
                 'conditional_logic' => [
                 ],
@@ -119,7 +119,7 @@ class Page extends Post
             ],
             [
                 'name' => 'Time',
-                'type' => 'App\\Aura\\Fields\\Time',
+                'type' => 'Eminiarts\\Aura\\Fields\\Time',
                 'validation' => '',
                 'conditional_logic' => [
                 ],
@@ -127,7 +127,7 @@ class Page extends Post
             ],
             [
                 'name' => 'Number',
-                'type' => 'App\\Aura\\Fields\\Number',
+                'type' => 'Eminiarts\\Aura\\Fields\\Number',
                 'validation' => '',
                 'suffix' => '%',
                 'conditional_logic' => [
@@ -136,7 +136,7 @@ class Page extends Post
             ],
             [
                 'name' => 'Text aHoK',
-                'type' => 'App\\Aura\\Fields\\Text',
+                'type' => 'Eminiarts\\Aura\\Fields\\Text',
                 'validation' => '',
                 'conditional_logic' => [
                 ],
@@ -144,7 +144,7 @@ class Page extends Post
             ],
             [
                 'name' => 'Panel Tab 2',
-                'type' => 'App\\Aura\\Fields\\Tab',
+                'type' => 'Eminiarts\\Aura\\Fields\\Tab',
                 'validation' => '',
                 'conditional_logic' => [
                 ],
@@ -152,7 +152,7 @@ class Page extends Post
             ],
             [
                 'name' => 'Wysiwyg',
-                'type' => 'App\\Aura\\Fields\\Wysiwyg',
+                'type' => 'Eminiarts\\Aura\\Fields\\Wysiwyg',
                 'validation' => '',
                 'conditional_logic' => [
                 ],
@@ -160,7 +160,7 @@ class Page extends Post
             ],
             [
                 'name' => 'Code',
-                'type' => 'App\\Aura\\Fields\\Code',
+                'type' => 'Eminiarts\\Aura\\Fields\\Code',
                 'validation' => '',
                 'conditional_logic' => [
                 ],
@@ -169,7 +169,7 @@ class Page extends Post
             ],
             [
                 'name' => 'Sidebar',
-                'type' => 'App\\Aura\\Fields\\Panel',
+                'type' => 'Eminiarts\\Aura\\Fields\\Panel',
                 'slug' => 'sidebar1',
                 'style' => [
                     'width' => '30',
@@ -177,32 +177,32 @@ class Page extends Post
             ],
             [
                 'name' => 'SelectMany',
-                'type' => 'App\\Aura\\Fields\\SelectMany',
+                'type' => 'Eminiarts\\Aura\\Fields\\SelectMany',
                 'validation' => '',
                 'conditional_logic' => [
                 ],
                 'slug' => 'select-many',
                 'instructions' => 'SelectMany',
-                'posttype' => 'App\\Aura\\Resources\\Invoice',
+                'posttype' => 'Eminiarts\\Aura\\Resources\\Invoice',
             ],
             [
                 'name' => 'Tab 2',
                 'global' => true,
-                'type' => 'App\\Aura\\Fields\\Tab',
+                'type' => 'Eminiarts\\Aura\\Fields\\Tab',
                 'slug' => 'tab-2',
                 'style' => [
                 ],
             ],
             [
                 'name' => 'Panel 3',
-                'type' => 'App\\Aura\\Fields\\Panel',
+                'type' => 'Eminiarts\\Aura\\Fields\\Panel',
                 'slug' => 'panel-3',
                 'style' => [
                 ],
             ],
             [
                 'name' => 'Text 1HcFr2',
-                'type' => 'App\\Aura\\Fields\\Text',
+                'type' => 'Eminiarts\\Aura\\Fields\\Text',
                 'validation' => '',
                 'conditional_logic' => [
                 ],

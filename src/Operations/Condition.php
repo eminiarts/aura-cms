@@ -11,7 +11,7 @@ class Condition extends BaseOperation
         return array_merge(parent::getFields(), [
             [
                 'name' => 'Condition',
-                'type' => 'App\\Aura\\Fields\\Code',
+                'type' => 'Eminiarts\\Aura\\Fields\\Code',
                 'instructions' => 'Condition to evaluate',
                 'validation' => 'required',
                 'slug' => 'delay',

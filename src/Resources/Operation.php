@@ -58,14 +58,14 @@ class Operation extends Post
     {
         return [
             [
-                'type' => 'App\\Aura\\Fields\\Tab',
+                'type' => 'Eminiarts\\Aura\\Fields\\Tab',
                 'name' => 'Operation details',
                 'slug' => 'operation-tab',
                 'global' => true,
             ],
             [
                 'name' => 'Operation Infos',
-                'type' => 'App\\Aura\\Fields\\Panel',
+                'type' => 'Eminiarts\\Aura\\Fields\\Panel',
                 'validation' => 'required',
                 'slug' => 'operation-infos',
                 'style' => [
@@ -74,7 +74,7 @@ class Operation extends Post
             ],
             [
                 'name' => 'Name',
-                'type' => 'App\\Aura\\Fields\\Text',
+                'type' => 'Eminiarts\\Aura\\Fields\\Text',
                 'validation' => 'required',
                 'on_index' => true,
                 'slug' => 'name',
@@ -84,7 +84,7 @@ class Operation extends Post
             ],
             [
                 'name' => 'Key',
-                'type' => 'App\\Aura\\Fields\\Slug',
+                'type' => 'Eminiarts\\Aura\\Fields\\Slug',
                 'based_on' => 'name',
                 'validation' => '',
                 'conditional_logic' => [
@@ -93,7 +93,7 @@ class Operation extends Post
             ],
             [
                 'name' => 'Flow_id',
-                'type' => 'App\\Aura\\Fields\\Number',
+                'type' => 'Eminiarts\\Aura\\Fields\\Number',
                 'disabled' => true,
                 'validation' => '',
                 'conditional_logic' => [
@@ -102,7 +102,7 @@ class Operation extends Post
             ],
             [
                 'name' => 'Resolve_id',
-                'type' => 'App\\Aura\\Fields\\Number',
+                'type' => 'Eminiarts\\Aura\\Fields\\Number',
                 'disabled' => true,
                 'validation' => '',
                 'conditional_logic' => [
@@ -111,7 +111,7 @@ class Operation extends Post
             ],
             [
                 'name' => 'Reject_id',
-                'type' => 'App\\Aura\\Fields\\Number',
+                'type' => 'Eminiarts\\Aura\\Fields\\Number',
                 'disabled' => true,
                 'validation' => '',
                 'conditional_logic' => [
@@ -121,7 +121,7 @@ class Operation extends Post
 
             [
                 'name' => 'Status',
-                'type' => 'App\\Aura\\Fields\\Select',
+                'type' => 'Eminiarts\\Aura\\Fields\\Select',
                 'validation' => 'required',
                 'conditional_logic' => [
                 ],
@@ -139,7 +139,7 @@ class Operation extends Post
             ],
             // [
             //     'name' => 'Options',
-            //     'type' => 'App\\Aura\\Fields\\Code',
+            //     'type' => 'Eminiarts\\Aura\\Fields\\Code',
             //     'validation' => '',
             //     'conditional_logic' => [
             //     ],
@@ -150,7 +150,7 @@ class Operation extends Post
 
             [
                 'name' => 'User_id',
-                'type' => 'App\\Aura\\Fields\\Number',
+                'type' => 'Eminiarts\\Aura\\Fields\\Number',
                 'validation' => '',
                 'conditional_logic' => [
                 ],
@@ -158,7 +158,7 @@ class Operation extends Post
             ],
 
             // [
-            //     'type' => 'App\\Aura\\Fields\\Tab',
+            //     'type' => 'Eminiarts\\Aura\\Fields\\Tab',
             //     'name' => 'OperationLogs',
             //     'slug' => 'tab-OperationLogs',
             //     'global' => true,
@@ -166,8 +166,8 @@ class Operation extends Post
             // [
             //     'name' => 'OperationLogs',
             //     'slug' => 'operation_logs',
-            //     'type' => 'App\\Aura\\Fields\\HasMany',
-            //     'posttype' => 'App\\Aura\\Resources\\OperationLog',
+            //     'type' => 'Eminiarts\\Aura\\Fields\\HasMany',
+            //     'posttype' => 'Eminiarts\\Aura\\Resources\\OperationLog',
             //     'validation' => '',
             //     'conditional_logic' => '',
             //     'has_conditional_logic' => false,
@@ -216,7 +216,7 @@ class Operation extends Post
         }
 
         // If $this->type is Delay, dispatch the job with a delay
-        if ($this->type == 'App\\Aura\\Operations\\Delay') {
+        if ($this->type == 'Eminiarts\\Aura\\Operations\\Delay') {
             // dd('in delay run', $this->name, $this->type);
 
             // Log $this->options['delay']

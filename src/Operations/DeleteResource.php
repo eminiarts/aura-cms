@@ -11,7 +11,7 @@ class DeleteResource extends BaseOperation
         return array_merge(parent::getFields(), [
             [
                 'name' => 'Select Type',
-                'type' => 'App\\Aura\\Fields\\Select',
+                'type' => 'Eminiarts\\Aura\\Fields\\Select',
                 'instructions' => 'Select the type of delete',
                 'validation' => '',
                 'defer' => false,
@@ -23,7 +23,7 @@ class DeleteResource extends BaseOperation
             ],
             [
                 'name' => 'User ID',
-                'type' => 'App\\Aura\\Fields\\Text',
+                'type' => 'Eminiarts\\Aura\\Fields\\Text',
                 'instructions' => 'Which user to send the notification to',
                 'validation' => 'required',
                 'conditional_logic' => [
@@ -37,7 +37,7 @@ class DeleteResource extends BaseOperation
             ],
             [
                 'name' => 'Role',
-                'type' => 'App\\Aura\\Fields\\Text',
+                'type' => 'Eminiarts\\Aura\\Fields\\Text',
                 'instructions' => 'Which role to send the notification to',
                 'conditional_logic' => [
                     [
@@ -57,11 +57,11 @@ class DeleteResource extends BaseOperation
         // dd('delete resource', $operation->options['type'], $operation->toArray(), $post->toArray(), $operationLog->toArray());
         // get the resource type of the post and the resource type of the flow trigger
         // throw an exception if the resource type of the post is the same as the resource type of the flow trigger
-        if ($operation->flow->trigger == 'post' && 'App\\Aura\\Resources\\'.$post->type == $operation->flow->options['resource']) {
+        if ($operation->flow->trigger == 'post' && 'Eminiarts\\Aura\\Resources\\'.$post->type == $operation->flow->options['resource']) {
             throw new \Exception('Cannot delete post of same type');
         }
 
-        if (isset($operation->flow->options['event']) && $operation->flow->options['event'] == 'deleted' && 'App\\Aura\\Resources\\'.$post->type == $operation->options['resource']) {
+        if (isset($operation->flow->options['event']) && $operation->flow->options['event'] == 'deleted' && 'Eminiarts\\Aura\\Resources\\'.$post->type == $operation->options['resource']) {
             throw new \Exception('Cannot delete post of same type');
         }
 
@@ -78,7 +78,7 @@ class DeleteResource extends BaseOperation
             $resource = $operation->options['resource'] ?? throw new \Exception('No Resource');
         } else {
             $ids = [$post->id];
-            $resource = 'App\\Aura\\Resources\\'.$post->type;
+            $resource = 'Eminiarts\\Aura\\Resources\\'.$post->type;
         }
 
         // Get the Resource

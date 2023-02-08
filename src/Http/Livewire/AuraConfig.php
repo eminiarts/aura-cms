@@ -60,20 +60,20 @@ class AuraConfig extends Component
     {
         return [
             [
-                'type' => 'App\\Aura\\Fields\\Tab',
+                'type' => 'Eminiarts\\Aura\\Fields\\Tab',
                 'name' => 'General',
                 'slug' => 'tab-general',
                 'global' => true,
             ],
             [
-                'type' => 'App\\Aura\\Fields\\Panel',
+                'type' => 'Eminiarts\\Aura\\Fields\\Panel',
                 'name' => 'General Aura Settings',
                 'slug' => 'panel-DZzV',
             ],
 
             [
                 'name' => 'App Name',
-                'type' => 'App\\Aura\\Fields\\Text',
+                'type' => 'Eminiarts\\Aura\\Fields\\Text',
                 'slug' => 'app_name',
                 'style' => [
                     'width' => '100',
@@ -81,7 +81,7 @@ class AuraConfig extends Component
             ],
             [
                 'name' => 'App Description',
-                'type' => 'App\\Aura\\Fields\\Text',
+                'type' => 'Eminiarts\\Aura\\Fields\\Text',
                 'slug' => 'app_description',
                 'style' => [
                     'width' => '100',
@@ -89,7 +89,7 @@ class AuraConfig extends Component
             ],
             [
                 'name' => 'App URL',
-                'type' => 'App\\Aura\\Fields\\Text',
+                'type' => 'Eminiarts\\Aura\\Fields\\Text',
                 'slug' => 'app_url',
                 'style' => [
                     'width' => '100',
@@ -97,7 +97,7 @@ class AuraConfig extends Component
             ],
             [
                 'name' => 'App Locale',
-                'type' => 'App\\Aura\\Fields\\Text',
+                'type' => 'Eminiarts\\Aura\\Fields\\Text',
                 'slug' => 'app_locale',
                 'style' => [
                     'width' => '100',
@@ -107,7 +107,7 @@ class AuraConfig extends Component
             // app_timezone text field
             [
                 'name' => 'App Timezone',
-                'type' => 'App\\Aura\\Fields\\Text',
+                'type' => 'Eminiarts\\Aura\\Fields\\Text',
                 'slug' => 'app_timezone',
                 'style' => [
                     'width' => '100',
@@ -115,14 +115,14 @@ class AuraConfig extends Component
             ],
 
             [
-                'type' => 'App\\Aura\\Fields\\Panel',
+                'type' => 'Eminiarts\\Aura\\Fields\\Panel',
                 'name' => 'Media Settings',
                 'slug' => 'panel-DZzV',
             ],
 
             [
                 'name' => 'Media',
-                'type' => 'App\\Aura\\Fields\\Group',
+                'type' => 'Eminiarts\\Aura\\Fields\\Group',
                 'slug' => 'media',
                 'style' => [
                     'width' => '100',
@@ -132,7 +132,7 @@ class AuraConfig extends Component
             // media.disk text field
             [
                 'name' => 'Media Disk',
-                'type' => 'App\\Aura\\Fields\\Text',
+                'type' => 'Eminiarts\\Aura\\Fields\\Text',
                 'slug' => 'media.disk',
                 'style' => [
                     'width' => '100',
@@ -142,7 +142,7 @@ class AuraConfig extends Component
             // media.url text field
             [
                 'name' => 'Media Path',
-                'type' => 'App\\Aura\\Fields\\Text',
+                'type' => 'Eminiarts\\Aura\\Fields\\Text',
                 'slug' => 'media.path',
                 'style' => [
                     'width' => '100',
@@ -152,7 +152,7 @@ class AuraConfig extends Component
             // media.max_file_size text field
             [
                 'name' => 'Max File Size',
-                'type' => 'App\\Aura\\Fields\\Text',
+                'type' => 'Eminiarts\\Aura\\Fields\\Text',
                 'slug' => 'media.max_file_size',
                 'style' => [
                     'width' => '100',
@@ -162,7 +162,7 @@ class AuraConfig extends Component
             // generate_thumbnails boolean field
             [
                 'name' => 'Generate Thumbnails',
-                'type' => 'App\\Aura\\Fields\\Boolean',
+                'type' => 'Eminiarts\\Aura\\Fields\\Boolean',
                 'slug' => 'media.generate_thumbnails',
                 'style' => [
                     'width' => '100',
@@ -172,7 +172,7 @@ class AuraConfig extends Component
             // media.thumbnails repeater field
             [
                 'name' => 'Thumbnails',
-                'type' => 'App\\Aura\\Fields\\Repeater',
+                'type' => 'Eminiarts\\Aura\\Fields\\Repeater',
                 'nested' => true,
                 'slug' => 'thumbnails',
                 'style' => [
@@ -183,7 +183,7 @@ class AuraConfig extends Component
 
             [
                 'name' => 'Name',
-                'type' => 'App\\Aura\\Fields\\Text',
+                'type' => 'Eminiarts\\Aura\\Fields\\Text',
                 'slug' => 'name',
                 'style' => [
                     'width' => '33',
@@ -191,7 +191,7 @@ class AuraConfig extends Component
             ],
             [
                 'name' => 'Width',
-                'type' => 'App\\Aura\\Fields\\Text',
+                'type' => 'Eminiarts\\Aura\\Fields\\Text',
                 'slug' => 'width',
                 'style' => [
                     'width' => '33',
@@ -199,7 +199,7 @@ class AuraConfig extends Component
             ],
             [
                 'name' => 'Height',
-                'type' => 'App\\Aura\\Fields\\Text',
+                'type' => 'Eminiarts\\Aura\\Fields\\Text',
                 'slug' => 'height',
                 'style' => [
                     'width' => '33',
@@ -207,7 +207,7 @@ class AuraConfig extends Component
             ],
 
             [
-                'type' => 'App\\Aura\\Fields\\Tab',
+                'type' => 'Eminiarts\\Aura\\Fields\\Tab',
                 'name' => 'Features',
                 'slug' => 'tab-features',
                 'global' => true,
@@ -215,7 +215,7 @@ class AuraConfig extends Component
 
             [
                 'name' => 'Features',
-                'type' => 'App\\Aura\\Fields\\View',
+                'type' => 'Eminiarts\\Aura\\Fields\\View',
                 'slug' => 'features',
                 'view' => 'aura.features',
                 'style' => [

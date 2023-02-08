@@ -32,14 +32,14 @@ class Attachment extends Post
     {
         return [
             [
-                'type' => 'App\\Aura\\Fields\\Tab',
+                'type' => 'Eminiarts\\Aura\\Fields\\Tab',
                 'name' => 'Tab',
                 'slug' => 'tab-5Lqb',
                 'global' => true,
             ],
             [
                 'name' => 'Name',
-                'type' => 'App\\Aura\\Fields\\Text',
+                'type' => 'Eminiarts\\Aura\\Fields\\Text',
                 'validation' => 'required',
                 'on_index' => true,
                 'slug' => 'name',
@@ -49,7 +49,7 @@ class Attachment extends Post
             ],
             [
                 'name' => 'Url',
-                'type' => 'App\\Aura\\Fields\\Text',
+                'type' => 'Eminiarts\\Aura\\Fields\\Text',
                 'validation' => 'required',
                 'on_index' => true,
                 'slug' => 'url',
@@ -59,7 +59,7 @@ class Attachment extends Post
             ],
             [
                 'name' => 'embed',
-                'type' => 'App\\Aura\\Fields\\Embed',
+                'type' => 'Eminiarts\\Aura\\Fields\\Embed',
                 'validation' => '',
                 'on_index' => false,
                 'slug' => 'embed',
@@ -69,7 +69,7 @@ class Attachment extends Post
             ],
             [
                 'name' => 'Mime Type',
-                'type' => 'App\\Aura\\Fields\\Text',
+                'type' => 'Eminiarts\\Aura\\Fields\\Text',
                 'validation' => 'required',
                 'on_index' => true,
                 'slug' => 'mime_type',
@@ -79,7 +79,7 @@ class Attachment extends Post
             ],
             [
                 'name' => 'Size',
-                'type' => 'App\\Aura\\Fields\\Text',
+                'type' => 'Eminiarts\\Aura\\Fields\\Text',
                 'validation' => 'required',
                 'on_index' => true,
                 'slug' => 'size',
@@ -90,7 +90,7 @@ class Attachment extends Post
             [
                 'name' => 'Created at',
                 'slug' => 'created_at',
-                'type' => 'App\\Aura\\Fields\\Text',
+                'type' => 'Eminiarts\\Aura\\Fields\\Text',
                 'validation' => '',
                 'conditional_logic' => '',
                 'has_conditional_logic' => false,
@@ -102,7 +102,7 @@ class Attachment extends Post
             [
                 'name' => 'Created at',
                 'slug' => 'created_at',
-                'type' => 'App\\Aura\\Fields\\Date',
+                'type' => 'Eminiarts\\Aura\\Fields\\Date',
                 'validation' => '',
                 'enable_time' => true,
                 'conditional_logic' => '',
@@ -115,7 +115,7 @@ class Attachment extends Post
             [
                 'name' => 'Updated at',
                 'slug' => 'updated_at',
-                'type' => 'App\\Aura\\Fields\\Date',
+                'type' => 'Eminiarts\\Aura\\Fields\\Date',
                 'validation' => '',
                 'conditional_logic' => '',
                 'has_conditional_logic' => false,
@@ -128,7 +128,7 @@ class Attachment extends Post
             [
                 'name' => 'Jobs',
                 'slug' => 'jobs',
-                'type' => 'App\\Aura\\Fields\\Jobs',
+                'type' => 'Eminiarts\\Aura\\Fields\\Jobs',
                 'validation' => '',
                 'conditional_logic' => '',
                 'has_conditional_logic' => false,

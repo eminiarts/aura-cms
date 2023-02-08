@@ -11,7 +11,7 @@ class Delay extends BaseOperation
         return array_merge(parent::getFields(), [
             [
                 'name' => 'Delay',
-                'type' => 'App\\Aura\\Fields\\Number',
+                'type' => 'Eminiarts\\Aura\\Fields\\Number',
                 'instructions' => 'Delay in seconds',
                 'validation' => 'required|numeric',
                 'slug' => 'delay',

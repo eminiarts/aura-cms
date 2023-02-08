@@ -14,7 +14,7 @@ class Notification extends BaseOperation
         return array_merge(parent::getFields(), [
             [
                 'name' => 'Select Type',
-                'type' => 'App\\Aura\\Fields\\Select',
+                'type' => 'Eminiarts\\Aura\\Fields\\Select',
                 'instructions' => 'Select the type of notification',
                 'validation' => '',
                 'defer' => false,
@@ -26,7 +26,7 @@ class Notification extends BaseOperation
             ],
             [
                 'name' => 'User ID',
-                'type' => 'App\\Aura\\Fields\\Text',
+                'type' => 'Eminiarts\\Aura\\Fields\\Text',
                 'instructions' => 'Which user to send the notification to',
                 'validation' => '',
                 'conditional_logic' => [
@@ -40,7 +40,7 @@ class Notification extends BaseOperation
             ],
             [
                 'name' => 'Role',
-                'type' => 'App\\Aura\\Fields\\Text',
+                'type' => 'Eminiarts\\Aura\\Fields\\Text',
                 'instructions' => 'Which role to send the notification to',
                 'conditional_logic' => [
                     [
@@ -54,7 +54,7 @@ class Notification extends BaseOperation
             ],
             [
                 'name' => 'Message',
-                'type' => 'App\\Aura\\Fields\\Textarea',
+                'type' => 'Eminiarts\\Aura\\Fields\\Textarea',
                 'instructions' => 'Message of the notifictation',
                 'validation' => 'required',
                 'slug' => 'message',

@@ -11,7 +11,7 @@ class UpdateResource extends BaseOperation
         return array_merge(parent::getFields(), [
             [
                 'name' => 'Select Type',
-                'type' => 'App\\Aura\\Fields\\Select',
+                'type' => 'Eminiarts\\Aura\\Fields\\Select',
                 'instructions' => 'Select which type of resource to update',
                 'validation' => '',
                 'defer' => false,
@@ -23,7 +23,7 @@ class UpdateResource extends BaseOperation
             ],
             [
                 'name' => 'User ID',
-                'type' => 'App\\Aura\\Fields\\Text',
+                'type' => 'Eminiarts\\Aura\\Fields\\Text',
                 'instructions' => 'Which user to send the notification to',
                 'validation' => '',
                 'conditional_logic' => [
@@ -37,7 +37,7 @@ class UpdateResource extends BaseOperation
             ],
             [
                 'name' => 'Role',
-                'type' => 'App\\Aura\\Fields\\Text',
+                'type' => 'Eminiarts\\Aura\\Fields\\Text',
                 'instructions' => 'Which role to send the notification to',
                 'conditional_logic' => [
                     [
@@ -51,7 +51,7 @@ class UpdateResource extends BaseOperation
             ],
             [
                 'name' => 'Message',
-                'type' => 'App\\Aura\\Fields\\Textarea',
+                'type' => 'Eminiarts\\Aura\\Fields\\Textarea',
                 'instructions' => 'Message of the notifictation',
                 'validation' => 'required',
                 'slug' => 'message',
@@ -63,7 +63,7 @@ class UpdateResource extends BaseOperation
     {
         // dd('send notification', $operation->toArray(), $post->toArray(), $operationLog->toArray());
         // dump('update resource', $operation->options);
-        if ($operation->flow->options['event'] == 'updated' && 'App\\Aura\\Resources\\'.$post->type == $operation->options['resource']) {
+        if ($operation->flow->options['event'] == 'updated' && 'Eminiarts\\Aura\\Resources\\'.$post->type == $operation->options['resource']) {
             throw new \Exception('Cannot update post of same type');
         }
 
@@ -80,7 +80,7 @@ class UpdateResource extends BaseOperation
             $resource = $operation->options['resource'];
         } else {
             $ids = [$post->id];
-            $resource = 'App\\Aura\\Resources\\'.$post->type;
+            $resource = 'Eminiarts\\Aura\\Resources\\'.$post->type;
         }
 
         if ($operation->options['data'] == null) {

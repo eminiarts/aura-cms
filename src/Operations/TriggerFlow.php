@@ -12,7 +12,7 @@ class TriggerFlow extends BaseOperation
         return array_merge(parent::getFields(), [
             [
                 'name' => 'Flow ID',
-                'type' => 'App\\Aura\\Fields\\Text',
+                'type' => 'Eminiarts\\Aura\\Fields\\Text',
                 'instructions' => 'Which flow to trigger',
                 'validation' => '',
                 'slug' => 'flow_id',
@@ -20,7 +20,7 @@ class TriggerFlow extends BaseOperation
 
             [
                 'name' => 'Pass Response',
-                'type' => 'App\\Aura\\Fields\\Select',
+                'type' => 'Eminiarts\\Aura\\Fields\\Select',
                 'instructions' => 'Select the type of notification',
                 'validation' => '',
                 'defer' => false,

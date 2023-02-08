@@ -10,7 +10,7 @@ trait DefaultFields
             [
                 'name' => 'Created at',
                 'slug' => 'created_at',
-                'type' => 'App\\Aura\\Fields\\Date',
+                'type' => 'Eminiarts\\Aura\\Fields\\Date',
                 'validation' => '',
                 'enable_time' => true,
                 'conditional_logic' => '',
@@ -23,7 +23,7 @@ trait DefaultFields
             [
                 'name' => 'Updated at',
                 'slug' => 'updated_at',
-                'type' => 'App\\Aura\\Fields\\Date',
+                'type' => 'Eminiarts\\Aura\\Fields\\Date',
                 'validation' => '',
                 'conditional_logic' => '',
                 'has_conditional_logic' => false,
@@ -36,7 +36,7 @@ trait DefaultFields
             [
                 'name' => 'User',
                 'slug' => 'user_id',
-                'type' => 'App\\Aura\\Fields\\BelongsTo',
+                'type' => 'Eminiarts\\Aura\\Fields\\BelongsTo',
                 'validation' => '',
                 'conditional_logic' => '',
                 'has_conditional_logic' => false,

@@ -13,19 +13,19 @@ class Color extends Field
         return array_merge(parent::getFields(), [
             [
                 'name' => 'Color',
-                'type' => 'App\\Aura\\Fields\\Tab',
+                'type' => 'Eminiarts\\Aura\\Fields\\Tab',
                 'slug' => 'color-tab',
                 'style' => [],
             ],
             [
                 'name' => 'Native Color Picker',
-                'type' => 'App\\Aura\\Fields\\Boolean',
+                'type' => 'Eminiarts\\Aura\\Fields\\Boolean',
                 'slug' => 'native',
                 'style' => [],
             ],
             [
                 'name' => 'Format',
-                'type' => 'App\\Aura\\Fields\\Select',
+                'type' => 'Eminiarts\\Aura\\Fields\\Select',
                 'validation' => '',
                 'slug' => 'format',
                 'options' => [

@@ -8,14 +8,14 @@ class BaseOperation
     {
         return [
             [
-                'type' => 'App\\Aura\\Fields\\Tab',
+                'type' => 'Eminiarts\\Aura\\Fields\\Tab',
                 'name' => 'Options',
                 'slug' => 'options-tab',
                 'global' => true,
             ],
             [
                 'name' => 'Type',
-                'type' => 'App\\Aura\\Fields\\Select',
+                'type' => 'Eminiarts\\Aura\\Fields\\Select',
                 'validation' => '',
                 'conditional_logic' => [
                 ],
@@ -23,35 +23,35 @@ class BaseOperation
                 'options' => [
                     [
                         'value' => 'Send Email',
-                        'key' => 'App\\Aura\\Operations\\Mail',
+                        'key' => 'Eminiarts\\Aura\\Operations\\Mail',
                     ],
                     [
                         'value' => 'Send Notification',
-                        'key' => 'App\\Aura\\Operations\\Notification',
+                        'key' => 'Eminiarts\\Aura\\Operations\\Notification',
                     ],
                     [
                         'value' => 'Webhook',
-                        'key' => 'App\\Aura\\Operations\\Webhook',
+                        'key' => 'Eminiarts\\Aura\\Operations\\Webhook',
                     ],
                     [
                         'value' => 'Read Post',
-                        'key' => 'App\\Aura\\Operations\\GetResource',
+                        'key' => 'Eminiarts\\Aura\\Operations\\GetResource',
                     ],
                     [
                         'value' => 'Create Post',
-                        'key' => 'App\\Aura\\Operations\\CreateResource',
+                        'key' => 'Eminiarts\\Aura\\Operations\\CreateResource',
                     ],
                     [
                         'value' => 'Update Post',
-                        'key' => 'App\\Aura\\Operations\\UpdateResource',
+                        'key' => 'Eminiarts\\Aura\\Operations\\UpdateResource',
                     ],
                     [
                         'value' => 'Delete Post',
-                        'key' => 'App\\Aura\\Operations\\DeleteResource',
+                        'key' => 'Eminiarts\\Aura\\Operations\\DeleteResource',
                     ],
                     [
                         'value' => 'Trigger Flow',
-                        'key' => 'App\\Aura\\Operations\\TriggerFlow',
+                        'key' => 'Eminiarts\\Aura\\Operations\\TriggerFlow',
                     ],
                     [
                         'value' => 'Transform Payload',
@@ -59,7 +59,7 @@ class BaseOperation
                     ],
                     [
                         'value' => 'Write to Log',
-                        'key' => 'App\\Aura\\Operations\\Log',
+                        'key' => 'Eminiarts\\Aura\\Operations\\Log',
                     ],
                     [
                         'value' => 'Console Command',
@@ -71,13 +71,13 @@ class BaseOperation
                     ],
                     [
                         'value' => 'Delay',
-                        'key' => 'App\\Aura\\Operations\\Delay',
+                        'key' => 'Eminiarts\\Aura\\Operations\\Delay',
                     ],
                 ],
             ],
             [
                 'name' => 'Options',
-                'type' => 'App\\Aura\\Fields\\Group',
+                'type' => 'Eminiarts\\Aura\\Fields\\Group',
                 'validation' => '',
                 'conditional_logic' => [
                 ],
@@ -86,7 +86,7 @@ class BaseOperation
             ],
             [
                 'name' => 'X',
-                'type' => 'App\\Aura\\Fields\\Number',
+                'type' => 'Eminiarts\\Aura\\Fields\\Number',
                 'validation' => '',
                 'conditional_logic' => [
                 ],
@@ -98,7 +98,7 @@ class BaseOperation
             ],
             [
                 'name' => 'Y',
-                'type' => 'App\\Aura\\Fields\\Number',
+                'type' => 'Eminiarts\\Aura\\Fields\\Number',
                 'validation' => '',
                 'conditional_logic' => [
                 ],
