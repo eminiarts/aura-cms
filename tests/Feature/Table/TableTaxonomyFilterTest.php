@@ -1,7 +1,7 @@
 <?php
 
-use Eminiarts\Aura\Aura\Resources\Post;
-use Eminiarts\Aura\Aura\Taxonomies\Tag;
+use Eminiarts\Aura\Resources\Post;
+use Eminiarts\Aura\Taxonomies\Tag;
 use Eminiarts\Aura\Http\Livewire\Table\Table;
 use Eminiarts\Aura\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;

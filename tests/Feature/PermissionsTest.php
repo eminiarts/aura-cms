@@ -1,7 +1,7 @@
 <?php
 
-use Eminiarts\Aura\Aura\Resources\Post;
-use Eminiarts\Aura\Aura\Resources\Role;
+use Eminiarts\Aura\Resources\Post;
+use Eminiarts\Aura\Resources\Role;
 use Eminiarts\Aura\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 

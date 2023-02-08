@@ -1,7 +1,7 @@
 <?php
 
-use Eminiarts\Aura\Aura\Resources\Flow;
-use Eminiarts\Aura\Aura\Resources\Post;
+use Eminiarts\Aura\Resources\Flow;
+use Eminiarts\Aura\Resources\Post;
 use Eminiarts\Aura\Jobs\RunOperation;
 use Eminiarts\Aura\Jobs\TriggerFlowOnCreatePostEvent;
 use Eminiarts\Aura\Models\User;

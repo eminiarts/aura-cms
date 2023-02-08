@@ -1,8 +1,8 @@
 <?php
 
-use Eminiarts\Aura\Aura\Resources\Flow;
-use Eminiarts\Aura\Aura\Resources\OperationLog;
-use Eminiarts\Aura\Aura\Resources\Post;
+use Eminiarts\Aura\Resources\Flow;
+use Eminiarts\Aura\Resources\OperationLog;
+use Eminiarts\Aura\Resources\Post;
 use Eminiarts\Aura\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 

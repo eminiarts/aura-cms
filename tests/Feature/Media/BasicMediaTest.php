@@ -1,7 +1,7 @@
 <?php
 
-use Eminiarts\Aura\Aura\Resources\Attachment;
-use Eminiarts\Aura\Aura\Resources\Post;
+use Eminiarts\Aura\Resources\Attachment;
+use Eminiarts\Aura\Resources\Post;
 use Eminiarts\Aura\Http\Livewire\MediaUploader;
 use Eminiarts\Aura\Http\Livewire\Table\Table;
 use Eminiarts\Aura\Models\User;
