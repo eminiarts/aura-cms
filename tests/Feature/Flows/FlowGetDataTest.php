@@ -51,12 +51,12 @@ test('flow - get resources operation', function () {
     $flow->operations()->create([
         'name' => 'Get Data',
         'key' => 'test-operation',
-        'type' => 'App\\Aura\\Operations\\GetResource',
+        'type' => 'Eminiarts\\Aura\\Operations\\GetResource',
         'options' => [
             'x' => 2,
             'y' => 2,
 
-            'resource' => 'App\\Aura\\Resources\\Post',
+            'resource' => 'Eminiarts\\Aura\\Resources\\Post',
             'resource_ids' => [$firstPost->id, $secondPost->id],
         ],
     ]);

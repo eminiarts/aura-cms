@@ -33,7 +33,7 @@ test('flow delay operation', function () {
     $delayOperation = $flow->operations()->create([
         'name' => 'Delay 5s',
         'key' => 'delay',
-        'type' => 'App\\Aura\\Operations\\Delay',
+        'type' => 'Eminiarts\\Aura\\Operations\\Delay',
         'options' => [
             'x' => 2,
             'y' => 2,
@@ -48,7 +48,7 @@ test('flow delay operation', function () {
     $resolveOperation = $flow->operations()->create([
         'name' => 'Log',
         'key' => 'log',
-        'type' => 'App\\Aura\\Operations\\Log',
+        'type' => 'Eminiarts\\Aura\\Operations\\Log',
         'options' => [
             'message' => 'Log after 1s',
         ],

@@ -44,12 +44,12 @@ test('flow - get resources operation and manipulate them', function () {
     $firstOperation = $flow->operations()->create([
         'name' => 'Get Data',
         'key' => 'test-operation',
-        'type' => 'App\\Aura\\Operations\\GetResource',
+        'type' => 'Eminiarts\\Aura\\Operations\\GetResource',
         'options' => [
             'x' => 2,
             'y' => 2,
 
-            'resource' => 'App\\Aura\\Resources\\Post',
+            'resource' => 'Eminiarts\\Aura\\Resources\\Post',
             'resource_ids' => [$firstPost->id, $secondPost->id],
         ],
     ]);
@@ -60,14 +60,14 @@ test('flow - get resources operation and manipulate them', function () {
     $resolveOperation = $flow->operations()->create([
         'name' => 'Update the fetched Data',
         'key' => 'test-operation-2',
-        'type' => 'App\\Aura\\Operations\\UpdateResource',
+        'type' => 'Eminiarts\\Aura\\Operations\\UpdateResource',
         'options' => [
             'x' => 2,
             'y' => 2,
 
             'type' => 'custom',
 
-            'resource' => 'App\\Aura\\Resources\\Post',
+            'resource' => 'Eminiarts\\Aura\\Resources\\Post',
             'resource_source' => $flow->operations()->first()->id,
             'resource_ids' => ['0'],
             'data' => [

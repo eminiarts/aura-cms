@@ -38,13 +38,13 @@ test('flow - data update operation', function () {
     $flow->operations()->create([
         'name' => 'Update Data',
         'key' => 'test-operation',
-        'type' => 'App\\Aura\\Operations\\UpdateResource',
+        'type' => 'Eminiarts\\Aura\\Operations\\UpdateResource',
         'options' => [
             'x' => 2,
             'y' => 2,
 
             'type' => 'custom',
-            'resource' => 'App\\Aura\\Resources\\Post',
+            'resource' => 'Eminiarts\\Aura\\Resources\\Post',
             'resource_ids' => [$firstPost->id],
             'data' => [
                 'title' => 'Test Post 1 Updated',
@@ -129,13 +129,13 @@ test('flow - data update multiple operation', function () {
     $flow->operations()->create([
         'name' => 'Update Data',
         'key' => 'test-operation',
-        'type' => 'App\\Aura\\Operations\\UpdateResource',
+        'type' => 'Eminiarts\\Aura\\Operations\\UpdateResource',
         'options' => [
             'x' => 2,
             'y' => 2,
 
             'type' => 'custom',
-            'resource' => 'App\\Aura\\Resources\\Post',
+            'resource' => 'Eminiarts\\Aura\\Resources\\Post',
             'resource_ids' => [$firstPost->id, $secondPost->id],
             'data' => [
                 'status' => 'published',
