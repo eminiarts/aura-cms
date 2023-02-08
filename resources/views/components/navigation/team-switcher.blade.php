@@ -1,0 +1,83 @@
+@props([
+  'permission' => false,
+  'id' => null,
+  'route' => null,
+  'strict' => true,
+  'compact' => false,
+  'title' => ''
+])
+
+@php
+$settings = App\Aura::getOption('team-settings');
+@endphp
+
+@php
+    if ($settings) {
+        $sidebarType = $settings['sidebar-type'] ?? 'primary';
+    } else {
+        $sidebarType = 'primary';
+    }
+@endphp
+
+
+<div x-data="{ active: {{ (Request::fullUrlIs($route ? route($route, $id) : '') ? ' 1' : '0')  }}, compact: {{ $compact ? '1' : '0' }} }" class="w-full">
+
+    <div x-data="teamDropdown" >
+
+      <div x-ref="this" tabindex="0" class="
+        flex items-center justify-between w-full cursor-pointer text-sm font-semibold rounded-lg
+        @if ($sidebarType == 'primary')
+          text-white
+          bg-primary-700 dark:bg-gray-800 hover:bg-primary-600
+          dark:bg-gray-800 dark:hover:bg-gray-900
+        @elseif ($sidebarType == 'light')
+          text-gray-700
+          bg-gray-50 hover:bg-gray-200
+          dark:bg-gray-800 dark:hover:bg-gray-900
+        @elseif ($sidebarType == 'dark')
+          text-white
+          bg-gray-800 hover:bg-gray-900
+
+        @endif
+
+      ">
+        <span>{{ $title }}</span>
+
+        <div>
+          <!-- svg chevron up down -->
+          <x-icon.chevron-up class="w-5 h-5" />
+        </div>
+      </div>
+
+    </div>
+
+</div>
+
+@push('scripts')
+    @once
+<script>
+  // when alpine is ready
+  document.addEventListener('alpine:init', () => {
+    // define an alpinejs component named 'teamDropdown'
+    Alpine.data('teamDropdown', () => ({
+      open: false,
+      init() {
+        // when the component is initialized, add a click event listener to the document
+        tippy(this.$refs.this, {
+          arrow: true,
+          theme: 'aura-small',
+          trigger: 'click',
+          offset: [0, 8],
+          placement: 'top-start',
+          content: '{!! str_replace("\n", "", $slot) !!}',
+          allowHTML: true,
+          interactive: true,
+        })
+      }
+    }));
+  })
+
+</script>
+
+    @endonce
+@endpush

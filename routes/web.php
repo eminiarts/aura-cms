@@ -8,15 +8,22 @@ use Eminiarts\Aura\Http\Livewire\Taxonomy\Edit as TaxonomyEdit;
 use Eminiarts\Aura\Http\Livewire\Taxonomy\Index as TaxonomyIndex;
 use Illuminate\Support\Facades\Route;
 
+require __DIR__.'/auth.php';
+
+
 Route::domain(config('aura.domain'))
-    ->middleware(config('aura.middleware.admin'))
+    // ->middleware(config('aura.middleware.admin'))
     ->name('aura.')
     ->group(function () {
         // Route::prefix(config('aura.core_path'))->group(function () {
         //     Route::get('/assets/{file}', AssetController::class)->where('file', '.*')->name('asset');
         // });
 
-        require __DIR__.'/auth.php';
+        //
+
+        Route::get('/test', function () {
+            return 'test';
+        });
 
 
         Route::prefix(config('aura.path'))->group(function () {

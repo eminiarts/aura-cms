@@ -1,0 +1,57 @@
+@props([
+'field',
+'wrapperClass' => 'px-4',
+'showLabel' => true,
+])
+
+@php
+    $label = optional($field)['name'];
+    $help = optional($field)['instructions'];
+    $model = 'post.fields.' . $field['slug'];
+
+    $slug = Str::slug(optional($field)['slug'])
+@endphp
+
+{{-- @dump($wrapperClass) --}}
+<style>
+  #post-field-{{ $slug }}-wrapper {
+    width: {{ optional(optional($field)['style'])['width'] ?? '100' }}%;
+  }
+
+  @media screen and (max-width: 768px) {
+    #post-field-{{ $slug }}-wrapper {
+      width: 100%;
+    }
+  }
+</style>
+<div id="post-field-{{ $slug }}-wrapper"
+        class="{{ $wrapperClass }}">
+  <div class="flex items-center justify-between">
+    @if ($label && $showLabel)
+      <x-fields.label :label="$label" />
+    @endif
+
+    @if($help)
+
+    <div class="text-gray-300">
+      <x-tippy text="{{ $help }}" position="left" class="text-sm text-gray-400 bg-white">
+        <x-icon icon="info" size='sm' />
+      </x-tippy>
+    </div>
+    @endif
+  </div>
+
+  <div class="">
+      @if(isset($slot))
+       {{ $slot }}
+      @else
+      NO SLOT DEFINED
+        <x-input.text :attributes="$attributes"></x-input.text>
+      @endif
+
+    @if($model)
+      @error($model) <span class="text-sm font-semibold text-red-500 error">{{ $message }}</span> @enderror
+    @endif
+
+  </div>
+</div>
