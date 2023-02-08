@@ -29,6 +29,12 @@ php artisan vendor:publish --tag="aura-migrations"
 php artisan migrate
 ```
 
+You can publish the assets with:
+
+```bash
+php artisan vendor:publish --tag="aura-assets"
+```
+
 You can publish the config file with:
 
 ```bash

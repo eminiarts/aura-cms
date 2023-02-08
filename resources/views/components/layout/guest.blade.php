@@ -9,8 +9,10 @@
 
         <!-- Scripts -->
         {{-- @vite(['resources/css/app.css', 'resources/js/app.js']) --}}
-        <link rel="stylesheet" href="/css/app.css">
-        <script defer src="/js/app.js"></script>
+        {{-- <link rel="stylesheet" href="/css/app.css"> --}}
+        {{-- <script defer src="/js/app.js"></script> --}}
+        @vite(['resources/css/app.css', 'resources/js/app.js'], 'vendor/aura')
+
     </head>
     <body class="font-sans antialiased text-gray-900 bg-black dark">
         <div class="relative overflow-hidden bg-black bg-[url('/img/landing-page/bgop1.png')] bg-cover bg-no-repeat bg-opacity-50 bg-bottom isolate">
