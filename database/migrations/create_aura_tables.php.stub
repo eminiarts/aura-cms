@@ -52,12 +52,15 @@ return new class () extends Migration {
             $table->timestamps();
         });
 
+        Schema::dropIfExists('password_resets');
+
         Schema::create('password_resets', function (Blueprint $table) {
             $table->string('email')->index();
             $table->string('token');
             $table->timestamp('created_at')->nullable();
         });
 
+        Schema::dropIfExists('failed_jobs');
 
         Schema::create('failed_jobs', function (Blueprint $table) {
             $table->id();
@@ -69,6 +72,7 @@ return new class () extends Migration {
             $table->timestamp('failed_at')->useCurrent();
         });
 
+        Schema::dropIfExists('personal_access_tokens');
 
         Schema::create('personal_access_tokens', function (Blueprint $table) {
             $table->bigIncrements('id');
