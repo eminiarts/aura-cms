@@ -68,7 +68,8 @@
     "extra": {
         "laravel": {
             "providers": [
-                "Eminiarts\\Aura\\AuraServiceProvider"
+                "Eminiarts\\Aura\\AuraServiceProvider",
+                "Eminiarts\\Aura\\Providers\\FortifyServiceProvider"
             ],
             "aliases": {
                 "Aura": "Eminiarts\\Aura\\Facades\\Aura"

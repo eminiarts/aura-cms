@@ -19,8 +19,6 @@ class FortifyServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        dd('FortifyServiceProvider');
-
         Fortify::createUsersUsing(CreateNewUser::class);
         Fortify::updateUserProfileInformationUsing(UpdateUserProfileInformation::class);
         Fortify::updateUserPasswordsUsing(UpdateUserPassword::class);
@@ -39,6 +37,7 @@ class FortifyServiceProvider extends ServiceProvider
         Fortify::twoFactorChallengeView(function () {
             return view('auth.two-factor-challenge');
         });
+
 
         Fortify::loginView(function () {
             return view('auth.login');
