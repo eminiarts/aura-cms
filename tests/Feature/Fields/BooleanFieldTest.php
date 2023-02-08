@@ -41,7 +41,7 @@ class BooleanFieldModel extends Post
         return [
             [
                 'name' => 'Boolean for Test',
-                'type' => 'App\\Aura\\Fields\\Boolean',
+                'type' => 'Eminiarts\\Aura\\Fields\\Boolean',
                 'validation' => 'boolean',
                 'conditional_logic' => [],
                 'slug' => 'boolean',

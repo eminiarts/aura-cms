@@ -45,7 +45,7 @@ class PasswordFieldModel extends Post
         return [
             [
                 'name' => 'Password for Test',
-                'type' => 'App\\Aura\\Fields\\Password',
+                'type' => 'Eminiarts\\Aura\\Fields\\Password',
                 'validation' => 'nullable|min:8',
                 'conditional_logic' => [],
                 'slug' => 'password',

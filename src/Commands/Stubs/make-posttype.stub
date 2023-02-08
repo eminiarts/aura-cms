@@ -25,7 +25,7 @@ class PostName extends Post
         return [
             [
                 'name' => 'Title',
-                'type' => 'App\\Aura\\Fields\\Text',
+                'type' => 'Eminiarts\\Aura\\Fields\\Text',
                 'validation' => 'required',
                 'on_index' => true,
                 'slug' => 'title',

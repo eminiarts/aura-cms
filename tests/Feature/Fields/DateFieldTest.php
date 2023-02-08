@@ -28,7 +28,7 @@ class DateFieldModel extends Post
         return [
             [
                 'name' => 'Date for Test',
-                'type' => 'App\\Aura\\Fields\\Date',
+                'type' => 'Eminiarts\\Aura\\Fields\\Date',
                 'validation' => '',
                 'format' => 'd.m.Y',
                 'conditional_logic' => [],

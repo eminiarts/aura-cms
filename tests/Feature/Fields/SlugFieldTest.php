@@ -43,14 +43,14 @@ class SlugFieldModel extends Post
         return [
             [
                 'name' => 'Text',
-                'type' => 'App\\Aura\\Fields\\Text',
+                'type' => 'Eminiarts\\Aura\\Fields\\Text',
                 'validation' => 'required',
                 'conditional_logic' => [],
                 'slug' => 'text',
             ],
             [
                 'name' => 'Slug for Test',
-                'type' => 'App\\Aura\\Fields\\Slug',
+                'type' => 'Eminiarts\\Aura\\Fields\\Slug',
                 'validation' => 'required|alpha_dash',
                 'conditional_logic' => [],
                 'slug' => 'slug',

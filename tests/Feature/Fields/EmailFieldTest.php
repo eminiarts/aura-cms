@@ -41,7 +41,7 @@ class EmailFieldModel extends Post
         return [
             [
                 'name' => 'Email for Test',
-                'type' => 'App\\Aura\\Fields\\Email',
+                'type' => 'Eminiarts\\Aura\\Fields\\Email',
                 'validation' => 'required|email',
                 'conditional_logic' => [],
                 'slug' => 'email',

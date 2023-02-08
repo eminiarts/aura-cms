@@ -15,19 +15,19 @@ class TabsInPanelTestModel extends Post
             [
                 'label' => 'Panel 1',
                 'name' => 'Panel 1',
-                'type' => 'App\\Aura\\Fields\\Panel',
+                'type' => 'Eminiarts\\Aura\\Fields\\Panel',
                 'slug' => 'panel',
             ],
             [
                 'label' => 'Tab 1 in Panel',
                 'name' => 'Tab 1 in Panel',
-                'type' => 'App\\Aura\\Fields\\Tab',
+                'type' => 'Eminiarts\\Aura\\Fields\\Tab',
                 'slug' => 'tab1-1',
             ],
             [
                 'label' => 'Text 1',
                 'name' => 'Text 1',
-                'type' => 'App\\Aura\\Fields\\Text',
+                'type' => 'Eminiarts\\Aura\\Fields\\Text',
                 'validation' => 'numeric',
                 'conditional_logic' => [],
                 'slug' => 'text1',
@@ -35,13 +35,13 @@ class TabsInPanelTestModel extends Post
             [
                 'label' => 'Tab 2 in Panel',
                 'name' => 'Tab 2 in Panel',
-                'type' => 'App\\Aura\\Fields\\Tab',
+                'type' => 'Eminiarts\\Aura\\Fields\\Tab',
                 'slug' => 'tab1-2',
             ],
             [
                 'label' => 'Text 2',
                 'name' => 'Text 2',
-                'type' => 'App\\Aura\\Fields\\Text',
+                'type' => 'Eminiarts\\Aura\\Fields\\Text',
                 'validation' => 'numeric',
                 'conditional_logic' => [],
                 'slug' => 'text2',

@@ -98,14 +98,14 @@ class MetaSortingModel extends Post
         return [
             [
                 'name' => 'Meta',
-                'type' => 'App\\Aura\\Fields\\Text',
+                'type' => 'Eminiarts\\Aura\\Fields\\Text',
                 'validation' => 'required',
                 'conditional_logic' => [],
                 'slug' => 'meta',
             ],
             [
                 'name' => 'Number',
-                'type' => 'App\\Aura\\Fields\\Number',
+                'type' => 'Eminiarts\\Aura\\Fields\\Number',
                 'validation' => '',
                 'conditional_logic' => [],
                 'slug' => 'number',
@@ -113,7 +113,7 @@ class MetaSortingModel extends Post
             [
                 'name' => 'Tags',
                 'slug' => 'tags',
-                'type' => 'App\\Aura\\Fields\\Tags',
+                'type' => 'Eminiarts\\Aura\\Fields\\Tags',
                 'model' => 'App\\Aura\\Taxonomies\\Tag',
                 'create' => true,
                 'validation' => '',

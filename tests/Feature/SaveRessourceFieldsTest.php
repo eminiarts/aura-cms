@@ -20,7 +20,7 @@ class SaveRessourceFieldsTestModel extends Post
             [
                 'label' => 'Text 1',
                 'name' => 'Text 1',
-                'type' => 'App\\Aura\\Fields\\Text',
+                'type' => 'Eminiarts\\Aura\\Fields\\Text',
                 'validation' => 'numeric',
                 'conditional_logic' => [],
                 'slug' => 'text1',
@@ -28,7 +28,7 @@ class SaveRessourceFieldsTestModel extends Post
             [
                 'label' => 'Text 2',
                 'name' => 'Text 2',
-                'type' => 'App\\Aura\\Fields\\Text',
+                'type' => 'Eminiarts\\Aura\\Fields\\Text',
                 'validation' => 'numeric',
                 'conditional_logic' => [],
                 'slug' => 'text2',

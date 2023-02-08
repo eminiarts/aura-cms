@@ -26,7 +26,7 @@ class ParentConditionalLogicModel extends Post
             [
                 'name' => 'Tab 1',
                 'global' => true,
-                'type' => 'App\\Aura\\Fields\\Tab',
+                'type' => 'Eminiarts\\Aura\\Fields\\Tab',
                 'slug' => 'tab-1',
                 'conditional_logic' => [
                     [
@@ -39,7 +39,7 @@ class ParentConditionalLogicModel extends Post
             [
                 'label' => 'Text 1',
                 'name' => 'Text 1',
-                'type' => 'App\\Aura\\Fields\\Text',
+                'type' => 'Eminiarts\\Aura\\Fields\\Text',
                 'slug' => 'text1',
                 'validation' => '',
                 'conditional_logic' => [
@@ -53,7 +53,7 @@ class ParentConditionalLogicModel extends Post
             [
                 'label' => 'Text 2',
                 'name' => 'Text 2',
-                'type' => 'App\\Aura\\Fields\\Text',
+                'type' => 'Eminiarts\\Aura\\Fields\\Text',
                 'validation' => '',
                 'conditional_logic' => [
                     [
@@ -139,7 +139,7 @@ class AdvancedParentConditionalLogicModel extends Post
             [
                 'name' => 'Tab 1',
                 'global' => true,
-                'type' => 'App\\Aura\\Fields\\Tab',
+                'type' => 'Eminiarts\\Aura\\Fields\\Tab',
                 'slug' => 'tab-1',
                 'conditional_logic' => [
                     [
@@ -151,7 +151,7 @@ class AdvancedParentConditionalLogicModel extends Post
             ],
             [
                 'name' => 'Text 1',
-                'type' => 'App\\Aura\\Fields\\Text',
+                'type' => 'Eminiarts\\Aura\\Fields\\Text',
                 'slug' => 'text1',
                 'validation' => '',
                 'conditional_logic' => [
@@ -164,7 +164,7 @@ class AdvancedParentConditionalLogicModel extends Post
             ],
             [
                 'name' => 'Text 2',
-                'type' => 'App\\Aura\\Fields\\Text',
+                'type' => 'Eminiarts\\Aura\\Fields\\Text',
                 'validation' => '',
                 'conditional_logic' => [
                     [
@@ -178,7 +178,7 @@ class AdvancedParentConditionalLogicModel extends Post
             [
                 'name' => 'Tab 2',
                 'global' => true,
-                'type' => 'App\\Aura\\Fields\\Tab',
+                'type' => 'Eminiarts\\Aura\\Fields\\Tab',
                 'slug' => 'tab-2',
                 'conditional_logic' => [
                     [
@@ -190,7 +190,7 @@ class AdvancedParentConditionalLogicModel extends Post
             ],
             [
                 'name' => 'Panel 1',
-                'type' => 'App\\Aura\\Fields\\Panel',
+                'type' => 'Eminiarts\\Aura\\Fields\\Panel',
                 'slug' => 'panel-1',
                 'conditional_logic' => [
                     [
@@ -202,7 +202,7 @@ class AdvancedParentConditionalLogicModel extends Post
             ],
             [
                 'name' => 'Text 3',
-                'type' => 'App\\Aura\\Fields\\Text',
+                'type' => 'Eminiarts\\Aura\\Fields\\Text',
                 'validation' => '',
                 'conditional_logic' => [
                     [

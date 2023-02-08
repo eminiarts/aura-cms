@@ -14,7 +14,7 @@ class NavigationModel extends Post
             [
                 'label' => 'Total',
                 'name' => 'Total',
-                'type' => 'App\\Aura\\Fields\\Text',
+                'type' => 'Eminiarts\\Aura\\Fields\\Text',
                 'validation' => 'numeric',
                 'conditional_logic' => [
                 ],

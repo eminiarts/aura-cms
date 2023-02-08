@@ -101,28 +101,28 @@ class CustomTableFilterModel extends Post
         return [
             [
                 'name' => 'Name',
-                'type' => 'App\\Aura\\Fields\\Text',
+                'type' => 'Eminiarts\\Aura\\Fields\\Text',
                 'validation' => 'required',
                 'conditional_logic' => [],
                 'slug' => 'name',
             ],
             [
                 'name' => 'Status',
-                'type' => 'App\\Aura\\Fields\\Text',
+                'type' => 'Eminiarts\\Aura\\Fields\\Text',
                 'validation' => '',
                 'conditional_logic' => [],
                 'slug' => 'status',
             ],
             [
                 'name' => 'Enabled',
-                'type' => 'App\\Aura\\Fields\\Boolean',
+                'type' => 'Eminiarts\\Aura\\Fields\\Boolean',
                 'validation' => '',
                 'conditional_logic' => [],
                 'slug' => 'enabled',
             ],
             [
                 'name' => 'Options',
-                'type' => 'App\\Aura\\Fields\\Textarea',
+                'type' => 'Eminiarts\\Aura\\Fields\\Textarea',
                 'validation' => '',
                 'conditional_logic' => [],
                 'slug' => 'options',
@@ -130,7 +130,7 @@ class CustomTableFilterModel extends Post
             [
                 'name' => 'Tags',
                 'slug' => 'tags',
-                'type' => 'App\\Aura\\Fields\\Tags',
+                'type' => 'Eminiarts\\Aura\\Fields\\Tags',
                 'model' => 'App\\Aura\\Taxonomies\\Tag',
                 'create' => true,
                 'validation' => '',

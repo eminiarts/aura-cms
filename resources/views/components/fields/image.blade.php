@@ -11,7 +11,7 @@ $files = null;
 
 @php
 if($selected) {
-    $files = \App\Aura\Resources\Attachment::find($selected)->sortBy(function($item) use ($selected) {
+    $files = \Eminiarts\Aura\Resources\Attachment::find($selected)->sortBy(function($item) use ($selected) {
         return array_search($item->id, $selected);
     });
 }

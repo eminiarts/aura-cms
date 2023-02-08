@@ -41,7 +41,7 @@ class NumberFieldModel extends Post
         return [
             [
                 'name' => 'Number for Test',
-                'type' => 'App\\Aura\\Fields\\Number',
+                'type' => 'Eminiarts\\Aura\\Fields\\Number',
                 'validation' => 'numeric|nullable',
                 'conditional_logic' => [],
                 'suffix' => '%',

@@ -15,7 +15,7 @@ class ComplexFieldsTestModel extends Post
                 'name' => 'Panel',
                 'slug' => 'panel',
                 'global' => true,
-                'type' => 'App\\Aura\\Fields\\Panel',
+                'type' => 'Eminiarts\\Aura\\Fields\\Panel',
                 'conditional_logic' => [
                 ],
                 'has_conditional_logic' => false,
@@ -24,7 +24,7 @@ class ComplexFieldsTestModel extends Post
             [
                 'name' => 'Tab 1',
                 'slug' => 'tab1',
-                'type' => 'App\\Aura\\Fields\\Tab',
+                'type' => 'Eminiarts\\Aura\\Fields\\Tab',
                 'validation' => '',
                 'conditional_logic' => [
                 ],
@@ -35,7 +35,7 @@ class ComplexFieldsTestModel extends Post
             [
                 'name' => 'Enabled',
                 'slug' => 'enabled',
-                'type' => 'App\\Aura\\Fields\\Boolean',
+                'type' => 'Eminiarts\\Aura\\Fields\\Boolean',
                 'validation' => 'required',
                 'conditional_logic' => [
                 ],
@@ -48,7 +48,7 @@ class ComplexFieldsTestModel extends Post
             [
                 'label' => 'Total',
                 'name' => 'Total',
-                'type' => 'App\\Aura\\Fields\\Text',
+                'type' => 'Eminiarts\\Aura\\Fields\\Text',
                 'validation' => 'numeric',
                 'conditional_logic' => [
                 ],
@@ -57,7 +57,7 @@ class ComplexFieldsTestModel extends Post
             [
                 'name' => 'Repeater',
                 'slug' => 'repeater',
-                'type' => 'App\\Aura\\Fields\\Repeater',
+                'type' => 'Eminiarts\\Aura\\Fields\\Repeater',
                 'validation' => '',
                 'conditional_logic' => [
                 ],
@@ -67,7 +67,7 @@ class ComplexFieldsTestModel extends Post
             [
                 'label' => 'Text',
                 'name' => 'Beschreibung',
-                'type' => 'App\\Aura\\Fields\\Text',
+                'type' => 'Eminiarts\\Aura\\Fields\\Text',
                 'conditional_logic' => [
                 ],
                 'slug' => 'description',
@@ -78,7 +78,7 @@ class ComplexFieldsTestModel extends Post
             [
                 'label' => 'Number',
                 'name' => 'Number',
-                'type' => 'App\\Aura\\Fields\\Number',
+                'type' => 'Eminiarts\\Aura\\Fields\\Number',
                 'validation' => 'required',
                 'conditional_logic' => [
                 ],
@@ -90,7 +90,7 @@ class ComplexFieldsTestModel extends Post
             [
                 'label' => 'Number2',
                 'name' => 'Number2',
-                'type' => 'App\\Aura\\Fields\\Number',
+                'type' => 'Eminiarts\\Aura\\Fields\\Number',
                 'validation' => 'required',
                 'conditional_logic' => [
                 ],
@@ -102,7 +102,7 @@ class ComplexFieldsTestModel extends Post
             [
                 'label' => 'Number 3',
                 'name' => 'Number 3',
-                'type' => 'App\\Aura\\Fields\\Number',
+                'type' => 'Eminiarts\\Aura\\Fields\\Number',
                 'validation' => 'required',
                 'conditional_logic' => [
                 ],
@@ -114,7 +114,7 @@ class ComplexFieldsTestModel extends Post
             [
                 'name' => 'Tab 2',
                 'slug' => 'tab2',
-                'type' => 'App\\Aura\\Fields\\Tab',
+                'type' => 'Eminiarts\\Aura\\Fields\\Tab',
                 'validation' => '',
                 'conditional_logic' => [
                 ],
@@ -124,7 +124,7 @@ class ComplexFieldsTestModel extends Post
             [
                 'name' => 'Text 2',
                 'slug' => 'text2',
-                'type' => 'App\\Aura\\Fields\\Text',
+                'type' => 'Eminiarts\\Aura\\Fields\\Text',
                 'validation' => '',
                 'conditional_logic' => '',
                 'has_conditional_logic' => false,
@@ -133,7 +133,7 @@ class ComplexFieldsTestModel extends Post
             [
                 'name' => 'Enabled',
                 'slug' => 'enabled2',
-                'type' => 'App\\Aura\\Fields\\Boolean',
+                'type' => 'Eminiarts\\Aura\\Fields\\Boolean',
                 'validation' => 'required',
                 'conditional_logic' => [
                 ],
@@ -146,7 +146,7 @@ class ComplexFieldsTestModel extends Post
             [
                 'name' => 'Panel 2',
                 'slug' => 'panel1',
-                'type' => 'App\\Aura\\Fields\\Panel',
+                'type' => 'Eminiarts\\Aura\\Fields\\Panel',
                 'validation' => '',
                 'conditional_logic' => [
                 ],
@@ -156,7 +156,7 @@ class ComplexFieldsTestModel extends Post
             [
                 'label' => 'Text',
                 'name' => 'Beschreibung',
-                'type' => 'App\\Aura\\Fields\\Text',
+                'type' => 'Eminiarts\\Aura\\Fields\\Text',
                 'conditional_logic' => [
                 ],
                 'slug' => 'description3',
@@ -164,7 +164,7 @@ class ComplexFieldsTestModel extends Post
             [
                 'label' => 'Image',
                 'name' => 'Bild',
-                'type' => 'App\\Aura\\Fields\\Image',
+                'type' => 'Eminiarts\\Aura\\Fields\\Image',
                 'conditional_logic' => [
                 ],
                 'validation' => 'nullable',
@@ -178,7 +178,7 @@ class ComplexFieldsTestModel extends Post
             [
                 'label' => 'Image',
                 'name' => 'file',
-                'type' => 'App\\Aura\\Fields\\File',
+                'type' => 'Eminiarts\\Aura\\Fields\\File',
                 'conditional_logic' => [
                 ],
                 'validation' => 'nullable',
@@ -192,7 +192,7 @@ class ComplexFieldsTestModel extends Post
             [
                 'name' => 'Text',
                 'slug' => 'text',
-                'type' => 'App\\Aura\\Fields\\Text',
+                'type' => 'Eminiarts\\Aura\\Fields\\Text',
                 'validation' => '',
                 'conditional_logic' => '',
                 'has_conditional_logic' => false,
