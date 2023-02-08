@@ -25,6 +25,7 @@ class AuraServiceProvider extends PackageServiceProvider
             ->name('aura')
             ->hasConfigFile()
             ->hasViews('aura')
+            ->hasAssets()
             ->hasRoute('web')
             ->hasMigrations(['create_aura_tables', 'create_flows_table'])
             ->runsMigrations()
@@ -40,7 +41,7 @@ class AuraServiceProvider extends PackageServiceProvider
                     ->publishMigrations()
                     ->askToRunMigrations()
                     ->copyAndRegisterServiceProviderInApp()
-                    ->askToStarRepoOnGitHub('your-vendor/your-repo-name');
+                    ->askToStarRepoOnGitHub('eminiarts/aura-cms');
             });
     }
 

@@ -1,0 +1,75 @@
+.tippy-box[data-theme~='aura'] {
+  background-color:white;
+  color: black;
+  @apply p-0 text-sm font-semibold text-gray-700 bg-white border border-gray-100 rounded-lg shadow-lg;
+}
+
+.tippy-box[data-theme~='aura'] .tippy-content {
+  @apply px-3 py-2 text-gray-700;
+}
+
+.tippy-box[data-theme~='aura'][data-placement^='top']>.tippy-arrow::before {
+  border-top-color:white;
+}
+
+.tippy-box[data-theme~='aura'][data-placement^='bottom']>.tippy-arrow::before {
+  border-bottom-color:white;
+}
+
+.tippy-box[data-theme~='aura'][data-placement^='left']>.tippy-arrow::before {
+  border-left-color:white;
+}
+
+.tippy-box[data-theme~='aura'][data-placement^='right']>.tippy-arrow::before {
+  border-right-color:white;
+}
+
+.dark .tippy-box[data-theme~='aura-small'] {
+  @apply px-0 py-2 text-sm font-semibold text-white bg-gray-700 border border-gray-600 rounded-lg shadow-lg;
+}
+
+.dark .tippy-box[data-theme~='aura-small'] .tippy-content {
+  @apply text-gray-200;
+}
+
+.tippy-box[data-theme~='aura-small'] {
+  background-color: white;
+  color: black;
+  @apply px-0 py-2 text-sm font-semibold text-gray-700 bg-white border border-gray-100 rounded-lg shadow-lg;
+}
+
+.tippy-box[data-theme~='aura-small'] .tippy-content {
+  @apply px-0 py-0 overflow-hidden text-gray-700;
+}
+
+.tippy-box[data-theme~='aura-small'][data-placement^='top']>.tippy-arrow::before {
+  border-top-color: white;
+}
+
+.tippy-box[data-theme~='aura-small'][data-placement^='bottom']>.tippy-arrow::before {
+  border-bottom-color: white;
+}
+
+.tippy-box[data-theme~='aura-small'][data-placement^='left']>.tippy-arrow::before {
+  border-left-color: white;
+}
+
+.tippy-box[data-theme~='aura-small'][data-placement^='right']>.tippy-arrow::before {
+  border-right-color: white;
+}
+
+.dark .tippy-box[data-theme~='aura-small'][data-placement^='top']>.tippy-arrow::before {
+  @apply border-t-gray-700;
+}
+
+.dark .tippy-box[data-theme~='aura-small'][data-placement^='bottom']>.tippy-arrow::before {
+  @apply border-b-gray-700;
+}
+
+.dark .tippy-box[data-theme~='aura-small'][data-placement^='left']>.tippy-arrow::before {
+  @apply border-l-gray-700;
+}
+
+.dark .tippy-box[data-theme~='aura-small'][data-placement^='right']>.tippy-arrow::before {
+  @apply border-r-gray-700;
+}
