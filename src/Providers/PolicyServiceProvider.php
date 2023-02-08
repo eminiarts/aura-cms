@@ -5,10 +5,10 @@ namespace Eminiarts\Aura\Providers;
 use Eminiarts\Aura\Resource;
 use Eminiarts\Aura\Resources\Team;
 use Eminiarts\Aura\Resources\User;
-use Eminiarts\Models\Post;
-use Eminiarts\Policies\PostPolicy;
-use Eminiarts\Policies\TeamPolicy;
-use Eminiarts\Policies\UserPolicy;
+use Illuminate\Support\Facades\Gate;
+use Eminiarts\Aura\Policies\PostPolicy;
+use Eminiarts\Aura\Policies\TeamPolicy;
+use Eminiarts\Aura\Policies\UserPolicy;
 use Illuminate\Foundation\Support\Providers\AuthServiceProvider as ServiceProvider;
 
 class PolicyServiceProvider extends ServiceProvider
@@ -26,7 +26,6 @@ class PolicyServiceProvider extends ServiceProvider
 
     public function register(): void
     {
-        dd('register');
     }
 
     /**
@@ -36,10 +35,15 @@ class PolicyServiceProvider extends ServiceProvider
      */
     public function boot()
     {
-        dd('boot');
-
         $this->registerPolicies();
 
-        //
+
+        Gate::before(function ($user, $ability) {
+            dd('before');
+            return true;
+            if ($user->resource->isSuperAdmin()) {
+                return true;
+            }
+        });
     }
 }

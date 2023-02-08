@@ -4,6 +4,7 @@ namespace Eminiarts\Aura\Http\Livewire\Post;
 
 use Livewire\Component;
 use Eminiarts\Aura\Facades\Aura;
+use Illuminate\Contracts\Auth\Access\Gate;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 
 class Index extends Component
@@ -26,8 +27,16 @@ class Index extends Component
             return redirect()->route('dashboard');
         }
 
+        dd(
+            'hier',
+            $this->post,
+            app(Gate::class)->authorize('viewAny', $this->post)
+        );
+        // dd($this->post);
         // Authorize if the User can see this Post
         $this->authorize('viewAny', $this->post);
+
+
 
         $this->fields = $this->post->inputFields();
         // dd($this->fields);

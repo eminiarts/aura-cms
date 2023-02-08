@@ -62,20 +62,7 @@ class AuraServiceProvider extends PackageServiceProvider
     {
         parent::boot();
 
-
-        // Register Policies
-        Gate::policy(Team::class, TeamPolicy::class);
-        Gate::policy(Resource::class, PostPolicy::class);
-        Gate::policy(User::class, UserPolicy::class);
-
         // dd('before gate before');
-
-        Gate::before(function ($user, $ability) {
-            return true;
-            if ($user->resource->isSuperAdmin()) {
-                return true;
-            }
-        });
     }
 
     public function packageBooted()
