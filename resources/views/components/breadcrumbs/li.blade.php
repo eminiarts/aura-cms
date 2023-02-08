@@ -15,12 +15,12 @@ if(!$iconClass){
     @if($href)
     <a href="{{ $href }}"
         class="inline-flex items-center text-sm font-medium text-gray-700 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white">
-        <x-icon :icon="$icon" size="xs" :iconClass="$iconClass" />
+        <x-aura::icon :icon="$icon" size="xs" :iconClass="$iconClass" />
         {!! $title !!}
     </a>
     @else
     <div class="flex items-center">
-        <x-icon :icon="$icon" size="xs" :iconClass="$iconClass" />
+        <x-aura::icon :icon="$icon" size="xs" :iconClass="$iconClass" />
         <span class="ml-1 text-sm font-medium text-gray-400 md:ml-2 dark:text-gray-500">{!! $title !!}</span>
     </div>
     @endif

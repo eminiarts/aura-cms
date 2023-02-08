@@ -18,11 +18,11 @@ if ($block) {
 }
 
 $sizes = [
-  'xs' => 'px-3.5 py-1.5 text-xs font-semibold rounded-md',
-  'sm' => 'px-4 py-2.5 text-sm leading-4 font-semibold rounded-lg',
-  'base' => 'px-4 py-2.5 text-sm font-semibold rounded-lg',
-  'lg' => 'px-5 py-3 text-base font-semibold rounded-lg',
-  'xl' => 'px-7 py-3.5 text-lg font-semibold rounded-lg',
+  'xs' => 'px-aura::3.5 py-1.5 text-xs font-semibold rounded-md',
+  'sm' => 'px-aura::4 py-2.5 text-sm leading-4 font-semibold rounded-lg',
+  'base' => 'px-aura::4 py-2.5 text-sm font-semibold rounded-lg',
+  'lg' => 'px-aura::5 py-3 text-base font-semibold rounded-lg',
+  'xl' => 'px-aura::7 py-3.5 text-lg font-semibold rounded-lg',
 ];
 $iconSizes = [
   'xs' => 'w-4',

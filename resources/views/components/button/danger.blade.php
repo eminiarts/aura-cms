@@ -2,16 +2,16 @@
   'size' => 'base',
   'class' => 'text-red-500 bg-red-100 border border-transparent hover:bg-red-200 focus:ring-red-500 shadow-none'
 ])
-<x-button
+<x-aura::button
   size="{{ $size }}"
   {{$attributes->merge([
     'class' => $class . ' ',
   ])}}
 >
   @if ($icon ?? false)
-    <x-slot:icon>
+    <x-aura::slot:icon>
       {{ $icon }}
-    </x-slot>
+    </x-aura::slot>
   @endif
   {{ $slot }}
-</x-button>
+</x-aura::button>

@@ -23,7 +23,7 @@ $settings = App\Aura::getOption('team-settings');
 @endphp
 
 
-<div class="flex md:hidden justify-between py-5 px-5
+<div class="flex md:hidden justify-between py-5 px-aura::5
     @if ($sidebarType == 'primary')
         text-white border-white border-opacity-20 bg-primary-700 dark:bg-gray-800 dark:border-gray-700 shadow-gray-400 md:shadow-none
     @elseif ($sidebarType == 'light')
@@ -41,7 +41,7 @@ $settings = App\Aura::getOption('team-settings');
         </svg>
     </div>
   <!-- Button to toggle the sidebar -->
-  <button x-on:click="$store.leftSidebar.toggle()">
+  <button x-aura::on:click="$store.leftSidebar.toggle()">
     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
         <path d="M3 12H15M3 6H21M3 18H21" stroke="currentcolor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
     </svg>
@@ -49,15 +49,15 @@ $settings = App\Aura::getOption('team-settings');
 </div>
 
 <div
-    x-cloak
-    class="flex-shrink-0 hidden w-0 md:block md:w-72"
+    x-aura::cloak
+    class="flex-aura::shrink-0 hidden w-0 md:block md:w-72"
 
-    x-bind:class="{
+    x-aura::bind:class="{
         'hidden md:hidden': !$store.leftSidebar.on,
         'block md:block': $store.leftSidebar.on,
     }"
 >
-  <div class="fixed top-0 left-0 z-10 flex flex-col flex-shrink-0 h-screen overflow-y-auto border-r shadow-xl w-72
+  <div class="fixed top-0 left-0 z-10 flex flex-aura::col flex-aura::shrink-0 h-screen overflow-y-auto border-r shadow-xl w-72
     @if ($sidebarType == 'primary')
         text-white border-white border-opacity-20 bg-primary-700 dark:bg-gray-800 dark:border-gray-700 shadow-gray-400 md:shadow-none
     @elseif ($sidebarType == 'light')
@@ -67,7 +67,7 @@ $settings = App\Aura::getOption('team-settings');
     @endif
   ">
 
-    <div class="flex flex-col flex-1 px-0 pt-0 pb-5 space-y-1 overflow-y-auto scrollbar-thin
+    <div class="flex flex-aura::col flex-aura::1 px-aura::0 pt-0 pb-5 space-y-1 overflow-y-auto scrollbar-thin
         @if ($sidebarType == 'primary')
             scrollbar-thumb-primary-500 scrollbar-track-primary-700 dark:scrollbar-thumb-gray-900 dark:scrollbar-track-gray-800
         @elseif ($sidebarType == 'light')
@@ -77,8 +77,8 @@ $settings = App\Aura::getOption('team-settings');
         @endif
     ">
 
-        <div class="flex flex-col px-5 space-y-1">
-            <div class="flex-shrink-0 h-[4.5rem] flex items-center justify-between">
+        <div class="flex flex-aura::col px-aura::5 space-y-1">
+            <div class="flex-aura::shrink-0 h-[4.5rem] flex items-center justify-between">
             {{-- <h1 class="text-2xl font-semibold">{{ config('app.name') }}</h1> --}}
                 @if ($settings)
 
@@ -145,16 +145,16 @@ $settings = App\Aura::getOption('team-settings');
                         focus:ring-primary-500 border-gray-700 text-gray-600 hover:text-gray-200
                         @endif
                     ">
-                        <x-icon icon="minus" />
+                        <x-aura::icon icon="minus" />
                     </button>
                 </div>
 
             </div>
 
-            <x-input.text placeholder="Search" @click="$dispatch('search')" class="cursor-pointer"></x-input>
+            <x-aura::input.text placeholder="Search" @click="$dispatch('search')" class="cursor-pointer"></x-aura::input>
         </div>
 
-        <div class="flex flex-col px-4 space-y-1">
+        <div class="flex flex-aura::col px-aura::4 space-y-1">
 
             @includeIf('navigation.before')
 
@@ -165,7 +165,7 @@ $settings = App\Aura::getOption('team-settings');
         </div>
         </div>
 
-        <div class="flex-shrink-0 px-5 min-h-[4.5rem] py-2 flex items-center border-t
+        <div class="flex-aura::shrink-0 px-aura::5 min-h-[4.5rem] py-2 flex items-center border-t
             @if ($sidebarType == 'primary')
                 border-white border-opacity-20 dark:border-gray-700
             @elseif ($sidebarType == 'light')
@@ -176,19 +176,19 @@ $settings = App\Aura::getOption('team-settings');
         ">
 
             @impersonating($guard = null)
-                <x-button.primary route="impersonate.leave" class="w-full my-2" size="xs">
-                    <x-slot:icon>
-                        <x-icon icon="user-impersonate" size="xs" />
-                    </x-slot:icon>
+                <x-aura::button.primary route="impersonate.leave" class="w-full my-2" size="xs">
+                    <x-aura::slot:icon>
+                        <x-aura::icon icon="user-impersonate" size="xs" />
+                    </x-aura::slot:icon>
                     <span>Leave Impersonation</span>
-                </x-button.primary>
+                </x-aura::button.primary>
             @endImpersonating
 
             @if(Auth::user()->currentTeam)
             <div class="flex items-center justify-between w-full">
-                <x-navigation.team-switcher>
-                    <x-slot:title>
-                        <div class="flex-shrink block w-full group">
+                <x-aura::navigation.team-switcher>
+                    <x-aura::slot:title>
+                        <div class="flex-aura::shrink block w-full group">
                             <div class="flex items-center">
                                 <div>
                                     <img class="inline-block rounded-full h-9 w-9" src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80" alt="">
@@ -215,51 +215,51 @@ $settings = App\Aura::getOption('team-settings');
                                 </div>
                             </div>
                         </div>
-                    </x-slot:title>
+                    </x-aura::slot:title>
                     <div class="w-60 dark:bg-gray-700">
-                        <div class="block px-4 py-2 text-xs text-gray-400 dark:text-gray-500">
+                        <div class="block px-aura::4 py-2 text-xs text-gray-400 dark:text-gray-500">
                             {{ __('Manage Profile') }}
                         </div>
-                        <x-dropdown-link href="/profile">
+                        <x-aura::dropdown-link href="/profile">
                             {{ __('View Profile') }}
-                        </x-dropdown-link>
+                        </x-aura::dropdown-link>
 
                         <!-- Team Management -->
-                        <div class="block px-4 py-2 text-xs text-gray-400 dark:text-gray-500">
+                        <div class="block px-aura::4 py-2 text-xs text-gray-400 dark:text-gray-500">
                             {{ __('Manage Team') }}
                         </div>
 
                         <!-- Team Settings -->
-                        <x-dropdown-link href="{{ route('post.edit', ['slug' => 'Team', 'id' => Auth::user()->currentTeam->id]) }}">
+                        <x-aura::dropdown-link href="{{ route('post.edit', ['slug' => 'Team', 'id' => Auth::user()->currentTeam->id]) }}">
                             {{ __('Team Settings') }}
-                        </x-dropdown-link>
+                        </x-aura::dropdown-link>
 
                         @can('create', Team::class)
-                            <x-dropdown-link href="{{ route('post.create', ['slug' => 'Team']) }}">
+                            <x-aura::dropdown-link href="{{ route('post.create', ['slug' => 'Team']) }}">
                                 {{ __('Create New Team') }}
-                            </x-dropdown-link>
+                            </x-aura::dropdown-link>
                         @endcan
 
                         <div class="my-2 border-t border-gray-100 dark:border-gray-600"></div>
 
                         <!-- Team Switcher -->
-                        <div class="block px-4 py-2 text-xs text-gray-400 dark:text-gray-500">
+                        <div class="block px-aura::4 py-2 text-xs text-gray-400 dark:text-gray-500">
                             {{ __('Switch Teams') }}
                         </div>
 
                         @foreach (Auth::user()->getTeams() as $team)
-                            <x-switchable-team :team="$team" />
+                            <x-aura::switchable-team :team="$team" />
                         @endforeach
                     </div>
-                </x-navigation.team-switcher>
+                </x-aura::navigation.team-switcher>
 
 
                 <div class="ml-2">
-                    <x-tippy text="Notifications">
-                        <x-button.primary @click="Livewire.emit('openSlideOver', 'notifications')" class="w-full my-2" size="xs">
-                            <x-icon icon="notifications" size="xs" />
-                        </x-button.primary>
-                    </x-tippy>
+                    <x-aura::tippy text="Notifications">
+                        <x-aura::button.primary @click="Livewire.emit('openSlideOver', 'notifications')" class="w-full my-2" size="xs">
+                            <x-aura::icon icon="notifications" size="xs" />
+                        </x-aura::button.primary>
+                    </x-aura::tippy>
                 </div>
             </div>
 
@@ -272,15 +272,15 @@ $settings = App\Aura::getOption('team-settings');
 </div>
 
 <div
-    x-cloak
-    class="flex-shrink-0 overflow-x-visible md:w-20"
-    x-bind:class="{
+    x-aura::cloak
+    class="flex-aura::shrink-0 overflow-x-aura::visible md:w-20"
+    x-aura::bind:class="{
         'hidden md:block': !$store.leftSidebar.on,
         'hidden': $store.leftSidebar.on,
     }"
 >
   <div class="
-    fixed top-0 left-0 z-10 flex flex-col flex-shrink-0 w-20 h-screen overflow-x-visible  border-r  shadow-xl
+    fixed top-0 left-0 z-10 flex flex-aura::col flex-aura::shrink-0 w-20 h-screen overflow-x-aura::visible  border-r  shadow-xl
 
     @if ($sidebarType == 'primary')
         text-white border-white bg-primary-700 dark:bg-gray-800 border-opacity-20 dark:border-gray-700 shadow-gray-400 md:shadow-none
@@ -291,7 +291,7 @@ $settings = App\Aura::getOption('team-settings');
     @endif
 
     ">
-    <div class="flex-shrink-0 px-5 h-[4.5rem] w-full overflow-x-visible flex items-center">
+    <div class="flex-aura::shrink-0 px-aura::5 h-[4.5rem] w-full overflow-x-aura::visible flex items-center">
         {{-- <h1 class="text-2xl font-semibold">{{ config('app.name') }}</h1> --}}
 
         <div>
@@ -307,27 +307,27 @@ $settings = App\Aura::getOption('team-settings');
                 focus:ring-primary-500 border-gray-700 text-gray-200 hover:text-white
                 @endif
             ">
-                <x-icon icon="plus" />
+                <x-aura::icon icon="plus" />
             </button>
         </div>
 
     </div>
 
-    <div class="flex flex-col items-center flex-1 px-1 pb-5 space-y-1 overflow-x-visible overflow-y-auto scrollbar-thin scrollbar-thumb-primary-500 scrollbar-track-primary-700">
+    <div class="flex flex-aura::col items-center flex-aura::1 px-aura::1 pb-5 space-y-1 overflow-x-aura::visible overflow-y-auto scrollbar-thin scrollbar-thumb-primary-500 scrollbar-track-primary-700">
 
-        <x-navigation.item-icon @click="$dispatch('search')" class="cursor-pointer" tooltip="Search">
-            <x-icon icon="search" />
-        </x-navigation.item-icon>
+        <x-aura::navigation.item-icon @click="$dispatch('search')" class="cursor-pointer" tooltip="Search">
+            <x-aura::icon icon="search" />
+        </x-aura::navigation.item-icon>
 
 
-        <x-navigation.item-icon route="dashboard" tooltip="Dashboard">
-            <x-icon icon="dashboard2" />
-        </x-navigation.item-icon>
+        <x-aura::navigation.item-icon route="dashboard" tooltip="Dashboard">
+            <x-aura::icon icon="dashboard2" />
+        </x-aura::navigation.item-icon>
 
         {{-- @foreach(\App\Aura::navigation() as $group => $resources)
 
 
-            <div class="w-full px-2 py-2">
+            <div class="w-full px-aura::2 py-2">
                 @if ($sidebarType == 'primary')
                 <hr class="w-full border-primary-500 dark:border-gray-700">
                 @elseif ($sidebarType == 'light')
@@ -338,17 +338,17 @@ $settings = App\Aura::getOption('team-settings');
             </div>
 
             @foreach($resources as $resource)
-                <x-navigation.item-icon route="post.index" :id="$resource['type']" :tooltip="$resource['name']" :strict="false">
+                <x-aura::navigation.item-icon route="post.index" :id="$resource['type']" :tooltip="$resource['name']" :strict="false">
                     {!! $resource['icon'] !!}
-                </x-navigation.item-icon>
+                </x-aura::navigation.item-icon>
             @endforeach
 
         @endforeach --}}
 
-        {{-- <x-navigation.heading>
+        {{-- <x-aura::navigation.heading>
             Taxonomies
-        </x-navigation.heading> --}}
-        <div class="w-full px-2 py-2">
+        </x-aura::navigation.heading> --}}
+        <div class="w-full px-aura::2 py-2">
             @if ($sidebarType == 'primary')
             <hr class="w-full border-primary-500 dark:border-gray-700">
             @elseif ($sidebarType == 'light')
@@ -359,16 +359,16 @@ $settings = App\Aura::getOption('team-settings');
         </div>
 
         @foreach(\App\Aura::taxonomies() as $taxonomy)
-            <x-navigation.item-icon route="taxonomy.index" :id="$taxonomy" :tooltip="$taxonomy" :strict="false">
-                <x-icon icon="circle" />
-            </x-navigation.item-icon>
+            <x-aura::navigation.item-icon route="taxonomy.index" :id="$taxonomy" :tooltip="$taxonomy" :strict="false">
+                <x-aura::icon icon="circle" />
+            </x-aura::navigation.item-icon>
         @endforeach
 
 
-        {{-- <x-navigation.heading>
+        {{-- <x-aura::navigation.heading>
             Admin
-        </x-navigation.heading> --}}
-        <div class="w-full px-2 py-2">
+        </x-aura::navigation.heading> --}}
+        <div class="w-full px-aura::2 py-2">
             @if ($sidebarType == 'primary')
             <hr class="w-full border-primary-500 dark:border-gray-700">
             @elseif ($sidebarType == 'light')
@@ -378,35 +378,35 @@ $settings = App\Aura::getOption('team-settings');
             @endif
         </div>
 
-        <x-navigation.dropdown-icon>
+        <x-aura::navigation.dropdown-icon>
 
-            <x-slot:title>
+            <x-aura::slot:title>
 
-            <x-icon icon="circle" />
+            <x-aura::icon icon="circle" />
 
-            </x-slot>
+            </x-aura::slot>
 
-            <x-navigation.item-dropdown route="table" compact>
+            <x-aura::navigation.item-dropdown route="table" compact>
                 <div>All users</div>
-            </x-navigation.item-dropdown>
-            <x-navigation.item-dropdown route="table" compact>
+            </x-aura::navigation.item-dropdown>
+            <x-aura::navigation.item-dropdown route="table" compact>
                 <div>Teams</div>
-            </x-navigation.item-dropdown>
-            <x-navigation.item-dropdown route="table" compact>
+            </x-aura::navigation.item-dropdown>
+            <x-aura::navigation.item-dropdown route="table" compact>
                 <div>Roles</div>
-            </x-navigation.item-dropdown>
-            <x-navigation.item-dropdown route="table" compact>
+            </x-aura::navigation.item-dropdown>
+            <x-aura::navigation.item-dropdown route="table" compact>
                 <div>Permissions</div>
-            </x-navigation.item-dropdown>
+            </x-aura::navigation.item-dropdown>
 
-        </x-navigation.dropdown-icon>
+        </x-aura::navigation.dropdown-icon>
 
 
 
-        {{-- <x-navigation.heading>
+        {{-- <x-aura::navigation.heading>
             Development
-        </x-navigation.heading> --}}
-        <div class="w-full px-2 py-2">
+        </x-aura::navigation.heading> --}}
+        <div class="w-full px-aura::2 py-2">
             @if ($sidebarType == 'primary')
             <hr class="w-full border-primary-500 dark:border-gray-700">
             @elseif ($sidebarType == 'light')
@@ -416,36 +416,36 @@ $settings = App\Aura::getOption('team-settings');
             @endif
         </div>
 
-        <x-navigation.item-icon route="components" tooltip="Components" :strict="false">
-            <x-icon icon="color-swatch" />
-        </x-navigation.item-icon>
+        <x-aura::navigation.item-icon route="components" tooltip="Components" :strict="false">
+            <x-aura::icon icon="color-swatch" />
+        </x-aura::navigation.item-icon>
 
-        {{-- <x-navigation.item-icon route="posttypes" tooltip="Posttypes" :strict="false">
-            <x-icon icon="collection" />
-        </x-navigation.item-icon> --}}
+        {{-- <x-aura::navigation.item-icon route="posttypes" tooltip="Posttypes" :strict="false">
+            <x-aura::icon icon="collection" />
+        </x-aura::navigation.item-icon> --}}
 
-        <x-navigation.item-icon onclick="Livewire.emit('openModal', 'create-posttype')" tooltip="Create Posttype" :strict="false">
-            <x-icon icon="collection" />
-        </x-navigation.item-icon>
+        <x-aura::navigation.item-icon onclick="Livewire.emit('openModal', 'create-posttype')" tooltip="Create Posttype" :strict="false">
+            <x-aura::icon icon="collection" />
+        </x-aura::navigation.item-icon>
 
-        <x-navigation.item-icon route="charts" tooltip="Charts" :strict="false">
-            <x-icon icon="adjustments" />
-        </x-navigation.item-icon>
+        <x-aura::navigation.item-icon route="charts" tooltip="Charts" :strict="false">
+            <x-aura::icon icon="adjustments" />
+        </x-aura::navigation.item-icon>
 
-        <x-navigation.item-icon route="team.settings" tooltip="Team Settings" :strict="false">
-            <x-icon icon="adjustments" />
-        </x-navigation.item-icon>
+        <x-aura::navigation.item-icon route="team.settings" tooltip="Team Settings" :strict="false">
+            <x-aura::icon icon="adjustments" />
+        </x-aura::navigation.item-icon>
 
-        <x-navigation.item-icon route="media.index" tooltip="Media" :strict="false">
-            <x-icon icon="collection" />
-        </x-navigation.item-icon>
+        <x-aura::navigation.item-icon route="media.index" tooltip="Media" :strict="false">
+            <x-aura::icon icon="collection" />
+        </x-aura::navigation.item-icon>
 
     </div>
 
-    <div class="flex-shrink-0 px-5 h-[4.5rem] flex items-center border-t border-white border-opacity-20 dark:border-gray-700">
-        <x-tippy text="{{ Auth::user()->name }}" position="right">
+    <div class="flex-aura::shrink-0 px-aura::5 h-[4.5rem] flex items-center border-t border-white border-opacity-20 dark:border-gray-700">
+        <x-aura::tippy text="{{ Auth::user()->name }}" position="right">
             <img class="inline-block rounded-full h-9 w-9" src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80" alt="">
-        </x-tippy>
+        </x-aura::tippy>
     </div>
   </div>
 </div>

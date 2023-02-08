@@ -10,7 +10,7 @@ $settings = App\Aura::getOption('team-settings');
     }
 @endphp
 <div>
-  <h5 class="px-2 mt-4 text-xs font-semibold tracking-wide uppercase select-none
+  <h5 class="px-aura::2 mt-4 text-xs font-semibold tracking-wide uppercase select-none
     @if ($sidebarType == 'primary')
       text-primary-400 dark:text-gray-500
     @elseif ($sidebarType == 'light')

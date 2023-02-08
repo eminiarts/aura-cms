@@ -1,7 +1,7 @@
-<x-fields.wrapper :field="$field">
+<x-aura::fields.wrapper :field="$field">
     @if (optional(optional($field)['options'])['native'])
         <div class="relative z-40 md:relative left-4 right-4 bottom-6 md:inset-0"
-            x-data="{
+            x-aura::data="{
                 color: $wire.entangle('post.fields.{{ optional($field)['slug'] }}').defer,
                 init () {
                     // console.log('init color', this.color);
@@ -14,14 +14,14 @@
                 },
             }"
         >
-            <x-input.text :disabled="optional($field)['disabled']" x-model="color" error="post.fields.{{ optional($field)['slug'] }}" placeholder="{{ optional($field)['name'] }}" id="post-field-{{ optional($field)['slug'] }}"></x-input.text>
+            <x-aura::input.text :disabled="optional($field)['disabled']" x-aura::model="color" error="post.fields.{{ optional($field)['slug'] }}" placeholder="{{ optional($field)['name'] }}" id="post-field-{{ optional($field)['slug'] }}"></x-aura::input.text>
 
-            <input type="color" x-model="color" class="absolute z-10 w-6 h-6 transform -translate-y-1/2 border-none rounded-full cursor-pointer top-1/2 right-4" />
+            <input type="color" x-aura::model="color" class="absolute z-10 w-6 h-6 transform -translate-y-1/2 border-none rounded-full cursor-pointer top-1/2 right-4" />
         </div>
     @else
 
     <div wire:ignore class="flex items-center"
-        x-data="{
+        x-aura::data="{
             selectedColor: $wire.entangle('post.fields.{{ optional($field)['slug'] }}').defer,
             init() {
                 console.log('init color', this.selectedColor);
@@ -106,21 +106,21 @@
     >
         <div>
             <input
-                x-ref="colorPicker"
+                x-aura::ref="colorPicker"
                 type="text"
-                x-model="selectedColor"
+                x-aura::model="selectedColor"
             />
 
         </div>
 
         <div class="ml-2">
-            <x-input.text :disabled="optional($field)['disabled']" x-model="selectedColor" error="post.fields.{{ optional($field)['slug'] }}" placeholder="{{ optional($field)['name'] }}" id="post-field-{{ optional($field)['slug'] }}"></x-input.text>
+            <x-aura::input.text :disabled="optional($field)['disabled']" x-aura::model="selectedColor" error="post.fields.{{ optional($field)['slug'] }}" placeholder="{{ optional($field)['name'] }}" id="post-field-{{ optional($field)['slug'] }}"></x-aura::input.text>
         </div>
     </div>
 
     @endif
 
-</x-fields.wrapper>
+</x-aura::fields.wrapper>
 
 
 {{-- border-gray-500/30 focus:border-primary-300 focus:ring focus:ring-primary-300  focus:ring-opacity-50 dark:focus:ring-primary-500 dark:focus:ring-opacity-50 rounded-md shadow-sm --}}

@@ -81,26 +81,26 @@
     <body class="overflow-hidden antialiased text-gray-800 bg-white dark:bg-gray-900 dark:text-gray-200">
 
         <div
-            x-data="aura"
+            x-aura::data="aura"
             @keydown.window.slash="$dispatch('search')"
             @keydown.window.prevent.cmd.k="$dispatch('search')"
             @keydown.window.escape="closeSearch()"
             @inset-sidebar.window="insetSidebar(event)"
-            class="flex flex-col items-stretch h-screen overflow-hidden md:flex-row"
+            class="flex flex-aura::col items-stretch h-screen overflow-hidden md:flex-aura::row"
         >
 
-            <x-navigation />
+            <x-aura::navigation />
 
 
-            <div class="flex flex-col flex-grow w-screen h-screen aura-content">
+            <div class="flex flex-aura::col flex-aura::grow w-screen h-screen aura-content">
 
 
-                <div class="flex-1 overflow-y-auto">
+                <div class="flex-aura::1 overflow-y-auto">
                     <div class="p-5 md:p-8">
                         {{ $slot }}
                     </div>
-                    <div class="flex justify-end px-8 pb-8">
-                        <div class="flex flex-col text-gray-200 dark:text-gray-700">
+                    <div class="flex justify-end px-aura::8 pb-8">
+                        <div class="flex flex-aura::col text-gray-200 dark:text-gray-700">
                                 <a href="https://auracms.com/" target="_blank">
                                     <svg width="123" height="24" viewBox="0 0 123 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                                         <path d="M44.5089 24C50.1237 24 54.1979 19.6519 54.1979 14.174V0H48.6173V14.174C48.6173 16.3994 47.0767 18.2825 44.5089 18.2825C41.9069 18.2825 40.4005 16.3994 40.4005 14.174V0H34.7857V14.174C34.7857 19.6519 38.8941 24 44.5089 24Z" fill="currentColor"/>
@@ -117,9 +117,9 @@
             </div>
 
             @if($sidebar)
-            <x-sidebar>
+            <x-aura::sidebar>
                 {{ $sidebar  }}
-            </x-sidebar>
+            </x-aura::sidebar>
             @endif
 
             @yield('sidebar')
@@ -129,7 +129,7 @@
 
         @stack('modals')
 
-        <x-notification />
+        <x-aura::notification />
 
         <livewire:notifications />
 
