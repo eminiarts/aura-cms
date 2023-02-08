@@ -2,13 +2,13 @@
 
 namespace Tests\Feature\Livewire;
 
-use App\Aura;
-use App\Aura\Resources\Post;
-use App\Aura\Resources\Team;
-use App\AuraTest;
-use App\Http\Livewire\Post\Create;
-use App\Http\Livewire\Post\Edit;
-use App\Models\User;
+use Eminiarts\Aura\Aura;
+use Eminiarts\Aura\Aura\Resources\Post;
+use Eminiarts\Aura\Aura\Resources\Team;
+use Eminiarts\Aura\AuraTest;
+use Eminiarts\Aura\Http\Livewire\Post\Create;
+use Eminiarts\Aura\Http\Livewire\Post\Edit;
+use Eminiarts\Aura\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
 use Livewire\Livewire;

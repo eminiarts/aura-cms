@@ -1,8 +1,8 @@
 <?php
 
-use App\Aura\Resources\Flow;
-use App\Http\Livewire\CreateFlow;
-use App\Models\User;
+use Eminiarts\Aura\Aura\Resources\Flow;
+use Eminiarts\Aura\Http\Livewire\CreateFlow;
+use Eminiarts\Aura\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
 

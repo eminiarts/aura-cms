@@ -1,10 +1,10 @@
 <?php
 
-use App\Aura\Resources\Flow;
-use App\Aura\Resources\Post;
-use App\Jobs\RunOperation;
-use App\Jobs\TriggerFlowOnCreatePostEvent;
-use App\Models\User;
+use Eminiarts\Aura\Aura\Resources\Flow;
+use Eminiarts\Aura\Aura\Resources\Post;
+use Eminiarts\Aura\Jobs\RunOperation;
+use Eminiarts\Aura\Jobs\TriggerFlowOnCreatePostEvent;
+use Eminiarts\Aura\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Queue;
 

@@ -1,9 +1,9 @@
 <?php
 
-use App\Aura\Resources\Flow;
-use App\Aura\Resources\OperationLog;
-use App\Aura\Resources\Post;
-use App\Models\User;
+use Eminiarts\Aura\Aura\Resources\Flow;
+use Eminiarts\Aura\Aura\Resources\OperationLog;
+use Eminiarts\Aura\Aura\Resources\Post;
+use Eminiarts\Aura\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);

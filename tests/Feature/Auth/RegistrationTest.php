@@ -2,9 +2,9 @@
 
 namespace Tests\Feature\Auth;
 
-use App\Providers\RouteServiceProvider;
+use Eminiarts\Aura\Providers\RouteServiceProvider;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Tests\TestCase;
+use Eminiarts\Aura\Tests\TestCase;
 
 class RegistrationTest extends TestCase
 {

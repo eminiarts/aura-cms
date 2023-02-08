@@ -2,12 +2,12 @@
 
 namespace Tests\Feature;
 
-use App\Models\User;
+use Eminiarts\Aura\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Jetstream\Features;
 use Laravel\Jetstream\Http\Livewire\ApiTokenManager;
 use Livewire\Livewire;
-use Tests\TestCase;
+use Eminiarts\Aura\Tests\TestCase;
 
 class CreateApiTokenTest extends TestCase
 {

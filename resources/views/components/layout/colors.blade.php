@@ -1,5 +1,5 @@
 @php
-    use App\TransformColor;
+    use Eminiarts\Aura\TransformColor;
 @endphp
 @if($settings)
 <style>

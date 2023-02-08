@@ -1,10 +1,10 @@
 <?php
 
-use App\Aura\Resources\Post;
-use App\Aura\Traits\CustomTable;
-use App\Http\Livewire\Table\Table;
-use App\Models\Scopes\TeamScope;
-use App\Models\User;
+use Eminiarts\Aura\Aura\Resources\Post;
+use Eminiarts\Aura\Aura\Traits\CustomTable;
+use Eminiarts\Aura\Http\Livewire\Table\Table;
+use Eminiarts\Aura\Models\Scopes\TeamScope;
+use Eminiarts\Aura\Models\User;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Schema;

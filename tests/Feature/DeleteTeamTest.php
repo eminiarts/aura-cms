@@ -2,12 +2,12 @@
 
 namespace Tests\Feature;
 
-use App\Aura\Resources\Team;
-use App\Models\User;
+use Eminiarts\Aura\Aura\Resources\Team;
+use Eminiarts\Aura\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Jetstream\Http\Livewire\DeleteTeamForm;
 use Livewire\Livewire;
-use Tests\TestCase;
+use Eminiarts\Aura\Tests\TestCase;
 
 class DeleteTeamTest extends TestCase
 {
