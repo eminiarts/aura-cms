@@ -14,14 +14,14 @@ class Model1 extends Post
             [
                 'label' => 'Tab 1',
                 'name' => 'Tab 1',
-                'type' => 'App\\Aura\\Fields\\Tab',
+                'type' => 'Eminiarts\\Aura\\Fields\\Tab',
                 'slug' => 'tab-1',
                 'style' => [],
             ],
             [
                 'label' => 'Total',
                 'name' => 'Total',
-                'type' => 'App\\Aura\\Fields\\Text',
+                'type' => 'Eminiarts\\Aura\\Fields\\Text',
                 'validation' => 'numeric',
                 'conditional_logic' => [
                 ],
@@ -30,7 +30,7 @@ class Model1 extends Post
             [
                 'label' => 'other',
                 'name' => 'other',
-                'type' => 'App\\Aura\\Fields\\Text',
+                'type' => 'Eminiarts\\Aura\\Fields\\Text',
                 'validation' => 'numeric',
                 'conditional_logic' => [
                 ],
@@ -39,14 +39,14 @@ class Model1 extends Post
             [
                 'label' => 'Tab 2',
                 'name' => 'Tab 2',
-                'type' => 'App\\Aura\\Fields\\Tab',
+                'type' => 'Eminiarts\\Aura\\Fields\\Tab',
                 'slug' => 'tab-2',
                 'style' => [],
             ],
             [
                 'label' => 'Total 2',
                 'name' => 'Total 2',
-                'type' => 'App\\Aura\\Fields\\Text',
+                'type' => 'Eminiarts\\Aura\\Fields\\Text',
                 'validation' => 'numeric',
                 'conditional_logic' => [
                 ],
@@ -87,14 +87,14 @@ class Model2 extends Post
             [
                 'label' => 'Tab 1',
                 'name' => 'Tab 1',
-                'type' => 'App\\Aura\\Fields\\Tab',
+                'type' => 'Eminiarts\\Aura\\Fields\\Tab',
                 'slug' => 'tab-1',
                 'style' => [],
             ],
             [
                 'label' => 'Total',
                 'name' => 'Total',
-                'type' => 'App\\Aura\\Fields\\Text',
+                'type' => 'Eminiarts\\Aura\\Fields\\Text',
                 'validation' => 'numeric',
                 'conditional_logic' => [
                 ],
@@ -103,7 +103,7 @@ class Model2 extends Post
             [
                 'label' => 'other',
                 'name' => 'other',
-                'type' => 'App\\Aura\\Fields\\Text',
+                'type' => 'Eminiarts\\Aura\\Fields\\Text',
                 'validation' => 'numeric',
                 'conditional_logic' => [
                 ],
@@ -112,14 +112,14 @@ class Model2 extends Post
             [
                 'label' => 'Tab 2',
                 'name' => 'Tab 2',
-                'type' => 'App\\Aura\\Fields\\Tab',
+                'type' => 'Eminiarts\\Aura\\Fields\\Tab',
                 'slug' => 'tab-2',
                 'style' => [],
             ],
             [
                 'label' => 'Total 2',
                 'name' => 'Total 2',
-                'type' => 'App\\Aura\\Fields\\Text',
+                'type' => 'Eminiarts\\Aura\\Fields\\Text',
                 'validation' => 'numeric',
                 'conditional_logic' => [
                 ],
@@ -128,14 +128,14 @@ class Model2 extends Post
             [
                 'label' => 'Tab 3',
                 'name' => 'Tab 3',
-                'type' => 'App\\Aura\\Fields\\Tab',
+                'type' => 'Eminiarts\\Aura\\Fields\\Tab',
                 'slug' => 'tab-3',
                 'style' => [],
             ],
             [
                 'label' => 'Total 3',
                 'name' => 'Total 3',
-                'type' => 'App\\Aura\\Fields\\Number',
+                'type' => 'Eminiarts\\Aura\\Fields\\Number',
                 'validation' => 'numeric',
                 'conditional_logic' => [
                 ],

@@ -20,7 +20,7 @@ class BasicConditionalLogicOnFieldModel extends Post
             [
                 'label' => 'Text 1',
                 'name' => 'Text 1',
-                'type' => 'App\\Aura\\Fields\\Text',
+                'type' => 'Eminiarts\\Aura\\Fields\\Text',
                 'slug' => 'text1',
                 'validation' => '',
                 'conditional_logic' => [],
@@ -28,7 +28,7 @@ class BasicConditionalLogicOnFieldModel extends Post
             [
                 'label' => 'Text 2',
                 'name' => 'Text 2',
-                'type' => 'App\\Aura\\Fields\\Text',
+                'type' => 'Eminiarts\\Aura\\Fields\\Text',
                 'validation' => '',
                 'conditional_logic' => [
                     [

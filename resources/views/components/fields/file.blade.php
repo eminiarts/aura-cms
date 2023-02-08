@@ -16,7 +16,7 @@ $files = null;
 // get the the attachement with the id
 // dd($this->post, $selected);
 if($selected) {
-    $files = \App\Aura\Resources\Attachment::find($selected)->sortBy(function($item) use ($selected) {
+    $files = \Eminiarts\Aura\Resources\Attachment::find($selected)->sortBy(function($item) use ($selected) {
         return array_search($item->id, $selected);
     });
 }

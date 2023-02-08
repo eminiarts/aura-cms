@@ -14,66 +14,66 @@ class ModelRecursive extends Post
             [
                 'name' => 'Tab 1',
                 'global' => true,
-                'type' => 'App\\Aura\\Fields\\Tab',
+                'type' => 'Eminiarts\\Aura\\Fields\\Tab',
                 'fields' => [],
             ],
             [
                 'name' => 'Panel 1',
-                'type' => 'App\\Aura\\Fields\\Panel',
+                'type' => 'Eminiarts\\Aura\\Fields\\Panel',
                 'fields' => [],
             ],
             [
                 'name' => 'Repeater 1',
-                'type' => 'App\\Aura\\Fields\\Repeater',
+                'type' => 'Eminiarts\\Aura\\Fields\\Repeater',
                 'fields' => [],
             ],
             [
                 'name' => 'Repeater 2',
-                'type' => 'App\\Aura\\Fields\\Repeater',
+                'type' => 'Eminiarts\\Aura\\Fields\\Repeater',
                 'fields' => [],
             ],
             [
                 'name' => 'Repeater 3',
-                'type' => 'App\\Aura\\Fields\\Repeater',
+                'type' => 'Eminiarts\\Aura\\Fields\\Repeater',
                 'fields' => [],
             ],
             [
                 'name' => 'Field in Repeater 3',
-                'type' => 'App\\Aura\\Fields\\Text',
+                'type' => 'Eminiarts\\Aura\\Fields\\Text',
             ],
             [
                 'name' => 'Field2 in Repeater 3',
-                'type' => 'App\\Aura\\Fields\\Text',
+                'type' => 'Eminiarts\\Aura\\Fields\\Text',
             ],
             [
                 'name' => 'Panel 2',
-                'type' => 'App\\Aura\\Fields\\Panel',
+                'type' => 'Eminiarts\\Aura\\Fields\\Panel',
                 'fields' => [],
             ],
             [
                 'name' => 'Repeater 4',
-                'type' => 'App\\Aura\\Fields\\Repeater',
+                'type' => 'Eminiarts\\Aura\\Fields\\Repeater',
                 'fields' => [],
             ],
             [
                 'name' => 'Tab 2',
                 'global' => true,
-                'type' => 'App\\Aura\\Fields\\Tab',
+                'type' => 'Eminiarts\\Aura\\Fields\\Tab',
                 'fields' => [],
             ],
             [
                 'name' => 'Field in Tab 2',
-                'type' => 'App\\Aura\\Fields\\Text',
+                'type' => 'Eminiarts\\Aura\\Fields\\Text',
             ],
             [
                 'name' => 'Tab 3',
                 'global' => true,
-                'type' => 'App\\Aura\\Fields\\Tab',
+                'type' => 'Eminiarts\\Aura\\Fields\\Tab',
                 'fields' => [],
             ],
             [
                 'name' => 'Field in Tab 3',
-                'type' => 'App\\Aura\\Fields\\Text',
+                'type' => 'Eminiarts\\Aura\\Fields\\Text',
             ],
         ];
     }

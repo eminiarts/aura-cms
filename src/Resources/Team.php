@@ -8,7 +8,7 @@ use Eminiarts\Aura\Traits\SaveMetaFields;
 use Eminiarts\Aura\Traits\SaveTerms;
 use Eminiarts\Aura\Models\Post;
 use Eminiarts\Aura\Models\TeamMeta;
-use Database\Factories\TeamFactory;
+use Eminiarts\Aura\Database\Factories\TeamFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class Team extends Post

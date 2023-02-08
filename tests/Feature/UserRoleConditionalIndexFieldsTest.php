@@ -20,7 +20,7 @@ class UserRoleConditionalIndexFieldsModel extends Post
         return [
             [
                 'name' => 'Text 1',
-                'type' => 'App\\Aura\\Fields\\Text',
+                'type' => 'Eminiarts\\Aura\\Fields\\Text',
                 'slug' => 'text1',
                 'validation' => '',
                 'conditional_logic' => [
@@ -33,7 +33,7 @@ class UserRoleConditionalIndexFieldsModel extends Post
             ],
             [
                 'name' => 'Text 2',
-                'type' => 'App\\Aura\\Fields\\Text',
+                'type' => 'Eminiarts\\Aura\\Fields\\Text',
                 'validation' => '',
                 'conditional_logic' => [
                     [
@@ -46,7 +46,7 @@ class UserRoleConditionalIndexFieldsModel extends Post
             ],
             [
                 'name' => 'Text 3',
-                'type' => 'App\\Aura\\Fields\\Text',
+                'type' => 'Eminiarts\\Aura\\Fields\\Text',
                 'validation' => '',
                 'conditional_logic' => [],
                 'slug' => 'text3',

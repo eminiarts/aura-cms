@@ -18,7 +18,7 @@ test('Team Settings Component can be rendered', function () {
     $role = Role::create(['type' => 'Role', 'title' => 'Super Admin', 'slug' => 'super_admin', 'description' => 'Super Admin has can perform everything.', 'super_admin' => true, 'permissions' => []]);
 
     // Attach to User
-    $user = \App\Aura\Resources\User::find(1);
+    $user = \Eminiarts\Aura\Resources\User::find(1);
 
     $user->update(['fields' => ['roles' => [$role->id]]]);
 
@@ -31,7 +31,7 @@ test('Default Team Settings are created', function () {
     $role = Role::create(['type' => 'Role', 'title' => 'Super Admin', 'slug' => 'super_admin', 'description' => 'Super Admin has can perform everything.', 'super_admin' => true, 'permissions' => []]);
 
     // Attach to User
-    $user = \App\Aura\Resources\User::find(1);
+    $user = \Eminiarts\Aura\Resources\User::find(1);
 
     $user->update(['fields' => ['roles' => [$role->id]]]);
 
@@ -61,7 +61,7 @@ test('Team Settings can be saved', function () {
     $role = Role::create(['type' => 'Role', 'title' => 'Super Admin', 'slug' => 'super_admin', 'description' => 'Super Admin has can perform everything.', 'super_admin' => true, 'permissions' => []]);
 
     // Attach to User
-    $user = \App\Aura\Resources\User::find(1);
+    $user = \Eminiarts\Aura\Resources\User::find(1);
 
     $user->update(['fields' => ['roles' => [$role->id]]]);
 
