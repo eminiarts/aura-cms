@@ -40,7 +40,7 @@ class FortifyServiceProvider extends ServiceProvider
 
 
         Fortify::loginView(function () {
-            return view('auth.login');
+            return view('aura::auth.login');
         });
     }
 
