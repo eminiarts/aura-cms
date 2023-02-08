@@ -2,7 +2,7 @@
 
 namespace Eminiarts\Aura\Models;
 
-use Eminiarts\Aura;
+use Eminiarts\Aura\Aura;
 use Eminiarts\Aura\Resource;
 use Eminiarts\Aura\Resources\Flow;
 use Eminiarts\Aura\Traits\InitialPostFields;

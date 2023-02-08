@@ -5,10 +5,16 @@ namespace Eminiarts\Aura;
 use Livewire\Livewire;
 use Livewire\Component;
 use Illuminate\Support\Arr;
+use Eminiarts\Aura\Resource;
+use Eminiarts\Aura\Resources\Team;
+use Eminiarts\Aura\Resources\User;
 use Illuminate\Support\Facades\Gate;
+use Eminiarts\Aura\Commands\MakeUser;
+use Eminiarts\Aura\Policies\PostPolicy;
+use Eminiarts\Aura\Policies\TeamPolicy;
+use Eminiarts\Aura\Policies\UserPolicy;
 use Spatie\LaravelPackageTools\Package;
 use Eminiarts\Aura\Commands\AuraCommand;
-use Eminiarts\Aura\Commands\MakeUser;
 use Illuminate\Database\Eloquent\Builder;
 use Spatie\LaravelPackageTools\PackageServiceProvider;
 use Spatie\LaravelPackageTools\Commands\InstallCommand;
@@ -51,18 +57,34 @@ class AuraServiceProvider extends PackageServiceProvider
         return config('aura.resources');
     }
 
+    // boot
+    public function boot()
+    {
+        parent::boot();
+
+
+        // Register Policies
+        Gate::policy(Team::class, TeamPolicy::class);
+        Gate::policy(Resource::class, PostPolicy::class);
+        Gate::policy(User::class, UserPolicy::class);
+
+        // dd('before gate before');
+
+        Gate::before(function ($user, $ability) {
+            return true;
+            if ($user->resource->isSuperAdmin()) {
+                return true;
+            }
+        });
+    }
+
     public function packageBooted()
     {
         Component::macro('notify', function ($message) {
             $this->dispatchBrowserEvent('notify', $message);
         });
 
-        Gate::before(function ($user, $ability) {
-            // return true;
-            if ($user->resource->isSuperAdmin()) {
-                return true;
-            }
-        });
+
 
         // Search in multiple columns
         Builder::macro('searchIn', function ($columns, $search) {
@@ -108,6 +130,11 @@ class AuraServiceProvider extends PackageServiceProvider
             \Eminiarts\Aura\Resources\Team::class,
             \Eminiarts\Aura\Resources\User::class,
         ]);
+
+
+
+
+
 
         // dd('hier', app('aura'), Facades\Aura::getResources());
     }

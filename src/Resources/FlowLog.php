@@ -119,7 +119,7 @@ class FlowLog extends Post
             ],
             [
                 'name' => 'OperationLogs',
-                'slug' => 'operation_logs',
+                'slug' => 'flow_operation_logs',
                 'type' => 'Eminiarts\\Aura\\Fields\\HasMany',
                 'posttype' => 'Eminiarts\\Aura\\Resources\\OperationLog',
                 'validation' => '',

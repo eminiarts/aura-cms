@@ -76,7 +76,7 @@ test('flow gets triggered on create post and sends a notification to a user', fu
     $this->assertDatabaseHas('flow_logs', ['flow_id' => $flow->id]);
 
     // Assert Flow Operation is triggered when Post is created
-    $this->assertDatabaseHas('operation_logs', ['operation_id' => $flow->operation_id]);
+    $this->assertDatabaseHas('flow_operation_logs', ['operation_id' => $flow->operation_id]);
 });
 
 test('flow gets triggered on create post and sends a notification to a role', function () {
@@ -147,5 +147,5 @@ test('flow gets triggered on create post and sends a notification to a role', fu
     $this->assertDatabaseHas('flow_logs', ['flow_id' => $flow->id]);
 
     // Assert Flow Operation is triggered when Post is created
-    $this->assertDatabaseHas('operation_logs', ['operation_id' => $flow->operation_id]);
+    $this->assertDatabaseHas('flow_operation_logs', ['operation_id' => $flow->operation_id]);
 });

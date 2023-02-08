@@ -2,7 +2,7 @@
 
 namespace Eminiarts\Aura\Http\Livewire;
 
-use Eminiarts\Aura;
+use Eminiarts\Aura\Aura;
 use Eminiarts\Aura\Resources\Option;
 use Eminiarts\Aura\Traits\InputFields;
 use Illuminate\Support\Arr;
@@ -419,7 +419,7 @@ class TeamSettings extends Component
 
     public function render()
     {
-        return view('livewire.team-settings');
+        return view('aura::livewire.team-settings');
     }
 
     public function reorderMedia($slug, $ids)

@@ -16,7 +16,7 @@ return new class() extends Migration
         Schema::dropIfExists('flows');
         Schema::dropIfExists('flow_operations');
         Schema::dropIfExists('flow_logs');
-        Schema::dropIfExists('operation_logs');
+        Schema::dropIfExists('flow_operation_logs');
     }
 
     /**

@@ -91,7 +91,7 @@ test('flow - get resources operation', function () {
     $this->assertDatabaseHas('flow_logs', ['flow_id' => $flow->id]);
 
     // Assert Flow Operation is triggered when Post is created
-    $this->assertDatabaseHas('operation_logs', ['operation_id' => $flow->operation_id]);
+    $this->assertDatabaseHas('flow_operation_logs', ['operation_id' => $flow->operation_id]);
 
     // dd($post->toArray(), $flow->toArray());
 });

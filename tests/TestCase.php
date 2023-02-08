@@ -33,7 +33,7 @@ class TestCase extends Orchestra
 
         $migration = include __DIR__.'/../database/migrations/create_aura_tables.php.stub';
         $migration->up();
-        $migration = include __DIR__.'/../database/migrations/create_flows_table.php.stub';
-        $migration->up();
+        $migration2 = include __DIR__.'/../database/migrations/create_flows_table.php.stub';
+        $migration2->up();
     }
 }
