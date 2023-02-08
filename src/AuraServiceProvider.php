@@ -32,7 +32,6 @@ class AuraServiceProvider extends PackageServiceProvider
             ->runsMigrations()
             ->hasCommand(AuraCommand::class)
             ->hasCommand(MakeUser::class)
-            ->publishesServiceProvider('FortifyServiceProvider')
 
             ->hasInstallCommand(function (InstallCommand $command) {
                 $command
