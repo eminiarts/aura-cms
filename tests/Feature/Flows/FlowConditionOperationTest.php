@@ -32,7 +32,7 @@ test('flow condition operation', function () {
     $delayOperation = $flow->operations()->create([
         'name' => 'Condition',
         'key' => 'condition',
-        'type' => 'App\\Aura\\Operations\\Condition',
+        'type' => 'Eminiarts\\Aura\\Operations\\Condition',
         'options' => [
             'x' => 2,
             'y' => 2,
@@ -51,7 +51,7 @@ test('flow condition operation', function () {
     $resolveOperation = $flow->operations()->create([
         'name' => 'Log',
         'key' => 'log',
-        'type' => 'App\\Aura\\Operations\\Log',
+        'type' => 'Eminiarts\\Aura\\Operations\\Log',
         'options' => [
             'message' => 'Condition is true',
         ],
@@ -63,7 +63,7 @@ test('flow condition operation', function () {
     $rejectOperation = $flow->operations()->create([
         'name' => 'Log',
         'key' => 'log',
-        'type' => 'App\\Aura\\Operations\\Log',
+        'type' => 'Eminiarts\\Aura\\Operations\\Log',
         'options' => [
             'message' => 'Condition is false',
         ],

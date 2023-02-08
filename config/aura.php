@@ -53,7 +53,7 @@ return [
     */
 
     'resources' => [
-        'namespace' => 'App\\Aura\\Resources',
+        'namespace' => 'Eminiarts\\Aura\\Resources',
         'path' => app_path('Aura/Resources'),
         'register' => [
             'User' => User::class,

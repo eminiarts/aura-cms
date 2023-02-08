@@ -35,7 +35,7 @@ test('flow - a flow can trigger another flow', function () {
     $flow->operations()->create([
         'name' => 'Log Operation',
         'key' => 'Log-operation',
-        'type' => 'App\\Aura\\Operations\\Log',
+        'type' => 'Eminiarts\\Aura\\Operations\\Log',
         'options' => [
             'x' => 2,
             'y' => 2,
@@ -47,7 +47,7 @@ test('flow - a flow can trigger another flow', function () {
     $resolveOperation = $flow->operations()->create([
         'name' => 'Trigger the other Flow',
         'key' => 'trigger-flow',
-        'type' => 'App\\Aura\\Operations\\TriggerFlow',
+        'type' => 'Eminiarts\\Aura\\Operations\\TriggerFlow',
         'options' => [
             'x' => 14,
             'y' => 14,
@@ -67,7 +67,7 @@ test('flow - a flow can trigger another flow', function () {
     $flow2->operations()->create([
         'name' => 'Log Operation 2',
         'key' => 'Log-operation-2',
-        'type' => 'App\\Aura\\Operations\\Log',
+        'type' => 'Eminiarts\\Aura\\Operations\\Log',
         'options' => [
             'x' => 2,
             'y' => 2,

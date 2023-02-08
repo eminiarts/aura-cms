@@ -30,7 +30,7 @@ test('flow - log operation', function () {
     $flow->operations()->create([
         'name' => 'Test Operation',
         'key' => 'test-operation',
-        'type' => 'App\\Aura\\Operations\\Log',
+        'type' => 'Eminiarts\\Aura\\Operations\\Log',
         'options' => [
             'x' => 2,
             'y' => 2,
@@ -95,7 +95,7 @@ test('chained flow gets triggered on create post', function () {
     $flow->operations()->create([
         'name' => 'Test Operation',
         'key' => 'test-operation',
-        'type' => 'App\\Aura\\Operations\\Log',
+        'type' => 'Eminiarts\\Aura\\Operations\\Log',
         'options' => [
             'x' => 2,
             'y' => 2,
@@ -106,7 +106,7 @@ test('chained flow gets triggered on create post', function () {
     $resolveOperation = $flow->operations()->create([
         'name' => 'Resolve Operation',
         'key' => 'resolve-operation',
-        'type' => 'App\\Aura\\Operations\\Log',
+        'type' => 'Eminiarts\\Aura\\Operations\\Log',
         'options' => [
             'x' => 14,
             'y' => 2,
@@ -117,7 +117,7 @@ test('chained flow gets triggered on create post', function () {
     $rejectOperation = $flow->operations()->create([
         'name' => 'Reject Operation',
         'key' => 'reject-operation',
-        'type' => 'App\\Aura\\Operations\\Log',
+        'type' => 'Eminiarts\\Aura\\Operations\\Log',
         'options' => [
             'x' => 14,
             'y' => 14,

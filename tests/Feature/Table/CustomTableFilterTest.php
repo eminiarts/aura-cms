@@ -131,7 +131,7 @@ class CustomTableFilterModel extends Post
                 'name' => 'Tags',
                 'slug' => 'tags',
                 'type' => 'Eminiarts\\Aura\\Fields\\Tags',
-                'model' => 'App\\Aura\\Taxonomies\\Tag',
+                'model' => 'Eminiarts\\Aura\\Taxonomies\\Tag',
                 'create' => true,
                 'validation' => '',
                 'conditional_logic' => '',

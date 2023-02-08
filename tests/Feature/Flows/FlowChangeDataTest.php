@@ -30,7 +30,7 @@ test('flow - a flow can change data and pass it to the next operation', function
     $flow->operations()->create([
         'name' => 'Update Operation',
         'key' => 'update-operation',
-        'type' => 'App\\Aura\\Operations\\UpdateResource',
+        'type' => 'Eminiarts\\Aura\\Operations\\UpdateResource',
         'options' => [
             'x' => 2,
             'y' => 2,
@@ -46,7 +46,7 @@ test('flow - a flow can change data and pass it to the next operation', function
     $resolveOperation = $flow->operations()->create([
         'name' => 'Log Completed',
         'key' => 'log-operation',
-        'type' => 'App\\Aura\\Operations\\Log',
+        'type' => 'Eminiarts\\Aura\\Operations\\Log',
         'options' => [
             'x' => 14,
             'y' => 14,

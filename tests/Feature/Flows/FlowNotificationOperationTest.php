@@ -30,7 +30,7 @@ test('flow gets triggered on create post and sends a notification to a user', fu
     $flow->operations()->create([
         'name' => 'Send Notification',
         'key' => 'notification',
-        'type' => 'App\\Aura\\Operations\\Notification',
+        'type' => 'Eminiarts\\Aura\\Operations\\Notification',
         'options' => [
             'x' => 2,
             'y' => 2,
@@ -97,7 +97,7 @@ test('flow gets triggered on create post and sends a notification to a role', fu
     $flow->operations()->create([
         'name' => 'Send Notification',
         'key' => 'notification',
-        'type' => 'App\\Aura\\Operations\\Notification',
+        'type' => 'Eminiarts\\Aura\\Operations\\Notification',
         'options' => [
             'x' => 2,
             'y' => 2,

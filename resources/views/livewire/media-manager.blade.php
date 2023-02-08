@@ -1,0 +1,16 @@
+<div class="w-full p-8">
+
+    <div class="">
+        <h1>Modal</h1>
+        <livewire:table.table :model="app('App\Aura\Resources\Attachment')"/>
+    </div>
+
+    {{-- Footer with 2 buttons: close and select --}}
+    <div class="flex justify-end mt-4">
+        <x-button class="ml-4" wire:click="$emit('closeModal')">
+            {{ __('Close') }}
+        </x-button>
+        <x-button.primary class="ml-4" wire:click="select">
+            {{ __('Select') }}
+        </x-button.primary>
+</div>

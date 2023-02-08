@@ -30,12 +30,12 @@ test('flow - create resource operation', function () {
     $flow->operations()->create([
         'name' => 'Create Data',
         'key' => 'test-operation',
-        'type' => 'App\\Aura\\Operations\\CreateResource',
+        'type' => 'Eminiarts\\Aura\\Operations\\CreateResource',
         'options' => [
             'x' => 2,
             'y' => 2,
 
-            'resource' => 'App\\Aura\\Resources\\Page',
+            'resource' => 'Eminiarts\\Aura\\Resources\\Page',
             'data' => [
                 'title' => 'Post created by Flow',
                 'status' => 'draft',
@@ -100,12 +100,12 @@ test('flow - cannot create post of same type on create', function () {
     $flow->operations()->create([
         'name' => 'Create Data',
         'key' => 'test-operation',
-        'type' => 'App\\Aura\\Operations\\CreateResource',
+        'type' => 'Eminiarts\\Aura\\Operations\\CreateResource',
         'options' => [
             'x' => 2,
             'y' => 2,
 
-            'resource' => 'App\\Aura\\Resources\\Post',
+            'resource' => 'Eminiarts\\Aura\\Resources\\Post',
             'data' => [
                 'title' => 'Post created by Flow',
                 'status' => 'draft',
@@ -116,7 +116,7 @@ test('flow - cannot create post of same type on create', function () {
     $rejectOperation = $flow->operations()->create([
         'name' => 'Reject Operation',
         'key' => 'reject-operation',
-        'type' => 'App\\Aura\\Operations\\Log',
+        'type' => 'Eminiarts\\Aura\\Operations\\Log',
         'options' => [
             'x' => 14,
             'y' => 14,

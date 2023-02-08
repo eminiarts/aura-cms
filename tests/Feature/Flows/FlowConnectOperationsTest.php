@@ -33,7 +33,7 @@ test('flow - an operation can be connected to another operation', function () {
     $firstOperation = $flow->operations()->create([
         'name' => 'Get Data',
         'key' => 'test-operation',
-        'type' => 'App\\Aura\\Operations\\Log',
+        'type' => 'Eminiarts\\Aura\\Operations\\Log',
         'options' => [
             'x' => 2,
             'y' => 2,
@@ -48,7 +48,7 @@ test('flow - an operation can be connected to another operation', function () {
     $resolveOperation = $flow->operations()->create([
         'name' => 'Update the fetched Data',
         'key' => 'test-operation-2',
-        'type' => 'App\\Aura\\Operations\\Log',
+        'type' => 'Eminiarts\\Aura\\Operations\\Log',
         'options' => [
             'x' => 2,
             'y' => 2,
@@ -85,7 +85,7 @@ test('flow - operations cannot be looped', function () {
     $firstOperation = $flow->operations()->create([
         'name' => 'Get Data',
         'key' => 'test-operation',
-        'type' => 'App\\Aura\\Operations\\Log',
+        'type' => 'Eminiarts\\Aura\\Operations\\Log',
         'options' => [
             'x' => 2,
             'y' => 2,
@@ -100,7 +100,7 @@ test('flow - operations cannot be looped', function () {
     $resolveOperation = $flow->operations()->create([
         'name' => 'Update the fetched Data',
         'key' => 'test-operation-2',
-        'type' => 'App\\Aura\\Operations\\Log',
+        'type' => 'Eminiarts\\Aura\\Operations\\Log',
         'options' => [
             'x' => 2,
             'y' => 2,
@@ -142,7 +142,7 @@ test('flow - connections can be removed', function () {
     $firstOperation = $flow->operations()->create([
         'name' => 'Get Data',
         'key' => 'test-operation',
-        'type' => 'App\\Aura\\Operations\\Log',
+        'type' => 'Eminiarts\\Aura\\Operations\\Log',
         'options' => [
             'x' => 2,
             'y' => 2,
@@ -157,7 +157,7 @@ test('flow - connections can be removed', function () {
     $resolveOperation = $flow->operations()->create([
         'name' => 'Update the fetched Data',
         'key' => 'test-operation-2',
-        'type' => 'App\\Aura\\Operations\\Log',
+        'type' => 'Eminiarts\\Aura\\Operations\\Log',
         'options' => [
             'x' => 2,
             'y' => 2,

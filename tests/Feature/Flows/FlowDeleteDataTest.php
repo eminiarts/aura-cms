@@ -49,12 +49,12 @@ test('flow - delete resource operation', function () {
     $flow->operations()->create([
         'name' => 'Create Data',
         'key' => 'test-operation',
-        'type' => 'App\\Aura\\Operations\\DeleteResource',
+        'type' => 'Eminiarts\\Aura\\Operations\\DeleteResource',
         'options' => [
             'x' => 2,
             'y' => 2,
             'type' => 'custom',
-            'resource' => 'App\\Aura\\Resources\\Post',
+            'resource' => 'Eminiarts\\Aura\\Resources\\Post',
             'resource_ids' => [$firstPost->id, $secondPost->id],
         ],
     ]);
