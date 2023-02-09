@@ -60,7 +60,7 @@ $values = app($field['posttype'])->pluck('title', 'id')->map(fn($name, $key) => 
         >
             <template x-aura::if="value && value.length > 0">
                 <div class="flex flex-aura::wrap">
-                    <template x-aura::for="item in value" :key="item">
+                    <template x-for="item in value" :key="item">
                         <div class="inline-flex items-center gap-1 px-aura::2 py-0.5 mr-2 mb-2 rounded-full text-xs font-medium leading-4 bg-primary-100 text-primary-800">
                             <span
                                 class=""
@@ -107,7 +107,7 @@ $values = app($field['posttype'])->pluck('title', 'id')->map(fn($name, $key) => 
 {{--                placeholder="Search..." />--}}
 {{--            </div>--}}
 {{--          </li>--}}
-            <template x-aura::for="item in filteredItems" :key="item.value">
+            <template x-for="item in filteredItems" :key="item.value">
                 <li
                     x-aura::listbox:option
                     :value="item.value"

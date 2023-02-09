@@ -92,7 +92,7 @@ $values = $field['field']->values($field['model']);
 
             </div>
           </li>
-            <template x-aura::for="item in filteredItems" :key="item.id">
+            <template x-for="item in filteredItems" :key="item.id">
                 <li
                     x-aura::listbox:option
                     :value="item.id"

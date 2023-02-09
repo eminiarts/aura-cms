@@ -18,7 +18,7 @@
     @notify.window="let message = $event.detail; messages.push(message); setTimeout(() => { remove(message) }, 2500)"
     class="fixed inset-0 flex flex-aura::col items-end justify-center px-aura::4 py-6 pointer-events-none sm:p-6 sm:justify-start space-y-4"
 >
-    <template x-aura::for="(message, messageIndex) in messages" :key="messageIndex" hidden>
+    <template x-for="(message, messageIndex) in messages" :key="messageIndex" hidden>
         <div
             x-aura::transition:enter="transform ease-out duration-300 transition"
             x-aura::transition:enter-start="translate-y-2 opacity-0 sm:translate-y-0 sm:translate-x-aura::2"

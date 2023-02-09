@@ -24,6 +24,6 @@ class Index extends Component
 
     public function render()
     {
-        return view('aura::livewire.taxonomy.index');
+        return view('aura::livewire.aura.taxonomy.index');
     }
 }

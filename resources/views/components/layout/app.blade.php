@@ -124,14 +124,14 @@
 
             @yield('sidebar')
 
-            <livewire:global-search />
+            <livewire:aura::global-search />
         </div>
 
         @stack('modals')
 
         <x-aura::notification />
 
-        <livewire:notifications />
+        <livewire:aura::notifications />
 
         @livewireScripts
 

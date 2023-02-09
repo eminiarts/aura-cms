@@ -358,8 +358,8 @@ $settings = Eminiarts\Aura\Aura::getOption('team-settings');
             @endif
         </div>
 
-        @foreach(\Eminiarts\Aura\Aura::taxonomies() as $taxonomy)
-            <x-aura::navigation.item-icon route="taxonomy.index" :id="$taxonomy" :tooltip="$taxonomy" :strict="false">
+        @foreach(app('aura')::getTaxonomies() as $taxonomy)
+            <x-aura::navigation.item-icon route="aura.taxonomy.index" :id="$taxonomy" :tooltip="$taxonomy" :strict="false">
                 <x-aura::icon icon="circle" />
             </x-aura::navigation.item-icon>
         @endforeach
@@ -378,7 +378,7 @@ $settings = Eminiarts\Aura\Aura::getOption('team-settings');
             @endif
         </div>
 
-        <x-aura::navigation.dropdown-icon>
+        {{-- <x-aura::navigation.dropdown-icon>
 
             <x-slot:title>
 
@@ -386,20 +386,20 @@ $settings = Eminiarts\Aura\Aura::getOption('team-settings');
 
             </x-slot>
 
-            <x-aura::navigation.item-dropdown route="table" compact>
+            <x-aura::navigation.item-dropdown route="aura.table" compact>
                 <div>All users</div>
             </x-aura::navigation.item-dropdown>
-            <x-aura::navigation.item-dropdown route="table" compact>
+            <x-aura::navigation.item-dropdown route="aura.table" compact>
                 <div>Teams</div>
             </x-aura::navigation.item-dropdown>
-            <x-aura::navigation.item-dropdown route="table" compact>
+            <x-aura::navigation.item-dropdown route="aura.table" compact>
                 <div>Roles</div>
             </x-aura::navigation.item-dropdown>
-            <x-aura::navigation.item-dropdown route="table" compact>
+            <x-aura::navigation.item-dropdown route="aura.table" compact>
                 <div>Permissions</div>
             </x-aura::navigation.item-dropdown>
 
-        </x-aura::navigation.dropdown-icon>
+        </x-aura::navigation.dropdown-icon> --}}
 
 
 
@@ -416,9 +416,9 @@ $settings = Eminiarts\Aura\Aura::getOption('team-settings');
             @endif
         </div>
 
-        <x-aura::navigation.item-icon route="components" tooltip="Components" :strict="false">
+        {{-- <x-aura::navigation.item-icon route="aura.components" tooltip="Components" :strict="false">
             <x-aura::icon icon="color-swatch" />
-        </x-aura::navigation.item-icon>
+        </x-aura::navigation.item-icon> --}}
 
         {{-- <x-aura::navigation.item-icon route="posttypes" tooltip="Posttypes" :strict="false">
             <x-aura::icon icon="collection" />
@@ -428,15 +428,15 @@ $settings = Eminiarts\Aura\Aura::getOption('team-settings');
             <x-aura::icon icon="collection" />
         </x-aura::navigation.item-icon>
 
-        <x-aura::navigation.item-icon route="charts" tooltip="Charts" :strict="false">
+        {{-- <x-aura::navigation.item-icon route="charts" tooltip="Charts" :strict="false">
+            <x-aura::icon icon="adjustments" />
+        </x-aura::navigation.item-icon> --}}
+
+        <x-aura::navigation.item-icon route="aura.team.settings" tooltip="Team Settings" :strict="false">
             <x-aura::icon icon="adjustments" />
         </x-aura::navigation.item-icon>
 
-        <x-aura::navigation.item-icon route="team.settings" tooltip="Team Settings" :strict="false">
-            <x-aura::icon icon="adjustments" />
-        </x-aura::navigation.item-icon>
-
-        <x-aura::navigation.item-icon route="media.index" tooltip="Media" :strict="false">
+        <x-aura::navigation.item-icon route="aura.media.index" tooltip="Media" :strict="false">
             <x-aura::icon icon="collection" />
         </x-aura::navigation.item-icon>
 
