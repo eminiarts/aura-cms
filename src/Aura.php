@@ -18,6 +18,8 @@ class Aura
 
     protected array $resources = [];
 
+    protected array $taxonomies = [];
+
     public static function checkCondition($model, $field)
     {
         return ConditionalLogic::checkCondition($model, $field);
@@ -126,6 +128,10 @@ class Aura
     {
         return array_unique($this->resources);
     }
+    public function getTaxonomies(): array
+    {
+        return array_unique($this->taxonomies);
+    }
 
     public static function taxonomies()
     {
@@ -165,5 +171,10 @@ class Aura
     public function registerResources(array $resources): void
     {
         $this->resources = array_merge($this->resources, $resources);
+    }
+
+    public function registerTaxonomies(array $taxonomies): void
+    {
+        $this->taxonomies = array_merge($this->taxonomies, $taxonomies);
     }
 }
