@@ -23,7 +23,6 @@ trait PerPagePagination
      *
      * @var string
      */
-
     public function paginationView()
     {
         return 'aura::aura.pagination';
