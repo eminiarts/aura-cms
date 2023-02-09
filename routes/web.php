@@ -28,7 +28,7 @@ Route::domain(config('aura.domain'))
 
         Route::prefix(config('aura.path'))->group(function () {
             Route::get('/', function () {
-                return 'dashboard coming soon';
+                return 'aura.dashboard coming soon';
             })->name('dashboard');
 
             Route::get('/posttypes/{slug}', Posttype::class)->name('posttype.edit');

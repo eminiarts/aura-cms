@@ -1,10 +1,10 @@
 <div class="">
     @section('title', 'Edit '. $model->singularName() . ' • ' . $model->name . ' • ')
-    <x-breadcrumbs>
-        <x-breadcrumbs.li :href="route('dashboard')" title="" icon="dashboard" iconClass="text-gray-500 w-7 h-7 mr-0" />
-        <x-breadcrumbs.li :href="route('taxonomy.index', $slug)" :title="Str::plural($slug)" />
-        <x-breadcrumbs.li :title="$model->name" />
-    </x-breadcrumbs.li>
+    <x-aura::breadcrumbs>
+        <x-aura::breadcrumbs.li :href="route('aura.dashboard')" title="" icon="dashboard" iconClass="text-gray-500 w-7 h-7 mr-0" />
+        <x-aura::breadcrumbs.li :href="route('taxonomy.index', $slug)" :title="Str::plural($slug)" />
+        <x-aura::breadcrumbs.li :title="$model->name" />
+    </x-aura::breadcrumbs.li>
 
      <div class="grid gap-6 aura-edit-post-container sm:grid-cols-3">
         <div class="col-span-1 sm:col-span-2 ">

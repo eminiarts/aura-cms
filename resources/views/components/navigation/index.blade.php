@@ -320,7 +320,7 @@ $settings = Eminiarts\Aura\Aura::getOption('team-settings');
         </x-aura::navigation.item-icon>
 
 
-        <x-aura::navigation.item-icon route="dashboard" tooltip="Dashboard">
+        <x-aura::navigation.item-icon route="aura.dashboard" tooltip="aura.dashboard">
             <x-aura::icon icon="dashboard2" />
         </x-aura::navigation.item-icon>
 
