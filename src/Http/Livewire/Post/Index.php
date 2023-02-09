@@ -27,11 +27,13 @@ class Index extends Component
             return redirect()->route('dashboard');
         }
 
-        dd(
-            'hier',
-            $this->post,
-            app(Gate::class)->authorize('viewAny', $this->post)
-        );
+        // dd('hier', auth()->user());
+
+        // dd(
+        //     'hier',
+        //     $this->post,
+        //     app(Gate::class)->authorize('viewAny', $this->post)
+        // );
         // dd($this->post);
         // Authorize if the User can see this Post
         $this->authorize('viewAny', $this->post);

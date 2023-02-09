@@ -12,9 +12,9 @@
         'lg' => 'h-8 w-8',
     ];
 
-    $componentName = 'icon.' . $icon;
+    $componentName = 'aura::icon.' . $icon;
 @endphp
 
 <div {{ $attributes->class([]) }}>
-  <x-aura::dynamic-component :component="$componentName" :class="$iconClass ?? $sizes[$size]" />
+  <x-dynamic-component :component="$componentName" :class="$iconClass ?? $sizes[$size]" />
 </div>

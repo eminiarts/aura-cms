@@ -11,7 +11,7 @@ use Illuminate\Support\Facades\Route;
 require __DIR__.'/auth.php';
 
 Route::domain(config('aura.domain'))
-    // ->middleware(config('aura.middleware.admin'))
+    ->middleware(config('aura.middleware.admin'))
     ->name('aura.')
     ->group(function () {
         // Route::prefix(config('aura.core_path'))->group(function () {
@@ -29,7 +29,7 @@ Route::domain(config('aura.domain'))
         Route::prefix(config('aura.path'))->group(function () {
             Route::get('/', function () {
                 return 'dashboard coming soon';
-            });
+            })->name('dashboard');
 
             Route::get('/posttypes/{slug}', Posttype::class)->name('posttype.edit');
             Route::get('/taxonomies/{slug}', TaxonomyIndex::class)->name('taxonomy.index');
