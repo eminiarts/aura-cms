@@ -23,7 +23,11 @@ trait PerPagePagination
      *
      * @var string
      */
-    protected $paginationTheme = 'aura-pagination';
+
+    public function paginationView()
+    {
+        return 'aura::aura.pagination';
+    }
 
     /**
      * Paginate the query.
