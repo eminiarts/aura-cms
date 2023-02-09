@@ -19,7 +19,7 @@
         <div>
             <x-button size="lg" wire:click="save">
                 <div wire:loading>
-                    <x-icon.loading />
+                    <x-aura::icon.loading />
                 </div>
                 Save
             </x-button>
@@ -109,7 +109,7 @@
                                     <span x-text="tab.name"></span>
                                 </button>
                                 <button class="ml-2 text-gray-400 hover:text-gray-600" @click="$wire.openSidebar(tab.slug, '{{ $model::getSlug() }}')">
-                                    <x-icon.edit class="w-4 h-4" />
+                                    <x-aura::icon.edit class="w-4 h-4" />
                                 </button>
                             </div>
                         </template>

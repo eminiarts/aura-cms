@@ -23,7 +23,7 @@
     
     <x-button wire:click="markAllAsRead">
         <div wire:loading>
-            <x-icon.loading  />
+            <x-aura::icon.loading  />
         </div>
         Mark all as read
     </x-button>

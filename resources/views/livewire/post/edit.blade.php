@@ -19,14 +19,14 @@
             @if ($model instanceof App\Aura\Resources\User)
                 <x-button.transparent route="impersonate" :id="$model->id" >
                     <x-slot:icon>
-                        <x-icon class="w-5 h-5 mr-2" icon="user-impersonate" />
+                        <x-aura::icon class="w-5 h-5 mr-2" icon="user-impersonate" />
                     </x-slot:icon>
                     Impersonate
                 </x-button.transparent>
             @endif
             <x-button size="lg" wire:click="save">
                 <div wire:loading>
-                    <x-icon.loading />
+                    <x-aura::icon.loading />
                 </div>
                 Save
             </x-button>
@@ -98,7 +98,7 @@
             <div class="aura-card">
              <x-button size="xl" wire:click="save">
                         <div wire:loading>
-                            <x-icon.loading  />
+                            <x-aura::icon.loading  />
                         </div>
                         Save
                     </x-button>
