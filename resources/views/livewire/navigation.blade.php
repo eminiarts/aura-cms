@@ -34,7 +34,7 @@
                 @foreach($resources as $resource)
 
                     @if (isset($resource['dropdown']) && $resource['dropdown'] !== false)
-                        <x-aura::navigation.dropdown route="table">
+                        <x-aura::navigation.dropdown route="aura.table">
                             <x-slot:title>
                                 <div class="{{ $iconClass }}">
 
@@ -88,7 +88,7 @@
 
     @if ($this->isToggled($group))
         @foreach(\app('aura')::taxonomies() as $taxonomy)
-        <x-aura::navigation.item route="aura.taxonomy.index" :id="$taxonomy" :strict="false">
+        <x-aura::navigation.item route="aura.aura.taxonomy.index" :id="$taxonomy" :strict="false">
             <div class="{{ $iconClass }}">
                 <x-aura::icon icon="circle" />
             </div>

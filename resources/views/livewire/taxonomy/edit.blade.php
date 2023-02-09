@@ -2,7 +2,7 @@
     @section('title', 'Edit '. $model->singularName() . ' • ' . $model->name . ' • ')
     <x-aura::breadcrumbs>
         <x-aura::breadcrumbs.li :href="route('aura.dashboard')" title="" icon="dashboard" iconClass="text-gray-500 w-7 h-7 mr-0" />
-        <x-aura::breadcrumbs.li :href="route('taxonomy.index', $slug)" :title="Str::plural($slug)" />
+        <x-aura::breadcrumbs.li :href="route('aura.taxonomy.index', $slug)" :title="Str::plural($slug)" />
         <x-aura::breadcrumbs.li :title="$model->name" />
     </x-aura::breadcrumbs.li>
 

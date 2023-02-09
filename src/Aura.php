@@ -133,8 +133,9 @@ class Aura
         return array_unique($this->taxonomies);
     }
 
-    public static function taxonomies()
+    public function taxonomies()
     {
+        return $this->getTaxonomies();
         return Cache::remember('aura.taxonomies', now()->addHour(), function () {
             $filesystem = app(Filesystem::class);
 
