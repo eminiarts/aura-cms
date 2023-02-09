@@ -151,12 +151,10 @@ class AuraServiceProvider extends PackageServiceProvider
             \Eminiarts\Aura\Resources\User::class,
         ]);
 
-
         Facades\Aura::registerTaxonomies([
             \Eminiarts\Aura\Taxonomies\Tag::class,
             \Eminiarts\Aura\Taxonomies\Category::class,
         ]);
-
 
         // dd('hier', app('aura'), Facades\Aura::getResources());
     }
