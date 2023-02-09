@@ -23,6 +23,6 @@ class SlideOver extends Component
 
     public function render()
     {
-        return view('livewire.slide-over');
+        return view('aura::livewire.slide-over');
     }
 }

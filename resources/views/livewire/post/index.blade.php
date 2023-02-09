@@ -23,5 +23,5 @@
     {{-- @dump($post) --}}
     {{-- @dump($fields) --}}
     
-    <livewire:table.table :model="$post"/>
+    <livewire:aura::table :model="$post"/>
 </div>

@@ -9,9 +9,9 @@
   ])}}
 >
   @if ($icon ?? false)
-    <x-aura::slot:icon>
+    <x-slot:icon>
       {{ $icon }}
-    </x-aura::slot>
+    </x-slot>
   @endif
   {{ $slot }}
 </x-aura::button>

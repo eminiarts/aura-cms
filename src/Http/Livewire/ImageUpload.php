@@ -18,7 +18,7 @@ class ImageUpload extends Component
 
     public function render()
     {
-        return view('livewire.image-upload');
+        return view('aura::livewire.image-upload');
     }
 
     public function save()

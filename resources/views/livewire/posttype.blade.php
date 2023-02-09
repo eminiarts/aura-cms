@@ -3,7 +3,7 @@
 
     <x-breadcrumbs>
         <x-breadcrumbs.li :href="route('dashboard')" title="" icon="dashboard" iconClass="text-gray-500 w-7 h-7 mr-0" />
-        <x-breadcrumbs.li :href="route('posttype.edit', $model::getSlug())" title="Posttypes" />
+        <x-breadcrumbs.li :href="route('aura.posttype.edit', $model::getSlug())" title="Posttypes" />
         <x-breadcrumbs.li :title="$model::getType()" />
     </x-breadcrumbs>
 

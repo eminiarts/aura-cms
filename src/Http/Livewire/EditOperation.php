@@ -63,7 +63,7 @@ class EditOperation extends Component
 
     public function render()
     {
-        return view('livewire.edit-operation');
+        return view('aura::livewire.edit-operation');
     }
 
     public function rules()

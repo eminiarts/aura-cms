@@ -8,6 +8,6 @@ class ChooseTemplate extends ModalComponent
 {
     public function render()
     {
-        return view('livewire.choose-template');
+        return view('aura::livewire.choose-template');
     }
 }

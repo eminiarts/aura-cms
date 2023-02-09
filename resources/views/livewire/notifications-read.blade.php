@@ -13,7 +13,7 @@
 
                 <div class="flex-1 space-y-1">
                     <div class="flex items-center justify-between">
-                        <a href="{{ route('post.edit', ['slug' => $notification->data['post']['type'], 'id' =>$notification->data['post']['id']]) }}" class="hover:underline"><h3 class="text-sm font-medium">{{ $notification->data['message'] }}</h3></a>
+                        <a href="{{ route('aura.post.edit', ['slug' => $notification->data['post']['type'], 'id' =>$notification->data['post']['id']]) }}" class="hover:underline"><h3 class="text-sm font-medium">{{ $notification->data['message'] }}</h3></a>
                         <p class="text-sm text-gray-500 dark:text-gray-400">{{ $notification->created_at->diffForHumans() }}</p>
                     </div>
                     <p class="text-sm text-gray-500 dark:text-gray-400">{{ $notification->type }}</p>

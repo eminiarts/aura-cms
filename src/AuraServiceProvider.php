@@ -18,6 +18,7 @@ use Eminiarts\Aura\Commands\AuraCommand;
 use Eminiarts\Aura\Http\Livewire\Post\Create;
 use Eminiarts\Aura\Http\Livewire\Post\Edit;
 use Eminiarts\Aura\Http\Livewire\Post\Index;
+use Eminiarts\Aura\Http\Livewire\Table\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Spatie\LaravelPackageTools\PackageServiceProvider;
 use Spatie\LaravelPackageTools\Commands\InstallCommand;
@@ -105,6 +106,7 @@ class AuraServiceProvider extends PackageServiceProvider
         Livewire::component('aura::post-index', Index::class);
         Livewire::component('aura::post-create', Create::class);
         Livewire::component('aura::post-create', Edit::class);
+        Livewire::component('aura::table', Table::class);
 
 
         return $this;

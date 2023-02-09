@@ -16,7 +16,7 @@ class MediaUploader extends Component
 
     public function render()
     {
-        return view('livewire.media-uploader');
+        return view('aura::livewire.media-uploader');
     }
 
     public function mount(Attachment $post)

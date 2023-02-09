@@ -177,9 +177,9 @@ $settings = App\Aura::getOption('team-settings');
 
             @impersonating($guard = null)
                 <x-aura::button.primary route="impersonate.leave" class="w-full my-2" size="xs">
-                    <x-aura::slot:icon>
+                    <x-slot:icon>
                         <x-aura::icon icon="user-impersonate" size="xs" />
-                    </x-aura::slot:icon>
+                    </x-slot:icon>
                     <span>Leave Impersonation</span>
                 </x-aura::button.primary>
             @endImpersonating
@@ -187,7 +187,7 @@ $settings = App\Aura::getOption('team-settings');
             @if(Auth::user()->currentTeam)
             <div class="flex items-center justify-between w-full">
                 <x-aura::navigation.team-switcher>
-                    <x-aura::slot:title>
+                    <x-slot:title>
                         <div class="flex-aura::shrink block w-full group">
                             <div class="flex items-center">
                                 <div>
@@ -215,7 +215,7 @@ $settings = App\Aura::getOption('team-settings');
                                 </div>
                             </div>
                         </div>
-                    </x-aura::slot:title>
+                    </x-slot:title>
                     <div class="w-60 dark:bg-gray-700">
                         <div class="block px-aura::4 py-2 text-xs text-gray-400 dark:text-gray-500">
                             {{ __('Manage Profile') }}
@@ -230,12 +230,12 @@ $settings = App\Aura::getOption('team-settings');
                         </div>
 
                         <!-- Team Settings -->
-                        <x-aura::dropdown-link href="{{ route('post.edit', ['slug' => 'Team', 'id' => Auth::user()->currentTeam->id]) }}">
+                        <x-aura::dropdown-link href="{{ route('aura.post.edit', ['slug' => 'Team', 'id' => Auth::user()->currentTeam->id]) }}">
                             {{ __('Team Settings') }}
                         </x-aura::dropdown-link>
 
                         @can('create', Team::class)
-                            <x-aura::dropdown-link href="{{ route('post.create', ['slug' => 'Team']) }}">
+                            <x-aura::dropdown-link href="{{ route('aura.post.create', ['slug' => 'Team']) }}">
                                 {{ __('Create New Team') }}
                             </x-aura::dropdown-link>
                         @endcan
@@ -380,11 +380,11 @@ $settings = App\Aura::getOption('team-settings');
 
         <x-aura::navigation.dropdown-icon>
 
-            <x-aura::slot:title>
+            <x-slot:title>
 
             <x-aura::icon icon="circle" />
 
-            </x-aura::slot>
+            </x-slot>
 
             <x-aura::navigation.item-dropdown route="table" compact>
                 <div>All users</div>

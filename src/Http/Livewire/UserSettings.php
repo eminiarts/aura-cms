@@ -72,7 +72,7 @@ class UserSettings extends Component
 
     public function render()
     {
-        return view('livewire.user-settings');
+        return view('aura::livewire.user-settings');
     }
 
     public function reorderMedia($slug, $ids)

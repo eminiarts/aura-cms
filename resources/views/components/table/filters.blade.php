@@ -105,19 +105,19 @@
 
         {{-- Ask for a name to save the filter --}}
         <x-aura::dialog-modal wire:model="showSaveFilterModal">
-            <x-aura::slot name="title">
+            <x-slot name="title">
                 Save Filter
-            </x-aura::slot>
+            </x-slot>
 
-            <x-aura::slot name="content">
+            <x-slot name="content">
                 <x-aura::input.text required wire:model.defer="filterName" error="filterName" placeholder="Enter a Name for the Filter"></x-aura::input.text>
 
                 <x-aura::jet-input-error for="filterName" class="mt-2" />
-            </x-aura::slot>
+            </x-slot>
 
-            <x-aura::slot name="footer">
+            <x-slot name="footer">
                 <x-aura::button.primary wire:click="saveFilter">Save as Template</x-aura::button.primary>
-            </x-aura::slot>
+            </x-slot>
         </x-aura::dialog-modal>
 
 

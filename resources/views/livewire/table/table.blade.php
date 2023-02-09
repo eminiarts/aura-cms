@@ -44,18 +44,18 @@
                     <a href="#" wire:click.prevent="$emit('openModal', 'post.create-modal', {{ json_encode(['type' => $this->model->getType(), 'params' => [
                         'for' => $this->parent->getType(), 'id' => $this->parent->id
                     ]]) }})">
-                           <x-button>
+                           <x-aura::button>
                         <x-slot:icon>
-                            <x-icon icon="plus" />
+                            <x-aura::icon icon="plus" />
                         </x-slot>
                         <span>Create {{ $model->getName() }}</span>
                     </x-button>
                         </a>
                     @else
                     <a href="{{ $this->createLink }}">
-                        <x-button>
+                        <x-aura::button>
                         <x-slot:icon>
-                            <x-icon icon="plus" />
+                            <x-aura::icon icon="plus" />
                         </x-slot>
                         <span>Create {{ $model->getName() }}</span>
                     </x-button>
@@ -98,25 +98,25 @@
                                         class="relative inline-flex items-center px-2 py-2 text-sm font-medium bg-white border border-gray-500/30 rounded-l-md hover:bg-gray-50 focus:z-10 focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500">
                                         <span class="sr-only">Grid Layout</span>
 
-                                        <x-icon icon="grid" size="sm" />
+                                        <x-aura::icon icon="grid" size="sm" />
                                     </button>
                                     <button wire:click="$set('tableView', 'list')" type="button"
                                         class="relative inline-flex items-center px-2 py-2 -ml-px text-sm font-medium bg-white border border-gray-500/30 rounded-r-md hover:bg-gray-50 focus:z-10 focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500">
                                         <span class="sr-only">List Layout</span>
-                                        <x-icon icon="list" size="sm" />
+                                        <x-aura::icon icon="list" size="sm" />
                                     </button>
                                 </span>
                             </div>
                         @endif
 
                         @if($tableView == 'list')
-                        @include('components.table.settings')
+                        @include('aura::components.table.settings')
                         @endif
 
                         <div>
-                            <x-button.border @click="toggleFilters()">
+                            <x-aura::button.border @click="toggleFilters()">
                                 <x-slot:icon>
-                                    <x-icon icon="filter" />
+                                    <x-aura::icon icon="filter" />
                                     </x-slot>
                                     Filters
                             </x-button.border>
@@ -127,7 +127,7 @@
                     @if($this->bulkActions)
                         <div>
                             <div class="relative ml-1">
-                                <x-dropdown align="right" width="60">
+                                <x-aura::dropdown align="right" width="60">
                                     <x-slot name="trigger">
                                         <span class="inline-flex rounded-md">
                                             <button type="button"
@@ -175,19 +175,19 @@
 
             @elseif($tableView == 'list')
             {{-- Table --}}
-                @include('components.table.index')
+                @include('aura::components.table.index')
             @endif
 
 
 
         </div>
-        <x-sidebar title="Filters" show="showFilters">
+        <x-aura::sidebar title="Filters" show="showFilters">
             <x-slot:heading class="font-semibold">
                 <h3 class="text-xl font-semibold">
                     Filters
                 </h3>
             </x-slot>
-                @include('components.table.filters')
+                @include('aura::components.table.filters')
         </x-sidebar>
     </main>
 

@@ -259,7 +259,7 @@ class Posttype extends Component
     {
         $title = 'Welcome';
 
-        return view('livewire.posttype', compact('title'));
+        return view('aura::livewire.posttype', compact('title'));
     }
 
     public function reorder($ids)
