@@ -2,16 +2,25 @@
 
 namespace Eminiarts\Aura;
 
-use Eminiarts\Aura\Commands\AuraCommand;
-use Eminiarts\Aura\Commands\MakeUser;
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Support\Arr;
-use Illuminate\Support\Facades\Gate;
-use Livewire\Component;
 use Livewire\Livewire;
-use Spatie\LaravelPackageTools\Commands\InstallCommand;
+use Livewire\Component;
+use Illuminate\Support\Arr;
+use Eminiarts\Aura\Resource;
+use Eminiarts\Aura\Resources\Team;
+use Eminiarts\Aura\Resources\User;
+use Illuminate\Support\Facades\Gate;
+use Eminiarts\Aura\Commands\MakeUser;
+use Eminiarts\Aura\Policies\PostPolicy;
+use Eminiarts\Aura\Policies\TeamPolicy;
+use Eminiarts\Aura\Policies\UserPolicy;
 use Spatie\LaravelPackageTools\Package;
+use Eminiarts\Aura\Commands\AuraCommand;
+use Eminiarts\Aura\Http\Livewire\Post\Create;
+use Eminiarts\Aura\Http\Livewire\Post\Edit;
+use Eminiarts\Aura\Http\Livewire\Post\Index;
+use Illuminate\Database\Eloquent\Builder;
 use Spatie\LaravelPackageTools\PackageServiceProvider;
+use Spatie\LaravelPackageTools\Commands\InstallCommand;
 
 class AuraServiceProvider extends PackageServiceProvider
 {
@@ -85,6 +94,37 @@ class AuraServiceProvider extends PackageServiceProvider
         // $resources = Aura::resources()->mapWithKeys(function ($resource) {
         //     return [$resource => 'Eminiarts\Aura\Resources\\'.str($resource)->title];
         // })->toArray();
+
+        $this
+        ->bootGate()
+        ->bootLivewireComponents();
+    }
+
+    public function bootLivewireComponents()
+    {
+        Livewire::component('aura::post-index', Index::class);
+        Livewire::component('aura::post-create', Create::class);
+        Livewire::component('aura::post-create', Edit::class);
+
+
+        return $this;
+    }
+
+    public function bootGate()
+    {
+        Gate::policy(Team::class, TeamPolicy::class);
+        Gate::policy(Resource::class, PostPolicy::class);
+        Gate::policy(User::class, UserPolicy::class);
+
+        Gate::before(function ($user, $ability) {
+            return true;
+            if ($user->resource->isSuperAdmin()) {
+                return true;
+            }
+        });
+
+
+        return $this;
     }
 
     public function packageRegistered()
