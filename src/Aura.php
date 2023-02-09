@@ -65,9 +65,9 @@ class Aura
         return Attachment::find($id)->url;
     }
 
-    public static function navigation()
+    public function navigation()
     {
-        $resources = static::resources()->map(fn ($r) => static::findResourceBySlug($r)->navigation())->sortBy('sort');
+        $resources = collect($this->getResources())->map(fn ($r) => static::findResourceBySlug($r)->navigation())->sortBy('sort');
 
         $grouped = array_reduce(collect($resources)->toArray(), function ($carry, $item) {
             if ($item['dropdown'] !== false) {
