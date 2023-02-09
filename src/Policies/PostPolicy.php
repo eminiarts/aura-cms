@@ -145,7 +145,7 @@ class PostPolicy
      */
     public function viewAny(User $user, $post)
     {
-        dd('hier');
+        dd('viewAny');
         if ($user->resource->hasPermissionTo('viewAny', $post)) {
             return true;
         }
