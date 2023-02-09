@@ -1,8 +1,8 @@
 <x-aura::guest-layout>
     <div>
-        <x-aura::slot name="logo">
+        <x-slot name="logo">
             logo here
-        </x-aura::slot>
+        </x-slot>
 
         <div x-aura::data="{ recovery: false }">
             <div class="mb-4 text-sm text-gray-600" x-aura::show="! recovery">

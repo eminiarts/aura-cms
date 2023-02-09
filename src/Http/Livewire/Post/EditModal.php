@@ -16,7 +16,7 @@ class EditModal extends ModalComponent
 
     public function render()
     {
-        return view('livewire.post.edit-modal');
+        return view('aura::livewire.post.edit-modal');
     }
 
     public static function modalMaxWidth(): string

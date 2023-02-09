@@ -35,7 +35,7 @@ class CreatePosttype extends ModalComponent
 
     public function render()
     {
-        return view('livewire.create-posttype');
+        return view('aura::livewire.create-posttype');
     }
 
     public function rules()

@@ -8,6 +8,6 @@ class Media extends Component
 {
     public function render()
     {
-        return view('livewire.media');
+        return view('aura::livewire.media');
     }
 }

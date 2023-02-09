@@ -8,7 +8,7 @@
 
     {{-- @dump($this->rows->first()) --}}
     {{-- @dump($this->rows->pluck('id')) --}}
-@include('components.table.bulk-select-row')
+@include('aura::components.table.bulk-select-row')
 
     <div class="flex flex-aura::col mt-2">
         <div class="min-w-full overflow-hidden overflow-x-aura::auto align-middle border border-gray-400/30 sm:rounded-lg dark:border-gray-700">
@@ -52,7 +52,7 @@
             }"
             >
             {{-- <x-aura::table.header></x-aura::table.header> --}}
-            @include('components.table.header')
+            @include('aura::components.table.header')
 
             <tbody class="bg-white divide-y divide-gray-200 dark:bg-gray-900 dark:divide-gray-700">
 
@@ -79,10 +79,10 @@
                             </a>
                         @else
 
-                            <x-aura::button.transparent route="post.edit" :id="[$row->getType(), $row->id]" size="xs">
-                                <x-aura::slot:icon>
+                            <x-aura::button.transparent route="aura.post.edit" :id="[$row->getType(), $row->id]" size="xs">
+                                <x-slot:icon>
                                     <x-aura::icon icon="edit" size="xs" />
-                                </x-aura::slot>
+                                </x-slot>
                                 Edit
                             </x-aura::button.transparent>
 

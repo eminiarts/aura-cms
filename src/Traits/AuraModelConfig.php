@@ -115,7 +115,7 @@ trait AuraModelConfig
     public function editUrl()
     {
         if ($this->getType() && $this->id) {
-            return route('post.edit', ['slug' => $this->getType(), 'id' => $this->id]);
+            return route('aura.post.edit', ['slug' => $this->getType(), 'id' => $this->id]);
         }
     }
 
@@ -309,7 +309,7 @@ trait AuraModelConfig
 
     public function rowView()
     {
-        return 'components.table.row';
+        return 'aura::components.table.row';
     }
 
     public function singularName(): string

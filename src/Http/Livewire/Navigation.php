@@ -26,7 +26,7 @@ class Navigation extends Component
 
     public function render()
     {
-        return view('livewire.navigation');
+        return view('aura::livewire.navigation');
     }
 
     public function toggleGroup($group)

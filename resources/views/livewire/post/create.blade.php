@@ -4,7 +4,7 @@
     @if(!$inModal)
     <x-breadcrumbs>
         <x-breadcrumbs.li :href="route('dashboard')" title="" icon="dashboard" iconClass="text-gray-500 w-7 h-7 mr-0" />
-        <x-breadcrumbs.li :href="route('post.index', $slug)" :title="Str::plural($slug)" />
+        <x-breadcrumbs.li :href="route('aura.post.index', $slug)" :title="Str::plural($slug)" />
         <x-breadcrumbs.li title="Create {{ $model->singularName() }}" />
     </x-breadcrumbs>
     @endif

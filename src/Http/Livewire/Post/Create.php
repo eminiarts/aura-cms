@@ -69,7 +69,7 @@ class Create extends Component
 
     public function render()
     {
-        return view('livewire.post.create');
+        return view('aura::livewire.post.create');
     }
 
     public function rules()

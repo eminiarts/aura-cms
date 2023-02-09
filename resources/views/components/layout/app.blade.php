@@ -26,7 +26,7 @@
             $settings = App\Aura::getOption('team-settings');
         @endphp
 
-        @include('components.layout.colors')
+        @include('aura::components.layout.colors')
 
 
         {{-- <link href="https://unpkg.com/filepond@^4/dist/filepond.css" rel="stylesheet" /> --}}

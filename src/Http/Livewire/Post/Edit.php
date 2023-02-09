@@ -81,7 +81,7 @@ class Edit extends Component
 
     public function render()
     {
-        return view('livewire.post.edit');
+        return view('aura::livewire.post.edit');
     }
 
     public function reorderMedia($slug, $ids)

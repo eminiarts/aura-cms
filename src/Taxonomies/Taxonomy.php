@@ -145,7 +145,7 @@ class Taxonomy extends ModelsTaxonomy
 
     public function rowView()
     {
-        return 'components.table.row';
+        return 'aura::components.table.row';
     }
 
     public function singularName(): string

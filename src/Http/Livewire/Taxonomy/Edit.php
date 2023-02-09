@@ -33,7 +33,7 @@ class Edit extends Component
 
     public function render()
     {
-        return view('livewire.taxonomy.edit');
+        return view('aura::livewire.taxonomy.edit');
     }
 
     public function rules()

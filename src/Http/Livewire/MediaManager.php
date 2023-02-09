@@ -27,7 +27,7 @@ class MediaManager extends ModalComponent
 
     public function render()
     {
-        return view('livewire.media-manager');
+        return view('aura::livewire.media-manager');
     }
 
     public function select()

@@ -321,7 +321,7 @@ class AuraConfig extends Component
 
     public function render()
     {
-        return view('livewire.aura-config');
+        return view('aura::livewire.aura-config');
     }
 
     public function rules()

@@ -14,6 +14,6 @@ class CreateModal extends ModalComponent
 
     public function render()
     {
-        return view('livewire.post.create-modal');
+        return view('aura::livewire.post.create-modal');
     }
 }

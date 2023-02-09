@@ -186,7 +186,7 @@ class CreateFlow extends Component
 
     public function render()
     {
-        return view('livewire.create-flow');
+        return view('aura::livewire.create-flow');
     }
 
     public function saveOperation($o)

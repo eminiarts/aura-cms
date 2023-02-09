@@ -158,14 +158,14 @@ class Table extends Component
     public function getCreateLinkProperty()
     {
         if ($this->parent) {
-            return route('post.create', [
+            return route('aura.post.create', [
                 'slug' => $this->model->getType(),
                 'for' => $this->parent->getType(),
                 'id' => $this->parent->id,
             ]);
         }
 
-        return route('post.create', ['slug' => $this->model->getType()]);
+        return route('aura.post.create', ['slug' => $this->model->getType()]);
     }
 
     /**
@@ -279,7 +279,7 @@ class Table extends Component
      */
     public function render()
     {
-        return view('livewire.table.table');
+        return view('aura::livewire.table.table');
     }
 
     /**

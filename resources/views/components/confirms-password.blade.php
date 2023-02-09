@@ -18,11 +18,11 @@
 
 @once
 <x-aura::dialog-modal wire:model="confirmingPassword">
-    <x-aura::slot name="title">
+    <x-slot name="title">
         {{ $title }}
-    </x-aura::slot>
+    </x-slot>
 
-    <x-aura::slot name="content">
+    <x-slot name="content">
 
         {{ $content }}
 
@@ -34,9 +34,9 @@
 
             <x-aura::simple-input-error for="confirmable_password" class="mt-2" />
         </div>
-    </x-aura::slot>
+    </x-slot>
 
-    <x-aura::slot name="footer">
+    <x-slot name="footer">
         <x-aura::button.transparent wire:click="stopConfirmingPassword" wire:loading.attr="disabled">
             {{ __('Cancel') }}
         </x-aura::button.transparent>
@@ -44,6 +44,6 @@
         <x-aura::button.primary class="ml-3" dusk="confirm-password-button" wire:click="confirmPassword" wire:loading.attr="disabled">
             {{ $button }}
         </x-aura::button.primary>
-    </x-aura::slot>
+    </x-slot>
 </x-aura::dialog-modal>
 @endonce
