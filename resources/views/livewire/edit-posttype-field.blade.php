@@ -12,7 +12,7 @@
       <div class="mt-10 space-x-2">
         <x-button.danger wire:click="deleteField('{{ $field['slug'] }}')">
             <x-slot:icon>
-                <x-icon.edit class="w-5 h-5" />
+                <x-aura::icon.edit class="w-5 h-5" />
             </x-slot>
             Delete
         </x-button.danger>
@@ -66,7 +66,7 @@
   <div class="flex mt-8 space-x-2">
         <x-button wire:click="save">
             <x-slot:icon>
-                <x-icon.edit class="w-5 h-5" />
+                <x-aura::icon.edit class="w-5 h-5" />
             </x-slot>
             Save
         </x-button>

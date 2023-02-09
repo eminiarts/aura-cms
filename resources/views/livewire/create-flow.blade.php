@@ -153,7 +153,7 @@
 
                 <div x-data x-ref="this" x-init="tippy($refs.this, { content: 'Edit operation', arrow: false, theme: 'aura', placement: 'top', offset: [0, 8], })">
                     <x-button.border size="xs" @mousedown="$event.stopPropagation()" @click="selectOperation(operation)">
-                        <x-icon class="pointer-events-none" icon="edit" size="xs" />
+                        <x-aura::icon class="pointer-events-none" icon="edit" size="xs" />
                     </x-button.border>
                 </div>
             </div>

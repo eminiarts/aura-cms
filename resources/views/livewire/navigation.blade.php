@@ -23,9 +23,9 @@
 
         @if ($group !== '')
             <div wire:key="toggle-{{$group}}" wire:click="toggleGroup('{{$group}}')" class="cursor-pointer">
-                <x-navigation.heading>
+                <x-aura::navigation.heading>
                     {{ $group }}
-                </x-navigation.heading>
+                </x-aura::navigation.heading>
             </div>
         @endif
 
@@ -34,12 +34,12 @@
                 @foreach($resources as $resource)
 
                     @if (isset($resource['dropdown']) && $resource['dropdown'] !== false)
-                        <x-navigation.dropdown route="table">
+                        <x-aura::navigation.dropdown route="table">
                             <x-slot:title>
                                 <div class="{{ $iconClass }}">
 
                                     @php
-                                        $iconView = 'aura.navigation.icons.' . Str::slug($resource['dropdown'] );
+                                        $iconView = 'aura::aura.navigation.icons.' . Str::slug($resource['dropdown'] );
                                     @endphp
                                     
                                     @includeIf($iconView, ['class' => 'w-6 h-6'])
@@ -52,23 +52,23 @@
                             </x-slot:title>
 
                             @foreach($resource['items'] as $resource)
-                                <x-navigation.item route="post.index" :id="$resource['type']" :strict="false">
+                                <x-aura::navigation.item route="aura.post.index" :id="$resource['type']" :strict="false">
                                     <div class="{{ $iconClass }}">
                                         {!! $resource['icon'] !!}
                                     </div>
                                     <div>{{ $resource['name'] }}</div>
-                                </x-navigation.item>
+                                </x-aura::navigation.item>
                             @endforeach
-                        </x-navigation.dropdown>
+                        </x-aura::navigation.dropdown>
 
                     @else
 
-                        <x-navigation.item route="post.index" :id="$resource['type']" :strict="false">
+                        <x-aura::navigation.item route="aura.post.index" :id="$resource['type']" :strict="false">
                             <div class="{{ $iconClass }}">
                                 {!! $resource['icon'] !!}
                             </div>
                             <div>{{ $resource['name'] }}</div>
-                        </x-navigation.item>
+                        </x-aura::navigation.item>
 
                     @endif
                 @endforeach
@@ -81,19 +81,19 @@
     @endphp
 
     <div wire:key="toggle-{{$group}}" wire:click="toggleGroup('{{$group}}')" class="cursor-pointer">
-        <x-navigation.heading>
+        <x-aura::navigation.heading>
             Taxonomies
-        </x-navigation.heading>
+        </x-aura::navigation.heading>
     </div>
 
     @if ($this->isToggled($group))
         @foreach(\Eminiarts\Aura\Aura::taxonomies() as $taxonomy)
-        <x-navigation.item route="taxonomy.index" :id="$taxonomy" :strict="false">
+        <x-aura::navigation.item route="aura.taxonomy.index" :id="$taxonomy" :strict="false">
             <div class="{{ $iconClass }}">
-                <x-icon icon="circle" />
+                <x-aura::icon icon="circle" />
             </div>
             <div>{{ $taxonomy }}</div>
-        </x-navigation.item>
+        </x-aura::navigation.item>
         @endforeach
     @endif
 
@@ -103,32 +103,32 @@
     @endphp
 
     <div wire:key="toggle-{{$group}}" wire:click="toggleGroup('{{$group}}')" class="cursor-pointer">
-        <x-navigation.heading>
+        <x-aura::navigation.heading>
             Development
-        </x-navigation.heading>
+        </x-aura::navigation.heading>
     </div>
 
     @if ($this->isToggled($group))
-        <x-navigation.item route="team.settings">
+        <x-aura::navigation.item route="aura.team.settings">
             <div class="{{ $iconClass }}">
-                <x-icon icon="adjustments" />
+                <x-aura::icon icon="adjustments" />
             </div>
             <div>Settings</div>
-        </x-navigation.item>
+        </x-aura::navigation.item>
 
-        <x-navigation.item route="posttypes">
+        <x-aura::navigation.item route="aura.posttypes">
             <div class="{{ $iconClass }}">
-                <x-icon icon="collection" />
+                <x-aura::icon icon="collection" />
             </div>
             <span>Posttypes</span>
-        </x-navigation.item>
+        </x-aura::navigation.item>
 
-        <x-navigation.item class="cursor-pointer" onclick="Livewire.emit('openModal', 'create-posttype')">
+        <x-aura::navigation.item class="cursor-pointer" onclick="Livewire.emit('openModal', 'create-posttype')">
             <div class="{{ $iconClass }}">
-                <x-icon icon="collection" />
+                <x-aura::icon icon="collection" />
             </div>
             <div>Create Posttype</div>
-        </x-navigation.item>
+        </x-aura::navigation.item>
     @endif
 
     @php
@@ -136,24 +136,24 @@
     @endphp
 
     <div wire:key="toggle-{{$group}}" wire:click="toggleGroup('{{$group}}')" class="cursor-pointer">
-        <x-navigation.heading>
+        <x-aura::navigation.heading>
             Aura
-        </x-navigation.heading>
+        </x-aura::navigation.heading>
     </div>
 
     @if ($this->isToggled($group))
-        <x-navigation.item route="aura.config">
+        <x-aura::navigation.item route="aura.config">
             <div class="{{ $iconClass }}">
-                <x-icon icon="adjustments" />
+                <x-aura::icon icon="adjustments" />
             </div>
             <div>Configuration</div>
-        </x-navigation.item>
+        </x-aura::navigation.item>
     @endif
 
     <div class="mt-6">
-        <x-navigation.item route="logout">
+        <x-aura::navigation.item route="logout">
             <div>Logout</div>
-        </x-navigation.item>
+        </x-aura::navigation.item>
     </div>
 
 </div>

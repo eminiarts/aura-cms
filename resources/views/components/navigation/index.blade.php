@@ -156,11 +156,11 @@ $settings = Eminiarts\Aura\Aura::getOption('team-settings');
 
         <div class="flex flex-aura::col px-aura::4 space-y-1">
 
-            @includeIf('navigation.before')
+            {{-- @includeIf('navigation.before') --}}
 
             <livewire:aura::navigation />
 
-            @includeIf('navigation.after')
+            {{-- @includeIf('navigation.after') --}}
 
         </div>
         </div>

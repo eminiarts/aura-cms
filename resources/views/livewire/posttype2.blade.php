@@ -151,7 +151,7 @@
             >
             <div class="flex items-center">
                 <div class="items-stretch pl-3 text-gray-400 cursor-move handle">
-                    <x-icon icon="move" size="sm" />
+                    <x-aura::icon icon="move" size="sm" />
                 </div>
                 <h2 class="flex-1">
                     <button
@@ -354,7 +354,7 @@
                         <div class="flex justify-end mt-4">
                             <x-button.danger wire:click="removeField('{{ $key }}')">
                                 <div class="flex items-center space-x-4">
-                                    <x-icon icon="trash" size="sm" />
+                                    <x-aura::icon icon="trash" size="sm" />
                                     Delete Field
                                 </div>
                             </x-button.danger>
@@ -376,7 +376,7 @@
     <div class="block mt-6">
         <x-button.light wire:click="addField">
             <div class="flex items-center space-x-4">
-                <x-icon icon="plus" size="sm" />
+                <x-aura::icon icon="plus" size="sm" />
                 Add Field
             </div>
         </x-button.light>
