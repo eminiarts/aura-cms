@@ -1,16 +1,16 @@
 <?php
 
-use Illuminate\Support\Facades\Route;
-use Eminiarts\Aura\Http\Livewire\Media;
-use Eminiarts\Aura\Http\Livewire\Posttype;
-use Eminiarts\Aura\Http\Livewire\Post\Edit;
 use Eminiarts\Aura\Http\Livewire\AuraConfig;
 use Eminiarts\Aura\Http\Livewire\CreateFlow;
-use Eminiarts\Aura\Http\Livewire\Post\Index;
+use Eminiarts\Aura\Http\Livewire\Media;
 use Eminiarts\Aura\Http\Livewire\Post\Create;
-use Eminiarts\Aura\Http\Livewire\TeamSettings;
+use Eminiarts\Aura\Http\Livewire\Post\Edit;
+use Eminiarts\Aura\Http\Livewire\Post\Index;
+use Eminiarts\Aura\Http\Livewire\Posttype;
 use Eminiarts\Aura\Http\Livewire\Taxonomy\Edit as TaxonomyEdit;
 use Eminiarts\Aura\Http\Livewire\Taxonomy\Index as TaxonomyIndex;
+use Eminiarts\Aura\Http\Livewire\TeamSettings;
+use Illuminate\Support\Facades\Route;
 
 require __DIR__.'/auth.php';
 
@@ -43,7 +43,6 @@ Route::domain(config('aura.domain'))
             Route::get('/{slug}/create', Create::class)->name('post.create');
             Route::get('/{slug}/{id}/edit', Edit::class)->name('post.edit');
 
-
             Route::get('/team-settings', TeamSettings::class)->name('team.settings');
             Route::get('/aura-config', AuraConfig::class)->name('aura.config');
 
@@ -51,7 +50,6 @@ Route::domain(config('aura.domain'))
 
             Route::get('/flows', CreateFlow::class)->name('flows.create');
             Route::get('/flows/{id}', CreateFlow::class)->name('flows.edit');
-
 
             // if ($loginPage = config('aura.auth.pages.login')) {
             //     Route::get('/login', $loginPage)->name('auth.login');
