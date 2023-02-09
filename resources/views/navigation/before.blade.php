@@ -1,3 +1,3 @@
-<x-navigation.item route="dashboard">
+<x-aura::navigation.item route="aura.dashboard">
   Dashboard
-</x-navigation.item>
+</x-aura::navigation.item>

@@ -15,6 +15,7 @@ use Eminiarts\Aura\Policies\TeamPolicy;
 use Eminiarts\Aura\Policies\UserPolicy;
 use Spatie\LaravelPackageTools\Package;
 use Eminiarts\Aura\Commands\AuraCommand;
+use Eminiarts\Aura\Http\Livewire\Navigation;
 use Eminiarts\Aura\Http\Livewire\Post\Create;
 use Eminiarts\Aura\Http\Livewire\Post\Edit;
 use Eminiarts\Aura\Http\Livewire\Post\Index;
@@ -107,6 +108,7 @@ class AuraServiceProvider extends PackageServiceProvider
         Livewire::component('aura::post-create', Create::class);
         Livewire::component('aura::post-create', Edit::class);
         Livewire::component('aura::table', Table::class);
+        Livewire::component('aura::navigation', Navigation::class);
 
 
         return $this;

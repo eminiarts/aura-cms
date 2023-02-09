@@ -1,7 +1,7 @@
 <div>
     @php
         use App\Aura\Resources\Team;
-        $settings = App\Aura::getOption('team-settings');
+        $settings = Eminiarts\Aura\Aura::getOption('team-settings');
         if ($settings) {
             $sidebarType = $settings['sidebar-type'] ?? 'primary';
         } else {
@@ -19,7 +19,7 @@
         
     @endphp
 
-    @foreach(\App\Aura::navigation() as $group => $resources)
+    @foreach(\Eminiarts\Aura\Aura::navigation() as $group => $resources)
 
         @if ($group !== '')
             <div wire:key="toggle-{{$group}}" wire:click="toggleGroup('{{$group}}')" class="cursor-pointer">
@@ -87,7 +87,7 @@
     </div>
 
     @if ($this->isToggled($group))
-        @foreach(\App\Aura::taxonomies() as $taxonomy)
+        @foreach(\Eminiarts\Aura\Aura::taxonomies() as $taxonomy)
         <x-navigation.item route="taxonomy.index" :id="$taxonomy" :strict="false">
             <div class="{{ $iconClass }}">
                 <x-icon icon="circle" />

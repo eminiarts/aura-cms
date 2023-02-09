@@ -23,7 +23,7 @@
         <link rel="stylesheet" href="/css/app.css">
 
         @php
-            $settings = App\Aura::getOption('team-settings');
+            $settings = Eminiarts\Aura\Aura::getOption('team-settings');
         @endphp
 
         @include('aura::components.layout.colors')

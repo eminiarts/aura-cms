@@ -8,7 +8,7 @@
 ])
 
 @php
-$settings = App\Aura::getOption('team-settings');
+$settings = Eminiarts\Aura\Aura::getOption('team-settings');
 @endphp
 
 @php
