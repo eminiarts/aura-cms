@@ -2,10 +2,10 @@
 
     <div class="flex items-center justify-between">
 
-        <x-breadcrumbs>
-            <x-breadcrumbs.li :href="route('dashboard')" title="" icon="dashboard" iconClass="text-gray-500 w-7 h-7 mr-0" />
-            <x-breadcrumbs.li :title="Str::plural($slug)"  />
-        </x-breadcrumbs.li>
+        <x-aura::breadcrumbs>
+            <x-aura::breadcrumbs.li :href="route('aura.dashboard')" title="" icon="dashboard" iconClass="text-gray-500 w-7 h-7 mr-0" />
+            <x-aura::breadcrumbs.li :title="Str::plural($slug)"  />
+        </x-aura::breadcrumbs.li>
 
     <div>
         <x-button.transparent route="posttype.edit" :id="$slug" size="" >

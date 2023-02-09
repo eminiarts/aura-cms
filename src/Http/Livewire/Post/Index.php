@@ -24,7 +24,7 @@ class Index extends Component
 
         // if this post is null redirect to dashboard
         if (is_null($this->post)) {
-            return redirect()->route('dashboard');
+            return redirect()->route('aura.dashboard');
         }
 
         // dd('hier', auth()->user());

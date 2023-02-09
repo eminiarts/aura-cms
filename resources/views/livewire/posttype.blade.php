@@ -1,11 +1,11 @@
 <div>
     @section('title', 'Edit ' . $model::getType() . ' Fields • ')
 
-    <x-breadcrumbs>
-        <x-breadcrumbs.li :href="route('dashboard')" title="" icon="dashboard" iconClass="text-gray-500 w-7 h-7 mr-0" />
-        <x-breadcrumbs.li :href="route('aura.posttype.edit', $model::getSlug())" title="Posttypes" />
-        <x-breadcrumbs.li :title="$model::getType()" />
-    </x-breadcrumbs>
+    <x-aura::breadcrumbs>
+        <x-aura::breadcrumbs.li :href="route('aura.dashboard')" title="" icon="dashboard" iconClass="text-gray-500 w-7 h-7 mr-0" />
+        <x-aura::breadcrumbs.li :href="route('aura.posttype.edit', $model::getSlug())" title="Posttypes" />
+        <x-aura::breadcrumbs.li :title="$model::getType()" />
+    </x-aura::breadcrumbs>
 
     {{-- <x-slot name="header">
         <h3 class="text-xl font-semibold">Edit Post Type</h3>

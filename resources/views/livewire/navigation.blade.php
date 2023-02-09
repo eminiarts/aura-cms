@@ -1,7 +1,7 @@
 <div>
     @php
         use App\Aura\Resources\Team;
-        $settings = app::getOption('team-settings');
+        $settings = app('aura')::getOption('team-settings');
         if ($settings) {
             $sidebarType = $settings['sidebar-type'] ?? 'primary';
         } else {
@@ -19,7 +19,7 @@
         
     @endphp
 
-    @foreach(\app::navigation() as $group => $resources)
+    @foreach(app('aura')::navigation() as $group => $resources)
 
         @if ($group !== '')
             <div wire:key="toggle-{{$group}}" wire:click="toggleGroup('{{$group}}')" class="cursor-pointer">
@@ -87,7 +87,7 @@
     </div>
 
     @if ($this->isToggled($group))
-        @foreach(\app::taxonomies() as $taxonomy)
+        @foreach(\app('aura')::taxonomies() as $taxonomy)
         <x-aura::navigation.item route="aura.taxonomy.index" :id="$taxonomy" :strict="false">
             <div class="{{ $iconClass }}">
                 <x-aura::icon icon="circle" />
