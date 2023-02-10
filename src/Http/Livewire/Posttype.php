@@ -2,10 +2,10 @@
 
 namespace Eminiarts\Aura\Http\Livewire;
 
-use Livewire\Component;
-use Illuminate\Support\Str;
 use Eminiarts\Aura\Facades\Aura;
 use Eminiarts\Aura\Traits\SaveFields;
+use Illuminate\Support\Str;
+use Livewire\Component;
 
 class Posttype extends Component
 {

@@ -114,8 +114,6 @@ class AuraServiceProvider extends PackageServiceProvider
         Livewire::component('aura::global-search', GlobalSearch::class);
         Livewire::component('aura::notifications', Notifications::class);
         Livewire::component('aura::edit-posttype-field', EditPosttypeField::class);
-        
-
 
         return $this;
     }
