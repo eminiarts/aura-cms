@@ -4,7 +4,7 @@ namespace Eminiarts\Aura\Fields;
 
 class Checkbox extends Field
 {
-    public string $component = 'fields.checkbox';
+    public string $component = 'aura::fields.checkbox';
 
     protected string $view = 'components.fields.checkbox';
 

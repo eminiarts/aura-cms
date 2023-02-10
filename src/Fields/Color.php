@@ -4,7 +4,7 @@ namespace Eminiarts\Aura\Fields;
 
 class Color extends Field
 {
-    public string $component = 'fields.color';
+    public string $component = 'aura::fields.color';
 
     protected string $view = 'components.fields.color';
 

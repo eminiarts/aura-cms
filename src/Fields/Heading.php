@@ -4,7 +4,7 @@ namespace Eminiarts\Aura\Fields;
 
 class Heading extends Field
 {
-    public string $component = 'fields.heading';
+    public string $component = 'aura::fields.heading';
 
     protected string $view = 'components.fields.heading';
 

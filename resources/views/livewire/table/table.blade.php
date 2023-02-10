@@ -49,7 +49,7 @@
                             <x-aura::icon icon="plus" />
                         </x-slot>
                         <span>Create {{ $model->getName() }}</span>
-                    </x-button>
+                    </x-aura::button>
                         </a>
                     @else
                     <a href="{{ $this->createLink }}">
@@ -58,7 +58,7 @@
                             <x-aura::icon icon="plus" />
                         </x-slot>
                         <span>Create {{ $model->getName() }}</span>
-                    </x-button>
+                    </x-aura::button>
                     </a>
                     @endif
                 </div>
@@ -119,7 +119,7 @@
                                     <x-aura::icon icon="filter" />
                                     </x-slot>
                                     Filters
-                            </x-button.border>
+                            </x-aura::button.border>
                         </div>
                     </div>
 

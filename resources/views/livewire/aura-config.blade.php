@@ -24,12 +24,12 @@
             }
         }
     </style>
-    <x-fields.conditions :field="$field" :model="$this">
+    <x-aura::fields.conditions :field="$field" :model="$this">
         <div wire:key="post-field-{{ $key }}"
         id="post-field-{{ optional($field)['slug'] }}-wrapper">
         <x-dynamic-component :component="$field['field']->component" :field="$field" />
         </div>
-    </x-fields.conditions>
+    </x-aura::fields.conditions>
     @endforeach
 
         

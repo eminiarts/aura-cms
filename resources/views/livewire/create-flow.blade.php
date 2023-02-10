@@ -152,9 +152,9 @@
                 <div class="text-sm font-semibold leading-tight select-text" x-text="operation.name"></div>
 
                 <div x-data x-ref="this" x-init="tippy($refs.this, { content: 'Edit operation', arrow: false, theme: 'aura', placement: 'top', offset: [0, 8], })">
-                    <x-button.border size="xs" @mousedown="$event.stopPropagation()" @click="selectOperation(operation)">
+                    <x-aura::button.border size="xs" @mousedown="$event.stopPropagation()" @click="selectOperation(operation)">
                         <x-aura::icon class="pointer-events-none" icon="edit" size="xs" />
-                    </x-button.border>
+                    </x-aura::button.border>
                 </div>
             </div>
 

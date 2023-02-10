@@ -1,4 +1,4 @@
-<x-slide-over key="edit-field" wire:key="editPostTypeField">
+<x-aura::slide-over key="edit-field" wire:key="editPostTypeField">
 
   <div>
     @if($field)
@@ -10,12 +10,12 @@
         <h1 class="mb-4 text-3xl font-semibold">{{ $field['label'] ?? ''}} ({{ $field['slug'] }})</h1>
       </div>
       <div class="mt-10 space-x-2">
-        <x-button.danger wire:click="deleteField('{{ $field['slug'] }}')">
+        <x-aura::button.danger wire:click="deleteField('{{ $field['slug'] }}')">
             <x-slot:icon>
                 <x-aura::icon.edit class="w-5 h-5" />
             </x-slot>
             Delete
-        </x-button.danger>
+        </x-aura::button.danger>
       </div>
     </div>
 
@@ -64,16 +64,16 @@
 
 
   <div class="flex mt-8 space-x-2">
-        <x-button wire:click="save">
+        <x-aura::button wire:click="save">
             <x-slot:icon>
                 <x-aura::icon.edit class="w-5 h-5" />
             </x-slot>
             Save
-        </x-button>
+        </x-aura::button>
 
-        <x-button.border x-on:click="open = false">
+        <x-aura::button.border x-on:click="open = false">
             Cancel
-        </x-button.border>
+        </x-aura::button.border>
   </div>
 
-</x-slide-over>
+</x-aura::slide-over>

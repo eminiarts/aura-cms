@@ -4,7 +4,7 @@ namespace Eminiarts\Aura\Fields;
 
 class Embed extends Field
 {
-    public string $component = 'fields.embed';
+    public string $component = 'aura::fields.embed';
 
     protected string $view = 'components.fields.embed';
 

@@ -4,7 +4,7 @@ namespace Eminiarts\Aura\Fields;
 
 class Image extends Field
 {
-    public string $component = 'fields.image';
+    public string $component = 'aura::fields.image';
 
     protected string $view = 'components.fields.image';
 

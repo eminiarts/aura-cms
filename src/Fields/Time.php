@@ -4,7 +4,7 @@ namespace Eminiarts\Aura\Fields;
 
 class Time extends Field
 {
-    public string $component = 'fields.time';
+    public string $component = 'aura::fields.time';
 
     protected string $view = 'components.fields.time';
 

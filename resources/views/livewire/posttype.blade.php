@@ -17,12 +17,12 @@
         </div>
 
         <div>
-            <x-button size="lg" wire:click="save">
+            <x-aura::button size="lg" wire:click="save">
                 <div wire:loading>
                     <x-aura::icon.loading />
                 </div>
                 Save
-            </x-button>
+            </x-aura::button>
         </div>
     </div>
 
@@ -239,9 +239,9 @@
                         Choose Template
                         </button>
 
-                        <x-button wire:click="addTemplateFields('Plain')">Plain</x-button>
-                        <x-button wire:click="addTemplateFields('TabsWithPanels')">TabsWithPanels</x-button>
-                        <x-button wire:click="addTemplateFields('PanelWithTabs')">PanelWithTabs</x-button>
+                        <x-aura::button wire:click="addTemplateFields('Plain')">Plain</x-aura::button>
+                        <x-aura::button wire:click="addTemplateFields('TabsWithPanels')">TabsWithPanels</x-aura::button>
+                        <x-aura::button wire:click="addTemplateFields('PanelWithTabs')">PanelWithTabs</x-aura::button>
                     </div>
                 </div>
             @endif

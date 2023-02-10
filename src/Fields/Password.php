@@ -6,7 +6,7 @@ use Illuminate\Support\Facades\Hash;
 
 class Password extends Field
 {
-    public string $component = 'fields.password';
+    public string $component = 'aura::fields.password';
 
     protected string $view = 'components.fields.password';
 

@@ -7,10 +7,10 @@
 
     {{-- Footer with 2 buttons: close and select --}}
     <div class="flex justify-end mt-4">
-        <x-button class="ml-4" wire:click="$emit('closeModal')">
+        <x-aura::button class="ml-4" wire:click="$emit('closeModal')">
             {{ __('Close') }}
-        </x-button>
-        <x-button.primary class="ml-4" wire:click="select">
+        </x-aura::button>
+        <x-aura::button.primary class="ml-4" wire:click="select">
             {{ __('Select') }}
-        </x-button.primary>
+        </x-aura::button.primary>
 </div>

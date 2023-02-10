@@ -4,7 +4,7 @@ namespace Eminiarts\Aura\Fields;
 
 class Slug extends Field
 {
-    public string $component = 'fields.slug';
+    public string $component = 'aura::fields.slug';
 
     protected string $view = 'components.fields.slug';
 

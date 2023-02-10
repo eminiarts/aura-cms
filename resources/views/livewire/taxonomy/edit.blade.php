@@ -46,7 +46,7 @@
 
         <div class="col-span-1">
             <div class="aura-card">
-                <x-button size="xl" wire:click="save">Save</x-button>
+                <x-aura::button size="xl" wire:click="save">Save</x-aura::button>
             </div>
         </div>
     </div>
