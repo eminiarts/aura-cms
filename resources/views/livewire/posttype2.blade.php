@@ -8,17 +8,17 @@
         <h2 class="text-xl font-semibold">Edit Post Type</h2>
         <div class="flex flex-wrap-mx-4">
             <div class="w-full px-4 mb-0 md:w-1/3">
-                <x-input.text label="Name" placeholder="Name" value="{{ $model::getType() }}"></x-input>
+                <x-aura::input.text label="Name" placeholder="Name" value="{{ $model::getType() }}"></x-aura::input>
                 </div>
                 <div class="w-full px-4 mb-0 md:w-1/3">
-                    <x-input.text label="Slug" placeholder="Slug" value="{{ $model::getSlug() }}"></x-input>
+                    <x-aura::input.text label="Slug" placeholder="Slug" value="{{ $model::getSlug() }}"></x-aura::input>
                     </div>
                     {{-- <div class="w-full px-4 mb-0 md:w-1/3">
-                        <x-input.text label="Label" placeholder="Placeholder"></x-input>
+                        <x-aura::input.text label="Label" placeholder="Placeholder"></x-aura::input>
                         </div> --}}
 
                         <div class="w-full px-4 mt-4 mb-4 md:w-1/3">
-                            <x-input.toggle label="Im Menü" model="true"></x-input>
+                            <x-aura::input.toggle label="Im Menü" model="true"></x-aura::input>
                             </div>
 
                         </div>
@@ -185,10 +185,10 @@
 
                     <div class="flex flex-wrap items-end -mx-4">
                         <div class="w-full px-4 mb-0 md:w-1/3">
-                            <x-input.wrapper label="Field Name" help="This is the name which will appear on the pages" placeholder="Field Name" wire:model.defer="fields.{{ $key}}.name" error="fields.{{ $key }}.name"></x-input.wrapper>
+                            <x-aura::input.wrapper label="Field Name" help="This is the name which will appear on the pages" placeholder="Field Name" wire:model.defer="fields.{{ $key}}.name" error="fields.{{ $key }}.name"></x-aura::input.wrapper>
                         </div>
                         <div class="w-full px-4 mb-0 md:w-1/3">
-                            <x-input.wrapper label="Field Slug" help="Single word, no spaces. Underscores and dashes allowed" placeholder="Field Slug" wire:model.lazy="fields.{{ $key}}.slug" error="fields.{{ $key }}.slug"></x-input.wrapper>
+                            <x-aura::input.wrapper label="Field Slug" help="Single word, no spaces. Underscores and dashes allowed" placeholder="Field Slug" wire:model.lazy="fields.{{ $key}}.slug" error="fields.{{ $key }}.slug"></x-aura::input.wrapper>
                         </div>
 
                         <div class="w-full px-4 mb-0 md:w-1/3">
@@ -237,24 +237,24 @@
 
 
 
-                            {{-- <x-input.select label="Type"></x-input.select> --}}
+                            {{-- <x-aura::input.select label="Type"></x-aura::input.select> --}}
 
                         </div>
 
                         <div class="w-full px-4 mb-0 md:w-1/2">
-                            <x-input.text label="Instructions" placeholder="Instructions" wire:model.defer="fields.{{ $key}}.instructions" error="fields.{{ $key }}.instructions"></x-input.text>
+                            <x-aura::input.text label="Instructions" placeholder="Instructions" wire:model.defer="fields.{{ $key}}.instructions" error="fields.{{ $key }}.instructions"></x-aura::input.text>
                         </div>
 
                         <div class="w-full px-4 mb-0 md:w-1/2">
 
-                            <x-input.text label="Validation" placeholder="required|min:3|max:255|number..." wire:model.defer="fields.{{ $key }}.validation"></x-input.text>
+                            <x-aura::input.text label="Validation" placeholder="required|min:3|max:255|number..." wire:model.defer="fields.{{ $key }}.validation"></x-aura::input.text>
                         </div>
 
                         <div class="w-full">
 
 
                             <div class="w-full px-4 mt-4 mb-4">
-                                <x-input.toggle label="Conditional Logic" wire:model.defer="fields.{{ $key}}.has_conditional_logic"></x-input.toggle>
+                                <x-aura::input.toggle label="Conditional Logic" wire:model.defer="fields.{{ $key}}.has_conditional_logic"></x-aura::input.toggle>
                             </div>
 
                             <div class="py-4 border-t border-b border-gray-400/30" x-show="hasConditionalLogic">
@@ -292,7 +292,7 @@
                                             @if ($fields[$key]['conditional_logic'][$groupKey][$ruleKey]['operator'] == 'is_empty')
                                             empty
                                             @else
-                                            <x-input.wrapper label="Value" placeholder="Value" wire:model.defer="fields.{{ $key }}.conditional_logic.{{ $groupKey }}.{{ $ruleKey }}.value" error="fields.{{ $key }}.conditional_logic.{{ $groupKey }}.{{ $ruleKey }}.value"></x-input.wrapper>
+                                            <x-aura::input.wrapper label="Value" placeholder="Value" wire:model.defer="fields.{{ $key }}.conditional_logic.{{ $groupKey }}.{{ $ruleKey }}.value" error="fields.{{ $key }}.conditional_logic.{{ $groupKey }}.{{ $ruleKey }}.value"></x-aura::input.wrapper>
                                             @endif
 
                                         </div>
@@ -326,19 +326,19 @@
 
                             <div x-show="showAdvanced" class="flex flex-wrap w-full">
                                 <div class="w-full px-4 mb-0 md:w-1/3">
-                                    <x-input.wrapper label="Width" help="This is the name which will appear on the pages" placeholder="Width" wire:model.defer="fields.{{ $key}}.style.width" error="fields.{{ $key }}.style.width"></x-input.wrapper>
+                                    <x-aura::input.wrapper label="Width" help="This is the name which will appear on the pages" placeholder="Width" wire:model.defer="fields.{{ $key}}.style.width" error="fields.{{ $key }}.style.width"></x-aura::input.wrapper>
                                 </div>
                                 <div class="w-full px-4 mb-0 md:w-1/3">
-                                    <x-input.wrapper label="CSS Classes" help="CSS Classes" placeholder="CSS Classes" wire:model.lazy="fields.{{ $key}}.style.class" error="fields.{{ $key }}.style.class"></x-input.wrapper>
+                                    <x-aura::input.wrapper label="CSS Classes" help="CSS Classes" placeholder="CSS Classes" wire:model.lazy="fields.{{ $key}}.style.class" error="fields.{{ $key }}.style.class"></x-aura::input.wrapper>
                                 </div>
 
                                 <div class="w-full px-4 mb-0 md:w-1/3">
-                                    <x-input.wrapper label="ID" help="ID" placeholder="CSS ID" wire:model.lazy="fields.{{ $key }}.style.id" error="fields.{{ $key }}.style.id"></x-input.wrapper>
+                                    <x-aura::input.wrapper label="ID" help="ID" placeholder="CSS ID" wire:model.lazy="fields.{{ $key }}.style.id" error="fields.{{ $key }}.style.id"></x-aura::input.wrapper>
                                 </div>
 
                                 <div class="w-full px-4">
                                     <div class="w-full px-4 mt-4 mb-4">
-                                        <x-input.toggle2 label="Show in Table?" wire:model.defer="fields.{{ $key}}.style.showInTable"></x-input.toggle2>
+                                        <x-aura::input.toggle2 label="Show in Table?" wire:model.defer="fields.{{ $key}}.style.showInTable"></x-aura::input.toggle2>
                                     </div>
                                 </div>
                             </div>
@@ -347,7 +347,7 @@
 
 
                         {{-- <div class="w-full px-4 mt-4 mb-4">
-                            <x-input.toggle label="Enabled" model="true"></x-input>
+                            <x-aura::input.toggle label="Enabled" model="true"></x-aura::input>
                             </div> --}}
                         </div>
 

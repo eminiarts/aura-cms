@@ -4,6 +4,7 @@ namespace Eminiarts\Aura;
 
 use Eminiarts\Aura\Commands\AuraCommand;
 use Eminiarts\Aura\Commands\MakeUser;
+use Eminiarts\Aura\Http\Livewire\EditPosttypeField;
 use Eminiarts\Aura\Http\Livewire\GlobalSearch;
 use Eminiarts\Aura\Http\Livewire\Navigation;
 use Eminiarts\Aura\Http\Livewire\Notifications;
@@ -112,6 +113,8 @@ class AuraServiceProvider extends PackageServiceProvider
         Livewire::component('aura::navigation', Navigation::class);
         Livewire::component('aura::global-search', GlobalSearch::class);
         Livewire::component('aura::notifications', Notifications::class);
+        Livewire::component('aura::edit-posttype-field', EditPosttypeField::class);
+        
 
 
         return $this;

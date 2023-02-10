@@ -48,7 +48,7 @@
             </label>
             <div class="flex mt-2 space-x-1">
                 <div class="shrink-0">
-                    <x-input.checkbox
+                    <x-aura::input.checkbox
                         {{-- wire:model="selected" --}}
                         id="checkbox_{{ $row->id }}"
                         {{-- value="{{ $row->id }}" --}}
