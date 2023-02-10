@@ -90,7 +90,7 @@ test('Date Field in View', function () {
         ->get('/DateModel/create')
         ->assertOk()
         ->assertSee('Date for Test')
-        ->assertSeeLivewire('post.create');
+        ->assertSeeLivewire('aura::post.create');
 
     // $a = Aura::findResourceBySlug('DateModel');
     // dd($a);
