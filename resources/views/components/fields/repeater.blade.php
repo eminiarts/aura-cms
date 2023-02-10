@@ -16,7 +16,7 @@
 
                 <div class="flex flex-aura::wrap flex-aura::1 items-center space-x-aura::0">
                 @foreach($group as $field)
-                    <x-aura::dynamic-component :component="$field['field']->component" :field="$field" />
+                    <x-dynamic-component :component="$field['field']->component" :field="$field" />
                 @endforeach
                 </div>
 

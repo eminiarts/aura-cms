@@ -27,7 +27,7 @@ $model = $this->model;
       @if(optional($field)['fields'])
       @foreach($field['fields'] as $key => $field)
       <x-aura::fields.conditions :field="$field" :model="$this->post">
-        <x-aura::dynamic-component :component="$field['field']->component" :field="$field" />
+        <x-dynamic-component :component="$field['field']->component" :field="$field" />
         </x-aura::fields.conditions>
         @endforeach
         @else

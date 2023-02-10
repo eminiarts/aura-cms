@@ -4,7 +4,7 @@ namespace Eminiarts\Aura\Fields;
 
 class Datetime extends Field
 {
-    public string $component = 'fields.datetime';
+    public string $component = 'aura::fields.datetime';
 
     protected string $view = 'components.fields.datetime';
 

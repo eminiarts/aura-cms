@@ -21,11 +21,11 @@
         @endforeach
     </div>
 
-    <x-button size="xl" wire:click="save">
+    <x-aura::button size="xl" wire:click="save">
         <div wire:loading>
             <x-aura::icon.loading  />
         </div>
         Save
-    </x-button>
+    </x-aura::button>
 
 </div>

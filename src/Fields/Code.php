@@ -4,7 +4,7 @@ namespace Eminiarts\Aura\Fields;
 
 class Code extends Field
 {
-    public string $component = 'fields.code';
+    public string $component = 'aura::fields.code';
 
     protected string $view = 'components.fields.code';
 

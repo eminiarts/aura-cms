@@ -19,8 +19,8 @@
         <link rel="stylesheet" href="/css/inter.css">
 
         @livewireStyles
-        <!-- Styles -->
-        <link rel="stylesheet" href="/css/app.css">
+
+        @vite(['resources/css/app.css'], 'vendor/aura')
 
         @php
             $settings = Eminiarts\Aura\Aura::getOption('team-settings');
@@ -148,7 +148,7 @@
         <script defer src="https://unpkg.com/@alpinejs/ui@3.10.5-beta.8/dist/cdn.min.js"></script>
         <script defer src="https://unpkg.com/@alpinejs/focus@3.10.5/dist/cdn.min.js"></script>
 
-        <script defer src="/js/app.js"></script>
+        @vite(['resources/js/app.js'], 'vendor/aura')
 
     </body>
 </html>

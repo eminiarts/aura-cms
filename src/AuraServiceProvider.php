@@ -4,7 +4,9 @@ namespace Eminiarts\Aura;
 
 use Eminiarts\Aura\Commands\AuraCommand;
 use Eminiarts\Aura\Commands\MakeUser;
+use Eminiarts\Aura\Http\Livewire\GlobalSearch;
 use Eminiarts\Aura\Http\Livewire\Navigation;
+use Eminiarts\Aura\Http\Livewire\Notifications;
 use Eminiarts\Aura\Http\Livewire\Post\Create;
 use Eminiarts\Aura\Http\Livewire\Post\Edit;
 use Eminiarts\Aura\Http\Livewire\Post\Index;
@@ -108,6 +110,9 @@ class AuraServiceProvider extends PackageServiceProvider
         Livewire::component('aura::post-create', Edit::class);
         Livewire::component('aura::table', Table::class);
         Livewire::component('aura::navigation', Navigation::class);
+        Livewire::component('aura::global-search', GlobalSearch::class);
+        Livewire::component('aura::notifications', Notifications::class);
+
 
         return $this;
     }

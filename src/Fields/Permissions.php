@@ -4,7 +4,7 @@ namespace Eminiarts\Aura\Fields;
 
 class Permissions extends Field
 {
-    public string $component = 'fields.permissions';
+    public string $component = 'aura::fields.permissions';
 
     protected string $view = 'components.fields.permissions';
 

@@ -297,10 +297,10 @@
 
                                         </div>
                                         <div class="px-1">
-                                            <x-button.light wire:click="addConditionalLogicRule('{{ $key }}', '{{ $groupKey }}')">And</x-button.light>
+                                            <x-aura::button.light wire:click="addConditionalLogicRule('{{ $key }}', '{{ $groupKey }}')">And</x-aura::button.light>
                                         </div>
                                         <div class="px-1">
-                                            <x-button.danger wire:click="removeConditionalLogicRule('{{ $key }}', '{{ $groupKey }}', '{{ $ruleKey }}')">-</x-button.danger>
+                                            <x-aura::button.danger wire:click="removeConditionalLogicRule('{{ $key }}', '{{ $groupKey }}', '{{ $ruleKey }}')">-</x-aura::button.danger>
                                         </div>
                                     </div>
                                     @endforeach
@@ -312,7 +312,7 @@
 
                                 <div class="px-4">
 
-                                    <x-button size="xs" wire:click="addConditionalLogicRuleGroup('{{ $key }}')">Add rule group</x-button>
+                                    <x-aura::button size="xs" wire:click="addConditionalLogicRuleGroup('{{ $key }}')">Add rule group</x-aura::button>
                                 </div>
 
                             </div>
@@ -320,7 +320,7 @@
 
                         <div class="w-full pl-2" x-data="{showAdvanced: false}">
                             <div class="flex items-center">
-                                <x-button.transparent size="xs" @click="showAdvanced = !showAdvanced">Advanced Settings +</x-button.transparent>
+                                <x-aura::button.transparent size="xs" @click="showAdvanced = !showAdvanced">Advanced Settings +</x-aura::button.transparent>
                                 <div class="h-[1px] bg-gray-200 flex-1 ml-2"></div>
                             </div>
 
@@ -352,12 +352,12 @@
                         </div>
 
                         <div class="flex justify-end mt-4">
-                            <x-button.danger wire:click="removeField('{{ $key }}')">
+                            <x-aura::button.danger wire:click="removeField('{{ $key }}')">
                                 <div class="flex items-center space-x-4">
                                     <x-aura::icon icon="trash" size="sm" />
                                     Delete Field
                                 </div>
-                            </x-button.danger>
+                            </x-aura::button.danger>
                         </div>
 
                     </div>
@@ -374,12 +374,12 @@
     </div>
 
     <div class="block mt-6">
-        <x-button.light wire:click="addField">
+        <x-aura::button.light wire:click="addField">
             <div class="flex items-center space-x-4">
                 <x-aura::icon icon="plus" size="sm" />
                 Add Field
             </div>
-        </x-button.light>
+        </x-aura::button.light>
     </div>
 
     @if (count($errors->all()))
@@ -399,7 +399,7 @@
 
 
 
-    <x-button size="xl" wire:click="save">Save</x-button>
+    <x-aura::button size="xl" wire:click="save">Save</x-aura::button>
 
 
 </div>

@@ -4,7 +4,7 @@ namespace Eminiarts\Aura\Fields;
 
 class Group extends Field
 {
-    public string $component = 'fields.group';
+    public string $component = 'aura::fields.group';
 
     public bool $group = true;
 

@@ -1,4 +1,4 @@
-<x-slide-over key="notifications" wire:key="notifications" >
+<x-aura::slide-over key="notifications" wire:key="notifications" >
     <h1>Notifications</h1>
 
     @foreach($this->fieldsForView as $key => $field)
@@ -13,19 +13,19 @@
             }
         }
     </style>
-    <x-fields.conditions :field="$field" :model="$this">
+    <x-aura::fields.conditions :field="$field" :model="$this">
         <div wire:key="post-field-{{ $key }}"
         id="post-field-{{ optional($field)['slug'] }}-wrapper">
         <x-dynamic-component :component="$field['field']->component" :field="$field" />
         </div>
-    </x-fields.conditions>
+    </x-aura::fields.conditions>
     @endforeach
     
-    <x-button wire:click="markAllAsRead">
+    <x-aura::button wire:click="markAllAsRead">
         <div wire:loading>
             <x-aura::icon.loading  />
         </div>
         Mark all as read
-    </x-button>
+    </x-aura::button>
 
-</x-slide-over>
+</x-aura::slide-over>

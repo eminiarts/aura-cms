@@ -15,12 +15,12 @@
         </div>
 
         <div>
-            <x-button size="lg" wire:click="save">
+            <x-aura::button size="lg" wire:click="save">
                 <div wire:loading>
                     <x-aura::icon.loading />
                 </div>
                 Save
-            </x-button>
+            </x-aura::button>
         </div>
     </div>
 
@@ -52,11 +52,11 @@
             @endif
 
            @foreach($this->editFields as $key => $field)
-            <x-fields.conditions :field="$field" :model="$model">
+            <x-aura::fields.conditions :field="$field" :model="$model">
                 <div wire:key="post-field-{{ $key }}">
                     <x-dynamic-component :component="$field['field']->component" :field="$field" />
                 </div>
-            </x-fields.conditions>
+            </x-aura::fields.conditions>
             @endforeach
 
             @if (count($errors->all()))
@@ -78,7 +78,7 @@
 
         {{-- <div class="col-span-1">
             <div class="aura-card">
-                <x-button size="xl" wire:click="save">Save</x-button>
+                <x-aura::button size="xl" wire:click="save">Save</x-aura::button>
             </div>
         </div> --}}
     </div>

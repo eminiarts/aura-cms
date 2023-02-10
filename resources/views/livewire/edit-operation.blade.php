@@ -1,7 +1,7 @@
 @php
   use App\Aura\Resources\Operation;
 @endphp
-<x-slide-over key="edit-operation" wire:key="editOperation" >
+<x-aura::slide-over key="edit-operation" wire:key="editOperation" >
   <div x-data="{
     post: @entangle('post'),
       init () {
@@ -22,12 +22,12 @@
         <h1 class="mb-4 text-3xl font-semibold">{{ $model['name'] }}</h1>
       </div>
       <div class="mt-10 space-x-2">
-        <x-button.danger wire:click="deleteOperation('{{ $model['id'] }}')">
+        <x-aura::button.danger wire:click="deleteOperation('{{ $model['id'] }}')">
             <x-slot:icon>
                 <x-aura::icon.edit class="w-5 h-5" />
             </x-slot>
             Delete
-        </x-button.danger>
+        </x-aura::button.danger>
       </div>
     </div>
 
@@ -55,15 +55,15 @@
     @endif
   </div>
   <div class="flex mt-8 space-x-2">
-        <x-button wire:click="save">
+        <x-aura::button wire:click="save">
             <x-slot:icon>
                 <x-aura::icon.edit class="w-5 h-5" />
             </x-slot>
             Save
-        </x-button>
+        </x-aura::button>
 
-        <x-button.border wire:click="validateBeforeClosing()">
+        <x-aura::button.border wire:click="validateBeforeClosing()">
             Cancel
-        </x-button.border>
+        </x-aura::button.border>
   </div>
-</x-slide-over>
+</x-aura::slide-over>

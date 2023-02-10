@@ -90,29 +90,29 @@
             @if (! $this->enabled)
             
             <x-confirms-password wire:then="enableTwoFactorAuthentication" :confirmingPassword="$confirmingPassword">
-                <x-button.primary type="button" wire:loading.attr="disabled">
+                <x-aura::button.primary type="button" wire:loading.attr="disabled">
                     {{ __('Enable') }}
-                </x-button.primary>
+                </x-aura::button.primary>
             </x-confirms-password>
             @else
             @if ($showingRecoveryCodes)
             <x-confirms-password wire:then="regenerateRecoveryCodes" :confirmingPassword="$confirmingPassword">
-                <x-button.light class="mr-3">
+                <x-aura::button.light class="mr-3">
                     {{ __('Regenerate Recovery Codes') }}
-                </x-button.light>
+                </x-aura::button.light>
             </x-confirms-password>
             @else
             <x-confirms-password wire:then="showRecoveryCodes" :confirmingPassword="$confirmingPassword">
-                <x-button.light class="mr-3">
+                <x-aura::button.light class="mr-3">
                     {{ __('Show Recovery Codes') }}
-                </x-button.light>
+                </x-aura::button.light>
             </x-confirms-password>
             @endif
             
             <x-confirms-password wire:then="disableTwoFactorAuthentication" :confirmingPassword="$confirmingPassword">
-                <x-button.danger wire:loading.attr="disabled">
+                <x-aura::button.danger wire:loading.attr="disabled">
                     {{ __('Disable') }}
-                </x-button.danger>
+                </x-aura::button.danger>
             </x-confirms-password>
             @endif
         </div>

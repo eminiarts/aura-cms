@@ -17,19 +17,19 @@
         <div class="flex items-center space-x-2">
             {{-- If the $model is an instance of User Resource, add a button to impersonate the user --}}
             @if ($model instanceof App\Aura\Resources\User)
-                <x-button.transparent route="impersonate" :id="$model->id" >
+                <x-aura::button.transparent route="impersonate" :id="$model->id" >
                     <x-slot:icon>
                         <x-aura::icon class="w-5 h-5 mr-2" icon="user-impersonate" />
                     </x-slot:icon>
                     Impersonate
-                </x-button.transparent>
+                </x-aura::button.transparent>
             @endif
-            <x-button size="lg" wire:click="save">
+            <x-aura::button size="lg" wire:click="save">
                 <div wire:loading>
                     <x-aura::icon.loading />
                 </div>
                 Save
-            </x-button>
+            </x-aura::button>
         </div>
     </div>
 
@@ -54,11 +54,11 @@
             {{-- @dump($this->post) --}}
 
             @foreach($this->editFields as $key => $field)
-            <x-fields.conditions :field="$field" :model="$model">
+            <x-aura::fields.conditions :field="$field" :model="$model">
                 <div wire:key="post-field-{{ $key }}">
                     <x-dynamic-component :component="$field['field']->component" :field="$field" />
                 </div>
-            </x-fields.conditions>
+            </x-aura::fields.conditions>
             @endforeach
 
             @if (count($errors->all()))
@@ -96,12 +96,12 @@
 
             </div>
             <div class="aura-card">
-             <x-button size="xl" wire:click="save">
+             <x-aura::button size="xl" wire:click="save">
                         <div wire:loading>
                             <x-aura::icon.loading  />
                         </div>
                         Save
-                    </x-button>
+                    </x-aura::button>
             </div>
 
         </div> --}}

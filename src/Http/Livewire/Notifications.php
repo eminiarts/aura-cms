@@ -35,7 +35,7 @@ class Notifications extends Component
                  'type' => 'Eminiarts\\Aura\\Fields\\View',
                  'name' => 'Unread',
                  'slug' => 'view-unread',
-                 'view' => 'livewire.notifications-unread',
+                 'view' => 'aura::livewire.notifications-unread',
              ],
              [
                  'type' => 'Eminiarts\\Aura\\Fields\\Tab',
@@ -47,7 +47,7 @@ class Notifications extends Component
                  'type' => 'Eminiarts\\Aura\\Fields\\View',
                  'name' => 'read',
                  'slug' => 'view-unread',
-                 'view' => 'livewire.notifications-read',
+                 'view' => 'aura::livewire.notifications-read',
              ],
          ];
      }

@@ -4,7 +4,7 @@ namespace Eminiarts\Aura\Fields;
 
 class Tabs extends Field
 {
-    public string $component = 'fields.tabs';
+    public string $component = 'aura::fields.tabs';
 
     public bool $group = true;
 

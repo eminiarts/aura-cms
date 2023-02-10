@@ -89,7 +89,7 @@
                 class="w-full py-4"
             >
 
-                <x-aura::dynamic-component :component="$field['field']->component" :field="$field" />
+                <x-dynamic-component :component="$field['field']->component" :field="$field" />
 
             </section>
         </x-aura::fields.conditions>
