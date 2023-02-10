@@ -11,7 +11,7 @@ class PostChart extends TrendWidget
      */
     public $name = 'Total Posts';
 
-    protected static string $view = 'widgets.chart';
+    protected static string $view = 'aura::widgets.chart';
 
     /**
      * Determine for how many minutes the metric should be cached.
