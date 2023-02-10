@@ -1,8 +1,9 @@
 <?php
 
-use Eminiarts\Aura\Http\Livewire\Table\Table;
+use Livewire\Livewire;
 use Eminiarts\Aura\Models\User;
 use Eminiarts\Aura\Resources\Post;
+use Eminiarts\Aura\Http\Livewire\Table\Table;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
@@ -35,7 +36,9 @@ test('table can be rendered', function () {
     $this->assertDatabaseHas('posts', ['title' => 'Test Post']);
 
     // Visit the Post Index Page
-    $this->get(route('aura.post.index', $post->type))->assertSeeLivewire('post.index')->assertSeeLivewire('table.table');
+    $this->get(route('aura.post.index', $post->type))
+    ->assertSeeLivewire('aura::post.index')
+    ->assertSeeLivewire('aura::table.table');
 });
 
 test('table shows all input fields', function () {
