@@ -2,10 +2,10 @@
 
 namespace Eminiarts\Aura\Http\Livewire;
 
-use Eminiarts\Aura\Aura;
-use Eminiarts\Aura\Traits\SaveFields;
-use Illuminate\Support\Str;
 use Livewire\Component;
+use Illuminate\Support\Str;
+use Eminiarts\Aura\Facades\Aura;
+use Eminiarts\Aura\Traits\SaveFields;
 
 class Posttype extends Component
 {
@@ -259,7 +259,7 @@ class Posttype extends Component
     {
         $title = 'Welcome';
 
-        return view('aura::livewire.posttype', compact('title'));
+        return view('aura::livewire.posttype', compact('title'))->layout('aura::components.layout.app');
     }
 
     public function reorder($ids)

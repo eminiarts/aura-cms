@@ -56,7 +56,7 @@ class EditPosttypeField extends Component
 
     public function render()
     {
-        return view('aura::livewire.edit-posttype-field');
+        return view('aura::livewire.edit-posttype-field')->layout('aura::components.layout.app');
     }
 
     public function rules()

@@ -50,21 +50,21 @@
 
             <div class="flex flex-wrap -mx-4">
                 <div class="w-full px-4 mb-0 md:w-1/3">
-                    <x-input.text label="Name" placeholder="Name" value="{{ $postTypeFields['type'] }}" disabled></x-input>
+                    <x-aura::input.text label="Name" placeholder="Name" value="{{ $postTypeFields['type'] }}" disabled></x-aura::input>
                 </div>
 
                 <div class="w-full px-4 mb-0 md:w-1/3">
-                    <x-input.text label="Slug" placeholder="Slug" value="{{ $postTypeFields['slug'] }}" disabled></x-input>
+                    <x-aura::input.text label="Slug" placeholder="Slug" value="{{ $postTypeFields['slug'] }}" disabled></x-aura::input>
                 </div>
 
                 <div class="w-full px-4 mt-4 mb-4 md:w-1/3">
-                    <x-input.toggle label="Show in sidebar" model="true"></x-input>
+                    <x-aura::input.toggle label="Show in sidebar" model="true"></x-aura::input>
                 </div>
 
 
                 <div class="flex items-end w-full px-4 mb-0 md:w-1/3">
                     <div class="flex-1">
-                        <x-input.text label="Icon" placeholder="Icon" wire:model="postTypeFields.icon"></x-input>
+                        <x-aura::input.text label="Icon" placeholder="Icon" wire:model="postTypeFields.icon"></x-aura::input>
                     </div>
 
                     <div class="flex items-center justify-center w-10 h-10 mt-0 ml-2 border border-gray-500/30 rounded-lg shadow-xs">
@@ -151,19 +151,19 @@
                                 </style>
 
                                 <div class="post-field-{{ optional($field)['slug'] }}-wrapper px-2 reorder-item draggable-item" id="field_{{ $field['_id'] }}" wire:key="pt-field-{{ $tab['_id'] }}">
-                                    <x-posttype.show-field :field="$field" :slug="$slug" />
+                                    <x-aura::posttype.show-field :field="$field" :slug="$slug" />
                                 </div>
 
                                 @if ($loop->last)
                                     <div class="w-full px-2">
-                                        <x-posttype.add-field :id="$field['_id']" :slug="$field['slug']" :type="$field['type']" :children="isset($field['fields']) ? count($field['fields']) : 0"/>
+                                        <x-aura::posttype.add-field :id="$field['_id']" :slug="$field['slug']" :type="$field['type']" :children="isset($field['fields']) ? count($field['fields']) : 0"/>
                                     </div>
                                 @endif
                             @endforeach
 
                             @else
                                 <div class="w-full px-2">
-                                    <x-posttype.add-field :id="$tab['_id']" :slug="$tab['slug']" :type="$tab['type']"/>
+                                    <x-aura::posttype.add-field :id="$tab['_id']" :slug="$tab['slug']" :type="$tab['type']"/>
                                 </div>
                             @endif
 
@@ -174,7 +174,7 @@
 {{--                        @dump($this->mappedFields)--}}
 {{--                        @dump($this->all())--}}
                                 <div class="w-full px-2">
-                                    <x-posttype.add-field :id="$field['_id']" :slug="$field['slug']" :type="$field['type']"/>
+                                    <x-aura::posttype.add-field :id="$field['_id']" :slug="$field['slug']" :type="$field['type']"/>
                                 </div>
                     @endif
                 </div>
@@ -206,7 +206,7 @@
                             }
                         </style>
                         <div class="px-2 reorder-item draggable-item post-field-{{ optional($field)['slug'] }}-wrapper" id="field_{{ $field['_id'] }}" wire:key="pt-field-{{ $field['_id'] }}">
-                            <x-posttype.show-field :field="$field" :slug="$slug" />
+                            <x-aura::posttype.show-field :field="$field" :slug="$slug" />
                         </div>
                     @endforeach
                 </div>
@@ -250,7 +250,7 @@
 
     </div>
 
-    <livewire:edit-posttype-field />
+    <livewire:aura::edit-posttype-field />
 
     @once
     @push('scripts')
