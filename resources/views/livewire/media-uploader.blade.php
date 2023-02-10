@@ -91,7 +91,7 @@
                 </div>
             </div>
 
-            <livewire:table.table :model="$post"/>
+            <livewire:aura::table :model="$post"/>
 
             </div>
 

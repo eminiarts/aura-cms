@@ -2,7 +2,7 @@
 
     <div class="">
         <h1>Modal</h1>
-        <livewire:table.table :model="app('App\Aura\Resources\Attachment')"/>
+        <livewire:aura::table :model="app('App\Aura\Resources\Attachment')"/>
     </div>
 
     {{-- Footer with 2 buttons: close and select --}}

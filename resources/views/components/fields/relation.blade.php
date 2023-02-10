@@ -6,7 +6,7 @@
 
   {{-- @dump(app($field['posttype'])) --}}
 
-  <livewire:table.table 
+  <livewire:aura::table 
   :model="app($field['posttype'])" 
   :query="function($query){ return $query->where('email', 'bajram@eminiarts.ch'); }"
   :settings="[

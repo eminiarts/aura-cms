@@ -70,7 +70,7 @@
 
                 <div class="shrink-0">
                     <a href="{{ $row->editUrl() }}">
-                        <x-icon icon="edit" />
+                        <x-aura::icon icon="edit" />
                     </a>
                 </div>
             </div>

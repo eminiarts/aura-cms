@@ -2,13 +2,13 @@
 
 namespace Eminiarts\Aura\Http\Livewire\Post;
 
-use Eminiarts\Aura\Aura;
-use Eminiarts\Aura\Models\Post;
-use Eminiarts\Aura\Traits\InteractsWithFields;
-use Eminiarts\Aura\Traits\RepeaterFields;
-use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
-use Illuminate\Support\Arr;
 use Livewire\Component;
+use Illuminate\Support\Arr;
+use Eminiarts\Aura\Models\Post;
+use Eminiarts\Aura\Facades\Aura;
+use Eminiarts\Aura\Traits\RepeaterFields;
+use Eminiarts\Aura\Traits\InteractsWithFields;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 
 class Create extends Component
 {
@@ -37,7 +37,7 @@ class Create extends Component
     {
         $this->slug = $slug;
 
-        $this->model = app(Aura::class)->findResourceBySlug($slug);
+        $this->model = Aura::findResourceBySlug($slug);
 
         // Authorize
         $this->authorize('create', $this->model);
@@ -69,7 +69,7 @@ class Create extends Component
 
     public function render()
     {
-        return view('aura::livewire.post.create');
+        return view('aura::livewire.post.create')->layout('aura::components.layout.app');
     }
 
     public function rules()
