@@ -358,7 +358,7 @@ $settings = Eminiarts\Aura\Aura::getOption('team-settings');
             @endif
         </div>
 
-        @foreach(app('aura')::getTaxonomies() as $taxonomy)
+        @foreach(Aura::getTaxonomies() as $taxonomy)
             <x-aura::navigation.item-icon route="aura.taxonomy.index" :id="$taxonomy" :tooltip="$taxonomy" :strict="false">
                 <x-aura::icon icon="circle" />
             </x-aura::navigation.item-icon>
