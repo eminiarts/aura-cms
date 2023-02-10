@@ -12,5 +12,5 @@
 
     </div>
 
-    <livewire:table.table :model="$taxonomy" :slug="$slug"/>
+    <livewire:aura::table :model="$taxonomy" :slug="$slug"/>
 </div>

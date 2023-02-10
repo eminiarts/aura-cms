@@ -47,7 +47,7 @@ test('media page can be rendered', function () {
     // Media Uploader
     ->assertSeeLivewire('aura::media-uploader')
     // Media Grid View
-    ->assertSeeLivewire('aura::table.table');
+    ->assertSeeLivewire('aura::table');
 });
 
 test('media uploader', function () {

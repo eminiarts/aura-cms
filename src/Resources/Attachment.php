@@ -153,12 +153,12 @@ class Attachment extends Post
 
     public function tableGridView()
     {
-        return 'attachment.grid';
+        return 'aura::attachment.grid';
     }
 
     public function tableRowView()
     {
-        return 'attachment.row';
+        return 'aura::attachment.row';
     }
 
     public function thumbnail()
