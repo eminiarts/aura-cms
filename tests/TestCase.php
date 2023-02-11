@@ -36,6 +36,9 @@ class TestCase extends Orchestra
     {
         config()->set('database.default', 'testing');
 
+        // without exception handling
+        // $this->withoutExceptionHandling();
+
         $migration = include __DIR__.'/../database/migrations/create_aura_tables.php.stub';
         $migration->up();
         $migration2 = include __DIR__.'/../database/migrations/create_flows_table.php.stub';
