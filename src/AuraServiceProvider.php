@@ -29,6 +29,7 @@ use Livewire\Livewire;
 use Spatie\LaravelPackageTools\Commands\InstallCommand;
 use Spatie\LaravelPackageTools\Package;
 use Spatie\LaravelPackageTools\PackageServiceProvider;
+use Eminiarts\Aura\Http\Livewire\Attachment\Index as AttachmentIndex;
 
 class AuraServiceProvider extends PackageServiceProvider
 {
@@ -121,6 +122,7 @@ class AuraServiceProvider extends PackageServiceProvider
         Livewire::component('aura::edit-posttype-field', EditPosttypeField::class);
         Livewire::component('aura::media-manager', MediaManager::class);
         Livewire::component('aura::media-uploader', MediaUploader::class);
+        Livewire::component('aura::attachment-index', AttachmentIndex::class);
 
         // Flows
         Livewire::component('aura::create-flow', CreateFlow::class);
