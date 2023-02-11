@@ -4,6 +4,7 @@ namespace Eminiarts\Aura;
 
 use Eminiarts\Aura\Commands\AuraCommand;
 use Eminiarts\Aura\Commands\MakeUser;
+use Eminiarts\Aura\Http\Livewire\Attachment\Index as AttachmentIndex;
 use Eminiarts\Aura\Http\Livewire\CreateFlow;
 use Eminiarts\Aura\Http\Livewire\EditOperation;
 use Eminiarts\Aura\Http\Livewire\EditPosttypeField;
@@ -29,7 +30,6 @@ use Livewire\Livewire;
 use Spatie\LaravelPackageTools\Commands\InstallCommand;
 use Spatie\LaravelPackageTools\Package;
 use Spatie\LaravelPackageTools\PackageServiceProvider;
-use Eminiarts\Aura\Http\Livewire\Attachment\Index as AttachmentIndex;
 
 class AuraServiceProvider extends PackageServiceProvider
 {
@@ -92,7 +92,6 @@ class AuraServiceProvider extends PackageServiceProvider
                 }
             });
         });
-
 
         // Register the morph map for the resources
         // $resources = Aura::resources()->mapWithKeys(function ($resource) {

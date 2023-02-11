@@ -3,7 +3,6 @@
 namespace Eminiarts\Aura\Http\Livewire\Post;
 
 use Eminiarts\Aura\Facades\Aura;
-use Illuminate\Contracts\Auth\Access\Gate;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Livewire\Component;
 
