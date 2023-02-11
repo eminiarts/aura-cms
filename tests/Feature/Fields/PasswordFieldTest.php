@@ -115,7 +115,7 @@ test('password field gets not overwritten if saved as null', function () {
     Aura::setModel($model);
 
     // Assert that the mock works
-    $this->assertInstanceOf(PasswordFieldModel::class, app(Aura::class)->findResourceBySlug($slug)->find($post->id));
+    $this->assertInstanceOf(PasswordFieldModel::class, Aura::findResourceBySlug($slug)->find($post->id));
 
     // If we call the edit view, the password field should be empty
     $component = Livewire::test(Edit::class, ['slug' => $slug, 'id' => $post->id])
