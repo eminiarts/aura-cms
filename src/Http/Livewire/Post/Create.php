@@ -39,6 +39,8 @@ class Create extends Component
 
         $this->model = Aura::findResourceBySlug($slug);
 
+        // dd('hier', $this->name());
+
         // Authorize
         $this->authorize('create', $this->model);
 

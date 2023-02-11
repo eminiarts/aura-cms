@@ -92,11 +92,6 @@ class AuraServiceProvider extends PackageServiceProvider
             });
         });
 
-        Livewire::component('app.aura.widgets.post-stats', \Eminiarts\Aura\Widgets\PostStats::class);
-        Livewire::component('app.aura.widgets.total-posts', \Eminiarts\Aura\Widgets\TotalPosts::class);
-        Livewire::component('app.aura.widgets.post-chart', \Eminiarts\Aura\Widgets\PostChart::class);
-        Livewire::component('app.aura.widgets.sum-posts-number', \Eminiarts\Aura\Widgets\SumPostsNumber::class);
-        Livewire::component('app.aura.widgets.avg-posts-number', \Eminiarts\Aura\Widgets\AvgPostsNumber::class);
 
         // Register the morph map for the resources
         // $resources = Aura::resources()->mapWithKeys(function ($resource) {
@@ -110,9 +105,15 @@ class AuraServiceProvider extends PackageServiceProvider
 
     public function bootLivewireComponents()
     {
+        Livewire::component('app.aura.widgets.post-stats', \Eminiarts\Aura\Widgets\PostStats::class);
+        Livewire::component('app.aura.widgets.total-posts', \Eminiarts\Aura\Widgets\TotalPosts::class);
+        Livewire::component('app.aura.widgets.post-chart', \Eminiarts\Aura\Widgets\PostChart::class);
+        Livewire::component('app.aura.widgets.sum-posts-number', \Eminiarts\Aura\Widgets\SumPostsNumber::class);
+        Livewire::component('app.aura.widgets.avg-posts-number', \Eminiarts\Aura\Widgets\AvgPostsNumber::class);
+
         Livewire::component('aura::post-index', Index::class);
         Livewire::component('aura::post-create', Create::class);
-        Livewire::component('aura::post-create', Edit::class);
+        Livewire::component('aura::post-edit', Edit::class);
         Livewire::component('aura::table', Table::class);
         Livewire::component('aura::navigation', Navigation::class);
         Livewire::component('aura::global-search', GlobalSearch::class);
