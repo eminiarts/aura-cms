@@ -249,7 +249,7 @@ class User extends UserModel
             [
                 'name' => '2FA',
                 'type' => 'Eminiarts\\Aura\\Fields\\LivewireComponent',
-                'component' => 'user.two-factor-authentication-form',
+                'component' => 'aura::user-two-factor-authentication-form',
                 'validation' => '',
                 'conditional_logic' => [
                 ],

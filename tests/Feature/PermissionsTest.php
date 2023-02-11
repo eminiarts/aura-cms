@@ -20,8 +20,6 @@ test('a super admin can perform any action', function () {
     // assert the role is a super admin
     $this->assertTrue($r->fields['super_admin']);
 
-    // dd($r);
-
     // Assert name is Super Admin
     $this->assertEquals('Super Admin', $r->title);
 
@@ -228,7 +226,7 @@ test('a admin can access all pages', function () {
     $response->assertStatus(200);
 
     // Can Not Access Edit Page
-    $response = $this->actingAs($user)->get(route('aura.post.edit', ['slug' => $post->type, 'id' => $post->id]));
+    $response = $this->actingAs($user)->get(route('aura.post.edit', ['slug' => $post->type, 'id' =>$post->id]));
 
     // Assert Response
     $response->assertStatus(200);
@@ -279,13 +277,13 @@ test('scoped posts', function () {
     $response->assertStatus(200);
 
     // Can Access Edit Page of Post 1
-    $response = $this->actingAs($user)->get(route('aura.post.edit', ['slug' => $post->type, 'id' => $post->id]));
+    $response = $this->actingAs($user)->get(route('aura.post.edit', ['slug' => $post->type, 'id' =>$post->id]));
 
     // Assert Response
     $response->assertStatus(200);
 
     // Can not access Edit Page of Post 2
-    $response = $this->actingAs($user)->get(route('aura.post.edit', ['slug' => $post2->type, 'id' => $post2->id]));
+    $response = $this->actingAs($user)->get(route('aura.post.edit', ['slug' => $post2->type, 'id' =>$post2->id]));
 
     // Assert Response is unauthorized
     $response->assertStatus(403);
@@ -293,13 +291,13 @@ test('scoped posts', function () {
     // User 2
 
     // Can not access Edit Page of Post 1
-    $response = $this->actingAs($user2)->get(route('aura.post.edit', ['slug' => $post->type, 'id' => $post->id]));
+    $response = $this->actingAs($user2)->get(route('aura.post.edit', ['slug' => $post->type, 'id' =>$post->id]));
 
     // Assert Response
     $response->assertStatus(403);
 
     // User 2 can Edit Post 2
-    $response = $this->actingAs($user2)->get(route('aura.post.edit', ['slug' => $post2->type, 'id' => $post2->id]));
+    $response = $this->actingAs($user2)->get(route('aura.post.edit', ['slug' => $post2->type, 'id' =>$post2->id]));
 
     // Assert Response
     $response->assertStatus(200);
@@ -338,19 +336,19 @@ test('a admin can access users', function () {
     $user->update(['fields' => ['roles' => [$r->id]]]);
 
     // Access Index Page
-    $response = $this->actingAs($this->user)->get(route('aura.post.index', ['slug' => $post->type]));
+    $response = $this->actingAs($this->user)->get(route('aura.post.index', ['slug' => 'User']));
 
     // Assert Response
     $response->assertStatus(200);
 
     // Can Access Create Page
-    $response = $this->actingAs($this->user)->get(route('aura.post.create', ['slug' => $post->type]));
+    $response = $this->actingAs($this->user)->get(route('aura.post.create', ['slug' => 'User']));
 
     // Assert Response
     $response->assertStatus(200);
 
     // Can Access Edit Page
-    $response = $this->actingAs($this->user)->get(route('aura.post.edit', ['slug' => $post->type, 'id' => $post->id]));
+    $response = $this->actingAs($this->user)->get(route('aura.post.edit', ['slug' => 'User', 'id' =>$post->id]));
 
     // Assert Response
     $response->assertStatus(200);

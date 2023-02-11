@@ -157,7 +157,7 @@ class TwoFactorAuthenticationForm extends Component
      */
     public function render()
     {
-        return view('profile.two-factor-authentication-form');
+        return view('aura::profile.two-factor-authentication-form')->layout('aura::components.layout.app');
     }
 
     /**
