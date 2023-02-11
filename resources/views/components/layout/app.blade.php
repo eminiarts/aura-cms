@@ -23,7 +23,7 @@
         @vite(['resources/css/app.css'], 'vendor/aura')
 
         @php
-            $settings = Eminiarts\Aura\Aura::getOption('team-settings');
+            $settings = Eminiarts\Aura\Facades\Aura::getOption('team-settings');
         @endphp
 
         @include('aura::components.layout.colors')
