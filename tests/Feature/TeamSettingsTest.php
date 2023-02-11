@@ -104,7 +104,7 @@ test('Team Settings can be saved', function () {
         ->call('save');
 
     $this->actingAs($this->user)
-        ->get('/team-settings')
+        ->get(route('aura.team.settings'))
         ->assertDontSee('--primary-400: 248 113 113;')
         ->assertSee('--primary-400: 16 185 129;');
 

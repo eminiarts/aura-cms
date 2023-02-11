@@ -41,7 +41,7 @@
             <div
                 class="block w-full overflow-hidden rounded-lg group aspect-w-10 aspect-h-7 bg-gray-50 focus-within:ring-2 focus-within:ring-primary-500 focus-within:ring-offset-2 focus-within:ring-offset-gray-100">
                     
-                        @include('attachment.thumbnail')
+                        @include('aura::attachment.thumbnail')
                     
 
             </div>

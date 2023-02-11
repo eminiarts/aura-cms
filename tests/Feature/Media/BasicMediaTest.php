@@ -43,7 +43,7 @@ test('media page can be rendered', function () {
     // Visit the Attachment Index Page
     $this->get(route('aura.post.index', $attachment->type))
     // Custom Index Page
-    ->assertSeeLivewire('aura::attachment.index')
+    ->assertSeeLivewire('aura::attachment-index')
     // Media Uploader
     ->assertSeeLivewire('aura::media-uploader')
     // Media Grid View

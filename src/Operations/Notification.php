@@ -3,9 +3,10 @@
 namespace Eminiarts\Aura\Operations;
 
 use Eminiarts\Aura\Models\User;
-use Eminiarts\Aura\Resources\Operation;
 use Eminiarts\Aura\Resources\Role;
 use Illuminate\Support\Facades\Blade;
+use Eminiarts\Aura\Resources\Operation;
+use Eminiarts\Aura\Notifications\FlowNotification;
 
 class Notification extends BaseOperation
 {
@@ -92,12 +93,12 @@ class Notification extends BaseOperation
             $users = $role->users;
             // foreach user send the notification
             foreach ($users as $user) {
-                $user->notify(new \App\Notifications\FlowNotification($post, $renderedMessage));
+                $user->notify(new FlowNotification($post, $renderedMessage));
             }
         } else {
             $user = User::find($operation->options['user_id']);
             // Send the notification
-            $user->notify(new \App\Notifications\FlowNotification($post, $renderedMessage));
+            $user->notify(new FlowNotification($post, $renderedMessage));
         }
 
         $operationLog->response = [
