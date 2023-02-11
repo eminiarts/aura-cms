@@ -172,13 +172,13 @@ test('a moderator can access index page', function () {
     $response->assertStatus(200);
 
     // Can Not Access Create Page
-    $response = $this->actingAs($user)->get(route('aura.post.create', $post->type));
+    $response = $this->actingAs($user)->get(route('aura.post.create', ['slug' => $post->type]));
 
     // Assert Response
     $response->assertStatus(403);
 
     // Can Not Access Edit Page
-    $response = $this->actingAs($user)->get(route('aura.post.edit', $post->id));
+    $response = $this->actingAs($user)->get(route('aura.post.edit', ['slug' => $post->type,  'id' => $post->id]));
 
     // Assert Response
     $response->assertStatus(403);
@@ -222,7 +222,7 @@ test('a admin can access all pages', function () {
     $response->assertStatus(200);
 
     // Can Not Access Create Page
-    $response = $this->actingAs($user)->get(route('aura.post.create', $post->type));
+    $response = $this->actingAs($user)->get(route('aura.post.create', ['slug' => $post->type]));
 
     // Assert Response
     $response->assertStatus(200);
@@ -344,7 +344,7 @@ test('a admin can access users', function () {
     $response->assertStatus(200);
 
     // Can Access Create Page
-    $response = $this->actingAs($this->user)->get(route('aura.post.create', $post->type));
+    $response = $this->actingAs($this->user)->get(route('aura.post.create', ['slug' => $post->type]));
 
     // Assert Response
     $response->assertStatus(200);
