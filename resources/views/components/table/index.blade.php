@@ -10,7 +10,7 @@
     {{-- @dump($this->rows->pluck('id')) --}}
 @include('aura::components.table.bulk-select-row')
 
-    <div class="flex flex-aura::col mt-2">
+    <div class="flex flex-col mt-2">
         <div class="min-w-full overflow-hidden overflow-x-aura::auto align-middle border border-gray-400/30 sm:rounded-lg dark:border-gray-700">
             <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700"
             x-aura::data="{

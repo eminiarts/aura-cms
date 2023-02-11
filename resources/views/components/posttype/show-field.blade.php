@@ -12,11 +12,11 @@
 
   @if (optional($field)['field']->group)
     <div class="aura-card">
-      <div class="flex justify-between mb-4 flex-aura::start">
+      <div class="flex justify-between mb-4 flex-start">
         <div class="mt-1 mr-2 draggable-handle">
           <svg class="w-5 h-5 text-gray-500" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M5 9L2 12M2 12L5 15M2 12H22M9 5L12 2M12 2L15 5M12 2V22M15 19L12 22M12 22L9 19M19 9L22 12M22 12L19 15" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
         </div>
-        <div class="flex-aura::1">
+        <div class="flex-1">
           <span class="text-lg font-semibold">{{ $field['name'] }}</span>
           @php
             // split string by / and get last item
@@ -43,7 +43,7 @@
       </div>
 
       @if (isset($field['fields']))
-        <div class="flex flex-aura::wrap items-start -mx-aura::4 draggable-container">
+        <div class="flex flex-wrap items-start -mx-aura::4 draggable-container">
           @foreach($field['fields'] as $key => $f)
             <div
               style="width: {{ optional(optional($f)['style'])['width'] ?? '100' }}%;"
@@ -71,7 +71,7 @@
           @endforeach
         </div>
       @else
-        <div class="flex flex-aura::wrap draggable-container">
+        <div class="flex flex-wrap draggable-container">
           <x-aura::posttype.add-field :id="$field['_id']" :slug="$field['slug']" :type="$field['type']" />
         </div>
       @endif
@@ -84,7 +84,7 @@
             <svg class="w-5 h-5 text-gray-500" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M5 9L2 12M2 12L5 15M2 12H22M9 5L12 2M12 2L15 5M12 2V22M15 19L12 22M12 22L9 19M19 9L22 12M22 12L19 15" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
           </div>
 
-          <div class="flex-aura::1">
+          <div class="flex-1">
               <span class="text-base font-semibold">{{ $field['name'] }}</span>
               @php
                   // split string by / and get last item

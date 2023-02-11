@@ -27,7 +27,7 @@ if($selected) {
     <x-aura::fields.wrapper :field="$field">
         <!-- blade if files isset and count  -->
         @if(isset($files) && count($files) > 0)
-        <div x-aura::data="orderMedia" x-aura::ref="container" data-slug="{{ $field['slug'] }}" class="flex flex-aura::col px-aura::0 mt-0 draggable-container">
+        <div x-aura::data="orderMedia" x-aura::ref="container" data-slug="{{ $field['slug'] }}" class="flex flex-col px-aura::0 mt-0 draggable-container">
             @foreach($files as $file)
             {{-- @dump($file) --}}
             <div class="w-full mb-2 draggable-item"  wire:key="{{ $field['slug'] }}_file_{{ $file->id }}" id="{{ $field['slug'] }}_file_{{ $file->id }}">

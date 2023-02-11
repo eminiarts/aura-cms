@@ -1,9 +1,9 @@
 @props(['heading' => null, 'footer' => null, 'show' => 'rightSidebar'])
 
-<div x-aura::cloak x-aura::show="{{ $show }}" class="flex-aura::shrink-0 w-0 xl:w-96 dark:bg-gray-800">
-    <div x-aura::ref="sidebar" class="fixed top-0 right-0 z-10 flex flex-aura::col flex-aura::shrink-0 h-screen border-l border-gray-400/30 shadow-xl w-96 dark:bg-gray-800 dark:border-gray-700 shadow-gray-400 xl:shadow-none">
+<div x-aura::cloak x-aura::show="{{ $show }}" class="flex-shrink-0 w-0 xl:w-96 dark:bg-gray-800">
+    <div x-aura::ref="sidebar" class="fixed top-0 right-0 z-10 flex flex-col flex-shrink-0 h-screen border-l border-gray-400/30 shadow-xl w-96 dark:bg-gray-800 dark:border-gray-700 shadow-gray-400 xl:shadow-none">
         <div class="absolute bg-primary-25 dark:bg-gray-800 opacity-50 inset-0 z-[-1]"></div>
-        <div class="flex-aura::shrink-0 px-aura::5 h-[4.5rem] flex items-center justify-between border-b border-gray-400/30 dark:border-gray-700">
+        <div class="flex-shrink-0 px-aura::5 h-[4.5rem] flex items-center justify-between border-b border-gray-400/30 dark:border-gray-700">
 
             @if($heading)
             <div {{ $heading->attributes->class(['']) }}>
@@ -20,12 +20,12 @@
             </div>
         </div>
 
-        <div class="flex-aura::1 p-5 overflow-y-auto">
+        <div class="flex-1 p-5 overflow-y-auto">
             {{ $slot }}
         </div>
 
         @if($footer)
-        <footer {{ $footer->attributes->class(['flex-aura::shrink-0 px-aura::5 h-[4.5rem] flex items-center border-t border-white border-opacity-10 dark:border-gray-700']) }}>
+        <footer {{ $footer->attributes->class(['flex-shrink-0 px-aura::5 h-[4.5rem] flex items-center border-t border-white border-opacity-10 dark:border-gray-700']) }}>
             {{ $footer }}
         </footer>
         @endif
