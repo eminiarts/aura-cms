@@ -1,6 +1,6 @@
 <div>
     @php
-        use App\Aura\Resources\Team;
+        use Eminiarts\Aura\Resources\Team;
         $settings = Aura::getOption('team-settings');
         if ($settings) {
             $sidebarType = $settings['sidebar-type'] ?? 'primary';
@@ -20,7 +20,6 @@
     @endphp
 
 
-        <h1>Navigation</h1>
     @foreach(Aura::navigation() as $group => $resources)
 
         @if ($group !== '')
@@ -36,7 +35,7 @@
                 @foreach($resources as $resource)
 
                     @if (isset($resource['dropdown']) && $resource['dropdown'] !== false)
-                        <x-aura::navigation.dropdown route="aura.table">
+                        <x-aura::navigation.dropdown>
                             <x-slot:title>
                                 <div class="{{ $iconClass }}">
 
@@ -90,7 +89,7 @@
 
     @if ($this->isToggled($group))
         @foreach(\Aura::taxonomies() as $taxonomy)
-        <x-aura::navigation.item route="aura.aura.taxonomy.index" :id="$taxonomy" :strict="false">
+        <x-aura::navigation.item route="aura.taxonomy.index" :id="$taxonomy" :strict="false">
             <div class="{{ $iconClass }}">
                 <x-aura::icon icon="circle" />
             </div>

@@ -9,24 +9,24 @@
 --}}
 
 <div
-    x-aura::data="{
+    x-data="{
         messages: [],
         remove(message) {
             this.messages.splice(this.messages.indexOf(message), 1)
         },
     }"
     @notify.window="let message = $event.detail; messages.push(message); setTimeout(() => { remove(message) }, 2500)"
-    class="fixed inset-0 flex flex-col items-end justify-center px-aura::4 py-6 pointer-events-none sm:p-6 sm:justify-start space-y-4"
+    class="fixed inset-0 flex flex-col items-end justify-center px-4 py-6 pointer-events-none sm:p-6 sm:justify-start space-y-4"
 >
     <template x-for="(message, messageIndex) in messages" :key="messageIndex" hidden>
         <div
-            x-aura::transition:enter="transform ease-out duration-300 transition"
-            x-aura::transition:enter-start="translate-y-2 opacity-0 sm:translate-y-0 sm:translate-x-aura::2"
-            x-aura::transition:enter-end="translate-y-0 opacity-100 sm:translate-x-aura::0"
-            x-aura::transition:leave="transition ease-in duration-100"
-            x-aura::transition:leave-start="opacity-100"
-            x-aura::transition:leave-end="opacity-0"
-            class="max-aura::w-sm w-full bg-white shadow-lg rounded-lg pointer-events-auto"
+            x-transition:enter="transform ease-out duration-300 transition"
+            x-transition:enter-start="translate-y-2 opacity-0 sm:translate-y-0 sm:translate-x-2"
+            x-transition:enter-end="translate-y-0 opacity-100 sm:translate-x-0"
+            x-transition:leave="transition ease-in duration-100"
+            x-transition:leave-start="opacity-100"
+            x-transition:leave-end="opacity-0"
+            class="max-w-sm w-full bg-white shadow-lg rounded-lg pointer-events-auto"
         >
             <div class="rounded-lg shadow-xs overflow-hidden">
                 <div class="p-4">
@@ -37,7 +37,7 @@
                             </svg>
                         </div>
                         <div class="ml-3 w-0 flex-1 pt-0.5">
-                            <p x-aura::text="message" class="text-sm leading-5 font-medium text-gray-900"></p>
+                            <p x-text="message" class="text-sm leading-5 font-medium text-gray-900"></p>
                         </div>
                         <div class="ml-4 flex-shrink-0 flex">
                             <button @click="remove(message)" class="inline-flex text-gray-400 focus:outline-none focus:text-gray-500 transition ease-in-out duration-150">

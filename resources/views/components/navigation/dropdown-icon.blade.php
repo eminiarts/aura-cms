@@ -10,17 +10,17 @@
 @dump(Request::fullUrlIs(route($route, $id))) --}}
 
 
-<div x-aura::data="{ active: {{ (Request::fullUrlIs($route ? route($route, $id) : '') ? ' 1' : '0')  }}, compact: {{ $compact ? '1' : '0' }} }" class="">
+<div x-data="{ active: {{ (Request::fullUrlIs($route ? route($route, $id) : '') ? ' 1' : '0')  }}, compact: {{ $compact ? '1' : '0' }} }" class="">
 
-    <div x-aura::data="userDropdown" x-aura::ref="this">
+    <div x-data="userDropdown" x-ref="this">
 
       <button
-          class="flex items-center justify-between w-full px-aura::3 py-2 transition duration-150 ease-in-out rounded"
+          class="flex items-center justify-between w-full px-3 py-2 transition duration-150 ease-in-out rounded"
       >
 
-          <div class="flex items-center ml-0 space-x-aura::3 text-base font-semibold">
+          <div class="flex items-center ml-0 space-x-3 text-base font-semibold">
 
-              <div class="flex items-center ml-0 space-x-aura::3 text-base font-semibold">
+              <div class="flex items-center ml-0 space-x-3 text-base font-semibold">
                 <div class="group-[.is-active]:text-white text-primary-300 group-hover:text-primary-200">
                   {{ $title }}
                 </div>

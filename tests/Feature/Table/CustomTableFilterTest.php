@@ -1,13 +1,14 @@
 <?php
 
-use Eminiarts\Aura\Http\Livewire\Table\Table;
-use Eminiarts\Aura\Models\Scopes\TeamScope;
+use Livewire\Livewire;
 use Eminiarts\Aura\Models\User;
 use Eminiarts\Aura\Resources\Post;
 use Eminiarts\Aura\Traits\CustomTable;
-use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Database\Schema\Blueprint;
+use Eminiarts\Aura\Models\Scopes\TeamScope;
+use Eminiarts\Aura\Http\Livewire\Table\Table;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
 

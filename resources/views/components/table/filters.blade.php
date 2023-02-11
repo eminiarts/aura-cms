@@ -4,7 +4,7 @@
 <div>
     <div>
         {{-- select dropdown with filters @foreach($this->userFilters as $userFilter)--}}
-        <select wire:model="selectedFilter" class="block w-full px-aura::3 py-2 pl-3 pr-10 mt-1 text-base bg-white border-gray-500/30 rounded-lg shadow-xs appearance-none focus:border-primary-300 focus:outline-none ring-gray-900/10 focus:ring focus:ring-primary-300 focus:ring-opacity-50 dark:focus:ring-primary-500 dark:focus:ring-opacity-50 dark:bg-gray-900 dark:border-gray-700 sm:text-sm">
+        <select wire:model="selectedFilter" class="block w-full px-3 py-2 pl-3 pr-10 mt-1 text-base bg-white border-gray-500/30 rounded-lg shadow-xs appearance-none focus:border-primary-300 focus:outline-none ring-gray-900/10 focus:ring focus:ring-primary-300 focus:ring-opacity-50 dark:focus:ring-primary-500 dark:focus:ring-opacity-50 dark:bg-gray-900 dark:border-gray-700 sm:text-sm">
             <option value="">Select a filter</option>
             @foreach($this->userFilters as $name => $userFilter)
             <option value="{{ $name }}">{{ $name }}</option>

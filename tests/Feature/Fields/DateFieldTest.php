@@ -2,7 +2,7 @@
 
 namespace Tests\Feature\Livewire;
 
-use Eminiarts\Aura\Aura;
+use Eminiarts\Aura\Facades\Aura;
 use Eminiarts\Aura\Http\Livewire\Post\Create;
 use Eminiarts\Aura\Http\Livewire\Post\Edit;
 use Eminiarts\Aura\Models\User;
@@ -87,7 +87,7 @@ test('Date Field in View', function () {
     $this->mock(Aura::class)->shouldReceive('findResourceBySlug')->with($slug)->andReturn($model);
 
     $this->actingAs($this->user)
-        ->get('/DateModel/create')
+        ->get('/admin/DateModel/create')
         ->assertOk()
         ->assertSee('Date for Test')
         ->assertSeeLivewire('aura::post.create');

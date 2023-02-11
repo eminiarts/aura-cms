@@ -419,7 +419,7 @@ class TeamSettings extends Component
 
     public function render()
     {
-        return view('aura::livewire.team-settings');
+        return view('aura::livewire.team-settings')->layout('aura::components.layout.app');
     }
 
     public function reorderMedia($slug, $ids)

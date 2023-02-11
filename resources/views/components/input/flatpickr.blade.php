@@ -12,13 +12,13 @@ $options = array_merge([
 
 <div wire:ignore>
     <input
-        x-aura::data="{value: @entangle($attributes->wire('model')), instance: undefined}"
+        x-data="{value: @entangle($attributes->wire('model')), instance: undefined}"
         x-aura::init="() => {
                 $watch('value', value => instance.setDate(value, true));
                 instance = flatpickr($refs.input, {{ json_encode((object)$options) }});
             }"
-        x-aura::ref="input"
-        x-aura::bind:value="value"
+        x-ref="input"
+        x-bind:value="value"
         type="text"
         {{ $attributes->merge(['class' => 'w-full border-gray-500/30 focus:border-cyan-600 focus:ring focus:ring-cyan-600 focus:ring-opacity-50 rounded-md shadow-sm']) }}
     />

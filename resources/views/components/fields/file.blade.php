@@ -27,7 +27,7 @@ if($selected) {
     <x-aura::fields.wrapper :field="$field">
         <!-- blade if files isset and count  -->
         @if(isset($files) && count($files) > 0)
-        <div x-aura::data="orderMedia" x-aura::ref="container" data-slug="{{ $field['slug'] }}" class="flex flex-col px-aura::0 mt-0 draggable-container">
+        <div x-data="orderMedia" x-ref="container" data-slug="{{ $field['slug'] }}" class="flex flex-col px-0 mt-0 draggable-container">
             @foreach($files as $file)
             {{-- @dump($file) --}}
             <div class="w-full mb-2 draggable-item"  wire:key="{{ $field['slug'] }}_file_{{ $file->id }}" id="{{ $field['slug'] }}_file_{{ $file->id }}">
@@ -37,7 +37,7 @@ if($selected) {
                     <div
                     class="flex justify-between w-full overflow-hidden rounded-lg cursor-move draggable-handle group bg-gray-100 p-3 items-start">
 
-                    <div class="flex space-x-aura::3 items-start w-full">
+                    <div class="flex space-x-3 items-start w-full">
                         <div class="w-8 h-8 rounded-full bg-primary-100 flex items-center justify-center text-primary-400 mt-1">
                             @include('attachment.icon', ['class' => 'h-4 w-4', 'attachment' => $file])
                         </div>
@@ -46,7 +46,7 @@ if($selected) {
                             <div class="block text-sm mb-1">
                                 <span class="">{{ $file->title }}</span>
                             </div>
-                            <div class="flex items-center space-x-aura::1 text-xs opacity-50">
+                            <div class="flex items-center space-x-1 text-xs opacity-50">
                                 <div>{{ $file->readable_filesize }}</div>
                                 <span class="opacity-20">•</span>
                                 <div>{{ $file->readable_mime_type }}</div>
@@ -66,7 +66,7 @@ if($selected) {
     </div>
     @endif
 
-    <x-aura::button.light wire:click="$emit('openModal', 'media-manager', {{ json_encode(['slug' => $field['slug'], 'selected' => $selected]) }})">
+    <x-aura::button.light wire:click="$emit('openModal', 'aura::media-manager', {{ json_encode(['slug' => $field['slug'], 'selected' => $selected]) }})">
         <x-slot:icon>
             <x-aura::icon icon="media" class="" />
         </x-slot>

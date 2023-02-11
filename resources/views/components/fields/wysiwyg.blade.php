@@ -1,6 +1,6 @@
 <x-aura::fields.wrapper :field="$field">
     <div
-        x-aura::data="{
+        x-data="{
             init() {
                 let quill = new Quill(this.$refs.quill, { theme: 'snow' })
 
@@ -10,7 +10,7 @@
                 });
             },
         }"
-       x-aura::ref="quill"
+       x-ref="quill"
        wire:ignore
        wire:model.defer="post.fields.{{ optional($field)['slug'] }}"
     >

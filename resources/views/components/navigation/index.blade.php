@@ -22,10 +22,7 @@ $settings = Eminiarts\Aura\Aura::getOption('team-settings');
     }
 @endphp
 
-<h1>NAVIGATION</h1>
-
-
-<div class="flex md:hidden justify-between py-5 px-aura::5
+<div class="flex md:hidden justify-between py-5 px-5
     @if ($sidebarType == 'primary')
         text-white border-white border-opacity-20 bg-primary-700 dark:bg-gray-800 dark:border-gray-700 shadow-gray-400 md:shadow-none
     @elseif ($sidebarType == 'light')
@@ -43,7 +40,7 @@ $settings = Eminiarts\Aura\Aura::getOption('team-settings');
         </svg>
     </div>
   <!-- Button to toggle the sidebar -->
-  <button x-aura::on:click="$store.leftSidebar.toggle()">
+  <button x-on:click="$store.leftSidebar.toggle()">
     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
         <path d="M3 12H15M3 6H21M3 18H21" stroke="currentcolor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
     </svg>
@@ -51,10 +48,10 @@ $settings = Eminiarts\Aura\Aura::getOption('team-settings');
 </div>
 
 <div
-    x-aura::cloak
+    x-cloak
     class="flex-shrink-0 hidden w-0 md:block md:w-72"
 
-    x-aura::bind:class="{
+    x-bind:class="{
         'hidden md:hidden': !$store.leftSidebar.on,
         'block md:block': $store.leftSidebar.on,
     }"
@@ -69,7 +66,7 @@ $settings = Eminiarts\Aura\Aura::getOption('team-settings');
     @endif
   ">
 
-    <div class="flex flex-col flex-1 px-aura::0 pt-0 pb-5 space-y-1 overflow-y-auto scrollbar-thin
+    <div class="flex flex-col flex-1 px-0 pt-0 pb-5 space-y-1 overflow-y-auto scrollbar-thin
         @if ($sidebarType == 'primary')
             scrollbar-thumb-primary-500 scrollbar-track-primary-700 dark:scrollbar-thumb-gray-900 dark:scrollbar-track-gray-800
         @elseif ($sidebarType == 'light')
@@ -79,7 +76,7 @@ $settings = Eminiarts\Aura\Aura::getOption('team-settings');
         @endif
     ">
 
-        <div class="flex flex-col px-aura::5 space-y-1">
+        <div class="flex flex-col px-5 space-y-1">
             <div class="flex-shrink-0 h-[4.5rem] flex items-center justify-between">
             {{-- <h1 class="text-2xl font-semibold">{{ config('app.name') }}</h1> --}}
                 @if ($settings)
@@ -156,7 +153,7 @@ $settings = Eminiarts\Aura\Aura::getOption('team-settings');
             <x-aura::input.text placeholder="Search" @click="$dispatch('search')" class="cursor-pointer"></x-aura::input>
         </div>
 
-        <div class="flex flex-col px-aura::4 space-y-1">
+        <div class="flex flex-col px-4 space-y-1">
 
             {{-- @includeIf('navigation.before') --}}
 
@@ -167,7 +164,7 @@ $settings = Eminiarts\Aura\Aura::getOption('team-settings');
         </div>
         </div>
 
-        <div class="flex-shrink-0 px-aura::5 min-h-[4.5rem] py-2 flex items-center border-t
+        <div class="flex-shrink-0 px-5 min-h-[4.5rem] py-2 flex items-center border-t
             @if ($sidebarType == 'primary')
                 border-white border-opacity-20 dark:border-gray-700
             @elseif ($sidebarType == 'light')
@@ -219,7 +216,7 @@ $settings = Eminiarts\Aura\Aura::getOption('team-settings');
                         </div>
                     </x-slot:title>
                     <div class="w-60 dark:bg-gray-700">
-                        <div class="block px-aura::4 py-2 text-xs text-gray-400 dark:text-gray-500">
+                        <div class="block px-4 py-2 text-xs text-gray-400 dark:text-gray-500">
                             {{ __('Manage Profile') }}
                         </div>
                         <x-aura::dropdown-link href="/profile">
@@ -227,7 +224,7 @@ $settings = Eminiarts\Aura\Aura::getOption('team-settings');
                         </x-aura::dropdown-link>
 
                         <!-- Team Management -->
-                        <div class="block px-aura::4 py-2 text-xs text-gray-400 dark:text-gray-500">
+                        <div class="block px-4 py-2 text-xs text-gray-400 dark:text-gray-500">
                             {{ __('Manage Team') }}
                         </div>
 
@@ -245,7 +242,7 @@ $settings = Eminiarts\Aura\Aura::getOption('team-settings');
                         <div class="my-2 border-t border-gray-100 dark:border-gray-600"></div>
 
                         <!-- Team Switcher -->
-                        <div class="block px-aura::4 py-2 text-xs text-gray-400 dark:text-gray-500">
+                        <div class="block px-4 py-2 text-xs text-gray-400 dark:text-gray-500">
                             {{ __('Switch Teams') }}
                         </div>
 
@@ -274,15 +271,15 @@ $settings = Eminiarts\Aura\Aura::getOption('team-settings');
 </div>
 
 <div
-    x-aura::cloak
-    class="flex-shrink-0 overflow-x-aura::visible md:w-20"
-    x-aura::bind:class="{
+    x-cloak
+    class="flex-shrink-0 overflow-x-visible md:w-20"
+    x-bind:class="{
         'hidden md:block': !$store.leftSidebar.on,
         'hidden': $store.leftSidebar.on,
     }"
 >
   <div class="
-    fixed top-0 left-0 z-10 flex flex-col flex-shrink-0 w-20 h-screen overflow-x-aura::visible  border-r  shadow-xl
+    fixed top-0 left-0 z-10 flex flex-col flex-shrink-0 w-20 h-screen overflow-x-visible  border-r  shadow-xl
 
     @if ($sidebarType == 'primary')
         text-white border-white bg-primary-700 dark:bg-gray-800 border-opacity-20 dark:border-gray-700 shadow-gray-400 md:shadow-none
@@ -293,7 +290,7 @@ $settings = Eminiarts\Aura\Aura::getOption('team-settings');
     @endif
 
     ">
-    <div class="flex-shrink-0 px-aura::5 h-[4.5rem] w-full overflow-x-aura::visible flex items-center">
+    <div class="flex-shrink-0 px-5 h-[4.5rem] w-full overflow-x-visible flex items-center">
         {{-- <h1 class="text-2xl font-semibold">{{ config('app.name') }}</h1> --}}
 
         <div>
@@ -315,7 +312,7 @@ $settings = Eminiarts\Aura\Aura::getOption('team-settings');
 
     </div>
 
-    <div class="flex flex-col items-center flex-1 px-aura::1 pb-5 space-y-1 overflow-x-aura::visible overflow-y-auto scrollbar-thin scrollbar-thumb-primary-500 scrollbar-track-primary-700">
+    <div class="flex flex-col items-center flex-1 px-1 pb-5 space-y-1 overflow-x-visible overflow-y-auto scrollbar-thin scrollbar-thumb-primary-500 scrollbar-track-primary-700">
 
         <x-aura::navigation.item-icon @click="$dispatch('search')" class="cursor-pointer" tooltip="Search">
             <x-aura::icon icon="search" />
@@ -329,7 +326,7 @@ $settings = Eminiarts\Aura\Aura::getOption('team-settings');
         {{-- @foreach(\Eminiarts\Aura\Aura::navigation() as $group => $resources)
 
 
-            <div class="w-full px-aura::2 py-2">
+            <div class="w-full px-2 py-2">
                 @if ($sidebarType == 'primary')
                 <hr class="w-full border-primary-500 dark:border-gray-700">
                 @elseif ($sidebarType == 'light')
@@ -350,7 +347,7 @@ $settings = Eminiarts\Aura\Aura::getOption('team-settings');
         {{-- <x-aura::navigation.heading>
             Taxonomies
         </x-aura::navigation.heading> --}}
-        <div class="w-full px-aura::2 py-2">
+        <div class="w-full px-2 py-2">
             @if ($sidebarType == 'primary')
             <hr class="w-full border-primary-500 dark:border-gray-700">
             @elseif ($sidebarType == 'light')
@@ -370,7 +367,7 @@ $settings = Eminiarts\Aura\Aura::getOption('team-settings');
         {{-- <x-aura::navigation.heading>
             Admin
         </x-aura::navigation.heading> --}}
-        <div class="w-full px-aura::2 py-2">
+        <div class="w-full px-2 py-2">
             @if ($sidebarType == 'primary')
             <hr class="w-full border-primary-500 dark:border-gray-700">
             @elseif ($sidebarType == 'light')
@@ -408,7 +405,7 @@ $settings = Eminiarts\Aura\Aura::getOption('team-settings');
         {{-- <x-aura::navigation.heading>
             Development
         </x-aura::navigation.heading> --}}
-        <div class="w-full px-aura::2 py-2">
+        <div class="w-full px-2 py-2">
             @if ($sidebarType == 'primary')
             <hr class="w-full border-primary-500 dark:border-gray-700">
             @elseif ($sidebarType == 'light')
@@ -444,7 +441,7 @@ $settings = Eminiarts\Aura\Aura::getOption('team-settings');
 
     </div>
 
-    <div class="flex-shrink-0 px-aura::5 h-[4.5rem] flex items-center border-t border-white border-opacity-20 dark:border-gray-700">
+    <div class="flex-shrink-0 px-5 h-[4.5rem] flex items-center border-t border-white border-opacity-20 dark:border-gray-700">
         <x-aura::tippy text="{{ Auth::user()->name }}" position="right">
             <img class="inline-block rounded-full h-9 w-9" src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80" alt="">
         </x-aura::tippy>
