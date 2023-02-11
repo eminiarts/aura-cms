@@ -78,7 +78,17 @@ test('Date Field in View', function () {
 
     $slug = 'DateModel';
 
+    // Aura::shouldReceive('getOption')->shouldReceive('navigation');
+
     Aura::shouldReceive('findResourceBySlug')->with($slug)->andReturn($model);
+
+
+    // $mock = $this->mock(Aura::class, function ($mock) use ($model) {
+    //     $mock->shouldReceive('findResourceBySlug')
+    //          ->once()
+    //          ->andReturn($model);
+    // });
+
 
     $this->actingAs($this->user)
         ->get('/admin/DateModel/create')
