@@ -41,7 +41,6 @@ class DateFieldModel extends Post
 test('Date Field in Livewire Component', function () {
     createSuperAdmin();
 
-    // Show all exceptions
     // $this->withoutExceptionHandling();
 
     $model = new DateFieldModel();
@@ -77,14 +76,9 @@ test('Date Field in View', function () {
 
     $model = new DateFieldModel();
 
-    // Mock Aura::findResourceBySlug($slug) and return $model
     $slug = 'DateModel';
 
-    // Bind the mock to the container
-    // $this->app->bind(Aura::class, AuraTest::class);
-
-    // Mock Aura::findResourceBySlug($slug) and return $model
-    $this->mock(Aura::class)->shouldReceive('findResourceBySlug')->with($slug)->andReturn($model);
+    Aura::shouldReceive('findResourceBySlug')->with($slug)->andReturn($model);
 
     $this->actingAs($this->user)
         ->get('/admin/DateModel/create')
@@ -93,7 +87,6 @@ test('Date Field in View', function () {
         ->assertSeeLivewire('aura::post.create');
 
     // $a = Aura::findResourceBySlug('DateModel');
-    // dd($a);
     // $editComponent = Livewire::test(Edit::class, ['slug' => 'Post', 'id' => $dateModel->id])
     //     ->call('setModel', $model)
     //     ->assertSee('Edit')
