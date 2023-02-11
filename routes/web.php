@@ -9,6 +9,8 @@ use Eminiarts\Aura\Http\Livewire\Post\Index;
 use Eminiarts\Aura\Http\Livewire\Posttype;
 use Eminiarts\Aura\Http\Livewire\Taxonomy\Edit as TaxonomyEdit;
 use Eminiarts\Aura\Http\Livewire\Taxonomy\Index as TaxonomyIndex;
+use Eminiarts\Aura\Http\Livewire\Attachment\Index as AttachmentIndex;
+
 use Eminiarts\Aura\Http\Livewire\TeamSettings;
 use Illuminate\Support\Facades\Route;
 
@@ -31,8 +33,10 @@ Route::domain(config('aura.domain'))
         });
 
         Route::prefix(config('aura.path'))->group(function () {
+            Route::impersonate();
+
             Route::get('/', function () {
-                return 'aura.dashboard coming soon';
+                return view('dashboard');
             })->name('dashboard');
 
 
@@ -49,6 +53,10 @@ Route::domain(config('aura.domain'))
             Route::get('/taxonomies/{slug}', TaxonomyIndex::class)->name('taxonomy.index');
             Route::get('/taxonomies/{slug}/{id}/edit', TaxonomyEdit::class)->name('taxonomy.edit');
             // Route::get('/taxonomies/{slug}/{id}', TaxonomyEdit::class)->name('taxonomy.edit');
+
+            Route::get('/Attachment', AttachmentIndex::class)->name('attachment.index');
+
+
             Route::get('/{slug}', Index::class)->name('post.index');
             Route::get('/{slug}/create', Create::class)->name('post.create');
             Route::get('/{slug}/{id}/edit', Edit::class)->name('post.edit');

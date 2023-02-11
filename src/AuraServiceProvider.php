@@ -7,6 +7,7 @@ use Eminiarts\Aura\Commands\MakeUser;
 use Eminiarts\Aura\Http\Livewire\EditPosttypeField;
 use Eminiarts\Aura\Http\Livewire\GlobalSearch;
 use Eminiarts\Aura\Http\Livewire\MediaManager;
+use Eminiarts\Aura\Http\Livewire\MediaUploader;
 use Eminiarts\Aura\Http\Livewire\Navigation;
 use Eminiarts\Aura\Http\Livewire\Notifications;
 use Eminiarts\Aura\Http\Livewire\Post\Create;
@@ -116,6 +117,7 @@ class AuraServiceProvider extends PackageServiceProvider
         Livewire::component('aura::notifications', Notifications::class);
         Livewire::component('aura::edit-posttype-field', EditPosttypeField::class);
         Livewire::component('aura::media-manager', MediaManager::class);
+        Livewire::component('aura::media-uploader', MediaUploader::class);
 
         return $this;
     }
