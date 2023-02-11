@@ -49,7 +49,7 @@ class Flow extends Post
             [
                 'name' => 'CreateFlow',
                 'type' => 'Eminiarts\\Aura\\Fields\\LivewireComponent',
-                'component' => 'create-flow',
+                'component' => 'aura::create-flow',
                 'create' => false,
                 'on_index' => false,
                 'validation' => '',
