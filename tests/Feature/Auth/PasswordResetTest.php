@@ -14,6 +14,9 @@ class PasswordResetTest extends TestCase
 
     public function test_password_can_be_reset_with_valid_token()
     {
+        // Set the user model in auth config to use the one from the package
+        config(['auth.providers.users.model' => User::class]);
+
         Notification::fake();
 
         $user = User::factory()->create();
@@ -36,6 +39,9 @@ class PasswordResetTest extends TestCase
 
     public function test_reset_password_link_can_be_requested()
     {
+        // Set the user model in auth config to use the one from the package
+        config(['auth.providers.users.model' => User::class]);
+
         Notification::fake();
 
         $user = User::factory()->create();

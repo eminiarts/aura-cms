@@ -1,18 +1,18 @@
-<x-aura::guest-layout>
+<x-aura::layout.guest>
     <form method="POST" action="{{ route('register') }}">
         @csrf
 
         <!-- Name -->
         <div>
             <x-aura::input-label for="name" :value="__('Name')" />
-            <x-text-input id="name" class="block mt-1 w-full" type="text" name="name" :value="old('name')" required autofocus />
+            <x-aura::text-input id="name" class="block mt-1 w-full" type="text" name="name" :value="old('name')" required autofocus />
             <x-aura::input-error :messages="$errors->get('name')" class="mt-2" />
         </div>
 
         <!-- Email Address -->
         <div class="mt-4">
             <x-aura::input-label for="email" :value="__('Email')" />
-            <x-text-input id="email" class="block mt-1 w-full" type="email" name="email" :value="old('email')" required />
+            <x-aura::text-input id="email" class="block mt-1 w-full" type="email" name="email" :value="old('email')" required />
             <x-aura::input-error :messages="$errors->get('email')" class="mt-2" />
         </div>
 
@@ -20,7 +20,7 @@
         <div class="mt-4">
             <x-aura::input-label for="password" :value="__('Password')" />
 
-            <x-text-input id="password" class="block mt-1 w-full"
+            <x-aura::text-input id="password" class="block mt-1 w-full"
                             type="password"
                             name="password"
                             required autocomplete="new-password" />
@@ -32,7 +32,7 @@
         <div class="mt-4">
             <x-aura::input-label for="password_confirmation" :value="__('Confirm Password')" />
 
-            <x-text-input id="password_confirmation" class="block mt-1 w-full"
+            <x-aura::text-input id="password_confirmation" class="block mt-1 w-full"
                             type="password"
                             name="password_confirmation" required />
 
@@ -49,4 +49,4 @@
             </x-aura::primary-button>
         </div>
     </form>
-</x-aura::guest-layout>
+</x-aura::layout.guest>
