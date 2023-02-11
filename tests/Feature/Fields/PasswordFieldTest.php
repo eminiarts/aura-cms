@@ -2,16 +2,16 @@
 
 namespace Tests\Feature\Livewire;
 
-use Eminiarts\Aura\Aura;
-use Eminiarts\Aura\Http\Livewire\Post\Create;
-use Eminiarts\Aura\Http\Livewire\Post\Edit;
+use Livewire\Livewire;
+use Eminiarts\AuraTest;
 use Eminiarts\Aura\Models\User;
+use Eminiarts\Aura\Facades\Aura;
 use Eminiarts\Aura\Resources\Post;
 use Eminiarts\Aura\Resources\Team;
-use Eminiarts\AuraTest;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
-use Livewire\Livewire;
+use Eminiarts\Aura\Http\Livewire\Post\Edit;
+use Eminiarts\Aura\Http\Livewire\Post\Create;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 
 // Refresh Database on every test
 uses(RefreshDatabase::class);
@@ -111,11 +111,8 @@ test('password field gets not overwritten if saved as null', function () {
     $model = PasswordFieldModel::query();
     $slug = 'PasswordModel';
 
-    // Mock the Aura::class
-    // $this->app->bind(Aura::class, AuraTest::class);
-
-    // Mock the findResourceBySlug method
-    $this->mock(Aura::class)->shouldReceive('findResourceBySlug')->with($slug)->andReturn($model);
+    Aura::fake();
+    Aura::setModel($model);
 
     // Assert that the mock works
     $this->assertInstanceOf(PasswordFieldModel::class, app(Aura::class)->findResourceBySlug($slug)->find($post->id));

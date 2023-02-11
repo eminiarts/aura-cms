@@ -2,14 +2,14 @@
 
 namespace Tests\Feature\Livewire;
 
-use Eminiarts\Aura\Aura;
-use Eminiarts\Aura\Http\Livewire\Post\Create;
-use Eminiarts\Aura\Http\Livewire\Post\Edit;
+use Livewire\Livewire;
 use Eminiarts\Aura\Models\User;
+use Eminiarts\Aura\Facades\Aura;
 use Eminiarts\Aura\Resources\Post;
 use Eminiarts\Aura\Resources\Team;
+use Eminiarts\Aura\Http\Livewire\Post\Edit;
+use Eminiarts\Aura\Http\Livewire\Post\Create;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Livewire\Livewire;
 
 // Refresh Database on every test
 uses(RefreshDatabase::class);
@@ -88,11 +88,10 @@ test('Slug Field Test', function () {
     // Assert that $post->fields['slug'] is 'custom-slug'
     $this->assertEquals('custom-title', $post->fields['slug']);
 
-    // Mock the findResourceBySlug method
-    $this->mock(Aura::class)->shouldReceive('findResourceBySlug')->with('SlugModel')->andReturn(SlugFieldModel::query());
+    Aura::fake();
+    Aura::setModel($model);
 
-    // Assert that the mock works
-    $this->assertInstanceOf(SlugFieldModel::class, app(Aura::class)->findResourceBySlug('SlugModel')->find($post->id));
+    $this->assertInstanceOf(SlugFieldModel::class, Aura::findResourceBySlug('SlugModel')->find($post->id));
 
     // If we call the edit view, the password field should be empty
     $component = Livewire::test(Edit::class, ['slug' => 'SlugModel', 'id' => $post->id])
