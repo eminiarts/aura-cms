@@ -1,7 +1,10 @@
 <div>
     @php
         use Eminiarts\Aura\Resources\Team;
+        use Eminiarts\Aura\Facades\Aura;
+
         $settings = Aura::getOption('team-settings');
+
         if ($settings) {
             $sidebarType = $settings['sidebar-type'] ?? 'primary';
         } else {

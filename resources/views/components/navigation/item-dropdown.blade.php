@@ -7,7 +7,7 @@
 ])
 
 @php
-$settings = Eminiarts\Aura\Aura::getOption('team-settings');
+$settings = Eminiarts\Aura\Facades\Aura::getOption('team-settings');
 @endphp
 
 @php

@@ -46,9 +46,8 @@ class Aura
         return app('Eminiarts\Aura\Templates\\'.str($slug)->title);
     }
 
-    public static function getOption($name)
+    public function getOption($name)
     {
-        // dd(auth()->user()->current_team_id . '.aura.team-settings');
         return Cache::remember(auth()->user()->current_team_id.'.aura.team-settings', now()->addHour(), function () {
             $option = Option::where('name', 'team-settings')->first();
 
