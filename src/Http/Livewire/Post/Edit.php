@@ -44,6 +44,9 @@ class Edit extends Component
     public function mount($slug, $id)
     {
         $this->slug = $slug;
+
+        // dd($slug);
+
         $this->model = Aura::findResourceBySlug($slug)->find($id);
 
         // Authorize

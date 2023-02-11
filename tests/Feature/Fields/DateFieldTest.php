@@ -7,6 +7,7 @@ use Eminiarts\Aura\Http\Livewire\Post\Create;
 use Eminiarts\Aura\Http\Livewire\Post\Edit;
 use Eminiarts\Aura\Models\User;
 use Eminiarts\Aura\Resources\Post;
+use Eminiarts\AuraTest;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
 
@@ -75,17 +76,8 @@ test('Date Field in View', function () {
 
     $model = new DateFieldModel();
 
-    $slug = 'DateModel';
-
-    // Aura::shouldReceive('getOption')->shouldReceive('navigation');
-
-    Aura::shouldReceive('findResourceBySlug')->with($slug)->andReturn($model);
-
-    // $mock = $this->mock(Aura::class, function ($mock) use ($model) {
-    //     $mock->shouldReceive('findResourceBySlug')
-    //          ->once()
-    //          ->andReturn($model);
-    // });
+    Aura::fake();
+    Aura::setModel($model);
 
     $this->actingAs($this->user)
         ->get('/admin/DateModel/create')
