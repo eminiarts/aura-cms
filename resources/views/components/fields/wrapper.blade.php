@@ -1,6 +1,6 @@
 @props([
 'field',
-'wrapperClass' => 'px-aura::4',
+'wrapperClass' => 'px-4',
 'showLabel' => true,
 ])
 
@@ -18,7 +18,7 @@
     width: {{ optional(optional($field)['style'])['width'] ?? '100' }}%;
   }
 
-  @media screen and (max-aura::width: 768px) {
+  @media screen and (max-width: 768px) {
     #post-field-{{ $slug }}-wrapper {
       width: 100%;
     }

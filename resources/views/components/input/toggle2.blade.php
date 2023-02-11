@@ -6,14 +6,14 @@
 
 <!-- Toggle -->
 <div
-    x-aura::data="{
+    x-data="{
         value: @entangle($attributes->wire('model')),
         toggle() {
             this.value = !this.value;
         }
     }"
     class="flex items-center"
-    x-aura::id="['toggle-label']"
+    x-id="['toggle-label']"
 >
 
     <input
@@ -32,17 +32,17 @@
 
     <!-- Button -->
     <button
-        x-aura::ref="toggle"
+        x-ref="toggle"
         @click="toggle()"
         type="button"
         role="switch"
         :aria-checked="value"
         :aria-labelledby="$id('toggle-label')"
         :class="value ? 'bg-primary-600 border border-white' : 'bg-gray-300 shadow-inner border border-gray-500/30'"
-        class="ml-4 relative w-14 py-1 px-aura::0 inline-flex rounded-full"
+        class="ml-4 relative w-14 py-1 px-0 inline-flex rounded-full"
     >
         <span
-            :class="value ? 'bg-white translate-x-aura::6' : 'bg-white translate-x-aura::1'"
+            :class="value ? 'bg-white translate-x-6' : 'bg-white translate-x-1'"
             class="w-6 h-6 rounded-full transition"
             aria-hidden="true"
         ></span>

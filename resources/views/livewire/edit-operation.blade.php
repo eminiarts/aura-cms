@@ -1,5 +1,5 @@
 @php
-  use App\Aura\Resources\Operation;
+  use Eminiarts\Aura\Resources\Operation;
 @endphp
 <x-aura::slide-over key="edit-operation" wire:key="editOperation" >
   <div x-data="{

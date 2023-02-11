@@ -95,7 +95,7 @@ test('Team Settings can be saved', function () {
 
     // acting as $this->user, get team-settings page and assertSee "--primary-400: #f87171;" in html
     $this->actingAs($this->user)
-        ->get('/team-settings')
+        ->get(route('aura.team.settings'))
         ->assertSee('--primary-400: 248 113 113;');
 
     // Default Team Settings
@@ -112,7 +112,7 @@ test('Team Settings can be saved', function () {
     $this->user->switchTeam($secondTeam);
 
     $this->actingAs($this->user)
-        ->get('/team-settings')
+        ->get(route('aura.team.settings'))
         ->assertSee('--primary-400: 82 139 255;');
 
     // assert DB has 1 record in options table
@@ -122,7 +122,7 @@ test('Team Settings can be saved', function () {
     $this->user->switchTeam($firstTeam);
 
     $this->actingAs($this->user)
-        ->get('/team-settings')
+        ->get(route('aura.team.settings'))
         ->assertSee('--primary-400: 16 185 129;')
         ->assertDontSee('--primary-400: 248 113 113;')
         ->assertDontSee('--primary-400: 82 139 255;');

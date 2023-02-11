@@ -24,7 +24,7 @@
             // get last item of array as string
             $field['type'] = end($field['type']);
           @endphp
-          <span class="inline-flex items-center rounded-full bg-primary-100 px-aura::2.5 py-0.5 text-xs font-medium text-primary-800">
+          <span class="inline-flex items-center rounded-full bg-primary-100 px-2.5 py-0.5 text-xs font-medium text-primary-800">
             <svg class="-ml-0.5 mr-1.5 h-2 w-2 text-primary-400" fill="currentColor" viewBox="0 0 8 8">
             <circle cx="4" cy="4" r="3" />
             </svg>
@@ -43,27 +43,27 @@
       </div>
 
       @if (isset($field['fields']))
-        <div class="flex flex-wrap items-start -mx-aura::4 draggable-container">
+        <div class="flex flex-wrap items-start -mx-4 draggable-container">
           @foreach($field['fields'] as $key => $f)
             <div
               style="width: {{ optional(optional($f)['style'])['width'] ?? '100' }}%;"
               id="field_{{ optional($f)['_id'] }}"
-              class="px-aura::4 reorder-item draggable-item"
+              class="px-4 reorder-item draggable-item"
             >
               <x-aura::posttype.show-field :field="$f" :slug="$slug" />
             </div>
             @if ($loop->last)
-              @if ($f['type'] == 'App\Aura\Fields\Repeater')
-              @elseif ($f['type'] == 'App\Aura\Fields\Tab')
-                <div class="w-full px-aura::4">
+              @if ($f['type'] == 'Eminiarts\Aura\Fields\Repeater')
+              @elseif ($f['type'] == 'Eminiarts\Aura\Fields\Tab')
+                <div class="w-full px-4">
                   <x-aura::posttype.add-field :id="$f['_id']" :slug="$f['slug']" :type="$f['type']" :children="isset($f['fields']) ? count($f['fields']) : 0"/>
                 </div>
-              @elseif ($f['type'] == 'App\Aura\Fields\Panel')
-                <div class="w-full px-aura::4">
+              @elseif ($f['type'] == 'Eminiarts\Aura\Fields\Panel')
+                <div class="w-full px-4">
                   <x-aura::posttype.add-field :id="$f['_id']" :slug="$f['slug']" :type="$f['type']" />
                 </div>
               @else
-                <div class="w-full px-aura::4">
+                <div class="w-full px-4">
                   <x-aura::posttype.add-field :id="$f['_id']" :slug="$f['slug']" :type="$f['type']" />
                 </div>
               @endif
@@ -93,7 +93,7 @@
                   $field['type'] = end($field['type']);
               @endphp
 
-              <span class="inline-flex items-center rounded-full bg-primary-100 px-aura::2.5 py-0.5 text-xs font-medium text-primary-800">
+              <span class="inline-flex items-center rounded-full bg-primary-100 px-2.5 py-0.5 text-xs font-medium text-primary-800">
                   <svg class="-ml-0.5 mr-1.5 h-2 w-2 text-primary-400" fill="currentColor" viewBox="0 0 8 8">
                   <circle cx="4" cy="4" r="3" />
                   </svg>
@@ -101,7 +101,7 @@
               </span>
           </div>
 
-          <div class="flex space-x-aura::2">
+          <div class="flex space-x-2">
               <x-aura::tippy text="Duplicate">
                 <x-aura::button.border size="xs" wire:click="duplicateField({{ $field['_id'] }}, '{{ $field['slug'] }}')">
                   <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">

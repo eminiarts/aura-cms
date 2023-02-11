@@ -8,10 +8,10 @@
 
 <span
     {{ $attributes->wire('then') }}
-    x-aura::data
-    x-aura::ref="span"
-    x-aura::on:click="$wire.startConfirmingPassword('{{ $confirmableId }}')"
-    x-aura::on:password-confirmed.window="setTimeout(() => $event.detail.id === '{{ $confirmableId }}' && $refs.span.dispatchEvent(new CustomEvent('then', { bubbles: false })), 250);"
+    x-data
+    x-ref="span"
+    x-on:click="$wire.startConfirmingPassword('{{ $confirmableId }}')"
+    x-on:password-confirmed.window="setTimeout(() => $event.detail.id === '{{ $confirmableId }}' && $refs.span.dispatchEvent(new CustomEvent('then', { bubbles: false })), 250);"
 >
     {{ $slot }}
 </span>
@@ -26,9 +26,9 @@
 
         {{ $content }}
 
-        <div class="mt-4" x-aura::data="{}" x-aura::on:confirming-password.window="setTimeout(() => $refs.confirmable_password.focus(), 250)">
+        <div class="mt-4" x-data="{}" x-on:confirming-password.window="setTimeout(() => $refs.confirmable_password.focus(), 250)">
             <x-aura::input type="password" class="mt-1 block w-3/4" placeholder="{{ __('Password') }}"
-                        x-aura::ref="confirmable_password"
+                        x-ref="confirmable_password"
                         wire:model.defer="confirmablePassword"
                         wire:keydown.enter="confirmPassword" />
 

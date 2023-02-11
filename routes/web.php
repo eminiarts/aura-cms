@@ -35,13 +35,6 @@ Route::domain(config('aura.domain'))
                 return 'aura.dashboard coming soon';
             })->name('dashboard');
 
-            Route::get('/posttypes/{slug}', Posttype::class)->name('posttype.edit');
-            Route::get('/taxonomies/{slug}', TaxonomyIndex::class)->name('taxonomy.index');
-            Route::get('/taxonomies/{slug}/{id}/edit', TaxonomyEdit::class)->name('taxonomy.edit');
-            // Route::get('/taxonomies/{slug}/{id}', TaxonomyEdit::class)->name('taxonomy.edit');
-            Route::get('/{slug}', Index::class)->name('post.index');
-            Route::get('/{slug}/create', Create::class)->name('post.create');
-            Route::get('/{slug}/{id}/edit', Edit::class)->name('post.edit');
 
             Route::get('/team-settings', TeamSettings::class)->name('team.settings');
             Route::get('/aura-config', AuraConfig::class)->name('aura.config');
@@ -50,6 +43,15 @@ Route::domain(config('aura.domain'))
 
             Route::get('/flows', CreateFlow::class)->name('flows.create');
             Route::get('/flows/{id}', CreateFlow::class)->name('flows.edit');
+
+
+            Route::get('/posttypes/{slug}', Posttype::class)->name('posttype.edit');
+            Route::get('/taxonomies/{slug}', TaxonomyIndex::class)->name('taxonomy.index');
+            Route::get('/taxonomies/{slug}/{id}/edit', TaxonomyEdit::class)->name('taxonomy.edit');
+            // Route::get('/taxonomies/{slug}/{id}', TaxonomyEdit::class)->name('taxonomy.edit');
+            Route::get('/{slug}', Index::class)->name('post.index');
+            Route::get('/{slug}/create', Create::class)->name('post.create');
+            Route::get('/{slug}/{id}/edit', Edit::class)->name('post.edit');
 
             // if ($loginPage = config('aura.auth.pages.login')) {
             //     Route::get('/login', $loginPage)->name('auth.login');

@@ -81,7 +81,7 @@
     <body class="overflow-hidden antialiased text-gray-800 bg-white dark:bg-gray-900 dark:text-gray-200">
 
         <div
-            x-aura::data="aura"
+            x-data="aura"
             @keydown.window.slash="$dispatch('search')"
             @keydown.window.prevent.cmd.k="$dispatch('search')"
             @keydown.window.escape="closeSearch()"
@@ -99,7 +99,7 @@
                     <div class="p-5 md:p-8">
                         {{ $slot }}
                     </div>
-                    <div class="flex justify-end px-aura::8 pb-8">
+                    <div class="flex justify-end px-8 pb-8">
                         <div class="flex flex-col text-gray-200 dark:text-gray-700">
                                 <a href="https://auracms.com/" target="_blank">
                                     <svg width="123" height="24" viewBox="0 0 123 24" fill="none" xmlns="http://www.w3.org/2000/svg">

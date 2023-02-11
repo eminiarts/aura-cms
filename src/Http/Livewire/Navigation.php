@@ -39,6 +39,5 @@ class Navigation extends Component
         }
 
         auth()->user()->updateOption('sidebar', $this->toggledGroups);
-        ray($this->toggledGroups);
     }
 }

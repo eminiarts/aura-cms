@@ -15,7 +15,7 @@ $values = app($field['posttype'])->pluck('title', 'id')->map(fn($name, $key) => 
 <div
     wire:ignore
     class="w-full"
-    x-aura::data="{
+    x-data="{
         value: $wire.entangle('post.fields.{{ $field['slug'] }}').defer,
         items: {{ Js::from($values) }},
 
@@ -47,24 +47,24 @@ $values = app($field['posttype'])->pluck('title', 'id')->map(fn($name, $key) => 
     }"
 >
     <div
-        x-aura::listbox
+        x-listbox
         multiple
-        x-aura::model="value"
+        x-model="value"
         class="relative w-full p-0 bg-transparent border-0"
     >
-        <label x-aura::listbox:label class="sr-only">Select Item</label>
+        <label x-listbox:label class="sr-only">Select Item</label>
 
         <button
-            x-aura::listbox:button
-            class="relative flex items-center justify-between w-full px-aura::3 py-2 border border-gray-500/30 rounded-lg shadow-xs appearance-none focus:border-primary-300 focus:outline-none ring-gray-900/10 focus:ring focus:ring-primary-300 focus:ring-opacity-50 dark:focus:ring-primary-500 dark:focus:ring-opacity-50 dark:bg-gray-900 dark:border-gray-700"
+            x-listbox:button
+            class="relative flex items-center justify-between w-full px-3 py-2 border border-gray-500/30 rounded-lg shadow-xs appearance-none focus:border-primary-300 focus:outline-none ring-gray-900/10 focus:ring focus:ring-primary-300 focus:ring-opacity-50 dark:focus:ring-primary-500 dark:focus:ring-opacity-50 dark:bg-gray-900 dark:border-gray-700"
         >
-            <template x-aura::if="value && value.length > 0">
+            <template x-if="value && value.length > 0">
                 <div class="flex flex-wrap">
                     <template x-for="item in value" :key="item">
-                        <div class="inline-flex items-center gap-1 px-aura::2 py-0.5 mr-2 mb-2 rounded-full text-xs font-medium leading-4 bg-primary-100 text-primary-800">
+                        <div class="inline-flex items-center gap-1 px-2 py-0.5 mr-2 mb-2 rounded-full text-xs font-medium leading-4 bg-primary-100 text-primary-800">
                             <span
                                 class=""
-                                x-aura::text="findItem(item)"
+                                x-text="findItem(item)"
                             ></span>
 
                             <!-- Small x svg -->
@@ -81,7 +81,7 @@ $values = app($field['posttype'])->pluck('title', 'id')->map(fn($name, $key) => 
                 </div>
             </template>
 
-            <template x-aura::if="!value || value.length == 0">
+            <template x-if="!value || value.length == 0">
                 <span class="text-gray-400">Select Item</span>
             </template>
 
@@ -93,37 +93,37 @@ $values = app($field['posttype'])->pluck('title', 'id')->map(fn($name, $key) => 
 
 
         <ul
-            x-aura::listbox:options
-            x-aura::transition.origin.top
-            x-aura::cloak
-            class="absolute left-0 z-10 w-full mt-2 overflow-y-auto origin-top bg-white border border-gray-500/30 divide-y divide-gray-100 rounded-md shadow-md outline-none dark:border-gray-700 dark:bg-gray-900 dark:divide-gray-800 max-aura::h-64"
+            x-listbox:options
+            x-transition.origin.top
+            x-cloak
+            class="absolute left-0 z-10 w-full mt-2 overflow-y-auto origin-top bg-white border border-gray-500/30 divide-y divide-gray-100 rounded-md shadow-md outline-none dark:border-gray-700 dark:bg-gray-900 dark:divide-gray-800 max-h-64"
         >
 {{--          <li>--}}
 {{--            <div>--}}
 {{--              <input--}}
-{{--                x-aura::model="search"--}}
+{{--                x-model="search"--}}
 {{--                autofocus--}}
-{{--                class="w-full px-aura::4 py-2.5 text-gray-900 placeholder-gray-500 border-none focus:outline-none"--}}
+{{--                class="w-full px-4 py-2.5 text-gray-900 placeholder-gray-500 border-none focus:outline-none"--}}
 {{--                placeholder="Search..." />--}}
 {{--            </div>--}}
 {{--          </li>--}}
             <template x-for="item in filteredItems" :key="item.value">
                 <li
-                    x-aura::listbox:option
+                    x-listbox:option
                     :value="item.value"
                     :class="{
                         'bg-primary-50 text-gray-900': $listboxOption.isActive,
                         'text-gray-600': ! $listboxOption.isActive,
                         'opacity-50 cursor-not-allowed': $listboxOption.isDisabled,
                     }"
-                    class="flex items-center justify-between w-full gap-2 px-aura::4 py-2 text-sm transition-colors cursor-pointer"
+                    class="flex items-center justify-between w-full gap-2 px-4 py-2 text-sm transition-colors cursor-pointer"
                 >
-                    <div class="flex items-center space-x-aura::2">
+                    <div class="flex items-center space-x-2">
                     <div>
-                      <span x-aura::text="item.label" class="font-semibold"></span>
+                      <span x-text="item.label" class="font-semibold"></span>
                     </div>
 
-                    <span x-aura::show="$listboxOption.isSelected" class="font-semibold text-cyan-600">&check;</span>
+                    <span x-show="$listboxOption.isSelected" class="font-semibold text-cyan-600">&check;</span>
                     </div>
                 </li>
             </template>

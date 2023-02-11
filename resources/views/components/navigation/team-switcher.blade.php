@@ -20,11 +20,11 @@ $settings = Eminiarts\Aura\Aura::getOption('team-settings');
 @endphp
 
 
-<div x-aura::data="{ active: {{ (Request::fullUrlIs($route ? route($route, $id) : '') ? ' 1' : '0')  }}, compact: {{ $compact ? '1' : '0' }} }" class="w-full">
+<div x-data="{ active: {{ (Request::fullUrlIs($route ? route($route, $id) : '') ? ' 1' : '0')  }}, compact: {{ $compact ? '1' : '0' }} }" class="w-full">
 
-    <div x-aura::data="teamDropdown" >
+    <div x-data="teamDropdown" >
 
-      <div x-aura::ref="this" tabindex="0" class="
+      <div x-ref="this" tabindex="0" class="
         flex items-center justify-between w-full cursor-pointer text-sm font-semibold rounded-lg
         @if ($sidebarType == 'primary')
           text-white

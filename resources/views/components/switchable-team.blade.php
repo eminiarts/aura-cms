@@ -1,13 +1,13 @@
 @props(['team', 'component' => 'dropdown-link'])
 
-<form method="POST" action="{{ route('current-team.update') }}" x-aura::data>
+<form method="POST" action="{{ route('current-team.update') }}" x-data>
     @method('PUT')
     @csrf
 
     <!-- Hidden Team ID -->
     <input type="hidden" name="team_id" value="{{ $team->id }}">
 
-    <x-dynamic-component :component="$component" href="#" x-aura::on:click.prevent="$root.submit();">
+    <x-dynamic-component :component="$component" href="#" x-on:click.prevent="$root.submit();">
         <div class="flex items-center">
             @if (Auth::user()->isCurrentTeam($team))
                 <svg class="w-5 h-5 mr-2 text-green-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">

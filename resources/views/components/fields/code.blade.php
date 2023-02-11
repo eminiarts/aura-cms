@@ -1,8 +1,8 @@
 <x-aura::fields.wrapper :field="$field">
     <div class="w-full overflow-hidden bg-white border border-gray-500/30 rounded-lg shadow-xs appearance-none focus:border-primary-300 focus:outline-none ring-gray-900/10 focus:ring focus:ring-primary-300  focus:ring-opacity-50 dark:focus:ring-primary-500 dark:focus:ring-opacity-50 dark:bg-gray-900">
     <div class="relative h-96 ">
-        <div x-aura::data
-            x-aura::ref="aceEditor"
+        <div x-data
+            x-ref="aceEditor"
             id="editor"
             wire:ignore
             x-aura::init="

@@ -19,6 +19,7 @@ module.exports = {
         './vendor/laravel/jetstream/**/*.blade.php',
         './storage/framework/views/*.php',
         './resources/views/**/*.blade.php',
+        './src/*.php',
     ],
 
     theme: {
@@ -74,35 +75,6 @@ module.exports = {
                 '4.5': '1.125rem',
             }
         },
-    },
-
-    purge: {
-        enable: true,
-        options: {
-            safelist: [
-                'w-full',
-                'sm:max-w-2xl',
-                'sm:max-w-3xl',
-                'sm:max-w-4xl',
-                'sm:max-w-5xl',
-                'sm:max-w-6xl',
-                'sm:max-w-7xl',
-                'md:max-w-xl',
-                'lg:max-w-3xl',
-                'xl:max-w-5xl',
-                'sm:max-w-md',
-                '2xl:max-w-7xl',
-                'xl:max-w-7xl',
-                'max-w-7xl',
-                'w-1/2',
-                /w$/ ],
-        },
-        content: [
-            './storage/framework/views/*.php',
-            './app/**/*.php',
-            './vendor/wire-elements/modal/resources/views/*.blade.php',
-            './resources/views/**/*.blade.php'
-        ]
     },
 
     plugins: [require('@tailwindcss/forms'), require('@tailwindcss/typography'), require('tailwind-scrollbar'), require('@tailwindcss/aspect-ratio'),],

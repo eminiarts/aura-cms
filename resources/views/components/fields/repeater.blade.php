@@ -12,9 +12,9 @@
 
         @if(optional($this->post['fields'])[$slug])
         @foreach($field['field']->transform($field['fields'],$this->post['fields'][$slug]) as $key => $group)
-            <div class="flex flex-wrap -mx-aura::0 items-center" wire:key="repeater-{{ $key }}">
+            <div class="flex flex-wrap -mx-0 items-center" wire:key="repeater-{{ $key }}">
 
-                <div class="flex flex-wrap flex-1 items-center space-x-aura::0">
+                <div class="flex flex-wrap flex-1 items-center space-x-0">
                 @foreach($group as $field)
                     <x-dynamic-component :component="$field['field']->component" :field="$field" />
                 @endforeach
