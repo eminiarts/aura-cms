@@ -4,6 +4,8 @@ namespace Eminiarts\Aura;
 
 use Eminiarts\Aura\Commands\AuraCommand;
 use Eminiarts\Aura\Commands\MakeUser;
+use Eminiarts\Aura\Http\Livewire\CreateFlow;
+use Eminiarts\Aura\Http\Livewire\EditOperation;
 use Eminiarts\Aura\Http\Livewire\EditPosttypeField;
 use Eminiarts\Aura\Http\Livewire\GlobalSearch;
 use Eminiarts\Aura\Http\Livewire\MediaManager;
@@ -118,6 +120,10 @@ class AuraServiceProvider extends PackageServiceProvider
         Livewire::component('aura::edit-posttype-field', EditPosttypeField::class);
         Livewire::component('aura::media-manager', MediaManager::class);
         Livewire::component('aura::media-uploader', MediaUploader::class);
+
+        // Flows
+        Livewire::component('aura::create-flow', CreateFlow::class);
+        Livewire::component('aura::edit-operation', EditOperation::class);
 
         return $this;
     }

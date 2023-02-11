@@ -245,7 +245,7 @@
     </div>
 </div>
 
-<livewire:edit-operation />
+<livewire:aura::edit-operation />
 
 
 {{-- <button wire:click="createOperation" class="p-2 text-white bg-blue-500 rounded-full">Create Operation</button> --}}
