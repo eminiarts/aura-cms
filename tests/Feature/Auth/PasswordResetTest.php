@@ -54,9 +54,17 @@ class PasswordResetTest extends TestCase
 
     public function test_reset_password_screen_can_be_rendered()
     {
+        // Set the user model in auth config to use the one from the package
+        config(['auth.providers.users.model' => User::class]);
+
+
         Notification::fake();
 
         $user = User::factory()->create();
+
+        $this->actingAs($user);
+
+
 
         $this->post('/forgot-password', ['email' => $user->email]);
 
