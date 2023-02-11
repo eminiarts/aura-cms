@@ -13,6 +13,8 @@ class TestCase extends Orchestra
     {
         parent::setUp();
 
+        $this->withoutVite();
+
         Factory::guessFactoryNamesUsing(
             fn (string $modelName) => 'Eminiarts\\Aura\\Database\\Factories\\'.class_basename($modelName).'Factory'
         );
