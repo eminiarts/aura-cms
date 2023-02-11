@@ -27,19 +27,10 @@ class Index extends Component
             return redirect()->route('aura.dashboard');
         }
 
-        // dd('hier', auth()->user());
-
-        // dd(
-        //     'hier',
-        //     $this->post,
-        //     app(Gate::class)->authorize('viewAny', $this->post)
-        // );
-        // dd($this->post);
         // Authorize if the User can see this Post
         $this->authorize('viewAny', $this->post);
 
         $this->fields = $this->post->inputFields();
-        // dd($this->fields);
     }
 
     public function render()
