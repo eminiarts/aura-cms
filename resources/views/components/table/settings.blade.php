@@ -25,7 +25,7 @@
 
                         <x-aura::input.checkbox wire:model="columns.{{ $key }}" value="true" id="colum_{{$key}}" />
 
-                        <span class="flex items-center flex-aura::1 px-aura::4 text-sm text-gray-700 dark:text-gray-200 group" role="menuitem"
+                        <span class="flex items-center flex-1 px-aura::4 text-sm text-gray-700 dark:text-gray-200 group" role="menuitem"
                             tabindex="-1" id="menu-item-6">
                             {{ $label }}
                         </span>

@@ -23,7 +23,7 @@ $model = $this->model;
 <div class="px-aura::2 mt-4" id="post-field-{{ Str::slug(optional($field)['slug']) }}-wrapper">
   <div class="p-0">
     <h2 class="px-aura::2 font-semibold">{{ $field['name'] }}</h2>
-    <div class="flex flex-aura::wrap items-start -mx-aura::2">
+    <div class="flex flex-wrap items-start -mx-aura::2">
       @if(optional($field)['fields'])
       @foreach($field['fields'] as $key => $field)
       <x-aura::fields.conditions :field="$field" :model="$this->post">

@@ -19,6 +19,8 @@
         
     @endphp
 
+
+        <h1>Navigation</h1>
     @foreach(Aura::navigation() as $group => $resources)
 
         @if ($group !== '')

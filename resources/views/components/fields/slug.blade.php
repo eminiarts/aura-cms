@@ -63,11 +63,11 @@
         }"
         class="flex space-x-aura::4"
     >
-        <div class="flex-aura::1" wire:model.defer="post.fields.{{ optional($field)['slug'] }}">
+        <div class="flex-1" wire:model.defer="post.fields.{{ optional($field)['slug'] }}">
             <x-aura::input.text type="text" x-aura::bind:disabled="!custom" id="slug" @keyup="value = slugifyTyping($event.target.value)" x-aura::model="value" />
         </div>
 
-        <div class="flex flex-aura::col">
+        <div class="flex flex-col">
             <button x-aura::ref="toggle" @click="custom = ! custom" type="button" role="switch" :aria-checked="custom"
                 :aria-labelledby="$id('boolean')"
                 :class="custom ? 'bg-primary-600 border border-white dark:border-gray-900' : 'bg-gray-300 shadow-inner border border-gray-500/30'"

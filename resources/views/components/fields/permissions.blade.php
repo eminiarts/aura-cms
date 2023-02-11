@@ -55,7 +55,7 @@ hallo
 }">
 <x-aura::fields.wrapper :field="$field">
     @foreach($groups as $group => $items)
-        <div class="flex flex-aura::row justify-between py-6">
+        <div class="flex flex-row justify-between py-6">
             <div class="w-1/3 pr-1.5">
                 <h4 class="font-bold">{{ $group  }}</h4>
                 <div class="flex space-x-aura::2">
