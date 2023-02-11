@@ -2,10 +2,12 @@
 
 namespace Eminiarts\Aura\Tests;
 
-use Eminiarts\Aura\AuraServiceProvider;
-use Illuminate\Database\Eloquent\Factories\Factory;
 use Livewire\LivewireServiceProvider;
+use Eminiarts\Aura\AuraServiceProvider;
 use Orchestra\Testbench\TestCase as Orchestra;
+use Lab404\Impersonate\ImpersonateServiceProvider;
+use LivewireUI\Modal\LivewireModalServiceProvider;
+use Illuminate\Database\Eloquent\Factories\Factory;
 
 class TestCase extends Orchestra
 {
@@ -25,6 +27,8 @@ class TestCase extends Orchestra
         return [
             AuraServiceProvider::class,
             LivewireServiceProvider::class,
+            ImpersonateServiceProvider::class,
+            LivewireModalServiceProvider::class,
         ];
     }
 
