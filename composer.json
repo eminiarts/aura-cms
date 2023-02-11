@@ -69,6 +69,7 @@
     "extra": {
         "laravel": {
             "providers": [
+                "Lab404\\Impersonate\\ImpersonateServiceProvider",
                 "Eminiarts\\Aura\\AuraServiceProvider",
                 "Eminiarts\\Aura\\Providers\\FortifyServiceProvider",
                 "Eminiarts\\Aura\\Providers\\PolicyServiceProvider"

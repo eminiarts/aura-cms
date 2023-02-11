@@ -14,6 +14,6 @@ class Index extends PostIndex
 
     public function render()
     {
-        return view('aura::livewire.attachment.index');
+        return view('aura::livewire.attachment.index')->layout('aura::components.layout.app');
     }
 }
