@@ -2,15 +2,15 @@
 
 namespace Eminiarts\Aura\Http\Livewire\Post;
 
-use Eminiarts\Aura\Aura;
-use Eminiarts\Aura\Models\Post;
-use Eminiarts\Aura\Resources\Attachment;
-use Eminiarts\Aura\Traits\InteractsWithFields;
-use Eminiarts\Aura\Traits\RepeaterFields;
-use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
+use Livewire\Component;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Str;
-use Livewire\Component;
+use Eminiarts\Aura\Models\Post;
+use Eminiarts\Aura\Facades\Aura;
+use Eminiarts\Aura\Resources\Attachment;
+use Eminiarts\Aura\Traits\RepeaterFields;
+use Eminiarts\Aura\Traits\InteractsWithFields;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 
 class Edit extends Component
 {
@@ -44,7 +44,7 @@ class Edit extends Component
     public function mount($slug, $id)
     {
         $this->slug = $slug;
-        $this->model = app(Aura::class)->findResourceBySlug($slug)->find($id);
+        $this->model = Aura::findResourceBySlug($slug)->find($id);
 
         // Authorize
         $this->authorize('update', $this->model);
@@ -81,7 +81,7 @@ class Edit extends Component
 
     public function render()
     {
-        return view('aura::livewire.post.edit');
+        return view('aura::livewire.post.edit')->layout('aura::components.layout.app');
     }
 
     public function reorderMedia($slug, $ids)
