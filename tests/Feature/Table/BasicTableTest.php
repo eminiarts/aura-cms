@@ -37,7 +37,7 @@ test('table can be rendered', function () {
 
     // Visit the Post Index Page
     $this->get(route('aura.post.index', $post->type))
-    ->assertSeeLivewire('aura::post.index')
+    ->assertSeeLivewire('aura::post-index')
     ->assertSeeLivewire('aura::table');
 });
 

@@ -16,6 +16,9 @@ use Illuminate\Support\Facades\Route;
 
 require __DIR__.'/auth.php';
 
+Route::impersonate();
+
+
 Route::domain(config('aura.domain'))
     ->middleware(config('aura.middleware.admin'))
     ->name('aura.')
@@ -24,8 +27,6 @@ Route::domain(config('aura.domain'))
         //     Route::get('/assets/{file}', AssetController::class)->where('file', '.*')->name('asset');
         // });
 
-        //
-
         Route::get('/test', function () {
             dd(config('aura'));
 
@@ -33,8 +34,6 @@ Route::domain(config('aura.domain'))
         });
 
         Route::prefix(config('aura.path'))->group(function () {
-            Route::impersonate();
-
             Route::get('/', function () {
                 return view('dashboard');
             })->name('dashboard');

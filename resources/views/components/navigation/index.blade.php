@@ -2,7 +2,8 @@
 
 @php
 use Eminiarts\Aura\Resources\Team;
-$settings = Eminiarts\Aura\Facades\Aura::getOption('team-settings');
+use Eminiarts\Aura\Facades\Aura;
+$settings = Aura::getOption('team-settings');
 @endphp
 
 
@@ -83,22 +84,22 @@ $settings = Eminiarts\Aura\Facades\Aura::getOption('team-settings');
 
                     @if ($sidebarType == 'primary')
                         @if (isset($settings['app-logo-darkmode']))
-                            <img src="{{ asset('storage/' . Eminiarts\Aura\Aura::getPath($settings['app-logo-darkmode'][0]) ) }}" alt="{{ $settings['title'] }}" class="h-6">
+                            <img src="{{ asset('storage/' . Aura::getPath($settings['app-logo-darkmode'][0]) ) }}" alt="{{ $settings['title'] }}" class="h-6">
                         @elseif (isset($settings['app-logo']))
-                            <img src="{{ asset('storage/' . Eminiarts\Aura\Aura::getPath($settings['app-logo-darkmode'][0]) ) }}" alt="{{ $settings['title'] }}" class="h-6">
+                            <img src="{{ asset('storage/' . Aura::getPath($settings['app-logo-darkmode'][0]) ) }}" alt="{{ $settings['title'] }}" class="h-6">
                         @endif
                     @elseif ($sidebarType == 'light')
                         @if (isset($settings['app-logo-darkmode']) && isset($settings['app-logo']))
-                            <img class="hidden dark:block" src="{{ asset('storage/' . Eminiarts\Aura\Aura::getPath($settings['app-logo-darkmode'][0]) ) }}" alt="{{ $settings['title'] }}" class="h-6">
-                            <img class="block dark:hidden" src="{{ asset('storage/' . Eminiarts\Aura\Aura::getPath($settings['app-logo'][0]) ) }}" alt="{{ $settings['title'] }}" class="h-6">
+                            <img class="hidden dark:block" src="{{ asset('storage/' . Aura::getPath($settings['app-logo-darkmode'][0]) ) }}" alt="{{ $settings['title'] }}" class="h-6">
+                            <img class="block dark:hidden" src="{{ asset('storage/' . Aura::getPath($settings['app-logo'][0]) ) }}" alt="{{ $settings['title'] }}" class="h-6">
                         @elseif (isset($settings['app-logo']))
-                            <img src="{{ asset('storage/' . Eminiarts\Aura\Aura::getPath($settings['app-logo-darkmode'][0]) ) }}" alt="{{ $settings['title'] }}" class="h-6">
+                            <img src="{{ asset('storage/' . Aura::getPath($settings['app-logo-darkmode'][0]) ) }}" alt="{{ $settings['title'] }}" class="h-6">
                         @endif
                     @elseif ($sidebarType == 'dark')
                         @if (isset($settings['app-logo-darkmode']))
-                            <img src="{{ asset('storage/' . Eminiarts\Aura\Aura::getPath($settings['app-logo-darkmode'][0]) ) }}" alt="{{ $settings['title'] }}" class="h-6">
+                            <img src="{{ asset('storage/' . Aura::getPath($settings['app-logo-darkmode'][0]) ) }}" alt="{{ $settings['title'] }}" class="h-6">
                         @elseif (isset($settings['app-logo']))
-                            <img src="{{ asset('storage/' . Eminiarts\Aura\Aura::getPath($settings['app-logo-darkmode'][0]) ) }}" alt="{{ $settings['title'] }}" class="h-6">
+                            <img src="{{ asset('storage/' . Aura::getPath($settings['app-logo-darkmode'][0]) ) }}" alt="{{ $settings['title'] }}" class="h-6">
                         @endif
                     @endif
 
@@ -323,7 +324,7 @@ $settings = Eminiarts\Aura\Facades\Aura::getOption('team-settings');
             <x-aura::icon icon="dashboard2" />
         </x-aura::navigation.item-icon>
 
-        {{-- @foreach(\Eminiarts\Aura\Aura::navigation() as $group => $resources)
+        {{-- @foreach(\Aura::navigation() as $group => $resources)
 
 
             <div class="w-full px-2 py-2">
