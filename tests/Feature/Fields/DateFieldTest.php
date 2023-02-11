@@ -83,7 +83,7 @@ test('Date Field in View', function () {
         ->get('/admin/DateModel/create')
         ->assertOk()
         ->assertSee('Date for Test')
-        ->assertSeeLivewire('aura::post.create');
+        ->assertSeeLivewire('aura::post-create');
 
     // $a = Aura::findResourceBySlug('DateModel');
     // $editComponent = Livewire::test(Edit::class, ['slug' => 'Post', 'id' => $dateModel->id])

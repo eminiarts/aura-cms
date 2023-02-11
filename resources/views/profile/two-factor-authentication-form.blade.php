@@ -59,13 +59,13 @@
 
                 @if ($showingConfirmation)
                     <div class="mt-4">
-                        <x-fields.label :label="__('Code')" />
+                        <x-aura::fields.label :label="__('Code')" />
 
                         <x-aura::input.text id="code" type="text" name="code" class="block mt-1 w-1/2" inputmode="numeric" autofocus autocomplete="one-time-code"
                             wire:model.defer="code"
                             wire:keydown.enter="confirmTwoFactorAuthentication" />
 
-                        <x-jet-input-error for="code" class="mt-2" />
+                        <x-aura::jet-input-error for="code" class="mt-2" />
                     </div>
                 @endif
 
@@ -89,31 +89,31 @@
         <div class="mt-5">
             @if (! $this->enabled)
             
-            <x-confirms-password wire:then="enableTwoFactorAuthentication" :confirmingPassword="$confirmingPassword">
+            <x-aura::confirms-password wire:then="enableTwoFactorAuthentication" :confirmingPassword="$confirmingPassword">
                 <x-aura::button.primary type="button" wire:loading.attr="disabled">
                     {{ __('Enable') }}
                 </x-aura::button.primary>
-            </x-confirms-password>
+            </x-aura::confirms-password>
             @else
             @if ($showingRecoveryCodes)
-            <x-confirms-password wire:then="regenerateRecoveryCodes" :confirmingPassword="$confirmingPassword">
+            <x-aura::confirms-password wire:then="regenerateRecoveryCodes" :confirmingPassword="$confirmingPassword">
                 <x-aura::button.light class="mr-3">
                     {{ __('Regenerate Recovery Codes') }}
                 </x-aura::button.light>
-            </x-confirms-password>
+            </x-aura::confirms-password>
             @else
-            <x-confirms-password wire:then="showRecoveryCodes" :confirmingPassword="$confirmingPassword">
+            <x-aura::confirms-password wire:then="showRecoveryCodes" :confirmingPassword="$confirmingPassword">
                 <x-aura::button.light class="mr-3">
                     {{ __('Show Recovery Codes') }}
                 </x-aura::button.light>
-            </x-confirms-password>
+            </x-aura::confirms-password>
             @endif
             
-            <x-confirms-password wire:then="disableTwoFactorAuthentication" :confirmingPassword="$confirmingPassword">
+            <x-aura::confirms-password wire:then="disableTwoFactorAuthentication" :confirmingPassword="$confirmingPassword">
                 <x-aura::button.danger wire:loading.attr="disabled">
                     {{ __('Disable') }}
                 </x-aura::button.danger>
-            </x-confirms-password>
+            </x-aura::confirms-password>
             @endif
         </div>
     </div>

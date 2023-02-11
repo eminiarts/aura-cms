@@ -120,7 +120,6 @@ class PostPolicy
      */
     public function view(User $user, Post $post)
     {
-        dd('view');
         // Scoped Posts
         if ($user->resource->hasPermissionTo('scope', $post) && $user->resource->hasPermissionTo('view', $post)) {
             if ($post->user_id == $user->id) {
@@ -145,7 +144,6 @@ class PostPolicy
      */
     public function viewAny(User $user, $post)
     {
-        dd('viewAny');
         if ($user->resource->hasPermissionTo('viewAny', $post)) {
             return true;
         }
