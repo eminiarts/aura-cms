@@ -55,8 +55,8 @@
     },
     "scripts": {
         "analyse": "vendor/bin/phpstan analyse",
-        "test": "vendor/bin/pest",
-        "test-coverage": "vendor/bin/pest --coverage",
+        "test": "vendor/bin/pest --no-coverage --parallel",
+        "test-coverage": "vendor/bin/pest --coverage --parallel --min=80",
         "format": "vendor/bin/pint"
     },
     "config": {
