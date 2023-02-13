@@ -3,8 +3,6 @@
 namespace Tests\Feature\Auth;
 
 use Eminiarts\Aura\Models\User;
-use Eminiarts\Aura\Tests\TestCase;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 
 test('confirm password screen can be rendered', function () {
     $user = User::factory()->create();

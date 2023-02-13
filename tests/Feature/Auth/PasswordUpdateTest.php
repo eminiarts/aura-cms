@@ -3,8 +3,6 @@
 namespace Tests\Feature\Auth;
 
 use Eminiarts\Aura\Models\User;
-use Eminiarts\Aura\Tests\TestCase;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
 
 test('password can be updated', function () {

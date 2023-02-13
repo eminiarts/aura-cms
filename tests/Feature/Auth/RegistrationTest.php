@@ -3,8 +3,6 @@
 namespace Tests\Feature\Auth;
 
 use Eminiarts\Aura\Providers\RouteServiceProvider;
-use Eminiarts\Aura\Tests\TestCase;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 
 test('registration screen can be rendered', function () {
     $response = $this->get('/register');
