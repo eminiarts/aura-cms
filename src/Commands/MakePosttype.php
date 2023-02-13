@@ -18,7 +18,7 @@ class MakePosttype extends GeneratorCommand
      *
      * @var string
      */
-    protected $signature = 'make:posttype {name}';
+    protected $signature = 'aura:posttype {name}';
 
     /**
      * The type of class being generated.
