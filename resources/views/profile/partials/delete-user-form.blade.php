@@ -9,13 +9,13 @@
         </p>
     </header>
 
-    <x-danger-button
+    <x-aura::danger-button
         x-data=""
         x-on:click.prevent="$dispatch('open-modal', 'confirm-user-deletion')"
-    >{{ __('Delete Account') }}</x-danger-button>
+    >{{ __('Delete Account') }}</x-aura::danger-button>
 
-    <x-modal name="confirm-user-deletion" :show="$errors->userDeletion->isNotEmpty()" focusable>
-        <form method="post" action="{{ route('profile.destroy') }}" class="p-6">
+    <x-aura::modal name="confirm-user-deletion" :show="$errors->userDeletion->isNotEmpty()" focusable>
+        <form method="post" action="{{ route('aura.profile.destroy') }}" class="p-6">
             @csrf
             @method('delete')
 
@@ -30,7 +30,7 @@
             <div class="mt-6">
                 <x-aura::input-label for="password" value="Password" class="sr-only" />
 
-                <x-text-input
+                <x-aura::text-input
                     id="password"
                     name="password"
                     type="password"
@@ -42,14 +42,14 @@
             </div>
 
             <div class="mt-6 flex justify-end">
-                <x-secondary-button x-on:click="$dispatch('close')">
+                <x-aura::secondary-button x-on:click="$dispatch('close')">
                     {{ __('Cancel') }}
-                </x-secondary-button>
+                </x-aura::secondary-button>
 
-                <x-danger-button class="ml-3">
+                <x-aura::danger-button class="ml-3">
                     {{ __('Delete Account') }}
-                </x-danger-button>
+                </x-aura::danger-button>
             </div>
         </form>
-    </x-modal>
+    </x-aura::modal>
 </section>
