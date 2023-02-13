@@ -40,6 +40,9 @@ class FortifyServiceProvider extends ServiceProvider
             Features::emailVerification(),
             Features::twoFactorAuthentication(),
         ]);
+
+        // Set Configuration of fortify.redirects.login to /admin/dashboard
+        app('config')->set('fortify.redirects.login', '/admin/dashboard');
     }
 
     /**
