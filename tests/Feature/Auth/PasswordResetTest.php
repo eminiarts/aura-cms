@@ -15,6 +15,9 @@ test('reset password link screen can be rendered', function () {
 });
 
 test('reset password link can be requested', function () {
+    // Set the user model in auth config to use the one from the package
+    config(['auth.providers.users.model' => User::class]);
+
     Notification::fake();
 
     $user = User::factory()->create();
@@ -25,6 +28,9 @@ test('reset password link can be requested', function () {
 });
 
 test('reset password screen can be rendered', function () {
+    // Set the user model in auth config to use the one from the package
+    config(['auth.providers.users.model' => User::class]);
+
     Notification::fake();
 
     $user = User::factory()->create();
