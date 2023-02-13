@@ -16,14 +16,14 @@ class ProfileTest extends TestCase
 
         $response = $this
             ->actingAs($user)
-            ->from('/profile')
-            ->delete('/profile', [
+            ->from(config('aura.path') . '/profile')
+            ->delete(config('aura.path') . '/profile', [
                 'password' => 'wrong-password',
             ]);
 
         $response
             ->assertSessionHasErrorsIn('userDeletion', 'password')
-            ->assertRedirect('/profile');
+            ->assertRedirect(config('aura.path') . '/profile');
 
         $this->assertNotNull($user->fresh());
     }
@@ -34,14 +34,14 @@ class ProfileTest extends TestCase
 
         $response = $this
             ->actingAs($user)
-            ->patch('/profile', [
+            ->patch(config('aura.path') . '/profile', [
                 'name' => 'Test User',
                 'email' => $user->email,
             ]);
 
         $response
             ->assertSessionHasNoErrors()
-            ->assertRedirect('/profile');
+            ->assertRedirect(config('aura.path') . '/profile');
 
         $this->assertNotNull($user->refresh()->email_verified_at);
     }
@@ -52,14 +52,14 @@ class ProfileTest extends TestCase
 
         $response = $this
             ->actingAs($user)
-            ->patch('/profile', [
+            ->patch(config('aura.path') . '/profile', [
                 'name' => 'Test User',
                 'email' => 'test@example.com',
             ]);
 
         $response
             ->assertSessionHasNoErrors()
-            ->assertRedirect('/profile');
+            ->assertRedirect(config('aura.path') . '/profile');
 
         $user->refresh();
 
@@ -74,7 +74,7 @@ class ProfileTest extends TestCase
 
         $response = $this
             ->actingAs($user)
-            ->get('/profile');
+            ->get(config('aura.path') . '/profile');
 
         $response->assertOk();
     }
@@ -85,7 +85,7 @@ class ProfileTest extends TestCase
 
         $response = $this
             ->actingAs($user)
-            ->delete('/profile', [
+            ->delete(config('aura.path') . '/profile', [
                 'password' => 'password',
             ]);
 

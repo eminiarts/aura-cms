@@ -1,17 +1,18 @@
 <?php
 
+use Illuminate\Support\Facades\Route;
+use Eminiarts\Aura\Http\Livewire\Media;
+use Eminiarts\Aura\Http\Livewire\Posttype;
+use Eminiarts\Aura\Http\Livewire\Post\Edit;
 use Eminiarts\Aura\Http\Livewire\AuraConfig;
 use Eminiarts\Aura\Http\Livewire\CreateFlow;
-use Eminiarts\Aura\Http\Livewire\Media;
-use Eminiarts\Aura\Http\Livewire\Post\Create;
-use Eminiarts\Aura\Http\Livewire\Post\Edit;
 use Eminiarts\Aura\Http\Livewire\Post\Index;
-use Eminiarts\Aura\Http\Livewire\Posttype;
+use Eminiarts\Aura\Http\Livewire\Post\Create;
+use Eminiarts\Aura\Http\Livewire\TeamSettings;
+use Eminiarts\Aura\Http\Controllers\ProfileController;
 use Eminiarts\Aura\Http\Livewire\Taxonomy\Edit as TaxonomyEdit;
 use Eminiarts\Aura\Http\Livewire\Taxonomy\Index as TaxonomyIndex;
 use Eminiarts\Aura\Http\Livewire\Attachment\Index as AttachmentIndex;
-use Eminiarts\Aura\Http\Livewire\TeamSettings;
-use Illuminate\Support\Facades\Route;
 
 Route::middleware(config('aura.middleware.admin'))->group(function () {
     require __DIR__.'/auth.php';
@@ -28,6 +29,8 @@ Route::domain(config('aura.domain'))
         //     Route::get('/assets/{file}', AssetController::class)->where('file', '.*')->name('asset');
         // });
 
+
+
         Route::get('/test', function () {
             dd(config('aura'));
 
@@ -39,6 +42,10 @@ Route::domain(config('aura.domain'))
                 return view('aura::dashboard');
             })->name('dashboard');
 
+
+            Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
+            Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
+            Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
             Route::get('/team-settings', TeamSettings::class)->name('team.settings');
             Route::get('/aura-config', AuraConfig::class)->name('aura.config');
