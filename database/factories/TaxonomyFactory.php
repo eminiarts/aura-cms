@@ -5,7 +5,7 @@ namespace Eminiarts\Aura\Database\Factories;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\Taxonomy>
+ * @extends \Illuminate\Database\Eloquent\Factories\Factory<\Eminiarts\Aura\Models\Taxonomy>
  */
 class TaxonomyFactory extends Factory
 {

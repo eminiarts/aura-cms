@@ -21,7 +21,7 @@ class TaxonomyController extends Controller
     /**
      * Remove the specified resource from storage.
      *
-     * @param  \App\Models\Taxonomy  $taxonomy
+     * @param  \Eminiarts\Aura\Models\Taxonomy  $taxonomy
      * @return \Illuminate\Http\Response
      */
     public function destroy(Taxonomy $taxonomy)
@@ -32,7 +32,7 @@ class TaxonomyController extends Controller
     /**
      * Show the form for editing the specified resource.
      *
-     * @param  \App\Models\Taxonomy  $taxonomy
+     * @param  \Eminiarts\Aura\Models\Taxonomy  $taxonomy
      * @return \Illuminate\Http\Response
      */
     public function edit(Taxonomy $taxonomy)
@@ -53,7 +53,7 @@ class TaxonomyController extends Controller
     /**
      * Display the specified resource.
      *
-     * @param  \App\Models\Taxonomy  $taxonomy
+     * @param  \Eminiarts\Aura\Models\Taxonomy  $taxonomy
      * @return \Illuminate\Http\Response
      */
     public function show(Taxonomy $taxonomy)
@@ -76,7 +76,7 @@ class TaxonomyController extends Controller
      * Update the specified resource in storage.
      *
      * @param  \App\Http\Requests\UpdateTaxonomyRequest  $request
-     * @param  \App\Models\Taxonomy  $taxonomy
+     * @param  \Eminiarts\Aura\Models\Taxonomy  $taxonomy
      * @return \Illuminate\Http\Response
      */
     public function update(UpdateTaxonomyRequest $request, Taxonomy $taxonomy)

@@ -8,7 +8,7 @@ trait SaveFields
 {
     public function formatIndentation($str, $str2)
     {
-        if (preg_split('#\r?\n#', $str, 0) !== null || count(preg_split('#\r?\n#', $str, 0)) == 0) {
+        if (preg_split('#\r?\n#', $str, 0) !== null) {
             return $str2;
         }
         // Get first Line
