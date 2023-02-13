@@ -24,7 +24,6 @@ class TrendWidget extends Widget
 
     /**
      * Return a value result showing a count aggregate over time.
-     *
      */
     public function count($model, $unit, $dateColumn, $range)
     {

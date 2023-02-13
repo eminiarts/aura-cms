@@ -2,16 +2,12 @@
 
 namespace Eminiarts\Aura\Providers;
 
-use Illuminate\Http\Request;
-use Laravel\Fortify\Fortify;
-use Laravel\Fortify\Features;
-use Illuminate\Support\ServiceProvider;
 use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
-use Eminiarts\Aura\Actions\Fortify\CreateNewUser;
-use Eminiarts\Aura\Actions\Fortify\ResetUserPassword;
-use Eminiarts\Aura\Actions\Fortify\UpdateUserPassword;
-use Eminiarts\Aura\Actions\Fortify\UpdateUserProfileInformation;
+use Illuminate\Support\ServiceProvider;
+use Laravel\Fortify\Features;
+use Laravel\Fortify\Fortify;
 
 class FortifyServiceProvider extends ServiceProvider
 {

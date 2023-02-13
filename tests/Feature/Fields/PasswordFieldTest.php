@@ -2,16 +2,15 @@
 
 namespace Tests\Feature\Livewire;
 
-use Livewire\Livewire;
-use Eminiarts\AuraTest;
-use Eminiarts\Aura\Models\User;
 use Eminiarts\Aura\Facades\Aura;
+use Eminiarts\Aura\Http\Livewire\Post\Create;
+use Eminiarts\Aura\Http\Livewire\Post\Edit;
+use Eminiarts\Aura\Models\User;
 use Eminiarts\Aura\Resources\Post;
 use Eminiarts\Aura\Resources\Team;
-use Illuminate\Support\Facades\Hash;
-use Eminiarts\Aura\Http\Livewire\Post\Edit;
-use Eminiarts\Aura\Http\Livewire\Post\Create;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Hash;
+use Livewire\Livewire;
 
 // Refresh Database on every test
 uses(RefreshDatabase::class);
