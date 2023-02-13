@@ -25,11 +25,6 @@ class TrendWidget extends Widget
     /**
      * Return a value result showing a count aggregate over time.
      *
-     * @param  \Laravel\Nova\Http\Requests\NovaRequest  $request
-     * @param  \Illuminate\Database\Eloquent\Builder|class-string<\Illuminate\Database\Eloquent\Model>  $model
-     * @param  string  $unit
-     * @param  string|null  $column
-     * @return \Laravel\Nova\Metrics\TrendResult
      */
     public function count($model, $unit, $dateColumn, $range)
     {

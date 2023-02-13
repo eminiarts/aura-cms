@@ -24,8 +24,6 @@ class ValueWidget extends Widget
         $column = $column ?? $query->getModel()->getQualifiedKeyName();
         $dateColumn = $dateColumn ?? $query->getModel()->getQualifiedCreatedAtColumn();
 
-        // dd($query->whereBetween($dateColumn, $this->previousRange)->{$calculation}($column));
-
         return [
             'current' => $current = with(clone $query)->whereBetween($dateColumn, $this->currentRange)->{$calculation}($column) ?? 0,
             'previous' => $previous = with(clone $query)->whereBetween($dateColumn, $this->previousRange)->{$calculation}($column) ?? 0,
