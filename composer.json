@@ -70,8 +70,8 @@
         "laravel": {
             "providers": [
                 "Lab404\\Impersonate\\ImpersonateServiceProvider",
-                "Eminiarts\\Aura\\AuraServiceProvider",
                 "Eminiarts\\Aura\\Providers\\FortifyServiceProvider",
+                "Eminiarts\\Aura\\AuraServiceProvider",
                 "Eminiarts\\Aura\\Providers\\PolicyServiceProvider"
             ],
             "aliases": {

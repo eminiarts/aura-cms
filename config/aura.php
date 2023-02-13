@@ -108,12 +108,16 @@ return [
     */
 
     'middleware' => [
-        'admin' => [
+        'aura-admin' => [
             'web',
             'auth',
         ],
 
-        'base' => [
+        'aura-guest' => [
+            'web',
+        ],
+
+        'aura-base' => [
             \App\Http\Middleware\EncryptCookies::class,
             \Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse::class,
             \Illuminate\Session\Middleware\StartSession::class,
