@@ -25,7 +25,7 @@
         "laravel/fortify": "^1.15",
         "laravel/sanctum": "^3.2",
         "livewire/livewire": "^2.10",
-        "spatie/laravel-package-tools": "^1.9.2",
+        "spatie/laravel-package-tools": "^1.14.1",
         "wire-elements/modal": "^1.0"
     },
     "require-dev": {
