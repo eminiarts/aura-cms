@@ -8,76 +8,58 @@ use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Notification;
 
-class PasswordResetTest extends TestCase
-{
-    use RefreshDatabase;
+test('reset password link screen can be rendered', function () {
+    $response = $this->get('/forgot-password');
 
-    public function test_password_can_be_reset_with_valid_token()
-    {
-        // Set the user model in auth config to use the one from the package
-        config(['auth.providers.users.model' => User::class]);
+    $response->assertStatus(200);
+});
 
-        Notification::fake();
+test('reset password link can be requested', function () {
+    Notification::fake();
 
-        $user = User::factory()->create();
+    $user = User::factory()->create();
 
-        $this->post('/forgot-password', ['email' => $user->email]);
+    $this->post('/forgot-password', ['email' => $user->email]);
 
-        Notification::assertSentTo($user, ResetPassword::class, function ($notification) use ($user) {
-            $response = $this->post('/reset-password', [
-                'token' => $notification->token,
-                'email' => $user->email,
-                'password' => 'password',
-                'password_confirmation' => 'password',
-            ]);
+    Notification::assertSentTo($user, ResetPassword::class);
+});
 
-            $response->assertSessionHasNoErrors();
+test('reset password screen can be rendered', function () {
+    Notification::fake();
 
-            return true;
-        });
-    }
+    $user = User::factory()->create();
 
-    public function test_reset_password_link_can_be_requested()
-    {
-        // Set the user model in auth config to use the one from the package
-        config(['auth.providers.users.model' => User::class]);
+    $this->post('/forgot-password', ['email' => $user->email]);
 
-        Notification::fake();
-
-        $user = User::factory()->create();
-
-        $this->post('/forgot-password', ['email' => $user->email]);
-
-        Notification::assertSentTo($user, ResetPassword::class);
-    }
-
-    public function test_reset_password_link_screen_can_be_rendered()
-    {
-        $response = $this->get('/forgot-password');
+    Notification::assertSentTo($user, ResetPassword::class, function ($notification) {
+        $response = $this->get('/reset-password/'.$notification->token);
 
         $response->assertStatus(200);
-    }
 
-    public function test_reset_password_screen_can_be_rendered()
-    {
-        // Set the user model in auth config to use the one from the package
-        config(['auth.providers.users.model' => User::class]);
+        return true;
+    });
+});
 
-        Notification::fake();
+test('password can be reset with valid token', function () {
+    // Set the user model in auth config to use the one from the package
+    config(['auth.providers.users.model' => User::class]);
 
-        $user = User::factory()->create();
+    Notification::fake();
 
-        $this->actingAs($user);
+    $user = User::factory()->create();
 
+    $this->post('/forgot-password', ['email' => $user->email]);
 
-        $this->post('/forgot-password', ['email' => $user->email]);
+    Notification::assertSentTo($user, ResetPassword::class, function ($notification) use ($user) {
+        $response = $this->post('/reset-password', [
+            'token' => $notification->token,
+            'email' => $user->email,
+            'password' => 'password',
+            'password_confirmation' => 'password',
+        ]);
 
-        Notification::assertSentTo($user, ResetPassword::class, function ($notification) {
-            $response = $this->get('/reset-password/'.$notification->token);
+        $response->assertSessionHasNoErrors();
 
-            $response->assertStatus(200);
-
-            return true;
-        });
-    }
-}
+        return true;
+    });
+});
