@@ -14,15 +14,16 @@ use Eminiarts\Aura\Http\Livewire\Taxonomy\Edit as TaxonomyEdit;
 use Eminiarts\Aura\Http\Livewire\Taxonomy\Index as TaxonomyIndex;
 use Eminiarts\Aura\Http\Livewire\Attachment\Index as AttachmentIndex;
 
-Route::middleware(config('aura.middleware.admin'))->group(function () {
+Route::middleware(config('aura.middleware.aura-guest'))->group(function () {
     require __DIR__.'/auth.php';
+});
 
+Route::middleware(config('aura.middleware.aura-admin'))->group(function () {
     Route::impersonate();
 });
 
-
 Route::domain(config('aura.domain'))
-    ->middleware(config('aura.middleware.admin'))
+    ->middleware(config('aura.middleware.aura-admin'))
     ->name('aura.')
     ->group(function () {
         // Route::prefix(config('aura.core_path'))->group(function () {

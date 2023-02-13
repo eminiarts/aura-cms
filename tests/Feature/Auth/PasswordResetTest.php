@@ -63,13 +63,11 @@ class PasswordResetTest extends TestCase
         // Set the user model in auth config to use the one from the package
         config(['auth.providers.users.model' => User::class]);
 
-
         Notification::fake();
 
         $user = User::factory()->create();
 
         $this->actingAs($user);
-
 
 
         $this->post('/forgot-password', ['email' => $user->email]);
