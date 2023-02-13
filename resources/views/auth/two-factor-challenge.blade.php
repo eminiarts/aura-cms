@@ -1,4 +1,4 @@
-<x-aura::guest-layout>
+<x-aura::layout.guest>
     <div>
         <x-slot name="logo">
             logo here
@@ -54,4 +54,4 @@
             </form>
         </div>
     </div>
-</x-aura::guest-layout>
+</x-aura::layout.guest>

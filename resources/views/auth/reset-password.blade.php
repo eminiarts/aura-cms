@@ -1,4 +1,4 @@
-<x-aura::guest-layout>
+<x-aura::layout.guest>
     <form method="POST" action="{{ route('password.store') }}">
         @csrf
 
@@ -36,4 +36,4 @@
             </x-aura::primary-button>
         </div>
     </form>
-</x-aura::guest-layout>
+</x-aura::layout.guest>
