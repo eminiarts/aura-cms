@@ -49,7 +49,7 @@ class CreatePosttype extends ModalComponent
     {
         $this->validate();
 
-        Artisan::call('make:posttype', [
+        Artisan::call('aura:posttype', [
             'name' => $this->post['fields']['name'],
         ]);
 

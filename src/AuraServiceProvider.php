@@ -3,9 +3,11 @@
 namespace Eminiarts\Aura;
 
 use Eminiarts\Aura\Commands\AuraCommand;
+use Eminiarts\Aura\Commands\MakePosttype;
 use Eminiarts\Aura\Commands\MakeUser;
 use Eminiarts\Aura\Http\Livewire\Attachment\Index as AttachmentIndex;
 use Eminiarts\Aura\Http\Livewire\CreateFlow;
+use Eminiarts\Aura\Http\Livewire\CreatePosttype;
 use Eminiarts\Aura\Http\Livewire\EditOperation;
 use Eminiarts\Aura\Http\Livewire\EditPosttypeField;
 use Eminiarts\Aura\Http\Livewire\GlobalSearch;
@@ -50,6 +52,7 @@ class AuraServiceProvider extends PackageServiceProvider
             ->hasMigrations(['create_aura_tables', 'create_flows_table'])
             ->runsMigrations()
             ->hasCommand(AuraCommand::class)
+            ->hasCommand(MakePosttype::class)
             ->hasCommand(MakeUser::class)
 
             ->hasInstallCommand(function (InstallCommand $command) {
@@ -124,6 +127,8 @@ class AuraServiceProvider extends PackageServiceProvider
         Livewire::component('aura::media-uploader', MediaUploader::class);
         Livewire::component('aura::attachment-index', AttachmentIndex::class);
         Livewire::component('aura::user-two-factor-authentication-form', TwoFactorAuthenticationForm::class);
+        Livewire::component('aura::create-posttype', CreatePosttype::class);
+
 
         // Flows
         Livewire::component('aura::create-flow', CreateFlow::class);
