@@ -67,6 +67,14 @@ echo $aura->echoPhrase('Hello, Eminiarts!');
 composer test
 ```
 
+```bash
+vendor/bin/pest
+```
+
+```bash
+XDEBUG_MODE=coverage vendor/bin/pest --coverage --min=80
+```
+
 ## Changelog
 
 Please see [CHANGELOG](CHANGELOG.md) for more information on what has changed recently.
