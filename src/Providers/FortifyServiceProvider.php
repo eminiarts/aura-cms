@@ -38,17 +38,12 @@ class FortifyServiceProvider extends ServiceProvider
             return view('aura::auth.login');
         });
 
-
         // Set Configuration of fortify.features to [registration, email-verification and two-factor-authentication]
-
         app('config')->set('fortify.features', [
             Features::registration(),
             Features::emailVerification(),
             Features::twoFactorAuthentication(),
         ]);
-
-
-        // dd('boot', config('fortify'));
     }
 
     /**
