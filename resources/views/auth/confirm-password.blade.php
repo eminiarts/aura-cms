@@ -1,4 +1,4 @@
-<x-aura::guest-layout>
+<x-aura::layout.guest>
     <div class="mb-4 text-sm text-gray-600">
         {{ __('This is a secure area of the application. Please confirm your password before continuing.') }}
     </div>
@@ -24,4 +24,4 @@
             </x-aura::primary-button>
         </div>
     </form>
-</x-aura::guest-layout>
+</x-aura::layout.guest>
