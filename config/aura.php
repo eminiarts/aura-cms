@@ -113,16 +113,13 @@ return [
             'auth',
         ],
 
-        // 'base' => [
-        //     EncryptCookies::class,
-        //     AddQueuedCookiesToResponse::class,
-        //     StartSession::class,
-        //     AuthenticateSession::class,
-        //     ShareErrorsFromSession::class,
-        //     VerifyCsrfToken::class,
-        //     SubstituteBindings::class,
-        //     DispatchServingFilamentEvent::class,
-        //     MirrorConfigToSubpackages::class,
-        // ],
+        'base' => [
+            \App\Http\Middleware\EncryptCookies::class,
+            \Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse::class,
+            \Illuminate\Session\Middleware\StartSession::class,
+            \Illuminate\View\Middleware\ShareErrorsFromSession::class,
+            \App\Http\Middleware\VerifyCsrfToken::class,
+            \Illuminate\Routing\Middleware\SubstituteBindings::class,
+        ],
     ],
 ];

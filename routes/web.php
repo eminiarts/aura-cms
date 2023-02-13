@@ -13,9 +13,12 @@ use Eminiarts\Aura\Http\Livewire\Attachment\Index as AttachmentIndex;
 use Eminiarts\Aura\Http\Livewire\TeamSettings;
 use Illuminate\Support\Facades\Route;
 
-require __DIR__.'/auth.php';
+Route::middleware(config('aura.middleware.admin'))->group(function () {
+    require __DIR__.'/auth.php';
 
-Route::impersonate();
+    Route::impersonate();
+});
+
 
 Route::domain(config('aura.domain'))
     ->middleware(config('aura.middleware.admin'))
