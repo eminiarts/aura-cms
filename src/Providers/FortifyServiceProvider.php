@@ -2,15 +2,16 @@
 
 namespace Eminiarts\Aura\Providers;
 
+use Illuminate\Http\Request;
+use Laravel\Fortify\Fortify;
+use Laravel\Fortify\Features;
+use Illuminate\Support\ServiceProvider;
+use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Support\Facades\RateLimiter;
 use Eminiarts\Aura\Actions\Fortify\CreateNewUser;
 use Eminiarts\Aura\Actions\Fortify\ResetUserPassword;
 use Eminiarts\Aura\Actions\Fortify\UpdateUserPassword;
 use Eminiarts\Aura\Actions\Fortify\UpdateUserProfileInformation;
-use Illuminate\Cache\RateLimiting\Limit;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\RateLimiter;
-use Illuminate\Support\ServiceProvider;
-use Laravel\Fortify\Fortify;
 
 class FortifyServiceProvider extends ServiceProvider
 {
@@ -19,11 +20,6 @@ class FortifyServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        Fortify::createUsersUsing(CreateNewUser::class);
-        Fortify::updateUserProfileInformationUsing(UpdateUserProfileInformation::class);
-        Fortify::updateUserPasswordsUsing(UpdateUserPassword::class);
-        Fortify::resetUserPasswordsUsing(ResetUserPassword::class);
-
         RateLimiter::for('login', function (Request $request) {
             $email = (string) $request->email;
 
@@ -41,6 +37,18 @@ class FortifyServiceProvider extends ServiceProvider
         Fortify::loginView(function () {
             return view('aura::auth.login');
         });
+
+
+        // Set Configuration of fortify.features to [registration, email-verification and two-factor-authentication]
+
+        app('config')->set('fortify.features', [
+            Features::registration(),
+            Features::emailVerification(),
+            Features::twoFactorAuthentication(),
+        ]);
+
+
+        // dd('boot', config('fortify'));
     }
 
     /**
