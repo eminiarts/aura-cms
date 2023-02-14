@@ -1,9 +1,10 @@
 <?php
 
 use Eminiarts\Aura\Models\User;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 use Eminiarts\Aura\Resources\Attachment;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Http\UploadedFile;
 
 uses(RefreshDatabase::class);
 
@@ -17,6 +18,7 @@ test('save Attachment Model when defined fields', function () {
     $this->actingAs($user = User::first());
 
     Storage::fake('avatars');
+    Storage::fake('tmp-for-tests');
 
     $file = UploadedFile::fake()->image('avatar.png');
 
