@@ -3,6 +3,7 @@
 namespace Eminiarts\Aura\Traits;
 
 use Illuminate\Support\Str;
+use Eminiarts\Aura\Facades\Aura;
 
 trait SaveFields
 {
@@ -48,7 +49,7 @@ trait SaveFields
 
         $file = file_get_contents($a->getFileName());
 
-        $replacement = varexport($this->setKeysToFields($fields), true);
+        $replacement = Aura::varexport($this->setKeysToFields($fields), true);
 
         // dd($replacement);
 

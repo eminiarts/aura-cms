@@ -2,13 +2,14 @@
 
 namespace Eminiarts\Aura\Http\Livewire;
 
-use Eminiarts\Aura\Models\Scopes\TeamScope;
+use Livewire\Component;
+use Illuminate\Support\Arr;
+use Illuminate\Support\Str;
+use Eminiarts\Aura\Facades\Aura;
 use Eminiarts\Aura\Resources\Option;
 use Eminiarts\Aura\Traits\InputFields;
 use Eminiarts\Aura\Traits\RepeaterFields;
-use Illuminate\Support\Arr;
-use Illuminate\Support\Str;
-use Livewire\Component;
+use Eminiarts\Aura\Models\Scopes\TeamScope;
 
 class AuraConfig extends Component
 {
@@ -337,7 +338,7 @@ class AuraConfig extends Component
 
         $file = file_get_contents($path);
 
-        $replacement = varexport($this->config, true);
+        $replacement = Aura::varexport($this->config, true);
 
         preg_match("/'features' => \[([^\]]*)\],/ms", $file, $matches);
 
@@ -364,7 +365,7 @@ class AuraConfig extends Component
 
          $file = file_get_contents($a->getFileName());
 
-         $replacement = varexport($this->setKeysToFields($fields), true);
+         $replacement = Aura::varexport($this->setKeysToFields($fields), true);
 
          // dd($replacement);
 
