@@ -213,7 +213,7 @@ class Posttype extends Component
             abort(403, 'Posttype Editor is turned off.');
         }
 
-        if (Str::startsWith(get_class($this->model), 'App') == false) {
+        if ($this->model->isVendorResource()) {
             abort(403, 'Only App resources can be edited.');
         }
     }
@@ -224,10 +224,7 @@ class Posttype extends Component
 
         $this->model = Aura::findResourceBySlug($slug);
 
-        // $this->authorize('edit-posttype', $this->model);
-
         $this->authorize();
-
 
         $this->fieldsArray = $this->model->getFields();
 

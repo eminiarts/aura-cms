@@ -337,6 +337,16 @@ trait AuraModelConfig
         return static::$title;
     }
 
+    public function isVendorResource()
+    {
+        return ! $this->isAppResource();
+    }
+
+    public function isAppResource()
+    {
+        return Str::startsWith(get_class($this), 'App');
+    }
+
     protected static function getSort(): ?int
     {
         return static::$sort;
