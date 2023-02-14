@@ -51,7 +51,7 @@ class Aura
     }
 
     /**
-     * Register the given resources from App.
+     * Register the App resources
      *
      * @param  array  $resources
      * @return static
@@ -72,6 +72,31 @@ class Aura
             ->filter(fn (string $class): bool => $class != 'Resource')
             ->map(function ($item) {
                 return config('aura.resources.namespace').'\\'.$item;
+            })
+            ->unique()->toArray();
+    }
+    /**
+     * Register the App taxonomies
+     *
+     * @param  array  $resources
+     * @return static
+     */
+    public static function getAppTaxonomies()
+    {
+        $path = config('aura.taxonomies.path');
+
+        if (! app(Filesystem::class)->exists($path)) {
+            return [];
+        }
+
+        return collect(app(Filesystem::class)->allFiles($path))
+            ->map(function (SplFileInfo $file): string {
+                return (string) Str::of($file->getRelativePathname())
+                    ->replace(['/', '.php'], ['\\', '']);
+            })
+            ->filter(fn (string $class): bool => $class != 'Taxonomy')
+            ->map(function ($item) {
+                return config('aura.taxonomies.namespace').'\\'.$item;
             })
             ->unique()->toArray();
     }
@@ -108,6 +133,26 @@ class Aura
 
     public function navigation()
     {
+        // $resources = collect($this->getResources())
+        //                     ->map(fn ($r) => app($r)->navigation())
+        //                     ->sortBy('sort');
+
+        // $grouped = $resources->reduce(function ($carry, $item) {
+        //     $carry[$item['dropdown']] = $carry[$item['dropdown']] ?? [
+        //         'group' => $item['group'],
+        //         'dropdown' => $item['dropdown'],
+        //         'items' => []
+        //     ];
+
+        //     $carry[$item['dropdown']]['items'][] = $item;
+
+        //     return $carry;
+        // }, []);
+
+        // return collect($grouped)->groupBy('group');
+
+
+        // Old code
         $resources = collect($this->getResources())->map(fn ($r) => app($r)->navigation())->sortBy('sort');
 
         $grouped = array_reduce(collect($resources)->toArray(), function ($carry, $item) {
@@ -125,16 +170,7 @@ class Aura
             return $carry;
         }, []);
 
-        // dd(collect($grouped)->groupBy('group'));
-
         return collect($grouped)->groupBy('group');
-
-        return static::resources()
-        ->map(fn ($r) => static::findResourceBySlug($r)->navigation())
-        ->filter(fn ($r) => $r['showInNavigation'])
-        // groupBy dropdown only if dropdown is set
-        ->groupBy('group')
-        ->map(fn ($group) => $group->sortBy('sort'))->dd();
     }
 
     public static function options()
