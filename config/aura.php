@@ -59,6 +59,12 @@ return [
         'register' => [],
     ],
 
+    'fields' => [
+        'namespace' => 'App\\Aura\\Fields',
+        'path' => app_path('Aura/Fields'),
+        'register' => [],
+    ],
+
     /*
     |--------------------------------------------------------------------------
     | Widgets

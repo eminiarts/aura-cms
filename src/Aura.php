@@ -20,6 +20,10 @@ class Aura
 
     protected array $taxonomies = [];
 
+    protected array $widgets = [];
+
+    protected array $fields = [];
+
     public static function checkCondition($model, $field)
     {
         return ConditionalLogic::checkCondition($model, $field);
@@ -56,24 +60,27 @@ class Aura
      * @param  array  $resources
      * @return static
      */
-    public static function getAppResources()
+    public function getAppResources()
     {
         $path = config('aura.resources.path');
 
-        if (! app(Filesystem::class)->exists($path)) {
+        if (!file_exists($path)) {
             return [];
         }
 
+        return $this->getAppFiles($path, $filter = 'Resource', $namespace = config('aura.resources.namespace'));
+    }
+
+    public function getAppFiles($path, $filter, $namespace)
+    {
         return collect(app(Filesystem::class)->allFiles($path))
-            ->map(function (SplFileInfo $file): string {
-                return (string) Str::of($file->getRelativePathname())
-                    ->replace(['/', '.php'], ['\\', '']);
-            })
-            ->filter(fn (string $class): bool => $class != 'Resource')
-            ->map(function ($item) {
-                return config('aura.resources.namespace').'\\'.$item;
-            })
-            ->unique()->toArray();
+                    ->map(function (SplFileInfo $file): string {
+                        return (string) Str::of($file->getRelativePathname())
+                            ->replace(['/', '.php'], ['\\', '']);
+                    })
+                    ->filter(fn (string $class): bool => $class != $filter)
+                    ->map(fn ($item) => $namespace.'\\'.$item)
+                    ->unique()->toArray();
     }
     /**
      * Register the App taxonomies
@@ -81,24 +88,37 @@ class Aura
      * @param  array  $resources
      * @return static
      */
-    public static function getAppTaxonomies()
+    public function getAppTaxonomies()
     {
         $path = config('aura.taxonomies.path');
 
-        if (! app(Filesystem::class)->exists($path)) {
+        if (!file_exists($path)) {
             return [];
         }
 
-        return collect(app(Filesystem::class)->allFiles($path))
-            ->map(function (SplFileInfo $file): string {
-                return (string) Str::of($file->getRelativePathname())
-                    ->replace(['/', '.php'], ['\\', '']);
-            })
-            ->filter(fn (string $class): bool => $class != 'Taxonomy')
-            ->map(function ($item) {
-                return config('aura.taxonomies.namespace').'\\'.$item;
-            })
-            ->unique()->toArray();
+        return $this->getAppFiles($path, $filter = 'Taxonomy', $namespace = config('aura.taxonomies.namespace'));
+    }
+
+    public function getAppFields()
+    {
+        $path = config('aura.fields.path');
+
+        if (!file_exists($path)) {
+            return [];
+        }
+
+        return $this->getAppFiles($path, $filter = 'Field', $namespace = config('aura.fields.namespace'));
+    }
+
+    public function getAppWidgets()
+    {
+        $path = config('aura.widgets.path');
+
+        if (!file_exists($path)) {
+            return [];
+        }
+
+        return $this->getAppFiles($path, $filter = 'Widget', $namespace = config('aura.widgets.namespace'));
     }
 
     public function getOption($name)
@@ -129,6 +149,16 @@ class Aura
     public function getTaxonomies(): array
     {
         return array_unique($this->taxonomies);
+    }
+
+    public function getFields(): array
+    {
+        return array_unique($this->fields);
+    }
+
+    public function getWidgets(): array
+    {
+        return array_unique($this->widgets);
     }
 
     public function navigation()
@@ -181,6 +211,16 @@ class Aura
     public function registerResources(array $resources): void
     {
         $this->resources = array_merge($this->resources, $resources);
+    }
+
+    public function registerFields(array $fields): void
+    {
+        $this->fields = array_merge($this->fields, $fields);
+    }
+
+    public function registerWidgets(array $widgets): void
+    {
+        $this->widgets = array_merge($this->widgets, $widgets);
     }
 
     public function registerTaxonomies(array $taxonomies): void
