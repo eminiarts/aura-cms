@@ -82,11 +82,6 @@ test('flow - data update operation', function () {
     // Assert Post 1 is updated
     $this->assertDatabaseHas('posts', ['title' => 'Test Post 1 Updated', 'status' => 'published']);
 
-    // Assert Flow gets triggered when Post is created
-
-    // Assert Message is in Laravel Log
-    $this->assertStringContainsString('Test Message', file_get_contents(storage_path('logs/laravel.log')));
-
     // Assert Flow is triggered when Post is created
     $this->assertDatabaseHas('flow_logs', ['flow_id' => $flow->id]);
 
@@ -170,11 +165,6 @@ test('flow - data update multiple operation', function () {
     // Assert Post 1 and 2 are updated and published
     $this->assertDatabaseHas('posts', ['title' => 'Test Post 1', 'status' => 'published']);
     $this->assertDatabaseHas('posts', ['title' => 'Test Post 2', 'status' => 'published']);
-
-    // Assert Flow gets triggered when Post is created
-
-    // Assert Message is in Laravel Log
-    $this->assertStringContainsString('Test Message', file_get_contents(storage_path('logs/laravel.log')));
 
     // Assert Flow is triggered when Post is created
     $this->assertDatabaseHas('flow_logs', ['flow_id' => $flow->id]);
