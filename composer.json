@@ -29,6 +29,7 @@
         "wire-elements/modal": "^1.0"
     },
     "require-dev": {
+        "laravel/dusk": "^7.6",
         "laravel/pint": "^1.0",
         "nunomaduro/collision": "^6.0",
         "nunomaduro/larastan": "^2.0.1",
