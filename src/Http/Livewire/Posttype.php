@@ -10,8 +10,8 @@ use Livewire\Component;
 
 class Posttype extends Component
 {
-    use SaveFields;
     use AuthorizesRequests;
+    use SaveFields;
 
     public $fields = [];
 
@@ -150,6 +150,17 @@ class Posttype extends Component
         return redirect(request()->header('Referer'));
     }
 
+    public function authorize()
+    {
+        if (config('aura.posttype_editor') == false) {
+            abort(403, 'Posttype Editor is turned off.');
+        }
+
+        if ($this->model->isVendorResource()) {
+            abort(403, 'Only App resources can be edited.');
+        }
+    }
+
     public function deleteField($data)
     {
         $fields = collect($this->fieldsArray);
@@ -204,17 +215,6 @@ class Posttype extends Component
         }
         // dd($this->model->getFieldsForEdit());
         return $this->model->getFieldsForEdit();
-    }
-
-    public function authorize()
-    {
-        if (config('aura.posttype_editor') == false) {
-            abort(403, 'Posttype Editor is turned off.');
-        }
-
-        if ($this->model->isVendorResource()) {
-            abort(403, 'Only App resources can be edited.');
-        }
     }
 
     public function mount($slug)

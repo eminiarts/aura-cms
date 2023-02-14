@@ -50,6 +50,32 @@ class Aura
         return app('Eminiarts\Aura\Templates\\'.str($slug)->title);
     }
 
+    /**
+     * Register the given resources from App.
+     *
+     * @param  array  $resources
+     * @return static
+     */
+    public static function getAppResources()
+    {
+        $path = config('aura.resources.path');
+
+        if (! app(Filesystem::class)->exists($path)) {
+            return [];
+        }
+
+        return collect(app(Filesystem::class)->allFiles($path))
+            ->map(function (SplFileInfo $file): string {
+                return (string) Str::of($file->getRelativePathname())
+                    ->replace(['/', '.php'], ['\\', '']);
+            })
+            ->filter(fn (string $class): bool => $class != 'Resource')
+            ->map(function ($item) {
+                return config('aura.resources.namespace').'\\'.$item;
+            })
+            ->unique()->toArray();
+    }
+
     public function getOption($name)
     {
         return Cache::remember(auth()->user()->current_team_id.'.aura.team-settings', now()->addHour(), function () {
@@ -68,6 +94,16 @@ class Aura
     public static function getPath($id)
     {
         return Attachment::find($id)->url;
+    }
+
+    public function getResources(): array
+    {
+        return array_unique($this->resources);
+    }
+
+    public function getTaxonomies(): array
+    {
+        return array_unique($this->taxonomies);
     }
 
     public function navigation()
@@ -106,40 +142,14 @@ class Aura
         //
     }
 
-    /**
-     * Register the given resources from App.
-     *
-     * @param  array  $resources
-     * @return static
-     */
-    public static function getAppResources()
+    public function registerResources(array $resources): void
     {
-        $path = config('aura.resources.path');
-
-        if (! app(Filesystem::class)->exists($path)) {
-            return [];
-        }
-
-        return collect(app(Filesystem::class)->allFiles($path))
-            ->map(function (SplFileInfo $file): string {
-                return (string) Str::of($file->getRelativePathname())
-                    ->replace(['/', '.php'], ['\\', '']);
-            })
-            ->filter(fn (string $class): bool => $class != 'Resource')
-            ->map(function ($item) {
-                return config('aura.resources.namespace').'\\'.$item;
-            })
-            ->unique()->toArray();
+        $this->resources = array_merge($this->resources, $resources);
     }
 
-    public function getResources(): array
+    public function registerTaxonomies(array $taxonomies): void
     {
-        return array_unique($this->resources);
-    }
-
-    public function getTaxonomies(): array
-    {
-        return array_unique($this->taxonomies);
+        $this->taxonomies = array_merge($this->taxonomies, $taxonomies);
     }
 
     public function taxonomies()
@@ -177,15 +187,5 @@ class Aura
 
             return $files;
         });
-    }
-
-    public function registerResources(array $resources): void
-    {
-        $this->resources = array_merge($this->resources, $resources);
-    }
-
-    public function registerTaxonomies(array $taxonomies): void
-    {
-        $this->taxonomies = array_merge($this->taxonomies, $taxonomies);
     }
 }

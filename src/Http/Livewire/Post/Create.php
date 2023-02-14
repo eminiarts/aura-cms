@@ -12,8 +12,8 @@ use Livewire\Component;
 
 class Create extends Component
 {
-    use InteractsWithFields;
     use AuthorizesRequests;
+    use InteractsWithFields;
     use RepeaterFields;
 
     public $inModal = false;

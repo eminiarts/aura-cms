@@ -10,6 +10,11 @@ class EditModal extends ModalComponent
 
     public $type;
 
+    public static function modalMaxWidth(): string
+    {
+        return '7xl';
+    }
+
     public function mount($post, $type)
     {
     }
@@ -17,10 +22,5 @@ class EditModal extends ModalComponent
     public function render()
     {
         return view('aura::livewire.post.edit-modal');
-    }
-
-    public static function modalMaxWidth(): string
-    {
-        return '7xl';
     }
 }

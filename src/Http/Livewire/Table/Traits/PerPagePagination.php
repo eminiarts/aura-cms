@@ -19,16 +19,6 @@ trait PerPagePagination
     public $perPage = 10;
 
     /**
-     * Pagination theme.
-     *
-     * @var string
-     */
-    public function paginationView()
-    {
-        return 'aura::aura.pagination';
-    }
-
-    /**
      * Paginate the query.
      *
      * @param  \Illuminate\Database\Eloquent\Builder  $query
@@ -47,6 +37,16 @@ trait PerPagePagination
     public function mountWithPerPagePagination()
     {
         $this->perPage = session()->get('perPage', $this->perPage);
+    }
+
+    /**
+     * Pagination theme.
+     *
+     * @var string
+     */
+    public function paginationView()
+    {
+        return 'aura::aura.pagination';
     }
 
     /**

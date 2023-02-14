@@ -15,23 +15,23 @@ class Card extends Component implements Htmlable
 
     protected ?string $color = null;
 
-    protected ?string $icon = null;
-
     protected string|Htmlable|null $description = null;
-
-    protected ?string $descriptionIcon = null;
 
     protected ?string $descriptionColor = null;
 
+    protected ?string $descriptionIcon = null;
+
     protected array $extraAttributes = [];
 
-    protected bool $shouldOpenUrlInNewTab = false;
-
-    protected ?string $url = null;
+    protected ?string $icon = null;
 
     protected ?string $id = null;
 
     protected string|Htmlable $label;
+
+    protected bool $shouldOpenUrlInNewTab = false;
+
+    protected ?string $url = null;
 
     protected $value;
 
@@ -41,9 +41,11 @@ class Card extends Component implements Htmlable
         $this->value($value);
     }
 
-    public static function make(string $label, $value): static
+    public function chart(?array $chart): static
     {
-        return app(static::class, ['label' => $label, 'value' => $value]);
+        $this->chart = $chart;
+
+        return $this;
     }
 
     public function chartColor(?string $color): static
@@ -56,13 +58,6 @@ class Card extends Component implements Htmlable
     public function color(?string $color): static
     {
         $this->color = $color;
-
-        return $this;
-    }
-
-    public function icon(?string $icon): static
-    {
-        $this->icon = $icon;
 
         return $this;
     }
@@ -95,49 +90,6 @@ class Card extends Component implements Htmlable
         return $this;
     }
 
-    public function openUrlInNewTab(bool $condition = true): static
-    {
-        $this->shouldOpenUrlInNewTab = $condition;
-
-        return $this;
-    }
-
-    public function url(?string $url, bool $shouldOpenInNewTab = false): static
-    {
-        $this->shouldOpenUrlInNewTab = $shouldOpenInNewTab;
-        $this->url = $url;
-
-        return $this;
-    }
-
-    public function chart(?array $chart): static
-    {
-        $this->chart = $chart;
-
-        return $this;
-    }
-
-    public function label(string|Htmlable $label): static
-    {
-        $this->label = $label;
-
-        return $this;
-    }
-
-    public function id(string $id): static
-    {
-        $this->id = $id;
-
-        return $this;
-    }
-
-    public function value($value): static
-    {
-        $this->value = $value;
-
-        return $this;
-    }
-
     public function getChart(): ?array
     {
         return $this->chart;
@@ -151,11 +103,6 @@ class Card extends Component implements Htmlable
     public function getColor(): ?string
     {
         return $this->color;
-    }
-
-    public function getIcon(): ?string
-    {
-        return $this->icon;
     }
 
     public function getDescription(): string|Htmlable|null
@@ -178,19 +125,9 @@ class Card extends Component implements Htmlable
         return $this->extraAttributes;
     }
 
-    public function getUrl(): ?string
+    public function getIcon(): ?string
     {
-        return $this->url;
-    }
-
-    public function shouldOpenUrlInNewTab(): bool
-    {
-        return $this->shouldOpenUrlInNewTab;
-    }
-
-    public function getLabel(): string|Htmlable
-    {
-        return $this->label;
+        return $this->icon;
     }
 
     public function getId(): string
@@ -198,9 +135,62 @@ class Card extends Component implements Htmlable
         return $this->id ?? Str::slug($this->getLabel());
     }
 
+    public function getLabel(): string|Htmlable
+    {
+        return $this->label;
+    }
+
+    public function getUrl(): ?string
+    {
+        return $this->url;
+    }
+
     public function getValue()
     {
         return value($this->value);
+    }
+
+    public function icon(?string $icon): static
+    {
+        $this->icon = $icon;
+
+        return $this;
+    }
+
+    public function id(string $id): static
+    {
+        $this->id = $id;
+
+        return $this;
+    }
+
+    public function label(string|Htmlable $label): static
+    {
+        $this->label = $label;
+
+        return $this;
+    }
+
+    public static function make(string $label, $value): static
+    {
+        return app(static::class, ['label' => $label, 'value' => $value]);
+    }
+
+    public function openUrlInNewTab(bool $condition = true): static
+    {
+        $this->shouldOpenUrlInNewTab = $condition;
+
+        return $this;
+    }
+
+    public function render(): View
+    {
+        return view('filament::widgets.stats-overview-widget.card', $this->data());
+    }
+
+    public function shouldOpenUrlInNewTab(): bool
+    {
+        return $this->shouldOpenUrlInNewTab;
     }
 
     public function toHtml(): string
@@ -208,8 +198,18 @@ class Card extends Component implements Htmlable
         return $this->render()->render();
     }
 
-    public function render(): View
+    public function url(?string $url, bool $shouldOpenInNewTab = false): static
     {
-        return view('filament::widgets.stats-overview-widget.card', $this->data());
+        $this->shouldOpenUrlInNewTab = $shouldOpenInNewTab;
+        $this->url = $url;
+
+        return $this;
+    }
+
+    public function value($value): static
+    {
+        $this->value = $value;
+
+        return $this;
     }
 }

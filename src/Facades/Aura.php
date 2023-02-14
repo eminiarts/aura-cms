@@ -10,11 +10,6 @@ use Illuminate\Support\Facades\Facade;
  */
 class Aura extends Facade
 {
-    protected static function getFacadeAccessor()
-    {
-        return \Eminiarts\Aura\Aura::class;
-    }
-
     /**
      * Replace the bound instance with a fake.
      *
@@ -25,5 +20,10 @@ class Aura extends Facade
         static::swap($fake = new AuraFake());
 
         return $fake;
+    }
+
+    protected static function getFacadeAccessor()
+    {
+        return \Eminiarts\Aura\Aura::class;
     }
 }

@@ -226,6 +226,11 @@ trait AuraModelConfig
         return $this->getIcon();
     }
 
+    public function isAppResource()
+    {
+        return Str::startsWith(get_class($this), 'App');
+    }
+
     public function isMetaField($key)
     {
         // If field is a taxonomy, it is not a meta field
@@ -276,6 +281,11 @@ trait AuraModelConfig
         }
 
         return false;
+    }
+
+    public function isVendorResource()
+    {
+        return ! $this->isAppResource();
     }
 
     /**
@@ -335,16 +345,6 @@ trait AuraModelConfig
     public static function usesTitle(): bool
     {
         return static::$title;
-    }
-
-    public function isVendorResource()
-    {
-        return ! $this->isAppResource();
-    }
-
-    public function isAppResource()
-    {
-        return Str::startsWith(get_class($this), 'App');
     }
 
     protected static function getSort(): ?int
