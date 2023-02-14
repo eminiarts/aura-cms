@@ -3,13 +3,14 @@
 namespace Eminiarts\Aura\Http\Livewire\Taxonomy;
 
 use Eminiarts\Aura\Aura;
-use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Support\Arr;
 use LivewireUI\Modal\ModalComponent;
+use Eminiarts\Aura\Traits\InteractsWithFields;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 
 class Create extends ModalComponent
 {
-    use Aura\Traits\InteractsWithFields;
+    use InteractsWithFields;
     use AuthorizesRequests;
 
     public $model;

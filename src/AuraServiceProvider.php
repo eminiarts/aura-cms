@@ -39,6 +39,7 @@ use Spatie\LaravelPackageTools\Package;
 use Spatie\LaravelPackageTools\PackageServiceProvider;
 use Eminiarts\Aura\Http\Livewire\Taxonomy\Edit as TaxonomyEdit;
 use Eminiarts\Aura\Http\Livewire\Taxonomy\Index as TaxonomyIndex;
+use Eminiarts\Aura\Http\Livewire\Taxonomy\Index as TaxonomyCreate;
 
 class AuraServiceProvider extends PackageServiceProvider
 {
@@ -88,6 +89,7 @@ class AuraServiceProvider extends PackageServiceProvider
         Livewire::component('aura::edit-posttype', Posttype::class);
         Livewire::component('aura::taxonomy-index', TaxonomyIndex::class);
         Livewire::component('aura::taxonomy-edit', TaxonomyEdit::class);
+        Livewire::component('aura::taxonomy-create', TaxonomyCreate::class);
 
         // Flows
         Livewire::component('aura::create-flow', CreateFlow::class);
