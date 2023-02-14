@@ -9,9 +9,10 @@ trait SaveFields
 {
     public function formatIndentation($str, $str2)
     {
-        if (preg_split('#\r?\n#', $str, 0) !== null) {
-            return $str2;
-        }
+        // if (preg_split('#\r?\n#', $str, 0) !== null) {
+        //     return $str2;
+        // }
+
         // Get first Line
         $line = preg_split('#\r?\n#', $str, 0)[1];
 
@@ -84,10 +85,7 @@ trait SaveFields
 
         preg_match("/type = '(.*?)'/", $file, $matches['type']);
         preg_match("/slug = '(.*?)'/", $file, $matches['slug']);
-
         preg_match("/public function getIcon\(\)[\n\r\s+]*\{[\n\r\s+]*return '(.*?)';/", $file, $matches['icon']);
-
-        // dd($matches);
 
         $replaced = Str::replace(
             $matches['type'][1],
@@ -106,10 +104,6 @@ trait SaveFields
             strip_tags(Str::replace('\'', '"', $replacement['icon']), '<a><altGlyph><altGlyphDef><altGlyphItem><animate><animateColor><animateMotion><animateTransform><circle><clipPath><color-profile><cursor><defs><desc><ellipse><feBlend><feColorMatrix><feComponentTransfer><feComposite><feConvolveMatrix><feDiffuseLighting><feDisplacementMap><feDistantLight><feFlood><feFuncA><feFuncB><feFuncG><feFuncR><feGaussianBlur><feImage><feMerge><feMergeNode><feMorphology><feOffset><fePointLight><feSpecularLighting><feSpotLight><feTile><feTurbulence><filter><font><font-face><font-face-format><font-face-name><font-face-src><font-face-uri><foreignObject><g><glyph><glyphRef><hkern><image><line><linearGradient><marker><mask><metadata><missing-glyph><mpath><path><pattern><polygon><polyline><radialGradient><rect><set><stop><style><svg><switch><symbol><text><textPath><title><tref><tspan><use><view><vkern>'),
             $replaced
         );
-
-        // dd('saveProps', $file, $replaced);
-
-        // dd($matches[1], $replacement, $this->formatIndentation($matches[1], $replacement));
 
         file_put_contents($a->getFileName(), $replaced);
 
