@@ -24,6 +24,7 @@ use Eminiarts\Aura\Http\Livewire\Table\Table;
 use Eminiarts\Aura\Http\Livewire\Taxonomy\Edit as TaxonomyEdit;
 use Eminiarts\Aura\Http\Livewire\Taxonomy\Index as TaxonomyCreate;
 use Eminiarts\Aura\Http\Livewire\Taxonomy\Index as TaxonomyIndex;
+use Eminiarts\Aura\Http\Livewire\TeamSettings;
 use Eminiarts\Aura\Http\Livewire\User\TwoFactorAuthenticationForm;
 use Eminiarts\Aura\Policies\PostPolicy;
 use Eminiarts\Aura\Policies\TeamPolicy;
@@ -89,6 +90,7 @@ class AuraServiceProvider extends PackageServiceProvider
         Livewire::component('aura::taxonomy-index', TaxonomyIndex::class);
         Livewire::component('aura::taxonomy-edit', TaxonomyEdit::class);
         Livewire::component('aura::taxonomy-create', TaxonomyCreate::class);
+        Livewire::component('aura::team-settings', TeamSettings::class);
 
         // Flows
         Livewire::component('aura::create-flow', CreateFlow::class);
