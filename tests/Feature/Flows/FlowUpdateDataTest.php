@@ -74,8 +74,6 @@ test('flow - data update operation', function () {
         'status' => 'draft',
     ]);
 
-    // dd('hier');
-
     // Assert Post is in DB
     $this->assertDatabaseHas('posts', ['title' => 'Test Post 2']);
 

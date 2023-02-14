@@ -19,6 +19,7 @@ use Eminiarts\Aura\Http\Livewire\Notifications;
 use Eminiarts\Aura\Http\Livewire\Post\Create;
 use Eminiarts\Aura\Http\Livewire\Post\Edit;
 use Eminiarts\Aura\Http\Livewire\Post\Index;
+use Eminiarts\Aura\Http\Livewire\Posttype;
 use Eminiarts\Aura\Http\Livewire\Table\Table;
 use Eminiarts\Aura\Http\Livewire\User\TwoFactorAuthenticationForm;
 use Eminiarts\Aura\Policies\PostPolicy;
@@ -97,6 +98,7 @@ class AuraServiceProvider extends PackageServiceProvider
         Livewire::component('aura::attachment-index', AttachmentIndex::class);
         Livewire::component('aura::user-two-factor-authentication-form', TwoFactorAuthenticationForm::class);
         Livewire::component('aura::create-posttype', CreatePosttype::class);
+        Livewire::component('aura::edit-posttype', Posttype::class);
 
         // Flows
         Livewire::component('aura::create-flow', CreateFlow::class);
