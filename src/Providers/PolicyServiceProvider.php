@@ -35,15 +35,15 @@ class PolicyServiceProvider extends ServiceProvider
      */
     public function boot()
     {
-        $this->registerPolicies();
+        //$this->registerPolicies();
 
-        Gate::before(function ($user, $ability) {
-            dd('before');
+        // Gate::before(function ($user, $ability) {
+        //     dd('before');
 
-            return true;
-            if ($user->resource->isSuperAdmin()) {
-                return true;
-            }
-        });
+        //     return true;
+        //     if ($user->resource->isSuperAdmin()) {
+        //         return true;
+        //     }
+        // });
     }
 }

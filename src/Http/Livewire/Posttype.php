@@ -2,14 +2,17 @@
 
 namespace Eminiarts\Aura\Http\Livewire;
 
-use Eminiarts\Aura\Facades\Aura;
-use Eminiarts\Aura\Traits\SaveFields;
-use Illuminate\Support\Str;
 use Livewire\Component;
+use Illuminate\Support\Str;
+use Eminiarts\Aura\Facades\Aura;
+use Illuminate\Auth\Access\Response;
+use Eminiarts\Aura\Traits\SaveFields;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 
 class Posttype extends Component
 {
     use SaveFields;
+    use AuthorizesRequests;
 
     public $fields = [];
 
@@ -209,6 +212,18 @@ class Posttype extends Component
         $this->slug = $slug;
 
         $this->model = Aura::findResourceBySlug($slug);
+
+        // $this->authorize('edit-posttype', $this->model);
+
+        if (config('aura.posttype_editor') == false) {
+            abort(403, 'Posttype Editor is turned off.');
+        }
+
+        // If the resource namespace does not start with "App", then it is a package resource, abort with "only app resources can be edited"
+        if (Str::startsWith(get_class($this->model), 'App') == false) {
+            abort(403, 'Only App resources can be edited.');
+        }
+
 
         $this->fieldsArray = $this->model->getFields();
 
