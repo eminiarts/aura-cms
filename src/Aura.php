@@ -27,12 +27,16 @@ class Aura
 
     public function findResourceBySlug($slug)
     {
-        // Only return if resource exists
-
         $name = Str::title($slug);
 
-        if (in_array("Eminiarts\Aura\Resources\\".$name, $this->getResources())) {
-            return app('Eminiarts\Aura\Resources\\'.$slug);
+        $resources = collect($this->getResources())->map(function ($resource) {
+            return Str::afterLast($resource, '\\');
+        })->toArray();
+
+        if (in_array($name, $resources)) {
+            $index = array_search($name, $resources);
+
+            return app($this->getResources()[$index]);
         }
     }
 
