@@ -10,7 +10,6 @@ class SwitchTeamController extends Controller
     /**
      * Update the authenticated user's current team.
      *
-     * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\RedirectResponse
      */
     public function update(Request $request)

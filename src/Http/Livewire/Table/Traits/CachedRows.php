@@ -24,7 +24,6 @@ trait CachedRows
     /**
      * Store result in cache and return result
      *
-     * @param  callable  $callback
      * @return mixed
      */
     protected function cache(callable $callback)

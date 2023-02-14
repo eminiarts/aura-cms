@@ -354,8 +354,6 @@ class User extends UserModel
 
     /**
      * Returns true if the user has at least one role that is a super admin.
-     *
-     * @return bool
      */
     public function isSuperAdmin(): bool
     {
@@ -449,9 +447,6 @@ class User extends UserModel
         });
     }
 
-    /**
-     * @return mixed
-     */
     protected function cachedRoles(): mixed
     {
         return Cache::remember('user.'.$this->id.'.roles', now()->addMinutes(60), function () {

@@ -109,7 +109,6 @@ class TrendWidget extends Widget
     /**
      * Format the possible aggregate result date into a proper string.
      *
-     * @param  \Carbon\CarbonInterface  $date
      * @param  string  $unit
      * @param  bool  $twelveHourTime
      * @return string
@@ -185,8 +184,6 @@ class TrendWidget extends Widget
     /**
      * Get all of the possible date results for the given units.
      *
-     * @param  \Carbon\CarbonInterface  $startingDate
-     * @param  \Carbon\CarbonInterface  $endingDate
      * @param  string  $unit
      * @param  bool  $twelveHourTime
      * @return array<string, int>

@@ -26,7 +26,6 @@ class GenerateImageThumbnail implements ShouldQueue
     /**
      * Create a new job instance.
      *
-     * @param  Attachment  $attachment
      * @return void
      */
     public function __construct(Attachment $attachment)

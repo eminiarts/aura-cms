@@ -6,10 +6,6 @@ use Closure;
 
 class ApplyLayoutFields implements Pipe
 {
-    /**
-     * @param  array  $layouts
-     * @return array
-     */
     public function createMainPanel(array $layouts): array
     {
         if (count($layouts) == 0) {
@@ -25,11 +21,6 @@ class ApplyLayoutFields implements Pipe
         return $layouts;
     }
 
-    /**
-     * @param  array  $layouts
-     * @param  int|string|null  $lastKey
-     * @return array
-     */
     public function createTabs(array $layouts, int|string|null $lastKey): array
     {
         $layouts[$lastKey]['fields'][] = [

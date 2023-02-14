@@ -124,8 +124,6 @@ class Table extends Component
 
     /**
      * Handle bulk action on the selected rows.
-     *
-     * @param  string  $action
      */
     public function bulkAction(string $action)
     {
