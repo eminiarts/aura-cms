@@ -193,10 +193,18 @@ class AuraServiceProvider extends PackageServiceProvider
             \Eminiarts\Aura\Taxonomies\Category::class,
         ]);
 
+        // Register Fields from src/Fields
+        $fields = collect(app('files')->files(__DIR__ . '/Fields'))->map(function ($field) {
+            return 'Eminiarts\Aura\Fields\\'.str($field->getFilename())->replace('.php', '')->title;
+        })->toArray();
+
+        Aura::registerFields($fields);
+
         // Register App Resources
         Aura::registerResources(Aura::getAppResources());
-
         Aura::registerResources(Aura::getAppTaxonomies());
+        Aura::registerWidgets(Aura::getAppWidgets());
+        Aura::registerFields(Aura::getAppFields());
     }
 
     protected function getResources(): array
