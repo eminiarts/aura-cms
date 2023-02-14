@@ -39,11 +39,6 @@ class Taxonomy extends ModelsTaxonomy
         return 'fields.taxonomy';
     }
 
-    public function getBulkActions()
-    {
-        return $this->bulkActions;
-    }
-
     public function display($key)
     {
         if ($this->fields && array_key_exists($key, $this->fields->toArray())) {
@@ -64,6 +59,11 @@ class Taxonomy extends ModelsTaxonomy
         $this->withAttributes($field);
 
         return $this;
+    }
+
+    public function getBulkActions()
+    {
+        return $this->bulkActions;
     }
 
     public static function getFields()

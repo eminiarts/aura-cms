@@ -4,13 +4,19 @@ namespace Eminiarts\Aura\Fields;
 
 class SelectRelation extends Field
 {
-    protected string $view = 'components.fields.select-relation';
-
     public string $component = 'aura::fields.select-relation';
 
-    public function set($value)
+    protected string $view = 'components.fields.select-relation';
+
+    public function display($field, $value)
     {
-        return json_encode($value);
+        if (! $value) {
+            return;
+        }
+
+        $values = json_decode($value, true);
+
+        return app($field['posttype'])->find($values)->pluck('name')->implode(',');
     }
 
     public function get($field, $value)
@@ -22,14 +28,8 @@ class SelectRelation extends Field
         return json_decode($value, true);
     }
 
-    public function display($field, $value)
+    public function set($value)
     {
-        if (! $value) {
-            return;
-        }
-
-        $values = json_decode($value, true);
-
-        return app($field['posttype'])->find($values)->pluck('name')->implode(',');
+        return json_encode($value);
     }
 }

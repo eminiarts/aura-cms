@@ -6,9 +6,9 @@ use Illuminate\Console\Command;
 
 class AuraCommand extends Command
 {
-    public $signature = 'aura';
-
     public $description = 'My command';
+
+    public $signature = 'aura';
 
     public function handle(): int
     {

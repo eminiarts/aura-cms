@@ -24,10 +24,6 @@ class PolicyServiceProvider extends ServiceProvider
         User::class => UserPolicy::class,
     ];
 
-    public function register(): void
-    {
-    }
-
     /**
      * Register any authentication / authorization services.
      *
@@ -45,5 +41,9 @@ class PolicyServiceProvider extends ServiceProvider
         //         return true;
         //     }
         // });
+    }
+
+    public function register(): void
+    {
     }
 }

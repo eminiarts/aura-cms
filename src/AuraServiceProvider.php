@@ -39,6 +39,72 @@ use Spatie\LaravelPackageTools\PackageServiceProvider;
 
 class AuraServiceProvider extends PackageServiceProvider
 {
+    // boot
+    public function boot()
+    {
+        parent::boot();
+
+        // dd('before gate before');
+    }
+
+    public function bootGate()
+    {
+        Gate::policy(Team::class, TeamPolicy::class);
+        Gate::policy(Resource::class, PostPolicy::class);
+        Gate::policy(User::class, UserPolicy::class);
+
+        Gate::before(function ($user, $ability) {
+            // if ($ability == 'edit-posttype' && ! config('aura.posttype_editor')) {
+            //     return Response::deny('Posttype Editor is turned off.');
+            // }
+
+            if ($user->resource->isSuperAdmin()) {
+                return true;
+            }
+        });
+
+        // Gate::define('edit-posttype', function ($user, $resource) {
+        //     return config('aura.posttype_editor');
+        // });
+
+        // Gate::after(function ($user, $ability, $result, $arguments) {
+        //     if ($ability == 'edit-posttype' && ! config('aura.posttype_editor')) {
+        //         return Response::deny('You must be an administrator.');
+        //     }
+        // });
+
+        return $this;
+    }
+
+    public function bootLivewireComponents()
+    {
+        Livewire::component('app.aura.widgets.post-stats', \Eminiarts\Aura\Widgets\PostStats::class);
+        Livewire::component('app.aura.widgets.total-posts', \Eminiarts\Aura\Widgets\TotalPosts::class);
+        Livewire::component('app.aura.widgets.post-chart', \Eminiarts\Aura\Widgets\PostChart::class);
+        Livewire::component('app.aura.widgets.sum-posts-number', \Eminiarts\Aura\Widgets\SumPostsNumber::class);
+        Livewire::component('app.aura.widgets.avg-posts-number', \Eminiarts\Aura\Widgets\AvgPostsNumber::class);
+
+        Livewire::component('aura::post-index', Index::class);
+        Livewire::component('aura::post-create', Create::class);
+        Livewire::component('aura::post-edit', Edit::class);
+        Livewire::component('aura::table', Table::class);
+        Livewire::component('aura::navigation', Navigation::class);
+        Livewire::component('aura::global-search', GlobalSearch::class);
+        Livewire::component('aura::notifications', Notifications::class);
+        Livewire::component('aura::edit-posttype-field', EditPosttypeField::class);
+        Livewire::component('aura::media-manager', MediaManager::class);
+        Livewire::component('aura::media-uploader', MediaUploader::class);
+        Livewire::component('aura::attachment-index', AttachmentIndex::class);
+        Livewire::component('aura::user-two-factor-authentication-form', TwoFactorAuthenticationForm::class);
+        Livewire::component('aura::create-posttype', CreatePosttype::class);
+
+        // Flows
+        Livewire::component('aura::create-flow', CreateFlow::class);
+        Livewire::component('aura::edit-operation', EditOperation::class);
+
+        return $this;
+    }
+
     /*
     * This class is a Package Service Provider
     *
@@ -71,19 +137,6 @@ class AuraServiceProvider extends PackageServiceProvider
             });
     }
 
-    protected function getResources(): array
-    {
-        return config('aura.resources');
-    }
-
-    // boot
-    public function boot()
-    {
-        parent::boot();
-
-        // dd('before gate before');
-    }
-
     public function packageBooted()
     {
         Component::macro('notify', function ($message) {
@@ -108,64 +161,6 @@ class AuraServiceProvider extends PackageServiceProvider
         $this
         ->bootGate()
         ->bootLivewireComponents();
-    }
-
-    public function bootLivewireComponents()
-    {
-        Livewire::component('app.aura.widgets.post-stats', \Eminiarts\Aura\Widgets\PostStats::class);
-        Livewire::component('app.aura.widgets.total-posts', \Eminiarts\Aura\Widgets\TotalPosts::class);
-        Livewire::component('app.aura.widgets.post-chart', \Eminiarts\Aura\Widgets\PostChart::class);
-        Livewire::component('app.aura.widgets.sum-posts-number', \Eminiarts\Aura\Widgets\SumPostsNumber::class);
-        Livewire::component('app.aura.widgets.avg-posts-number', \Eminiarts\Aura\Widgets\AvgPostsNumber::class);
-
-        Livewire::component('aura::post-index', Index::class);
-        Livewire::component('aura::post-create', Create::class);
-        Livewire::component('aura::post-edit', Edit::class);
-        Livewire::component('aura::table', Table::class);
-        Livewire::component('aura::navigation', Navigation::class);
-        Livewire::component('aura::global-search', GlobalSearch::class);
-        Livewire::component('aura::notifications', Notifications::class);
-        Livewire::component('aura::edit-posttype-field', EditPosttypeField::class);
-        Livewire::component('aura::media-manager', MediaManager::class);
-        Livewire::component('aura::media-uploader', MediaUploader::class);
-        Livewire::component('aura::attachment-index', AttachmentIndex::class);
-        Livewire::component('aura::user-two-factor-authentication-form', TwoFactorAuthenticationForm::class);
-        Livewire::component('aura::create-posttype', CreatePosttype::class);
-
-        // Flows
-        Livewire::component('aura::create-flow', CreateFlow::class);
-        Livewire::component('aura::edit-operation', EditOperation::class);
-
-        return $this;
-    }
-
-    public function bootGate()
-    {
-        Gate::policy(Team::class, TeamPolicy::class);
-        Gate::policy(Resource::class, PostPolicy::class);
-        Gate::policy(User::class, UserPolicy::class);
-
-        Gate::before(function ($user, $ability) {
-            // if ($ability == 'edit-posttype' && ! config('aura.posttype_editor')) {
-            //     return Response::deny('Posttype Editor is turned off.');
-            // }
-
-            if ($user->resource->isSuperAdmin()) {
-                return true;
-            }
-        });
-
-        // Gate::define('edit-posttype', function ($user, $resource) {
-        //     return config('aura.posttype_editor');
-        // });
-
-        // Gate::after(function ($user, $ability, $result, $arguments) {
-        //     if ($ability == 'edit-posttype' && ! config('aura.posttype_editor')) {
-        //         return Response::deny('You must be an administrator.');
-        //     }
-        // });
-
-        return $this;
     }
 
     public function packageRegistered()
@@ -198,5 +193,10 @@ class AuraServiceProvider extends PackageServiceProvider
 
         // Register App Resources
         Aura::registerResources(Aura::getAppResources());
+    }
+
+    protected function getResources(): array
+    {
+        return config('aura.resources');
     }
 }

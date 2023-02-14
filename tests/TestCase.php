@@ -22,16 +22,6 @@ class TestCase extends Orchestra
         );
     }
 
-    protected function getPackageProviders($app)
-    {
-        return [
-            AuraServiceProvider::class,
-            LivewireServiceProvider::class,
-            ImpersonateServiceProvider::class,
-            LivewireModalServiceProvider::class,
-        ];
-    }
-
     public function getEnvironmentSetUp($app)
     {
         config()->set('database.default', 'testing');
@@ -43,5 +33,15 @@ class TestCase extends Orchestra
         $migration->up();
         $migration2 = include __DIR__.'/../database/migrations/create_flows_table.php.stub';
         $migration2->up();
+    }
+
+    protected function getPackageProviders($app)
+    {
+        return [
+            AuraServiceProvider::class,
+            LivewireServiceProvider::class,
+            ImpersonateServiceProvider::class,
+            LivewireModalServiceProvider::class,
+        ];
     }
 }
