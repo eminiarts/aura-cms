@@ -1,14 +1,45 @@
 <?php
 
+use Eminiarts\Aura\Resources\User;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+
+uses(RefreshDatabase::class);
+
+beforeEach(fn () => $this->actingAs($this->user = User::factory()->create()));
+
 
 test('resource in app can be edited', function () {
-    // Todo: add test
+    // create a app resource
+
+    $this->assertFalse($appResource->isAppResource());
+    $this->assertTrue($appResource->isVendorResource());
+
+    createSuperAdmin();
+
+    // visit edit posttype page
+    $response = $this->get(route('aura.posttype.edit', 'user'));
+
+    $response->assertForbidden();
+
+    expect($response->exception->getMessage())->toBe('Only App resources can be edited.');
 });
 
 
 test('vendor resource can not be edited', function () {
-    // Todo: add test
+    $userResource = new User();
+
+    $this->assertFalse($userResource->isAppResource());
+    $this->assertTrue($userResource->isVendorResource());
+
+    createSuperAdmin();
+
+    // visit edit posttype page
+    $response = $this->get(route('aura.posttype.edit', 'user'));
+
+    $response->assertForbidden();
+
+    expect($response->exception->getMessage())->toBe('Only App resources can be edited.');
 });
 
 
@@ -20,7 +51,8 @@ test('edit posttype should be allowed', function () {
 });
 
 test('edit posttype can be turned off in config', function () {
-    // Set aura.posttype_editor to true
+    createSuperAdmin();
+
     config(['aura.posttype_editor' => false]);
 
     $config = config('aura.posttype_editor');
@@ -28,8 +60,11 @@ test('edit posttype can be turned off in config', function () {
     $this->assertFalse($config);
 
     // visit edit posttype page
-    $this->get(route('aura.posttype.edit', 'post'))
-        ->assertStatus(403);
+    $response = $this->get(route('aura.posttype.edit', 'user'));
+
+    $response->assertForbidden();
+
+    expect($response->exception->getMessage())->toBe('Posttype Editor is turned off.');
 });
 
 
