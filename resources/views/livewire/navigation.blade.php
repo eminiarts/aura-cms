@@ -92,11 +92,11 @@
 
     @if ($this->isToggled($group))
         @foreach(\Aura::taxonomies() as $taxonomy)
-        <x-aura::navigation.item route="aura.taxonomy.index" :id="$taxonomy" :strict="false">
+        <x-aura::navigation.item route="aura.taxonomy.index" :id="app($taxonomy)->title" :strict="false">
             <div class="{{ $iconClass }}">
                 <x-aura::icon icon="circle" />
             </div>
-            <div>{{ $taxonomy }}</div>
+            <div>{{ app($taxonomy)->title }}</div>
         </x-aura::navigation.item>
         @endforeach
     @endif

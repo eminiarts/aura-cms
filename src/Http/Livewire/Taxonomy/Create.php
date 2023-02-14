@@ -32,7 +32,7 @@ class Create extends ModalComponent
 
     public function render()
     {
-        return view('aura::livewire.taxonomy.create');
+        return view('aura::livewire.taxonomy.create')->layout('aura::components.layout.app');
     }
 
     public function rules()

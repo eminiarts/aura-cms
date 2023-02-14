@@ -37,6 +37,8 @@ use Livewire\Livewire;
 use Spatie\LaravelPackageTools\Commands\InstallCommand;
 use Spatie\LaravelPackageTools\Package;
 use Spatie\LaravelPackageTools\PackageServiceProvider;
+use Eminiarts\Aura\Http\Livewire\Taxonomy\Edit as TaxonomyEdit;
+use Eminiarts\Aura\Http\Livewire\Taxonomy\Index as TaxonomyIndex;
 
 class AuraServiceProvider extends PackageServiceProvider
 {
@@ -55,24 +57,10 @@ class AuraServiceProvider extends PackageServiceProvider
         Gate::policy(User::class, UserPolicy::class);
 
         Gate::before(function ($user, $ability) {
-            // if ($ability == 'edit-posttype' && ! config('aura.posttype_editor')) {
-            //     return Response::deny('Posttype Editor is turned off.');
-            // }
-
             if ($user->resource->isSuperAdmin()) {
                 return true;
             }
         });
-
-        // Gate::define('edit-posttype', function ($user, $resource) {
-        //     return config('aura.posttype_editor');
-        // });
-
-        // Gate::after(function ($user, $ability, $result, $arguments) {
-        //     if ($ability == 'edit-posttype' && ! config('aura.posttype_editor')) {
-        //         return Response::deny('You must be an administrator.');
-        //     }
-        // });
 
         return $this;
     }
@@ -84,7 +72,6 @@ class AuraServiceProvider extends PackageServiceProvider
         Livewire::component('app.aura.widgets.post-chart', \Eminiarts\Aura\Widgets\PostChart::class);
         Livewire::component('app.aura.widgets.sum-posts-number', \Eminiarts\Aura\Widgets\SumPostsNumber::class);
         Livewire::component('app.aura.widgets.avg-posts-number', \Eminiarts\Aura\Widgets\AvgPostsNumber::class);
-
         Livewire::component('aura::post-index', Index::class);
         Livewire::component('aura::post-create', Create::class);
         Livewire::component('aura::post-edit', Edit::class);
@@ -99,6 +86,8 @@ class AuraServiceProvider extends PackageServiceProvider
         Livewire::component('aura::user-two-factor-authentication-form', TwoFactorAuthenticationForm::class);
         Livewire::component('aura::create-posttype', CreatePosttype::class);
         Livewire::component('aura::edit-posttype', Posttype::class);
+        Livewire::component('aura::taxonomy-index', TaxonomyIndex::class);
+        Livewire::component('aura::taxonomy-edit', TaxonomyEdit::class);
 
         // Flows
         Livewire::component('aura::create-flow', CreateFlow::class);
