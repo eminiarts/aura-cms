@@ -27,7 +27,6 @@ class Meta extends Model
     protected $table = 'post_meta';
 
     /**
-     * @param  array  $models
      * @return MetaCollection
      */
     public function newCollection(array $models = [])

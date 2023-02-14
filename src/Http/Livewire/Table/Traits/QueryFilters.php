@@ -38,11 +38,6 @@ trait QueryFilters
         return $query;
     }
 
-    /**
-     * @param  Builder  $query
-     * @param  array  $filter
-     * @return void
-     */
     protected function applyIsEmptyMetaFilter(Builder $query, array $filter): void
     {
         $query->where(function ($query) use ($filter) {
@@ -61,10 +56,6 @@ trait QueryFilters
 
     /**
      * Apply filters to the meta fields query
-     *
-     * @param  Builder  $query
-     * @param  array  $filter
-     * @return Builder
      */
     protected function applyMetaFieldFilter(Builder $query, array $filter): Builder
     {
@@ -110,8 +101,6 @@ trait QueryFilters
     /**
      * Apply filter for table fields
      *
-     * @param  Builder  $query
-     * @param  array  $filter
      * @return Builder
      */
     protected function applyTableFieldFilter(Builder $query, array $filter)

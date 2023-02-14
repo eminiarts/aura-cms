@@ -1,15 +1,13 @@
 <?php
 
-use Mockery\MockInterface;
-use Eminiarts\Aura\Models\Post;
 use Eminiarts\Aura\Facades\Aura;
+use Eminiarts\Aura\Models\Post;
 use Eminiarts\Aura\Resources\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
 
 beforeEach(fn () => $this->actingAs($this->user = User::factory()->create()));
-
 
 class PosttypeEditModel extends Post
 {
@@ -24,7 +22,6 @@ class PosttypeEditModel extends Post
         return true;
     }
 }
-
 
 test('resource in app can be edited', function () {
     // create a app resource

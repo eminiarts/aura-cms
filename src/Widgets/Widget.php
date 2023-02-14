@@ -66,7 +66,6 @@ class Widget extends Component
     /**
      * Format date between.
      *
-     * @param  array  $ranges
      * @return array
      */
     protected function formatQueryDateBetween(array $ranges)

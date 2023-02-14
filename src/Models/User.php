@@ -85,17 +85,11 @@ class User extends Authenticatable
         });
     }
 
-    /**
-     * @return bool
-     */
     public function canBeImpersonated(): bool
     {
         return ! $this->resource->isSuperAdmin();
     }
 
-    /**
-     * @return bool
-     */
     public function canImpersonate(): bool
     {
         return $this->resource->isSuperAdmin();

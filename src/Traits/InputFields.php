@@ -162,8 +162,6 @@ trait InputFields
      * This code is used to render the form fields in the correct order.
      * It applies tabs to the fields, maps the fields, adds ids to the fields,
      * applies the parent conditional logic to the fields, and builds a tree from the fields.
-     *
-     * @return array
      */
     public function getGroupedFields($fields = null): array
     {
