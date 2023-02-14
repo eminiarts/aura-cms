@@ -2,8 +2,8 @@
 
 namespace Eminiarts\Aura\Traits;
 
-use Illuminate\Support\Str;
 use Eminiarts\Aura\Facades\Aura;
+use Illuminate\Support\Str;
 
 trait SaveFields
 {
