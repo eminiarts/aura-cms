@@ -55,9 +55,14 @@ return [
     'resources' => [
         'namespace' => 'App\\Aura\\Resources',
         'path' => app_path('Aura/Resources'),
-        'register' => [
+        'register' => [],
+    ],
 
-        ],
+
+    'taxonomies' => [
+        'namespace' => 'App\\Aura\\Taxonomies',
+        'path' => app_path('Aura/Taxonomies'),
+        'register' => [],
     ],
 
     /*
@@ -71,27 +76,9 @@ return [
     */
 
     'widgets' => [
-        'namespace' => 'Eminiarts\\Aura\\Widgets',
+        'namespace' => 'App\\Aura\\Widgets',
         'path' => app_path('Aura/Widgets'),
-        'register' => [
-            // Widgets\AccountWidget::class,
-            // Widgets\FilamentInfoWidget::class,
-        ],
-    ],
-
-    /*
-    |--------------------------------------------------------------------------
-    | Livewire
-    |--------------------------------------------------------------------------
-    |
-    | This is the namespace and directory that Aura will automatically
-    | register Livewire components inside.
-    |
-    */
-
-    'livewire' => [
-        'namespace' => 'App\\Aura',
-        'path' => app_path('Aura'),
+        'register' => [],
     ],
 
     'posttype_editor' => app()->environment('production') ? false : true,

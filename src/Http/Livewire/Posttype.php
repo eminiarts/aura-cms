@@ -207,6 +207,17 @@ class Posttype extends Component
         return $this->model->getFieldsForEdit();
     }
 
+    public function authorize()
+    {
+        if (config('aura.posttype_editor') == false) {
+            abort(403, 'Posttype Editor is turned off.');
+        }
+
+        if (Str::startsWith(get_class($this->model), 'App') == false) {
+            abort(403, 'Only App resources can be edited.');
+        }
+    }
+
     public function mount($slug)
     {
         $this->slug = $slug;
@@ -215,14 +226,7 @@ class Posttype extends Component
 
         // $this->authorize('edit-posttype', $this->model);
 
-        if (config('aura.posttype_editor') == false) {
-            abort(403, 'Posttype Editor is turned off.');
-        }
-
-        // If the resource namespace does not start with "App", then it is a package resource, abort with "only app resources can be edited"
-        if (Str::startsWith(get_class($this->model), 'App') == false) {
-            abort(403, 'Only App resources can be edited.');
-        }
+        $this->authorize();
 
 
         $this->fieldsArray = $this->model->getFields();
