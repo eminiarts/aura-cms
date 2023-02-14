@@ -52,6 +52,7 @@ test('media page can be rendered', function () {
 
 test('media uploader', function () {
     Storage::fake('avatars');
+    Storage::fake('tmp-for-tests');
 
     $file = UploadedFile::fake()->image('avatar.png');
 
