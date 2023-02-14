@@ -45,7 +45,8 @@ class MakePosttype extends GeneratorCommand
      */
     protected function getStub()
     {
-        return  app_path().'/Console/Commands/Stubs/make-posttype.stub';
+        // current dir /Stubs/make-posttype.stub
+        return __DIR__.'/Stubs/make-posttype.stub';
     }
 
     /**
