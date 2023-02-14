@@ -36,18 +36,14 @@ Route::domain(config('aura.domain'))
             return config('aura.path');
         });
 
-
-
         Route::prefix(config('aura.path'))->group(function () {
             Route::get('/', function () {
                 return view('aura::dashboard');
             })->name('dashboard');
 
-
             Route::get('/posttypes', function () {
                 return view('aura::posttypes');
             })->name('posttypes');
-
 
             Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
             Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');

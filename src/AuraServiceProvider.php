@@ -2,42 +2,40 @@
 
 namespace Eminiarts\Aura;
 
-use Livewire\Livewire;
-use Livewire\Component;
-use Illuminate\Support\Arr;
-use Illuminate\Support\Str;
-use Eminiarts\Aura\Facades\Aura;
-use Eminiarts\Aura\Resources\Team;
-use Eminiarts\Aura\Resources\User;
-use Illuminate\Support\Facades\Gate;
+use Eminiarts\Aura\Commands\AuraCommand;
+use Eminiarts\Aura\Commands\MakePosttype;
 use Eminiarts\Aura\Commands\MakeUser;
-use Illuminate\Filesystem\Filesystem;
+use Eminiarts\Aura\Facades\Aura;
+use Eminiarts\Aura\Http\Livewire\Attachment\Index as AttachmentIndex;
+use Eminiarts\Aura\Http\Livewire\CreateFlow;
+use Eminiarts\Aura\Http\Livewire\CreatePosttype;
+use Eminiarts\Aura\Http\Livewire\EditOperation;
+use Eminiarts\Aura\Http\Livewire\EditPosttypeField;
+use Eminiarts\Aura\Http\Livewire\GlobalSearch;
+use Eminiarts\Aura\Http\Livewire\MediaManager;
+use Eminiarts\Aura\Http\Livewire\MediaUploader;
+use Eminiarts\Aura\Http\Livewire\Navigation;
+use Eminiarts\Aura\Http\Livewire\Notifications;
+use Eminiarts\Aura\Http\Livewire\Post\Create;
+use Eminiarts\Aura\Http\Livewire\Post\Edit;
+use Eminiarts\Aura\Http\Livewire\Post\Index;
+use Eminiarts\Aura\Http\Livewire\Table\Table;
+use Eminiarts\Aura\Http\Livewire\User\TwoFactorAuthenticationForm;
 use Eminiarts\Aura\Policies\PostPolicy;
 use Eminiarts\Aura\Policies\TeamPolicy;
 use Eminiarts\Aura\Policies\UserPolicy;
-use Spatie\LaravelPackageTools\Package;
+use Eminiarts\Aura\Resources\Team;
+use Eminiarts\Aura\Resources\User;
 use Illuminate\Auth\Access\Response;
-use Eminiarts\Aura\Commands\AuraCommand;
-use Eminiarts\Aura\Commands\MakePosttype;
 use Illuminate\Database\Eloquent\Builder;
-use Symfony\Component\Finder\SplFileInfo;
-use Eminiarts\Aura\Http\Livewire\Post\Edit;
-use Eminiarts\Aura\Http\Livewire\CreateFlow;
-use Eminiarts\Aura\Http\Livewire\Navigation;
-use Eminiarts\Aura\Http\Livewire\Post\Index;
-use Eminiarts\Aura\Http\Livewire\Post\Create;
-use Eminiarts\Aura\Http\Livewire\Table\Table;
-use Eminiarts\Aura\Http\Livewire\GlobalSearch;
-use Eminiarts\Aura\Http\Livewire\MediaManager;
-use Eminiarts\Aura\Http\Livewire\EditOperation;
-use Eminiarts\Aura\Http\Livewire\MediaUploader;
-use Eminiarts\Aura\Http\Livewire\Notifications;
-use Eminiarts\Aura\Http\Livewire\CreatePosttype;
-use Eminiarts\Aura\Http\Livewire\EditPosttypeField;
-use Spatie\LaravelPackageTools\PackageServiceProvider;
+use Illuminate\Support\Arr;
+use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Str;
+use Livewire\Component;
+use Livewire\Livewire;
 use Spatie\LaravelPackageTools\Commands\InstallCommand;
-use Eminiarts\Aura\Http\Livewire\User\TwoFactorAuthenticationForm;
-use Eminiarts\Aura\Http\Livewire\Attachment\Index as AttachmentIndex;
+use Spatie\LaravelPackageTools\Package;
+use Spatie\LaravelPackageTools\PackageServiceProvider;
 
 class AuraServiceProvider extends PackageServiceProvider
 {
@@ -134,7 +132,6 @@ class AuraServiceProvider extends PackageServiceProvider
         Livewire::component('aura::user-two-factor-authentication-form', TwoFactorAuthenticationForm::class);
         Livewire::component('aura::create-posttype', CreatePosttype::class);
 
-
         // Flows
         Livewire::component('aura::create-flow', CreateFlow::class);
         Livewire::component('aura::edit-operation', EditOperation::class);
@@ -162,14 +159,11 @@ class AuraServiceProvider extends PackageServiceProvider
         //     return config('aura.posttype_editor');
         // });
 
-
         // Gate::after(function ($user, $ability, $result, $arguments) {
         //     if ($ability == 'edit-posttype' && ! config('aura.posttype_editor')) {
         //         return Response::deny('You must be an administrator.');
         //     }
         // });
-
-
 
         return $this;
     }

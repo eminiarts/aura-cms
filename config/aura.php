@@ -1,10 +1,5 @@
 <?php
 
-use Eminiarts\Aura\Resources\Permission;
-use Eminiarts\Aura\Resources\Post;
-use Eminiarts\Aura\Resources\Role;
-use Eminiarts\Aura\Resources\User;
-
 return [
     /*
     |--------------------------------------------------------------------------
@@ -57,7 +52,6 @@ return [
         'path' => app_path('Aura/Resources'),
         'register' => [],
     ],
-
 
     'taxonomies' => [
         'namespace' => 'App\\Aura\\Taxonomies',

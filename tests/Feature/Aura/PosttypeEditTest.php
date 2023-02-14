@@ -1,13 +1,11 @@
 <?php
 
 use Eminiarts\Aura\Resources\User;
-use Illuminate\Support\Facades\Artisan;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
 
 beforeEach(fn () => $this->actingAs($this->user = User::factory()->create()));
-
 
 test('resource in app can be edited', function () {
     // create a app resource
@@ -25,7 +23,6 @@ test('resource in app can be edited', function () {
     expect($response->exception->getMessage())->toBe('Only App resources can be edited.');
 });
 
-
 test('vendor resource can not be edited', function () {
     $userResource = new User();
 
@@ -41,8 +38,6 @@ test('vendor resource can not be edited', function () {
 
     expect($response->exception->getMessage())->toBe('Only App resources can be edited.');
 });
-
-
 
 test('edit posttype should be allowed', function () {
     $config = config('aura.posttype_editor');
@@ -66,7 +61,6 @@ test('edit posttype can be turned off in config', function () {
 
     expect($response->exception->getMessage())->toBe('Posttype Editor is turned off.');
 });
-
 
 test('edit posttype should not be available in production', function () {
     // Set env to production
