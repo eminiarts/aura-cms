@@ -16,6 +16,7 @@ use Eminiarts\Aura\Policies\PostPolicy;
 use Eminiarts\Aura\Policies\TeamPolicy;
 use Eminiarts\Aura\Policies\UserPolicy;
 use Spatie\LaravelPackageTools\Package;
+use Illuminate\Auth\Access\Response;
 use Eminiarts\Aura\Commands\AuraCommand;
 use Eminiarts\Aura\Commands\MakePosttype;
 use Illuminate\Database\Eloquent\Builder;
@@ -148,10 +149,27 @@ class AuraServiceProvider extends PackageServiceProvider
         Gate::policy(User::class, UserPolicy::class);
 
         Gate::before(function ($user, $ability) {
+            // if ($ability == 'edit-posttype' && ! config('aura.posttype_editor')) {
+            //     return Response::deny('Posttype Editor is turned off.');
+            // }
+
             if ($user->resource->isSuperAdmin()) {
                 return true;
             }
         });
+
+        // Gate::define('edit-posttype', function ($user, $resource) {
+        //     return config('aura.posttype_editor');
+        // });
+
+
+        // Gate::after(function ($user, $ability, $result, $arguments) {
+        //     if ($ability == 'edit-posttype' && ! config('aura.posttype_editor')) {
+        //         return Response::deny('You must be an administrator.');
+        //     }
+        // });
+
+
 
         return $this;
     }

@@ -94,6 +94,8 @@ return [
         'path' => app_path('Aura'),
     ],
 
+    'posttype_editor' => app()->environment('production') ? false : true,
+
     /*
     |--------------------------------------------------------------------------
     | Middleware
