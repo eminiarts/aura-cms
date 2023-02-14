@@ -103,25 +103,30 @@ class Aura
     }
 
     /**
-     * Register the given resources.
+     * Register the given resources from App.
      *
      * @param  array  $resources
      * @return static
      */
-    // public static function resources()
-    // {
-    //     return Cache::remember('aura.resources', now()->addHour(), function () {
-    //         $filesystem = app(Filesystem::class);
+    public static function getAppResources()
+    {
+        $path = config('aura.resources.path');
 
-    //         $files = collect($filesystem->allFiles(app_path('Aura/Resources')))
-    //         ->map(function (SplFileInfo $file): string {
-    //             return (string) Str::of($file->getRelativePathname())
-    //             ->replace(['/', '.php'], ['\\', '']);
-    //         })->filter(fn (string $class): bool => $class != 'Resource');
+        if (! app(Filesystem::class)->exists($path)) {
+            return [];
+        }
 
-    //         return $files;
-    //     });
-    // }
+        return collect(app(Filesystem::class)->allFiles($path))
+            ->map(function (SplFileInfo $file): string {
+                return (string) Str::of($file->getRelativePathname())
+                    ->replace(['/', '.php'], ['\\', '']);
+            })
+            ->filter(fn (string $class): bool => $class != 'Resource')
+            ->map(function ($item) {
+                return config('aura.resources.namespace').'\\'.$item;
+            })
+            ->unique()->toArray();
+    }
 
     public function getResources(): array
     {

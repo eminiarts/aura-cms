@@ -2,37 +2,41 @@
 
 namespace Eminiarts\Aura;
 
-use Eminiarts\Aura\Commands\AuraCommand;
-use Eminiarts\Aura\Commands\MakePosttype;
+use Livewire\Livewire;
+use Livewire\Component;
+use Illuminate\Support\Arr;
+use Illuminate\Support\Str;
+use Eminiarts\Aura\Facades\Aura;
+use Eminiarts\Aura\Resources\Team;
+use Eminiarts\Aura\Resources\User;
+use Illuminate\Support\Facades\Gate;
 use Eminiarts\Aura\Commands\MakeUser;
-use Eminiarts\Aura\Http\Livewire\Attachment\Index as AttachmentIndex;
-use Eminiarts\Aura\Http\Livewire\CreateFlow;
-use Eminiarts\Aura\Http\Livewire\CreatePosttype;
-use Eminiarts\Aura\Http\Livewire\EditOperation;
-use Eminiarts\Aura\Http\Livewire\EditPosttypeField;
-use Eminiarts\Aura\Http\Livewire\GlobalSearch;
-use Eminiarts\Aura\Http\Livewire\MediaManager;
-use Eminiarts\Aura\Http\Livewire\MediaUploader;
-use Eminiarts\Aura\Http\Livewire\Navigation;
-use Eminiarts\Aura\Http\Livewire\Notifications;
-use Eminiarts\Aura\Http\Livewire\Post\Create;
-use Eminiarts\Aura\Http\Livewire\Post\Edit;
-use Eminiarts\Aura\Http\Livewire\Post\Index;
-use Eminiarts\Aura\Http\Livewire\Table\Table;
-use Eminiarts\Aura\Http\Livewire\User\TwoFactorAuthenticationForm;
+use Illuminate\Filesystem\Filesystem;
 use Eminiarts\Aura\Policies\PostPolicy;
 use Eminiarts\Aura\Policies\TeamPolicy;
 use Eminiarts\Aura\Policies\UserPolicy;
-use Eminiarts\Aura\Resources\Team;
-use Eminiarts\Aura\Resources\User;
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Support\Arr;
-use Illuminate\Support\Facades\Gate;
-use Livewire\Component;
-use Livewire\Livewire;
-use Spatie\LaravelPackageTools\Commands\InstallCommand;
 use Spatie\LaravelPackageTools\Package;
+use Eminiarts\Aura\Commands\AuraCommand;
+use Eminiarts\Aura\Commands\MakePosttype;
+use Illuminate\Database\Eloquent\Builder;
+use Symfony\Component\Finder\SplFileInfo;
+use Eminiarts\Aura\Http\Livewire\Post\Edit;
+use Eminiarts\Aura\Http\Livewire\CreateFlow;
+use Eminiarts\Aura\Http\Livewire\Navigation;
+use Eminiarts\Aura\Http\Livewire\Post\Index;
+use Eminiarts\Aura\Http\Livewire\Post\Create;
+use Eminiarts\Aura\Http\Livewire\Table\Table;
+use Eminiarts\Aura\Http\Livewire\GlobalSearch;
+use Eminiarts\Aura\Http\Livewire\MediaManager;
+use Eminiarts\Aura\Http\Livewire\EditOperation;
+use Eminiarts\Aura\Http\Livewire\MediaUploader;
+use Eminiarts\Aura\Http\Livewire\Notifications;
+use Eminiarts\Aura\Http\Livewire\CreatePosttype;
+use Eminiarts\Aura\Http\Livewire\EditPosttypeField;
 use Spatie\LaravelPackageTools\PackageServiceProvider;
+use Spatie\LaravelPackageTools\Commands\InstallCommand;
+use Eminiarts\Aura\Http\Livewire\User\TwoFactorAuthenticationForm;
+use Eminiarts\Aura\Http\Livewire\Attachment\Index as AttachmentIndex;
 
 class AuraServiceProvider extends PackageServiceProvider
 {
@@ -160,7 +164,7 @@ class AuraServiceProvider extends PackageServiceProvider
             return new Aura();
         });
 
-        Facades\Aura::registerResources([
+        Aura::registerResources([
             \Eminiarts\Aura\Resources\Attachment::class,
             \Eminiarts\Aura\Resources\Flow::class,
             \Eminiarts\Aura\Resources\FlowLog::class,
@@ -175,11 +179,12 @@ class AuraServiceProvider extends PackageServiceProvider
             \Eminiarts\Aura\Resources\User::class,
         ]);
 
-        Facades\Aura::registerTaxonomies([
+        Aura::registerTaxonomies([
             \Eminiarts\Aura\Taxonomies\Tag::class,
             \Eminiarts\Aura\Taxonomies\Category::class,
         ]);
 
-        // dd('hier', app('aura'), Facades\Aura::getResources());
+        // Register App Resources
+        Aura::registerResources(Aura::getAppResources());
     }
 }
