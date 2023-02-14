@@ -20,7 +20,7 @@
     }],
     "require": {
         "php": "^8.1",
-        "illuminate/contracts": "^9.0",
+        "illuminate/contracts": "^9.0|^10.0",
         "lab404/laravel-impersonate": "^1.7",
         "laravel/fortify": "^1.15",
         "laravel/sanctum": "^3.2",
