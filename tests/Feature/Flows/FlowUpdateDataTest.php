@@ -176,8 +176,6 @@ test('flow - data update multiple operation', function () {
     // Assert Message is in Laravel Log
     $this->assertStringContainsString('Test Message', file_get_contents(storage_path('logs/laravel.log')));
 
-    dd(file_get_contents(storage_path('logs/laravel.log')));
-
     // Assert Flow is triggered when Post is created
     $this->assertDatabaseHas('flow_logs', ['flow_id' => $flow->id]);
 
