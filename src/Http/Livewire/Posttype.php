@@ -2,12 +2,11 @@
 
 namespace Eminiarts\Aura\Http\Livewire;
 
-use Livewire\Component;
-use Illuminate\Support\Str;
 use Eminiarts\Aura\Facades\Aura;
-use Illuminate\Auth\Access\Response;
 use Eminiarts\Aura\Traits\SaveFields;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
+use Illuminate\Support\Str;
+use Livewire\Component;
 
 class Posttype extends Component
 {
