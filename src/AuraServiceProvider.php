@@ -21,13 +21,15 @@ use Eminiarts\Aura\Http\Livewire\Post\Edit;
 use Eminiarts\Aura\Http\Livewire\Post\Index;
 use Eminiarts\Aura\Http\Livewire\Posttype;
 use Eminiarts\Aura\Http\Livewire\Table\Table;
+use Eminiarts\Aura\Http\Livewire\Taxonomy\Edit as TaxonomyEdit;
+use Eminiarts\Aura\Http\Livewire\Taxonomy\Index as TaxonomyCreate;
+use Eminiarts\Aura\Http\Livewire\Taxonomy\Index as TaxonomyIndex;
 use Eminiarts\Aura\Http\Livewire\User\TwoFactorAuthenticationForm;
 use Eminiarts\Aura\Policies\PostPolicy;
 use Eminiarts\Aura\Policies\TeamPolicy;
 use Eminiarts\Aura\Policies\UserPolicy;
 use Eminiarts\Aura\Resources\Team;
 use Eminiarts\Aura\Resources\User;
-use Illuminate\Auth\Access\Response;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Gate;
@@ -37,9 +39,6 @@ use Livewire\Livewire;
 use Spatie\LaravelPackageTools\Commands\InstallCommand;
 use Spatie\LaravelPackageTools\Package;
 use Spatie\LaravelPackageTools\PackageServiceProvider;
-use Eminiarts\Aura\Http\Livewire\Taxonomy\Edit as TaxonomyEdit;
-use Eminiarts\Aura\Http\Livewire\Taxonomy\Index as TaxonomyIndex;
-use Eminiarts\Aura\Http\Livewire\Taxonomy\Index as TaxonomyCreate;
 
 class AuraServiceProvider extends PackageServiceProvider
 {
@@ -185,7 +184,7 @@ class AuraServiceProvider extends PackageServiceProvider
         ]);
 
         // Register Fields from src/Fields
-        $fields = collect(app('files')->files(__DIR__ . '/Fields'))->map(function ($field) {
+        $fields = collect(app('files')->files(__DIR__.'/Fields'))->map(function ($field) {
             return 'Eminiarts\Aura\Fields\\'.str($field->getFilename())->replace('.php', '')->title;
         })->toArray();
 
