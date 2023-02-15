@@ -26,10 +26,10 @@
     }">
 
     {{-- if a view exists: aura.$model->pluralName().header, load it  --}}
-    @if(View::exists('aura.' . str($model->pluralName())->slug . '.header'))
-        @include('aura.' . str($model->pluralName())->slug . '.header')
-    @elseif(View::exists('aura::aura.' . str($model->pluralName())->slug . '.header'))
-        @include('aura::aura.' . str($model->pluralName())->slug . '.header')
+    @if(View::exists($view = 'aura.' . str($model->pluralName())->slug . '.header'))
+        @include($view)
+    @elseif(View::exists('aura::' . $view))
+        @include('aura::' . $view)
     @else
         <div class="flex items-center justify-between mt-6">
             <div>
