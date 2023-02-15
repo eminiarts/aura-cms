@@ -27,7 +27,7 @@
                     <x-slot:icon>
                         <x-aura::icon icon="plus" />
                         </x-slot>
-                        <span>Create {{ $model->getName() }}</span>
+                        <span>Create {{ $model->singularName() }}</span>
                 </x-aura::button>
             </a>
             @else
