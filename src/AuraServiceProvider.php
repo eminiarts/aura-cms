@@ -179,6 +179,7 @@ class AuraServiceProvider extends PackageServiceProvider
             \Eminiarts\Aura\Resources\Permission::class,
             \Eminiarts\Aura\Resources\Role::class,
             \Eminiarts\Aura\Resources\Team::class,
+            \Eminiarts\Aura\Resources\TeamInvitation::class,
             \Eminiarts\Aura\Resources\User::class,
         ]);
 
