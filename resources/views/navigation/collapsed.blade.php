@@ -17,7 +17,7 @@
         <x-aura::icon icon="dashboard2" />
     </x-aura::navigation.item-icon>
 
-    @foreach(\Aura::navigation() as $group => $resources)
+    @foreach(app('aura')::navigation() as $group => $resources)
       @foreach($resources as $resource)
 
           @if (isset($resource['dropdown']) && $resource['dropdown'] !== false)
@@ -69,7 +69,7 @@
     @endforeach
 
 
-    @foreach(Aura::getTaxonomies() as $taxonomy)
+    @foreach(app('aura')::getTaxonomies() as $taxonomy)
         <x-aura::navigation.item-icon route="aura.taxonomy.index" :id="$taxonomy" :tooltip="$taxonomy" :strict="false">
             <x-aura::icon icon="circle" />
         </x-aura::navigation.item-icon>

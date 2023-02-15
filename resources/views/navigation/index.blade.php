@@ -1,5 +1,6 @@
+
 <div>
-    @foreach(Aura::navigation() as $group => $resources)
+    @foreach(app('aura')::navigation() as $group => $resources)
 
         @if ($group !== '')
             <div wire:key="toggle-{{$group}}" wire:click="toggleGroup('{{$group}}')" class="cursor-pointer">
