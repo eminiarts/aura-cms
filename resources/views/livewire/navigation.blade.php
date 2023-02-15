@@ -43,7 +43,7 @@
                                     @php
                                         $iconView = 'aura::aura.navigation.icons.' . Str::slug($resource['dropdown'] );
                                     @endphp
-                                    
+
                                     @includeIf($iconView, ['class' => 'w-6 h-6'])
 
                                     @if(! View::exists($iconView))
