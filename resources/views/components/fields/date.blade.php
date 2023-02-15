@@ -4,7 +4,7 @@
 
 <div
     x-data
-    x-aura::init="
+    x-init="
         window.flatpickr($refs.input, {
             inline: false,
 

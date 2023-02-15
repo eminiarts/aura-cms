@@ -39,7 +39,7 @@ $settings = Eminiarts\Aura\Facades\Aura::getOption('team-settings');
     href="{{ route($route, $id ?? null) }}"
     @endif
     {{$attributes->merge([
-      'class' => 'group flex items-center py-2 px-2 rounded-lg transition ease-in-out duration-150' . (Request::fullUrlIs($route ? route($route, $id) : '') ? ' is-active bg-primary-600 hover:bg-primary-600 text-white' : 'bg-white dark:bg-gray-800 hover:bg-primary-600') . ' ' .  ($compact ? 'px-2 py-1' : 'px-2 py-2'),
+      'class' => 'sidebar-item-icon group flex items-center py-2 px-2 rounded-lg transition ease-in-out duration-150' . (Request::fullUrlIs($route ? route($route, $id) : '') ? ' is-active bg-primary-600 hover:bg-primary-600 text-white' : 'bg-white dark:bg-gray-800 hover:bg-primary-600') . ' ' .  ($compact ? 'px-2 py-1' : 'px-2 py-2'),
       ])}}
   >
     <div class="flex items-center ml-0 space-x-3 text-base font-semibold">
@@ -57,7 +57,7 @@ $settings = Eminiarts\Aura\Facades\Aura::getOption('team-settings');
     href="{{ route($route, $id ?? null) }}"
     @endif
     {{$attributes->merge([
-      'class' => 'group flex items-center py-2 px-2 rounded-lg transition ease-in-out duration-150' . (Request::fullUrlIs($route ? route($route, $id) : '') ? ' is-active bg-gray-200 dark:bg-gray-900 dark:text-white hover:bg-gray-100 text-gray-900' : ' bg-gray-50 text-gray-900 dark:text-white dark:bg-gray-800 hover:bg-gray-200') . ' ' .  ($compact ? 'px-2 py-1' : 'px-2 py-2'),
+      'class' => 'sidebar-item-icon group flex items-center py-2 px-2 rounded-lg transition ease-in-out duration-150' . (Request::fullUrlIs($route ? route($route, $id) : '') ? ' is-active bg-gray-200 dark:bg-gray-900 dark:text-white hover:bg-gray-100 text-gray-900' : ' bg-gray-50 text-gray-900 dark:text-white dark:bg-gray-800 hover:bg-gray-200') . ' ' .  ($compact ? 'px-2 py-1' : 'px-2 py-2'),
       ])}}
   >
     <div class="flex items-center ml-0 space-x-3 text-base font-semibold">
@@ -75,7 +75,7 @@ $settings = Eminiarts\Aura\Facades\Aura::getOption('team-settings');
     href="{{ route($route, $id ?? null) }}"
     @endif
     {{$attributes->merge([
-      'class' => 'group flex items-center py-2 px-2 rounded-lg transition ease-in-out duration-150' . (Request::fullUrlIs($route ? route($route, $id) : '') ? ' is-active bg-gray-900 hover:bg-gray-900 text-white' : ' bg-gray-800 dark:bg-gray-800 hover:bg-gray-900') . ' ' .  ($compact ? 'px-2 py-1' : 'px-2 py-2'),
+      'class' => 'sidebar-item-icon group flex items-center py-2 px-2 rounded-lg transition ease-in-out duration-150' . (Request::fullUrlIs($route ? route($route, $id) : '') ? ' is-active bg-gray-900 hover:bg-gray-900 text-white' : ' bg-gray-800 dark:bg-gray-800 hover:bg-gray-900') . ' ' .  ($compact ? 'px-2 py-1' : 'px-2 py-2'),
       ])}}
   >
     <div class="flex items-center ml-0 space-x-3 text-base font-semibold">
