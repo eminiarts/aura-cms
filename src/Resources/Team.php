@@ -154,6 +154,13 @@ class Team extends Post
         });
     }
 
+    public function customPermissions()
+    {
+        return [
+            'invite-users' => 'Invite users to team',
+        ];
+    }
+
     /**
      * Create a new factory instance for the model.
      *

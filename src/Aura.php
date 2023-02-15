@@ -31,11 +31,17 @@ class Aura
 
     public function findResourceBySlug($slug)
     {
-        $name = Str::title($slug);
-
         $resources = collect($this->getResources())->map(function ($resource) {
             return Str::afterLast($resource, '\\');
         })->toArray();
+
+        if (in_array($slug, $resources)) {
+            $index = array_search($slug, $resources);
+
+            return app($this->getResources()[$index]);
+        }
+
+        $name = Str::slug($slug);
 
         if (in_array($name, $resources)) {
             $index = array_search($name, $resources);
