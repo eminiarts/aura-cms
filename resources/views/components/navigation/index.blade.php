@@ -220,7 +220,7 @@ $settings = Aura::getOption('team-settings');
                         <div class="block px-4 py-2 text-xs text-gray-400 dark:text-gray-500">
                             {{ __('Manage Profile') }}
                         </div>
-                        <x-aura::dropdown-link href="/profile">
+                        <x-aura::dropdown-link href="{{ route('aura.profile.edit') }}">
                             {{ __('View Profile') }}
                         </x-aura::dropdown-link>
 

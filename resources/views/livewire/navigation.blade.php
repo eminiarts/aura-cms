@@ -18,8 +18,6 @@
         } else if ($sidebarType == 'dark') {
             $iconClass = 'group-[.is-active]:text-primary-500 text-primary-500';
         }
-
-        
     @endphp
 
 

@@ -51,7 +51,7 @@ Route::domain(config('aura.domain'))
             Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
             Route::get('/team-settings', TeamSettings::class)->name('team.settings');
-            Route::get('/aura-config', AuraConfig::class)->name('aura.config');
+            Route::get('/aura-config', AuraConfig::class)->name('config');
 
             Route::get('/media', Media::class)->name('media.index');
 
