@@ -31,7 +31,6 @@ class Navigation extends Component
 
     public function toggleGroup($group)
     {
-        // dd($group);
         if (in_array($group, $this->toggledGroups)) {
             $this->toggledGroups = array_diff($this->toggledGroups, [$group]);
         } else {

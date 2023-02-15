@@ -5,7 +5,7 @@
             x-ref="aceEditor"
             id="editor"
             wire:ignore
-            x-aura::init="
+            x-init="
             ace.config.set('basePath', 'https://cdnjs.cloudflare.com/ajax/libs/ace/1.14.0/');
                 editor = ace.edit($refs.aceEditor);
                 editor.setTheme('ace/theme/github');

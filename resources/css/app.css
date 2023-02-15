@@ -72,3 +72,7 @@
 .sidebar-item-compact svg {
     width: 20px;
 }
+
+.sidebar-item-icon svg {
+    @apply w-6 h-6;
+}

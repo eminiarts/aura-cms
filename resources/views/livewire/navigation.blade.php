@@ -1,5 +1,5 @@
 
-
+<div>
 @php
 use Eminiarts\Aura\Resources\Team;
 use Eminiarts\Aura\Facades\Aura;
@@ -81,7 +81,8 @@ $settings = Aura::getOption('team-settings');
         <div class="flex flex-col px-5 space-y-1">
             <div class="flex-shrink-0 h-[4.5rem] flex items-center justify-between">
             {{-- <h1 class="text-2xl font-semibold">{{ config('app.name') }}</h1> --}}
-                @include('aura::components.navigation.logo')
+
+                @include('aura::navigation.logo')
 
 
                 <div>
@@ -171,41 +172,9 @@ $settings = Aura::getOption('team-settings');
                         </div>
                     </div>
                 </x-slot:title>
-                <div class="w-60 dark:bg-gray-700">
-                    <div class="block px-4 py-2 text-xs text-gray-400 dark:text-gray-500">
-                        {{ __('Manage Profile') }}
-                    </div>
-                    <x-aura::dropdown-link href="{{ route('aura.profile.edit') }}">
-                        {{ __('View Profile') }}
-                    </x-aura::dropdown-link>
 
-                    <!-- Team Management -->
-                    <div class="block px-4 py-2 text-xs text-gray-400 dark:text-gray-500">
-                        {{ __('Manage Team') }}
-                    </div>
+                @include('aura::navigation.footer-popup')
 
-                    <!-- Team Settings -->
-                    <x-aura::dropdown-link href="{{ route('aura.post.edit', ['slug' => 'Team', 'id' => Auth::user()->currentTeam->id]) }}">
-                        {{ __('Team Settings') }}
-                    </x-aura::dropdown-link>
-
-                    @can('create', Team::class)
-                        <x-aura::dropdown-link href="{{ route('aura.post.create', ['slug' => 'Team']) }}">
-                            {{ __('Create New Team') }}
-                        </x-aura::dropdown-link>
-                    @endcan
-
-                    <div class="my-2 border-t border-gray-100 dark:border-gray-600"></div>
-
-                    <!-- Team Switcher -->
-                    <div class="block px-4 py-2 text-xs text-gray-400 dark:text-gray-500">
-                        {{ __('Switch Teams') }}
-                    </div>
-
-                    @foreach (Auth::user()->getTeams() as $team)
-                        <x-aura::switchable-team :team="$team" />
-                    @endforeach
-                </div>
             </x-aura::navigation.team-switcher>
 
             <div class="ml-2">
@@ -264,139 +233,13 @@ $settings = Aura::getOption('team-settings');
 
     </div>
 
-    <div class="flex flex-col items-center flex-1 px-1 pb-5 space-y-1 overflow-x-visible overflow-y-auto scrollbar-thin scrollbar-thumb-primary-500 scrollbar-track-primary-700">
-
-        <x-aura::navigation.item-icon @click="$dispatch('search')" class="cursor-pointer" tooltip="Search">
-            <x-aura::icon icon="search" />
-        </x-aura::navigation.item-icon>
-
-
-        <x-aura::navigation.item-icon route="aura.dashboard" tooltip="aura.dashboard">
-            <x-aura::icon icon="dashboard2" />
-        </x-aura::navigation.item-icon>
-
-        {{-- @foreach(\Aura::navigation() as $group => $resources)
-
-
-            <div class="w-full px-2 py-2">
-                @if ($sidebarType == 'primary')
-                <hr class="w-full border-primary-500 dark:border-gray-700">
-                @elseif ($sidebarType == 'light')
-                <hr class="w-full border-gray-500/30 dark:border-gray-700">
-                @elseif ($sidebarType == 'dark')
-                <hr class="w-full border-gray-700">
-                @endif
-            </div>
-
-            @foreach($resources as $resource)
-                <x-aura::navigation.item-icon route="post.index" :id="$resource['type']" :tooltip="$resource['name']" :strict="false">
-                    {!! $resource['icon'] !!}
-                </x-aura::navigation.item-icon>
-            @endforeach
-
-        @endforeach --}}
-
-        {{-- <x-aura::navigation.heading>
-            Taxonomies
-        </x-aura::navigation.heading> --}}
-        <div class="w-full px-2 py-2">
-            @if ($sidebarType == 'primary')
-            <hr class="w-full border-primary-500 dark:border-gray-700">
-            @elseif ($sidebarType == 'light')
-            <hr class="w-full border-gray-500/30 dark:border-gray-700">
-            @elseif ($sidebarType == 'dark')
-            <hr class="w-full border-gray-700">
-            @endif
-        </div>
-
-        @foreach(Aura::getTaxonomies() as $taxonomy)
-            <x-aura::navigation.item-icon route="aura.taxonomy.index" :id="$taxonomy" :tooltip="$taxonomy" :strict="false">
-                <x-aura::icon icon="circle" />
-            </x-aura::navigation.item-icon>
-        @endforeach
-
-
-        {{-- <x-aura::navigation.heading>
-            Admin
-        </x-aura::navigation.heading> --}}
-        <div class="w-full px-2 py-2">
-            @if ($sidebarType == 'primary')
-            <hr class="w-full border-primary-500 dark:border-gray-700">
-            @elseif ($sidebarType == 'light')
-            <hr class="w-full border-gray-500/30 dark:border-gray-700">
-            @elseif ($sidebarType == 'dark')
-            <hr class="w-full border-gray-700">
-            @endif
-        </div>
-
-        {{-- <x-aura::navigation.dropdown-icon>
-
-            <x-slot:title>
-
-            <x-aura::icon icon="circle" />
-
-            </x-slot>
-
-            <x-aura::navigation.item-dropdown route="aura.table" compact>
-                <div>All users</div>
-            </x-aura::navigation.item-dropdown>
-            <x-aura::navigation.item-dropdown route="aura.table" compact>
-                <div>Teams</div>
-            </x-aura::navigation.item-dropdown>
-            <x-aura::navigation.item-dropdown route="aura.table" compact>
-                <div>Roles</div>
-            </x-aura::navigation.item-dropdown>
-            <x-aura::navigation.item-dropdown route="aura.table" compact>
-                <div>Permissions</div>
-            </x-aura::navigation.item-dropdown>
-
-        </x-aura::navigation.dropdown-icon> --}}
-
-
-
-        {{-- <x-aura::navigation.heading>
-            Development
-        </x-aura::navigation.heading> --}}
-        <div class="w-full px-2 py-2">
-            @if ($sidebarType == 'primary')
-            <hr class="w-full border-primary-500 dark:border-gray-700">
-            @elseif ($sidebarType == 'light')
-            <hr class="w-full border-gray-500/30 dark:border-gray-700">
-            @elseif ($sidebarType == 'dark')
-            <hr class="w-full border-gray-700">
-            @endif
-        </div>
-
-        {{-- <x-aura::navigation.item-icon route="aura.components" tooltip="Components" :strict="false">
-            <x-aura::icon icon="color-swatch" />
-        </x-aura::navigation.item-icon> --}}
-
-        {{-- <x-aura::navigation.item-icon route="posttypes" tooltip="Posttypes" :strict="false">
-            <x-aura::icon icon="collection" />
-        </x-aura::navigation.item-icon> --}}
-
-        <x-aura::navigation.item-icon onclick="Livewire.emit('openModal', 'create-posttype')" tooltip="Create Posttype" :strict="false">
-            <x-aura::icon icon="collection" />
-        </x-aura::navigation.item-icon>
-
-        {{-- <x-aura::navigation.item-icon route="charts" tooltip="Charts" :strict="false">
-            <x-aura::icon icon="adjustments" />
-        </x-aura::navigation.item-icon> --}}
-
-        <x-aura::navigation.item-icon route="aura.team.settings" tooltip="Team Settings" :strict="false">
-            <x-aura::icon icon="adjustments" />
-        </x-aura::navigation.item-icon>
-
-        <x-aura::navigation.item-icon route="aura.media.index" tooltip="Media" :strict="false">
-            <x-aura::icon icon="collection" />
-        </x-aura::navigation.item-icon>
-
-    </div>
+    @include('aura::navigation.collapsed')
 
     <div class="flex-shrink-0 px-5 h-[4.5rem] flex items-center border-t border-white border-opacity-20 dark:border-gray-700">
-        <x-aura::tippy text="{{ Auth::user()->name }}" position="right">
+        <x-aura::tippy text="@include('aura::navigation.footer-popup')" position="right">
             <img class="inline-block rounded-full h-9 w-9" src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80" alt="">
         </x-aura::tippy>
     </div>
   </div>
+</div>
 </div>
