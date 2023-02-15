@@ -25,18 +25,21 @@
         }
     }">
 
-        <div class="flex items-start justify-between">
+    {{-- if a view exists: aura.$model->pluralName().header, load it  --}}
+    @if(View::exists('aura.' . str($model->pluralName())->slug . '.header'))
+        @include('aura.' . str($model->pluralName())->slug . '.header')
+    @elseif(View::exists('aura::aura.' . str($model->pluralName())->slug . '.header'))
+        @include('aura::aura.' . str($model->pluralName())->slug . '.header')
+    @else
+        <div class="flex items-center justify-between mt-6">
             <div>
                 <h1 class="text-3xl font-semibold">{{ $model->pluralName() }}</h1>
-                <h3>View all {{ $model->pluralName() }}
 
                 @if($this->parent)
                 <span class="text-primary-500">from {{ $this->parent->name }}</span>
                 @endif
                 </h3>
             </div>
-
-            {{-- @dump($filters) --}}
 
             <div>
                 <div>
@@ -64,8 +67,9 @@
                 </div>
             </div>
         </div>
+    @endif
 
-        <div class="mt-8">
+        <div class="mt-6">
 
             {{-- @dump($this->headers) --}}
             <div class="flex flex-col justify-between w-full mb-4 md:items-center md:flex-row">

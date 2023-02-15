@@ -23,6 +23,4 @@
 
     <livewire:aura::media-uploader :table="true" :model="$post" />
     
-
-    
 </div>
