@@ -19,6 +19,7 @@ class InviteUser extends ModalComponent
             [
                 'name' => 'Email',
                 'type' => 'Eminiarts\\Aura\\Fields\\Email',
+                'placeholder' => 'email@example.com',
                 'validation' => 'required',
                 'slug' => 'email',
             ],

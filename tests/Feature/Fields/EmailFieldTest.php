@@ -83,3 +83,7 @@ test('Email Field', function () {
     expect($model->fields['email'])->toBe('example@example.com');
     expect($model->email)->toBe('example@example.com');
 });
+
+
+test('Email Field - Placeholder', function () {
+});
