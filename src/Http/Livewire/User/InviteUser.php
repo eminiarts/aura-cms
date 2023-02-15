@@ -8,11 +8,14 @@ use Eminiarts\Aura\Resources\Team;
 use Illuminate\Support\Facades\Mail;
 use LivewireUI\Modal\ModalComponent;
 use Eminiarts\Aura\Traits\InputFields;
+use Eminiarts\Aura\Mail\TeamInvitation;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Support\Facades\Artisan;
 
 class InviteUser extends ModalComponent
 {
     use InputFields;
+    use AuthorizesRequests;
 
     public $post;
 
