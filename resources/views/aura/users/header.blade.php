@@ -10,7 +10,7 @@
 
     <div>
         <div>
-            <a href="#">
+            <a href="#" wire:click.prevent="$emit('openModal', 'aura::invite-user')">
                 <x-aura::button.light>
                     <x-slot:icon>
                         <x-aura::icon icon="plus" />
