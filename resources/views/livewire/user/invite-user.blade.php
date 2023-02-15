@@ -25,7 +25,7 @@
         <div wire:loading>
             <x-aura::icon.loading  />
         </div>
-        Save
+        Invite
     </x-aura::button>
 
 </div>
