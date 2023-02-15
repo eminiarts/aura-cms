@@ -1,6 +1,7 @@
 <?php
 
 use Eminiarts\Aura\Http\Livewire\Table\Table;
+use Eminiarts\Aura\Http\Livewire\User\InviteUser;
 use Eminiarts\Aura\Models\User;
 use Eminiarts\Aura\Resources\Post;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -24,6 +25,16 @@ beforeEach(function () {
 
 
 test('user can be invited', function () {
+    // Test InviteUser Livewire Component
+    $component = Livewire::test(InviteUser::class, ['resource' => 'user'])
+        ->call('save')
+        ->assertHasErrors(['post.fields.email' => 'required'])
+        ->set('post.fields.email', 'test@test.ch')
+        ->call('save')
+        ->assertHasErrors(['post.fields.role' => 'required'])
+        ->set('post.fields.role', 1)
+        ->call('save')
+        ->assertHasNoErrors();
 });
 
 test('user gets correct role', function () {

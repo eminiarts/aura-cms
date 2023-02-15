@@ -161,6 +161,11 @@ class Team extends Post
         ];
     }
 
+    public function teamInvitations()
+    {
+        return $this->hasMany(TeamInvitation::class, 'team_id');
+    }
+
     /**
      * Create a new factory instance for the model.
      *
