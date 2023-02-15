@@ -20,7 +20,7 @@ class InviteUser extends ModalComponent
                 'name' => 'Email',
                 'type' => 'Eminiarts\\Aura\\Fields\\Email',
                 'placeholder' => 'email@example.com',
-                'validation' => 'required',
+                'validation' => 'required|email',
                 'slug' => 'email',
             ],
         ];
@@ -49,7 +49,11 @@ class InviteUser extends ModalComponent
     {
         $this->validate();
 
-        dd('save');
+        $email = $this->post['fields']['email'];
+
+
+
+        dd('save', $this->post);
 
 
         $this->notify('Erfolgreich Erstellt.');
