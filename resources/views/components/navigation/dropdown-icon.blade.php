@@ -31,13 +31,17 @@ $settings = Eminiarts\Aura\Facades\Aura::getOption('team-settings');
 
       <button
         class="flex items-center justify-between w-full px-2 py-2 transition duration-150 ease-in-out rounded-lg
+
         @if ($sidebarType == 'primary')
-          group-[.is-active]:text-white bg-transparent dark:bg-gray-800 dark:hover:bg-gray-900 hover:bg-primary-600
+          group-[.is-active]:text-white text-primary-300 hover:text-primary-200 hover:bg-primary-600
+          dark:text-primary-500 dark:hover:text-primary-500
         @elseif ($sidebarType == 'light')
-          group-[.is-active]:text-white bg-gray-50 text-gray-900 dark:text-white dark:bg-gray-800 hover:bg-gray-200
+          group-[.is-active]:text-primary-500 text-primary-500 hover:text-primary-400
+          dark:text-primary-500 group-hover:text-primary-500
         @elseif ($sidebarType == 'dark')
-          group-[.is-active]:text-white text-primary-300 group-hover:text-primary-200
-        @endif"
+          group-[.is-active]:text-primary-500 text-primary-500 hover:text-primary-400
+        @endif
+        "
       >
 
           <div class="flex items-center ml-0 space-x-3 text-base font-semibold">
