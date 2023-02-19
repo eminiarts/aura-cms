@@ -4,6 +4,7 @@ use Livewire\Livewire;
 use Eminiarts\Aura\Models\User;
 use Eminiarts\Aura\Resources\Post;
 use Eminiarts\Aura\Resources\Role;
+use Eminiarts\Aura\Resources\TeamInvitation;
 use Eminiarts\Aura\Http\Livewire\Table\Table;
 use Eminiarts\Aura\Http\Livewire\User\InviteUser;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -44,6 +45,15 @@ test('user gets correct role', function () {
 
 test('Team Invitation can be created', function () {
     $team = $this->user->currentTeam;
+
+    $teamInvitation = TeamInvitation::create([
+        'email' => 'test@test.ch',
+        'role' => Role::first()->id,
+        'team_id' => $team->id,
+    ]);
+
+    dd('hier', $teamInvitation->toArray());
+
 
     $invitation = $team->teamInvitations()->create([
         'email' => 'test@test.ch',
