@@ -5,6 +5,7 @@ namespace Eminiarts\Aura\Traits;
 use Illuminate\Support\Str;
 use Eminiarts\Aura\Models\Meta;
 use Eminiarts\Aura\Resources\Team;
+use Illuminate\Support\Facades\DB;
 use Eminiarts\Aura\ConditionalLogic;
 
 trait AuraModelConfig
@@ -75,6 +76,17 @@ trait AuraModelConfig
         }
 
         return $this->displayFieldValue($key, $value);
+    }
+
+    public static function getNextId()
+    {
+        $model = new static();
+
+        $query = "show table status like '"  . $model->getTable() . "'";
+
+        $statement = DB::select($query);
+
+        return $statement[0]->Auto_increment;
     }
 
     public static function create($fields)

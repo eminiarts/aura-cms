@@ -3,6 +3,7 @@
 namespace Eminiarts\Aura\Traits;
 
 use Illuminate\Support\Str;
+use Eminiarts\Aura\Models\Meta;
 
 trait SaveMetaFields
 {
@@ -17,11 +18,6 @@ trait SaveMetaFields
 
                     // Do not continue if the Field is not found
                     if (! $class) {
-                        continue;
-                    }
-
-                    // Do not continue, if there is no post
-                    if (!optional($post)->id) {
                         continue;
                     }
 
@@ -51,6 +47,17 @@ trait SaveMetaFields
                     // If the field exists in the $post->getBaseFillable(), it should be safed in the table instead of the meta table
                     if (in_array($key, $post->getBaseFillable())) {
                         $post->attributes[$key] = $value;
+
+                        continue;
+                    }
+
+
+                    // If there is no ID
+                    if (!optional($post)->id) {
+                        // dd('hier hooo', static::getNextId());
+                        // $post->meta()->updateOrCreate;
+                        dump(static::getNextId());
+                        Meta::updateOrCreate(['key' => $key, 'post_id' => static::getNextId()], ['value' => $value]);
 
                         continue;
                     }

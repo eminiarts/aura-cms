@@ -45,7 +45,6 @@ test('user can be invited', function () {
 
     $invitation->fresh();
 
-
     // DB should have 1 TeamInvitation with correct email
     expect($invitation->email)->toBe('test@test.ch');
 });
@@ -64,17 +63,12 @@ test('Team Invitation can be created', function () {
     // ]);
 
     // dd('hier', $teamInvitation->toArray());
-
-
     // ray()->showQueries();
-
 
     $invitation = $team->teamInvitations()->create([
         'email' => 'test@test.ch',
         'role' => Role::first()->id,
     ]);
-
-    dd($invitation->toArray());
 
     // DB should have 1 TeamInvitation with correct email
     expect($invitation->email)->toBe('test@test.ch');
