@@ -20,6 +20,11 @@ trait SaveMetaFields
                         continue;
                     }
 
+                    // Do not continue, if there is no post
+                    if (!optional($post)->id) {
+                        continue;
+                    }
+
                     // if there is a function set{Slug}Field on the model, use it
                     $method = 'set'.Str::studly($key).'Field';
 
@@ -46,13 +51,6 @@ trait SaveMetaFields
                     // If the field exists in the $post->getBaseFillable(), it should be safed in the table instead of the meta table
                     if (in_array($key, $post->getBaseFillable())) {
                         $post->attributes[$key] = $value;
-
-                        continue;
-                    }
-
-
-                    if (!optional($post)->id) {
-                        dump($post->id, $key, $value);
 
                         continue;
                     }

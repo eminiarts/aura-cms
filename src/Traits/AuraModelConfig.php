@@ -2,9 +2,10 @@
 
 namespace Eminiarts\Aura\Traits;
 
-use Eminiarts\Aura\ConditionalLogic;
-use Eminiarts\Aura\Models\Meta;
 use Illuminate\Support\Str;
+use Eminiarts\Aura\Models\Meta;
+use Eminiarts\Aura\Resources\Team;
+use Eminiarts\Aura\ConditionalLogic;
 
 trait AuraModelConfig
 {
@@ -327,11 +328,6 @@ trait AuraModelConfig
         return static::$singularName ?? Str::title(static::$slug);
     }
 
-    // public function title()
-    // {
-    //     return $this->id;
-    // }
-
     public static function usesCustomTable(): bool
     {
         return static::$customTable;
@@ -350,5 +346,10 @@ trait AuraModelConfig
     protected static function getSort(): ?int
     {
         return static::$sort;
+    }
+
+    public function team()
+    {
+        return $this->belongsTo(Team::class);
     }
 }
