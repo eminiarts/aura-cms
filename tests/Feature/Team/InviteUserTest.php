@@ -37,6 +37,17 @@ test('user can be invited', function () {
     ->set('post.fields.role', 1)
     ->call('save')
     ->assertHasNoErrors();
+
+    // DB should have 1 TeamInvitation
+    $this->assertEquals(1, TeamInvitation::count());
+
+    $invitation = TeamInvitation::first();
+
+    $invitation->fresh();
+
+
+    // DB should have 1 TeamInvitation with correct email
+    expect($invitation->email)->toBe('test@test.ch');
 });
 
 test('user gets correct role', function () {
@@ -55,7 +66,7 @@ test('Team Invitation can be created', function () {
     // dd('hier', $teamInvitation->toArray());
 
 
-    ray()->showQueries();
+    // ray()->showQueries();
 
 
     $invitation = $team->teamInvitations()->create([
@@ -63,6 +74,12 @@ test('Team Invitation can be created', function () {
         'role' => Role::first()->id,
     ]);
 
+    dd($invitation->toArray());
 
-    ray()->stopShowingQueries();
+    // DB should have 1 TeamInvitation with correct email
+    expect($invitation->email)->toBe('test@test.ch');
+
+
+
+    // ray()->stopShowingQueries();
 });
