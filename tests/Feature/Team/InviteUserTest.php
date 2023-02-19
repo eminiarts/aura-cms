@@ -46,17 +46,23 @@ test('user gets correct role', function () {
 test('Team Invitation can be created', function () {
     $team = $this->user->currentTeam;
 
-    $teamInvitation = TeamInvitation::create([
-        'email' => 'test@test.ch',
-        'role' => Role::first()->id,
-        'team_id' => $team->id,
-    ]);
+    // $teamInvitation = TeamInvitation::create([
+    //     'email' => 'test@test.ch',
+    //     'role' => Role::first()->id,
+    //     'team_id' => $team->id,
+    // ]);
 
-    dd('hier', $teamInvitation->toArray());
+    // dd('hier', $teamInvitation->toArray());
+
+
+    ray()->showQueries();
 
 
     $invitation = $team->teamInvitations()->create([
         'email' => 'test@test.ch',
         'role' => Role::first()->id,
     ]);
+
+
+    ray()->stopShowingQueries();
 });

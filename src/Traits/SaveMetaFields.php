@@ -50,6 +50,13 @@ trait SaveMetaFields
                         continue;
                     }
 
+
+                    if (!optional($post)->id) {
+                        dump($post->id, $key, $value);
+
+                        continue;
+                    }
+
                     // Update or create the meta field
                     $post->meta()->updateOrCreate(['key' => $key], ['value' => $value]);
                 }
