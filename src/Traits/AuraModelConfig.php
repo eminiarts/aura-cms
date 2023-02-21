@@ -11,6 +11,7 @@ use Eminiarts\Aura\ConditionalLogic;
 trait AuraModelConfig
 {
     public array $metaFields = [];
+    public array $terms = [];
 
     public array $bulkActions = [];
 
@@ -47,6 +48,11 @@ trait AuraModelConfig
     public function saveMetaFields(array $metaFields): void
     {
         $this->metaFields = array_merge($this->metaFields, $metaFields);
+    }
+
+    public function saveTerms(array $terms): void
+    {
+        $this->terms = array_merge($this->terms, $terms);
     }
 
 
