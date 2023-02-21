@@ -10,6 +10,8 @@ use Eminiarts\Aura\ConditionalLogic;
 
 trait AuraModelConfig
 {
+    public array $metaFields = [];
+
     public array $bulkActions = [];
 
     public static $pluralName = null;
@@ -41,6 +43,12 @@ trait AuraModelConfig
     protected static bool $title = false;
 
     protected static string $type = 'Resource';
+
+    public function saveMetaFields(array $metaFields): void
+    {
+        $this->metaFields = array_merge($this->metaFields, $metaFields);
+    }
+
 
     public function __construct(array $attributes = [])
     {
@@ -89,16 +97,16 @@ trait AuraModelConfig
         return $statement[0]->Auto_increment;
     }
 
-    public static function create($fields)
-    {
-        $model = new static();
+    // public static function create($fields)
+    // {
+    //     $model = new static();
 
-        $model->save();
+    //     $model->save();
 
-        $model->update($fields);
+    //     $model->update($fields);
 
-        return $model;
-    }
+    //     return $model;
+    // }
 
     public function display($key)
     {

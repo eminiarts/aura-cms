@@ -11,9 +11,17 @@ trait SaveMetaFields
     {
         static::saving(function ($post) {
             if (isset($post->attributes['fields'])) {
-                // ray('fields in savemetafields', $post->attributes['fields']);
+                //ray('fields in savemetafields', $post->attributes['fields']);
 
-                foreach ($post->attributes['fields'] as $key => $value) {
+                $post->saveMetaFields($post->attributes['fields']);
+
+                unset($post->attributes['fields']);
+            }
+        });
+
+        static::saved(function ($post) {
+            if (isset($post->metaFields)) {
+                foreach ($post->metaFields as $key => $value) {
                     $class = $post->fieldClassBySlug($key);
 
                     // Do not continue if the Field is not found
@@ -54,19 +62,21 @@ trait SaveMetaFields
 
                     // If there is no ID
                     if (!optional($post)->id) {
-                        // dd('hier hooo', static::getNextId());
-                        // $post->meta()->updateOrCreate;
-                        dump(static::getNextId());
-                        Meta::updateOrCreate(['key' => $key, 'post_id' => static::getNextId()], ['value' => $value]);
+                        dd('should never reach this point');
+                        // // dd('hier hooo', static::getNextId());
+                        // // $post->meta()->updateOrCreate;
+                        // dump(static::getNextId());
+                        // Meta::updateOrCreate(['key' => $key, 'post_id' => static::getNextId()], ['value' => $value]);
 
-                        continue;
+                        // continue;
                     }
 
                     // Update or create the meta field
                     $post->meta()->updateOrCreate(['key' => $key], ['value' => $value]);
                 }
 
-                unset($post->attributes['fields']);
+                // Reload relation
+                $post->load('meta');
             }
         });
     }
