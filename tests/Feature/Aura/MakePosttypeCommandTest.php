@@ -1,31 +1,28 @@
 <?php
 
-use Eminiarts\Aura\Resources\User;
-use Illuminate\Foundation\Testing\RefreshDatabase;
-
-uses(RefreshDatabase::class);
-
 uses()->group('current');
 
-beforeEach(fn () => $this->actingAs($this->user = User::factory()->create()));
-
+use Eminiarts\Aura\Resources\User;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Filesystem\FilesystemServiceProvider;
+
+uses(RefreshDatabase::class);
+uses(FilesystemServiceProvider::class)->in('current');
+
+beforeEach(function () {
+    $this->actingAs(User::factory()->create());
+});
 
 it('generates the correct files for a posttype', function () {
-    Storage::fake('app', [
-                'driver' => 'local',
-                'root' => app_path(),
-            ]);
-
+    Storage::fake('app');
 
     Artisan::call('aura:posttype', [
         'name' => 'TestPosttype',
     ]);
 
-    dd(Storage::disk('app')->allFiles());
-
-
     // assert app/Aura/Resources/TestPosttype.php exists
-    $this->assertTrue(Storage::disk('app')->exists('Aura/Resources/TestPosttype.php'));
+    $this->assertTrue(File::exists(app_path('Aura/Resources/TestPosttype.php')));
 });
