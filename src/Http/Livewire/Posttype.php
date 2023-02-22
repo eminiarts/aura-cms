@@ -156,6 +156,7 @@ class Posttype extends Component
             abort(403, 'Posttype Editor is turned off.');
         }
 
+        dump($this->model);
         if ($this->model->isVendorResource()) {
             abort(403, 'Only App resources can be edited.');
         }
