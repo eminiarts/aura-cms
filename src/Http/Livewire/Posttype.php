@@ -207,6 +207,7 @@ class Posttype extends Component
 
             return $this->newFields;
         }
+
         return $this->model->getFieldsForEdit();
     }
 

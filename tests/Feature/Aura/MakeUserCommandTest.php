@@ -1,7 +1,5 @@
 <?php
 
-use Eminiarts\Aura\Facades\Aura;
-use Eminiarts\Aura\Models\Post;
 use Eminiarts\Aura\Resources\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
@@ -11,7 +9,6 @@ uses(RefreshDatabase::class);
 uses()->group('current');
 
 beforeEach(fn () => $this->actingAs($this->user = User::factory()->create()));
-
 
 it('can create a user with all required fields', function () {
     $this->artisan('aura:user')
