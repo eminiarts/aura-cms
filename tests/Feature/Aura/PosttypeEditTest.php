@@ -49,13 +49,16 @@ test('vendor resource can not be edited', function () {
 
     createSuperAdmin();
 
+    Aura::fake();
+    Aura::setModel($userResource);
+
     // visit edit posttype page
     $response = $this->get(route('aura.posttype.edit', 'user'));
 
     $response->assertForbidden();
 
     expect($response->exception->getMessage())->toBe('Only App resources can be edited.');
-});
+})->group('current');
 
 test('edit posttype should be allowed', function () {
     $config = config('aura.posttype_editor');
