@@ -97,4 +97,4 @@ test('flow - a flow can change data and pass it to the next operation', function
 
     // dd(OperationLog::orderBy('id', 'desc')->first());
     $this->assertDatabaseHas('flow_operation_logs', ['response->message' => 'Updated Title: Updated Title']);
-});
+})->group('current');

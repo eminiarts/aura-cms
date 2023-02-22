@@ -50,6 +50,11 @@ trait AuraModelConfig
         $this->metaFields = array_merge($this->metaFields, $metaFields);
     }
 
+    public function saveMetaField(array $metaFields): void
+    {
+        $this->saveMetaFields($metaFields);
+    }
+
     public function saveTerms(array $terms): void
     {
         $this->terms = array_merge($this->terms, $terms);
