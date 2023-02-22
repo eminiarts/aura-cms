@@ -2,20 +2,19 @@
 
 namespace Eminiarts\Aura\Http\Controllers\Auth;
 
+use Eminiarts\Aura\Resources\TeamInvitation;
+use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Http\Request;
-use Laravel\Jetstream\Jetstream;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\Gate;
-use Eminiarts\Aura\Resources\TeamInvitation;
 use Laravel\Jetstream\Contracts\AddsTeamMembers;
-use Illuminate\Auth\Access\AuthorizationException;
+use Laravel\Jetstream\Jetstream;
 
 class TeamInvitationController extends Controller
 {
     /**
      * Accept a team invitation.
      *
-     * @param  \Illuminate\Http\Request  $request
      * @param  int  $invitationId
      * @return \Illuminate\Http\RedirectResponse
      */
@@ -42,7 +41,6 @@ class TeamInvitationController extends Controller
     /**
      * Cancel the given team invitation.
      *
-     * @param  \Illuminate\Http\Request  $request
      * @param  int  $invitationId
      * @return \Illuminate\Http\RedirectResponse
      */

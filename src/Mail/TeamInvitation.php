@@ -2,13 +2,11 @@
 
 namespace Eminiarts\Aura\Mail;
 
+use Eminiarts\Aura\Resources\TeamInvitation as TeamInvitationResource;
 use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
-use Illuminate\Support\Facades\URL;
 use Illuminate\Queue\SerializesModels;
-use Illuminate\Notifications\Notification;
-use Illuminate\Notifications\Messages\MailMessage;
-use Eminiarts\Aura\Resources\TeamInvitation as TeamInvitationResource;
+use Illuminate\Support\Facades\URL;
 
 class TeamInvitation extends Mailable
 {
@@ -16,10 +14,10 @@ class TeamInvitation extends Mailable
     use SerializesModels;
 
     /**
-    * The team invitation instance.
-    *
-    * @var \Laravel\Jetstream\TeamInvitation
-    */
+     * The team invitation instance.
+     *
+     * @var \Laravel\Jetstream\TeamInvitation
+     */
     public $invitation;
 
     /**

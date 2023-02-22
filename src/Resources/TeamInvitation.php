@@ -3,7 +3,6 @@
 namespace Eminiarts\Aura\Resources;
 
 use Eminiarts\Aura\Models\Post;
-use Eminiarts\Aura\Widgets\PostStats;
 
 class TeamInvitation extends Post
 {

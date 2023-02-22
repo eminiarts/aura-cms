@@ -46,7 +46,6 @@ class Posttype extends Component
 
     public function addField($id, $slug, $type, $children)
     {
-        // dd($id, $slug, $type, $children);
         $children = (int) $children;
         $str = Str::random(4);
         if ($type == 'Eminiarts\\Aura\\Fields\\Tab') {
@@ -75,16 +74,12 @@ class Posttype extends Component
             ];
         }
 
-        // dd($field, $type);
-
         $fields = collect($this->fieldsArray);
 
         // get index of the field
         $index = $fields->search(function ($item) use ($slug) {
             return $item['slug'] == $slug;
         });
-
-        // dd($index, $children, $index + $children, $slug, $fields);
 
         // duplicate field in at index of the field + 1
         $fields->splice($index + $children + 1, 0, [$field]);
@@ -105,7 +100,6 @@ class Posttype extends Component
     public function addNewTab()
     {
         $fields = collect($this->fieldsArray);
-        // dd($fields);
 
         // check if collection has an item with type = "Eminiarts\Aura\Fields\Tab" and global = true
         $hasGlobalTabs = $fields->where('type', 'Eminiarts\Aura\Fields\Tab')->where('global', true)->count();
@@ -156,7 +150,6 @@ class Posttype extends Component
             abort(403, 'Posttype Editor is turned off.');
         }
 
-        dump($this->model);
         if ($this->model->isVendorResource()) {
             abort(403, 'Only App resources can be edited.');
         }
@@ -214,7 +207,6 @@ class Posttype extends Component
 
             return $this->newFields;
         }
-        // dd($this->model->getFieldsForEdit());
         return $this->model->getFieldsForEdit();
     }
 
@@ -280,20 +272,13 @@ class Posttype extends Component
 
     public function reorder($ids)
     {
-        // $this->fields = $this->model->getFields();
-
         $this->validate();
-        // dd('hier');
 
-        // dd($ids);
         $ids = collect($ids)->map(function ($id) {
             return (int) Str::after($id, 'field_') - 1;
         });
-        // dd($ids);
 
-        // dd($this->model->getFields());
         $fields = array_values($this->fieldsArray);
-        // dd($ids, $fields);
 
         $fields = $ids->map(function ($id) use ($fields) {
             return $fields[$id];
@@ -351,8 +336,6 @@ class Posttype extends Component
 
     public function saveField($data)
     {
-        // code...
-        // dd($data);
         // edit the field in $this->fieldsArray with the slug $data['slug'] and replace it with $data['value']
         $fields = collect($this->fieldsArray);
 
