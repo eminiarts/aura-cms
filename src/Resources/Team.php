@@ -34,6 +34,13 @@ class Team extends Post
 
     protected static bool $title = false;
 
+    public function customPermissions()
+    {
+        return [
+            'invite-users' => 'Invite users to team',
+        ];
+    }
+
     public static function getFields()
     {
         return [
@@ -126,6 +133,11 @@ class Team extends Post
         return $this->hasMany(TeamMeta::class, 'team_id');
     }
 
+    public function teamInvitations()
+    {
+        return $this->hasMany(TeamInvitation::class, 'team_id');
+    }
+
     public function title()
     {
         return $this->name;
@@ -152,18 +164,6 @@ class Team extends Post
         static::updating(function ($team) {
             dd('uppdating');
         });
-    }
-
-    public function customPermissions()
-    {
-        return [
-            'invite-users' => 'Invite users to team',
-        ];
-    }
-
-    public function teamInvitations()
-    {
-        return $this->hasMany(TeamInvitation::class, 'team_id');
     }
 
     /**

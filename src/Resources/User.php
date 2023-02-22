@@ -274,9 +274,7 @@ class User extends UserModel
             }
         });
 
-
-
-        if (!$meta->isEmpty()) {
+        if (! $meta->isEmpty()) {
             // Cast Attributes
             $meta = $meta->map(function ($value, $key) {
                 // if there is a function get{Slug}Field on the model, use it

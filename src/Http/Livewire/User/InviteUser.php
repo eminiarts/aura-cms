@@ -2,20 +2,19 @@
 
 namespace Eminiarts\Aura\Http\Livewire\User;
 
-use Illuminate\Support\Arr;
+use Eminiarts\Aura\Mail\TeamInvitation;
 use Eminiarts\Aura\Resources\Role;
 use Eminiarts\Aura\Resources\Team;
+use Eminiarts\Aura\Traits\InputFields;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Mail;
 use LivewireUI\Modal\ModalComponent;
-use Eminiarts\Aura\Traits\InputFields;
-use Eminiarts\Aura\Mail\TeamInvitation;
-use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
-use Illuminate\Support\Facades\Artisan;
 
 class InviteUser extends ModalComponent
 {
-    use InputFields;
     use AuthorizesRequests;
+    use InputFields;
 
     public $post;
 
@@ -67,9 +66,9 @@ class InviteUser extends ModalComponent
         $team = auth()->user()->currentTeam;
 
         $invitation = $team->teamInvitations()->create([
-                    'email' => $email = $this->post['fields']['email'],
-                    'role' => $this->post['fields']['role'],
-                ]);
+            'email' => $email = $this->post['fields']['email'],
+            'role' => $this->post['fields']['role'],
+        ]);
 
         Mail::to($email)->send(new TeamInvitation($invitation));
 

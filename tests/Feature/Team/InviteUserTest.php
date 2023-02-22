@@ -1,13 +1,10 @@
 <?php
 
-use Livewire\Livewire;
+use Eminiarts\Aura\Http\Livewire\User\InviteUser;
 use Eminiarts\Aura\Models\User;
-use Eminiarts\Aura\Resources\Post;
 use Eminiarts\Aura\Resources\Role;
 use Eminiarts\Aura\Resources\TeamInvitation;
-use Eminiarts\Aura\Http\Livewire\Table\Table;
-use Eminiarts\Aura\Http\Livewire\User\InviteUser;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Livewire\Livewire;
 
 // Before each test, create a Superadmin and login
 beforeEach(function () {
@@ -23,8 +20,6 @@ beforeEach(function () {
     // Login
     $this->actingAs($this->user);
 });
-
-
 
 test('user can be invited', function () {
     // Test InviteUser Livewire Component
@@ -52,7 +47,6 @@ test('user can be invited', function () {
 test('user gets correct role', function () {
 });
 
-
 test('Team Invitation can be created', function () {
     $team = $this->user->currentTeam;
 
@@ -72,8 +66,6 @@ test('Team Invitation can be created', function () {
 
     // DB should have 1 TeamInvitation with correct email
     expect($invitation->email)->toBe('test@test.ch');
-
-
 
     // ray()->stopShowingQueries();
 });

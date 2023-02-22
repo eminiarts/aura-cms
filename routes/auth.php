@@ -1,17 +1,17 @@
 <?php
 
-use Illuminate\Support\Facades\Route;
-use Eminiarts\Aura\Http\Controllers\SwitchTeamController;
-use Eminiarts\Aura\Http\Controllers\Auth\PasswordController;
+use Eminiarts\Aura\Http\Controllers\Auth\AuthenticatedSessionController;
+use Eminiarts\Aura\Http\Controllers\Auth\ConfirmablePasswordController;
+use Eminiarts\Aura\Http\Controllers\Auth\EmailVerificationNotificationController;
+use Eminiarts\Aura\Http\Controllers\Auth\EmailVerificationPromptController;
 use Eminiarts\Aura\Http\Controllers\Auth\NewPasswordController;
-use Eminiarts\Aura\Http\Controllers\Auth\VerifyEmailController;
+use Eminiarts\Aura\Http\Controllers\Auth\PasswordController;
+use Eminiarts\Aura\Http\Controllers\Auth\PasswordResetLinkController;
 use Eminiarts\Aura\Http\Controllers\Auth\RegisteredUserController;
 use Eminiarts\Aura\Http\Controllers\Auth\TeamInvitationController;
-use Eminiarts\Aura\Http\Controllers\Auth\PasswordResetLinkController;
-use Eminiarts\Aura\Http\Controllers\Auth\ConfirmablePasswordController;
-use Eminiarts\Aura\Http\Controllers\Auth\AuthenticatedSessionController;
-use Eminiarts\Aura\Http\Controllers\Auth\EmailVerificationPromptController;
-use Eminiarts\Aura\Http\Controllers\Auth\EmailVerificationNotificationController;
+use Eminiarts\Aura\Http\Controllers\Auth\VerifyEmailController;
+use Eminiarts\Aura\Http\Controllers\SwitchTeamController;
+use Illuminate\Support\Facades\Route;
 
 Route::middleware('guest')->group(function () {
     Route::get('register', [RegisteredUserController::class, 'create'])->name('register');
@@ -50,7 +50,6 @@ Route::middleware('auth')->group(function () {
 
     // If has Team Features
     Route::put('/current-team', [SwitchTeamController::class, 'update'])->name('current-team.update');
-
 
     Route::get('/team-invitations/{invitation}', [TeamInvitationController::class, 'accept'])
                                 ->middleware(['signed'])

@@ -2,8 +2,8 @@
 
 namespace Eminiarts\Aura\Traits;
 
-use Illuminate\Support\Str;
 use Eminiarts\Aura\Models\Meta;
+use Illuminate\Support\Str;
 
 trait SaveMetaFields
 {
@@ -12,7 +12,6 @@ trait SaveMetaFields
         static::saving(function ($post) {
             if (isset($post->attributes['fields'])) {
                 //ray('fields in savemetafields', $post->attributes['fields']);
-
 
                 foreach ($post->attributes['fields'] as $key => $value) {
                     $class = $post->fieldClassBySlug($key);
@@ -65,7 +64,6 @@ trait SaveMetaFields
                 // if ($post->type == 'SlugModel') {
                 //     dump('saved', $post->toArray());
                 // }
-
 
                 foreach ($post->metaFields as $key => $value) {
                     $post->meta()->updateOrCreate(['key' => $key], ['value' => $value]);

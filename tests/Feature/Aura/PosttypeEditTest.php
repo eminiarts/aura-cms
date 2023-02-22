@@ -58,7 +58,7 @@ test('vendor resource can not be edited', function () {
     $response->assertForbidden();
 
     expect($response->exception->getMessage())->toBe('Only App resources can be edited.');
-})->group('current');
+});
 
 test('edit posttype should be allowed', function () {
     $config = config('aura.posttype_editor');
