@@ -13,7 +13,6 @@ trait SaveMetaFields
             if (isset($post->attributes['fields'])) {
                 //ray('fields in savemetafields', $post->attributes['fields']);
 
-                $post->saveMetaFields($post->attributes['fields']);
 
                 foreach ($post->attributes['fields'] as $key => $value) {
                     $class = $post->fieldClassBySlug($key);
@@ -49,7 +48,12 @@ trait SaveMetaFields
                     // If the field exists in the $post->getBaseFillable(), it should be safed in the table instead of the meta table
                     if (in_array($key, $post->getBaseFillable())) {
                         $post->attributes[$key] = $value;
+
+                        continue;
                     }
+
+                    // Save the meta field to the model, so it can be saved in the Meta table
+                    $post->saveMetaField([$key => $value]);
                 }
 
                 unset($post->attributes['fields']);
