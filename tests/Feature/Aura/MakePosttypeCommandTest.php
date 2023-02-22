@@ -3,14 +3,14 @@
 uses()->group('current');
 
 use Eminiarts\Aura\Resources\User;
+use Illuminate\Filesystem\FilesystemServiceProvider;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Filesystem\FilesystemServiceProvider;
 
 uses(RefreshDatabase::class);
-uses(FilesystemServiceProvider::class)->in('current');
+// uses(FilesystemServiceProvider::class);
 
 beforeEach(function () {
     $this->actingAs(User::factory()->create());
