@@ -274,23 +274,27 @@ class User extends UserModel
             }
         });
 
-        // Cast Attributes
-        $meta = $meta->map(function ($meta, $key) {
-            // if there is a function get{Slug}Field on the model, use it
-            $method = 'get'.Str::studly($key).'Field';
 
-            if (method_exists($this, $method)) {
-                return $this->{$method}();
-            }
 
-            $class = $this->fieldClassBySlug($key);
+        if (!$meta->isEmpty()) {
+            // Cast Attributes
+            $meta = $meta->map(function ($value, $key) {
+                // if there is a function get{Slug}Field on the model, use it
+                $method = 'get'.Str::studly($key).'Field';
 
-            if ($class && method_exists($class, 'get')) {
-                return $class->get($class, $meta);
-            }
+                if (method_exists($this, $method)) {
+                    return $this->{$method}($value);
+                }
 
-            return $meta;
-        });
+                $class = $this->fieldClassBySlug($key);
+
+                if ($class && method_exists($class, 'get')) {
+                    return $class->get($class, $value);
+                }
+
+                return $value;
+            });
+        }
 
         return $defaultValues->merge($meta);
     }
