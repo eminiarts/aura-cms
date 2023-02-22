@@ -68,56 +68,11 @@ trait SaveMetaFields
 
 
                 foreach ($post->metaFields as $key => $value) {
-                    $class = $post->fieldClassBySlug($key);
-
-                    // Do not continue if the Field is not found
-                    if (! $class) {
-                        continue;
-                    }
-
-                    // if there is a function set{Slug}Field on the model, use it
-                    $method = 'set'.Str::studly($key).'Field';
-
-                    if (method_exists($post, $method)) {
-                        $post = $post->{$method}($value);
-
-                        continue;
-                    }
-
-                    // If the $class is a Password Field and the value is null, continue
-                    if ($class instanceof \Eminiarts\Aura\Fields\Password && is_null($value)) {
-                        // If the password is available in the $post->attributes, unset it
-                        if (isset($post->attributes[$key])) {
-                            unset($post->attributes[$key]);
-                        }
-
-                        continue;
-                    }
-
-                    if (method_exists($class, 'set')) {
-                        $value = $class->set($value);
-                    }
-
-
-
-                    // If there is no ID
-                    if (!optional($post)->id) {
-                        dd('should never reach this point');
-                        // // dd('hier hooo', static::getNextId());
-                        // // $post->meta()->updateOrCreate;
-                        // dump(static::getNextId());
-                        // Meta::updateOrCreate(['key' => $key, 'post_id' => static::getNextId()], ['value' => $value]);
-
-                        // continue;
-                    }
-
-                    // Update or create the meta field
                     $post->meta()->updateOrCreate(['key' => $key], ['value' => $value]);
                 }
 
                 // Reload relation
                 $post->load('meta');
-
 
                 // if ($post->type == 'SlugModel') {
                 //     dump('saved', $post->toArray());
