@@ -25,4 +25,7 @@ it('generates the correct files for a posttype', function () {
 
     // assert app/Aura/Resources/TestPosttype.php exists
     $this->assertTrue(File::exists(app_path('Aura/Resources/TestPosttype.php')));
+
+    // delete app/Aura/Resources/TestPosttype.php
+    File::delete(app_path('Aura/Resources/TestPosttype.php'));
 });
