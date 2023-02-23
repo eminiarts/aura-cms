@@ -11,12 +11,18 @@ use Eminiarts\Aura\Http\Controllers\Auth\TeamInvitationController;
 use Eminiarts\Aura\Http\Controllers\Auth\PasswordResetLinkController;
 use Eminiarts\Aura\Http\Controllers\Auth\ConfirmablePasswordController;
 use Eminiarts\Aura\Http\Controllers\Auth\AuthenticatedSessionController;
+use Eminiarts\Aura\Http\Controllers\Auth\InvitationRegisterUserController;
 use Eminiarts\Aura\Http\Controllers\Auth\EmailVerificationPromptController;
 use Eminiarts\Aura\Http\Controllers\Auth\EmailVerificationNotificationController;
 
 Route::middleware('guest')->group(function () {
     Route::get('register', [RegisteredUserController::class, 'create'])->name('register');
+
     Route::post('register', [RegisteredUserController::class, 'store']);
+
+    Route::get('register/{team}/{teamInvitation}', [InvitationRegisterUserController::class, 'create'])->name('invitation.register')->middleware(['signed']);
+
+    Route::post('register/{team}/{teamInvitation}', [InvitationRegisterUserController::class, 'store'])->name('invitation.register')->middleware(['signed']);
 
     Route::get('login', [AuthenticatedSessionController::class, 'create'])->name('login');
 
@@ -51,7 +57,5 @@ Route::middleware('auth')->group(function () {
     // If has Team Features
     Route::put('/current-team', [SwitchTeamController::class, 'update'])->name('current-team.update');
 
-    Route::get('/team-invitations/{invitation}', [TeamInvitationController::class, 'accept'])
-                                ->middleware(['signed'])
-                                ->name('team-invitations.accept');
+    Route::get('/team-invitations/{invitation}', [TeamInvitationController::class, 'accept'])->middleware(['signed'])->name('team-invitations.accept');
 });

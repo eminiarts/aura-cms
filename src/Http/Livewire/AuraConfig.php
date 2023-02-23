@@ -50,6 +50,15 @@ class AuraConfig extends Component
                     'width' => '100',
                 ],
             ],
+            [
+                'name' => 'User Invitations ',
+                'type' => 'Eminiarts\\Aura\\Fields\\Boolean',
+                'instructions' => 'With this option enabled, users will be able to invite other users to their team. This is useful if you want to allow organizations or groups to use your site.',
+                'slug' => 'user_invitations',
+                'style' => [
+                    'width' => '100',
+                ],
+            ],
 
             [
                 'type' => 'Eminiarts\\Aura\\Fields\\Panel',

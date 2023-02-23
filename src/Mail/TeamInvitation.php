@@ -2,11 +2,12 @@
 
 namespace Eminiarts\Aura\Mail;
 
-use Eminiarts\Aura\Resources\TeamInvitation as TeamInvitationResource;
 use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
-use Illuminate\Queue\SerializesModels;
+use Eminiarts\Aura\Resources\User;
 use Illuminate\Support\Facades\URL;
+use Illuminate\Queue\SerializesModels;
+use Eminiarts\Aura\Resources\TeamInvitation as TeamInvitationResource;
 
 class TeamInvitation extends Mailable
 {
@@ -38,8 +39,13 @@ class TeamInvitation extends Mailable
      */
     public function build()
     {
-        return $this->markdown('aura::emails.team-invitation', ['acceptUrl' => URL::signedRoute('team-invitations.accept', [
-            'invitation' => $this->invitation,
-        ])])->subject(__('Team Invitation'));
+        return $this->markdown('aura::emails.team-invitation', [
+            'registerUrl' => URL::signedRoute('invitation.register', [
+                'team' => $this->invitation->team,
+                'teamInvitation' => $this->invitation,
+            ]),
+            'userExists' => User::where('email', $this->invitation->email)->exists(),
+            'acceptUrl' => URL::signedRoute('team-invitations.accept', ['invitation' => $this->invitation,])
+            ])->subject(__('Aura CMS - You have been invited to ' . $this->invitation->team->name));
     }
 }
