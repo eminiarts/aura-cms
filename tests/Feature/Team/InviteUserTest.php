@@ -1,10 +1,11 @@
 <?php
 
-use Eminiarts\Aura\Http\Livewire\User\InviteUser;
+use Livewire\Livewire;
 use Eminiarts\Aura\Models\User;
+use Eminiarts\Aura\Facades\Aura;
 use Eminiarts\Aura\Resources\Role;
 use Eminiarts\Aura\Resources\TeamInvitation;
-use Livewire\Livewire;
+use Eminiarts\Aura\Http\Livewire\User\InviteUser;
 
 uses()->group('current');
 
@@ -22,6 +23,9 @@ beforeEach(function () {
 
     // Login
     $this->actingAs($this->user);
+
+    // Enable Team Registration
+    Aura::setOption('team_registration', true);
 });
 
 test('user can be invited', function () {

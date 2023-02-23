@@ -227,71 +227,7 @@ class AuraConfig extends Component
 
     public function mount()
     {
-        // Get Config from aura:config
-        // $this->config = config('aura')['features'];
-
-        $valueString =
-            [
-                'app_name' => 'Aura CMS',
-                'app_description' => 'Aura CMS',
-                'app_url' => 'http://aura.test',
-                'app_locale' => 'en',
-                'app_timezone' => 'UTC',
-
-                'media' => [
-                    'disk' => 'public',
-                    'path' => 'media',
-                    'max_file_size' => 10000,
-                    'generate_thumbnails' => true,
-                    'thumbnails' => [
-                        [
-                            'name' => 'thumbnail',
-                            'width' => 600,
-                            'height' => 600,
-                        ],
-                        [
-                            'name' => 'medium',
-                            'width' => 1200,
-                            'height' => 1200,
-                        ],
-                        [
-                            'name' => 'large',
-                            'width' => 2000,
-                            'height' => 2000,
-                        ],
-                    ],
-                ],
-                'date_format' => 'd.m.Y',
-                'time_format' => 'H:i',
-                'features' => [
-                    'teams' => true,
-                    'users' => true,
-                    'media' => true,
-                    'notifications' => true,
-                    'settings' => true,
-                    'pages' => true,
-                    'posts' => true,
-                    'categories' => true,
-                    'tags' => true,
-                    'comments' => true,
-                    'menus' => true,
-                    'roles' => true,
-                    'permissions' => true,
-                    'activity' => true,
-                    'backups' => true,
-                    'updates' => true,
-                    'support' => true,
-                    'documentation' => true,
-                ],
-            ];
-
-        $this->model = Option::withoutGlobalScopes([TeamScope::class])->firstOrCreate([
-            'name' => 'aura-settings',
-            'team_id' => 0,
-        ], [
-            'value' => json_encode($valueString),
-            'team_id' => 0,
-        ]);
+        $this->model = Aura::getGlobalOptions();
 
         if (is_string($this->model->value)) {
             $this->post['fields'] = json_decode($this->model->value, true);
@@ -300,9 +236,6 @@ class AuraConfig extends Component
                 return [$field['slug'] => $this->post['fields'][$field['slug']] ?? null];
             })->toArray();
         }
-
-        // dump($this->post);
-        // dump($this->model, $this->post);
     }
 
     public function render()
@@ -319,14 +252,12 @@ class AuraConfig extends Component
 
     public function save()
     {
-        // validate
         $this->validate();
 
         $this->model->value = json_encode($this->post['fields']);
 
         $this->model->save();
 
-        // Clear Cache
         Cache::forget('aura-settings');
 
         $this->notify('Erfolgreich gespeichert!');
