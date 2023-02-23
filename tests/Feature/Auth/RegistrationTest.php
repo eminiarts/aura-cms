@@ -25,6 +25,9 @@ test('registration screen can be rendered', function () {
 });
 
 test('new users can register', function () {
+    // Create team
+    Team::factory()->create();
+
     $response = $this->post(route('register'), [
         'name' => 'Test User',
         'team' => 'Test Team',
@@ -49,4 +52,10 @@ test('new users can register', function () {
         'type' => 'Role',
         'team_id' => $team->id,
     ]);
+
+    // get authenticated user
+    $user = auth()->user();
+
+    // User->current_team_id should be set to Team->id
+    expect($user->current_team_id)->toBe($team->id);
 });

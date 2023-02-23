@@ -54,7 +54,6 @@ class RegisteredUserController extends Controller
             'password' => Hash::make($request->password),
         ]);
 
-
         $team = Team::create([
             'name' => $request->team,
             'user_id' => $user->id,
@@ -62,8 +61,6 @@ class RegisteredUserController extends Controller
             'created_at' => now(),
             'updated_at' => now(),
         ]);
-
-        $team = Team::first();
 
         $user->current_team_id = $team->id;
 
