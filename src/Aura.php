@@ -2,13 +2,14 @@
 
 namespace Eminiarts\Aura;
 
-use Eminiarts\Aura\Resources\Attachment;
+use Illuminate\Support\Str;
 use Eminiarts\Aura\Resources\Option;
-use Eminiarts\Aura\Traits\DefaultFields;
 use Illuminate\Filesystem\Filesystem;
 use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Str;
+use Eminiarts\Aura\Resources\Attachment;
+use Eminiarts\Aura\Traits\DefaultFields;
 use Symfony\Component\Finder\SplFileInfo;
+use Eminiarts\Aura\Models\Scopes\TeamScope;
 
 class Aura
 {
@@ -209,9 +210,22 @@ class Aura
         return collect($grouped)->groupBy('group');
     }
 
-    public static function options()
+    public function options()
     {
-        //
+        return Cache::rememberForever('aura-settings', function () {
+            $option = Option::withoutGlobalScopes([TeamScope::class])->where('name', 'aura-settings')->where('team_id', 0)->first();
+
+            if ($option && is_string($option->value)) {
+                return json_decode($option->value, true);
+            } else {
+                return [];
+            }
+        });
+    }
+
+    public function option($key)
+    {
+        return $this->options()[$key] ?? null;
     }
 
     public function registerFields(array $fields): void

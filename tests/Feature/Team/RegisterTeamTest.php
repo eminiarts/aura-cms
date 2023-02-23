@@ -2,6 +2,8 @@
 
 use Eminiarts\Aura\Models\User;
 
+use Eminiarts\Aura\Facades\Aura;
+
 use Eminiarts\Aura\Resources\Option;
 
 use Eminiarts\Aura\Models\Scopes\TeamScope;
@@ -51,6 +53,7 @@ test('registration config can be disabled', function () {
 
     // expect $options->team_registration to be true
     expect($options->team_registration)->toBeFalse();
+    expect(Aura::option('team_registration'))->toBeFalse();
 });
 
 test('registration config can be enabled', function () {
@@ -78,4 +81,16 @@ test('registration config can be enabled', function () {
 test('aura config site is working', function () {
     // make sure the site route('aura.config') is working
     $this->get(route('aura.config'))->assertOk();
+});
+
+
+test('registration config can be enabled and called from the aura facade', function () {
+    livewire(AuraConfig::class)
+        ->set('post.fields.team_registration', true)
+        ->call('save')
+        ->assertHasNoErrors();
+
+    expect(Aura::option('team_registration'))->toBeTrue();
+
+    expect(app('aura')::option('team_registration'))->toBeTrue();
 });
