@@ -6,7 +6,7 @@ use Illuminate\Support\Facades\DB;
 
 uses(RefreshDatabase::class);
 
-uses()->group('current');
+// uses()->group('current');
 
 beforeEach(fn () => $this->actingAs($this->user = User::factory()->create()));
 

@@ -6,6 +6,9 @@ use Eminiarts\Aura\Resources\Role;
 use Eminiarts\Aura\Resources\TeamInvitation;
 use Livewire\Livewire;
 
+uses()->group('current');
+
+
 // Before each test, create a Superadmin and login
 beforeEach(function () {
     // Create User
@@ -50,14 +53,33 @@ test('user gets correct role', function () {
 test('Team Invitation can be created', function () {
     $team = $this->user->currentTeam;
 
-    // $teamInvitation = TeamInvitation::create([
-    //     'email' => 'test@test.ch',
-    //     'role' => Role::first()->id,
-    //     'team_id' => $team->id,
-    // ]);
+    $invitation = $team->teamInvitations()->create([
+        'email' => 'test@test.ch',
+        'role' => Role::first()->id,
+    ]);
 
-    // dd('hier', $teamInvitation->toArray());
-    // ray()->showQueries();
+    // DB should have 1 TeamInvitation with correct email
+    expect($invitation->email)->toBe('test@test.ch');
+
+    // expect $invitation->exists to be true
+    expect($invitation->exists)->toBeTrue();
+});
+
+// create a test to see if /register route is available
+test('register route is available', function () {
+    // log the user out
+    $this->app['auth']->logout();
+
+    // assert that the user is logged out
+    $this->assertGuest();
+
+    // Get the register view
+    $this->get(route('register'))->assertOk();
+});
+
+
+test('user email is prefilled in the registration', function () {
+    $team = $this->user->currentTeam;
 
     $invitation = $team->teamInvitations()->create([
         'email' => 'test@test.ch',
@@ -67,5 +89,6 @@ test('Team Invitation can be created', function () {
     // DB should have 1 TeamInvitation with correct email
     expect($invitation->email)->toBe('test@test.ch');
 
-    // ray()->stopShowingQueries();
+    // expect $invitation->exists to be true
+    expect($invitation->exists)->toBeTrue();
 });

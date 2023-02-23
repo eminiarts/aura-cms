@@ -24,38 +24,7 @@ class AuraConfig extends Component
         'fields' => [],
     ];
 
-    public function formatIndentation($str, $str2)
-    {
-        // Get first Line
-        $line = preg_split('#\r?\n#', $str, 0)[1];
 
-        // Get Spaces in first Line
-        $count = substr_count($line, ' ');
-
-        // Get second Line
-        $line2 = preg_split('#\r?\n#', $str2, 0)[1];
-
-        // Get Spaces in second Line
-        $count2 = substr_count($line2, ' ');
-
-        // Get the difference of Spaces
-        $newSpaces = str_pad('', $count - $count2, ' ');
-
-        // Str to Array
-        $new = preg_split('#\r?\n#', $str2, 0);
-
-        // Add Spaces to each line except the 1st
-        foreach ($new as $key => $line) {
-            if ($key == 0) {
-                continue;
-            }
-
-            $new[$key] = $newSpaces.$line;
-        }
-
-        // Implode Array to Text
-        return implode("\n", $new);
-    }
 
     public static function getFields()
     {
@@ -66,6 +35,21 @@ class AuraConfig extends Component
                 'slug' => 'tab-general',
                 'global' => true,
             ],
+            [
+                'type' => 'Eminiarts\\Aura\\Fields\\Panel',
+                'name' => 'Registration Settings',
+                'slug' => 'panel-registration',
+            ],
+            [
+                'name' => 'Team registration',
+                'type' => 'Eminiarts\\Aura\\Fields\\Boolean',
+                'instructions' => 'With this option enabled, users will be able to create a team when they register for an account. This is useful if you want to allow organizations or groups to use your site.',
+                'slug' => 'team_registration',
+                'style' => [
+                    'width' => '100',
+                ],
+            ],
+
             [
                 'type' => 'Eminiarts\\Aura\\Fields\\Panel',
                 'name' => 'General Aura Settings',
@@ -218,7 +202,7 @@ class AuraConfig extends Component
                 'name' => 'Features',
                 'type' => 'Eminiarts\\Aura\\Fields\\View',
                 'slug' => 'features',
-                'view' => 'aura.features',
+                'view' => 'aura::aura.features',
                 'style' => [
                     'width' => '100',
                 ],
@@ -243,7 +227,7 @@ class AuraConfig extends Component
     public function mount()
     {
         // Get Config from aura:config
-        $this->config = config('aura')['features'];
+        // $this->config = config('aura')['features'];
 
         $valueString =
             [
@@ -322,7 +306,7 @@ class AuraConfig extends Component
 
     public function render()
     {
-        return view('aura::livewire.aura-config');
+        return view('aura::livewire.aura-config')->layout('aura::components.layout.app');
     }
 
     public function rules()
@@ -332,61 +316,22 @@ class AuraConfig extends Component
         ]);
     }
 
-    public function saveConfig()
+    public function save()
     {
-        $path = config_path('aura.php');
+        // validate
+        $this->validate();
 
-        $file = file_get_contents($path);
+        $this->model->value = json_encode($this->post['fields']);
 
-        $replacement = Aura::varexport($this->config, true);
+        $this->model->save();
 
-        preg_match("/'features' => \[([^\]]*)\],/ms", $file, $matches);
-
-        $replacement = $this->formatIndentation($matches[0], '\'features\' => '.$replacement.',');
-
-        $replaced = Str::replace(
-            $matches[0],
-            $replacement,
-            $file
-        );
-
-        // Save to file
-        file_put_contents($path, $replaced);
-
-        // Clear Config Cache
-        \Artisan::call('config:clear');
+        // clear cache of auth()->user()->current_team_id . '.aura.team-settings'
+        // Cache::forget(auth()->user()->current_team_id.'.aura.team-settings');
 
         $this->notify('Erfolgreich gespeichert!');
     }
 
-     public function saveFields($fields)
-     {
-         $a = new \ReflectionClass($this->model::class);
 
-         $file = file_get_contents($a->getFileName());
-
-         $replacement = Aura::varexport($this->setKeysToFields($fields), true);
-
-         // dd($replacement);
-
-         preg_match('/function\s+getFields\s*\((?:[^()]+)*?\s*\)\s*(?<functionBody>{(?:[^{}]+|(?-1))*+})/ms', $file, $matches);
-
-         $body = $matches['functionBody'];
-
-         preg_match('/return (\[.*\]);/ms', $body, $matches2);
-
-         $replaced = Str::replace(
-             $matches2[1],
-             $this->formatIndentation($matches2[1], $replacement),
-             $file
-         );
-
-         // dd($matches[1], $replacement, $this->formatIndentation($matches[1], $replacement));
-
-         file_put_contents($a->getFileName(), $replaced);
-
-         $this->notify('Saved successfully.');
-     }
 
     public function updatedConfig()
     {
@@ -394,6 +339,6 @@ class AuraConfig extends Component
         //$this->config = config('aura')['features'];
 
         // Save Config
-        $this->saveConfig();
+        $this->save();
     }
 }
