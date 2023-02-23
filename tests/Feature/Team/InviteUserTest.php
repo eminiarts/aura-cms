@@ -7,9 +7,6 @@ use Eminiarts\Aura\Resources\Role;
 use Eminiarts\Aura\Resources\TeamInvitation;
 use Eminiarts\Aura\Http\Livewire\User\InviteUser;
 
-uses()->group('current');
-
-
 // Before each test, create a Superadmin and login
 beforeEach(function () {
     // Create User
