@@ -61,20 +61,12 @@ trait SaveMetaFields
 
         static::saved(function ($post) {
             if (isset($post->metaFields)) {
-                // if ($post->type == 'SlugModel') {
-                //     dump('saved', $post->toArray());
-                // }
-
                 foreach ($post->metaFields as $key => $value) {
                     $post->meta()->updateOrCreate(['key' => $key], ['value' => $value]);
                 }
 
                 // Reload relation
                 $post->load('meta');
-
-                // if ($post->type == 'SlugModel') {
-                //     dump('saved', $post->toArray());
-                // }
             }
         });
     }

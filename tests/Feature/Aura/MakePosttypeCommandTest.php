@@ -1,6 +1,6 @@
 <?php
 
-uses()->group('current');
+// uses()->group('current');
 
 use Eminiarts\Aura\Resources\User;
 use Illuminate\Filesystem\FilesystemServiceProvider;

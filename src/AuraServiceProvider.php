@@ -7,6 +7,7 @@ use Eminiarts\Aura\Commands\MakePosttype;
 use Eminiarts\Aura\Commands\MakeUser;
 use Eminiarts\Aura\Facades\Aura;
 use Eminiarts\Aura\Http\Livewire\Attachment\Index as AttachmentIndex;
+use Eminiarts\Aura\Http\Livewire\AuraConfig;
 use Eminiarts\Aura\Http\Livewire\CreateFlow;
 use Eminiarts\Aura\Http\Livewire\CreatePosttype;
 use Eminiarts\Aura\Http\Livewire\EditOperation;
@@ -93,6 +94,7 @@ class AuraServiceProvider extends PackageServiceProvider
         Livewire::component('aura::taxonomy-create', TaxonomyCreate::class);
         Livewire::component('aura::team-settings', TeamSettings::class);
         Livewire::component('aura::invite-user', InviteUser::class);
+        Livewire::component('aura::config', AuraConfig::class);
 
         // Flows
         Livewire::component('aura::create-flow', CreateFlow::class);

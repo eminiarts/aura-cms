@@ -10,6 +10,16 @@
             </div>
         </div>
 
+        {{-- @dump($post) --}}
+
+
+    {{-- save button --}}
+    <div class="flex justify-end">
+        <x-aura::button.primary wire:click="save" wire:loading.attr="disabled">
+            {{-- <x-aura::loading wire:loading wire:target="save" /> --}}
+            Save
+        </x-aura::button.primary>
+    </div>
 
 
     @foreach($this->fieldsForView as $key => $field)
