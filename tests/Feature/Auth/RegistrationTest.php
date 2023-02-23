@@ -2,7 +2,13 @@
 
 namespace Tests\Feature\Auth;
 
+use Eminiarts\Aura\Facades\Aura;
 use Eminiarts\Aura\Providers\RouteServiceProvider;
+
+beforeEach(function () {
+    // Enable Team Registration
+    Aura::setOption('team_registration', true);
+});
 
 test('registration screen can be rendered', function () {
     $response = $this->get('/register');
