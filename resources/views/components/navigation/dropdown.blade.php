@@ -35,7 +35,7 @@ $settings = Eminiarts\Aura\Facades\Aura::getOption('team-settings');
             this.active = value ? this.id : null
         },
     }" role="region" :class="{
-        'bg-primary-800/70 rounded-lg': expanded,
+        'bg-primary-800/70 dark:bg-gray-700/50 rounded-lg': expanded,
     }">
           <button
               x-on:click="expanded = !expanded"
@@ -61,7 +61,7 @@ $settings = Eminiarts\Aura\Facades\Aura::getOption('team-settings');
               </span>
           </button>
 
-        <div x-show="expanded" x-cloak class=" p-2" x-aura::collapse>
+        <div x-show="expanded" x-cloak class="p-2 " x-aura::collapse>
             {{$slot}}
         </div>
     </div>
@@ -84,7 +84,9 @@ $settings = Eminiarts\Aura\Facades\Aura::getOption('team-settings');
         set expanded(value) {
             this.active = value ? this.id : null
         },
-    }" role="region" class="">
+    }" role="region" :class="{
+        'bg-gray-200/50 dark:bg-gray-700/50 rounded-lg': expanded,
+    }">
           <button
               x-on:click="expanded = !expanded"
               :aria-expanded="expanded"
@@ -110,7 +112,7 @@ $settings = Eminiarts\Aura\Facades\Aura::getOption('team-settings');
               </span>
           </button>
 
-        <div x-show="expanded" x-cloak class="pl-3 ml-[1.4rem] border-l-2 border-l-primary-600" x-aura::collapse>
+        <div x-show="expanded" x-cloak class="p-2" x-aura::collapse>
             {{$slot}}
         </div>
     </div>
@@ -133,7 +135,9 @@ $settings = Eminiarts\Aura\Facades\Aura::getOption('team-settings');
         set expanded(value) {
             this.active = value ? this.id : null
         },
-    }" role="region" class="">
+    }" role="region" :class="{
+        'bg-gray-700/50 rounded-lg': expanded,
+    }">
           <button
               x-on:click="expanded = !expanded"
               :aria-expanded="expanded"
@@ -159,7 +163,7 @@ $settings = Eminiarts\Aura\Facades\Aura::getOption('team-settings');
               </span>
           </button>
 
-        <div x-show="expanded" x-ref="container" x-cloak class="pl-1 ml-[1.4rem] border-l-2 border-l-gray-600" x-aura::collapse>
+        <div x-show="expanded" x-ref="container" x-cloak class="p-2" x-aura::collapse>
             {{$slot}}
         </div>
     </div>
