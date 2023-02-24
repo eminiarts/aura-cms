@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Auth\Events\Registered;
+use Eminiarts\Aura\Resources\TeamInvitation;
 use Eminiarts\Aura\Http\Controllers\Controller;
 use Eminiarts\Aura\Providers\RouteServiceProvider;
 
@@ -22,12 +23,15 @@ class InvitationRegisterUserController extends Controller
     *
     * @return \Illuminate\View\View
     */
-    public function create()
+    public function create(Request $request, Team $team, TeamInvitation $teamInvitation)
     {
         // If team registration is disabled, we show a 404 page.
         abort_if(!Aura::option('user_invitations'), 404);
 
-        return view('aura::auth.register');
+        return view('aura::auth.user_invitation', [
+            'team' => $team,
+            'teamInvitation' => $teamInvitation,
+        ]);
     }
 
     /**
@@ -37,39 +41,25 @@ class InvitationRegisterUserController extends Controller
     *
     * @throws \Illuminate\Validation\ValidationException
     */
-    public function store(Request $request)
+    public function store(Request $request, Team $team, TeamInvitation $teamInvitation)
     {
         abort_if(!Aura::option('user_invitations'), 404);
 
         $request->validate([
             'name' => ['required', 'string', 'max:255'],
-            'team' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'string', 'email', 'max:255', 'unique:'.User::class],
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
         ]);
 
         $user = User::create([
             'name' => $request->name,
-            'email' => $request->email,
+            'email' => $teamInvitation->email,
             'password' => Hash::make($request->password),
+            'current_team_id' => $team->id,
+            'fields' => ['roles' => [$teamInvitation->role]]
         ]);
 
-        $team = Team::create([
-            'name' => $request->team,
-            'user_id' => $user->id,
-            'personal_team' => 1, // todo: remove this column
-            'created_at' => now(),
-            'updated_at' => now(),
-        ]);
-
-        $user->current_team_id = $team->id;
-
-        $user->save();
-
-        // Create Role
-        $role = Role::create(['type' => 'Role', 'title' => 'Super Admin', 'slug' => 'super_admin', 'name' => 'Super Admin', 'description' => 'Super Admin has can perform everything.', 'super_admin' => true, 'permissions' => [], 'team_id' => $team->id, 'user_id' => $user->id]);
-
-        $user->update(['fields' => ['roles' => [$role->id]]]);
+        // Delete the invitation
+        $teamInvitation->delete();
 
         event(new Registered($user));
 
