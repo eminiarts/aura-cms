@@ -20,16 +20,16 @@ class TeamScope implements Scope
             return $builder->whereId(auth()->user()->current_team_id);
         }
 
-        if ($model instanceof \Eminiarts\Aura\Resources\Role) {
-            // return $builder;
+        if (auth()->user() && $model instanceof \Eminiarts\Aura\Resources\Role) {
             return $builder->where('posts.team_id', auth()->user()->current_team_id);
         }
 
-        // return $builder;
         if (auth()->user()) {
             return $builder->whereTeamId(auth()->user()->current_team_id);
         }
 
-        //return $builder;
+        // Check access?
+
+        return $builder;
     }
 }

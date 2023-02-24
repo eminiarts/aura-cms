@@ -7,9 +7,15 @@ use Eminiarts\Aura\Facades\Aura;
 use Eminiarts\Aura\Resources\Role;
 use Eminiarts\Aura\Resources\TeamInvitation;
 use Eminiarts\Aura\Http\Livewire\User\InviteUser;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Eminiarts\Aura\Models\User;
+use Eminiarts\Aura\Models\Team;
+use Eminiarts\Aura\Models\TeamInvitation;
+use Illuminate\Support\Facades\Hash;
 
 uses()->group('current');
 
+uses(RefreshDatabase::class);
 
 // Before each test, create a Superadmin and login
 beforeEach(function () {
@@ -98,8 +104,6 @@ test('user email is prefilled in the registration', function () {
     expect($invitation->exists)->toBeTrue();
 });
 
-
-
 test('user_invitations can be enabled', function () {
     livewire(AuraConfig::class)
         ->set('post.fields.user_invitations', true)
@@ -121,3 +125,39 @@ test('user_invitations can be disabled', function () {
 
     expect(app('aura')::option('user_invitations'))->toBeTrue();
 });
+
+
+test('user can register using an invitation', function () {
+    $team = Team::first();
+
+    $invitation = TeamInvitation::create([
+        'team_id' => $team->id
+    ]);
+
+    $response = $this->get(route('register.invitation', [$team, $invitation->token]));
+
+    $response->assertOk();
+
+    $user = User::where('email', $invitation->email)->first();
+    $this->assertNull($user);
+
+    $response = $this->post(route('register.invitation', [$team, $invitation->token]), [
+        'name' => 'Test User',
+        'password' => 'password',
+        'password_confirmation' => 'password',
+    ]);
+
+    $response->assertRedirect(route('home'));
+
+    $user = User::where('email', $invitation->email)->first();
+    $this->assertNotNull($user);
+    $this->assertTrue(Hash::check('password', $user->password));
+    $this->assertEquals($team->id, $user->current_team_id);
+    $this->assertEquals([$invitation->role], $user->fields['roles']);
+    $this->assertDatabaseMissing('team_invitations', ['id' => $invitation->id]);
+});
+Note that this assumes you have the necessary routes set up, including the register.invitation route that corresponds to the create() and store() methods in the controller. You'll need to modify the test to match your route names and parameters.
+
+
+
+
