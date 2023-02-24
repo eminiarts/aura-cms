@@ -39,7 +39,7 @@ if($selected) {
 
                     <div class="flex space-x-3 items-start w-full">
                         <div class="w-8 h-8 rounded-full bg-primary-100 flex items-center justify-center text-primary-400 mt-1">
-                            @include('attachment.icon', ['class' => 'h-4 w-4', 'attachment' => $file])
+                            @include('aura::attachment.icon', ['class' => 'h-4 w-4', 'attachment' => $file])
                         </div>
 
                         <div>

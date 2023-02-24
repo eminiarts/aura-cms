@@ -2,6 +2,7 @@
 
 namespace Eminiarts\Aura\Traits;
 
+use Eminiarts\Aura\Models\Meta;
 use Illuminate\Support\Str;
 
 trait SaveMetaFields
@@ -10,7 +11,7 @@ trait SaveMetaFields
     {
         static::saving(function ($post) {
             if (isset($post->attributes['fields'])) {
-                // ray('fields in savemetafields', $post->attributes['fields']);
+                //ray('fields in savemetafields', $post->attributes['fields']);
 
                 foreach ($post->attributes['fields'] as $key => $value) {
                     $class = $post->fieldClassBySlug($key);
@@ -50,11 +51,22 @@ trait SaveMetaFields
                         continue;
                     }
 
-                    // Update or create the meta field
-                    $post->meta()->updateOrCreate(['key' => $key], ['value' => $value]);
+                    // Save the meta field to the model, so it can be saved in the Meta table
+                    $post->saveMetaField([$key => $value]);
                 }
 
                 unset($post->attributes['fields']);
+            }
+        });
+
+        static::saved(function ($post) {
+            if (isset($post->metaFields)) {
+                foreach ($post->metaFields as $key => $value) {
+                    $post->meta()->updateOrCreate(['key' => $key], ['value' => $value]);
+                }
+
+                // Reload relation
+                $post->load('meta');
             }
         });
     }

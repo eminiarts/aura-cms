@@ -1,10 +1,6 @@
 <?php
 
-use Eminiarts\Aura\Http\Livewire\Table\Table;
 use Eminiarts\Aura\Models\User;
-use Eminiarts\Aura\Resources\Post;
-use Illuminate\Foundation\Testing\RefreshDatabase;
-use Livewire\Livewire;
 
 // Before each test, create a Superadmin and login
 beforeEach(function () {
@@ -20,8 +16,6 @@ beforeEach(function () {
     // Login
     $this->actingAs($this->user);
 });
-
-
 
 test('team can be created', function () {
 });

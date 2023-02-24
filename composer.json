@@ -73,8 +73,7 @@
             "providers": [
                 "Lab404\\Impersonate\\ImpersonateServiceProvider",
                 "Eminiarts\\Aura\\Providers\\FortifyServiceProvider",
-                "Eminiarts\\Aura\\AuraServiceProvider",
-                "Eminiarts\\Aura\\Providers\\PolicyServiceProvider"
+                "Eminiarts\\Aura\\AuraServiceProvider"
             ],
             "aliases": {
                 "Aura": "Eminiarts\\Aura\\Facades\\Aura"
