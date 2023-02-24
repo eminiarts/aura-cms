@@ -1,19 +1,21 @@
 <?php
 
-use livewire;
 use Livewire\Livewire;
-use Eminiarts\Aura\Models\User;
 use Eminiarts\Aura\Facades\Aura;
 use Eminiarts\Aura\Resources\Role;
+use Eminiarts\Aura\Resources\Team;
+use Eminiarts\Aura\Resources\User;
+use Illuminate\Support\Facades\URL;
+use Illuminate\Support\Facades\Hash;
+use Eminiarts\Aura\Http\Livewire\AuraConfig;
 use Eminiarts\Aura\Resources\TeamInvitation;
 use Eminiarts\Aura\Http\Livewire\User\InviteUser;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Eminiarts\Aura\Models\User;
-use Eminiarts\Aura\Models\Team;
-use Eminiarts\Aura\Models\TeamInvitation;
-use Illuminate\Support\Facades\Hash;
+use Eminiarts\Aura\Providers\RouteServiceProvider;
 
-uses()->group('current');
+use function Pest\Livewire\livewire;
+
+//uses()->group('current');
 
 uses(RefreshDatabase::class);
 
@@ -106,9 +108,9 @@ test('user email is prefilled in the registration', function () {
 
 test('user_invitations can be enabled', function () {
     livewire(AuraConfig::class)
-        ->set('post.fields.user_invitations', true)
-        ->call('save')
-        ->assertHasNoErrors();
+    ->set('post.fields.user_invitations', true)
+    ->call('save')
+    ->assertHasNoErrors();
 
     expect(Aura::option('user_invitations'))->toBeTrue();
 
@@ -117,9 +119,9 @@ test('user_invitations can be enabled', function () {
 
 test('user_invitations can be disabled', function () {
     livewire(AuraConfig::class)
-        ->set('post.fields.user_invitations', true)
-        ->call('save')
-        ->assertHasNoErrors();
+    ->set('post.fields.user_invitations', true)
+    ->call('save')
+    ->assertHasNoErrors();
 
     expect(Aura::option('user_invitations'))->toBeTrue();
 
@@ -131,33 +133,55 @@ test('user can register using an invitation', function () {
     $team = Team::first();
 
     $invitation = TeamInvitation::create([
-        'team_id' => $team->id
+        'team_id' => $team->id,
+        'email' => 'invite@test.de',
+        'role' => Role::first()->id,
     ]);
 
-    $response = $this->get(route('register.invitation', [$team, $invitation->token]));
+    // Generate the signed URL
+    $url = URL::signedRoute('invitation.register', [$team, $invitation]);
 
-    $response->assertOk();
+    // Make the request to the signed URL
+    $response = $this->get($url);
+
+    // Should be 302 because is logged in
+    $response->assertStatus(302);
+
+    // log the user out
+    $this->app['auth']->logout();
+
+    // assert that the user is logged out
+    $this->assertGuest();
+
+    // Make the request to the signed URL
+    $response = $this->get($url);
+
+    // Assert that the response is OK and contains the registration view
+    $response->assertOk()->assertViewIs('aura::auth.user_invitation');
 
     $user = User::where('email', $invitation->email)->first();
+
     $this->assertNull($user);
 
-    $response = $this->post(route('register.invitation', [$team, $invitation->token]), [
+    $response = $this->post($url, [
         'name' => 'Test User',
         'password' => 'password',
         'password_confirmation' => 'password',
     ]);
 
-    $response->assertRedirect(route('home'));
+    $response->assertRedirect(RouteServiceProvider::HOME);
 
     $user = User::where('email', $invitation->email)->first();
+
+    // dd($user);
+
     $this->assertNotNull($user);
+
     $this->assertTrue(Hash::check('password', $user->password));
+
     $this->assertEquals($team->id, $user->current_team_id);
+
     $this->assertEquals([$invitation->role], $user->fields['roles']);
+
     $this->assertDatabaseMissing('team_invitations', ['id' => $invitation->id]);
-});
-Note that this assumes you have the necessary routes set up, including the register.invitation route that corresponds to the create() and store() methods in the controller. You'll need to modify the test to match your route names and parameters.
-
-
-
-
+})->group('current');

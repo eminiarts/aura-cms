@@ -6,7 +6,7 @@ use Eminiarts\Aura\Facades\Aura;
 use Eminiarts\Aura\Resources\Team;
 use Eminiarts\Aura\Providers\RouteServiceProvider;
 
-uses()->group('current');
+// uses()->group('current');
 
 beforeEach(function () {
     // Enable Team Registration

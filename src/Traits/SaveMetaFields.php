@@ -11,6 +11,7 @@ trait SaveMetaFields
     {
         static::saving(function ($post) {
             if (isset($post->attributes['fields'])) {
+                // dump('saving', $post->attributes['fields']);
                 //ray('fields in savemetafields', $post->attributes['fields']);
 
                 foreach ($post->attributes['fields'] as $key => $value) {
@@ -25,7 +26,9 @@ trait SaveMetaFields
                     $method = 'set'.Str::studly($key).'Field';
 
                     if (method_exists($post, $method)) {
-                        $post = $post->{$method}($value);
+                        $post->saveMetaField([$key => $value]);
+
+                        //$post = $post->{$method}($value);
 
                         continue;
                     }
@@ -62,6 +65,15 @@ trait SaveMetaFields
         static::saved(function ($post) {
             if (isset($post->metaFields)) {
                 foreach ($post->metaFields as $key => $value) {
+                    // if there is a function set{Slug}Field on the model, use it
+                    $method = 'set'.Str::studly($key).'Field';
+
+                    if (method_exists($post, $method)) {
+                        $post = $post->{$method}($value);
+
+                        continue;
+                    }
+
                     $post->meta()->updateOrCreate(['key' => $key], ['value' => $value]);
                 }
 
