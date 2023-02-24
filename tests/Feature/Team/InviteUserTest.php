@@ -1,11 +1,15 @@
 <?php
 
+use livewire;
 use Livewire\Livewire;
 use Eminiarts\Aura\Models\User;
 use Eminiarts\Aura\Facades\Aura;
 use Eminiarts\Aura\Resources\Role;
 use Eminiarts\Aura\Resources\TeamInvitation;
 use Eminiarts\Aura\Http\Livewire\User\InviteUser;
+
+uses()->group('current');
+
 
 // Before each test, create a Superadmin and login
 beforeEach(function () {
@@ -92,4 +96,28 @@ test('user email is prefilled in the registration', function () {
 
     // expect $invitation->exists to be true
     expect($invitation->exists)->toBeTrue();
+});
+
+
+
+test('user_invitations can be enabled', function () {
+    livewire(AuraConfig::class)
+        ->set('post.fields.user_invitations', true)
+        ->call('save')
+        ->assertHasNoErrors();
+
+    expect(Aura::option('user_invitations'))->toBeTrue();
+
+    expect(app('aura')::option('user_invitations'))->toBeTrue();
+});
+
+test('user_invitations can be disabled', function () {
+    livewire(AuraConfig::class)
+        ->set('post.fields.user_invitations', true)
+        ->call('save')
+        ->assertHasNoErrors();
+
+    expect(Aura::option('user_invitations'))->toBeTrue();
+
+    expect(app('aura')::option('user_invitations'))->toBeTrue();
 });
