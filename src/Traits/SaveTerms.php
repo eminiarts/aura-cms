@@ -9,11 +9,19 @@ trait SaveTerms
     protected static function bootSaveTerms()
     {
         static::saving(function ($post) {
-            // Terms
             if (isset($post->attributes['terms'])) {
+                $post->saveTerms($post->attributes['terms']);
+
+                unset($post->attributes['terms']);
+            }
+        });
+
+        static::saved(function ($post) {
+            // Terms
+            if (isset($post->terms)) {
                 $values = [];
 
-                foreach ($post->attributes['terms'] as $key => $value) {
+                foreach ($post->terms as $key => $value) {
                     // if value is null, continue
                     if (! $value) {
                         continue;

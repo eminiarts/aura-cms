@@ -4,15 +4,21 @@ namespace Eminiarts\Aura\Traits;
 
 use Eminiarts\Aura\ConditionalLogic;
 use Eminiarts\Aura\Models\Meta;
+use Eminiarts\Aura\Resources\Team;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 trait AuraModelConfig
 {
     public array $bulkActions = [];
 
+    public array $metaFields = [];
+
     public static $pluralName = null;
 
     public static $singularName = null;
+
+    public array $terms = [];
 
     public static bool $usesMeta = true;
 
@@ -76,16 +82,16 @@ trait AuraModelConfig
         return $this->displayFieldValue($key, $value);
     }
 
-    public static function create($fields)
-    {
-        $model = new static();
+    // public static function create($fields)
+    // {
+    //     $model = new static();
 
-        $model->save();
+    //     $model->save();
 
-        $model->update($fields);
+    //     $model->update($fields);
 
-        return $model;
-    }
+    //     return $model;
+    // }
 
     public function display($key)
     {
@@ -189,6 +195,17 @@ trait AuraModelConfig
     public static function getName(): ?string
     {
         return static::$name;
+    }
+
+    public static function getNextId()
+    {
+        $model = new static();
+
+        $query = "show table status like '".$model->getTable()."'";
+
+        $statement = DB::select($query);
+
+        return $statement[0]->Auto_increment;
     }
 
     public static function getPluralName(): string
@@ -322,15 +339,30 @@ trait AuraModelConfig
         return 'aura::components.table.row';
     }
 
+    public function saveMetaField(array $metaFields): void
+    {
+        $this->saveMetaFields($metaFields);
+    }
+
+    public function saveMetaFields(array $metaFields): void
+    {
+        $this->metaFields = array_merge($this->metaFields, $metaFields);
+    }
+
+    public function saveTerms(array $terms): void
+    {
+        $this->terms = array_merge($this->terms, $terms);
+    }
+
     public function singularName(): string
     {
         return static::$singularName ?? Str::title(static::$slug);
     }
 
-    // public function title()
-    // {
-    //     return $this->id;
-    // }
+    public function team()
+    {
+        return $this->belongsTo(Team::class);
+    }
 
     public static function usesCustomTable(): bool
     {

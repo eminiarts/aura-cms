@@ -81,8 +81,13 @@ test('flow - a flow can change data and pass it to the next operation', function
         'status' => 'published',
     ]);
 
+    // dd($firstPost);
+
+    // Expect $post->exists to be true
+    expect($firstPost->exists)->toBeTrue();
+
     // Assert Post is in DB
-    $this->assertDatabaseHas('posts', ['title' => 'Test Post 1', 'type' => 'Post', 'status' => 'published']);
+    $this->assertDatabaseHas('posts', ['title' => 'Updated Title', 'type' => 'Post', 'status' => 'published']);
 
     // Assert Flow 1 is triggered when Post is created
     $this->assertDatabaseHas('flow_logs', ['flow_id' => $flow->id]);

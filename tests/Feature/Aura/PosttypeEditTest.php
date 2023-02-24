@@ -49,6 +49,9 @@ test('vendor resource can not be edited', function () {
 
     createSuperAdmin();
 
+    Aura::fake();
+    Aura::setModel($userResource);
+
     // visit edit posttype page
     $response = $this->get(route('aura.posttype.edit', 'user'));
 

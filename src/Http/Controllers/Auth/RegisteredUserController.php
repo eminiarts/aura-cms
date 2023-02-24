@@ -2,38 +2,48 @@
 
 namespace Eminiarts\Aura\Http\Controllers\Auth;
 
-use Eminiarts\Aura\Http\Controllers\Controller;
-use Eminiarts\Aura\Models\User;
-use Eminiarts\Aura\Providers\RouteServiceProvider;
-use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\Request;
+use Eminiarts\Aura\Models\User;
+use Eminiarts\Aura\Facades\Aura;
+use Illuminate\Validation\Rules;
+use Eminiarts\Aura\Resources\Role;
+use Eminiarts\Aura\Resources\Team;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Validation\Rules;
+use Illuminate\Auth\Events\Registered;
+use Eminiarts\Aura\Http\Controllers\Controller;
+use Eminiarts\Aura\Providers\RouteServiceProvider;
 
 class RegisteredUserController extends Controller
 {
     /**
-     * Display the registration view.
-     *
-     * @return \Illuminate\View\View
-     */
+    * Display the registration view.
+    *
+    * @return \Illuminate\View\View
+    */
     public function create()
     {
+        // If team registration is disabled, we show a 404 page.
+        abort_if(!Aura::option('team_registration'), 404);
+
         return view('aura::auth.register');
     }
 
     /**
-     * Handle an incoming registration request.
-     *
-     * @return \Illuminate\Http\RedirectResponse
-     *
-     * @throws \Illuminate\Validation\ValidationException
-     */
+    * Handle an incoming registration request.
+    *
+    * @return \Illuminate\Http\RedirectResponse
+    *
+    * @throws \Illuminate\Validation\ValidationException
+    */
     public function store(Request $request)
     {
+        abort_if(!Aura::option('team_registration'), 404);
+
         $request->validate([
             'name' => ['required', 'string', 'max:255'],
+            'team' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'email', 'max:255', 'unique:'.User::class],
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
         ]);
@@ -43,6 +53,23 @@ class RegisteredUserController extends Controller
             'email' => $request->email,
             'password' => Hash::make($request->password),
         ]);
+
+        $team = Team::create([
+            'name' => $request->team,
+            'user_id' => $user->id,
+            'personal_team' => 1, // todo: remove this column
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $user->current_team_id = $team->id;
+
+        $user->save();
+
+        // Create Role
+        $role = Role::create(['type' => 'Role', 'title' => 'Super Admin', 'slug' => 'super_admin', 'name' => 'Super Admin', 'description' => 'Super Admin has can perform everything.', 'super_admin' => true, 'permissions' => [], 'team_id' => $team->id, 'user_id' => $user->id]);
+
+        $user->update(['fields' => ['roles' => [$role->id]]]);
 
         event(new Registered($user));
 
