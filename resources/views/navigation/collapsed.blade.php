@@ -38,12 +38,12 @@
                   </x-slot:title>
 
                   @foreach($resource['items'] as $resource)
-                      <x-aura::navigation.item route="aura.post.index" :id="$resource['type']" :strict="false">
+                      <x-aura::navigation.item-dropdown route="aura.post.index" :id="$resource['type']" :strict="false">
                           <div class="{{ $iconClass }}">
                               {!! $resource['icon'] !!}
                           </div>
                           <div>{{ $resource['name'] }}</div>
-                      </x-aura::navigation.item>
+                      </x-aura::navigation.item-dropdown>
                   @endforeach
               </x-aura::navigation.dropdown-icon>
 
