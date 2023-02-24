@@ -3,7 +3,7 @@
 namespace Eminiarts\Aura\Http\Controllers\Auth;
 
 use Illuminate\Http\Request;
-use Eminiarts\Aura\Models\User;
+use Eminiarts\Aura\Resources\User;
 use Eminiarts\Aura\Facades\Aura;
 use Illuminate\Validation\Rules;
 use Eminiarts\Aura\Resources\Role;
@@ -57,6 +57,8 @@ class InvitationRegisterUserController extends Controller
             'current_team_id' => $team->id,
             'fields' => ['roles' => [$teamInvitation->role]]
         ]);
+
+        // dd($user->fresh()->toArray());
 
         // Delete the invitation
         $teamInvitation->delete();

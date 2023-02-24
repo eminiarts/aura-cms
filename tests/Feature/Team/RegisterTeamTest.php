@@ -12,9 +12,6 @@ use Eminiarts\Aura\Http\Livewire\AuraConfig;
 
 use function Pest\Livewire\livewire;
 
-uses()->group('current');
-
-
 // Before each test, create a Superadmin and login
 beforeEach(function () {
     // Create User
