@@ -12,7 +12,7 @@
   </div>
 
   <!-- Team Settings -->
-  <x-aura::dropdown-link href="{{ route('aura.post.edit', ['slug' => 'Team', 'id' => Auth::user()->currentTeam->id]) }}">
+  <x-aura::dropdown-link href="{{ route('aura.post.edit', ['slug' => 'Team', 'id' => Auth::user()->current_team_id]) }}">
       {{ __('Team Settings') }}
   </x-aura::dropdown-link>
 
