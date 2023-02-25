@@ -15,7 +15,7 @@ use Eminiarts\Aura\Providers\RouteServiceProvider;
 
 use function Pest\Livewire\livewire;
 
-//uses()->group('current');
+uses()->group('current');
 
 uses(RefreshDatabase::class);
 
@@ -159,6 +159,12 @@ test('user can register using an invitation', function () {
     // Assert that the response is OK and contains the registration view
     $response->assertOk()->assertViewIs('aura::auth.user_invitation');
 
+    // Assert team name is in the view
+    $response->assertSee($team->name);
+
+    // Assert email is in the view
+    $response->assertSee($invitation->email);
+
     $user = User::where('email', $invitation->email)->first();
 
     $this->assertNull($user);
@@ -173,8 +179,6 @@ test('user can register using an invitation', function () {
 
     $user = User::where('email', $invitation->email)->first();
 
-    // dd($user);
-
     $this->assertNotNull($user);
 
     $this->assertTrue(Hash::check('password', $user->password));
@@ -184,4 +188,31 @@ test('user can register using an invitation', function () {
     $this->assertEquals([$invitation->role], $user->fields['roles']);
 
     $this->assertDatabaseMissing('team_invitations', ['id' => $invitation->id]);
-})->group('current');
+});
+
+
+
+test('email and role are required in the invite user component', function () {
+    $team = Team::first();
+
+    livewire(InviteUser::class, ['team' => $team])
+        ->set('post.fields.email', '')
+        ->set('post.fields.role', '')
+        ->call('save')
+        ->assertHasErrors([
+            'post.fields.email',
+            'post.fields.role'
+        ]);
+
+    User::factory()->create(['email' => 'invited@test.com']);
+
+    livewire(InviteUser::class, ['team' => $team])
+        ->set('post', ['fields' => [
+            'email' => 'invited@test.com',
+            'role' => Role::first()->id,
+        ]])
+        ->call('save')
+        ->assertHasErrors([
+            'post.fields.email'
+        ]);
+});
