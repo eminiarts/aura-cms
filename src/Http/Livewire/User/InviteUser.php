@@ -25,7 +25,7 @@ class InviteUser extends ModalComponent
                 'name' => 'Email',
                 'type' => 'Eminiarts\\Aura\\Fields\\Email',
                 'placeholder' => 'email@example.com',
-                'validation' => 'required|email|unique:users,email',
+                'validation' => 'required|email',
                 'slug' => 'email',
             ],
             [
@@ -52,14 +52,32 @@ class InviteUser extends ModalComponent
 
     public function rules()
     {
-        return Arr::dot([
+        $rules = Arr::dot([
             'post.fields' => $this->validationRules(),
+
         ]);
+
+        $rules['post.fields.email'] = [
+                'required', 'email', 'unique:users,email',
+                function ($attribute, $value, $fail) {
+                    $team = auth()->user()->currentTeam;
+
+                    dd($team->users);
+
+                    if ($team->users()->where('email', $value)->exists()) {
+                        $fail('User already exists.');
+                    }
+                },
+            ];
+
+        return $rules;
     }
 
     public function save()
     {
         $this->validate();
+
+        dd($this->rules());
 
         $this->authorize('invite-users', Team::class);
 
