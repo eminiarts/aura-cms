@@ -2,13 +2,14 @@
 
 namespace Eminiarts\Aura\Resources;
 
-use Eminiarts\Aura\Database\Factories\TeamFactory;
 use Eminiarts\Aura\Models\Post;
+use Eminiarts\Aura\Facades\Aura;
 use Eminiarts\Aura\Models\TeamMeta;
-use Eminiarts\Aura\Traits\CustomTable;
-use Eminiarts\Aura\Traits\SaveFieldAttributes;
-use Eminiarts\Aura\Traits\SaveMetaFields;
 use Eminiarts\Aura\Traits\SaveTerms;
+use Eminiarts\Aura\Traits\CustomTable;
+use Eminiarts\Aura\Traits\SaveMetaFields;
+use Eminiarts\Aura\Traits\SaveFieldAttributes;
+use Eminiarts\Aura\Database\Factories\TeamFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class Team extends Post
@@ -174,6 +175,11 @@ class Team extends Post
     protected static function newFactory()
     {
         return TeamFactory::new();
+    }
+
+    public function users()
+    {
+        return $this->belongsToMany(Aura::userModel())->withPivot('role')->withTimestamps();
     }
 
     // public static function create($fields)

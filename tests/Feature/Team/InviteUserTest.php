@@ -204,7 +204,7 @@ test('email and role are required in the invite user component', function () {
             'post.fields.role'
         ]);
 
-    User::factory()->create(['email' => 'invited@test.com']);
+    $user = User::factory()->create(['email' => 'invited@test.com']);
 
     livewire(InviteUser::class, ['team' => $team])
         ->set('post', ['fields' => [
@@ -212,7 +212,22 @@ test('email and role are required in the invite user component', function () {
             'role' => Role::first()->id,
         ]])
         ->call('save')
-        ->assertHasErrors([
+        ->assertHasNoErrors([
             'post.fields.email'
         ]);
+
+    // Attach the user to the team
+    $user->update(['fields' => ['roles' => [Role::first()->id]]]);
+    $user->teams()->attach($team->id);
+
+
+    livewire(InviteUser::class, ['team' => $team])
+            ->set('post', ['fields' => [
+                'email' => 'invited@test.com',
+                'role' => Role::first()->id,
+            ]])
+            ->call('save')
+            ->assertHasErrors([
+                'post.fields.email'
+            ]);
 });
