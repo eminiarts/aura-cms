@@ -14,10 +14,15 @@
 
       @php
         $optionGroup = false;
+        $options = optional($field)['options'];
+
+        if (isset($this->model)) {
+          $options = $field['field']->options($this->model, $field);
+        }
       @endphp
 
       {{-- @dd($field['options']) --}}
-      @foreach($field['field']->options($this->model, $field) as $key => $option)
+      @foreach($options as $key => $option)
         <!-- if key starts with "option_group" -->
         @if (Str::startsWith($key, 'option_group'))
           @if ($optionGroup)

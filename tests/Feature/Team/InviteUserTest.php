@@ -217,9 +217,9 @@ test('email and role are required in the invite user component', function () {
         ]);
 
     // Attach the user to the team
+    $user = User::find($user->id);
     $user->update(['fields' => ['roles' => [Role::first()->id]]]);
     $user->teams()->attach($team->id);
-
 
     livewire(InviteUser::class, ['team' => $team])
             ->set('post', ['fields' => [
