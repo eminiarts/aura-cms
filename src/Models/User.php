@@ -242,10 +242,7 @@ class User extends Authenticatable
      */
     public function teams()
     {
-        return $this->belongsToMany(Team::class, 'team_user')
-                        ->withPivot('role')
-                        ->withTimestamps()
-                        ->as('membership');
+        return $this->belongsToMany(Team::class, 'user_meta', 'user_id', 'team_id')->wherePivot('key', 'roles');
     }
 
     public function updateOption($option, $value)

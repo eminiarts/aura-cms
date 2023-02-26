@@ -179,15 +179,6 @@ class Team extends Post
 
     public function users()
     {
-        return $this->belongsToMany(Aura::userModel())->withPivot('role')->withTimestamps();
+        return $this->belongsToMany(User::class, 'user_meta', 'team_id', 'user_id')->wherePivot('key', 'roles');
     }
-
-    // public static function create($fields)
-    // {
-    //     $model = new static();
-
-    //     $model->save($fields);
-
-    //     return $model;
-    // }
 }
