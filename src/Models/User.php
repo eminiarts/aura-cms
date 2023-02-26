@@ -95,6 +95,14 @@ class User extends Authenticatable
         return $this->resource->isSuperAdmin();
     }
 
+    public function indexQuery($query)
+    {
+        // Query where user_meta key = roles and team_id = auth()->user()->current_team_id
+        return $query->whereHas('meta', function ($query) {
+            $query->where('key', 'roles')->where('team_id', auth()->user()->current_team_id);
+        });
+    }
+
     // Reset to default create Method from Laravel
     public static function create($fields)
     {
