@@ -236,6 +236,10 @@ class Table extends Component
             $query = app($this->field)->queryFor($this->parent, $query);
         }
 
+        if (method_exists($this->model, 'indexQuery')) {
+            $query = $this->model->indexQuery($query);
+        }
+
         // when model is instance Post, eager load meta and taxonomies
         if ($this->model instanceof Resource) {
             $query = $query->with(['meta', 'taxonomies']);
