@@ -45,6 +45,8 @@ class MakeUser extends Command
 
         $user->current_team_id = $team->id;
 
+
+
         $user->save();
 
         auth()->loginUsingId($user->id);
@@ -53,6 +55,9 @@ class MakeUser extends Command
         $role = Role::create(['type' => 'Role', 'title' => 'Super Admin', 'slug' => 'super_admin', 'name' => 'Super Admin', 'description' => 'Super Admin has can perform everything.', 'super_admin' => true, 'permissions' => [], 'team_id' => $team->id, 'user_id' => $user->id]);
 
         $user->update(['fields' => ['roles' => [$role->id]]]);
+
+        // Attach the user to the team
+        $team->users()->attach($user->id, ['role' => $role->id]);
 
         $this->info('User created successfully.');
 

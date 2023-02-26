@@ -62,8 +62,6 @@ class InviteUser extends ModalComponent
                 function ($attribute, $value, $fail) {
                     $team = auth()->user()->currentTeam;
 
-                    dd($team->users);
-
                     if ($team->users()->where('email', $value)->exists()) {
                         $fail('User already exists.');
                     }
@@ -77,7 +75,7 @@ class InviteUser extends ModalComponent
     {
         $this->validate();
 
-        dd($this->rules());
+        // dd($this->rules());
 
         $this->authorize('invite-users', Team::class);
 
