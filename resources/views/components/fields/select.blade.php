@@ -17,7 +17,7 @@
       @endphp
 
       {{-- @dd($field['options']) --}}
-      @foreach($field['options'] as $key => $option)
+      @foreach($field['field']->options($this->model, $field) as $key => $option)
         <!-- if key starts with "option_group" -->
         @if (Str::startsWith($key, 'option_group'))
           @if ($optionGroup)

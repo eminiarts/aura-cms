@@ -58,17 +58,26 @@ class InviteUser extends ModalComponent
         ]);
 
         $rules['post.fields.email'] = [
-                'required', 'email', 'unique:users,email',
+                'required', 'email',
                 function ($attribute, $value, $fail) {
                     $team = auth()->user()->currentTeam;
 
                     if ($team->users()->where('email', $value)->exists()) {
                         $fail('User already exists.');
                     }
+
+                    if ($team->teamInvitations()->where('email', $value)->exists()) {
+                        $fail('User already invited.');
+                    }
                 },
             ];
 
         return $rules;
+    }
+
+    public static function modalMaxWidth(): string
+    {
+        return '7xl';
     }
 
     public function save()
