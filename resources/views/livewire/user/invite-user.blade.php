@@ -34,7 +34,7 @@
     
     <div class="w-2/3">
         Team Invitations
-        {{-- <livewire:aura::table :model="app('Eminiarts\Aura\Resources\TeamInvitation')"/> --}}
+        <livewire:aura::table :model="app('Eminiarts\Aura\Resources\TeamInvitation')"/>
     </div>
 </div>
 
