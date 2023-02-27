@@ -45,8 +45,6 @@ class MakeUser extends Command
 
         $user->current_team_id = $team->id;
 
-
-
         $user->save();
 
         auth()->loginUsingId($user->id);
@@ -57,7 +55,7 @@ class MakeUser extends Command
         $user->update(['fields' => ['roles' => [$role->id]]]);
 
         // Attach the user to the team
-        $team->users()->attach($user->id, ['role' => $role->id]);
+        //$team->users()->attach($user->id, ['role' => $role->id]);
 
         $this->info('User created successfully.');
 
