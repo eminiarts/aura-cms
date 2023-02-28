@@ -9,7 +9,9 @@
                     // watch color for changes  and update the input
                     this.$watch('color', value => {
                         // console.log('color changed', value);
-                        $dispatch('input', this.color);
+                        this.$nextTick(() => {
+                            $dispatch('input', this.color);
+                        });
                     });
                 },
             }"
@@ -20,11 +22,11 @@
         </div>
     @else
 
+
     <div wire:ignore class="flex items-center"
         x-data="{
             selectedColor: $wire.entangle('post.fields.{{ optional($field)['slug'] }}').defer,
             init() {
-                console.log('init color', this.selectedColor);
                 // Simple example, see optional options for more configuration.
                 const pickr = Pickr.create({
                     el: this.$refs.colorPicker,
@@ -32,7 +34,7 @@
 
                     swatches: [],
 
-                    default: '{{ optional($this->post['fields'])[$field['slug']] ?? '#000000' }}',
+                    default: this.selectedColor ?? '#000000',
 
                     position: 'bottom-start',
 
@@ -95,11 +97,24 @@
                 // watch color for changes  and update the input
                 this.$watch('selectedColor', value => {
                     // console.log('color changed', value);
-                    $dispatch('input', value);
-                    // debounce 400ms
-                    setTimeout(() => {
-                        pickr.setColor(value);
-                    }, 400);
+                    this.$nextTick(() => {
+                        // trim the value and all characters after the 9th
+                        this.selectedColor = this.selectedColor.substring(0, 9);
+                        $dispatch('input', value);
+
+                        // debounce 400ms
+                        setTimeout(() => {
+                            @if (optional($field)['format'] == 'hex')
+                            // only update if the color is 7 characters
+                            if (this.selectedColor.length == 7 || this.selectedColor.length == 4 || this.selectedColor.length == 9) {
+                                pickr.setColor(this.selectedColor);
+                            }
+                            @else
+                                pickr.setColor(this.selectedColor);
+                            @endif
+                        }, 1000);
+                    });
+
                 });
             },
         }"
@@ -108,7 +123,7 @@
             <input
                 x-ref="colorPicker"
                 type="text"
-                x-model="selectedColor"
+                class="hidden"
             />
 
         </div>
