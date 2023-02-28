@@ -67,7 +67,7 @@
                         <x-aura::input.text label="Icon" placeholder="Icon" wire:model="postTypeFields.icon"></x-aura::input>
                     </div>
 
-                    <div class="flex items-center justify-center w-10 h-10 mt-0 ml-2 border border-gray-500/30 rounded-lg shadow-xs">
+                    <div class="flex items-center justify-center w-10 h-10 mt-0 ml-2 border rounded-lg shadow-xs border-gray-500/30">
                         <span class="text-gray-500">
                             {!! $model->icon() !!}
                         </span>
@@ -123,7 +123,7 @@
                     </button>
                 </div>
 
-                <div class="mb-3 border-t border-gray-400/30 rounded-b-lg dark:border-gray-700"></div>
+                <div class="mb-3 border-t rounded-b-lg border-gray-400/30 dark:border-gray-700"></div>
 
 
                 <div class="flex flex-wrap py-2 draggable-container" x-data="posttype" wire:key="posttype-fields">
@@ -191,8 +191,11 @@
                     <span class="ml-2">+ New Tab</span>
                 </button>
             </div>
+
+
             @if (count($this->mappedFields) > 0)
-                <div x-data="posttype" class="flex flex-wrap min-w-full mt-2 -mx-2 reorder-item draggable-item">
+
+                <div class="flex flex-wrap py-2 draggable-container" x-data="posttype" wire:key="posttype-fields">
                     @foreach($this->mappedFields as $field)
                         <style>
                             .post-field-{{ optional($field)['slug'] }}-wrapper {
@@ -208,6 +211,12 @@
                         <div class="px-2 reorder-item draggable-item post-field-{{ optional($field)['slug'] }}-wrapper" id="field_{{ $field['_id'] }}" wire:key="pt-field-{{ $field['_id'] }}">
                             <x-aura::posttype.show-field :field="$field" :slug="$slug" />
                         </div>
+
+                        @if ($loop->last)
+                                    <div class="w-full px-2">
+                                        <x-aura::posttype.add-field :id="$field['_id']" :slug="$field['slug']" :type="$field['type']" :children="isset($field['fields']) ? count($field['fields']) : 0"/>
+                                    </div>
+                                @endif
                     @endforeach
                 </div>
             @else
@@ -241,6 +250,7 @@
 
                         <x-aura::button wire:click="addTemplateFields('Plain')">Plain</x-aura::button>
                         <x-aura::button wire:click="addTemplateFields('TabsWithPanels')">TabsWithPanels</x-aura::button>
+                        <x-aura::button wire:click="addTemplateFields('PanelWithSidebar')">PanelWithSidebar</x-aura::button>
                         <x-aura::button wire:click="addTemplateFields('PanelWithTabs')">PanelWithTabs</x-aura::button>
                     </div>
                 </div>
