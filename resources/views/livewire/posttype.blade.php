@@ -78,6 +78,9 @@
         </div>
     </div>
 
+    {{-- @dd($this->mappedFields) --}}
+    {{-- @dump($this->mappedFields) --}}
+
     <div class="mt-8">
 
         @if ($hasGlobalTabs)
@@ -89,7 +92,7 @@
                     tabs: @entangle('globalTabs') ,
 
                     init() {
-                        console.log('init tabs', this.tabs);
+                        console.log('init tabs', this.tabs, this.activeTab);
                     }
                 }
             ">
@@ -126,7 +129,7 @@
                 <div class="mb-3 border-t rounded-b-lg border-gray-400/30 dark:border-gray-700"></div>
 
 
-                <div class="flex flex-wrap py-2 draggable-container" x-data="posttype" wire:key="posttype-fields">
+                <div class="flex flex-wrap py-2 draggable-container" wire:key="posttype-fields" x-data="posttype">
 
                     @if($this->mappedFields)
                         @foreach($this->mappedFields as $tab)
@@ -162,7 +165,9 @@
                             @endforeach
 
                             @else
-                                <div class="w-full px-2">
+                                empty tab
+                                <x-aura::button wire:click="insertTemplateFields({{ $tab['_id'] }}, '{{ $tab['slug'] }}', 'PanelWithSidebar')">PanelWithSidebar</x-aura::button>
+                                <div x-cloak class="w-full px-2">
                                     <x-aura::posttype.add-field :id="$tab['_id']" :slug="$tab['slug']" :type="$tab['type']"/>
                                 </div>
                             @endif
@@ -195,7 +200,7 @@
 
             @if (count($this->mappedFields) > 0)
 
-                <div class="flex flex-wrap py-2 draggable-container" x-data="posttype" wire:key="posttype-fields">
+                <div class="flex flex-wrap py-2 draggable-container" x-data="posttype" wire:key="posttype2-fields">
                     @foreach($this->mappedFields as $field)
                         <style>
                             .post-field-{{ optional($field)['slug'] }}-wrapper {
@@ -271,7 +276,7 @@
                 // define an alpinejs component named 'userDropdown'
                 Alpine.data('posttype', () => ({
                     init() {
-                        console.log('init posttype');
+                        console.log('init posttype!');
                         const sortable = new window.Sortable(document.querySelectorAll('.draggable-container'), {
                             draggable: '.draggable-item',
                             handle: '.draggable-handle',
