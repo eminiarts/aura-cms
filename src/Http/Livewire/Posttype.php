@@ -5,6 +5,7 @@ namespace Eminiarts\Aura\Http\Livewire;
 use Eminiarts\Aura\Facades\Aura;
 use Eminiarts\Aura\Traits\SaveFields;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Str;
 use Livewire\Component;
 
@@ -119,6 +120,9 @@ class Posttype extends Component
             $fields->push($globalTab);
         }
 
+        $this->hasGlobalTabs = true;
+        $this->updateGlobalTabs();
+
         $fields = $fields->toArray();
 
         $this->fieldsArray = $fields;
@@ -127,21 +131,74 @@ class Posttype extends Component
 
         $this->newFields = $this->model->mapToGroupedFields($this->fieldsArray);
 
-        $this->emit('refreshComponent');
+        // $this->emit('refreshComponent');
 
         $this->emit('openSlideOver', 'edit-field', ['fieldSlug' => $globalTab['slug'], 'slug' => $this->slug, 'field' => $globalTab]);
+    }
+
+    public function insertTemplateFields($id, $slug, $type)
+    {
+        $template = Aura::findTemplateBySlug($type);
+        $newFields = $template->getFields();
+
+        // go through each field and add a random string to the slug
+        foreach ($newFields as $key => $field) {
+            $newFields[$key]['slug'] = $field['slug'].'_'.Str::random(4);
+        }
+
+        $fields = collect($this->fieldsArray);
+
+        // get index of the field
+        $index = $fields->search(function ($item) use ($slug) {
+            return $item['slug'] == $slug;
+        });
+
+        // duplicate field in at index of the field + 1
+        $fields->splice($index + 1, 0, $newFields);
+
+        $fields = $fields->toArray();
+
+        $this->fieldsArray = $fields;
+
+        $this->saveFields($this->fieldsArray);
+
+        $this->newFields = $this->model->mapToGroupedFields($this->fieldsArray);
     }
 
     public function addTemplateFields($slug)
     {
         $template = Aura::findTemplateBySlug($slug);
+
         $newFields = $template->getFields();
 
-        $this->saveFields($newFields);
+        // go through each field and add a random string to the slug
+        foreach ($newFields as $key => $field) {
+            $newFields[$key]['slug'] = $field['slug'].'_'.Str::random(4);
+        }
 
-        $this->newFields = $this->model->mapToGroupedFields($newFields);
+        // check if newfields has a global tab
+        $hasGlobalTab = collect($newFields)->where('type', 'Eminiarts\Aura\Fields\Tab')->where('global', true)->count();
 
-        return redirect(request()->header('Referer'));
+        if ($hasGlobalTab > 0) {
+            $this->hasGlobalTabs = true;
+            $this->updateGlobalTabs();
+        }
+
+        $fields = collect($this->fieldsArray);
+
+        // get index of the field
+        $index = 0;
+
+        // duplicate field in at index of the field + 1
+        $fields->splice($index + 1, 0, $newFields);
+
+        $fields = $fields->toArray();
+
+        $this->fieldsArray = $fields;
+
+        $this->saveFields($this->fieldsArray);
+
+        $this->newFields = $this->model->mapToGroupedFields($this->fieldsArray);
     }
 
     public function authorize()

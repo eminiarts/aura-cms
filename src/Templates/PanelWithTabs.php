@@ -14,7 +14,6 @@ class PanelWithTabs
                 'type' => 'Eminiarts\\Aura\\Fields\\Panel',
                 'validation' => '',
                 'on_index' => true,
-                'global' => true,
                 'has_conditional_logic' => false,
                 'conditional_logic' => [
                 ],
