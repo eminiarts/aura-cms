@@ -129,12 +129,12 @@
                 <div class="mb-3 border-t rounded-b-lg border-gray-400/30 dark:border-gray-700"></div>
 
 
-                <div class="flex flex-wrap py-2 draggable-container" wire:key="posttype-fields" x-data="posttype">
+                <div class="flex flex-wrap py-2 " wire:key="posttype-fields" x-data="posttype">
 
                     @if($this->mappedFields)
                         @foreach($this->mappedFields as $tab)
 
-                        <div class="flex flex-wrap min-w-full -mx-2 reorder-item draggable-item focus:outline-none" id="field_{{ $tab['_id'] }}" x-show="activeTab === {{ $loop->index }}" wire:key="posttype-tab-{{ $tab['_id'] }}">
+                        <div class="flex flex-wrap min-w-full -mx-2 draggable-container reorder-item focus:outline-none" id="field_{{ $tab['_id'] }}" x-show="activeTab === {{ $loop->index }}" wire:key="posttype-tab-{{ $tab['_id'] }}">
                             {{-- <span>{{ $tab['name'] }}</span> --}}
 
                             <!-- if $tab['fields'] -->
@@ -154,20 +154,21 @@
                                 </style>
 
                                 <div class="post-field-{{ optional($field)['slug'] }}-wrapper px-2 reorder-item draggable-item" id="field_{{ $field['_id'] }}" wire:key="pt-field-{{ $tab['_id'] }}">
-                                    <x-aura::posttype.show-field :field="$field" :slug="$slug" />
+                                    @include('aura::components.posttype.show-field')
                                 </div>
 
                                 @if ($loop->last)
                                     <div class="w-full px-2">
-                                        <x-aura::posttype.add-field :id="$field['_id']" :slug="$field['slug']" :type="$field['type']" :children="isset($field['fields']) ? count($field['fields']) : 0"/>
+                                        <x-aura::posttype.add-field :id="$field['_id']" :slug="$field['slug']" :type="$field['type']" :children="$this->countChildren($field)"/>
                                     </div>
                                 @endif
                             @endforeach
 
                             @else
-                                empty tab
-                                <x-aura::button wire:click="insertTemplateFields({{ $tab['_id'] }}, '{{ $tab['slug'] }}', 'PanelWithSidebar')">PanelWithSidebar</x-aura::button>
+
                                 <div x-cloak class="w-full px-2">
+                                    <x-aura::button wire:click="insertTemplateFields({{ $tab['_id'] }}, '{{ $tab['slug'] }}', 'PanelWithSidebar')">PanelWithSidebar</x-aura::button>
+
                                     <x-aura::posttype.add-field :id="$tab['_id']" :slug="$tab['slug']" :type="$tab['type']"/>
                                 </div>
                             @endif
@@ -202,6 +203,7 @@
 
                 <div class="flex flex-wrap py-2 draggable-container" x-data="posttype" wire:key="posttype2-fields">
                     @foreach($this->mappedFields as $field)
+
                         <style>
                             .post-field-{{ optional($field)['slug'] }}-wrapper {
                                 width: {{ optional(optional($field)['style'])['width'] ?? '100' }}%;
@@ -214,14 +216,15 @@
                             }
                         </style>
                         <div class="px-2 reorder-item draggable-item post-field-{{ optional($field)['slug'] }}-wrapper" id="field_{{ $field['_id'] }}" wire:key="pt-field-{{ $field['_id'] }}">
-                            <x-aura::posttype.show-field :field="$field" :slug="$slug" />
+                            @include('aura::components.posttype.show-field')
                         </div>
 
                         @if ($loop->last)
-                                    <div class="w-full px-2">
-                                        <x-aura::posttype.add-field :id="$field['_id']" :slug="$field['slug']" :type="$field['type']" :children="isset($field['fields']) ? count($field['fields']) : 0"/>
-                                    </div>
-                                @endif
+                            @dump($this->countChildren($field))
+                                <div class="w-full px-2">
+                                    <x-aura::posttype.add-field :id="$field['_id']" :slug="$field['slug']" :type="$field['type']" :children="$this->countChildren($field)"/>
+                                </div>
+                        @endif
                     @endforeach
                 </div>
             @else
@@ -276,6 +279,7 @@
                 // define an alpinejs component named 'userDropdown'
                 Alpine.data('posttype', () => ({
                     init() {
+                        Alpine.nextTick(() => {
                         console.log('init posttype!');
                         const sortable = new window.Sortable(document.querySelectorAll('.draggable-container'), {
                             draggable: '.draggable-item',
@@ -286,12 +290,14 @@
                         });
 
                         sortable.on('sortable:stop', () => {
-                            setTimeout(() => {
+                            Alpine.nextTick(() => {
+                                console.log('reorder', Array.from(document.querySelectorAll('.reorder-item')).map(el => el.id));
                                 @this.reorder(
                                     Array.from(document.querySelectorAll('.reorder-item')).map(el => el.id)
                                 )
-                            }, 0)
+                            })
                         });
+                        })
 
 
                         // const containerTwoCapacity = 3;
