@@ -45,6 +45,20 @@ class Posttype extends Component
         ];
     }
 
+    public function countChildren($item)
+    {
+        $count = 0;
+
+        if (isset($item['fields'])) {
+            foreach ($item['fields'] as $child) {
+                $count++;
+                $count += $this->countChildren($child);
+            }
+        }
+
+        return $count;
+    }
+
     public function addField($id, $slug, $type, $children)
     {
         $children = (int) $children;
@@ -52,7 +66,7 @@ class Posttype extends Component
         if ($type == 'Eminiarts\\Aura\\Fields\\Tab') {
             $field = [
                 'name' => 'Tab '.$str,
-                'type' => 'Eminiarts\\Aura\\Fields\\Text',
+                'type' => 'Eminiarts\\Aura\\Fields\\Tab',
                 'validation' => '',
                 'conditional_logic' => [],
                 'slug' => 'tab'.'_'.$str,
@@ -336,6 +350,8 @@ class Posttype extends Component
             return (int) Str::after($id, 'field_') - 1;
         });
 
+        // ray($ids);
+
         $fields = array_values($this->fieldsArray);
 
         $fields = $ids->map(function ($id) use ($fields) {
@@ -343,6 +359,8 @@ class Posttype extends Component
         })->toArray();
 
         $this->fieldsArray = $fields;
+
+        // dd($fields);
 
         $this->saveFields($this->fieldsArray);
 

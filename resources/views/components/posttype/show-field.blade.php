@@ -1,6 +1,4 @@
-@props([
-  'field', 'slug'
-])
+
 
 @php
     $validation = 'fields.' . $field['_id'] - 1 . '.slug';
@@ -45,35 +43,41 @@
       @if (isset($field['fields']))
         <div class="flex flex-wrap items-start -mx-4 draggable-container">
           @foreach($field['fields'] as $key => $f)
+
             <div
               style="width: {{ optional(optional($f)['style'])['width'] ?? '100' }}%;"
               id="field_{{ optional($f)['_id'] }}"
               class="px-4 reorder-item draggable-item"
             >
-              <x-aura::posttype.show-field :field="$f" :slug="$slug" />
+              @include('aura::components.posttype.show-field', ['field' => $f, 'slug' => $slug])
             </div>
+
             @if ($loop->last)
+
+            </div>
               @if ($f['type'] == 'Eminiarts\Aura\Fields\Repeater')
               @elseif ($f['type'] == 'Eminiarts\Aura\Fields\Tab')
-                <div class="w-full px-4">
-                  <x-aura::posttype.add-field :id="$f['_id']" :slug="$f['slug']" :type="$f['type']" :children="isset($f['fields']) ? count($f['fields']) : 0"/>
+                <div class="w-full">
+                  <x-aura::posttype.add-field :id="$f['_id']" :slug="$f['slug']" :type="$f['type']"/>
                 </div>
               @elseif ($f['type'] == 'Eminiarts\Aura\Fields\Panel')
-                <div class="w-full px-4">
+                <div class="w-full">
                   <x-aura::posttype.add-field :id="$f['_id']" :slug="$f['slug']" :type="$f['type']" />
                 </div>
               @else
-                <div class="w-full px-4">
+                <div class="w-full">
                   <x-aura::posttype.add-field :id="$f['_id']" :slug="$f['slug']" :type="$f['type']" />
                 </div>
               @endif
             @endif
           @endforeach
-        </div>
+
+
       @else
-        <div class="flex flex-wrap draggable-container">
-          <x-aura::posttype.add-field :id="$field['_id']" :slug="$field['slug']" :type="$field['type']" />
+        <div class="relative flex flex-wrap items-center justify-center h-12 mb-4 border border-gray-100 rounded-md bg-gray-50 draggable-container">
+          <span class="absolute text-xs text-gray-400">Drag field here</span>
         </div>
+        <x-aura::posttype.add-field :id="$field['_id']" :slug="$field['slug']" :type="$field['type']" />
       @endif
 
     </div>
