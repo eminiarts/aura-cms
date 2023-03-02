@@ -32,7 +32,6 @@ class PanelWithTabs
             [
                 'name' => 'Text 1',
                 'type' => 'Eminiarts\\Aura\\Fields\\Text',
-                'validation' => 'required',
                 'on_index' => true,
                 'has_conditional_logic' => false,
                 'conditional_logic' => [
@@ -55,7 +54,6 @@ class PanelWithTabs
             [
                 'name' => 'Text 2',
                 'type' => 'Eminiarts\\Aura\\Fields\\Text',
-                'validation' => 'required',
                 'on_index' => true,
                 'has_conditional_logic' => false,
                 'conditional_logic' => [
