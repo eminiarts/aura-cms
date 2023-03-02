@@ -12,7 +12,6 @@ class Plain
             [
                 'name' => 'Text',
                 'type' => 'Eminiarts\\Aura\\Fields\\Text',
-                'validation' => 'required',
                 'on_index' => true,
                 'has_conditional_logic' => false,
                 'conditional_logic' => [
