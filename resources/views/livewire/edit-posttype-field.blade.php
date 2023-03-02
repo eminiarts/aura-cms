@@ -20,7 +20,7 @@
     </div>
 
 
-    @dump($this->post)
+    {{-- @dump($this->post) --}}
 
     {{-- @foreach($this->fields as $key => $field)
     <div wire:key="post-field-{{ $key }}"

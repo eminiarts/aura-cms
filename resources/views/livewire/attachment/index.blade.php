@@ -1,6 +1,6 @@
 <div>
 
-    <div class="flex items-center justify-between">
+    <div class="flex items-start justify-between">
 
         <x-aura::breadcrumbs>
             <x-aura::breadcrumbs.li :href="route('aura.dashboard')" title="" icon="dashboard" iconClass="text-gray-500 w-7 h-7 mr-0" />
@@ -22,5 +22,5 @@
     @endif
 
     <livewire:aura::media-uploader :table="true" :model="$post" />
-    
+
 </div>
