@@ -1,0 +1,140 @@
+<?php
+
+use Livewire\Livewire;
+use Eminiarts\Aura\Models\Post;
+use Eminiarts\Aura\Facades\Aura;
+use Eminiarts\Aura\Resources\User;
+use Eminiarts\Aura\Http\Livewire\Posttype;
+use Illuminate\Foundation\Testing\WithFaker;
+use Illuminate\Foundation\Testing\DatabaseTransactions;
+
+class PosttypeFake extends Posttype {
+
+    public $toSave = [];
+
+    public function saveFields($fields)
+    {
+        dump('saveFields', $fields);
+        $this->toSave = $fields;
+    }
+}
+
+class PosttypeTestModel extends Post
+{
+    public static ?string $slug = 'model';
+
+    public static string $type = 'Model';
+
+    public function isAppResource(): bool
+    {
+        return true;
+    }
+
+    public static function getFields()
+    {
+        return [
+            [
+                'name' => 'Tab 1',
+                'global' => true,
+                'type' => 'Eminiarts\\Aura\\Fields\\Tab',
+                'slug' => 'tab-1',
+                'style' => [
+                ],
+            ],
+            [
+                'name' => 'Panel 1',
+                'type' => 'Eminiarts\\Aura\\Fields\\Panel',
+                'slug' => 'panel-1',
+                'style' => [
+                ],
+            ],
+            [
+                'name' => 'Total',
+                'type' => 'Eminiarts\\Aura\\Fields\\Text',
+                'validation' => 'numeric',
+                'conditional_logic' => [
+                ],
+                'slug' => 'total',
+            ],
+            
+        ];
+    }
+}
+
+// Before each test, create a Superadmin and login
+beforeEach(function () {
+    // Create User
+    $this->actingAs($this->user = User::factory()->create());
+
+    // Create Team and assign to user
+    createSuperAdmin();
+
+    // Refresh User
+    $this->user = $this->user->refresh();
+
+    // Login
+    $this->actingAs($this->user);
+
+    $appResource = new PosttypeTestModel();
+
+    $this->assertTrue($appResource->isAppResource());
+    $this->assertFalse($appResource->isVendorResource());
+
+    Aura::fake();
+    Aura::setModel($appResource);
+    
+});
+
+it('can mount the posttype component', function () {
+    $this->withoutExceptionHandling();
+
+    Livewire::test(Posttype::class, ['slug' => 'Model'])->assertStatus(200);
+});
+
+it('can add new tab', function () {
+    $this->withoutExceptionHandling();
+
+    Livewire::test(Posttype::class, ['slug' => 'Model'])
+        ->call('addNewTab')
+        ->assertEmitted('openSlideOver');
+});
+
+it('can insert template fields', function () {
+    $this->withoutExceptionHandling();
+
+    // Posttype::swap(new PosttypeFake);
+
+    $component = Livewire::test(PosttypeFake::class, ['slug' => 'Model'])
+        ->call('saveFields', [ 'test' => 'test' ]);
+
+        dd($component->fieldsArray);
+
+        // expect $component->fieldsArray to be 3
+        expect($component->fieldsArray)->toBeArray();
+        expect($component->fieldsArray)->toHaveCount(3);
+
+        
+});
+
+it('can add template fields', function () {
+    $this->withoutExceptionHandling();
+
+    // Livewire::test(Posttype::class, ['slug' => 'Model'])
+    //     ->call('addTemplateFields', ['slug' => 'my-template'])
+    //     ->assertSet('fieldsArray', [['name' => 'Name 1', 'type' => 'Type 1'], ['name' => 'Name 2', 'type' => 'Type 2']])
+    //     ->assertSet('newFields', [['name' => 'Name 1', 'type' => 'Type 1'], ['name' => 'Name 2', 'type' => 'Type 2']]);
+});
+
+it('can save the posttype component', function () {
+    $this->withoutExceptionHandling();
+    $postTypeFields = [
+        'type' => 'my-type',
+        'slug' => 'my-slug',
+        'icon' => 'my-icon',
+    ];
+
+    Livewire::test(Posttype::class, ['slug' => 'Model'])
+        ->set('postTypeFields', $postTypeFields)
+        ->call('save')
+        ->assertSet('postTypeFields', $postTypeFields);
+});
