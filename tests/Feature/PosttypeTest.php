@@ -107,12 +107,11 @@ it('current posttype fields', function () {
     expect($component->fieldsArray)->toHaveCount(3);
 });
 
-it('can add a field', function () {
+it('can add fields', function () {
     $this->withoutExceptionHandling();
     
     $component = Livewire::test(PosttypeFake::class, ['slug' => 'Model'])
-    ->call('addField', ...[ 2, 'new_field', 'Eminiarts\\Aura\\Fields\\Text', '' ])
-    ;
+    ->call('addField', ...[ 2, 'new_field', 'Eminiarts\\Aura\\Fields\\Text', '' ]);
     
     expect($component->fieldsArray)->toBeArray();
     expect($component->fieldsArray)->toHaveCount(4);
@@ -121,6 +120,27 @@ it('can add a field', function () {
     
     expect($component->fieldsArray)->toBeArray();
     expect($component->fieldsArray)->toHaveCount(5);
+    
+    $component->call('addField', ...[ 5, 'new_field_2', 'Eminiarts\\Aura\\Fields\\Text', '' ]);
+    
+    expect($component->fieldsArray)->toBeArray();
+    expect($component->fieldsArray)->toHaveCount(6);
+});
+
+it('can remove fields', function () {
+    $this->withoutExceptionHandling();
+    
+    $component = Livewire::test(PosttypeFake::class, ['slug' => 'Model'])
+    ->call('removeField', 0);
+    
+    dd($component->fields);
+    
+    expect($component->fieldsArray)->toBeArray();
+    expect($component->fieldsArray)->toHaveCount(2);
+    
+    $component->call('removeField', 1);
+    
+    expect($component->fieldsArray)->toHaveCount(1);
 });
 
 it('can add template fields', function () {
