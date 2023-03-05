@@ -2,13 +2,14 @@
 
 namespace Tests\Feature\Livewire;
 
-use Eminiarts\Aura\Http\Livewire\TeamSettings;
+use Livewire\Livewire;
 use Eminiarts\Aura\Models\User;
-use Eminiarts\Aura\Resources\Option;
 use Eminiarts\Aura\Resources\Role;
 use Eminiarts\Aura\Resources\Team;
+use Illuminate\Support\Facades\DB;
+use Eminiarts\Aura\Resources\Option;
+use Eminiarts\Aura\Http\Livewire\TeamSettings;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Livewire\Livewire;
 
 uses(RefreshDatabase::class);
 
@@ -70,8 +71,19 @@ test('Team Settings can be saved', function () {
     $firstTeam = $teams->first();
     $secondTeam = $teams->last();
 
+    // DB get user_meta table
+    // $userMeta = DB::table('user_meta')->where('user_id', $this->user->id)->get();
+    // dd($userMeta);
+
     // create a entry in team_user table with team_id and user_id
-    $this->user->teams()->attach([$firstTeam->id, $secondTeam->id]);
+    $this->user->teams()->attach([
+        $secondTeam->id => ['key' => 'roles', 'value' => $role->id], 
+    ]);
+
+    // DB get user_meta table
+    // $userMeta = DB::table('user_meta')->where('user_id', $this->user->id)->get();
+
+    // dd($userMeta);
 
     // Default Team Settings
     Livewire::test(TeamSettings::class)
@@ -110,6 +122,9 @@ test('Team Settings can be saved', function () {
 
     // user switchTeam
     $this->user->switchTeam($secondTeam);
+
+    // Options
+    $options = Option::get();
 
     $this->actingAs($this->user)
         ->get(route('aura.team.settings'))
