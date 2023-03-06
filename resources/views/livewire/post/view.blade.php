@@ -1,5 +1,5 @@
 <div>
-    @section('title', 'Edit '. $model->singularName() . ' • ' . $model->title . ' • ')
+    @section('title', 'View '. $model->singularName() . ' • ' . $model->title . ' • ')
 
     @if(!$inModal)
     <x-aura::breadcrumbs>
@@ -15,15 +15,6 @@
         </div>
 
         <div class="flex items-center space-x-2">
-            {{-- If the $model is an instance of User Resource, add a button to impersonate the user --}}
-            @if ($model instanceof Eminiarts\Aura\Resources\User)
-                <x-aura::button.transparent route="impersonate" :id="$model->id" >
-                    <x-slot:icon>
-                        <x-aura::icon class="w-5 h-5 mr-2" icon="user-impersonate" />
-                    </x-slot:icon>
-                    Impersonate
-                </x-aura::button.transparent>
-            @endif
             {{-- <x-aura::button size="lg" wire:click="save">
                 <div wire:loading>
                     <x-aura::icon.loading />
@@ -42,16 +33,48 @@
     </div>
     @endif
 
-      {{-- @dump($post) --}}
+    {{-- @dump($post) --}}
     {{-- @dump($this->fields) --}}
 
+    <style>
+        .aura-view-post-container input {
+            border: 0 !important;
+            background-color: var(--gray-100)!important;
 
-    <div class="grid gap-6 mt-4 aura-edit-post-container sm:grid-cols-3">
+
+            box-shadow: none !important;
+        }
+
+    input[type="text"],
+    input[type="email"],
+    input[type="password"],
+    input[type="url"],
+    input[type="tel"],
+    input[type="number"],
+    textarea,
+    select {
+        background-color: var(--gray-100)!important;
+        border-radius: 0.375rem;
+        border: 1px solid var(--gray-200) !important;
+        padding: 0.5rem;
+        font-size: 1rem;
+        line-height: 1.5;
+        color: var(--gray-700);
+    }
+    </style>
+
+    <div class="grid gap-6 mt-4 aura-view-post-container sm:grid-cols-3" x-data="{
+         init() {
+            const container = document.querySelector('.aura-view-post-container');
+            const inputs = container.querySelectorAll('input');
+
+            inputs.forEach((input) => {
+                input.setAttribute('readonly', true);
+            });
+        }
+    }">
 
         <div class="col-span-1 mx-0 sm:col-span-3">
-
-            {{-- @dump($this->fields) --}}
-            {{-- @dump($this->post) --}}
 
             @foreach($this->editFields as $key => $field)
             <x-aura::fields.conditions :field="$field" :model="$model">
@@ -78,33 +101,6 @@
             @endif
 
         </div>
-
-        {{-- <div class="col-span-1">
-
-            <div class="aura-card">
-                <h2>Taxonomies</h2>
-
-                @foreach($this->taxonomies as $key => $taxonomy)
-
-                @dump($taxonomy)
-
-                <div wire:key="post-field-{{ $key }}"
-                    style="width: {{ optional(optional($field)['style'])['width'] ?? '100' }}%;">
-                    <x-dynamic-component :component="$taxonomy->component()" :taxonomy="$taxonomy" />
-                </div>
-                @endforeach
-
-            </div>
-            <div class="aura-card">
-             <x-aura::button size="xl" wire:click="save">
-                        <div wire:loading>
-                            <x-aura::icon.loading  />
-                        </div>
-                        Save
-                    </x-aura::button>
-            </div>
-
-        </div> --}}
 
     </div>
 
