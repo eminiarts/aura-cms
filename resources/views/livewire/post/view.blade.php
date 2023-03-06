@@ -40,8 +40,7 @@
         .aura-view-post-container input {
             border: 0 !important;
             background-color: var(--gray-100)!important;
-
-
+            pointer-events: none !important;
             box-shadow: none !important;
         }
 
@@ -66,7 +65,8 @@
     <div class="grid gap-6 mt-4 aura-view-post-container sm:grid-cols-3" x-data="{
          init() {
             const container = document.querySelector('.aura-view-post-container');
-            const inputs = container.querySelectorAll('input');
+                        const inputs = container.querySelectorAll('input, select, textarea');
+
 
             inputs.forEach((input) => {
                 input.setAttribute('readonly', true);
