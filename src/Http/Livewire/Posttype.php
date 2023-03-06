@@ -330,11 +330,6 @@ class Posttype extends Component
         }
     }
 
-    public function removeField($key)
-    {
-        unset($this->fields[$key]);
-    }
-
     public function render()
     {
         $title = 'Welcome';
