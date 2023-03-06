@@ -127,18 +127,17 @@ it('can add fields', function () {
     expect($component->fieldsArray)->toHaveCount(6);
 });
 
-it('can remove fields', function () {
+it('can delete fields', function () {
     $this->withoutExceptionHandling();
     
-    $component = Livewire::test(PosttypeFake::class, ['slug' => 'Model'])
-    ->call('removeField', 0);
-    
-    dd($component->fields);
+    $component = Livewire::test(PosttypeFake::class, ['slug' => 'Model']);
+
+    $component->call('deleteField', [ 'slug' => 'panel-1']);;
     
     expect($component->fieldsArray)->toBeArray();
     expect($component->fieldsArray)->toHaveCount(2);
     
-    $component->call('removeField', 1);
+    $component->call('deleteField', [ 'slug' => 'total']);
     
     expect($component->fieldsArray)->toHaveCount(1);
 });
