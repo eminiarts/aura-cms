@@ -20,6 +20,7 @@ use Eminiarts\Aura\Http\Livewire\Notifications;
 use Eminiarts\Aura\Http\Livewire\Post\Create;
 use Eminiarts\Aura\Http\Livewire\Post\Edit;
 use Eminiarts\Aura\Http\Livewire\Post\Index;
+use Eminiarts\Aura\Http\Livewire\Post\View;
 use Eminiarts\Aura\Http\Livewire\Posttype;
 use Eminiarts\Aura\Http\Livewire\Table\Table;
 use Eminiarts\Aura\Http\Livewire\Taxonomy\Edit as TaxonomyEdit;
@@ -78,6 +79,7 @@ class AuraServiceProvider extends PackageServiceProvider
         Livewire::component('aura::post-index', Index::class);
         Livewire::component('aura::post-create', Create::class);
         Livewire::component('aura::post-edit', Edit::class);
+        Livewire::component('aura::post-view', View::class);
         Livewire::component('aura::table', Table::class);
         Livewire::component('aura::navigation', Navigation::class);
         Livewire::component('aura::global-search', GlobalSearch::class);
