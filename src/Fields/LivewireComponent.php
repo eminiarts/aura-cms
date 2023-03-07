@@ -4,7 +4,7 @@ namespace Eminiarts\Aura\Fields;
 
 class LivewireComponent extends Field
 {
-    public string $component = 'aura::fields.livewire-component';
+    public $component = 'aura::fields.livewire-component';
 
     // public $view = 'components.fields.livewire-component';
 

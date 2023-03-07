@@ -4,7 +4,7 @@ namespace Eminiarts\Aura\Fields;
 
 class HorizontalLine extends Field
 {
-    public string $component = 'aura::fields.hr';
+    public $component = 'aura::fields.hr';
 
     // public $view = 'components.fields.hr';
 

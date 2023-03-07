@@ -4,7 +4,7 @@ namespace Eminiarts\Aura\Fields;
 
 class SelectMany extends Field
 {
-    public string $component = 'aura::fields.select-many';
+    public $component = 'aura::fields.select-many';
 
     // public $view = 'components.fields.select-many';
 

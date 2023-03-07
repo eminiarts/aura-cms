@@ -4,7 +4,7 @@ namespace Eminiarts\Aura\Fields;
 
 class Jobs extends Field
 {
-    public string $component = 'aura::fields.jobs';
+    public $component = 'aura::fields.jobs';
 
     public string $type = 'job';
 

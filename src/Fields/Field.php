@@ -25,6 +25,8 @@ class Field
     public string $type = 'input';
 
     public $view = null;
+    
+    public $component = null;
 
     public function display($field, $value, $model)
     {
@@ -255,15 +257,6 @@ class Field
         ];
     }
 
-    public function getView(): string
-    {
-        if (! isset($this->view)) {
-            throw new Exception('Class ['.static::class.'] extends ['.ViewComponent::class.'] but does not have a [$view] property defined.');
-        }
-
-        return $this->view;
-    }
-
     public function isInputField()
     {
         return in_array($this->type, ['input', 'repeater', 'group']);
@@ -273,19 +266,6 @@ class Field
     {
         return $this->taxonomy;
     }
-
-    public function render(): View
-    {
-        return view(
-            $this->getView(),
-            array_merge(
-                $this->data(),
-                isset($this->viewIdentifier) ? [$this->viewIdentifier => $this] : [],
-            ),
-        );
-    }
-
-    
 
     public function value($value)
     {

@@ -4,7 +4,7 @@ namespace Eminiarts\Aura\Fields;
 
 class Repeater extends Field
 {
-    public string $component = 'aura::fields.repeater';
+    public $component = 'aura::fields.repeater';
 
     public bool $group = true;
 

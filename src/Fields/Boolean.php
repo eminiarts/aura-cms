@@ -4,7 +4,7 @@ namespace Eminiarts\Aura\Fields;
 
 class Boolean extends Field
 {
-    public string $component = 'aura::fields.boolean';
+    public $component = 'aura::fields.boolean';
 
     // public $view = 'components.fields.boolean';
 

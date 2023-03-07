@@ -4,7 +4,7 @@ namespace Eminiarts\Aura\Fields;
 
 class HasMany extends Field
 {
-    public string $component = 'aura::fields.hasmany';
+    public $component = 'aura::fields.hasmany';
 
     public bool $group = true;
 

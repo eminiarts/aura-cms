@@ -4,7 +4,7 @@ namespace Eminiarts\Aura\Fields;
 
 class Number extends Field
 {
-    public string $component = 'aura::fields.number';
+    public $component = 'aura::fields.number';
 
     // public $view = 'components.fields.number';
 

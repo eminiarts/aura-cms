@@ -4,7 +4,7 @@ namespace Eminiarts\Aura\Fields;
 
 class Email extends Field
 {
-    public string $component = 'aura::fields.email';
+    public $component = 'aura::fields.email';
 
     // public $view = 'components.fields.email';
 

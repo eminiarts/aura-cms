@@ -4,7 +4,7 @@ namespace Eminiarts\Aura\Fields;
 
 class SelectRelation extends Field
 {
-    public string $component = 'aura::fields.select-relation';
+    public $component = 'aura::fields.select-relation';
 
     // public $view = 'components.fields.select-relation';
 
