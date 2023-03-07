@@ -6,7 +6,7 @@ class Date extends Field
 {
     public $component = 'aura::fields.date';
 
-    // public $view = 'components.fields.date';
+    public $view = 'aura::fields.view-value';
 
     public function get($field, $value)
     {
