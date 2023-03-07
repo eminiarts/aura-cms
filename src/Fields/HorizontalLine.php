@@ -6,7 +6,7 @@ class HorizontalLine extends Field
 {
     public string $component = 'aura::fields.hr';
 
-    protected string $view = 'components.fields.hr';
+    // public $view = 'components.fields.hr';
 
     public function getFields()
     {

@@ -6,7 +6,7 @@ class LivewireComponent extends Field
 {
     public string $component = 'aura::fields.livewire-component';
 
-    protected string $view = 'components.fields.livewire-component';
+    // public $view = 'components.fields.livewire-component';
 
     public function getFields()
     {

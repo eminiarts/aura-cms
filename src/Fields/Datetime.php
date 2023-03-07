@@ -6,7 +6,7 @@ class Datetime extends Field
 {
     public string $component = 'aura::fields.datetime';
 
-    protected string $view = 'components.fields.datetime';
+    // public $view = 'components.fields.datetime';
 
     public function getFields()
     {

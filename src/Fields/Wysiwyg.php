@@ -6,5 +6,5 @@ class Wysiwyg extends Field
 {
     public string $component = 'aura::fields.wysiwyg';
 
-    protected string $view = 'components.fields.wysiwyg';
+    // public $view = 'components.fields.wysiwyg';
 }

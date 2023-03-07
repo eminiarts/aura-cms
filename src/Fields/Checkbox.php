@@ -6,7 +6,7 @@ class Checkbox extends Field
 {
     public string $component = 'aura::fields.checkbox';
 
-    protected string $view = 'components.fields.checkbox';
+    // public $view = 'components.fields.checkbox';
 
     public function getFields()
     {

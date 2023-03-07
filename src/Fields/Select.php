@@ -6,7 +6,7 @@ class Select extends Field
 {
     public string $component = 'aura::fields.select';
 
-    protected string $view = 'components.fields.select';
+    // public $view = 'components.fields.select';
 
     public function options($model, $field)
     {

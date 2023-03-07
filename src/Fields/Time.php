@@ -6,7 +6,7 @@ class Time extends Field
 {
     public string $component = 'aura::fields.time';
 
-    protected string $view = 'components.fields.time';
+    // public $view = 'components.fields.time';
 
     public function getFields()
     {

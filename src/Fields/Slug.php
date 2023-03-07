@@ -6,7 +6,7 @@ class Slug extends Field
 {
     public string $component = 'aura::fields.slug';
 
-    protected string $view = 'components.fields.slug';
+    // public $view = 'components.fields.slug';
 
     public function getFields()
     {

@@ -10,7 +10,7 @@ class BelongsTo extends Field
 
     public bool $group = false;
 
-    protected string $view = 'components.fields.belongsto';
+    // public $view = 'components.fields.belongsto';
 
     public function api($request)
     {

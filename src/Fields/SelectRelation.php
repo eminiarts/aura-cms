@@ -6,7 +6,7 @@ class SelectRelation extends Field
 {
     public string $component = 'aura::fields.select-relation';
 
-    protected string $view = 'components.fields.select-relation';
+    // public $view = 'components.fields.select-relation';
 
     public function display($field, $value)
     {

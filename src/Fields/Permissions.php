@@ -6,7 +6,7 @@ class Permissions extends Field
 {
     public string $component = 'aura::fields.permissions';
 
-    protected string $view = 'components.fields.permissions';
+    // public $view = 'components.fields.permissions';
 
     public function get($field, $value)
     {

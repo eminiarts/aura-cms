@@ -12,7 +12,7 @@ class Tab extends Field
 
     public string $type = 'tab';
 
-    protected string $view = 'components.fields.tab';
+    // public $view = 'components.fields.tab';
 
     public function getFields()
     {

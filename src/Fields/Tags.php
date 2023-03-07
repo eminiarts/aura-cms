@@ -12,7 +12,7 @@ class Tags extends Field
 
     public bool $taxonomy = true;
 
-    protected string $view = 'components.fields.tags';
+    // public $view = 'components.fields.tags';
 
     public function display($field, $value, $model)
     {

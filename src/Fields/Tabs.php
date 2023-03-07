@@ -9,6 +9,4 @@ class Tabs extends Field
     public bool $group = true;
 
     public string $type = 'tabs';
-
-    protected string $view = 'components.fields.tabs';
 }
