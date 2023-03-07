@@ -10,7 +10,7 @@ class HasMany extends Field
 
     public string $type = 'relation';
 
-    protected string $view = 'components.fields.hasmany';
+    // public $view = 'components.fields.hasmany';
 
     public function queryFor($model, $query)
     {

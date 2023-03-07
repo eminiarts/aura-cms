@@ -6,7 +6,7 @@ class Heading extends Field
 {
     public string $component = 'aura::fields.heading';
 
-    protected string $view = 'components.fields.heading';
+    // public $view = 'components.fields.heading';
 
     public function getFields()
     {

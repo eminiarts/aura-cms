@@ -10,7 +10,7 @@ class Group extends Field
 
     public string $type = 'group';
 
-    protected string $view = 'components.fields.group';
+    // public $view = 'components.fields.group';
 
     public function get($field, $value)
     {

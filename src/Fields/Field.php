@@ -10,7 +10,7 @@ use Illuminate\Support\Traits\Tappable;
 use Illuminate\View\Component;
 use Illuminate\View\View;
 
-class Field extends Component implements Htmlable
+class Field 
 {
     use InputFields;
     use Macroable;
@@ -24,11 +24,21 @@ class Field extends Component implements Htmlable
 
     public string $type = 'input';
 
-    protected string $view;
+    public $view = null;
 
     public function display($field, $value, $model)
     {
         return $value;
+    }
+
+    public function component()
+    {
+        // if there is $this->view, return it
+        if ($this->view) {
+           return $this->view;
+        }
+
+        return $this->component;
     }
 
     // public $component;
@@ -36,7 +46,7 @@ class Field extends Component implements Htmlable
     public function field($field)
     {
         // $this->field = $field;
-        $this->withAttributes($field);
+        // $this->withAttributes($field);
 
         return $this;
     }
@@ -275,10 +285,7 @@ class Field extends Component implements Htmlable
         );
     }
 
-    public function toHtml(): string
-    {
-        return $this->render()->render();
-    }
+    
 
     public function value($value)
     {

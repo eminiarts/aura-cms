@@ -8,7 +8,7 @@ class Jobs extends Field
 
     public string $type = 'job';
 
-    protected string $view = 'components.fields.jobs';
+    // public $view = 'components.fields.jobs';
 
     public function getFields()
     {

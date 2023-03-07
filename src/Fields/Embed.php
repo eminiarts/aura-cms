@@ -6,7 +6,7 @@ class Embed extends Field
 {
     public string $component = 'aura::fields.embed';
 
-    protected string $view = 'components.fields.embed';
+    // public $view = 'components.fields.embed';
 
     public function getFields()
     {

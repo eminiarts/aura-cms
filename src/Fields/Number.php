@@ -6,7 +6,7 @@ class Number extends Field
 {
     public string $component = 'aura::fields.number';
 
-    protected string $view = 'components.fields.number';
+    // public $view = 'components.fields.number';
 
     public function getFields()
     {

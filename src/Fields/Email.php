@@ -6,7 +6,7 @@ class Email extends Field
 {
     public string $component = 'aura::fields.email';
 
-    protected string $view = 'components.fields.email';
+    // public $view = 'components.fields.email';
 
     public function getFields()
     {

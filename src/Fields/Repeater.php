@@ -10,7 +10,7 @@ class Repeater extends Field
 
     public string $type = 'repeater';
 
-    protected string $view = 'components.fields.repeater';
+    // public $view = 'components.fields.repeater';
 
     public function get($field, $value)
     {

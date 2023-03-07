@@ -6,7 +6,7 @@ class File extends Field
 {
     public string $component = 'aura::fields.file';
 
-    protected string $view = 'components.fields.file';
+    // public $view = 'components.fields.file';
 
     public function get($field, $value)
     {

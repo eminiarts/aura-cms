@@ -6,7 +6,7 @@ class Text extends Field
 {
     public string $component = 'aura::fields.text';
 
-    protected string $view = 'components.fields.text';
+    public $view = 'aura::view.text';
 
     public function getFields()
     {

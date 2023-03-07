@@ -32,5 +32,6 @@ test('post can be viewed', function () {
 
     // Visit the Post Index Page
     $this->get(route('aura.post.view', [$post->type, $post->id]))
-    ->assertSeeLivewire('aura::post-view');
+    ->assertSeeLivewire('aura::post-view')
+    ->assertSee('Test Post');
 });

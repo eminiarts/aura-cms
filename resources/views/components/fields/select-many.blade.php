@@ -50,7 +50,7 @@ $values = app($field['posttype'])->pluck('title', 'id')->map(fn($name, $key) => 
         x-listbox
         multiple
         x-model="value"
-        class="relative w-full p-0 bg-transparent border-0"
+        class="relative w-full p-0 bg-transparent border-0 aura-input"
     >
         <label x-listbox:label class="sr-only">Select Item</label>
 

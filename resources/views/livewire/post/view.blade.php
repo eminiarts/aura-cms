@@ -37,10 +37,10 @@
     {{-- @dump($this->fields) --}}
 
     <style>
-        .aura-view-post-container input {
+        .aura-view-post-container input, .aura-input {
             border: 0 !important;
             background-color: var(--gray-100)!important;
-            pointer-events: none !important;
+            #pointer-events: none !important;
             box-shadow: none !important;
         }
 
@@ -65,7 +65,7 @@
     <div class="grid gap-6 mt-4 aura-view-post-container sm:grid-cols-3" x-data="{
          init() {
             const container = document.querySelector('.aura-view-post-container');
-                        const inputs = container.querySelectorAll('input, select, textarea');
+                        const inputs = container.querySelectorAll('input, select, textarea, .aura-input');
 
 
             inputs.forEach((input) => {
@@ -79,7 +79,9 @@
             @foreach($this->editFields as $key => $field)
             <x-aura::fields.conditions :field="$field" :model="$model">
                 <div wire:key="post-field-{{ $key }}">
-                    <x-dynamic-component :component="$field['field']->component" :field="$field" />
+
+                    @dump($field['field'])
+                    <x-dynamic-component :component="$field['field']->component()" :field="$field" />
                 </div>
             </x-aura::fields.conditions>
             @endforeach

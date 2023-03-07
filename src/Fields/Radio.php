@@ -6,5 +6,5 @@ class Radio extends Field
 {
     public string $component = 'aura::fields.radio';
 
-    protected string $view = 'components.fields.radio';
+    // public $view = 'components.fields.radio';
 }
