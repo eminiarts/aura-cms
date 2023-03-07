@@ -6,5 +6,5 @@ class Textarea extends Field
 {
     public $component = 'aura::fields.textarea';
 
-    // public $view = 'components.fields.textarea';
+    public $view = 'aura::fields.view-value';
 }

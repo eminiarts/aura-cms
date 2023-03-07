@@ -2,13 +2,13 @@
 
 namespace Eminiarts\Aura\Fields;
 
-use Eminiarts\Aura\Traits\InputFields;
 use Exception;
-use Illuminate\Contracts\Support\Htmlable;
-use Illuminate\Support\Traits\Macroable;
-use Illuminate\Support\Traits\Tappable;
 use Illuminate\View\Component;
-use Illuminate\View\View;
+use Eminiarts\Aura\Traits\InputFields;
+use Illuminate\Support\Traits\Tappable;
+use Illuminate\Support\Traits\Macroable;
+use Illuminate\Contracts\Support\Htmlable;
+use Eminiarts\Aura\Http\Livewire\Post\View;
 
 class Field 
 {
@@ -25,7 +25,7 @@ class Field
     public string $type = 'input';
 
     public $view = null;
-    
+
     public $component = null;
 
     public function display($field, $value, $model)
@@ -35,9 +35,8 @@ class Field
 
     public function component()
     {
-        // if there is $this->view, return it
-        if ($this->view) {
-           return $this->view;
+        if ($this->view && str(request()->route()->action['uses'])->contains(View::class)) {
+            return $this->view;
         }
 
         return $this->component;
