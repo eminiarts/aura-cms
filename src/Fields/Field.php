@@ -35,7 +35,7 @@ class Field
 
     public function component()
     {
-        if ($this->view && str(request()->route()->action['uses'])->contains(View::class)) {
+       if ($this->view && is_string(request()->route()->action['uses']) && str(request()->route()->action['uses'])->contains(View::class)) {
             return $this->view;
         }
 
