@@ -6,7 +6,7 @@ use Illuminate\Support\Str;
 
 class Tags extends Field
 {
-    public string $component = 'aura::fields.tags';
+    public $component = 'aura::fields.tags';
 
     //public string $type = 'taxonomy';
 

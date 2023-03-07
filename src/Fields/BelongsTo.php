@@ -6,7 +6,7 @@ use Illuminate\Support\Str;
 
 class BelongsTo extends Field
 {
-    public string $component = 'aura::fields.belongsto';
+    public $component = 'aura::fields.belongsto';
 
     public bool $group = false;
 

@@ -4,7 +4,7 @@ namespace Eminiarts\Aura\Fields;
 
 class Phone extends Field
 {
-    public string $component = 'aura::fields.phone';
+    public $component = 'aura::fields.phone';
 
     // public $view = 'components.fields.phone';
 

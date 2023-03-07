@@ -4,7 +4,7 @@ namespace Eminiarts\Aura\Fields;
 
 class Panel extends Field
 {
-    public string $component = 'aura::fields.panel';
+    public $component = 'aura::fields.panel';
 
     public bool $group = true;
 

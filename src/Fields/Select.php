@@ -4,7 +4,7 @@ namespace Eminiarts\Aura\Fields;
 
 class Select extends Field
 {
-    public string $component = 'aura::fields.select';
+    public $component = 'aura::fields.select';
 
     // public $view = 'components.fields.select';
 
