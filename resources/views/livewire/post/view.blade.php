@@ -80,8 +80,6 @@
             @foreach($this->editFields as $key => $field)
             <x-aura::fields.conditions :field="$field" :model="$model">
                 <div wire:key="post-field-{{ $key }}">
-
-                    @dump($field['field'])
                     <x-dynamic-component :component="$field['field']->component()" :field="$field" />
                 </div>
             </x-aura::fields.conditions>

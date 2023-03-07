@@ -6,7 +6,7 @@ class SelectMany extends Field
 {
     public $component = 'aura::fields.select-many';
 
-    // public $view = 'components.fields.select-many';
+    public $view = 'aura::fields.view-value';
 
     public function display($field, $value, $model)
     {
