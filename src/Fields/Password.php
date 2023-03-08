@@ -8,7 +8,7 @@ class Password extends Field
 {
     public $component = 'aura::fields.password';
 
-    // public $view = 'components.fields.password';
+    public $view = 'aura::fields.view-value';
 
     public function get($field, $value)
     {

@@ -205,7 +205,7 @@ class Post extends ModelsPost
                  'wrapper' => '',
                  'on_index' => true,
                  'on_forms' => true,
-                 'in_view' => true,
+                 'on_view' => true,
              ],
              [
                  'name' => 'Categories',
@@ -219,7 +219,7 @@ class Post extends ModelsPost
                  'wrapper' => '',
                  'on_index' => true,
                  'on_forms' => true,
-                 'in_view' => true,
+                 'on_view' => true,
              ],
              [
                  'name' => 'Team',
@@ -238,7 +238,7 @@ class Post extends ModelsPost
                  'wrapper' => '',
                  'on_index' => true,
                  'on_forms' => true,
-                 'in_view' => true,
+                 'on_view' => true,
              ],
              [
                  'name' => 'User',
@@ -252,7 +252,7 @@ class Post extends ModelsPost
                  'api' => false,
                  'on_index' => true,
                  'on_forms' => true,
-                 'in_view' => true,
+                 'on_view' => true,
              ],
              [
                  'name' => 'Attachments',
@@ -276,7 +276,7 @@ class Post extends ModelsPost
                  'wrapper' => '',
                  'on_index' => false,
                  'on_forms' => true,
-                 'in_view' => true,
+                 'on_view' => true,
                  'style' => [
                      'width' => '100',
                  ],

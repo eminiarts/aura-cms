@@ -72,7 +72,7 @@ class Invoice extends Post
                 'has_conditional_logic' => false,
                 'on_index' => true,
                 'on_forms' => true,
-                'in_view' => true,
+                'on_view' => true,
             ],
             [
                 'name' => 'Infos',
@@ -97,7 +97,7 @@ class Invoice extends Post
                 'has_conditional_logic' => false,
                 'on_index' => true,
                 'on_forms' => true,
-                'in_view' => true,
+                'on_view' => true,
                 'style' => [
                     'width' => '50',
                 ],
@@ -111,7 +111,7 @@ class Invoice extends Post
                 'has_conditional_logic' => false,
                 'on_index' => true,
                 'on_forms' => true,
-                'in_view' => true,
+                'on_view' => true,
                 'style' => [
                     'width' => '50',
                 ],
@@ -126,7 +126,7 @@ class Invoice extends Post
                 'has_conditional_logic' => false,
                 'on_index' => true,
                 'on_forms' => true,
-                'in_view' => true,
+                'on_view' => true,
                 'style' => [
                     'width' => '50',
                 ],
@@ -140,7 +140,7 @@ class Invoice extends Post
                 'has_conditional_logic' => false,
                 'on_index' => true,
                 'on_forms' => true,
-                'in_view' => true,
+                'on_view' => true,
                 'style' => [
                     'width' => '50',
                 ],
@@ -155,7 +155,7 @@ class Invoice extends Post
                 'has_conditional_logic' => false,
                 'on_index' => true,
                 'on_forms' => true,
-                'in_view' => true,
+                'on_view' => true,
                 'style' => [
                     'width' => '50',
                 ],
@@ -169,7 +169,7 @@ class Invoice extends Post
                 'has_conditional_logic' => false,
                 'on_index' => true,
                 'on_forms' => true,
-                'in_view' => true,
+                'on_view' => true,
                 'style' => [
                     'width' => '50',
                 ],
@@ -196,7 +196,7 @@ class Invoice extends Post
                 'has_conditional_logic' => false,
                 'on_index' => true,
                 'on_forms' => true,
-                'in_view' => true,
+                'on_view' => true,
                 'style' => [
                     'width' => '100',
                 ],
@@ -439,7 +439,7 @@ class Invoice extends Post
                 'has_conditional_logic' => false,
                 'on_index' => true,
                 'on_forms' => true,
-                'in_view' => true,
+                'on_view' => true,
             ],
             [
                 'name' => 'Categories',
@@ -452,7 +452,7 @@ class Invoice extends Post
                 'has_conditional_logic' => false,
                 'on_index' => true,
                 'on_forms' => true,
-                'in_view' => true,
+                'on_view' => true,
             ],
             [
                 'name' => 'Panel 2',

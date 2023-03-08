@@ -2,6 +2,7 @@
 
 use Eminiarts\Aura\Resources\Post;
 use Eminiarts\Aura\Resources\User;
+use function Pest\Livewire\livewire;
 
 // Before each test, create a Superadmin and login
 beforeEach(function () {
@@ -34,4 +35,18 @@ test('post can be viewed', function () {
     $this->get(route('aura.post.view', [$post->type, $post->id]))
     ->assertSeeLivewire('aura::post-view')
     ->assertSee('Test Post');
+});
+
+test('post view - view fields are displayed correctly', function () {
+    // Create a Post
+    $post = Post::create([
+        'title' => 'Test Post',
+        'content' => 'Test Content',
+        'type' => 'Post',
+        'status' => 'publish',
+    ]);
+
+    // LiveWire Component
+    $component = livewire('aura::post-view', ['post' => $post]);
+
 });

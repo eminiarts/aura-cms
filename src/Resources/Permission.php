@@ -30,7 +30,7 @@ class Permission extends Post
                 'wrapper' => '',
                 'on_index' => true,
                 'on_forms' => true,
-                'in_view' => true,
+                'on_view' => true,
             ],
             [
                 'name' => 'Slug',
@@ -52,7 +52,7 @@ class Permission extends Post
                 'wrapper' => '',
                 'on_index' => false,
                 'on_forms' => true,
-                'in_view' => true,
+                'on_view' => true,
             ],
             [
                 'name' => 'Group',
@@ -72,7 +72,7 @@ class Permission extends Post
                 'wrapper' => '',
                 'on_index' => true,
                 'on_forms' => true,
-                'in_view' => true,
+                'on_view' => true,
             ],
         ];
     }

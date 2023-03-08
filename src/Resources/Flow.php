@@ -197,7 +197,7 @@ class Flow extends Post
                 'wrapper' => '',
                 'on_index' => false,
                 'on_forms' => true,
-                'in_view' => true,
+                'on_view' => true,
                 'style' => [
                     'width' => '100',
                 ],

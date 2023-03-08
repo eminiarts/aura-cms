@@ -18,7 +18,7 @@ trait DefaultFields
                 'wrapper' => '',
                 'on_index' => true,
                 'on_forms' => true,
-                'in_view' => true,
+                'on_view' => true,
             ],
             [
                 'name' => 'Updated at',
@@ -31,7 +31,7 @@ trait DefaultFields
                 'enable_time' => true,
                 'on_index' => true,
                 'on_forms' => true,
-                'in_view' => true,
+                'on_view' => true,
             ],
             [
                 'name' => 'User',
@@ -43,7 +43,7 @@ trait DefaultFields
                 'wrapper' => '',
                 'on_index' => true,
                 'on_forms' => true,
-                'in_view' => true,
+                'on_view' => true,
             ],
         ]);
 

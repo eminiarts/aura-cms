@@ -42,7 +42,7 @@ class Role extends Post
                 'wrapper' => '',
                 'on_index' => true,
                 'on_forms' => true,
-                'in_view' => true,
+                'on_view' => true,
             ],
             [
                 'name' => 'Slug',
@@ -64,7 +64,7 @@ class Role extends Post
                 'wrapper' => '',
                 'on_index' => false,
                 'on_forms' => true,
-                'in_view' => true,
+                'on_view' => true,
             ],
             [
                 'name' => 'Super Admin',
@@ -77,7 +77,7 @@ class Role extends Post
                 'wrapper' => '',
                 'on_index' => false,
                 'on_forms' => true,
-                'in_view' => true,
+                'on_view' => true,
             ],
             [
                 'name' => 'Permissions',
