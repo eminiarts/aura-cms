@@ -41,7 +41,7 @@
         .aura-view-post-container input, .aura-input {
             border: 0 !important;
             background-color: var(--gray-100)!important;
-            #pointer-events: none !important;
+            /* pointer-events: none !important; */
             box-shadow: none !important;
         }
 
