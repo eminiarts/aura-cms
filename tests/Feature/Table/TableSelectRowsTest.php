@@ -64,7 +64,7 @@ class TableSelectRowsModel extends Post
                 'model' => 'Eminiarts\\Aura\\Taxonomies\\Tag',
                 'create' => true,
                 'validation' => '',
-                'conditional_logic' => '',
+                'conditional_logic' => [],
                 'has_conditional_logic' => false,
                 'wrapper' => '',
                 'on_index' => true,

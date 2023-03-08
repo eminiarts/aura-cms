@@ -169,7 +169,7 @@ class Operation extends Post
             //     'type' => 'Eminiarts\\Aura\\Fields\\HasMany',
             //     'posttype' => 'Eminiarts\\Aura\\Resources\\OperationLog',
             //     'validation' => '',
-            //     'conditional_logic' => '',
+            //     'conditional_logic' => [],
             //     'has_conditional_logic' => false,
             //     'wrapper' => '',
             //     'on_index' => false,

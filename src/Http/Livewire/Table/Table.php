@@ -242,7 +242,6 @@ class Table extends Component
 
         // when model is instance Post, eager load meta and taxonomies
         if ($this->model instanceof Resource) {
-            ray('hier', $this->model);
             $query = $query->with(['meta', 'taxonomies']);
         }
 
