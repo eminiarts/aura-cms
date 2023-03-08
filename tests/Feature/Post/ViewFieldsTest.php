@@ -49,7 +49,13 @@ test('fields get grouped when field group is true', function () {
 
     $fields = $model->viewFields();
 
-    expect($fields)->toHaveCount(2);
+    expect($fields)->toHaveCount(1);
+    
+    expect($fields[0]['fields'])->toHaveCount(1);
 
-    dd($fields);
+    expect($fields[0]['fields'][0]['fields'])->toHaveCount(1);
+
+    expect($fields[0]['fields'][0]['fields'][0]['slug'])->toBe('text1');
+
+    expect($fields[0]['fields'][0]['fields'][0]['slug'])->not->toBe('text2');
 });

@@ -13,9 +13,7 @@ trait InteractsWithFields
     
     public function getViewFieldsProperty()
     {
-        $fields = $this->model->viewFields();
-        
-        return $this->model->fieldsForView($fields);
+        return $this->model->viewFields();
     }
     
     public function getFieldsProperty()
