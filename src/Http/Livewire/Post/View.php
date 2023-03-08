@@ -61,28 +61,17 @@ class View extends Component
     
     public function render()
     {
-        return view('aura::livewire.post.view')->layout('aura::components.layout.app');
-    }
+        $view = "aura.{$this->slug}.view";
 
-    public function rules()
-    {
-        return Arr::dot([
-            'post.terms' => '',
-            'post.fields' => $this->model->validationRules(),
-        ]);
-    }
-
-    public function save()
-    {
-        $this->validate();
-
-        $this->model->update($this->post);
-
-        $this->notify('Successfully updated.');
-
-        if ($this->inModal) {
-            $this->emit('closeModal');
-            $this->emit('refreshTable');
+        // if aura::aura.{$post->type}.view is set, use that view
+        if (view()->exists($view)) {
+            return view($view)->layout('aura::components.layout.app');
         }
+        
+        if (view()->exists("aura::" . $view)) {
+            return view("aura::" . $view)->layout('aura::components.layout.app');
+        }
+
+        return view('aura::livewire.post.view')->layout('aura::components.layout.app');
     }
 }

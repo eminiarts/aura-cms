@@ -52,3 +52,19 @@ test('post view - view fields are displayed correctly', function () {
     // Expect $component->viewFields to be an array
     expect($component->viewFields)->toBeArray();
 });
+
+test('post view - can be customized', function () {
+    // Create a Post
+    $post = Post::create([
+        'title' => 'Test Post',
+        'content' => 'Test Content',
+        'type' => 'Post',
+        'status' => 'publish',
+    ]);
+
+    // LiveWire Component
+    $component = livewire('aura::post-view', [$post->type, $post->id]);
+
+    // fake view exists in resources: aura/post/view.blade.php
+
+});
