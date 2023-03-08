@@ -36,7 +36,7 @@ class TeamInvitation extends Post
                 'has_conditional_logic' => false,
                 'on_index' => true,
                 'on_forms' => true,
-                'in_view' => true,
+                'on_view' => true,
                 'style' => [
                     'width' => '50',
                 ],

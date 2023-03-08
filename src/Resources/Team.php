@@ -110,7 +110,7 @@ class Team extends Post
                 'wrapper' => '',
                 'on_index' => false,
                 'on_forms' => false,
-                'in_view' => true,
+                'on_view' => true,
                 'style' => [
                     'width' => '100',
                     'class' => 'p-4',

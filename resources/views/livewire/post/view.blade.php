@@ -77,7 +77,7 @@
 
         <div class="col-span-1 mx-0 sm:col-span-3">
 
-            @foreach($this->editFields as $key => $field)
+            @foreach($this->viewFields as $key => $field)
             <x-aura::fields.conditions :field="$field" :model="$model">
                 <div wire:key="post-field-{{ $key }}">
                     <x-dynamic-component :component="$field['field']->component()" :field="$field" />

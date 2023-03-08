@@ -123,7 +123,7 @@ class MetaSortingModel extends Post
                 'wrapper' => '',
                 'on_index' => true,
                 'on_forms' => true,
-                'in_view' => true,
+                'on_view' => true,
             ],
         ];
     }

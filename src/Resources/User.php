@@ -141,7 +141,7 @@ class User extends UserModel
                 'wrapper' => '',
                 'on_index' => false,
                 'on_forms' => true,
-                'in_view' => true,
+                'on_view' => true,
             ],
             [
                 'name' => 'Password',
@@ -151,6 +151,7 @@ class User extends UserModel
                 ],
                 'slug' => 'password',
                 'on_index' => false,
+                'on_view' => false,
             ],
             [
                 'name' => 'Send Welcome Email',
@@ -158,8 +159,8 @@ class User extends UserModel
                 'validation' => '',
                 'conditional_logic' => [
                 ],
-                'on_update' => false,
-                'in_view' => false,
+                'on_edit' => false,
+                'on_view' => false,
                 'on_index' => false,
                 'slug' => 'send-welcome-email',
                 'instructions' => 'Do you want to inform the user about his account?',
@@ -212,7 +213,7 @@ class User extends UserModel
                 'wrapper' => '',
                 'on_index' => false,
                 'on_forms' => true,
-                'in_view' => true,
+                'on_view' => true,
                 'style' => [
                     'width' => '100',
                 ],
@@ -234,7 +235,7 @@ class User extends UserModel
                 'wrapper' => '',
                 'on_index' => false,
                 'on_forms' => false,
-                'in_view' => true,
+                'on_view' => true,
                 'style' => [
                     'width' => '100',
                 ],

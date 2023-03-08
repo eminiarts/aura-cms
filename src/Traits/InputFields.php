@@ -56,8 +56,20 @@ trait InputFields
                 return false;
             }
 
-            // if there is a on_update = false, filter it out
-            if (optional($field)['on_update'] === false) {
+            // if there is a on_edit = false, filter it out
+            if (optional($field)['on_edit'] === false) {
+                return false;
+            }
+
+            return true;
+        });
+    }
+
+    public function viewFields()
+    {
+        return $this->mappedFields()->filter(function ($field) {
+            // if there is a on_view = false, filter it out
+            if (optional($field)['on_view'] === false) {
                 return false;
             }
 

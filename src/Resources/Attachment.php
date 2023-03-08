@@ -97,7 +97,7 @@ class Attachment extends Post
                 'wrapper' => '',
                 'on_index' => true,
                 'on_forms' => true,
-                'in_view' => true,
+                'on_view' => true,
             ],
             [
                 'name' => 'Created at',
@@ -110,7 +110,7 @@ class Attachment extends Post
                 'wrapper' => '',
                 'on_index' => true,
                 'on_forms' => true,
-                'in_view' => true,
+                'on_view' => true,
             ],
             [
                 'name' => 'Updated at',
@@ -123,7 +123,7 @@ class Attachment extends Post
                 'enable_time' => true,
                 'on_index' => true,
                 'on_forms' => true,
-                'in_view' => true,
+                'on_view' => true,
             ],
             [
                 'name' => 'Jobs',
@@ -136,7 +136,7 @@ class Attachment extends Post
                 'enable_time' => true,
                 'on_index' => false,
                 'on_forms' => true,
-                'in_view' => true,
+                'on_view' => true,
             ],
         ];
     }
