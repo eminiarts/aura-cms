@@ -3,12 +3,14 @@
 namespace Eminiarts\Aura\Traits;
 
 use Eminiarts\Aura\ConditionalLogic;
-use Eminiarts\Aura\Pipeline\AddIdsToFields;
-use Eminiarts\Aura\Pipeline\ApplyParentConditionalLogic;
 use Eminiarts\Aura\Pipeline\ApplyTabs;
-use Eminiarts\Aura\Pipeline\BuildTreeFromFields;
 use Eminiarts\Aura\Pipeline\MapFields;
+use Eminiarts\Aura\Pipeline\AddIdsToFields;
 use Eminiarts\Aura\Pipeline\TransformSlugs;
+use Eminiarts\Aura\Pipeline\FilterViewFields;
+use Eminiarts\Aura\Pipeline\BuildTreeFromFields;
+use Eminiarts\Aura\Pipeline\ApplyParentConditionalLogic;
+use Eminiarts\Aura\Pipeline\ApplyParentDisplayAttributes;
 
 trait InputFields
 {
@@ -67,14 +69,17 @@ trait InputFields
 
     public function viewFields()
     {
-        return $this->mappedFields()->filter(function ($field) {
-            // if there is a on_view = false, filter it out
-            if (optional($field)['on_view'] === false) {
-                return false;
-            }
+        $pipes = [
+            ApplyTabs::class,
+            MapFields::class,
+            AddIdsToFields::class,
+            // ApplyParentConditionalLogic::class,
+            ApplyParentDisplayAttributes::class,
+            FilterViewFields::class,
+            BuildTreeFromFields::class,
+        ];
 
-            return true;
-        });
+        return $this->sendThroughPipeline($this->mappedFields(), $pipes);
     }
 
     public function fieldBySlugWithDefaultValues($slug)
