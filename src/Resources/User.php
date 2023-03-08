@@ -246,6 +246,7 @@ class User extends UserModel
                 'label' => 'Tab',
                 'slug' => '2fa',
                 'global' => true,
+                'on_view' => false,
             ],
             [
                 'name' => '2FA',
