@@ -32,7 +32,7 @@ class TeamInvitation extends Post
                 'slug' => 'email',
                 'type' => 'Eminiarts\\Aura\\Fields\\Email',
                 'validation' => 'required|email|unique:users,email',
-                'conditional_logic' => '',
+                'conditional_logic' => [],
                 'has_conditional_logic' => false,
                 'on_index' => true,
                 'on_forms' => true,
