@@ -6,7 +6,7 @@ class Image extends Field
 {
     public $component = 'aura::fields.image';
 
-    // public $view = 'components.fields.image';
+    public $view = 'aura::fields.view-value';
 
     public function get($field, $value)
     {

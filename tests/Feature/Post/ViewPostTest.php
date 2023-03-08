@@ -47,6 +47,8 @@ test('post view - view fields are displayed correctly', function () {
     ]);
 
     // LiveWire Component
-    $component = livewire('aura::post-view', ['post' => $post]);
+    $component = livewire('aura::post-view', [$post->type, $post->id]);
 
+    // Expect $component->viewFields to be an array
+    expect($component->viewFields)->toBeArray();
 });

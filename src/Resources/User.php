@@ -170,6 +170,7 @@ class User extends UserModel
                 'name' => 'Notifications',
                 'slug' => 'tab-notifications',
                 'global' => true,
+                'on_view' => false,
             ],
             [
                 'name' => 'Notifications',
