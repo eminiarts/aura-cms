@@ -28,6 +28,12 @@ class ConditionalLogic
                 break;
             }
 
+            // if $condition is not an array, break
+            if (! is_array($condition)) {
+                // $show = false;
+                break;
+            }
+
             switch ($condition['field']) {
                 case 'role':
                     // Super Admins can do everything

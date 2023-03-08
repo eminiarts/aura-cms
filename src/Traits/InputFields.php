@@ -73,7 +73,7 @@ trait InputFields
             ApplyTabs::class,
             MapFields::class,
             AddIdsToFields::class,
-            // ApplyParentConditionalLogic::class,
+            ApplyParentConditionalLogic::class,
             ApplyParentDisplayAttributes::class,
             FilterViewFields::class,
             BuildTreeFromFields::class,
