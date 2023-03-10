@@ -39,14 +39,14 @@ class CreateAuraPlugin extends Command
         
         File::copyDirectory($stubDirectory, $pluginDirectory);
         
-        $this->info("{$pluginType} plugin created at {$pluginDirectory}");
+        $this->line("{$pluginType} created at {$pluginDirectory}");
         
-        $this->info("Replacing placeholders...");
+        $this->line("Replacing placeholders...");
         // $this->runProcess("php {$pluginDirectory}/configure.php --vendor={$vendor} --name={$name}");
         
         $result = Process::path($pluginDirectory)->run("php ./configure.php --vendor={$vendor} --name={$name}");
         
-        $this->info($result->output());
+        $this->line($result->output());
         
         if ($this->confirm("Do you want to append " . str($name)->title() . "ServiceProvider to config/app.php?")) {
             $providerClassName = str($name)->title() . "ServiceProvider";
@@ -55,22 +55,22 @@ class CreateAuraPlugin extends Command
             $newProvider = str($vendor)->title() . "\\" . str($name)->title() . "\\{$providerClassName}::class";
             $configContent = str_replace("App\Providers\AppServiceProvider::class,", "{$newProvider},\n\n        App\Providers\AppServiceProvider::class,", $configContent);
             File::put($configFile, $configContent);
-            $this->info("{$providerClassName} added to config/app.php");
+            $this->line("{$providerClassName} added to config/app.php");
         }
         
-        $this->info("Updating composer.json...");
+        $this->line("Updating composer.json...");
         $composerJsonFile = base_path('composer.json');
         $composerJson = json_decode(File::get($composerJsonFile), true);
         $composerJson['autoload']['psr-4'][ucfirst($vendor).'\\'.ucfirst($name).'\\']
         = "plugins/{$vendor}/{$name}/src";
         File::put($composerJsonFile, json_encode($composerJson, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
-        $this->info("composer.json updated");
+        $this->line("composer.json updated");
 
-        $this->info("composer dump-autoload...");
+        $this->line("composer dump-autoload...");
 
         Process::run("composer dump-autoload");
 
-        $this->info("Plugin created successfully!");
+        $this->line("Plugin created successfully!");
 
     }
     
