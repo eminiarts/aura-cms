@@ -87,7 +87,7 @@ test('register route is available', function () {
     $this->assertGuest();
 
     // Get the register view
-    $this->get(route('register'))->assertOk();
+    $this->get(route('aura.register'))->assertOk();
 });
 
 
@@ -139,7 +139,7 @@ test('user can register using an invitation', function () {
     ]);
 
     // Generate the signed URL
-    $url = URL::signedRoute('invitation.register', [$team, $invitation]);
+    $url = URL::signedRoute('aura.invitation.register', [$team, $invitation]);
 
     // Make the request to the signed URL
     $response = $this->get($url);

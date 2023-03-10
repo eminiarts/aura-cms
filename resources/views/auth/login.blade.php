@@ -2,7 +2,7 @@
     <!-- Session Status -->
     <x-aura::auth-session-status class="mb-4" :status="session('status')" />
 
-    <form method="POST" action="{{ route('login') }}">
+    <form method="POST" action="{{ route('aura.login') }}">
         @csrf
 
         <div class="mt-6 mb-8 text-center">

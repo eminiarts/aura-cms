@@ -40,12 +40,12 @@ class TeamInvitation extends Mailable
     public function build()
     {
         return $this->markdown('aura::emails.team-invitation', [
-            'registerUrl' => URL::signedRoute('invitation.register', [
+            'registerUrl' => URL::signedRoute('aura.invitation.register', [
                 'team' => $this->invitation->team,
                 'teamInvitation' => $this->invitation,
             ]),
             'userExists' => User::where('email', $this->invitation->email)->exists(),
-            'acceptUrl' => URL::signedRoute('team-invitations.accept', ['invitation' => $this->invitation,])
+            'acceptUrl' => URL::signedRoute('aura.team-invitations.accept', ['invitation' => $this->invitation,])
             ])->subject(__('Aura CMS - You have been invited to ' . $this->invitation->team->name));
     }
 }

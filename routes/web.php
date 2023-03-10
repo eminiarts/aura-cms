@@ -67,6 +67,8 @@ Route::domain(config('aura.domain'))
 
             Route::get('/Attachment', AttachmentIndex::class)->name('attachment.index');
 
+            ray(' ------ aura routes');
+
             Route::get('/{slug}', Index::class)->name('post.index');
             Route::get('/{slug}/create', Create::class)->name('post.create');
             Route::get('/{slug}/{id}/edit', Edit::class)->name('post.edit');

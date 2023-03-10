@@ -51,7 +51,7 @@ class AuraServiceProvider extends PackageServiceProvider
     {
         parent::boot();
 
-        // dd('before gate before');
+       // ray('boot');
     }
 
     public function bootGate()
@@ -105,6 +105,13 @@ class AuraServiceProvider extends PackageServiceProvider
         return $this;
     }
 
+    public function registeringPackage() {
+
+        // ray('registering package');
+        //$package->hasRoute('web');
+        //$this->loadRoutesFrom(__DIR__.'/../routes/web.php');
+    }
+
     /*
     * This class is a Package Service Provider
     *
@@ -112,6 +119,8 @@ class AuraServiceProvider extends PackageServiceProvider
     */
     public function configurePackage(Package $package): void
     {
+        // ray('configuring package');
+
         $package
             ->name('aura')
             ->hasConfigFile()

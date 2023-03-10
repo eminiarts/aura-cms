@@ -1,6 +1,6 @@
 @props(['team', 'component' => 'aura::dropdown-link'])
 
-<form method="POST" action="{{ route('current-team.update') }}" x-data>
+<form method="POST" action="{{ route('aura.current-team.update') }}" x-data>
     @method('PUT')
     @csrf
 

@@ -14,7 +14,7 @@ beforeEach(function () {
 });
 
 test('registration screen can be rendered', function () {
-    $response = $this->get(route('register'));
+    $response = $this->get(route('aura.register'));
 
     $response->assertSee('Team');
     $response->assertSee('Name');
@@ -28,7 +28,7 @@ test('new users can register', function () {
     // Create team
     Team::factory()->create();
 
-    $response = $this->post(route('register'), [
+    $response = $this->post(route('aura.register'), [
         'name' => 'Test User',
         'team' => 'Test Team',
         'email' => 'test@example.com',
