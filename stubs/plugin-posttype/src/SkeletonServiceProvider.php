@@ -2,9 +2,10 @@
 
 namespace VendorName\Skeleton;
 
+use Eminiarts\Aura\Facades\Aura;
 use Spatie\LaravelPackageTools\Package;
-use Spatie\LaravelPackageTools\PackageServiceProvider;
 use VendorName\Skeleton\Commands\SkeletonCommand;
+use Spatie\LaravelPackageTools\PackageServiceProvider;
 
 class SkeletonServiceProvider extends PackageServiceProvider
 {
@@ -18,5 +19,12 @@ class SkeletonServiceProvider extends PackageServiceProvider
         $package
             ->name('skeleton')
             ->hasViews(":vendor_slug-skeleton");
+
+        /*
+         * Register Aura Resources
+         *
+         * More info: https://aura-cms.com/docs/resources
+         */
+        Aura::registerResources([\VendorName\Skeleton\Skeleton::class]);
     }
 }
