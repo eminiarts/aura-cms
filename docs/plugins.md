@@ -4,29 +4,33 @@ I am working on a Package in Laravel. This is the outline for the functionality 
 
 ## Creating a Plugin
 
-I want to be able to run `php artisan aura:plugin` to start a new plugin.
+I want to be able to run `php artisan aura:plugin {vendor/name}` to start a new plugin.
 
 The command should ask if i want to build a complete plugin, a posttype, a field or a widget plugin.
 
 Regardless which option you chosse:
-- ask for the {vendor} and package {name}
+- ask for the {vendor} and package {name} (if not set already)
 - create a folder with {name} in app/Aura/Plugins.
 - the folder should contain a composer.json (so it could be it's own laravel package) with the {name} as a package title and {vendor} as the package vendor.
 - create a `{Name}ServiceProvider.php` class 
 
 Based on the first answer:
 If you choose "complete plugin", the following should happen:
-- copy files from stubs/plugin/* to app/Aura/Plugins/{name}
+- copy files from stubs/plugin/* to app/Aura/Plugins/{vendor}/{name}
 
 If you choose "posttype plugin", the following should happen:
-- copy files from stubs/plugin-posttype/* to app/Aura/Plugins/{name}
+- copy files from stubs/plugin-posttype/* to app/Aura/Plugins/{vendor}/{name}
 
 If you choose "field plugin", the following should happen:
-- copy files from stubs/plugin-field/* to app/Aura/Plugins/{name}
+- copy files from stubs/plugin-field/* to app/Aura/Plugins/{vendor}/{name}
 
 If you choose "widget plugin", the following should happen:
-- copy files from stubs/plugin-widget/* to app/Aura/Plugins/{name}
+- copy files from stubs/plugin-widget/* to app/Aura/Plugins/{vendor}/{name}
 
+Finally
+-Then the command should ask you if you want to append the `{Name}ServiceProvider.php` in your Application Service Providers in config/app.php.
+
+Can you help me write the command first and then continue with the functionality of the plugin system?
 
 ## Installing a Plugin
 
