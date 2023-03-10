@@ -1,51 +1,76 @@
-# Plugins
+CreateAuraPlugin Command
+========================
 
-I am working on a Package in Laravel. This is the outline for the functionality i want to build. In Aura CMS, i want to build a Plugin System. Users should be able to run a command to create their own plugins, which could be its own composer packages for Aura CMS.
+The `CreateAuraPlugin` command is a Laravel Artisan command that allows you to create a new Aura plugin with a single command. The command will create a new plugin folder and copy over the necessary files and configurations based on the plugin type that you choose. It will also update the `composer.json` file to autoload the plugin correctly.
 
-## Creating a Plugin
+Usage
+-----
 
-I want to be able to run `php artisan aura:plugin {vendor/name}` to start a new plugin.
+To create a new Aura plugin, run the following command:
 
-The command should ask if i want to build a complete plugin, a posttype, a field or a widget plugin.
+css
 
-Regardless which option you chosse:
-- ask for the {vendor} and package {name} (if not set already)
-- create a folder with {name} in app/Aura/Plugins.
-- the folder should contain a composer.json (so it could be it's own laravel package) with the {name} as a package title and {vendor} as the package vendor.
-- create a `{Name}ServiceProvider.php` class 
+```css
+php artisan aura:plugin {name}
+```
 
-Based on the first answer:
-If you choose "complete plugin", the following should happen:
-- copy files from stubs/plugin/* to app/Aura/Plugins/{vendor}/{name}
+where `{name}` is the name of your plugin in the format `vendor/name`. For example, to create a plugin with the name `mycompany/mymodule`, you would run:
 
-If you choose "posttype plugin", the following should happen:
-- copy files from stubs/plugin-posttype/* to app/Aura/Plugins/{vendor}/{name}
+bash
 
-If you choose "field plugin", the following should happen:
-- copy files from stubs/plugin-field/* to app/Aura/Plugins/{vendor}/{name}
+```bash
+php artisan aura:plugin mycompany/mymodule
+```
 
-If you choose "widget plugin", the following should happen:
-- copy files from stubs/plugin-widget/* to app/Aura/Plugins/{vendor}/{name}
+Available Options
+-----------------
 
-Finally
--Then the command should ask you if you want to append the `{Name}ServiceProvider.php` in your Application Service Providers in config/app.php.
+When you run the `aura:plugin` command, you will be prompted to choose the type of plugin you want to create. The available options are:
 
-Can you help me write the command first and then continue with the functionality of the plugin system?
+*   Complete plugin
+*   Posttype plugin
+*   Field plugin
+*   Widget plugin
 
-## Installing a Plugin
+Choose the option that best suits your needs.
 
-You can customize the Post view by either changing Fields or you can change the Post View alltogether.
+Examples
+--------
 
-## Register your Plugin at the plugins.aura-cms.com
+Here are some examples of how to use the `CreateAuraPlugin` command:
 
-Please upload your package to github and submit your plugin at plugins.aura-cms.com.
+bash
 
+```bash
+php artisan aura:plugin mycompany/mymodule
+```
 
+This will create a new plugin called `mymodule` in the `plugins/mycompany` folder, and will copy over the necessary files and configurations for a complete plugin.
 
-# Fields
+bash
 
-## Creating a Field
+```bash
+php artisan aura:plugin mycompany/mymodule --type=posttype
+```
 
-I want to be able to run `php artisan aura:field {name}` to start a new field.
+This will create a new plugin called `mymodule` in the `plugins/mycompany` folder, and will copy over the necessary files and configurations for a posttype plugin.
 
-It should create a File in app/Aura/Fields/{name}.php and the corresponding view in resources/views/aura/fields/{name}.php
+Updating Composer Autoloading
+-----------------------------
+
+The `CreateAuraPlugin` command will update the `composer.json` file to autoload the plugin correctly. The autoloader entry is added to the `autoload.psr-4` section of the `composer.json` file, and uses the plugin's namespace as the key and the plugin's source directory as the value.
+
+Append Service Provider
+-----------------------
+
+The `CreateAuraPlugin` command also gives the option to append the `{Name}ServiceProvider` to `config/app.php` file.
+
+Replacing Placeholders
+----------------------
+
+Before copying files to the new plugin directory, the `CreateAuraPlugin` command will replace all placeholders throughout all the files. The placeholders will be replaced with the correct values that you specified when running the command.
+
+Conclusion
+----------
+
+With the `CreateAuraPlugin` command, you can easily create a new Aura plugin without having to manually create the necessary files and configurations. This can save you a lot of time and effort when building your Laravel application with Aura CMS.
