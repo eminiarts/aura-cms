@@ -5,9 +5,6 @@ use Illuminate\Support\Facades\File;
 use Spatie\Snapshots\MatchesSnapshots;
 
 it('creates a complete plugin', function () {
-
-
-    dd('hier');
     // without exception handling
     $this->withoutExceptionHandling();
     
@@ -31,7 +28,7 @@ it('creates a complete plugin', function () {
         ->expectsQuestion('Select the type of plugin you want to create', 'Complete plugin')
         ->expectsOutput('Complete plugin created at ' . $pluginDirectory)
         ->expectsOutputToContain('Replacing placeholders')
-        ->expectsConfirmation("Do you want to append " . str($name)->title() . "ServiceProvider to config/app.php?", 'yes')
+        ->expectsConfirmation("Do you want to append " . str($name)->title() . "ServiceProvider to config/app.php?", 'no') // no, because it would adjust the config and make tests fail next time
         ->expectsOutputToContain('Updating composer.json')
         ->expectsOutputToContain('composer.json updated')
         ->expectsOutputToContain('composer dump-autoload')
@@ -49,9 +46,13 @@ it('creates a complete plugin', function () {
 
     // Assert that the composer.json file was updated correctly
     $composerJson = json_decode(File::get(base_path('composer.json')), true);
-    expect($composerJson['autoload']['psr-4'])->toContain("$pluginName\\");
+
+    // $composerJson['autoload']['psr-4'] should have 2 items
+    expect($composerJson['autoload']['psr-4'])->toHaveCount(2);
+    // $composerJson['autoload']['psr-4'] should have key "$pluginName\\"
+    expect($composerJson['autoload']['psr-4'])->toHaveKey("Myvendor\Mypackage\\");
 
     // Assert that the service provider was appended to the app config file correctly
     $configFile = File::get(base_path('config/app.php'));
-    expect($configFile)->toContain("$pluginName\\MyPackageServiceProvider::class");
+    expect($configFile)->not->toContain("$pluginName\\MyPackageServiceProvider::class");
 });
