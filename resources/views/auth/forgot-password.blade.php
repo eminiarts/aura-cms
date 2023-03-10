@@ -6,7 +6,7 @@
     <!-- Session Status -->
     <x-aura::auth-session-status class="mb-4" :status="session('status')" />
 
-    <form method="POST" action="{{ route('password.email') }}">
+    <form method="POST" action="{{ route('aura.password.email') }}">
         @csrf
 
         <!-- Email Address -->

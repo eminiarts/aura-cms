@@ -61,16 +61,16 @@ class View extends Component
     
     public function render()
     {
-        $view = "aura.{$this->slug}.view";
+        // $view = "aura.{$this->slug}.view";
 
-        // if aura::aura.{$post->type}.view is set, use that view
-        if (view()->exists($view)) {
-            return view($view)->layout('aura::components.layout.app');
-        }
+        // // if aura::aura.{$post->type}.view is set, use that view
+        // if (view()->exists($view)) {
+        //     return view($view)->layout('aura::components.layout.app');
+        // }
         
-        if (view()->exists("aura::" . $view)) {
-            return view("aura::" . $view)->layout('aura::components.layout.app');
-        }
+        // if (view()->exists("aura::" . $view)) {
+        //     return view("aura::" . $view)->layout('aura::components.layout.app');
+        // }
 
         return view('aura::livewire.post.view')->layout('aura::components.layout.app');
     }
