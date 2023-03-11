@@ -4,6 +4,7 @@ namespace Eminiarts\Aura;
 
 use Eminiarts\Aura\Commands\AuraCommand;
 use Eminiarts\Aura\Commands\CreateAuraPlugin;
+use Eminiarts\Aura\Commands\MakeField;
 use Eminiarts\Aura\Commands\MakePosttype;
 use Eminiarts\Aura\Commands\MakeUser;
 use Eminiarts\Aura\Facades\Aura;
@@ -130,7 +131,7 @@ class AuraServiceProvider extends PackageServiceProvider
             ->hasRoute('web')
             ->hasMigrations(['create_aura_tables', 'create_flows_table'])
             ->runsMigrations()
-            ->hasCommands([AuraCommand::class, MakePosttype::class, MakeUser::class, CreateAuraPlugin::class])
+            ->hasCommands([AuraCommand::class, MakePosttype::class, MakeUser::class, CreateAuraPlugin::class, MakeField::class])
             ->hasInstallCommand(function (InstallCommand $command) {
                 $command
                 ->startWith(function (InstallCommand $command) {
