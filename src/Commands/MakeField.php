@@ -4,28 +4,28 @@ namespace Eminiarts\Aura\Commands;
 
 use Illuminate\Console\GeneratorCommand;
 
-class MakePosttype extends GeneratorCommand
+class MakeField extends GeneratorCommand
 {
     /**
      * The console command description.
      *
      * @var string
      */
-    protected $description = 'Create a new Aura Posttype';
+    protected $description = 'Create a new Aura Field';
 
     /**
      * The name and signature of the console command.
      *
      * @var string
      */
-    protected $signature = 'aura:posttype {name}';
+    protected $signature = 'aura:field {name}';
 
     /**
      * The type of class being generated.
      *
      * @var string
      */
-    protected $type = 'Posttype';
+    protected $type = 'Field';
 
     /**
      * Get the default namespace for the class.
@@ -35,7 +35,7 @@ class MakePosttype extends GeneratorCommand
      */
     protected function getDefaultNamespace($rootNamespace)
     {
-        return $rootNamespace.'\Aura\Resources';
+        return $rootNamespace.'\Aura\Fields';
     }
 
     /**
@@ -45,8 +45,7 @@ class MakePosttype extends GeneratorCommand
      */
     protected function getStub()
     {
-        // current dir /Stubs/make-posttype.stub
-        return __DIR__.'/Stubs/make-posttype.stub';
+        return __DIR__.'/Stubs/make-field.stub';
     }
 
     /**
@@ -60,8 +59,8 @@ class MakePosttype extends GeneratorCommand
     {
         $stub = parent::replaceClass($stub, $name);
 
-        $stub = str_replace('PostName', ucfirst($this->argument('name')), $stub);
-        $stub = str_replace('PostSlug', str($this->argument('name'))->slug(), $stub);
+        $stub = str_replace('FieldName', ucfirst($this->argument('name')), $stub);
+        $stub = str_replace('FieldSlug', str($this->argument('name'))->slug(), $stub);
 
         return $stub;
     }

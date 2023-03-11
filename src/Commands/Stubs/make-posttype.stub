@@ -28,6 +28,8 @@ class PostName extends Post
                 'type' => 'Eminiarts\\Aura\\Fields\\Text',
                 'validation' => 'required',
                 'on_index' => true,
+                'on_view' => true,
+                'on_forms' => true,
                 'slug' => 'title',
                 'style' => [
                     'width' => '100',

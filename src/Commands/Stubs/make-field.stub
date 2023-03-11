@@ -1,0 +1,20 @@
+<?php
+
+namespace App\Aura\Fields;
+
+use Eminiarts\Aura\Fields\Field;
+
+class FieldName extends Field
+{
+    public $component = 'fields.FieldSlug';
+
+    public $view = 'fields.FieldSlug-view';
+
+    public function getFields()
+    {
+        return array_merge(parent::getFields(), [
+            // Custom Fields for this field
+            // See Documentation for more info
+        ]);
+    }
+}
