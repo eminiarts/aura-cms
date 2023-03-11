@@ -35,7 +35,7 @@ jobs:
           echo "::add-matcher::${{ runner.tool_cache }}/phpunit.json"
       - name: Install dependencies
         run: |
-          composer require "laravel/framework:9.*" "orchestra/testbench:^7.0" --no-interaction --no-update
+          composer require "laravel/framework:10.*" "orchestra/testbench:^8.0" --no-interaction --no-update
           composer update --${{ matrix.stability }} --prefer-dist --no-interaction
 
       - name: Execute tests
