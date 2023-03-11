@@ -31,7 +31,7 @@ it('generates the correct files for a posttype', function () {
 });
 
 test('MakePosttype command generates posttype class and test', function () {
-    $posttypeName = 'posttype';
+    $posttypeName = 'Posttype';
     
     // Run the command and provide input
     $this->artisan('aura:posttype ' . $posttypeName)->assertExitCode(0);
