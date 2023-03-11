@@ -1,5 +1,3 @@
-View Skeleton Field
-
 <x-aura::fields.wrapper :field="$field">
     {!! $this->model->display($field['slug']) !!}
 </x-aura::fields.wrapper>
