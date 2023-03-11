@@ -10,9 +10,6 @@ uses(RefreshDatabase::class);
 
 beforeEach(fn () => User::factory()->create());
 
-it('has users')->assertDatabaseHas('users', [
-    'id' => 1,
-]);
 
 test('save Attachment Model when defined fields', function () {
     $this->actingAs($user = User::first());

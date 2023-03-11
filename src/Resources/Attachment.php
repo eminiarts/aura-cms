@@ -225,15 +225,15 @@ class Attachment extends Post
             // Check if the attachment has a file
 
             // Dispatch the GenerateThumbnail job
-            $job = new GenerateImageThumbnail($attachment);
+            // $job = new GenerateImageThumbnail($attachment);
 
-            $model = new static();
-            $jobId = $model->dispatch($job);
+            // $model = new static();
+            // $jobId = $model->dispatch($job);
 
-            $attachment->jobs()->create([
-                'job_id' => $jobId,
-                'job_status' => 'pending',
-            ]);
+            // $attachment->jobs()->create([
+            //     'job_id' => $jobId,
+            //     'job_status' => 'pending',
+            // ]);
         });
     }
 }
