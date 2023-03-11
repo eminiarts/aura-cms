@@ -1,4 +1,4 @@
-`aura:field`
+`php artisan aura:field {name}`
 ------------
 
 The `aura:field` command generates a new Aura field class, along with a view and an edit file for the field. The generated field class will be saved in the `App\Aura\Fields` namespace.
@@ -13,11 +13,11 @@ php artisan aura:field <name>
 
 ### Arguments
 
-```
+
 | Argument | Description |
 | --- | --- |
 | `name` | The name of the field class to be generated. |
-```
+
 
 ### Options
 
