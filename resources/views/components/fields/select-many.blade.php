@@ -51,7 +51,7 @@ if(optional($field)['api']) {
         },
 
         fetchApi() {
-            fetch('/api/fields/values', {
+            fetch('/admin/api/fields/values', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -86,6 +86,10 @@ if(optional($field)['api']) {
             return this.items.find(item => item.value === value).label;
         }, --}}
         findItem(id) {
+            // only search if this.items is not empty
+            if (this.items.length === 0) {
+                return;
+            }
             return this.items.find(item => item.id === id).title;
         },
 
