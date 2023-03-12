@@ -11,6 +11,7 @@ use Eminiarts\Aura\Http\Livewire\Post\Index;
 use Eminiarts\Aura\Http\Livewire\Post\Create;
 use Eminiarts\Aura\Http\Livewire\TeamSettings;
 use Eminiarts\Aura\Http\Controllers\ProfileController;
+use Eminiarts\Aura\Http\Controllers\Api\FieldsController;
 use Eminiarts\Aura\Http\Livewire\Taxonomy\Edit as TaxonomyEdit;
 use Eminiarts\Aura\Http\Livewire\Taxonomy\Index as TaxonomyIndex;
 use Eminiarts\Aura\Http\Livewire\Taxonomy\Create as TaxonomyCreate;
@@ -43,6 +44,9 @@ Route::domain(config('aura.domain'))
                 return view('aura::dashboard');
             })->name('dashboard');
 
+            // route for api/fields/values which calls Api\FieldsController@values
+            Route::post('/api/fields/values', [FieldsController::class, 'values'])->name('api.fields.values');
+
             Route::get('/posttypes', function () {
                 return view('aura::posttypes');
             })->name('posttypes');
@@ -50,6 +54,7 @@ Route::domain(config('aura.domain'))
             Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
             Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
             Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+
 
             Route::get('/team-settings', TeamSettings::class)->name('team.settings');
             Route::get('/aura-config', AuraConfig::class)->name('config');
