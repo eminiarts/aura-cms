@@ -1,15 +1,17 @@
 @php
-$values = app($field['posttype'])->pluck('title', 'id')->map(fn($name, $key) => ['value' => $key, 'label' => $name])->values()->toArray();
+
+if(optional($field)['api']) {
+ $values = [];
+} else {
+    // $values = $field['field']->values($field['model']);
+    $values = $field['field']->values($field['posttype']);
+}
+
+
 @endphp
 
-@once
-@push('scripts')
-
-@endpush
-@endonce
-
-{{-- @dump($values)
-@dump($this->post) --}}
+@dump($values)
+{{-- @dump($this->post) --}}
 
 <x-aura::fields.wrapper :field="$field">
 <div
@@ -18,7 +20,11 @@ $values = app($field['posttype'])->pluck('title', 'id')->map(fn($name, $key) => 
     x-data="{
         value: $wire.entangle('post.fields.{{ $field['slug'] }}').defer,
         items: {{ Js::from($values) }},
-
+        api: {{ optional($field)['api'] ? 'true' : 'false' }},
+        model: {{ Js::from($field['posttype']) }},
+        field: {{ Js::from($field['type']) }},
+        slug: '{{ $field['slug'] }}',
+        csrf: document.querySelector('meta[name=\'csrf-token\']').getAttribute('content'),
         search: null,
 
         get selectedItems() {
@@ -26,6 +32,42 @@ $values = app($field['posttype'])->pluck('title', 'id')->map(fn($name, $key) => 
                 return [];
             }
             return this.items.filter(item => this.value.includes(item.value));
+        },
+
+         init() {
+            // Get Values via API Fetch Call to /api/fields/{field}/values and pass this.model and this.slug as params
+            if (this.api) {
+                this.fetchApi();
+            }
+
+            // Watch this.search and fetch new values, debounce for 500ms
+            this.$watch('search', () => {
+                if (this.api) {
+                    this.fetchApi();
+                }
+            }, { debounce: 500 });
+
+
+        },
+
+        fetchApi() {
+            fetch('/api/fields/values', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'x-CSRF-TOKEN': this.csrf,
+                },
+                body: JSON.stringify({
+                    model: this.model,
+                    slug: this.slug,
+                    field: this.field,
+                    search: this.search,
+                }),
+            })
+            .then(response => response.json())
+            .then(data => {
+                this.items = data;
+            });
         },
 
         get filteredItems() {
@@ -40,8 +82,11 @@ $values = app($field['posttype'])->pluck('title', 'id')->map(fn($name, $key) => 
             return [...new Set([...this.items, ...this.selectedItems])];
         },
 
-        findItem(value) {
+        {{-- findItem(value) {
             return this.items.find(item => item.value === value).label;
+        }, --}}
+        findItem(id) {
+            return this.items.find(item => item.id === id).title;
         },
 
     }"
@@ -98,15 +143,17 @@ $values = app($field['posttype'])->pluck('title', 'id')->map(fn($name, $key) => 
             x-cloak
             class="absolute left-0 z-10 w-full mt-2 overflow-y-auto origin-top bg-white border border-gray-500/30 divide-y divide-gray-100 rounded-md shadow-md outline-none dark:border-gray-700 dark:bg-gray-900 dark:divide-gray-800 max-h-64"
         >
-{{--          <li>--}}
-{{--            <div>--}}
-{{--              <input--}}
-{{--                x-model="search"--}}
-{{--                autofocus--}}
-{{--                class="w-full px-4 py-2.5 text-gray-900 placeholder-gray-500 border-none focus:outline-none"--}}
-{{--                placeholder="Search..." />--}}
-{{--            </div>--}}
-{{--          </li>--}}
+     <li>
+            <div>
+              {{-- search input --}}
+              <input
+                x-model.debounce.500ms="search"
+                autofocus
+                class="w-full px-4 py-2.5 text-gray-900 placeholder-gray-500 border-none focus:outline-none"
+                placeholder="Search..."
+
+            </div>
+          </li>
             <template x-for="item in filteredItems" :key="item.value">
                 <li
                     x-listbox:option
