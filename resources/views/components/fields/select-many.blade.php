@@ -31,25 +31,12 @@ if(optional($field)['api']) {
         slug: '{{ $field['slug'] }}',
         csrf: document.querySelector('meta[name=\'csrf-token\']').getAttribute('content'),
         search: null,
+        showListbox: false,
         loaded: false,
-
-        {{-- get selectedItems() {
-            // if seletecItems is set, return it
-            if (this.initialItems.length > 0) {
-                return this.initialItems;
-            }
-
-            if (!this.value || this.value.length === 0) {
-                return [];
-            }
-
-            return this.items.filter(item => this.value.includes(item.value));
-        }, --}}
 
          init() {
 
             console.log(this.value, 'initial value');
-            // Get Values via API Fetch Call to /api/fields/{field}/values and pass this.model and this.slug as params
             
                 if (this.api) {
                  this.fetchApi();
@@ -131,13 +118,23 @@ if(optional($field)['api']) {
             // return this.selectedItems and items and remove duplicates by id
             return [...this.selectedItems, ...items].filter((item, index, self) => self.findIndex(i => i.id === item.id) === index).sort((a, b) => a.id - b.id);
 
-            // order by id
-            // return [...this.selectedItems, ...items].sort((a, b) => a.id - b.id);
+            
         },
 
-        {{-- selectedItem(value) {
-            return this.items.find(item => item.value === value).label;
-        }, --}}
+        isActive(item) {
+            return this.value.includes(item.id);
+        },
+        isDisabled(item) {
+            return this.value.length >= 5 && !this.isActive(item);
+        },
+        isSelected(item) {
+            return this.value.includes(item.id);
+        },
+
+        toggleListbox() {
+            this.showListbox = !this.showListbox;
+        },
+
         selectedItem(id) {
             // only search if this.items is not empty
             if (this.selectedItems.length === 0) {
@@ -152,20 +149,13 @@ if(optional($field)['api']) {
     }"
 >
 
-        <template x-if="loaded">
 
-    <div
-
-        x-listbox
-        multiple
-        x-model="value"
-        class="relative w-full p-0 bg-transparent border-0 aura-input"
-    >
-        <label x-listbox:label class="sr-only">Select Item</label>
+    <div class="relative w-full p-0 bg-transparent border-0 aura-input">
+        <label class="sr-only">Select Item</label>
 
         <button
-            x-listbox:button
             class="relative flex items-center justify-between w-full px-3 py-2 border border-gray-500/30 rounded-lg shadow-xs appearance-none focus:border-primary-300 focus:outline-none ring-gray-900/10 focus:ring focus:ring-primary-300 focus:ring-opacity-50 dark:focus:ring-primary-500 dark:focus:ring-opacity-50 dark:bg-gray-900 dark:border-gray-700"
+            @click="toggleListbox"
         >
             <template x-if="value && value.length > 0">
                 <div class="flex flex-wrap">
@@ -200,34 +190,28 @@ if(optional($field)['api']) {
             </div>
         </button>
 
-
+        <template x-if="showListbox">
         <ul
-            x-listbox:options
-            x-ref="listbox"
             x-transition.origin.top
             x-cloak
             class="absolute left-0 z-10 w-full mt-2 overflow-y-auto origin-top bg-white border border-gray-500/30 divide-y divide-gray-100 rounded-md shadow-md outline-none dark:border-gray-700 dark:bg-gray-900 dark:divide-gray-800 max-h-64"
         >
      <li>
             <div>
-              {{-- search input --}}
               <input
                 x-model.debounce.500ms="search"
                 autofocus
                 class="w-full px-4 py-2.5 text-gray-900 placeholder-gray-500 border-none focus:outline-none"
-                placeholder="Search..."
-
+                placeholder="Search...">
             </div>
           </li>
             <template x-for="item in filteredItems" :key="item.id">
                 <li
-                    x-listbox:option
-                    x-init="console.log('list', $listboxOption.$refs)"
                     :value="item.id"
                     :class="{
-                        'bg-primary-500 hover:bg-primary-100': $listboxOption.isActive,
-                        'bg-primary-500 hover:bg-primary-100': ! $listboxOption.isActive,
-                        'opacity-50 cursor-not-allowed': $listboxOption.isDisabled,
+                        'bg-primary-500 hover:bg-primary-100': isActive(item.id),
+                        'bg-primary-500 hover:bg-primary-100': ! isActive(item.id),
+                        'opacity-50 cursor-not-allowed': isDisabled(item.id),
                     }"
                     class="flex items-center justify-between w-full gap-2 px-4 py-2 text-sm transition-colors cursor-default"
                 >
@@ -236,14 +220,14 @@ if(optional($field)['api']) {
                       <span x-text="item.title" class="font-semibold"></span>
                     </div>
 
-                    <span x-show="$listboxOption.isSelected" class="font-semibold text-primary-600">&check;</span>
+                    <span x-show="isSelected(item.id)" class="font-semibold text-primary-600">&check;</span>
                     </div>
 
                 </li>
             </template>
         </ul>
-    </div>
         </template>
+    </div>
 </div>
 
 
