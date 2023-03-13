@@ -56,7 +56,7 @@ class SelectMany extends Field
 
     public function set($value)
     {
-        return json_encode($value);
+        return json_encode($value);  
     }
 
     public function api($request)
