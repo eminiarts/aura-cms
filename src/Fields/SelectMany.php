@@ -85,4 +85,17 @@ class SelectMany extends Field
 
         // app($model)->pluck('title', 'id')->map(fn($name, $key) => ['value' => $key, 'label' => $name])->values()->toArray()
     }
+    
+    public function selectedValues($model, $values)
+    {
+        return app($model)->find($values)->map(function ($item) {
+            return [
+                'id' => $item->id,
+                'title' => $item->title(),
+            ];
+        })->toArray();
+
+
+        // app($model)->pluck('title', 'id')->map(fn($name, $key) => ['value' => $key, 'label' => $name])->values()->toArray()
+    }
 }

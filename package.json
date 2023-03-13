@@ -5,13 +5,13 @@
         "build": "vite build"
     },
     "devDependencies": {
-        "@alpinejs/collapse": "^3.10.5",
-        "@alpinejs/focus": "^3.10.5",
-        "@alpinejs/ui": "^3.10.5-beta.8",
+        "@alpinejs/collapse": "^3.12",
+        "@alpinejs/focus": "^3.12",
+        "@alpinejs/ui": "^3.12.8-beta.0",
         "@tailwindcss/aspect-ratio": "^0.4.2",
         "@tailwindcss/forms": "^0.5.2",
         "@tailwindcss/typography": "^0.5.0",
-        "alpinejs": "^3.10.5",
+        "alpinejs": "^3.12",
         "autoprefixer": "^10.4.2",
         "flatpickr": "^4.6.13",
         "postcss-import": "^14.0.1",
