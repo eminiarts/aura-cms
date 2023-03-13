@@ -12,9 +12,9 @@ if(optional($field)['api']) {
 
 @endphp
 
-@dump($values)
+{{-- @dump($values)
 @dump($field)
-@dump($selectedValues)
+@dump($selectedValues) --}}
 @dump($this->post['fields'][$field['slug']])
 
 <x-aura::fields.wrapper :field="$field">
@@ -31,6 +31,7 @@ if(optional($field)['api']) {
         slug: '{{ $field['slug'] }}',
         csrf: document.querySelector('meta[name=\'csrf-token\']').getAttribute('content'),
         search: null,
+        loaded: false,
 
         {{-- get selectedItems() {
             // if seletecItems is set, return it
@@ -49,9 +50,10 @@ if(optional($field)['api']) {
 
             console.log(this.value, 'initial value');
             // Get Values via API Fetch Call to /api/fields/{field}/values and pass this.model and this.slug as params
-            if (this.api) {
-               this.fetchApi();
-            }
+            
+                if (this.api) {
+                 this.fetchApi();
+                }
 
             // Watch this.search and fetch new values, debounce for 500ms
             this.$watch('search', () => {
@@ -79,6 +81,7 @@ if(optional($field)['api']) {
         },
 
         fetchApi() {
+            
             fetch('/admin/api/fields/values', {
                 method: 'POST',
                 headers: {
@@ -95,6 +98,15 @@ if(optional($field)['api']) {
             .then(response => response.json())
             .then(data => {
                 this.items = data;
+                this.loaded = true;
+
+                this.$nextTick(() => {
+                    {{-- this.$refs.listbox.init(); --}}
+                    {{-- this.$refs.listbox.dispatchEvent(new Event('alpine:init')); --}}
+                });
+
+                // refresh the alpinejs component
+                
             });
         },
 
@@ -117,7 +129,10 @@ if(optional($field)['api']) {
             }
 
             // return this.selectedItems and items and remove duplicates by id
-            return [...this.selectedItems, ...items].filter((item, index, self) => self.findIndex(i => i.id === item.id) === index);
+            return [...this.selectedItems, ...items].filter((item, index, self) => self.findIndex(i => i.id === item.id) === index).sort((a, b) => a.id - b.id);
+
+            // order by id
+            // return [...this.selectedItems, ...items].sort((a, b) => a.id - b.id);
         },
 
         {{-- selectedItem(value) {
@@ -136,13 +151,14 @@ if(optional($field)['api']) {
 
     }"
 >
+
+        <template x-if="loaded">
+
     <div
 
         x-listbox
         multiple
         x-model="value"
-        by="id"
-        :default-value="value"
         class="relative w-full p-0 bg-transparent border-0 aura-input"
     >
         <label x-listbox:label class="sr-only">Select Item</label>
@@ -187,6 +203,7 @@ if(optional($field)['api']) {
 
         <ul
             x-listbox:options
+            x-ref="listbox"
             x-transition.origin.top
             x-cloak
             class="absolute left-0 z-10 w-full mt-2 overflow-y-auto origin-top bg-white border border-gray-500/30 divide-y divide-gray-100 rounded-md shadow-md outline-none dark:border-gray-700 dark:bg-gray-900 dark:divide-gray-800 max-h-64"
@@ -205,10 +222,11 @@ if(optional($field)['api']) {
             <template x-for="item in filteredItems" :key="item.id">
                 <li
                     x-listbox:option
+                    x-init="console.log('list', $listboxOption.$refs)"
                     :value="item.id"
                     :class="{
-                        'bg-primary-500/10 text-gray-900': $listboxOption.isActive,
-                        'text-gray-700': ! $listboxOption.isActive,
+                        'bg-primary-500 hover:bg-primary-100': $listboxOption.isActive,
+                        'bg-primary-500 hover:bg-primary-100': ! $listboxOption.isActive,
                         'opacity-50 cursor-not-allowed': $listboxOption.isDisabled,
                     }"
                     class="flex items-center justify-between w-full gap-2 px-4 py-2 text-sm transition-colors cursor-default"
@@ -225,6 +243,7 @@ if(optional($field)['api']) {
             </template>
         </ul>
     </div>
+        </template>
 </div>
 
 
