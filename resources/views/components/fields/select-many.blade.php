@@ -12,7 +12,7 @@
 <x-aura::fields.wrapper :field="$field">
 <div
     wire:ignore
-    class="w-full"
+    class="w-full" 
     x-data="{ 
         value: $wire.entangle('post.fields.{{ $field['slug'] }}').defer,
         items: {{ Js::from($values) }},
@@ -55,7 +55,7 @@
             })
             .then(response => response.json())
             .then(data => {
-                this.items = data;
+                this.items = data; 
                 this.loading = false;
             });
         },
@@ -66,9 +66,9 @@
                 return items.filter(item => item.title.toLowerCase().includes(this.search.toLowerCase()));
             }
             
-            if (items.length === 0) {
+            if (items.length === 0) { 
                 return this.selectedItems;
-            }
+            } 
 
             // return this.selectedItems and items and remove duplicates by id
             return [...this.selectedItems, ...items].filter((item, index, self) => self.findIndex(i => i.id === item.id) === index).sort((a, b) => a.id - b.id);

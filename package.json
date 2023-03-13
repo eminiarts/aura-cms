@@ -2,28 +2,30 @@
     "private": true,
     "scripts": {
         "dev": "vite",
-        "build": "vite build"
+        "build": "vite build",
+        "watch": "nodemon --watch resources/views --exec \"npm run build\" --ext php,js,css,html"
     },
     "devDependencies": {
         "@alpinejs/collapse": "^3.12",
         "@alpinejs/focus": "^3.12",
-        "@alpinejs/ui": "^3.12.8-beta.0",
+        "@alpinejs/ui": "^3.12.0-beta.0",
+        "@shopify/draggable": "^1.0.0-beta.8",
         "@tailwindcss/aspect-ratio": "^0.4.2",
         "@tailwindcss/forms": "^0.5.2",
         "@tailwindcss/typography": "^0.5.0",
         "alpinejs": "^3.12",
         "autoprefixer": "^10.4.2",
+        "axios": "^1.1.2",
+        "choices.js": "^10.1.0",
         "flatpickr": "^4.6.13",
+        "laravel-vite-plugin": "^0.7.2",
+        "lodash": "^4.17.19",
+        "nodemon": "^2.0.21",
+        "postcss": "^8.1.14",
         "postcss-import": "^14.0.1",
         "tailwind-scrollbar": "^2.0.1",
         "tailwindcss": "^3.2.4",
         "tippy.js": "^6.3.7",
-        "axios": "^1.1.2",
-        "laravel-vite-plugin": "^0.7.2",
-        "lodash": "^4.17.19",
-        "@shopify/draggable": "^1.0.0-beta.8",
-        "choices.js": "^10.1.0",
-        "postcss": "^8.1.14",
         "vite": "^4.0.0"
     }
 }
