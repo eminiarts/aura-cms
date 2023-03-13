@@ -11,6 +11,8 @@ use Eminiarts\Aura\Resources\Attachment;
 use Eminiarts\Aura\Traits\DefaultFields;
 use Symfony\Component\Finder\SplFileInfo;
 use Eminiarts\Aura\Models\Scopes\TeamScope;
+use Illuminate\Support\Facades\File;
+use RuntimeException;
 
 class Aura
 {
@@ -393,5 +395,23 @@ class Aura
         } else {
             echo $export;
         }
+    }
+
+     /**
+     * Determine if Aura's published assets are up-to-date.
+     *
+     * @return bool
+     *
+     * @throws \RuntimeException
+     */
+    public static function assetsAreCurrent()
+    {
+        $publishedPath = public_path('vendor/aura/manifest.json');
+
+        if (! File::exists($publishedPath)) {
+            throw new RuntimeException('Aura CMS assets are not published. Please run: php artisan aura:publish');
+        }
+
+        return File::get($publishedPath) === File::get(__DIR__.'/../resources/dist/manifest.json');
     }
 }

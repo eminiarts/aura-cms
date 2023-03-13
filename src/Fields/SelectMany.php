@@ -64,7 +64,9 @@ class SelectMany extends Field
         // Get $searchable from $request->model
         $searchableFields = app($request->model)->getSearchable();
 
-        return app($request->model)->searchIn($searchableFields, $request->search)->take(5)->get()->map(function ($item) {
+        sleep(2);
+
+        return app($request->model)->searchIn($searchableFields, $request->search)->take(20)->get()->map(function ($item) {
             return [
                 'id' => $item->id,
                 'title' => $item->title(),

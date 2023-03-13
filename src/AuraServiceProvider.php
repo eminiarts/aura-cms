@@ -7,6 +7,7 @@ use Eminiarts\Aura\Commands\CreateAuraPlugin;
 use Eminiarts\Aura\Commands\MakeField;
 use Eminiarts\Aura\Commands\MakePosttype;
 use Eminiarts\Aura\Commands\MakeUser;
+use Eminiarts\Aura\Commands\PublishCommand;
 use Eminiarts\Aura\Facades\Aura;
 use Eminiarts\Aura\Http\Livewire\Attachment\Index as AttachmentIndex;
 use Eminiarts\Aura\Http\Livewire\AuraConfig;
@@ -131,7 +132,14 @@ class AuraServiceProvider extends PackageServiceProvider
             ->hasRoute('web')
             ->hasMigrations(['create_aura_tables', 'create_flows_table'])
             ->runsMigrations()
-            ->hasCommands([AuraCommand::class, MakePosttype::class, MakeUser::class, CreateAuraPlugin::class, MakeField::class])
+            ->hasCommands([
+                AuraCommand::class, 
+                MakePosttype::class, 
+                MakeUser::class, 
+                CreateAuraPlugin::class, 
+                MakeField::class,
+                PublishCommand::class,
+            ])
             ->hasInstallCommand(function (InstallCommand $command) {
                 $command
                 ->startWith(function (InstallCommand $command) {
@@ -218,4 +226,6 @@ class AuraServiceProvider extends PackageServiceProvider
     {
         return config('aura.resources');
     }
+
+    
 }
