@@ -1,21 +1,14 @@
 @php
+    if(optional($field)['api']) {
+        $values = [];
 
-if(optional($field)['api']) {
-    $values = [];
-
-    // selected values
-    $selectedValues = $field['field']->selectedValues($field['posttype'], $this->post['fields'][$field['slug']]);
-} else {
-    // $values = $field['field']->values($field['model']);
-    $values = $field['field']->values($field['posttype']);
-}
-
+        // selected values
+        $selectedValues = $field['field']->selectedValues($field['posttype'], $this->post['fields'][$field['slug']]);
+    } else {
+        // $values = $field['field']->values($field['model']);
+        $values = $field['field']->values($field['posttype']);
+    }
 @endphp
-
-{{-- @dump($values)
-@dump($field)
-@dump($selectedValues) --}}
-@dump($this->post['fields'][$field['slug']])
 
 <x-aura::fields.wrapper :field="$field">
 <div
@@ -35,12 +28,9 @@ if(optional($field)['api']) {
         loaded: false,
 
          init() {
-
-            console.log(this.value, 'initial value');
-            
-                if (this.api) {
-                 this.fetchApi();
-                }
+            if (this.api) {
+                this.fetchApi();
+            }
 
             // Watch this.search and fetch new values, debounce for 500ms
             this.$watch('search', () => {
@@ -48,27 +38,9 @@ if(optional($field)['api']) {
                     this.fetchApi();
                 }
             }, { debounce: 500 });
-
-            this.$watch('value', () => {
-                this.$nextTick(() => {
-                   console.log('value changed', this.value);
-
-                this.value.forEach(value => {
-                    if (!this.selectedItems.find(item => item.id === value)) {
-                        this.selectedItems.push(this.items.find(item => item.id === value));
-                    }
-                });
-
-                console.log(this.selectedItems);
-                });
-
-            });
-
-
         },
 
         fetchApi() {
-            
             fetch('/admin/api/fields/values', {
                 method: 'POST',
                 headers: {
@@ -85,39 +57,22 @@ if(optional($field)['api']) {
             .then(response => response.json())
             .then(data => {
                 this.items = data;
-                this.loaded = true;
-
-                this.$nextTick(() => {
-                    {{-- this.$refs.listbox.init(); --}}
-                    {{-- this.$refs.listbox.dispatchEvent(new Event('alpine:init')); --}}
-                });
-
-                // refresh the alpinejs component
-                
             });
         },
 
         get filteredItems() {
-
-            
-            // merge selectedItems with items
             var items = this.items;
             
             if (this.search) {
-                items = items.filter(item => item.title.toLowerCase().includes(this.search.toLowerCase()));
+                return items.filter(item => item.title.toLowerCase().includes(this.search.toLowerCase()));
             }
             
-            console.log('search here');
-            console.log(this.search, items);
-
-            // if this.items length is 0, return selectedItems
             if (items.length === 0) {
                 return this.selectedItems;
             }
 
             // return this.selectedItems and items and remove duplicates by id
             return [...this.selectedItems, ...items].filter((item, index, self) => self.findIndex(i => i.id === item.id) === index).sort((a, b) => a.id - b.id);
-
             
         },
 
@@ -125,7 +80,7 @@ if(optional($field)['api']) {
             return this.value.includes(item.id);
         },
         isDisabled(item) {
-            return this.value.length >= 5 && !this.isActive(item);
+            return false;
         },
         isSelected(item) {
             return this.value.includes(item.id);
@@ -135,13 +90,33 @@ if(optional($field)['api']) {
             this.showListbox = !this.showListbox;
         },
 
+        toggleItem(item) {
+            if (this.isActive(item)) {
+
+                this.value = this.value.filter(i => i !== item.id);
+
+                this.$nextTick(() => {
+                    this.selectedItems = this.selectedItems.filter(i => i.id !== item.id);
+                });
+
+
+            } else {
+                // if item is not in selectedItems, add it
+                if (!this.selectedItems.find(i => i.id === item.id)) {
+                    this.selectedItems.push(item);
+                }
+
+                this.$nextTick(() => {
+                    this.value = [...this.value, item.id];
+                });
+            }
+        },
+
         selectedItem(id) {
             // only search if this.items is not empty
             if (this.selectedItems.length === 0) {
                 return;
             }
-
-            console.log('selectedItem', id, this.selectedItems, this.selectedItems.find(item => item.id === id).title);
 
             return this.selectedItems.find(item => item.id === id).title;
         },
@@ -209,18 +184,19 @@ if(optional($field)['api']) {
                 <li
                     :value="item.id"
                     :class="{
-                        'bg-primary-500 hover:bg-primary-100': isActive(item.id),
-                        'bg-primary-500 hover:bg-primary-100': ! isActive(item.id),
-                        'opacity-50 cursor-not-allowed': isDisabled(item.id),
+                        'bg-primary-50 hover:bg-primary-100': isActive(item),
+                        'bg-white hover:bg-primary-100': ! isSelected(item),
+                        'opacity-50 cursor-not-allowed': isDisabled(item),
                     }"
-                    class="flex items-center justify-between w-full gap-2 px-4 py-2 text-sm transition-colors cursor-default"
+                    class="flex items-center justify-between w-full gap-2 px-4 py-2 text-sm transition-colors cursor-pointer"
+                    @click="toggleItem(item)"
                 >
                     <div class="flex items-center space-x-2">
                     <div>
                       <span x-text="item.title" class="font-semibold"></span>
                     </div>
 
-                    <span x-show="isSelected(item.id)" class="font-semibold text-primary-600">&check;</span>
+                    <span x-show="isSelected(item)" class="font-semibold text-primary-600">&check;</span>
                     </div>
 
                 </li>
