@@ -128,8 +128,7 @@
         },
 
         focusNext(e) {
-            const listbox = this.$refs.listbox;
-            const items = listbox.querySelectorAll(`[role='option']`);
+            const items = this.$refs.listbox.querySelectorAll(`[role='option']`);
             const active = e.target;
 
             if (!active) {
@@ -148,11 +147,8 @@
         },
 
         focusPrevious(e) {
-            const listbox = this.$refs.listbox;
-            const items = listbox.querySelectorAll(`[role='option']`);
+            const items = this.$refs.listbox.querySelectorAll(`[role='option']`);
             const active = e.target;
-
-            console.log('focusPrevious', items, active)
 
             if (!active) {
                 items[items.length - 1].focus();
@@ -175,6 +171,7 @@
     @keydown.right.stop.prevent="focusNext"
     @keydown.up.stop.prevent="focusPrevious"
     @keydown.left.stop.prevent="focusPrevious"
+    @keydown.escape.stop.prevent="toggleListbox"
 >
 
 
