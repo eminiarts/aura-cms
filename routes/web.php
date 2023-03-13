@@ -80,7 +80,7 @@ Route::domain(config('aura.domain'))
             Route::get('/{slug}/{id}', View::class)->name('post.view');
 
             // if ($loginPage = config('aura.auth.pages.login')) {
-            //     Route::get('/login', $loginPage)->name('auth.login');
+            //     Route::get('/login', $loginPage)->name('login');
             // }
 
             // Route::middleware(config('aura.middleware.auth'))->group(function (): void {

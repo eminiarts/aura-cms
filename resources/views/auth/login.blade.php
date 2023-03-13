@@ -2,7 +2,7 @@
     <!-- Session Status -->
     <x-aura::auth-session-status class="mb-4" :status="session('status')" />
 
-    <form method="POST" action="{{ route('aura.login') }}">
+    <form method="POST" action="">
         @csrf
 
         <div class="mt-6 mb-8 text-center">
@@ -34,7 +34,7 @@
             <!-- Remember Me -->
             <div class="block mt-4">
                 <label for="remember_me" class="inline-flex items-center">
-                    <input id="remember_me" type="checkbox" class="text-indigo-600 border-gray-500/30 rounded shadow-sm focus:ring-indigo-500" name="remember">
+                    <input id="remember_me" type="checkbox" class="text-indigo-600 rounded shadow-sm border-gray-500/30 focus:ring-indigo-500" name="remember">
                     <span class="ml-2 text-sm text-gray-600">{{ __('Remember me') }}</span>
                 </label>
             </div>
