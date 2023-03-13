@@ -26,8 +26,7 @@
         search: null,
         showListbox: false,
         loaded: false,
-
-         init() {
+        init() {
             if (this.api) {
                 this.fetchApi();
             }
@@ -91,7 +90,7 @@
         },
 
         toggleItem(item) {
-            if (this.isActive(item)) {
+            if (this.isSelected(item)) {
 
                 this.value = this.value.filter(i => i !== item.id);
 
@@ -101,13 +100,16 @@
 
 
             } else {
-                // if item is not in selectedItems, add it
-                if (!this.selectedItems.find(i => i.id === item.id)) {
+
+                console.log('toggleItem else', this.selectedItems, item.id);
+                if(this.selectedItems.length === 0) {
+                    this.selectedItems.push(item);
+                } else if (!this.selectedItems.find(i => i.id === item.id)) {
                     this.selectedItems.push(item);
                 }
 
                 this.$nextTick(() => {
-                    this.value = [...this.value, item.id];
+                    this.value.push(item.id);
                 });
             }
         },
@@ -118,10 +120,61 @@
                 return;
             }
 
+            if (!this.selectedItems) {
+                return;
+            }
+
             return this.selectedItems.find(item => item.id === id).title;
         },
 
+        focusNext(e) {
+            const listbox = this.$refs.listbox;
+            const items = listbox.querySelectorAll(`[role='option']`);
+            const active = e.target;
+
+            if (!active) {
+                items[0].focus();
+                return;
+            }
+
+            const index = Array.from(items).indexOf(active);
+
+            if (index === items.length - 1) {
+                items[0].focus();
+                return;
+            }
+
+            items[index + 1].focus();
+        },
+
+        focusPrevious(e) {
+            const listbox = this.$refs.listbox;
+            const items = listbox.querySelectorAll(`[role='option']`);
+            const active = e.target;
+
+            console.log('focusPrevious', items, active)
+
+            if (!active) {
+                items[items.length - 1].focus();
+                return;
+            }
+
+            const index = Array.from(items).indexOf(active);
+
+            if (index === 0) {
+                items[items.length - 1].focus();
+                return;
+            }
+
+            items[index - 1].focus();
+        },
+
     }"
+
+    @keydown.down.stop.prevent="focusNext"
+    @keydown.right.stop.prevent="focusNext"
+    @keydown.up.stop.prevent="focusPrevious"
+    @keydown.left.stop.prevent="focusPrevious"
 >
 
 
@@ -167,6 +220,7 @@
 
         <template x-if="showListbox">
         <ul
+            x-ref="listbox"
             x-transition.origin.top
             x-cloak
             class="absolute left-0 z-10 w-full mt-2 overflow-y-auto origin-top bg-white border border-gray-500/30 divide-y divide-gray-100 rounded-md shadow-md outline-none dark:border-gray-700 dark:bg-gray-900 dark:divide-gray-800 max-h-64"
@@ -189,7 +243,11 @@
                         'opacity-50 cursor-not-allowed': isDisabled(item),
                     }"
                     class="flex items-center justify-between w-full gap-2 px-4 py-2 text-sm transition-colors cursor-pointer"
+                    tabindex="0"
+                    role="option"
                     @click="toggleItem(item)"
+                    @keydown.enter.stop.prevent="toggleItem(item)"
+                    @keydown.space.stop.prevent="toggleItem(item)"
                 >
                     <div class="flex items-center space-x-2">
                     <div>
