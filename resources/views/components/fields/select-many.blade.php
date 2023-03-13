@@ -1,17 +1,21 @@
 @php
 
 if(optional($field)['api']) {
- $values = [];
+    $values = [];
+
+    // selected values
+    $selectedValues = $field['field']->selectedValues($field['posttype'], $this->post['fields'][$field['slug']]);
 } else {
     // $values = $field['field']->values($field['model']);
     $values = $field['field']->values($field['posttype']);
 }
 
-
 @endphp
 
 @dump($values)
-{{-- @dump($this->post) --}}
+@dump($field)
+@dump($selectedValues)
+@dump($this->post['fields'][$field['slug']])
 
 <x-aura::fields.wrapper :field="$field">
 <div
@@ -20,6 +24,7 @@ if(optional($field)['api']) {
     x-data="{
         value: $wire.entangle('post.fields.{{ $field['slug'] }}').defer,
         items: {{ Js::from($values) }},
+        selectedItems: {{ Js::from($selectedValues) }},
         api: {{ optional($field)['api'] ? 'true' : 'false' }},
         model: {{ Js::from($field['posttype']) }},
         field: {{ Js::from($field['type']) }},
@@ -27,17 +32,25 @@ if(optional($field)['api']) {
         csrf: document.querySelector('meta[name=\'csrf-token\']').getAttribute('content'),
         search: null,
 
-        get selectedItems() {
+        {{-- get selectedItems() {
+            // if seletecItems is set, return it
+            if (this.initialItems.length > 0) {
+                return this.initialItems;
+            }
+
             if (!this.value || this.value.length === 0) {
                 return [];
             }
+
             return this.items.filter(item => this.value.includes(item.value));
-        },
+        }, --}}
 
          init() {
+
+            console.log(this.value, 'initial value');
             // Get Values via API Fetch Call to /api/fields/{field}/values and pass this.model and this.slug as params
             if (this.api) {
-                this.fetchApi();
+               this.fetchApi();
             }
 
             // Watch this.search and fetch new values, debounce for 500ms
@@ -46,6 +59,21 @@ if(optional($field)['api']) {
                     this.fetchApi();
                 }
             }, { debounce: 500 });
+
+            this.$watch('value', () => {
+                this.$nextTick(() => {
+                   console.log('value changed', this.value);
+
+                this.value.forEach(value => {
+                    if (!this.selectedItems.find(item => item.id === value)) {
+                        this.selectedItems.push(this.items.find(item => item.id === value));
+                    }
+                });
+
+                console.log(this.selectedItems);
+                });
+
+            });
 
 
         },
@@ -72,33 +100,49 @@ if(optional($field)['api']) {
 
         get filteredItems() {
 
-          console.log('value', this.value);
-
+            
+            // merge selectedItems with items
+            var items = this.items;
+            
             if (this.search) {
-                return [...new Set([...this.items.filter(item => item.label.toLowerCase().includes(this.search.toLowerCase())), ...this.selectedItems])];
+                items = items.filter(item => item.title.toLowerCase().includes(this.search.toLowerCase()));
+            }
+            
+            console.log('search here');
+            console.log(this.search, items);
+
+            // if this.items length is 0, return selectedItems
+            if (items.length === 0) {
+                return this.selectedItems;
             }
 
-            // join this.selectedItems and this.items and remove duplicates
-            return [...new Set([...this.items, ...this.selectedItems])];
+            // return this.selectedItems and items and remove duplicates by id
+            return [...this.selectedItems, ...items].filter((item, index, self) => self.findIndex(i => i.id === item.id) === index);
         },
 
-        {{-- findItem(value) {
+        {{-- selectedItem(value) {
             return this.items.find(item => item.value === value).label;
         }, --}}
-        findItem(id) {
+        selectedItem(id) {
             // only search if this.items is not empty
-            if (this.items.length === 0) {
+            if (this.selectedItems.length === 0) {
                 return;
             }
-            return this.items.find(item => item.id === id).title;
+
+            console.log('selectedItem', id, this.selectedItems, this.selectedItems.find(item => item.id === id).title);
+
+            return this.selectedItems.find(item => item.id === id).title;
         },
 
     }"
 >
     <div
+
         x-listbox
         multiple
         x-model="value"
+        by="id"
+        :default-value="value"
         class="relative w-full p-0 bg-transparent border-0 aura-input"
     >
         <label x-listbox:label class="sr-only">Select Item</label>
@@ -113,7 +157,7 @@ if(optional($field)['api']) {
                         <div class="inline-flex items-center gap-1 px-2 py-0.5 mr-2 mb-2 rounded-full text-xs font-medium leading-4 bg-primary-100 text-primary-800">
                             <span
                                 class=""
-                                x-text="findItem(item)"
+                                x-text="selectedItem(item)"
                             ></span>
 
                             <!-- Small x svg -->
@@ -158,24 +202,25 @@ if(optional($field)['api']) {
 
             </div>
           </li>
-            <template x-for="item in filteredItems" :key="item.value">
+            <template x-for="item in filteredItems" :key="item.id">
                 <li
                     x-listbox:option
-                    :value="item.value"
+                    :value="item.id"
                     :class="{
-                        'bg-primary-50 text-gray-900': $listboxOption.isActive,
-                        'text-gray-600': ! $listboxOption.isActive,
+                        'bg-primary-500/10 text-gray-900': $listboxOption.isActive,
+                        'text-gray-700': ! $listboxOption.isActive,
                         'opacity-50 cursor-not-allowed': $listboxOption.isDisabled,
                     }"
-                    class="flex items-center justify-between w-full gap-2 px-4 py-2 text-sm transition-colors cursor-pointer"
+                    class="flex items-center justify-between w-full gap-2 px-4 py-2 text-sm transition-colors cursor-default"
                 >
                     <div class="flex items-center space-x-2">
                     <div>
-                      <span x-text="item.label" class="font-semibold"></span>
+                      <span x-text="item.title" class="font-semibold"></span>
                     </div>
 
-                    <span x-show="$listboxOption.isSelected" class="font-semibold text-cyan-600">&check;</span>
+                    <span x-show="$listboxOption.isSelected" class="font-semibold text-primary-600">&check;</span>
                     </div>
+
                 </li>
             </template>
         </ul>
