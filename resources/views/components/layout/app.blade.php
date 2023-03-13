@@ -94,6 +94,12 @@
 
             <div class="flex flex-col flex-grow w-screen h-screen aura-content">
 
+                @if (! app('aura')::assetsAreCurrent())
+                    <div class="bg-red-100 text-red-800 p-4 text-xs">
+                        The published assets are not up-to-date with the installed version. To update, run:<br/><code class="font-bold">php artisan aura:publish</code>
+                    </div>
+                @endif
+
 
                 <div class="flex-1 overflow-y-auto">
                     <div class="p-5 md:p-8">
