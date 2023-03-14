@@ -89,6 +89,10 @@ class SelectMany extends Field
     
     public function selectedValues($model, $values)
     {
+        if (! $values) {
+            return;
+        }
+
         return app($model)->find($values)->map(function ($item) {
             return [
                 'id' => $item->id,
