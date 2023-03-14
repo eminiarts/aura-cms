@@ -21,6 +21,7 @@
         model: {{ Js::from($field['posttype']) }},
         field: {{ Js::from($field['type']) }},
         slug: '{{ $field['slug'] }}',
+        searchable: {{ Js::from($field['searchable'] ?? true) }},
         csrf: document.querySelector('meta[name=\'csrf-token\']').getAttribute('content'),
         search: null,
         showListbox: false,
@@ -28,6 +29,8 @@
         init() {
             if (this.api) {
                 this.fetchApi();
+            } else {
+                this.selectedItems = this.items.filter(item => this.value.includes(item.id));
             }
 
             // Watch this.search and fetch new values, debounce for 500ms
@@ -95,10 +98,7 @@
                 this.$nextTick(() => {
                     this.selectedItems = this.selectedItems.filter(i => i.id !== item.id);
                 });
-
-
             } else {
-
                 console.log('toggleItem else', this.selectedItems, item.id);
                 if(this.selectedItems.length === 0) {
                     this.selectedItems.push(item);
@@ -215,6 +215,7 @@
             x-cloak
             class="absolute left-0 z-10 w-full mt-2 overflow-y-auto origin-top bg-white border border-gray-500/30 divide-y divide-gray-100 rounded-md shadow-md outline-none dark:border-gray-700 dark:bg-gray-900 dark:divide-gray-800 max-h-64"
         >
+        <template x-if="searchable">
      <li>
             <div>
               <input
@@ -224,6 +225,7 @@
                 placeholder="Search...">
             </div>
           </li> 
+        </template>
 
           <template x-if="loading">
             <div role="status" class="w-full mx-auto">

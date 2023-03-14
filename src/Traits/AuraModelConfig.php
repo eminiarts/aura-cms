@@ -93,6 +93,11 @@ trait AuraModelConfig
     //     return $model;
     // }
 
+    public function title()
+    {
+        return $this->title." (#{$this->id})";
+    }
+
     public function display($key)
     {
         if (array_key_exists($key, $this->fields->toArray())) {
