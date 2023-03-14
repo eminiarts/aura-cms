@@ -55,7 +55,6 @@ Route::domain(config('aura.domain'))
             Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
             Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
-
             Route::get('/team-settings', TeamSettings::class)->name('team.settings');
             Route::get('/aura-config', AuraConfig::class)->name('config');
 
@@ -72,29 +71,10 @@ Route::domain(config('aura.domain'))
 
             Route::get('/Attachment', AttachmentIndex::class)->name('attachment.index');
 
-            ray(' ------ aura routes');
-
             Route::get('/{slug}', Index::class)->name('post.index');
             Route::get('/{slug}/create', Create::class)->name('post.create');
             Route::get('/{slug}/{id}/edit', Edit::class)->name('post.edit');
             Route::get('/{slug}/{id}', View::class)->name('post.view');
-
-            // if ($loginPage = config('aura.auth.pages.login')) {
-            //     Route::get('/login', $loginPage)->name('login');
-            // }
-
-            // Route::middleware(config('aura.middleware.auth'))->group(function (): void {
-            //     Route::name('pages.')->group(function (): void {
-            //         foreach (Filament::getPages() as $page) {
-            //             Route::group([], $page::getRoutes());
-            //         }
-            //     });
-
-            //     Route::name('resources.')->group(function (): void {
-            //         foreach (Filament::getResources() as $resource) {
-            //             Route::group([], $resource::getRoutes());
-            //         }
-            //     });
-            // });
+           
         });
     });

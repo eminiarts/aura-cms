@@ -39,8 +39,6 @@ class Create extends Component
 
         $this->model = Aura::findResourceBySlug($slug);
 
-        // dd('hier', $this->name());
-
         // Authorize
         $this->authorize('create', $this->model);
 
@@ -65,8 +63,6 @@ class Create extends Component
         if ($for == 'User') {
             $this->post['fields']['user_id'] = (int) $id;
         }
-
-        // dd($this->post);
     }
 
     public function render()
@@ -84,16 +80,18 @@ class Create extends Component
 
     public function save()
     {
-        // dd($this->rules());
         $this->validate();
 
-        $this->model->create($this->post);
+        $model = $this->model->create($this->post);
+
 
         $this->notify('Successfully created.');
 
         if ($this->inModal) {
             $this->emit('closeModal');
             $this->emit('refreshTable');
+        } else {
+            return redirect()->route('aura.post.edit', [$this->slug, $model->id]);
         }
     }
 

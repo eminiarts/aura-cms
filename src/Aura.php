@@ -406,6 +406,10 @@ class Aura
      */
     public static function assetsAreCurrent()
     {
+        if (app()->environment('testing')) {
+            return true;
+        }
+        
         $publishedPath = public_path('vendor/aura/manifest.json');
 
         if (! File::exists($publishedPath)) {
