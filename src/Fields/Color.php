@@ -6,7 +6,7 @@ class Color extends Field
 {
     public $component = 'aura::fields.color';
 
-    // public $view = 'components.fields.color';
+    public $view = 'aura::fields.view-value';
 
     public function getFields()
     {
