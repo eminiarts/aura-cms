@@ -14,7 +14,7 @@ class SelectMany extends Field
             return;
         }
 
-        $items = app($field['posttype'])->find($value);
+        $items = app($field['resource'])->find($value);
 
         if (! $items) {
             return;
@@ -45,11 +45,11 @@ class SelectMany extends Field
                 'style' => [],
             ],
             [
-                'label' => 'Posttype',
-                'name' => 'Posttype',
+                'label' => 'Resource',
+                'name' => 'Resource',
                 'type' => 'Eminiarts\\Aura\\Fields\\Text',
                 'validation' => '',
-                'slug' => 'posttype',
+                'slug' => 'resource',
             ],
         ]);
     }
@@ -91,6 +91,11 @@ class SelectMany extends Field
     {
         if (! $values) {
             return;
+        }
+
+        // if $values is a string, convert it to an array
+        if (!is_array($values)) {
+            $values = [ $values];
         }
 
         return app($model)->find($values)->map(function ($item) {

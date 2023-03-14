@@ -1,10 +1,10 @@
 @php
     if(optional($field)['api']) {
         $values = [];
-        $selectedValues = $field['field']->selectedValues($field['posttype'], $this->post['fields'][$field['slug']]);
+        $selectedValues = $field['field']->selectedValues($field['resource'], $this->post['fields'][$field['slug']]);
     } else {
         // $values = $field['field']->values($field['model']);
-        $values = $field['field']->values($field['posttype']);
+        $values = $field['field']->values($field['resource']);
         $selectedValues = [];
     }
 @endphp
@@ -18,8 +18,9 @@
         items: {{ Js::from($values) }},
         selectedItems: {{ Js::from($selectedValues) }},
         api: {{ optional($field)['api'] ? 'true' : 'false' }},
-        model: {{ Js::from($field['posttype']) }},
+        model: {{ Js::from($field['resource']) }},
         field: {{ Js::from($field['type']) }},
+        multiple: {{ Js::from(optional($field)['multiple'] ?? true) }},
         slug: '{{ $field['slug'] }}',
         searchable: {{ Js::from($field['searchable'] ?? true) }},
         csrf: document.querySelector('meta[name=\'csrf-token\']').getAttribute('content'),
@@ -30,7 +31,11 @@
             if (this.api) {
                 this.fetchApi();
             } else {
-                this.selectedItems = this.items.filter(item => this.value.includes(item.id));
+                if (!this.multiple) {
+                    this.selectedItems = this.items.filter(item => item.id === this.value);
+                } else {
+                    this.selectedItems = this.items.filter(item => this.value.includes(item.id));
+                }
             }
 
             // Watch this.search and fetch new values, debounce for 500ms
@@ -78,12 +83,20 @@
             
         },
         isActive(item) {
+            if (!this.multiple) {
+                return this.value === item.id;
+            }
+
             return this.value.includes(item.id);
         },
         isDisabled(item) {
             return false;
         },
         isSelected(item) {
+            if (!this.multiple) {
+                return this.value === item.id;
+            }
+
             return this.value.includes(item.id);
         },
 
@@ -91,6 +104,15 @@
             this.showListbox = !this.showListbox;
         },
         toggleItem(item) {
+
+            // singular
+            if (!this.multiple) {
+                this.value = item.id;
+                this.selectedItems = [item];
+                this.showListbox = false;
+                return;
+            }
+
             if (this.isSelected(item)) {
 
                 this.value = this.value.filter(i => i !== item.id);
@@ -175,26 +197,40 @@
             class="relative flex items-center justify-between w-full px-3 py-2 border border-gray-500/30 rounded-lg shadow-xs appearance-none focus:border-primary-300 focus:outline-none ring-gray-900/10 focus:ring focus:ring-primary-300 focus:ring-opacity-50 dark:focus:ring-primary-500 dark:focus:ring-opacity-50 dark:bg-gray-900 dark:border-gray-700"
             @click="toggleListbox"
         >
-            <template x-if="value && value.length > 0">
-                <div class="flex flex-wrap">
-                    <template x-for="item in value" :key="item">
-                        <div class="inline-flex items-center gap-1 px-2 py-0.5 mr-2 mb-2 rounded-full text-xs font-medium leading-4 bg-primary-100 text-primary-800">
-                            <span
-                                class=""
-                                x-text="selectedItem(item)"
-                            ></span>
 
-                            <!-- Small x svg -->
-                            <svg
-                                @click.stop.prevent="value = value.filter(i => i !== item)""
-                                xmlns="http://www.w3.org/2000/svg"
-                                viewBox="0 0 20 20"
-                                fill="currentColor"
-                                class="w-4 h-4 -mr-1 cursor-pointer text-primary-300">
-                                <path fill-rule="evenodd" d="M5.293 5.293a1 1 0 011.414 0L10 8.586l3.293-3.293a1 1 0 111.414 1.414L11.414 10l3.293 3.293a1 1 0 01-1.414 1.414L10 11.414l-3.293 3.293a1 1 0 01-1.414-1.414L8.586 10 5.293 6.707a1 1 0 010-1.414z" clip-rule="evenodd" />
-                            </svg>
-                        </div>
+        <template x-if="value && !multiple">
+                        SINGULAR
+                        <span
+                            class=""
+                            x-text="selectedItem(value)"
+                        ></span>    
                     </template>
+
+            <template x-if="value && value.length > 0 && multiple">
+                <div class="flex flex-wrap">
+
+                    
+
+                        <template x-for="item in value" :key="item">
+                                    <div class="inline-flex items-center gap-1 px-2 py-0.5 mr-2 mb-2 rounded-full text-xs font-medium leading-4 bg-primary-100 text-primary-800">
+                                        <span
+                                            class=""
+                                            x-text="selectedItem(item)"
+                                        ></span>
+
+                                        <!-- Small x svg -->
+                                        <svg
+                                            @click.stop.prevent="value = value.filter(i => i !== item)""
+                                            xmlns="http://www.w3.org/2000/svg"
+                                            viewBox="0 0 20 20"
+                                            fill="currentColor"
+                                            class="w-4 h-4 -mr-1 cursor-pointer text-primary-300">
+                                            <path fill-rule="evenodd" d="M5.293 5.293a1 1 0 011.414 0L10 8.586l3.293-3.293a1 1 0 111.414 1.414L11.414 10l3.293 3.293a1 1 0 01-1.414 1.414L10 11.414l-3.293 3.293a1 1 0 01-1.414-1.414L8.586 10 5.293 6.707a1 1 0 010-1.414z" clip-rule="evenodd" />
+                                        </svg>
+                                    </div>
+                                </template>
+
+           
                 </div>
             </template>
 
