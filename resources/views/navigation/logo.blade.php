@@ -1,22 +1,22 @@
 @if ($settings)
    @if ($sidebarType == 'primary')
         @if (isset($settings['app-logo-darkmode']))
-            <img src="{{ asset('storage/' . Aura::getPath($settings['app-logo-darkmode'][0]) ) }}" alt="{{ $settings['title'] ?? '' }}" class="h-6">
+            <img src="{{ asset('storage/' . app('aura')::getPath($settings['app-logo-darkmode'][0]) ) }}" alt="{{ $settings['title'] ?? '' }}" class="h-6">
         @elseif (isset($settings['app-logo']))
-            <img src="{{ asset('storage/' . Aura::getPath($settings['app-logo'][0]) ) }}" alt="{{ optional($settings)['title'] }}" class="h-6">
+            <img src="{{ asset('storage/' . app('aura')::getPath($settings['app-logo'][0]) ) }}" alt="{{ optional($settings)['title'] }}" class="h-6">
         @endif
     @elseif ($sidebarType == 'light')
         @if (optional($settings['app-logo-darkmode'])[0] && optional($settings['app-logo'])[0])
-            <img class="hidden dark:block" src="{{ asset('storage/' . Aura::getPath($settings['app-logo-darkmode'][0]) ) }}" alt="{{ $settings['title'] ?? '' }}" class="h-6">
-            <img class="block dark:hidden" src="{{ asset('storage/' . Aura::getPath($settings['app-logo-darkmode'][0]) ) }}" alt="{{ $settings['title'] ?? '' }}" class="h-6">
+            <img class="hidden dark:block" src="{{ asset('storage/' . app('aura')::getPath($settings['app-logo-darkmode'][0]) ) }}" alt="{{ $settings['title'] ?? '' }}" class="h-6">
+            <img class="block dark:hidden" src="{{ asset('storage/' . app('aura')::getPath($settings['app-logo-darkmode'][0]) ) }}" alt="{{ $settings['title'] ?? '' }}" class="h-6">
         @elseif (optional($settings['app-logo']))
-            <img src="{{ asset('storage/' . Aura::getPath($settings['app-logo'][0]) ) }}" alt="{{ $settings['title'] ?? '' }}" class="h-6">
+            <img src="{{ asset('storage/' . app('aura')::getPath($settings['app-logo'][0]) ) }}" alt="{{ $settings['title'] ?? '' }}" class="h-6">
         @endif
     @elseif ($sidebarType == 'dark')
         @if (isset($settings['app-logo-darkmode']))
-            <img src="{{ asset('storage/' . Aura::getPath($settings['app-logo-darkmode'][0]) ) }}" alt="{{ $settings['title'] ?? '' }}" class="h-6">
+            <img src="{{ asset('storage/' . app('aura')::getPath($settings['app-logo-darkmode'][0]) ) }}" alt="{{ $settings['title'] ?? '' }}" class="h-6">
         @elseif (optional($settings['app-logo'])[0])
-            <img src="{{ asset('storage/' . Aura::getPath($settings['app-logo'][0]) ) }}" alt="{{ $settings['title'] ?? '' }}" class="h-6">
+            <img src="{{ asset('storage/' . app('aura')::getPath($settings['app-logo'][0]) ) }}" alt="{{ $settings['title'] ?? '' }}" class="h-6">
         @endif
     @endif
 

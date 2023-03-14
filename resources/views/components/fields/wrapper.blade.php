@@ -6,13 +6,18 @@
 
 @php
     $label = optional($field)['name'];
+
+    // if the field is required, add a * to the label
+    if (str(optional($field)['validation'])->contains('required')) {
+        $label .= '*';
+    }
+
     $help = optional($field)['instructions'];
     $model = 'post.fields.' . $field['slug'];
 
-    $slug = Str::slug(optional($field)['slug'])
+    $slug = Str::slug(optional($field)['slug']);
 @endphp
 
-{{-- @dump($wrapperClass) --}}
 <style>
   #post-field-{{ $slug }}-wrapper {
     width: {{ optional(optional($field)['style'])['width'] ?? '100' }}%;
