@@ -76,13 +76,7 @@
                     </div>
 
                     
-                    <label for="file-upload">
-                         <p class="mb-2 text-sm text-gray-500 dark:text-gray-400"><span class="font-semibold">Click to
-                                upload</span> or drag and drop</p>
                     
-                    <input type="file" id="file-upload" multiple @change="handleFileSelect" class="hidden"
-                        wire:model.defer="media" />
-                        </label>
             </div>
 
             <div class="bg-white dark:bg-gray-900 h-[4px] w-full mt-0">

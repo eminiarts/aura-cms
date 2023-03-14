@@ -26,7 +26,7 @@
     }">
 
     {{-- if a view exists: aura.$model->pluralName().header, load it  --}}
-    @if(View::exists($view = 'aura.' . $model->type . '.header'))
+    @if(View::exists($view = 'aura.' . $model->getType() . '.header'))
         @include($view)
     @elseif(View::exists('aura::' . $view))
         @include('aura::' . $view)
