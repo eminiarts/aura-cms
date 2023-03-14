@@ -142,6 +142,7 @@ class User extends UserModel
                 'on_index' => false,
                 'on_forms' => true,
                 'on_view' => true,
+                'searchable' => true,
             ],
             [
                 'name' => 'Password',
