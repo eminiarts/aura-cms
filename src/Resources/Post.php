@@ -225,7 +225,7 @@ class Post extends ModelsPost
                  'name' => 'Team',
                  'slug' => 'team_id',
                  'type' => 'Eminiarts\\Aura\\Fields\\BelongsTo',
-                 'model' => 'Eminiarts\\Aura\\Resources\\Team',
+                 'resource' => 'Eminiarts\\Aura\\Resources\\Team',
                  'validation' => '',
                  'conditional_logic' => [
                      [
@@ -244,7 +244,7 @@ class Post extends ModelsPost
                  'name' => 'User',
                  'slug' => 'user_id',
                  'type' => 'Eminiarts\\Aura\\Fields\\BelongsTo',
-                 'model' => 'Eminiarts\\Aura\\Resources\\User',
+                 'resource' => 'Eminiarts\\Aura\\Resources\\User',
                  'validation' => '',
                  'conditional_logic' => [],
                  'has_conditional_logic' => false,
@@ -268,7 +268,7 @@ class Post extends ModelsPost
                  'name' => 'Attachments',
                  'slug' => 'attachments',
                  'type' => 'Eminiarts\\Aura\\Fields\\HasMany',
-                 'posttype' => 'Eminiarts\\Aura\\Resources\\Attachment',
+                 'resource' => 'Eminiarts\\Aura\\Resources\\Attachment',
                  'validation' => '',
                  'conditional_logic' => [],
                  'has_conditional_logic' => false,

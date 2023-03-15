@@ -103,7 +103,7 @@ class Team extends Post
                 'name' => 'Users',
                 'slug' => 'users',
                 'type' => 'Eminiarts\\Aura\\Fields\\HasMany',
-                'posttype' => 'Eminiarts\\Aura\\Resources\\User',
+                'resource' => 'Eminiarts\\Aura\\Resources\\User',
                 'validation' => '',
                 'conditional_logic' => [],
                 'has_conditional_logic' => false,

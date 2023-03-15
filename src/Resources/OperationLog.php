@@ -69,11 +69,11 @@ class OperationLog extends Post
             ],
             [
                 'name' => 'Flow Log',
-                'type' => 'Eminiarts\\Aura\\Fields\\Text',
+                'type' => 'Eminiarts\\Aura\\Fields\\BelongsTo',
                 'validation' => '',
                 'on_index' => true,
                 'slug' => 'flow_log_id',
-                'model' => 'Eminiarts\\Aura\\Resources\\Flow',
+                'resource' => 'Eminiarts\\Aura\\Resources\\Flow',
                 'style' => [
                     'width' => '100',
                 ],

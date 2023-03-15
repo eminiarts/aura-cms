@@ -190,7 +190,7 @@ class Flow extends Post
                 'name' => 'FlowLogs',
                 'slug' => 'flowLogs',
                 'type' => 'Eminiarts\\Aura\\Fields\\HasMany',
-                'posttype' => 'Eminiarts\\Aura\\Resources\\FlowLog',
+                'resource' => 'Eminiarts\\Aura\\Resources\\FlowLog',
                 'validation' => '',
                 'conditional_logic' => [],
                 'has_conditional_logic' => false,

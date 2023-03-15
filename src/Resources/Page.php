@@ -176,13 +176,13 @@ class Page extends Post
                 ],
             ],
             [
-                'name' => 'SelectMany',
-                'type' => 'Eminiarts\\Aura\\Fields\\SelectMany',
+                'name' => 'AdvancedSelect',
+                'type' => 'Eminiarts\\Aura\\Fields\\AdvancedSelect',
                 'validation' => '',
                 'conditional_logic' => [
                 ],
                 'slug' => 'select-many',
-                'instructions' => 'SelectMany',
+                'instructions' => 'AdvancedSelect',
                 'resource' => 'Eminiarts\\Aura\\Resources\\Invoice',
             ],
             [

@@ -16,7 +16,7 @@ class SelectRelation extends Field
 
         $values = json_decode($value, true);
 
-        return app($field['posttype'])->find($values)->pluck('name')->implode(',');
+        return app($field['resource'])->find($values)->pluck('name')->implode(',');
     }
 
     public function get($field, $value)

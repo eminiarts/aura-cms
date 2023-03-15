@@ -24,11 +24,11 @@ class Permissions extends Field
                 'style' => [],
             ],
             [
-                'label' => 'Posttype',
-                'name' => 'Posttype',
+                'label' => 'Resource',
+                'name' => 'Resource',
                 'type' => 'Eminiarts\\Aura\\Fields\\Text',
                 'validation' => '',
-                'slug' => 'posttype',
+                'slug' => 'resource',
             ],
         ]);
     }

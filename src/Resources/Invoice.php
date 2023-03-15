@@ -66,7 +66,7 @@ class Invoice extends Post
                 'name' => 'User',
                 'slug' => 'user_id',
                 'type' => 'Eminiarts\\Aura\\Fields\\BelongsTo',
-                'model' => 'Eminiarts\\Aura\\Resources\\User',
+                'resource' => 'Eminiarts\\Aura\\Resources\\User',
                 'validation' => '',
                 'conditional_logic' => [],
                 'has_conditional_logic' => false,
