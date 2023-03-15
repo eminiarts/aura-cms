@@ -20,8 +20,7 @@
     }
 
     .shadow-item {
-        opacity: 0.2;
-      box-shadow: 0 0 10px 0 rgba(0, 0, 0, 0.1);
+        opacity: 0.4;
     }
   </style>
 
@@ -48,55 +47,12 @@
         dragIndex: null,
         dragX: 0,
 
-        initSortable() {
-            console.log('initSortable', this.$refs.selectedItemsContainer);
+        boundStopDragging: null,
+        boundMoveItem: null,
 
-            if (this.sortable) {
-                // Destroy the existing instance to avoid memory leaks
-                this.sortable.destroy();
-            }
-
-            this.sortable = new Sortable(this.$refs.selectedItemsContainer, {
-                draggable: '.draggable-item',
-                animation: 150,
-                mirror: {
-                    constrainDimensions: true,
-                }
-            });
-
-            // on drag start add x-ignore attribute to the selectedItemsContainer
-
-            this.sortable.on('drag:start', () => {
-                this.$refs.selectedItemsContainer.setAttribute('x-ignore', true);
-            });
-
-            // on drag stop remove the x-ignore attribute from the selectedItemsContainer
-
-            this.sortable.on('drag:stop', () => {
-                this.$refs.selectedItemsContainer.removeAttribute('x-ignore');
-            });
-
-            {{-- this.sortable.on('mirror:created', ({ mirror }) => {
-                console.log('mirror:created', mirror);
-                const originalElement = this.sortable.originalSource;
-                mirror.textContent = originalElement.textContent;
-                const dataId = originalElement.getAttribute('data-id');
-        mirror.setAttribute('data-id', dataId);
-            });
-
-            this.sortable.on('drag:start', () => {
-        const originalElement = this.sortable.originalSource;
-        const item = originalElement.getAttribute('data-id');
-    }); --}}
-
-
-            this.sortable.on('sortable:stop', () => {
-                this.updateSelectedItemsOrder();
-            });
-        },
         updateSelectedItemsOrder() {
-            console.log('updateSelectedItemsOrder', this.value, this.$refs.selectedItemsContainer.querySelectorAll('.draggable-item'));
-            const newOrder = Array.from(this.$refs.selectedItemsContainer.querySelectorAll('.draggable-item')).map(item => parseInt(item.getAttribute('data-id')));
+            console.log('updateSelectedItemsOrder', this.value, this.$refs.selectedItemsContainer.querySelectorAll('.draggable-selectmany-item'));
+            const newOrder = Array.from(this.$refs.selectedItemsContainer.querySelectorAll('.draggable-selectmany-item')).map(item => parseInt(item.getAttribute('data-id')));
 
             const validIds = newOrder.filter(item => !isNaN(item));
 
@@ -107,7 +63,11 @@
                 this.showListbox = false;
             });
         },
+
         init() {
+
+            this.boundStopDragging = this.stopDragging.bind(this);
+            this.boundMoveItem = this.moveItem.bind(this);
 
             if (this.api) {
                 this.fetchApi();
@@ -121,10 +81,6 @@
                     this.selectedItems = this.items.filter(item => this.value.includes(item.id));
                 }
             }
-
-            this.$nextTick(() => {
-                // this.initSortable();
-            });
 
             // Watch this.search and fetch new values, debounce for 500ms
             this.$watch('search', () => {
@@ -227,6 +183,7 @@
                 });
             }
         },
+
         selectedItem(id) {
             console.log('selectedItem', id, this.selectedItems);
             // only search if this.items is not empty
@@ -240,6 +197,7 @@
 
             return this.selectedItems.find(item => item.id === id).title;
         },
+
         focusNext(e) {
             const items = this.$refs.listbox.querySelectorAll(`[role='option']`);
             const active = e.target;
@@ -277,37 +235,49 @@
             items[index - 1].focus();
         },
 
+
         startDragging(index, event) {
-          this.dragging = true;
-          this.dragIndex = index;
-          this.$refs.draggingItem.style.left = event.clientX + 'px';
-          this.$refs.draggingItem.style.top = event.target.offsetTop + 'px';
+            console.log('startDragging', index, event);
 
-            window.addEventListener('mouseup', this.stopDragging.bind(this));
+            this.dragging = true;
+            this.dragIndex = index;
 
-            window.addEventListener('mousemove', this.moveItem.bind(this));
+            const containerRect = this.$refs.selectedItemsContainer.getBoundingClientRect();
+            console.log('containerRect', containerRect);
+            this.$refs.draggingItem.style.left = event.clientX - containerRect.left + 'px';
+            this.$refs.draggingItem.style.top = event.target.offsetTop + 'px';
+
+            window.addEventListener('mouseup', this.boundStopDragging);
+            window.addEventListener('mousemove', this.boundMoveItem);
 
         },
 
         moveItem(event) {
-          if (!this.dragging) return;
-          this.dragX = event.clientX;
-          this.$refs.draggingItem.style.left = event.clientX + 'px';
-          const newIndex = this.findNewIndex();
-          if (newIndex !== this.dragIndex) {
-            this.items.splice(newIndex, 0, this.items.splice(this.dragIndex, 1)[0]);
-            this.dragIndex = newIndex;
-          }
+            console.log('moveItem', event);
+            if (!this.dragging) return;
+            const containerRect = this.$refs.selectedItemsContainer.getBoundingClientRect();
+
+            // Clamp the dragged item's position
+            const minX = containerRect.left;
+            const maxX = containerRect.right - this.$refs.draggingItem.offsetWidth;
+            const clampedX = Math.min(Math.max(event.clientX, minX), maxX);
+
+            this.dragX = clampedX - containerRect.left;
+            this.$refs.draggingItem.style.left = this.dragX + 'px';
+
+            const newIndex = this.findNewIndex();
+            if (newIndex !== this.dragIndex) {
+                this.value.splice(newIndex, 0, this.value.splice(this.dragIndex, 1)[0]);
+                this.dragIndex = newIndex;
+            }
         },
 
         stopDragging() {
-            console.log('stopDragging');
-            window.removeEventListener('mouseup', this.stopDragging.bind(this));
-
-            window.removeEventListener('mousemove', this.moveItem.bind(this));
-
-          this.dragging = false;
-          this.dragIndex = null;
+            window.removeEventListener('mouseup', this.boundStopDragging);
+            window.removeEventListener('mousemove', this.boundMoveItem);
+            this.dragging = false;
+            this.dragIndex = null;
+            this.updateSelectedItemsOrder();
         },
 
         findNewIndex() {
@@ -335,58 +305,58 @@
             @click="toggleListbox"
         >
 
-        <template x-if="value && !multiple">
-                        SINGULAR
-                        <span
-                            class=""
-                            x-text="selectedItem(value)"
-                        ></span>
-                    </template>
-
-            <template x-if="value && value.length > 0 && multiple">
-                <div class="flex items-start">
-        <template x-for="(item, index) in value" :key="item">
-
-            <div
-                class="inline-flex items-center gap-1 px-2 py-0.5 mr-2 mb-2 rounded-full text-xs font-medium leading-4 bg-primary-100 text-primary-800 draggable-selectmany-item"
-                :data-id="item"
-                @mousedown.prevent="startDragging(index, $event)"
-                @mouseup.prevent="stopDragging()"
-                :class="{ 'shadow-item': index == dragIndex }"
-            >
+            <template x-if="value && !multiple">
+                SINGULAR
                 <span
                     class=""
-                    x-text="item"
+                    x-text="selectedItem(value)"
                 ></span>
+            </template>
 
-                <!-- Small x svg -->
-                <svg
-                    @click.stop.prevent="value = value.filter(i => i !== item)""
-                    xmlns="http://www.w3.org/2000/svg"
-                    viewBox="0 0 20 20"
-                    fill="currentColor"
-                    class="w-4 h-4 -mr-1 cursor-pointer text-primary-300">
-                    <path fill-rule="evenodd" d="M5.293 5.293a1 1 0 011.414 0L10 8.586l3.293-3.293a1 1 0 111.414 1.414L11.414 10l3.293 3.293a1 1 0 01-1.414 1.414L10 11.414l-3.293 3.293a1 1 0 01-1.414-1.414L8.586 10 5.293 6.707a1 1 0 010-1.414z" clip-rule="evenodd" />
-                </svg>
-            </div>
-        </template>
+            <template x-if="value && value.length > 0 && multiple">
+                <div class="flex items-start" @mousemove.prevent="moveItem($event)" @mouseup.prevent="stopDragging()" x-ref="selectedItemsContainer">
+                    <template x-for="(item, index) in value" :key="item">
 
-        <div x-show="dragging" class="inline-flex items-center gap-1 px-2 py-0.5 mr-2 mb-2 rounded-full text-xs font-medium leading-4 bg-primary-100 text-primary-800 dragging-item"  x-ref="draggingItem">
-            <span
-                class=""
-                x-text="value[dragIndex]"
-            ></span>
+                        <div
+                            class="inline-flex items-center gap-1 px-2 py-0.5 mr-2 mb-2 rounded-full text-xs font-medium leading-4 bg-primary-100 text-primary-800 draggable-selectmany-item"
+                            :data-id="item"
+                            @mousedown.prevent="startDragging(index, $event)"
+                            :class="{ 'shadow-item': index == dragIndex }"
+                        >
+                            <span
+                                class=""
+                                x-text="item"
+                            ></span>
 
-            <!-- Small x svg -->
-            <svg
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 20 20"
-                fill="currentColor"
-                class="w-4 h-4 -mr-1 cursor-pointer text-primary-300">
-                <path fill-rule="evenodd" d="M5.293 5.293a1 1 0 011.414 0L10 8.586l3.293-3.293a1 1 0 111.414 1.414L11.414 10l3.293 3.293a1 1 0 01-1.414 1.414L10 11.414l-3.293 3.293a1 1 0 01-1.414-1.414L8.586 10 5.293 6.707a1 1 0 010-1.414z" clip-rule="evenodd" />
-            </svg>
-        </div>
-    </div>
+                            <!-- Small x svg -->
+                            <svg
+                                @mousedown.prevent="value = value.filter(i => i !== item)"
+                                @click.stop.prevent="value = value.filter(i => i !== item)"
+                                xmlns="http://www.w3.org/2000/svg"
+                                viewBox="0 0 20 20"
+                                fill="currentColor"
+                                class="w-4 h-4 -mr-1 cursor-pointer text-primary-300">
+                                <path fill-rule="evenodd" d="M5.293 5.293a1 1 0 011.414 0L10 8.586l3.293-3.293a1 1 0 111.414 1.414L11.414 10l3.293 3.293a1 1 0 01-1.414 1.414L10 11.414l-3.293 3.293a1 1 0 01-1.414-1.414L8.586 10 5.293 6.707a1 1 0 010-1.414z" clip-rule="evenodd" />
+                            </svg>
+                        </div>
+                    </template>
+
+                    <div x-show="dragging" class="inline-flex items-center gap-1 px-2 py-0.5 mr-2 mb-2 rounded-full text-xs font-medium leading-4 bg-primary-100 text-primary-800 dragging-item"  x-ref="draggingItem">
+                        <span
+                            class=""
+                            x-text="value[dragIndex]"
+                        ></span>
+
+                        <!-- Small x svg -->
+                        <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            viewBox="0 0 20 20"
+                            fill="currentColor"
+                            class="w-4 h-4 -mr-1 cursor-pointer text-primary-300">
+                            <path fill-rule="evenodd" d="M5.293 5.293a1 1 0 011.414 0L10 8.586l3.293-3.293a1 1 0 111.414 1.414L11.414 10l3.293 3.293a1 1 0 01-1.414 1.414L10 11.414l-3.293 3.293a1 1 0 01-1.414-1.414L8.586 10 5.293 6.707a1 1 0 010-1.414z" clip-rule="evenodd" />
+                        </svg>
+                    </div>
+                </div>
 
             </template>
 
@@ -401,61 +371,59 @@
         </button>
 
         <template x-if="showListbox">
-        <ul
-            x-ref="listbox"
-            x-transition.origin.top
-            x-cloak
-            class="absolute left-0 z-10 w-full mt-2 overflow-y-auto origin-top bg-white border divide-y divide-gray-100 rounded-md shadow-md outline-none border-gray-500/30 dark:border-gray-700 dark:bg-gray-900 dark:divide-gray-800 max-h-64"
-        >
-        <template x-if="searchable">
-     <li>
-            <div>
-              <input
-                x-model.debounce.500ms="search"
-                autofocus
-                class="w-full px-4 py-2.5 text-gray-900 placeholder-gray-500 border-none focus:outline-none"
-                placeholder="Search...">
-            </div>
-          </li>
-        </template>
+            <ul
+                x-ref="listbox"
+                x-transition.origin.top
+                x-cloak
+                class="absolute left-0 z-10 w-full mt-2 overflow-y-auto origin-top bg-white border divide-y divide-gray-100 rounded-md shadow-md outline-none border-gray-500/30 dark:border-gray-700 dark:bg-gray-900 dark:divide-gray-800 max-h-64"
+            >
+                <template x-if="searchable">
+                    <li>
+                        <div>
+                            <input
+                                x-model.debounce.500ms="search"
+                                autofocus
+                                class="w-full px-4 py-2.5 text-gray-900 placeholder-gray-500 border-none focus:outline-none"
+                                placeholder="Search...">
+                        </div>
+                    </li>
+                </template>
 
-          <template x-if="loading">
-            <div role="status" class="w-full mx-auto">
-    <svg aria-hidden="true" class="w-8 h-8 mx-auto my-8 text-gray-200 animate-spin dark:text-gray-600 fill-primary-500" viewBox="0 0 100 101" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <path d="M100 50.5908C100 78.2051 77.6142 100.591 50 100.591C22.3858 100.591 0 78.2051 0 50.5908C0 22.9766 22.3858 0.59082 50 0.59082C77.6142 0.59082 100 22.9766 100 50.5908ZM9.08144 50.5908C9.08144 73.1895 27.4013 91.5094 50 91.5094C72.5987 91.5094 90.9186 73.1895 90.9186 50.5908C90.9186 27.9921 72.5987 9.67226 50 9.67226C27.4013 9.67226 9.08144 27.9921 9.08144 50.5908Z" fill="currentColor"/>
-        <path d="M93.9676 39.0409C96.393 38.4038 97.8624 35.9116 97.0079 33.5539C95.2932 28.8227 92.871 24.3692 89.8167 20.348C85.8452 15.1192 80.8826 10.7238 75.2124 7.41289C69.5422 4.10194 63.2754 1.94025 56.7698 1.05124C51.7666 0.367541 46.6976 0.446843 41.7345 1.27873C39.2613 1.69328 37.813 4.19778 38.4501 6.62326C39.0873 9.04874 41.5694 10.4717 44.0505 10.1071C47.8511 9.54855 51.7191 9.52689 55.5402 10.0491C60.8642 10.7766 65.9928 12.5457 70.6331 15.2552C75.2735 17.9648 79.3347 21.5619 82.5849 25.841C84.9175 28.9121 86.7997 32.2913 88.1811 35.8758C89.083 38.2158 91.5421 39.6781 93.9676 39.0409Z" fill="currentFill"/>
-    </svg>
-    <span class="sr-only">Loading...</span>
-</div>
-          </template>
-          <template x-if="!loading">
-            <template x-for="item in filteredItems" :key="item.id">
-                <li
-                    :value="item.id"
-                    :class="{
-                        'bg-primary-50 hover:bg-primary-100': isActive(item),
-                        'bg-white hover:bg-primary-100': ! isSelected(item),
-                        'opacity-50 cursor-not-allowed': isDisabled(item),
-                    }"
-                    class="flex items-center justify-between w-full gap-2 px-4 py-2 text-sm transition-colors cursor-pointer"
-                    tabindex="0"
-                    role="option"
-                    @click="toggleItem(item)"
-                    @keydown.enter.stop.prevent="toggleItem(item)"
-                    @keydown.space.stop.prevent="toggleItem(item)"
-                >
-                    <div class="flex items-center space-x-2">
-                    <div>
-                      <span x-text="item.title" class="font-semibold"></span>
+                <template x-if="loading">
+                    <div role="status" class="w-full mx-auto">
+                        <svg aria-hidden="true" class="w-8 h-8 mx-auto my-8 text-gray-200 animate-spin dark:text-gray-600 fill-primary-500" viewBox="0 0 100 101" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M100 50.5908C100 78.2051 77.6142 100.591 50 100.591C22.3858 100.591 0 78.2051 0 50.5908C0 22.9766 22.3858 0.59082 50 0.59082C77.6142 0.59082 100 22.9766 100 50.5908ZM9.08144 50.5908C9.08144 73.1895 27.4013 91.5094 50 91.5094C72.5987 91.5094 90.9186 73.1895 90.9186 50.5908C90.9186 27.9921 72.5987 9.67226 50 9.67226C27.4013 9.67226 9.08144 27.9921 9.08144 50.5908Z" fill="currentColor"/>
+                            <path d="M93.9676 39.0409C96.393 38.4038 97.8624 35.9116 97.0079 33.5539C95.2932 28.8227 92.871 24.3692 89.8167 20.348C85.8452 15.1192 80.8826 10.7238 75.2124 7.41289C69.5422 4.10194 63.2754 1.94025 56.7698 1.05124C51.7666 0.367541 46.6976 0.446843 41.7345 1.27873C39.2613 1.69328 37.813 4.19778 38.4501 6.62326C39.0873 9.04874 41.5694 10.4717 44.0505 10.1071C47.8511 9.54855 51.7191 9.52689 55.5402 10.0491C60.8642 10.7766 65.9928 12.5457 70.6331 15.2552C75.2735 17.9648 79.3347 21.5619 82.5849 25.841C84.9175 28.9121 86.7997 32.2913 88.1811 35.8758C89.083 38.2158 91.5421 39.6781 93.9676 39.0409Z" fill="currentFill"/>
+                        </svg>
+                        <span class="sr-only">Loading...</span>
                     </div>
-
-                    <span x-show="isSelected(item)" class="font-semibold text-primary-600">&check;</span>
-                    </div>
-
-                </li>
-            </template>
-            </template>
-        </ul>
+                </template>
+                <template x-if="!loading">
+                    <template x-for="item in filteredItems" :key="item.id">
+                        <li
+                            :value="item.id"
+                            :class="{
+                                'bg-primary-50 hover:bg-primary-100': isActive(item),
+                                'bg-white hover:bg-primary-100': ! isSelected(item),
+                                'opacity-50 cursor-not-allowed': isDisabled(item),
+                            }"
+                            class="flex items-center justify-between w-full gap-2 px-4 py-2 text-sm transition-colors cursor-pointer"
+                            tabindex="0"
+                            role="option"
+                            @click="toggleItem(item)"
+                            @keydown.enter.stop.prevent="toggleItem(item)"
+                            @keydown.space.stop.prevent="toggleItem(item)"
+                        >
+                            <div class="flex items-center space-x-2">
+                                <div>
+                                    <span x-text="item.title" class="font-semibold"></span>
+                                </div>
+                                <span x-show="isSelected(item)" class="font-semibold text-primary-600">&check;</span>
+                            </div>
+                        </li>
+                    </template>
+                </template>
+            </ul>
         </template>
     </div>
 </div>
