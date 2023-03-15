@@ -124,6 +124,8 @@
                     </div>
                 </div>
 
+                @if($table)
+
                 <div class="flex items-center justify-between mt-6">
                     <div>
                         <h1 class="text-3xl font-semibold">Attachments</h1>
@@ -151,8 +153,23 @@
                     </div>
                 </div>
 
+                @endif
 
-                <livewire:aura::table :model="$post" />
+                <div>
+                    @if($table)
+                        <livewire:aura::table :model="$post" />
+                    @endif
+
+                    @if($button)
+                        <x-aura::button.light wire:click="$emit('openModal', 'aura::media-manager', {{ json_encode(['slug' => $field['slug'], 'selected' => $selected]) }})">
+                        <x-slot:icon>
+                            <x-aura::icon icon="media" class="" />
+                        </x-slot>
+
+                        <span>Media Manager</span>
+                    </x-aura::button.light>
+                    @endif
+                </div>
 
             </div>
 
