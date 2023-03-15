@@ -5,7 +5,6 @@ namespace Eminiarts\Aura\Http\Livewire;
 use Eminiarts\Aura\Facades\Aura;
 use Eminiarts\Aura\Traits\SaveFields;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
-use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Str;
 use Livewire\Component;
 
@@ -43,20 +42,6 @@ class Posttype extends Component
         $this->fields[$key]['conditional_logic'][] = [
             ['param' => '', 'operator' => '=', 'value' => ''],
         ];
-    }
-
-    public function countChildren($item)
-    {
-        $count = 0;
-
-        if (isset($item['fields'])) {
-            foreach ($item['fields'] as $child) {
-                $count++;
-                $count += $this->countChildren($child);
-            }
-        }
-
-        return $count;
     }
 
     public function addField($id, $slug, $type, $children)
@@ -150,35 +135,6 @@ class Posttype extends Component
         $this->emit('openSlideOver', 'edit-field', ['fieldSlug' => $globalTab['slug'], 'slug' => $this->slug, 'field' => $globalTab]);
     }
 
-    public function insertTemplateFields($id, $slug, $type)
-    {
-        $template = Aura::findTemplateBySlug($type);
-        $newFields = $template->getFields();
-
-        // go through each field and add a random string to the slug
-        foreach ($newFields as $key => $field) {
-            $newFields[$key]['slug'] = $field['slug'].'_'.Str::random(4);
-        }
-
-        $fields = collect($this->fieldsArray);
-
-        // get index of the field
-        $index = $fields->search(function ($item) use ($slug) {
-            return $item['slug'] == $slug;
-        });
-
-        // duplicate field in at index of the field + 1
-        $fields->splice($index + 1, 0, $newFields);
-
-        $fields = $fields->toArray();
-
-        $this->fieldsArray = $fields;
-
-        $this->saveFields($this->fieldsArray);
-
-        $this->newFields = $this->model->mapToGroupedFields($this->fieldsArray);
-    }
-
     public function addTemplateFields($slug)
     {
         $template = Aura::findTemplateBySlug($slug);
@@ -224,6 +180,20 @@ class Posttype extends Component
         if ($this->model->isVendorResource()) {
             abort(403, 'Only App resources can be edited.');
         }
+    }
+
+    public function countChildren($item)
+    {
+        $count = 0;
+
+        if (isset($item['fields'])) {
+            foreach ($item['fields'] as $child) {
+                $count++;
+                $count += $this->countChildren($child);
+            }
+        }
+
+        return $count;
     }
 
     public function deleteField($data)
@@ -280,6 +250,35 @@ class Posttype extends Component
         }
 
         return $this->model->getFieldsForEdit();
+    }
+
+    public function insertTemplateFields($id, $slug, $type)
+    {
+        $template = Aura::findTemplateBySlug($type);
+        $newFields = $template->getFields();
+
+        // go through each field and add a random string to the slug
+        foreach ($newFields as $key => $field) {
+            $newFields[$key]['slug'] = $field['slug'].'_'.Str::random(4);
+        }
+
+        $fields = collect($this->fieldsArray);
+
+        // get index of the field
+        $index = $fields->search(function ($item) use ($slug) {
+            return $item['slug'] == $slug;
+        });
+
+        // duplicate field in at index of the field + 1
+        $fields->splice($index + 1, 0, $newFields);
+
+        $fields = $fields->toArray();
+
+        $this->fieldsArray = $fields;
+
+        $this->saveFields($this->fieldsArray);
+
+        $this->newFields = $this->model->mapToGroupedFields($this->fieldsArray);
     }
 
     public function mount($slug)

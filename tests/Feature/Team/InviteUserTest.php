@@ -1,18 +1,17 @@
 <?php
 
-use Livewire\Livewire;
 use Eminiarts\Aura\Facades\Aura;
+use Eminiarts\Aura\Http\Livewire\AuraConfig;
+use Eminiarts\Aura\Http\Livewire\User\InviteUser;
+use Eminiarts\Aura\Providers\RouteServiceProvider;
 use Eminiarts\Aura\Resources\Role;
 use Eminiarts\Aura\Resources\Team;
-use Eminiarts\Aura\Resources\User;
-use Illuminate\Support\Facades\URL;
-use Illuminate\Support\Facades\Hash;
-use Eminiarts\Aura\Http\Livewire\AuraConfig;
 use Eminiarts\Aura\Resources\TeamInvitation;
-use Eminiarts\Aura\Http\Livewire\User\InviteUser;
+use Eminiarts\Aura\Resources\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Eminiarts\Aura\Providers\RouteServiceProvider;
-
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\URL;
+use Livewire\Livewire;
 use function Pest\Livewire\livewire;
 
 uses()->group('current');
@@ -90,7 +89,6 @@ test('register route is available', function () {
     $this->get(route('aura.register'))->assertOk();
 });
 
-
 test('user email is prefilled in the registration', function () {
     $team = $this->user->currentTeam;
 
@@ -127,7 +125,6 @@ test('user_invitations can be disabled', function () {
 
     expect(app('aura')::option('user_invitations'))->toBeTrue();
 });
-
 
 test('user can register using an invitation', function () {
     $team = Team::first();
@@ -190,8 +187,6 @@ test('user can register using an invitation', function () {
     $this->assertDatabaseMissing('team_invitations', ['id' => $invitation->id]);
 });
 
-
-
 test('email and role are required in the invite user component', function () {
     $team = Team::first();
 
@@ -201,7 +196,7 @@ test('email and role are required in the invite user component', function () {
         ->call('save')
         ->assertHasErrors([
             'post.fields.email',
-            'post.fields.role'
+            'post.fields.role',
         ]);
 
     $user = User::factory()->create(['email' => 'invited@test.com']);
@@ -213,7 +208,7 @@ test('email and role are required in the invite user component', function () {
         ]])
         ->call('save')
         ->assertHasNoErrors([
-            'post.fields.email'
+            'post.fields.email',
         ]);
 
     // Attach the user to the team
@@ -228,6 +223,6 @@ test('email and role are required in the invite user component', function () {
             ]])
             ->call('save')
             ->assertHasErrors([
-                'post.fields.email'
+                'post.fields.email',
             ]);
 });

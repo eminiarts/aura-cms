@@ -2,14 +2,14 @@
 
 namespace Tests\Feature\Livewire;
 
-use Livewire\Livewire;
+use Eminiarts\Aura\Http\Livewire\TeamSettings;
 use Eminiarts\Aura\Models\User;
+use Eminiarts\Aura\Resources\Option;
 use Eminiarts\Aura\Resources\Role;
 use Eminiarts\Aura\Resources\Team;
-use Illuminate\Support\Facades\DB;
-use Eminiarts\Aura\Resources\Option;
-use Eminiarts\Aura\Http\Livewire\TeamSettings;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
+use Livewire\Livewire;
 
 uses(RefreshDatabase::class);
 
@@ -77,7 +77,7 @@ test('Team Settings can be saved', function () {
 
     // create a entry in team_user table with team_id and user_id
     $this->user->teams()->attach([
-        $secondTeam->id => ['key' => 'roles', 'value' => $role->id], 
+        $secondTeam->id => ['key' => 'roles', 'value' => $role->id],
     ]);
 
     // DB get user_meta table

@@ -27,6 +27,65 @@ class MakeField extends GeneratorCommand
      */
     protected $type = 'Field';
 
+    public function handle()
+    {
+        parent::handle();
+
+        $this->createViewFile();
+        $this->createEditFile();
+
+        $this->info('Field created successfully.');
+    }
+
+    protected function buildEditFileContents()
+    {
+        $contents = $this->files->get(__DIR__.'/Stubs/make-field-edit.stub');
+
+        // replace :fieldSlug with the actual slug
+        $contents = str_replace(':fieldSlug', str($this->argument('name'))->slug(), $contents);
+
+        return $contents;
+    }
+
+    protected function buildViewFileContents()
+    {
+        return $this->files->get(__DIR__.'/Stubs/make-field-view.stub');
+    }
+
+    protected function createEditFile()
+    {
+        $name = $this->argument('name');
+        $slug = str($name)->slug();
+
+        $path = resource_path('views/components/fields/'.$slug.'.blade.php');
+
+        if (! $this->files->exists(dirname($path))) {
+            // create the directory if it doesn't exist
+            $this->files->makeDirectory(dirname($path), 0755, true);
+        }
+
+        if (! $this->files->exists($path)) {
+            $this->files->put($path, $this->buildEditFileContents());
+        }
+    }
+
+    protected function createViewFile()
+    {
+        $name = $this->argument('name');
+        $slug = str($name)->slug();
+
+        $path = resource_path('views/components/fields/'.$slug.'-view.blade.php');
+
+        if (! $this->files->exists(dirname($path))) {
+            // create the directory if it doesn't exist
+            $this->files->makeDirectory(dirname($path), 0755, true);
+        }
+
+        if (! $this->files->exists($path)) {
+            $this->files->put($path, $this->buildViewFileContents());
+        }
+    }
+
     /**
      * Get the default namespace for the class.
      *
@@ -63,64 +122,5 @@ class MakeField extends GeneratorCommand
         $stub = str_replace('FieldSlug', str($this->argument('name'))->slug(), $stub);
 
         return $stub;
-    }
-
-    public function handle()
-    {
-        parent::handle();
-
-        $this->createViewFile();
-        $this->createEditFile();
-
-        $this->info('Field created successfully.');
-    }
-
-    protected function createViewFile()
-    {
-        $name = $this->argument('name');
-        $slug = str($name)->slug();
-
-        $path = resource_path('views/components/fields/'.$slug.'-view.blade.php');
-
-        if (! $this->files->exists(dirname($path))) {
-            // create the directory if it doesn't exist
-            $this->files->makeDirectory(dirname($path), 0755, true);
-        }
-
-        if (! $this->files->exists($path)) {
-            $this->files->put($path, $this->buildViewFileContents());
-        }
-    }
-
-    protected function createEditFile()
-    {
-        $name = $this->argument('name');
-        $slug = str($name)->slug();
-
-        $path = resource_path('views/components/fields/'.$slug.'.blade.php');
-
-        if (! $this->files->exists(dirname($path))) {
-            // create the directory if it doesn't exist
-            $this->files->makeDirectory(dirname($path), 0755, true);
-        }
-
-        if (! $this->files->exists($path)) {
-            $this->files->put($path, $this->buildEditFileContents());
-        }
-    }
-
-    protected function buildViewFileContents()
-    {
-        return $this->files->get(__DIR__.'/Stubs/make-field-view.stub');
-    }
-
-    protected function buildEditFileContents()
-    {
-        $contents = $this->files->get(__DIR__.'/Stubs/make-field-edit.stub');
-
-        // replace :fieldSlug with the actual slug
-        $contents = str_replace(':fieldSlug', str($this->argument('name'))->slug(), $contents);
-        
-        return $contents;
     }
 }

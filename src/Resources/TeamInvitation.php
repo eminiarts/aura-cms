@@ -12,11 +12,6 @@ class TeamInvitation extends Post
 
     public static string $type = 'TeamInvitation';
 
-    public function getRoleOptions()
-    {
-        return Role::get()->pluck('title', 'id')->toArray();
-    }
-
     public static function getFields()
     {
         return [
@@ -48,5 +43,10 @@ class TeamInvitation extends Post
                 'slug' => 'role',
             ],
         ];
+    }
+
+    public function getRoleOptions()
+    {
+        return Role::get()->pluck('title', 'id')->toArray();
     }
 }

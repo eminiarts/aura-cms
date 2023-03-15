@@ -3,14 +3,14 @@
 namespace Eminiarts\Aura\Traits;
 
 use Eminiarts\Aura\ConditionalLogic;
-use Eminiarts\Aura\Pipeline\ApplyTabs;
-use Eminiarts\Aura\Pipeline\MapFields;
 use Eminiarts\Aura\Pipeline\AddIdsToFields;
-use Eminiarts\Aura\Pipeline\TransformSlugs;
-use Eminiarts\Aura\Pipeline\FilterViewFields;
-use Eminiarts\Aura\Pipeline\BuildTreeFromFields;
 use Eminiarts\Aura\Pipeline\ApplyParentConditionalLogic;
 use Eminiarts\Aura\Pipeline\ApplyParentDisplayAttributes;
+use Eminiarts\Aura\Pipeline\ApplyTabs;
+use Eminiarts\Aura\Pipeline\BuildTreeFromFields;
+use Eminiarts\Aura\Pipeline\FilterViewFields;
+use Eminiarts\Aura\Pipeline\MapFields;
+use Eminiarts\Aura\Pipeline\TransformSlugs;
 
 trait InputFields
 {
@@ -65,21 +65,6 @@ trait InputFields
 
             return true;
         });
-    }
-
-    public function viewFields()
-    {
-        $pipes = [
-            ApplyTabs::class,
-            MapFields::class,
-            AddIdsToFields::class,
-            ApplyParentConditionalLogic::class,
-            ApplyParentDisplayAttributes::class,
-            FilterViewFields::class,
-            BuildTreeFromFields::class,
-        ];
-
-        return $this->sendThroughPipeline($this->mappedFields(), $pipes);
     }
 
     public function fieldBySlugWithDefaultValues($slug)
@@ -251,6 +236,21 @@ trait InputFields
 
             return false;
         });
+    }
+
+    public function viewFields()
+    {
+        $pipes = [
+            ApplyTabs::class,
+            MapFields::class,
+            AddIdsToFields::class,
+            ApplyParentConditionalLogic::class,
+            ApplyParentDisplayAttributes::class,
+            FilterViewFields::class,
+            BuildTreeFromFields::class,
+        ];
+
+        return $this->sendThroughPipeline($this->mappedFields(), $pipes);
     }
 
     // Display the value of a field in the index view

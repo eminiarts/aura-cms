@@ -1,21 +1,21 @@
 <?php
 
-use Illuminate\Support\Facades\Route;
-use Eminiarts\Aura\Http\Livewire\Media;
-use Eminiarts\Aura\Http\Livewire\Posttype;
-use Eminiarts\Aura\Http\Livewire\Post\Edit;
-use Eminiarts\Aura\Http\Livewire\Post\View;
+use Eminiarts\Aura\Http\Controllers\Api\FieldsController;
+use Eminiarts\Aura\Http\Controllers\ProfileController;
+use Eminiarts\Aura\Http\Livewire\Attachment\Index as AttachmentIndex;
 use Eminiarts\Aura\Http\Livewire\AuraConfig;
 use Eminiarts\Aura\Http\Livewire\CreateFlow;
-use Eminiarts\Aura\Http\Livewire\Post\Index;
+use Eminiarts\Aura\Http\Livewire\Media;
 use Eminiarts\Aura\Http\Livewire\Post\Create;
-use Eminiarts\Aura\Http\Livewire\TeamSettings;
-use Eminiarts\Aura\Http\Controllers\ProfileController;
-use Eminiarts\Aura\Http\Controllers\Api\FieldsController;
+use Eminiarts\Aura\Http\Livewire\Post\Edit;
+use Eminiarts\Aura\Http\Livewire\Post\Index;
+use Eminiarts\Aura\Http\Livewire\Post\View;
+use Eminiarts\Aura\Http\Livewire\Posttype;
+use Eminiarts\Aura\Http\Livewire\Taxonomy\Create as TaxonomyCreate;
 use Eminiarts\Aura\Http\Livewire\Taxonomy\Edit as TaxonomyEdit;
 use Eminiarts\Aura\Http\Livewire\Taxonomy\Index as TaxonomyIndex;
-use Eminiarts\Aura\Http\Livewire\Taxonomy\Create as TaxonomyCreate;
-use Eminiarts\Aura\Http\Livewire\Attachment\Index as AttachmentIndex;
+use Eminiarts\Aura\Http\Livewire\TeamSettings;
+use Illuminate\Support\Facades\Route;
 
 Route::middleware(config('aura.middleware.aura-guest'))->group(function () {
     require __DIR__.'/auth.php';
@@ -75,6 +75,5 @@ Route::domain(config('aura.domain'))
             Route::get('/{slug}/create', Create::class)->name('post.create');
             Route::get('/{slug}/{id}/edit', Edit::class)->name('post.edit');
             Route::get('/{slug}/{id}', View::class)->name('post.view');
-           
         });
     });
