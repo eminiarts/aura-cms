@@ -32,9 +32,14 @@ module.exports = {
                 '0%': { transform: 'translateY(-50%) rotate(0deg)' },
                 '100%': { transform: 'translateY(-50%) rotate(360deg)' },
                 },
+                countdown: {
+                '0%': { transform: 'scaleX(1)' },
+                '100%': { transform: 'scaleX(0)' },
+                },
             },
             animation: {
                 disco: 'disco 1.5s linear infinite',
+                countdown: 'countdown 3s linear 1',
             },
             colors: {
                 primary: {
