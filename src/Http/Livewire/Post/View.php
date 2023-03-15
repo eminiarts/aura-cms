@@ -3,13 +3,9 @@
 namespace Eminiarts\Aura\Http\Livewire\Post;
 
 use Eminiarts\Aura\Facades\Aura;
-use Eminiarts\Aura\Models\Post;
-use Eminiarts\Aura\Resources\Attachment;
 use Eminiarts\Aura\Traits\InteractsWithFields;
 use Eminiarts\Aura\Traits\RepeaterFields;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
-use Illuminate\Support\Arr;
-use Illuminate\Support\Str;
 use Livewire\Component;
 
 class View extends Component
@@ -58,7 +54,6 @@ class View extends Component
         $this->post['terms']['category'] = $this->post['terms']['category'] ?? null;
     }
 
-    
     public function render()
     {
         // $view = "aura.{$this->slug}.view";
@@ -67,7 +62,7 @@ class View extends Component
         // if (view()->exists($view)) {
         //     return view($view)->layout('aura::components.layout.app');
         // }
-        
+
         // if (view()->exists("aura::" . $view)) {
         //     return view("aura::" . $view)->layout('aura::components.layout.app');
         // }

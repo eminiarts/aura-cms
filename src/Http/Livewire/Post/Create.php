@@ -84,7 +84,6 @@ class Create extends Component
 
         $model = $this->model->create($this->post);
 
-
         $this->notify('Successfully created.');
 
         if ($this->inModal) {

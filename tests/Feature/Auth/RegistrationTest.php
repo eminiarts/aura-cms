@@ -3,8 +3,8 @@
 namespace Tests\Feature\Auth;
 
 use Eminiarts\Aura\Facades\Aura;
-use Eminiarts\Aura\Resources\Team;
 use Eminiarts\Aura\Providers\RouteServiceProvider;
+use Eminiarts\Aura\Resources\Team;
 
 // uses()->group('current');
 

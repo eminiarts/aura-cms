@@ -6,19 +6,6 @@ class Select extends Field
 {
     public $component = 'aura::fields.select';
 
-    // public $view = 'components.fields.select';
-
-    public function options($model, $field)
-    {
-        // if get"$field->slug"Options is defined on the model, use that
-        if (method_exists($model, 'get' . ucfirst($field['slug']) . 'Options')) {
-            return $model->{'get' . ucfirst($field['slug']) . 'Options'}();
-        }
-
-        // return the options defined in the field
-        return $field['options'] ?? [];
-    }
-
     public function getFields()
     {
         return array_merge(parent::getFields(), [
@@ -60,5 +47,18 @@ class Select extends Field
 
             ],
         ]);
+    }
+
+    // public $view = 'components.fields.select';
+
+    public function options($model, $field)
+    {
+        // if get"$field->slug"Options is defined on the model, use that
+        if (method_exists($model, 'get'.ucfirst($field['slug']).'Options')) {
+            return $model->{'get'.ucfirst($field['slug']).'Options'}();
+        }
+
+        // return the options defined in the field
+        return $field['options'] ?? [];
     }
 }

@@ -21,7 +21,9 @@ use Eminiarts\Aura\Http\Livewire\MediaUploader;
 use Eminiarts\Aura\Http\Livewire\Navigation;
 use Eminiarts\Aura\Http\Livewire\Notifications;
 use Eminiarts\Aura\Http\Livewire\Post\Create;
+use Eminiarts\Aura\Http\Livewire\Post\CreateModal;
 use Eminiarts\Aura\Http\Livewire\Post\Edit;
+use Eminiarts\Aura\Http\Livewire\Post\EditModal;
 use Eminiarts\Aura\Http\Livewire\Post\Index;
 use Eminiarts\Aura\Http\Livewire\Post\View;
 use Eminiarts\Aura\Http\Livewire\Posttype;
@@ -54,7 +56,7 @@ class AuraServiceProvider extends PackageServiceProvider
     {
         parent::boot();
 
-       // ray('boot');
+        // ray('boot');
     }
 
     public function bootGate()
@@ -81,7 +83,9 @@ class AuraServiceProvider extends PackageServiceProvider
         Livewire::component('app.aura.widgets.avg-posts-number', \Eminiarts\Aura\Widgets\AvgPostsNumber::class);
         Livewire::component('aura::post-index', Index::class);
         Livewire::component('aura::post-create', Create::class);
+        Livewire::component('aura::post-create-modal', CreateModal::class);
         Livewire::component('aura::post-edit', Edit::class);
+        Livewire::component('aura::post-edit-modal', EditModal::class);
         Livewire::component('aura::post-view', View::class);
         Livewire::component('aura::table', Table::class);
         Livewire::component('aura::navigation', Navigation::class);
@@ -108,13 +112,6 @@ class AuraServiceProvider extends PackageServiceProvider
         return $this;
     }
 
-    public function registeringPackage() {
-
-        // ray('registering package');
-        //$package->hasRoute('web');
-        //$this->loadRoutesFrom(__DIR__.'/../routes/web.php');
-    }
-
     /*
     * This class is a Package Service Provider
     *
@@ -133,10 +130,10 @@ class AuraServiceProvider extends PackageServiceProvider
             ->hasMigrations(['create_aura_tables', 'create_flows_table'])
             ->runsMigrations()
             ->hasCommands([
-                AuraCommand::class, 
-                MakePosttype::class, 
-                MakeUser::class, 
-                CreateAuraPlugin::class, 
+                AuraCommand::class,
+                MakePosttype::class,
+                MakeUser::class,
+                CreateAuraPlugin::class,
                 MakeField::class,
                 PublishCommand::class,
             ])
@@ -222,10 +219,15 @@ class AuraServiceProvider extends PackageServiceProvider
         Aura::registerFields(Aura::getAppFields());
     }
 
+    public function registeringPackage()
+    {
+        // ray('registering package');
+        //$package->hasRoute('web');
+        //$this->loadRoutesFrom(__DIR__.'/../routes/web.php');
+    }
+
     protected function getResources(): array
     {
         return config('aura.resources');
     }
-
-    
 }

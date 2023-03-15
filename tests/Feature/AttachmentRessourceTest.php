@@ -10,7 +10,6 @@ uses(RefreshDatabase::class);
 
 beforeEach(fn () => User::factory()->create());
 
-
 test('save Attachment Model when defined fields', function () {
     $this->actingAs($user = User::first());
 

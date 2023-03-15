@@ -12,6 +12,11 @@ class CreateModal extends ModalComponent
 
     public $type;
 
+    public static function modalMaxWidth(): string
+    {
+        return '7xl';
+    }
+
     public function render()
     {
         return view('aura::livewire.post.create-modal');

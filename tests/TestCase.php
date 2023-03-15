@@ -4,6 +4,7 @@ namespace Eminiarts\Aura\Tests;
 
 use Eminiarts\Aura\AuraServiceProvider;
 use Illuminate\Database\Eloquent\Factories\Factory;
+use Intervention\Image\ImageServiceProvider;
 use Lab404\Impersonate\ImpersonateServiceProvider;
 use Livewire\LivewireServiceProvider;
 use LivewireUI\Modal\LivewireModalServiceProvider;
@@ -42,6 +43,7 @@ class TestCase extends Orchestra
             LivewireServiceProvider::class,
             ImpersonateServiceProvider::class,
             LivewireModalServiceProvider::class,
+            ImageServiceProvider::class,
         ];
     }
 }
