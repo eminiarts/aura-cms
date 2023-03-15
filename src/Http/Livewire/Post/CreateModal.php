@@ -16,4 +16,9 @@ class CreateModal extends ModalComponent
     {
         return view('aura::livewire.post.create-modal');
     }
+
+    public static function modalMaxWidth(): string
+    {
+        return '7xl';
+    }
 }

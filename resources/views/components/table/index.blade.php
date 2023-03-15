@@ -68,7 +68,7 @@
                             {{-- If createInModal is true, open a Modal --}}
                             @if($this->editInModal)
                             <a href="#"
-                                wire:click.prevent="$emit('openModal', 'post.edit-modal', {{ json_encode(["post" => $row->id, 'type' => $row->getType()]) }})">
+                                wire:click.prevent="$emit('openModal', 'aura::post-edit-modal', {{ json_encode(["post" => $row->id, 'type' => $row->getType()]) }})">
                                 <x-aura::icon icon="edit" />
                             </a>
                             @else
