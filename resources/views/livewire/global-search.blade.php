@@ -23,10 +23,19 @@
                     <div>
                         <ul class="mt-4">
                     @foreach($searchResults as $result)
-                        <li>
+                        <li class="px-4 py-2 cursor-default select-none hover:bg-primary-500 hover:text-white" id="option-1" role="option" tabindex="-1">
+                            @if(! is_array($result))
                             <a href="{{ route('aura.post.view', ['slug' => $result->type, 'id' => $result->id]) }}">
                                 {{ $result->type }}: {{ $result->id }} {{ $result->title }}
                             </a>
+                            @elseif(isset($result['type']))
+                            <a href="{{ route('aura.post.view', ['slug' => $result['type'], 'id' => $result['id']]) }}">
+                                {{ $result['type'] }}: {{ $result['id'] }} {{ $result['title'] }}
+                            </a>
+                            @else
+                                User #{{ $result['id'] }}: {{ $result['name'] }}
+                            @endif
+
                         </li>
                     @endforeach
             </ul>
