@@ -1,5 +1,7 @@
 <div>
-    <div>
+    <div wire:key="media-notifications">
+        {{-- @dump(count($media)) --}}
+
         @if($media && count($media))
 
         {{-- @dump($media, json_encode($media)) --}}
@@ -10,17 +12,8 @@
   <div class="flex w-full flex-col items-end space-y-4 sm:items-end">
 
     @foreach($media as $file)
-    <!--
-      Notification panel, dynamically insert this into the live region when it needs to be displayed
-
-      Entering: "transform ease-out duration-300 transition"
-        From: "translate-y-2 opacity-0 sm:translate-y-0 sm:translate-x-2"
-        To: "translate-y-0 opacity-100 sm:translate-x-0"
-      Leaving: "transition ease-in duration-100"
-        From: "opacity-100"
-        To: "opacity-0"
-    -->
-    <div class="pointer-events-auto w-full max-w-sm overflow-hidden rounded-lg bg-white shadow-lg ring-1 ring-black ring-opacity-5 relative" x-data="{loading: true}" x-show="loading"
+    
+    <div wire:key="{{ str()->random(4) }}" class="pointer-events-auto w-full max-w-sm overflow-hidden rounded-lg bg-white shadow-lg ring-1 ring-black ring-opacity-5 relative" x-data="{loading: true}" x-show="loading"
             x-init="setTimeout(() => { loading = false }, 3000)" x-transition:leave="transition ease-linear duration-1000" x-transition:leave-end="opacity-0">
       <div class="p-4">
         <div class="flex items-start">
