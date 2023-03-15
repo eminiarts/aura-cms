@@ -10,6 +10,22 @@
 @endphp
 
 <x-aura::fields.wrapper :field="$field">
+
+  <style>
+    .dragging-item {
+      position: absolute;
+      pointer-events: none;
+      opacity: 0.8;
+      z-index: 100;
+    }
+
+    .shadow-item {
+        opacity: 0.2;
+      box-shadow: 0 0 10px 0 rgba(0, 0, 0, 0.1);
+    }
+  </style>
+
+
 <div
     wire:ignore
     class="w-full"
@@ -27,31 +43,88 @@
         search: null,
         showListbox: false,
         loading: false,
+
+        dragging: false,
+        dragIndex: null,
+        dragX: 0,
+
         initSortable() {
+            console.log('initSortable', this.$refs.selectedItemsContainer);
+
+            if (this.sortable) {
+                // Destroy the existing instance to avoid memory leaks
+                this.sortable.destroy();
+            }
+
             this.sortable = new Sortable(this.$refs.selectedItemsContainer, {
                 draggable: '.draggable-item',
+                animation: 150,
+                mirror: {
+                    constrainDimensions: true,
+                }
             });
 
-            this.sortable.on('sortable:sorted', () => {
+            // on drag start add x-ignore attribute to the selectedItemsContainer
+
+            this.sortable.on('drag:start', () => {
+                this.$refs.selectedItemsContainer.setAttribute('x-ignore', true);
+            });
+
+            // on drag stop remove the x-ignore attribute from the selectedItemsContainer
+
+            this.sortable.on('drag:stop', () => {
+                this.$refs.selectedItemsContainer.removeAttribute('x-ignore');
+            });
+
+            {{-- this.sortable.on('mirror:created', ({ mirror }) => {
+                console.log('mirror:created', mirror);
+                const originalElement = this.sortable.originalSource;
+                mirror.textContent = originalElement.textContent;
+                const dataId = originalElement.getAttribute('data-id');
+        mirror.setAttribute('data-id', dataId);
+            });
+
+            this.sortable.on('drag:start', () => {
+        const originalElement = this.sortable.originalSource;
+        const item = originalElement.getAttribute('data-id');
+    }); --}}
+
+
+            this.sortable.on('sortable:stop', () => {
                 this.updateSelectedItemsOrder();
             });
         },
         updateSelectedItemsOrder() {
+            console.log('updateSelectedItemsOrder', this.value, this.$refs.selectedItemsContainer.querySelectorAll('.draggable-item'));
             const newOrder = Array.from(this.$refs.selectedItemsContainer.querySelectorAll('.draggable-item')).map(item => parseInt(item.getAttribute('data-id')));
-            this.value = newOrder;
-            this.selectedItems = newOrder.map(id => this.items.find(item => item.id === id));
+
+            const validIds = newOrder.filter(item => !isNaN(item));
+
+            this.$nextTick(() => {
+                this.value = newOrder;
+                this.selectedItems = newOrder.map(id => this.items.find(item => item.id === id));
+                // this.$wire.set('post.fields.{{ $field['slug'] }}', validIds);
+                this.showListbox = false;
+            });
         },
         init() {
-            this.initSortable();
+
             if (this.api) {
                 this.fetchApi();
             } else {
+                if (!this.value) {
+                    this.value = [];
+                }
                 if (!this.multiple) {
                     this.selectedItems = this.items.filter(item => item.id === this.value);
                 } else {
                     this.selectedItems = this.items.filter(item => this.value.includes(item.id));
                 }
             }
+
+            this.$nextTick(() => {
+                // this.initSortable();
+            });
 
             // Watch this.search and fetch new values, debounce for 500ms
             this.$watch('search', () => {
@@ -134,6 +207,8 @@
 
                 this.$nextTick(() => {
                     this.selectedItems = this.selectedItems.filter(i => i.id !== item.id);
+
+                    console.log('this.value', this.value, this.selectedItems);
                 });
             } else {
                 console.log('toggleItem else', this.selectedItems, item.id);
@@ -145,10 +220,15 @@
 
                 this.$nextTick(() => {
                     this.value.push(item.id);
+
+                    console.log('this.value', this.value, this.selectedItems);
+
+                    this.initSortable();
                 });
             }
         },
         selectedItem(id) {
+            console.log('selectedItem', id, this.selectedItems);
             // only search if this.items is not empty
             if (this.selectedItems.length === 0) {
                 return;
@@ -196,6 +276,48 @@
 
             items[index - 1].focus();
         },
+
+        startDragging(index, event) {
+          this.dragging = true;
+          this.dragIndex = index;
+          this.$refs.draggingItem.style.left = event.clientX + 'px';
+          this.$refs.draggingItem.style.top = event.target.offsetTop + 'px';
+
+            window.addEventListener('mouseup', this.stopDragging.bind(this));
+
+            window.addEventListener('mousemove', this.moveItem.bind(this));
+
+        },
+
+        moveItem(event) {
+          if (!this.dragging) return;
+          this.dragX = event.clientX;
+          this.$refs.draggingItem.style.left = event.clientX + 'px';
+          const newIndex = this.findNewIndex();
+          if (newIndex !== this.dragIndex) {
+            this.items.splice(newIndex, 0, this.items.splice(this.dragIndex, 1)[0]);
+            this.dragIndex = newIndex;
+          }
+        },
+
+        stopDragging() {
+            console.log('stopDragging');
+            window.removeEventListener('mouseup', this.stopDragging.bind(this));
+
+            window.removeEventListener('mousemove', this.moveItem.bind(this));
+
+          this.dragging = false;
+          this.dragIndex = null;
+        },
+
+        findNewIndex() {
+            const itemWidth = this.$refs.draggingItem.offsetWidth;
+            const listLeft = this.$refs.draggingItem.parentElement.offsetLeft;
+            const draggedItemCenter = this.dragX - listLeft + itemWidth / 2;
+            let newIndex = Math.floor(draggedItemCenter / itemWidth);
+            newIndex = Math.max(0, Math.min(newIndex, this.items.length - 1));
+            return newIndex;
+        }
     }"
 
     @keydown.down.stop.prevent="focusNext"
@@ -209,7 +331,7 @@
         <label class="sr-only">Select Item</label>
 
         <button
-            class="relative flex items-center justify-between w-full px-3 py-2 border rounded-lg shadow-xs appearance-none border-gray-500/30 focus:border-primary-300 focus:outline-none ring-gray-900/10 focus:ring focus:ring-primary-300 focus:ring-opacity-50 dark:focus:ring-primary-500 dark:focus:ring-opacity-50 dark:bg-gray-900 dark:border-gray-700"
+            class="relative flex items-center justify-between w-full px-3 pt-2 pb-0 border rounded-lg shadow-xs appearance-none border-gray-500/30 focus:border-primary-300 focus:outline-none ring-gray-900/10 focus:ring focus:ring-primary-300 focus:ring-opacity-50 dark:focus:ring-primary-500 dark:focus:ring-opacity-50 dark:bg-gray-900 dark:border-gray-700"
             @click="toggleListbox"
         >
 
@@ -222,29 +344,50 @@
                     </template>
 
             <template x-if="value && value.length > 0 && multiple">
-                <div class="flex flex-wrap">
+                <div class="flex items-start">
+        <template x-for="(item, index) in value" :key="item">
 
-                        <template x-for="item in value" :key="item">
-                                    <div class="inline-flex items-center gap-1 px-2 py-0.5 mr-2 mb-2 rounded-full text-xs font-medium leading-4 bg-primary-100 text-primary-800 sortable-item" :data-id="item">
-                                        <span
-                                            class=""
-                                            x-text="selectedItem(item)"
-                                        ></span>
+            <div
+                class="inline-flex items-center gap-1 px-2 py-0.5 mr-2 mb-2 rounded-full text-xs font-medium leading-4 bg-primary-100 text-primary-800 draggable-selectmany-item"
+                :data-id="item"
+                @mousedown.prevent="startDragging(index, $event)"
+                @mouseup.prevent="stopDragging()"
+                :class="{ 'shadow-item': index == dragIndex }"
+            >
+                <span
+                    class=""
+                    x-text="item"
+                ></span>
 
-                                        <!-- Small x svg -->
-                                        <svg
-                                            @click.stop.prevent="value = value.filter(i => i !== item)""
-                                            xmlns="http://www.w3.org/2000/svg"
-                                            viewBox="0 0 20 20"
-                                            fill="currentColor"
-                                            class="w-4 h-4 -mr-1 cursor-pointer text-primary-300">
-                                            <path fill-rule="evenodd" d="M5.293 5.293a1 1 0 011.414 0L10 8.586l3.293-3.293a1 1 0 111.414 1.414L11.414 10l3.293 3.293a1 1 0 01-1.414 1.414L10 11.414l-3.293 3.293a1 1 0 01-1.414-1.414L8.586 10 5.293 6.707a1 1 0 010-1.414z" clip-rule="evenodd" />
-                                        </svg>
-                                    </div>
-                                </template>
+                <!-- Small x svg -->
+                <svg
+                    @click.stop.prevent="value = value.filter(i => i !== item)""
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 20 20"
+                    fill="currentColor"
+                    class="w-4 h-4 -mr-1 cursor-pointer text-primary-300">
+                    <path fill-rule="evenodd" d="M5.293 5.293a1 1 0 011.414 0L10 8.586l3.293-3.293a1 1 0 111.414 1.414L11.414 10l3.293 3.293a1 1 0 01-1.414 1.414L10 11.414l-3.293 3.293a1 1 0 01-1.414-1.414L8.586 10 5.293 6.707a1 1 0 010-1.414z" clip-rule="evenodd" />
+                </svg>
+            </div>
+        </template>
 
+        <div x-show="dragging" class="inline-flex items-center gap-1 px-2 py-0.5 mr-2 mb-2 rounded-full text-xs font-medium leading-4 bg-primary-100 text-primary-800 dragging-item"  x-ref="draggingItem">
+            <span
+                class=""
+                x-text="value[dragIndex]"
+            ></span>
 
-                </div>
+            <!-- Small x svg -->
+            <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 20 20"
+                fill="currentColor"
+                class="w-4 h-4 -mr-1 cursor-pointer text-primary-300">
+                <path fill-rule="evenodd" d="M5.293 5.293a1 1 0 011.414 0L10 8.586l3.293-3.293a1 1 0 111.414 1.414L11.414 10l3.293 3.293a1 1 0 01-1.414 1.414L10 11.414l-3.293 3.293a1 1 0 01-1.414-1.414L8.586 10 5.293 6.707a1 1 0 010-1.414z" clip-rule="evenodd" />
+            </svg>
+        </div>
+    </div>
+
             </template>
 
             <template x-if="!value || value.length == 0">
@@ -252,7 +395,7 @@
             </template>
 
             <!-- Heroicons up/down -->
-            <div class="shrink-0">
+            <div class="transform -translate-y-1 shrink-0">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-5 h-5 text-gray-500 shrink-0"><path fill-rule="evenodd" d="M10 3a.75.75 0 01.55.24l3.25 3.5a.75.75 0 11-1.1 1.02L10 4.852 7.3 7.76a.75.75 0 01-1.1-1.02l3.25-3.5A.75.75 0 0110 3zm-3.76 9.2a.75.75 0 011.06.04l2.7 2.908 2.7-2.908a.75.75 0 111.1 1.02l-3.25 3.5a.75.75 0 01-1.1 0l-3.25-3.5a.75.75 0 01.04-1.06z" clip-rule="evenodd" /></svg>
             </div>
         </button>
