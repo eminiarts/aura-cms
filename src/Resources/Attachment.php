@@ -5,6 +5,7 @@ namespace Eminiarts\Aura\Resources;
 use Eminiarts\Aura\Jobs\GenerateImageThumbnail;
 use Eminiarts\Aura\Models\Post;
 use Illuminate\Foundation\Bus\DispatchesJobs;
+use Illuminate\Support\Str;
 
 class Attachment extends Post
 {
@@ -53,6 +54,16 @@ class Attachment extends Post
                 'validation' => 'required',
                 'on_index' => true,
                 'slug' => 'url',
+                'style' => [
+                    'width' => '50',
+                ],
+            ],
+            [
+                'name' => 'Thumbnail',
+                'type' => 'Eminiarts\\Aura\\Fields\\Text',
+                'validation' => '',
+                'on_index' => false,
+                'slug' => 'thumbnail_url',
                 'style' => [
                     'width' => '50',
                 ],
@@ -195,6 +206,16 @@ class Attachment extends Post
         return [];
     }
 
+    public function isImage()
+    {
+        return Str::startsWith($this->mime_type, 'image/');
+    }
+
+    public function path()
+    {
+        return asset('storage/'.$this->url);
+    }
+
     public function tableGridView()
     {
         return 'aura::attachment.grid';
@@ -217,6 +238,11 @@ class Attachment extends Post
         return $mimeTypeToThumbnail[$this->mime_type] ?? 'default-thumbnail.jpg';
     }
 
+    public function thumbnail_path()
+    {
+        return asset('storage/'.$this->thumbnail_url);
+    }
+
     protected static function booted()
     {
         parent::booted();
@@ -225,15 +251,9 @@ class Attachment extends Post
             // Check if the attachment has a file
 
             // Dispatch the GenerateThumbnail job
-            // $job = new GenerateImageThumbnail($attachment);
-
-            // $model = new static();
-            // $jobId = $model->dispatch($job);
-
-            // $attachment->jobs()->create([
-            //     'job_id' => $jobId,
-            //     'job_status' => 'pending',
-            // ]);
+            if ($attachment->isImage()) {
+                GenerateImageThumbnail::dispatch($attachment);
+            }
         });
     }
 }

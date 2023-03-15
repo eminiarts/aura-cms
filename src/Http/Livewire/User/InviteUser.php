@@ -45,6 +45,11 @@ class InviteUser extends ModalComponent
         return $this->fieldsForView($fields);
     }
 
+    public static function modalMaxWidth(): string
+    {
+        return '7xl';
+    }
+
     public function render()
     {
         return view('aura::livewire.user.invite-user');
@@ -58,26 +63,21 @@ class InviteUser extends ModalComponent
         ]);
 
         $rules['post.fields.email'] = [
-                'required', 'email',
-                function ($attribute, $value, $fail) {
-                    $team = auth()->user()->currentTeam;
+            'required', 'email',
+            function ($attribute, $value, $fail) {
+                $team = auth()->user()->currentTeam;
 
-                    if ($team->users()->where('email', $value)->exists()) {
-                        $fail('User already exists.');
-                    }
+                if ($team->users()->where('email', $value)->exists()) {
+                    $fail('User already exists.');
+                }
 
-                    if ($team->teamInvitations()->where('email', $value)->exists()) {
-                        $fail('User already invited.');
-                    }
-                },
-            ];
+                if ($team->teamInvitations()->where('email', $value)->exists()) {
+                    $fail('User already invited.');
+                }
+            },
+        ];
 
         return $rules;
-    }
-
-    public static function modalMaxWidth(): string
-    {
-        return '7xl';
     }
 
     public function save()

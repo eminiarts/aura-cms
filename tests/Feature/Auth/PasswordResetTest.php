@@ -4,8 +4,8 @@ namespace Tests\Feature\Auth;
 
 use Eminiarts\Aura\Models\User;
 use Illuminate\Auth\Notifications\ResetPassword;
-use Illuminate\Support\Facades\Notification;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Notification;
 
 uses(RefreshDatabase::class);
 

@@ -44,7 +44,7 @@
             <div>
                 <div>
                     @if($this->createInModal)
-                    <a href="#" wire:click.prevent="$emit('openModal', 'post.create-modal', {{ json_encode(['type' => $this->model->getType(), 'params' => [
+                    <a href="#" wire:click.prevent="$emit('openModal', 'aura::post-create-modal', {{ json_encode(['type' => $this->model->getType(), 'params' => [
                         'for' => $this->parent->getType(), 'id' => $this->parent->id
                     ]]) }})">
                            <x-aura::button>

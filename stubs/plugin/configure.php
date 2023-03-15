@@ -141,7 +141,6 @@ function replaceForAllOtherOSes(): array
     return explode(PHP_EOL, run('grep -E -r -l -i ":author|:vendor|:package|VendorName|skeleton|migration_table_name|vendor_name|vendor_slug|author@domain.com" --exclude-dir=vendor ./* ./.github/* | grep -v '.basename(__FILE__)));
 }
 
-
 $vendor = '';
 $name = '';
 
@@ -189,7 +188,6 @@ $useLaravelRay = false;
 $useUpdateChangelogWorkflow = false;
 
 writeln('Replacing Files...');
-
 
 $files = (str_starts_with(strtoupper(PHP_OS), 'WIN') ? replaceForWindows() : replaceForAllOtherOSes());
 

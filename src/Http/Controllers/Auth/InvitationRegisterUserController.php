@@ -2,31 +2,29 @@
 
 namespace Eminiarts\Aura\Http\Controllers\Auth;
 
-use Illuminate\Http\Request;
-use Eminiarts\Aura\Resources\User;
 use Eminiarts\Aura\Facades\Aura;
-use Illuminate\Validation\Rules;
-use Eminiarts\Aura\Resources\Role;
-use Eminiarts\Aura\Resources\Team;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Hash;
-use Illuminate\Auth\Events\Registered;
-use Eminiarts\Aura\Resources\TeamInvitation;
 use Eminiarts\Aura\Http\Controllers\Controller;
 use Eminiarts\Aura\Providers\RouteServiceProvider;
+use Eminiarts\Aura\Resources\Team;
+use Eminiarts\Aura\Resources\TeamInvitation;
+use Eminiarts\Aura\Resources\User;
+use Illuminate\Auth\Events\Registered;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\Rules;
 
 class InvitationRegisterUserController extends Controller
 {
     /**
-    * Display the registration view.
-    *
-    * @return \Illuminate\View\View
-    */
+     * Display the registration view.
+     *
+     * @return \Illuminate\View\View
+     */
     public function create(Request $request, Team $team, TeamInvitation $teamInvitation)
     {
         // If team registration is disabled, we show a 404 page.
-        abort_if(!Aura::option('user_invitations'), 404);
+        abort_if(! Aura::option('user_invitations'), 404);
 
         return view('aura::auth.user_invitation', [
             'team' => $team,
@@ -35,15 +33,15 @@ class InvitationRegisterUserController extends Controller
     }
 
     /**
-    * Handle an incoming registration request.
-    *
-    * @return \Illuminate\Http\RedirectResponse
-    *
-    * @throws \Illuminate\Validation\ValidationException
-    */
+     * Handle an incoming registration request.
+     *
+     * @return \Illuminate\Http\RedirectResponse
+     *
+     * @throws \Illuminate\Validation\ValidationException
+     */
     public function store(Request $request, Team $team, TeamInvitation $teamInvitation)
     {
-        abort_if(!Aura::option('user_invitations'), 404);
+        abort_if(! Aura::option('user_invitations'), 404);
 
         $request->validate([
             'name' => ['required', 'string', 'max:255'],
@@ -55,7 +53,7 @@ class InvitationRegisterUserController extends Controller
             'email' => $teamInvitation->email,
             'password' => Hash::make($request->password),
             'current_team_id' => $team->id,
-            'fields' => ['roles' => [$teamInvitation->role]]
+            'fields' => ['roles' => [$teamInvitation->role]],
         ]);
 
         // dd($user->fresh()->toArray());

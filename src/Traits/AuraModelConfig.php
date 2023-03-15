@@ -82,22 +82,6 @@ trait AuraModelConfig
         return $this->displayFieldValue($key, $value);
     }
 
-    // public static function create($fields)
-    // {
-    //     $model = new static();
-
-    //     $model->save();
-
-    //     $model->update($fields);
-
-    //     return $model;
-    // }
-
-    public function title()
-    {
-        return $this->title." (#{$this->id})";
-    }
-
     public function display($key)
     {
         if (array_key_exists($key, $this->fields->toArray())) {
@@ -367,6 +351,22 @@ trait AuraModelConfig
     public function team()
     {
         return $this->belongsTo(Team::class);
+    }
+
+    // public static function create($fields)
+    // {
+    //     $model = new static();
+
+    //     $model->save();
+
+    //     $model->update($fields);
+
+    //     return $model;
+    // }
+
+    public function title()
+    {
+        return $this->title." (#{$this->id})";
     }
 
     public static function usesCustomTable(): bool
