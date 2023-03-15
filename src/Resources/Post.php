@@ -243,7 +243,7 @@ class Post extends ModelsPost
              [
                  'name' => 'User',
                  'slug' => 'user_id',
-                 'type' => 'Eminiarts\\Aura\\Fields\\SelectMany',
+                 'type' => 'Eminiarts\\Aura\\Fields\\BelongsTo',
                  'multiple' => false,
                  'resource' => 'Eminiarts\\Aura\\Resources\\User',
                  'validation' => '',

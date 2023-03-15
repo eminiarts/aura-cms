@@ -183,7 +183,7 @@ class Page extends Post
                 ],
                 'slug' => 'select-many',
                 'instructions' => 'SelectMany',
-                'posttype' => 'Eminiarts\\Aura\\Resources\\Invoice',
+                'resource' => 'Eminiarts\\Aura\\Resources\\Invoice',
             ],
             [
                 'name' => 'Tab 2',
