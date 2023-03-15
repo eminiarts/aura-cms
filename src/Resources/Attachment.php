@@ -156,6 +156,10 @@ class Attachment extends Post
     {
         return asset('storage/'.$this->url);
     }
+    public function thumbnail_path()
+    {
+        return asset('storage/'.$this->thumbnail_url);
+    }
 
     public function getIcon()
     {
