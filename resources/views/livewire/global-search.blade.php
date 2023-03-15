@@ -11,7 +11,7 @@
                         </svg>
                     </div>
 
-                    <input x-ref="searchField" class="py-4 px-2 focus:outline-none relative block w-full rounded-none rounded-t-md bg-transparent focus:z-10 focus:border-0 focus:!border-none sm:text-sm" style="border: none; box-shadow: none;" aria-autocomplete="list" aria-labelledby="docsearch-label" id="docsearch-input" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="Search Aura" maxlength="64" type="search">
+                    <input wire:model="search" x-ref="searchField" class="py-4 px-2 focus:outline-none relative block w-full rounded-none rounded-t-md bg-transparent focus:z-10 focus:border-0 focus:!border-none sm:text-sm" style="border: none; box-shadow: none;" aria-autocomplete="list" aria-labelledby="docsearch-label" id="docsearch-input" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="Search Aura" maxlength="64" type="search">
 
                     <div>
                         <span @click="closeSearch()" class="cursor-pointer mx-3 text-[10px] text-gray-400 lowercase bg-white shadow-lg rounded border border-gray-100 w-6 h-6 flex items-center justify-center">esc</span>
@@ -20,7 +20,17 @@
 
                 <div class="p-5 border-t">
                     <h4>Projekte</h4>
-                    <div></div>
+                    <div>
+                        <ul class="mt-4">
+                    @foreach($searchResults as $result)
+                        <li>
+                            <a href="{{ route('aura.post.view', ['slug' => $result->type, 'id' => $result->id]) }}">
+                                {{ $result->type }}: {{ $result->id }} {{ $result->title }}
+                            </a>
+                        </li>
+                    @endforeach
+            </ul>
+                    </div>
                 </div>
             </div>
         </div>
