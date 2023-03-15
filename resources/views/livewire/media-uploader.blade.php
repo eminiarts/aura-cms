@@ -5,11 +5,11 @@
         {{-- @dump($media, json_encode($media)) --}}
     <div
     x-data="{ media: {{ json_encode($media) }}, loading: true }"
-    class="fixed top-0 right-0 p-4 space-y-4 z-50"
+    class="pointer-events-none fixed inset-0 flex items-end px-4 py-6 sm:items-start sm:p-6 z-50"
 >
-    @foreach($media as $file)
-    <div aria-live="assertive" class="pointer-events-none fixed inset-0 flex items-end px-4 py-6 sm:items-start sm:p-6">
   <div class="flex w-full flex-col items-end space-y-4 sm:items-end">
+
+    @foreach($media as $file)
     <!--
       Notification panel, dynamically insert this into the live region when it needs to be displayed
 
@@ -20,7 +20,8 @@
         From: "opacity-100"
         To: "opacity-0"
     -->
-    <div class="pointer-events-auto w-full max-w-sm overflow-hidden rounded-lg bg-white shadow-lg ring-1 ring-black ring-opacity-5">
+    <div class="pointer-events-auto w-full max-w-sm overflow-hidden rounded-lg bg-white shadow-lg ring-1 ring-black ring-opacity-5 relative" x-data="{loading: true}" x-show="loading"
+            x-init="setTimeout(() => { loading = false }, 3000)" x-transition:leave="transition ease-linear duration-1000" x-transition:leave-end="opacity-0">
       <div class="p-4">
         <div class="flex items-start">
           <div class="flex-shrink-0">
@@ -29,8 +30,8 @@
             </svg>
           </div>
           <div class="ml-3 w-0 flex-1 pt-0.5">
-            <p class="text-sm font-medium text-gray-900">Successfully saved!</p>
-            <p class="mt-1 text-sm text-gray-500">Anyone with a link can now view this file.</p>
+            <p class="text-sm font-medium text-gray-900">Successfully uploaded</p>
+            <p class="mt-1 text-sm text-gray-500">{{ $file->getClientOriginalName() }}</p>
           </div>
           <div class="ml-4 flex flex-shrink-0">
             <button type="button" class="inline-flex rounded-md bg-white text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2">
@@ -42,30 +43,17 @@
           </div>
         </div>
       </div>
-    </div>
-  </div>
-</div>
-        <div
-            x-show="loading"
-            x-init="setTimeout(() => { loading = false }, 3000)"
-            class="relative flex items-center w-full max-w-xs p-4 mb-4 text-gray-500 bg-white rounded-lg shadow dark:text-gray-400 dark:bg-gray-800"
-            role="alert"
-        >
-            <div class="inline-flex items-center justify-center flex-shrink-0 w-8 h-8 text-green-500 bg-green-100 rounded-lg dark:bg-green-800 dark:text-green-200">
-                <svg aria-hidden="true" class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path></svg>
-            </div>
-            <div class="ml-3 text-sm font-normal">{{ $file->getClientOriginalName() }} uploaded</div>
-            <div class="absolute bottom-0 left-0 w-full h-1.5">
+
+      <div class="absolute bottom-0 left-0 w-full h-1">
                 <div
-                    x-show="loading"
-                    x-transition:leave="transition ease-linear duration-1000"
-                    x-transition:leave-start="w-full bg-primary-500"
-                    x-transition:leave-end="w-0 bg-primary-500"
-                    class="h-1.5 bg-primary-500"
-                ></div>
+                    class="h-1 bg-primary-200 animate-countdown origin-left"
+                ></div> 
             </div>
-        </div>
+    </div>
+
     @endforeach
+  </div>
+
 </div>
 
     @endif
