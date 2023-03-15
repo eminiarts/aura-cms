@@ -34,7 +34,7 @@ if($selected) {
                     @else
                     
                     <div class="text-gray-300 flex items-center justify-center">
-                        @include('attachment.icon', ['class' => 'h-8 w-8', 'attachment' => $file])
+                        @include('aura::attachment.icon', ['class' => 'h-8 w-8', 'attachment' => $file])
                     </div>
 
                     @endif

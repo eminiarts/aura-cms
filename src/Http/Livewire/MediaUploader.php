@@ -51,15 +51,17 @@ class MediaUploader extends Component
             ]);
         }
 
+        if ($this->field) {
          // Emit update Field
-        $this->emit('updateField', [
-            'slug' => $this->field['slug'],
-            // merge the new attachments with the old ones
-            'value' => array_merge($this->selected, collect($attachments)->pluck('id')->toArray()),
-        ]);
+            $this->emit('updateField', [
+                'slug' => $this->field['slug'],
+                // merge the new attachments with the old ones
+                'value' => array_merge($this->selected, collect($attachments)->pluck('id')->toArray()),
+            ]);
 
 
-        $this->selected = array_merge($this->selected, collect($attachments)->pluck('id')->toArray());
+            $this->selected = array_merge($this->selected, collect($attachments)->pluck('id')->toArray());
+        }
 
         $this->emit('refreshTable');
     }

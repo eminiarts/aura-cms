@@ -1,7 +1,7 @@
 <div class="w-full p-8">
     <div class="">
         {{-- <livewire:aura::table :model="app('Eminiarts\Aura\Resources\Attachment')"/> --}}
-        <livewire:aura::media-uploader :table="true" :model="app('Eminiarts\Aura\Resources\Attachment')" />
+        <livewire:aura::media-uploader :field="$field" :selected="$selected" :table="true" :model="app('Eminiarts\Aura\Resources\Attachment')" />
     </div>
 
     {{-- Footer with 2 buttons: close and select --}}
