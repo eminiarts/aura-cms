@@ -7,18 +7,18 @@ use Illuminate\Console\Command;
 class PublishCommand extends Command
 {
     /**
-     * The name and signature of the console command.
-     *
-     * @var string
-     */
-    protected $signature = 'aura:publish';
-
-    /**
      * The console command description.
      *
      * @var string
      */
     protected $description = 'Publish all of the Aura resources';
+
+    /**
+     * The name and signature of the console command.
+     *
+     * @var string
+     */
+    protected $signature = 'aura:publish';
 
     /**
      * Execute the console command.

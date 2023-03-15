@@ -1,4 +1,4 @@
-<?php 
+<?php
 
 use Eminiarts\Aura\Models\Post;
 
@@ -49,7 +49,7 @@ test('field inherits on_view from parent', function () {
     $fields = $model->viewFields();
 
     expect($fields)->toHaveCount(1);
-    
+
     expect($fields[0]['fields'])->toHaveCount(1);
 
     expect($fields[0]['fields'][0]['fields'])->toHaveCount(1);
@@ -107,7 +107,7 @@ test('field is hidden when on_view is false', function () {
     $fields = $model->viewFields();
 
     expect($fields)->toHaveCount(1);
-    
+
     expect($fields[0]['fields'])->toHaveCount(2);
 
     expect($fields[0]['fields'][0]['fields'])->toHaveCount(1);
@@ -117,5 +117,4 @@ test('field is hidden when on_view is false', function () {
     expect($fields[0]['fields'][0]['fields'][0]['slug'])->not->toBe('text2');
 
     expect(optional($fields[0]['fields'][1])['fields'])->toBeEmpty();
-
 });

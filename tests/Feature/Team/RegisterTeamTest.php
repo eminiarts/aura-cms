@@ -1,15 +1,10 @@
 <?php
 
-use Eminiarts\Aura\Models\User;
-
 use Eminiarts\Aura\Facades\Aura;
-
-use Eminiarts\Aura\Resources\Option;
-
-use Eminiarts\Aura\Models\Scopes\TeamScope;
-
 use Eminiarts\Aura\Http\Livewire\AuraConfig;
-
+use Eminiarts\Aura\Models\Scopes\TeamScope;
+use Eminiarts\Aura\Models\User;
+use Eminiarts\Aura\Resources\Option;
 use function Pest\Livewire\livewire;
 
 // Before each test, create a Superadmin and login
@@ -79,7 +74,6 @@ test('aura config site is working', function () {
     // make sure the site route('aura.config') is working
     $this->get(route('aura.config'))->assertOk();
 });
-
 
 test('registration config can be enabled and called from the aura facade', function () {
     livewire(AuraConfig::class)

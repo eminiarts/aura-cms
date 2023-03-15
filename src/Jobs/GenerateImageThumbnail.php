@@ -2,14 +2,14 @@
 
 namespace Eminiarts\Aura\Jobs;
 
-use Illuminate\Bus\Queueable;
-use Intervention\Image\Facades\Image;
-use Illuminate\Queue\SerializesModels;
-use Illuminate\Support\Facades\Storage;
 use Eminiarts\Aura\Resources\Attachment;
-use Illuminate\Queue\InteractsWithQueue;
+use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
+use Illuminate\Queue\InteractsWithQueue;
+use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Facades\Storage;
+use Intervention\Image\Facades\Image;
 
 class GenerateImageThumbnail implements ShouldQueue
 {
@@ -47,7 +47,7 @@ class GenerateImageThumbnail implements ShouldQueue
             return;
         }
         // Set the desired storage path for the thumbnail
-        $thumbnailPath = 'thumbnails/' . basename($this->attachment->url);
+        $thumbnailPath = 'thumbnails/'.basename($this->attachment->url);
 
         // If the thumbnail already exists, don't generate it again
         if (Storage::exists($thumbnailPath)) {

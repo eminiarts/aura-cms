@@ -2,10 +2,10 @@
 
 namespace Eminiarts\Aura\Resources;
 
-use Illuminate\Support\Str;
+use Eminiarts\Aura\Jobs\GenerateImageThumbnail;
 use Eminiarts\Aura\Models\Post;
 use Illuminate\Foundation\Bus\DispatchesJobs;
-use Eminiarts\Aura\Jobs\GenerateImageThumbnail;
+use Illuminate\Support\Str;
 
 class Attachment extends Post
 {
@@ -152,15 +152,6 @@ class Attachment extends Post
         ];
     }
 
-    public function path()
-    {
-        return asset('storage/'.$this->url);
-    }
-    public function thumbnail_path()
-    {
-        return asset('storage/'.$this->thumbnail_url);
-    }
-
     public function getIcon()
     {
         return '<svg fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"></path></svg>';
@@ -215,6 +206,16 @@ class Attachment extends Post
         return [];
     }
 
+    public function isImage()
+    {
+        return Str::startsWith($this->mime_type, 'image/');
+    }
+
+    public function path()
+    {
+        return asset('storage/'.$this->url);
+    }
+
     public function tableGridView()
     {
         return 'aura::attachment.grid';
@@ -237,6 +238,11 @@ class Attachment extends Post
         return $mimeTypeToThumbnail[$this->mime_type] ?? 'default-thumbnail.jpg';
     }
 
+    public function thumbnail_path()
+    {
+        return asset('storage/'.$this->thumbnail_url);
+    }
+
     protected static function booted()
     {
         parent::booted();
@@ -249,10 +255,5 @@ class Attachment extends Post
                 GenerateImageThumbnail::dispatch($attachment);
             }
         });
-    }
-
-    public function isImage()
-    {
-        return Str::startsWith($this->mime_type, 'image/');
     }
 }

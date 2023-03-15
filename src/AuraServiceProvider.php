@@ -56,7 +56,7 @@ class AuraServiceProvider extends PackageServiceProvider
     {
         parent::boot();
 
-       // ray('boot');
+        // ray('boot');
     }
 
     public function bootGate()
@@ -104,21 +104,12 @@ class AuraServiceProvider extends PackageServiceProvider
         Livewire::component('aura::team-settings', TeamSettings::class);
         Livewire::component('aura::invite-user', InviteUser::class);
         Livewire::component('aura::config', AuraConfig::class);
-        
-        
 
         // Flows
         Livewire::component('aura::create-flow', CreateFlow::class);
         Livewire::component('aura::edit-operation', EditOperation::class);
 
         return $this;
-    }
-
-    public function registeringPackage() {
-
-        // ray('registering package');
-        //$package->hasRoute('web');
-        //$this->loadRoutesFrom(__DIR__.'/../routes/web.php');
     }
 
     /*
@@ -139,10 +130,10 @@ class AuraServiceProvider extends PackageServiceProvider
             ->hasMigrations(['create_aura_tables', 'create_flows_table'])
             ->runsMigrations()
             ->hasCommands([
-                AuraCommand::class, 
-                MakePosttype::class, 
-                MakeUser::class, 
-                CreateAuraPlugin::class, 
+                AuraCommand::class,
+                MakePosttype::class,
+                MakeUser::class,
+                CreateAuraPlugin::class,
                 MakeField::class,
                 PublishCommand::class,
             ])
@@ -228,10 +219,15 @@ class AuraServiceProvider extends PackageServiceProvider
         Aura::registerFields(Aura::getAppFields());
     }
 
+    public function registeringPackage()
+    {
+        // ray('registering package');
+        //$package->hasRoute('web');
+        //$this->loadRoutesFrom(__DIR__.'/../routes/web.php');
+    }
+
     protected function getResources(): array
     {
         return config('aura.resources');
     }
-
-    
 }

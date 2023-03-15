@@ -2,15 +2,12 @@
 
 namespace Eminiarts\Aura\Http\Livewire;
 
-use Livewire\Component;
-use Illuminate\Support\Arr;
-use Illuminate\Support\Str;
 use Eminiarts\Aura\Facades\Aura;
-use Eminiarts\Aura\Resources\Option;
-use Illuminate\Support\Facades\Cache;
 use Eminiarts\Aura\Traits\InputFields;
 use Eminiarts\Aura\Traits\RepeaterFields;
-use Eminiarts\Aura\Models\Scopes\TeamScope;
+use Illuminate\Support\Arr;
+use Illuminate\Support\Facades\Cache;
+use Livewire\Component;
 
 class AuraConfig extends Component
 {
@@ -24,8 +21,6 @@ class AuraConfig extends Component
     public $post = [
         'fields' => [],
     ];
-
-
 
     public static function getFields()
     {
@@ -271,8 +266,6 @@ class AuraConfig extends Component
 
         $this->notify('Erfolgreich gespeichert!');
     }
-
-
 
     public function updatedConfig()
     {

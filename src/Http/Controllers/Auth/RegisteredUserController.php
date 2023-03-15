@@ -2,44 +2,43 @@
 
 namespace Eminiarts\Aura\Http\Controllers\Auth;
 
-use Illuminate\Http\Request;
-use Eminiarts\Aura\Models\User;
 use Eminiarts\Aura\Facades\Aura;
-use Illuminate\Validation\Rules;
+use Eminiarts\Aura\Http\Controllers\Controller;
+use Eminiarts\Aura\Models\User;
+use Eminiarts\Aura\Providers\RouteServiceProvider;
 use Eminiarts\Aura\Resources\Role;
 use Eminiarts\Aura\Resources\Team;
-use Illuminate\Support\Facades\DB;
+use Illuminate\Auth\Events\Registered;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Auth\Events\Registered;
-use Eminiarts\Aura\Http\Controllers\Controller;
-use Eminiarts\Aura\Providers\RouteServiceProvider;
+use Illuminate\Validation\Rules;
 
 class RegisteredUserController extends Controller
 {
     /**
-    * Display the registration view.
-    *
-    * @return \Illuminate\View\View
-    */
+     * Display the registration view.
+     *
+     * @return \Illuminate\View\View
+     */
     public function create()
     {
         // If team registration is disabled, we show a 404 page.
-        abort_if(!Aura::option('team_registration'), 404);
+        abort_if(! Aura::option('team_registration'), 404);
 
         return view('aura::auth.register');
     }
 
     /**
-    * Handle an incoming registration request.
-    *
-    * @return \Illuminate\Http\RedirectResponse
-    *
-    * @throws \Illuminate\Validation\ValidationException
-    */
+     * Handle an incoming registration request.
+     *
+     * @return \Illuminate\Http\RedirectResponse
+     *
+     * @throws \Illuminate\Validation\ValidationException
+     */
     public function store(Request $request)
     {
-        abort_if(!Aura::option('team_registration'), 404);
+        abort_if(! Aura::option('team_registration'), 404);
 
         $request->validate([
             'name' => ['required', 'string', 'max:255'],

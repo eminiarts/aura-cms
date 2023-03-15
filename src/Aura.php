@@ -2,21 +2,28 @@
 
 namespace Eminiarts\Aura;
 
-use Illuminate\Support\Str;
-use Eminiarts\Aura\Resources\User;
+use Eminiarts\Aura\Models\Scopes\TeamScope;
+use Eminiarts\Aura\Resources\Attachment;
 use Eminiarts\Aura\Resources\Option;
+use Eminiarts\Aura\Resources\User;
+use Eminiarts\Aura\Traits\DefaultFields;
 use Illuminate\Filesystem\Filesystem;
 use Illuminate\Support\Facades\Cache;
-use Eminiarts\Aura\Resources\Attachment;
-use Eminiarts\Aura\Traits\DefaultFields;
-use Symfony\Component\Finder\SplFileInfo;
-use Eminiarts\Aura\Models\Scopes\TeamScope;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Str;
 use RuntimeException;
+use Symfony\Component\Finder\SplFileInfo;
 
 class Aura
 {
     use DefaultFields;
+
+    /**
+     * The user model that should be used by Jetstream.
+     *
+     * @var string
+     */
+    public static $userModel = User::class;
 
     protected array $config = [];
 
@@ -27,6 +34,28 @@ class Aura
     protected array $taxonomies = [];
 
     protected array $widgets = [];
+
+    /**
+     * Determine if Aura's published assets are up-to-date.
+     *
+     * @return bool
+     *
+     * @throws \RuntimeException
+     */
+    public static function assetsAreCurrent()
+    {
+        if (app()->environment('testing')) {
+            return true;
+        }
+
+        $publishedPath = public_path('vendor/aura/manifest.json');
+
+        if (! File::exists($publishedPath)) {
+            throw new RuntimeException('Aura CMS assets are not published. Please run: php artisan aura:publish');
+        }
+
+        return File::get($publishedPath) === File::get(__DIR__.'/../resources/dist/manifest.json');
+    }
 
     public static function checkCondition($model, $field)
     {
@@ -88,11 +117,11 @@ class Aura
     }
 
     /**
-    * Register the App resources
-    *
-    * @param  array  $resources
-    * @return static
-    */
+     * Register the App resources
+     *
+     * @param  array  $resources
+     * @return static
+     */
     public function getAppResources()
     {
         $path = config('aura.resources.path');
@@ -105,11 +134,11 @@ class Aura
     }
 
     /**
-    * Register the App taxonomies
-    *
-    * @param  array  $resources
-    * @return static
-    */
+     * Register the App taxonomies
+     *
+     * @param  array  $resources
+     * @return static
+     */
     public function getAppTaxonomies()
     {
         $path = config('aura.taxonomies.path');
@@ -135,29 +164,6 @@ class Aura
     public function getFields(): array
     {
         return array_unique($this->fields);
-    }
-
-    /**
-    * The user model that should be used by Jetstream.
-    *
-    * @var string
-    */
-    public static $userModel = User::class;
-
-    /**
-    * Get the name of the user model used by the application.
-    *
-    * @return string
-    */
-    public static function userModel()
-    {
-        return static::$userModel;
-    }
-    public static function useUserModel(string $model)
-    {
-        static::$userModel = $model;
-
-        return new static();
     }
 
     public function getGlobalOptions()
@@ -229,24 +235,6 @@ class Aura
         ]);
     }
 
-    public function setOption($key, $value)
-    {
-        $option = $this->getGlobalOptions();
-
-        if ($option && is_string($option->value)) {
-            $settings = json_decode($option->value, true);
-        } else {
-            $settings = [];
-        }
-
-        $settings[$key] = $value;
-
-        $option->value = json_encode($settings);
-        $option->save();
-
-        Cache::forget('aura-settings');
-    }
-
     public function getOption($name)
     {
         return Cache::remember(auth()->user()->current_team_id.'.aura.team-settings', now()->addHour(), function () {
@@ -304,6 +292,11 @@ class Aura
         return collect($grouped)->groupBy('group');
     }
 
+    public function option($key)
+    {
+        return $this->options()[$key] ?? null;
+    }
+
     public function options()
     {
         return Cache::rememberForever('aura-settings', function () {
@@ -315,11 +308,6 @@ class Aura
                 return [];
             }
         });
-    }
-
-    public function option($key)
-    {
-        return $this->options()[$key] ?? null;
     }
 
     public function registerFields(array $fields): void
@@ -340,6 +328,24 @@ class Aura
     public function registerWidgets(array $widgets): void
     {
         $this->widgets = array_merge($this->widgets, $widgets);
+    }
+
+    public function setOption($key, $value)
+    {
+        $option = $this->getGlobalOptions();
+
+        if ($option && is_string($option->value)) {
+            $settings = json_decode($option->value, true);
+        } else {
+            $settings = [];
+        }
+
+        $settings[$key] = $value;
+
+        $option->value = json_encode($settings);
+        $option->save();
+
+        Cache::forget('aura-settings');
     }
 
     public function taxonomies()
@@ -379,6 +385,23 @@ class Aura
         });
     }
 
+    /**
+     * Get the name of the user model used by the application.
+     *
+     * @return string
+     */
+    public static function userModel()
+    {
+        return static::$userModel;
+    }
+
+    public static function useUserModel(string $model)
+    {
+        static::$userModel = $model;
+
+        return new static();
+    }
+
     public function varexport($expression, $return = false)
     {
         if (! is_array($expression)) {
@@ -395,27 +418,5 @@ class Aura
         } else {
             echo $export;
         }
-    }
-
-     /**
-     * Determine if Aura's published assets are up-to-date.
-     *
-     * @return bool
-     *
-     * @throws \RuntimeException
-     */
-    public static function assetsAreCurrent()
-    {
-        if (app()->environment('testing')) {
-            return true;
-        }
-        
-        $publishedPath = public_path('vendor/aura/manifest.json');
-
-        if (! File::exists($publishedPath)) {
-            throw new RuntimeException('Aura CMS assets are not published. Please run: php artisan aura:publish');
-        }
-
-        return File::get($publishedPath) === File::get(__DIR__.'/../resources/dist/manifest.json');
     }
 }

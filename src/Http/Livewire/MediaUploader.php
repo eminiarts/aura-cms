@@ -10,16 +10,17 @@ class MediaUploader extends Component
 {
     use WithFileUploads;
 
-    public $media = [];
-    
-    public $table = true;
-
     public $button = false;
 
     public $field;
-    public $selected;
+
+    public $media = [];
 
     public Attachment $post;
+
+    public $selected;
+
+    public $table = true;
 
     public function mount(Attachment $post)
     {
@@ -52,13 +53,12 @@ class MediaUploader extends Component
         }
 
         if ($this->field) {
-         // Emit update Field
+            // Emit update Field
             $this->emit('updateField', [
                 'slug' => $this->field['slug'],
                 // merge the new attachments with the old ones
                 'value' => array_merge($this->selected, collect($attachments)->pluck('id')->toArray()),
             ]);
-
 
             $this->selected = array_merge($this->selected, collect($attachments)->pluck('id')->toArray());
         }
