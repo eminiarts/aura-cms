@@ -66,7 +66,6 @@
         init() {
             this.boundStopDragging = this.stopDragging.bind(this);
             this.boundMoveItem = this.moveItem.bind(this);
-
             if (this.api) {
                 this.fetchApi();
             } else {
@@ -87,6 +86,7 @@
                 }
             }, { debounce: 500 });
         },
+
         fetchApi() {
             this.loading = true;
 
@@ -109,44 +109,42 @@
                 this.loading = false;
             });
         },
+
         get filteredItems() {
             var items = this.items;
-
             if (this.search) {
                 return items.filter(item => item.title.toLowerCase().includes(this.search.toLowerCase()));
             }
-
             if (items.length === 0) {
                 return this.selectedItems;
             }
-
             // return this.selectedItems and items and remove duplicates by id
             return [...this.selectedItems, ...items].filter((item, index, self) => self.findIndex(i => i.id === item.id) === index).sort((a, b) => a.id - b.id);
-
         },
+
         isActive(item) {
             if (!this.multiple) {
                 return this.value === item.id;
             }
-
             return this.value.includes(item.id);
         },
+
         isDisabled(item) {
             return false;
         },
+
         isSelected(item) {
             if (!this.multiple) {
                 return this.value === item.id;
             }
-
             return this.value.includes(item.id);
         },
 
         toggleListbox() {
             this.showListbox = !this.showListbox;
         },
-        toggleItem(item) {
 
+        toggleItem(item) {
             // singular
             if (!this.multiple) {
                 this.value = item.id;
@@ -185,37 +183,29 @@
         focusNext(e) {
             const items = this.$refs.listbox.querySelectorAll(`[role='option']`);
             const active = e.target;
-
             if (!active) {
                 items[0].focus();
                 return;
             }
-
             const index = Array.from(items).indexOf(active);
-
             if (index === items.length - 1) {
                 items[0].focus();
                 return;
             }
-
             items[index + 1].focus();
         },
         focusPrevious(e) {
             const items = this.$refs.listbox.querySelectorAll(`[role='option']`);
             const active = e.target;
-
             if (!active) {
                 items[items.length - 1].focus();
                 return;
             }
-
             const index = Array.from(items).indexOf(active);
-
             if (index === 0) {
                 items[items.length - 1].focus();
                 return;
             }
-
             items[index - 1].focus();
         },
 
