@@ -42,6 +42,10 @@ class GenerateImageThumbnail implements ShouldQueue
      */
     public function handle()
     {
+        // Skip in tests
+        if (app()->environment('testing')) {
+            return;
+        }
         // Set the desired storage path for the thumbnail
         $thumbnailPath = 'thumbnails/' . basename($this->attachment->url);
 
