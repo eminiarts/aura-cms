@@ -9,10 +9,12 @@ class MediaManager extends ModalComponent
 {
     public $fieldSlug;
 
+    public $field;
+
     public $selected = [];
 
     // Listen for select Attachment
-    protected $listeners = ['selectedRows' => 'selectAttachment', 'tableMounted'];
+    protected $listeners = ['selectedRows' => 'selectAttachment', 'tableMounted', 'updateField' => 'updateField'];
 
     public static function modalMaxWidth(): string
     {
@@ -28,6 +30,19 @@ class MediaManager extends ModalComponent
     public function render()
     {
         return view('aura::livewire.media-manager');
+    }
+
+    public function updateField($field)
+    {
+        // dump($field);
+        // if $field['slug'] == $this->fieldSlug
+        if ($field['slug'] == $this->fieldSlug) {
+            $this->selected = $field['value'];
+            $this->emit('selectedRows', $this->selected);
+        }
+
+        // $this->field = $field;
+        // $this->selected = $field['value'];
     }
 
     public function select()

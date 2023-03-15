@@ -161,7 +161,7 @@
                     @endif
 
                     @if($button)
-                        <x-aura::button.light wire:click="$emit('openModal', 'aura::media-manager', {{ json_encode(['slug' => $field['slug'], 'selected' => $selected]) }})">
+                        <x-aura::button.light wire:click="$emit('openModal', 'aura::media-manager', {{ json_encode(['field' => $field, 'slug' => $field['slug'], 'selected' => $selected]) }})">
                         <x-slot:icon>
                             <x-aura::icon icon="media" class="" />
                         </x-slot>
