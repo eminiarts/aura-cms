@@ -192,7 +192,36 @@ class Post extends Resource
             }
         });
 
-        return $defaultValues->merge($meta ?? []);
+        return  $defaultValues->merge($meta ?? [])->map(function ($value, $key) {
+        $class = $this->fieldClassBySlug($key);
+
+        if ($class && isset($this->{$key}) && method_exists($class, 'get') && $this->isRelation($key)) {
+            return $class->get($class, $this->{$key});
+        }
+
+        // if $this->{$key} is set, then we want to use that
+        if (isset($this->{$key})) {
+            return $this->{$key};
+        }
+
+        // if $this->attributes[$key] is set, then we want to use that
+        if (isset($this->attributes[$key])) {
+            return $this->attributes[$key];
+        }
+    });
+    }
+
+
+    public function isRelation($key)
+    {
+        $modelMethods = get_class_methods($this);
+        $possibleRelationMethods = [$key, Str::camel($key)];
+        foreach ($possibleRelationMethods as $method) {
+            if (in_array($method, $modelMethods) && ($this->{$method}() instanceof \Illuminate\Database\Eloquent\Relations\Relation)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**
