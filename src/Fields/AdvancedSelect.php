@@ -2,9 +2,9 @@
 
 namespace Eminiarts\Aura\Fields;
 
-class SelectMany extends Field
+class AdvancedSelect extends Field
 {
-    public $component = 'aura::fields.select-many';
+    public $component = 'aura::fields.advanced-select';
 
     public $view = 'aura::fields.view-value';
 
@@ -56,7 +56,7 @@ class SelectMany extends Field
 
     public function set($value)
     {
-        return json_encode($value);  
+        return json_encode($value);
     }
 
     public function api($request)
@@ -86,7 +86,7 @@ class SelectMany extends Field
 
         // app($model)->pluck('title', 'id')->map(fn($name, $key) => ['value' => $key, 'label' => $name])->values()->toArray()
     }
-    
+
     public function selectedValues($model, $values)
     {
         if (! $values) {

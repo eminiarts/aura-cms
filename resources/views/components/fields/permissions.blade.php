@@ -2,7 +2,7 @@
 @php
     $name = 'post.fields.'  . optional($field)['slug'];
 
-    $groups = app($field['posttype'])->get()->map(function($item, $key) {
+    $groups = app($field['resource'])->get()->map(function($item, $key) {
         return [
             'name' => $item->fields['name'],
             'description' => $item->fields['description'],
@@ -67,7 +67,7 @@ hallo
             <div class="w-2/3 pl-1.5">
                 @foreach($items as $item)
                     <div class="flex items-center mb-2 ">
-                        <input x-model="field['{{ $item['slug'] }}']" type="checkbox" id="permissions_{{ $item['slug'] }}" class="w-5 h-5 transition duration-150 ease-in-out bg-gray-100 border-gray-500/30 rounded cursor-pointer form-checkbox text-primary-600 focus:ring-primary-500">
+                        <input x-model="field['{{ $item['slug'] }}']" type="checkbox" id="permissions_{{ $item['slug'] }}" class="w-5 h-5 transition duration-150 ease-in-out bg-gray-100 rounded cursor-pointer border-gray-500/30 form-checkbox text-primary-600 focus:ring-primary-500">
                         <label for="permissions_{{ $item['slug'] }}" class="block ml-3 text-sm leading-5 text-gray-700 cursor-pointer dark:text-gray-200">
                             {{ $item['name'] }}
                             <span class="block text-xs text-gray-400">{{ $item['description'] }}</span>

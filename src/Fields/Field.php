@@ -10,7 +10,7 @@ use Illuminate\Support\Traits\Macroable;
 use Illuminate\Contracts\Support\Htmlable;
 use Eminiarts\Aura\Http\Livewire\Post\View;
 
-class Field 
+class Field
 {
     use InputFields;
     use Macroable;
@@ -35,7 +35,7 @@ class Field
 
     public function component()
     {
-       if ($this->view && is_string(request()->route()->action['uses']) && str(request()->route()->action['uses'])->contains(View::class)) {
+        if ($this->view && is_string(request()->route()->action['uses']) && str(request()->route()->action['uses'])->contains(View::class)) {
             return $this->view;
         }
 
@@ -136,7 +136,7 @@ class Field
                     'option_group_7' => 'Relationship Fields',
                     'Eminiarts\\Aura\\Fields\\BelongsTo' => 'BelongsTo',
                     'Eminiarts\\Aura\\Fields\\HasMany' => 'HasMany',
-                    'Eminiarts\\Aura\\Fields\\SelectMany' => 'SelectMany',
+                    'Eminiarts\\Aura\\Fields\\AdvancedSelect' => 'AdvancedSelect',
 
                     'option_group_8' => 'Special Fields',
                     'Eminiarts\\Aura\\Fields\\Permissions' => 'Permissions',

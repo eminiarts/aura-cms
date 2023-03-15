@@ -27,11 +27,11 @@ class BelongsTo extends Field
 
     public function display($field, $value, $model)
     {
-        if ($field['model'] && $value) {
-            // Get Str after last backslash from $field['model']
-            $model = Str::afterLast($field['model'], '\\');
+        if ($field['resource'] && $value) {
+            // Get Str after last backslash from $field['resource']
+            $model = Str::afterLast($field['resource'], '\\');
 
-            return "<a class='font-bold text-primary-500' href='/".$model.'/'.$value."/edit'>".app($field['model'])::find($value)->title().'</a>';
+            return "<a class='font-bold text-primary-500' href='/".$model.'/'.$value."/edit'>".app($field['resource'])::find($value)->title().'</a>';
         }
 
         return $value;

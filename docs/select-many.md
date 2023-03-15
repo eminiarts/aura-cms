@@ -12,7 +12,7 @@ return [
         'name' => 'Roles',
         'slug' => 'roles',
         'posttype' => 'Eminiarts\\Aura\\Resources\\Role',
-        'type' => 'Eminiarts\\Aura\\Fields\\SelectMany',
+        'type' => 'Eminiarts\\Aura\\Fields\\AdvancedSelect',
         'validation' => '',
         'conditional_logic' => [],
         'has_conditional_logic' => false,

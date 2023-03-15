@@ -167,7 +167,7 @@ class Operation extends Post
             //     'name' => 'OperationLogs',
             //     'slug' => 'flow_operation_logs',
             //     'type' => 'Eminiarts\\Aura\\Fields\\HasMany',
-            //     'posttype' => 'Eminiarts\\Aura\\Resources\\OperationLog',
+            //     'resource' => 'Eminiarts\\Aura\\Resources\\OperationLog',
             //     'validation' => '',
             //     'conditional_logic' => [],
             //     'has_conditional_logic' => false,

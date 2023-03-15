@@ -1,7 +1,7 @@
 
 @php
 
-// dd($field['field']->values($field['model']), $field);
+// dd($field['field']->values($field['resource']), $field);
 
 // Maybe set a custom display field for BelongsTo fields, eg. email instead of Title
 // $displayField = $field['field']->displayField ?? 'title';
@@ -9,7 +9,7 @@
 if(optional($field)['api']) {
  $values = [];
 } else {
-    $values = $field['field']->values($field['model']);
+    $values = $field['field']->values($field['resource']);
 }
 
 // Paginate the results
@@ -26,7 +26,7 @@ if(optional($field)['api']) {
 
 @endphp
 
-{{-- @dump($field['model']) --}}
+{{-- @dump($field['resource']) --}}
 {{-- @dump($this->post['fields'][$field['slug']]) --}}
 
 <x-aura::fields.wrapper :field="$field">
@@ -41,7 +41,7 @@ if(optional($field)['api']) {
         items: {{ Js::from($values) }},
 
         api: {{ optional($field)['api'] ? 'true' : 'false' }},
-        model: {{ Js::from($field['model']) }},
+        model: {{ Js::from($field['resource']) }},
         field: {{ Js::from($field['type']) }},
         slug: '{{ $field['slug'] }}',
         csrf: document.querySelector('meta[name=\'csrf-token\']').getAttribute('content'),
@@ -126,7 +126,7 @@ if(optional($field)['api']) {
             x-listbox:options
             x-transition.origin.top.right
             x-cloak
-            class="absolute left-0 z-10 w-full mt-2 overflow-y-auto origin-top-right bg-white border border-gray-400/30 divide-y divide-gray-100 rounded-lg shadow-md outline-none max-h-96"
+            class="absolute left-0 z-10 w-full mt-2 overflow-y-auto origin-top-right bg-white border divide-y divide-gray-100 rounded-lg shadow-md outline-none border-gray-400/30 max-h-96"
         >
           <li>
             <div>

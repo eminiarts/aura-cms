@@ -92,7 +92,7 @@ class Role extends Post
                     ],
                 ],
                 'slug' => 'permissions',
-                'posttype' => 'Eminiarts\\Aura\\Resources\\Permission',
+                'resource' => 'Eminiarts\\Aura\\Resources\\Permission',
             ],
         ];
     }
