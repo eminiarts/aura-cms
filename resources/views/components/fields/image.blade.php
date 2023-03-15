@@ -17,7 +17,8 @@ if($selected) {
 }
 @endphp
 
-<div class="w-full">
+<div class="w-full relative">
+
     <x-aura::fields.wrapper :field="$field">
         @if(isset($files) && count($files) > 0)
         <div x-data="orderMedia" x-ref="container" data-slug="{{ $field['slug'] }}" class="flex flex-wrap px-0 mt-0 draggable-container">
@@ -53,13 +54,9 @@ if($selected) {
     </div>
     @endif
 
-    <x-aura::button.light wire:click="$emit('openModal', 'aura::media-manager', {{ json_encode(['slug' => $field['slug'], 'selected' => $selected]) }})">
-        <x-slot:icon>
-            <x-aura::icon icon="media" class="" />
-        </x-slot>
+    <livewire:aura::media-uploader :table="false" :field="$field" :selected="$selected" :button="true" :model="app('Eminiarts\Aura\Resources\Attachment')" />
 
-        <span>Media Manager</span>
-    </x-aura::button.light>
+   
 </x-aura::fields.wrapper>
 </div>
 
