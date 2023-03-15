@@ -51,7 +51,6 @@
         boundMoveItem: null,
 
         updateSelectedItemsOrder() {
-            console.log('updateSelectedItemsOrder', this.value, this.$refs.selectedItemsContainer.querySelectorAll('.draggable-selectmany-item'));
             const newOrder = Array.from(this.$refs.selectedItemsContainer.querySelectorAll('.draggable-selectmany-item')).map(item => parseInt(item.getAttribute('data-id')));
 
             const validIds = newOrder.filter(item => !isNaN(item));
@@ -65,7 +64,6 @@
         },
 
         init() {
-
             this.boundStopDragging = this.stopDragging.bind(this);
             this.boundMoveItem = this.moveItem.bind(this);
 
@@ -158,43 +156,29 @@
             }
 
             if (this.isSelected(item)) {
-
                 this.value = this.value.filter(i => i !== item.id);
-
                 this.$nextTick(() => {
                     this.selectedItems = this.selectedItems.filter(i => i.id !== item.id);
-
-                    console.log('this.value', this.value, this.selectedItems);
                 });
             } else {
-                console.log('toggleItem else', this.selectedItems, item.id);
                 if(this.selectedItems.length === 0) {
                     this.selectedItems.push(item);
                 } else if (!this.selectedItems.find(i => i.id === item.id)) {
                     this.selectedItems.push(item);
                 }
-
                 this.$nextTick(() => {
                     this.value.push(item.id);
-
-                    console.log('this.value', this.value, this.selectedItems);
-
-                    this.initSortable();
                 });
             }
         },
 
         selectedItem(id) {
-            console.log('selectedItem', id, this.selectedItems);
-            // only search if this.items is not empty
             if (this.selectedItems.length === 0) {
                 return;
             }
-
             if (!this.selectedItems) {
                 return;
             }
-
             return this.selectedItems.find(item => item.id === id).title;
         },
 
@@ -235,36 +219,25 @@
             items[index - 1].focus();
         },
 
-
         startDragging(index, event) {
-            console.log('startDragging', index, event);
-
             this.dragging = true;
             this.dragIndex = index;
-
             const containerRect = this.$refs.selectedItemsContainer.getBoundingClientRect();
-            console.log('containerRect', containerRect);
             this.$refs.draggingItem.style.left = event.clientX - containerRect.left + 'px';
             this.$refs.draggingItem.style.top = event.target.offsetTop + 'px';
-
             window.addEventListener('mouseup', this.boundStopDragging);
             window.addEventListener('mousemove', this.boundMoveItem);
-
         },
 
         moveItem(event) {
-            console.log('moveItem', event);
             if (!this.dragging) return;
             const containerRect = this.$refs.selectedItemsContainer.getBoundingClientRect();
-
             // Clamp the dragged item's position
             const minX = containerRect.left;
             const maxX = containerRect.right - this.$refs.draggingItem.offsetWidth;
             const clampedX = Math.min(Math.max(event.clientX, minX), maxX);
-
             this.dragX = clampedX - containerRect.left;
             this.$refs.draggingItem.style.left = this.dragX + 'px';
-
             const newIndex = this.findNewIndex();
             if (newIndex !== this.dragIndex) {
                 this.value.splice(newIndex, 0, this.value.splice(this.dragIndex, 1)[0]);
