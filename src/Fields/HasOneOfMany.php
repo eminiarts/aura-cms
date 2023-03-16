@@ -2,9 +2,9 @@
 
 namespace Eminiarts\Aura\Fields;
 
-class HasMany extends Field
+class HasOneOfMany extends Field
 {
-    public $component = 'aura::fields.has-many';
+    public $component = 'aura::fields.hasOneOfMany';
 
     public bool $group = true;
 
