@@ -79,4 +79,30 @@ Alpine.store('leftSidebar', {
 
 Alpine.start()
 
-console.log('Alpine.js started');
+console.log('Alpine.js started 3');
+
+function updateVisitedPages(title, url) {
+  console.log('updateVisitedPages');
+  const key = 'visitedPages';
+  const maxVisitedPages = 5;
+  let visitedPages = JSON.parse(localStorage.getItem(key)) || [];
+
+  // Remove the existing entry with the same URL, if any
+  visitedPages = visitedPages.filter(page => page.url !== url);
+
+  // Add the new entry
+  visitedPages.unshift({ title, url });
+
+  // Keep only the last 5 entries
+  visitedPages = visitedPages.slice(0, maxVisitedPages);
+
+  // Update local storage
+  localStorage.setItem(key, JSON.stringify(visitedPages));
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  console.log('DOMContentLoaded');
+  const pageTitle = document.title;
+  const pageUrl = window.location.href;
+  updateVisitedPages(pageTitle, pageUrl);
+});

@@ -95,7 +95,7 @@
             <div class="flex flex-col flex-grow w-screen h-screen aura-content">
 
                 @if (! app('aura')::assetsAreCurrent())
-                    <div class="bg-red-100 text-red-800 p-4 text-xs">
+                    <div class="p-4 text-xs text-red-800 bg-red-100">
                         The published assets are not up-to-date with the installed version. To update, run:<br/><code class="font-bold">php artisan aura:publish</code>
                     </div>
                 @endif
@@ -150,10 +150,10 @@
         <link href="https://unpkg.com/@yaireo/tagify/dist/tagify.css" rel="stylesheet" type="text/css" />
 
         <!-- Alpine Plugins -->
-        <script defer src="https://unpkg.com/@alpinejs/collapse@3.10.5/dist/cdn.min.js"></script>
+        {{-- <script defer src="https://unpkg.com/@alpinejs/collapse@3.10.5/dist/cdn.min.js"></script>
         <script defer src="https://unpkg.com/@alpinejs/ui@3.12.0-beta.0/dist/cdn.min.js"></script>
 
-        <script defer src="https://unpkg.com/@alpinejs/focus@3.12.0/dist/cdn.min.js"></script>
+        <script defer src="https://unpkg.com/@alpinejs/focus@3.12.0/dist/cdn.min.js"></script> --}}
 
         @vite(['resources/js/app.js'], 'vendor/aura')
 

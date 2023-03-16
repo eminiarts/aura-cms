@@ -11,7 +11,6 @@ class GlobalSearch extends Component
 {
     public $search;
 
-
     public function render()
     {
         return view('aura::livewire.global-search');
