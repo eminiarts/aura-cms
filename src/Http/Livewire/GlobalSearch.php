@@ -11,11 +11,16 @@ class GlobalSearch extends Component
 {
     public $search;
 
+    public $searchResults = [];
+
 
     public function render()
     {
-        $searchResults = [];
+        return view('aura::livewire.global-search');
+    }
 
+    public function updatedSearch()
+    {
         // Get all accessible resources
         $resources = app('aura')::getResources();
 
@@ -30,12 +35,7 @@ class GlobalSearch extends Component
 
         // dd($resources);
 
-        // if $this->search is empty, return
-        if (!$this->search) {
-            return view('aura::livewire.global-search', [
-                'searchResults' => $searchResults,
-            ]);
-        }
+        $this->searchResults = [];
 
         // Search in each resource model
         foreach ($resources as $resource) {
@@ -50,17 +50,31 @@ class GlobalSearch extends Component
                 $query->where('key', 'LIKE', '%' . $this->search . '%')
                     ->orWhere('value', 'LIKE', '%' . $this->search . '%');
             })->get();
-            $searchResults = array_merge($searchResults, $results->toArray());
+            $this->searchResults = array_merge($this->searchResults, $results->toArray());
         }
 
         // Search in User model
         $userResults = User::where('name', 'like', '%' . $this->search . '%')
             ->orWhere('email', 'like', '%' . $this->search . '%')
             ->get();
-        $searchResults = array_merge($searchResults, $userResults->toArray());
+        $this->searchResults = array_merge($this->searchResults, $userResults->toArray());
 
-        return view('aura::livewire.global-search', [
-            'searchResults' => $searchResults
-        ]);
+        // limit search results to 15
+        $this->searchResults = array_slice($this->searchResults, 0, 10);
+        // dump($this->searchResults);
+        // map searchresults and add View URL to each item
+        // dump($this->searchResults);
+
+        $this->searchResults = array_map(function ($item) {
+            // return route aura.post.view with slug and id
+            if (isset($item['type'])) {
+            $item['view_url'] = route('aura.post.view', ['slug' => $item['type'], 'id' => $item['id']]);
+            } else {
+                $item['view_url'] = route('aura.post.view', ['slug' => 'user', 'id' => $item['id']]);
+            }
+            return $item;
+        }, $this->searchResults);
     }
+
+
 }
