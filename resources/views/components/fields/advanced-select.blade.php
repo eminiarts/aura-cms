@@ -1,13 +1,30 @@
 @php
-    if(optional($field)['api']) {
+    // Api from Field is more important than from Field Class
+    $api = optional($field)['api'] ?? false;
+
+    if(!$api) {
+        $api = optional($field['field'])->api ?? false;
+    }
+
+    // Multiple from Field is more important than from Field Class
+    $multiple = optional($field)['multiple'] ?? true;
+
+    if(!isset($field['multiple'])) {
+        $multiple = optional($field['field'])->multiple ?? true;
+    }
+
+    if($api) {
         $values = [];
-        $selectedValues = $field['field']->selectedValues($field['resource'], $this->post['fields'][$field['slug']]);
+        $selectedValues = $field['field']->selectedValues($field['resource'], optional($this->post['fields'])[$field['slug']]);
     } else {
         // $values = $field['field']->values($field['model']);
         $values = $field['field']->values($field['resource']);
         $selectedValues = [];
     }
 @endphp
+
+{{-- @dump(optional($field['field'])->api)
+@dump($api) --}}
 
 <x-aura::fields.wrapper :field="$field">
 
@@ -30,13 +47,13 @@
     class="w-full"
     x-data="{
         value: $wire.entangle('post.fields.{{ $field['slug'] }}').defer,
-        items: {{ Js::from($values) }},
-        selectedItems: {{ Js::from($selectedValues) }},
-        api: {{ optional($field)['api'] ? 'true' : 'false' }},
-        model: {{ Js::from($field['resource']) }},
-        field: {{ Js::from($field['type']) }},
-        multiple: {{ Js::from(optional($field)['multiple'] ?? true) }},
-        slug: '{{ $field['slug'] }}',
+        items: @js($values),
+        selectedItems: @js($selectedValues),
+        api: @js($api),
+        model: @js($field['resource']),
+        field: @js($field['type']),
+        multiple: @js($multiple),
+        slug: @js($field['slug']),
         searchable: {{ Js::from($field['searchable'] ?? true) }},
         csrf: document.querySelector('meta[name=\'csrf-token\']').getAttribute('content'),
         search: null,

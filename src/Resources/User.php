@@ -18,7 +18,7 @@ class User extends UserModel
 
     public static ?string $slug = 'user';
 
-    public static ?int $sort = 6;
+    public static ?int $sort = 1;
 
     public static string $type = 'User';
 
@@ -286,7 +286,6 @@ class User extends UserModel
                 'resource' => 'Eminiarts\\Aura\\Resources\\Page',
                 'validation' => '',
                 'conditional_logic' => [],
-                'wrapper' => '',
                 'on_index' => false,
                 'on_forms' => true,
                 'on_view' => true,
