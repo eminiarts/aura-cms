@@ -133,7 +133,17 @@
                 return items.filter(item => item.title.toLowerCase().includes(this.search.toLowerCase()));
             }
             if (items.length === 0) {
-                return this.selectedItems;
+                console.log('hier no items');
+
+                if(this.selectedItems && this.selectedItems.length > 0) {
+                    return this.selectedItems;
+                }
+
+                return [];
+            }
+
+            if(!this.selectedItems || this.selectedItems.length === 0) {
+                return items;
             }
             // return this.selectedItems and items and remove duplicates by id
             return [...this.selectedItems, ...items].filter((item, index, self) => self.findIndex(i => i.id === item.id) === index).sort((a, b) => a.id - b.id);
@@ -432,3 +442,4 @@
     </div>
 </div>
 </x-aura::fields.wrapper>
+

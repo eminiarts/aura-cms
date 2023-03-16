@@ -220,4 +220,9 @@ class Page extends Post
     {
         return [];
     }
+
+    public function title()
+    {
+        return "Page (#{$this->id})";
+    }
 }
