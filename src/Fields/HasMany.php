@@ -6,7 +6,7 @@ class HasMany extends Field
 {
     public $component = 'aura::fields.has-many';
 
-    public bool $group = true;
+    public bool $group = false;
 
     public string $type = 'relation';
 

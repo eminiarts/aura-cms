@@ -11,7 +11,7 @@ return [
     [
         'name' => 'Roles',
         'slug' => 'roles',
-        'posttype' => 'Eminiarts\\Aura\\Resources\\Role',
+        'resource' => 'Eminiarts\\Aura\\Resources\\Role',
         'type' => 'Eminiarts\\Aura\\Fields\\AdvancedSelect',
         'validation' => '',
         'conditional_logic' => [],

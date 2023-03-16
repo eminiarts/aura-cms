@@ -1,6 +1,9 @@
 <?php
 
 use Eminiarts\Aura\Models\Post;
+use Eminiarts\Aura\Fields\HasOne;
+use Eminiarts\Aura\Fields\HasMany;
+use Eminiarts\Aura\Fields\HasOneOfMany;
 
 class GroupRelationsTestModel extends Post
 {
@@ -61,10 +64,22 @@ class GroupRelationsTestModel extends Post
     }
 }
 
-test('hasMany - field should not be grouped', function () {
+test('hasMany - fields should not be grouped', function () {
     $model = new GroupRelationsTestModel();
 
     $fields = $model->getGroupedFields();
 
     $this->assertCount(3, $fields);
+});
+
+test('hasMany - field should not be grouped', function () {
+    expect((new HasMany)->group)->toBe(false);
+});
+
+test('hasOne - field should not be grouped', function () {
+    expect((new HasOne)->group)->toBe(false);
+});
+
+test('hasOneOfMany - field should not be grouped', function () {
+    expect((new HasOneOfMany)->group)->toBe(false);
 });
