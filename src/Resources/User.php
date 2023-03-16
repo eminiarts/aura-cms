@@ -235,7 +235,7 @@ class User extends UserModel
                 'has_conditional_logic' => false,
                 'wrapper' => '',
                 'on_index' => false,
-                'on_forms' => false,
+                'on_forms' => true,
                 'on_view' => true,
                 'style' => [
                     'width' => '100',
@@ -257,6 +257,58 @@ class User extends UserModel
                 'conditional_logic' => [
                 ],
                 'slug' => '2fa',
+            ],
+            [
+                'type' => 'Eminiarts\\Aura\\Fields\\Tab',
+                'name' => 'Relations',
+                'slug' => 'tab-Relations',
+                'global' => true,
+            ],
+            [
+                'name' => 'Attachments',
+                'slug' => 'attachments',
+                'type' => 'Eminiarts\\Aura\\Fields\\HasMany',
+                'resource' => 'Eminiarts\\Aura\\Resources\\Attachment',
+                'validation' => '',
+                'conditional_logic' => [],
+                'wrapper' => '',
+                'on_index' => false,
+                'on_forms' => true,
+                'on_view' => true,
+                'style' => [
+                    'width' => '100',
+                ],
+            ],
+            [
+                'name' => 'Pages',
+                'slug' => 'pages',
+                'type' => 'Eminiarts\\Aura\\Fields\\HasOne',
+                'resource' => 'Eminiarts\\Aura\\Resources\\Page',
+                'validation' => '',
+                'conditional_logic' => [],
+                'wrapper' => '',
+                'on_index' => false,
+                'on_forms' => true,
+                'on_view' => true,
+                'style' => [
+                    'width' => '100',
+                ],
+            ],
+            [
+                'name' => 'Latest Post',
+                'slug' => 'latest_post',
+                'type' => 'Eminiarts\\Aura\\Fields\\HasOneOfMany',
+                'resource' => 'Eminiarts\\Aura\\Resources\\Post',
+                'option' => 'latest',
+                'validation' => '',
+                'conditional_logic' => [],
+                'wrapper' => '',
+                'on_index' => false,
+                'on_forms' => true,
+                'on_view' => true,
+                'style' => [
+                    'width' => '100',
+                ],
             ],
         ];
     }
