@@ -19,22 +19,40 @@
                 </div>
 
                 <div class="p-5 border-t">
-                    <h4>Projekte</h4>
                     <div>
                         <ul class="mt-4">
+
+
+
                     @foreach($searchResults as $result)
-                        <li class="px-4 py-2 cursor-default select-none hover:bg-primary-500 hover:text-white" id="option-1" role="option" tabindex="-1">
-                            @if(! is_array($result))
-                            <a href="{{ route('aura.post.view', ['slug' => $result->type, 'id' => $result->id]) }}">
-                                {{ $result->type }}: {{ $result->id }} {{ $result->title }}
-                            </a>
-                            @elseif(isset($result['type']))
-                            <a href="{{ route('aura.post.view', ['slug' => $result['type'], 'id' => $result['id']]) }}">
-                                {{ $result['type'] }}: {{ $result['id'] }} {{ $result['title'] }}
-                            </a>
-                            @else
-                                User #{{ $result['id'] }}: {{ $result['name'] }}
-                            @endif
+                        <li class="flex px-4 py-2 cursor-default select-none hover:bg-primary-500 hover:text-white" id="option-1" role="option" tabindex="-1">
+
+                            <div class="w-8 h-8 mr-4 rounded-full shrink-0 bg-primary-200">
+                                {{-- SVG Icon Circle --}}
+                                <svg class="w-full h-full text-primary-500" fill="currentColor" viewBox="0 0 24 24">
+                                    <path d="M12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2zm0 18c-4.411 0-8-3.589-8-8s3.589-8 8-8 8 3.589 8 8-3.589 8-8 8z"></path>
+                                </svg>
+                            </div>
+
+                            <div class="flex-1">
+                                @if(! is_array($result))
+                                <a href="{{ route('aura.post.view', ['slug' => $result->type, 'id' => $result->id]) }}">
+                                    {{ $result->type }}: {{ $result->id }} {{ $result->title }}
+                                </a>
+                                @elseif(isset($result['type']))
+                                <a href="{{ route('aura.post.view', ['slug' => $result['type'], 'id' => $result['id']]) }}">
+                                    {{ $result['type'] }}: {{ $result['id'] }} {{ $result['title'] }}
+                                </a>
+                                @else
+                                    User #{{ $result['id'] }}: {{ $result['name'] }}
+                                @endif
+                            </div>
+
+                            <div>
+                                <svg class="w-4 h-4 ml-auto text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"></path>
+                                </svg>
+                            </div>
 
                         </li>
                     @endforeach
@@ -56,6 +74,9 @@
             search: '',
 
             items: [],
+            searchResults: {{ Js::from($searchResults) }},
+
+            selectedIndex: 0,
 
 			init() {
 				console.log('init search');
