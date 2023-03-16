@@ -10,7 +10,10 @@ class HasOneOfMany extends Field
 
     public string $type = 'relation';
 
-    public function queryFor($model, $query)
+    public function resource($model, $posttype, $option)
     {
+        // return $model->posts()->latest()->first();
+
+        return app($posttype)->where('user_id', $model->id)->latest()->first();
     }
 }
