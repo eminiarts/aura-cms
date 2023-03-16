@@ -300,6 +300,6 @@ class Post extends ModelsPost
 
     public function title()
     {
-        return $this->title." (#{$this->id})";
+        return $this->title." (Post #{$this->id})";
     }
 }
