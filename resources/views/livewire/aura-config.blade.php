@@ -10,7 +10,7 @@
             </div>
         </div>
 
-        @dump($post['fields'])
+        {{-- @dump($post['fields']) --}}
 
 
     {{-- save button --}}

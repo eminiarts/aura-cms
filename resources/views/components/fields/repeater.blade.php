@@ -1,5 +1,6 @@
 @php
     $slug = $field['slug'];
+    $values = data_get($this->post['fields'], $slug);
 @endphp
 
 {{-- @dump($field) --}}
@@ -10,8 +11,8 @@
 
     <div class="flex flex-col">
 
-        @if(optional($this->post['fields'])[$slug])
-        @foreach($field['field']->transform($field,$this->post['fields'][$slug]) as $key => $group)
+        @if(optional($values))
+        @foreach($field['field']->transform($field, $values) as $key => $group)
             <div class="flex flex-wrap -mx-0 items-center" wire:key="repeater-{{ $key }}">
 
                 <div class="flex flex-wrap flex-1 items-center space-x-0">
