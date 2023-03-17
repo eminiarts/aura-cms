@@ -184,6 +184,20 @@ class User extends Authenticatable
         return [];
     }
 
+    public function getOptionBookmarks()
+    {
+        // Cache
+        $option = Cache::remember('user.'.$this->id.'.bookmarks', now()->addHour(), function () {
+            return Option::whereName('user.'.$this->id.'.bookmarks')->first();
+        });
+
+        if ($option) {
+            return $option->value;
+        }
+
+        return [];
+    }
+
     public function getTeams()
     {
         // Return cached teams with meta
