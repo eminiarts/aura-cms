@@ -192,6 +192,9 @@ class Post extends Resource
             }
         });
 
+        return $defaultValues->merge($meta ?? []);
+
+
         return  $defaultValues->merge($meta ?? [])->map(function ($value, $key) {
             $class = $this->fieldClassBySlug($key);
 
@@ -224,10 +227,13 @@ class Post extends Resource
         }
     }
 
+    // Override isRelation
     public function isRelation($key)
     {
         $modelMethods = get_class_methods($this);
+
         $possibleRelationMethods = [$key, Str::camel($key)];
+
         foreach ($possibleRelationMethods as $method) {
             if (in_array($method, $modelMethods) && ($this->{$method}() instanceof \Illuminate\Database\Eloquent\Relations\Relation)) {
                 return true;
