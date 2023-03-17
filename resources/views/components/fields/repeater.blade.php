@@ -11,7 +11,7 @@
     <div class="flex flex-col">
 
         @if(optional($this->post['fields'])[$slug])
-        @foreach($field['field']->transform($field['fields'],$this->post['fields'][$slug]) as $key => $group)
+        @foreach($field['field']->transform($field,$this->post['fields'][$slug]) as $key => $group)
             <div class="flex flex-wrap -mx-0 items-center" wire:key="repeater-{{ $key }}">
 
                 <div class="flex flex-wrap flex-1 items-center space-x-0">
