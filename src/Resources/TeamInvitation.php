@@ -21,7 +21,6 @@ class TeamInvitation extends Post
                 'slug' => 'tab-invoice',
                 'global' => true,
             ],
-
             [
                 'name' => 'Email',
                 'slug' => 'email',
