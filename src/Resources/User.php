@@ -2,13 +2,14 @@
 
 namespace Eminiarts\Aura\Resources;
 
-use Eminiarts\Aura\Models\User as UserModel;
+use Illuminate\Support\Str;
+use Aura\Flows\Resources\Flow;
 use Eminiarts\Aura\Models\UserMeta;
-use Eminiarts\Aura\Traits\SaveFieldAttributes;
-use Eminiarts\Aura\Traits\SaveMetaFields;
 use Eminiarts\Aura\Traits\SaveTerms;
 use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Str;
+use Eminiarts\Aura\Traits\SaveMetaFields;
+use Eminiarts\Aura\Models\User as UserModel;
+use Eminiarts\Aura\Traits\SaveFieldAttributes;
 
 class User extends UserModel
 {

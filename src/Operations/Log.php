@@ -2,7 +2,7 @@
 
 namespace Eminiarts\Aura\Operations;
 
-use Eminiarts\Aura\Resources\Operation;
+use Aura\Flows\Resources\Operation;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\Log as LaravelLog;
 

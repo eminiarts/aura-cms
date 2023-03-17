@@ -2,8 +2,8 @@
 
 namespace Eminiarts\Aura\Operations;
 
-use Eminiarts\Aura\Resources\Flow;
-use Eminiarts\Aura\Resources\Operation;
+use Aura\Flows\Resources\Flow;
+use Aura\Flows\Resources\Operation;
 
 class TriggerFlow extends BaseOperation
 {
