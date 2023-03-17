@@ -272,7 +272,13 @@ class Aura
 
     public function navigation()
     {
-        $resources = collect($this->getResources())->map(fn ($r) => app($r)->navigation())->sortBy('sort');
+        $resources = collect($this->getResources())
+            ->map(fn ($r) => app($r)->navigation())
+            ->filter(fn ($r) => $r['showInNavigation'] ?? true)
+            ->sortBy('sort');
+
+        // filter if $resource['showInNavigation'] is false
+
 
         $grouped = array_reduce(collect($resources)->toArray(), function ($carry, $item) {
             if ($item['dropdown'] !== false) {
