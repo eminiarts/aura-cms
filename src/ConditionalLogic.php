@@ -47,7 +47,8 @@ class ConditionalLogic
 
                     // if $model->fields is set, use that, otherwise, use $model['fields']
 
-                    if (isset($model->fields)) {
+                    if (optional($model)->fields) {
+                        // ray('hier', $model->fields);
                         $fieldValue = $model->fields[$condition['field']];
                     } else {
                         $fieldValue = optional($model['fields'])[$condition['field']];
@@ -66,7 +67,7 @@ class ConditionalLogic
                         break;
                     }
 
-                    if (! array_key_exists($condition['field'], $model->fields->toArray())) {
+                    if (optional($model)->fields && ! array_key_exists($condition['field'], $model->fields->toArray())) {
                         $show = false; // The model does not have the field, so it does not match the condition
                         break;
                     }
