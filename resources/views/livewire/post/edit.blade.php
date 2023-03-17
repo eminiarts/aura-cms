@@ -42,11 +42,13 @@
     </div>
     @endif
 
-      {{-- @dump($post) --}}
-    {{-- @dump($this->fields) --}}
+    <div class="grid gap-6 mt-4 aura-edit-post-container sm:grid-cols-3" x-data="{
+        model: @entangle('post').defer,
+        init() {
+            console.log('init post edit', this.model);
 
-
-    <div class="grid gap-6 mt-4 aura-edit-post-container sm:grid-cols-3">
+        }
+    }">
 
         <div class="col-span-1 mx-0 sm:col-span-3">
 
@@ -78,33 +80,6 @@
             @endif
 
         </div>
-
-        {{-- <div class="col-span-1">
-
-            <div class="aura-card">
-                <h2>Taxonomies</h2>
-
-                @foreach($this->taxonomies as $key => $taxonomy)
-
-                @dump($taxonomy)
-
-                <div wire:key="post-field-{{ $key }}"
-                    style="width: {{ optional(optional($field)['style'])['width'] ?? '100' }}%;">
-                    <x-dynamic-component :component="$taxonomy->component()" :taxonomy="$taxonomy" />
-                </div>
-                @endforeach
-
-            </div>
-            <div class="aura-card">
-             <x-aura::button size="xl" wire:click="save">
-                        <div wire:loading>
-                            <x-aura::icon.loading  />
-                        </div>
-                        Save
-                    </x-aura::button>
-            </div>
-
-        </div> --}}
 
     </div>
 

@@ -1,6 +1,5 @@
 @aware(['model'])
 
-<!-- Tabs -->
 <div
     x-data="{
         selectedId: null,
@@ -10,6 +9,7 @@
         },
         select(id) {
             this.selectedId = id
+            console.log('select', id);
         },
         isSelected(id) {
             return this.selectedId === id
@@ -18,7 +18,6 @@
     x-id="['tab']"
     class="w-full mx-0 mt-0"
 >
-    <!-- Tab List -->
     <ul
         x-ref="tablist"
         @keydown.right.prevent.stop="$focus.wrap().next()"
@@ -31,14 +30,12 @@
         class="flex items-stretch px-0 pt-3 mx-0 -mb-px space-x-0"
     >
 
-        <!-- Tab -->
         @foreach(collect($field['fields']) as $key => $tab)
 
         {{-- if there are no fields, continue --}}
         @if(!optional($tab)['fields'] || !count($tab['fields']))
-        @continue
+            @continue
         @endif
-
 
         @php
             $tabHasErrors = false;
@@ -76,10 +73,7 @@
 
     </ul>
 
-    <!-- Panels -->
-
     <div role="tabpanels" class="border-t border-gray-400/30 rounded-b-lg dark:border-gray-700">
-        <!-- Panel -->
         @foreach($field['fields'] as $key => $field)
         <x-aura::fields.conditions :field="$field" :model="$model">
             <section
@@ -88,13 +82,10 @@
                 role="tabpanel"
                 class="w-full py-4"
             >
-
                 <x-dynamic-component :component="$field['field']->component" :field="$field" />
-
             </section>
         </x-aura::fields.conditions>
         @endforeach
-
     </div>
 
 </div>
