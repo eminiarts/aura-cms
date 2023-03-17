@@ -11,6 +11,7 @@ use Eminiarts\Aura\Commands\PublishCommand;
 use Eminiarts\Aura\Facades\Aura;
 use Eminiarts\Aura\Http\Livewire\Attachment\Index as AttachmentIndex;
 use Eminiarts\Aura\Http\Livewire\AuraConfig;
+use Eminiarts\Aura\Http\Livewire\BookmarkPage;
 use Eminiarts\Aura\Http\Livewire\CreateFlow;
 use Eminiarts\Aura\Http\Livewire\CreatePosttype;
 use Eminiarts\Aura\Http\Livewire\EditOperation;
@@ -90,6 +91,7 @@ class AuraServiceProvider extends PackageServiceProvider
         Livewire::component('aura::table', Table::class);
         Livewire::component('aura::navigation', Navigation::class);
         Livewire::component('aura::global-search', GlobalSearch::class);
+        Livewire::component('aura::bookmark-page', BookmarkPage::class);
         Livewire::component('aura::notifications', Notifications::class);
         Livewire::component('aura::edit-posttype-field', EditPosttypeField::class);
         Livewire::component('aura::media-manager', MediaManager::class);

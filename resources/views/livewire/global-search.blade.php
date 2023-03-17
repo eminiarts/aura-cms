@@ -55,9 +55,27 @@
                                         <li class="flex px-4 py-2 cursor-pointer select-item hover:bg-primary-500 hover:text-white"
                                             :class="{ 'bg-primary-500 text-white': index === selectedIndex }"
                                         >
-                                            <a :href="page.url" x-text="page.title"></a>
+                                            <div class="flex items-center justify-center mr-3 rounded-full search-list-icon text-primary-400 shrink-0">
+                                                {{-- SVG Icon Circle --}}
+                                                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2"></path></svg>
+                                            </div>
+
+                                            <div class="flex-1">
+                                                <a :href="page.url" x-text="page.title"></a>
+                                            </div>
                                         </li>
                                     </template>
+
+                                    <div class="px-4 py-1 text-xs font-bold text-gray-700 bg-gray-100 heading-item">Bookmarks</div>
+
+                                    {{-- Get user option bookmarks --}}
+
+                                    @foreach($this->bookmarks as $key => $bookmark)
+                                        <li>bookmark</li>
+                                    @endforeach
+
+
+
                                 </ul>
 
                                 <div class="px-4 py-1 text-xs font-bold text-gray-700 bg-gray-100 heading-item">Shortcuts</div>
@@ -72,32 +90,42 @@
 
                         <ul class="mt-0" x-ref="searchList" wire:key="searchList">
 
+                            @php
+                                $i = 0;
+                            @endphp
+                            @forelse($this->searchResults as $key => $group)
+                                <div class="px-4 py-1 text-xs font-bold text-gray-700 bg-gray-100 heading-item">{{ $key ?? 'Other' }}</div>
 
-                            @forelse($this->searchResults as $key => $result)
-                                <li
-                                    class="flex px-4 py-2 cursor-default select-none hover:bg-primary-500 hover:text-white" id="option-1" role="option" tabindex="-1"
-                                    wire:key="search-result-{{ $key }}"
-                                    :class="{ 'bg-primary-500 text-white': {{ $key }} === selectedIndex }"
-                                >
+                                @foreach($group as $key => $result)
+                                    <li
+                                        class="flex px-4 py-2 cursor-default select-none hover:bg-primary-500 hover:text-white select-item" id="option-1" role="option" tabindex="-1"
+                                        wire:key="search-result-{{ $i }}"
+                                        :class="{ 'bg-primary-500 text-white': {{ $i }} === selectedIndex }"
+                                    >
 
-                                    <div class="flex items-center justify-center w-8 h-8 mr-4 rounded-full search-list-icon text-primary-500 shrink-0 bg-primary-200">
-                                        {{-- SVG Icon Circle --}}
-                                        {!! $result->getIcon() !!}
-                                    </div>
+                                        <div class="flex items-center justify-center mr-3 rounded-full search-list-icon text-primary-400 shrink-0">
+                                            {{-- SVG Icon Circle --}}
+                                            {!! $result->getIcon() !!}
+                                        </div>
 
-                                    <div class="flex-1">
-                                        <a href="{{ route('aura.post.view', ['slug' => $result->getType(), 'id' => $result->id]) }}">
-                                            {{ $result->getType() }}: {{ $result->id }} {{ $result->title }}
-                                        </a>
-                                    </div>
+                                        <div class="flex-1 overflow-hidden whitespace-nowrap text-ellipsis">
+                                            <a class="block overflow-hidden text-ellipsis" href="{{ route('aura.post.view', ['slug' => $result->getType(), 'id' => $result->id]) }}">
+                                                #{{ $result->id }} {{ $result->title }}
+                                            </a>
+                                        </div>
 
-                                    <div>
-                                        <svg class="w-4 h-4 ml-auto text-gray-400" fill="currentColor" viewBox="0 0 20 20">
-                                            <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"></path>
-                                        </svg>
-                                    </div>
+                                        <div>
+                                            <svg class="w-4 h-4 ml-auto text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+                                                <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"></path>
+                                            </svg>
+                                        </div>
 
-                                </li>
+                                    </li>
+                                    @php
+                                        $i++;
+                                    @endphp
+                                @endforeach
+
                                 @empty
                                 @if ($search)
                                 <li class="flex px-4 py-2 text-center text-gray-600 cursor-default select-none">
@@ -153,21 +181,15 @@
             },
 
             selectPrevious() {
-                var length;
-                if (this.$refs.searchList.children.length > 0) {
-                    length = this.$refs.searchList.children.length;
-                } else {
-                    length = this.$refs.commandList.children.length;
-                }
+                const items = this.search ? this.$refs.searchList.querySelectorAll('.select-item') : this.$refs.commandList.querySelectorAll('.select-item');
+                const length = items.length;
+
                 this.selectedIndex > 0 ? this.selectedIndex-- : this.selectedIndex = length - 1;
             },
 
             selectNext() {
-                if (this.$refs.searchList.children.length > 0) {
-                    length = this.$refs.searchList.children.length;
-                } else {
-                    length = this.$refs.commandList.children.length;
-                }
+                const items = this.search ? this.$refs.searchList.querySelectorAll('.select-item') : this.$refs.commandList.querySelectorAll('.select-item');
+                const length = items.length;
                 this.selectedIndex < length - 1 ? this.selectedIndex++ : this.selectedIndex = 0;
             },
 
@@ -176,10 +198,10 @@
 
                 if (this.selectedIndex > -1) {
                     if (this.$refs.searchList.children.length > 0) {
-                        var link = this.$refs.searchList.children[this.selectedIndex].querySelector('a');
+                        var link = this.$refs.searchList.querySelectorAll('.select-item')[this.selectedIndex].querySelector('a');
                         link.click();
                     } else {
-                        var link = this.$refs.commandList.children[this.selectedIndex].querySelector('a');
+                        var link = this.$refs.commandList.querySelectorAll('.select-item')[this.selectedIndex].querySelector('a');
                         link.click();
                     }
                 }
