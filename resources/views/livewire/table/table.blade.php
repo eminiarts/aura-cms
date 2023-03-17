@@ -33,10 +33,14 @@
     @else
         <div class="flex items-center justify-between mt-6">
             <div>
+                @if(optional(optional($this)->field)['name'])
+                <h1 class="text-3xl font-semibold">{{ $this->field['name'] }}</h1>
+                @else
                 <h1 class="text-3xl font-semibold">{{ $model->pluralName() }}</h1>
+                @endif
 
-                @if($this->parent)
-                <span class="text-primary-500">from {{ $this->parent->name }}</span>
+                @if(optional(optional($this)->field)['description'])
+                <span class="text-primary-500">{{ $this->field['description'] }}</span>
                 @endif
                 </h3>
             </div>
@@ -45,7 +49,7 @@
                 <div>
                     @if($this->createInModal)
                     <a href="#" wire:click.prevent="$emit('openModal', 'aura::post-create-modal', {{ json_encode(['type' => $this->model->getType(), 'params' => [
-                        'for' => $this->field['related_slug'] ?? $this->parent->getType(), 'id' => $this->parent->id
+                        'for' => $this->field['relation'] ?? $this->parent->getType(), 'id' => $this->parent->id
                     ]]) }})">
                            <x-aura::button>
                         <x-slot:icon>
