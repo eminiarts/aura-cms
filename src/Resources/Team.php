@@ -23,9 +23,6 @@ class Team extends Post
 
     public static string $type = 'Team';
 
-    protected static $dropdown = 'Users';
-
-    // fillable
     protected $fillable = [
         'name', 'user_id', 'personal_team', 'fields',
     ];
@@ -88,16 +85,7 @@ class Team extends Post
                 'slug' => 'tab-users',
                 'global' => true,
             ],
-            [
-                'name' => 'Users',
-                'slug' => 'users',
-                'type' => 'Eminiarts\\Aura\\Fields\\Panel',
-                'validation' => '',
-                'conditional_logic' => [
-                ],
-                'has_conditional_logic' => false,
-                'wrapper' => '',
-            ],
+
             [
                 'name' => 'Users',
                 'slug' => 'users',
@@ -105,14 +93,36 @@ class Team extends Post
                 'resource' => 'Eminiarts\\Aura\\Resources\\User',
                 'validation' => '',
                 'conditional_logic' => [],
-                'has_conditional_logic' => false,
-                'wrapper' => '',
                 'on_index' => false,
-                'on_forms' => false,
+                'on_forms' => true,
                 'on_view' => true,
                 'style' => [
                     'width' => '100',
-                    'class' => 'p-4',
+                    'class' => '!p-4',
+                ],
+            ],
+            [
+                'name' => 'Invitations',
+                'slug' => 'tab-Invitations',
+                'type' => 'Eminiarts\\Aura\\Fields\\Tab',
+                'global' => true,
+                'validation' => '',
+                'conditional_logic' => [],
+                'has_conditional_logic' => false,
+            ],
+            [
+                'name' => 'Invitations',
+                'slug' => 'Invitations',
+                'type' => 'Eminiarts\\Aura\\Fields\\HasMany',
+                'resource' => 'Eminiarts\\Aura\\Resources\\TeamInvitation',
+                'validation' => '',
+                'conditional_logic' => [],
+                'on_index' => false,
+                'on_forms' => true,
+                'on_view' => true,
+                'style' => [
+                    'width' => '100',
+                    'class' => '!p-4',
                 ],
             ],
         ];

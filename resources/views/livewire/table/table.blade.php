@@ -182,11 +182,8 @@
             @include($model->tableGridView())
 
             @elseif($tableView == 'list')
-            {{-- Table --}}
                 @include('aura::components.table.index')
             @endif
-
-
 
         </div>
         <x-aura::sidebar title="Filters" show="showFilters">
