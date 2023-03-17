@@ -77,13 +77,13 @@
 
         <div class="col-span-1 mx-0 sm:col-span-3">
 
-            @foreach($this->viewFields as $key => $field)
-            <x-aura::fields.conditions :field="$field" :model="$model">
-                <div wire:key="post-field-{{ $key }}">
+            <div class="flex flex-wrap items-start -mx-2">
+                @foreach($this->viewFields as $key => $field)
+                <x-aura::fields.conditions :field="$field" :model="$model" wire:key="post-field-{{ $key }}">
                     <x-dynamic-component :component="$field['field']->component()" :field="$field" />
-                </div>
-            </x-aura::fields.conditions>
-            @endforeach
+                </x-aura::fields.conditions>
+                @endforeach
+            </div>
 
             @if (count($errors->all()))
             <div class="block">
