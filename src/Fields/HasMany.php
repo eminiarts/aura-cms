@@ -14,7 +14,7 @@ class HasMany extends Field
 
     public function queryFor($model, $query, $field)
     {
-        ray('hier', $model, $query, $field);
+        // ray('hier', $model, $query, $field);
 
         // if $field['relation'] is set, check if meta with key $field['relation'] exists, apply whereHas meta to the query
 
