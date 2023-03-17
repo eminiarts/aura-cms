@@ -9,7 +9,7 @@ use Eminiarts\Aura\Jobs\TriggerFlowOnUpdatePostEvent;
 use Eminiarts\Aura\Models\Scopes\TeamScope;
 use Eminiarts\Aura\Models\Scopes\TypeScope;
 use Eminiarts\Aura\Resource;
-use Eminiarts\Aura\Resources\Flow;
+use Aura\Flows\Resources\Flow;
 use Eminiarts\Aura\Traits\InitialPostFields;
 use Eminiarts\Aura\Traits\SaveFieldAttributes;
 use Eminiarts\Aura\Traits\SaveMetaFields;

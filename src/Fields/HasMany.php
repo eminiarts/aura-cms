@@ -32,11 +32,11 @@ class HasMany extends Field
             return $query;
         }
 
-        if ($model instanceof \Eminiarts\Aura\Resources\Flow) {
+        if ($model instanceof \Aura\Flows\Resources\Flow) {
             return $query->where('flow_id', $model->id);
         }
 
-        if ($model instanceof \Eminiarts\Aura\Resources\Flow) {
+        if ($model instanceof \Aura\Flows\Resources\Flow) {
             return $query->where('flow_id', $model->id);
         }
 
@@ -44,7 +44,7 @@ class HasMany extends Field
             return $query->where('operation_id', $model->id);
         }
 
-        if ($model instanceof \Eminiarts\Aura\Resources\FlowLog) {
+        if ($model instanceof \Aura\Flows\Resources\FlowLog) {
             return $query->where('flow_log_id', $model->id);
         }
 

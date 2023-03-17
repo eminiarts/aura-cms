@@ -2,7 +2,7 @@
 
 namespace Eminiarts\Aura\Jobs;
 
-use Eminiarts\Aura\Resources\Operation;
+use Aura\Flows\Resources\Operation;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
