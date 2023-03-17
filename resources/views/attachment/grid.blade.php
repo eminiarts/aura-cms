@@ -71,7 +71,7 @@
 
         @empty
 
-            <div class="w-full ">
+            <div class="col-span-5">
                 <div class="py-8 text-center bg-white dark:bg-gray-900 mx-auto">
                 <svg class="w-12 h-12 mx-auto text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"
                     xmlns="http://www.w3.org/2000/svg">
