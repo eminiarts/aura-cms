@@ -32,7 +32,32 @@ class Attachment extends Post
     public static function getFields()
     {
         return [
-
+            [
+                'name' => 'Attachment',
+                'type' => 'Eminiarts\\Aura\\Fields\\Panel',
+                'slug' => 'panel1',
+                'style' => [
+                    'width' => '50',
+                ],
+            ],
+            [
+                'name' => 'Preview',
+                'type' => 'Eminiarts\\Aura\\Fields\\Embed',
+                'validation' => '',
+                'on_index' => false,
+                'slug' => 'embed',
+                'style' => [
+                    'width' => '100',
+                ],
+            ],
+            [
+                'name' => 'Details',
+                'type' => 'Eminiarts\\Aura\\Fields\\Panel',
+                'slug' => 'panel2',
+                'style' => [
+                    'width' => '50',
+                ],
+            ],
             [
                 'name' => 'Name',
                 'type' => 'Eminiarts\\Aura\\Fields\\Text',
@@ -50,7 +75,7 @@ class Attachment extends Post
                 'on_index' => true,
                 'slug' => 'url',
                 'style' => [
-                    'width' => '50',
+                    'width' => '100',
                 ],
             ],
             [
@@ -60,19 +85,10 @@ class Attachment extends Post
                 'on_index' => false,
                 'slug' => 'thumbnail_url',
                 'style' => [
-                    'width' => '50',
+                    'width' => '100',
                 ],
             ],
-            [
-                'name' => 'embed',
-                'type' => 'Eminiarts\\Aura\\Fields\\Embed',
-                'validation' => '',
-                'on_index' => false,
-                'slug' => 'embed',
-                'style' => [
-                    'width' => '33',
-                ],
-            ],
+
             [
                 'name' => 'Mime Type',
                 'type' => 'Eminiarts\\Aura\\Fields\\ViewValue',
@@ -105,7 +121,7 @@ class Attachment extends Post
                 'on_index' => true,
                 'on_forms' => true,
                 'on_view' => true,
-                 'style' => [
+                'style' => [
                     'width' => '50',
                 ],
             ],
@@ -121,7 +137,7 @@ class Attachment extends Post
                 'on_index' => true,
                 'on_forms' => true,
                 'on_view' => true,
-                 'style' => [
+                'style' => [
                     'width' => '50',
                 ],
             ],
