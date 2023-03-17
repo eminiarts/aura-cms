@@ -9,7 +9,7 @@
     </x-aura::breadcrumbs>
     @endif
 
-    <div class="flex items-center justify-between my-8">
+    <div class="flex items-center justify-between {{ $inModal ? 'mb-8' : 'my-8'}}">
         <div>
             <h1 class="text-3xl font-semibold">Create {{ $model->singularName() }}</h1>
         </div>
