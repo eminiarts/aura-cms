@@ -41,6 +41,11 @@ class Repeater extends Field
 
         $new = collect();
 
+        // dd($values, $fields, $field, $slug);
+        if (!$values) {
+            return $fields;
+        }
+
         foreach ($values as $key => $value) {
             $new[] = collect($fields)->map(function ($item) use ($slug, $key) {
                 $item['slug'] = $slug.'.'.$key.'.'.$item['slug'];
