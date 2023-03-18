@@ -69,8 +69,12 @@ class CreateResourceMigration extends Command
 
         $content = $this->files->get($migrationFile);
 
+
+        $content = $this->files->get($migrationFile);
+
         $upReplacement = 'public function up(): void' . PHP_EOL . '    {' . PHP_EOL . '        Schema::table(\'' . $tableName . '\', function (Blueprint $table) {' . PHP_EOL . $schema . '        });' . PHP_EOL . '    }';
-        $content = preg_replace('/public function up\(\): void(.*?)public function down\(\): void/s', $upReplacement . PHP_EOL . PHP_EOL . '    public function down(): void', $content);
+        $downReplacement = 'public function down(): void' . PHP_EOL . '    {' . PHP_EOL . '        Schema::dropIfExists(\'' . $tableName . '\');' . PHP_EOL . '    }';
+        $content = preg_replace('/public function up\(\): void(.*?)public function down\(\): void/s', $upReplacement . PHP_EOL . PHP_EOL . $downReplacement, $content);
 
         $this->files->put($migrationFile, $content);
 
