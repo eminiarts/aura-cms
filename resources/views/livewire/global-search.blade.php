@@ -83,9 +83,11 @@
                                                 <a class="block overflow-hidden text-ellipsis"  href="{{ $bookmark['url'] }}">{{ $bookmark['title'] }}</a>
                                             </div>
 
+                                            @if ($key < 10)
                                             <div>
                                                 <span class="flex-none ml-3 text-xs font-semibold text-gray-400"><kbd class="font-sans">⌘</kbd><kbd class="font-sans">{{$key+1}}</kbd></span>
                                             </div>
+                                            @endif
                                         </li>
                                     @endforeach
 
