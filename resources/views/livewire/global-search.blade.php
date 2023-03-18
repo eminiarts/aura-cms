@@ -5,7 +5,7 @@
             height: 1.5rem;
         }
     </style>
-    <div x-show="show" x-data="globalSearch" x-ref="searchContainer" style="display: none;" @search.window="openSearch()" @keydown.escape.window="closeSearch()">
+    <div x-show="show" x-data="globalSearch" x-ref="searchContainer" style="display: none;" @search.window="openSearch()" @keydown.escape.window="closeSearch()" @keydown.cmd.1.prevent="openBookmark(1)" @keydown.cmd.2.prevent="openBookmark(2)" @keydown.cmd.3.prevent="openBookmark(3)" @keydown.cmd.4.prevent="openBookmark(4)" @keydown.cmd.5.prevent="openBookmark(5)" @keydown.cmd.6.prevent="openBookmark(6)" @keydown.cmd.7.prevent="openBookmark(7)" @keydown.cmd.8.prevent="openBookmark(8)" @keydown.cmd.9.prevent="openBookmark(9)">
     <div class="fixed inset-0 z-30">
         <div class="absolute inset-0 bg-black/10 backdrop-blur-sm"></div>
         <div class="absolute inset-0 flex items-center justify-center">
@@ -71,19 +71,28 @@
                                     {{-- Get user option bookmarks --}}
 
                                     @foreach($this->bookmarks as $key => $bookmark)
-                                        <li>bookmark</li>
+                                        <li class="flex px-4 py-2 cursor-pointer bookmark-item select-item hover:bg-primary-500 hover:text-white"
+                                            :class="{ 'bg-primary-500 text-white': 5 + {{ $key }} === selectedIndex }"
+                                        >
+                                            <div class="flex items-center justify-center mr-3 rounded-full search-list-icon text-primary-400 shrink-0">
+                                                {{-- SVG Icon Circle --}}
+                                                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2"></path></svg>
+                                            </div>
+
+                                            <div class="flex-1">
+                                                <a href="{{ $bookmark['url'] }}">{{ $bookmark['title'] }}</a>
+                                            </div>
+
+                                            <div>
+                                                <span class="flex-none ml-3 text-xs font-semibold text-gray-400"><kbd class="font-sans">⌘</kbd><kbd class="font-sans">{{$key+1}}</kbd></span>
+                                            </div>
+                                        </li>
                                     @endforeach
 
 
 
                                 </ul>
 
-                                <div class="px-4 py-1 text-xs font-bold text-gray-700 bg-gray-100 heading-item">Shortcuts</div>
-
-                                <div class="flex px-4 py-2 cursor-pointer select-item hover:bg-primary-500 hover:text-white"
-                                    >
-                                    <a href="#" x-text="'Create Booking'"></a>
-                                </div>
                             </div>
                         </template>
 
@@ -205,7 +214,14 @@
                         link.click();
                     }
                 }
-            }
+            },
+
+            openBookmark(index) {
+                if (!this.$refs.commandList.querySelectorAll('.bookmark-item')[index-1]) return;
+                const link = this.$refs.commandList.querySelectorAll('.bookmark-item')[index-1].querySelector('a');
+                if (!link) return;
+                link.click();
+            },
 
 		}))
 

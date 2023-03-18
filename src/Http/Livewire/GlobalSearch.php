@@ -15,6 +15,7 @@ class GlobalSearch extends Component
 
     public function render()
     {
+        $this->bookmarks = auth()->user()->getOptionBookmarks();
         return view('aura::livewire.global-search');
     }
 
