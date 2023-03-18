@@ -12,16 +12,11 @@ class TeamInvitation extends Post
 
     public static string $type = 'TeamInvitation';
 
+    protected static bool $showInNavigation = false;
+
     public static function getFields()
     {
         return [
-            [
-                'type' => 'Eminiarts\\Aura\\Fields\\Tab',
-                'name' => 'Invoice',
-                'slug' => 'tab-invoice',
-                'global' => true,
-            ],
-
             [
                 'name' => 'Email',
                 'slug' => 'email',
@@ -41,6 +36,9 @@ class TeamInvitation extends Post
                 'type' => 'Eminiarts\\Aura\\Fields\\Select',
                 'validation' => 'required',
                 'slug' => 'role',
+                'style' => [
+                    'width' => '50',
+                ],
             ],
         ];
     }

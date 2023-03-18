@@ -17,8 +17,8 @@ class CreatePosttype extends ModalComponent
     {
         return [
             [
-                'label' => 'Name',
-                'name' => 'name',
+                'name' => 'Name (Singular, e.g. Post)',
+                'instructions' => 'The name of the post type, shown in the admin panel.',
                 'type' => 'Eminiarts\\Aura\\Fields\\Text',
                 'validation' => 'required',
                 'slug' => 'name',

@@ -2,13 +2,14 @@
 
 namespace Eminiarts\Aura\Resources;
 
-use Eminiarts\Aura\Models\User as UserModel;
+use Illuminate\Support\Str;
+use Aura\Flows\Resources\Flow;
 use Eminiarts\Aura\Models\UserMeta;
-use Eminiarts\Aura\Traits\SaveFieldAttributes;
-use Eminiarts\Aura\Traits\SaveMetaFields;
 use Eminiarts\Aura\Traits\SaveTerms;
 use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Str;
+use Eminiarts\Aura\Traits\SaveMetaFields;
+use Eminiarts\Aura\Models\User as UserModel;
+use Eminiarts\Aura\Traits\SaveFieldAttributes;
 
 class User extends UserModel
 {
@@ -258,57 +259,7 @@ class User extends UserModel
                 ],
                 'slug' => '2fa',
             ],
-            [
-                'type' => 'Eminiarts\\Aura\\Fields\\Tab',
-                'name' => 'Relations',
-                'slug' => 'tab-Relations',
-                'global' => true,
-            ],
-            [
-                'name' => 'Attachments',
-                'slug' => 'attachments',
-                'type' => 'Eminiarts\\Aura\\Fields\\HasMany',
-                'resource' => 'Eminiarts\\Aura\\Resources\\Attachment',
-                'validation' => '',
-                'conditional_logic' => [],
-                'wrapper' => '',
-                'on_index' => false,
-                'on_forms' => true,
-                'on_view' => true,
-                'style' => [
-                    'width' => '100',
-                ],
-            ],
-            [
-                'name' => 'Pages',
-                'slug' => 'pages',
-                'type' => 'Eminiarts\\Aura\\Fields\\HasOne',
-                'resource' => 'Eminiarts\\Aura\\Resources\\Page',
-                'validation' => '',
-                'conditional_logic' => [],
-                'on_index' => false,
-                'on_forms' => true,
-                'on_view' => true,
-                'style' => [
-                    'width' => '100',
-                ],
-            ],
-            [
-                'name' => 'Latest Post',
-                'slug' => 'latest_post',
-                'type' => 'Eminiarts\\Aura\\Fields\\HasOneOfMany',
-                'resource' => 'Eminiarts\\Aura\\Resources\\Post',
-                'option' => 'latest',
-                'validation' => '',
-                'conditional_logic' => [],
-                'wrapper' => '',
-                'on_index' => false,
-                'on_forms' => true,
-                'on_view' => true,
-                'style' => [
-                    'width' => '100',
-                ],
-            ],
+
         ];
     }
 

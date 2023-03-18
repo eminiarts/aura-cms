@@ -34,13 +34,12 @@ class Repeater extends Field
         return json_encode($value);
     }
 
-    public function transform($fields, $values)
+    public function transform($field, $values)
     {
-        $slug = $this->attributes['slug'];
+        $fields = $field['fields'];
+        $slug = $field['slug'];
 
         $new = collect();
-
-        //dd($fields, $values);
 
         foreach ($values as $key => $value) {
             $new[] = collect($fields)->map(function ($item) use ($slug, $key) {

@@ -6,11 +6,11 @@
 
             <div class="my-8">
                 <h3 class="text-lg font-semibold">Aura CMS Features</h3>
-                <span class="font-light text-gray-400"> Enable or disable Features from Aura.</span>
+                <span class=""> Enable or disable Features from Aura.</span>
             </div>
         </div>
 
-        {{-- @dump($post) --}}
+        {{-- @dump($post['fields']) --}}
 
 
     {{-- save button --}}

@@ -49,7 +49,6 @@ class MediaManager extends ModalComponent
     // Select Attachment
     public function selectAttachment($ids)
     {
-        // Add to selected array
         $this->selected = $ids;
     }
 
@@ -67,14 +66,9 @@ class MediaManager extends ModalComponent
 
     public function updateField($field)
     {
-        // dump($field);
-        // if $field['slug'] == $this->fieldSlug
         if ($field['slug'] == $this->fieldSlug) {
             $this->selected = $field['value'];
             $this->emit('selectedRows', $this->selected);
         }
-
-        // $this->field = $field;
-        // $this->selected = $field['value'];
     }
 }

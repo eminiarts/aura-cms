@@ -38,20 +38,14 @@
 
         <div class="relative select-none" wire:key="grid_{{ $row->id }}">
             <label for="checkbox_{{ $row->id }}" class="cursor-pointer" x-on:click="toggleRow($event, {{ $row->id }})">
-            <div
-                class="block w-full overflow-hidden rounded-lg group aspect-w-10 aspect-h-7 bg-gray-50 focus-within:ring-2 focus-within:ring-primary-500 focus-within:ring-offset-2 focus-within:ring-offset-gray-100">
-                    
-                        @include('aura::attachment.thumbnail')
-                    
-
+            <div class="block w-full overflow-hidden rounded-lg group aspect-w-10 aspect-h-7 bg-gray-50 focus-within:ring-2 focus-within:ring-primary-500 focus-within:ring-offset-2 focus-within:ring-offset-gray-100">
+                @include('aura::attachment.thumbnail')
             </div>
             </label>
             <div class="flex mt-2 space-x-1">
                 <div class="shrink-0">
                     <x-aura::input.checkbox
-                        {{-- wire:model="selected" --}}
                         id="checkbox_{{ $row->id }}"
-                        {{-- value="{{ $row->id }}" --}}
                         x-model="selected"
                         :value="$row->id"
                         x-on:click="toggleRow($event, {{ $row->id }})"
@@ -60,7 +54,6 @@
 
                 <div class="flex-1 overflow-hidden truncate">
                     <div class="w-full overflow-hidden truncate">
-                        {{-- @dump($row['fields']['name']) --}}
                         <div class="max-w-[10rem]">
                             <p class="block overflow-hidden text-sm font-medium truncate pointer-events-none">{{ $row->title ?? '' }}</p>
                         </div>
@@ -74,14 +67,12 @@
                     </a>
                 </div>
             </div>
-
-
         </div>
 
         @empty
 
-        <div>
-            <div class="py-8 text-center bg-white dark:bg-gray-900">
+            <div class="col-span-5">
+                <div class="py-8 text-center bg-white dark:bg-gray-900 mx-auto">
                 <svg class="w-12 h-12 mx-auto text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"
                     xmlns="http://www.w3.org/2000/svg">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -91,7 +82,7 @@
 
                 <h3 class="mt-2 text-sm font-medium text-gray-900">No entries available</h3>
             </div>
-        </div>
+            </div>
 
         @endforelse
 

@@ -188,10 +188,6 @@ class AuraServiceProvider extends PackageServiceProvider
 
         Aura::registerResources([
             \Eminiarts\Aura\Resources\Attachment::class,
-            \Eminiarts\Aura\Resources\Flow::class,
-            \Eminiarts\Aura\Resources\FlowLog::class,
-            \Eminiarts\Aura\Resources\Operation::class,
-            \Eminiarts\Aura\Resources\OperationLog::class,
             \Eminiarts\Aura\Resources\Option::class,
             \Eminiarts\Aura\Resources\Page::class,
             \Eminiarts\Aura\Resources\Post::class,

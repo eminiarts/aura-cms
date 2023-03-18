@@ -164,7 +164,7 @@ class AuraConfig extends Component
                 'name' => 'Thumbnails',
                 'type' => 'Eminiarts\\Aura\\Fields\\Repeater',
                 'nested' => true,
-                'slug' => 'thumbnails',
+                'slug' => 'media.thumbnails',
                 'style' => [
                     'width' => '100',
                 ],

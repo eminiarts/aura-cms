@@ -33,10 +33,30 @@ class Attachment extends Post
     {
         return [
             [
-                'type' => 'Eminiarts\\Aura\\Fields\\Tab',
-                'name' => 'Tab',
-                'slug' => 'tab-5Lqb',
-                'global' => true,
+                'name' => 'Attachment',
+                'type' => 'Eminiarts\\Aura\\Fields\\Panel',
+                'slug' => 'panel1',
+                'style' => [
+                    'width' => '50',
+                ],
+            ],
+            [
+                'name' => 'Preview',
+                'type' => 'Eminiarts\\Aura\\Fields\\Embed',
+                'validation' => '',
+                'on_index' => false,
+                'slug' => 'embed',
+                'style' => [
+                    'width' => '100',
+                ],
+            ],
+            [
+                'name' => 'Details',
+                'type' => 'Eminiarts\\Aura\\Fields\\Panel',
+                'slug' => 'panel2',
+                'style' => [
+                    'width' => '50',
+                ],
             ],
             [
                 'name' => 'Name',
@@ -45,42 +65,33 @@ class Attachment extends Post
                 'on_index' => true,
                 'slug' => 'name',
                 'style' => [
-                    'width' => '50',
+                    'width' => '100',
                 ],
             ],
             [
                 'name' => 'Url',
-                'type' => 'Eminiarts\\Aura\\Fields\\Text',
+                'type' => 'Eminiarts\\Aura\\Fields\\ViewValue',
                 'validation' => 'required',
                 'on_index' => true,
                 'slug' => 'url',
                 'style' => [
-                    'width' => '50',
+                    'width' => '100',
                 ],
             ],
             [
                 'name' => 'Thumbnail',
-                'type' => 'Eminiarts\\Aura\\Fields\\Text',
+                'type' => 'Eminiarts\\Aura\\Fields\\ViewValue',
                 'validation' => '',
                 'on_index' => false,
                 'slug' => 'thumbnail_url',
                 'style' => [
-                    'width' => '50',
+                    'width' => '100',
                 ],
             ],
-            [
-                'name' => 'embed',
-                'type' => 'Eminiarts\\Aura\\Fields\\Embed',
-                'validation' => '',
-                'on_index' => false,
-                'slug' => 'embed',
-                'style' => [
-                    'width' => '33',
-                ],
-            ],
+
             [
                 'name' => 'Mime Type',
-                'type' => 'Eminiarts\\Aura\\Fields\\Text',
+                'type' => 'Eminiarts\\Aura\\Fields\\ViewValue',
                 'validation' => 'required',
                 'on_index' => true,
                 'slug' => 'mime_type',
@@ -90,25 +101,13 @@ class Attachment extends Post
             ],
             [
                 'name' => 'Size',
-                'type' => 'Eminiarts\\Aura\\Fields\\Text',
+                'type' => 'Eminiarts\\Aura\\Fields\\ViewValue',
                 'validation' => 'required',
                 'on_index' => true,
                 'slug' => 'size',
                 'style' => [
                     'width' => '33',
                 ],
-            ],
-            [
-                'name' => 'Created at',
-                'slug' => 'created_at',
-                'type' => 'Eminiarts\\Aura\\Fields\\Text',
-                'validation' => '',
-                'conditional_logic' => [],
-                'has_conditional_logic' => false,
-                'wrapper' => '',
-                'on_index' => true,
-                'on_forms' => true,
-                'on_view' => true,
             ],
             [
                 'name' => 'Created at',
@@ -122,6 +121,9 @@ class Attachment extends Post
                 'on_index' => true,
                 'on_forms' => true,
                 'on_view' => true,
+                'style' => [
+                    'width' => '50',
+                ],
             ],
             [
                 'name' => 'Updated at',
@@ -135,19 +137,9 @@ class Attachment extends Post
                 'on_index' => true,
                 'on_forms' => true,
                 'on_view' => true,
-            ],
-            [
-                'name' => 'Jobs',
-                'slug' => 'jobs',
-                'type' => 'Eminiarts\\Aura\\Fields\\Jobs',
-                'validation' => '',
-                'conditional_logic' => [],
-                'has_conditional_logic' => false,
-                'wrapper' => '',
-                'enable_time' => true,
-                'on_index' => false,
-                'on_forms' => true,
-                'on_view' => true,
+                'style' => [
+                    'width' => '50',
+                ],
             ],
         ];
     }

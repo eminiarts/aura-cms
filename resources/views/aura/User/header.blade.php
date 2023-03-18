@@ -1,10 +1,14 @@
 <div class="flex items-center justify-between mt-6">
     <div>
-        <h1 class="text-3xl font-semibold">Custom {{ $model->pluralName() }}</h1>
+         @if(optional(optional($this)->field)['name'])
+                <h1 class="text-3xl font-semibold">{{ $this->field['name'] }}</h1>
+                @else
+                <h1 class="text-3xl font-semibold">{{ $model->pluralName() }}</h1>
+                @endif
 
-        @if($this->parent)
-        <span class="text-primary-500">from {{ $this->parent->name }}</span>
-        @endif
+                @if(optional(optional($this)->field)['description'])
+                <span class="text-primary-500">{{ $this->field['description'] }}</span>
+                @endif
         </h3>
     </div>
 
