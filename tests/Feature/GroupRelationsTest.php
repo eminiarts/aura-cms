@@ -1,9 +1,9 @@
 <?php
 
-use Eminiarts\Aura\Models\Post;
-use Eminiarts\Aura\Fields\HasOne;
 use Eminiarts\Aura\Fields\HasMany;
+use Eminiarts\Aura\Fields\HasOne;
 use Eminiarts\Aura\Fields\HasOneOfMany;
+use Eminiarts\Aura\Models\Post;
 
 class GroupRelationsTestModel extends Post
 {
@@ -14,7 +14,7 @@ class GroupRelationsTestModel extends Post
     public static function getFields()
     {
         return [
-               [
+            [
                 'name' => 'Attachments',
                 'slug' => 'attachments',
                 'type' => 'Eminiarts\\Aura\\Fields\\HasMany',

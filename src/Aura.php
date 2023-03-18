@@ -279,7 +279,6 @@ class Aura
 
         // filter if $resource['showInNavigation'] is false
 
-
         $grouped = array_reduce(collect($resources)->toArray(), function ($carry, $item) {
             if ($item['dropdown'] !== false) {
                 if (! isset($carry[$item['dropdown']])) {

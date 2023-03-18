@@ -3,11 +3,11 @@
 namespace Eminiarts\Aura\Resources;
 
 use Aura\Flows\Resources\Flow;
-use Eminiarts\Aura\Widgets\PostChart;
-use Eminiarts\Aura\Widgets\TotalPosts;
-use Eminiarts\Aura\Widgets\AvgPostsNumber;
-use Eminiarts\Aura\Widgets\SumPostsNumber;
 use Eminiarts\Aura\Models\Post as ModelsPost;
+use Eminiarts\Aura\Widgets\AvgPostsNumber;
+use Eminiarts\Aura\Widgets\PostChart;
+use Eminiarts\Aura\Widgets\SumPostsNumber;
+use Eminiarts\Aura\Widgets\TotalPosts;
 
 class Post extends ModelsPost
 {
@@ -222,25 +222,25 @@ class Post extends ModelsPost
                  'on_forms' => true,
                  'on_view' => true,
              ],
-            //  [
-            //      'name' => 'Team',
-            //      'slug' => 'team_id',
-            //      'type' => 'Eminiarts\\Aura\\Fields\\BelongsTo',
-            //      'resource' => 'Eminiarts\\Aura\\Resources\\Team',
-            //      'validation' => '',
-            //      'conditional_logic' => [
-            //          [
-            //              'field' => 'role',
-            //              'operator' => '==',
-            //              'value' => 'super_admin',
-            //          ],
-            //      ],
-            //      'has_conditional_logic' => false,
-            //      'wrapper' => '',
-            //      'on_index' => true,
-            //      'on_forms' => true,
-            //      'on_view' => true,
-            //  ],
+             //  [
+             //      'name' => 'Team',
+             //      'slug' => 'team_id',
+             //      'type' => 'Eminiarts\\Aura\\Fields\\BelongsTo',
+             //      'resource' => 'Eminiarts\\Aura\\Resources\\Team',
+             //      'validation' => '',
+             //      'conditional_logic' => [
+             //          [
+             //              'field' => 'role',
+             //              'operator' => '==',
+             //              'value' => 'super_admin',
+             //          ],
+             //      ],
+             //      'has_conditional_logic' => false,
+             //      'wrapper' => '',
+             //      'on_index' => true,
+             //      'on_forms' => true,
+             //      'on_view' => true,
+             //  ],
              [
                  'name' => 'User',
                  'slug' => 'user_id',
