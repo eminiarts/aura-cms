@@ -47,6 +47,7 @@ class GenerateImageThumbnail implements ShouldQueue
         if (app()->environment('testing')) {
             return;
         }
+
         // Set the desired storage path for the thumbnail
         $thumbnailPath = 'thumbnails/'.basename($this->attachment->url);
 
@@ -71,19 +72,5 @@ class GenerateImageThumbnail implements ShouldQueue
 
             Storage::put($size['name'] . '/' . basename($this->attachment->url), (string) $image->encode());
         }
-
-        // $image = Image::make($this->attachment->path());
-
-        // $width = 300;
-        // $height = 300;
-
-        // $image->fit($width, $height, function ($constraint) {
-        //     $constraint->aspectRatio();
-        //     $constraint->upsize();
-        // });
-
-        // Storage::put($thumbnailPath, (string) $image->encode());
-
-        // $this->attachment->update(['thumbnail_url' => Storage::url($thumbnailPath)]);
     }
 }
