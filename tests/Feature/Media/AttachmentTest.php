@@ -23,7 +23,6 @@ beforeEach(function () {
     $this->actingAs($this->user);
 });
 
-
 it('creates an attachment', function () {
     $attachment = Attachment::create([
         'name' => 'Test Attachment',
@@ -46,7 +45,6 @@ it('checks if attachment is an image', function () {
 
     expect($attachment->isImage())->toBeTrue();
 });
-
 
 test('save Attachment Model when defined fields', function () {
     $this->actingAs($user = User::first());
@@ -77,7 +75,6 @@ test('save Attachment Model when defined fields', function () {
     ]);
 });
 
-
 it('checks mime_type of image and pdf', function () {
     $attachment = Attachment::create([
         'mime_type' => 'image/jpeg',
@@ -95,10 +92,9 @@ it('gets attachment path', function () {
         'url' => 'test-url.jpg',
     ]);
 
-    $path = asset('storage/' . $attachment->url);
+    $path = asset('storage/'.$attachment->url);
     $this->assertEquals($path, $attachment->path());
 });
-
 
 it('gets readable file size', function () {
     $attachment = Attachment::create([
@@ -127,6 +123,6 @@ it('gets thumbnail path', function () {
         'thumbnail_url' => 'thumbnails/test-url.jpg',
     ]);
 
-    $thumbnailPath = asset('storage/' . $attachment->thumbnail_url);
+    $thumbnailPath = asset('storage/'.$attachment->thumbnail_url);
     $this->assertEquals($thumbnailPath, $attachment->thumbnail_path());
 });

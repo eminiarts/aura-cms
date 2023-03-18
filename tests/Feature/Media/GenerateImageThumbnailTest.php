@@ -1,14 +1,11 @@
 <?php
 
+use Eminiarts\Aura\Jobs\GenerateImageThumbnail;
 use Eminiarts\Aura\Models\User;
-use Illuminate\Http\UploadedFile;
-use Illuminate\Support\Facades\Event;
+use Eminiarts\Aura\Resources\Attachment;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Storage;
-
-use Eminiarts\Aura\Resources\Attachment;
-use Eminiarts\Aura\Jobs\GenerateImageThumbnail;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
 
@@ -26,8 +23,6 @@ beforeEach(function () {
     // Login
     $this->actingAs($this->user);
 });
-
-
 
 it('generates image thumbnail', function () {
     Storage::fake('local');

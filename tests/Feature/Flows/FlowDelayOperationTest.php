@@ -1,9 +1,9 @@
 <?php
 
+use Aura\Flows\Resources\Flow;
 use Eminiarts\Aura\Jobs\RunOperation;
 use Eminiarts\Aura\Jobs\TriggerFlowOnCreatePostEvent;
 use Eminiarts\Aura\Models\User;
-use Aura\Flows\Resources\Flow;
 use Eminiarts\Aura\Resources\Post;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Queue;

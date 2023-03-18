@@ -20,13 +20,13 @@ class Edit extends Component
 
     public $inModal = false;
 
-    public $tab;
-
     public $model;
 
     public $post;
 
     public $slug;
+
+    public $tab;
 
     public $tax;
 

@@ -2,9 +2,9 @@
 
 namespace Eminiarts\Aura\Operations;
 
+use Aura\Flows\Resources\Operation;
 use Eminiarts\Aura\Models\User;
 use Eminiarts\Aura\Notifications\FlowNotification;
-use Aura\Flows\Resources\Operation;
 use Eminiarts\Aura\Resources\Role;
 use Illuminate\Support\Facades\Blade;
 

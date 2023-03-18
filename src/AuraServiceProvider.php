@@ -4,6 +4,7 @@ namespace Eminiarts\Aura;
 
 use Eminiarts\Aura\Commands\AuraCommand;
 use Eminiarts\Aura\Commands\CreateAuraPlugin;
+use Eminiarts\Aura\Commands\CreateResourceMigration;
 use Eminiarts\Aura\Commands\MakeField;
 use Eminiarts\Aura\Commands\MakePosttype;
 use Eminiarts\Aura\Commands\MakeUser;
@@ -138,6 +139,7 @@ class AuraServiceProvider extends PackageServiceProvider
                 CreateAuraPlugin::class,
                 MakeField::class,
                 PublishCommand::class,
+                CreateResourceMigration::class,
             ])
             ->hasInstallCommand(function (InstallCommand $command) {
                 $command

@@ -2,6 +2,7 @@
 
 namespace Eminiarts\Aura\Models;
 
+use Aura\Flows\Resources\Flow;
 use Eminiarts\Aura\Aura;
 use Eminiarts\Aura\Jobs\TriggerFlowOnCreatePostEvent;
 use Eminiarts\Aura\Jobs\TriggerFlowOnDeletedPostEvent;
@@ -9,7 +10,6 @@ use Eminiarts\Aura\Jobs\TriggerFlowOnUpdatePostEvent;
 use Eminiarts\Aura\Models\Scopes\TeamScope;
 use Eminiarts\Aura\Models\Scopes\TypeScope;
 use Eminiarts\Aura\Resource;
-use Aura\Flows\Resources\Flow;
 use Eminiarts\Aura\Traits\InitialPostFields;
 use Eminiarts\Aura\Traits\SaveFieldAttributes;
 use Eminiarts\Aura\Traits\SaveMetaFields;
@@ -193,7 +193,6 @@ class Post extends Resource
         });
 
         return $defaultValues->merge($meta ?? []);
-
 
         return  $defaultValues->merge($meta ?? [])->map(function ($value, $key) {
             $class = $this->fieldClassBySlug($key);

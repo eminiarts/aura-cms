@@ -2,15 +2,15 @@
 
 namespace Eminiarts\Aura\Jobs;
 
-use Illuminate\Bus\Queueable;
 use Eminiarts\Aura\Facades\Aura;
-use Intervention\Image\Facades\Image;
-use Illuminate\Queue\SerializesModels;
-use Illuminate\Support\Facades\Storage;
 use Eminiarts\Aura\Resources\Attachment;
-use Illuminate\Queue\InteractsWithQueue;
+use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
+use Illuminate\Queue\InteractsWithQueue;
+use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Facades\Storage;
+use Intervention\Image\Facades\Image;
 
 class GenerateImageThumbnail implements ShouldQueue
 {
@@ -70,7 +70,7 @@ class GenerateImageThumbnail implements ShouldQueue
                 $constraint->upsize();
             });
 
-            Storage::put($size['name'] . '/' . basename($this->attachment->url), (string) $image->encode());
+            Storage::put($size['name'].'/'.basename($this->attachment->url), (string) $image->encode());
         }
     }
 }
