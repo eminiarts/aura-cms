@@ -38,13 +38,18 @@ class BookmarkPage extends Component
         $bookmarkUrls = array_column($bookmarks, 'url');
         $key = array_search($this->site['url'], $bookmarkUrls);
 
+
         if ($key !== false) {
             unset($bookmarks[$key]);
         } else {
             $bookmarks[] = $this->site;
         }
 
+        // save without keys
+        $bookmarks = array_values($bookmarks);
+
         auth()->user()->updateOption('bookmarks', $bookmarks);
+        // dump('toggleBookmark', $bookmarks, $bookmarkUrls, $key);
     }
 
     public function render()
