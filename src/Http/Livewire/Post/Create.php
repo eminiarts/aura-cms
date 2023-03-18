@@ -56,6 +56,11 @@ class Create extends Component
             if ($this->params['for'] == 'User') {
                 $this->post['fields']['user_id'] = (int) $this->params['id'];
             }
+
+            // if there is a key in post's fields named $this->params['for'], set it to $this->params['id']
+            if (array_key_exists($this->params['for'], $this->post['fields'])) {
+                $this->post['fields'][$this->params['for']] = (int) $this->params['id'];
+            }
         }
 
         // If $for is "User", set the user_id to the $id

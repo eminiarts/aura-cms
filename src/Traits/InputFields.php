@@ -39,7 +39,7 @@ trait InputFields
 
         // ray('hier', $key, $value);
 
-        if ($value === null && optional($this->meta)->$key) {
+        if ($value === null && optional(optional($this)->meta)->$key) {
             // dump($value, $key, optional($this->meta)->$key);
             return optional($this->fieldClassBySlug($key))->display($this->fieldBySlug($key), optional($this->meta)->$key, $this);
         }

@@ -2,7 +2,7 @@
 
 namespace Eminiarts\Aura\Http\Livewire;
 
-use Eminiarts\Aura\Resources\Operation;
+use Aura\Flows\Resources\Operation;
 use Eminiarts\Aura\Traits\RepeaterFields;
 use Illuminate\Support\Arr;
 use Livewire\Component;

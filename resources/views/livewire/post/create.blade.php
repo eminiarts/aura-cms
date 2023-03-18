@@ -9,7 +9,7 @@
     </x-aura::breadcrumbs>
     @endif
 
-    <div class="flex items-center justify-between my-8">
+    <div class="flex items-center justify-between {{ $inModal ? 'mb-8' : 'my-8'}}">
         <div>
             <h1 class="text-3xl font-semibold">Create {{ $model->singularName() }}</h1>
         </div>
@@ -51,13 +51,13 @@
             </div>
             @endif
 
+            <div class="flex flex-wrap items-start -mx-2">
            @foreach($this->editFields as $key => $field)
-            <x-aura::fields.conditions :field="$field" :model="$model">
-                <div wire:key="post-field-{{ $key }}">
+            <x-aura::fields.conditions :field="$field" :model="$model" wire:key="post-field-{{ $key }}">
                     <x-dynamic-component :component="$field['field']->component" :field="$field" />
-                </div>
             </x-aura::fields.conditions>
             @endforeach
+            </div>
 
             @if (count($errors->all()))
             <div class="block">

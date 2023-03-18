@@ -2,14 +2,15 @@
 
 namespace Eminiarts\Aura\Jobs;
 
-use Eminiarts\Aura\Resources\Attachment;
 use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldQueue;
-use Illuminate\Foundation\Bus\Dispatchable;
-use Illuminate\Queue\InteractsWithQueue;
+use Eminiarts\Aura\Facades\Aura;
+use Intervention\Image\Facades\Image;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Storage;
-use Intervention\Image\Facades\Image;
+use Eminiarts\Aura\Resources\Attachment;
+use Illuminate\Queue\InteractsWithQueue;
+use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Foundation\Bus\Dispatchable;
 
 class GenerateImageThumbnail implements ShouldQueue
 {
@@ -46,6 +47,7 @@ class GenerateImageThumbnail implements ShouldQueue
         if (app()->environment('testing')) {
             return;
         }
+
         // Set the desired storage path for the thumbnail
         $thumbnailPath = 'thumbnails/'.basename($this->attachment->url);
 
@@ -54,18 +56,21 @@ class GenerateImageThumbnail implements ShouldQueue
             return;
         }
 
-        $image = Image::make($this->attachment->path());
+        $settings = Aura::option('media');
 
-        $width = 300;
-        $height = 300;
+        // Generate the thumbnails
+        foreach ($settings['thumbnails'] as $size) {
+            $image = Image::make($this->attachment->path());
 
-        $image->fit($width, $height, function ($constraint) {
-            $constraint->aspectRatio();
-            $constraint->upsize();
-        });
+            $width = $size['width'];
+            $height = $size['height'];
 
-        Storage::put($thumbnailPath, (string) $image->encode());
+            $image->fit($width, $height, function ($constraint) {
+                $constraint->aspectRatio();
+                $constraint->upsize();
+            });
 
-        $this->attachment->update(['thumbnail_url' => Storage::url($thumbnailPath)]);
+            Storage::put($size['name'] . '/' . basename($this->attachment->url), (string) $image->encode());
+        }
     }
 }

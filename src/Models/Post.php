@@ -9,7 +9,7 @@ use Eminiarts\Aura\Jobs\TriggerFlowOnUpdatePostEvent;
 use Eminiarts\Aura\Models\Scopes\TeamScope;
 use Eminiarts\Aura\Models\Scopes\TypeScope;
 use Eminiarts\Aura\Resource;
-use Eminiarts\Aura\Resources\Flow;
+use Aura\Flows\Resources\Flow;
 use Eminiarts\Aura\Traits\InitialPostFields;
 use Eminiarts\Aura\Traits\SaveFieldAttributes;
 use Eminiarts\Aura\Traits\SaveMetaFields;
@@ -192,6 +192,9 @@ class Post extends Resource
             }
         });
 
+        return $defaultValues->merge($meta ?? []);
+
+
         return  $defaultValues->merge($meta ?? [])->map(function ($value, $key) {
             $class = $this->fieldClassBySlug($key);
 
@@ -224,10 +227,13 @@ class Post extends Resource
         }
     }
 
+    // Override isRelation
     public function isRelation($key)
     {
         $modelMethods = get_class_methods($this);
+
         $possibleRelationMethods = [$key, Str::camel($key)];
+
         foreach ($possibleRelationMethods as $method) {
             if (in_array($method, $modelMethods) && ($this->{$method}() instanceof \Illuminate\Database\Eloquent\Relations\Relation)) {
                 return true;

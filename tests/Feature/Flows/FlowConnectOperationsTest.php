@@ -2,7 +2,7 @@
 
 use Eminiarts\Aura\Http\Livewire\CreateFlow;
 use Eminiarts\Aura\Models\User;
-use Eminiarts\Aura\Resources\Flow;
+use Aura\Flows\Resources\Flow;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
 

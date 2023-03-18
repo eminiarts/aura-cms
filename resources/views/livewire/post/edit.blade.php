@@ -24,6 +24,13 @@
                     Impersonate
                 </x-aura::button.transparent>
             @endif
+             <a href="{{ route('aura.post.view', [$slug, $model->id]) }}" class="text-gray-500 hover:text-gray-700">
+                <x-aura::button.transparent size="lg">
+                    <x-aura::icon.view class="w-5 h-5 mr-2" />
+                    View
+                </x-aura::button.transparent>
+            </a>
+
             <x-aura::button size="lg" wire:click="save">
                 <div wire:loading>
                     <x-aura::icon.loading />
@@ -42,24 +49,24 @@
     </div>
     @endif
 
-      {{-- @dump($post) --}}
-    {{-- @dump($this->fields) --}}
-
-
-    <div class="grid gap-6 mt-4 aura-edit-post-container sm:grid-cols-3">
+    <div class="grid gap-6 mt-4 aura-edit-post-container sm:grid-cols-3" x-data="{
+        model: @entangle('post').defer,
+        init() {
+            console.log('init post edit', this.model);
+        }
+    }">
 
         <div class="col-span-1 mx-0 sm:col-span-3">
 
             {{-- @dump($this->fields) --}}
             {{-- @dump($this->post) --}}
-
+            <div class="flex flex-wrap items-start -mx-2">
             @foreach($this->editFields as $key => $field)
-            <x-aura::fields.conditions :field="$field" :model="$model">
-                <div wire:key="post-field-{{ $key }}">
+            <x-aura::fields.conditions :field="$field" :model="$model" wire:key="post-field-{{ $key }}">
                     <x-dynamic-component :component="$field['field']->component" :field="$field" />
-                </div>
             </x-aura::fields.conditions>
             @endforeach
+            </div>
 
             @if (count($errors->all()))
             <div class="block">
@@ -78,33 +85,6 @@
             @endif
 
         </div>
-
-        {{-- <div class="col-span-1">
-
-            <div class="aura-card">
-                <h2>Taxonomies</h2>
-
-                @foreach($this->taxonomies as $key => $taxonomy)
-
-                @dump($taxonomy)
-
-                <div wire:key="post-field-{{ $key }}"
-                    style="width: {{ optional(optional($field)['style'])['width'] ?? '100' }}%;">
-                    <x-dynamic-component :component="$taxonomy->component()" :taxonomy="$taxonomy" />
-                </div>
-                @endforeach
-
-            </div>
-            <div class="aura-card">
-             <x-aura::button size="xl" wire:click="save">
-                        <div wire:loading>
-                            <x-aura::icon.loading  />
-                        </div>
-                        Save
-                    </x-aura::button>
-            </div>
-
-        </div> --}}
 
     </div>
 

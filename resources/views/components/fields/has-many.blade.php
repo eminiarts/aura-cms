@@ -1,8 +1,9 @@
 
-<div class="mt-8 w-full px-2 {{ $field['style']['class'] ?? '' }}">
+<div class="w-full px-2 {{ $field['style']['class'] ?? '' }}">
+  {{-- @dump($field) --}}
   <livewire:aura::table
   :model="app($field['resource'])"
-  :field="$field['type']"
+  :field="$field"
   :editInModal="true"
   :createInModal="true"
   :parent="$this->model"
