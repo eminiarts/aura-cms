@@ -74,7 +74,7 @@ class CreateResourceMigration extends Command
 
 
         // Down method
-        $down = "Schema::dropIfExists('jobs');";
+        $down = "Schema::dropIfExists('{$tableName}');";
         $pattern = '/(public function down\(\): void[\s\S]*?{)[\s\S]*?Schema::table\(.*?function \(Blueprint \$table\) \{[\s\S]*?\/\/[\s\S]*?\}\);[\s\S]*?\}/';
         $replacement = '${1}' . PHP_EOL . '    ' . $down . PHP_EOL . '}';
         $replacedContent2 = preg_replace($pattern, $replacement, $replacedContent);
