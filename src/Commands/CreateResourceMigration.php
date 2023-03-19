@@ -52,8 +52,6 @@ class CreateResourceMigration extends Command
         $fields = $resource->inputFields();
         $schema = $this->generateSchema($fields);
 
-        // dd($schema);
-
         Artisan::call('make:migration', [
             'name' => $migrationName,
             '--table' => $tableName,
@@ -67,21 +65,28 @@ class CreateResourceMigration extends Command
             return 1;
         }
 
-
-
-
         $content = $this->files->get($migrationFile);
 
-
-
+        // Up method
         $pattern = '/(public function up\(\): void[\s\S]*?Schema::table\(.*?function \(Blueprint \$table\) \{[\s\S]*?)\/\/([\s\S]*?\}\);[\s\S]*?\})/';
         $replacement = '${1}' . $schema . '${2}';
         $replacedContent = preg_replace($pattern, $replacement, $content);
 
 
-        $this->files->put($migrationFile, $replacedContent);
+        // Down method
+        $down = "Schema::dropIfExists('jobs');";
+        $pattern = '/(public function down\(\): void[\s\S]*?{)[\s\S]*?Schema::table\(.*?function \(Blueprint \$table\) \{[\s\S]*?\/\/[\s\S]*?\}\);[\s\S]*?\}/';
+        $replacement = '${1}' . PHP_EOL . '    ' . $down . PHP_EOL . '}';
+        $replacedContent2 = preg_replace($pattern, $replacement, $replacedContent);
+
+        $this->files->put($migrationFile, $replacedContent2);
 
         $this->info("Migration '{$migrationName}' created successfully.");
+
+        // Run "pint" on the migration file
+        exec('./vendor/bin/pint ' . $migrationFile);
+
+        $this->info("Pint applied to '{$migrationName}'.");
     }
 
     protected function generateColumn($field)
