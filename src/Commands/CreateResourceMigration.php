@@ -69,16 +69,17 @@ class CreateResourceMigration extends Command
 
 
 
+
         $content = $this->files->get($migrationFile);
 
-        $upReplacement = 'public function up(): void' . PHP_EOL . '    {' . PHP_EOL . '        Schema::table(\'' . $tableName . '\', function (Blueprint $table) {' . PHP_EOL . $schema . '        });' . PHP_EOL . '    }';
-        $content = preg_replace('/public function up\(\): void(.*?)\{(\s*?)Schema::table\(\'([a-zA-Z]+)\',/s', $upReplacement, $content);
 
-        $content = preg_replace_callback('/^(\s+)(.*)/m', function ($matches) {
-            return str_repeat(' ', max((strlen($matches[1]) - 4), 0)) . $matches[2];
-        }, $content);
 
-        $this->files->put($migrationFile, $content);
+        $pattern = '/(public function up\(\): void[\s\S]*?Schema::table\(.*?function \(Blueprint \$table\) \{[\s\S]*?)\/\/([\s\S]*?\}\);[\s\S]*?\})/';
+        $replacement = '${1}' . $schema . '${2}';
+        $replacedContent = preg_replace($pattern, $replacement, $content);
+
+
+        $this->files->put($migrationFile, $replacedContent);
 
         $this->info("Migration '{$migrationName}' created successfully.");
     }
