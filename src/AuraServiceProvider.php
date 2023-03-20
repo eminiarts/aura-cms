@@ -44,6 +44,7 @@ use Eminiarts\Aura\Http\Livewire\User\InviteUser;
 use Eminiarts\Aura\Http\Livewire\Post\CreateModal;
 use Eminiarts\Aura\Http\Livewire\EditPosttypeField;
 use Eminiarts\Aura\Commands\CreateResourceMigration;
+use Eminiarts\Aura\Commands\CreateResourcePermissions;
 use Eminiarts\Aura\Commands\TransformTableToResource;
 use Spatie\LaravelPackageTools\PackageServiceProvider;
 use Spatie\LaravelPackageTools\Commands\InstallCommand;
@@ -144,6 +145,7 @@ class AuraServiceProvider extends PackageServiceProvider
                 CreateResourceMigration::class,
                 DatabaseToResources::class,
                 TransformTableToResource::class,
+                CreateResourcePermissions::class,
             ])
             ->hasInstallCommand(function (InstallCommand $command) {
                 $command
