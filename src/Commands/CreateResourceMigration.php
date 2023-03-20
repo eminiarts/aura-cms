@@ -111,7 +111,7 @@ class CreateResourceMigration extends Command
         //     return "{\$table}->foreignId('{$slug}')->nullable()->constrained('{$relatedTableName}')->onDelete('cascade');\n";
         // },
             'Eminiarts\Aura\Fields\HasMany' => '', // No need to add anything to the schema for HasMany relationships
-            default => "// Add your custom field type schema generation here for '{$slug}' with type '{$type}'\n",
+            default => "\$table->text('{$slug}')->nullable(); // Add your custom field type schema generation here for '{$slug}' with type '{$type}'\n",
         };
     }
 
