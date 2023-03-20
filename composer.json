@@ -49,7 +49,8 @@
         "psr-4": {
             "Eminiarts\\Aura\\": "src",
             "Eminiarts\\Aura\\Database\\Factories\\": "database/factories",
-            "Aura\\Flows\\": "plugins/aura/flows/src"
+            "Aura\\Flows\\": "plugins/aura/flows/src",
+            "Aura\\Forms\\": "plugins/aura/forms/src"
         }
     },
     "autoload-dev": {
@@ -76,6 +77,7 @@
                 "Lab404\\Impersonate\\ImpersonateServiceProvider",
                 "Eminiarts\\Aura\\Providers\\FortifyServiceProvider",
                 "Aura\\Flows\\FlowsServiceProvider",
+                "Aura\\Forms\\FormsServiceProvider",
                 "Eminiarts\\Aura\\AuraServiceProvider"
             ],
             "aliases": {
