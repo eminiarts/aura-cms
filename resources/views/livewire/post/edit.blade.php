@@ -10,8 +10,6 @@
     </x-aura::breadcrumbs>
     @endif
 
-    
-
     <div class="flex items-center justify-between my-8">
         <div>
             <h1 class="text-3xl font-semibold">Edit {{ $model->singularName() }}</h1>
