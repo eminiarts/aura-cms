@@ -139,4 +139,11 @@ class Edit extends Component
 
         $this->save();
     }
+
+    public function singleAction($action)
+    {
+        $this->model->{$action}();
+
+        $this->notify('Successfully ran: ' . $action);
+    }
 }
