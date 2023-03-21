@@ -20,6 +20,13 @@ trait InputFieldsValidation
         return $map;
     }
 
+    public function postFieldValidationRules()
+    {
+        return collect($this->validationRules())->mapWithKeys(function ($value, $key) {
+            return ['post.fields.'.$key => $value];
+        })->toArray();
+    }
+
     public function validationRules()
     {
         $subFields = [];
