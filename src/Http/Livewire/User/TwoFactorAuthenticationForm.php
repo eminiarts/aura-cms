@@ -47,8 +47,6 @@ class TwoFactorAuthenticationForm extends Component
      */
     public $showingRecoveryCodes = false;
 
-    public $user;
-
     /**
      * Confirm two factor authentication for the user.
      *
@@ -56,9 +54,11 @@ class TwoFactorAuthenticationForm extends Component
      */
     public function confirmTwoFactorAuthentication(ConfirmTwoFactorAuthentication $confirm)
     {
-        if (Features::optionEnabled(Features::twoFactorAuthentication(), 'confirmPassword')) {
-            $this->ensurePasswordIsConfirmed();
-        }
+        // if (Features::optionEnabled(Features::twoFactorAuthentication(), 'confirmPassword')) {
+        //     $this->ensurePasswordIsConfirmed();
+        // }
+        $this->ensurePasswordIsConfirmed();
+
 
         $confirm($this->user, $this->code);
 
@@ -74,9 +74,11 @@ class TwoFactorAuthenticationForm extends Component
      */
     public function disableTwoFactorAuthentication(DisableTwoFactorAuthentication $disable)
     {
-        if (Features::optionEnabled(Features::twoFactorAuthentication(), 'confirmPassword')) {
-            $this->ensurePasswordIsConfirmed();
-        }
+        // if (Features::optionEnabled(Features::twoFactorAuthentication(), 'confirmPassword')) {
+        //     $this->ensurePasswordIsConfirmed();
+        // }
+        $this->ensurePasswordIsConfirmed();
+
 
         $disable($this->user);
 
@@ -92,19 +94,21 @@ class TwoFactorAuthenticationForm extends Component
      */
     public function enableTwoFactorAuthentication(EnableTwoFactorAuthentication $enable)
     {
-        if (Features::optionEnabled(Features::twoFactorAuthentication(), 'confirmPassword')) {
-            $this->ensurePasswordIsConfirmed();
-        }
+        // if (Features::optionEnabled(Features::twoFactorAuthentication(), 'confirmPassword')) {
+        //     $this->ensurePasswordIsConfirmed();
+        // }
+        $this->ensurePasswordIsConfirmed();
 
         $enable($this->user);
 
         $this->showingQrCode = true;
+        $this->showingConfirmation = true;
 
-        if (Features::optionEnabled(Features::twoFactorAuthentication(), 'confirm')) {
-            $this->showingConfirmation = true;
-        } else {
-            $this->showingRecoveryCodes = true;
-        }
+        // if (Features::optionEnabled(Features::twoFactorAuthentication(), 'confirm')) {
+        //     $this->showingConfirmation = true;
+        // } else {
+        //     $this->showingRecoveryCodes = true;
+        // }
     }
 
     /**
@@ -122,12 +126,21 @@ class TwoFactorAuthenticationForm extends Component
      *
      * @return void
      */
-    public function mount(User $user)
+    public function mount()
     {
-        // if (Features::optionEnabled(Features::twoFactorAuthentication(), 'confirm') &&
-        //     is_null($this->user->two_factor_confirmed_at)) {
-        //     app(DisableTwoFactorAuthentication::class)($this->user);
-        // }
+        if (is_null($this->user->two_factor_confirmed_at)) {
+            app(DisableTwoFactorAuthentication::class)($this->user);
+        }
+    }
+
+    /**
+     * Get the current user of the application.
+     *
+     * @return mixed
+     */
+    public function getUserProperty()
+    {
+        return auth()->user();
     }
 
     /**
@@ -163,9 +176,10 @@ class TwoFactorAuthenticationForm extends Component
      */
     public function showRecoveryCodes()
     {
-        if (Features::optionEnabled(Features::twoFactorAuthentication(), 'confirmPassword')) {
-            $this->ensurePasswordIsConfirmed();
-        }
+        // if (Features::optionEnabled(Features::twoFactorAuthentication(), 'confirmPassword')) {
+        //     $this->ensurePasswordIsConfirmed();
+        // }
+        $this->ensurePasswordIsConfirmed();
 
         $this->showingRecoveryCodes = true;
     }
