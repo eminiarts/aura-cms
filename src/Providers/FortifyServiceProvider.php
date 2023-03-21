@@ -27,7 +27,7 @@ class FortifyServiceProvider extends ServiceProvider
         });
 
         Fortify::twoFactorChallengeView(function () {
-            return view('auth.two-factor-challenge');
+            return view('aura::auth.two-factor-challenge');
         });
 
         Fortify::loginView(function () {
