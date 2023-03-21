@@ -74,7 +74,7 @@ class CreateResourceMigration extends Command
 
 
         // Down method
-        $down = "Schema::dropIfExists('jobs');";
+        $down = "Schema::dropIfExists('{$tableName}');";
         $pattern = '/(public function down\(\): void[\s\S]*?{)[\s\S]*?Schema::table\(.*?function \(Blueprint \$table\) \{[\s\S]*?\/\/[\s\S]*?\}\);[\s\S]*?\}/';
         $replacement = '${1}' . PHP_EOL . '    ' . $down . PHP_EOL . '}';
         $replacedContent2 = preg_replace($pattern, $replacement, $replacedContent);
@@ -111,7 +111,7 @@ class CreateResourceMigration extends Command
         //     return "{\$table}->foreignId('{$slug}')->nullable()->constrained('{$relatedTableName}')->onDelete('cascade');\n";
         // },
             'Eminiarts\Aura\Fields\HasMany' => '', // No need to add anything to the schema for HasMany relationships
-            default => "// Add your custom field type schema generation here for '{$slug}' with type '{$type}'\n",
+            default => "\$table->text('{$slug}')->nullable(); // Add your custom field type schema generation here for '{$slug}' with type '{$type}'\n",
         };
     }
 
