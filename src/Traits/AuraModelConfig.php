@@ -366,7 +366,7 @@ trait AuraModelConfig
 
     public function title()
     {
-        return $this->title." (#{$this->id})";
+        return $this->getType()." (#{$this->id})";
     }
 
     public static function usesCustomTable(): bool
