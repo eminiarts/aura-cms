@@ -12,6 +12,8 @@ trait AuraModelConfig
 {
     public array $bulkActions = [];
 
+    public array $actions = [];
+
     public array $metaFields = [];
 
     public static $pluralName = null;
@@ -105,6 +107,11 @@ trait AuraModelConfig
 
             return $value;
         }
+    }
+
+    public function getActions()
+    {
+        return $this->actions;
     }
 
     public function editUrl()

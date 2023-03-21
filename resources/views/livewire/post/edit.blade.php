@@ -3,11 +3,14 @@
 
     @if(!$inModal)
     <x-aura::breadcrumbs>
-        <x-aura::breadcrumbs.li :href="route('aura.dashboard')" title="" icon="dashboard" iconClass="text-gray-500 w-7 h-7 mr-0" />
+        <x-aura::breadcrumbs.li :href="route('aura.dashboard')" title="" icon="dashboard"
+            iconClass="text-gray-500 w-7 h-7 mr-0" />
         <x-aura::breadcrumbs.li :href="route('aura.post.index', $slug)" :title="Str::plural($slug)" />
         <x-aura::breadcrumbs.li :title="$model->title" />
     </x-aura::breadcrumbs>
     @endif
+
+    
 
     <div class="flex items-center justify-between my-8">
         <div>
@@ -15,16 +18,33 @@
         </div>
 
         <div class="flex items-center space-x-2">
+        <x-aura::dropdown >
+            <x-slot name="trigger">
+                <x-aura::button.transparent>
+                        <x-aura::icon.dots class="w-5 h-5 mr-2" />
+                Actions
+                </x-aura::button.transparent>
+            </x-slot>
+            <x-slot name="content">
+                <div class="px-4">
+                    @foreach($this->actions as $action => $label)
+                    <div wire:click="singleAction('{{ $action }}')" class="py-2 cursor-pointer hover:bg-primary-100">
+                        {{ $label }}
+                    </div>
+                    @endforeach
+                </div>
+            </x-slot>
+        </x-aura::dropdown>
             {{-- If the $model is an instance of User Resource, add a button to impersonate the user --}}
             @if ($model instanceof Eminiarts\Aura\Resources\User)
-                <x-aura::button.transparent route="impersonate" :id="$model->id" >
-                    <x-slot:icon>
-                        <x-aura::icon class="w-5 h-5 mr-2" icon="user-impersonate" />
-                    </x-slot:icon>
-                    Impersonate
-                </x-aura::button.transparent>
+            <x-aura::button.transparent route="impersonate" :id="$model->id">
+                <x-slot:icon>
+                    <x-aura::icon class="w-5 h-5 mr-2" icon="user-impersonate" />
+                </x-slot:icon>
+                Impersonate
+            </x-aura::button.transparent>
             @endif
-             <a href="{{ route('aura.post.view', [$slug, $model->id]) }}" class="text-gray-500 hover:text-gray-700">
+            <a href="{{ route('aura.post.view', [$slug, $model->id]) }}" class="text-gray-500 hover:text-gray-700">
                 <x-aura::button.transparent size="lg">
                     <x-aura::icon.view class="w-5 h-5 mr-2" />
                     View
@@ -50,22 +70,22 @@
     @endif
 
     <div class="grid gap-6 mt-4 aura-edit-post-container sm:grid-cols-3" x-data="{
-        model: @entangle('post').defer,
-        init() {
-            console.log('init post edit', this.model);
-        }
-    }">
+    model: @entangle('post').defer,
+    init() {
+        console.log('init post edit', this.model);
+    }
+}">
 
         <div class="col-span-1 mx-0 sm:col-span-3">
 
             {{-- @dump($this->fields) --}}
             {{-- @dump($this->post) --}}
             <div class="flex flex-wrap items-start -mx-2">
-            @foreach($this->editFields as $key => $field)
-            <x-aura::fields.conditions :field="$field" :model="$model" wire:key="post-field-{{ $key }}">
+                @foreach($this->editFields as $key => $field)
+                <x-aura::fields.conditions :field="$field" :model="$model" wire:key="post-field-{{ $key }}">
                     <x-dynamic-component :component="$field['field']->component" :field="$field" />
-            </x-aura::fields.conditions>
-            @endforeach
+                </x-aura::fields.conditions>
+                @endforeach
             </div>
 
             @if (count($errors->all()))

@@ -38,6 +38,11 @@ class Edit extends Component
         return $this->post['fields'][$slug];
     }
 
+    public function getActionsProperty()
+    {
+        return $this->model->getActions();
+    }
+
     public function getTaxonomiesProperty()
     {
         return $this->model->getTaxonomies();
