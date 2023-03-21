@@ -1,15 +1,14 @@
 <div>
-    <h3>
+    <h3 class="max-w-xl text-sm">
         {{ __('Add additional security to your account using two factor authentication.') }}
     </h3>
     
     <div>
         <h3 class="text-lg font-medium text-gray-900">
             @if ($this->enabled)
-            
-            <div class="my-4 pointer-events-auto w-full max-w-sm overflow-hidden rounded-lg bg-white ring-1 ring-black ring-opacity-5">
-                <div class="p-4">
-                    <div class="flex items-start">
+
+            <div class="p-4 my-4 text-sm text-green-800 rounded-lg bg-green-50 dark:bg-gray-800 dark:text-green-400" role="alert">
+  <div class="flex items-start">
                         <div class="flex-shrink-0">
                             <!-- Heroicon name: outline/check-circle -->
                             <svg class="h-6 w-6 text-green-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
@@ -21,8 +20,9 @@
                         </div>
                         
                     </div>
-                </div>
-            </div>
+</div>
+            
+           
             
             @else
             <div class="p-4 my-4 text-sm text-yellow-800 rounded-lg bg-yellow-50 dark:bg-gray-800 dark:text-yellow-300" role="alert">
@@ -32,7 +32,7 @@
             @endif
         </h3>
         
-        <div class="mt-3 max-w-xl text-sm text-gray-600">
+        <div class="mt-3 max-w-xl text-sm">
             <p>
                 {{ __('When two factor authentication is enabled, you will be prompted for a secure, random token during authentication. You may retrieve this token from your phone\'s Google Authenticator application.') }}
             </p>
@@ -40,7 +40,7 @@
         
         @if ($this->enabled)
         @if ($showingQrCode)
-        <div class="mt-4 max-w-xl text-sm text-gray-600">
+        <div class="mt-4 max-w-xl text-sm">
             <p class="font-semibold">
                 {{ __('Two factor authentication is now enabled. Scan the following QR code using your phone\'s authenticator application.') }}
             </p>
@@ -50,7 +50,7 @@
             {!! $this->user->twoFactorQrCodeSvg() !!}
         </div>
 
-        <div class="mt-4 max-w-xl text-sm text-gray-600">
+        <div class="mt-4 max-w-xl text-sm">
                     <p class="font-semibold">
                         {{ __('Setup Key') }}: {{ decrypt($this->user->two_factor_secret) }}
                     </p>
@@ -71,7 +71,7 @@
         @endif
         
         @if ($showingRecoveryCodes)
-        <div class="mt-4 max-w-xl text-sm text-gray-600">
+        <div class="mt-4 max-w-xl text-sm">
             <p class="font-semibold">
                 {{ __('Store these recovery codes in a secure password manager. They can be used to recover access to your account if your two factor authentication device is lost.') }}
             </p>
@@ -93,6 +93,12 @@
                     {{ __('Enable') }}
                 </x-aura::button.primary>
             </x-aura::confirms-password>
+             @elseif ($showingConfirmation)
+                    <x-aura::confirms-password wire:then="confirmTwoFactorAuthentication">
+                        <x-aura::button.primary type="button" class="mr-3" wire:loading.attr="disabled">
+                            {{ __('Confirm') }}
+                        </x-aura::button.primary>
+                    </x-aura::confirms-password>
             @else
             @if ($showingRecoveryCodes)
             <x-aura::confirms-password wire:then="regenerateRecoveryCodes" :confirmingPassword="$confirmingPassword">
