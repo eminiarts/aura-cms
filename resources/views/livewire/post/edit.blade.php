@@ -18,7 +18,7 @@
         </div>
 
         <div class="flex items-center space-x-2">
-        <x-aura::dropdown >
+        <x-aura::dropdown>
             <x-slot name="trigger">
                 <x-aura::button.transparent>
                         <x-aura::icon.dots class="w-5 h-5 mr-2" />
@@ -26,10 +26,20 @@
                 </x-aura::button.transparent>
             </x-slot>
             <x-slot name="content">
-                <div class="px-4">
+                <div class="px-2">
                     @foreach($this->actions as $action => $label)
-                    <div wire:click="singleAction('{{ $action }}')" class="py-2 cursor-pointer hover:bg-primary-100">
-                        {{ $label }}
+                    <div wire:click="singleAction('{{ $action }}')" class="p-2 cursor-pointer hover:bg-primary-100">
+                        @if(is_array($label))
+                           <div class="flex flex-col {{ $label['class'] ?? ''}}">
+                            <div class="flex space-x-2">
+                                 {!! $label['icon'] ?? '' !!}
+                            <strong class="font-bold">{{ $label['label'] ?? '' }}</strong>
+                            </div>
+                            <span class="text-xs text-gray-500">{{ $label['description'] ?? '' }}</span>
+                           </div>
+                        @else
+                            {{ $label }}
+                        @endif
                     </div>
                     @endforeach
                 </div>
