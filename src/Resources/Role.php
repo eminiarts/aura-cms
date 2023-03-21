@@ -18,20 +18,28 @@ class Role extends Post
 
     protected $with = ['meta'];
 
+    public array $bulkActions = [
+        'deleteSelected' => 'Delete',
+    ];
+
+    public array $actions = [
+        'createMissingPermissions' => 'Create Missing Permissions',
+        'delete' => 'Delete',
+    ];
+
+    public function createMissingPermissions()
+    {
+        dd('createMissingPermissions');
+    }
+
+    public function delete()
+    {
+        dd('delete');
+    }
+
     public static function getFields()
     {
         return [
-            //             [
-            //                 'name' => 'Role',
-            //                 'slug' => 'role',
-            //                 'type' => 'Eminiarts\\Aura\\Fields\\Tab',
-            //                 'validation' => '',
-            //                 'conditional_logic' => [],
-            //                 'has_conditional_logic' => false,
-            //                 'wrapper' => '',
-            //                 'global' => true,
-            //             ],
-
             [
                 'name' => 'Name',
                 'slug' => 'title',
@@ -122,10 +130,4 @@ class Role extends Post
         return $this->belongsToMany(User::class, 'user_meta', 'value', 'user_id')
             ->wherePivot('key', 'roles');
     }
-
-    // public function users()
-    // {
-    //     return $this->hasManyThrough(User::class, UserMetaPivot::class, 'value', 'user_id', 'id')
-    //         ->wherePivot('key', 'roles');
-    // }
 }
