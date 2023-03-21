@@ -2,14 +2,17 @@
 
 namespace Eminiarts\Aura\Http\Livewire\User;
 
-use Eminiarts\Aura\Aura;
-use Eminiarts\Aura\Resources\Option;
-use Eminiarts\Aura\Traits\InputFields;
-use Illuminate\Support\Arr;
-use Illuminate\Support\Facades\Artisan;
-use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Str;
 use Livewire\Component;
+use Eminiarts\Aura\Aura;
+use Illuminate\Support\Arr;
+use Illuminate\Support\Str;
+use Illuminate\Http\Request;
+use Eminiarts\Aura\Resources\Option;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
+use Eminiarts\Aura\Traits\InputFields;
+use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Redirect;
 use Illuminate\Validation\Rules\Password;
 
 class Profile extends Component
@@ -21,6 +24,15 @@ class Profile extends Component
     public $post = [
         'fields' => [],
     ];
+
+    /**
+     * The user's current password.
+     *
+     * @var string
+     */
+    public $password = '';
+
+    public $confirmingUserDeletion = false;
 
     // Listen for selectedAttachment
     protected $listeners = ['updateField' => 'updateField'];
@@ -103,7 +115,6 @@ class Profile extends Component
              [
                 'type' => 'Eminiarts\\Aura\\Fields\\Tab',
                 'name' => '2FA',
-                'label' => 'Tab',
                 'slug' => '2fa',
                 'global' => true,
                 'on_view' => false,
@@ -125,8 +136,44 @@ class Profile extends Component
                 ],
                 'slug' => '2fa',
             ],
+             [
+                'type' => 'Eminiarts\\Aura\\Fields\\Tab',
+                'name' => 'Delete',
+                'slug' => 'delete-tab',
+                'global' => true,
+                'on_view' => false,
+            ],
+            [
+                'name' => 'Delete Account',
+                'type' => 'Eminiarts\\Aura\\Fields\\Panel',
+                'slug' => 'user-delete-panel',
+                'style' => [
+                    'width' => '100',
+                ],
+            ],
+            [
+                'name' => '2FA',
+                'type' => 'Eminiarts\\Aura\\Fields\\View',
+                'view' => 'aura::profile.delete-user-form',
+                'validation' => '',
+                'conditional_logic' => [
+                ],
+                'slug' => '2fa',
+            ],
 
         ];
+    }
+
+    /**
+     * Confirm that the user would like to delete their account.
+     *
+     * @return void
+     */
+    public function confirmUserDeletion()
+    {
+        $this->dispatchBrowserEvent('confirming-delete-user');
+
+        $this->confirmingUserDeletion = true;
     }
 
     public function getFieldsForViewProperty()
@@ -207,5 +254,26 @@ class Profile extends Component
         // dd($this->post['fields'][$data['slug']], $data['value']);
         // dd($this->post);
         $this->save();
+    }
+
+    /**
+     * Delete the current user.
+     *
+     */
+    public function deleteUser(Request $request)
+    {
+        $this->validate(['password' => ['required', 'current_password']]);
+
+
+        $user = $request->user();
+
+        Auth::logout();
+
+        $user->delete();
+
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
+
+        return Redirect::to('/');
     }
 }

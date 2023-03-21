@@ -52,11 +52,7 @@ Route::domain(config('aura.domain'))
                 return view('aura::posttypes');
             })->name('posttypes');
 
-            Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
-            Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
-            Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
-
-            Route::get('/aura-profile', Profile::class)->name('user.profile');
+            Route::get('/profile', Profile::class)->name('profile');
             Route::get('/team-settings', TeamSettings::class)->name('team.settings');
             Route::get('/aura-config', AuraConfig::class)->name('config');
 
