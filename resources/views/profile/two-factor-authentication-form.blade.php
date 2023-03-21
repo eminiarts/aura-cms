@@ -1,8 +1,4 @@
 <div>
-    <h2 class="">
-        {{ __('Two Factor Authentication') }}
-    </h2>
-    
     <h3>
         {{ __('Add additional security to your account using two factor authentication.') }}
     </h3>
@@ -29,7 +25,10 @@
             </div>
             
             @else
-            {{ __('You have not enabled two factor authentication.') }}
+            <div class="p-4 my-4 text-sm text-yellow-800 rounded-lg bg-yellow-50 dark:bg-gray-800 dark:text-yellow-300" role="alert">
+  {{ __('You have not enabled two factor authentication.') }}
+</div>
+            
             @endif
         </h3>
         

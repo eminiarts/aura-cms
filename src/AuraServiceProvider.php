@@ -53,6 +53,7 @@ use Eminiarts\Aura\Http\Livewire\Taxonomy\Index as TaxonomyIndex;
 use Eminiarts\Aura\Http\Livewire\Taxonomy\Index as TaxonomyCreate;
 use Eminiarts\Aura\Http\Livewire\User\TwoFactorAuthenticationForm;
 use Eminiarts\Aura\Http\Livewire\Attachment\Index as AttachmentIndex;
+use Eminiarts\Aura\Http\Livewire\User\Profile;
 
 class AuraServiceProvider extends PackageServiceProvider
 {
@@ -110,6 +111,8 @@ class AuraServiceProvider extends PackageServiceProvider
         Livewire::component('aura::team-settings', TeamSettings::class);
         Livewire::component('aura::invite-user', InviteUser::class);
         Livewire::component('aura::config', AuraConfig::class);
+
+        Livewire::component('aura::profile', Profile::class);
 
         // Flows
         Livewire::component('aura::create-flow', CreateFlow::class);
