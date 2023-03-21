@@ -33,6 +33,9 @@
                            <div class="flex flex-col {{ $label['class'] ?? ''}}">
                             <div class="flex space-x-2">
                                  {!! $label['icon'] ?? '' !!}
+                                 @if(optional($label)['icon-view'])
+                                    @include($label['icon-view'])
+                                 @endif
                             <strong class="font-bold">{{ $label['label'] ?? '' }}</strong>
                             </div>
                             <span class="text-xs text-gray-500">{{ $label['description'] ?? '' }}</span>
