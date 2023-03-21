@@ -180,9 +180,22 @@ class Profile extends Component
     {
         $this->validate();
 
-        dd('save', $this->post, $this->rules(), $this->validationRules());
+        // dd('save', $this->post, $this->rules(), $this->validationRules());
 
-        // clear cache of auth()->user()->current_team_id . '.aura.team-settings'
+        // if $this->post['fields']['current_password'] and  is set, save password
+
+        if (optional($this->post['fields'])['current_password'] && optional($this->post['fields'])['password']) {
+            $this->model->update([
+                'password' => bcrypt($this->post['fields']['password']),
+            ]);
+
+            // unset password fields
+            unset($this->post['fields']['current_password']);
+            unset($this->post['fields']['password']);
+            unset($this->post['fields']['password_confirmation']);
+        }
+
+        $this->model->update($this->post['fields']);
 
         return $this->notify('Successfully updated.');
 
