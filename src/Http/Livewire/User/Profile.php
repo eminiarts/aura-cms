@@ -36,7 +36,6 @@ class Profile extends Component
             [
                 'name' => 'Personal Infos',
                 'type' => 'Eminiarts\\Aura\\Fields\\Panel',
-                'validation' => 'required',
                 'slug' => 'user-details',
                 'style' => [
                     'width' => '100',
@@ -67,6 +66,14 @@ class Profile extends Component
                 'name' => 'Password',
                 'slug' => 'tab-password',
                 'global' => true,
+            ],
+              [
+                'name' => 'Change Password',
+                'type' => 'Eminiarts\\Aura\\Fields\\Panel',
+                'slug' => 'user-details',
+                'style' => [
+                    'width' => '100',
+                ],
             ],
             [
                 'name' => 'Current Password',
@@ -99,6 +106,14 @@ class Profile extends Component
                 'slug' => '2fa',
                 'global' => true,
                 'on_view' => false,
+            ],
+             [
+                'name' => 'Two Factor Authentication',
+                'type' => 'Eminiarts\\Aura\\Fields\\Panel',
+                'slug' => 'user-2fa',
+                'style' => [
+                    'width' => '100',
+                ],
             ],
             [
                 'name' => '2FA',
