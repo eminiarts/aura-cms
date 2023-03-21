@@ -1,21 +1,22 @@
 <?php
 
-use Eminiarts\Aura\Http\Controllers\Api\FieldsController;
-use Eminiarts\Aura\Http\Controllers\ProfileController;
-use Eminiarts\Aura\Http\Livewire\Attachment\Index as AttachmentIndex;
+use Illuminate\Support\Facades\Route;
+use Eminiarts\Aura\Http\Livewire\Media;
+use Eminiarts\Aura\Http\Livewire\Posttype;
+use Eminiarts\Aura\Http\Livewire\Post\Edit;
+use Eminiarts\Aura\Http\Livewire\Post\View;
 use Eminiarts\Aura\Http\Livewire\AuraConfig;
 use Eminiarts\Aura\Http\Livewire\CreateFlow;
-use Eminiarts\Aura\Http\Livewire\Media;
-use Eminiarts\Aura\Http\Livewire\Post\Create;
-use Eminiarts\Aura\Http\Livewire\Post\Edit;
 use Eminiarts\Aura\Http\Livewire\Post\Index;
-use Eminiarts\Aura\Http\Livewire\Post\View;
-use Eminiarts\Aura\Http\Livewire\Posttype;
-use Eminiarts\Aura\Http\Livewire\Taxonomy\Create as TaxonomyCreate;
+use Eminiarts\Aura\Http\Livewire\Post\Create;
+use Eminiarts\Aura\Http\Livewire\TeamSettings;
+use Eminiarts\Aura\Http\Livewire\User\Profile;
+use Eminiarts\Aura\Http\Controllers\ProfileController;
+use Eminiarts\Aura\Http\Controllers\Api\FieldsController;
 use Eminiarts\Aura\Http\Livewire\Taxonomy\Edit as TaxonomyEdit;
 use Eminiarts\Aura\Http\Livewire\Taxonomy\Index as TaxonomyIndex;
-use Eminiarts\Aura\Http\Livewire\TeamSettings;
-use Illuminate\Support\Facades\Route;
+use Eminiarts\Aura\Http\Livewire\Taxonomy\Create as TaxonomyCreate;
+use Eminiarts\Aura\Http\Livewire\Attachment\Index as AttachmentIndex;
 
 Route::middleware(config('aura.middleware.aura-guest'))->group(function () {
     require __DIR__.'/auth.php';
@@ -55,6 +56,7 @@ Route::domain(config('aura.domain'))
             Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
             Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
+            Route::get('/aura-profile', Profile::class)->name('user.profile');
             Route::get('/team-settings', TeamSettings::class)->name('team.settings');
             Route::get('/aura-config', AuraConfig::class)->name('config');
 
