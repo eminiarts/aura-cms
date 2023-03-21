@@ -8,7 +8,7 @@
     $label = optional($field)['name'];
 
     // if the field is required, add a * to the label
-    if (str(optional($field)['validation'])->contains('required')) {
+    if (is_string(optional($field)['validation']) && str(optional($field)['validation'])->contains('required')) {
         $label .= '*';
     }
 

@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
 use Livewire\Component;
+use Illuminate\Validation\Rules\Password;
 
 class Profile extends Component
 {
@@ -78,7 +79,7 @@ class Profile extends Component
             [
                 'name' => 'Current Password',
                 'type' => 'Eminiarts\\Aura\\Fields\\Password',
-                'validation' => '',
+                'validation' => 'current_password',
                 'slug' => 'current_password',
                 'on_index' => false,
                 'on_view' => false,
@@ -86,7 +87,7 @@ class Profile extends Component
             [
                 'name' => 'New Password',
                 'type' => 'Eminiarts\\Aura\\Fields\\Password',
-                'validation' => '',
+                'validation' => ['required_with:current_password', 'confirmed', Password::min(8)],
                 'slug' => 'password',
                 'on_index' => false,
                 'on_view' => false,
@@ -95,7 +96,7 @@ class Profile extends Component
                 'name' => 'Confirm Password',
                 'type' => 'Eminiarts\\Aura\\Fields\\Password',
                 'validation' => '',
-                'slug' => 'confirm_password',
+                'slug' => 'password_confirmation',
                 'on_index' => false,
                 'on_view' => false,
             ],
@@ -168,19 +169,20 @@ class Profile extends Component
 
     public function rules()
     {
-        return Arr::dot([
-            'post.fields' => $this->validationRules(),
-        ]);
+        // return Arr::dot([
+        //     'post.fields' => $this->validationRules(),
+        // ]);
+
+        return $this->postFieldValidationRules();
     }
 
     public function save()
     {
-        // $this->validate();
+        $this->validate();
 
-        dd('save');
+        dd('save', $this->post, $this->rules(), $this->validationRules());
 
         // clear cache of auth()->user()->current_team_id . '.aura.team-settings'
-        Cache::forget(auth()->user()->current_team_id.'.aura.team-settings');
 
         return $this->notify('Successfully updated.');
 
