@@ -16,7 +16,13 @@
                             </svg>
                         </div>
                         <div class="ml-3 w-0 flex-1 pt-0.5">
-                            <p class="text-sm font-medium text-gray-900">{{ __('You have enabled two factor authentication.') }}</p>
+                            <p class="text-sm font-medium text-gray-900">
+                                @if($showingConfirmation)
+                                {{ __('Please scan the QR-Code with your Authenticator App and confirm the Code to enable 2FA.') }}
+                                @else
+                                {{ __('You have enabled two factor authentication.') }}
+                                @endif
+                            </p>
                         </div>
                         
                     </div>

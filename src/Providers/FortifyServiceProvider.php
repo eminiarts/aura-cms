@@ -34,11 +34,19 @@ class FortifyServiceProvider extends ServiceProvider
             return view('aura::auth.login');
         });
 
+        // dd(app('config')->get('fortify'), app('config')->get('fortify-options'));
+
+
         // Set Configuration of fortify.features to [registration, email-verification and two-factor-authentication]
         app('config')->set('fortify.features', [
             //Features::registration(),
             //Features::emailVerification(),
-            Features::twoFactorAuthentication(),
+            Features::twoFactorAuthentication([
+                'confirm' => true,
+                'confirmPassword' => true,
+                // 'window' => 0,
+            ]),
+            // Features::confirmsTwoFactorAuthentication(),
         ]);
 
         // Set Configuration of fortify.redirects.login to /admin/dashboard
