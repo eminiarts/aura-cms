@@ -18,7 +18,7 @@
         </div>
 
         <div class="flex items-center space-x-2">
-        <x-aura::dropdown>
+        <x-aura::dropdown width="w-96">
             <x-slot name="trigger">
                 <x-aura::button.transparent>
                         <x-aura::icon.dots class="w-5 h-5 mr-2" />
@@ -36,9 +36,10 @@
                                  @if(optional($label)['icon-view'])
                                     @include($label['icon-view'])
                                  @endif
-                            <strong class="font-bold">{{ $label['label'] ?? '' }}</strong>
+                            <strong class="font-bold">{{ $label['label'] ?? '' }} <br>
+                            <span class="text-xs text-gray-500 font-normal leading-none">{{ $label['description'] ?? '' }}</span></strong>
                             </div>
-                            <span class="text-xs text-gray-500">{{ $label['description'] ?? '' }}</span>
+                            
                            </div>
                         @else
                             {{ $label }}
