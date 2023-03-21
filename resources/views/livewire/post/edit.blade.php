@@ -32,12 +32,17 @@
                         @if(is_array($label))
                            <div class="flex flex-col {{ $label['class'] ?? ''}}">
                             <div class="flex space-x-2">
-                                 {!! $label['icon'] ?? '' !!}
+                                 <div class="shrink-0">
+                                    {!! $label['icon'] ?? '' !!}
                                  @if(optional($label)['icon-view'])
                                     @include($label['icon-view'])
                                  @endif
-                            <strong class="font-bold">{{ $label['label'] ?? '' }} <br>
-                            <span class="text-xs text-gray-500 font-normal leading-none">{{ $label['description'] ?? '' }}</span></strong>
+                                 </div>
+                            <strong class="font-semibold">{{ $label['label'] ?? '' }} 
+                                @if(optional($label)['description'])
+                            <span class="text-sm text-gray-500 font-normal leading-tight inline-block">{{ $label['description'] ?? '' }}</span>
+                            @endif
+                            </strong>
                             </div>
                             
                            </div>
