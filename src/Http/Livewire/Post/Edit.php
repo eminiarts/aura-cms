@@ -38,6 +38,11 @@ class Edit extends Component
         return $this->post['fields'][$slug];
     }
 
+    public function getActionsProperty()
+    {
+        return $this->model->getActions();
+    }
+
     public function getTaxonomiesProperty()
     {
         return $this->model->getTaxonomies();
@@ -135,5 +140,12 @@ class Edit extends Component
         $this->post['fields'][$data['slug']] = $data['value'];
 
         $this->save();
+    }
+
+    public function singleAction($action)
+    {
+        $this->model->{$action}();
+
+        $this->notify('Successfully ran: ' . $action);
     }
 }
