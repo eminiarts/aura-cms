@@ -194,7 +194,7 @@ class Profile extends Component
     {
         $this->model = auth()->user();
 
-        $this->post['fields'] = $this->model;
+        $this->post['fields'] = $this->model->attributesToArray();
     }
 
     public function render()
@@ -216,18 +216,14 @@ class Profile extends Component
 
     public function rules()
     {
-        // return Arr::dot([
-        //     'post.fields' => $this->validationRules(),
-        // ]);
-
         return $this->postFieldValidationRules();
     }
 
     public function save()
     {
-        $this->validate();
+        // dd($this->post['fields'], $this->rules());
 
-        // dd('save', $this->post, $this->rules(), $this->validationRules());
+        $this->validate();
 
         // if $this->post['fields']['current_password'] and  is set, save password
         if (optional($this->post['fields'])['current_password'] && optional($this->post['fields'])['password']) {
@@ -246,33 +242,22 @@ class Profile extends Component
         return $this->notify('Successfully updated.');
     }
 
-    // Select Attachment
-    public function updateField($data)
-    {
-        $this->post['fields'][$data['slug']] = $data['value'];
-
-        // dd($this->post['fields'][$data['slug']], $data['value']);
-        // dd($this->post);
-        $this->save();
-    }
-
     /**
      * Delete the current user.
      *
      */
-    public function deleteUser(Request $request)
+    public function deleteUser()
     {
         $this->validate(['password' => ['required', 'current_password']]);
 
-
-        $user = $request->user();
+        $user = request()->user();
 
         Auth::logout();
 
         $user->delete();
 
-        $request->session()->invalidate();
-        $request->session()->regenerateToken();
+        request()->session()->invalidate();
+        request()->session()->regenerateToken();
 
         return Redirect::to('/');
     }
