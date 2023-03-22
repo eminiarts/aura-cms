@@ -2,12 +2,16 @@
 
 namespace Eminiarts\Aura\Providers;
 
-use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\RateLimiter;
-use Illuminate\Support\ServiceProvider;
-use Laravel\Fortify\Features;
 use Laravel\Fortify\Fortify;
+use Laravel\Fortify\Features;
+use Illuminate\Support\ServiceProvider;
+use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Support\Facades\RateLimiter;
+use Laravel\Fortify\TwoFactorAuthenticationProvider;
+use Laravel\Fortify\Contracts\TwoFactorAuthenticationProvider as TwoFactorAuthenticationProviderContract;
+use Illuminate\Contracts\Cache\Repository;
+use PragmaRX\Google2FA\Google2FA;
 
 class FortifyServiceProvider extends ServiceProvider
 {
@@ -58,5 +62,11 @@ class FortifyServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
+        $this->app->singleton(TwoFactorAuthenticationProviderContract::class, function ($app) {
+            return new TwoFactorAuthenticationProvider(
+                $app->make(Google2FA::class),
+                $app->make(Repository::class)
+            );
+        });
     }
 }

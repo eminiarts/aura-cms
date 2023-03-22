@@ -2,11 +2,17 @@
 
 use Livewire\Livewire;
 
+use Illuminate\Http\Request;
 use Eminiarts\Aura\Models\User;
-
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Session;
+use Illuminate\Session\Store as SessionStore;
 
 use Eminiarts\Aura\Http\Livewire\User\Profile;
+
+use Laravel\Fortify\Actions\EnableTwoFactorAuthentication;
+
+use Eminiarts\Aura\Http\Livewire\User\TwoFactorAuthenticationForm;
 
 use function Pest\Livewire\livewire;
 
@@ -63,26 +69,24 @@ it('updates the user password', function () {
 });
 
 
+
 it('deletes the user account', function () {
-    $user = auth()->user();
+    $user = $this->user;
 
     // Visit route aura.profile
     $this->get(route('aura.profile'))->assertSeeLivewire('aura::profile');
 
-    $request = new \Illuminate\Http\Request();
-    $request->setLaravelSession(app('session.store'));
+    // dd(request()->session());
 
-    Livewire::actingAs($this->user);
-
-    livewire(Profile::class)
+    Livewire::actingAs($this->user)->test(Profile::class) // Pass the request to the Livewire component
         ->set('password', 'password')
-        ->call('deleteUser', $request)
+        ->call('deleteUser')
         ->assertRedirect('/');
 
-    $this->assertDeleted($user);
+    expect(auth()->user())->toBeNull();
+
+    expect(User::find($user->id))->toBeNull();
 });
-
-
 
 it('fails to delete the user account with incorrect password', function () {
     livewire(Profile::class)
@@ -92,14 +96,19 @@ it('fails to delete the user account with incorrect password', function () {
 });
 
 
-test('profile - user details can be saved', function () {
-});
-
-test('profile - password can be changed', function () {
-});
-
 test('profile - 2fa can be enabled', function () {
-});
+    $user = $this->user;
 
-test('profile - can be deleted', function () {
+    $this->withSession(['auth.password_confirmed_at' => time()]);
+
+
+    $this->withSession(['auth.password_confirmed_at' => time()]);
+
+    Livewire::test(TwoFactorAuthenticationForm::class)
+            ->call('enableTwoFactorAuthentication');
+
+    $user = $user->fresh();
+
+    expect($user->two_factor_secret)->not->toBeNull();
+    expect($user->recoveryCodes())->toHaveCount(8);
 });
