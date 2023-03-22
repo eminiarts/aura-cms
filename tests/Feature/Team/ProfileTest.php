@@ -54,7 +54,6 @@ it('updates the user profile', function () {
     expect($user->email)->toBe('updated@example.com');
 });
 
-
 it('updates the user password', function () {
     livewire(Profile::class)
         ->set('post.fields.current_password', 'password')
@@ -68,17 +67,12 @@ it('updates the user password', function () {
     expect(Hash::check('new-password', $user->password))->toBeTrue();
 });
 
-
-
 it('deletes the user account', function () {
     $user = $this->user;
 
-    // Visit route aura.profile
     $this->get(route('aura.profile'))->assertSeeLivewire('aura::profile');
 
-    // dd(request()->session());
-
-    Livewire::actingAs($this->user)->test(Profile::class) // Pass the request to the Livewire component
+    Livewire::actingAs($this->user)->test(Profile::class)
         ->set('password', 'password')
         ->call('deleteUser')
         ->assertRedirect('/');
@@ -95,6 +89,7 @@ it('fails to delete the user account with incorrect password', function () {
         ->assertHasErrors(['password' => 'current_password']);
 });
 
+// Thanks to https://github.com/laravel/jetstream
 
 test('profile - 2fa can be enabled', function () {
     $this->withSession(['auth.password_confirmed_at' => time()]);
@@ -103,7 +98,6 @@ test('profile - 2fa can be enabled', function () {
             ->call('enableTwoFactorAuthentication');
 
     $user = $this->user->fresh();
-
 
     expect($user->two_factor_secret)->not->toBeNull();
     expect($user->recoveryCodes())->toHaveCount(8);
@@ -132,7 +126,6 @@ test('two factor authentication can be disabled', function () {
             ->call('enableTwoFactorAuthentication');
 
     $user = $this->user->fresh();
-
 
     $this->assertNotNull($user->fresh()->two_factor_secret);
 
