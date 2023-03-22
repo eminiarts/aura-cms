@@ -7,6 +7,7 @@ use Eminiarts\Aura\Aura;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Str;
 use Illuminate\Http\Request;
+use Eminiarts\Aura\Resources\User;
 use Eminiarts\Aura\Resources\Option;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
@@ -246,18 +247,18 @@ class Profile extends Component
      * Delete the current user.
      *
      */
-    public function deleteUser()
+    public function deleteUser(Request $request)
     {
         $this->validate(['password' => ['required', 'current_password']]);
 
-        $user = request()->user();
-
-        Auth::logout();
+        $user = User::find(auth()->id());
 
         $user->delete();
 
-        request()->session()->invalidate();
-        request()->session()->regenerateToken();
+        session()->invalidate();
+        session()->regenerateToken();
+
+        Auth::logout();
 
         return Redirect::to('/');
     }
