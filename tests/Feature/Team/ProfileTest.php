@@ -1,19 +1,10 @@
 <?php
 
-use Livewire\Livewire;
-
-use Illuminate\Http\Request;
+use Eminiarts\Aura\Http\Livewire\User\Profile;
+use Eminiarts\Aura\Http\Livewire\User\TwoFactorAuthenticationForm;
 use Eminiarts\Aura\Models\User;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Session;
-use Illuminate\Session\Store as SessionStore;
-
-use Eminiarts\Aura\Http\Livewire\User\Profile;
-
-use Laravel\Fortify\Actions\EnableTwoFactorAuthentication;
-
-use Eminiarts\Aura\Http\Livewire\User\TwoFactorAuthenticationForm;
-
+use Livewire\Livewire;
 use function Pest\Livewire\livewire;
 
 // Before each test, create a Superadmin and login
@@ -39,7 +30,6 @@ it('renders the profile component', function () {
         ->assertSee('2FA')
         ->assertSee('Delete');
 });
-
 
 it('updates the user profile', function () {
     livewire(Profile::class)
@@ -102,7 +92,6 @@ test('profile - 2fa can be enabled', function () {
     expect($user->two_factor_secret)->not->toBeNull();
     expect($user->recoveryCodes())->toHaveCount(8);
 });
-
 
 test('recovery codes can be regenerated', function () {
     $this->withSession(['auth.password_confirmed_at' => time()]);

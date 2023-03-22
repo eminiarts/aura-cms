@@ -4,15 +4,14 @@ namespace Eminiarts\Aura\Commands;
 
 use Illuminate\Console\Command;
 use Illuminate\Filesystem\Filesystem;
-use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 
 class TransformTableToResource extends Command
 {
-    protected $signature = 'aura:transform-table-to-resource {table}';
-
     protected $description = 'Create a resource based on a specific database table';
+
+    protected $signature = 'aura:transform-table-to-resource {table}';
 
     public function handle()
     {
@@ -48,24 +47,6 @@ class TransformTableToResource extends Command
         return $fields;
     }
 
-    private function getFieldTypeFromColumnType(string $columnType): string
-    {
-        switch ($columnType) {
-            case 'text':
-            case 'longtext':
-                return 'Eminiarts\\Aura\\Fields\\Textarea';
-            case 'integer':
-            case 'float':
-            case 'double':
-                return 'Eminiarts\\Aura\\Fields\\Number';
-            case 'date':
-                return 'Eminiarts\\Aura\\Fields\\Date';
-                // Add more cases as needed
-            default:
-                return 'Eminiarts\\Aura\\Fields\\Text';
-        }
-    }
-
     private function generateResourceContent(string $resourceName, array $fields): string
     {
         $fieldsContent = '';
@@ -78,7 +59,6 @@ class TransformTableToResource extends Command
             $fieldsContent .= "                'validation' => '{$field['validation']}',\n";
             $fieldsContent .= "            ],\n";
         }
-
 
         return <<<EOT
 <?php
@@ -114,12 +94,30 @@ class {$resourceName} extends Post
 EOT;
     }
 
+    private function getFieldTypeFromColumnType(string $columnType): string
+    {
+        switch ($columnType) {
+            case 'text':
+            case 'longtext':
+                return 'Eminiarts\\Aura\\Fields\\Textarea';
+            case 'integer':
+            case 'float':
+            case 'double':
+                return 'Eminiarts\\Aura\\Fields\\Number';
+            case 'date':
+                return 'Eminiarts\\Aura\\Fields\\Date';
+                // Add more cases as needed
+            default:
+                return 'Eminiarts\\Aura\\Fields\\Text';
+        }
+    }
+
     private function saveResourceFile(string $resourceName, string $resourceContent)
     {
         $filesystem = new Filesystem();
 
         $resourcesDirectory = app_path('Aura/Resources');
-        if (!$filesystem->exists($resourcesDirectory)) {
+        if (! $filesystem->exists($resourcesDirectory)) {
             $filesystem->makeDirectory($resourcesDirectory, 0755, true);
         }
 
@@ -127,6 +125,7 @@ EOT;
 
         if ($filesystem->exists($resourceFile)) {
             $this->error("Resource file '{$resourceName}.php' already exists.");
+
             return;
         }
 

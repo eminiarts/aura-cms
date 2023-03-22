@@ -2,29 +2,22 @@
 
 namespace Eminiarts\Aura\Http\Livewire\User;
 
-use Livewire\Component;
-use Eminiarts\Aura\Aura;
-use Illuminate\Support\Arr;
-use Illuminate\Support\Str;
-use Illuminate\Http\Request;
 use Eminiarts\Aura\Resources\User;
-use Eminiarts\Aura\Resources\Option;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Cache;
 use Eminiarts\Aura\Traits\InputFields;
-use Illuminate\Support\Facades\Artisan;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Redirect;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rules\Password;
+use Livewire\Component;
 
 class Profile extends Component
 {
     use InputFields;
 
-    public $model;
+    public $confirmingUserDeletion = false;
 
-    public $post = [
-        'fields' => [],
-    ];
+    public $model;
 
     /**
      * The user's current password.
@@ -33,10 +26,43 @@ class Profile extends Component
      */
     public $password = '';
 
-    public $confirmingUserDeletion = false;
+    public $post = [
+        'fields' => [],
+    ];
 
     // Listen for selectedAttachment
     protected $listeners = ['updateField' => 'updateField'];
+
+    /**
+     * Confirm that the user would like to delete their account.
+     *
+     * @return void
+     */
+    public function confirmUserDeletion()
+    {
+        $this->dispatchBrowserEvent('confirming-delete-user');
+
+        $this->confirmingUserDeletion = true;
+    }
+
+    /**
+     * Delete the current user.
+     */
+    public function deleteUser(Request $request)
+    {
+        $this->validate(['password' => ['required', 'current_password']]);
+
+        $user = User::find(auth()->id());
+
+        $user->delete();
+
+        session()->invalidate();
+        session()->regenerateToken();
+
+        Auth::logout();
+
+        return Redirect::to('/');
+    }
 
     public static function getFields()
     {
@@ -75,13 +101,13 @@ class Profile extends Component
                     'width' => '100',
                 ],
             ],
-             [
+            [
                 'type' => 'Eminiarts\\Aura\\Fields\\Tab',
                 'name' => 'Password',
                 'slug' => 'tab-password',
                 'global' => true,
             ],
-              [
+            [
                 'name' => 'Change Password',
                 'type' => 'Eminiarts\\Aura\\Fields\\Panel',
                 'slug' => 'user-details',
@@ -113,14 +139,14 @@ class Profile extends Component
                 'on_index' => false,
                 'on_view' => false,
             ],
-             [
+            [
                 'type' => 'Eminiarts\\Aura\\Fields\\Tab',
                 'name' => '2FA',
                 'slug' => '2fa',
                 'global' => true,
                 'on_view' => false,
             ],
-             [
+            [
                 'name' => 'Two Factor Authentication',
                 'type' => 'Eminiarts\\Aura\\Fields\\Panel',
                 'slug' => 'user-2fa',
@@ -137,7 +163,7 @@ class Profile extends Component
                 ],
                 'slug' => '2fa',
             ],
-             [
+            [
                 'type' => 'Eminiarts\\Aura\\Fields\\Tab',
                 'name' => 'Delete',
                 'slug' => 'delete-tab',
@@ -163,18 +189,6 @@ class Profile extends Component
             ],
 
         ];
-    }
-
-    /**
-     * Confirm that the user would like to delete their account.
-     *
-     * @return void
-     */
-    public function confirmUserDeletion()
-    {
-        $this->dispatchBrowserEvent('confirming-delete-user');
-
-        $this->confirmingUserDeletion = true;
     }
 
     public function getFieldsForViewProperty()
@@ -241,25 +255,5 @@ class Profile extends Component
         $this->model->update($this->post['fields']);
 
         return $this->notify('Successfully updated.');
-    }
-
-    /**
-     * Delete the current user.
-     *
-     */
-    public function deleteUser(Request $request)
-    {
-        $this->validate(['password' => ['required', 'current_password']]);
-
-        $user = User::find(auth()->id());
-
-        $user->delete();
-
-        session()->invalidate();
-        session()->regenerateToken();
-
-        Auth::logout();
-
-        return Redirect::to('/');
     }
 }

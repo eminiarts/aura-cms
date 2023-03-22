@@ -1,11 +1,8 @@
 <?php
 
-use Eminiarts\Aura\Models\Post;
-
 use Eminiarts\Aura\Facades\Aura;
-
+use Eminiarts\Aura\Models\Post;
 use Eminiarts\Aura\Resources\User;
-
 use function Pest\Livewire\livewire;
 
 // Before each test, create a Superadmin and login
@@ -23,17 +20,16 @@ beforeEach(function () {
     $this->actingAs($this->user);
 });
 
-
 class ResourceActionsTestModel extends Post
 {
+    public array $actions = [
+        'createMissingPermissions' => 'Create Missing Permissions',
+        'delete' => 'Delete',
+    ];
+
     public static ?string $slug = 'page';
 
     public static string $type = 'Page';
-
-    public array $actions = [
-      'createMissingPermissions' => 'Create Missing Permissions',
-      'delete' => 'Delete',
-    ];
 
     public static function getFields()
     {
@@ -62,20 +58,20 @@ test('simple single Actions work correctly', function () {
 
 class ResourceActionsTestModel2 extends Post
 {
+    public array $actions = [
+        'createMissingPermissions' => [
+            'label' => 'Create Missing Permissions',
+            'icon' => 'icon',
+        ],
+        'delete' => [
+            'label' => 'Delete',
+            'icon' => 'delete-icon',
+        ],
+    ];
+
     public static ?string $slug = 'page';
 
     public static string $type = 'Page';
-
-    public array $actions = [
-      'createMissingPermissions' => [
-        'label' => 'Create Missing Permissions',
-        'icon' => 'icon',
-      ],
-      'delete' => [
-        'label' => 'Delete',
-        'icon' => 'delete-icon',
-      ],
-    ];
 
     public static function getFields()
     {

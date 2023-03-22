@@ -59,7 +59,6 @@ class TwoFactorAuthenticationForm extends Component
         // }
         $this->ensurePasswordIsConfirmed();
 
-
         $confirm($this->user, $this->code);
 
         $this->showingQrCode = false;
@@ -78,7 +77,6 @@ class TwoFactorAuthenticationForm extends Component
         //     $this->ensurePasswordIsConfirmed();
         // }
         $this->ensurePasswordIsConfirmed();
-
 
         $disable($this->user);
 
@@ -122,6 +120,16 @@ class TwoFactorAuthenticationForm extends Component
     }
 
     /**
+     * Get the current user of the application.
+     *
+     * @return mixed
+     */
+    public function getUserProperty()
+    {
+        return auth()->user();
+    }
+
+    /**
      * Mount the component.
      *
      * @return void
@@ -131,16 +139,6 @@ class TwoFactorAuthenticationForm extends Component
         if (is_null($this->user->two_factor_confirmed_at)) {
             app(DisableTwoFactorAuthentication::class)($this->user);
         }
-    }
-
-    /**
-     * Get the current user of the application.
-     *
-     * @return mixed
-     */
-    public function getUserProperty()
-    {
-        return auth()->user();
     }
 
     /**

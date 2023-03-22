@@ -69,14 +69,13 @@ class CreateResourceMigration extends Command
 
         // Up method
         $pattern = '/(public function up\(\): void[\s\S]*?Schema::table\(.*?function \(Blueprint \$table\) \{[\s\S]*?)\/\/([\s\S]*?\}\);[\s\S]*?\})/';
-        $replacement = '${1}' . $schema . '${2}';
+        $replacement = '${1}'.$schema.'${2}';
         $replacedContent = preg_replace($pattern, $replacement, $content);
-
 
         // Down method
         $down = "Schema::dropIfExists('{$tableName}');";
         $pattern = '/(public function down\(\): void[\s\S]*?{)[\s\S]*?Schema::table\(.*?function \(Blueprint \$table\) \{[\s\S]*?\/\/[\s\S]*?\}\);[\s\S]*?\}/';
-        $replacement = '${1}' . PHP_EOL . '    ' . $down . PHP_EOL . '}';
+        $replacement = '${1}'.PHP_EOL.'    '.$down.PHP_EOL.'}';
         $replacedContent2 = preg_replace($pattern, $replacement, $replacedContent);
 
         $this->files->put($migrationFile, $replacedContent2);
@@ -84,7 +83,7 @@ class CreateResourceMigration extends Command
         $this->info("Migration '{$migrationName}' created successfully.");
 
         // Run "pint" on the migration file
-        exec('./vendor/bin/pint ' . $migrationFile);
+        exec('./vendor/bin/pint '.$migrationFile);
 
         $this->info("Pint applied to '{$migrationName}'.");
     }
