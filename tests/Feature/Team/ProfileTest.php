@@ -97,18 +97,46 @@ it('fails to delete the user account with incorrect password', function () {
 
 
 test('profile - 2fa can be enabled', function () {
-    $user = $this->user;
-
-    $this->withSession(['auth.password_confirmed_at' => time()]);
-
-
     $this->withSession(['auth.password_confirmed_at' => time()]);
 
     Livewire::test(TwoFactorAuthenticationForm::class)
             ->call('enableTwoFactorAuthentication');
 
-    $user = $user->fresh();
+    $user = $this->user->fresh();
+
 
     expect($user->two_factor_secret)->not->toBeNull();
     expect($user->recoveryCodes())->toHaveCount(8);
+});
+
+
+test('recovery codes can be regenerated', function () {
+    $this->withSession(['auth.password_confirmed_at' => time()]);
+
+    $component = Livewire::test(TwoFactorAuthenticationForm::class)
+            ->call('enableTwoFactorAuthentication')
+            ->call('regenerateRecoveryCodes');
+
+    $user = $this->user->fresh();
+
+    $component->call('regenerateRecoveryCodes');
+
+    expect($user->recoveryCodes())->toHaveCount(8);
+    expect(array_diff($user->recoveryCodes(), $user->fresh()->recoveryCodes()))->toHaveCount(8);
+});
+
+test('two factor authentication can be disabled', function () {
+    $this->withSession(['auth.password_confirmed_at' => time()]);
+
+    $component = Livewire::test(TwoFactorAuthenticationForm::class)
+            ->call('enableTwoFactorAuthentication');
+
+    $user = $this->user->fresh();
+
+
+    $this->assertNotNull($user->fresh()->two_factor_secret);
+
+    $component->call('disableTwoFactorAuthentication');
+
+    expect($user->fresh()->two_factor_secret)->toBeNull();
 });
