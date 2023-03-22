@@ -3,21 +3,12 @@
 namespace Eminiarts\Aura\Http\Livewire;
 
 use Livewire\Component;
-use Eminiarts\Aura\Models\User;
-use Eminiarts\Aura\Resources\Post;
-use Illuminate\Contracts\Database\Eloquent\Builder;
 
 class BookmarkPage extends Component
 {
-
     public $bookmarks;
-    public $site;
 
-    public function mount($site)
-    {
-        $this->site = $site;
-        $this->bookmarks = auth()->user()->getOptionBookmarks();
-    }
+    public $site;
 
     public function getIsBookmarkedProperty()
     {
@@ -32,12 +23,22 @@ class BookmarkPage extends Component
         }
     }
 
+    public function mount($site)
+    {
+        $this->site = $site;
+        $this->bookmarks = auth()->user()->getOptionBookmarks();
+    }
+
+    public function render()
+    {
+        return view('aura::livewire.bookmark-page');
+    }
+
     public function toggleBookmark()
     {
         $bookmarks = auth()->user()->getOptionBookmarks();
         $bookmarkUrls = array_column($bookmarks, 'url');
         $key = array_search($this->site['url'], $bookmarkUrls);
-
 
         if ($key !== false) {
             unset($bookmarks[$key]);
@@ -51,10 +52,4 @@ class BookmarkPage extends Component
         auth()->user()->updateOption('bookmarks', $bookmarks);
         // dump('toggleBookmark', $bookmarks, $bookmarkUrls, $key);
     }
-
-    public function render()
-    {
-        return view('aura::livewire.bookmark-page');
-    }
-
 }

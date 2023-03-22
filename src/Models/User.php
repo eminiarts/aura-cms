@@ -156,6 +156,20 @@ class User extends Authenticatable
         }
     }
 
+    public function getOptionBookmarks()
+    {
+        // Cache
+        $option = Cache::remember('user.'.$this->id.'.bookmarks', now()->addHour(), function () {
+            return Option::whereName('user.'.$this->id.'.bookmarks')->first();
+        });
+
+        if ($option) {
+            return $option->value;
+        }
+
+        return [];
+    }
+
     public function getOptionColumns($slug)
     {
         // Cache
@@ -175,20 +189,6 @@ class User extends Authenticatable
         // Cache
         $option = Cache::remember('user.'.$this->id.'.sidebar', now()->addHour(), function () {
             return Option::whereName('user.'.$this->id.'.sidebar')->first();
-        });
-
-        if ($option) {
-            return $option->value;
-        }
-
-        return [];
-    }
-
-    public function getOptionBookmarks()
-    {
-        // Cache
-        $option = Cache::remember('user.'.$this->id.'.bookmarks', now()->addHour(), function () {
-            return Option::whereName('user.'.$this->id.'.bookmarks')->first();
         });
 
         if ($option) {

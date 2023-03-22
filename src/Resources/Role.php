@@ -2,13 +2,29 @@
 
 namespace Eminiarts\Aura\Resources;
 
+use Eminiarts\Aura\Jobs\GenerateAllResourcePermissions;
 use Eminiarts\Aura\Models\Meta;
 use Eminiarts\Aura\Models\Post;
-use Eminiarts\Aura\Models\UserMetaPivot;
-use Eminiarts\Aura\Jobs\GenerateAllResourcePermissions;
 
 class Role extends Post
 {
+    public array $actions = [
+        'createMissingPermissions' => [
+            'label' => 'Create Missing Permissions',
+            'description' => 'Create missing permissions if you have added new resources.',
+            'icon' => '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M3 8L15 8M15 8C15 9.65686 16.3431 11 18 11C19.6569 11 21 9.65685 21 8C21 6.34315 19.6569 5 18 5C16.3431 5 15 6.34315 15 8ZM9 16L21 16M9 16C9 17.6569 7.65685 19 6 19C4.34315 19 3 17.6569 3 16C3 14.3431 4.34315 13 6 13C7.65685 13 9 14.3431 9 16Z" stroke="black" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+        ],
+        'delete' => [
+            'label' => 'Delete',
+            'icon' => '<svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>',
+            'class' => 'hover:text-red-700 text-red-500 font-bold',
+        ],
+    ];
+
+    public array $bulkActions = [
+        'deleteSelected' => 'Delete',
+    ];
+
     public static ?string $slug = 'role';
 
     public static ?int $sort = 2;
@@ -18,23 +34,6 @@ class Role extends Post
     protected static $dropdown = 'Users';
 
     protected $with = ['meta'];
-
-    public array $bulkActions = [
-        'deleteSelected' => 'Delete',
-    ];
-
-    public array $actions = [
-      'createMissingPermissions' => [
-        'label' => 'Create Missing Permissions',
-        'description' => 'Create missing permissions if you have added new resources.',
-        'icon' => '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M3 8L15 8M15 8C15 9.65686 16.3431 11 18 11C19.6569 11 21 9.65685 21 8C21 6.34315 19.6569 5 18 5C16.3431 5 15 6.34315 15 8ZM9 16L21 16M9 16C9 17.6569 7.65685 19 6 19C4.34315 19 3 17.6569 3 16C3 14.3431 4.34315 13 6 13C7.65685 13 9 14.3431 9 16Z" stroke="black" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
-      ],
-      'delete' => [
-        'label' => 'Delete',
-        'icon' => '<svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>',
-        'class' => 'hover:text-red-700 text-red-500 font-bold',
-      ],
-    ];
 
     public function createMissingPermissions()
     {

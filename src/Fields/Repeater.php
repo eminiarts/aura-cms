@@ -42,7 +42,7 @@ class Repeater extends Field
         $new = collect();
 
         // dd($values, $fields, $field, $slug);
-        if (!$values) {
+        if (! $values) {
             return $fields;
         }
 

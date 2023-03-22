@@ -3,16 +3,13 @@
 namespace Eminiarts\Aura\Commands;
 
 use Illuminate\Console\Command;
-use Illuminate\Filesystem\Filesystem;
-use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Schema;
-use Illuminate\Support\Str;
 
 class DatabaseToResources extends Command
 {
-    protected $signature = 'aura:database-to-resources';
-
     protected $description = 'Create resources based on existing database tables';
+
+    protected $signature = 'aura:database-to-resources';
 
     public function handle()
     {

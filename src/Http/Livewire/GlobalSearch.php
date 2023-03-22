@@ -2,31 +2,21 @@
 
 namespace Eminiarts\Aura\Http\Livewire;
 
-use Livewire\Component;
 use Eminiarts\Aura\Models\User;
 use Eminiarts\Aura\Resources\Post;
 use Illuminate\Contracts\Database\Eloquent\Builder;
+use Livewire\Component;
 
 class GlobalSearch extends Component
 {
-    public $search = '';
-
     public $bookmarks;
 
-    public function render()
-    {
-        $this->bookmarks = auth()->user()->getOptionBookmarks();
-        return view('aura::livewire.global-search');
-    }
-
-    public function mount() {
-        $this->bookmarks = auth()->user()->getOptionBookmarks();
-    }
+    public $search = '';
 
     public function getSearchResultsProperty()
     {
         // if no $this->search return
-        if (!$this->search || $this->search === '') {
+        if (! $this->search || $this->search === '') {
             return [];
         }
         // dd('getSearchResultsProperty');
@@ -38,9 +28,8 @@ class GlobalSearch extends Component
         // filter out flows and flow_logs from resources
         $resources = array_filter($resources, function ($resource) {
             // dump($resource::getSlug());
-            return $resource::getSlug() !== 'resource' && $resource::getSlug() !== 'flow' && $resource::getSlug() !== 'flowlog' && $resource::getSlug() !== 'operation' && $resource::getSlug() !== 'flowoperation' && $resource::getSlug() !== 'operationlog' && $resource::getSlug() !== 'option' && $resource::getSlug() !== 'team' && $resource::getSlug() !== 'user' && $resource::getSlug() !== 'product' ;
+            return $resource::getSlug() !== 'resource' && $resource::getSlug() !== 'flow' && $resource::getSlug() !== 'flowlog' && $resource::getSlug() !== 'operation' && $resource::getSlug() !== 'flowoperation' && $resource::getSlug() !== 'operationlog' && $resource::getSlug() !== 'option' && $resource::getSlug() !== 'team' && $resource::getSlug() !== 'user' && $resource::getSlug() !== 'product';
         });
-
 
         // dd($resources);
 
@@ -50,17 +39,17 @@ class GlobalSearch extends Component
         foreach ($resources as $resource) {
             $model = $resource::query();
 
-            $results = $model->where('title', 'like', '%' . $this->search . '%')->orWhereHas('meta', function (Builder $query) {
-                $query->where('key', 'LIKE', '%' . $this->search . '%')
-                    ->orWhere('value', 'LIKE', '%' . $this->search . '%');
+            $results = $model->where('title', 'like', '%'.$this->search.'%')->orWhereHas('meta', function (Builder $query) {
+                $query->where('key', 'LIKE', '%'.$this->search.'%')
+                    ->orWhere('value', 'LIKE', '%'.$this->search.'%');
             })->get();
 
             $searchResults->push(...$results);
         }
 
         // Search in User model
-        $userResults = User::where('name', 'like', '%' . $this->search . '%')
-            ->orWhere('email', 'like', '%' . $this->search . '%')
+        $userResults = User::where('name', 'like', '%'.$this->search.'%')
+            ->orWhere('email', 'like', '%'.$this->search.'%')
             ->get();
         $searchResults->push(...$userResults);
 
@@ -71,6 +60,7 @@ class GlobalSearch extends Component
             } else {
                 $item['view_url'] = route('aura.post.view', ['slug' => 'user', 'id' => $item->id]);
             }
+
             return $item;
         });
 
@@ -80,5 +70,15 @@ class GlobalSearch extends Component
         return $searchResults;
     }
 
+    public function mount()
+    {
+        $this->bookmarks = auth()->user()->getOptionBookmarks();
+    }
 
+    public function render()
+    {
+        $this->bookmarks = auth()->user()->getOptionBookmarks();
+
+        return view('aura::livewire.global-search');
+    }
 }

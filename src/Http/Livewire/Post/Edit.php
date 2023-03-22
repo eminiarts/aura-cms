@@ -33,14 +33,14 @@ class Edit extends Component
     // Listen for selectedAttachment
     protected $listeners = ['updateField' => 'updateField'];
 
-    public function getField($slug)
-    {
-        return $this->post['fields'][$slug];
-    }
-
     public function getActionsProperty()
     {
         return $this->model->getActions();
+    }
+
+    public function getField($slug)
+    {
+        return $this->post['fields'][$slug];
     }
 
     public function getTaxonomiesProperty()
@@ -134,18 +134,18 @@ class Edit extends Component
         }
     }
 
+    public function singleAction($action)
+    {
+        $this->model->{$action}();
+
+        $this->notify('Successfully ran: '.$action);
+    }
+
     // Select Attachment
     public function updateField($data)
     {
         $this->post['fields'][$data['slug']] = $data['value'];
 
         $this->save();
-    }
-
-    public function singleAction($action)
-    {
-        $this->model->{$action}();
-
-        $this->notify('Successfully ran: ' . $action);
     }
 }

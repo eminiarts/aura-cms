@@ -2,15 +2,15 @@
 
 namespace Eminiarts\Aura\Providers;
 
-use Illuminate\Http\Request;
-use Laravel\Fortify\Fortify;
-use Laravel\Fortify\Features;
-use Illuminate\Support\ServiceProvider;
 use Illuminate\Cache\RateLimiting\Limit;
-use Illuminate\Support\Facades\RateLimiter;
-use Laravel\Fortify\TwoFactorAuthenticationProvider;
-use Laravel\Fortify\Contracts\TwoFactorAuthenticationProvider as TwoFactorAuthenticationProviderContract;
 use Illuminate\Contracts\Cache\Repository;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\ServiceProvider;
+use Laravel\Fortify\Contracts\TwoFactorAuthenticationProvider as TwoFactorAuthenticationProviderContract;
+use Laravel\Fortify\Features;
+use Laravel\Fortify\Fortify;
+use Laravel\Fortify\TwoFactorAuthenticationProvider;
 use PragmaRX\Google2FA\Google2FA;
 
 class FortifyServiceProvider extends ServiceProvider
@@ -39,7 +39,6 @@ class FortifyServiceProvider extends ServiceProvider
         });
 
         // dd(app('config')->get('fortify'), app('config')->get('fortify-options'));
-
 
         // Set Configuration of fortify.features to [registration, email-verification and two-factor-authentication]
         app('config')->set('fortify.features', [

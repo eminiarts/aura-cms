@@ -10,9 +10,9 @@ use Illuminate\Support\Str;
 
 trait AuraModelConfig
 {
-    public array $bulkActions = [];
-
     public array $actions = [];
+
+    public array $bulkActions = [];
 
     public array $metaFields = [];
 
@@ -109,16 +109,16 @@ trait AuraModelConfig
         }
     }
 
-    public function getActions()
-    {
-        return $this->actions;
-    }
-
     public function editUrl()
     {
         if ($this->getType() && $this->id) {
             return route('aura.post.edit', ['slug' => $this->getType(), 'id' => $this->id]);
         }
+    }
+
+    public function getActions()
+    {
+        return $this->actions;
     }
 
     public function getBaseFillable()
