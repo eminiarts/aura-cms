@@ -15,6 +15,8 @@ class Create extends ModalComponent
 
     public $model;
 
+    public $inModal = false;
+
     public $post;
 
     public $slug;
