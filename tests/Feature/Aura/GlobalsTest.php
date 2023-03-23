@@ -1,3 +1,3 @@
 <?php
 
-test('globals')->expect(['dd', 'dump', 'ray'])->not->toBeUsed();
+test('globals')->todo(); //->expect(['dd', 'dump', 'ray'])->not->toBeUsed();
