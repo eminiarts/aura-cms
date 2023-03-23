@@ -15,12 +15,6 @@ use Illuminate\Support\Str;
 
 class Taxonomy extends Resource
 {
-    use HasFactory;
-    use InputFields;
-    use InteractsWithTable;
-
-    public array $bulkActions = [];
-
     public static $hierarchical = false;
 
     protected $fillable = ['name', 'slug', 'taxonomy', 'description', 'parent', 'count'];
@@ -45,12 +39,12 @@ class Taxonomy extends Resource
 
     public function editUrl()
     {
-        return route('taxonomy.edit', ['slug' => $this->taxonomy, 'id' => $this->id]);
+        return route('aura.taxonomy.edit', ['slug' => $this->getType(), 'id' => $this->id]);
     }
 
     public function createUrl()
     {
-        return route('taxonomy.create', ['slug' => $this->taxonomy]);
+        return route('aura.taxonomy.create', [ $this->getType()]);
     }
 
     public static function getFields()

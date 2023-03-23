@@ -114,8 +114,8 @@ trait AuraTaxonomies
         // return $this->belongsToMany(Taxonomy::class, 'taxonomy_relations', 'relatable_id');
     }
 
-    public function taxonomy($name)
-    {
-        return $this->taxonomies->where('taxonomy', $name);
-    }
+    // public function taxonomy($name)
+    // {
+    //     return $this->taxonomies->where('taxonomy', $name);
+    // }
 }
