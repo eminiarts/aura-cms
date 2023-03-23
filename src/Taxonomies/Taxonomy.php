@@ -6,13 +6,14 @@ use Eminiarts\Aura\Models\Scopes\TaxonomyScope;
 use Eminiarts\Aura\Models\Scopes\TeamScope;
 use Eminiarts\Aura\Models\Taxonomy as ModelsTaxonomy;
 use Eminiarts\Aura\Models\TaxonomyMeta;
+use Eminiarts\Aura\Resource;
 use Eminiarts\Aura\Traits\InputFields;
 use Eminiarts\Aura\Traits\InteractsWithTable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
 
-class Taxonomy extends ModelsTaxonomy
+class Taxonomy extends Resource
 {
     use HasFactory;
     use InputFields;
@@ -21,12 +22,6 @@ class Taxonomy extends ModelsTaxonomy
     public array $bulkActions = [];
 
     public static $hierarchical = false;
-
-    public static $pluralName = null;
-
-    public static $singularName = null;
-
-    public static string $type = '';
 
     protected $fillable = ['name', 'slug', 'taxonomy', 'description', 'parent', 'count'];
 
@@ -39,30 +34,23 @@ class Taxonomy extends ModelsTaxonomy
         return 'fields.taxonomy';
     }
 
-    public function display($key)
-    {
-        if ($this->fields && array_key_exists($key, $this->fields->toArray())) {
-            return $this->displayFieldValue($key, $this->fields[$key]);
-        }
+    // public function display($key)
+    // {
+    //     if ($this->fields && array_key_exists($key, $this->fields->toArray())) {
+    //         return $this->displayFieldValue($key, $this->fields[$key]);
+    //     }
 
-        return $this->{$key};
-    }
+    //     return $this->{$key};
+    // }
 
     public function editUrl()
     {
         return route('taxonomy.edit', ['slug' => $this->taxonomy, 'id' => $this->id]);
     }
 
-    public function field($field)
+    public function createUrl()
     {
-        $this->withAttributes($field);
-
-        return $this;
-    }
-
-    public function getBulkActions()
-    {
-        return $this->bulkActions;
+        return route('taxonomy.create', ['slug' => $this->taxonomy]);
     }
 
     public static function getFields()
@@ -105,12 +93,12 @@ class Taxonomy extends ModelsTaxonomy
         ];
     }
 
-    public function getHeaders()
-    {
-        return $this->inputFields()
-            ->pluck('name', 'slug')
-            ->prepend('ID', 'id');
-    }
+    // public function getHeaders()
+    // {
+    //     return $this->inputFields()
+    //         ->pluck('name', 'slug')
+    //         ->prepend('ID', 'id');
+    // }
 
     public static function getName(): ?string
     {
@@ -120,11 +108,6 @@ class Taxonomy extends ModelsTaxonomy
     public function getTitleAttribute()
     {
         return str(get_class($this))->afterLast('\\');
-    }
-
-    public static function getType()
-    {
-        return static::$type;
     }
 
     /**
@@ -137,20 +120,6 @@ class Taxonomy extends ModelsTaxonomy
         return $this->hasMany(TaxonomyMeta::class, 'taxonomy_id');
     }
 
-    public function pluralName(): string
-    {
-        return static::$pluralName ?? Str::plural($this->singularName());
-    }
-
-    public function rowView()
-    {
-        return 'aura::components.table.row';
-    }
-
-    public function singularName(): string
-    {
-        return static::$singularName ?? Str::title(static::$slug);
-    }
 
     /**
      * The "booted" method of the model.
