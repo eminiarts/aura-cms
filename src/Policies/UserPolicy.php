@@ -2,6 +2,6 @@
 
 namespace Eminiarts\Aura\Policies;
 
-class UserPolicy extends PostPolicy
+class UserPolicy extends ResourcePolicy
 {
 }

@@ -2,11 +2,12 @@
 
 namespace Eminiarts\Aura\Resources;
 
-use Eminiarts\Aura\Jobs\GenerateAllResourcePermissions;
+use Eminiarts\Aura\Resource;
 use Eminiarts\Aura\Models\Meta;
 use Eminiarts\Aura\Models\Post;
+use Eminiarts\Aura\Jobs\GenerateAllResourcePermissions;
 
-class Role extends Post
+class Role extends Resource
 {
     public array $actions = [
         'createMissingPermissions' => [

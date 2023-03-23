@@ -2,6 +2,8 @@
 
 namespace Eminiarts\Aura\Resources;
 
+use Eminiarts\Aura\Resource;
+
 class Project extends Resource
 {
     public static $fields = [];

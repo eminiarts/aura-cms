@@ -2,7 +2,7 @@
 
 namespace Eminiarts\Aura\Providers;
 
-use Eminiarts\Aura\Policies\PostPolicy;
+use Eminiarts\Aura\Policies\ResourcePolicy;
 use Eminiarts\Aura\Policies\TeamPolicy;
 use Eminiarts\Aura\Policies\UserPolicy;
 use Eminiarts\Aura\Resource;
@@ -20,7 +20,7 @@ class PolicyServiceProvider extends ServiceProvider
      */
     protected $policies = [
         Team::class => TeamPolicy::class,
-        Resource::class => PostPolicy::class,
+        Resource::class => ResourcePolicy::class,
         User::class => UserPolicy::class,
     ];
 

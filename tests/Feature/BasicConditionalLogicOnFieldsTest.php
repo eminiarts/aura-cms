@@ -1,5 +1,6 @@
 <?php
 
+use Eminiarts\Aura\Resource;
 use Eminiarts\Aura\Models\Post;
 use Eminiarts\Aura\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -8,7 +9,7 @@ uses(RefreshDatabase::class);
 
 beforeEach(fn () => $this->actingAs($this->user = User::factory()->create()));
 
-class BasicConditionalLogicOnFieldModel extends Post
+class BasicConditionalLogicOnFieldModel extends Resource
 {
     public static ?string $slug = 'page';
 

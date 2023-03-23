@@ -1,8 +1,9 @@
 <?php
 
+use Eminiarts\Aura\Resource;
 use Eminiarts\Aura\Models\Post;
 
-class ComplexFieldsTestModel extends Post
+class ComplexFieldsTestModel extends Resource
 {
     public static ?string $slug = 'page';
 

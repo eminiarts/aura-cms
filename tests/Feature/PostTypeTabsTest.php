@@ -1,8 +1,9 @@
 <?php
 
+use Eminiarts\Aura\Resource;
 use Eminiarts\Aura\Models\Post;
 
-class Model1 extends Post
+class Model1 extends Resource
 {
     public static ?string $slug = 'page';
 
@@ -75,7 +76,7 @@ test('model get tabs', function () {
     $this->assertEquals($fields[0]['fields'][1]['fields'][0]['slug'], 'total-2');
 });
 
-class Model2 extends Post
+class Model2 extends Resource
 {
     public static ?string $slug = 'page';
 

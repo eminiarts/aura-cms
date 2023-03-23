@@ -2,15 +2,16 @@
 
 namespace Tests\Feature\Livewire;
 
-use Eminiarts\Aura\Facades\Aura;
-use Eminiarts\Aura\Http\Livewire\Post\Create;
-use Eminiarts\Aura\Http\Livewire\Post\Edit;
+use Livewire\Livewire;
+use Eminiarts\Aura\Resource;
 use Eminiarts\Aura\Models\User;
+use Eminiarts\Aura\Facades\Aura;
 use Eminiarts\Aura\Resources\Post;
 use Eminiarts\Aura\Resources\Team;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
-use Livewire\Livewire;
+use Eminiarts\Aura\Http\Livewire\Post\Edit;
+use Eminiarts\Aura\Http\Livewire\Post\Create;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 
 // Refresh Database on every test
 uses(RefreshDatabase::class);
@@ -31,7 +32,7 @@ beforeEach(function () {
 });
 
 // Create Resource for this test
-class PasswordFieldModel extends Post
+class PasswordFieldModel extends Resource
 {
     public static $singularName = 'Password Model';
 
