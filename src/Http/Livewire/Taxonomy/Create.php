@@ -53,7 +53,12 @@ class Create extends ModalComponent
         // Set Fields
         $this->post['fields']['taxonomy'] = $this->slug;
 
-        $this->model->create($this->post['fields']);
+        // dd($this->post, $this->model);
+
+        $model = $this->model->create($this->post['fields']);
+
+        dd('hier', $model);
+
 
         $this->closeModal();
 

@@ -7,6 +7,7 @@ use Eminiarts\Aura\Models\Scopes\TeamScope;
 use Eminiarts\Aura\Models\Taxonomy as ModelsTaxonomy;
 use Eminiarts\Aura\Models\TaxonomyMeta;
 use Eminiarts\Aura\Resource;
+use Eminiarts\Aura\Traits\CustomTable;
 use Eminiarts\Aura\Traits\InputFields;
 use Eminiarts\Aura\Traits\InteractsWithTable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -15,6 +16,8 @@ use Illuminate\Support\Str;
 
 class Taxonomy extends Resource
 {
+    use CustomTable;
+
     public static $hierarchical = false;
 
     protected $fillable = ['name', 'slug', 'taxonomy', 'description', 'parent', 'count'];
@@ -150,10 +153,8 @@ class Taxonomy extends Resource
                 $taxonomy->team_id = auth()->user()->current_team_id;
             }
 
-            // Temporary Fix
-            if (! $taxonomy->team_id) {
-                $taxonomy->team_id = 1;
-            }
+            unset($taxonomy->user_id);
+            unset($taxonomy->type);
         });
     }
 }
