@@ -2,13 +2,12 @@
 
 namespace Eminiarts\Aura\Resources;
 
-use Eminiarts\Aura\Resource;
 use Aura\Flows\Resources\Flow;
-use Eminiarts\Aura\Widgets\PostChart;
-use Eminiarts\Aura\Widgets\TotalPosts;
+use Eminiarts\Aura\Resource;
 use Eminiarts\Aura\Widgets\AvgPostsNumber;
+use Eminiarts\Aura\Widgets\PostChart;
 use Eminiarts\Aura\Widgets\SumPostsNumber;
-use Eminiarts\Aura\Models\Post as ModelsPost;
+use Eminiarts\Aura\Widgets\TotalPosts;
 
 class Post extends Resource
 {

@@ -2,8 +2,6 @@
 
 namespace VendorName\Skeleton;
 
-use Eminiarts\Aura\Models\Post;
-
 class Skeleton extends Resource
 {
     public static ?string $slug = 'skeleton';

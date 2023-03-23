@@ -2,10 +2,9 @@
 
 namespace Eminiarts\Aura\Resources;
 
-use Eminiarts\Aura\Resource;
-use Eminiarts\Aura\Models\Meta;
-use Eminiarts\Aura\Models\Post;
 use Eminiarts\Aura\Jobs\GenerateAllResourcePermissions;
+use Eminiarts\Aura\Models\Meta;
+use Eminiarts\Aura\Resource;
 
 class Role extends Resource
 {

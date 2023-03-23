@@ -1,11 +1,7 @@
 <?php
 
-use Eminiarts\Aura\Resources\Post;
 use Eminiarts\Aura\Resources\User;
-
 use Eminiarts\Aura\Taxonomies\Taxonomy;
-
-use function Pest\Livewire\livewire;
 
 // Before each test, create a Superadmin and login
 beforeEach(function () {
@@ -21,15 +17,14 @@ beforeEach(function () {
     // Login
     $this->actingAs($this->user);
 
-
     $this->taxonomyData = [
-            'name' => 'Test Category',
-            'slug' => 'test-category',
-            'taxonomy' => 'category',
-            'description' => 'A test category',
-            'parent' => 0,
-            'count' => 0,
-        ];
+        'name' => 'Test Category',
+        'slug' => 'test-category',
+        'taxonomy' => 'category',
+        'description' => 'A test category',
+        'parent' => 0,
+        'count' => 0,
+    ];
 });
 
 test('it can create a taxonomy instance', function () {
@@ -69,7 +64,6 @@ test('it can delete a taxonomy instance', function () {
     ]);
 });
 
-
 test('it returns correct singular and plural names', function () {
     $taxonomy = new Taxonomy();
 
@@ -80,13 +74,11 @@ test('it returns correct singular and plural names', function () {
     $this->assertEquals('Categories', $taxonomy->pluralName());
 });
 
-
 test('it returns the correct title attribute', function () {
     $taxonomy = new Taxonomy();
 
     $this->assertEquals('Taxonomy', $taxonomy->title);
 });
-
 
 test('it sets default values when saving a taxonomy instance', function () {
     $taxonomyData = [
@@ -101,7 +93,6 @@ test('it sets default values when saving a taxonomy instance', function () {
     $this->assertEquals(0, $taxonomy->count);
     $this->assertNotNull($taxonomy->team_id);
 });
-
 
 test('it returns the correct type', function () {
     $taxonomy = new Taxonomy();

@@ -44,7 +44,7 @@ class TestInputFieldsClass2 extends Taxonomy
     public function getFields()
     {
         return [
-          [
+            [
                 'slug' => 'title',
                 'name' => 'Title',
                 'type' => 'Eminiarts\\Aura\\Fields\\Text',
@@ -107,17 +107,14 @@ test('check default per page value', function () {
     $this->assertEquals(10, $defaultPerPage);
 });
 
-
-use Illuminate\Validation\ValidationException;
-
 test('field postFieldValidationRules prepend post.fields', function () {
     $inputFields = new TestInputFieldsClass();
 
     $rules = $inputFields->postFieldValidationRules();
 
     expect($rules)->toBe([
-    "post.fields.title" => "required|string|max:255",
-    "post.fields.body" => "required|string"
+        'post.fields.title' => 'required|string|max:255',
+        'post.fields.body' => 'required|string',
     ]);
 });
 
@@ -129,13 +126,13 @@ test('field validation allows array of rules', function () {
 
     expect($rules)->toBeArray();
     expect($rules)->toHaveCount(2);
-    expect($rules)->toHaveKey("post.fields.title");
-    expect($rules)->toHaveKey("post.fields.body");
+    expect($rules)->toHaveKey('post.fields.title');
+    expect($rules)->toHaveKey('post.fields.body');
 
     // first rule should be ['required', 'string', 'max:255']
-    expect($rules["post.fields.title"])->toBeArray();
-    expect($rules["post.fields.title"])->toHaveCount(3);
-    expect($rules["post.fields.title"])->toContain("required");
-    expect($rules["post.fields.title"])->toContain("string");
-    expect($rules["post.fields.title"])->toContain("max:255");
+    expect($rules['post.fields.title'])->toBeArray();
+    expect($rules['post.fields.title'])->toHaveCount(3);
+    expect($rules['post.fields.title'])->toContain('required');
+    expect($rules['post.fields.title'])->toContain('string');
+    expect($rules['post.fields.title'])->toContain('max:255');
 });

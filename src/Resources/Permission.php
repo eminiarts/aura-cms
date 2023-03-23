@@ -3,7 +3,6 @@
 namespace Eminiarts\Aura\Resources;
 
 use Eminiarts\Aura\Resource;
-use Eminiarts\Aura\Models\Post;
 
 class Permission extends Resource
 {

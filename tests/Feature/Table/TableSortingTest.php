@@ -1,11 +1,11 @@
 <?php
 
-use Livewire\Livewire;
-use Eminiarts\Aura\Resource;
-use Eminiarts\Aura\Models\User;
-use Eminiarts\Aura\Resources\Post;
 use Eminiarts\Aura\Http\Livewire\Table\Table;
+use Eminiarts\Aura\Models\User;
+use Eminiarts\Aura\Resource;
+use Eminiarts\Aura\Resources\Post;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Livewire\Livewire;
 
 uses(RefreshDatabase::class);
 

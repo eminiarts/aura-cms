@@ -2,10 +2,10 @@
 
 namespace Eminiarts\Aura\Resources;
 
-use Eminiarts\Aura\Resource;
 use Eminiarts\Aura\Models\Post;
-use Eminiarts\Aura\Traits\CustomTable;
 use Eminiarts\Aura\Models\Scopes\TeamScope;
+use Eminiarts\Aura\Resource;
+use Eminiarts\Aura\Traits\CustomTable;
 
 class Option extends Resource
 {
