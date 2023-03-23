@@ -1,7 +1,6 @@
 <?php
 
 use Eminiarts\Aura\Resource;
-use Eminiarts\Aura\Models\Post;
 
 class Model1 extends Resource
 {

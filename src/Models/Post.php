@@ -2,22 +2,22 @@
 
 namespace Eminiarts\Aura\Models;
 
-use Eminiarts\Aura\Aura;
-use Illuminate\Support\Str;
-use Eminiarts\Aura\Resource;
 use Aura\Flows\Resources\Flow;
+use Eminiarts\Aura\Aura;
 use Eminiarts\Aura\BaseResource;
-use Eminiarts\Aura\Traits\SaveTerms;
-use Eminiarts\Aura\Traits\SaveMetaFields;
+use Eminiarts\Aura\Jobs\TriggerFlowOnCreatePostEvent;
+use Eminiarts\Aura\Jobs\TriggerFlowOnDeletedPostEvent;
+use Eminiarts\Aura\Jobs\TriggerFlowOnUpdatePostEvent;
 use Eminiarts\Aura\Models\Scopes\TeamScope;
 use Eminiarts\Aura\Models\Scopes\TypeScope;
+use Eminiarts\Aura\Resource;
 use Eminiarts\Aura\Traits\InitialPostFields;
 use Eminiarts\Aura\Traits\SaveFieldAttributes;
-use Eminiarts\Aura\Jobs\TriggerFlowOnCreatePostEvent;
-use Eminiarts\Aura\Jobs\TriggerFlowOnUpdatePostEvent;
-use Eminiarts\Aura\Jobs\TriggerFlowOnDeletedPostEvent;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Eminiarts\Aura\Traits\SaveMetaFields;
+use Eminiarts\Aura\Traits\SaveTerms;
 use Illuminate\Database\Eloquent\Concerns\HasTimestamps;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Support\Str;
 
 class Post extends BaseResource
 {

@@ -1,10 +1,9 @@
 <?php
 
-use Eminiarts\Aura\Resource;
-use Eminiarts\Aura\Models\Post;
-use Eminiarts\Aura\Fields\HasOne;
 use Eminiarts\Aura\Fields\HasMany;
+use Eminiarts\Aura\Fields\HasOne;
 use Eminiarts\Aura\Fields\HasOneOfMany;
+use Eminiarts\Aura\Resource;
 
 class GroupRelationsTestModel extends Resource
 {

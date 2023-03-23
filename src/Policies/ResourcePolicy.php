@@ -2,9 +2,8 @@
 
 namespace Eminiarts\Aura\Policies;
 
-use Eminiarts\Aura\Resource;
-use Eminiarts\Aura\Models\Post;
 use Eminiarts\Aura\Models\User;
+use Eminiarts\Aura\Resource;
 use Illuminate\Auth\Access\HandlesAuthorization;
 
 class ResourcePolicy

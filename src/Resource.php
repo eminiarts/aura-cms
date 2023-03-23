@@ -2,39 +2,36 @@
 
 namespace Eminiarts\Aura;
 
-use Eminiarts\Aura\Traits\AuraModelConfig;
-use Eminiarts\Aura\Traits\AuraTaxonomies;
-use Eminiarts\Aura\Traits\InputFields;
-use Eminiarts\Aura\Traits\InteractsWithTable;
-use Illuminate\Database\Eloquent\Model;
-
 use Aura\Flows\Resources\Flow;
-use Eminiarts\Aura\Aura;
 use Eminiarts\Aura\Jobs\TriggerFlowOnCreatePostEvent;
 use Eminiarts\Aura\Jobs\TriggerFlowOnDeletedPostEvent;
 use Eminiarts\Aura\Jobs\TriggerFlowOnUpdatePostEvent;
 use Eminiarts\Aura\Models\Scopes\TeamScope;
 use Eminiarts\Aura\Models\Scopes\TypeScope;
+use Eminiarts\Aura\Traits\AuraModelConfig;
+use Eminiarts\Aura\Traits\AuraTaxonomies;
 use Eminiarts\Aura\Traits\InitialPostFields;
+use Eminiarts\Aura\Traits\InputFields;
+use Eminiarts\Aura\Traits\InteractsWithTable;
 use Eminiarts\Aura\Traits\SaveFieldAttributes;
 use Eminiarts\Aura\Traits\SaveMetaFields;
 use Eminiarts\Aura\Traits\SaveTerms;
 use Illuminate\Database\Eloquent\Concerns\HasTimestamps;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
 
 class Resource extends Model
 {
     use AuraModelConfig;
     use AuraTaxonomies;
-    use InputFields;
-    use InteractsWithTable;
-
     use HasFactory;
     use HasTimestamps;
 
     // Aura
     use InitialPostFields;
+    use InputFields;
+    use InteractsWithTable;
     use SaveFieldAttributes;
     use SaveMetaFields;
     use SaveTerms;

@@ -2,11 +2,10 @@
 
 namespace Eminiarts\Aura\Resources;
 
-use Illuminate\Support\Str;
-use Eminiarts\Aura\Resource;
-use Eminiarts\Aura\Models\Post;
-use Illuminate\Foundation\Bus\DispatchesJobs;
 use Eminiarts\Aura\Jobs\GenerateImageThumbnail;
+use Eminiarts\Aura\Resource;
+use Illuminate\Foundation\Bus\DispatchesJobs;
+use Illuminate\Support\Str;
 
 class Attachment extends Resource
 {
