@@ -55,7 +55,6 @@ class Taxonomy extends ModelsTaxonomy
 
     public function field($field)
     {
-        // $this->field = $field;
         $this->withAttributes($field);
 
         return $this;
