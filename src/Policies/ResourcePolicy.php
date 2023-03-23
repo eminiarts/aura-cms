@@ -2,11 +2,12 @@
 
 namespace Eminiarts\Aura\Policies;
 
+use Eminiarts\Aura\Resource;
 use Eminiarts\Aura\Models\Post;
 use Eminiarts\Aura\Models\User;
 use Illuminate\Auth\Access\HandlesAuthorization;
 
-class PostPolicy
+class ResourcePolicy
 {
     use HandlesAuthorization;
 
@@ -15,9 +16,9 @@ class PostPolicy
      *
      * @return \Illuminate\Auth\Access\Response|bool
      */
-    public function create(User $user, $post)
+    public function create(User $user, $resource)
     {
-        if ($user->resource->hasPermissionTo('create', $post)) {
+        if ($user->resource->hasPermissionTo('create', $resource)) {
             return true;
         }
 
@@ -27,21 +28,21 @@ class PostPolicy
     /**
      * Determine whether the user can delete the model.
      *
-     * @param  \App\Models\Post  $post
+     * @param  \App\Models\Post  $resource
      * @return \Illuminate\Auth\Access\Response|bool
      */
-    public function delete(User $user, Post $post)
+    public function delete(User $user, Resource $resource)
     {
         // Scoped Posts
-        if ($user->resource->hasPermissionTo('scope', $post) && $user->resource->hasPermissionTo('delete', $post)) {
-            if ($post->user_id == $user->id) {
+        if ($user->resource->hasPermissionTo('scope', $resource) && $user->resource->hasPermissionTo('delete', $resource)) {
+            if ($resource->user_id == $user->id) {
                 return true;
             } else {
                 return false;
             }
         }
 
-        if ($user->resource->hasPermissionTo('delete', $post)) {
+        if ($user->resource->hasPermissionTo('delete', $resource)) {
             return true;
         }
 
@@ -51,12 +52,12 @@ class PostPolicy
     /**
      * Determine whether the user can permanently delete the model.
      *
-     * @param  \App\Models\Post  $post
+     * @param  \App\Models\Post  $resource
      * @return \Illuminate\Auth\Access\Response|bool
      */
-    public function forceDelete(User $user, Post $post)
+    public function forceDelete(User $user, Resource $resource)
     {
-        if ($user->resource->hasPermissionTo('forceDelete', $post)) {
+        if ($user->resource->hasPermissionTo('forceDelete', $resource)) {
             return true;
         }
 
@@ -66,12 +67,12 @@ class PostPolicy
     /**
      * Determine whether the user can restore the model.
      *
-     * @param  \App\Models\Post  $post
+     * @param  \App\Models\Post  $resource
      * @return \Illuminate\Auth\Access\Response|bool
      */
-    public function restore(User $user, Post $post)
+    public function restore(User $user, Resource $resource)
     {
-        if ($user->resource->hasPermissionTo('restore', $post)) {
+        if ($user->resource->hasPermissionTo('restore', $resource)) {
             return true;
         }
 
@@ -81,27 +82,27 @@ class PostPolicy
     /**
      * Determine whether the user can update the model.
      *
-     * @param  \App\Models\Post  $post
+     * @param  \App\Models\Post  $resource
      * @return \Illuminate\Auth\Access\Response|bool
      */
-    public function update(User $user, $post)
+    public function update(User $user, $resource)
     {
         // Scoped Posts
-        if ($user->resource->hasPermissionTo('scope', $post) && $user->resource->hasPermissionTo('update', $post)) {
-            //dd('scope should be called', $post->user_id == $user->id, $post->user_id, $user->id);
+        if ($user->resource->hasPermissionTo('scope', $resource) && $user->resource->hasPermissionTo('update', $resource)) {
+            //dd('scope should be called', $resource->user_id == $user->id, $resource->user_id, $user->id);
 
-            if ($post->user_id == $user->id) {
+            if ($resource->user_id == $user->id) {
                 return true;
             } else {
                 return false;
             }
         }
 
-        if ($user->resource->hasPermissionTo('update', $post)) {
+        if ($user->resource->hasPermissionTo('update', $resource)) {
             return true;
         }
 
-        // dd('hier', $user->resource->hasPermissionTo('update', $post), $post);
+        // dd('hier', $user->resource->hasPermissionTo('update', $resource), $resource);
 
         return false;
     }
@@ -109,21 +110,21 @@ class PostPolicy
     /**
      * Determine whether the user can view the model.
      *
-     * @param  \App\Models\Post  $post
+     * @param  \App\Models\Post  $resource
      * @return \Illuminate\Auth\Access\Response|bool
      */
-    public function view(User $user, Post $post)
+    public function view(User $user, Resource $resource)
     {
         // Scoped Posts
-        if ($user->resource->hasPermissionTo('scope', $post) && $user->resource->hasPermissionTo('view', $post)) {
-            if ($post->user_id == $user->id) {
+        if ($user->resource->hasPermissionTo('scope', $resource) && $user->resource->hasPermissionTo('view', $resource)) {
+            if ($resource->user_id == $user->id) {
                 return true;
             } else {
                 return false;
             }
         }
 
-        if ($user->resource->hasPermissionTo('view', $post)) {
+        if ($user->resource->hasPermissionTo('view', $resource)) {
             return true;
         }
 
@@ -135,9 +136,9 @@ class PostPolicy
      *
      * @return \Illuminate\Auth\Access\Response|bool
      */
-    public function viewAny(User $user, $post)
+    public function viewAny(User $user, $resource)
     {
-        if ($user->resource->hasPermissionTo('viewAny', $post)) {
+        if ($user->resource->hasPermissionTo('viewAny', $resource)) {
             return true;
         }
 

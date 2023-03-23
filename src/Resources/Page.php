@@ -2,9 +2,10 @@
 
 namespace Eminiarts\Aura\Resources;
 
+use Eminiarts\Aura\Resource;
 use Eminiarts\Aura\Models\Post;
 
-class Page extends Post
+class Page extends Resource
 {
     public static ?string $slug = 'page';
 
@@ -175,16 +176,16 @@ class Page extends Post
                     'width' => '30',
                 ],
             ],
-            [
-                'name' => 'AdvancedSelect',
-                'type' => 'Eminiarts\\Aura\\Fields\\AdvancedSelect',
-                'validation' => '',
-                'conditional_logic' => [
-                ],
-                'slug' => 'select-many',
-                'instructions' => 'AdvancedSelect',
-                'resource' => 'Eminiarts\\Aura\\Resources\\Invoice',
-            ],
+            // [
+            //     'name' => 'AdvancedSelect',
+            //     'type' => 'Eminiarts\\Aura\\Fields\\AdvancedSelect',
+            //     'validation' => '',
+            //     'conditional_logic' => [
+            //     ],
+            //     'slug' => 'select-many',
+            //     'instructions' => 'AdvancedSelect',
+            //     'resource' => 'Eminiarts\\Aura\\Resources\\Invoice',
+            // ],
             [
                 'name' => 'Tab 2',
                 'global' => true,

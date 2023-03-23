@@ -1,8 +1,9 @@
 <?php
 
+use Eminiarts\Aura\Resource;
 use Eminiarts\Aura\Models\Post;
 
-class NavigationModel extends Post
+class NavigationModel extends Resource
 {
     public static ?string $slug = 'page';
 

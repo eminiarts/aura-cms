@@ -1,5 +1,6 @@
 <?php
 
+use Eminiarts\Aura\Resource;
 use Eminiarts\Aura\Models\Post;
 use Eminiarts\Aura\Models\User;
 use Eminiarts\Aura\Resources\Role;
@@ -9,7 +10,7 @@ uses(RefreshDatabase::class);
 
 beforeEach(fn () => $this->actingAs($this->user = User::factory()->create()));
 
-class UserRoleConditionalIndexFieldsModel extends Post
+class UserRoleConditionalIndexFieldsModel extends Resource
 {
     public static ?string $slug = 'page';
 

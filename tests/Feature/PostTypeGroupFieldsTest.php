@@ -1,8 +1,9 @@
 <?php
 
+use Eminiarts\Aura\Resource;
 use Eminiarts\Aura\Models\Post;
 
-class ModelWithGroups extends Post
+class ModelWithGroups extends Resource
 {
     public static ?string $slug = 'page';
 

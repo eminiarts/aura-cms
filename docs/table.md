@@ -18,7 +18,7 @@ You can customize the Row view
 ## Grid Layout
 If you want to add a grid Layout, add `tableGridView()`to your resource:
 ```php
-class Attachment extends Post
+class Attachment extends Resource
 {
     public function tableGridView()
     {

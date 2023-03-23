@@ -17,7 +17,7 @@ namespace App\Aura\Resources;
 
 use Eminiarts\Aura\Models\Post;
 
-class CustomResource extends Post
+class CustomResource extends Resource
 {
     //...
 

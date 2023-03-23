@@ -1,10 +1,11 @@
 <?php
 
-use Eminiarts\Aura\Http\Livewire\Table\Table;
+use Livewire\Livewire;
+use Eminiarts\Aura\Resource;
 use Eminiarts\Aura\Models\User;
 use Eminiarts\Aura\Resources\Post;
+use Eminiarts\Aura\Http\Livewire\Table\Table;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Livewire\Livewire;
 
 uses(RefreshDatabase::class);
 
@@ -24,7 +25,7 @@ beforeEach(function () {
 });
 
 // Create Resource for this test
-class TableFilterModel extends Post
+class TableFilterModel extends Resource
 {
     public static $singularName = 'Post';
 

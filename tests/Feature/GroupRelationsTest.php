@@ -1,11 +1,12 @@
 <?php
 
-use Eminiarts\Aura\Fields\HasMany;
-use Eminiarts\Aura\Fields\HasOne;
-use Eminiarts\Aura\Fields\HasOneOfMany;
+use Eminiarts\Aura\Resource;
 use Eminiarts\Aura\Models\Post;
+use Eminiarts\Aura\Fields\HasOne;
+use Eminiarts\Aura\Fields\HasMany;
+use Eminiarts\Aura\Fields\HasOneOfMany;
 
-class GroupRelationsTestModel extends Post
+class GroupRelationsTestModel extends Resource
 {
     public static ?string $slug = 'page';
 
@@ -73,13 +74,13 @@ test('hasMany - fields should not be grouped', function () {
 });
 
 test('hasMany - field should not be grouped', function () {
-    expect((new HasMany)->group)->toBe(false);
+    expect((new HasMany())->group)->toBe(false);
 });
 
 test('hasOne - field should not be grouped', function () {
-    expect((new HasOne)->group)->toBe(false);
+    expect((new HasOne())->group)->toBe(false);
 });
 
 test('hasOneOfMany - field should not be grouped', function () {
-    expect((new HasOneOfMany)->group)->toBe(false);
+    expect((new HasOneOfMany())->group)->toBe(false);
 });

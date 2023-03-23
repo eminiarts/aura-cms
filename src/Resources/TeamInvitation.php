@@ -2,9 +2,10 @@
 
 namespace Eminiarts\Aura\Resources;
 
+use Eminiarts\Aura\Resource;
 use Eminiarts\Aura\Models\Post;
 
-class TeamInvitation extends Post
+class TeamInvitation extends Resource
 {
     public static $singularName = 'Team Invitation';
 

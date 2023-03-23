@@ -2,12 +2,13 @@
 
 namespace Tests\Feature\Livewire;
 
-use Eminiarts\Aura\Http\Livewire\Post\Create;
+use Livewire\Livewire;
+use Eminiarts\Aura\Resource;
 use Eminiarts\Aura\Models\User;
 use Eminiarts\Aura\Resources\Post;
 use Eminiarts\Aura\Resources\Team;
+use Eminiarts\Aura\Http\Livewire\Post\Create;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Livewire\Livewire;
 
 // Refresh Database on every test
 uses(RefreshDatabase::class);
@@ -28,7 +29,7 @@ beforeEach(function () {
 });
 
 // Create Resource for this test
-class NumberFieldModel extends Post
+class NumberFieldModel extends Resource
 {
     public static $singularName = 'Number Model';
 
