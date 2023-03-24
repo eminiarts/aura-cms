@@ -28,6 +28,8 @@ trait AuraModelConfig
 
     protected static bool $customTable = false;
 
+    public static $taxonomy = false;
+
     protected static $dropdown = false;
 
     protected static ?string $group = 'Resources';
@@ -116,6 +118,11 @@ trait AuraModelConfig
         }
     }
 
+    public function createUrl()
+    {
+        return route('aura.post.create', [ $this->getType()]);
+    }
+
     public function getActions()
     {
         return $this->actions;
@@ -164,6 +171,12 @@ trait AuraModelConfig
     {
         return static::$group;
     }
+
+    public function isTaxonomy()
+    {
+        return static::$taxonomy;
+    }
+
 
     public function getHeaders()
     {
