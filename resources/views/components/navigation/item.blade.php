@@ -18,7 +18,7 @@ $settings = Eminiarts\Aura\Facades\Aura::getOption('team-settings');
     }
 @endphp
 
-
+{{-- @dump(Request::fullUrlIs($route ? route($route, $id) : '')) --}}
 {{-- {{ dump(route($route, $id)) }}
 @dump(Request::fullUrlIs(route($route, $id))) --}}
 @if ($sidebarType == 'primary')

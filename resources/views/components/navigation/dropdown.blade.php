@@ -22,7 +22,6 @@ $settings = Eminiarts\Aura\Facades\Aura::getOption('team-settings');
 
 <div x-data="{ active: {{ (Request::fullUrlIs($route ? route($route, $id) : '') ? ' 1' : '0')  }}, compact: {{ $compact ? '1' : '0' }} }" class="">
     <div x-data="{
-        id: 1,
         init() {
             if (this.$refs.container?.querySelector('.is-active')) {
                 this.expanded = true;
@@ -61,7 +60,7 @@ $settings = Eminiarts\Aura\Facades\Aura::getOption('team-settings');
               </span>
           </button>
 
-        <div x-show="expanded" x-cloak class="p-2 " x-aura::collapse>
+        <div x-show="expanded" x-ref="container" x-cloak class="p-2 " x-aura::collapse>
             {{$slot}}
         </div>
     </div>
@@ -72,7 +71,6 @@ $settings = Eminiarts\Aura\Facades\Aura::getOption('team-settings');
 
 <div x-data="{ active: {{ (Request::fullUrlIs($route ? route($route, $id) : '') ? ' 1' : '0')  }}, compact: {{ $compact ? '1' : '0' }} }" class="">
     <div x-data="{
-        id: 1,
         init() {
             if (this.$refs.container?.querySelector('.is-active')) {
                 this.expanded = true;
@@ -112,7 +110,7 @@ $settings = Eminiarts\Aura\Facades\Aura::getOption('team-settings');
               </span>
           </button>
 
-        <div x-show="expanded" x-cloak class="p-2" x-aura::collapse>
+        <div x-show="expanded" x-ref="container" x-cloak class="p-2" x-aura::collapse>
             {{$slot}}
         </div>
     </div>
@@ -121,9 +119,9 @@ $settings = Eminiarts\Aura\Facades\Aura::getOption('team-settings');
 
 
 @elseif ($sidebarType == 'dark')
+
 <div x-data="{ active: {{ (Request::fullUrlIs($route ? route($route, $id) : '') ? ' 1' : '0')  }}, compact: {{ $compact ? '1' : '0' }} }" class="">
     <div x-data="{
-        id: 1,
         init() {
             if (this.$refs.container?.querySelector('.is-active')) {
                 this.expanded = true;
