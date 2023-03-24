@@ -4,7 +4,7 @@ namespace App\Aura\Resources;
 
 use Eminiarts\Aura\Models\Post;
 
-class PostName extends Post
+class PostName extends Resource
 {
     public static string $type = 'PostName';
 

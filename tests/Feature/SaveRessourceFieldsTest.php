@@ -1,14 +1,14 @@
 <?php
 
-use Eminiarts\Aura\Models\Post;
 use Eminiarts\Aura\Models\User;
+use Eminiarts\Aura\Resource;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
 
 beforeEach(fn () => $this->actingAs($user = User::factory()->create()));
 
-class SaveRessourceFieldsTestModel extends Post
+class SaveRessourceFieldsTestModel extends Resource
 {
     public static ?string $slug = 'model';
 

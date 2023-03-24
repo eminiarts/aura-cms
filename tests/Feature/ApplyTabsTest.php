@@ -1,8 +1,8 @@
 <?php
 
-use Eminiarts\Aura\Models\Post;
+use Eminiarts\Aura\Resource;
 
-class ApplyTabsTestModel extends Post
+class ApplyTabsTestModel extends Resource
 {
     public static ?string $slug = 'page';
 

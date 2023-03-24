@@ -2,9 +2,9 @@
 
 namespace Eminiarts\Aura\Resources;
 
-use Eminiarts\Aura\Models\Post;
+use Eminiarts\Aura\Resource;
 
-class Permission extends Post
+class Permission extends Resource
 {
     public static ?string $slug = 'permission';
 

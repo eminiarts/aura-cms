@@ -1,8 +1,8 @@
 <?php
 
-use Eminiarts\Aura\Models\Post;
+use Eminiarts\Aura\Resource;
 
-class ModelRecursive extends Post
+class ModelRecursive extends Resource
 {
     public static ?string $slug = 'page';
 

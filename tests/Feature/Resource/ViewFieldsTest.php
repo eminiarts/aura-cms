@@ -1,8 +1,8 @@
 <?php
 
-use Eminiarts\Aura\Models\Post;
+use Eminiarts\Aura\Resource;
 
-class ViewFieldsTestModel extends Post
+class ViewFieldsTestModel extends Resource
 {
     public static ?string $slug = 'page';
 
@@ -59,7 +59,7 @@ test('field inherits on_view from parent', function () {
     expect($fields[0]['fields'][0]['fields'][0]['slug'])->not->toBe('text2');
 });
 
-class ViewFieldsTestModel2 extends Post
+class ViewFieldsTestModel2 extends Resource
 {
     public static ?string $slug = 'page';
 
