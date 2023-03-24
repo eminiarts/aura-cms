@@ -15,6 +15,7 @@
                 @foreach($resources as $resource)
 
                     @if (isset($resource['dropdown']) && $resource['dropdown'] !== false)
+
                         <x-aura::navigation.dropdown>
                             <x-slot:title>
                                 <div class="{{ $iconClass }}">
