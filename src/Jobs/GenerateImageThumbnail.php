@@ -59,18 +59,20 @@ class GenerateImageThumbnail implements ShouldQueue
         $settings = Aura::option('media');
 
         // Generate the thumbnails
-        foreach ($settings['thumbnails'] as $size) {
-            $image = Image::make($this->attachment->path());
+        if ($settings && $settings['thumbnails']) {
+            foreach ($settings['thumbnails'] as $size) {
+                $image = Image::make($this->attachment->path());
 
-            $width = $size['width'];
-            $height = $size['height'];
+                $width = $size['width'];
+                $height = $size['height'];
 
-            $image->fit($width, $height, function ($constraint) {
-                $constraint->aspectRatio();
-                $constraint->upsize();
-            });
+                $image->fit($width, $height, function ($constraint) {
+                    $constraint->aspectRatio();
+                    $constraint->upsize();
+                });
 
-            Storage::put($size['name'].'/'.basename($this->attachment->url), (string) $image->encode());
+                Storage::put($size['name'].'/'.basename($this->attachment->url), (string) $image->encode());
+            }
         }
     }
 }
