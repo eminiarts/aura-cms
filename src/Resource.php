@@ -240,7 +240,13 @@ class Resource extends Model
 
         $possibleRelationMethods = [$key, Str::camel($key)];
 
+
+
         foreach ($possibleRelationMethods as $method) {
+            if ($method == 'taxonomy') {
+                continue;
+            }
+
             if (in_array($method, $modelMethods) && ($this->{$method}() instanceof \Illuminate\Database\Eloquent\Relations\Relation)) {
                 return true;
             }

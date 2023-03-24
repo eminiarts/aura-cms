@@ -20,7 +20,7 @@ trait AuraModelConfig
 
     public static $singularName = null;
 
-    public array $terms = [];
+    public array $taxonomyFields = [];
 
     public static bool $usesMeta = true;
 
@@ -358,9 +358,9 @@ trait AuraModelConfig
         $this->metaFields = array_merge($this->metaFields, $metaFields);
     }
 
-    public function saveTerms(array $terms): void
+    public function saveTaxonomyFields(array $taxonomyFields): void
     {
-        $this->terms = array_merge($this->terms, $terms);
+        $this->taxonomyFields = array_merge($this->taxonomyFields, $taxonomyFields);
     }
 
     public function singularName(): string

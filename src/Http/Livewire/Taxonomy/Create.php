@@ -57,7 +57,7 @@ class Create extends ModalComponent
 
         $model = $this->model->create($this->post['fields']);
 
-        dd('hier', $model);
+        // dd('hier', $model);
 
 
         $this->closeModal();
