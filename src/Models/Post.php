@@ -4,6 +4,7 @@ namespace Eminiarts\Aura\Models;
 
 use Aura\Flows\Resources\Flow;
 use Eminiarts\Aura\Aura;
+use Eminiarts\Aura\BaseResource;
 use Eminiarts\Aura\Jobs\TriggerFlowOnCreatePostEvent;
 use Eminiarts\Aura\Jobs\TriggerFlowOnDeletedPostEvent;
 use Eminiarts\Aura\Jobs\TriggerFlowOnUpdatePostEvent;
@@ -18,7 +19,7 @@ use Illuminate\Database\Eloquent\Concerns\HasTimestamps;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Support\Str;
 
-class Post extends Resource
+class Post extends BaseResource
 {
     use HasFactory;
     use HasTimestamps;

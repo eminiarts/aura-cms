@@ -1,7 +1,7 @@
 <?php
 
 use Eminiarts\Aura\Facades\Aura;
-use Eminiarts\Aura\Models\Post;
+use Eminiarts\Aura\Resource;
 use Eminiarts\Aura\Resources\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
@@ -9,7 +9,7 @@ uses(RefreshDatabase::class);
 
 beforeEach(fn () => $this->actingAs($this->user = User::factory()->create()));
 
-class PosttypeEditModel extends Post
+class PosttypeEditModel extends Resource
 {
     public static $singularName = 'Custom Posttype';
 

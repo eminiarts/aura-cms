@@ -2,6 +2,7 @@
 
 use Eminiarts\Aura\Http\Livewire\Table\Table;
 use Eminiarts\Aura\Models\User;
+use Eminiarts\Aura\Resource;
 use Eminiarts\Aura\Resources\Post;
 use Eminiarts\Aura\Taxonomies\Tag;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -25,7 +26,7 @@ beforeEach(function () {
 });
 
 // Create Resource for this test
-class TableTaxonomyFilterModel extends Post
+class TableTaxonomyFilterModel extends Resource
 {
     public static $singularName = 'Post';
 

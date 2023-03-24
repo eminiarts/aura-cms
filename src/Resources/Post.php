@@ -3,13 +3,13 @@
 namespace Eminiarts\Aura\Resources;
 
 use Aura\Flows\Resources\Flow;
-use Eminiarts\Aura\Models\Post as ModelsPost;
+use Eminiarts\Aura\Resource;
 use Eminiarts\Aura\Widgets\AvgPostsNumber;
 use Eminiarts\Aura\Widgets\PostChart;
 use Eminiarts\Aura\Widgets\SumPostsNumber;
 use Eminiarts\Aura\Widgets\TotalPosts;
 
-class Post extends ModelsPost
+class Post extends Resource
 {
     public array $bulkActions = [
         'deleteSelected' => 'Delete',

@@ -40,7 +40,7 @@ use Eminiarts\Aura\Http\Livewire\TeamSettings;
 use Eminiarts\Aura\Http\Livewire\User\InviteUser;
 use Eminiarts\Aura\Http\Livewire\User\Profile;
 use Eminiarts\Aura\Http\Livewire\User\TwoFactorAuthenticationForm;
-use Eminiarts\Aura\Policies\PostPolicy;
+use Eminiarts\Aura\Policies\ResourcePolicy;
 use Eminiarts\Aura\Policies\TeamPolicy;
 use Eminiarts\Aura\Policies\UserPolicy;
 use Eminiarts\Aura\Resources\Team;
@@ -68,7 +68,7 @@ class AuraServiceProvider extends PackageServiceProvider
     public function bootGate()
     {
         Gate::policy(Team::class, TeamPolicy::class);
-        Gate::policy(Resource::class, PostPolicy::class);
+        Gate::policy(Resource::class, ResourcePolicy::class);
         Gate::policy(User::class, UserPolicy::class);
 
         Gate::before(function ($user, $ability) {

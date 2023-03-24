@@ -1,7 +1,7 @@
 <?php
 
 use Eminiarts\Aura\Facades\Aura;
-use Eminiarts\Aura\Models\Post;
+use Eminiarts\Aura\Resource;
 use Eminiarts\Aura\Resources\User;
 use function Pest\Livewire\livewire;
 
@@ -20,7 +20,7 @@ beforeEach(function () {
     $this->actingAs($this->user);
 });
 
-class ResourceActionsTestModel extends Post
+class ResourceActionsTestModel extends Resource
 {
     public array $actions = [
         'createMissingPermissions' => 'Create Missing Permissions',
@@ -56,7 +56,7 @@ test('simple single Actions work correctly', function () {
     expect($component->actions)->toHaveCount(2);
 });
 
-class ResourceActionsTestModel2 extends Post
+class ResourceActionsTestModel2 extends Resource
 {
     public array $actions = [
         'createMissingPermissions' => [

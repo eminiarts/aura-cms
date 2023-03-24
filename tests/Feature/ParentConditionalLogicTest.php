@@ -1,12 +1,12 @@
 <?php
 
 use Eminiarts\Aura\Aura;
-use Eminiarts\Aura\Models\Post;
 use Eminiarts\Aura\Models\User;
 use Eminiarts\Aura\Pipeline\AddIdsToFields;
 use Eminiarts\Aura\Pipeline\ApplyParentConditionalLogic;
 use Eminiarts\Aura\Pipeline\ApplyTabs;
 use Eminiarts\Aura\Pipeline\MapFields;
+use Eminiarts\Aura\Resource;
 use Eminiarts\Aura\Resources\Role;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
@@ -14,7 +14,7 @@ uses(RefreshDatabase::class);
 
 beforeEach(fn () => $this->actingAs($this->user = User::factory()->create()));
 
-class ParentConditionalLogicModel extends Post
+class ParentConditionalLogicModel extends Resource
 {
     public static ?string $slug = 'page';
 
@@ -127,7 +127,7 @@ test('fields merge parent conditional logic', function () {
 
 // More advanced example
 
-class AdvancedParentConditionalLogicModel extends Post
+class AdvancedParentConditionalLogicModel extends Resource
 {
     public static ?string $slug = 'page';
 

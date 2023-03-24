@@ -6,6 +6,7 @@ use Eminiarts\Aura\Facades\Aura;
 use Eminiarts\Aura\Http\Livewire\Post\Create;
 use Eminiarts\Aura\Http\Livewire\Post\Edit;
 use Eminiarts\Aura\Models\User;
+use Eminiarts\Aura\Resource;
 use Eminiarts\Aura\Resources\Post;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
@@ -14,7 +15,7 @@ uses(RefreshDatabase::class);
 
 beforeEach(fn () => $this->actingAs($this->user = User::factory()->create()));
 
-class DateFieldModel extends Post
+class DateFieldModel extends Resource
 {
     public static $singularName = 'Date Model';
 

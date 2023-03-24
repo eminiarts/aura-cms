@@ -3,6 +3,7 @@
 use Eminiarts\Aura\Http\Livewire\Table\Table;
 use Eminiarts\Aura\Models\Scopes\TeamScope;
 use Eminiarts\Aura\Models\User;
+use Eminiarts\Aura\Resource;
 use Eminiarts\Aura\Resources\Post;
 use Eminiarts\Aura\Traits\CustomTable;
 use Illuminate\Database\Schema\Blueprint;
@@ -74,7 +75,7 @@ beforeEach(function () {
 });
 
 // Create Resource for this test
-class CustomTableFilterModel extends Post
+class CustomTableFilterModel extends Resource
 {
     use CustomTable;
 
