@@ -3,27 +3,20 @@
 namespace Eminiarts\Aura\Traits;
 
 use Eminiarts\Aura\Aura;
-use Eminiarts\Aura\Taxonomies\Taxonomy;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\DB;
+use Eminiarts\Aura\Models\Taxonomy;
 
 trait AuraTaxonomies
 {
     public function allTaxonomies()
     {
-        return $this->getTaxonomies()->map(fn ($item) => $item::getType());
+        return $this->taxonomies()->map(fn ($item) => $item::getType());
     }
 
     public function firstTaxonomy($taxonomy)
     {
         return $this->taxonomies()->where('taxonomy', $taxonomy)->orderby('name', 'asc')->first();
-    }
-
-    public static function getTaxonomies()
-    {
-        // Get this model fields where the field class type is taxonomy
-
-        return Aura::taxonomiesFor(static::getType());
     }
 
     /**

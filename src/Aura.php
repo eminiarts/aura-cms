@@ -368,13 +368,6 @@ class Aura
         });
     }
 
-    public static function taxonomiesFor($posttype)
-    {
-        return collect(static::taxonomies())->filter(function ($taxonomy) use ($posttype) {
-            return in_array($posttype, static::findTaxonomyBySlug($taxonomy)::$attachTo);
-        })->map(fn ($taxonomy) => static::findTaxonomyBySlug($taxonomy));
-    }
-
     public static function templates()
     {
         return Cache::remember('aura.templates', now()->addHour(), function () {
