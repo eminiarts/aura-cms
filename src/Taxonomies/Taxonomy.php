@@ -20,6 +20,8 @@ class Taxonomy extends Resource
 
     public static $hierarchical = false;
 
+    public static $taxonomy = true;
+
     protected $fillable = ['name', 'slug', 'taxonomy', 'description', 'parent', 'count'];
 
     protected static ?string $name = null;
