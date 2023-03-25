@@ -57,10 +57,10 @@ class MediaUploader extends Component
             $this->emit('updateField', [
                 'slug' => $this->field['slug'],
                 // merge the new attachments with the old ones
-                'value' => array_merge($this->selected, collect($attachments)->pluck('id')->toArray()),
+                'value' => optional($this)->selected ? array_merge($this->selected, collect($attachments)->pluck('id')->toArray()) : collect($attachments)->pluck('id')->toArray(),
             ]);
 
-            $this->selected = array_merge($this->selected, collect($attachments)->pluck('id')->toArray());
+            $this->selected = optional($this)->selected ? array_merge($this->selected, collect($attachments)->pluck('id')->toArray()) : collect($attachments)->pluck('id')->toArray();
         }
 
         $this->emit('refreshTable');
