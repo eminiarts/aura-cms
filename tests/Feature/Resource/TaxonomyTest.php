@@ -96,7 +96,6 @@ test('it sets default values when saving a taxonomy instance', function () {
 
 test('it returns the correct type', function () {
     $taxonomy = new Taxonomy();
-    $taxonomy::$type = 'test-type';
 
-    $this->assertEquals('test-type', $taxonomy->getType());
+    $this->assertEquals('Taxonomy', $taxonomy->getType());
 });
