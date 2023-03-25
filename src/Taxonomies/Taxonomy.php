@@ -28,6 +28,8 @@ class Taxonomy extends Resource
 
     protected $table = 'taxonomies';
 
+    protected static string $type = 'Taxonomy';
+
     public function component()
     {
         return 'fields.taxonomy';

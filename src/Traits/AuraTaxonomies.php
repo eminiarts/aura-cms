@@ -5,7 +5,7 @@ namespace Eminiarts\Aura\Traits;
 use Eminiarts\Aura\Aura;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\DB;
-use Eminiarts\Aura\Models\Taxonomy;
+use Eminiarts\Aura\Taxonomies\Taxonomy;
 
 trait AuraTaxonomies
 {
