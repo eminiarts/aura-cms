@@ -15,6 +15,8 @@ class Edit extends Component
 
     public $slug;
 
+    public $inModal = false;
+
     public $taxonomy;
 
     public function mount($slug, $id)
@@ -29,6 +31,11 @@ class Edit extends Component
 
         // dd($this->post);
         $this->post['fields'] = $this->model->toArray();
+    }
+
+    public function getActionsProperty()
+    {
+        return $this->model->getActions();
     }
 
     public function render()
