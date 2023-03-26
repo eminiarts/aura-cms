@@ -129,7 +129,7 @@ class Taxonomy extends Resource
      */
     protected static function booted()
     {
-        static::addGlobalScope(new TaxonomyScope());
+        // static::addGlobalScope(new TaxonomyScope());
         static::addGlobalScope(new TeamScope());
 
         static::saving(function ($taxonomy) {
