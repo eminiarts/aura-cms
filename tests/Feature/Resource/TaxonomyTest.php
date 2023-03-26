@@ -116,3 +116,10 @@ test('Tag Taxonomy properties', function () {
 
     expect($taxonomy->getType())->toBe('Tag');
 });
+
+
+test('Tag Index Page', function () {
+    $this->get(route('aura.taxonomies.index', 'tag'))
+        ->assertStatus(200)
+        ->assertSee('Tags');
+});

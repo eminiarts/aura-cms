@@ -23,3 +23,9 @@ test('Aura::findTaxonomyBySlug()', function () {
 
     expect($tag)->toBeInstanceOf(Tag::class);
 });
+
+test('Aura::findTaxonomyBySlug() returns null if not found', function () {
+    $tag = Aura::findTaxonomyBySlug('Tagg');
+
+    expect($tag)->toBeNull();
+});
