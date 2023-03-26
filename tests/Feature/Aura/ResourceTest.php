@@ -1,9 +1,10 @@
 <?php
 
 use Eminiarts\Aura\Facades\Aura;
+use Eminiarts\Aura\Resources\Attachment;
 use Eminiarts\Aura\Resources\User;
-use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\File;
 
 uses()->group('current');
 
@@ -15,8 +16,8 @@ test('resource folder in app gets loaded correctly', function () {
     expect(Aura::getResources())->not->toContain('App\\Aura\\Resources\\TestPosttype');
 
     Artisan::call('aura:posttype', [
-           'name' => 'TestPosttype',
-       ]);
+        'name' => 'TestPosttype',
+    ]);
 
     // assert app/Aura/Resources/TestPosttype.php exists
     $this->assertTrue(File::exists(app_path('Aura/Resources/TestPosttype.php')));
@@ -37,6 +38,12 @@ test('Aura findResourceBySlug() lowercase', function () {
     $user = Aura::findResourceBySlug('user');
 
     expect($user)->toBeInstanceOf(User::class);
+});
+
+test('Aura findResourceBySlug() Attachment', function () {
+    $attachment = Aura::findResourceBySlug('Attachment');
+
+    expect($attachment)->toBeInstanceOf(Attachment::class);
 });
 
 test('app resource overwrites vendor resource', function () {
