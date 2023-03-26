@@ -54,7 +54,7 @@
         </x-aura::dropdown>
             {{-- If the $model is an instance of User Resource, add a button to impersonate the user --}}
             @if ($model instanceof Eminiarts\Aura\Resources\User)
-            <x-aura::button.transparent route="impersonate" :id="$model->id">
+            <x-aura::button.transparent :href="route('impersonate', $model->id)" :id="$model->id">
                 <x-slot:icon>
                     <x-aura::icon class="w-5 h-5 mr-2" icon="user-impersonate" />
                 </x-slot:icon>

@@ -9,7 +9,7 @@
 
         <div>
             @if($post->isAppResource())
-            <x-aura::button.transparent route="aura.posttype.edit" :id="$slug" size="" >
+            <x-aura::button.transparent :href="route('aura.posttype.edit', $slug)" size="" >
                 <x-aura::icon icon="cog" class="mr-2" />
                 Edit Posttype
             </x-aura::button.transparent>
