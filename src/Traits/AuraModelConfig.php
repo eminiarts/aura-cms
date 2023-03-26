@@ -123,6 +123,13 @@ trait AuraModelConfig
         }
     }
 
+    public function viewUrl()
+    {
+        if ($this->getType() && $this->id) {
+            return route('aura.post.view', ['slug' => $this->getType(), 'id' => $this->id]);
+        }
+    }
+
     public function getActions()
     {
         return $this->actions;

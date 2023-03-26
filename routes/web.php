@@ -13,6 +13,7 @@ use Eminiarts\Aura\Http\Livewire\Posttype;
 use Eminiarts\Aura\Http\Livewire\Taxonomy\Create as TaxonomyCreate;
 use Eminiarts\Aura\Http\Livewire\Taxonomy\Edit as TaxonomyEdit;
 use Eminiarts\Aura\Http\Livewire\Taxonomy\Index as TaxonomyIndex;
+use Eminiarts\Aura\Http\Livewire\Taxonomy\View as TaxonomyView;
 use Eminiarts\Aura\Http\Livewire\TeamSettings;
 use Eminiarts\Aura\Http\Livewire\User\Profile;
 use Illuminate\Support\Facades\Route;
@@ -64,6 +65,7 @@ Route::domain(config('aura.domain'))
             Route::get('/taxonomies/{slug}', TaxonomyIndex::class)->name('taxonomy.index');
             Route::get('/taxonomies/{slug}/create', TaxonomyCreate::class)->name('taxonomy.create');
             Route::get('/taxonomies/{slug}/{id}/edit', TaxonomyEdit::class)->name('taxonomy.edit');
+            Route::get('/taxonomies/{slug}/{id}', TaxonomyView::class)->name('taxonomy.view');
             // Route::get('/taxonomies/{slug}/{id}', TaxonomyEdit::class)->name('taxonomy.edit');
 
             Route::get('/Attachment', AttachmentIndex::class)->name('attachment.index');

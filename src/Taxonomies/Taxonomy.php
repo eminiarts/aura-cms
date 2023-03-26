@@ -49,6 +49,11 @@ class Taxonomy extends Resource
         return route('aura.taxonomy.edit', ['slug' => $this->getType(), 'id' => $this->id]);
     }
 
+    public function viewUrl()
+    {
+        return route('aura.taxonomy.view', ['slug' => $this->getType(), 'id' => $this->id]);
+    }
+
     public static function getFields()
     {
         return [
