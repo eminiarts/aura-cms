@@ -23,7 +23,7 @@ beforeEach(function () {
     $this->taxonomyData = [
         'name' => 'Test Category',
         'slug' => 'test-category',
-        'taxonomy' => 'category',
+        'taxonomy' => 'Category',
         'description' => 'A test category',
         'parent' => 0,
         'count' => 0,
@@ -136,8 +136,9 @@ test('Tag Create Page', function () {
 test('Tag Edit Page', function () {
     $taxonomy = Taxonomy::create($this->taxonomyData);
 
+
     $this->get(route('aura.taxonomy.edit', ['Category', $taxonomy->id]))
         ->assertOk()
-        ->assertSee('Create')
+        ->assertSee('Edit')
         ->assertSeeLivewire('aura::taxonomy-create');
 });
