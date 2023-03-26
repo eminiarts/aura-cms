@@ -140,5 +140,5 @@ test('Tag Edit Page', function () {
     $this->get(route('aura.taxonomy.edit', ['Category', $taxonomy->id]))
         ->assertOk()
         ->assertSee('Edit')
-        ->assertSeeLivewire('aura::taxonomy-create');
+        ->assertSeeLivewire('aura::taxonomy-edit');
 });
