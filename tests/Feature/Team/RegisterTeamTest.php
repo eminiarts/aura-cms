@@ -5,7 +5,6 @@ use Eminiarts\Aura\Http\Livewire\AuraConfig;
 use Eminiarts\Aura\Models\Scopes\TeamScope;
 use Eminiarts\Aura\Models\User;
 use Eminiarts\Aura\Resources\Option;
-
 use function Pest\Livewire\livewire;
 
 // Before each test, create a Superadmin and login
