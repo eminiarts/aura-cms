@@ -23,7 +23,6 @@ trait SaveTerms
             if (optional($post)->taxonomyFields) {
                 $values = [];
 
-
                 foreach ($post->taxonomyFields as $key => $value) {
                     // if value is null, continue
                     if (! $value) {

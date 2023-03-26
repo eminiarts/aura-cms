@@ -4,15 +4,10 @@ namespace Eminiarts\Aura\Taxonomies;
 
 use Eminiarts\Aura\Models\Scopes\TaxonomyScope;
 use Eminiarts\Aura\Models\Scopes\TeamScope;
-use Eminiarts\Aura\Models\Taxonomy as ModelsTaxonomy;
 use Eminiarts\Aura\Models\TaxonomyMeta;
 use Eminiarts\Aura\Resource;
-use Eminiarts\Aura\Traits\CustomTable;
 use Eminiarts\Aura\Traits\InputFields;
-use Eminiarts\Aura\Traits\InteractsWithTable;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Str;
 
 class Taxonomy extends Resource
 {
@@ -35,6 +30,11 @@ class Taxonomy extends Resource
         return 'fields.taxonomy';
     }
 
+    public function createUrl()
+    {
+        return route('aura.taxonomy.create', [$this->getType()]);
+    }
+
     // public function display($key)
     // {
     //     if ($this->fields && array_key_exists($key, $this->fields->toArray())) {
@@ -47,11 +47,6 @@ class Taxonomy extends Resource
     public function editUrl()
     {
         return route('aura.taxonomy.edit', ['slug' => $this->getType(), 'id' => $this->id]);
-    }
-
-    public function createUrl()
-    {
-        return route('aura.taxonomy.create', [ $this->getType()]);
     }
 
     public static function getFields()
@@ -120,7 +115,6 @@ class Taxonomy extends Resource
     {
         return $this->hasMany(TaxonomyMeta::class, 'taxonomy_id');
     }
-
 
     /**
      * The "booted" method of the model.
