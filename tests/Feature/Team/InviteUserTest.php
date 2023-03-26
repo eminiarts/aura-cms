@@ -15,8 +15,6 @@ use Livewire\Livewire;
 
 use function Pest\Livewire\livewire;
 
-uses()->group('current');
-
 uses(RefreshDatabase::class);
 
 // Before each test, create a Superadmin and login
