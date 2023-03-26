@@ -13,13 +13,14 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class Team extends Resource
 {
-    use CustomTable;
     use HasFactory;
     use SaveFieldAttributes;
     use SaveMetaFields;
     use SaveTerms;
 
     public static ?string $slug = 'team';
+
+    public static $customTable = true;
 
     public static string $type = 'Team';
 

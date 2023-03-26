@@ -5,7 +5,7 @@ namespace Eminiarts\Aura\Traits;
 use Eminiarts\Aura\Aura;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\DB;
-use Eminiarts\Aura\Taxonomies\Taxonomy;
+use Eminiarts\Aura\Models\Taxonomy;
 
 trait AuraTaxonomies
 {
@@ -105,7 +105,6 @@ trait AuraTaxonomies
     public function taxonomies()
     {
         return $this->morphToMany(Taxonomy::class, 'relatable', 'taxonomy_relations');
-        // return $this->belongsToMany(Taxonomy::class, 'taxonomy_relations', 'relatable_id');
     }
 
     public function taxonomy($name)
