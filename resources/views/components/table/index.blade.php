@@ -77,8 +77,7 @@
                             <div class="flex space-x-2">
 
                                 <x-aura::tippy text="View" position="top" class="text-sm text-gray-400 bg-white">
-                                    <x-aura::button.transparent route="aura.post.view" :id="[$row->getType(), $row->id]"
-                                        size="xs">
+                                    <x-aura::button.transparent :href="$row->viewUrl()" size="xs">
                                         <x-slot:icon>
                                             <x-aura::icon icon="view" size="xs" />
                                         </x-slot:icon>
@@ -86,8 +85,7 @@
                                 </x-aura::tippy>
 
                                 <x-aura::tippy text="Edit" position="top" class="text-sm text-gray-400 bg-white">
-                                    <x-aura::button.transparent route="aura.post.edit" :id="[$row->getType(), $row->id]"
-                                        size="xs">
+                                    <x-aura::button.transparent :href="$row->editUrl()" size="xs">
                                         <x-slot:icon>
                                             <x-aura::icon icon="edit" size="xs" />
                                             </x-slot>

@@ -36,6 +36,7 @@ use Eminiarts\Aura\Http\Livewire\Table\Table;
 use Eminiarts\Aura\Http\Livewire\Taxonomy\Create as TaxonomyCreate;
 use Eminiarts\Aura\Http\Livewire\Taxonomy\Edit as TaxonomyEdit;
 use Eminiarts\Aura\Http\Livewire\Taxonomy\Index as TaxonomyIndex;
+use Eminiarts\Aura\Http\Livewire\Taxonomy\View as TaxonomyView;
 use Eminiarts\Aura\Http\Livewire\TeamSettings;
 use Eminiarts\Aura\Http\Livewire\User\InviteUser;
 use Eminiarts\Aura\Http\Livewire\User\Profile;
@@ -108,6 +109,7 @@ class AuraServiceProvider extends PackageServiceProvider
         Livewire::component('aura::taxonomy-index', TaxonomyIndex::class);
         Livewire::component('aura::taxonomy-edit', TaxonomyEdit::class);
         Livewire::component('aura::taxonomy-create', TaxonomyCreate::class);
+        Livewire::component('aura::taxonomy-view', TaxonomyView::class);
         Livewire::component('aura::team-settings', TeamSettings::class);
         Livewire::component('aura::invite-user', InviteUser::class);
         Livewire::component('aura::config', AuraConfig::class);
