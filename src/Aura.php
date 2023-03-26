@@ -66,19 +66,11 @@ class Aura
     {
         $resources = collect($this->getResources())->map(function ($resource) {
             return Str::afterLast($resource, '\\');
-        })->toArray();
+        });
 
-        if (in_array($slug, $resources)) {
-            $index = array_search($slug, $resources);
-
-            return app($this->getResources()[$index]);
-        }
-
-        $name = Str::slug($slug);
-
-        if (in_array($name, $resources)) {
-            $index = array_search($name, $resources);
-
+        if ($index = $resources->search(function ($item) use ($slug) {
+            return Str::slug($item) == Str::slug($slug);
+        })) {
             return app($this->getResources()[$index]);
         }
     }
