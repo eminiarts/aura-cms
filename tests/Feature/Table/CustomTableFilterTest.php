@@ -77,7 +77,7 @@ beforeEach(function () {
 // Create Resource for this test
 class CustomTableFilterModel extends Resource
 {
-    use CustomTable;
+    public static $customTable = true;
 
     public static $singularName = 'Project';
 

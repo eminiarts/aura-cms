@@ -1,6 +1,7 @@
 <?php
 
 use Eminiarts\Aura\Resources\User;
+use Eminiarts\Aura\Taxonomies\Tag;
 use Eminiarts\Aura\Taxonomies\Taxonomy;
 
 // Before each test, create a Superadmin and login
@@ -98,4 +99,20 @@ test('it returns the correct type', function () {
     $taxonomy = new Taxonomy();
 
     $this->assertEquals('Taxonomy', $taxonomy->getType());
+});
+
+test('Tag Taxonomy properties', function () {
+    $taxonomy = new Tag();
+
+    expect($taxonomy->isTaxonomy())->toBeTrue();
+
+    expect($taxonomy->usesCustomTable())->toBeTrue();
+
+    expect($taxonomy->getGlobalScopes())->toHaveCount(2);
+
+    expect($taxonomy->getGlobalScopes())->toHaveKey('Eminiarts\Aura\Models\Scopes\TeamScope');
+
+    expect($taxonomy->getGlobalScopes())->toHaveKey('Eminiarts\Aura\Models\Scopes\TaxonomyScope');
+
+    expect($taxonomy->getType())->toBe('Tag');
 });

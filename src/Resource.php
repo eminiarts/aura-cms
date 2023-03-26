@@ -297,7 +297,9 @@ class Resource extends Model
      */
     protected static function booted()
     {
-        static::addGlobalScope(new TypeScope());
+        if (!static::$customTable) {
+            static::addGlobalScope(new TypeScope());
+        }
 
         static::addGlobalScope(new TeamScope());
 

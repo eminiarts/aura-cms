@@ -9,7 +9,7 @@ use Eminiarts\Aura\Traits\CustomTable;
 
 class Option extends Resource
 {
-    use CustomTable;
+    public static $customTable = true;
 
     public static ?string $slug = 'option';
 

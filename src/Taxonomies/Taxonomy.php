@@ -16,7 +16,7 @@ use Illuminate\Support\Str;
 
 class Taxonomy extends Resource
 {
-    use CustomTable;
+    public static $customTable = true;
 
     public static $hierarchical = false;
 
@@ -129,7 +129,7 @@ class Taxonomy extends Resource
      */
     protected static function booted()
     {
-        // static::addGlobalScope(new TaxonomyScope());
+        static::addGlobalScope(new TaxonomyScope());
         static::addGlobalScope(new TeamScope());
 
         static::saving(function ($taxonomy) {

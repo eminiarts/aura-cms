@@ -26,7 +26,7 @@ trait AuraModelConfig
 
     protected $baseFillable = [];
 
-    protected static bool $customTable = false;
+    public static $customTable = false;
 
     public static $taxonomy = false;
 
@@ -391,6 +391,7 @@ trait AuraModelConfig
 
     public static function usesCustomTable(): bool
     {
+        // dd('usesCustomTable', static::$customTable, static::$taxonomy);
         return static::$customTable;
     }
 
