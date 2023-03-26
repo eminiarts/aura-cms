@@ -136,7 +136,6 @@ test('Tag Create Page', function () {
 test('Tag Edit Page', function () {
     $taxonomy = Taxonomy::create($this->taxonomyData);
 
-
     $this->get(route('aura.taxonomy.edit', ['Category', $taxonomy->id]))
         ->assertOk()
         ->assertSee('Edit')
