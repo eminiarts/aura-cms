@@ -119,7 +119,8 @@ test('Tag Taxonomy properties', function () {
 
 
 test('Tag Index Page', function () {
-    $this->get(route('aura.taxonomies.index', 'tag'))
-        ->assertStatus(200)
-        ->assertSee('Tags');
+    $this->get(route('aura.taxonomy.index', 'Tag'))
+        ->assertOk()
+        ->assertSee('Tags')
+        ->assertSeeLivewire('aura::taxonomy-index');
 });
