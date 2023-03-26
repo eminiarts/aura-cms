@@ -2,12 +2,14 @@
     <form method="POST" action="{{ route('aura.register') }}">
         @csrf
 
-        <!-- Name -->
+        @if(config('aura.teams'))
+        <!-- Team -->
         <div>
             <x-aura::input-label for="team" :value="__('Team')" />
             <x-aura::text-input id="team" class="block mt-1 w-full bg-gray-800" type="text" name="team" :value="old('name')" required autofocus />
             <x-aura::input-error :messages="$errors->get('team')" class="mt-2" />
         </div>
+        @endif
      
         <!-- Name -->
         <div class="mt-4">

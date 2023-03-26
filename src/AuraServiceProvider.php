@@ -68,7 +68,10 @@ class AuraServiceProvider extends PackageServiceProvider
 
     public function bootGate()
     {
-        Gate::policy(Team::class, TeamPolicy::class);
+        if (config('aura.teams')) {
+            Gate::policy(Team::class, TeamPolicy::class);
+        }
+
         Gate::policy(Resource::class, ResourcePolicy::class);
         Gate::policy(User::class, UserPolicy::class);
 
@@ -206,10 +209,15 @@ class AuraServiceProvider extends PackageServiceProvider
             \Eminiarts\Aura\Resources\Post::class,
             \Eminiarts\Aura\Resources\Permission::class,
             \Eminiarts\Aura\Resources\Role::class,
-            \Eminiarts\Aura\Resources\Team::class,
-            \Eminiarts\Aura\Resources\TeamInvitation::class,
             \Eminiarts\Aura\Resources\User::class,
         ]);
+
+        if (config('aura.teams')) {
+            Aura::registerResources([
+                \Eminiarts\Aura\Resources\Team::class,
+                \Eminiarts\Aura\Resources\TeamInvitation::class,
+            ]);
+        }
 
         Aura::registerTaxonomies([
             \Eminiarts\Aura\Taxonomies\Tag::class,
