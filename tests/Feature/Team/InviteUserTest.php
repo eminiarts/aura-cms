@@ -12,6 +12,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\URL;
 use Livewire\Livewire;
+
 use function Pest\Livewire\livewire;
 
 uses()->group('current');
@@ -60,7 +61,7 @@ test('user can be invited', function () {
 });
 
 test('user gets correct role', function () {
-});
+})->todo();
 
 test('Team Invitation can be created', function () {
     $team = $this->user->currentTeam;

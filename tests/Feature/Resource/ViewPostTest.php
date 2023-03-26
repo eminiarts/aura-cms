@@ -2,6 +2,7 @@
 
 use Eminiarts\Aura\Resources\Post;
 use Eminiarts\Aura\Resources\User;
+
 use function Pest\Livewire\livewire;
 
 // Before each test, create a Superadmin and login
@@ -66,4 +67,4 @@ test('post view - can be customized', function () {
     $component = livewire('aura::post-view', [$post->type, $post->id]);
 
     // fake view exists in resources: aura/post/view.blade.php
-});
+})->todo();
