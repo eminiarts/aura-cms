@@ -43,8 +43,13 @@ test('media page can be rendered', function () {
     // With exception handling
     $this->withoutExceptionHandling();
 
+
     // Visit the Attachment Index Page
-    $this->get(route('aura.post.index', $attachment->type))
+    $response = $this->get(route('aura.post.index', $attachment->type));
+
+    // Visit the Attachment Index Page
+    $response
+    ->assertOk()
     // Custom Index Page
     ->assertSeeLivewire('aura::attachment-index')
     // Media Uploader

@@ -68,21 +68,20 @@ class Aura
             return Str::afterLast($resource, '\\');
         });
 
-        if ($index = $resources->search(function ($item) use ($slug) {
+        $index = $resources->search(function ($item) use ($slug) {
             return Str::slug($item) == Str::slug($slug);
-        })) {
+        });
+
+        if ($index !== false) {
             return app($this->getResources()[$index]);
         }
+
+        return null;
     }
 
     public static function findTaxonomyBySlug($slug)
     {
         return app('Eminiarts\Aura\Taxonomies\\'.str($slug)->title);
-    }
-
-    public static function findTemplateBySlug($slug)
-    {
-        return app('Eminiarts\Aura\Templates\\'.str($slug)->title);
     }
 
     public function getAppFields()
@@ -268,8 +267,6 @@ class Aura
             ->map(fn ($r) => app($r)->navigation())
             ->filter(fn ($r) => $r['showInNavigation'] ?? true)
             ->sortBy('sort');
-
-        // filter if $resource['showInNavigation'] is false
 
         $grouped = array_reduce(collect($resources)->toArray(), function ($carry, $item) {
             if ($item['dropdown'] !== false) {
