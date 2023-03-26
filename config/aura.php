@@ -39,6 +39,19 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Teams & Multi-tenancy
+    |--------------------------------------------------------------------------
+    |
+    | If you change this to false, you will not be able to create teams.
+    | You will need to rerun your migrations to remove the teams table.
+    | Run `php artisan migrate:fresh`.
+    |
+    */
+
+    'teams' => true,
+
+    /*
+    |--------------------------------------------------------------------------
     | Resources
     |--------------------------------------------------------------------------
     |

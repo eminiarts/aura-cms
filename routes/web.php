@@ -34,12 +34,6 @@ Route::domain(config('aura.domain'))
         //     Route::get('/assets/{file}', AssetController::class)->where('file', '.*')->name('asset');
         // });
 
-        Route::get('/test', function () {
-            dd(config('aura'));
-
-            return config('aura.path');
-        });
-
         Route::prefix(config('aura.path'))->group(function () {
             Route::get('/', function () {
                 return view('aura::dashboard');
