@@ -10,6 +10,8 @@ trait SaveTerms
     {
         static::saving(function ($post) {
             if (isset($post->attributes['terms'])) {
+                // dd('saving', $post->attributes['terms']);
+
                 $post->saveTaxonomyFields($post->attributes['terms']);
 
                 unset($post->attributes['terms']);
@@ -18,8 +20,9 @@ trait SaveTerms
 
         static::saved(function ($post) {
             // taxonomyFields
-            if (isset($post->taxonomyFields)) {
+            if (optional($post)->taxonomyFields) {
                 $values = [];
+
 
                 foreach ($post->taxonomyFields as $key => $value) {
                     // if value is null, continue
@@ -45,6 +48,8 @@ trait SaveTerms
                 });
 
                 $post->taxonomies()->sync($values);
+
+                // dd('saved', $values, $post->fresh()->taxonomies);
 
                 unset($post->attributes['taxonomyFields']);
             }

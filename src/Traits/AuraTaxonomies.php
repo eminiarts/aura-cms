@@ -5,7 +5,7 @@ namespace Eminiarts\Aura\Traits;
 use Eminiarts\Aura\Aura;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\DB;
-use Eminiarts\Aura\Taxonomies\Taxonomy;
+use Eminiarts\Aura\Models\Taxonomy;
 
 trait AuraTaxonomies
 {
@@ -43,6 +43,7 @@ trait AuraTaxonomies
      */
     public function getTermsAttribute()
     {
+        // dd('terms', $this->taxonomies);
         $terms = $this->taxonomies->groupBy(function ($taxonomy) {
             return Str::slug($taxonomy->taxonomy);
         })->map(function ($group) {
