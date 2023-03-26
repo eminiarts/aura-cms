@@ -47,7 +47,9 @@ return new class () extends Migration {
             $table->text('two_factor_recovery_codes')->nullable();
             $table->timestamp('two_factor_confirmed_at')->nullable();
             $table->rememberToken();
-            $table->foreignId('current_team_id')->nullable();
+            if(config('aura.teams')) {
+                $table->foreignId('current_team_id')->nullable();
+            }
             $table->string('profile_photo_path', 2048)->nullable();
             $table->timestamps();
         });
@@ -92,33 +94,34 @@ return new class () extends Migration {
             $table->timestamp('created_at')->nullable();
         });
 
-        Schema::create('teams', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('user_id')->index();
-            $table->string('name');
-            $table->boolean('personal_team');
-            $table->timestamps();
-        });
+        if(config('aura.teams')){
+            Schema::create('teams', function (Blueprint $table) {
+                $table->id();
+                $table->foreignId('user_id')->index();
+                $table->string('name');
+                $table->boolean('personal_team');
+                $table->timestamps();
+            });
 
-        Schema::create('team_user', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('team_id');
-            $table->foreignId('user_id');
-            $table->string('role')->nullable();
-            $table->timestamps();
-            $table->unique(['team_id', 'user_id']);
-        });
+            Schema::create('team_user', function (Blueprint $table) {
+                $table->id();
+                $table->foreignId('team_id');
+                $table->foreignId('user_id');
+                $table->string('role')->nullable();
+                $table->timestamps();
+                $table->unique(['team_id', 'user_id']);
+            });
 
+            Schema::create('team_invitations', function (Blueprint $table) {
+                $table->id();
+                $table->foreignId('team_id')->constrained()->cascadeOnDelete();
+                $table->string('email');
+                $table->string('role')->nullable();
+                $table->timestamps();
 
-        Schema::create('team_invitations', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('team_id')->constrained()->cascadeOnDelete();
-            $table->string('email');
-            $table->string('role')->nullable();
-            $table->timestamps();
-
-            $table->unique(['team_id', 'email']);
-        });
+                $table->unique(['team_id', 'email']);
+            });
+        }
 
         Schema::create('posts', function (Blueprint $table) {
             $table->id();
@@ -130,7 +133,9 @@ return new class () extends Migration {
             $table->foreignId('user_id')->nullable()->index();
             $table->foreignId('parent_id')->nullable()->index();
             $table->integer('order')->nullable();
-            $table->foreignId('team_id')->index();
+            if(config('aura.teams')){
+                $table->foreignId('team_id')->index();
+            }
             $table->timestamps();
             $table->softDeletes();
 
@@ -159,7 +164,9 @@ return new class () extends Migration {
             $table->longtext('description');
             $table->foreignId('parent');
             $table->bigInteger('count');
-            $table->foreignId('team_id')->index();
+            if(config('aura.teams')){
+                $table->foreignId('team_id')->index();
+            }
             $table->timestamps();
             $table->softDeletes();
         });
@@ -174,10 +181,16 @@ return new class () extends Migration {
             $table->id();
             $table->string('name');
             $table->longText('value');
-            $table->foreignId('team_id');
+            if(config('aura.teams')){
+                $table->foreignId('team_id');
+            }
             $table->timestamps();
 
-            $table->index(['team_id', 'name']);
+            if(config('aura.teams')) {
+                $table->index(['team_id', 'name']);
+            } else {
+                $table->index(['name']);
+            }
         });
 
         Schema::create('user_meta', function (Blueprint $table) {
@@ -185,12 +198,16 @@ return new class () extends Migration {
             $table->foreignId('user_id');
             $table->string('key')->nullable();
             $table->longText('value')->nullable();
-            $table->foreignId('team_id')->index();
+            if(config('aura.teams')){
+                $table->foreignId('team_id')->index();
+            }
         });
 
         Schema::create('team_meta', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('team_id');
+            if(config('aura.teams')) {
+                $table->foreignId('team_id')->index();
+            }
             $table->string('key')->nullable();
             $table->longText('value')->nullable();
         });
