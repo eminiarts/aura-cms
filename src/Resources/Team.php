@@ -5,7 +5,6 @@ namespace Eminiarts\Aura\Resources;
 use Eminiarts\Aura\Database\Factories\TeamFactory;
 use Eminiarts\Aura\Models\TeamMeta;
 use Eminiarts\Aura\Resource;
-use Eminiarts\Aura\Traits\CustomTable;
 use Eminiarts\Aura\Traits\SaveFieldAttributes;
 use Eminiarts\Aura\Traits\SaveMetaFields;
 use Eminiarts\Aura\Traits\SaveTerms;
@@ -18,9 +17,9 @@ class Team extends Resource
     use SaveMetaFields;
     use SaveTerms;
 
-    public static ?string $slug = 'team';
-
     public static $customTable = true;
+
+    public static ?string $slug = 'team';
 
     public static string $type = 'Team';
 

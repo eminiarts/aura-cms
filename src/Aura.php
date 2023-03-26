@@ -76,7 +76,6 @@ class Aura
             return app($this->getResources()[$index]);
         }
 
-        return null;
     }
 
     public static function findTaxonomyBySlug($slug)

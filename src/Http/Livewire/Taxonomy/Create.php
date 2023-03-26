@@ -13,9 +13,9 @@ class Create extends ModalComponent
     use AuthorizesRequests;
     use InteractsWithFields;
 
-    public $model;
-
     public $inModal = false;
+
+    public $model;
 
     public $post;
 
@@ -58,7 +58,6 @@ class Create extends ModalComponent
         $model = $this->model->create($this->post['fields']);
 
         // dd('hier', $model);
-
 
         $this->closeModal();
 

@@ -240,8 +240,6 @@ class Resource extends Model
 
         $possibleRelationMethods = [$key, Str::camel($key)];
 
-
-
         foreach ($possibleRelationMethods as $method) {
             if ($method == 'taxonomy') {
                 continue;
@@ -297,7 +295,7 @@ class Resource extends Model
      */
     protected static function booted()
     {
-        if (!static::$customTable) {
+        if (! static::$customTable) {
             static::addGlobalScope(new TypeScope());
         }
 
