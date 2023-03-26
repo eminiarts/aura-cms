@@ -1,6 +1,7 @@
 <?php
 
 use Eminiarts\Aura\Facades\Aura;
+use Eminiarts\Aura\Taxonomies\Tag;
 
 uses()->group('current');
 
@@ -17,6 +18,8 @@ test('taxonomy folder in app gets loaded correctly', function () {
     // Todo: add test
 })->todo();
 
-test('findtaxonomyBySlug returns correct taxonomy', function () {
-    // Todo: add test
-})->todo();
+test('Aura::findTaxonomyBySlug()', function () {
+    $tag = Aura::findTaxonomyBySlug('Tag');
+
+    expect($tag)->toBeInstanceOf(Tag::class);
+});

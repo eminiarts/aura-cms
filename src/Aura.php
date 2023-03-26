@@ -75,12 +75,21 @@ class Aura
         if ($index !== false) {
             return app($this->getResources()[$index]);
         }
-
     }
 
-    public static function findTaxonomyBySlug($slug)
+    public function findTaxonomyBySlug($slug)
     {
-        return app('Eminiarts\Aura\Taxonomies\\'.str($slug)->title);
+        $taxonomies = collect($this->getTaxonomies())->map(function ($resource) {
+            return Str::afterLast($resource, '\\');
+        });
+
+        $index = $taxonomies->search(function ($item) use ($slug) {
+            return Str::slug($item) == Str::slug($slug);
+        });
+
+        if ($index !== false) {
+            return app($this->getTaxonomies()[$index]);
+        }
     }
 
     public function getAppFields()
