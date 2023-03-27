@@ -12,8 +12,8 @@ use Livewire\Livewire;
 
 uses(RefreshDatabase::class);
 
-// current
-uses()->group('current');
+// // current
+// uses()->group('current');
 
 // Before each test, create a Superadmin and login
 beforeEach(function () {

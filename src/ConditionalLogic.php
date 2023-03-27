@@ -19,6 +19,8 @@ class ConditionalLogic
             return true;
         }
 
+        ray('checkCondition', $field, $conditions);
+
         $show = true;
 
         foreach ($conditions as $condition) {
@@ -26,6 +28,15 @@ class ConditionalLogic
                 // dd('break here', $model, $field);
                 $show = false;
                 break;
+            }
+
+            // if condition is a closure, run it
+            if ($condition instanceof \Closure) {
+                $show = $condition($model);
+
+                if ($show === false) {
+                    break;
+                }
             }
 
             // if $condition is not an array, break
