@@ -82,22 +82,16 @@ beforeEach(function () {
 });
 
 it('can mount the posttype component', function () {
-    $this->withoutExceptionHandling();
-
     Livewire::test(PosttypeFake::class, ['slug' => 'Model'])->assertStatus(200);
 });
 
 it('can add new tab', function () {
-    $this->withoutExceptionHandling();
-
     Livewire::test(PosttypeFake::class, ['slug' => 'Model'])
     ->call('addNewTab')
     ->assertEmitted('openSlideOver');
 });
 
 it('current posttype fields', function () {
-    $this->withoutExceptionHandling();
-
     $component = Livewire::test(PosttypeFake::class, ['slug' => 'Model']);
 
     expect($component->fieldsArray)->toBeArray();
@@ -105,8 +99,6 @@ it('current posttype fields', function () {
 });
 
 it('can add fields', function () {
-    $this->withoutExceptionHandling();
-
     $component = Livewire::test(PosttypeFake::class, ['slug' => 'Model'])
     ->call('addField', ...[2, 'new_field', 'Eminiarts\\Aura\\Fields\\Text', '']);
 
@@ -125,8 +117,6 @@ it('can add fields', function () {
 });
 
 it('can delete fields', function () {
-    $this->withoutExceptionHandling();
-
     $component = Livewire::test(PosttypeFake::class, ['slug' => 'Model']);
 
     $component->call('deleteField', ['slug' => 'panel-1']);
@@ -140,8 +130,6 @@ it('can delete fields', function () {
 });
 
 it('can add template fields', function () {
-    $this->withoutExceptionHandling();
-
     // Livewire::test(Posttype::class, ['slug' => 'Model'])
     //     ->call('addTemplateFields', ['slug' => 'my-template'])
     //     ->assertSet('fieldsArray', [['name' => 'Name 1', 'type' => 'Type 1'], ['name' => 'Name 2', 'type' => 'Type 2']])
@@ -149,7 +137,6 @@ it('can add template fields', function () {
 });
 
 it('can save the posttype component', function () {
-    $this->withoutExceptionHandling();
     $postTypeFields = [
         'type' => 'my-type',
         'slug' => 'my-slug',
