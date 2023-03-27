@@ -66,6 +66,19 @@ test('Aura without teams - table columns', function () {
     expect(Schema::hasColumn('user_meta', 'team_id'))->toBeFalse();
 });
 
+test('Aura without teams - options table', function () {
+    // Set config to not use teams
+    config(['aura.teams' => false]);
+
+    expect(config('aura.teams'))->toBeFalse();
+
+    // Rerun migrations
+    $this->artisan('migrate:fresh');
+
+    // expect options table to exist
+    expect(Schema::hasTable('options'))->toBeTrue();
+});
+
 test('Aura without teams - pages', function () {
     // Set config to not use teams
     config(['aura.teams' => false]);
