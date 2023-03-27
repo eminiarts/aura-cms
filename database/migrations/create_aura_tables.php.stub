@@ -121,6 +121,15 @@ return new class () extends Migration {
 
                 $table->unique(['team_id', 'email']);
             });
+              
+            Schema::create('team_meta', function (Blueprint $table) {
+                $table->id();
+                if(config('aura.teams')) {
+                    $table->foreignId('team_id')->index();
+                }
+                $table->string('key')->nullable();
+                $table->longText('value')->nullable();
+            });
         }
 
         Schema::create('posts', function (Blueprint $table) {
@@ -203,16 +212,6 @@ return new class () extends Migration {
             }
         });
 
-        Schema::create('team_meta', function (Blueprint $table) {
-            $table->id();
-            if(config('aura.teams')) {
-                $table->foreignId('team_id')->index();
-            }
-            $table->string('key')->nullable();
-            $table->longText('value')->nullable();
-        });
-
-
         Schema::create('notifications', function (Blueprint $table) {
             $table->uuid('id')->primary();
             $table->string('type');
@@ -221,7 +220,6 @@ return new class () extends Migration {
             $table->timestamp('read_at')->nullable();
             $table->timestamps();
         });
-
 
         Schema::create('post_job', function (Blueprint $table) {
             $table->id();
