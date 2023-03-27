@@ -9,7 +9,6 @@ uses(RefreshDatabase::class);
 // current
 uses()->group('current');
 
-
 // Before each test, create a Superadmin and login
 beforeEach(function () {
     // Create User
@@ -73,7 +72,11 @@ test('Aura without teams - options table', function () {
     expect(config('aura.teams'))->toBeFalse();
 
     // Rerun migrations
-    $this->artisan('migrate:fresh');
+    $this->refreshTestDatabase();
+    $this->getEnvironmentSetUp($this->app);
+
+    // get all db tables
+    $tables = Schema::getConnection()->getDoctrineSchemaManager()->listTableNames();
 
     // expect options table to exist
     expect(Schema::hasTable('options'))->toBeTrue();
@@ -86,7 +89,10 @@ test('Aura without teams - pages', function () {
     expect(config('aura.teams'))->toBeFalse();
 
     // Rerun migrations
-    $this->artisan('migrate:fresh');
+    $this->refreshTestDatabase();
+    $this->getEnvironmentSetUp($this->app);
+
+
 
     // expect pages to be accessible
     $this->get(config('aura.path'))->assertOk();
