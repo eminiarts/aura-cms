@@ -6,8 +6,6 @@ use Eminiarts\Aura\Resources\User;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\File;
 
-uses()->group('current');
-
 test('resource folder in app gets loaded correctly', function () {
     // Delete app/Aura/Resources/TestPosttype.php if it exists
     File::delete(app_path('Aura/Resources/TestPosttype.php'));

@@ -4,8 +4,6 @@ use Eminiarts\Aura\Resources\User;
 use Eminiarts\Aura\Taxonomies\Tag;
 use Eminiarts\Aura\Taxonomies\Taxonomy;
 
-uses()->group('current');
-
 // Before each test, create a Superadmin and login
 beforeEach(function () {
     // Create User
