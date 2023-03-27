@@ -154,5 +154,7 @@ test('Posttype Builder not accessible if fields contain closure', function () {
     Aura::fake();
     Aura::setModel($model);
 
+    expect($model->fieldsHaveClosures())->toBeTrue();
+
     Livewire::test(PosttypeFake::class, ['slug' => 'Model'])->assertStatus(403);
 });

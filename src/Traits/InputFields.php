@@ -253,6 +253,27 @@ trait InputFields
         return $this->sendThroughPipeline($this->mappedFields(), $pipes);
     }
 
+     public function fieldsHaveClosures($fields)
+     {
+         foreach ($fields as $field) {
+             if (isset($field['conditional_logic']) && is_array($field['conditional_logic'])) {
+                 foreach ($field['conditional_logic'] as $conditional) {
+                     if ($conditional instanceof \Closure) {
+                         return true;
+                     }
+                 }
+             }
+
+             if (isset($field['fields']) && is_array($field['fields'])) {
+                 if ($this->fieldsHaveClosures($field['fields'])) {
+                     return true;
+                 }
+             }
+         }
+
+         return false;
+     }
+
     // Display the value of a field in the index view
     // $this->displayEmailField()
     // $this->getEmailField()
