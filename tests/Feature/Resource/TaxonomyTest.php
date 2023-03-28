@@ -1,7 +1,10 @@
 <?php
 
 use Eminiarts\Aura\Resources\User;
+use Eminiarts\Aura\Taxonomies\Tag;
 use Eminiarts\Aura\Taxonomies\Taxonomy;
+
+uses()->group('current');
 
 // Before each test, create a Superadmin and login
 beforeEach(function () {
@@ -20,7 +23,7 @@ beforeEach(function () {
     $this->taxonomyData = [
         'name' => 'Test Category',
         'slug' => 'test-category',
-        'taxonomy' => 'category',
+        'taxonomy' => 'Category',
         'description' => 'A test category',
         'parent' => 0,
         'count' => 0,
@@ -96,7 +99,45 @@ test('it sets default values when saving a taxonomy instance', function () {
 
 test('it returns the correct type', function () {
     $taxonomy = new Taxonomy();
-    $taxonomy::$type = 'test-type';
 
-    $this->assertEquals('test-type', $taxonomy->getType());
+    $this->assertEquals('Taxonomy', $taxonomy->getType());
+});
+
+test('Tag Taxonomy properties', function () {
+    $taxonomy = new Tag();
+
+    expect($taxonomy->isTaxonomy())->toBeTrue();
+
+    expect($taxonomy->usesCustomTable())->toBeTrue();
+
+    expect($taxonomy->getGlobalScopes())->toHaveCount(2);
+
+    expect($taxonomy->getGlobalScopes())->toHaveKey('Eminiarts\Aura\Models\Scopes\TeamScope');
+
+    expect($taxonomy->getGlobalScopes())->toHaveKey('Eminiarts\Aura\Models\Scopes\TaxonomyScope');
+
+    expect($taxonomy->getType())->toBe('Tag');
+});
+
+
+test('Tag Index Page', function () {
+    $this->get(route('aura.taxonomy.index', 'Tag'))
+        ->assertOk()
+        ->assertSee('Tags')
+        ->assertSeeLivewire('aura::taxonomy-index');
+});
+
+test('Tag Create Page', function () {
+    $this->get(route('aura.taxonomy.create', 'Tag'))
+        ->assertOk()
+        ->assertSee('Create')
+        ->assertSeeLivewire('aura::taxonomy-create');
+});
+test('Tag Edit Page', function () {
+    $taxonomy = Taxonomy::create($this->taxonomyData);
+
+    $this->get(route('aura.taxonomy.edit', ['Category', $taxonomy->id]))
+        ->assertOk()
+        ->assertSee('Edit')
+        ->assertSeeLivewire('aura::taxonomy-edit');
 });

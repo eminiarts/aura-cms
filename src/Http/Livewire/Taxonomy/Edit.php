@@ -2,11 +2,11 @@
 
 namespace Eminiarts\Aura\Http\Livewire\Taxonomy;
 
-use Eminiarts\Aura\Aura;
+use Livewire\Component;
+use Illuminate\Support\Arr;
+use Eminiarts\Aura\Facades\Aura;
 use Eminiarts\Aura\Traits\InteractsWithFields;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
-use Illuminate\Support\Arr;
-use Livewire\Component;
 
 class Edit extends Component
 {
@@ -14,6 +14,8 @@ class Edit extends Component
     use InteractsWithFields;
 
     public $slug;
+
+    public $inModal = false;
 
     public $taxonomy;
 
@@ -29,6 +31,11 @@ class Edit extends Component
 
         // dd($this->post);
         $this->post['fields'] = $this->model->toArray();
+    }
+
+    public function getActionsProperty()
+    {
+        return $this->model->getActions();
     }
 
     public function render()

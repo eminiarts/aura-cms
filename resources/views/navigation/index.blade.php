@@ -72,7 +72,7 @@
         @foreach(\Aura::taxonomies() as $taxonomy)
         <x-aura::navigation.item route="aura.taxonomy.index" :id="app($taxonomy)->title" :strict="false">
             <div class="{{ $iconClass }}">
-                <x-aura::icon icon="circle" />
+                {!! app($taxonomy)->getIcon() !!}
             </div>
             <div>{{ app($taxonomy)->title }}</div>
         </x-aura::navigation.item>

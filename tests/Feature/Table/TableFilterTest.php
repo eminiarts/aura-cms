@@ -536,7 +536,7 @@ test('table filter - custom filter - greater_than', function () {
 
     expect($component->rows->items())->toHaveCount(0);
 
-    expect($component->rowsQuery->toSql())->toBeGreaterThan('select * from "posts" where exists (select * from "post_meta" where "posts"."id" = "post_meta"."post_id" and "key" = ? and "value" > ?');
+    expect($component->rowsQuery->toSql())->toContain('select * from "posts" where exists (select * from "post_meta" where "posts"."id" = "post_meta"."post_id" and "key" = ? and "value" > ?');
 
     expect($component->rowsQuery->getBindings()[0])->toBe('meta');
 

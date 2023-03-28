@@ -5,7 +5,6 @@ use Eminiarts\Aura\Models\Scopes\TeamScope;
 use Eminiarts\Aura\Models\User;
 use Eminiarts\Aura\Resource;
 use Eminiarts\Aura\Resources\Post;
-use Eminiarts\Aura\Traits\CustomTable;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Schema;
@@ -77,7 +76,7 @@ beforeEach(function () {
 // Create Resource for this test
 class CustomTableFilterModel extends Resource
 {
-    use CustomTable;
+    public static $customTable = true;
 
     public static $singularName = 'Project';
 

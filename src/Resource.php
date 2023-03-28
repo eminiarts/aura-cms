@@ -241,6 +241,10 @@ class Resource extends Model
         $possibleRelationMethods = [$key, Str::camel($key)];
 
         foreach ($possibleRelationMethods as $method) {
+            if ($method == 'taxonomy') {
+                continue;
+            }
+
             if (in_array($method, $modelMethods) && ($this->{$method}() instanceof \Illuminate\Database\Eloquent\Relations\Relation)) {
                 return true;
             }
@@ -291,7 +295,9 @@ class Resource extends Model
      */
     protected static function booted()
     {
-        static::addGlobalScope(new TypeScope());
+        if (! static::$customTable) {
+            static::addGlobalScope(new TypeScope());
+        }
 
         static::addGlobalScope(new TeamScope());
 

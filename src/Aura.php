@@ -66,31 +66,30 @@ class Aura
     {
         $resources = collect($this->getResources())->map(function ($resource) {
             return Str::afterLast($resource, '\\');
-        })->toArray();
+        });
 
-        if (in_array($slug, $resources)) {
-            $index = array_search($slug, $resources);
+        $index = $resources->search(function ($item) use ($slug) {
+            return Str::slug($item) == Str::slug($slug);
+        });
 
-            return app($this->getResources()[$index]);
-        }
-
-        $name = Str::slug($slug);
-
-        if (in_array($name, $resources)) {
-            $index = array_search($name, $resources);
-
+        if ($index !== false) {
             return app($this->getResources()[$index]);
         }
     }
 
-    public static function findTaxonomyBySlug($slug)
+    public function findTaxonomyBySlug($slug)
     {
-        return app('Eminiarts\Aura\Taxonomies\\'.str($slug)->title);
-    }
+        $taxonomies = collect($this->getTaxonomies())->map(function ($resource) {
+            return Str::afterLast($resource, '\\');
+        });
 
-    public static function findTemplateBySlug($slug)
-    {
-        return app('Eminiarts\Aura\Templates\\'.str($slug)->title);
+        $index = $taxonomies->search(function ($item) use ($slug) {
+            return Str::slug($item) == Str::slug($slug);
+        });
+
+        if ($index !== false) {
+            return app($this->getTaxonomies()[$index]);
+        }
     }
 
     public function getAppFields()
@@ -277,8 +276,6 @@ class Aura
             ->filter(fn ($r) => $r['showInNavigation'] ?? true)
             ->sortBy('sort');
 
-        // filter if $resource['showInNavigation'] is false
-
         $grouped = array_reduce(collect($resources)->toArray(), function ($carry, $item) {
             if ($item['dropdown'] !== false) {
                 if (! isset($carry[$item['dropdown']])) {
@@ -366,13 +363,6 @@ class Aura
                 ->replace(['/', '.php'], ['\\', '']);
             })->filter(fn (string $class): bool => $class != 'Taxonomy')->toArray();
         });
-    }
-
-    public static function taxonomiesFor($posttype)
-    {
-        return collect(static::taxonomies())->filter(function ($taxonomy) use ($posttype) {
-            return in_array($posttype, static::findTaxonomyBySlug($taxonomy)::$attachTo);
-        })->map(fn ($taxonomy) => static::findTaxonomyBySlug($taxonomy));
     }
 
     public static function templates()

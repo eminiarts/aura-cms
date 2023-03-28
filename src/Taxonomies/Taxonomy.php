@@ -4,29 +4,18 @@ namespace Eminiarts\Aura\Taxonomies;
 
 use Eminiarts\Aura\Models\Scopes\TaxonomyScope;
 use Eminiarts\Aura\Models\Scopes\TeamScope;
-use Eminiarts\Aura\Models\Taxonomy as ModelsTaxonomy;
 use Eminiarts\Aura\Models\TaxonomyMeta;
+use Eminiarts\Aura\Resource;
 use Eminiarts\Aura\Traits\InputFields;
-use Eminiarts\Aura\Traits\InteractsWithTable;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Str;
 
-class Taxonomy extends ModelsTaxonomy
+class Taxonomy extends Resource
 {
-    use HasFactory;
-    use InputFields;
-    use InteractsWithTable;
-
-    public array $bulkActions = [];
+    public static $customTable = true;
 
     public static $hierarchical = false;
 
-    public static $pluralName = null;
-
-    public static $singularName = null;
-
-    public static string $type = '';
+    public static $taxonomy = true;
 
     protected $fillable = ['name', 'slug', 'taxonomy', 'description', 'parent', 'count'];
 
@@ -34,36 +23,35 @@ class Taxonomy extends ModelsTaxonomy
 
     protected $table = 'taxonomies';
 
+    protected static string $type = 'Taxonomy';
+
     public function component()
     {
         return 'fields.taxonomy';
     }
 
-    public function display($key)
+    public function createUrl()
     {
-        if ($this->fields && array_key_exists($key, $this->fields->toArray())) {
-            return $this->displayFieldValue($key, $this->fields[$key]);
-        }
-
-        return $this->{$key};
+        return route('aura.taxonomy.create', [$this->getType()]);
     }
+
+    // public function display($key)
+    // {
+    //     if ($this->fields && array_key_exists($key, $this->fields->toArray())) {
+    //         return $this->displayFieldValue($key, $this->fields[$key]);
+    //     }
+
+    //     return $this->{$key};
+    // }
 
     public function editUrl()
     {
-        return route('taxonomy.edit', ['slug' => $this->taxonomy, 'id' => $this->id]);
+        return route('aura.taxonomy.edit', ['slug' => $this->getType(), 'id' => $this->id]);
     }
 
-    public function field($field)
+    public function viewUrl()
     {
-        // $this->field = $field;
-        $this->withAttributes($field);
-
-        return $this;
-    }
-
-    public function getBulkActions()
-    {
-        return $this->bulkActions;
+        return route('aura.taxonomy.view', ['slug' => $this->getType(), 'id' => $this->id]);
     }
 
     public static function getFields()
@@ -106,12 +94,12 @@ class Taxonomy extends ModelsTaxonomy
         ];
     }
 
-    public function getHeaders()
-    {
-        return $this->inputFields()
-            ->pluck('name', 'slug')
-            ->prepend('ID', 'id');
-    }
+    // public function getHeaders()
+    // {
+    //     return $this->inputFields()
+    //         ->pluck('name', 'slug')
+    //         ->prepend('ID', 'id');
+    // }
 
     public static function getName(): ?string
     {
@@ -123,11 +111,6 @@ class Taxonomy extends ModelsTaxonomy
         return str(get_class($this))->afterLast('\\');
     }
 
-    public static function getType()
-    {
-        return static::$type;
-    }
-
     /**
      * Get the Meta Relation
      *
@@ -136,21 +119,6 @@ class Taxonomy extends ModelsTaxonomy
     public function meta()
     {
         return $this->hasMany(TaxonomyMeta::class, 'taxonomy_id');
-    }
-
-    public function pluralName(): string
-    {
-        return static::$pluralName ?? Str::plural($this->singularName());
-    }
-
-    public function rowView()
-    {
-        return 'aura::components.table.row';
-    }
-
-    public function singularName(): string
-    {
-        return static::$singularName ?? Str::title(static::$slug);
     }
 
     /**
@@ -188,10 +156,8 @@ class Taxonomy extends ModelsTaxonomy
                 $taxonomy->team_id = auth()->user()->current_team_id;
             }
 
-            // Temporary Fix
-            if (! $taxonomy->team_id) {
-                $taxonomy->team_id = 1;
-            }
+            unset($taxonomy->user_id);
+            unset($taxonomy->type);
         });
     }
 }

@@ -23,7 +23,7 @@ beforeEach(function () {
 });
 
 test('team can be registered', function () {
-});
+})->todo();
 
 test('registration config can be disabled', function () {
     // test AuraConfig Livewire component
