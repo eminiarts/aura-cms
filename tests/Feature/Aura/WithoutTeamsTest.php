@@ -1,5 +1,6 @@
 <?php
 
+use Eminiarts\Aura\Resources\Role;
 use Eminiarts\Aura\Resources\User;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -86,12 +87,30 @@ test('Aura without teams - pages', function () {
     expect(config('aura.teams'))->toBeFalse();
 
     // Rerun migrations
-    // $this->refreshTestDatabase();
     $this->artisan('migrate:fresh', ['--env' => 'testing']);
     $this->getEnvironmentSetUp($this->app);
 
-    $this->actingAs($this->user = User::factory()->create());
+    // Create User
+    $user = User::factory()->create();
 
-    // expect pages to be accessible
+    // Create Role
+    $role = Role::create(['type' => 'Role', 'title' => 'Super Admin', 'slug' => 'super_admin', 'description' => 'Super Admin has can perform everything.', 'super_admin' => true, 'permissions' => []]);
+
+    // Attach to User
+    $user = User::find($user->id);
+    $user->update(['fields' => ['roles' => [$role->id]]]);
+
+    // Refresh User
+    $user = $user->refresh();
+    $this->actingAs($user);
+
+    // expect Dashboard to be accessible
     $this->get(config('aura.path'))->assertOk();
+
+    // Team Settings Page
+    $this->get(route('aura.team.settings'))->assertOk();
+
+    // Resources
+    $this->get(route('aura.post.index', ['slug' =>'Option']))->assertOk();
+    $this->get(route('aura.post.index', ['slug' =>'User']))->assertOk();
 });

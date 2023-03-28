@@ -32,14 +32,9 @@ class UserFactory extends Factory
             'remember_token' => Str::random(10),
         ];
 
-        if (!config()->has('aura.teams')) {
-            dd($data, config()->has('aura.teams'), config('aura.teams'));
-        }
-
         if (config()->has('aura.teams') && config('aura.teams')) {
-            $data['current_team_id'] = Team::factory()->create()->id;
+            $data['current_team_id'] = 1;
         }
-
 
         return $data;
     }
