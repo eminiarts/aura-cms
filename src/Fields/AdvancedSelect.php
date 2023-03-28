@@ -51,18 +51,23 @@ class AdvancedSelect extends Field
     {
         return array_merge(parent::getFields(), [
             [
-                'label' => 'Select Many',
                 'name' => 'Select Many',
                 'type' => 'Eminiarts\\Aura\\Fields\\Tab',
                 'slug' => 'select-many',
                 'style' => [],
             ],
             [
-                'label' => 'Resource',
                 'name' => 'Resource',
                 'type' => 'Eminiarts\\Aura\\Fields\\Text',
                 'validation' => '',
                 'slug' => 'resource',
+            ],
+
+            [
+                'name' => 'Allow Create New',
+                'type' => 'Eminiarts\\Aura\\Fields\\Boolean',
+                'validation' => '',
+                'slug' => 'allow_create_new',
             ],
         ]);
     }
