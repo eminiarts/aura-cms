@@ -55,6 +55,8 @@ class EditPosttypeField extends Component
         //
         $fields = app($this->field['type'])->inputFields()->pluck('slug');
 
+        dd($fields, $this->post['fields']);
+
         // fields are not set on $this->post['fields'] set it to false
         foreach ($fields as $field) {
             if (! isset($this->post['fields'][$field])) {
@@ -87,6 +89,11 @@ class EditPosttypeField extends Component
     {
         // dd($this->post['fields'], $this->rules());
         // Validate
+        // remove all NULL values from $this->post['fields']
+        $this->post['fields'] = array_filter($this->post['fields'], function ($value) {
+            return ! is_null($value);
+        });
+
         $this->validate();
 
         // emit event to parent with slug and value
