@@ -1,6 +1,18 @@
 <x-aura::slide-over key="edit-field" wire:key="editPostTypeField">
 
-  <div>
+  <div x-data="{
+    post: @entangle('post'),
+      init () {
+        // alpine watch post
+        this.$watch('post', (value) => {
+          const select = document.getElementById('post_fields_type');
+          select.addEventListener('change', (event) => {
+            @this.updateType();
+          });
+
+        });
+      }
+    }">
     @if($field)
          <!-- Buttons -->
 
@@ -34,7 +46,7 @@
 
     {{-- @dd($model->mappedFieldBySlug($fieldSlug)['field']->getGroupedFields()) --}}
 
-    @foreach(app($field['type'])->getGroupedFields() as $key => $field)
+    @foreach($this->groupedFields as $key => $field)
       <style>
         #post-field-{{ optional($field)['slug'] }}-wrapper {
           width: {{ optional(optional($field)['style'])['width'] ?? '100' }}%;

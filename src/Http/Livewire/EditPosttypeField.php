@@ -22,6 +22,9 @@ class EditPosttypeField extends Component
 
     public $post;
 
+    // listener for newFields
+    protected $listeners = ['newFields' => 'newFields'];
+
     public function activate($params)
     {
         $this->fieldSlug = $params['fieldSlug'];
@@ -75,5 +78,36 @@ class EditPosttypeField extends Component
         $this->emit('saveField', ['slug' => $this->fieldSlug, 'value' => $this->post['fields']]);
 
         $this->open = false;
+    }
+
+    public function updateType()
+    {
+        // Validate
+        // $this->validate();
+
+        // emit event to parent with slug and value
+        $this->emit('saveField', ['slug' => $this->fieldSlug, 'value' => $this->post['fields']]);
+
+        // refresh component
+
+
+        // $this->emit('updatedOperation');
+    }
+
+    public function newFields($fields)
+    {
+        // get the field of $fields with the slug of $this->field['slug']
+        $field = collect($fields)->firstWhere('slug', $this->field['slug']);
+
+        // refresh the $this->field array
+        $this->field = $field;
+
+
+        $this->emit('refreshComponent');
+    }
+
+    public function getGroupedFieldsProperty()
+    {
+        return app($this->field['type'])->getGroupedFields();
     }
 }
