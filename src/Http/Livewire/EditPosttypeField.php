@@ -55,7 +55,7 @@ class EditPosttypeField extends Component
         //
         $fields = app($this->field['type'])->inputFields()->pluck('slug');
 
-        dd($fields, $this->post['fields']);
+        // dd($fields, $this->post['fields']);
 
         // fields are not set on $this->post['fields'] set it to false
         foreach ($fields as $field) {
