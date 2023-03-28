@@ -396,17 +396,20 @@ class User extends UserModel
 
     public function roles()
     {
-        return $this->belongsToMany(Role::class, 'user_meta', 'user_id', 'value')
-        ->wherePivot('key', 'roles')->wherePivot('team_id', $this->current_team_id);
+        $roles = $this->belongsToMany(Role::class, 'user_meta', 'user_id', 'value')
+                      ->wherePivot('key', 'roles');
+
+        return config('aura.teams') ? $roles->wherePivot('team_id', $this->current_team_id) : $roles;
     }
 
     public function setRolesField($value)
     {
         // Save the roles
-        // $this->roles()->sync($value);
-
-        $this->roles()->syncWithPivotValues($value, ['key' => 'roles', 'team_id' => $this->current_team_id]);
-        // or auth()->user()->currentTeam->id ?
+        if (config('aura.teams')) {
+            $this->roles()->syncWithPivotValues($value, ['key' => 'roles', 'team_id' => $this->current_team_id]);
+        } else {
+            $this->roles()->syncWithPivotValues($value, ['key' => 'roles']);
+        }
 
         // Unset the roles field
         unset($this->attributes['fields']['roles']);
