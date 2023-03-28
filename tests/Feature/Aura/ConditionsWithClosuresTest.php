@@ -66,6 +66,45 @@ class ConditionalLogicWithClosuresModel extends Resource
         return true;
     }
 }
+class ConditionalLogicWithoutClosuresModel extends Resource
+{
+    public static ?string $slug = 'page';
+
+    public static string $type = 'Page';
+
+    public static function getFields()
+    {
+        return [
+            [
+                'label' => 'Text 1',
+                'name' => 'Text 1',
+                'type' => 'Eminiarts\\Aura\\Fields\\Text',
+                'slug' => 'text1',
+                'validation' => '',
+                'conditional_logic' => [],
+            ],
+            [
+                'label' => 'Text 2',
+                'name' => 'Text 2',
+                'type' => 'Eminiarts\\Aura\\Fields\\Text',
+                'validation' => '',
+                'conditional_logic' => [
+                    [
+                        'field' => 'text1',
+                        'operator' => '==',
+                        'value' => 'test',
+                    ],
+                ],
+                'slug' => 'text2',
+            ],
+        ];
+    }
+
+    public function isAppResource(): bool
+    {
+        return true;
+    }
+}
 
 test('Conditional Logic with Closures - true', function () {
     $model = new ConditionalLogicWithClosuresModel();
@@ -157,6 +196,17 @@ test('Posttype Builder not accessible if fields contain closure', function () {
     expect($model->fieldsHaveClosures($model->getFields()))->toBeTrue();
 
     Livewire::test(PosttypeFake::class, ['slug' => 'Model'])->assertStatus(403);
+});
+
+test('Posttype Builder  accessible if fields dont contain closure', function () {
+    $model = new ConditionalLogicWithoutClosuresModel();
+
+    Aura::fake();
+    Aura::setModel($model);
+
+    expect($model->fieldsHaveClosures($model->getFields()))->toBeFalse();
+
+    Livewire::test(PosttypeFake::class, ['slug' => 'Model'])->assertOk();
 });
 
 test('fieldsHaveClosures() without closures', function () {
