@@ -12,6 +12,9 @@ use Livewire\Livewire;
 
 uses(RefreshDatabase::class);
 
+// current
+uses()->group('current');
+
 // Before each test, create a Superadmin and login
 beforeEach(function () {
     // Create User
@@ -41,7 +44,11 @@ test('media page can be rendered', function () {
     $this->withoutExceptionHandling();
 
     // Visit the Attachment Index Page
-    $this->get(route('aura.post.index', $attachment->type))
+    $response = $this->get(route('aura.post.index', $attachment->type));
+
+    // Visit the Attachment Index Page
+    $response
+    ->assertOk()
     // Custom Index Page
     ->assertSeeLivewire('aura::attachment-index')
     // Media Uploader
@@ -90,4 +97,4 @@ test('media grid view', function () {
 });
 
 test('media can be selected', function () {
-});
+})->todo();

@@ -2,7 +2,7 @@
 
 namespace Eminiarts\Aura\Traits;
 
-use Eminiarts\Aura\Aura;
+use Eminiarts\Aura\Facades\Aura;
 
 trait SaveTerms
 {
@@ -10,18 +10,20 @@ trait SaveTerms
     {
         static::saving(function ($post) {
             if (isset($post->attributes['terms'])) {
-                $post->saveTerms($post->attributes['terms']);
+                // dd('saving', $post->attributes['terms']);
+
+                $post->saveTaxonomyFields($post->attributes['terms']);
 
                 unset($post->attributes['terms']);
             }
         });
 
         static::saved(function ($post) {
-            // Terms
-            if (isset($post->terms)) {
+            // taxonomyFields
+            if (optional($post)->taxonomyFields) {
                 $values = [];
 
-                foreach ($post->terms as $key => $value) {
+                foreach ($post->taxonomyFields as $key => $value) {
                     // if value is null, continue
                     if (! $value) {
                         continue;
@@ -46,7 +48,9 @@ trait SaveTerms
 
                 $post->taxonomies()->sync($values);
 
-                unset($post->attributes['terms']);
+                // dd('saved', $values, $post->fresh()->taxonomies);
+
+                unset($post->attributes['taxonomyFields']);
             }
         });
     }

@@ -132,7 +132,7 @@ $settings = Aura::getOption('team-settings');
     ">
 
         @impersonating($guard = null)
-            <x-aura::button.primary route="impersonate.leave" class="w-full my-2" size="xs">
+            <x-aura::button.primary :href="route('impersonate.leave')" class="w-full my-2" size="xs">
                 <x-slot:icon>
                     <x-aura::icon icon="user-impersonate" size="xs" />
                 </x-slot:icon>

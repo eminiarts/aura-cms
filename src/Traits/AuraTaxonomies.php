@@ -2,8 +2,7 @@
 
 namespace Eminiarts\Aura\Traits;
 
-use Eminiarts\Aura\Aura;
-use Eminiarts\Aura\Taxonomies\Taxonomy;
+use Eminiarts\Aura\Models\Taxonomy;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
@@ -11,19 +10,12 @@ trait AuraTaxonomies
 {
     public function allTaxonomies()
     {
-        return $this->getTaxonomies()->map(fn ($item) => $item::getType());
+        return $this->taxonomies()->map(fn ($item) => $item::getType());
     }
 
     public function firstTaxonomy($taxonomy)
     {
         return $this->taxonomies()->where('taxonomy', $taxonomy)->orderby('name', 'asc')->first();
-    }
-
-    public static function getTaxonomies()
-    {
-        // Get this model fields where the field class type is taxonomy
-
-        return Aura::taxonomiesFor(static::getType());
     }
 
     /**
@@ -50,6 +42,7 @@ trait AuraTaxonomies
      */
     public function getTermsAttribute()
     {
+        // dd('terms', $this->taxonomies);
         $terms = $this->taxonomies->groupBy(function ($taxonomy) {
             return Str::slug($taxonomy->taxonomy);
         })->map(function ($group) {
@@ -111,7 +104,6 @@ trait AuraTaxonomies
     public function taxonomies()
     {
         return $this->morphToMany(Taxonomy::class, 'relatable', 'taxonomy_relations');
-        // return $this->belongsToMany(Taxonomy::class, 'taxonomy_relations', 'relatable_id');
     }
 
     public function taxonomy($name)

@@ -25,9 +25,7 @@
     </div>
     <hr class="my-4 border-t border-gray-400/30 dark:border-gray-700">
 
-    {{-- foreach $this->model->taxonomyFields(), show a taxonomy filter --}}
     @forelse($this->model->taxonomyFields() as $field)
-
     <div>
         <h4 class="my-4 font-semibold text-primary-600">{{ $field['name'] }}</h4>
         <div class="flex flex-col space-y-2">
@@ -38,7 +36,6 @@
             @endforeach
         </div>
     </div>
-
     @empty
     @endforelse
 

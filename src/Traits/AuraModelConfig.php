@@ -14,19 +14,21 @@ trait AuraModelConfig
 
     public array $bulkActions = [];
 
+    public static $customTable = false;
+
     public array $metaFields = [];
 
     public static $pluralName = null;
 
     public static $singularName = null;
 
-    public array $terms = [];
+    public static $taxonomy = false;
+
+    public array $taxonomyFields = [];
 
     public static bool $usesMeta = true;
 
     protected $baseFillable = [];
-
-    protected static bool $customTable = false;
 
     protected static $dropdown = false;
 
@@ -84,6 +86,11 @@ trait AuraModelConfig
         return $this->displayFieldValue($key, $value);
     }
 
+    public function createUrl()
+    {
+        return route('aura.post.create', [$this->getType()]);
+    }
+
     public function display($key)
     {
         if (array_key_exists($key, $this->fields->toArray())) {
@@ -113,6 +120,13 @@ trait AuraModelConfig
     {
         if ($this->getType() && $this->id) {
             return route('aura.post.edit', ['slug' => $this->getType(), 'id' => $this->id]);
+        }
+    }
+
+    public function viewUrl()
+    {
+        if ($this->getType() && $this->id) {
+            return route('aura.post.view', ['slug' => $this->getType(), 'id' => $this->id]);
         }
     }
 
@@ -281,6 +295,11 @@ trait AuraModelConfig
         return false;
     }
 
+    public function isTaxonomy()
+    {
+        return static::$taxonomy;
+    }
+
     public function isTaxonomyField($key)
     {
         // Check if the Field is a taxonomy 'type' => 'Eminiarts\\Aura\\Fields\\Tags',
@@ -345,9 +364,9 @@ trait AuraModelConfig
         $this->metaFields = array_merge($this->metaFields, $metaFields);
     }
 
-    public function saveTerms(array $terms): void
+    public function saveTaxonomyFields(array $taxonomyFields): void
     {
-        $this->terms = array_merge($this->terms, $terms);
+        $this->taxonomyFields = array_merge($this->taxonomyFields, $taxonomyFields);
     }
 
     public function singularName(): string
@@ -378,6 +397,7 @@ trait AuraModelConfig
 
     public static function usesCustomTable(): bool
     {
+        // dd('usesCustomTable', static::$customTable, static::$taxonomy);
         return static::$customTable;
     }
 

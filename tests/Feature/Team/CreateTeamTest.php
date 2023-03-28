@@ -18,10 +18,10 @@ beforeEach(function () {
 });
 
 test('team can be created', function () {
-});
+})->todo();
 
 test('team can be changed', function () {
-});
+})->todo();
 
 test('team can be deleted', function () {
-});
+})->todo();

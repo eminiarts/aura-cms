@@ -1,3 +1,0 @@
-<div>
-    Navigation index
-</div>

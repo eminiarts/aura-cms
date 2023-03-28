@@ -2,8 +2,8 @@
 
 namespace Eminiarts\Aura\Http\Livewire\Taxonomy;
 
-use Eminiarts\Aura\Aura;
 use Livewire\Component;
+use Eminiarts\Aura\Facades\Aura;
 
 class Index extends Component
 {

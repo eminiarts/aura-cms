@@ -33,9 +33,10 @@ use Eminiarts\Aura\Http\Livewire\Post\Index;
 use Eminiarts\Aura\Http\Livewire\Post\View;
 use Eminiarts\Aura\Http\Livewire\Posttype;
 use Eminiarts\Aura\Http\Livewire\Table\Table;
+use Eminiarts\Aura\Http\Livewire\Taxonomy\Create as TaxonomyCreate;
 use Eminiarts\Aura\Http\Livewire\Taxonomy\Edit as TaxonomyEdit;
-use Eminiarts\Aura\Http\Livewire\Taxonomy\Index as TaxonomyCreate;
 use Eminiarts\Aura\Http\Livewire\Taxonomy\Index as TaxonomyIndex;
+use Eminiarts\Aura\Http\Livewire\Taxonomy\View as TaxonomyView;
 use Eminiarts\Aura\Http\Livewire\TeamSettings;
 use Eminiarts\Aura\Http\Livewire\User\InviteUser;
 use Eminiarts\Aura\Http\Livewire\User\Profile;
@@ -67,7 +68,10 @@ class AuraServiceProvider extends PackageServiceProvider
 
     public function bootGate()
     {
-        Gate::policy(Team::class, TeamPolicy::class);
+        if (config('aura.teams')) {
+            Gate::policy(Team::class, TeamPolicy::class);
+        }
+
         Gate::policy(Resource::class, ResourcePolicy::class);
         Gate::policy(User::class, UserPolicy::class);
 
@@ -108,6 +112,7 @@ class AuraServiceProvider extends PackageServiceProvider
         Livewire::component('aura::taxonomy-index', TaxonomyIndex::class);
         Livewire::component('aura::taxonomy-edit', TaxonomyEdit::class);
         Livewire::component('aura::taxonomy-create', TaxonomyCreate::class);
+        Livewire::component('aura::taxonomy-view', TaxonomyView::class);
         Livewire::component('aura::team-settings', TeamSettings::class);
         Livewire::component('aura::invite-user', InviteUser::class);
         Livewire::component('aura::config', AuraConfig::class);
@@ -204,10 +209,15 @@ class AuraServiceProvider extends PackageServiceProvider
             \Eminiarts\Aura\Resources\Post::class,
             \Eminiarts\Aura\Resources\Permission::class,
             \Eminiarts\Aura\Resources\Role::class,
-            \Eminiarts\Aura\Resources\Team::class,
-            \Eminiarts\Aura\Resources\TeamInvitation::class,
             \Eminiarts\Aura\Resources\User::class,
         ]);
+
+        if (config('aura.teams')) {
+            Aura::registerResources([
+                \Eminiarts\Aura\Resources\Team::class,
+                \Eminiarts\Aura\Resources\TeamInvitation::class,
+            ]);
+        }
 
         Aura::registerTaxonomies([
             \Eminiarts\Aura\Taxonomies\Tag::class,

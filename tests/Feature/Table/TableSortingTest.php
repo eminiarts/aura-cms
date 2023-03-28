@@ -277,6 +277,9 @@ test('table sorting by taxonomy field', function () {
     expect($post->isTaxonomyField('tags'))->toBeTrue();
     expect($post->isMetaField('tags'))->toBeFalse();
 
+    // dump($post->taxonomies);
+    // dd($post->terms);
+
     // Visit the Post Index Page
     $component = Livewire::test(Table::class, ['query' => null, 'model' => $post])
     ->assertSet('tableView', $post->defaultTableView())

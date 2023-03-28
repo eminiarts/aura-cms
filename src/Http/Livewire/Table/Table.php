@@ -155,6 +155,10 @@ class Table extends Component
      */
     public function getCreateLinkProperty()
     {
+        if ($this->model->createUrl()) {
+            return $this->model->createUrl();
+        }
+
         if ($this->parent) {
             return route('aura.post.create', [
                 'slug' => $this->model->getType(),
