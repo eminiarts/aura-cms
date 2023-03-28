@@ -28,8 +28,8 @@ class EditPosttypeField extends Component
     public function activate($params)
     {
         $this->fieldSlug = $params['fieldSlug'];
+        $this->post['fields'] = $params['field'];
         $this->field = $params['field'];
-        $this->post['fields'] = $this->field;
 
         // Check if field is an input field
         if (app($this->field['type'])->isInputField()) {
@@ -46,8 +46,22 @@ class EditPosttypeField extends Component
                 $this->post['fields']['on_view'] = true;
             }
         }
-
+        $this->updatedField();
         $this->open = true;
+    }
+
+    public function updatedField()
+    {
+        //
+        $fields = app($this->field['type'])->inputFields()->pluck('slug');
+
+        // fields are not set on $this->post['fields'] set it to false
+        foreach ($fields as $field) {
+            if (! isset($this->post['fields'][$field])) {
+                $this->post['fields'][$field] = null;
+            }
+        }
+        // dd('groupedFields', $fields, $this->post['fields']);
     }
 
     public function deleteField($slug)
@@ -71,6 +85,7 @@ class EditPosttypeField extends Component
 
     public function save()
     {
+        // dd($this->post['fields'], $this->rules());
         // Validate
         $this->validate();
 
@@ -101,7 +116,9 @@ class EditPosttypeField extends Component
 
         // refresh the $this->field array
         $this->field = $field;
+        $this->post['fields'] = $field;
 
+        $this->updatedField();
 
         $this->emit('refreshComponent');
     }
