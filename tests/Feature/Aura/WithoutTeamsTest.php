@@ -7,7 +7,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 uses(RefreshDatabase::class);
 
 // current
-// uses()->group('current');
+uses()->group('current');
 
 // Before each test, create a Superadmin and login
 beforeEach(function () {
@@ -89,6 +89,8 @@ test('Aura without teams - pages', function () {
     // $this->refreshTestDatabase();
     $this->artisan('migrate:fresh', ['--env' => 'testing']);
     $this->getEnvironmentSetUp($this->app);
+
+    $this->actingAs($this->user = User::factory()->create());
 
     // expect pages to be accessible
     $this->get(config('aura.path'))->assertOk();

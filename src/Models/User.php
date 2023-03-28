@@ -112,6 +112,10 @@ class User extends Authenticatable
      */
     public function currentTeam()
     {
+        if (!config('aura.teams')) {
+            return null;
+        }
+
         if (is_null($this->current_team_id) && $this->id) {
             $this->switchTeam($this->personalTeam());
         }
@@ -200,6 +204,10 @@ class User extends Authenticatable
 
     public function getTeams()
     {
+        if (!config('aura.teams')) {
+            return null;
+        }
+
         // Return cached teams with meta
         return Cache::remember('user.'.$this->id.'.teams', now()->addHour(), function () {
             return $this->teams()->with('meta')->get();

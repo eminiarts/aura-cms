@@ -3,8 +3,6 @@
 use Eminiarts\Aura\Facades\Aura;
 use Eminiarts\Aura\Taxonomies\Tag;
 
-uses()->group('current');
-
 test('Aura::getTaxonomies()', function () {
     $taxonomies = Aura::getTaxonomies();
 
