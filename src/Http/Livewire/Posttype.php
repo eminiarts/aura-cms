@@ -430,6 +430,9 @@ class Posttype extends Component
         $this->saveFields($this->fieldsArray);
 
         $this->newFields = $this->model->mapToGroupedFields($this->fieldsArray);
+
+        // emit new fields
+        $this->emit('newFields', $this->fieldsArray);
     }
 
     public function sendField($slug)
