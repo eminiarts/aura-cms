@@ -9,6 +9,7 @@ use Eminiarts\Aura\Models\Post;
 use Eminiarts\Aura\Facades\Aura;
 use Eminiarts\Aura\Traits\RepeaterFields;
 use Eminiarts\Aura\Traits\InteractsWithFields;
+use Eminiarts\Aura\Traits\MediaFields;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 
 class Create extends Component
@@ -16,6 +17,7 @@ class Create extends Component
     use AuthorizesRequests;
     use InteractsWithFields;
     use RepeaterFields;
+    use MediaFields;
 
     public $inModal = false;
 
@@ -105,49 +107,5 @@ class Create extends Component
     public function setModel($model)
     {
         $this->model = $model;
-    }
-
-    public function updateField($data)
-    {
-        $this->post['fields'][$data['slug']] = $data['value'];
-        // $this->save();
-
-        $this->emit('selectedMediaUpdated', [
-            'slug' => $data['slug'],
-            'value' => $data['value'],
-        ]);
-    }
-
-    public function reorderMedia($slug, $ids)
-    {
-        $ids = collect($ids)->map(function ($id) {
-            return Str::after($id, '_file_');
-        })->toArray();
-
-        // emit update Field
-        $this->updateField([
-            'slug' => $slug,
-            'value' => $ids,
-        ]);
-    }
-
-    public function removeMediaFromField($slug, $id)
-    {
-        $field = $this->getField($slug);
-
-        $field = collect($field)->filter(function ($value) use ($id) {
-            return $value != $id;
-        })->values()->toArray();
-
-        $this->updateField([
-            'slug' => $slug,
-            'value' => $field,
-        ]);
-
-        // Emit Event selectedMediaUpdated
-        $this->emit('selectedMediaUpdated', [
-            'slug' => $slug,
-            'value' => $field,
-        ]);
     }
 }

@@ -6,6 +6,7 @@ use Eminiarts\Aura\Facades\Aura;
 use Eminiarts\Aura\Models\Post;
 use Eminiarts\Aura\Resources\Attachment;
 use Eminiarts\Aura\Traits\InteractsWithFields;
+use Eminiarts\Aura\Traits\MediaFields;
 use Eminiarts\Aura\Traits\RepeaterFields;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Support\Arr;
@@ -17,6 +18,7 @@ class Edit extends Component
     use AuthorizesRequests;
     use InteractsWithFields;
     use RepeaterFields;
+    use MediaFields;
 
     public $inModal = false;
 
@@ -36,11 +38,6 @@ class Edit extends Component
     public function getActionsProperty()
     {
         return $this->model->getActions();
-    }
-
-    public function getField($slug)
-    {
-        return $this->post['fields'][$slug];
     }
 
     public function getTaxonomiesProperty()
@@ -77,43 +74,14 @@ class Edit extends Component
         $this->post['terms']['category'] = $this->post['terms']['category'] ?? null;
     }
 
-    public function removeMediaFromField($slug, $id)
-    {
-        $field = $this->getField($slug);
 
-        $field = collect($field)->filter(function ($value) use ($id) {
-            return $value != $id;
-        })->values()->toArray();
-
-        $this->updateField([
-            'slug' => $slug,
-            'value' => $field,
-        ]);
-
-        // Emit Event selectedMediaUpdated
-        $this->emit('selectedMediaUpdated', [
-            'slug' => $slug,
-            'value' => $field,
-        ]);
-    }
 
     public function render()
     {
         return view('aura::livewire.post.edit')->layout('aura::components.layout.app');
     }
 
-    public function reorderMedia($slug, $ids)
-    {
-        $ids = collect($ids)->map(function ($id) {
-            return Str::after($id, '_file_');
-        })->toArray();
 
-        // emit update Field
-        $this->updateField([
-            'slug' => $slug,
-            'value' => $ids,
-        ]);
-    }
 
     public function rules()
     {
@@ -147,11 +115,4 @@ class Edit extends Component
         $this->notify('Successfully ran: '.$action);
     }
 
-    // Select Attachment
-    public function updateField($data)
-    {
-        $this->post['fields'][$data['slug']] = $data['value'];
-
-        $this->save();
-    }
 }

@@ -12,7 +12,7 @@
   <div class="flex w-full flex-col items-end space-y-4 sm:items-end">
 
     @foreach($media as $file)
-    
+
     <div wire:key="{{ str()->random(4) }}" class="pointer-events-auto w-full max-w-sm overflow-hidden rounded-lg bg-white shadow-lg ring-1 ring-black ring-opacity-5 relative" x-data="{loading: true}" x-show="loading"
             x-init="setTimeout(() => { loading = false }, 3000)" x-transition:leave="transition ease-linear duration-1000" x-transition:leave-end="opacity-0">
       <div class="p-4">
@@ -40,7 +40,7 @@
       <div class="absolute bottom-0 left-0 w-full h-1">
                 <div
                     class="h-1 bg-primary-200 animate-countdown origin-left"
-                ></div> 
+                ></div>
             </div>
     </div>
 
@@ -105,6 +105,22 @@
             },
         }">
 
+            <div class="mt-2">
+                @if($table)
+                    <livewire:aura::table :model="$post" />
+                @endif
+
+                @if($button)
+                    <x-aura::button.light wire:click="$emit('openModal', 'aura::media-manager', {{ json_encode(['field' => $field, 'slug' => $field['slug'], 'selected' => $selected]) }})">
+                    <x-slot:icon>
+                        <x-aura::icon icon="media" class="" />
+                    </x-slot>
+
+                    <span>Media Manager</span>
+                </x-aura::button.light>
+                @endif
+            </div>
+
             <div class="" x-on:drop="isDropping = false" x-on:drop.prevent="handleFileDrop($event)"
                 x-on:dragover.prevent="isDropping = true; console.log('dragover'); dragover($event);"
                 x-on:dragleave.prevent="isDropping = false; console.log('dragleave');">
@@ -155,21 +171,7 @@
 
                 @endif
 
-                <div>
-                    @if($table)
-                        <livewire:aura::table :model="$post" />
-                    @endif
 
-                    @if($button)
-                        <x-aura::button.light wire:click="$emit('openModal', 'aura::media-manager', {{ json_encode(['field' => $field, 'slug' => $field['slug'], 'selected' => $selected]) }})">
-                        <x-slot:icon>
-                            <x-aura::icon icon="media" class="" />
-                        </x-slot>
-
-                        <span>Media Manager</span>
-                    </x-aura::button.light>
-                    @endif
-                </div>
 
             </div>
 
