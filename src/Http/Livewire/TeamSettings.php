@@ -40,25 +40,22 @@ class TeamSettings extends Component
                 'name' => 'Panel',
                 'slug' => 'panel-DZzV',
             ],
-
-            // [
-            //     'name' => 'App Logo',
-            //     'type' => 'Eminiarts\\Aura\\Fields\\Image',
-            //     'slug' => 'app-logo',
-            //     'style' => [
-            //         'width' => '50',
-            //     ],
-            // ],
-
-            // [
-            //     'name' => 'App Logo (Darkmode)',
-            //     'type' => 'Eminiarts\\Aura\\Fields\\Image',
-            //     'slug' => 'app-logo-darkmode',
-            //     'style' => [
-            //         'width' => '50',
-            //     ],
-            // ],
-
+            [
+                'name' => 'App Logo',
+                'type' => 'Eminiarts\\Aura\\Fields\\Image',
+                'slug' => 'app-logo',
+                'style' => [
+                    'width' => '50',
+                ],
+            ],
+            [
+                'name' => 'App Logo (Darkmode)',
+                'type' => 'Eminiarts\\Aura\\Fields\\Image',
+                'slug' => 'app-logo-darkmode',
+                'style' => [
+                    'width' => '50',
+                ],
+            ],
             [
                 'name' => 'Timezone',
                 'type' => 'Eminiarts\\Aura\\Fields\\Text',
