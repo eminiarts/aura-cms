@@ -18,7 +18,9 @@
     $slug = Str::slug(optional($field)['slug']);
 @endphp
 
-<style>
+<div id="post-field-{{ $slug }}-wrapper"
+        class="{{ $wrapperClass }}">
+        <style>
   #post-field-{{ $slug }}-wrapper {
     width: {{ optional(optional($field)['style'])['width'] ?? '100' }}%;
   }
@@ -29,8 +31,6 @@
     }
   }
 </style>
-<div id="post-field-{{ $slug }}-wrapper"
-        class="{{ $wrapperClass }}">
   <div class="flex items-center justify-between">
     @if ($label && $showLabel)
       <x-aura::fields.label :label="$label" />

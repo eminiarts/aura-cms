@@ -9,21 +9,15 @@ if($this->post) {
 $files = null;
 @endphp
 
-<!-- Inside existing Livewire component -->
-{{-- @dump($selected) --}}
-
 @php
-// get the the attachement with the id
-// dd($this->post, $selected);
 if($selected) {
     $files = \Eminiarts\Aura\Resources\Attachment::find($selected)->sortBy(function($item) use ($selected) {
         return array_search($item->id, $selected);
     });
 }
-// dump($files->pluck('id'));
 @endphp
 
-<div class="w-full relative">
+<div class="relative w-full" wire:key="edit-files-{{ $field['slug'] }}">
     <x-aura::fields.wrapper :field="$field">
         <!-- blade if files isset and count  -->
         @if(isset($files) && count($files) > 0)
@@ -32,33 +26,33 @@ if($selected) {
             {{-- @dump($file) --}}
             <div class="w-full mb-2 draggable-item"  wire:key="{{ $field['slug'] }}_file_{{ $file->id }}" id="{{ $field['slug'] }}_file_{{ $file->id }}">
 
-                <div class="relative">
+                <div class="relative flex items-start justify-between">
 
                     <div
-                    class="flex justify-between w-full overflow-hidden rounded-lg cursor-move draggable-handle group bg-gray-100 p-3 items-start">
+                    class="flex items-start justify-between w-full p-3 overflow-hidden bg-gray-100 rounded-lg cursor-move draggable-handle group">
 
-                    <div class="flex space-x-3 items-start w-full">
-                        <div class="w-8 h-8 rounded-full bg-primary-100 flex items-center justify-center text-primary-400 mt-1">
-                            @include('aura::attachment.icon', ['class' => 'h-4 w-4', 'attachment' => $file])
+                        <div class="flex items-start w-full space-x-3">
+                            <div class="flex items-center justify-center w-8 h-8 mt-1 rounded-full bg-primary-100 text-primary-400">
+                                @include('aura::attachment.icon', ['class' => 'h-4 w-4', 'attachment' => $file])
+                            </div>
+
+                            <div>
+                                <div class="block mb-1 text-sm">
+                                    <span class="">{{ $file->title }}</span>
+                                </div>
+                                <div class="flex items-center space-x-1 text-xs opacity-50">
+                                    <div>{{ $file->readable_filesize }}</div>
+                                    <span class="opacity-20">•</span>
+                                    <div>{{ $file->readable_mime_type }}</div>
+                                </div>
+                            </div>
                         </div>
 
-                        <div>
-                            <div class="block text-sm mb-1">
-                                <span class="">{{ $file->title }}</span>
-                            </div>
-                            <div class="flex items-center space-x-1 text-xs opacity-50">
-                                <div>{{ $file->readable_filesize }}</div>
-                                <span class="opacity-20">•</span>
-                                <div>{{ $file->readable_mime_type }}</div>
-                            </div>
-                        </div>
                     </div>
 
-                    <div class="shrink-0" wire:click="removeMediaFromField('{{ $field['slug'] }}', '{{ $file->id }}')">
-                        <x-aura::icon icon="close" size="xs" class="text-primary-400 cursor-pointer hover:text-red-500" />
+                    <div class="absolute top-2 right-2" wire:click="removeMediaFromField('{{ $field['slug'] }}', '{{ $file->id }}')">
+                        <x-aura::icon icon="close" size="xs" class="cursor-pointer text-primary-400 hover:text-red-500" />
                     </div>
-                    
-                </div>
 
             </div>
         </div>
@@ -66,7 +60,7 @@ if($selected) {
     </div>
     @endif
 
-    <livewire:aura::media-uploader :table="false" :field="$field" :selected="$selected" :button="true" :model="app('Eminiarts\Aura\Resources\Attachment')" />
+    <livewire:aura::media-uploader :table="false" :field="$field" :selected="$selected" :button="true" :model="app('Eminiarts\Aura\Resources\Attachment')" wire:key="media-uploader-{{ $field['slug'] }}" />
 </x-aura::fields.wrapper>
 </div>
 
