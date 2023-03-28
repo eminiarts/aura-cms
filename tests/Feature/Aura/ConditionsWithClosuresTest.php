@@ -61,10 +61,10 @@ class ConditionalLogicWithClosuresModel extends Resource
         ];
     }
 
-     public function isAppResource(): bool
-     {
-         return true;
-     }
+    public function isAppResource(): bool
+    {
+        return true;
+    }
 }
 
 test('Conditional Logic with Closures - true', function () {
@@ -154,7 +154,59 @@ test('Posttype Builder not accessible if fields contain closure', function () {
     Aura::fake();
     Aura::setModel($model);
 
-    expect($model->fieldsHaveClosures())->toBeTrue();
+    expect($model->fieldsHaveClosures($model->getFields()))->toBeTrue();
 
     Livewire::test(PosttypeFake::class, ['slug' => 'Model'])->assertStatus(403);
+});
+
+test('fieldsHaveClosures() without closures', function () {
+    $model = new ConditionalLogicWithClosuresModel();
+
+    expect($model->fieldsHaveClosures($model->getFields()))->toBeTrue();
+
+    expect($model->fieldsHaveClosures([
+        [
+            'label' => 'Text 1',
+            'name' => 'Text 1',
+            'type' => 'Eminiarts\\Aura\\Fields\\Text',
+            'slug' => 'text1',
+            'validation' => '',
+            'conditional_logic' => [],
+        ],
+        [
+            'label' => 'Text 2',
+            'name' => 'Text 2',
+            'type' => 'Eminiarts\\Aura\\Fields\\Text',
+            'validation' => '',
+            'conditional_logic' => [],
+            'slug' => 'text2',
+            ]
+            ]))->toBeFalse();
+});
+
+test('fieldsHaveClosures() with closures', function () {
+    $model = new ConditionalLogicWithClosuresModel();
+
+    expect($model->fieldsHaveClosures($model->getFields()))->toBeTrue();
+
+    expect($model->fieldsHaveClosures([
+        [
+            'label' => 'Text 1',
+            'name' => 'Text 1',
+            'type' => 'Eminiarts\\Aura\\Fields\\Text',
+            'slug' => 'text1',
+            'validation' => function ($value) {
+                return $value === 'test';
+            },
+            'conditional_logic' => [],
+        ],
+        [
+            'label' => 'Text 2',
+            'name' => 'Text 2',
+            'type' => 'Eminiarts\\Aura\\Fields\\Text',
+            'validation' => '',
+            'conditional_logic' => [],
+            'slug' => 'text2',
+            ]
+            ]))->toBeTrue();
 });
