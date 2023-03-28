@@ -255,22 +255,19 @@ trait InputFields
 
      public function fieldsHaveClosures($fields)
      {
+         ray('start here ----', $fields);
+
          foreach ($fields as $field) {
-             if (isset($field['conditional_logic']) && is_array($field['conditional_logic'])) {
-                 foreach ($field['conditional_logic'] as $conditional) {
-                     if ($conditional instanceof \Closure) {
+             foreach ($field as $value) {
+                 if (is_array($value)) {
+                     if ($this->fieldsHaveClosures([$value])) {
                          return true;
                      }
-                 }
-             }
-
-             if (isset($field['fields']) && is_array($field['fields'])) {
-                 if ($this->fieldsHaveClosures($field['fields'])) {
+                 } elseif ($value instanceof \Closure) {
                      return true;
                  }
              }
          }
-
          return false;
      }
 
