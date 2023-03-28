@@ -5,9 +5,13 @@ use Eminiarts\Aura\Resource;
 use Eminiarts\Aura\Models\User;
 use Eminiarts\Aura\Facades\Aura;
 use Eminiarts\Aura\ConditionalLogic;
+use Eminiarts\Aura\Http\Livewire\Posttype;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
+
+// current
+uses()->group('current');
 
 // Before each test, create a Superadmin and login
 beforeEach(function () {
@@ -191,7 +195,7 @@ test('Posttype Builder not accessible if fields contain closure', function () {
 
     expect($model->fieldsHaveClosures($model->getFields()))->toBeTrue();
 
-    Livewire::test(PosttypeFake::class, ['slug' => 'Model'])->assertStatus(403);
+    Livewire::test(Posttype::class, ['slug' => 'Model'])->assertStatus(403);
 });
 
 test('Posttype Builder  accessible if fields dont contain closure', function () {
@@ -202,7 +206,7 @@ test('Posttype Builder  accessible if fields dont contain closure', function () 
 
     expect($model->fieldsHaveClosures($model->getFields()))->toBeFalse();
 
-    Livewire::test(PosttypeFake::class, ['slug' => 'Model'])->assertOk();
+    Livewire::test(Posttype::class, ['slug' => 'Model'])->assertOk();
 });
 
 test('fieldsHaveClosures() without closures', function () {
