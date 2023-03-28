@@ -287,7 +287,14 @@ class Posttype extends Component
 
         $this->model = Aura::findResourceBySlug($slug);
 
+        // Check if fields have closures
+        if ($this->model->fieldsHaveClosures($this->model->getFields())) {
+            abort(403, 'Your fields have closures. You can not use the Posttype Builder with Closures.');
+        }
+
         $this->authorize();
+
+
 
         $this->fieldsArray = $this->model->getFields();
 
