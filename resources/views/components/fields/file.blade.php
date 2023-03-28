@@ -32,12 +32,12 @@ if($selected) {
                     class="flex items-start justify-between w-full p-3 overflow-hidden bg-gray-100 rounded-lg cursor-move draggable-handle group">
 
                         <div class="flex items-start w-full space-x-3">
-                            <div class="flex items-center justify-center w-8 h-8 mt-1 rounded-full bg-primary-100 text-primary-400">
+                            <div class="flex items-center justify-center w-8 h-8 mt-1 rounded-full shrink-0 bg-primary-100 text-primary-400">
                                 @include('aura::attachment.icon', ['class' => 'h-4 w-4', 'attachment' => $file])
                             </div>
 
-                            <div>
-                                <div class="block mb-1 text-sm">
+                            <div class="flex-1 overflow-hidden text-sm truncate text-ellipsis whitespace-nowrap">
+                                <div class="block mb-1">
                                     <span class="">{{ $file->title }}</span>
                                 </div>
                                 <div class="flex items-center space-x-1 text-xs opacity-50">

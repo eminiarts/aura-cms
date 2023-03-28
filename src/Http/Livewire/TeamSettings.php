@@ -5,6 +5,7 @@ namespace Eminiarts\Aura\Http\Livewire;
 use Eminiarts\Aura\Aura;
 use Eminiarts\Aura\Resources\Option;
 use Eminiarts\Aura\Traits\InputFields;
+use Eminiarts\Aura\Traits\MediaFields;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Cache;
@@ -14,6 +15,7 @@ use Livewire\Component;
 class TeamSettings extends Component
 {
     use InputFields;
+    use MediaFields;
 
     public $model;
 
@@ -422,17 +424,6 @@ class TeamSettings extends Component
         return view('aura::livewire.team-settings')->layout('aura::components.layout.app');
     }
 
-    public function reorderMedia($slug, $ids)
-    {
-        $ids = collect($ids)->map(function ($id) {
-            return Str::after($id, '_file_');
-        })->toArray();
-
-        $this->updateField([
-            'slug' => $slug,
-            'value' => $ids,
-        ]);
-    }
 
     public function rules()
     {
@@ -466,13 +457,4 @@ class TeamSettings extends Component
         // return $this->notify('Created successfully.');
     }
 
-    // Select Attachment
-    public function updateField($data)
-    {
-        $this->post['fields'][$data['slug']] = $data['value'];
-
-        // dd($this->post['fields'][$data['slug']], $data['value']);
-        // dd($this->post);
-        $this->save();
-    }
 }
