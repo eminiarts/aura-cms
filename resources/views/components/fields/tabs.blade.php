@@ -47,8 +47,8 @@
             }
         @endphp
 
-        <x-aura::fields.conditions :field="$tab" :model="$model">
-            <li>
+        <x-aura::fields.conditions :field="$tab" :model="$model" wire:key="tab-{{ $key }}">
+            <li wire:key="tab-item-{{ $key }}">
                 <button
                     :id="$id('tab', {{ $key }})"
                     @click="select($el.id)"
@@ -73,7 +73,7 @@
 
     </ul>
 
-    <div role="tabpanels" class="border-t border-gray-400/30 rounded-b-lg dark:border-gray-700">
+    <div role="tabpanels" class="border-t rounded-b-lg border-gray-400/30 dark:border-gray-700">
         @foreach($field['fields'] as $key => $field)
         <x-aura::fields.conditions :field="$field" :model="$model">
             <section
@@ -81,6 +81,7 @@
                 :aria-labelledby="$id('tab', {{ $key }})"
                 role="tabpanel"
                 class="w-full py-4"
+                wire:key="tab-section-{{ $key }}"
             >
                 <x-dynamic-component :component="$field['field']->component" :field="$field" />
             </section>

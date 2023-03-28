@@ -270,11 +270,18 @@
             if (!this.dragging) return;
             const containerRect = this.$refs.selectedItemsContainer.getBoundingClientRect();
             // Clamp the dragged item's position
-            const minX = containerRect.left;
-            const maxX = containerRect.right - this.$refs.draggingItem.offsetWidth;
+            const minX = containerRect.left - this.$refs.draggingItem.offsetWidth;
+            const maxX = containerRect.right;
             const clampedX = Math.min(Math.max(event.clientX, minX), maxX);
             this.dragX = clampedX - containerRect.left;
             this.$refs.draggingItem.style.left = this.dragX + 'px';
+
+            const minY = containerRect.top;
+            const maxY = containerRect.bottom - this.$refs.draggingItem.offsetHeight;
+            const clampedY = Math.min(Math.max(event.clientY, minY), maxY);
+            this.dragY = clampedY - containerRect.top;
+            this.$refs.draggingItem.style.top = this.dragY + 'px';
+
             const newIndex = this.findNewIndex();
             if (newIndex !== this.dragIndex) {
                 this.value.splice(newIndex, 0, this.value.splice(this.dragIndex, 1)[0]);
@@ -291,13 +298,25 @@
         },
 
         findNewIndex() {
-            const itemWidth = this.$refs.draggingItem.offsetWidth;
-            const listLeft = this.$refs.draggingItem.parentElement.offsetLeft;
-            const draggedItemCenter = this.dragX - listLeft + itemWidth / 2;
-            let newIndex = Math.floor(draggedItemCenter / itemWidth);
-            newIndex = Math.max(0, Math.min(newIndex, this.items.length - 1));
-            return newIndex;
-        }
+    const itemsContainer = this.$refs.selectedItemsContainer;
+    const draggingItem = this.$refs.draggingItem;
+    const itemWidth = draggingItem.offsetWidth;
+    const itemHeight = draggingItem.offsetHeight;
+    const containerWidth = itemsContainer.clientWidth;
+    const numCols = Math.floor(containerWidth / itemWidth);
+
+    // Calculate the X and Y index based on the current dragX and dragY position
+    const colIndex = Math.floor(this.dragX / itemWidth);
+    const rowIndex = Math.floor(this.dragY / itemHeight);
+
+    // Calculate the new index based on the flex structure
+    let newIndex = rowIndex * numCols + colIndex;
+
+    // Clamp the new index within the valid range
+    newIndex = Math.max(0, Math.min(newIndex, this.items.length - 1));
+
+    return newIndex;
+}
     }"
 
     @keydown.down.stop.prevent="focusNext"
@@ -313,7 +332,7 @@
         <label class="sr-only">Select Item</label>
 
         <button
-            class="relative flex items-center justify-between w-full h-10 px-3 pt-0 pb-0 border rounded-lg shadow-xs appearance-none border-gray-500/30 focus:border-primary-300 focus:outline-none ring-gray-900/10 focus:ring focus:ring-primary-300 focus:ring-opacity-50 dark:focus:ring-primary-500 dark:focus:ring-opacity-50 dark:bg-gray-900 dark:border-gray-700"
+            class="relative flex items-center justify-between w-full px-3 pt-0 pb-0 border rounded-lg shadow-xs appearance-none min-h-10 border-gray-500/30 focus:border-primary-300 focus:outline-none ring-gray-900/10 focus:ring focus:ring-primary-300 focus:ring-opacity-50 dark:focus:ring-primary-500 dark:focus:ring-opacity-50 dark:bg-gray-900 dark:border-gray-700"
             x-ref="listboxButton"
             @click="toggleListbox"
         >
@@ -327,7 +346,7 @@
             </template>
 
             <template x-if="value && value.length > 0 && multiple">
-                <div class="flex items-center pt-2" @mousemove.prevent="moveItem($event)" @mouseup.prevent="stopDragging()" x-ref="selectedItemsContainer">
+                <div class="flex flex-wrap items-center pt-2" @mousemove.prevent="moveItem($event)" @mouseup.prevent="stopDragging()" x-ref="selectedItemsContainer">
                     <template x-for="(item, index) in value" :key="item">
 
                         <div
@@ -442,4 +461,3 @@
     </div>
 </div>
 </x-aura::fields.wrapper>
-

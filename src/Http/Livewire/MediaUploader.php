@@ -22,6 +22,9 @@ class MediaUploader extends Component
 
     public $table = true;
 
+    // listener selectedMediaUpdated
+    protected $listeners = ['selectedMediaUpdated' => 'selectedMediaUpdated'];
+
     public function mount(Attachment $post)
     {
         $this->post = $post;
@@ -30,6 +33,12 @@ class MediaUploader extends Component
     public function render()
     {
         return view('aura::livewire.media-uploader');
+    }
+
+    public function selectedMediaUpdated($data)
+    {
+        // dd($data);
+        $this->selected = $data['value'];
     }
 
     public function updatedMedia()

@@ -89,6 +89,12 @@ class Edit extends Component
             'slug' => $slug,
             'value' => $field,
         ]);
+
+        // Emit Event selectedMediaUpdated
+        $this->emit('selectedMediaUpdated', [
+            'slug' => $slug,
+            'value' => $field,
+        ]);
     }
 
     public function render()
