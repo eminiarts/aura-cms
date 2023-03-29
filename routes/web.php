@@ -49,9 +49,6 @@ Route::domain(config('aura.domain'))
             Route::get('/team-settings', TeamSettings::class)->name('team.settings');
             Route::get('/aura-config', AuraConfig::class)->name('config');
 
-            Route::get('/flows', CreateFlow::class)->name('flows.create');
-            Route::get('/flows/{id}', CreateFlow::class)->name('flows.edit');
-
             Route::get('/posttypes/{slug}', Posttype::class)->name('posttype.edit');
             Route::get('/taxonomies/{slug}', TaxonomyIndex::class)->name('taxonomy.index');
             Route::get('/taxonomies/{slug}/create', TaxonomyCreate::class)->name('taxonomy.create');
