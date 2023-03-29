@@ -2,6 +2,8 @@
 
 namespace Eminiarts\Aura\Fields;
 
+use Aura\Flows\Resources\Operation;
+
 class HasMany extends Field
 {
     public $component = 'aura::fields.has-many';
@@ -40,7 +42,7 @@ class HasMany extends Field
             return $query->where('flow_id', $model->id);
         }
 
-        if ($model instanceof \Eminiarts\Aura\Resources\Operation) {
+        if ($model instanceof Operation) {
             return $query->where('operation_id', $model->id);
         }
 

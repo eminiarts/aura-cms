@@ -113,4 +113,18 @@ test('Aura without teams - pages', function () {
     // Resources
     $this->get(route('aura.post.index', ['slug' =>'Option']))->assertOk();
     $this->get(route('aura.post.index', ['slug' =>'User']))->assertOk();
+    $this->get(route('aura.post.index', ['slug' =>'Post']))->assertOk();
+    $this->get(route('aura.post.index', ['slug' =>'Role']))->assertOk();
+    $this->get(route('aura.post.index', ['slug' =>'Permission']))->assertOk();
+    $this->get(route('aura.post.index', ['slug' =>'Attachment']))->assertOk();
+    $this->get(route('aura.post.index', ['slug' =>'Option']))->assertOk();
+
+
+    $this->get(route('aura.post.create', ['slug' =>'User']))->assertOk();
+    $this->get(route('aura.post.create', ['slug' =>'Post']))->assertOk();
+
+
+    // Taxonomies
+    $this->get(route('aura.taxonomy.index', ['slug' =>'Tag']))->assertOk();
+    $this->get(route('aura.taxonomy.index', ['slug' =>'Category']))->assertOk();
 });

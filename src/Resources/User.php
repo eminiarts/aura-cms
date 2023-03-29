@@ -225,6 +225,11 @@ class User extends UserModel
                 'name' => 'Teams',
                 'slug' => 'tab-Teams',
                 'global' => true,
+                'conditional_logic' => [
+                    function () {
+                        return config('aura.teams');
+                    }
+                ],
             ],
             [
                 'name' => 'Teams',
@@ -232,11 +237,14 @@ class User extends UserModel
                 'type' => 'Eminiarts\\Aura\\Fields\\BelongsToMany',
                 'resource' => 'Eminiarts\\Aura\\Resources\\Team',
                 'validation' => '',
-                'conditional_logic' => [],
-                'has_conditional_logic' => false,
                 'wrapper' => '',
                 'on_index' => false,
                 'on_forms' => true,
+                'conditional_logic' => [
+                    function () {
+                        return config('aura.teams');
+                    }
+                ],
                 'on_view' => true,
                 'style' => [
                     'width' => '100',
