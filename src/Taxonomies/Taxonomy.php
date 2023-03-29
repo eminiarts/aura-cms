@@ -152,7 +152,7 @@ class Taxonomy extends Resource
                 $taxonomy->count = 0;
             }
 
-            if (! $taxonomy->team_id && auth()->user()) {
+            if (config('aura.teams') && ! $taxonomy->team_id && auth()->user()) {
                 $taxonomy->team_id = auth()->user()->current_team_id;
             }
 

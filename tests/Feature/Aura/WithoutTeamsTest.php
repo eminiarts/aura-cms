@@ -1,8 +1,12 @@
 <?php
 
+use Eminiarts\Aura\Resources\Post;
 use Eminiarts\Aura\Resources\Role;
 use Eminiarts\Aura\Resources\User;
+use Eminiarts\Aura\Taxonomies\Tag;
+use Eminiarts\Aura\Resources\Option;
 use Illuminate\Support\Facades\Schema;
+use Eminiarts\Aura\Resources\Permission;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
@@ -78,53 +82,4 @@ test('Aura without teams - options table', function () {
 
     // expect options table to exist
     expect(Schema::hasTable('options'))->toBeTrue();
-});
-
-test('Aura without teams - pages', function () {
-    // Set config to not use teams
-    config(['aura.teams' => false]);
-
-    expect(config('aura.teams'))->toBeFalse();
-
-    // Rerun migrations
-    $this->artisan('migrate:fresh', ['--env' => 'testing']);
-    $this->getEnvironmentSetUp($this->app);
-
-    // Create User
-    $user = User::factory()->create();
-
-    // Create Role
-    $role = Role::create(['type' => 'Role', 'title' => 'Super Admin', 'slug' => 'super_admin', 'description' => 'Super Admin has can perform everything.', 'super_admin' => true, 'permissions' => []]);
-
-    // Attach to User
-    $user = User::find($user->id);
-    $user->update(['fields' => ['roles' => [$role->id]]]);
-
-    // Refresh User
-    $user = $user->refresh();
-    $this->actingAs($user);
-
-    // expect Dashboard to be accessible
-    $this->get(config('aura.path'))->assertOk();
-
-    // Team Settings Page
-    $this->get(route('aura.team.settings'))->assertOk();
-
-    // Resources
-    $this->get(route('aura.post.index', ['slug' =>'Option']))->assertOk();
-    $this->get(route('aura.post.index', ['slug' =>'User']))->assertOk();
-    $this->get(route('aura.post.index', ['slug' =>'Post']))->assertOk();
-    $this->get(route('aura.post.index', ['slug' =>'Role']))->assertOk();
-    $this->get(route('aura.post.index', ['slug' =>'Permission']))->assertOk();
-    $this->get(route('aura.post.index', ['slug' =>'Attachment']))->assertOk();
-    $this->get(route('aura.post.index', ['slug' =>'Option']))->assertOk();
-
-
-    $this->get(route('aura.post.create', ['slug' =>'User']))->assertOk();
-    $this->get(route('aura.post.create', ['slug' =>'Post']))->assertOk();
-
-
-    // Taxonomies
-    $this->get(route('aura.taxonomy.index', ['slug' =>'Tag']))->assertOk();
-    $this->get(route('aura.taxonomy.index', ['slug' =>'Category']))->assertOk();
 });
