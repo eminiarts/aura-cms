@@ -1,12 +1,12 @@
 <?php
 
-use Livewire\Livewire;
-use Eminiarts\Aura\Resource;
-use Eminiarts\Aura\Models\User;
-use Eminiarts\Aura\Facades\Aura;
 use Eminiarts\Aura\ConditionalLogic;
+use Eminiarts\Aura\Facades\Aura;
 use Eminiarts\Aura\Http\Livewire\Posttype;
+use Eminiarts\Aura\Models\User;
+use Eminiarts\Aura\Resource;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Livewire\Livewire;
 
 uses(RefreshDatabase::class);
 
@@ -27,7 +27,6 @@ beforeEach(function () {
     // Login
     $this->actingAs($this->user);
 });
-
 
 class ConditionalLogicWithClosuresModel extends Resource
 {
@@ -186,7 +185,6 @@ test('Conditional Logic with Closures - returns false for superadmin', function 
     expect($check)->toBeFalse();
 });
 
-
 test('Posttype Builder not accessible if fields contain closure', function () {
     $model = new ConditionalLogicWithClosuresModel();
 
@@ -230,8 +228,8 @@ test('fieldsHaveClosures() without closures', function () {
             'validation' => '',
             'conditional_logic' => [],
             'slug' => 'text2',
-            ]
-            ]))->toBeFalse();
+        ],
+    ]))->toBeFalse();
 });
 
 test('fieldsHaveClosures() with closures', function () {
@@ -257,6 +255,6 @@ test('fieldsHaveClosures() with closures', function () {
             'validation' => '',
             'conditional_logic' => [],
             'slug' => 'text2',
-            ]
-            ]))->toBeTrue();
+        ],
+    ]))->toBeTrue();
 });

@@ -104,6 +104,23 @@ trait InputFields
         return $this->sendThroughPipeline($fields, $pipes);
     }
 
+     public function fieldsHaveClosures($fields)
+     {
+         foreach ($fields as $field) {
+             foreach ($field as $value) {
+                 if (is_array($value)) {
+                     if ($this->fieldsHaveClosures([$value])) {
+                         return true;
+                     }
+                 } elseif ($value instanceof \Closure) {
+                     return true;
+                 }
+             }
+         }
+
+         return false;
+     }
+
     public function getAccessibleFieldKeys()
     {
         // Apply Conditional Logic of Parent Fields
@@ -252,22 +269,6 @@ trait InputFields
 
         return $this->sendThroughPipeline($this->mappedFields(), $pipes);
     }
-
-     public function fieldsHaveClosures($fields)
-     {
-         foreach ($fields as $field) {
-             foreach ($field as $value) {
-                 if (is_array($value)) {
-                     if ($this->fieldsHaveClosures([$value])) {
-                         return true;
-                     }
-                 } elseif ($value instanceof \Closure) {
-                     return true;
-                 }
-             }
-         }
-         return false;
-     }
 
     // Display the value of a field in the index view
     // $this->displayEmailField()

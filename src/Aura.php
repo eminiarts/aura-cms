@@ -227,18 +227,18 @@ class Aura
 
         if (config('aura.teams')) {
             return Option::withoutGlobalScopes([TeamScope::class])->firstOrCreate([
-                       'name' => 'aura-settings',
-                       'team_id' => 0,
-                   ], [
-                       'value' => json_encode($valueString),
-                       'team_id' => 0,
-                   ]);
+                'name' => 'aura-settings',
+                'team_id' => 0,
+            ], [
+                'value' => json_encode($valueString),
+                'team_id' => 0,
+            ]);
         } else {
             return Option::firstOrCreate([
-                       'name' => 'aura-settings',
-                   ], [
-                       'value' => json_encode($valueString),
-                   ]);
+                'name' => 'aura-settings',
+            ], [
+                'value' => json_encode($valueString),
+            ]);
         }
     }
 

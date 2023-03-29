@@ -228,7 +228,7 @@ class User extends UserModel
                 'conditional_logic' => [
                     function () {
                         return config('aura.teams');
-                    }
+                    },
                 ],
             ],
             [
@@ -243,7 +243,7 @@ class User extends UserModel
                 'conditional_logic' => [
                     function () {
                         return config('aura.teams');
-                    }
+                    },
                 ],
                 'on_view' => true,
                 'style' => [
