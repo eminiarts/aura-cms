@@ -44,6 +44,12 @@ test('Aura without teams - pages', function () {
     // Team Settings Page
     $this->get(route('aura.team.settings'))->assertOk();
 
+    // Profile
+    $this->get(route('aura.profile'))->assertOk();
+
+    // Config
+    $this->get(route('aura.config'))->assertOk();
+
     // Index Pages
     $this->get(route('aura.post.index', ['slug' =>'Option']))->assertOk();
     $this->get(route('aura.post.index', ['slug' =>'User']))->assertOk();
@@ -105,8 +111,4 @@ test('Aura without teams - pages', function () {
 
     $this->get(route('aura.taxonomy.view', ['slug' =>'Tag', 'id' => $tag->id]))->assertOk();
     $this->get(route('aura.taxonomy.edit', ['slug' =>'Tag', 'id' => $tag->id]))->assertOk();
-
-
-    // Profile
-    $this->get(route('aura.profile'))->assertOk();
 });
