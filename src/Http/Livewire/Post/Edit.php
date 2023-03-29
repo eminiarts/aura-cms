@@ -4,21 +4,19 @@ namespace Eminiarts\Aura\Http\Livewire\Post;
 
 use Eminiarts\Aura\Facades\Aura;
 use Eminiarts\Aura\Models\Post;
-use Eminiarts\Aura\Resources\Attachment;
 use Eminiarts\Aura\Traits\InteractsWithFields;
 use Eminiarts\Aura\Traits\MediaFields;
 use Eminiarts\Aura\Traits\RepeaterFields;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Support\Arr;
-use Illuminate\Support\Str;
 use Livewire\Component;
 
 class Edit extends Component
 {
     use AuthorizesRequests;
     use InteractsWithFields;
-    use RepeaterFields;
     use MediaFields;
+    use RepeaterFields;
 
     public $inModal = false;
 
@@ -74,14 +72,10 @@ class Edit extends Component
         $this->post['terms']['category'] = $this->post['terms']['category'] ?? null;
     }
 
-
-
     public function render()
     {
         return view('aura::livewire.post.edit')->layout('aura::components.layout.app');
     }
-
-
 
     public function rules()
     {
@@ -114,5 +108,4 @@ class Edit extends Component
 
         $this->notify('Successfully ran: '.$action);
     }
-
 }

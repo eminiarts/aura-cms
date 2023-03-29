@@ -112,8 +112,8 @@ class User extends Authenticatable
      */
     public function currentTeam()
     {
-        if (!config('aura.teams')) {
-            return null;
+        if (! config('aura.teams')) {
+            return;
         }
 
         if (is_null($this->current_team_id) && $this->id) {
@@ -204,8 +204,8 @@ class User extends Authenticatable
 
     public function getTeams()
     {
-        if (!config('aura.teams')) {
-            return null;
+        if (! config('aura.teams')) {
+            return;
         }
 
         // Return cached teams with meta

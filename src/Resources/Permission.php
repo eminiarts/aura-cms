@@ -2,8 +2,8 @@
 
 namespace Eminiarts\Aura\Resources;
 
-use Eminiarts\Aura\Resource;
 use Eminiarts\Aura\Facades\Aura;
+use Eminiarts\Aura\Resource;
 
 class Permission extends Resource
 {

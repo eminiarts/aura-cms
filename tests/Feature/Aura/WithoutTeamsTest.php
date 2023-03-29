@@ -1,13 +1,8 @@
 <?php
 
-use Eminiarts\Aura\Resources\Post;
-use Eminiarts\Aura\Resources\Role;
 use Eminiarts\Aura\Resources\User;
-use Eminiarts\Aura\Taxonomies\Tag;
-use Eminiarts\Aura\Resources\Option;
-use Illuminate\Support\Facades\Schema;
-use Eminiarts\Aura\Resources\Permission;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Schema;
 
 uses(RefreshDatabase::class);
 
@@ -37,7 +32,6 @@ beforeEach(function () {
         'count' => 0,
     ];
 });
-
 
 test('Aura without teams', function () {
     // Set config to not use teams

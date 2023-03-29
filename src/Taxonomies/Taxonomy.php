@@ -49,11 +49,6 @@ class Taxonomy extends Resource
         return route('aura.taxonomy.edit', ['slug' => $this->getType(), 'id' => $this->id]);
     }
 
-    public function viewUrl()
-    {
-        return route('aura.taxonomy.view', ['slug' => $this->getType(), 'id' => $this->id]);
-    }
-
     public static function getFields()
     {
         return [
@@ -119,6 +114,11 @@ class Taxonomy extends Resource
     public function meta()
     {
         return $this->hasMany(TaxonomyMeta::class, 'taxonomy_id');
+    }
+
+    public function viewUrl()
+    {
+        return route('aura.taxonomy.view', ['slug' => $this->getType(), 'id' => $this->id]);
     }
 
     /**

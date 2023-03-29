@@ -4,7 +4,6 @@ use Eminiarts\Aura\Http\Controllers\Api\FieldsController;
 use Eminiarts\Aura\Http\Livewire\Attachment\Index as AttachmentIndex;
 use Eminiarts\Aura\Http\Livewire\AuraConfig;
 use Eminiarts\Aura\Http\Livewire\CreateFlow;
-use Eminiarts\Aura\Http\Livewire\Media;
 use Eminiarts\Aura\Http\Livewire\Post\Create;
 use Eminiarts\Aura\Http\Livewire\Post\Edit;
 use Eminiarts\Aura\Http\Livewire\Post\Index;

@@ -2,14 +2,12 @@
 
 namespace Eminiarts\Aura\Http\Livewire;
 
-use Eminiarts\Aura\Aura;
 use Eminiarts\Aura\Resources\Option;
 use Eminiarts\Aura\Traits\InputFields;
 use Eminiarts\Aura\Traits\MediaFields;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Str;
 use Livewire\Component;
 
 class TeamSettings extends Component
@@ -420,7 +418,6 @@ class TeamSettings extends Component
     {
         return view('aura::livewire.team-settings')->layout('aura::components.layout.app');
     }
-
 
     public function rules()
     {

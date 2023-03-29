@@ -123,13 +123,6 @@ trait AuraModelConfig
         }
     }
 
-    public function viewUrl()
-    {
-        if ($this->getType() && $this->id) {
-            return route('aura.post.view', ['slug' => $this->getType(), 'id' => $this->id]);
-        }
-    }
-
     public function getActions()
     {
         return $this->actions;
@@ -409,6 +402,13 @@ trait AuraModelConfig
     public static function usesTitle(): bool
     {
         return static::$title;
+    }
+
+    public function viewUrl()
+    {
+        if ($this->getType() && $this->id) {
+            return route('aura.post.view', ['slug' => $this->getType(), 'id' => $this->id]);
+        }
     }
 
     protected static function getSort(): ?int

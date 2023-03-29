@@ -2,11 +2,11 @@
 
 namespace Eminiarts\Aura\Http\Livewire\Taxonomy;
 
-use Illuminate\Support\Arr;
 use Eminiarts\Aura\Facades\Aura;
-use LivewireUI\Modal\ModalComponent;
 use Eminiarts\Aura\Traits\InteractsWithFields;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
+use Illuminate\Support\Arr;
+use LivewireUI\Modal\ModalComponent;
 
 class Create extends ModalComponent
 {
