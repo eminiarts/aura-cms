@@ -8,8 +8,6 @@ class ConditionalLogic
     {
         $conditions = optional($field)['conditional_logic'];
 
-        // ray($conditions);
-
         if (! $conditions) {
             return true;
         }
@@ -18,8 +16,6 @@ class ConditionalLogic
         if (! auth()->user()) {
             return true;
         }
-
-        ray('checkCondition', $field, $conditions);
 
         $show = true;
 
@@ -59,7 +55,6 @@ class ConditionalLogic
                     // if $model->fields is set, use that, otherwise, use $model['fields']
 
                     if (optional($model)->fields) {
-                        // ray('hier', $model->fields);
                         $fieldValue = $model->fields[$condition['field']];
                     } else {
                         $fieldValue = optional($model['fields'])[$condition['field']];
