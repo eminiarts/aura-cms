@@ -255,8 +255,6 @@ trait InputFields
 
      public function fieldsHaveClosures($fields)
      {
-         ray('start here ----', $fields);
-
          foreach ($fields as $field) {
              foreach ($field as $value) {
                  if (is_array($value)) {

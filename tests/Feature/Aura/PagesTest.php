@@ -111,4 +111,7 @@ test('Check Aura Pages (with Teams)', function () {
 
     $this->get(route('aura.taxonomy.view', ['slug' =>'Tag', 'id' => $tag->id]))->assertOk();
     $this->get(route('aura.taxonomy.edit', ['slug' =>'Tag', 'id' => $tag->id]))->assertOk();
+
+    // Profile
+    $this->get(route('aura.profile'))->assertOk();
 });

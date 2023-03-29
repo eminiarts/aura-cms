@@ -223,7 +223,6 @@ class Table extends Component
      */
     public function getRowsProperty()
     {
-        ray($this->rowsQuery->toSql());
         return $this->rowsQuery->paginate($this->perPage);
     }
 
