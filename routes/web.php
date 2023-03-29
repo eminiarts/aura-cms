@@ -50,8 +50,6 @@ Route::domain(config('aura.domain'))
             Route::get('/team-settings', TeamSettings::class)->name('team.settings');
             Route::get('/aura-config', AuraConfig::class)->name('config');
 
-            Route::get('/media', Media::class)->name('media.index');
-
             Route::get('/flows', CreateFlow::class)->name('flows.create');
             Route::get('/flows/{id}', CreateFlow::class)->name('flows.edit');
 
