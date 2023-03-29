@@ -217,8 +217,14 @@ class User extends Authenticatable
     public function indexQuery($query)
     {
         // Query where user_meta key = roles and team_id = auth()->user()->current_team_id
+        if (config('aura.teams')) {
+            return $query->whereHas('meta', function ($query) {
+                $query->where('key', 'roles')->where('team_id', auth()->user()->current_team_id);
+            });
+        }
+
         return $query->whereHas('meta', function ($query) {
-            $query->where('key', 'roles')->where('team_id', auth()->user()->current_team_id);
+            $query->where('key', 'roles');
         });
     }
 
