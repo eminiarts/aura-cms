@@ -2,59 +2,60 @@
 
 namespace Eminiarts\Aura;
 
-use Eminiarts\Aura\Commands\AuraCommand;
-use Eminiarts\Aura\Commands\CreateAuraPlugin;
-use Eminiarts\Aura\Commands\CreateResourceMigration;
-use Eminiarts\Aura\Commands\CreateResourcePermissions;
-use Eminiarts\Aura\Commands\DatabaseToResources;
-use Eminiarts\Aura\Commands\MakeField;
-use Eminiarts\Aura\Commands\MakePosttype;
-use Eminiarts\Aura\Commands\MakeUser;
-use Eminiarts\Aura\Commands\PublishCommand;
-use Eminiarts\Aura\Commands\TransformTableToResource;
+use Livewire\Livewire;
+use Livewire\Component;
+use Illuminate\Support\Arr;
+use Illuminate\Support\Str;
 use Eminiarts\Aura\Facades\Aura;
-use Eminiarts\Aura\Http\Livewire\Attachment\Index as AttachmentIndex;
-use Eminiarts\Aura\Http\Livewire\AuraConfig;
-use Eminiarts\Aura\Http\Livewire\BookmarkPage;
-use Eminiarts\Aura\Http\Livewire\CreateFlow;
-use Eminiarts\Aura\Http\Livewire\CreatePosttype;
-use Eminiarts\Aura\Http\Livewire\EditOperation;
-use Eminiarts\Aura\Http\Livewire\EditPosttypeField;
-use Eminiarts\Aura\Http\Livewire\GlobalSearch;
-use Eminiarts\Aura\Http\Livewire\MediaManager;
-use Eminiarts\Aura\Http\Livewire\MediaUploader;
-use Eminiarts\Aura\Http\Livewire\Navigation;
-use Eminiarts\Aura\Http\Livewire\Notifications;
-use Eminiarts\Aura\Http\Livewire\Post\Create;
-use Eminiarts\Aura\Http\Livewire\Post\CreateModal;
-use Eminiarts\Aura\Http\Livewire\Post\Edit;
-use Eminiarts\Aura\Http\Livewire\Post\EditModal;
-use Eminiarts\Aura\Http\Livewire\Post\Index;
-use Eminiarts\Aura\Http\Livewire\Post\View;
-use Eminiarts\Aura\Http\Livewire\Posttype;
-use Eminiarts\Aura\Http\Livewire\Table\Table;
-use Eminiarts\Aura\Http\Livewire\Taxonomy\Create as TaxonomyCreate;
-use Eminiarts\Aura\Http\Livewire\Taxonomy\Edit as TaxonomyEdit;
-use Eminiarts\Aura\Http\Livewire\Taxonomy\Index as TaxonomyIndex;
-use Eminiarts\Aura\Http\Livewire\Taxonomy\View as TaxonomyView;
-use Eminiarts\Aura\Http\Livewire\TeamSettings;
-use Eminiarts\Aura\Http\Livewire\User\InviteUser;
-use Eminiarts\Aura\Http\Livewire\User\Profile;
-use Eminiarts\Aura\Http\Livewire\User\TwoFactorAuthenticationForm;
-use Eminiarts\Aura\Policies\ResourcePolicy;
-use Eminiarts\Aura\Policies\TeamPolicy;
-use Eminiarts\Aura\Policies\UserPolicy;
 use Eminiarts\Aura\Resources\Team;
 use Eminiarts\Aura\Resources\User;
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Gate;
-use Illuminate\Support\Str;
-use Livewire\Component;
-use Livewire\Livewire;
-use Spatie\LaravelPackageTools\Commands\InstallCommand;
+use Eminiarts\Aura\Commands\MakeUser;
+use Illuminate\Support\Facades\Blade;
+use Eminiarts\Aura\Commands\MakeField;
+use Eminiarts\Aura\Policies\TeamPolicy;
+use Eminiarts\Aura\Policies\UserPolicy;
 use Spatie\LaravelPackageTools\Package;
+use Eminiarts\Aura\Commands\AuraCommand;
+use Eminiarts\Aura\Commands\MakePosttype;
+use Illuminate\Database\Eloquent\Builder;
+use Eminiarts\Aura\Http\Livewire\Posttype;
+use Eminiarts\Aura\Commands\PublishCommand;
+use Eminiarts\Aura\Http\Livewire\Post\Edit;
+use Eminiarts\Aura\Http\Livewire\Post\View;
+use Eminiarts\Aura\Policies\ResourcePolicy;
+use Eminiarts\Aura\Http\Livewire\AuraConfig;
+use Eminiarts\Aura\Http\Livewire\CreateFlow;
+use Eminiarts\Aura\Http\Livewire\Navigation;
+use Eminiarts\Aura\Http\Livewire\Post\Index;
+use Eminiarts\Aura\Commands\CreateAuraPlugin;
+use Eminiarts\Aura\Http\Livewire\Post\Create;
+use Eminiarts\Aura\Http\Livewire\Table\Table;
+use Eminiarts\Aura\Http\Livewire\BookmarkPage;
+use Eminiarts\Aura\Http\Livewire\GlobalSearch;
+use Eminiarts\Aura\Http\Livewire\MediaManager;
+use Eminiarts\Aura\Http\Livewire\TeamSettings;
+use Eminiarts\Aura\Http\Livewire\User\Profile;
+use Eminiarts\Aura\Http\Livewire\EditOperation;
+use Eminiarts\Aura\Http\Livewire\MediaUploader;
+use Eminiarts\Aura\Http\Livewire\Notifications;
+use Eminiarts\Aura\Commands\DatabaseToResources;
+use Eminiarts\Aura\Http\Livewire\CreatePosttype;
+use Eminiarts\Aura\Http\Livewire\Post\EditModal;
+use Eminiarts\Aura\Http\Livewire\User\InviteUser;
+use Eminiarts\Aura\Http\Livewire\Post\CreateModal;
+use Eminiarts\Aura\Http\Livewire\EditPosttypeField;
+use Eminiarts\Aura\Commands\CreateResourceMigration;
+use Eminiarts\Aura\Commands\TransformTableToResource;
+use Eminiarts\Aura\Commands\CreateResourcePermissions;
 use Spatie\LaravelPackageTools\PackageServiceProvider;
+use Spatie\LaravelPackageTools\Commands\InstallCommand;
+use Eminiarts\Aura\Http\Livewire\Taxonomy\Edit as TaxonomyEdit;
+use Eminiarts\Aura\Http\Livewire\Taxonomy\View as TaxonomyView;
+use Eminiarts\Aura\Http\Livewire\Taxonomy\Index as TaxonomyIndex;
+use Eminiarts\Aura\Http\Livewire\User\TwoFactorAuthenticationForm;
+use Eminiarts\Aura\Http\Livewire\Taxonomy\Create as TaxonomyCreate;
+use Eminiarts\Aura\Http\Livewire\Attachment\Index as AttachmentIndex;
 
 class AuraServiceProvider extends PackageServiceProvider
 {
@@ -183,6 +184,13 @@ class AuraServiceProvider extends PackageServiceProvider
                 }
             });
         });
+
+
+        // CheckCondition Blade Directive
+        Blade::if('checkCondition', function ($model, $field) {
+            return \Eminiarts\Aura\Aura::checkCondition($model, $field);
+        });
+
 
         // Register the morph map for the resources
         // $resources = Aura::resources()->mapWithKeys(function ($resource) {

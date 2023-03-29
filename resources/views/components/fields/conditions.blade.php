@@ -1,12 +1,5 @@
-@props([
-'field',
-'model'
-])
+@props(['field','model'])
 
-  @php
-  $show = \Eminiarts\Aura\Aura::checkCondition($model, $field);
-  @endphp
-
-  @if ($show)
-  {{ $slot }}
-  @endif
+@checkCondition($this->model, $field)
+{{ $slot }}
+@endcheckCondition
