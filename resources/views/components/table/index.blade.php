@@ -104,7 +104,8 @@
                     @empty
 
                     <tr>
-                        <div class="py-8 text-center bg-white dark:bg-gray-900">
+                       <td colspan="{{ count($this->headers) + 2 }}">
+                         <div class="py-8 text-center bg-white dark:bg-gray-900">
                             <svg class="w-12 h-12 mx-auto text-gray-300" fill="none" stroke="currentColor"
                                 viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -114,6 +115,7 @@
 
                             <h3 class="mt-2 text-sm font-medium text-gray-900">No entries available</h3>
                         </div>
+                       </td>
                     </tr>
 
                     @endforelse
