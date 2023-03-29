@@ -293,7 +293,16 @@ class Aura
 
     public function navigation()
     {
-        $resources = collect($this->getResources())
+        $resources = collect($this->getResources());
+
+        // If a Resource is overriden, we want to remove the original from the navigation
+        $keys = $resources->map(function ($resource) {
+            return Str::afterLast($resource, '\\');
+        })->reverse()->unique()->reverse()->keys();
+
+        $resources = $resources->filter(function ($value, $key) use ($keys) {
+            return $keys->contains($key);
+        })
             ->map(fn ($r) => app($r)->navigation())
             ->filter(fn ($r) => $r['showInNavigation'] ?? true)
             ->sortBy('sort');

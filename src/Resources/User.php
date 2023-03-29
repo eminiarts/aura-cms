@@ -444,7 +444,11 @@ class User extends UserModel
                     if (optional($user->attributes)[$key]) {
                         $user->{$key} = $value;
                     } else {
-                        $user->meta()->updateOrCreate(['key' => $key, 'team_id' => $user->current_team_id], ['value' => $value]);
+                        if (config('aura.teams')) {
+                            $user->meta()->updateOrCreate(['key' => $key, 'team_id' => $user->current_team_id], ['value' => $value]);
+                        } else {
+                            $user->meta()->updateOrCreate(['key' => $key], ['value' => $value]);
+                        }
                     }
                 }
 
