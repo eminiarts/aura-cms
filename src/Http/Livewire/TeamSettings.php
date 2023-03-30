@@ -2,14 +2,12 @@
 
 namespace Eminiarts\Aura\Http\Livewire;
 
-use Eminiarts\Aura\Aura;
 use Eminiarts\Aura\Resources\Option;
 use Eminiarts\Aura\Traits\InputFields;
 use Eminiarts\Aura\Traits\MediaFields;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Str;
 use Livewire\Component;
 
 class TeamSettings extends Component
@@ -40,25 +38,22 @@ class TeamSettings extends Component
                 'name' => 'Panel',
                 'slug' => 'panel-DZzV',
             ],
-
             [
                 'name' => 'App Logo',
-                'type' => 'Eminiarts\\Aura\\Fields\\File',
+                'type' => 'Eminiarts\\Aura\\Fields\\Image',
                 'slug' => 'app-logo',
                 'style' => [
                     'width' => '50',
                 ],
             ],
-
             [
                 'name' => 'App Logo (Darkmode)',
-                'type' => 'Eminiarts\\Aura\\Fields\\File',
+                'type' => 'Eminiarts\\Aura\\Fields\\Image',
                 'slug' => 'app-logo-darkmode',
                 'style' => [
                     'width' => '50',
                 ],
             ],
-
             [
                 'name' => 'Timezone',
                 'type' => 'Eminiarts\\Aura\\Fields\\Text',
@@ -424,7 +419,6 @@ class TeamSettings extends Component
         return view('aura::livewire.team-settings')->layout('aura::components.layout.app');
     }
 
-
     public function rules()
     {
         return Arr::dot([
@@ -441,8 +435,11 @@ class TeamSettings extends Component
 
         // $this->validate();
 
-        // clear cache of auth()->user()->current_team_id . '.aura.team-settings'
-        Cache::forget(auth()->user()->current_team_id.'.aura.team-settings');
+        if (config('aura.teams')) {
+            Cache::forget(auth()->user()->current_team_id.'.aura.team-settings');
+        } else {
+            Cache::forget('aura.team-settings');
+        }
 
         return $this->notify('Successfully updated.');
 
@@ -456,5 +453,4 @@ class TeamSettings extends Component
 
         // return $this->notify('Created successfully.');
     }
-
 }

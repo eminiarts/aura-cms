@@ -33,24 +33,39 @@ class MakeUser extends Command
             ],
         ]);
 
-        DB::table('teams')->insert([
-            'name' => $name,
-            'user_id' => $user->id,
-            'personal_team' => 1,
-            'created_at' => now(),
-            'updated_at' => now(),
-        ]);
+        if (config('aura.teams')) {
+            DB::table('teams')->insert([
+                'name' => $name,
+                'user_id' => $user->id,
+                'personal_team' => 1,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
 
-        $team = Team::first();
-
-        $user->current_team_id = $team->id;
-
-        $user->save();
+            $team = Team::first();
+            $user->current_team_id = $team->id;
+            $user->save();
+        }
 
         auth()->loginUsingId($user->id);
 
         // Create Role
-        $role = Role::create(['type' => 'Role', 'title' => 'Super Admin', 'slug' => 'super_admin', 'name' => 'Super Admin', 'description' => 'Super Admin has can perform everything.', 'super_admin' => true, 'permissions' => [], 'team_id' => $team->id, 'user_id' => $user->id]);
+        $roleData = [
+            'type' => 'Role',
+            'title' => 'Super Admin',
+            'slug' => 'super_admin',
+            'name' => 'Super Admin',
+            'description' => 'Super Admin has can perform everything.',
+            'super_admin' => true,
+            'permissions' => [],
+            'user_id' => $user->id,
+        ];
+
+        if (config('aura.teams')) {
+            $roleData['team_id'] = $team->id;
+        }
+
+        $role = Role::create($roleData);
 
         $user->update(['fields' => ['roles' => [$role->id]]]);
 

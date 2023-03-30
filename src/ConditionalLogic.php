@@ -8,8 +8,6 @@ class ConditionalLogic
     {
         $conditions = optional($field)['conditional_logic'];
 
-        // ray($conditions);
-
         if (! $conditions) {
             return true;
         }
@@ -26,6 +24,15 @@ class ConditionalLogic
                 // dd('break here', $model, $field);
                 $show = false;
                 break;
+            }
+
+            // if condition is a closure, run it
+            if ($condition instanceof \Closure) {
+                $show = $condition($model);
+
+                if ($show === false) {
+                    break;
+                }
             }
 
             // if $condition is not an array, break
@@ -48,7 +55,6 @@ class ConditionalLogic
                     // if $model->fields is set, use that, otherwise, use $model['fields']
 
                     if (optional($model)->fields) {
-                        // ray('hier', $model->fields);
                         $fieldValue = $model->fields[$condition['field']];
                     } else {
                         $fieldValue = optional($model['fields'])[$condition['field']];

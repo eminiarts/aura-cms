@@ -2,6 +2,7 @@
 
 namespace Eminiarts\Aura\Resources;
 
+use Eminiarts\Aura\Facades\Aura;
 use Eminiarts\Aura\Resource;
 
 class Permission extends Resource
@@ -79,7 +80,7 @@ class Permission extends Resource
 
     public static function getGroupOptions()
     {
-        return app('App\Aura')->resources()->mapWithKeys(fn ($item) => [$item => $item])->toArray();
+        return collect(Aura::getResources())->mapWithKeys(fn ($item) => [$item => $item])->toArray();
     }
 
     public function getIcon()

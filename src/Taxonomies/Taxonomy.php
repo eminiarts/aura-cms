@@ -49,11 +49,6 @@ class Taxonomy extends Resource
         return route('aura.taxonomy.edit', ['slug' => $this->getType(), 'id' => $this->id]);
     }
 
-    public function viewUrl()
-    {
-        return route('aura.taxonomy.view', ['slug' => $this->getType(), 'id' => $this->id]);
-    }
-
     public static function getFields()
     {
         return [
@@ -121,6 +116,11 @@ class Taxonomy extends Resource
         return $this->hasMany(TaxonomyMeta::class, 'taxonomy_id');
     }
 
+    public function viewUrl()
+    {
+        return route('aura.taxonomy.view', ['slug' => $this->getType(), 'id' => $this->id]);
+    }
+
     /**
      * The "booted" method of the model.
      *
@@ -152,7 +152,7 @@ class Taxonomy extends Resource
                 $taxonomy->count = 0;
             }
 
-            if (! $taxonomy->team_id && auth()->user()) {
+            if (config('aura.teams') && ! $taxonomy->team_id && auth()->user()) {
                 $taxonomy->team_id = auth()->user()->current_team_id;
             }
 

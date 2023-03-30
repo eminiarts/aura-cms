@@ -289,6 +289,11 @@ class Posttype extends Component
 
         $this->authorize();
 
+        // Check if fields have closures
+        if ($this->model->fieldsHaveClosures($this->model->getFields())) {
+            abort(403, 'Your fields have closures. You can not use the Posttype Builder with Closures.');
+        }
+
         $this->fieldsArray = $this->model->getFields();
 
         if (count($this->mappedFields) > 0 && $this->mappedFields[0]['type'] == "Eminiarts\Aura\Fields\Tab" && $this->mappedFields[0]['global']) {

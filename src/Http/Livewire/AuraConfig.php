@@ -44,6 +44,14 @@ class AuraConfig extends Component
                 'style' => [
                     'width' => '100',
                 ],
+                'conditional_logic' => [
+                    function () {
+                        return config('aura.teams');
+                    },
+                    // function () {
+                    //     return auth()->user()->email == 'ivan@eminiarts.ch';
+                    // },
+                ],
             ],
             [
                 'name' => 'User Invitations ',
@@ -269,10 +277,6 @@ class AuraConfig extends Component
 
     public function updatedConfig()
     {
-        // Update Config
-        //$this->config = config('aura')['features'];
-
-        // Save Config
         $this->save();
     }
 }

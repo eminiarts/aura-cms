@@ -2,33 +2,13 @@
 
 namespace Eminiarts\Aura\Traits;
 
-use Illuminate\Support\Arr;
 use Illuminate\Support\Str;
 
 trait MediaFields
 {
-    public function updateField($data)
+    public function getField($slug)
     {
-        $this->post['fields'][$data['slug']] = $data['value'];
-        // $this->save();
-
-        $this->emit('selectedMediaUpdated', [
-            'slug' => $data['slug'],
-            'value' => $data['value'],
-        ]);
-    }
-
-    public function reorderMedia($slug, $ids)
-    {
-        $ids = collect($ids)->map(function ($id) {
-            return Str::after($id, '_file_');
-        })->toArray();
-
-        // emit update Field
-        $this->updateField([
-            'slug' => $slug,
-            'value' => $ids,
-        ]);
+        return $this->post['fields'][$slug];
     }
 
     public function removeMediaFromField($slug, $id)
@@ -51,8 +31,27 @@ trait MediaFields
         ]);
     }
 
-    public function getField($slug)
+    public function reorderMedia($slug, $ids)
     {
-        return $this->post['fields'][$slug];
+        $ids = collect($ids)->map(function ($id) {
+            return Str::after($id, '_file_');
+        })->toArray();
+
+        // emit update Field
+        $this->updateField([
+            'slug' => $slug,
+            'value' => $ids,
+        ]);
+    }
+
+    public function updateField($data)
+    {
+        $this->post['fields'][$data['slug']] = $data['value'];
+        // $this->save();
+
+        $this->emit('selectedMediaUpdated', [
+            'slug' => $data['slug'],
+            'value' => $data['value'],
+        ]);
     }
 }

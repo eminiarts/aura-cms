@@ -11,10 +11,12 @@
       {{ __('Manage Team') }}
   </div>
 
+  @if(config('aura.teams'))      
   <!-- Team Settings -->
   <x-aura::dropdown-link href="{{ route('aura.post.edit', ['slug' => 'Team', 'id' => Auth::user()->current_team_id]) }}">
       {{ __('Team Settings') }}
   </x-aura::dropdown-link>
+  @endif
 
   @can('create', Team::class)
       <x-aura::dropdown-link href="{{ route('aura.post.create', ['slug' => 'Team']) }}">
@@ -29,7 +31,9 @@
       {{ __('Switch Teams') }}
   </div>
 
+  @if(config('aura.teams'))      
   @foreach (Auth::user()->getTeams() as $team)
       <x-aura::switchable-team :team="$team" />
   @endforeach
+  @endif
 </div>

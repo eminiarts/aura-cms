@@ -68,7 +68,7 @@ class Option extends Resource
         static::addGlobalScope(new TeamScope());
 
         static::saving(function ($post) {
-            if (! isset($post->team_id) && auth()->user()) {
+            if (config('aura.teams') && ! isset($post->team_id) && auth()->user()) {
                 $post->team_id = auth()->user()->current_team_id;
             }
 
@@ -77,7 +77,6 @@ class Option extends Resource
             unset($post->content);
             unset($post->user_id);
             unset($post->type);
-            // unset($post->team_id);
         });
     }
 }

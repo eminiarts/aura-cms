@@ -4,8 +4,6 @@ use Eminiarts\Aura\Resources\User;
 use Eminiarts\Aura\Taxonomies\Tag;
 use Eminiarts\Aura\Taxonomies\Taxonomy;
 
-uses()->group('current');
-
 // Before each test, create a Superadmin and login
 beforeEach(function () {
     // Create User
@@ -118,7 +116,6 @@ test('Tag Taxonomy properties', function () {
 
     expect($taxonomy->getType())->toBe('Tag');
 });
-
 
 test('Tag Index Page', function () {
     $this->get(route('aura.taxonomy.index', 'Tag'))

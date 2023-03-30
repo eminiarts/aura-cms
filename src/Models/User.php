@@ -112,6 +112,10 @@ class User extends Authenticatable
      */
     public function currentTeam()
     {
+        if (! config('aura.teams')) {
+            return;
+        }
+
         if (is_null($this->current_team_id) && $this->id) {
             $this->switchTeam($this->personalTeam());
         }
@@ -200,6 +204,10 @@ class User extends Authenticatable
 
     public function getTeams()
     {
+        if (! config('aura.teams')) {
+            return;
+        }
+
         // Return cached teams with meta
         return Cache::remember('user.'.$this->id.'.teams', now()->addHour(), function () {
             return $this->teams()->with('meta')->get();
@@ -209,8 +217,14 @@ class User extends Authenticatable
     public function indexQuery($query)
     {
         // Query where user_meta key = roles and team_id = auth()->user()->current_team_id
+        if (config('aura.teams')) {
+            return $query->whereHas('meta', function ($query) {
+                $query->where('key', 'roles')->where('team_id', auth()->user()->current_team_id);
+            });
+        }
+
         return $query->whereHas('meta', function ($query) {
-            $query->where('key', 'roles')->where('team_id', auth()->user()->current_team_id);
+            $query->where('key', 'roles');
         });
     }
 

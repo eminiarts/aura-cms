@@ -4,6 +4,13 @@ namespace Eminiarts\Aura\Traits;
 
 trait InteractsWithFields
 {
+    public function getCreateFieldsProperty()
+    {
+        $fields = $this->model->createFields();
+
+        return $this->model->fieldsForView($fields);
+    }
+
     public function getEditFieldsProperty()
     {
         $fields = $this->model->editFields();

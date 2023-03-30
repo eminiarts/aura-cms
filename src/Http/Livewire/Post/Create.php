@@ -2,22 +2,21 @@
 
 namespace Eminiarts\Aura\Http\Livewire\Post;
 
-use Livewire\Component;
-use Illuminate\Support\Arr;
-use Illuminate\Support\Str;
-use Eminiarts\Aura\Models\Post;
 use Eminiarts\Aura\Facades\Aura;
-use Eminiarts\Aura\Traits\RepeaterFields;
+use Eminiarts\Aura\Models\Post;
 use Eminiarts\Aura\Traits\InteractsWithFields;
 use Eminiarts\Aura\Traits\MediaFields;
+use Eminiarts\Aura\Traits\RepeaterFields;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
+use Illuminate\Support\Arr;
+use Livewire\Component;
 
 class Create extends Component
 {
     use AuthorizesRequests;
     use InteractsWithFields;
-    use RepeaterFields;
     use MediaFields;
+    use RepeaterFields;
 
     public $inModal = false;
 
