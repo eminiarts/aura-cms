@@ -10,9 +10,6 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
 
-// current
-uses()->group('current');
-
 test('Aura without teams - pages', function () {
     // Set config to not use teams
     config(['aura.teams' => false]);
