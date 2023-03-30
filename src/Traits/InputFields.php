@@ -58,8 +58,22 @@ trait InputFields
                 return false;
             }
 
-            // if there is a on_edit = false, filter it out
             if (optional($field)['on_edit'] === false) {
+                return false;
+            }
+
+            return true;
+        });
+    }
+
+    public function createFields()
+    {
+        return $this->mappedFields()->filter(function ($field) {
+            if (optional($field)['on_forms'] === false) {
+                return false;
+            }
+
+            if (optional($field)['on_create'] === false) {
                 return false;
             }
 
@@ -95,10 +109,12 @@ trait InputFields
 
         $pipes = [
             ApplyTabs::class,
-            MapFields::class,
-            AddIdsToFields::class,
+            // MapFields::class,
+            // AddIdsToFields::class,
             // ApplyParentConditionalLogic::class,
-            BuildTreeFromFields::class,
+            // ApplyParentDisplayAttributes::class,
+            // FilterViewFields::class,
+            // BuildTreeFromFields::class,
         ];
 
         return $this->sendThroughPipeline($fields, $pipes);

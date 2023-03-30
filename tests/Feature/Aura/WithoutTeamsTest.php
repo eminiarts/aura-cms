@@ -6,9 +6,6 @@ use Illuminate\Support\Facades\Schema;
 
 uses(RefreshDatabase::class);
 
-// current
-uses()->group('current');
-
 // Before each test, create a Superadmin and login
 beforeEach(function () {
     // Create User
