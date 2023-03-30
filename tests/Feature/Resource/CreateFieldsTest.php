@@ -47,12 +47,20 @@ class CreateFieldsTestModel extends Resource
     }
 }
 
-test('field inherits on_view from parent', function () {
+test('if the first tab is hidden, tabs should be applied correctly to second tab', function () {
     $model = new CreateFieldsTestModel();
 
     $fields = $model->createFields();
 
+    // expect count to be 2
+    expect($fields->count())->toBe(2);
+
+    // tab 1 should not be in the fields
+    expect($fields->firstWhere('slug', 'tab-1'))->toBeNull();
+    expect($fields->firstWhere('slug', 'text1'))->toBeNull();
+
     $fieldsForView = $model->fieldsForView($fields);
 
-    dd($fields);
+
+    dd($fields, $fieldsForView);
 });
