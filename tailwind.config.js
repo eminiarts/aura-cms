@@ -42,6 +42,14 @@ module.exports = {
                 countdown: 'countdown 3s linear 1',
             },
             colors: {
+                sidebar: {
+                    'bg' : withOpacityValue('--sidebar-bg'),
+                    'bg-hover' : withOpacityValue('--sidebar-bg-hover'),
+                    'bg-dropdown' : withOpacityValue('--sidebar-bg-dropdown'),
+                    'icon' : withOpacityValue('--sidebar-icon'),
+                    'icon-hover' : withOpacityValue('--sidebar-icon-hover'),
+                    'text' : withOpacityValue('--sidebar-text'),
+                },
                 primary: {
                     '25': withOpacityValue('--primary-25'),
                     '50':  withOpacityValue('--primary-50'),

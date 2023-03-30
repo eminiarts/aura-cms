@@ -39,10 +39,23 @@ class GlobalSearch extends Component
         foreach ($resources as $resource) {
             $model = $resource::query();
 
-            $results = $model->where('title', 'like', '%'.$this->search.'%')->orWhereHas('meta', function (Builder $query) {
-                $query->where('key', 'LIKE', '%'.$this->search.'%')
-                    ->orWhere('value', 'LIKE', '%'.$this->search.'%');
-            })->get();
+            // if no resource then continue
+            if (! $resource) {
+                continue;
+            }
+            // dd($resource);
+
+            // ray('hier 2222', app($resource)->getSearchableFields(), $resource::getSlug());
+
+            $searchableFields = app($resource)->getSearchableFields()->pluck('slug');
+
+            $results = $model->where('title', 'like', $this->search . '%')
+                ->orWhereHas('meta', function (Builder $query) use ($searchableFields) {
+                    $query->whereIn('key', $searchableFields)
+                        ->where(function (Builder $query) {
+                            $query->where('value', 'LIKE', $this->search . '%');
+                        });
+                })->get();
 
             $searchResults->push(...$results);
         }
@@ -63,6 +76,9 @@ class GlobalSearch extends Component
 
             return $item;
         });
+
+        // limit to 15
+        $searchResults = $searchResults->take(15);
 
         // group by type
         $searchResults = $searchResults->groupBy('type');

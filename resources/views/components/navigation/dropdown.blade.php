@@ -34,15 +34,15 @@ $settings = Eminiarts\Aura\Facades\Aura::getOption('team-settings');
             this.active = value ? this.id : null
         },
     }" role="region" :class="{
-        'bg-primary-800/70 dark:bg-gray-700/50 rounded-lg': expanded,
+        'bg-sidebar-bg-dropdown/70 dark:bg-gray-700/50 rounded-lg': expanded,
     }">
           <button
               x-on:click="expanded = !expanded"
               :aria-expanded="expanded"
               class="flex items-center justify-between w-full transition duration-150 ease-in-out rounded-lg"
               :class="{
-                  'bg-primary-700 dark:bg-gray-800 hover:bg-primary-600': expanded,
-                  'bg-primary-700 dark:bg-gray-800 hover:bg-primary-600': !expanded,
+                  'bg-sidebar-bg dark:bg-gray-800 hover:bg-sidebar-bg-hover': expanded,
+                  'bg-sidebar-bg dark:bg-gray-800 hover:bg-sidebar-bg-hover': !expanded,
                   'sidebar-item-compact px-2 h-8': compact,
                   'sidebar-item px-3 h-10': !compact,
               }"

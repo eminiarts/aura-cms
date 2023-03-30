@@ -4,21 +4,54 @@
 @if($settings)
 <style>
 
+:root {
+    --primary-25: {{ TransformColor::hexToRgb('#fbfeff') }};
+    --primary-50: {{ TransformColor::hexToRgb('#E9EEFD') }};
+    --primary-100: {{ TransformColor::hexToRgb('#C9D9FB') }};
+    --primary-200: {{ TransformColor::hexToRgb('#A3BFF9') }};
+    --primary-300: {{ TransformColor::hexToRgb('#699EF6') }};
+    --primary-400: {{ TransformColor::hexToRgb('#3C7EF4') }};
+    --primary-500: {{ TransformColor::hexToRgb('#153AEF') }};
+    --primary-600: {{ TransformColor::hexToRgb('#0E30D7') }};
+    --primary-700: {{ TransformColor::hexToRgb('#0A25B9') }};
+    --primary-800: {{ TransformColor::hexToRgb('#071B9B') }};
+    --primary-900: {{ TransformColor::hexToRgb('#04127C') }};
+    --primary-950: {{ TransformColor::hexToRgb('#010850') }};
+
+
+    --sidebar-bg: var(--primary-700);
+    --sidebar-bg-hover: var(--primary-600);
+    --sidebar-bg-dropdown: var(--primary-800);
+
+    --sidebar-text: var(--primary-400);
+    --sidebar-icon: var(--primary-300);
+    --sidebar-icon-hover: var(--primary-200);
+}
 
 @if (optional($settings)['color-palette'] == 'aura' )
 
     :root {
-        --primary-25: 245 248 255;
-        --primary-50: 239 244 255;
-        --primary-100: 209 224 255;
-        --primary-200: 178 204 255;
-        --primary-300: 132 173 255;
-        --primary-400: 82 139 255;
-        --primary-500: 41 91 255;
-        --primary-600: 21 58 239;
-        --primary-700: 0 12 235;
-        --primary-800: 0 172 193;
-        --primary-900: 0 137 158;
+        --primary-25: {{ TransformColor::hexToRgb('#fbfeff') }};
+        --primary-50: {{ TransformColor::hexToRgb('#E9EEFD') }};
+        --primary-100: {{ TransformColor::hexToRgb('#C9D9FB') }};
+        --primary-200: {{ TransformColor::hexToRgb('#A3BFF9') }};
+        --primary-300: {{ TransformColor::hexToRgb('#699EF6') }};
+        --primary-400: {{ TransformColor::hexToRgb('#3C7EF4') }};
+        --primary-500: {{ TransformColor::hexToRgb('#153AEF') }};
+        --primary-600: {{ TransformColor::hexToRgb('#0E30D7') }};
+        --primary-700: {{ TransformColor::hexToRgb('#0A25B9') }};
+        --primary-800: {{ TransformColor::hexToRgb('#071B9B') }};
+        --primary-900: {{ TransformColor::hexToRgb('#04127C') }};
+        --primary-950: {{ TransformColor::hexToRgb('#010850') }};
+
+
+        --sidebar-bg: var(--primary-700);
+        --sidebar-bg-hover: var(--primary-600);
+        --sidebar-bg-dropdown: var(--primary-800);
+
+        --sidebar-text: var(--primary-400);
+        --sidebar-icon: var(--primary-300);
+        --sidebar-icon-hover: var(--primary-200);
     }
 
 @elseif (optional($settings)['color-palette'] == 'red' )
@@ -35,6 +68,7 @@
         --primary-700: 185 28 28;
         --primary-800: 153 27 27;
         --primary-900: 127 29 29;
+
     }
 
 @elseif (optional($settings)['color-palette'] == 'orange' )
@@ -51,6 +85,14 @@
         --primary-700: 154 52 18;
         --primary-800: 124 45 18;
         --primary-900: 101 43 18;
+
+        --sidebar-bg: var(--primary-500);
+        --sidebar-bg-hover: var(--primary-400);
+        --sidebar-bg-dropdown: var(--primary-600);
+
+        --sidebar-text: var(--primary-300);
+        --sidebar-icon: var(--primary-200);
+        --sidebar-icon-hover: var(--primary-100);
     }
 
 @elseif (optional($settings)['color-palette'] == 'amber' )
@@ -67,6 +109,14 @@
         --primary-700: 146 64 14;
         --primary-800: 120 53 15;
         --primary-900: 99 49 18;
+
+        --sidebar-bg: var(--primary-500);
+        --sidebar-bg-hover: var(--primary-400);
+        --sidebar-bg-dropdown: var(--primary-600);
+
+        --sidebar-text: var(--primary-300);
+        --sidebar-icon: var(--primary-200);
+        --sidebar-icon-hover: var(--primary-100);
     }
 
 @elseif (optional($settings)['color-palette'] == 'yellow'    )
@@ -83,6 +133,14 @@
         --primary-700: 133 77 14;
         --primary-800: 113 63 18;
         --primary-900: 101 54 16;
+
+        --sidebar-bg: var(--primary-500);
+        --sidebar-bg-hover: var(--primary-400);
+        --sidebar-bg-dropdown: var(--primary-600);
+
+        --sidebar-text: var(--primary-300);
+        --sidebar-icon: var(--primary-200);
+        --sidebar-icon-hover: var(--primary-100);
     }
 
 @elseif (optional($settings)['color-palette'] == 'lime' )
@@ -99,6 +157,14 @@
         --primary-700: 63 98 18;
         --primary-800: 54 83 20;
         --primary-900: 47 75 18;
+
+        --sidebar-bg: var(--primary-600);
+        --sidebar-bg-hover: var(--primary-500);
+        --sidebar-bg-dropdown: var(--primary-700);
+
+        --sidebar-text: var(--primary-400);
+        --sidebar-icon: var(--primary-300);
+        --sidebar-icon-hover: var(--primary-200);
     }
 
 @elseif (optional($settings)['color-palette'] == 'green' )
@@ -131,6 +197,14 @@
         --primary-700: 6 95 70;
         --primary-800: 6 78 59;
         --primary-900: 6 78 59;
+
+        --sidebar-bg: var(--primary-600);
+        --sidebar-bg-hover: var(--primary-500);
+        --sidebar-bg-dropdown: var(--primary-700);
+
+        --sidebar-text: var(--primary-400);
+        --sidebar-icon: var(--primary-300);
+        --sidebar-icon-hover: var(--primary-200);
     }
 
 @elseif (optional($settings)['color-palette'] == 'teal' )
@@ -147,6 +221,14 @@
         --primary-700: 17 94 89;
         --primary-800: 20 78 74;
         --primary-900: 20 78 72;
+
+        --sidebar-bg: var(--primary-600);
+        --sidebar-bg-hover: var(--primary-500);
+        --sidebar-bg-dropdown: var(--primary-700);
+
+        --sidebar-text: var(--primary-400);
+        --sidebar-icon: var(--primary-300);
+        --sidebar-icon-hover: var(--primary-200);
     }
 
 @elseif (optional($settings)['color-palette'] == 'cyan' )
@@ -163,6 +245,14 @@
         --primary-700: 21 94 117;
         --primary-800: 22 78 99;
         --primary-900: 26 54 93;
+
+        --sidebar-bg: var(--primary-600);
+        --sidebar-bg-hover: var(--primary-500);
+        --sidebar-bg-dropdown: var(--primary-700);
+
+        --sidebar-text: var(--primary-300);
+        --sidebar-icon: var(--primary-200);
+        --sidebar-icon-hover: var(--primary-100);
     }
 
 @elseif (optional($settings)['color-palette'] == 'sky' )
@@ -179,6 +269,14 @@
         --primary-700: 7 89 133;
         --primary-800: 12 74 110;
         --primary-900: 12 74 110;
+
+        --sidebar-bg: var(--primary-600);
+        --sidebar-bg-hover: var(--primary-500);
+        --sidebar-bg-dropdown: var(--primary-700);
+
+        --sidebar-text: var(--primary-300);
+        --sidebar-icon: var(--primary-200);
+        --sidebar-icon-hover: var(--primary-100);
     }
 
 @elseif (optional($settings)['color-palette'] == 'blue' )
@@ -227,6 +325,14 @@
         --primary-700: 91 33 182;
         --primary-800: 76 29 149;
         --primary-900: 63 24 95;
+
+        --sidebar-bg: var(--primary-600);
+        --sidebar-bg-hover: var(--primary-500);
+        --sidebar-bg-dropdown: var(--primary-700);
+
+        --sidebar-text: var(--primary-300);
+        --sidebar-icon: var(--primary-200);
+        --sidebar-icon-hover: var(--primary-100);
     }
 
 @elseif (optional($settings)['color-palette'] == 'purple' )
@@ -243,6 +349,14 @@
         --primary-700: 107 33 168;
         --primary-800: 88 28 135;
         --primary-900: 79 26 111;
+
+        --sidebar-bg: var(--primary-600);
+        --sidebar-bg-hover: var(--primary-500);
+        --sidebar-bg-dropdown: var(--primary-700);
+
+        --sidebar-text: var(--primary-300);
+        --sidebar-icon: var(--primary-200);
+        --sidebar-icon-hover: var(--primary-100);
     }
 
 @elseif (optional($settings)['color-palette'] == 'fuchsia' )
@@ -259,6 +373,14 @@
         --primary-700: 134 25 143;
         --primary-800: 112 26 117;
         --primary-900: 99 25 99;
+
+        --sidebar-bg: var(--primary-600);
+        --sidebar-bg-hover: var(--primary-500);
+        --sidebar-bg-dropdown: var(--primary-700);
+
+        --sidebar-text: var(--primary-300);
+        --sidebar-icon: var(--primary-200);
+        --sidebar-icon-hover: var(--primary-100);
     }
 
 @elseif (optional($settings)['color-palette'] == 'pink' )
@@ -275,6 +397,14 @@
         --primary-700: 157 24 77;
         --primary-800: 131 24 67;
         --primary-900: 107 26 61;
+
+        --sidebar-bg: var(--primary-600);
+        --sidebar-bg-hover: var(--primary-500);
+        --sidebar-bg-dropdown: var(--primary-700);
+
+        --sidebar-text: var(--primary-300);
+        --sidebar-icon: var(--primary-200);
+        --sidebar-icon-hover: var(--primary-100);
     }
 
 @elseif (optional($settings)['color-palette'] == 'rose' )
@@ -291,6 +421,14 @@
         --primary-700: 159 18 57;
         --primary-800: 136 19 55;
         --primary-900: 119 30 61;
+
+        --sidebar-bg: var(--primary-600);
+        --sidebar-bg-hover: var(--primary-500);
+        --sidebar-bg-dropdown: var(--primary-700);
+
+        --sidebar-text: var(--primary-300);
+        --sidebar-icon: var(--primary-200);
+        --sidebar-icon-hover: var(--primary-100);
     }
 
 @elseif (optional($settings)['color-palette'] == 'mountain-meadow' )
@@ -307,6 +445,14 @@
         --primary-700: 15 118 104;
         --primary-800: 17 94 85;
         --primary-900: 20 78 71;
+
+        --sidebar-bg: var(--primary-600);
+        --sidebar-bg-hover: var(--primary-500);
+        --sidebar-bg-dropdown: var(--primary-700);
+
+        --sidebar-text: var(--primary-300);
+        --sidebar-icon: var(--primary-100);
+        --sidebar-icon-hover: var(--primary-50);
     }
 
 @elseif (optional($settings)['color-palette'] == 'sandal' )
@@ -339,6 +485,14 @@
     --primary-700: 52 65 85;
     --primary-800: 30 41 59;
     --primary-900: 15 23 42;
+
+    --sidebar-bg: var(--primary-600);
+    --sidebar-bg-hover: var(--primary-500);
+    --sidebar-bg-dropdown: var(--primary-700);
+
+    --sidebar-text: var(--primary-400);
+    --sidebar-icon: var(--primary-400);
+    --sidebar-icon-hover: var(--primary-300);
 }
 
 @elseif (optional($settings)['color-palette'] == 'gray' )
@@ -355,6 +509,14 @@
     --primary-700: 55 65 81;
     --primary-800: 31 41 55;
     --primary-900: 17 24 39;
+
+    --sidebar-bg: var(--primary-600);
+    --sidebar-bg-hover: var(--primary-500);
+    --sidebar-bg-dropdown: var(--primary-700);
+
+    --sidebar-text: var(--primary-400);
+    --sidebar-icon: var(--primary-400);
+    --sidebar-icon-hover: var(--primary-300);
 }
 
 @elseif (optional($settings)['color-palette'] == 'zinc' )
@@ -371,6 +533,14 @@
     --primary-700: 63 63 70;
     --primary-800: 39 39 42;
     --primary-900: 24 24 27;
+
+    --sidebar-bg: var(--primary-600);
+    --sidebar-bg-hover: var(--primary-500);
+    --sidebar-bg-dropdown: var(--primary-700);
+
+    --sidebar-text: var(--primary-400);
+    --sidebar-icon: var(--primary-400);
+    --sidebar-icon-hover: var(--primary-300);
 }
 
 @elseif (optional($settings)['color-palette'] == 'neutral' )
@@ -386,6 +556,14 @@
     --primary-700: 64 64 64;
     --primary-800: 38 38 38;
     --primary-900: 23 23 23;
+
+    --sidebar-bg: var(--primary-600);
+    --sidebar-bg-hover: var(--primary-500);
+    --sidebar-bg-dropdown: var(--primary-700);
+
+    --sidebar-text: var(--primary-400);
+    --sidebar-icon: var(--primary-400);
+    --sidebar-icon-hover: var(--primary-300);
 }
 
 @elseif (optional($settings)['color-palette'] == 'stone' )
@@ -401,6 +579,14 @@
     --primary-700: 68 64 60;
     --primary-800: 41 37 40;
     --primary-900: 28 25 23;
+
+    --sidebar-bg: var(--primary-600);
+    --sidebar-bg-hover: var(--primary-500);
+    --sidebar-bg-dropdown: var(--primary-700);
+
+    --sidebar-text: var(--primary-400);
+    --sidebar-icon: var(--primary-400);
+    --sidebar-icon-hover: var(--primary-300);
 }
 
 @elseif (optional($settings)['color-palette'] == 'custom' )

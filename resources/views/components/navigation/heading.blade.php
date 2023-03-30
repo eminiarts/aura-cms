@@ -13,7 +13,7 @@ $settings = Eminiarts\Aura\Facades\Aura::getOption('team-settings');
 <div>
   <h5 class="px-2 mt-4 text-xs font-semibold tracking-wide uppercase select-none
     @if ($sidebarType == 'primary')
-      text-primary-400 dark:text-gray-500
+      text-sidebar-text dark:text-gray-500
     @elseif ($sidebarType == 'light')
       text-gray-400 dark:text-gray-500
     @elseif ($sidebarType == 'dark')

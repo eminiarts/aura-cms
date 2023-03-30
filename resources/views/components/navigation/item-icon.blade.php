@@ -19,7 +19,7 @@ $settings = Eminiarts\Aura\Facades\Aura::getOption('team-settings');
     }
 
     if ($sidebarType == 'primary') {
-        $iconClass = 'group-[.is-active]:text-white text-primary-300 dark:text-primary-500 group-hover:text-primary-200 dark:group-hover:text-primary-600';
+        $iconClass = 'group-[.is-active]:text-white text-primary-300 dark:text-primary-500 group-hover:text-primary-200 dark:group-hover:text-sidebar-bg-hover';
     } else if ($sidebarType == 'light') {
         $iconClass = 'group-[.is-active]:text-primary-500 text-primary-500 dark:text-primary-500 group-hover:text-primary-500';
     } else if ($sidebarType == 'dark') {
@@ -39,7 +39,7 @@ $settings = Eminiarts\Aura\Facades\Aura::getOption('team-settings');
     href="{{ route($route, $id ?? null) }}"
     @endif
     {{$attributes->merge([
-      'class' => 'sidebar-item-icon group flex items-center py-2 px-2 rounded-lg transition ease-in-out duration-150' . (Request::fullUrlIs($route ? route($route, $id) : '') ? ' is-active bg-primary-600 hover:bg-primary-600 text-white' : 'bg-white dark:bg-gray-800 hover:bg-primary-600') . ' ' .  ($compact ? 'px-2 py-1' : 'px-2 py-2'),
+      'class' => 'sidebar-item-icon group flex items-center py-2 px-2 rounded-lg transition ease-in-out duration-150' . (Request::fullUrlIs($route ? route($route, $id) : '') ? ' is-active bg-sidebar-bg-hover hover:bg-sidebar-bg-hover text-white' : 'bg-white dark:bg-gray-800 hover:bg-sidebar-bg-hover') . ' ' .  ($compact ? 'px-2 py-1' : 'px-2 py-2'),
       ])}}
   >
     <div class="flex items-center ml-0 space-x-3 text-base font-semibold">
