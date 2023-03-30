@@ -317,4 +317,18 @@ class Resource extends Model
         //     dd('da', $post);
         // });
     }
+
+    public function getSearchableFields()
+    {
+        // get input fields and remove the ones that are not searchable
+        $fields = $this->inputFields()->filter(function ($field) {
+            // if $field is array or undefined, then we don't want to use it
+            if (! is_array($field) || ! isset($field['searchable'])) {
+                return false;
+            }
+            return $field['searchable'];
+        });
+
+        return $fields;
+    }
 }

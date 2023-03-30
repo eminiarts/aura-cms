@@ -33,7 +33,7 @@ $settings = Eminiarts\Aura\Facades\Aura::getOption('team-settings');
         class="flex items-center justify-between w-full px-2 py-2 transition duration-150 ease-in-out rounded-lg
 
         @if ($sidebarType == 'primary')
-          group-[.is-active]:text-white text-primary-300 hover:text-primary-200 hover:bg-primary-600
+          group-[.is-active]:text-white text-primary-300 hover:text-primary-200 hover:bg-sidebar-bg-hover
           dark:text-primary-500 dark:hover:text-primary-500
         @elseif ($sidebarType == 'light')
           group-[.is-active]:text-primary-500 text-primary-500 hover:text-primary-400

@@ -16,7 +16,7 @@ $settings = Aura::getOption('team-settings');
     }
 
     if ($sidebarType == 'primary') {
-        $iconClass = 'group-[.is-active]:text-white text-primary-300 dark:text-primary-500 group-hover:text-primary-200 dark:group-hover:text-primary-500';
+        $iconClass = 'group-[.is-active]:text-white text-sidebar-icon dark:text-primary-500 group-hover:text-sidebar-icon-hover dark:group-hover:text-primary-500';
     } else if ($sidebarType == 'light') {
         $iconClass = 'group-[.is-active]:text-primary-500 text-primary-500 dark:text-primary-500 group-hover:text-primary-500';
     } else if ($sidebarType == 'dark') {
@@ -26,7 +26,7 @@ $settings = Aura::getOption('team-settings');
 
 <div class="flex md:hidden justify-between py-5 px-5
     @if ($sidebarType == 'primary')
-        text-white border-white border-opacity-20 bg-primary-700 dark:bg-gray-800 dark:border-gray-700 shadow-gray-400 md:shadow-none
+        text-white border-white border-opacity-20 bg-sidebar-bg dark:bg-gray-800 dark:border-gray-700 shadow-gray-400 md:shadow-none
     @elseif ($sidebarType == 'light')
         text-gray-900 border-gray-500/30 border-opacity-20 bg-gray-50 dark:bg-gray-800 dark:text-white dark:border-gray-700 shadow-gray-400 md:shadow-none
     @elseif ($sidebarType == 'dark')
@@ -60,7 +60,7 @@ $settings = Aura::getOption('team-settings');
 >
   <div class="fixed top-0 left-0 z-10 flex flex-col flex-shrink-0 h-screen overflow-y-auto border-r shadow-xl w-72
     @if ($sidebarType == 'primary')
-        text-white border-white border-opacity-20 bg-primary-700 dark:bg-gray-800 dark:border-gray-700 shadow-gray-400 md:shadow-none
+        text-white border-white border-opacity-20 bg-sidebar-bg dark:bg-gray-800 dark:border-gray-700 shadow-gray-400 md:shadow-none
     @elseif ($sidebarType == 'light')
         text-gray-900 border-gray-500/30 border-opacity-20 bg-gray-50 dark:bg-gray-800 dark:text-white dark:border-gray-700 shadow-gray-400 md:shadow-none
     @elseif ($sidebarType == 'dark')
@@ -203,7 +203,7 @@ $settings = Aura::getOption('team-settings');
     fixed top-0 left-0 z-10 flex flex-col flex-shrink-0 w-20 h-screen overflow-x-visible  border-r  shadow-xl
 
     @if ($sidebarType == 'primary')
-        text-white border-white bg-primary-700 dark:bg-gray-800 border-opacity-20 dark:border-gray-700 shadow-gray-400 md:shadow-none
+        text-white border-white bg-sidebar-bg dark:bg-gray-800 border-opacity-20 dark:border-gray-700 shadow-gray-400 md:shadow-none
     @elseif ($sidebarType == 'light')
         text-gray-900 border-gray-500/30 border-opacity-20 bg-gray-50 dark:bg-gray-800 dark:text-white dark:border-gray-700 shadow-gray-400 md:shadow-none
     @elseif ($sidebarType == 'dark')

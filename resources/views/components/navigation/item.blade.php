@@ -29,7 +29,7 @@ $settings = Eminiarts\Aura\Facades\Aura::getOption('team-settings');
   tabindex="0"
   @endif
   {{$attributes->merge([
-    'class' => 'group flex items-center rounded-lg transition ease-in-out duration-150' . (Request::fullUrlIs($route ? route($route, $id) : '') ? ' is-active bg-primary-600 hover:bg-primary-600 text-white' : ' bg-transparent dark:hover:bg-gray-900 hover:bg-primary-600') . ' ' .  ($compact ? 'sidebar-item-compact px-2 h-8' : 'sidebar-item px-3 h-10'),
+    'class' => 'group flex items-center rounded-lg transition ease-in-out duration-150' . (Request::fullUrlIs($route ? route($route, $id) : '') ? ' is-active bg-sidebar-bg-hover hover:bg-sidebar-bg-hover text-white' : ' bg-transparent dark:hover:bg-gray-900 hover:bg-sidebar-bg-hover') . ' ' .  ($compact ? 'sidebar-item-compact px-2 h-8' : 'sidebar-item px-3 h-10'),
     ])}}
 >
   <div class="flex items-center ml-0 font-semibold {{ $compact ? 'space-x-2 text-sm' : 'space-x-3 text-base' }}">

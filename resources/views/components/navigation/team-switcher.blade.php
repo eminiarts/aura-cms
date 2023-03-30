@@ -28,7 +28,7 @@ $settings = Eminiarts\Aura\Facades\Aura::getOption('team-settings');
         flex items-center justify-between w-full cursor-pointer text-sm font-semibold rounded-lg
         @if ($sidebarType == 'primary')
           text-white
-          bg-primary-700 dark:bg-gray-800 hover:bg-primary-600
+          bg-sidebar-bg dark:bg-gray-800 hover:bg-sidebar-bg-hover
           dark:bg-gray-800 dark:hover:bg-gray-900
         @elseif ($sidebarType == 'light')
           text-gray-700

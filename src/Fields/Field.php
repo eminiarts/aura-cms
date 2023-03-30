@@ -108,8 +108,7 @@ class Field
                     'Eminiarts\\Aura\\Fields\\Select' => 'Select',
                     'Eminiarts\\Aura\\Fields\\Radio' => 'Radio',
                     'Eminiarts\\Aura\\Fields\\Checkbox' => 'Checkbox',
-                    'Eminiarts\\Aura\\Fields\\Toggle' => 'Toggle',
-                    'Eminiarts\\Aura\\Fields\\Switch' => 'Switch',
+                    'Eminiarts\\Aura\\Fields\\Boolean' => 'Boolean',
 
                     'option_group_4' => 'JS Fields',
                     'Eminiarts\\Aura\\Fields\\Wysiwyg' => 'Wysiwyg',
@@ -144,8 +143,16 @@ class Field
                 'type' => 'Eminiarts\\Aura\\Fields\\Text',
                 'validation' => '',
                 'slug' => 'instructions',
-
             ],
+
+            [
+                'name' => 'Searchable',
+                'type' => 'Eminiarts\\Aura\\Fields\\Boolean',
+                'instructions' => 'Defines if the field is searchable.',
+                'validation' => '',
+                'slug' => 'searchable',
+            ],
+
             [
                 'name' => 'View',
                 'type' => 'Eminiarts\\Aura\\Fields\\Tab',
