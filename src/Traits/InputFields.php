@@ -18,6 +18,16 @@ trait InputFields
     use InputFieldsTable;
     use InputFieldsValidation;
 
+    public $defaultPipes = [
+            ApplyTabs::class,
+            MapFields::class,
+            AddIdsToFields::class,
+            ApplyParentConditionalLogic::class,
+            ApplyParentDisplayAttributes::class,
+            FilterViewFields::class,
+            BuildTreeFromFields::class,
+    ];
+
     public function displayFieldValue($key, $value = null)
     {
         // Check Conditional Logic if the field should be displayed
@@ -37,10 +47,7 @@ trait InputFields
             return $this->fieldBySlug($key)['display']($value);
         }
 
-        // ray('hier', $key, $value);
-
         if ($value === null && optional(optional($this)->meta)->$key) {
-            // dump($value, $key, optional($this->meta)->$key);
             return optional($this->fieldClassBySlug($key))->display($this->fieldBySlug($key), optional($this->meta)->$key, $this);
         }
 
@@ -63,7 +70,7 @@ trait InputFields
             }
 
             return true;
-        });
+        })->values();
     }
 
     public function createFields()
@@ -78,7 +85,7 @@ trait InputFields
             }
 
             return true;
-        });
+        })->values();
     }
 
     public function fieldBySlugWithDefaultValues($slug)
@@ -101,21 +108,15 @@ trait InputFields
         return $field;
     }
 
-    public function fieldsForView($fields = null)
+    public function fieldsForView($fields = null, $pipes = null)
     {
         if (! $fields) {
             $fields = $this->mappedFields();
         }
 
-        $pipes = [
-            ApplyTabs::class,
-            // MapFields::class,
-            // AddIdsToFields::class,
-            // ApplyParentConditionalLogic::class,
-            // ApplyParentDisplayAttributes::class,
-            // FilterViewFields::class,
-            // BuildTreeFromFields::class,
-        ];
+        if (! $pipes) {
+            $pipes = $this->defaultPipes;
+        }
 
         return $this->sendThroughPipeline($fields, $pipes);
     }
@@ -199,7 +200,7 @@ trait InputFields
      * It applies tabs to the fields, maps the fields, adds ids to the fields,
      * applies the parent conditional logic to the fields, and builds a tree from the fields.
      */
-    public function getGroupedFields($fields = null): array
+    public function getGroupedFields($fields = null, $pipes = null): array
     {
         // If fields is set and is an array, create a collection
         if ($fields && is_array($fields)) {
@@ -210,14 +211,11 @@ trait InputFields
             $fields = $this->fieldsCollection();
         }
 
-        return $this->sendThroughPipeline($fields, [
-            ApplyTabs::class,
-            MapFields::class,
-            AddIdsToFields::class,
-            TransformSlugs::class,
-            ApplyParentConditionalLogic::class,
-            BuildTreeFromFields::class,
-        ]);
+        if (! $pipes) {
+            $pipes = $this->defaultPipes;
+        }
+
+        return $this->sendThroughPipeline($fields, $pipes);
     }
 
     public function indexFields()
@@ -273,17 +271,7 @@ trait InputFields
 
     public function viewFields()
     {
-        $pipes = [
-            ApplyTabs::class,
-            MapFields::class,
-            AddIdsToFields::class,
-            ApplyParentConditionalLogic::class,
-            ApplyParentDisplayAttributes::class,
-            FilterViewFields::class,
-            BuildTreeFromFields::class,
-        ];
-
-        return $this->sendThroughPipeline($this->mappedFields(), $pipes);
+        return $this->sendThroughPipeline($this->mappedFields(), $this->defaultPipes);
     }
 
     // Display the value of a field in the index view
