@@ -94,7 +94,7 @@ return [
         'register' => [],
     ],
 
-    'posttype_editor' => app()->environment('production') ? false : true,
+    'posttype_editor' => config('app.env') == 'production' ? false : true,
 
     /*
     |--------------------------------------------------------------------------

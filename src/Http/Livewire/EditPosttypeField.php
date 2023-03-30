@@ -50,27 +50,30 @@ class EditPosttypeField extends Component
         $this->open = true;
     }
 
-    public function updatedField()
-    {
-        //
-        $fields = app($this->field['type'])->inputFields()->pluck('slug');
-
-        // dd($fields, $this->post['fields']);
-
-        // fields are not set on $this->post['fields'] set it to false
-        foreach ($fields as $field) {
-            if (! isset($this->post['fields'][$field])) {
-                $this->post['fields'][$field] = null;
-            }
-        }
-        // dd('groupedFields', $fields, $this->post['fields']);
-    }
-
     public function deleteField($slug)
     {
         $this->emit('deleteField', ['slug' => $this->fieldSlug, 'value' => $this->post['fields']]);
 
         $this->open = false;
+    }
+
+    public function getGroupedFieldsProperty()
+    {
+        return app($this->field['type'])->getGroupedFields();
+    }
+
+    public function newFields($fields)
+    {
+        // get the field of $fields with the slug of $this->field['slug']
+        $field = collect($fields)->firstWhere('slug', $this->field['slug']);
+
+        // refresh the $this->field array
+        $this->field = $field;
+        $this->post['fields'] = $field;
+
+        $this->updatedField();
+
+        $this->emit('refreshComponent');
     }
 
     public function render()
@@ -102,6 +105,22 @@ class EditPosttypeField extends Component
         $this->open = false;
     }
 
+    public function updatedField()
+    {
+        //
+        $fields = app($this->field['type'])->inputFields()->pluck('slug');
+
+        // dd($fields, $this->post['fields']);
+
+        // fields are not set on $this->post['fields'] set it to false
+        foreach ($fields as $field) {
+            if (! isset($this->post['fields'][$field])) {
+                $this->post['fields'][$field] = null;
+            }
+        }
+        // dd('groupedFields', $fields, $this->post['fields']);
+    }
+
     public function updateType()
     {
         // Validate
@@ -112,26 +131,6 @@ class EditPosttypeField extends Component
 
         // refresh component
 
-
         // $this->emit('updatedOperation');
-    }
-
-    public function newFields($fields)
-    {
-        // get the field of $fields with the slug of $this->field['slug']
-        $field = collect($fields)->firstWhere('slug', $this->field['slug']);
-
-        // refresh the $this->field array
-        $this->field = $field;
-        $this->post['fields'] = $field;
-
-        $this->updatedField();
-
-        $this->emit('refreshComponent');
-    }
-
-    public function getGroupedFieldsProperty()
-    {
-        return app($this->field['type'])->getGroupedFields();
     }
 }

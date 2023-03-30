@@ -48,6 +48,7 @@ use Eminiarts\Aura\Resources\Team;
 use Eminiarts\Aura\Resources\User;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Arr;
+use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Str;
 use Livewire\Component;
@@ -182,6 +183,11 @@ class AuraServiceProvider extends PackageServiceProvider
                     // $query->orWhere($column, 'like', $search . '%');
                 }
             });
+        });
+
+        // CheckCondition Blade Directive
+        Blade::if('checkCondition', function ($model, $field) {
+            return \Eminiarts\Aura\Aura::checkCondition($model, $field);
         });
 
         // Register the morph map for the resources

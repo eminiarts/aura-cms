@@ -225,6 +225,11 @@ class User extends UserModel
                 'name' => 'Teams',
                 'slug' => 'tab-Teams',
                 'global' => true,
+                'conditional_logic' => [
+                    function () {
+                        return config('aura.teams');
+                    },
+                ],
             ],
             [
                 'name' => 'Teams',
@@ -232,11 +237,14 @@ class User extends UserModel
                 'type' => 'Eminiarts\\Aura\\Fields\\BelongsToMany',
                 'resource' => 'Eminiarts\\Aura\\Resources\\Team',
                 'validation' => '',
-                'conditional_logic' => [],
-                'has_conditional_logic' => false,
                 'wrapper' => '',
                 'on_index' => false,
                 'on_forms' => true,
+                'conditional_logic' => [
+                    function () {
+                        return config('aura.teams');
+                    },
+                ],
                 'on_view' => true,
                 'style' => [
                     'width' => '100',
@@ -396,17 +404,20 @@ class User extends UserModel
 
     public function roles()
     {
-        return $this->belongsToMany(Role::class, 'user_meta', 'user_id', 'value')
-        ->wherePivot('key', 'roles')->wherePivot('team_id', $this->current_team_id);
+        $roles = $this->belongsToMany(Role::class, 'user_meta', 'user_id', 'value')
+                      ->wherePivot('key', 'roles');
+
+        return config('aura.teams') ? $roles->wherePivot('team_id', $this->current_team_id) : $roles;
     }
 
     public function setRolesField($value)
     {
         // Save the roles
-        // $this->roles()->sync($value);
-
-        $this->roles()->syncWithPivotValues($value, ['key' => 'roles', 'team_id' => $this->current_team_id]);
-        // or auth()->user()->currentTeam->id ?
+        if (config('aura.teams')) {
+            $this->roles()->syncWithPivotValues($value, ['key' => 'roles', 'team_id' => $this->current_team_id]);
+        } else {
+            $this->roles()->syncWithPivotValues($value, ['key' => 'roles']);
+        }
 
         // Unset the roles field
         unset($this->attributes['fields']['roles']);
@@ -441,7 +452,11 @@ class User extends UserModel
                     if (optional($user->attributes)[$key]) {
                         $user->{$key} = $value;
                     } else {
-                        $user->meta()->updateOrCreate(['key' => $key, 'team_id' => $user->current_team_id], ['value' => $value]);
+                        if (config('aura.teams')) {
+                            $user->meta()->updateOrCreate(['key' => $key, 'team_id' => $user->current_team_id], ['value' => $value]);
+                        } else {
+                            $user->meta()->updateOrCreate(['key' => $key], ['value' => $value]);
+                        }
                     }
                 }
 

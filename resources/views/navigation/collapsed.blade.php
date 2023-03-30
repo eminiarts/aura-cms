@@ -147,8 +147,4 @@
         <x-aura::icon icon="adjustments" />
     </x-aura::navigation.item-icon>
 
-    <x-aura::navigation.item-icon route="aura.media.index" tooltip="Media" :strict="false">
-        <x-aura::icon icon="collection" />
-    </x-aura::navigation.item-icon>
-
 </div>

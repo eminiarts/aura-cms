@@ -140,7 +140,7 @@ $settings = Aura::getOption('team-settings');
             </x-aura::button.primary>
         @endImpersonating
 
-        @if(Auth::user()->currentTeam)
+        @if(config('aura.teams') && Auth::user()->currentTeam)
         <div class="flex items-center justify-between w-full">
             <x-aura::navigation.team-switcher>
                 <x-slot:title>
@@ -185,6 +185,8 @@ $settings = Aura::getOption('team-settings');
                 </x-aura::tippy>
             </div>
         </div>
+        @else
+        Without Teams
         @endif
 
     </div>

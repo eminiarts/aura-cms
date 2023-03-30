@@ -21,7 +21,7 @@ trait InitialPostFields
                 $post->user_id = auth()->user()->id;
             }
 
-            if (! isset($post->team_id) && auth()->user()) {
+            if (config('aura.teams') && ! isset($post->team_id) && auth()->user()) {
                 $post->team_id = auth()->user()->current_team_id;
             }
 

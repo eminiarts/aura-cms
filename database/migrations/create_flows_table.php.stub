@@ -37,7 +37,10 @@ return new class() extends Migration
             $table->timestamps();
             $table->softDeletes();
             $table->foreignId('user_id')->constrained('users')->onDelete('cascade')->nullable();
-            $table->foreignId('team_id')->constrained('teams')->onDelete('cascade')->nullable();
+
+            if(config('aura.teams')) {
+                $table->foreignId('team_id')->constrained('teams')->onDelete('cascade')->nullable();
+            }
         });
 
         Schema::create('flow_operations', function (Blueprint $table) {
@@ -55,7 +58,9 @@ return new class() extends Migration
             $table->foreign('resolve_id')->references('id')->on('flow_operations')->onDelete('set null');
             $table->foreign('reject_id')->references('id')->on('flow_operations')->onDelete('set null');
             $table->foreignId('user_id')->constrained('users')->onDelete('cascade')->nullable();
-            $table->foreignId('team_id')->constrained('teams')->onDelete('cascade')->nullable();
+            if(config('aura.teams')) {
+                $table->foreignId('team_id')->constrained('teams')->onDelete('cascade')->nullable();
+            }
         });
 
         Schema::create('flow_logs', function (Blueprint $table) {
@@ -74,7 +79,9 @@ return new class() extends Migration
             $table->timestamps();
 
             $table->foreignId('user_id')->constrained('users')->onDelete('cascade')->nullable();
-            $table->foreignId('team_id')->constrained('teams')->onDelete('cascade')->nullable();
+            if(config('aura.teams')) {
+                $table->foreignId('team_id')->constrained('teams')->onDelete('cascade')->nullable();
+            }
         });
 
         Schema::create('flow_operation_logs', function (Blueprint $table) {
@@ -94,7 +101,9 @@ return new class() extends Migration
             $table->timestamps();
 
             $table->foreignId('user_id')->constrained('users')->onDelete('cascade')->nullable();
-            $table->foreignId('team_id')->constrained('teams')->onDelete('cascade')->nullable();
+            if(config('aura.teams')) {
+                $table->foreignId('team_id')->constrained('teams')->onDelete('cascade')->nullable();
+            }
         });
     }
 };

@@ -225,28 +225,50 @@ class Aura
             ],
         ];
 
-        return Option::withoutGlobalScopes([TeamScope::class])->firstOrCreate([
-            'name' => 'aura-settings',
-            'team_id' => 0,
-        ], [
-            'value' => json_encode($valueString),
-            'team_id' => 0,
-        ]);
+        if (config('aura.teams')) {
+            return Option::withoutGlobalScopes([TeamScope::class])->firstOrCreate([
+                'name' => 'aura-settings',
+                'team_id' => 0,
+            ], [
+                'value' => json_encode($valueString),
+                'team_id' => 0,
+            ]);
+        } else {
+            return Option::firstOrCreate([
+                'name' => 'aura-settings',
+            ], [
+                'value' => json_encode($valueString),
+            ]);
+        }
     }
 
     public function getOption($name)
     {
-        return Cache::remember(auth()->user()->current_team_id.'.aura.team-settings', now()->addHour(), function () {
-            $option = Option::where('name', 'team-settings')->first();
+        if (config('aura.teams')) {
+            return Cache::remember(auth()->user()->current_team_id.'.aura.team-settings', now()->addHour(), function () {
+                $option = Option::where('name', 'team-settings')->first();
 
-            if ($option && is_string($option->value)) {
-                $settings = json_decode($option->value, true);
-            } else {
-                return [];
-            }
+                if ($option && is_string($option->value)) {
+                    $settings = json_decode($option->value, true);
+                } else {
+                    return [];
+                }
 
-            return $settings;
-        });
+                return $settings;
+            });
+        } else {
+            return Cache::remember('aura.team-settings', now()->addHour(), function () {
+                $option = Option::where('name', 'team-settings')->first();
+
+                if ($option && is_string($option->value)) {
+                    $settings = json_decode($option->value, true);
+                } else {
+                    return [];
+                }
+
+                return $settings;
+            });
+        }
     }
 
     public static function getPath($id)
@@ -271,7 +293,16 @@ class Aura
 
     public function navigation()
     {
-        $resources = collect($this->getResources())
+        $resources = collect($this->getResources());
+
+        // If a Resource is overriden, we want to remove the original from the navigation
+        $keys = $resources->map(function ($resource) {
+            return Str::afterLast($resource, '\\');
+        })->reverse()->unique()->reverse()->keys();
+
+        $resources = $resources->filter(function ($value, $key) use ($keys) {
+            return $keys->contains($key);
+        })
             ->map(fn ($r) => app($r)->navigation())
             ->filter(fn ($r) => $r['showInNavigation'] ?? true)
             ->sortBy('sort');
