@@ -57,10 +57,12 @@ test('team can be changed', function () {
         'user_id' => $this->user->id,
     ]);
 
-
     // put request to route aura.current-team.update
     $this->put(route('aura.current-team.update', ['team_id' => $team->id]))
         ->assertRedirect(route('aura.dashboard'));
+
+    // Assert that the user's current team has been updated...
+    expect($this->user->fresh()->currentTeam->id)->toBe($team->id);
 });
 
 test('team can be deleted', function () {
