@@ -3,30 +3,22 @@
 namespace Eminiarts\Aura\Traits;
 
 use Eminiarts\Aura\ConditionalLogic;
+use Eminiarts\Aura\Pipeline\ApplyTabs;
+use Eminiarts\Aura\Pipeline\MapFields;
 use Eminiarts\Aura\Pipeline\AddIdsToFields;
+use Eminiarts\Aura\Pipeline\TransformSlugs;
+use Eminiarts\Aura\Pipeline\FilterEditFields;
+use Eminiarts\Aura\Pipeline\FilterViewFields;
+use Eminiarts\Aura\Pipeline\FilterCreateFields;
+use Eminiarts\Aura\Pipeline\BuildTreeFromFields;
 use Eminiarts\Aura\Pipeline\ApplyParentConditionalLogic;
 use Eminiarts\Aura\Pipeline\ApplyParentDisplayAttributes;
-use Eminiarts\Aura\Pipeline\ApplyTabs;
-use Eminiarts\Aura\Pipeline\BuildTreeFromFields;
-use Eminiarts\Aura\Pipeline\FilterViewFields;
-use Eminiarts\Aura\Pipeline\MapFields;
-use Eminiarts\Aura\Pipeline\TransformSlugs;
 
 trait InputFields
 {
     use InputFieldsHelpers;
     use InputFieldsTable;
     use InputFieldsValidation;
-
-    public $defaultPipes = [
-            ApplyTabs::class,
-            MapFields::class,
-            AddIdsToFields::class,
-            ApplyParentConditionalLogic::class,
-            ApplyParentDisplayAttributes::class,
-            FilterViewFields::class,
-            BuildTreeFromFields::class,
-    ];
 
     public function displayFieldValue($key, $value = null)
     {
@@ -60,32 +52,30 @@ trait InputFields
 
     public function editFields()
     {
-        return $this->mappedFields()->filter(function ($field) {
-            if (optional($field)['on_forms'] === false) {
-                return false;
-            }
-
-            if (optional($field)['on_edit'] === false) {
-                return false;
-            }
-
-            return true;
-        })->values();
+        // Apply Conditional Logic of Parent Fields
+        return $this->sendThroughPipeline($this->fieldsCollection(), [
+                    ApplyTabs::class,
+                    MapFields::class,
+                    AddIdsToFields::class,
+                    ApplyParentConditionalLogic::class,
+                    ApplyParentDisplayAttributes::class,
+                    FilterEditFields::class,
+                    BuildTreeFromFields::class,
+        ]);
     }
 
     public function createFields()
     {
-        return $this->mappedFields()->filter(function ($field) {
-            if (optional($field)['on_forms'] === false) {
-                return false;
-            }
-
-            if (optional($field)['on_create'] === false) {
-                return false;
-            }
-
-            return true;
-        })->values();
+        // Apply Conditional Logic of Parent Fields
+        return $this->sendThroughPipeline($this->fieldsCollection(), [
+                    ApplyTabs::class,
+                    MapFields::class,
+                    AddIdsToFields::class,
+                    ApplyParentConditionalLogic::class,
+                    ApplyParentDisplayAttributes::class,
+                    FilterCreateFields::class,
+                    BuildTreeFromFields::class,
+        ]);
     }
 
     public function fieldBySlugWithDefaultValues($slug)
@@ -115,7 +105,15 @@ trait InputFields
         }
 
         if (! $pipes) {
-            $pipes = $this->defaultPipes;
+            $pipes = [
+                ApplyTabs::class,
+            MapFields::class,
+            AddIdsToFields::class,
+            ApplyParentConditionalLogic::class,
+            ApplyParentDisplayAttributes::class,
+            FilterViewFields::class,
+            BuildTreeFromFields::class,
+            ];
         }
 
         return $this->sendThroughPipeline($fields, $pipes);
@@ -212,7 +210,15 @@ trait InputFields
         }
 
         if (! $pipes) {
-            $pipes = $this->defaultPipes;
+            $pipes = [
+                ApplyTabs::class,
+            MapFields::class,
+            AddIdsToFields::class,
+            ApplyParentConditionalLogic::class,
+            ApplyParentDisplayAttributes::class,
+            FilterViewFields::class,
+            BuildTreeFromFields::class,
+            ];
         }
 
         return $this->sendThroughPipeline($fields, $pipes);
@@ -271,7 +277,15 @@ trait InputFields
 
     public function viewFields()
     {
-        return $this->sendThroughPipeline($this->mappedFields(), $this->defaultPipes);
+        return $this->sendThroughPipeline($this->mappedFields(), [
+            ApplyTabs::class,
+            MapFields::class,
+            AddIdsToFields::class,
+            ApplyParentConditionalLogic::class,
+            ApplyParentDisplayAttributes::class,
+            FilterViewFields::class,
+            BuildTreeFromFields::class,
+        ]);
     }
 
     // Display the value of a field in the index view
