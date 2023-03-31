@@ -202,6 +202,21 @@ class User extends Authenticatable
         return [];
     }
 
+    /**
+     * Determine if the user owns the given team.
+     *
+     * @param  mixed  $team
+     * @return bool
+     */
+    public function ownsTeam($team)
+    {
+        if (is_null($team)) {
+            return false;
+        }
+
+        return $this->id == $team->{$this->getForeignKey()};
+    }
+
     public function getTeams()
     {
         if (! config('aura.teams')) {

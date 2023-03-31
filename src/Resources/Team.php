@@ -2,12 +2,14 @@
 
 namespace Eminiarts\Aura\Resources;
 
-use Eminiarts\Aura\Database\Factories\TeamFactory;
-use Eminiarts\Aura\Models\TeamMeta;
 use Eminiarts\Aura\Resource;
-use Eminiarts\Aura\Traits\SaveFieldAttributes;
-use Eminiarts\Aura\Traits\SaveMetaFields;
+use Eminiarts\Aura\Resources\Role;
+use Eminiarts\Aura\Models\TeamMeta;
 use Eminiarts\Aura\Traits\SaveTerms;
+use Illuminate\Support\Facades\Cache;
+use Eminiarts\Aura\Traits\SaveMetaFields;
+use Eminiarts\Aura\Traits\SaveFieldAttributes;
+use Eminiarts\Aura\Database\Factories\TeamFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class Team extends Resource
@@ -175,9 +177,38 @@ class Team extends Resource
             // dd('creating', $team);
         });
 
-        static::updating(function ($team) {
-            dd('uppdating');
+        static::created(function ($team) {
+            $user = auth()->user();
+
+            // Change the current team id of the user
+            $user->current_team_id = $team->id;
+            $user->save();
+
+            // Create a Super Admin role for the team
+            $role = Role::create([
+                'type' => 'Role',
+                'title' => 'Super Admin',
+                'slug' => 'super_admin',
+                'name' => 'Super Admin',
+                'description' => 'Super Admin has can perform everything.',
+                'super_admin' => true,
+                'permissions' => [],
+                'user_id' => $user->id,
+            ]);
+
+            // Attach the current user to the team
+            $team->users()->attach($user->id, [
+                'key' => 'roles',
+                'value' => json_encode([$role->id]),
+            ]);
+
+            // Clear cache of Cache('user.'.$this->id.'.teams')
+            Cache::forget('user.'.$user->id.'.teams');
         });
+
+        // static::updating(function ($team) {
+        //     dd('uppdating');
+        // });
     }
 
     /**
