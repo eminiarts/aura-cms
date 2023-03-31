@@ -121,7 +121,6 @@ class Profile extends Component
                 'validation' => 'current_password',
                 'slug' => 'current_password',
                 'on_index' => false,
-                'on_view' => false,
             ],
             [
                 'name' => 'New Password',
@@ -129,7 +128,6 @@ class Profile extends Component
                 'validation' => ['required_with:current_password', 'confirmed', Password::min(8)],
                 'slug' => 'password',
                 'on_index' => false,
-                'on_view' => false,
             ],
             [
                 'name' => 'Confirm Password',
@@ -137,14 +135,12 @@ class Profile extends Component
                 'validation' => '',
                 'slug' => 'password_confirmation',
                 'on_index' => false,
-                'on_view' => false,
             ],
             [
                 'type' => 'Eminiarts\\Aura\\Fields\\Tab',
                 'name' => '2FA',
                 'slug' => '2fa',
                 'global' => true,
-                'on_view' => false,
             ],
             [
                 'name' => 'Two Factor Authentication',
@@ -168,7 +164,6 @@ class Profile extends Component
                 'name' => 'Delete',
                 'slug' => 'delete-tab',
                 'global' => true,
-                'on_view' => false,
             ],
             [
                 'name' => 'Delete Account',

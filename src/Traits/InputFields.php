@@ -228,8 +228,6 @@ trait InputFields
     {
         return $this->inputFields()->filter(function ($field) {
             if (optional($field)['on_index'] === false) {
-                dd($field['on_index']);
-
                 return false;
             }
 

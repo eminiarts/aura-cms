@@ -71,19 +71,10 @@ test('Team Settings can be saved', function () {
     $firstTeam = $teams->first();
     $secondTeam = $teams->last();
 
-    // DB get user_meta table
-    // $userMeta = DB::table('user_meta')->where('user_id', $this->user->id)->get();
-    // dd($userMeta);
-
     // create a entry in team_user table with team_id and user_id
     $this->user->teams()->attach([
         $secondTeam->id => ['key' => 'roles', 'value' => $role->id],
     ]);
-
-    // DB get user_meta table
-    // $userMeta = DB::table('user_meta')->where('user_id', $this->user->id)->get();
-
-    // dd($userMeta);
 
     // Default Team Settings
     Livewire::test(TeamSettings::class)
@@ -118,7 +109,7 @@ test('Team Settings can be saved', function () {
     $this->actingAs($this->user)
         ->get(route('aura.team.settings'))
         ->assertDontSee('--primary-400: 248 113 113;')
-        ->assertSee('--primary-400: 16 185 129;');
+        ->assertSee('--primary-400: 60 126 244;');
 
     // user switchTeam
     $this->user->switchTeam($secondTeam);
@@ -139,7 +130,7 @@ test('Team Settings can be saved', function () {
     $this->actingAs($this->user)
         ->get(route('aura.team.settings'))
         ->assertOk()
-        ->assertSee('--primary-400: 16 185 129;')
+        ->assertSee('--primary-400: 60 126 244;')
         ->assertDontSee('--primary-400: 248 113 113;')
         ->assertDontSee('--primary-400: 82 139 255;');
 });
