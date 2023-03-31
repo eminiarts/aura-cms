@@ -52,15 +52,15 @@ test('if the first tab is hidden, tabs should be applied correctly to second tab
 
     $fields = $model->createFields();
 
-    // expect count to be 2
-    expect($fields->count())->toBe(2);
+    // expect count to be 1
+    expect(count($fields))->toBe(1);
 
-    // tab 1 should not be in the fields
-    expect($fields->firstWhere('slug', 'tab-1'))->toBeNull();
-    expect($fields->firstWhere('slug', 'text1'))->toBeNull();
+    // $fields[0]['fields'] should have 1 field
+    expect(count($fields[0]['fields']))->toBe(1);
 
-    $fieldsForView = $model->fieldsForView($fields);
+    // slug should be tab-2
+    expect($fields[0]['fields'][0]['slug'])->toBe('tab-2');
 
-
-    dd($fields, $fieldsForView);
+    // $fields[0]['fields'][0]['fields'] should have 1 field
+    expect(count($fields[0]['fields'][0]['fields']))->toBe(1);
 });
