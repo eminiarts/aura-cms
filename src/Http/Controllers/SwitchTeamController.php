@@ -20,6 +20,6 @@ class SwitchTeamController extends Controller
             abort(403);
         }
 
-        return redirect(config('fortify.home'), 303);
+        return redirect(route('aura.dashboard'), 303);
     }
 }
