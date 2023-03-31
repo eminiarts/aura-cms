@@ -20,7 +20,6 @@ class FilterCreateFields implements Pipe
             return true;
         })->values();
 
-
         return  $next($fields);
     }
 }

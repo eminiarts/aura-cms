@@ -1,13 +1,12 @@
 <?php
 
-use Eminiarts\Aura\Resource;
-use Eminiarts\Aura\Pipeline\ApplyTabs;
-use Eminiarts\Aura\Pipeline\MapFields;
 use Eminiarts\Aura\Pipeline\AddIdsToFields;
-use Eminiarts\Aura\Pipeline\FilterEditFields;
-use Eminiarts\Aura\Pipeline\FilterCreateFields;
 use Eminiarts\Aura\Pipeline\ApplyParentConditionalLogic;
 use Eminiarts\Aura\Pipeline\ApplyParentDisplayAttributes;
+use Eminiarts\Aura\Pipeline\ApplyTabs;
+use Eminiarts\Aura\Pipeline\FilterEditFields;
+use Eminiarts\Aura\Pipeline\MapFields;
+use Eminiarts\Aura\Resource;
 
 // current
 uses()->group('current');
@@ -76,12 +75,12 @@ test('check on_edit inheritance', function () {
     $model = new EditFieldsTestModel();
 
     $fields = $model->sendThroughPipeline($model->fieldsCollection(), [
-            ApplyTabs::class,
-            MapFields::class,
-            AddIdsToFields::class,
-            ApplyParentConditionalLogic::class,
-            ApplyParentDisplayAttributes::class,
-            FilterEditFields::class,
+        ApplyTabs::class,
+        MapFields::class,
+        AddIdsToFields::class,
+        ApplyParentConditionalLogic::class,
+        ApplyParentDisplayAttributes::class,
+        FilterEditFields::class,
     ]);
 
     // expect count to be 1

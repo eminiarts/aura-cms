@@ -49,11 +49,11 @@ class GlobalSearch extends Component
 
             $searchableFields = app($resource)->getSearchableFields()->pluck('slug');
 
-            $results = $model->where('title', 'like', $this->search . '%')
+            $results = $model->where('title', 'like', $this->search.'%')
                 ->orWhereHas('meta', function (Builder $query) use ($searchableFields) {
                     $query->whereIn('key', $searchableFields)
                         ->where(function (Builder $query) {
-                            $query->where('value', 'LIKE', $this->search . '%');
+                            $query->where('value', 'LIKE', $this->search.'%');
                         });
                 })->get();
 
