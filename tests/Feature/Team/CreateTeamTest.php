@@ -1,11 +1,8 @@
 <?php
 
-use Eminiarts\Aura\Models\User;
-
-use Eminiarts\Aura\Resources\Team;
-
 use Eminiarts\Aura\Http\Livewire\Post\Create;
-
+use Eminiarts\Aura\Models\User;
+use Eminiarts\Aura\Resources\Team;
 use function Pest\Livewire\livewire;
 
 uses()->group('current');
@@ -51,7 +48,7 @@ test('team can be created', function () {
 
 test('team can be changed', function () {
     // Create second Team
-    $team =Team::create([
+    $team = Team::create([
         'name' => 'Test Team 2',
         'description' => 'Test Description 2',
         'user_id' => $this->user->id,

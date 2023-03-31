@@ -2,15 +2,14 @@
 
 namespace Eminiarts\Aura\Resources;
 
-use Eminiarts\Aura\Resource;
-use Eminiarts\Aura\Resources\Role;
-use Eminiarts\Aura\Models\TeamMeta;
-use Eminiarts\Aura\Traits\SaveTerms;
-use Illuminate\Support\Facades\Cache;
-use Eminiarts\Aura\Traits\SaveMetaFields;
-use Eminiarts\Aura\Traits\SaveFieldAttributes;
 use Eminiarts\Aura\Database\Factories\TeamFactory;
+use Eminiarts\Aura\Models\TeamMeta;
+use Eminiarts\Aura\Resource;
+use Eminiarts\Aura\Traits\SaveFieldAttributes;
+use Eminiarts\Aura\Traits\SaveMetaFields;
+use Eminiarts\Aura\Traits\SaveTerms;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Support\Facades\Cache;
 
 class Team extends Resource
 {

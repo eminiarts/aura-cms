@@ -3,22 +3,36 @@
 namespace Eminiarts\Aura\Traits;
 
 use Eminiarts\Aura\ConditionalLogic;
-use Eminiarts\Aura\Pipeline\ApplyTabs;
-use Eminiarts\Aura\Pipeline\MapFields;
 use Eminiarts\Aura\Pipeline\AddIdsToFields;
-use Eminiarts\Aura\Pipeline\TransformSlugs;
-use Eminiarts\Aura\Pipeline\FilterEditFields;
-use Eminiarts\Aura\Pipeline\FilterViewFields;
-use Eminiarts\Aura\Pipeline\FilterCreateFields;
-use Eminiarts\Aura\Pipeline\BuildTreeFromFields;
 use Eminiarts\Aura\Pipeline\ApplyParentConditionalLogic;
 use Eminiarts\Aura\Pipeline\ApplyParentDisplayAttributes;
+use Eminiarts\Aura\Pipeline\ApplyTabs;
+use Eminiarts\Aura\Pipeline\BuildTreeFromFields;
+use Eminiarts\Aura\Pipeline\FilterCreateFields;
+use Eminiarts\Aura\Pipeline\FilterEditFields;
+use Eminiarts\Aura\Pipeline\FilterViewFields;
+use Eminiarts\Aura\Pipeline\MapFields;
+use Eminiarts\Aura\Pipeline\TransformSlugs;
 
 trait InputFields
 {
     use InputFieldsHelpers;
     use InputFieldsTable;
     use InputFieldsValidation;
+
+    public function createFields()
+    {
+        // Apply Conditional Logic of Parent Fields
+        return $this->sendThroughPipeline($this->fieldsCollection(), [
+            ApplyTabs::class,
+            MapFields::class,
+            AddIdsToFields::class,
+            ApplyParentConditionalLogic::class,
+            ApplyParentDisplayAttributes::class,
+            FilterCreateFields::class,
+            BuildTreeFromFields::class,
+        ]);
+    }
 
     public function displayFieldValue($key, $value = null)
     {
@@ -54,27 +68,13 @@ trait InputFields
     {
         // Apply Conditional Logic of Parent Fields
         return $this->sendThroughPipeline($this->fieldsCollection(), [
-                    ApplyTabs::class,
-                    MapFields::class,
-                    AddIdsToFields::class,
-                    ApplyParentConditionalLogic::class,
-                    ApplyParentDisplayAttributes::class,
-                    FilterEditFields::class,
-                    BuildTreeFromFields::class,
-        ]);
-    }
-
-    public function createFields()
-    {
-        // Apply Conditional Logic of Parent Fields
-        return $this->sendThroughPipeline($this->fieldsCollection(), [
-                    ApplyTabs::class,
-                    MapFields::class,
-                    AddIdsToFields::class,
-                    ApplyParentConditionalLogic::class,
-                    ApplyParentDisplayAttributes::class,
-                    FilterCreateFields::class,
-                    BuildTreeFromFields::class,
+            ApplyTabs::class,
+            MapFields::class,
+            AddIdsToFields::class,
+            ApplyParentConditionalLogic::class,
+            ApplyParentDisplayAttributes::class,
+            FilterEditFields::class,
+            BuildTreeFromFields::class,
         ]);
     }
 
@@ -107,12 +107,12 @@ trait InputFields
         if (! $pipes) {
             $pipes = [
                 ApplyTabs::class,
-            MapFields::class,
-            AddIdsToFields::class,
-            ApplyParentConditionalLogic::class,
-            ApplyParentDisplayAttributes::class,
-            FilterViewFields::class,
-            BuildTreeFromFields::class,
+                MapFields::class,
+                AddIdsToFields::class,
+                ApplyParentConditionalLogic::class,
+                ApplyParentDisplayAttributes::class,
+                FilterViewFields::class,
+                BuildTreeFromFields::class,
             ];
         }
 
@@ -212,12 +212,12 @@ trait InputFields
         if (! $pipes) {
             $pipes = [
                 ApplyTabs::class,
-            MapFields::class,
-            AddIdsToFields::class,
-            ApplyParentConditionalLogic::class,
-            ApplyParentDisplayAttributes::class,
-            FilterViewFields::class,
-            BuildTreeFromFields::class,
+                MapFields::class,
+                AddIdsToFields::class,
+                ApplyParentConditionalLogic::class,
+                ApplyParentDisplayAttributes::class,
+                FilterViewFields::class,
+                BuildTreeFromFields::class,
             ];
         }
 
