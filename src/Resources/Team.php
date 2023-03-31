@@ -24,7 +24,7 @@ class Team extends Resource
     public static string $type = 'Team';
 
     protected $fillable = [
-        'name', 'user_id', 'personal_team', 'fields',
+        'name', 'user_id', 'fields',
     ];
 
     protected $table = 'teams';
@@ -65,7 +65,6 @@ class Team extends Resource
                 'slug' => 'name',
                 'style' => [
                     'width' => '100',
-
                 ],
             ],
             [
@@ -76,7 +75,6 @@ class Team extends Resource
                 'slug' => 'description',
                 'style' => [
                     'width' => '100',
-
                 ],
             ],
             [
@@ -84,8 +82,8 @@ class Team extends Resource
                 'name' => 'Users',
                 'slug' => 'tab-users',
                 'global' => true,
+                'on_create' => false,
             ],
-
             [
                 'name' => 'Users',
                 'slug' => 'users',
@@ -109,6 +107,7 @@ class Team extends Resource
                 'validation' => '',
                 'conditional_logic' => [],
                 'has_conditional_logic' => false,
+                'on_create' => false,
             ],
             [
                 'name' => 'Invitations',

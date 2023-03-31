@@ -37,7 +37,6 @@ class MakeUser extends Command
             DB::table('teams')->insert([
                 'name' => $name,
                 'user_id' => $user->id,
-                'personal_team' => 1,
                 'created_at' => now(),
                 'updated_at' => now(),
             ]);
