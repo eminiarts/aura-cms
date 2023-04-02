@@ -100,13 +100,6 @@
                 }
             }
 
-            @this.on('resourceCreated', (data) => {
-                console.log('resoucreCreated', data);
-                {{-- if (this.model === resource) {
-                    this.fetchApi();
-                } --}}
-            })
-
             Livewire.on('resourceCreated', data => {
                 this.items.push({ id: data.resource.id, title: data.title });
                 this.toggleItem({ id: data.resource.id, title: data.title });
