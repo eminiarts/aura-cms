@@ -169,18 +169,18 @@ class Post extends Resource
                  'on_forms' => true,
                  'on_view' => true,
              ],
-             [
-                 'name' => 'Color',
-                 'type' => 'Eminiarts\\Aura\\Fields\\Color',
-                 'validation' => '',
-                 'conditional_logic' => [
-                 ],
-                 'slug' => 'color',
-                 'on_index' => true,
-                 'on_forms' => true,
-                 'on_view' => true,
-                 'format' => 'hex',
-             ],
+            //  [
+            //      'name' => 'Color',
+            //      'type' => 'Eminiarts\\Aura\\Fields\\Color',
+            //      'validation' => '',
+            //      'conditional_logic' => [
+            //      ],
+            //      'slug' => 'color',
+            //      'on_index' => true,
+            //      'on_forms' => true,
+            //      'on_view' => true,
+            //      'format' => 'hex',
+            //  ],
              [
                  'name' => 'Sidebar',
                  'type' => 'Eminiarts\\Aura\\Fields\\Panel',

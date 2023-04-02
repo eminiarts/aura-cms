@@ -6,6 +6,9 @@
         $api = optional($field['field'])->api ?? false;
     }
 
+    // Create Modal
+    $create = optional($field)['create'] ?? false;
+
     // Multiple from Field is more important than from Field Class
     $multiple = optional($field)['multiple'] ?? true;
 
@@ -23,8 +26,9 @@
     }
 @endphp
 
-{{-- @dump(optional($field['field'])->api)
-@dump($api) --}}
+{{-- @dump(optional($field['field'])->api) --}}
+{{-- @dump($create) 
+@dump($field)  --}}
 
 <x-aura::fields.wrapper :field="$field">
 
@@ -95,6 +99,13 @@
                     this.selectedItems = this.items.filter(item => this.value.includes(item.id));
                 }
             }
+
+            @this.on('resourceCreated', (data) => {
+                console.log('resoucreCreated', data);
+                {{-- if (this.model === resource) {
+                    this.fetchApi();
+                } --}}
+            })
 
             // Watch this.search and fetch new values, debounce for 500ms
             this.$watch('search', () => {
@@ -459,5 +470,12 @@
             </ul>
         </template>
     </div>
+
+    @if($create)
+<button wire:click.prevent="$emit('openModal', 'aura::post-create-modal', {{ json_encode(['type' => $field['resource'], 'params' => [ 'for' => $field['slug'] ]
+]) }})" class="cursor-pointer text-bold text-sm">
+    + Create
+</button>
+@endif
 </div>
 </x-aura::fields.wrapper>

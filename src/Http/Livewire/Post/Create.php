@@ -30,7 +30,19 @@ class Create extends Component
 
     public $tax;
 
-    protected $listeners = ['updateField' => 'updateField'];
+    protected $listeners = ['updateField' => 'updateField', 'resourceCreated'];
+
+    public function resourceCreated($data)
+    {
+        ray($data, $this->post['fields']);
+
+
+        if (array_key_exists($data['for'], $this->post['fields'])) {
+            dd($data, $this->post['fields'], $this->post['fields'][$data['for']]);
+
+            $this->post['fields'][$data['for']] = (int) $data['id'];
+        }
+    }
 
     public function getTaxonomiesProperty()
     {
@@ -62,7 +74,7 @@ class Create extends Component
             }
 
             // if there is a key in post's fields named $this->params['for'], set it to $this->params['id']
-            if (array_key_exists($this->params['for'], $this->post['fields'])) {
+            if (optional($this->params)['for'] && optional($this->params)['id'] && array_key_exists($this->params['for'], $this->post['fields'])) {
                 $this->post['fields'][$this->params['for']] = (int) $this->params['id'];
             }
         }
@@ -98,6 +110,10 @@ class Create extends Component
         if ($this->inModal) {
             $this->emit('closeModal');
             $this->emit('refreshTable');
+
+            if ($this->params['for']) {
+                $this->emit('resourceCreated', ['for' => $this->params['for'], 'resource' => $model]);
+            }
         } else {
             return redirect()->route('aura.post.edit', [$this->slug, $model->id]);
         }

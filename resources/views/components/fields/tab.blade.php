@@ -1,2 +1,1 @@
-
 <x-aura::fields.fields />

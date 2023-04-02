@@ -35,7 +35,8 @@
     <div class="grid gap-6 aura-edit-post-container sm:grid-cols-3">
         <div class="col-span-1 sm:col-span-3">
 
-            @if (count($errors->all()))
+            <div>
+                @if (count($errors->all()))
             <div class="block">
                 <div class="mt-8 form_errors">
                     <strong class="block text-red-600">Unfortunately, there were still the following validation
@@ -50,16 +51,18 @@
                 </div>
             </div>
             @endif
+            </div>
 
             <div class="flex flex-wrap items-start -mx-2">
            @foreach($this->createFields as $key => $field)
-            <x-aura::fields.conditions :field="$field" :model="$model" wire:key="post-field-{{ $key }}">
-                    <x-dynamic-component :component="$field['field']->component" :field="$field" />
+            <x-aura::fields.conditions :field="$field" :model="$model">
+                    <x-dynamic-component :component="$field['field']->component" :field="$field" wire:key="post-field-{{ $key }}-{{ md5(json_encode($field)) }}" />
             </x-aura::fields.conditions>
             @endforeach
             </div>
 
-            @if (count($errors->all()))
+            <div wire:key="errors-{{ md5(json_encode($model)) }}">
+                @if (count($errors->all()))
             <div class="block">
                 <div class="mt-8 form_errors">
                     <strong class="block text-red-600">Unfortunately, there were still the following validation
@@ -74,6 +77,7 @@
                 </div>
             </div>
             @endif
+            </div>
         </div>
 
         {{-- <div class="col-span-1">
