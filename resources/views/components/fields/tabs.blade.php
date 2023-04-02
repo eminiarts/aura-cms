@@ -1,5 +1,10 @@
 @aware(['model'])
 
+@php
+    // Create md5 hash of the field array
+    $fieldHash = md5(json_encode($field));
+@endphp
+
 <div
     x-data="{
         selectedId: null,
@@ -47,8 +52,8 @@
             }
         @endphp
 
-        <x-aura::fields.conditions :field="$tab" :model="$model" wire:key="tab-{{ $key }}">
-            <li wire:key="tab-item-{{ $key }}">
+        <x-aura::fields.conditions :field="$tab" :model="$model" wire:key="tab-{{ $key }}-{{ $fieldHash }}">
+            <li wire:key="tab-item-{{ $key }}-{{ $fieldHash }}">
                 <button
                     :id="$id('tab', {{ $key }})"
                     @click="select($el.id)"
@@ -75,13 +80,13 @@
 
     <div role="tabpanels" class="border-t rounded-b-lg border-gray-400/30 dark:border-gray-700">
         @foreach($field['fields'] as $key => $field)
-        <x-aura::fields.conditions :field="$field" :model="$model">
+        <x-aura::fields.conditions :field="$field" :model="$model" wire:key="tab-section-condition-{{ $key }}-{{ $fieldHash }}">
             <section
                 x-show="isSelected($id('tab', {{ $key }}))"
                 :aria-labelledby="$id('tab', {{ $key }})"
                 role="tabpanel"
                 class="w-full py-4"
-                wire:key="tab-section-{{ $key }}"
+                wire:key="tab-section-{{ $key }}-{{ $fieldHash }}"
             >
                 <x-dynamic-component :component="$field['field']->component" :field="$field" />
             </section>

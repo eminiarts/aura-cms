@@ -471,7 +471,7 @@ class User extends UserModel
 
     protected function cachedRoles(): mixed
     {
-        return Cache::remember('user.'.$this->id.'.roles', now()->addMinutes(60), function () {
+        return Cache::remember($this->current_team_id.'.user.'.$this->id.'.roles', now()->addMinutes(60), function () {
             return $this->roles;
         });
     }
