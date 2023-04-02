@@ -112,7 +112,7 @@ class Create extends Component
             $this->emit('refreshTable');
 
             if ($this->params['for']) {
-                $this->emit('resourceCreated', ['for' => $this->params['for'], 'resource' => $model]);
+                $this->emit('resourceCreated', ['for' => $this->params['for'], 'resource' => $model, 'title' => $model->title()]);
             }
         } else {
             return redirect()->route('aura.post.edit', [$this->slug, $model->id]);

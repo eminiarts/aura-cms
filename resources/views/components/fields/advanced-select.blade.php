@@ -107,6 +107,11 @@
                 } --}}
             })
 
+            Livewire.on('resourceCreated', data => {
+                this.items.push({ id: data.resource.id, title: data.title });
+                this.toggleItem({ id: data.resource.id, title: data.title });
+            })
+
             // Watch this.search and fetch new values, debounce for 500ms
             this.$watch('search', () => {
                 if (this.api) {
