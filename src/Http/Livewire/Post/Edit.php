@@ -31,21 +31,7 @@ class Edit extends Component
     public $tax;
 
     // Listen for selectedAttachment
-    protected $listeners = ['updateField' => 'updateField', 'resourceCreated'];
-
-    public function resourceCreated($data)
-    {
-        ray($data, $this->post['fields']);
-
-        if (array_key_exists($data['for'], $this->post['fields'])) {
-            // dd($data, $this->post['fields'], $this->post['fields'][$data['for']]);
-
-            // Refresh component
-            //$this->emit('refresh');
-
-            //$this->post['fields'][$data['for']][] = (int) $data['resource']['id'];
-        }
-    }
+    protected $listeners = ['updateField' => 'updateField'];
 
     public function getActionsProperty()
     {

@@ -30,19 +30,7 @@ class Create extends Component
 
     public $tax;
 
-    protected $listeners = ['updateField' => 'updateField', 'resourceCreated'];
-
-    public function resourceCreated($data)
-    {
-        ray($data, $this->post['fields']);
-
-
-        if (array_key_exists($data['for'], $this->post['fields'])) {
-            dd($data, $this->post['fields'], $this->post['fields'][$data['for']]);
-
-            $this->post['fields'][$data['for']] = (int) $data['id'];
-        }
-    }
+    protected $listeners = ['updateField' => 'updateField'];
 
     public function getTaxonomiesProperty()
     {
