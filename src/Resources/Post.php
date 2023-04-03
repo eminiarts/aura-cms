@@ -39,6 +39,22 @@ class Post extends Resource
         'content',
     ];
 
+    public array $widgetSettings = [
+        'default' => '30d',
+        'options' => [
+            '30d' => '30 Days',
+            '60d' => '60 Days',
+            '90d' => '90 Days',
+            '180d' => '180 Days',
+            '365d' => '365 Days',
+            'all' => 'All',
+            'ytd' => 'Year to Date',
+            'mtd' => 'Month to Date',
+            'wtd' => 'Week to Date',
+            'custom' => 'Custom',
+        ],
+    ];
+
     public function callFlow($flowId)
     {
         $flow = Flow::find($flowId);
@@ -91,22 +107,21 @@ class Post extends Resource
         return [
             [
                 'name' => 'Total Posts Created',
+                'slug' => 'total_posts_created',
                 'type' => 'Eminiarts\\Aura\\Widgets\\TotalPosts',
-                'config' => [
-                    'interval' => CarbonInterval::hours(24),
-                    'cache' => [
-                        'duration' => 5,
-                    ],
-                ],
+                'cache' => '5s',
+                // 'config' => [
+                //     'interval' => CarbonInterval::hours(24),
+                // ],
                 'style' => [
                     'width' => '50',
-                    'height' => 'auto',
                 ],
-                'slug' => 'total_posts_created',
-
+                'conditional_logic' => [],
             ],
         ];
     }
+
+
 
 
      public static function getFields()
