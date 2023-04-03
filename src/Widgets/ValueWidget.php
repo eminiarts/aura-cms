@@ -10,15 +10,20 @@ class ValueWidget extends Widget
     public $widget;
     public $start;
     public $end;
+    public $model;
 
-    public $aggregateFunction = 'count';
+    public $method = 'count';
 
     protected $listeners = ['dateFilterUpdated' => 'updateDateRange'];
 
-
-    public function mount($widget)
+    public function mount($widget, $model)
     {
         $this->widget = $widget;
+        $this->model = $model;
+
+        if($this->widget['method']) {
+            $this->method = $this->widget['method'];
+        }
     }
 
     public function render()
@@ -49,5 +54,18 @@ class ValueWidget extends Widget
             'previous' => $previous,
             'change' => $change,
         ];
+    }
+
+    protected function getValue($start, $end)
+    {
+        $posts = $this->model->whereBetween('created_at', [$start, $end]);
+
+        return match ($this->method) {
+            'avg' => $posts->avg('value_column'),
+            'sum' => $posts->sum('value_column'),
+            'min' => $posts->min('value_column'),
+            'max' => $posts->max('value_column'),
+            default => $posts->count(),
+        };
     }
 }

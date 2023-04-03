@@ -109,10 +109,8 @@ class Post extends Resource
                 'name' => 'Total Posts Created',
                 'slug' => 'total_posts_created',
                 'type' => 'Eminiarts\\Aura\\Widgets\\ValueWidget',
+                'method' => 'count',
                 'cache' => '5s',
-                // 'config' => [
-                //     'interval' => CarbonInterval::hours(24),
-                // ],
                 'style' => [
                     'width' => '50',
                 ],
