@@ -13,6 +13,6 @@ class TotalPosts extends Widget
 
     public function render()
     {
-        return view('components.widgets.total-posts');
+        return view('aura::components.widgets.total-posts');
     }
 }
