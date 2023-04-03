@@ -4,7 +4,7 @@ namespace Eminiarts\Aura\Widgets;
 
 use Livewire\Component;
 
-abstract class Widget extends Component
+class Widget extends Component
 {
     public $widget;
 
