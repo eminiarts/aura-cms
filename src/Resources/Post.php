@@ -110,6 +110,7 @@ class Post extends Resource
                 'slug' => 'total_posts_created',
                 'type' => 'Eminiarts\\Aura\\Widgets\\ValueWidget',
                 'method' => 'count',
+                'column' => 'number',
                 'cache' => '5s',
                 'style' => [
                     'width' => '50',
