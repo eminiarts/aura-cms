@@ -1,6 +1,6 @@
 @aware(['field', 'model'])
 
-<div class="flex flex-wrap items-start -mx-2">
+<div class="flex flex-wrap items-start -mx-2" wire:key="tab-field-{{ md5(json_encode($field)) }}">
     @if(optional($field)['fields'])
         @foreach($field['fields'] as $key => $field)
             <x-aura::fields.conditions :field="$field" :model="$model">

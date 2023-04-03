@@ -6,16 +6,12 @@ trait InteractsWithFields
 {
     public function getCreateFieldsProperty()
     {
-        $fields = $this->model->createFields();
-
-        return $this->model->fieldsForView($fields);
+        return $this->model->createFields();
     }
 
     public function getEditFieldsProperty()
     {
-        $fields = $this->model->editFields();
-
-        return $this->model->fieldsForView($fields);
+        return $this->model->editFields();
     }
 
     public function getFieldsProperty()

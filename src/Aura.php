@@ -64,6 +64,10 @@ class Aura
 
     public function findResourceBySlug($slug)
     {
+        if (in_array($slug, $this->getResources())) {
+            return app($slug);
+        }
+
         $resources = collect($this->getResources())->map(function ($resource) {
             return Str::afterLast($resource, '\\');
         });

@@ -9,6 +9,7 @@ use Eminiarts\Aura\Traits\SaveFieldAttributes;
 use Eminiarts\Aura\Traits\SaveMetaFields;
 use Eminiarts\Aura\Traits\SaveTerms;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Support\Facades\Cache;
 
 class Team extends Resource
 {
@@ -24,7 +25,7 @@ class Team extends Resource
     public static string $type = 'Team';
 
     protected $fillable = [
-        'name', 'user_id', 'personal_team', 'fields',
+        'name', 'user_id', 'fields',
     ];
 
     protected $table = 'teams';
@@ -65,7 +66,6 @@ class Team extends Resource
                 'slug' => 'name',
                 'style' => [
                     'width' => '100',
-
                 ],
             ],
             [
@@ -76,7 +76,6 @@ class Team extends Resource
                 'slug' => 'description',
                 'style' => [
                     'width' => '100',
-
                 ],
             ],
             [
@@ -84,8 +83,8 @@ class Team extends Resource
                 'name' => 'Users',
                 'slug' => 'tab-users',
                 'global' => true,
+                'on_create' => false,
             ],
-
             [
                 'name' => 'Users',
                 'slug' => 'users',
@@ -109,6 +108,7 @@ class Team extends Resource
                 'validation' => '',
                 'conditional_logic' => [],
                 'has_conditional_logic' => false,
+                'on_create' => false,
             ],
             [
                 'name' => 'Invitations',
@@ -176,9 +176,38 @@ class Team extends Resource
             // dd('creating', $team);
         });
 
-        static::updating(function ($team) {
-            dd('uppdating');
+        static::created(function ($team) {
+            $user = auth()->user();
+
+            // Change the current team id of the user
+            $user->current_team_id = $team->id;
+            $user->save();
+
+            // Create a Super Admin role for the team
+            $role = Role::create([
+                'type' => 'Role',
+                'title' => 'Super Admin',
+                'slug' => 'super_admin',
+                'name' => 'Super Admin',
+                'description' => 'Super Admin has can perform everything.',
+                'super_admin' => true,
+                'permissions' => [],
+                'user_id' => $user->id,
+            ]);
+
+            // Attach the current user to the team
+            $team->users()->attach($user->id, [
+                'key' => 'roles',
+                'value' => json_encode([$role->id]),
+            ]);
+
+            // Clear cache of Cache('user.'.$this->id.'.teams')
+            Cache::forget('user.'.$user->id.'.teams');
         });
+
+        // static::updating(function ($team) {
+        //     dd('uppdating');
+        // });
     }
 
     /**

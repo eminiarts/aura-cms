@@ -239,6 +239,21 @@ class User extends Authenticatable
         return $team->id === $this->currentTeam->id;
     }
 
+    /**
+     * Determine if the user owns the given team.
+     *
+     * @param  mixed  $team
+     * @return bool
+     */
+    public function ownsTeam($team)
+    {
+        if (is_null($team)) {
+            return false;
+        }
+
+        return $this->id == $team->{$this->getForeignKey()};
+    }
+
     public function resource()
     {
         // Return \Eminiarts\Aura\Resources\User for this user

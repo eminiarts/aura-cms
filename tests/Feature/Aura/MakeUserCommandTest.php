@@ -24,7 +24,6 @@ it('can create a user with all required fields', function () {
 
     $this->assertDatabaseHas('teams', [
         'name' => 'John Doe',
-        'personal_team' => 1,
     ]);
 
     $user = User::where('email', 'johndoe@example.com')->first();
