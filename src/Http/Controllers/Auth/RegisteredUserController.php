@@ -56,7 +56,6 @@ class RegisteredUserController extends Controller
         $team = Team::create([
             'name' => $request->team,
             'user_id' => $user->id,
-            'personal_team' => 1, // todo: remove this column
             'created_at' => now(),
             'updated_at' => now(),
         ]);

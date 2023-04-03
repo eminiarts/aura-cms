@@ -4,14 +4,14 @@ use Eminiarts\Aura\Pipeline\AddIdsToFields;
 use Eminiarts\Aura\Pipeline\ApplyParentConditionalLogic;
 use Eminiarts\Aura\Pipeline\ApplyParentDisplayAttributes;
 use Eminiarts\Aura\Pipeline\ApplyTabs;
-use Eminiarts\Aura\Pipeline\FilterCreateFields;
+use Eminiarts\Aura\Pipeline\FilterEditFields;
 use Eminiarts\Aura\Pipeline\MapFields;
 use Eminiarts\Aura\Resource;
 
 // current
 uses()->group('current');
 
-class CreateFieldsTestModel extends Resource
+class EditFieldsTestModel extends Resource
 {
     public static ?string $slug = 'page';
 
@@ -25,7 +25,7 @@ class CreateFieldsTestModel extends Resource
                 'type' => 'Eminiarts\\Aura\\Fields\\Tab',
                 'slug' => 'tab-1',
                 'global' => true,
-                'on_create' => false,
+                'on_edit' => false,
             ],
             [
                 'name' => 'Text 1',
@@ -54,9 +54,9 @@ class CreateFieldsTestModel extends Resource
 }
 
 test('if the first tab is hidden, tabs should be applied correctly to second tab', function () {
-    $model = new CreateFieldsTestModel();
+    $model = new EditFieldsTestModel();
 
-    $fields = $model->createFields();
+    $fields = $model->editFields();
 
     // expect count to be 1
     expect(count($fields))->toBe(1);
@@ -71,8 +71,8 @@ test('if the first tab is hidden, tabs should be applied correctly to second tab
     expect(count($fields[0]['fields'][0]['fields']))->toBe(1);
 });
 
-test('check on_create inheritance', function () {
-    $model = new CreateFieldsTestModel();
+test('check on_edit inheritance', function () {
+    $model = new EditFieldsTestModel();
 
     $fields = $model->sendThroughPipeline($model->fieldsCollection(), [
         ApplyTabs::class,
@@ -80,7 +80,7 @@ test('check on_create inheritance', function () {
         AddIdsToFields::class,
         ApplyParentConditionalLogic::class,
         ApplyParentDisplayAttributes::class,
-        FilterCreateFields::class,
+        FilterEditFields::class,
     ]);
 
     // expect count to be 1

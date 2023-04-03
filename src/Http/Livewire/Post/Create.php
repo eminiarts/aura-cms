@@ -62,7 +62,7 @@ class Create extends Component
             }
 
             // if there is a key in post's fields named $this->params['for'], set it to $this->params['id']
-            if (array_key_exists($this->params['for'], $this->post['fields'])) {
+            if (optional($this->params)['for'] && optional($this->params)['id'] && array_key_exists($this->params['for'], $this->post['fields'])) {
                 $this->post['fields'][$this->params['for']] = (int) $this->params['id'];
             }
         }
@@ -98,6 +98,10 @@ class Create extends Component
         if ($this->inModal) {
             $this->emit('closeModal');
             $this->emit('refreshTable');
+
+            if ($this->params['for']) {
+                $this->emit('resourceCreated', ['for' => $this->params['for'], 'resource' => $model, 'title' => $model->title()]);
+            }
         } else {
             return redirect()->route('aura.post.edit', [$this->slug, $model->id]);
         }

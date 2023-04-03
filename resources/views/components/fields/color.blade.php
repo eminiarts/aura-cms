@@ -22,7 +22,6 @@
         </div>
     @else
 
-
     <div wire:ignore class="flex items-center"
         x-data="{
             selectedColor: $wire.entangle('post.fields.{{ optional($field)['slug'] }}').defer,
