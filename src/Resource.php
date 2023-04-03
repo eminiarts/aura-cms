@@ -159,7 +159,7 @@ class Resource extends Model
                 }
 
                 // if (optional($this->fieldBySlug($key))['type']) {
-            //     return app($this->fieldBySlug($key)['type'])->get($meta);
+                //     return app($this->fieldBySlug($key)['type'])->get($meta);
                 // }
 
                 return $meta;
@@ -331,4 +331,15 @@ class Resource extends Model
 
         return $fields;
     }
+
+    public function widgets()
+    {
+        return collect($this->getWidgets())->map(function ($item) {
+            $item['widget'] = app($item['type'])->widget($item);
+            $item['widget_type'] = app($item['type'])->type;
+
+            return $item;
+        });
+    }
+
 }

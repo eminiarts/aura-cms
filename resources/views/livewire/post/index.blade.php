@@ -17,8 +17,8 @@
         </div>
     </div>
 
-    @if($widgets = $post->getWidgets())
-    <x-aura::widgets :widgets="$widgets" />
+    @if($widgets = $post->widgets())
+        <x-aura::widgets :widgets="$widgets" />
     @endif
 
     <livewire:aura::table :model="$post"/>
