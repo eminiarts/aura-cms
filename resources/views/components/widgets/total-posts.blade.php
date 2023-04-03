@@ -1,6 +1,8 @@
 <div class="aura-card">
   @dump($start)
   @dump($end)
+  @dump($widget)
+  @dump($this->values)
    <div class="px-4 py-5 sm:p-6">
       <dt class="text-base font-normal text-gray-900">{{ $widget['name'] }}</dt>
       <dd class="mt-1 flex items-baseline justify-between md:block lg:flex">
