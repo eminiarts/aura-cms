@@ -25,7 +25,7 @@
     <div class="flex flex-wrap mt-4 -mx-2">
         @foreach ($widgets as $widget)
         {{-- Conditions --}}
-        @livewire(\Livewire\Livewire::getAlias(get_class($widget['widget'])), ['widget' => $widget, 'start' => $start, 'end' => $end] )
+        @livewire(\Livewire\Livewire::getAlias($widget['type']), ['widget' => $widget, 'start' => $start, 'end' => $end, 'model' => $model] )
         @endforeach
     </div>
 </div>
