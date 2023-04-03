@@ -2,59 +2,17 @@
 
 namespace Eminiarts\Aura\Widgets;
 
+use Carbon\CarbonInterval;
 use Eminiarts\Aura\Resources\Post;
 
-class TotalPosts extends ValueWidget
+class TotalPosts extends Widget
 {
-    /**
-     * @var string
-     */
-    public $name = 'Total Posts';
+    public $component = 'aura::widgets.total_posts';
 
-    /**
-     * Determine for how many minutes the metric should be cached.
-     *
-     * @return \DateTimeInterface|\DateInterval|float|int
-     */
-    public function cacheFor()
-    {
-        return now()->addMinutes(5);
-    }
+    public string $type = 'numeric';
 
-    /**
-     * Calculate the value of the metric.
-     *
-     * @return mixed
-     */
-    public function getValueProperty()
+    public function render()
     {
-        return $this->cache(function () {
-            return $this->count(Post::class);
-        });
-    }
-
-    /**
-     * Get the ranges available for the metric.
-     *
-     * @return array
-     */
-    public function ranges()
-    {
-        return [
-            30 => '30 Days',
-            60 => '60 Days',
-            90 => '90 Days',
-            365 => '365 Days',
-        ];
-    }
-
-    /**
-     * Get the URI key for the metric.
-     *
-     * @return string
-     */
-    public function uriKey()
-    {
-        return 'total-posts';
+        return view('components.widgets.total-posts');
     }
 }

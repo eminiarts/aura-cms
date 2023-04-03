@@ -46,6 +46,7 @@ use Eminiarts\Aura\Policies\TeamPolicy;
 use Eminiarts\Aura\Policies\UserPolicy;
 use Eminiarts\Aura\Resources\Team;
 use Eminiarts\Aura\Resources\User;
+use Eminiarts\Aura\Widgets\TotalPosts;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Blade;
@@ -88,7 +89,7 @@ class AuraServiceProvider extends PackageServiceProvider
     public function bootLivewireComponents()
     {
         Livewire::component('app.aura.widgets.post-stats', \Eminiarts\Aura\Widgets\PostStats::class);
-        Livewire::component('app.aura.widgets.total-posts', \Eminiarts\Aura\Widgets\TotalPosts::class);
+        // Livewire::component('app.aura.widgets.total-posts', \Eminiarts\Aura\Widgets\TotalPosts::class);
         Livewire::component('app.aura.widgets.post-chart', \Eminiarts\Aura\Widgets\PostChart::class);
         Livewire::component('app.aura.widgets.sum-posts-number', \Eminiarts\Aura\Widgets\SumPostsNumber::class);
         Livewire::component('app.aura.widgets.avg-posts-number', \Eminiarts\Aura\Widgets\AvgPostsNumber::class);
@@ -123,6 +124,8 @@ class AuraServiceProvider extends PackageServiceProvider
         // Flows
         Livewire::component('aura::create-flow', CreateFlow::class);
         Livewire::component('aura::edit-operation', EditOperation::class);
+
+        Livewire::component('aura::widgets.total-posts', TotalPosts::class);
 
         return $this;
     }
