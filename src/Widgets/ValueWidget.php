@@ -56,15 +56,15 @@ class ValueWidget extends Widget
         ];
     }
 
-    protected function getValue($start, $end)
+    public function getValue($start, $end)
     {
         $posts = $this->model->whereBetween('created_at', [$start, $end]);
 
         return match ($this->method) {
-            'avg' => $posts->avg('value_column'),
-            'sum' => $posts->sum('value_column'),
-            'min' => $posts->min('value_column'),
-            'max' => $posts->max('value_column'),
+            'avg' => $posts->avg($this->widget['column']),
+            'sum' => $posts->sum($this->widget['column']),
+            'min' => $posts->min($this->widget['column']),
+            'max' => $posts->max($this->widget['column']),
             default => $posts->count(),
         };
     }

@@ -3,6 +3,13 @@
   @dump($end)
   @dump($widget)
   @dump($this->values) --}}
+   <div class="px-4 py-5 sm:p-6">
+      <dt class="text-base font-normal text-gray-900">{{ $widget['name'] }}</dt>
+      <dd class="mt-1 flex items-baseline justify-between md:block lg:flex">
+        <div class="flex items-baseline text-2xl font-semibold text-primary-600">
+          58.16%
+          <span class="ml-2 text-sm font-medium text-gray-500">from 56.14%</span>
+        </div>
 
   <div class="px-4 py-5">
     <div class="flex items-baseline">
