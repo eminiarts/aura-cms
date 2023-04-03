@@ -7,10 +7,6 @@ use Eminiarts\Aura\Resources\Post;
 
 class TotalPosts extends Widget
 {
-    public $component = 'aura::widgets.total_posts';
-
-    public string $type = 'numeric';
-
     protected $listeners = ['dateFilterUpdated' => 'updateDateRange'];
 
     public $widget;
@@ -27,9 +23,9 @@ class TotalPosts extends Widget
         return view('aura::components.widgets.total-posts');
     }
 
-       public function updateDateRange($start, $end)
-       {
-           $this->start = $start;
-           $this->end = $end;
-       }
+    public function updateDateRange($start, $end)
+    {
+        $this->start = $start;
+        $this->end = $end;
+    }
 }

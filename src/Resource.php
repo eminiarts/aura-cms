@@ -337,7 +337,6 @@ class Resource extends Model
     {
         return collect($this->getWidgets())->map(function ($item) {
             $item['widget'] = app($item['type'])->widget($item);
-            $item['widget_type'] = app($item['type'])->type;
 
             return $item;
         });
