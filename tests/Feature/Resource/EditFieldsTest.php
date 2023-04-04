@@ -9,7 +9,7 @@ use Eminiarts\Aura\Pipeline\MapFields;
 use Eminiarts\Aura\Resource;
 
 // current
-uses()->group('current');
+// uses()->group('current');
 
 class EditFieldsTestModel extends Resource
 {

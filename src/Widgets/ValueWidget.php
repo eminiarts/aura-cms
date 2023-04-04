@@ -3,8 +3,9 @@
 namespace Eminiarts\Aura\Widgets;
 
 use Carbon\CarbonInterval;
-use Eminiarts\Aura\Resources\Post;
 use Illuminate\Support\Carbon;
+use Eminiarts\Aura\Resources\Post;
+use Illuminate\Support\Facades\DB;
 
 class ValueWidget extends Widget
 {
@@ -38,17 +39,16 @@ class ValueWidget extends Widget
         $this->end = $end;
     }
 
-    public function getValuesProperty($selected = 30)
+    public function getValuesProperty()
     {
-        $currentStart = $this->start;
-        $currentEnd = $this->end;
+        $currentStart = $this->start instanceof Carbon ? $this->start : Carbon::parse($this->start);
+        $currentEnd = $this->end instanceof Carbon ? $this->end : Carbon::parse($this->end);
 
-        // dd($currentStart, $currentEnd, Carbon::create($currentStart)->diffInDays($currentEnd));
+        // Calculate the duration between start and end dates
+        $duration = $currentStart->diffInDays($currentEnd);
 
-        // get diff of start and end
-        $diff = Carbon::create($currentStart)->diffInDays($currentEnd);
-
-        $previousStart = Carbon::create($currentStart)->subDays($diff);
+        // Calculate previousStart and previousEnd based on the duration
+        $previousStart = $currentStart->copy()->subDays($duration);
         $previousEnd = $currentStart;
 
         $current = $this->getValue($currentStart, $currentEnd);
@@ -63,17 +63,27 @@ class ValueWidget extends Widget
         ];
     }
 
-    protected function getValue($start, $end)
+    public function getValue($start, $end)
     {
-        $posts = $this->model->whereBetween('created_at', [$start, $end])->get();
+        $column = optional($this->widget)['column'];
 
-        ray($start, $end, $posts, $this->method, $posts->avg('number'));
+        $posts = $this->model->query()
+        ->where('created_at', '>=', $start)
+        ->where('created_at', '<', $end);
+
+        if($column && $this->model->isMetaField($column)) {
+            $posts->select('posts.*', DB::raw("CAST(post_meta.value as SIGNED) as $column"))
+            ->leftJoin('post_meta', function ($join) use ($column) {
+                $join->on('posts.id', '=', 'post_meta.post_id')
+            ->where('post_meta.key', '=', $column);
+            });
+        }
 
         return match ($this->method) {
-            'avg' => $posts->avg('number'),
-            'sum' => $posts->sum('number'),
-            'min' => $posts->min('number'),
-            'max' => $posts->max('number'),
+            'avg' => $posts->avg($this->model->isMetaField($column) ? DB::raw("CAST(post_meta.value as SIGNED)") : $column),
+            'sum' => $posts->sum($this->model->isMetaField($column) ? DB::raw("CAST(post_meta.value as SIGNED)") : $column),
+            'min' => $posts->min($this->model->isMetaField($column) ? DB::raw("CAST(post_meta.value as SIGNED)") : $column),
+            'max' => $posts->max($this->model->isMetaField($column) ? DB::raw("CAST(post_meta.value as SIGNED)") : $column),
             default => $posts->count(),
         };
     }

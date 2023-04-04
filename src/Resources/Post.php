@@ -116,6 +116,7 @@ class Post extends Resource
                 'slug' => 'total_posts_created',
                 'type' => 'Eminiarts\\Aura\\Widgets\\ValueWidget',
                 'method' => 'count',
+                'column' => 'number',
                 'cache' => '5s',
                 'style' => [
                     'width' => '50',
@@ -135,9 +136,6 @@ class Post extends Resource
             ],
         ];
     }
-
-
-
 
      public static function getFields()
      {
@@ -352,6 +350,32 @@ class Post extends Resource
                      'width' => '100',
                  ],
              ],
+             [
+                'name' => 'Created at',
+                'slug' => 'created_at',
+                'type' => 'Eminiarts\\Aura\\Fields\\Date',
+                'validation' => '',
+                'enable_time' => true,
+                'conditional_logic' => [],
+                'has_conditional_logic' => false,
+                'wrapper' => '',
+                'on_index' => true,
+                'on_forms' => true,
+                'on_view' => true,
+            ],
+            [
+                'name' => 'Updated at',
+                'slug' => 'updated_at',
+                'type' => 'Eminiarts\\Aura\\Fields\\Date',
+                'validation' => '',
+                'conditional_logic' => [],
+                'has_conditional_logic' => false,
+                'wrapper' => '',
+                'enable_time' => true,
+                'on_index' => true,
+                'on_forms' => true,
+                'on_view' => true,
+            ],
          ];
      }
 
