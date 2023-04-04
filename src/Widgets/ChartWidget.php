@@ -6,14 +6,14 @@ use Carbon\CarbonInterval;
 use Eminiarts\Aura\Resources\Post;
 use Illuminate\Support\Carbon;
 
-class ValueWidget extends Widget
+class ChartWidget extends Widget
 {
     public $widget;
     public $start;
     public $end;
     public $model;
 
-    public $method = 'count';
+    public $method = 'area';
 
     protected $listeners = ['dateFilterUpdated' => 'updateDateRange'];
 
@@ -29,7 +29,7 @@ class ValueWidget extends Widget
 
     public function render()
     {
-        return view('aura::components.widgets.total-posts');
+        return view('aura::components.widgets.chart');
     }
 
     public function updateDateRange($start, $end)
@@ -54,27 +54,41 @@ class ValueWidget extends Widget
         $current = $this->getValue($currentStart, $currentEnd);
         $previous = $this->getValue($previousStart, $previousEnd);
 
-        $change = ($previous != 0) ? (($current - $previous) / $previous) * 100 : 0;
+        // $change = ($previous != 0) ? (($current - $previous) / $previous) * 100 : 0;
 
         return [
-            'current' => $current,
-            'previous' => $previous,
-            'change' => $change,
+            'current' => $current->toArray(),
+            'previous' => $previous->toArray(),
+            // 'change' => $change,
         ];
     }
 
     protected function getValue($start, $end)
     {
+        $dateRange = collect();
+        $currentDate = Carbon::parse($start);
+
+        while ($currentDate->lte($end)) {
+            $dateRange->push($currentDate->toDateString());
+            $currentDate->addDay();
+        }
+
         $posts = $this->model->whereBetween('created_at', [$start, $end])->get();
 
-        ray($start, $end, $posts, $this->method, $posts->avg('number'));
+        $dailyCounts = $dateRange->mapWithKeys(function ($date) use ($posts) {
+            $count = $posts->filter(function ($post) use ($date) {
+                return Carbon::parse($post->created_at)->toDateString() === $date;
+            })->count();
+
+            return [$date => $count];
+        });
 
         return match ($this->method) {
-            'avg' => $posts->avg('number'),
-            'sum' => $posts->sum('number'),
-            'min' => $posts->min('number'),
-            'max' => $posts->max('number'),
-            default => $posts->count(),
+            'avg' => $dailyCounts->avg(),
+            'sum' => $dailyCounts->sum(),
+            'min' => $dailyCounts->min(),
+            'max' => $dailyCounts->max(),
+            default => $dailyCounts,
         };
     }
 }

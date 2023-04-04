@@ -58,6 +58,7 @@ use Eminiarts\Aura\Http\Livewire\Taxonomy\Index as TaxonomyIndex;
 use Eminiarts\Aura\Http\Livewire\User\TwoFactorAuthenticationForm;
 use Eminiarts\Aura\Http\Livewire\Taxonomy\Create as TaxonomyCreate;
 use Eminiarts\Aura\Http\Livewire\Attachment\Index as AttachmentIndex;
+use Eminiarts\Aura\Widgets\ChartWidget;
 
 class AuraServiceProvider extends PackageServiceProvider
 {
@@ -128,6 +129,7 @@ class AuraServiceProvider extends PackageServiceProvider
 
         Livewire::component('aura::widgets', Widgets::class);
         Livewire::component('aura::widgets.value-widget', ValueWidget::class);
+        Livewire::component('aura::widgets.chart', ChartWidget::class);
 
         return $this;
     }

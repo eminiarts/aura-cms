@@ -42,6 +42,8 @@ class Post extends Resource
     public array $widgetSettings = [
         'default' => '30d',
         'options' => [
+            '1d' => '1 Day',
+            '7d' => '7 Days',
             '30d' => '30 Days',
             '60d' => '60 Days',
             '90d' => '90 Days',
@@ -49,8 +51,12 @@ class Post extends Resource
             '365d' => '365 Days',
             'all' => 'All',
             'ytd' => 'Year to Date',
+            'qtd' => 'Quarter to Date',
             'mtd' => 'Month to Date',
             'wtd' => 'Week to Date',
+            'last-year' => 'Last Year',
+            'last-month' => 'Last Month',
+            'last-week' => 'Last Week',
             'custom' => 'Custom',
         ],
     ];
@@ -110,6 +116,17 @@ class Post extends Resource
                 'slug' => 'total_posts_created',
                 'type' => 'Eminiarts\\Aura\\Widgets\\ValueWidget',
                 'method' => 'count',
+                'cache' => '5s',
+                'style' => [
+                    'width' => '50',
+                ],
+                'conditional_logic' => [],
+            ],
+            [
+                'name' => 'Average Number',
+                'slug' => 'average_number',
+                'type' => 'Eminiarts\\Aura\\Widgets\\ChartWidget',
+                'method' => 'area',
                 'cache' => '5s',
                 'style' => [
                     'width' => '50',
