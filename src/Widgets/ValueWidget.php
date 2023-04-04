@@ -38,11 +38,16 @@ class ValueWidget extends Widget
         $this->end = $end;
     }
 
-    public function getValuesProperty($selected = 30)
+    public function getValuesProperty()
     {
-        $currentStart = now()->subDays($selected);
-        $currentEnd = now();
-        $previousStart = $currentStart->copy()->subDays($selected);
+        $currentStart = $this->start;
+        $currentEnd = $this->end;
+
+        // Calculate the duration between start and end dates
+        $duration = $currentStart->diffInDays($currentEnd);
+
+        // Calculate previousStart and previousEnd based on the duration
+        $previousStart = $currentStart->copy()->subDays($duration);
         $previousEnd = $currentStart;
 
         $current = $this->getValue($currentStart, $currentEnd);
@@ -59,16 +64,15 @@ class ValueWidget extends Widget
 
     public function getValue($start, $end)
     {
-
-        $column = $this->widget['column'];
+        $column = optional($this->widget)['column'];
 
         $posts = $this->model->query()
-                ->select('posts.*', DB::raw("CAST(post_meta.value as SIGNED) as $column"))
-                ->whereBetween('created_at', [$start, $end]);
+        ->where('created_at', '>=', $start)
+        ->where('created_at', '<', $end);
 
-
-        if($this->model->isMetaField($column)) {
-            $posts->leftJoin('post_meta', function ($join) use ($column) {
+        if($column && $this->model->isMetaField($column)) {
+            $posts->select('posts.*', DB::raw("CAST(post_meta.value as SIGNED) as $column"))
+            ->leftJoin('post_meta', function ($join) use ($column) {
                 $join->on('posts.id', '=', 'post_meta.post_id')
             ->where('post_meta.key', '=', $column);
             });
@@ -81,6 +85,5 @@ class ValueWidget extends Widget
             'max' => $posts->max($this->model->isMetaField($column) ? DB::raw("CAST(post_meta.value as SIGNED)") : $column),
             default => $posts->count(),
         };
-
     }
 }

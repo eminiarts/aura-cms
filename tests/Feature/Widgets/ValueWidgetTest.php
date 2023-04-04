@@ -68,7 +68,7 @@ it('calculates avg correctly', function () {
 
     $widget = $widgetTest->instance();
 
-    expect($widget->getValue($widget->start, $widget->end))->toBe(15);
+    expect($widget->getValue($widget->start, $widget->end))->toBe(15.0);
 });
 
 it('calculates sum correctly', function () {
@@ -81,31 +81,40 @@ it('calculates sum correctly', function () {
     expect($widget->getValue($widget->start, $widget->end))->toBe(30);
 });
 
-// it('calculates min correctly', function () {
-//     $widget = Livewire::test(ValueWidget::class, ['widget' => ['method' => 'min', 'column' => 'number', 'name' => 'Widget'], 'model' => new Post()])
-//         ->set('start', Carbon::now()->subDays(30))
-//         ->set('end', Carbon::now());
+it('calculates min correctly', function () {
+    $widgetTest = Livewire::test(ValueWidget::class, ['widget' => ['method' => 'min', 'column' => 'number', 'name' => 'Widget'], 'model' => new Post()])
+        ->set('start', Carbon::now()->subDays(30))
+        ->set('end', Carbon::now());
 
-//     expect($widget->getValue($widget->start, $widget->end))->toBe(10);
-// });
+    $widget = $widgetTest->instance();
 
-// it('calculates max correctly', function () {
-//     $widget = Livewire::test(ValueWidget::class, ['widget' => ['method' => 'max', 'column' => 'number', 'name' => 'Widget'], 'model' => new Post()])
-//         ->set('start', Carbon::now()->subDays(30))
-//         ->set('end', Carbon::now());
 
-//     expect($widget->getValue($widget->start, $widget->end))->toBe(20);
-// });
+    expect($widget->getValue($widget->start, $widget->end))->toBe(10);
+});
 
-// it('returns correct calculated values for current, previous, change', function () {
-//     $widget = Livewire::test(ValueWidget::class, ['widget' => ['method' => 'count', "name" => "Total Posts Created"], 'model' => new Post()])
-//         ->set('start', Carbon::now()->subDays(30))
-//         ->set('end', Carbon::now());
+it('calculates max correctly', function () {
+    $widgetTest = Livewire::test(ValueWidget::class, ['widget' => ['method' => 'max', 'column' => 'number', 'name' => 'Widget'], 'model' => new Post()])
+        ->set('start', Carbon::now()->subDays(30))
+        ->set('end', Carbon::now());
 
-//     $values = $widget->getValuesProperty(15);
+    $widget = $widgetTest->instance();
 
-//     expect($values)->toBeArray();
-//     expect($values['current'])->toBe(1);
-//     expect($values['previous'])->toBe(1);
-//     expect($values['change'])->toBe(0);
-// });
+
+    expect($widget->getValue($widget->start, $widget->end))->toBe(20);
+});
+
+it('returns correct calculated values for current, previous, change', function () {
+    $widgetTest = Livewire::test(ValueWidget::class, ['widget' => ['method' => 'count', "name" => "Total Posts Created"], 'model' => new Post()])
+        ->set('start', Carbon::now()->subDays(15))
+        ->set('end', Carbon::now());
+
+    $widget = $widgetTest->instance();
+
+
+    $values = $widget->getValuesProperty();
+
+    expect($values)->toBeArray();
+    expect($values['current'])->toBe(1);
+    expect($values['previous'])->toBe(1);
+    expect($values['change'])->toBe(0);
+});
