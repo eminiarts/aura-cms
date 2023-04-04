@@ -44,4 +44,16 @@
         </div>
         @endforeach
     </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+
+  <script>
+      // after 100ms trigger a window resize event to force the chart to redraw
+      setTimeout(function() {
+          window.dispatchEvent(new Event('resize'));
+      }, 0);
+      setTimeout(function() {
+          window.dispatchEvent(new Event('resize'));
+      }, 100);
+  </script>
 </div>

@@ -1,16 +1,9 @@
-<div class="aura-card" wire:key="chart">
-  {{-- @dump($start)
-  @dump($end)
-  @dump($widget)
-  @dump($this->values) --}}
-
+<div class="aura-card" wire:key="chart"  @if (!$isCached) wire:init="loadWidget" @endif>
+@if($loaded)
   <div class="p-2">
     <div class="flex items-baseline justify-between mb-4">
       <span class="text-sm font-semibold">Chart {{ $widget['name'] }}</span>
 
-      {{-- <div class="ml-4">
-        <span class="text-xs font-normal text-gray-500">{{ $start }} - {{ $end }}</span>
-      </div> --}}
     </div>
 
     <div class="-mb-6">
@@ -164,17 +157,34 @@
     </div> --}}
 
   </div>
+  @else
+  <div class="p-2 animate-pulse">
+    <div class="flex items-baseline justify-between mb-4">
+        <div class="w-32 h-4 bg-gray-200 rounded"></div>
+        <div class="w-8 h-4 bg-gray-200 rounded"></div>
+    </div>
 
-  <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+    <div class="-mx-6 -mb-6">
+   <svg viewBox="0 0 300 80" preserveAspectRatio="none" class="h-16 w-full">
+  <defs>
+    <linearGradient id="grad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#e2e8f0;stop-opacity:1" />
+      <stop offset="30%" style="stop-color:#e2e8f0;stop-opacity:0.5" />
+      <stop offset="70%" style="stop-color:#e2e8f0;stop-opacity:0" />
+    </linearGradient>
+  </defs>
+  <g fill="none" stroke="#e2e8f0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M0 70 Q5 80, 10 60 Q15 65, 20 60 Q25 70, 30 55 Q35 60, 40 50 Q45 70, 50 65 Q55 62, 60 70 Q65 50, 70 65 Q75 60, 80 48 Q85 70, 90 40 Q95 45, 100 50 Q105 60, 110 40 Q115 50, 120 45 Q125 60, 130 55 Q135 65, 140 55 Q145 70, 150 50 Q155 60, 160 55 Q165 70, 170 60 Q175 65, 180 45 Q185 50, 190 45 Q195 35, 200 30 Q205 40, 210 35 Q215 45, 220 40 Q225 50, 230 52 Q235 60, 240 48 Q245 55, 250 40 Q255 65, 260 62 Q265 70, 270 65 Q275 72, 280 55 Q285 65, 290 55 Q295 60, 300 50" fill="url(#grad)" />
+  </g>
+</svg>
 
-  <script>
-      // after 100ms trigger a window resize event to force the chart to redraw
-      setTimeout(function() {
-          window.dispatchEvent(new Event('resize'));
-      }, 0);
-      setTimeout(function() {
-          window.dispatchEvent(new Event('resize'));
-      }, 100);
-  </script>
+
+
+
+    </div>
+</div>
+  @endif
+
+ 
 
 </div>

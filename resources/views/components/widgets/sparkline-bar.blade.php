@@ -1,9 +1,6 @@
-<div class="aura-card" wire:key="sparkline">
-  {{-- @dump($start)
-  @dump($end)
-  @dump($widget)
-  @dump($this->values) --}}
-
+<div class="aura-card" wire:key="sparkline" @if (!$isCached) wire:init="loadWidget" @endif>
+  <div>
+    @if($loaded)
   <div class="p-2">
     <div class="flex items-start justify-between mb-4">
       <span class="text-sm font-semibold">Chart {{ $widget['name'] }}</span>
@@ -97,17 +94,45 @@
     </div> --}}
 
   </div>
+  @else
+  <div class="p-2 animate-pulse">
+    <div class="flex items-baseline justify-between mb-4">
+        <div class="w-32 h-4 bg-gray-200 rounded"></div>
+        <div class="w-8 h-4 bg-gray-200 rounded"></div>
+    </div>
 
-  <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+    <div class="-mx-6 -mb-6">
+    <svg viewBox="0 0 300 80" preserveAspectRatio="none" class="h-16 w-full">
+    <g fill="none" fill-rule="evenodd">
+        <rect x="0" y="0" width="10" height="80" fill="#e2e8f0"/>
+        <rect x="15" y="20" width="10" height="60" fill="#e2e8f0"/>
+        <rect x="30" y="30" width="10" height="50" fill="#e2e8f0"/>
+        <rect x="45" y="40" width="10" height="40" fill="#e2e8f0"/>
+        <rect x="60" y="10" width="10" height="70" fill="#e2e8f0"/>
+        <rect x="75" y="50" width="10" height="30" fill="#e2e8f0"/>
+        <rect x="90" y="60" width="10" height="20" fill="#e2e8f0"/>
+        <rect x="105" y="30" width="10" height="50" fill="#e2e8f0"/>
+        <rect x="120" y="10" width="10" height="70" fill="#e2e8f0"/>
+        <rect x="135" y="20" width="10" height="60" fill="#e2e8f0"/>
+        <rect x="150" y="40" width="10" height="40" fill="#e2e8f0"/>
+        <rect x="165" y="50" width="10" height="30" fill="#e2e8f0"/>
+        <rect x="180" y="60" width="10" height="20" fill="#e2e8f0"/>
+        <rect x="195" y="40" width="10" height="40" fill="#e2e8f0"/>
+        <rect x="210" y="30" width="10" height="50" fill="#e2e8f0"/>
+        <rect x="225" y="20" width="10" height="60" fill="#e2e8f0"/>
+        <rect x="240" y="40" width="10" height="40" fill="#e2e8f0"/>
+        <rect x="255" y="60" width="10" height="20" fill="#e2e8f0"/>
+        <rect x="270" y="30" width="10" height="50" fill="#e2e8f0"/>
+        <rect x="285" y="10" width="10" height="70" fill="#e2e8f0"/>
+    </g>
+</svg>
 
-  <script>
-      // after 100ms trigger a window resize event to force the chart to redraw
-      setTimeout(function() {
-          window.dispatchEvent(new Event('resize'));
-      }, 0);
-      setTimeout(function() {
-          window.dispatchEvent(new Event('resize'));
-      }, 100);
-  </script>
+    </div>
+</div>
+  @endif
+  </div>
+
+
+  
 
 </div>
