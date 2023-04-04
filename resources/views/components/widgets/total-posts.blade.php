@@ -1,11 +1,8 @@
-<div class="aura-card" wire:key="total_posts">
+<div class="aura-card" wire:init="loadWidget" wire:key="total_posts">
+  @if($loaded)
   <div class="p-2">
     <div class="flex items-baseline justify-between mb-4">
       <span class="text-sm font-semibold">{{ $widget['name'] }}</span>
-
-      {{-- <div class="ml-4">
-        <span class="text-xs font-normal text-gray-500">{{ $start }} - {{ $end }}</span>
-      </div> --}}
     </div>
 
     <div class="flex items-baseline justify-between mt-1 mb-2 md:block lg:flex">
@@ -29,5 +26,27 @@
     </div>
 
   </div>
+  @else
+<div class="p-2 animate-pulse">
+  <div class="flex items-baseline justify-between mb-4 ">
+    <div class="w-1/4 h-4 bg-gray-200 rounded"></div>
+  </div>
 
+  <div class="flex items-baseline justify-between mt-1 mb-2 md:block lg:flex">
+    <div class="flex items-baseline text-4xl font-medium">
+      <div class="w-16 h-4 bg-gray-200 rounded"></div>
+    </div>
+    <div>
+        <div class="w-12 h-4 bg-gray-200 rounded"></div>
+    </div>
+  </div>
+
+  <div>
+    <span class="text-sm font-medium text-gray-500">
+      <div class="w-16 h-4 bg-gray-200 rounded"></div>
+    </span>
+  </div>
+</div>
+
+  @endif
 </div>
