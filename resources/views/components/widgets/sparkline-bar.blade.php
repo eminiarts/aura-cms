@@ -1,23 +1,21 @@
-<div class="aura-card" wire:key="chart">
+<div class="aura-card" wire:key="sparkline">
   {{-- @dump($start)
   @dump($end)
   @dump($widget)
   @dump($this->values) --}}
 
   <div class="p-2">
-    <div class="flex items-baseline justify-between mb-4">
+    <div class="flex items-start justify-between mb-4">
       <span class="text-sm font-semibold">Chart {{ $widget['name'] }}</span>
 
       {{-- <div class="ml-4">
         <span class="text-xs font-normal text-gray-500">{{ $start }} - {{ $end }}</span>
       </div> --}}
-    </div>
-
-    <div class="-mb-6">
       <div class="flex items-baseline text-4xl font-medium">
         {{ collect($this->values['current'])->last() ?? 'N/A' }}
       </div>
     </div>
+
 
     <div class="-mx-6 -mb-6">
       <div class="w-full">
@@ -42,89 +40,24 @@
               get options() {
                   return {
                     chart: {
-                      type: 'area',
-                      toolbar: false,
+                      type: 'bar',
                       width: '100%',
                       height: 80,
-
                       sparkline: {
-                        enabled: true,
-                      },
-
-                      chart: {
-                          animations: {
-                              enabled: true,
-                              easing: 'easeinout',
-                              speed: 1200,
-                              animateGradually: {
-                                  enabled: true,
-                                  delay: 150
-                              },
-                              dynamicAnimation: {
-                                  enabled: true,
-                                  speed: 350
-                              }
-                          }
+                        enabled: true
                       }
-
                     },
-
-
 
                     colors: [getCssVariableValue('--primary-400'), getCssVariableValue('--primary-200')],
 
-                    stroke: {
-                      curve: 'smooth',
-                      width: 2,
-                    },
-                    fill: {
-                        type: 'gradient',
-                        gradient: {
-                            shadeIntensity: 1,
-                            gradientToColors: [getCssVariableValue('--primary-400'), getCssVariableValue('--primary-200')],
-                            opacityFrom: 0.7,
-                            opacityTo: 0,
-                            stops: [0, 90, 100]
-                        }
+                    plotOptions: {
+                      bar: {
+                        columnWidth: '80%',
+                      }
                     },
 
-                    theme: {
-                      mode: 'light',
-                      palette: 'palette1',
-                      monochrome: {
-                        enabled: false,
-                        color: '#255aee',
-                        shadeTo: 'light  ',
-                        shadeIntensity: 0.65
-                      },
-                    },
-
-                    dataLabels: {
-                      enabled: false,
-                    },
-                    tooltip: {
-                      marker: false,
-                    },
                     xaxis: {
                       categories: this.labels,
-                      labels: {
-                        show: false,
-                      },
-                      axisBorder: {
-                        show: false,
-                      },
-                      axisTicks: {
-                        show: false,
-                      },
-
-                    },
-                    yaxis: {
-                      labels: {
-                        show: false,
-                      },
-                    },
-                    grid: {
-                      show: false,
                     },
 
                     series: [{

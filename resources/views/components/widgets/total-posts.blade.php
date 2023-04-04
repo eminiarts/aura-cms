@@ -1,4 +1,4 @@
-<div class="aura-card">
+<div class="aura-card" wire:key="total_posts">
   <div class="p-2">
     <div class="flex items-baseline justify-between mb-4">
       <span class="text-sm font-semibold">{{ $widget['name'] }}</span>
