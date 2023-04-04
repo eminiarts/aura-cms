@@ -6,10 +6,10 @@ use Carbon\CarbonInterval;
 use Eminiarts\Aura\Resources\Post;
 use Illuminate\Support\Carbon;
 
-class SparklineBarChart extends Sparkline
+class SparklineArea extends Sparkline
 {
     public function render()
     {
-        return view('aura::components.widgets.sparkline-bar');
+        return view('aura::components.widgets.sparkline-area');
     }
 }

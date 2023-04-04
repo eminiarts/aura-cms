@@ -6,7 +6,7 @@ use Carbon\CarbonInterval;
 use Eminiarts\Aura\Resources\Post;
 use Illuminate\Support\Carbon;
 
-class ChartWidget extends Widget
+class Sparkline extends Widget
 {
     public $widget;
     public $start;
@@ -29,7 +29,7 @@ class ChartWidget extends Widget
 
     public function render()
     {
-        return view('aura::components.widgets.chart');
+        return view('aura::components.widgets.sparkline-area');
     }
 
     public function updateDateRange($start, $end)

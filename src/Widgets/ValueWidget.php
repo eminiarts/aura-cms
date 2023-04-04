@@ -20,6 +20,9 @@ class ValueWidget extends Widget
 
     public function mount($widget, $model)
     {
+        // parent mount
+        parent::mount($widget, $model);
+
         $this->widget = $widget;
         $this->model = $model;
 
@@ -30,7 +33,7 @@ class ValueWidget extends Widget
 
     public function render()
     {
-        return view('aura::components.widgets.total-posts');
+        return view('aura::components.widgets.value');
     }
 
     public function updateDateRange($start, $end)
@@ -51,10 +54,7 @@ class ValueWidget extends Widget
         $previousStart = $currentStart->copy()->subDays($duration);
         $previousEnd = $currentStart;
 
-        $cacheKey = md5(auth()->user()->current_team_id . $this->widget['slug']);
-        $cacheDuration = $this->widget['cache']['duration'] ?? 60;
-
-        return cache()->remember($cacheKey, $cacheDuration, function () use ($currentStart, $currentEnd, $previousStart, $previousEnd) {
+        return cache()->remember($this->cacheKey, $this->cacheDuration, function () use ($currentStart, $currentEnd, $previousStart, $previousEnd) {
 
             $current = $this->getValue($currentStart, $currentEnd);
             $previous = $this->getValue($previousStart, $previousEnd);
