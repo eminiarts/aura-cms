@@ -4,6 +4,7 @@ namespace Eminiarts\Aura\Widgets;
 
 use Carbon\CarbonInterval;
 use Eminiarts\Aura\Resources\Post;
+use Illuminate\Support\Facades\DB;
 
 class ValueWidget extends Widget
 {
@@ -58,14 +59,28 @@ class ValueWidget extends Widget
 
     public function getValue($start, $end)
     {
-        $posts = $this->model->whereBetween('created_at', [$start, $end]);
+
+        $column = $this->widget['column'];
+
+        $posts = $this->model->query()
+                ->select('posts.*', DB::raw("CAST(post_meta.value as SIGNED) as $column"))
+                ->whereBetween('created_at', [$start, $end]);
+
+
+        if($this->model->isMetaField($column)) {
+            $posts->leftJoin('post_meta', function ($join) use ($column) {
+                $join->on('posts.id', '=', 'post_meta.post_id')
+            ->where('post_meta.key', '=', $column);
+            });
+        }
 
         return match ($this->method) {
-            'avg' => $posts->avg($this->widget['column']),
-            'sum' => $posts->sum($this->widget['column']),
-            'min' => $posts->min($this->widget['column']),
-            'max' => $posts->max($this->widget['column']),
+            'avg' => $posts->avg($this->model->isMetaField($column) ? DB::raw("CAST(post_meta.value as SIGNED)") : $column),
+            'sum' => $posts->sum($this->model->isMetaField($column) ? DB::raw("CAST(post_meta.value as SIGNED)") : $column),
+            'min' => $posts->min($this->model->isMetaField($column) ? DB::raw("CAST(post_meta.value as SIGNED)") : $column),
+            'max' => $posts->max($this->model->isMetaField($column) ? DB::raw("CAST(post_meta.value as SIGNED)") : $column),
             default => $posts->count(),
         };
+
     }
 }
