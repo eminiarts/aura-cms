@@ -11,7 +11,6 @@ class Widget extends Component
 
     public function loadWidget()
     {
-        sleep(5);
         $this->loaded = true;
     }
 

@@ -3,7 +3,7 @@
     @if($loaded)
   <div class="p-2">
     <div class="flex items-start justify-between mb-4">
-      <span class="text-sm font-semibold">Chart {{ $widget['name'] }}</span>
+      <span class="text-sm font-semibold">{{ $widget['name'] }}</span>
 
       {{-- <div class="ml-4">
         <span class="text-xs font-normal text-gray-500">{{ $start }} - {{ $end }}</span>

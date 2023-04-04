@@ -118,7 +118,7 @@ class Post extends Resource
                 'method' => 'count',
                 'cache' => '300',
                 'style' => [
-                    'width' => '33',
+                    'width' => '33.33',
                 ],
                 'conditional_logic' => [],
             ],
@@ -130,7 +130,7 @@ class Post extends Resource
                 'column' => 'number',
                 'cache' => '300',
                 'style' => [
-                    'width' => '33',
+                    'width' => '33.33',
                 ],
                 'conditional_logic' => [],
             ],
@@ -142,13 +142,13 @@ class Post extends Resource
                 'column' => 'number',
                 'cache' => '300',
                 'style' => [
-                    'width' => '33',
+                    'width' => '33.33',
                 ],
                 'conditional_logic' => [],
             ],
             [
-                'name' => 'Average Number',
-                'slug' => 'average_number',
+                'name' => 'Sparkline Bar Chart',
+                'slug' => 'sparkline_bar_chart',
                 'type' => 'Eminiarts\\Aura\\Widgets\\SparklineBarChart',
                 'cache' => '5s',
                 'style' => [
@@ -158,8 +158,8 @@ class Post extends Resource
             ],
 
             [
-                'name' => 'Average Number 2',
-                'slug' => 'average_number2',
+                'name' => 'Sparkline Area',
+                'slug' => 'sparkline_area',
                 'type' => 'Eminiarts\\Aura\\Widgets\\SparklineArea',
                 'cache' => '5s',
                 'style' => [
