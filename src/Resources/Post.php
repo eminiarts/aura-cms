@@ -111,18 +111,41 @@ class Post extends Resource
     public static function getWidgets(): array
     {
         return [
-            // [
-            //     'name' => 'Total Posts Created',
-            //     'slug' => 'total_posts_created',
-            //     'type' => 'Eminiarts\\Aura\\Widgets\\ValueWidget',
-            //     'method' => 'count',
-            //     'column' => 'number',
-            //     'cache' => '300',
-            //     'style' => [
-            //         'width' => '50',
-            //     ],
-            //     'conditional_logic' => [],
-            // ],
+            [
+                'name' => 'Total Posts Created',
+                'slug' => 'total_posts_created',
+                'type' => 'Eminiarts\\Aura\\Widgets\\ValueWidget',
+                'method' => 'count',
+                'cache' => '300',
+                'style' => [
+                    'width' => '33',
+                ],
+                'conditional_logic' => [],
+            ],
+            [
+                'name' => 'Average Number',
+                'slug' => 'average_number',
+                'type' => 'Eminiarts\\Aura\\Widgets\\ValueWidget',
+                'method' => 'avg',
+                'column' => 'number',
+                'cache' => '300',
+                'style' => [
+                    'width' => '33',
+                ],
+                'conditional_logic' => [],
+            ],
+            [
+                'name' => 'Sum Number',
+                'slug' => 'sum_number',
+                'type' => 'Eminiarts\\Aura\\Widgets\\ValueWidget',
+                'method' => 'sum',
+                'column' => 'number',
+                'cache' => '300',
+                'style' => [
+                    'width' => '33',
+                ],
+                'conditional_logic' => [],
+            ],
             [
                 'name' => 'Average Number',
                 'slug' => 'average_number',
