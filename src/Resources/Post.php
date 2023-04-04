@@ -117,7 +117,7 @@ class Post extends Resource
                 'type' => 'Eminiarts\\Aura\\Widgets\\ValueWidget',
                 'method' => 'count',
                 'column' => 'number',
-                'cache' => '5s',
+                'cache' => '300',
                 'style' => [
                     'width' => '50',
                 ],
