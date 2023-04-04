@@ -51,16 +51,22 @@ class ValueWidget extends Widget
         $previousStart = $currentStart->copy()->subDays($duration);
         $previousEnd = $currentStart;
 
-        $current = $this->getValue($currentStart, $currentEnd);
-        $previous = $this->getValue($previousStart, $previousEnd);
+        $cacheKey = md5(auth()->user()->current_team_id . $this->widget['slug']);
+        $cacheDuration = $this->widget['cache']['duration'] ?? 60;
 
-        $change = ($previous != 0) ? (($current - $previous) / $previous) * 100 : 0;
+        return cache()->remember($cacheKey, $cacheDuration, function () use ($currentStart, $currentEnd, $previousStart, $previousEnd) {
 
-        return [
-            'current' => $current,
-            'previous' => $previous,
-            'change' => $change,
-        ];
+            $current = $this->getValue($currentStart, $currentEnd);
+            $previous = $this->getValue($previousStart, $previousEnd);
+
+            $change = ($previous != 0) ? (($current - $previous) / $previous) * 100 : 0;
+
+            return [
+                'current' => $current,
+                'previous' => $previous,
+                'change' => $change,
+            ];
+        });
     }
 
     public function getValue($start, $end)
