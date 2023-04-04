@@ -3,9 +3,8 @@
 use Eminiarts\Aura\Http\Livewire\Post\Create;
 use Eminiarts\Aura\Models\User;
 use Eminiarts\Aura\Resources\Team;
-use function Pest\Livewire\livewire;
 
-uses()->group('current');
+use function Pest\Livewire\livewire;
 
 // Before each test, create a Superadmin and login
 beforeEach(function () {
