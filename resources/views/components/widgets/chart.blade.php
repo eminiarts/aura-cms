@@ -8,15 +8,14 @@
     <div class="flex items-baseline justify-between mb-4">
       <span class="text-sm font-semibold">Chart {{ $widget['name'] }}</span>
 
-      <div class="ml-4">
+      {{-- <div class="ml-4">
         <span class="text-xs font-normal text-gray-500">{{ $start }} - {{ $end }}</span>
-      </div>
+      </div> --}}
     </div>
 
     <div class="flex items-baseline justify-between mt-1 mb-2 md:block lg:flex">
       <div class="flex items-baseline text-4xl font-medium">
 
-        <div>
           <div
           x-data="{
               values: {{ json_encode(array_values($this->values['current'])) }},
@@ -37,6 +36,7 @@
                   return {
                       chart: { type: 'area',
                       toolbar: false,
+                      height: 500,
 
 
                   },
@@ -103,8 +103,6 @@
               <div x-ref="chart" class="bg-white rounded-lg dark:bg-gray-800"></div>
           </div>
 
-          {{-- @dump($this->values['current'], array_keys($this->values['current']), array_values($this->values['current'])) --}}
-        </div>
 
 
 
