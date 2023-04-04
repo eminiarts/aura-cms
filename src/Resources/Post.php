@@ -126,8 +126,7 @@ class Post extends Resource
             [
                 'name' => 'Average Number',
                 'slug' => 'average_number',
-                'type' => 'Eminiarts\\Aura\\Widgets\\ChartWidget',
-                'method' => 'area',
+                'type' => 'Eminiarts\\Aura\\Widgets\\SparklineBarChart',
                 'cache' => '5s',
                 'style' => [
                     'width' => '50',

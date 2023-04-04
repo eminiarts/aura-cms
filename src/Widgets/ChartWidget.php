@@ -22,7 +22,7 @@ class ChartWidget extends Widget
         $this->widget = $widget;
         $this->model = $model;
 
-        if($this->widget['method']) {
+        if(optional($this->widget)['method']) {
             $this->method = $this->widget['method'];
         }
     }
@@ -80,7 +80,7 @@ class ChartWidget extends Widget
                 return Carbon::parse($post->created_at)->toDateString() === $date;
             })->count();
 
-            return [$date => $count];
+            return [$date => rand(10, 100)];
         });
 
         return match ($this->method) {

@@ -1,4 +1,4 @@
-<div>
+<div wire:key="widgets">
     <div>
         {{-- Filter here --}}
         {{-- @dump($selected)
@@ -29,6 +29,7 @@
 
 
         <div class="px-2" wire-key="widget-{{ $widget['slug'] }}-wrapper" id="widget-{{ $widget['slug'] }}-wrapper">
+            {{ $widget['slug'] }}
             <style>
                 #widget-{{ $widget['slug'] }}-wrapper {
                     width: {{ optional(optional($widget)['style'])['width'] ?? '100' }}%;
