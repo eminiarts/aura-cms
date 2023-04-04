@@ -14,7 +14,7 @@
     </div>
 
     <div class="flex items-baseline justify-between mt-1 mb-2 md:block lg:flex">
-      <div class="flex items-baseline text-4xl font-medium">
+      <div class="w-full">
 
           <div
           x-data="{
@@ -36,8 +36,8 @@
                   return {
                       chart: { type: 'area',
                       toolbar: false,
-                      height: 500,
-
+                      width: '100%',
+                      height: 150
 
                   },
 
