@@ -3,6 +3,7 @@
 namespace Eminiarts\Aura\Widgets;
 
 use Carbon\CarbonInterval;
+use Illuminate\Support\Carbon;
 use Eminiarts\Aura\Resources\Post;
 use Illuminate\Support\Facades\DB;
 
@@ -40,8 +41,8 @@ class ValueWidget extends Widget
 
     public function getValuesProperty()
     {
-        $currentStart = $this->start;
-        $currentEnd = $this->end;
+        $currentStart = $this->start instanceof Carbon ? $this->start : Carbon::parse($this->start);
+        $currentEnd = $this->end instanceof Carbon ? $this->end : Carbon::parse($this->end);
 
         // Calculate the duration between start and end dates
         $duration = $currentStart->diffInDays($currentEnd);
