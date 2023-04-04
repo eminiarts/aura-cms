@@ -1,5 +1,5 @@
 <div wire:key="widgets">
-    <div>
+    <div wire:key="widgets-filter">
         {{-- Filter here --}}
         {{-- @dump($selected)
         @dump($start)
@@ -12,12 +12,14 @@
                 <option value="{{ $key }}">{{ $label }}</option>
                 @endforeach
             </select>
-            @if($selected === 'custom')
-            <label for="start" class="block text-sm font-medium text-gray-700">From:</label>
-            <input type="date" id="start" wire:model="start" class="block w-full py-2 pl-3 pr-10 text-base border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
-            <label for="end" class="block text-sm font-medium text-gray-700">To:</label>
-            <input type="date" id="end" wire:model="end" class="block w-full py-2 pl-3 pr-10 text-base border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
-            @endif
+            <div>
+                @if($selected === 'custom')
+                    <label for="start" class="block text-sm font-medium text-gray-700">From:</label>
+                    <input type="date" id="start" wire:model="start" class="block w-full py-2 pl-3 pr-10 text-base border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                    <label for="end" class="block text-sm font-medium text-gray-700">To:</label>
+                    <input type="date" id="end" wire:model="end" class="block w-full py-2 pl-3 pr-10 text-base border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                @endif
+            </div>
         </div>
 
     </div>
