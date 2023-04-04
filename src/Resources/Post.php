@@ -116,7 +116,7 @@ class Post extends Resource
                 'slug' => 'total_posts_created',
                 'type' => 'Eminiarts\\Aura\\Widgets\\ValueWidget',
                 'method' => 'count',
-                'cache' => '300',
+                'cache' => 300,
                 'style' => [
                     'width' => '33.33',
                 ],
@@ -128,7 +128,7 @@ class Post extends Resource
                 'type' => 'Eminiarts\\Aura\\Widgets\\ValueWidget',
                 'method' => 'avg',
                 'column' => 'number',
-                'cache' => '300',
+                'cache' => 300,
                 'style' => [
                     'width' => '33.33',
                 ],
@@ -140,7 +140,7 @@ class Post extends Resource
                 'type' => 'Eminiarts\\Aura\\Widgets\\ValueWidget',
                 'method' => 'sum',
                 'column' => 'number',
-                'cache' => '300',
+                'cache' => 300,
                 'style' => [
                     'width' => '33.33',
                 ],
@@ -150,7 +150,7 @@ class Post extends Resource
                 'name' => 'Sparkline Bar Chart',
                 'slug' => 'sparkline_bar_chart',
                 'type' => 'Eminiarts\\Aura\\Widgets\\SparklineBarChart',
-                'cache' => '5s',
+                'cache' => 300,
                 'style' => [
                     'width' => '50',
                 ],
@@ -161,7 +161,19 @@ class Post extends Resource
                 'name' => 'Sparkline Area',
                 'slug' => 'sparkline_area',
                 'type' => 'Eminiarts\\Aura\\Widgets\\SparklineArea',
-                'cache' => '5s',
+                'cache' => 300,
+                'style' => [
+                    'width' => '50',
+                ],
+                'conditional_logic' => [],
+            ],
+
+            [
+                'name' => 'Donut Chart',
+                'slug' => 'donut',
+                'type' => 'Eminiarts\\Aura\\Widgets\\Donut',
+                'cache' => 300,
+                'column' => 'number',
                 'style' => [
                     'width' => '50',
                 ],
