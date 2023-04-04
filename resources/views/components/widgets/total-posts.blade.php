@@ -3,9 +3,9 @@
     <div class="flex items-baseline justify-between mb-4">
       <span class="text-sm font-semibold">{{ $widget['name'] }}</span>
 
-      <div class="ml-4">
+      {{-- <div class="ml-4">
         <span class="text-xs font-normal text-gray-500">{{ $start }} - {{ $end }}</span>
-      </div>
+      </div> --}}
     </div>
 
     <div class="flex items-baseline justify-between mt-1 mb-2 md:block lg:flex">
@@ -20,7 +20,7 @@
         </svg>
         <span class="sr-only"> Increased by </span>
         {{ $this->values['change'] }}%
-      </div> <span class="text-sm">for the period</span>
+      </div>
       </div>
     </div>
 
