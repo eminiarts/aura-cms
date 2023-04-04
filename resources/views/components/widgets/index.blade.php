@@ -1,9 +1,9 @@
 <div>
     <div>
         {{-- Filter here --}}
-        @dump($selected)
+        {{-- @dump($selected)
         @dump($start)
-        @dump($end)
+        @dump($end) --}}
         {{-- @dump($widgets) --}}
         <div class="flex items-center space-x-2">
             <label for="selected" class="block text-sm font-medium text-gray-700">Date Range:</label>

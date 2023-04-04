@@ -43,11 +43,10 @@ class Widgets extends Component
             $this->end = null;
         } else {
             $interval = intval(preg_replace('/[^0-9]/', '', $this->selected));
-            $this->start = Carbon::now()->subDays($interval)->toDateString();
-            $this->end = Carbon::now()->toDateString();
+            $this->start = Carbon::now()->subDays($interval);
+            $this->end = Carbon::now();
         }
     }
-
 
     public function render()
     {
