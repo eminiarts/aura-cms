@@ -33,14 +33,27 @@ class Donut extends Widget
 
 
 
+
+
+
+
         $taxonomies = app($taxonomy)->whereExists(function ($query) {
             $query->select(DB::raw(1))
                 ->from('taxonomy_relations')
                 ->where('relatable_type', get_class($this->model))
                 ->whereColumn('taxonomies.id', 'taxonomy_relations.taxonomy_id');
-        })->get();
+        })->withCount(['taxonomies' => function ($query) {
+            $query->select(DB::raw('count(*)'))
+                ->from('taxonomy_relations')
+                ->where('relatable_type', get_class($this->model))
+                ->whereColumn('taxonomies.id', 'taxonomy_relations.taxonomy_id');
+        }])->get();
 
         dd($taxonomies);
+
+
+
+
 
 
 
