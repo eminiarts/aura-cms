@@ -23,7 +23,16 @@
                 <x-slot name="content">
                     <div class="w-60">
                         <div class="p-4" role="none">
-                            <div class="flex flex-col space-y-2">
+                            {{-- here --}}
+                        </div>
+                    </div>
+                </x-slot>
+            </x-aura::dropdown>
+        </div>
+    </div>
+
+    <div>
+        <div class="flex flex-col space-y-2">
                                 <label for="selected" class="block text-sm font-medium text-gray-700">Date Range:</label>
                                 <select id="selected" wire:model="selected" class="block w-full py-2 pl-3 pr-10 text-base border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
                                     @foreach($model->widgetSettings['options'] as $key => $label)
@@ -39,11 +48,6 @@
                                     @endif
                                 </div>
                             </div>
-                        </div>
-                    </div>
-                </x-slot>
-            </x-aura::dropdown>
-        </div>
     </div>
 
     <div class="flex flex-wrap items-stretch mt-4 -mx-2">
