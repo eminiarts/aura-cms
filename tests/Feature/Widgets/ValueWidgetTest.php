@@ -10,7 +10,7 @@ use Livewire\Livewire;
 uses(RefreshDatabase::class);
 
 // current
-uses()->group('current');
+// uses()->group('current');
 
 // Before each test, create a Superadmin and login
 beforeEach(function () {
@@ -53,7 +53,7 @@ it('calculates count correctly', function () {
         ->set('start', Carbon::now()->subDays(30))
         ->set('end', Carbon::now())
         //->assertSet('value', 2)
-;
+    ;
 
     $widget = $widgetTest->instance();
 
@@ -110,7 +110,21 @@ it('returns correct calculated values for current, previous, change', function (
     $values = $widget->getValuesProperty();
 
     expect($values)->toBeArray();
-    expect($values['current'])->toBe(1);
-    expect($values['previous'])->toBe(1);
-    expect($values['change'])->toBe(0);
+    expect($values['current'])->toBe("1");
+    expect($values['previous'])->toBe("1");
+    expect($values['change'])->toBe("0");
+});
+
+it('formats a number to 2 decimals', function () {
+    $widgetTest = Livewire::test(ValueWidget::class, ['widget' => ['method' => 'max', 'column' => 'number', 'name' => 'Widget'], 'model' => new Post()])
+        ->set('start', Carbon::now()->subDays(30))
+        ->set('end', Carbon::now());
+
+    $widget = $widgetTest->instance();
+
+    expect($widget->format(2.2222222))->toBe("2.22");
+    expect($widget->format(2.123))->toBe("2.12");
+    expect($widget->format(2.588))->toBe("2.59");
+    expect($widget->format(2))->toBe("2");
+    expect($widget->format(2.00))->toBe("2");
 });
