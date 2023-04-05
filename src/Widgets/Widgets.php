@@ -22,69 +22,39 @@ class Widgets extends Component
         $this->model= $model;
 
         $this->selected = $this->model->widgetSettings['default'] ?? 'all';
-        // $this->updatedSelected();
-
-
-        $this->start = Carbon::now()->subDays(30)->toDateString();
-        $this->end = Carbon::now()->toDateString();
-
+        $this->updatedSelected();
     }
 
     public function updatedSelected()
     {
-        // if ($this->selected === 'custom') {
-        //     $this->start = Carbon::now()->subDays(30)->toDateString();
-        //     $this->end = Carbon::now()->toDateString();
-        // } else {
-        //     // $this->updateDates();
-        // }
-
-
-        $this->start = Carbon::now()->subDays(10)->toDateString();
-        $this->end = Carbon::now()->endOfDay()->toDateString();
-
-
-        ray('updatedSelected', $this->start, $this->end, $this->selected);
+        if ($this->selected === 'custom') {
+            $this->start = Carbon::now()->subDays(30);
+            $this->end = Carbon::now();
+        } else {
+            $this->updateDates();
+        }
 
         $this->emit('dateFilterUpdated', $this->start, $this->end);
     }
 
     protected function updateDates()
     {
-        if ($this->selected === 'all') {
-            $this->start = null;
-            $this->end = null;
-        } elseif ($this->selected === 'ytd') {
-            $this->start = Carbon::now()->startOfYear()->toDateString();
-            $this->end = Carbon::now()->toDateString();
-        } elseif ($this->selected === 'qtd') {
-            $this->start = Carbon::now()->startOfQuarter()->toDateString();
-            $this->end = Carbon::now()->toDateString();
-        } elseif ($this->selected === 'mtd') {
-            $this->start = Carbon::now()->startOfMonth()->toDateString();
-            $this->end = Carbon::now()->toDateString();
-        } elseif ($this->selected === 'wtd') {
-            $this->start = Carbon::now()->startOfWeek()->toDateString();
-            $this->end = Carbon::now()->toDateString();
-        } elseif ($this->selected === 'last-month') {
-            $this->start = Carbon::now()->subMonth()->startOfMonth()->toDateString();
-            $this->end = Carbon::now()->subMonth()->endOfMonth()->toDateString();
-        } elseif ($this->selected === 'last-week') {
-            $this->start = Carbon::now()->subWeek()->startOfWeek()->toDateString();
-            $this->end = Carbon::now()->subWeek()->endOfWeek()->toDateString();
-        } elseif ($this->selected === 'last-quarter') {
-            $this->start = Carbon::now()->subQuarter()->startOfQuarter()->toDateString();
-            $this->end = Carbon::now()->subQuarter()->endOfQuarter()->toDateString();
-        } elseif ($this->selected === 'last-year') {
-            $this->start = Carbon::now()->subYear()->startOfYear()->toDateString();
-            $this->end = Carbon::now()->subYear()->endOfYear()->toDateString();
-        } else {
-            $interval = intval(preg_replace('/[^0-9]/', '', $this->selected));
-            $this->start = Carbon::now()->subDays($interval);
-            $this->end = Carbon::now();
-        }
 
-        ray($this->start, $this->end, $this->selected);
+        $now = now()->endOfDay();
+
+        [$this->start, $this->end] = match ($this->selected) {
+            'all' => [null, null],
+            'ytd' => [$now->copy()->startOfYear(), $now->copy()],
+            'qtd' => [$now->copy()->startOfQuarter(), $now->copy()],
+            'mtd' => [$now->copy()->startOfMonth(), $now->copy()],
+            'wtd' => [$now->copy()->startOfWeek(), $now->copy()],
+            'last-month' => [$now->copy()->subMonth()->startOfMonth(), $now->copy()->subMonth()->endOfMonth()],
+            'last-week' => [$now->copy()->subWeek()->startOfWeek(), $now->copy()->subWeek()->endOfWeek()],
+            'last-quarter' => [$now->copy()->subQuarter()->startOfQuarter(), $now->copy()->subQuarter()->endOfQuarter()],
+            'last-year' => [$now->copy()->subYear()->startOfYear(), $now->copy()->subYear()->endOfYear()],
+            default => [$now->copy()->subDays(intval(preg_replace('/[^0-9]/', '', $this->selected))), $now->copy()],
+        };
+
     }
 
     public function render()

@@ -1,5 +1,8 @@
 <div class="aura-card" @if (!$isCached) wire:init="loadWidget" @endif wire:key="total_posts">
+
     @if($loaded)
+
+    {{-- @dump($this->values, $this->cacheKey, $this->start, $this->end) --}}
     <div class="p-2">
         <div class="flex items-baseline justify-between mb-4">
             <span class="text-sm font-semibold">{{ $widget['name'] }}</span>
