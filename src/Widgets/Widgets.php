@@ -2,27 +2,35 @@
 
 namespace Eminiarts\Aura\Widgets;
 
-use Livewire\Component;
-use Carbon\CarbonInterval;
 use Illuminate\Support\Carbon;
-use Eminiarts\Aura\Resources\Post;
+use Livewire\Component;
 
 class Widgets extends Component
 {
-    public $widgets;
-    public $model;
-    public $start;
     public $end;
+
+    public $model;
+
     public $selected = '30d';
+
+    public $start;
+
     public $test = 'bajram';
+
+    public $widgets;
 
     public function mount($widgets, $model)
     {
         $this->widgets = $widgets;
-        $this->model= $model;
+        $this->model = $model;
 
         $this->selected = $this->model->widgetSettings['default'] ?? 'all';
         $this->updatedSelected();
+    }
+
+    public function render()
+    {
+        return view('aura::components.widgets.index');
     }
 
     public function updatedSelected()
@@ -39,7 +47,6 @@ class Widgets extends Component
 
     protected function updateDates()
     {
-
         $now = now()->endOfDay();
 
         [$this->start, $this->end] = match ($this->selected) {
@@ -54,11 +61,5 @@ class Widgets extends Component
             'last-year' => [$now->copy()->subYear()->startOfYear(), $now->copy()->subYear()->endOfYear()],
             default => [$now->copy()->subDays(intval(preg_replace('/[^0-9]/', '', $this->selected))), $now->copy()],
         };
-
-    }
-
-    public function render()
-    {
-        return view('aura::components.widgets.index');
     }
 }

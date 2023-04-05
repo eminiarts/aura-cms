@@ -2,38 +2,46 @@
 
 namespace Eminiarts\Aura\Widgets;
 
-use Carbon\CarbonInterval;
 use Illuminate\Support\Carbon;
-use Eminiarts\Aura\Resources\Post;
 use Illuminate\Support\Facades\DB;
 
 class ValueWidget extends Widget
 {
-    public $widget;
-    public $start;
     public $end;
-    public $model;
 
     public $method = 'count';
 
+    public $model;
+
+    public $start;
+
+    public $widget;
+
     protected $listeners = ['dateFilterUpdated' => 'updateDateRange'];
 
-    public function mount()
+    public function getValue($start, $end)
     {
-        if($this->widget['method']) {
-            $this->method = $this->widget['method'];
+        $column = optional($this->widget)['column'];
+
+        $posts = $this->model->query()
+        ->where('created_at', '>=', $start)
+        ->where('created_at', '<', $end);
+
+        if ($column && $this->model->isMetaField($column)) {
+            $posts->select('posts.*', DB::raw("CAST(post_meta.value as SIGNED) as $column"))
+            ->leftJoin('post_meta', function ($join) use ($column) {
+                $join->on('posts.id', '=', 'post_meta.post_id')
+            ->where('post_meta.key', '=', $column);
+            });
         }
-    }
 
-    public function render()
-    {
-        return view('aura::components.widgets.value');
-    }
-
-    public function updateDateRange($start, $end)
-    {
-        $this->start = $start;
-        $this->end = $end;
+        return match ($this->method) {
+            'avg' => $posts->avg($this->model->isMetaField($column) ? DB::raw('CAST(post_meta.value as SIGNED)') : $column),
+            'sum' => $posts->sum($this->model->isMetaField($column) ? DB::raw('CAST(post_meta.value as SIGNED)') : $column),
+            'min' => $posts->min($this->model->isMetaField($column) ? DB::raw('CAST(post_meta.value as SIGNED)') : $column),
+            'max' => $posts->max($this->model->isMetaField($column) ? DB::raw('CAST(post_meta.value as SIGNED)') : $column),
+            default => $posts->count(),
+        };
     }
 
     public function getValuesProperty()
@@ -49,44 +57,34 @@ class ValueWidget extends Widget
         $previousEnd = $currentStart;
 
         return cache()->remember($this->cacheKey, $this->cacheDuration, function () use ($currentStart, $currentEnd, $previousStart, $previousEnd) {
-
             $current = $this->getValue($currentStart, $currentEnd);
             $previous = $this->getValue($previousStart, $previousEnd);
 
             $change = ($previous != 0) ? (($current - $previous) / $previous) * 100 : 0;
 
             return [
-                'current' => $current,
-                'previous' => $previous,
-                'change' => $change,
+                'current' => $this->format($current),
+                'previous' => $this->format($previous),
+                'change' => $this->format($change),
             ];
         });
     }
 
-    public function getValue($start, $end)
+    public function mount()
     {
-        $column = optional($this->widget)['column'];
-
-        $posts = $this->model->query()
-        ->where('created_at', '>=', $start)
-        ->where('created_at', '<', $end);
-
-        if($column && $this->model->isMetaField($column)) {
-            $posts->select('posts.*', DB::raw("CAST(post_meta.value as SIGNED) as $column"))
-            ->leftJoin('post_meta', function ($join) use ($column) {
-                $join->on('posts.id', '=', 'post_meta.post_id')
-            ->where('post_meta.key', '=', $column);
-            });
+        if ($this->widget['method']) {
+            $this->method = $this->widget['method'];
         }
+    }
 
-        ray('getValue', $this->method, $column, $this->start, $this->end);
+    public function render()
+    {
+        return view('aura::components.widgets.value');
+    }
 
-        return match ($this->method) {
-            'avg' => $posts->avg($this->model->isMetaField($column) ? DB::raw("CAST(post_meta.value as SIGNED)") : $column),
-            'sum' => $posts->sum($this->model->isMetaField($column) ? DB::raw("CAST(post_meta.value as SIGNED)") : $column),
-            'min' => $posts->min($this->model->isMetaField($column) ? DB::raw("CAST(post_meta.value as SIGNED)") : $column),
-            'max' => $posts->max($this->model->isMetaField($column) ? DB::raw("CAST(post_meta.value as SIGNED)") : $column),
-            default => $posts->count(),
-        };
+    public function updateDateRange($start, $end)
+    {
+        $this->start = $start;
+        $this->end = $end;
     }
 }

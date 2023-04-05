@@ -22,7 +22,7 @@ Allowed Types
 -------------
 
 1.  **Eminiarts\\Aura\\Widgets\\ValueWidget**: A simple value widget that displays a single value. Supports count, avg, and sum methods.
-2.  **Eminiarts\\Aura\\Widgets\\SparklineBarChart**: A bar chart using the sparkline visualization style.
+2.  **Eminiarts\\Aura\\Widgets\\SparklineBar**: A bar chart using the sparkline visualization style.
 3.  **Eminiarts\\Aura\\Widgets\\SparklineArea**: An area chart using the sparkline visualization style.
 4.  **Eminiarts\\Aura\\Widgets\\Donut**: A donut chart visualization.
 5.  **Eminiarts\\Aura\\Widgets\\Pie**: A pie chart visualization.
@@ -75,7 +75,7 @@ php
 [
     'name' => 'Sparkline Bar Chart',
     'slug' => 'sparkline_bar_chart',
-    'type' => 'Eminiarts\\Aura\\Widgets\\SparklineBarChart',
+    'type' => 'Eminiarts\\Aura\\Widgets\\SparklineBar',
     'cache' => 300,
     'style' => [
         'width' => '50',

@@ -2,26 +2,43 @@
 
 namespace Eminiarts\Aura\Widgets;
 
-use Carbon\CarbonInterval;
-use Eminiarts\Aura\Resources\Post;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
 
 class Sparkline extends Widget
 {
-    public $widget;
-    public $start;
     public $end;
-    public $model;
 
     public $method = 'area';
 
+    public $model;
+
+    public $start;
+
+    public $widget;
+
     protected $listeners = ['dateFilterUpdated' => 'updateDateRange'];
+
+    public function getValuesProperty()
+    {
+        $currentStart = $this->getCarbonDate($this->start)->addDay();
+        $currentEnd = $this->getCarbonDate($this->end);
+        $diff = $currentStart->diffInDays($currentEnd);
+
+        $previousStart = $currentStart->copy()->subDays($diff + 1);
+        $previousEnd = $currentStart->copy()->subDay();
+
+        return [
+            'current' => $this->getValue($currentStart, $currentEnd)->toArray(),
+            'previous' => $this->getValue($previousStart, $previousEnd)->toArray(),
+        ];
+    }
 
     public function mount()
     {
         // dd('hier', $this->start, $this->end, $this->model, $this->widget);
 
-        if(optional($this->widget)['method']) {
+        if (optional($this->widget)['method']) {
             $this->method = $this->widget['method'];
         }
     }
@@ -37,57 +54,29 @@ class Sparkline extends Widget
         $this->end = $end;
     }
 
-    public function getValuesProperty()
-    {
-        $currentStart = $this->start;
-        $currentEnd = $this->end;
-
-        // dd($currentStart, $currentEnd, Carbon::create($currentStart)->diffInDays($currentEnd));
-
-        // get diff of start and end
-        $diff = Carbon::create($currentStart)->diffInDays($currentEnd);
-
-        $previousStart = Carbon::create($currentStart)->subDays($diff);
-        $previousEnd = $currentStart;
-
-        $current = $this->getValue($currentStart, $currentEnd);
-        $previous = $this->getValue($previousStart, $previousEnd);
-
-        // $change = ($previous != 0) ? (($current - $previous) / $previous) * 100 : 0;
-
-        return [
-            'current' => $current->toArray(),
-            'previous' => $previous->toArray(),
-            // 'change' => $change,
-        ];
-    }
-
     protected function getValue($start, $end)
     {
-        $dateRange = collect();
-        $currentDate = Carbon::parse($start);
+        $postsByDate = $this->model
+        ->where('created_at', '>=', $start)
+        ->where('created_at', '<', $end)
+        ->select(DB::raw('DATE(created_at) as date'), DB::raw('COUNT(*) as count'))
+            ->groupBy('date')
+            ->get()
+            ->pluck('count', 'date')
+            ->toArray();
 
-        while ($currentDate->lte($end)) {
-            $dateRange->push($currentDate->toDateString());
-            $currentDate->addDay();
+        // Generate a date range between $start and $end
+        $dateRange = [];
+        for ($date = $start; $date->lte($end); $date->addDay()) {
+            $dateRange[$date->format('Y-m-d')] = 0;
         }
 
-        $posts = $this->model->whereBetween('created_at', [$start, $end])->get();
-
-        $dailyCounts = $dateRange->mapWithKeys(function ($date) use ($posts) {
-            $count = $posts->filter(function ($post) use ($date) {
-                return Carbon::parse($post->created_at)->toDateString() === $date;
-            })->count();
-
-            return [$date => rand(10, 100)];
-        });
-
-        return match ($this->method) {
-            'avg' => $dailyCounts->avg(),
-            'sum' => $dailyCounts->sum(),
-            'min' => $dailyCounts->min(),
-            'max' => $dailyCounts->max(),
-            default => $dailyCounts,
-        };
+        // Merge date range with the results from the query
+        return collect($dateRange)->merge($postsByDate);
     }
+
+private function getCarbonDate($date)
+{
+    return $date instanceof Carbon ? $date : Carbon::parse($date);
+}
 }

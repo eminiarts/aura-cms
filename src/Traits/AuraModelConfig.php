@@ -28,28 +28,6 @@ trait AuraModelConfig
 
     public static bool $usesMeta = true;
 
-    protected $baseFillable = [];
-
-    protected static $dropdown = false;
-
-    protected static ?string $group = 'Resources';
-
-    protected static ?string $icon = null;
-
-    protected static ?string $name = null;
-
-    protected static array $searchable = [];
-
-    protected static bool $showInNavigation = true;
-
-    protected static ?string $slug = null;
-
-    protected static ?int $sort = 1000;
-
-    protected static bool $title = false;
-
-    protected static string $type = 'Resource';
-
     public array $widgetSettings = [
         'default' => '30d',
         'options' => [
@@ -71,6 +49,28 @@ trait AuraModelConfig
             'custom' => 'Custom',
         ],
     ];
+
+    protected $baseFillable = [];
+
+    protected static $dropdown = false;
+
+    protected static ?string $group = 'Resources';
+
+    protected static ?string $icon = null;
+
+    protected static ?string $name = null;
+
+    protected static array $searchable = [];
+
+    protected static bool $showInNavigation = true;
+
+    protected static ?string $slug = null;
+
+    protected static ?int $sort = 1000;
+
+    protected static bool $title = false;
+
+    protected static string $type = 'Resource';
 
     public function __construct(array $attributes = [])
     {

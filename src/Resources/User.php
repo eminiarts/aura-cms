@@ -433,6 +433,13 @@ class User extends UserModel
         return $this->name;
     }
 
+      public function widgets()
+      {
+          return collect($this->getWidgets())->map(function ($item) {
+              return $item;
+          });
+      }
+
     /**
      * The "booted" method of the model.
      *
@@ -475,11 +482,4 @@ class User extends UserModel
             return $this->roles;
         });
     }
-
-      public function widgets()
-      {
-          return collect($this->getWidgets())->map(function ($item) {
-              return $item;
-          });
-      }
 }

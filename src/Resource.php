@@ -303,6 +303,15 @@ class Resource extends Model
         return $this->belongsTo(User::class);
     }
 
+    public function widgets()
+    {
+        return collect($this->getWidgets())->map(function ($item) {
+            //$item['widget'] = app($item['type'])->widget($item);
+
+            return $item;
+        });
+    }
+
     /**
      * The "booted" method of the model.
      *
@@ -331,14 +340,5 @@ class Resource extends Model
         // static::saving(function ($post) {
         //     dd('da', $post);
         // });
-    }
-
-    public function widgets()
-    {
-        return collect($this->getWidgets())->map(function ($item) {
-            //$item['widget'] = app($item['type'])->widget($item);
-
-            return $item;
-        });
     }
 }
