@@ -34,6 +34,8 @@ class Image extends Field
        if ($attachment) {
            $url = $attachment->path();
            $imageHtml = "<img src='{$url}' class='w-32 h-32 object-cover rounded-lg shadow-lg'>";
+       } else {
+           return $value;
        }
 
        $additionalImagesCount = count($values);

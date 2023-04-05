@@ -50,6 +50,28 @@ trait AuraModelConfig
 
     protected static string $type = 'Resource';
 
+    public array $widgetSettings = [
+        'default' => '30d',
+        'options' => [
+            '1d' => '1 Day',
+            '7d' => '7 Days',
+            '30d' => '30 Days',
+            '60d' => '60 Days',
+            '90d' => '90 Days',
+            '180d' => '180 Days',
+            '365d' => '365 Days',
+            'all' => 'All',
+            'ytd' => 'Year to Date',
+            'qtd' => 'Quarter to Date',
+            'mtd' => 'Month to Date',
+            'wtd' => 'Week to Date',
+            'last-year' => 'Last Year',
+            'last-month' => 'Last Month',
+            'last-week' => 'Last Week',
+            'custom' => 'Custom',
+        ],
+    ];
+
     public function __construct(array $attributes = [])
     {
         parent::__construct($attributes);

@@ -149,6 +149,18 @@
         <script src="https://unpkg.com/@yaireo/tagify/dist/tagify.polyfills.min.js"></script>
         <link href="https://unpkg.com/@yaireo/tagify/dist/tagify.css" rel="stylesheet" type="text/css" />
 
+          <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+
+  <script>
+      // after 100ms trigger a window resize event to force the chart to redraw
+      setTimeout(function() {
+          window.dispatchEvent(new Event('resize'));
+      }, 0);
+      setTimeout(function() {
+          window.dispatchEvent(new Event('resize'));
+      }, 100);
+  </script>
+
         <!-- Alpine Plugins -->
         {{-- <script defer src="https://unpkg.com/@alpinejs/collapse@3.10.5/dist/cdn.min.js"></script>
         <script defer src="https://unpkg.com/@alpinejs/ui@3.12.0-beta.0/dist/cdn.min.js"></script>
