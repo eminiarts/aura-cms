@@ -32,10 +32,10 @@
                       toolbar: false,
                       width: '100%',
                       height: '300',
-
-                       sparkline: {
+                      sparkline: {
                         enabled: true,
                       },
+                      
                       
                       animations: {
                           enabled: true,
@@ -49,15 +49,20 @@
                               enabled: true,
                               speed: 350
                           }
+                          
                       }
                     },
 
-                    colors: [getCssVariableValue('--primary-400'), getCssVariableValue('--primary-200')],
+                    
+
+                    colors: [getCssVariableValue('--primary-400'), getCssVariableValue('--primary-200'), getCssVariableValue('--primary-600'), getCssVariableValue('--primary-800')],
 
                     dataLabels: {
                       enabled: true,
                       formatter: function(val) {
-                          return val + '%';
+                        // format the value to 2 decimal places
+                        
+                          return parseFloat(val).toFixed(0) + '%';
                       }
                     },
 
@@ -65,7 +70,7 @@
                       enabled: true,
                       y: {
                         formatter: function(val) {
-                          return val + '%';
+                          return parseFloat(val).toFixed(2) + '%';
                         }
                       }
                     },
