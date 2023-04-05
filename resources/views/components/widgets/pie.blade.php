@@ -29,7 +29,6 @@
                   return {
                     chart: {
                       type: 'pie',
-                      toolbar: false,
                       width: '100%',
                       height: '300',
                       sparkline: {
@@ -90,7 +89,7 @@
             <div class="w-8 h-4 bg-gray-200 rounded"></div>
         </div>
 
-        <svg viewBox="0 0 36 36" class="w-64 h-64 rounded-full bg-gray-200 text-gray-200 mx-auto">
+        <svg viewBox="0 0 36 36" class="w-64 h-64 mx-auto text-gray-200 bg-gray-200 rounded-full">
             <circle class="donut-hole" cx="18" cy="18" r="15.91549430918954" fill="#fff"></circle>
             <circle class="donut-ring" cx="18" cy="18" r="15.91549430918954" fill="transparent" stroke="currentColor"
                 stroke-width="3"></circle>
