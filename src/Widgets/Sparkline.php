@@ -54,28 +54,28 @@ class Sparkline extends Widget
         $this->end = $end;
     }
 
-    protected function getValue($start, $end)
+    public function getValue($start, $end)
     {
         $column = optional($this->widget)['column'];
         $method = $this->method;
 
         $query = $this->model->query()
-            ->where('created_at', '>=', $start)
-            ->where('created_at', '<', $end)
-            ->select(DB::raw('DATE(created_at) as date'));
+        ->where('created_at', '>=', $start)
+        ->where('created_at', '<', $end)
+        ->groupBy(DB::raw('DATE(created_at)'))
+        ->select(DB::raw('DATE(created_at) as date'));
 
         if ($column && $this->model->isMetaField($column)) {
-            $query->addSelect(DB::raw("CAST(post_meta.value as SIGNED) as $column"))
-                ->leftJoin('post_meta', function ($join) use ($column) {
-                    $join->on('posts.id', '=', 'post_meta.post_id')
-                        ->where('post_meta.key', '=', $column);
-                });
-        }
+            $query->leftJoin('post_meta', function ($join) use ($column) {
+                $join->on('posts.id', '=', 'post_meta.post_id')
+                ->where('post_meta.key', '=', $column);
+            });
 
-        $query->groupBy('date');
-
-        if ($column && in_array($method, ['avg', 'sum', 'min', 'max'])) {
-            $query->addSelect(DB::raw("{$method}(CAST(post_meta.value as SIGNED)) as count"));
+            if (in_array($method, ['avg', 'sum', 'min', 'max'])) {
+                $query->addSelect(DB::raw("{$method}(CAST(post_meta.value as SIGNED)) as count"));
+            } else {
+                $query->addSelect(DB::raw('COUNT(*) as count'));
+            }
         } else {
             $query->addSelect(DB::raw('COUNT(*) as count'));
         }
@@ -92,9 +92,8 @@ class Sparkline extends Widget
         return collect($dateRange)->merge($postsByDate);
     }
 
-
-private function getCarbonDate($date)
-{
-    return $date instanceof Carbon ? $date : Carbon::parse($date);
-}
+    public function getCarbonDate($date)
+    {
+        return $date instanceof Carbon ? $date : Carbon::parse($date);
+    }
 }
