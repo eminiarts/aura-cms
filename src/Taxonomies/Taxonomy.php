@@ -37,6 +37,14 @@ class Taxonomy extends Resource
         return route('aura.taxonomy.create', [$this->getType()]);
     }
 
+       /**
+     * Get the parent commentable model (post or video).
+     */
+    public function relatable()
+    {
+        return $this->morphTo();
+    }
+
     // public function display($key)
     // {
     //     if ($this->fields && array_key_exists($key, $this->fields->toArray())) {

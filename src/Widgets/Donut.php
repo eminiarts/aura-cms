@@ -21,14 +21,28 @@ class Donut extends Widget
 
     public function getValue($start, $end)
     {
-        return [
-            'tag-1' => rand(10, 50),
-            'tag-2' => rand(10, 50),
-            'tag-3' => rand(10, 50),
-            'tag-4' => rand(10, 50),
-        ];
+        // return [
+        //     'tag-1' => rand(10, 50),
+        //     'tag-2' => rand(10, 50),
+        //     'tag-3' => rand(10, 50),
+        //     'tag-4' => rand(10, 50),
+        // ];
 
         $column = optional($this->widget)['column'];
+        $taxonomy = optional($this->widget)['taxonomy'];
+
+
+
+        $taxonomies = app($taxonomy)->whereExists(function ($query) {
+            $query->select(DB::raw(1))
+                ->from('taxonomy_relations')
+                ->where('relatable_type', get_class($this->model))
+                ->whereColumn('taxonomies.id', 'taxonomy_relations.taxonomy_id');
+        })->get();
+
+        dd($taxonomies);
+
+
 
         $posts = $this->model->query()
         ->where('created_at', '>=', $start)
