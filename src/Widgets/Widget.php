@@ -26,7 +26,7 @@ class Widget extends Component
 
     public function getCacheKeyProperty()
     {
-        return md5(auth()->user()->current_team_id . $this->widget['slug']);
+        return md5(auth()->user()->current_team_id . $this->widget['slug'] . $this->start . $this->end);
     }
 
     public function getCacheDurationProperty()
