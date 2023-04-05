@@ -10,18 +10,10 @@ class Json extends Field
 
     public function get($field, $value)
     {
-
         return $value;
+
         return json_decode($value, true);
     }
-      public function set($value)
-      {
-          if(is_array($value)) {
-              return json_encode($value);
-          }
-
-          return $value;
-      }
 
     public function getFields()
     {
@@ -52,5 +44,12 @@ class Json extends Field
         ]);
     }
 
+      public function set($value)
+      {
+          if (is_array($value)) {
+              return json_encode($value);
+          }
 
+          return $value;
+      }
 }

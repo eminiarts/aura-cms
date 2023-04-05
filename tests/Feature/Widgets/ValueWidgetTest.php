@@ -1,11 +1,11 @@
 <?php
 
-use Livewire\Livewire;
-use Illuminate\Support\Carbon;
 use Eminiarts\Aura\Resources\Post;
 use Eminiarts\Aura\Resources\User;
 use Eminiarts\Aura\Widgets\ValueWidget;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Carbon;
+use Livewire\Livewire;
 
 uses(RefreshDatabase::class);
 
@@ -46,15 +46,14 @@ beforeEach(function () {
     ]);
 
     $this->widget = (new Post())->widgets()->first();
-
 });
 
 it('calculates count correctly', function () {
-    $widgetTest = Livewire::test(ValueWidget::class, ['widget' => ['method' => 'count', "name" => "Total Posts Created"], 'model' => new Post()])
+    $widgetTest = Livewire::test(ValueWidget::class, ['widget' => ['method' => 'count', 'name' => 'Total Posts Created'], 'model' => new Post()])
         ->set('start', Carbon::now()->subDays(30))
         ->set('end', Carbon::now())
         //->assertSet('value', 2)
-    ;
+;
 
     $widget = $widgetTest->instance();
 
@@ -88,7 +87,6 @@ it('calculates min correctly', function () {
 
     $widget = $widgetTest->instance();
 
-
     expect($widget->getValue($widget->start, $widget->end))->toBe(10);
 });
 
@@ -99,17 +97,15 @@ it('calculates max correctly', function () {
 
     $widget = $widgetTest->instance();
 
-
     expect($widget->getValue($widget->start, $widget->end))->toBe(20);
 });
 
 it('returns correct calculated values for current, previous, change', function () {
-    $widgetTest = Livewire::test(ValueWidget::class, ['widget' => ['method' => 'count', "name" => "Total Posts Created", 'slug' => 'total_posts_created'], 'model' => new Post()])
+    $widgetTest = Livewire::test(ValueWidget::class, ['widget' => ['method' => 'count', 'name' => 'Total Posts Created', 'slug' => 'total_posts_created'], 'model' => new Post()])
         ->set('start', Carbon::now()->subDays(15))
         ->set('end', Carbon::now());
 
     $widget = $widgetTest->instance();
-
 
     $values = $widget->getValuesProperty();
 

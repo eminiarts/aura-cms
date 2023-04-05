@@ -2,11 +2,11 @@
 
 namespace Eminiarts\Aura\Resources;
 
-use Illuminate\Support\Str;
-use Eminiarts\Aura\Resource;
-use Illuminate\Support\Facades\Storage;
-use Illuminate\Foundation\Bus\DispatchesJobs;
 use Eminiarts\Aura\Jobs\GenerateImageThumbnail;
+use Eminiarts\Aura\Resource;
+use Illuminate\Foundation\Bus\DispatchesJobs;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 class Attachment extends Resource
 {
@@ -205,7 +205,7 @@ class Attachment extends Resource
         $imageContent = file_get_contents($url);
 
         // Generate a unique file name
-        $fileName = uniqid() . '.jpg';
+        $fileName = uniqid().'.jpg';
 
         // Save the image to the desired storage
         $storagePath = "{$folder}/{$fileName}";

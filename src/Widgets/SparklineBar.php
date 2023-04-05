@@ -2,11 +2,7 @@
 
 namespace Eminiarts\Aura\Widgets;
 
-use Carbon\CarbonInterval;
-use Eminiarts\Aura\Resources\Post;
-use Illuminate\Support\Carbon;
-
-class SparklineBarChart extends Sparkline
+class SparklineBar extends Sparkline
 {
     public function render()
     {
