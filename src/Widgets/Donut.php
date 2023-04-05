@@ -26,7 +26,7 @@ class Donut extends Widget
         $this->widget = $widget;
         $this->model = $model;
 
-        if($this->widget['method']) {
+        if(optional($this->widget)['method']) {
             $this->method = $this->widget['method'];
         }
     }
@@ -59,18 +59,26 @@ class Donut extends Widget
             $current = $this->getValue($currentStart, $currentEnd);
             $previous = $this->getValue($previousStart, $previousEnd);
 
-            $change = ($previous != 0) ? (($current - $previous) / $previous) * 100 : 0;
+            // $change = ($previous != 0) ? (($current - $previous) / $previous) * 100 : 0;
 
             return [
                 'current' => $current,
                 'previous' => $previous,
-                'change' => $change,
+                // 'change' => $change,
             ];
         });
     }
 
     public function getValue($start, $end)
     {
+
+        return [
+            'tag-1' => rand(10, 50),
+            'tag-2' => rand(10, 50),
+            'tag-3' => rand(10, 50),
+            'tag-4' => rand(10, 50),
+        ];
+
         $column = optional($this->widget)['column'];
 
         $posts = $this->model->query()
