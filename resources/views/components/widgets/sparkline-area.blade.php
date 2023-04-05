@@ -2,8 +2,8 @@
     @if($loaded)
     <div class="p-2">
 
-      @dump($this->start, $this->end)
-      @dump($this->values)
+      {{-- @dump($this->start, $this->end)
+      @dump($this->values) --}}
         <div class="flex items-start justify-between mb-4">
             <span class="text-sm font-semibold">{{ $widget['name'] }}</span>
             <div class="">

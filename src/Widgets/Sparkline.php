@@ -56,14 +56,31 @@ class Sparkline extends Widget
 
     protected function getValue($start, $end)
     {
-        $postsByDate = $this->model
-        ->where('created_at', '>=', $start)
-        ->where('created_at', '<', $end)
-        ->select(DB::raw('DATE(created_at) as date'), DB::raw('COUNT(*) as count'))
-            ->groupBy('date')
-            ->get()
-            ->pluck('count', 'date')
-            ->toArray();
+        $column = optional($this->widget)['column'];
+        $method = $this->method;
+
+        $query = $this->model->query()
+            ->where('created_at', '>=', $start)
+            ->where('created_at', '<', $end)
+            ->select(DB::raw('DATE(created_at) as date'));
+
+        if ($column && $this->model->isMetaField($column)) {
+            $query->addSelect(DB::raw("CAST(post_meta.value as SIGNED) as $column"))
+                ->leftJoin('post_meta', function ($join) use ($column) {
+                    $join->on('posts.id', '=', 'post_meta.post_id')
+                        ->where('post_meta.key', '=', $column);
+                });
+        }
+
+        $query->groupBy('date');
+
+        if ($column && in_array($method, ['avg', 'sum', 'min', 'max'])) {
+            $query->addSelect(DB::raw("{$method}(CAST(post_meta.value as SIGNED)) as count"));
+        } else {
+            $query->addSelect(DB::raw('COUNT(*) as count'));
+        }
+
+        $postsByDate = $query->get()->pluck('count', 'date')->toArray();
 
         // Generate a date range between $start and $end
         $dateRange = [];
@@ -74,6 +91,7 @@ class Sparkline extends Widget
         // Merge date range with the results from the query
         return collect($dateRange)->merge($postsByDate);
     }
+
 
 private function getCarbonDate($date)
 {
