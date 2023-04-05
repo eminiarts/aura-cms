@@ -70,6 +70,8 @@ class Widgets extends Component
             $this->start = Carbon::now()->subDays($interval);
             $this->end = Carbon::now();
         }
+
+        ray($this->start, $this->end, $this->selected);
     }
 
     public function render()
