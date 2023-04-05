@@ -14,7 +14,7 @@ class Widget extends Component
         $this->loaded = true;
     }
 
-    public function mount($widget, $model)
+    public function mount()
     {
         // Check if the widget is cached
         if(cache()->has($this->cacheKey)) {

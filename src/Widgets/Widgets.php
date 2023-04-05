@@ -13,7 +13,8 @@ class Widgets extends Component
     public $model;
     public $start;
     public $end;
-    public $selected;
+    public $selected = '30d';
+    public $test = 'bajram';
 
     public function mount($widgets, $model)
     {
@@ -21,17 +22,29 @@ class Widgets extends Component
         $this->model= $model;
 
         $this->selected = $this->model->widgetSettings['default'] ?? 'all';
-        $this->updatedSelected();
+        // $this->updatedSelected();
+
+
+        $this->start = Carbon::now()->subDays(30)->toDateString();
+        $this->end = Carbon::now()->toDateString();
+
     }
 
     public function updatedSelected()
     {
-        if ($this->selected === 'custom') {
-            $this->start = Carbon::now()->subDays(30)->toDateString();
-            $this->end = Carbon::now()->toDateString();
-        } else {
-            $this->updateDates();
-        }
+        // if ($this->selected === 'custom') {
+        //     $this->start = Carbon::now()->subDays(30)->toDateString();
+        //     $this->end = Carbon::now()->toDateString();
+        // } else {
+        //     // $this->updateDates();
+        // }
+
+
+        $this->start = Carbon::now()->subDays(10)->toDateString();
+        $this->end = Carbon::now()->toDateString();
+
+
+        ray('updatedSelected', $this->start, $this->end, $this->selected);
 
         $this->emit('dateFilterUpdated', $this->start, $this->end);
     }

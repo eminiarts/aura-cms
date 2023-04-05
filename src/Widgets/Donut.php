@@ -18,14 +18,8 @@ class Donut extends Widget
 
     protected $listeners = ['dateFilterUpdated' => 'updateDateRange'];
 
-    public function mount($widget, $model)
+    public function mount()
     {
-        // parent mount
-        parent::mount($widget, $model);
-
-        $this->widget = $widget;
-        $this->model = $model;
-
         if(optional($this->widget)['method']) {
             $this->method = $this->widget['method'];
         }
