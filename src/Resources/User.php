@@ -475,4 +475,11 @@ class User extends UserModel
             return $this->roles;
         });
     }
+
+      public function widgets()
+      {
+          return collect($this->getWidgets())->map(function ($item) {
+              return $item;
+          });
+      }
 }
