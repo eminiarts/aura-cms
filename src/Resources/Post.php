@@ -179,6 +179,17 @@ class Post extends Resource
                 ],
                 'conditional_logic' => [],
             ],
+            [
+                'name' => 'Pie Chart',
+                'slug' => 'pie',
+                'type' => 'Eminiarts\\Aura\\Widgets\\Pie',
+                'cache' => 300,
+                'column' => 'number',
+                'style' => [
+                    'width' => '50',
+                ],
+                'conditional_logic' => [],
+            ],
         ];
     }
 

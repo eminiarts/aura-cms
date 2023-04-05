@@ -28,7 +28,7 @@
               get options() {
                   return {
                     chart: {
-                      type: 'donut',
+                      type: 'pie',
                       toolbar: false,
                       width: '100%',
                       height: '300',
