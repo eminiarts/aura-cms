@@ -58,7 +58,7 @@ use Eminiarts\Aura\Http\Livewire\Taxonomy\Index as TaxonomyIndex;
 use Eminiarts\Aura\Http\Livewire\User\TwoFactorAuthenticationForm;
 use Eminiarts\Aura\Http\Livewire\Taxonomy\Create as TaxonomyCreate;
 use Eminiarts\Aura\Http\Livewire\Attachment\Index as AttachmentIndex;
-
+use Eminiarts\Aura\Widgets\Donut;
 use Eminiarts\Aura\Widgets\SparklineArea;
 use Eminiarts\Aura\Widgets\SparklineBarChart;
 
@@ -131,9 +131,10 @@ class AuraServiceProvider extends PackageServiceProvider
 
         Livewire::component('aura::widgets', Widgets::class);
         Livewire::component('aura::widgets.value-widget', ValueWidget::class);
-        Livewire::component('aura::widgets.chart', SparklineArea::class);
+        Livewire::component('aura::widgets.sparkline-area', SparklineArea::class);
 
         Livewire::component('aura::widgets.sparkline-bar', SparklineBarChart::class);
+        Livewire::component('aura::widgets.donut', Donut::class);
 
         return $this;
     }
