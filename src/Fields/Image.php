@@ -27,20 +27,22 @@ class Image extends Field
        }
 
        $values = is_array($value) ? $value : [$value];
-       $imagesHtml = '';
 
-       $offset = 0;
-       foreach ($values as $imageValue) {
-           $attachment = Attachment::find($imageValue);
+       $firstImageValue = array_shift($values);
+       $attachment = Attachment::find($firstImageValue);
 
-           if ($attachment) {
-               $url = $attachment->path();
-               $imagesHtml .= "<img src='{$url}' class='w-32 h-32 object-cover rounded-lg shadow-lg absolute' style='left: {$offset}px'>";
-               $offset += 10; // Change this value to adjust the offset between images
-           }
+       if ($attachment) {
+           $url = $attachment->path();
+           $imageHtml = "<img src='{$url}' class='w-32 h-32 object-cover rounded-lg shadow-lg'>";
        }
 
-       return "<div class='relative h-32' style='height: 128px; width: calc(100% + {$offset}px)'>{$imagesHtml}</div>";
+       $additionalImagesCount = count($values);
+       $circleHtml = '';
+       if ($additionalImagesCount > 0) {
+           $circleHtml = "<div class='h-10 w-10 bg-gray-200 text-center flex items-center justify-center rounded-full text-gray-800 font-bold'>+{$additionalImagesCount}</div>";
+       }
+
+       return "<div class='flex items-center space-x-2'>{$imageHtml}{$circleHtml}</div>";
    }
 
 }
