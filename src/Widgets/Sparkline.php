@@ -17,10 +17,9 @@ class Sparkline extends Widget
 
     protected $listeners = ['dateFilterUpdated' => 'updateDateRange'];
 
-    public function mount($widget, $model)
+    public function mount()
     {
-        $this->widget = $widget;
-        $this->model = $model;
+        // dd('hier', $this->start, $this->end, $this->model, $this->widget);
 
         if(optional($this->widget)['method']) {
             $this->method = $this->widget['method'];
@@ -38,7 +37,7 @@ class Sparkline extends Widget
         $this->end = $end;
     }
 
-    public function getValuesProperty($selected = 30)
+    public function getValuesProperty()
     {
         $currentStart = $this->start;
         $currentEnd = $this->end;
