@@ -2,10 +2,11 @@
 
 namespace Eminiarts\Aura\Resources;
 
-use Eminiarts\Aura\Jobs\GenerateImageThumbnail;
-use Eminiarts\Aura\Resource;
-use Illuminate\Foundation\Bus\DispatchesJobs;
 use Illuminate\Support\Str;
+use Eminiarts\Aura\Resource;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Foundation\Bus\DispatchesJobs;
+use Eminiarts\Aura\Jobs\GenerateImageThumbnail;
 
 class Attachment extends Resource
 {
@@ -196,6 +197,34 @@ class Attachment extends Resource
     public static function getWidgets(): array
     {
         return [];
+    }
+
+    public static function import($url, $folder = 'attachments')
+    {
+        // Download the image
+        $imageContent = file_get_contents($url);
+
+        // Generate a unique file name
+        $fileName = uniqid() . '.jpg';
+
+        // Save the image to the desired storage
+        $storagePath = "{$folder}/{$fileName}";
+        Storage::disk('public')->put($storagePath, $imageContent);
+
+        // Get the image size and mime type
+        $imageSize = Storage::disk('public')->size($storagePath);
+        $imageMimeType = Storage::disk('public')->mimeType($storagePath);
+
+        // Create a new Attachment instance
+        $attachment = self::create([
+            'url' => $storagePath,
+            'name' => $fileName,
+            'title' => $fileName,
+            'size' => $imageSize,
+            'mime_type' => $imageMimeType,
+        ]);
+
+        return $attachment;
     }
 
     public function isImage()

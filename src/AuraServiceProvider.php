@@ -130,10 +130,11 @@ class AuraServiceProvider extends PackageServiceProvider
         Livewire::component('aura::create-flow', CreateFlow::class);
         Livewire::component('aura::edit-operation', EditOperation::class);
 
+
+        // Widgets
         Livewire::component('aura::widgets', Widgets::class);
         Livewire::component('aura::widgets.value-widget', ValueWidget::class);
         Livewire::component('aura::widgets.sparkline-area', SparklineArea::class);
-
         Livewire::component('aura::widgets.sparkline-bar', SparklineBarChart::class);
         Livewire::component('aura::widgets.donut', Donut::class);
         Livewire::component('aura::widgets.pie', Pie::class);

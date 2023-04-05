@@ -111,41 +111,41 @@ class Post extends Resource
     public static function getWidgets(): array
     {
         return [
-            // [
-            //     'name' => 'Total Posts Created',
-            //     'slug' => 'total_posts_created',
-            //     'type' => 'Eminiarts\\Aura\\Widgets\\ValueWidget',
-            //     'method' => 'count',
-            //     'cache' => 300,
-            //     'style' => [
-            //         'width' => '33.33',
-            //     ],
-            //     'conditional_logic' => [],
-            // ],
-            // [
-            //     'name' => 'Average Number',
-            //     'slug' => 'average_number',
-            //     'type' => 'Eminiarts\\Aura\\Widgets\\ValueWidget',
-            //     'method' => 'avg',
-            //     'column' => 'number',
-            //     'cache' => 300,
-            //     'style' => [
-            //         'width' => '33.33',
-            //     ],
-            //     'conditional_logic' => [],
-            // ],
-            // [
-            //     'name' => 'Sum Number',
-            //     'slug' => 'sum_number',
-            //     'type' => 'Eminiarts\\Aura\\Widgets\\ValueWidget',
-            //     'method' => 'sum',
-            //     'column' => 'number',
-            //     'cache' => 300,
-            //     'style' => [
-            //         'width' => '33.33',
-            //     ],
-            //     'conditional_logic' => [],
-            // ],
+            [
+                'name' => 'Total Posts Created',
+                'slug' => 'total_posts_created',
+                'type' => 'Eminiarts\\Aura\\Widgets\\ValueWidget',
+                'method' => 'count',
+                'cache' => 300,
+                'style' => [
+                    'width' => '33.33',
+                ],
+                'conditional_logic' => [],
+            ],
+            [
+                'name' => 'Average Number',
+                'slug' => 'average_number',
+                'type' => 'Eminiarts\\Aura\\Widgets\\ValueWidget',
+                'method' => 'avg',
+                'column' => 'number',
+                'cache' => 300,
+                'style' => [
+                    'width' => '33.33',
+                ],
+                'conditional_logic' => [],
+            ],
+            [
+                'name' => 'Sum Number',
+                'slug' => 'sum_number',
+                'type' => 'Eminiarts\\Aura\\Widgets\\ValueWidget',
+                'method' => 'sum',
+                'column' => 'number',
+                'cache' => 300,
+                'style' => [
+                    'width' => '33.33',
+                ],
+                'conditional_logic' => [],
+            ],
             [
                 'name' => 'Sparkline Bar Chart',
                 'slug' => 'sparkline_bar_chart',
@@ -157,39 +157,45 @@ class Post extends Resource
                 'conditional_logic' => [],
             ],
 
-            // [
-            //     'name' => 'Sparkline Area',
-            //     'slug' => 'sparkline_area',
-            //     'type' => 'Eminiarts\\Aura\\Widgets\\SparklineArea',
-            //     'cache' => 300,
-            //     'style' => [
-            //         'width' => '50',
-            //     ],
-            //     'conditional_logic' => [],
-            // ],
+            [
+                'name' => 'Sparkline Area',
+                'slug' => 'sparkline_area',
+                'type' => 'Eminiarts\\Aura\\Widgets\\SparklineArea',
+                'cache' => 300,
+                'style' => [
+                    'width' => '50',
+                ],
+                'conditional_logic' => [],
+            ],
 
-            // [
-            //     'name' => 'Donut Chart',
-            //     'slug' => 'donut',
-            //     'type' => 'Eminiarts\\Aura\\Widgets\\Donut',
-            //     'cache' => 300,
-            //     'column' => 'number',
-            //     'style' => [
-            //         'width' => '50',
-            //     ],
-            //     'conditional_logic' => [],
-            // ],
-            // [
-            //     'name' => 'Pie Chart',
-            //     'slug' => 'pie',
-            //     'type' => 'Eminiarts\\Aura\\Widgets\\Pie',
-            //     'cache' => 300,
-            //     'column' => 'number',
-            //     'style' => [
-            //         'width' => '50',
-            //     ],
-            //     'conditional_logic' => [],
-            // ],
+            [
+                'name' => 'Donut Chart',
+                'slug' => 'donut',
+                'type' => 'Eminiarts\\Aura\\Widgets\\Donut',
+                'cache' => 300,
+                // 'values' => function () {
+                //     return [
+                //         'value1' => 10,
+                //         'value2' => 20,
+                //         'value3' => 30,
+                //     ];
+                // },
+                'style' => [
+                    'width' => '50',
+                ],
+                'conditional_logic' => [],
+            ],
+            [
+                'name' => 'Pie Chart',
+                'slug' => 'pie',
+                'type' => 'Eminiarts\\Aura\\Widgets\\Pie',
+                'cache' => 300,
+                'column' => 'number',
+                'style' => [
+                    'width' => '50',
+                ],
+                'conditional_logic' => [],
+            ],
         ];
     }
 
