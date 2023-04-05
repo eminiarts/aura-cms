@@ -312,3 +312,13 @@ it('calculates max correctly', function () {
 
     expect($sparkline->format(end($values['current'])))->toBe("70");
 });
+
+it('renders sparkline correctly', function () {
+    $widget = ['method' => 'max', 'name' => 'Test Name'];
+
+    Livewire::test(Sparkline::class, ['widget' => $widget, 'model' => new Post()])
+        ->assertOk()
+        ->assertSet('loaded', false)
+        ->set('loaded', true)
+        ->assertSee('Test Name');
+});
