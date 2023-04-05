@@ -1,4 +1,4 @@
-<div class="aura-card" wire:key="sparkline" @if (!$isCached) wire:init="loadWidget" @endif>
+<div class="aura-card" wire:key="sparkline-bar-{{ $widget['slug'] }}" @if (!$isCached) wire:init="loadWidget" @endif>
   <div>
     @if($loaded)
   <div class="p-2">
@@ -67,7 +67,7 @@
                   }
                 }
               }"
-              class="w-full"
+              class="w-full px-2"
               >
               <div x-ref="chart" class="bg-white rounded-lg dark:bg-gray-800"></div>
           </div>
@@ -102,7 +102,7 @@
     </div>
 
     <div class="-mx-6 -mb-6">
-    <svg viewBox="0 0 300 80" preserveAspectRatio="none" class="h-16 w-full">
+    <svg viewBox="0 0 300 80" preserveAspectRatio="none" class="w-full h-16">
     <g fill="none" fill-rule="evenodd">
         <rect x="0" y="0" width="10" height="80" fill="#e2e8f0"/>
         <rect x="15" y="20" width="10" height="60" fill="#e2e8f0"/>
@@ -133,6 +133,6 @@
   </div>
 
 
-  
+
 
 </div>
