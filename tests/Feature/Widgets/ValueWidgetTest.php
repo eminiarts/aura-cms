@@ -104,7 +104,7 @@ it('calculates max correctly', function () {
 });
 
 it('returns correct calculated values for current, previous, change', function () {
-    $widgetTest = Livewire::test(ValueWidget::class, ['widget' => ['method' => 'count', "name" => "Total Posts Created"], 'model' => new Post()])
+    $widgetTest = Livewire::test(ValueWidget::class, ['widget' => ['method' => 'count', "name" => "Total Posts Created", 'slug' => 'total_posts_created'], 'model' => new Post()])
         ->set('start', Carbon::now()->subDays(15))
         ->set('end', Carbon::now());
 
