@@ -6,6 +6,11 @@ if($this->post) {
     $selected = null;
 }
 
+// Temporary fix for single image fields
+if($selected && !is_array($selected)) {
+    $selected = [$selected];
+}
+
 $files = null;
 @endphp
 
