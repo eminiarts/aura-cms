@@ -79,6 +79,8 @@ class ValueWidget extends Widget
             });
         }
 
+        ray('getValue', $this->method, $column, $this->start, $this->end);
+
         return match ($this->method) {
             'avg' => $posts->avg($this->model->isMetaField($column) ? DB::raw("CAST(post_meta.value as SIGNED)") : $column),
             'sum' => $posts->sum($this->model->isMetaField($column) ? DB::raw("CAST(post_meta.value as SIGNED)") : $column),

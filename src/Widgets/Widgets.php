@@ -41,7 +41,7 @@ class Widgets extends Component
 
 
         $this->start = Carbon::now()->subDays(10)->toDateString();
-        $this->end = Carbon::now()->toDateString();
+        $this->end = Carbon::now()->endOfDay()->toDateString();
 
 
         ray('updatedSelected', $this->start, $this->end, $this->selected);
