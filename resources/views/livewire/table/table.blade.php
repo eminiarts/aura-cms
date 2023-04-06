@@ -1,4 +1,47 @@
 <div>
+    <div x-data="contextMenu()" @contextmenu.prevent="openContextMenu($event)" @click.away="closeContextMenu" @keydown.escape="closeContextMenu">
+
+    <!-- Your table goes here -->
+
+    <!-- Context Menu -->
+    <div x-show="visible" x-ref="contextMenu" class="absolute z-10 w-48 mt-2 overflow-hidden bg-white rounded-md shadow-lg" @click.away="closeContextMenu" x-cloak>
+        @can('view', $model)
+        <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" @click="viewAction">View</a>
+        @endcan
+
+        @can('edit', $model)
+        <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" @click="editAction">Edit</a>
+        @endcan
+
+        @foreach($model->getActions() as $action => $label)
+
+        <div @click="customAction('{{ $action }}')" class="p-2 cursor-pointer hover:bg-primary-100">
+            @if(is_array($label))
+                <div class="flex flex-col {{ $label['class'] ?? ''}}">
+                <div class="flex space-x-2">
+                        <div class="shrink-0">
+                        {!! $label['icon'] ?? '' !!}
+                        @if(optional($label)['icon-view'])
+                        @include($label['icon-view'])
+                        @endif
+                        </div>
+                <strong class="font-semibold">{{ $label['label'] ?? '' }}
+                    @if(optional($label)['description'])
+                <span class="inline-block text-sm font-normal leading-tight text-gray-500">{{ $label['description'] ?? '' }}</span>
+                @endif
+                </strong>
+                </div>
+
+                </div>
+            @else
+                {{ $label }}
+            @endif
+        </div>
+        @endforeach
+
+    </div>
+
+
     <main class="" x-data="{
         showFilters: false,
         toggleFilters() {
@@ -139,7 +182,7 @@
                                     <x-slot name="trigger">
                                         <span class="inline-flex rounded-md">
                                             <button type="button"
-                                                class="inline-flex items-center px-3 py-2 text-sm font-medium leading-4 text-gray-700 transition bg-white border border-transparent border-gray-500/30 rounded-md hover:bg-gray-50 hover:text-gray-700 focus:outline-none focus:bg-gray-50 active:bg-gray-50 ">
+                                                class="inline-flex items-center px-3 py-2 text-sm font-medium leading-4 text-gray-700 transition bg-white border border-transparent rounded-md border-gray-500/30 hover:bg-gray-50 hover:text-gray-700 focus:outline-none focus:bg-gray-50 active:bg-gray-50 ">
                                                 Actions
 
 
@@ -195,5 +238,42 @@
                 @include('aura::components.table.filters')
         </x-sidebar>
     </main>
-
+</div>
+<script>
+    function contextMenu() {
+        return {
+            visible: false,
+            currentRow: null,
+            openContextMenu(event) {
+                this.$refs.contextMenu.style.top = event.clientY + 'px';
+                this.$refs.contextMenu.style.left = event.clientX + 'px';
+                this.visible = true;
+                this.currentRow = event.target.closest('tr').getAttribute('data-id');
+            },
+            closeContextMenu() {
+                this.visible = false;
+            },
+            viewAction(e) {
+                // Implement your view action here
+                // get the data-id attribute of the tr parent of the clicked element and reroute to the show route
+                console.log('View clicked', this.currentRow);
+                // redirect to /admoin/Movie/ $id
+                @this.call('action', {action: 'view', id: this.currentRow});
+                this.closeContextMenu();
+            },
+            editAction() {
+                // Implement your edit action here
+                console.log('Edit clicked');
+                @this.call('action', {action: 'edit', id: this.currentRow});
+                this.closeContextMenu();
+            },
+            customAction(action) {
+                // Implement your custom action here
+                console.log('Custom action clicked');
+                @this.call('action', {action: action, id: this.currentRow});
+                this.closeContextMenu();
+            }
+        }
+    }
+</script>
 </div>

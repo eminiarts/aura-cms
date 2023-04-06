@@ -15,7 +15,7 @@
                 selected: @entangle('selected'),
                 rows: @js($this->rows->pluck('id')->toArray()), //.map(item => item.toString()),
                 lastSelectedId: null,
-                
+
                 init() {
                 },
                 toggleRow(event, id) {
@@ -25,11 +25,11 @@
                             // Get the indexes of the current and last selected rows
                             const lastIndex = this.rows.indexOf(this.lastSelectedId);
                             const currentIndex = this.rows.indexOf(id);
-                            
+
                             // Determine the start and end indexes of the rows to be selected
                             const start = Math.min(lastIndex, currentIndex);
                             const end = Math.max(lastIndex, currentIndex);
-                            
+
                             // If the current row is not already selected, remove all rows between start and end
                             if (!this.selected.includes(id.toString())) {
                                 this.selected = this.selected.filter(row => !this.rows.slice(start, end + 1).map(item => item.toString()).includes(row.toString()));
@@ -37,16 +37,16 @@
                             // Otherwise, add all rows between start and end
                             else {
                                 this.selected = [...this.selected, ...this.rows.slice(start, end + 1)].map(item => item.toString());
-                                
+
                                 // Remove duplicates from the selected rows
                                 this.selected = this.selected.filter((item, index) => this.selected.indexOf(item) === index);
                             }
                         }
-                        
+
                         this.lastSelectedId = id;
                     });
                 }
-                
+
             }">
                 {{-- <x-aura::table.header></x-aura::table.header> --}}
                 @include('aura::components.table.header')
@@ -55,7 +55,7 @@
 
                     @forelse($this->rows as $row)
 
-                    <tr class="bg-white dark:bg-gray-900" wire:key="{{ $row->id }}">
+                    <tr class="bg-white dark:bg-gray-900" wire:key="{{ $row->id }}" data-id="{{ $row->id }}">
 
                         <x-aura::table.cell class="pr-0">
                             <x-aura::input.checkbox x-model="selected" :value="$row->id"
@@ -76,21 +76,22 @@
 
                             <div class="flex space-x-2">
 
+                                @can('view', $row)
                                 <x-aura::tippy text="View" position="top" class="text-sm text-gray-400 bg-white">
                                     <x-aura::button.transparent :href="$row->viewUrl()" size="xs">
-                                        <x-slot:icon>
-                                            <x-aura::icon icon="view" size="xs" />
-                                        </x-slot:icon>
+                                        <x-aura::icon icon="view" size="xs" />
                                     </x-aura::button.transparent>
                                 </x-aura::tippy>
+                                @endcan
 
+
+                                @can('edit', $row)
                                 <x-aura::tippy text="Edit" position="top" class="text-sm text-gray-400 bg-white">
                                     <x-aura::button.transparent :href="$row->editUrl()" size="xs">
-                                        <x-slot:icon>
-                                            <x-aura::icon icon="edit" size="xs" />
-                                            </x-slot>
+                                        <x-aura::icon icon="edit" size="xs" />
                                     </x-aura::button.transparent>
                                 </x-aura::tippy>
+                                @endcan
                             </div>
 
 

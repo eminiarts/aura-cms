@@ -358,4 +358,23 @@ class Table extends Component
 
         $this->emit('selectedRows', $this->selected);
     }
+
+    public function action($data)
+    {
+        // return redirect to post view
+        if ($data['action'] == 'view') {
+            return redirect()->route('aura.post.view', ['slug' => $this->model->getType(), 'id' => $data['id']]);
+        }
+        // edit
+        if ($data['action'] == 'edit') {
+            return redirect()->route('aura.post.edit', ['slug' => $this->model->getType(), 'id' => $data['id']]);
+        }
+
+        // if custom
+        // dd($data);
+
+        if (method_exists($this->model, $data['action'])) {
+            return $this->model->find($data['id'])->{$data['action']}();
+        }
+    }
 }

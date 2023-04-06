@@ -85,8 +85,8 @@ class TeamPolicy
      *
      * @return mixed
      */
-    public function viewAny(User $user)
+    public function viewAny(User $user, Team $team)
     {
-        return true;
+        return $user->ownsTeam($team);
     }
 }

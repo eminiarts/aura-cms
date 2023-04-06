@@ -44,13 +44,15 @@
                         </x-aura::navigation.dropdown>
 
                     @else
-
+                        {{-- @dd($resource) --}}
+                        @can('viewAny', app($resource['resource']))
                         <x-aura::navigation.item route="aura.post.index" :id="$resource['type']" :strict="false">
                             <div class="{{ $iconClass }}">
                                 {!! $resource['icon'] !!}
                             </div>
                             <div>{{ $resource['name'] }}</div>
                         </x-aura::navigation.item>
+                        @endcan
 
                     @endif
                 @endforeach

@@ -299,6 +299,13 @@ class Aura
     {
         $resources = collect($this->getResources());
 
+        // filter resources by permission and check if user has viewAny permission
+        $resources = $resources->filter(function ($resource) {
+            $resource = app($resource);
+            return auth()->user()->can('viewAny', $resource);
+
+        });
+
         // If a Resource is overriden, we want to remove the original from the navigation
         $keys = $resources->map(function ($resource) {
             return Str::afterLast($resource, '\\');
