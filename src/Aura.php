@@ -19,10 +19,10 @@ class Aura
     use DefaultFields;
 
     /**
-     * The user model that should be used by Jetstream.
-     *
-     * @var string
-     */
+    * The user model that should be used by Jetstream.
+    *
+    * @var string
+    */
     public static $userModel = User::class;
 
     protected array $config = [];
@@ -36,12 +36,12 @@ class Aura
     protected array $widgets = [];
 
     /**
-     * Determine if Aura's published assets are up-to-date.
-     *
-     * @return bool
-     *
-     * @throws \RuntimeException
-     */
+    * Determine if Aura's published assets are up-to-date.
+    *
+    * @return bool
+    *
+    * @throws \RuntimeException
+    */
     public static function assetsAreCurrent()
     {
         if (app()->environment('testing')) {
@@ -120,11 +120,11 @@ class Aura
     }
 
     /**
-     * Register the App resources
-     *
-     * @param  array  $resources
-     * @return static
-     */
+    * Register the App resources
+    *
+    * @param  array  $resources
+    * @return static
+    */
     public function getAppResources()
     {
         $path = config('aura.resources.path');
@@ -137,11 +137,11 @@ class Aura
     }
 
     /**
-     * Register the App taxonomies
-     *
-     * @param  array  $resources
-     * @return static
-     */
+    * Register the App taxonomies
+    *
+    * @param  array  $resources
+    * @return static
+    */
     public function getAppTaxonomies()
     {
         $path = config('aura.taxonomies.path');
@@ -162,6 +162,11 @@ class Aura
         }
 
         return $this->getAppFiles($path, $filter = 'Widget', $namespace = config('aura.widgets.namespace'));
+    }
+
+    public static function findTemplateBySlug($slug)
+    {
+        return app('Eminiarts\Aura\Templates\\'.str($slug)->title);
     }
 
     public function getFields(): array
@@ -314,9 +319,9 @@ class Aura
         $resources = $resources->filter(function ($value, $key) use ($keys) {
             return $keys->contains($key);
         })
-            ->map(fn ($r) => app($r)->navigation())
-            ->filter(fn ($r) => $r['showInNavigation'] ?? true)
-            ->sortBy('sort');
+        ->map(fn ($r) => app($r)->navigation())
+        ->filter(fn ($r) => $r['showInNavigation'] ?? true)
+        ->sortBy('sort');
 
         $grouped = array_reduce(collect($resources)->toArray(), function ($carry, $item) {
             if ($item['dropdown'] !== false) {
@@ -423,10 +428,10 @@ class Aura
     }
 
     /**
-     * Get the name of the user model used by the application.
-     *
-     * @return string
-     */
+    * Get the name of the user model used by the application.
+    *
+    * @return string
+    */
     public static function userModel()
     {
         return static::$userModel;
