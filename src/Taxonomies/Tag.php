@@ -2,6 +2,8 @@
 
 namespace Eminiarts\Aura\Taxonomies;
 
+use App\Aura\Resources\Movie;
+
 class Tag extends Taxonomy
 {
     public static $hierarchical = false;
@@ -20,7 +22,12 @@ class Tag extends Taxonomy
      */
     public function movies()
     {
-        return $this->morphedByMany(Movie::class, 'relatable');
+        return $this->morphedByMany(Movie::class, 'relatable', 'taxonomy_relations');
+    }
+
+    public function taxonomyRelations()
+    {
+        return $this->hasMany('App\TaxonomyRelation', 'taxonomy_id');
     }
 
 
