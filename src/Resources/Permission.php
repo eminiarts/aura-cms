@@ -11,6 +11,8 @@ class Permission extends Resource
 
     protected static $dropdown = 'Users';
 
+    public static $globalSearch = false;
+
     protected static ?int $sort = 3;
 
     protected static bool $title = false;

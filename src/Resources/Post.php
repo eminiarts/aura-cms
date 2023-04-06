@@ -386,6 +386,8 @@ class Post extends Resource
                 'type' => 'Eminiarts\\Aura\\Widgets\\ValueWidget',
                 'method' => 'sum',
                 'column' => 'number',
+                'goal' => 2000,
+                'dailygoal' => false,
                 'cache' => 300,
                 'style' => [
                     'width' => '33.33',
