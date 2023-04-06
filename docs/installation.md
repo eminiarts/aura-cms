@@ -20,3 +20,15 @@ You can customize the views by publishing them to your project.
 3. run `php artisan aura:migrate` to migrate the database
 4. run `php artisan aura:user` to create a user
 5. navigate to `/admin` to log in
+
+
+## Livewire Components
+
+If you want to use the same layout that Aura uses, you can extend the `aura::components.layout.app` layout.
+
+```php
+public function render()
+    {
+        return view('livewire.my-component')->layout('aura::components.layout.app');
+    }
+```
