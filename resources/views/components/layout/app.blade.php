@@ -145,6 +145,14 @@
 
         @stack('scripts')
 
+        <script>
+            if (localStorage.getItem('leftSidebar') === 'true') {
+                document.querySelector('.aura-navigation-collapsed').setAttribute('x-cloak', '');
+            } else {
+                document.querySelector('.aura-navigation').setAttribute('x-cloak', '');
+            }
+        </script>
+
         <script src="https://unpkg.com/@yaireo/tagify"></script>
         <script src="https://unpkg.com/@yaireo/tagify/dist/tagify.polyfills.min.js"></script>
         <link href="https://unpkg.com/@yaireo/tagify/dist/tagify.css" rel="stylesheet" type="text/css" />
@@ -159,6 +167,11 @@
       setTimeout(function() {
           window.dispatchEvent(new Event('resize'));
       }, 100);
+
+
+
+
+
   </script>
 
         <!-- Alpine Plugins -->

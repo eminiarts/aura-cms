@@ -50,8 +50,7 @@ $settings = Aura::getOption('team-settings');
 </div>
 
 <div
-    x-cloak
-    class="flex-shrink-0 hidden w-0 md:block md:w-72"
+    class="flex-shrink-0 hidden w-0 aura-navigation md:block md:w-72"
 
     x-bind:class="{
         'hidden md:hidden': !$store.leftSidebar.on,
@@ -227,8 +226,7 @@ $settings = Aura::getOption('team-settings');
 </div>
 
 <div
-    x-cloak
-    class="flex-shrink-0 overflow-x-visible md:w-20"
+    class="flex-shrink-0 overflow-x-visible aura-navigation-collapsed md:w-20"
     x-bind:class="{
         'hidden md:block': !$store.leftSidebar.on,
         'hidden': $store.leftSidebar.on,
