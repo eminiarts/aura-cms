@@ -5,9 +5,9 @@
             <span class="text-sm font-semibold">{{ $widget['name'] }}</span>
 
             <div class="">
-                <div class="flex items-baseline text-4xl font-medium">
+                {{-- <div class="flex items-baseline text-4xl font-medium">
                     {{ collect($this->values['current'])->last() ?? 'N/A' }}
-                </div>
+                </div> --}}
             </div>
         </div>
 

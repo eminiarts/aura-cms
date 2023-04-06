@@ -46,6 +46,7 @@ use Eminiarts\Aura\Policies\TeamPolicy;
 use Eminiarts\Aura\Policies\UserPolicy;
 use Eminiarts\Aura\Resources\Team;
 use Eminiarts\Aura\Resources\User;
+use Eminiarts\Aura\Widgets\Bar;
 use Eminiarts\Aura\Widgets\Donut;
 use Eminiarts\Aura\Widgets\Pie;
 use Eminiarts\Aura\Widgets\SparklineArea;
@@ -137,6 +138,7 @@ class AuraServiceProvider extends PackageServiceProvider
         Livewire::component('aura::widgets.sparkline-bar', SparklineBar::class);
         Livewire::component('aura::widgets.donut', Donut::class);
         Livewire::component('aura::widgets.pie', Pie::class);
+        Livewire::component('aura::widgets.bar', Bar::class);
 
         return $this;
     }
