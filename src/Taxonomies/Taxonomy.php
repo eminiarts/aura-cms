@@ -13,6 +13,8 @@ class Taxonomy extends Resource
 {
     public static $customTable = true;
 
+    public static ?string $group = 'Taxonomies';
+
     public static $hierarchical = false;
 
     public static $taxonomy = true;

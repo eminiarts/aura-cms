@@ -7,11 +7,11 @@ use Eminiarts\Aura\Resource;
 
 class Permission extends Resource
 {
+    public static $globalSearch = false;
+
     public static ?string $slug = 'permission';
 
     protected static $dropdown = 'Users';
-
-    public static $globalSearch = false;
 
     protected static ?int $sort = 3;
 

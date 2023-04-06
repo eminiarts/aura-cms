@@ -24,7 +24,7 @@ class GenerateAllResourcePermissions implements ShouldQueue
      */
     public function handle()
     {
-        foreach (Aura::getResources() as $resource) {
+        foreach (array_merge(Aura::getResources(), Aura::getTaxonomies()) as $resource) {
             $r = app($resource);
 
             Permission::firstOrCreate(

@@ -204,6 +204,12 @@ class AuraServiceProvider extends PackageServiceProvider
             return \Eminiarts\Aura\Aura::checkCondition($model, $field);
         });
 
+        Blade::if('superadmin', function () {
+            return true;
+
+            return auth()->user()->resource->isSuperAdmin();
+        });
+
         // Register the morph map for the resources
         // $resources = Aura::resources()->mapWithKeys(function ($resource) {
         //     return [$resource => 'Eminiarts\Aura\Resources\\'.str($resource)->title];

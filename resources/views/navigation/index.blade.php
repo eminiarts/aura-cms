@@ -60,79 +60,52 @@
         @endif
     @endforeach
 
-    @php
-        $group = 'Taxonomies';
-    @endphp
-
-    <div wire:key="toggle-{{$group}}" wire:click="toggleGroup('{{$group}}')" class="cursor-pointer">
-        <x-aura::navigation.heading>
-            Taxonomies
-        </x-aura::navigation.heading>
-    </div>
-
-    @if ($this->isToggled($group))
-        @foreach(\Aura::taxonomies() as $taxonomy)
-        <x-aura::navigation.item route="aura.taxonomy.index" :id="app($taxonomy)->title" :strict="false">
-            <div class="{{ $iconClass }}">
-                {!! app($taxonomy)->getIcon() !!}
-            </div>
-            <div>{{ app($taxonomy)->title }}</div>
-        </x-aura::navigation.item>
-        @endforeach
-    @endif
-
+    @superadmin
 
     @php
         $group = 'Development';
     @endphp
 
-    <div wire:key="toggle-{{$group}}" wire:click="toggleGroup('{{$group}}')" class="cursor-pointer">
-        <x-aura::navigation.heading>
-            Development
-        </x-aura::navigation.heading>
-    </div>
+        <div wire:key="toggle-{{$group}}" wire:click="toggleGroup('{{$group}}')" class="cursor-pointer">
+            <x-aura::navigation.heading>
+                Development
+            </x-aura::navigation.heading>
+        </div>
 
-    @if ($this->isToggled($group))
-        <x-aura::navigation.item route="aura.team.settings">
-            <div class="{{ $iconClass }}">
-                <x-aura::icon icon="adjustments" />
-            </div>
-            <div>Settings</div>
-        </x-aura::navigation.item>
+        @if ($this->isToggled($group))
+            <x-aura::navigation.item route="aura.team.settings">
+                <div class="{{ $iconClass }}">
+                    <x-aura::icon icon="adjustments" />
+                </div>
+                <div>Settings</div>
+            </x-aura::navigation.item>
 
-        <x-aura::navigation.item route="aura.posttypes">
-            <div class="{{ $iconClass }}">
-                <x-aura::icon icon="collection" />
-            </div>
-            <span>Posttypes</span>
-        </x-aura::navigation.item>
+            <x-aura::navigation.item class="cursor-pointer" onclick="Livewire.emit('openModal', 'aura::create-posttype')">
+                <div class="{{ $iconClass }}">
+                    <x-aura::icon icon="collection" />
+                </div>
+                <div>Create Posttype</div>
+            </x-aura::navigation.item>
+        @endif
 
-        <x-aura::navigation.item class="cursor-pointer" onclick="Livewire.emit('openModal', 'aura::create-posttype')">
-            <div class="{{ $iconClass }}">
-                <x-aura::icon icon="collection" />
-            </div>
-            <div>Create Posttype</div>
-        </x-aura::navigation.item>
-    @endif
+        @php
+            $group = 'Aura';
+        @endphp
+        <div wire:key="toggle-{{$group}}" wire:click="toggleGroup('{{$group}}')" class="cursor-pointer">
+            <x-aura::navigation.heading>
+                Aura
+            </x-aura::navigation.heading>
+        </div>
 
-    @php
-        $group = 'Aura';
-    @endphp
-
-    <div wire:key="toggle-{{$group}}" wire:click="toggleGroup('{{$group}}')" class="cursor-pointer">
-        <x-aura::navigation.heading>
-            Aura
-        </x-aura::navigation.heading>
-    </div>
-
-    @if ($this->isToggled($group))
-        <x-aura::navigation.item route="aura.config">
-            <div class="{{ $iconClass }}">
-                <x-aura::icon icon="adjustments" />
-            </div>
-            <div>Configuration</div>
-        </x-aura::navigation.item>
-    @endif
+        @if ($this->isToggled($group))
+            <x-aura::navigation.item route="aura.config">
+                <div class="{{ $iconClass }}">
+                    <x-aura::icon icon="adjustments" />
+                </div>
+                <div>Configuration</div>
+            </x-aura::navigation.item>
+        @endif
+    @endsuperadmin
 
     <div class="mt-6">
         <x-aura::navigation.item route="aura.logout">

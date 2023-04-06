@@ -391,6 +391,8 @@ class TeamSettings extends Component
 
     public function mount()
     {
+        abort_unless(auth()->user()->resource->isSuperAdmin(), 403);
+
         $valueString = json_encode(
             [
                 'darkmode-type' => 'auto',

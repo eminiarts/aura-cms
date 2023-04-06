@@ -10,9 +10,9 @@ class Option extends Resource
 {
     public static $customTable = true;
 
-    public static ?string $slug = 'option';
-
     public static $globalSearch = false;
+
+    public static ?string $slug = 'option';
 
     public static string $type = 'Option';
 

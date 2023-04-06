@@ -4,7 +4,6 @@ namespace Eminiarts\Aura\Http\Livewire;
 
 use Eminiarts\Aura\Models\User;
 use Eminiarts\Aura\Resources\Post;
-use Illuminate\Contracts\Database\Eloquent\Builder;
 use Livewire\Component;
 
 class GlobalSearch extends Component
@@ -68,9 +67,9 @@ class GlobalSearch extends Component
                         ->whereIn('post_meta.key', $metaFields);
                 })
                 ->where(function ($query) {
-                    $query->where('posts.title', 'like', $this->search . '%')
+                    $query->where('posts.title', 'like', $this->search.'%')
                         ->orWhere(function ($query) {
-                            $query->where('post_meta.value', 'LIKE', $this->search . '%');
+                            $query->where('post_meta.value', 'LIKE', $this->search.'%');
                         });
                 })
                 ->distinct()

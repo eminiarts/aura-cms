@@ -19,39 +19,9 @@ class Sparkline extends Widget
 
     protected $listeners = ['dateFilterUpdated' => 'updateDateRange'];
 
-    public function getValuesProperty()
+    public function getCarbonDate($date)
     {
-        $currentStart = $this->getCarbonDate($this->start)->addDay();
-        $currentEnd = $this->getCarbonDate($this->end);
-        $diff = $currentStart->diffInDays($currentEnd);
-
-        $previousStart = $currentStart->copy()->subDays($diff + 1);
-        $previousEnd = $currentStart->copy()->subDay();
-
-        return [
-            'current' => $this->getValue($currentStart, $currentEnd)->toArray(),
-            'previous' => $this->getValue($previousStart, $previousEnd)->toArray(),
-        ];
-    }
-
-    public function mount()
-    {
-        // dd('hier', $this->start, $this->end, $this->model, $this->widget);
-
-        if (optional($this->widget)['method']) {
-            $this->method = $this->widget['method'];
-        }
-    }
-
-    public function render()
-    {
-        return view('aura::components.widgets.sparkline-area');
-    }
-
-    public function updateDateRange($start, $end)
-    {
-        $this->start = $start;
-        $this->end = $end;
+        return $date instanceof Carbon ? $date : Carbon::parse($date);
     }
 
     public function getValue($start, $end)
@@ -92,8 +62,38 @@ class Sparkline extends Widget
         return collect($dateRange)->merge($postsByDate);
     }
 
-    public function getCarbonDate($date)
+    public function getValuesProperty()
     {
-        return $date instanceof Carbon ? $date : Carbon::parse($date);
+        $currentStart = $this->getCarbonDate($this->start)->addDay();
+        $currentEnd = $this->getCarbonDate($this->end);
+        $diff = $currentStart->diffInDays($currentEnd);
+
+        $previousStart = $currentStart->copy()->subDays($diff + 1);
+        $previousEnd = $currentStart->copy()->subDay();
+
+        return [
+            'current' => $this->getValue($currentStart, $currentEnd)->toArray(),
+            'previous' => $this->getValue($previousStart, $previousEnd)->toArray(),
+        ];
+    }
+
+    public function mount()
+    {
+        // dd('hier', $this->start, $this->end, $this->model, $this->widget);
+
+        if (optional($this->widget)['method']) {
+            $this->method = $this->widget['method'];
+        }
+    }
+
+    public function render()
+    {
+        return view('aura::components.widgets.sparkline-area');
+    }
+
+    public function updateDateRange($start, $end)
+    {
+        $this->start = $start;
+        $this->end = $end;
     }
 }

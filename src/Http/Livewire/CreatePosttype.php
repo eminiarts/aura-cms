@@ -33,6 +33,11 @@ class CreatePosttype extends ModalComponent
         return $this->fieldsForView($fields);
     }
 
+    public function mount()
+    {
+        abort_unless(auth()->user()->resource->isSuperAdmin(), 403);
+    }
+
     public function render()
     {
         return view('aura::livewire.create-posttype');
@@ -47,6 +52,8 @@ class CreatePosttype extends ModalComponent
 
     public function save()
     {
+        abort_unless(auth()->user()->resource->isSuperAdmin(), 403);
+
         $this->validate();
 
         Artisan::call('aura:posttype', [

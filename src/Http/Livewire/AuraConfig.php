@@ -239,6 +239,8 @@ class AuraConfig extends Component
 
     public function mount()
     {
+        abort_unless(auth()->user()->resource->isSuperAdmin(), 403);
+
         $this->model = Aura::getGlobalOptions();
 
         if (is_string($this->model->value)) {
