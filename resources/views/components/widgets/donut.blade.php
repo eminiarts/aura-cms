@@ -80,7 +80,7 @@
   </div>
   @else
   <div class="p-2 animate-pulse">
-    <div class="flex items-baseline justify-between mb-4">
+    <div class="flex items-baseline justify-between mt-2 mb-6">
       <div class="w-32 h-4 bg-gray-200 rounded"></div>
       <div class="w-8 h-4 bg-gray-200 rounded"></div>
     </div>

@@ -12,7 +12,7 @@ class Widget extends Component
 
     public function format($value)
     {
-        $formatted = number_format($value, 2);
+        $formatted = number_format($value, 2, '.', "'");
 
         if (substr($formatted, -3) === '.00') {
             $formatted = substr($formatted, 0, -3);

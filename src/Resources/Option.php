@@ -12,6 +12,8 @@ class Option extends Resource
 
     public static ?string $slug = 'option';
 
+    public static $globalSearch = false;
+
     public static string $type = 'Option';
 
     protected $casts = [

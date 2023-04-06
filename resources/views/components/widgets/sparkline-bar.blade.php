@@ -4,7 +4,7 @@
   <div class="p-2">
     <div class="flex items-start justify-between mb-4">
       <span class="text-sm font-semibold">{{ $widget['name'] }}</span>
-     
+
       {{-- <div class="flex items-baseline text-4xl font-medium">
         {{ collect($this->values['current'])->last() ?? 'N/A' }}
       </div> --}}
@@ -93,7 +93,7 @@
   </div>
   @else
   <div class="p-2 animate-pulse">
-    <div class="flex items-baseline justify-between mb-4">
+    <div class="flex items-baseline justify-between mt-2 mb-6">
         <div class="w-32 h-4 bg-gray-200 rounded"></div>
         <div class="w-8 h-4 bg-gray-200 rounded"></div>
     </div>

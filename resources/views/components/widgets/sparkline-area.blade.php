@@ -130,18 +130,18 @@
 
             </div>
 
-           
+
 </div>
 </div>
 @else
 <div class="p-2 animate-pulse">
-    <div class="flex items-baseline justify-between mb-4">
+    <div class="flex items-baseline justify-between mt-2 mb-6">
         <div class="w-32 h-4 bg-gray-200 rounded"></div>
         <div class="w-8 h-4 bg-gray-200 rounded"></div>
     </div>
 
     <div class="-mx-6 -mb-6">
-        <svg viewBox="0 0 300 80" preserveAspectRatio="none" class="h-16 w-full">
+        <svg viewBox="0 0 300 80" preserveAspectRatio="none" class="w-full h-16">
             <defs>
                 <linearGradient id="grad" x1="0%" y1="0%" x2="0%" y2="100%">
                     <stop offset="0%" style="stop-color:#e2e8f0;stop-opacity:1" />

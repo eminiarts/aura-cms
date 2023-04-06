@@ -225,7 +225,6 @@ class AuraServiceProvider extends PackageServiceProvider
         Aura::registerResources([
             \Eminiarts\Aura\Resources\Attachment::class,
             \Eminiarts\Aura\Resources\Option::class,
-            \Eminiarts\Aura\Resources\Page::class,
             \Eminiarts\Aura\Resources\Post::class,
             \Eminiarts\Aura\Resources\Permission::class,
             \Eminiarts\Aura\Resources\Role::class,

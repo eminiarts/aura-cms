@@ -24,6 +24,8 @@ trait AuraModelConfig
 
     public static $taxonomy = false;
 
+    public static $globalSearch = true;
+
     public array $taxonomyFields = [];
 
     public static bool $usesMeta = true;
@@ -158,6 +160,11 @@ trait AuraModelConfig
     public static function getDropdown()
     {
         return static::$dropdown;
+    }
+
+    public static function getGlobalSearch()
+    {
+        return static::$globalSearch;
     }
 
     public static function getFields()

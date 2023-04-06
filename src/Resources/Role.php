@@ -27,6 +27,8 @@ class Role extends Resource
 
     public static ?string $slug = 'role';
 
+    public static $globalSearch = false;
+
     public static ?int $sort = 2;
 
     public static string $type = 'Role';

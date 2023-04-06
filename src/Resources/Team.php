@@ -20,6 +20,8 @@ class Team extends Resource
 
     public static $customTable = true;
 
+    public static $globalSearch = false;
+
     public static ?string $slug = 'team';
 
     public static string $type = 'Team';

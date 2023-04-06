@@ -43,19 +43,38 @@ class GlobalSearch extends Component
             if (! $resource) {
                 continue;
             }
+
+            if (app($resource)->getGlobalSearch() === false) {
+                continue;
+            }
             // dd($resource);
 
             // ray('hier 2222', app($resource)->getSearchableFields(), $resource::getSlug());
 
             $searchableFields = app($resource)->getSearchableFields()->pluck('slug');
 
-            $results = $model->where('title', 'like', $this->search.'%')
-                ->orWhereHas('meta', function (Builder $query) use ($searchableFields) {
-                    $query->whereIn('key', $searchableFields)
-                        ->where(function (Builder $query) {
-                            $query->where('value', 'LIKE', $this->search.'%');
+            // ray($searchableFields);
+
+            $metaFields = $searchableFields->filter(function ($field) use ($resource) {
+                // check if it is a meta field
+                return app($resource)->isMetaField($field);
+            });
+
+            // ray($metaFields);
+
+            $results = $model->select('posts.*')
+                ->leftJoin('post_meta', function ($join) use ($metaFields) {
+                    $join->on('posts.id', '=', 'post_meta.post_id')
+                        ->whereIn('post_meta.key', $metaFields);
+                })
+                ->where(function ($query) {
+                    $query->where('posts.title', 'like', $this->search . '%')
+                        ->orWhere(function ($query) {
+                            $query->where('post_meta.value', 'LIKE', $this->search . '%');
                         });
-                })->get();
+                })
+                ->distinct()
+                ->get();
 
             $searchResults->push(...$results);
         }

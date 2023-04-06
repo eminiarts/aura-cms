@@ -10,6 +10,8 @@ class TeamInvitation extends Resource
 
     public static ?string $slug = 'TeamInvitation';
 
+    public static $globalSearch = false;
+
     public static string $type = 'TeamInvitation';
 
     protected static bool $showInNavigation = false;
