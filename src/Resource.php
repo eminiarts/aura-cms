@@ -2,24 +2,25 @@
 
 namespace Eminiarts\Aura;
 
+use Illuminate\Support\Str;
 use Aura\Flows\Resources\Flow;
-use Eminiarts\Aura\Jobs\TriggerFlowOnCreatePostEvent;
-use Eminiarts\Aura\Jobs\TriggerFlowOnDeletedPostEvent;
-use Eminiarts\Aura\Jobs\TriggerFlowOnUpdatePostEvent;
+use Eminiarts\Aura\Resources\User;
+use Eminiarts\Aura\Traits\SaveTerms;
+use Eminiarts\Aura\Traits\InputFields;
+use Illuminate\Database\Eloquent\Model;
+use Eminiarts\Aura\Traits\AuraTaxonomies;
+use Eminiarts\Aura\Traits\SaveMetaFields;
+use Eminiarts\Aura\Traits\AuraModelConfig;
 use Eminiarts\Aura\Models\Scopes\TeamScope;
 use Eminiarts\Aura\Models\Scopes\TypeScope;
-use Eminiarts\Aura\Traits\AuraModelConfig;
-use Eminiarts\Aura\Traits\AuraTaxonomies;
 use Eminiarts\Aura\Traits\InitialPostFields;
-use Eminiarts\Aura\Traits\InputFields;
 use Eminiarts\Aura\Traits\InteractsWithTable;
 use Eminiarts\Aura\Traits\SaveFieldAttributes;
-use Eminiarts\Aura\Traits\SaveMetaFields;
-use Eminiarts\Aura\Traits\SaveTerms;
-use Illuminate\Database\Eloquent\Concerns\HasTimestamps;
+use Eminiarts\Aura\Jobs\TriggerFlowOnCreatePostEvent;
+use Eminiarts\Aura\Jobs\TriggerFlowOnUpdatePostEvent;
+use Eminiarts\Aura\Jobs\TriggerFlowOnDeletedPostEvent;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Str;
+use Illuminate\Database\Eloquent\Concerns\HasTimestamps;
 
 class Resource extends Model
 {
@@ -305,6 +306,10 @@ class Resource extends Model
 
     public function widgets()
     {
+        if(! $this->getWidgets()) {
+            return;
+        }
+
         return collect($this->getWidgets())->map(function ($item) {
             //$item['widget'] = app($item['type'])->widget($item);
 
