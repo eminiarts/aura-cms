@@ -42,6 +42,7 @@ Alpine.data('aura', () => ({
   showFilters: false,
 
   init() {
+    console.log('aura init from data');
   },
 
 
@@ -66,6 +67,7 @@ Alpine.data('aura', () => ({
 
 Alpine.store('leftSidebar', {
     init() {
+      console.log('leftSidebar init from store');
       // get value from localstorage
       this.on = localStorage.getItem('leftSidebar') === 'true';
     },
