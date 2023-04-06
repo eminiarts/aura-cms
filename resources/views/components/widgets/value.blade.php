@@ -67,7 +67,7 @@
                         <x-aura::tippy text="{{ $currentValue }} / {{ intval($widget['goal']) }}" class="bg-primary-100">
                         <div class="block">
                             <div class="w-full h-2 bg-gray-200 rounded">
-                                <div class="h-2 rounded bg-primary-500" style="width: {{ intval(str_replace("'", "", $this->values['current'])) / intval($widget['goal']) * 100 }}%"></div>
+                                <div class="h-2 rounded bg-primary-500" style="max-width: 100%; width: {{ intval(str_replace("'", "", $this->values['current'])) / intval($widget['goal']) * 100 }}%"></div>
                             </div>
                         </div>
                     </x-aura::tippy>
