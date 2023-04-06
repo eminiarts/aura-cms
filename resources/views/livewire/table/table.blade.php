@@ -9,7 +9,7 @@
         <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" @click="viewAction">View</a>
         @endcan
 
-        @can('edit', $model)
+        @can('update', $model)
         <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" @click="editAction">Edit</a>
         @endcan
 

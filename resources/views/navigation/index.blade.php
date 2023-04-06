@@ -5,7 +5,19 @@
         @if ($group !== '')
             <div wire:key="toggle-{{$group}}" wire:click="toggleGroup('{{$group}}')" class="cursor-pointer">
                 <x-aura::navigation.heading>
-                    {{ $group }}
+                    <div class="flex items-center justify-between">
+                    <span>{{ $group }}</span>
+
+                    @if ($this->isToggled($group))
+
+                        {{-- <span>-</span> --}}
+
+                    @else
+
+                        <span>+</span>
+
+                    @endif
+                    </div>
                 </x-aura::navigation.heading>
             </div>
         @endif
@@ -68,7 +80,14 @@
 
         <div wire:key="toggle-{{$group}}" wire:click="toggleGroup('{{$group}}')" class="cursor-pointer">
             <x-aura::navigation.heading>
-                Development
+                <div class="flex items-center justify-between">
+                    <span>{{ $group }}</span>
+
+                    @if ($this->isToggled($group))
+                    @else
+                        <span>+</span>
+                    @endif
+                </div>
             </x-aura::navigation.heading>
         </div>
 
@@ -93,7 +112,14 @@
         @endphp
         <div wire:key="toggle-{{$group}}" wire:click="toggleGroup('{{$group}}')" class="cursor-pointer">
             <x-aura::navigation.heading>
-                Aura
+                <div class="flex items-center justify-between">
+                    <span>{{ $group }}</span>
+
+                    @if ($this->isToggled($group))
+                    @else
+                        <span>+</span>
+                    @endif
+                </div>
             </x-aura::navigation.heading>
         </div>
 
