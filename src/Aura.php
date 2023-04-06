@@ -297,13 +297,13 @@ class Aura
 
     public function navigation()
     {
-        $resources = collect($this->getResources());
+        $resources = collect($this->getResources())->merge($this->getTaxonomies());
 
         // filter resources by permission and check if user has viewAny permission
         $resources = $resources->filter(function ($resource) {
             $resource = app($resource);
-            return auth()->user()->can('viewAny', $resource);
 
+            return auth()->user()->can('viewAny', $resource);
         });
 
         // If a Resource is overriden, we want to remove the original from the navigation

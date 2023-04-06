@@ -25,9 +25,9 @@ class Role extends Resource
         'deleteSelected' => 'Delete',
     ];
 
-    public static ?string $slug = 'role';
-
     public static $globalSearch = false;
+
+    public static ?string $slug = 'role';
 
     public static ?int $sort = 2;
 

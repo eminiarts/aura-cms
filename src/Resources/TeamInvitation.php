@@ -6,11 +6,11 @@ use Eminiarts\Aura\Resource;
 
 class TeamInvitation extends Resource
 {
+    public static $globalSearch = false;
+
     public static $singularName = 'Team Invitation';
 
     public static ?string $slug = 'TeamInvitation';
-
-    public static $globalSearch = false;
 
     public static string $type = 'TeamInvitation';
 

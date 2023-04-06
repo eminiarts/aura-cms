@@ -16,6 +16,8 @@ trait AuraModelConfig
 
     public static $customTable = false;
 
+    public static $globalSearch = true;
+
     public array $metaFields = [];
 
     public static $pluralName = null;
@@ -23,8 +25,6 @@ trait AuraModelConfig
     public static $singularName = null;
 
     public static $taxonomy = false;
-
-    public static $globalSearch = true;
 
     public array $taxonomyFields = [];
 
@@ -162,11 +162,6 @@ trait AuraModelConfig
         return static::$dropdown;
     }
 
-    public static function getGlobalSearch()
-    {
-        return static::$globalSearch;
-    }
-
     public static function getFields()
     {
         return [];
@@ -194,6 +189,11 @@ trait AuraModelConfig
         });
 
         return $defaultValues->merge($meta);
+    }
+
+    public static function getGlobalSearch()
+    {
+        return static::$globalSearch;
     }
 
     public static function getGroup(): ?string

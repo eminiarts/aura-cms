@@ -1,11 +1,11 @@
 <?php
 
-use Livewire\Livewire;
-use Illuminate\Support\Carbon;
 use Eminiarts\Aura\Resources\Post;
 use Eminiarts\Aura\Resources\User;
 use Eminiarts\Aura\Widgets\Sparkline;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Carbon;
+use Livewire\Livewire;
 
 uses(RefreshDatabase::class);
 
@@ -89,7 +89,6 @@ it('correctly handles date range for current and previous', function () {
     expect($values['previous'][Carbon::now()->subDays(35)->format('Y-m-d')])->toBe(1);
 });
 
-
 it('calculates values correctly for given date range', function () {
     $widget = ['method' => 'count', 'name' => 'Total Posts Created'];
 
@@ -105,7 +104,6 @@ it('calculates values correctly for given date range', function () {
     expect($values['current'])->toBeArray();
     expect($values['previous'])->toBeArray();
 });
-
 
 it('updates date range correctly', function () {
     $widget = ['method' => 'count', 'name' => 'Total Posts Created'];
@@ -123,15 +121,14 @@ it('updates date range correctly', function () {
     expect($sparklineTest->get('end'))->toEqual($newEnd);
 });
 
-
 it('calculates values for the current date range correctly', function () {
     $widget = ['method' => 'count', 'name' => 'Total Posts Created'];
 
     Post::create([
-            'title' => 'Post 4',
-            'number' => 30,
-            'created_at' => Carbon::now()->subMinutes(5),
-        ]);
+        'title' => 'Post 4',
+        'number' => 30,
+        'created_at' => Carbon::now()->subMinutes(5),
+    ]);
 
     $sparklineTest = Livewire::test(Sparkline::class, ['widget' => $widget, 'model' => new Post()])
         ->set('start', Carbon::now()->subDays(30))
@@ -147,7 +144,6 @@ it('calculates values for the current date range correctly', function () {
     // Check if the last data point of the current date range has the correct value (should be 1)
     expect(end($values['current']))->toBe(1);
 });
-
 
 it('calculates values for the previous date range correctly', function () {
     $widget = ['method' => 'sum', 'name' => 'Total Posts Created'];
@@ -184,7 +180,6 @@ it('calculates values for a custom column correctly', function () {
 
     $values = $sparkline->getValuesProperty();
 
-
     // Check if the last data point of the current date range has the correct value for the custom column (should be 10)
     expect(end($values['current']))->toBe(40);
 });
@@ -192,13 +187,11 @@ it('calculates values for a custom column correctly', function () {
 it('mounts with the correct method if specified in the widget', function () {
     $widget = ['method' => 'sum', 'name' => 'Total Posts Created'];
 
-
     Post::create([
         'title' => 'Post 4',
         'number' => 40,
         'created_at' => Carbon::now()->subMinutes(5),
     ]);
-
 
     $sparklineTest = Livewire::test(Sparkline::class, ['widget' => array_merge($widget, ['method' => 'sum']), 'model' => new Post()])
         ->set('start', Carbon::now()->subDays(30))
@@ -207,7 +200,6 @@ it('mounts with the correct method if specified in the widget', function () {
     // Check if the method has been set correctly
     expect($sparklineTest->get('method'))->toBe('sum');
 });
-
 
 it('calculates sum correctly', function () {
     $widget = ['method' => 'sum', 'name' => 'Total Posts Created'];
@@ -258,7 +250,7 @@ it('calculates avg correctly', function () {
 
     $values = $sparkline->getValuesProperty();
 
-    expect($sparkline->format(end($values['current'])))->toBe("50");
+    expect($sparkline->format(end($values['current'])))->toBe('50');
 });
 
 it('calculates min correctly', function () {
@@ -284,7 +276,7 @@ it('calculates min correctly', function () {
 
     $values = $sparkline->getValuesProperty();
 
-    expect($sparkline->format(end($values['current'])))->toBe("40");
+    expect($sparkline->format(end($values['current'])))->toBe('40');
 });
 
 it('calculates max correctly', function () {
@@ -310,7 +302,7 @@ it('calculates max correctly', function () {
 
     $values = $sparkline->getValuesProperty();
 
-    expect($sparkline->format(end($values['current'])))->toBe("70");
+    expect($sparkline->format(end($values['current'])))->toBe('70');
 });
 
 it('renders sparkline correctly', function () {

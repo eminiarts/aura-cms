@@ -45,6 +45,7 @@ Route::domain(config('aura.domain'))
             })->name('posttypes');
 
             Route::get('/profile', Profile::class)->name('profile');
+
             Route::get('/team-settings', TeamSettings::class)->name('team.settings');
             Route::get('/aura-config', AuraConfig::class)->name('config');
 

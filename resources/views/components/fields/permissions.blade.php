@@ -13,12 +13,6 @@
 
 @endphp
 
-{{-- Button: Create Missing Permissions --}}
-<x-aura::button.transparent>
-{{ __('Create Missing Permissions') }}
-</x-aura::button.transparent>
-
-
 <x-aura::fields.conditions :field="$field" :model="$model">
 <div class="w-full" x-data="{
     groups: @js($groups),
