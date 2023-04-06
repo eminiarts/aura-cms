@@ -444,6 +444,18 @@ class Post extends Resource
                 ],
                 'conditional_logic' => [],
             ],
+
+            [
+                'name' => 'Bar Chart',
+                'slug' => 'bar',
+                'type' => 'Eminiarts\\Aura\\Widgets\\Bar',
+                'cache' => 300,
+                'column' => 'number',
+                'style' => [
+                    'width' => '50',
+                ],
+                'conditional_logic' => [],
+            ],
         ];
     }
 
