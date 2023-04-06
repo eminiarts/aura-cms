@@ -136,7 +136,7 @@ class User extends UserModel
                 'slug' => 'roles',
                 'resource' => 'Eminiarts\\Aura\\Resources\\Role',
                 'type' => 'Eminiarts\\Aura\\Fields\\AdvancedSelect',
-                'validation' => '',
+                'validation' => 'required',
                 'conditional_logic' => [],
                 'has_conditional_logic' => false,
                 'wrapper' => '',

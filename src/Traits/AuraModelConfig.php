@@ -356,6 +356,7 @@ trait AuraModelConfig
     {
         return [
             'icon' => $this->icon(),
+            'resource' => get_class($this),
             'type' => $this->getType(),
             'name' => $this->getName() ?? str($this->getType())->plural(),
             'slug' => $this->getSlug(),
