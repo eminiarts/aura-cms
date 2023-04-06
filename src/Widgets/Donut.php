@@ -21,12 +21,12 @@ class Donut extends Widget
 
     public function getValue($start, $end)
     {
-        // return [
-        //     'tag-1' => rand(10, 50),
-        //     'tag-2' => rand(10, 50),
-        //     'tag-3' => rand(10, 50),
-        //     'tag-4' => rand(10, 50),
-        // ];
+        return [
+            'tag-1' => rand(10, 50),
+            'tag-2' => rand(10, 50),
+            'tag-3' => rand(10, 50),
+            'tag-4' => rand(10, 50),
+        ];
 
         $column = optional($this->widget)['column'];
         $taxonomy = optional($this->widget)['taxonomy'];
