@@ -31,6 +31,8 @@ class EditPosttypeField extends Component
         $this->post['fields'] = $params['field'];
         $this->field = $params['field'];
 
+        ray('params', $params);
+
         // Check if field is an input field
         if (app($this->field['type'])->isInputField()) {
             // if $this->post['fields']['on_index'] is not set, set it to true (default)
@@ -44,6 +46,11 @@ class EditPosttypeField extends Component
             // on_view
             if (! isset($this->post['fields']['on_view'])) {
                 $this->post['fields']['on_view'] = true;
+            }
+
+            // searchable
+            if (! isset($this->post['fields']['searchable'])) {
+                $this->post['fields']['searchable'] = false;
             }
         }
         $this->updatedField();
@@ -64,16 +71,27 @@ class EditPosttypeField extends Component
 
     public function newFields($fields)
     {
-        // get the field of $fields with the slug of $this->field['slug']
         $field = collect($fields)->firstWhere('slug', $this->field['slug']);
 
-        // refresh the $this->field array
+        ray('field', $field);
+
+        if (! $field) {
+            return;
+        }
+
+        foreach ($field as $key => $value) {
+            if (is_null($value)) {
+                $field[$key] = false;
+            }
+        }
+
         $this->field = $field;
         $this->post['fields'] = $field;
+        ray('newFields', $field, $this->field, $this->post['fields']);
 
         $this->updatedField();
 
-        $this->emit('refreshComponent');
+        // $this->emit('refreshComponent');
     }
 
     public function render()
@@ -108,6 +126,12 @@ class EditPosttypeField extends Component
     public function updatedField()
     {
         //
+        // if $this->field is undefined, return
+        if (! isset($this->field['type'])) {
+            ray('no type');
+            return;
+        }
+        ray($this->field['type']);
         $fields = app($this->field['type'])->inputFields()->pluck('slug');
 
         // dd($fields, $this->post['fields']);
@@ -125,6 +149,8 @@ class EditPosttypeField extends Component
     {
         // Validate
         // $this->validate();
+
+        ray('updateType');
 
         // emit event to parent with slug and value
         $this->emit('saveField', ['slug' => $this->fieldSlug, 'value' => $this->post['fields']]);

@@ -16,8 +16,6 @@
           <style>
             .apexcharts-tooltip-text,
 .apexcharts-tooltip-series,
-.apexcharts-tooltip-series-group,
-.apexcharts-tooltip-marker,
 .apexcharts-tooltip-y-group,
 .apexcharts-tooltip-z-group,
 .apexcharts-tooltip-c,
@@ -26,9 +24,13 @@
   margin: 0 !important;
 }
 
+.apexcharts-tooltip-marker {
+  padding: 0px 4px 0px 0px !important;
+}
+
             /* ApexCharts Tooltip Container */
 .apexcharts-tooltip {
-  background-color: rgba(255, 255, 255, 0.8) !important; /* Change the tooltip background color */
+  background-color: rgba(255, 255, 255, 0.9) !important; /* Change the tooltip background color */
   border-radius: 8px !important; /* Add border-radius to the tooltip */
   padding: 12px !important; /* Adjust the tooltip padding */
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1) !important; /* Add a subtle shadow */
@@ -37,18 +39,14 @@
 
 /* ApexCharts Tooltip Title (X-axis value) */
 .apexcharts-tooltip-title {
-  font-size: 14px !important; /* Change the font size of the tooltip title */
-  line-height: 14px !important;
+  font-size: 13px !important; /* Change the font size of the tooltip title */
+  line-height: 13px !important;
   font-weight: 600 !important; /* Set the font weight for the tooltip title */
   background: transparent !important;
 
-  padding: 0px !important;
-  margin: 0px !important;
+  padding: 0px 0px 8px 0px !important;
 
-  border-bottom: 1px !important;
-
-  padding-bottom: 3px !important;
-  margin-bottom: 3px !important;
+  border-bottom: 1px solid black !important;
 
   color: #111 !important; /* Change the tooltip title color */
   margin-bottom: 0px !important; /* Adjust the space between the title and content */
@@ -56,11 +54,15 @@
 }
 
 .apexcharts-tooltip-text {
-  font-family: 'Inter', sans-serif !important;
+  font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,Segoe UI,Roboto,Helvetica Neue,Arial,Noto Sans,sans-serif,"Apple Color Emoji","Segoe UI Emoji",Segoe UI Symbol,"Noto Color Emoji"; !important;
   padding: 0px !important;
-  font-size: 14px !important;
-  line-height: 14px !important;
+  font-size: 13px !important;
+  line-height: 13px !important;
   padding-top: 3px !important;
+}
+
+.apexcharts-tooltip-series-group {
+  padding: 8px 0px 0px 0px !important;
 }
 
 
@@ -100,28 +102,12 @@
                   return {
                     chart: {
                       type: 'bar',
-                      id: 'myChart',
                       width: '100%',
                       height: 300,
                       toolbar: {
                         show: false,
                       },
-                      events: {
-        mousemove: function (event, chartContext, config) {
-          const chart = ApexCharts.getChartByID('myChart');
-          chart.exec('myChart', 'showTooltip', chartContext, config.globals.xaxisLabels.slice(-1)[0]);
-        },
-      },
-                    },
 
-                    tooltip: {
-                        marker: {
-                            show: false // Hide the marker in the tooltip
-                        },
-                        style: {
-                            fontSize: '12px', // Adjust the font size of the tooltip text
-                            fontFamily: 'Inter' // Set the font family for the tooltip text
-                        }
                     },
 
                     colors: [getCssVariableValue('--primary-400'), getCssVariableValue('--primary-200')],
@@ -134,15 +120,23 @@
 
                     xaxis: {
                       categories: this.labels,
+                      tickAmount: 4,
+                      labels: {
+                        rotate: 0 // Set rotation to 0 degrees
+                      }
                     },
 
                     series: [{
                       name: 'Current',
                       data: this.values,
-                    }, {
+                    },
+                    @if (isset($widget['previous']))
+                    {
                       name: 'Previous',
                       data: {{ json_encode(array_values($this->values['previous'])) }},
-                    }],
+                    }
+                    @endif
+                    ],
                   }
                 }
               }"

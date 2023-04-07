@@ -8,7 +8,11 @@
 <x-aura::fields.wrapper :field="$field">
     <div
         x-data="{
+            @if(optional($field)['defer'] === false)
+            value: $wire.entangle('post.fields.{{ optional($field)['slug'] }}'),
+            @else
             value: $wire.entangle('post.fields.{{ optional($field)['slug'] }}').defer,
+            @endif
             custom: false,
 
             slugify (value) {
@@ -63,7 +67,14 @@
         }"
         class="flex space-x-4"
     >
-        <div class="flex-1" wire:model.defer="post.fields.{{ optional($field)['slug'] }}">
+        <div
+            class="flex-1"
+            @if(optional($field)['defer'] === false)
+            wire:model="post.fields.{{ optional($field)['slug'] }}"
+            @else
+            wire:model.defer="post.fields.{{ optional($field)['slug'] }}"
+            @endif
+        >
             <x-aura::input.text type="text" x-bind:disabled="!custom" id="slug" @keyup="value = slugifyTyping($event.target.value)" x-model="value" />
         </div>
 
