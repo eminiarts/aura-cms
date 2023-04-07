@@ -4,8 +4,9 @@
     {{-- console.log($root.getAttribute('wire:id')); --}}
 
     Livewire.on('openSlideOver', (id, params) => {
-        console.log('openSlideOver', id, params, this.key);
+        console.log('2 openSlideOver', id, params, this.key);
         if(id == this.key) {
+            console.log('should activate');
             @this.activate(params);
         }
     });

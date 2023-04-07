@@ -3,6 +3,7 @@
 namespace Eminiarts\Aura\Commands;
 
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\File;
 
 class PublishCommand extends Command
 {
@@ -27,6 +28,12 @@ class PublishCommand extends Command
      */
     public function handle()
     {
+        $assetPath = public_path('vendor/aura/assets');
+
+        if (File::exists($assetPath)) {
+            File::deleteDirectory($assetPath);
+        }
+
         $this->call('vendor:publish', [
             '--tag' => 'aura-assets',
             '--force' => true,

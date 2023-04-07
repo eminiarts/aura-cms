@@ -57,10 +57,6 @@
                     <x-aura::input.text label="Slug" placeholder="Slug" value="{{ $postTypeFields['slug'] }}" disabled></x-aura::input>
                 </div>
 
-                <div class="w-full px-4 mt-4 mb-4 md:w-1/3">
-                    <x-aura::input.toggle label="Show in sidebar" model="true"></x-aura::input>
-                </div>
-
 
                 <div class="flex items-end w-full px-4 mb-0 md:w-1/3">
                     <div class="flex-1">
@@ -128,32 +124,30 @@
 
                 <div class="mb-3 border-t rounded-b-lg border-gray-400/30 dark:border-gray-700"></div>
 
-
                 <div class="flex flex-wrap py-2 " wire:key="posttype-fields" x-data="posttype">
 
                     @if($this->mappedFields)
+
                         @foreach($this->mappedFields as $tab)
 
                         <div class="flex flex-wrap min-w-full -mx-2 draggable-container reorder-item focus:outline-none" id="field_{{ $tab['_id'] }}" x-show="activeTab === {{ $loop->index }}" wire:key="posttype-tab-{{ $tab['_id'] }}">
-                            {{-- <span>{{ $tab['name'] }}</span> --}}
 
-                            <!-- if $tab['fields'] -->
                             @if ( optional($tab)['fields'] )
                             @foreach($tab['fields'] as $field)
 
-                                <style>
-                                .post-field-{{ optional($field)['slug'] }}-wrapper {
-                                    width: {{ optional(optional($field)['style'])['width'] ?? '100' }}%;
-                                }
-
-                                @media screen and (max-width: 768px) {
-                                    .post-field-{{ optional($field)['slug'] }}-wrapper {
-                                    width: 100%;
-                                    }
-                                }
-                                </style>
-
                                 <div class="post-field-{{ optional($field)['slug'] }}-wrapper px-2 reorder-item draggable-item" id="field_{{ $field['_id'] }}" wire:key="pt-field-{{ $tab['_id'] }}">
+                                    <style>
+                                    .post-field-{{ optional($field)['slug'] }}-wrapper {
+                                        width: {{ optional(optional($field)['style'])['width'] ?? '100' }}%;
+                                    }
+
+                                    @media screen and (max-width: 768px) {
+                                        .post-field-{{ optional($field)['slug'] }}-wrapper {
+                                        width: 100%;
+                                        }
+                                    }
+                                    </style>
+
                                     @include('aura::components.posttype.show-field')
                                 </div>
 
@@ -165,7 +159,6 @@
                             @endforeach
 
                             @else
-
                                 <div x-cloak class="w-full px-2">
                                     <x-aura::button wire:click="insertTemplateFields({{ $tab['_id'] }}, '{{ $tab['slug'] }}', 'PanelWithSidebar')">PanelWithSidebar</x-aura::button>
 
@@ -175,13 +168,10 @@
 
                         </div>
                         @endforeach
-{{--                        @dump($this->all())--}}
                     @else
-{{--                        @dump($this->mappedFields)--}}
-{{--                        @dump($this->all())--}}
-                                <div class="w-full px-2">
-                                    <x-aura::posttype.add-field :id="$field['_id']" :slug="$field['slug']" :type="$field['type']"/>
-                                </div>
+                        <div class="w-full px-2">
+                            <x-aura::posttype.add-field :id="$field['_id']" :slug="$field['slug']" :type="$field['type']"/>
+                        </div>
                     @endif
                 </div>
 
@@ -202,28 +192,29 @@
             @if (count($this->mappedFields) > 0)
 
                 <div class="flex flex-wrap py-2 draggable-container" x-data="posttype" wire:key="posttype2-fields">
+
                     @foreach($this->mappedFields as $field)
 
-                        <style>
-                            .post-field-{{ optional($field)['slug'] }}-wrapper {
-                                width: {{ optional(optional($field)['style'])['width'] ?? '100' }}%;
-                            }
-
-                            @media screen and (max-width: 768px) {
-                                .post-field-{{ optional($field)['slug'] }}-wrapper {
-                                width: 100%;
-                                }
-                            }
-                        </style>
                         <div class="px-2 reorder-item draggable-item post-field-{{ optional($field)['slug'] }}-wrapper" id="field_{{ $field['_id'] }}" wire:key="pt-field-{{ $field['_id'] }}">
+                            <style>
+                                .post-field-{{ optional($field)['slug'] }}-wrapper {
+                                    width: {{ optional(optional($field)['style'])['width'] ?? '100' }}%;
+                                }
+
+                                @media screen and (max-width: 768px) {
+                                    .post-field-{{ optional($field)['slug'] }}-wrapper {
+                                    width: 100%;
+                                    }
+                                }
+                            </style>
+
                             @include('aura::components.posttype.show-field')
                         </div>
 
                         @if ($loop->last)
-                            {{-- @dump($this->countChildren($field)) --}}
-                                <div class="w-full px-2">
-                                    <x-aura::posttype.add-field :id="$field['_id']" :slug="$field['slug']" :type="$field['type']" :children="$this->countChildren($field)"/>
-                                </div>
+                            <div class="w-full px-2">
+                                <x-aura::posttype.add-field :id="$field['_id']" :slug="$field['slug']" :type="$field['type']" :children="$this->countChildren($field)"/>
+                            </div>
                         @endif
                     @endforeach
                 </div>
@@ -322,69 +313,24 @@
                 Alpine.data('posttype', () => ({
                     init() {
                         Alpine.nextTick(() => {
-                        console.log('init posttype!');
-                        const sortable = new window.Sortable(document.querySelectorAll('.draggable-container'), {
-                            draggable: '.draggable-item',
-                            handle: '.draggable-handle',
-                            mirror: {
-                                constrainDimensions: true,
-                            },
-                        });
+                            console.log('init posttype!');
+                            const sortable = new window.Sortable(document.querySelectorAll('.draggable-container'), {
+                                draggable: '.draggable-item',
+                                handle: '.draggable-handle',
+                                mirror: {
+                                    constrainDimensions: true,
+                                },
+                            });
 
-                        sortable.on('sortable:stop', () => {
-                            Alpine.nextTick(() => {
-                                console.log('reorder', Array.from(document.querySelectorAll('.reorder-item')).map(el => el.id));
-                                @this.reorder(
-                                    Array.from(document.querySelectorAll('.reorder-item')).map(el => el.id)
-                                )
-                            })
-                        });
+                            sortable.on('sortable:stop', () => {
+                                Alpine.nextTick(() => {
+                                    console.log('reorder', Array.from(document.querySelectorAll('.reorder-item')).map(el => el.id));
+                                    @this.reorder(
+                                        Array.from(document.querySelectorAll('.reorder-item')).map(el => el.id)
+                                    )
+                                })
+                            });
                         })
-
-
-                        // const containerTwoCapacity = 3;
-                        // const containerTwoParent = sortable.containers[1].parentNode;
-                        // let currentMediumChildren;
-                        // let capacityReached;
-                        // let lastOverContainer;
-
-                        // // --- Draggable events --- //
-                        // sortable.on('drag:start', (evt) => {
-                        //     currentMediumChildren = sortable.getDraggableElementsForContainer(sortable.containers[1])
-                        //     .length;
-                        //     console.log('drag:start', currentMediumChildren, evt);
-                        //     capacityReached = currentMediumChildren >= containerTwoCapacity;
-                        //     lastOverContainer = evt.sourceContainer;
-                        //     containerTwoParent.classList.toggle('!bg-red-500', capacityReached);
-                        // });
-
-                        // sortable.on('drag:stop', (evt) => {
-                        //     currentMediumChildren = sortable.getDraggableElementsForContainer(sortable.containers[1])
-                        //     .length;
-                        //     console.log('drag:stop', currentMediumChildren, evt);
-                        //     // remove !bg-red-500 from classlist
-                        //     containerTwoParent.classList.remove('!bg-red-500');
-                        // });
-
-                        // sortable.on('sortable:sort', (evt) => {
-                        //     if (!capacityReached) {
-                        //         return;
-                        //     }
-
-                        //     const sourceIsCapacityContainer = evt.dragEvent.sourceContainer === sortable.containers[1];
-
-                        //     if (!sourceIsCapacityContainer && evt.dragEvent.overContainer === sortable.containers[1]) {
-                        //     evt.cancel();
-                        //     }
-                        // });
-
-                        // sortable.on('sortable:sorted', (evt) => {
-                        //     if (lastOverContainer === evt.dragEvent.overContainer) {
-                        //     return;
-                        //     }
-
-                        //     lastOverContainer = evt.dragEvent.overContainer;
-                        // });
                     }
                 }));
             })

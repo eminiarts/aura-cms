@@ -411,24 +411,16 @@ class Posttype extends Component
 
     public function saveField($data)
     {
-        // edit the field in $this->fieldsArray with the slug $data['slug'] and replace it with $data['value']
         $fields = collect($this->fieldsArray);
-
-        $field = $fields->where('slug', $data['slug'])->first();
-
-        $field = $data['value'];
-
-        // $fields = $fields->map(function ($item) use ($field) {
-        //     if ($item['slug'] == $field['slug']) {
-        //         return $field;
-        //     }
-        //     return $item;
-        // });
 
         // get index of the field with the slug $data['slug']
         $index = $fields->search(function ($item) use ($data) {
             return $item['slug'] == $data['slug'];
         });
+
+        if ($index === false) {
+            return;
+        }
 
         $this->fieldsArray[$index] = $data['value'];
 
