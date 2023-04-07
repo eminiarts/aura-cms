@@ -31,8 +31,7 @@ class ModelWithGroups extends Resource
                 'name' => 'Text 1.1',
                 'type' => 'Eminiarts\\Aura\\Fields\\Text',
                 'validation' => 'numeric',
-                'conditional_logic' => [
-                ],
+                'conditional_logic' => [],
                 'slug' => 'text-1-1',
             ],
             [
@@ -47,8 +46,7 @@ class ModelWithGroups extends Resource
                 'name' => 'Text 1.2.1',
                 'type' => 'Eminiarts\\Aura\\Fields\\Text',
                 'validation' => 'numeric',
-                'conditional_logic' => [
-                ],
+                'conditional_logic' => [],
                 'slug' => 'text-1-2-1',
             ],
             [
@@ -63,8 +61,7 @@ class ModelWithGroups extends Resource
                 'name' => 'Total 1.2.2.1',
                 'type' => 'Eminiarts\\Aura\\Fields\\Text',
                 'validation' => 'numeric',
-                'conditional_logic' => [
-                ],
+                'conditional_logic' => [],
                 'slug' => 'total-1-2-2-1',
             ],
             [
@@ -93,8 +90,7 @@ class ModelWithGroups extends Resource
                 'name' => 'Total 2.1.1.1',
                 'type' => 'Eminiarts\\Aura\\Fields\\Text',
                 'validation' => 'numeric',
-                'conditional_logic' => [
-                ],
+                'conditional_logic' => [],
                 'slug' => 'total-2-1-1-1',
             ],
 
@@ -118,8 +114,7 @@ class ModelWithGroups extends Resource
                 'name' => 'Text 3',
                 'type' => 'Eminiarts\\Aura\\Fields\\Text',
                 'validation' => 'numeric',
-                'conditional_logic' => [
-                ],
+                'conditional_logic' => [],
                 'slug' => 'text3',
             ],
         ];
@@ -136,7 +131,7 @@ test('fields get grouped when field group is true', function () {
 
     $fields = $model->getGroupedFields();
 
-//    ray($fields);
+    //    ray($fields);
 
     $this->assertCount(1, $fields);
     $this->assertCount(2, $fields[0]['fields']);

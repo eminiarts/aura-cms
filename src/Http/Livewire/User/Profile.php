@@ -155,8 +155,7 @@ class Profile extends Component
                 'type' => 'Eminiarts\\Aura\\Fields\\LivewireComponent',
                 'component' => 'aura::user-two-factor-authentication-form',
                 'validation' => '',
-                'conditional_logic' => [
-                ],
+                'conditional_logic' => [],
                 'slug' => '2fa',
             ],
             [
@@ -178,8 +177,7 @@ class Profile extends Component
                 'type' => 'Eminiarts\\Aura\\Fields\\View',
                 'view' => 'aura::profile.delete-user-form',
                 'validation' => '',
-                'conditional_logic' => [
-                ],
+                'conditional_logic' => [],
                 'slug' => '2fa',
             ],
 

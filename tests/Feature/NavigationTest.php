@@ -16,8 +16,7 @@ class NavigationModel extends Resource
                 'name' => 'Total',
                 'type' => 'Eminiarts\\Aura\\Fields\\Text',
                 'validation' => 'numeric',
-                'conditional_logic' => [
-                ],
+                'conditional_logic' => [],
                 'slug' => 'total',
             ],
         ];
