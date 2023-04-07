@@ -66,8 +66,7 @@ class Taxonomy extends Resource
                 'name' => 'Name',
                 'type' => 'Eminiarts\\Aura\\Fields\\Text',
                 'validation' => 'required',
-                'conditional_logic' => [
-                ],
+                'conditional_logic' => [],
                 'slug' => 'name',
             ],
 
@@ -75,23 +74,20 @@ class Taxonomy extends Resource
                 'label' => 'Text',
                 'name' => 'Beschreibung',
                 'type' => 'Eminiarts\\Aura\\Fields\\Text',
-                'conditional_logic' => [
-                ],
+                'conditional_logic' => [],
                 'slug' => 'description',
             ],
             'slug' => [
                 'name' => 'Slug',
                 'type' => 'Eminiarts\\Aura\\Fields\\Text',
                 'validation' => 'required',
-                'conditional_logic' => [
-                ],
+                'conditional_logic' => [],
                 'slug' => 'slug',
             ],
             'count' => [
                 'name' => 'Count',
                 'type' => 'Eminiarts\\Aura\\Fields\\Number',
-                'conditional_logic' => [
-                ],
+                'conditional_logic' => [],
                 'slug' => 'count',
                 'on_forms' => false,
             ],

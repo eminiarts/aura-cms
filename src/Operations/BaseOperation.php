@@ -17,8 +17,7 @@ class BaseOperation
                 'name' => 'Type',
                 'type' => 'Eminiarts\\Aura\\Fields\\Select',
                 'validation' => '',
-                'conditional_logic' => [
-                ],
+                'conditional_logic' => [],
                 'slug' => 'type',
                 'options' => [
                     [
@@ -79,8 +78,7 @@ class BaseOperation
                 'name' => 'Options',
                 'type' => 'Eminiarts\\Aura\\Fields\\Group',
                 'validation' => '',
-                'conditional_logic' => [
-                ],
+                'conditional_logic' => [],
                 'on_index' => false,
                 'slug' => 'options',
             ],
@@ -88,8 +86,7 @@ class BaseOperation
                 'name' => 'X',
                 'type' => 'Eminiarts\\Aura\\Fields\\Number',
                 'validation' => '',
-                'conditional_logic' => [
-                ],
+                'conditional_logic' => [],
                 'slug' => 'x',
                 'disabled' => true,
                 'style' => [
@@ -100,8 +97,7 @@ class BaseOperation
                 'name' => 'Y',
                 'type' => 'Eminiarts\\Aura\\Fields\\Number',
                 'validation' => '',
-                'conditional_logic' => [
-                ],
+                'conditional_logic' => [],
                 'disabled' => true,
                 'slug' => 'y',
                 'style' => [

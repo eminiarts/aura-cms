@@ -23,8 +23,7 @@ class Model1 extends Resource
                 'name' => 'Total',
                 'type' => 'Eminiarts\\Aura\\Fields\\Text',
                 'validation' => 'numeric',
-                'conditional_logic' => [
-                ],
+                'conditional_logic' => [],
                 'slug' => 'total',
             ],
             [
@@ -32,8 +31,7 @@ class Model1 extends Resource
                 'name' => 'other',
                 'type' => 'Eminiarts\\Aura\\Fields\\Text',
                 'validation' => 'numeric',
-                'conditional_logic' => [
-                ],
+                'conditional_logic' => [],
                 'slug' => 'other',
             ],
             [
@@ -48,8 +46,7 @@ class Model1 extends Resource
                 'name' => 'Total 2',
                 'type' => 'Eminiarts\\Aura\\Fields\\Text',
                 'validation' => 'numeric',
-                'conditional_logic' => [
-                ],
+                'conditional_logic' => [],
                 'slug' => 'total-2',
             ],
         ];
@@ -96,8 +93,7 @@ class Model2 extends Resource
                 'name' => 'Total',
                 'type' => 'Eminiarts\\Aura\\Fields\\Text',
                 'validation' => 'numeric',
-                'conditional_logic' => [
-                ],
+                'conditional_logic' => [],
                 'slug' => 'total',
             ],
             [
@@ -105,8 +101,7 @@ class Model2 extends Resource
                 'name' => 'other',
                 'type' => 'Eminiarts\\Aura\\Fields\\Text',
                 'validation' => 'numeric',
-                'conditional_logic' => [
-                ],
+                'conditional_logic' => [],
                 'slug' => 'other',
             ],
             [
@@ -121,8 +116,7 @@ class Model2 extends Resource
                 'name' => 'Total 2',
                 'type' => 'Eminiarts\\Aura\\Fields\\Text',
                 'validation' => 'numeric',
-                'conditional_logic' => [
-                ],
+                'conditional_logic' => [],
                 'slug' => 'total-2',
             ],
             [
@@ -137,8 +131,7 @@ class Model2 extends Resource
                 'name' => 'Total 3',
                 'type' => 'Eminiarts\\Aura\\Fields\\Number',
                 'validation' => 'numeric',
-                'conditional_logic' => [
-                ],
+                'conditional_logic' => [],
                 'slug' => 'total-3',
             ],
         ];

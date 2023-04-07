@@ -56,8 +56,7 @@ class Team extends Resource
                 'slug' => 'team-panel',
                 'type' => 'Eminiarts\\Aura\\Fields\\Panel',
                 'validation' => '',
-                'conditional_logic' => [
-                ],
+                'conditional_logic' => [],
             ],
             [
                 'name' => 'Name',
