@@ -25,7 +25,6 @@ class TeamInvitation extends Resource
                 'type' => 'Eminiarts\\Aura\\Fields\\Email',
                 'validation' => 'required|email|unique:users,email',
                 'conditional_logic' => [],
-                'has_conditional_logic' => false,
                 'on_index' => true,
                 'on_forms' => true,
                 'on_view' => true,

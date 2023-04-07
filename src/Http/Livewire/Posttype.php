@@ -394,7 +394,6 @@ class Posttype extends Component
             'fields.*.validation' => '',
             'fields.*.wrapper' => '',
             'fields.*.conditional_logic' => '',
-            'fields.*.has_conditional_logic' => '',
         ];
     }
 

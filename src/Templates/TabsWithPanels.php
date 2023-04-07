@@ -15,7 +15,6 @@ class TabsWithPanels
                 'validation' => '',
                 'on_index' => true,
                 'global' => true,
-                'has_conditional_logic' => false,
                 'conditional_logic' => [
                 ],
                 'slug' => 'tab-1',
@@ -25,7 +24,6 @@ class TabsWithPanels
                 'type' => 'Eminiarts\\Aura\\Fields\\Panel',
                 'validation' => '',
                 'on_index' => true,
-                'has_conditional_logic' => false,
                 'conditional_logic' => [
                 ],
                 'slug' => 'panel-1',
@@ -34,7 +32,6 @@ class TabsWithPanels
                 'name' => 'Text 1',
                 'type' => 'Eminiarts\\Aura\\Fields\\Text',
                 'on_index' => true,
-                'has_conditional_logic' => false,
                 'conditional_logic' => [
                 ],
                 'slug' => 'text-1',
@@ -48,7 +45,6 @@ class TabsWithPanels
                 'validation' => '',
                 'on_index' => true,
                 'global' => true,
-                'has_conditional_logic' => false,
                 'conditional_logic' => [
                 ],
                 'slug' => 'tab-2',
@@ -58,7 +54,6 @@ class TabsWithPanels
                 'type' => 'Eminiarts\\Aura\\Fields\\Panel',
                 'validation' => '',
                 'on_index' => true,
-                'has_conditional_logic' => false,
                 'conditional_logic' => [
                 ],
                 'slug' => 'panel-2',
@@ -67,7 +62,6 @@ class TabsWithPanels
                 'name' => 'Text 2',
                 'type' => 'Eminiarts\\Aura\\Fields\\Text',
                 'on_index' => true,
-                'has_conditional_logic' => false,
                 'conditional_logic' => [
                 ],
                 'slug' => 'text-2',
