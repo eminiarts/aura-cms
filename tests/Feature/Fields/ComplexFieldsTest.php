@@ -18,7 +18,6 @@ class ComplexFieldsTestModel extends Resource
                 'type' => 'Eminiarts\\Aura\\Fields\\Panel',
                 'conditional_logic' => [
                 ],
-                'has_conditional_logic' => false,
                 'wrapper' => '',
             ],
             [
@@ -28,7 +27,6 @@ class ComplexFieldsTestModel extends Resource
                 'validation' => '',
                 'conditional_logic' => [
                 ],
-                'has_conditional_logic' => false,
                 'wrapper' => '',
             ],
 
@@ -61,7 +59,6 @@ class ComplexFieldsTestModel extends Resource
                 'validation' => '',
                 'conditional_logic' => [
                 ],
-                'has_conditional_logic' => false,
                 'wrapper' => '',
             ],
             [
@@ -118,7 +115,6 @@ class ComplexFieldsTestModel extends Resource
                 'validation' => '',
                 'conditional_logic' => [
                 ],
-                'has_conditional_logic' => false,
                 'wrapper' => '',
             ],
             [
@@ -127,7 +123,6 @@ class ComplexFieldsTestModel extends Resource
                 'type' => 'Eminiarts\\Aura\\Fields\\Text',
                 'validation' => '',
                 'conditional_logic' => [],
-                'has_conditional_logic' => false,
                 'wrapper' => '',
             ],
             [
@@ -150,7 +145,6 @@ class ComplexFieldsTestModel extends Resource
                 'validation' => '',
                 'conditional_logic' => [
                 ],
-                'has_conditional_logic' => false,
                 'wrapper' => '',
             ],
             [
@@ -195,7 +189,6 @@ class ComplexFieldsTestModel extends Resource
                 'type' => 'Eminiarts\\Aura\\Fields\\Text',
                 'validation' => '',
                 'conditional_logic' => [],
-                'has_conditional_logic' => false,
                 'wrapper' => '',
             ],
         ];

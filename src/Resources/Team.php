@@ -58,7 +58,6 @@ class Team extends Resource
                 'validation' => '',
                 'conditional_logic' => [
                 ],
-                'has_conditional_logic' => false,
             ],
             [
                 'name' => 'Name',
@@ -109,7 +108,6 @@ class Team extends Resource
                 'global' => true,
                 'validation' => '',
                 'conditional_logic' => [],
-                'has_conditional_logic' => false,
                 'on_create' => false,
             ],
             [
