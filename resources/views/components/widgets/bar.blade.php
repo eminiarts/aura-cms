@@ -24,8 +24,11 @@
   margin: 0 !important;
 }
 
-.apexcharts-tooltip-marker {
-  padding: 0px 4px 0px 0px !important;
+.apexcharts-tooltip-marker, .apexcharts-legend-marker {
+  padding: 0px 0px 0px 0px !important;
+  margin-right: 8px !important;
+  border-radius: 4px !important;
+  display: inline-block;
 }
 
             /* ApexCharts Tooltip Container */
@@ -34,7 +37,7 @@
   border-radius: 8px !important; /* Add border-radius to the tooltip */
   padding: 12px !important; /* Adjust the tooltip padding */
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1) !important; /* Add a subtle shadow */
-  font-family: 'Inter', sans-serif !important;
+  font-family: 'Inter', system-ui, sans-serif !important;
 }
 
 /* ApexCharts Tooltip Title (X-axis value) */
@@ -46,35 +49,26 @@
 
   padding: 0px 0px 8px 0px !important;
 
-  border-bottom: 1px solid black !important;
+  border-bottom: 1px solid rgb(var(--gray-400) / 0.3) !important;
 
-  color: #111 !important; /* Change the tooltip title color */
+  color: rgb(var(--gray-800)); /* Change the tooltip title color */
   margin-bottom: 0px !important; /* Adjust the space between the title and content */
-  font-family: 'Inter', sans-serif !important;
+  font-family: 'Inter', system-ui, sans-serif !important;
 }
-
+.apexcharts-text {
+  font-family: 'Inter', system-ui, sans-serif !important;
+  font-size: 12px;
+}
 .apexcharts-tooltip-text {
-  font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,Segoe UI,Roboto,Helvetica Neue,Arial,Noto Sans,sans-serif,"Apple Color Emoji","Segoe UI Emoji",Segoe UI Symbol,"Noto Color Emoji"; !important;
+  font-family: 'Inter', system-ui, sans-serif !important;
   padding: 0px !important;
   font-size: 13px !important;
   line-height: 13px !important;
-  padding-top: 3px !important;
+  color: rgb(var(--gray-600));
 }
 
 .apexcharts-tooltip-series-group {
   padding: 8px 0px 0px 0px !important;
-}
-
-
-/* ApexCharts Tooltip Series (Y-axis values) */
-.apexcharts-tooltip-series {
-  font-size: 12px !important; /* Change the font size of the tooltip content */
-  font-weight: normal !important; /* Set the font weight for the tooltip content */
-  display: flex !important; /* Use flexbox for better alignment */
-  align-items: flex-start !important; /* Align items vertically */
-  justify-content: space-between !important; /* Distribute space evenly */
-  padding: 0px !important;
-  background: green !important;
 }
 
 /* ApexCharts Tooltip Series Marker */
@@ -140,7 +134,7 @@
                   }
                 }
               }"
-              class="w-full px-2"
+              class="w-full px-0 -mb-4"
               >
               <div x-ref="chart" class="bg-white rounded-lg dark:bg-gray-800"></div>
           </div>
