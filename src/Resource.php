@@ -170,7 +170,7 @@ class Resource extends Model
         // This hydrates the models, is there a way without hydrating?
         // $meta = $this->meta()->toBase()->get()->pluck('value', 'key');
 
-        ray($this->getFieldSlugs());
+        // ray($this->getFieldSlugs());
 
         $defaultValues = $this->getFieldSlugs()->mapWithKeys(fn ($value, $key) => [$value => null])->map(fn ($value, $key) => $meta[$key] ?? $value)->map(function ($value, $key) {
             // if the value is in $this->hidden, set it to null
