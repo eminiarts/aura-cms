@@ -91,7 +91,7 @@
                       enabled: false,
                     },
                     tooltip: {
-                      marker: false,
+                      // marker: false,
                     },
                     xaxis: {
                       categories: this.labels,
