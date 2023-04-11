@@ -136,7 +136,6 @@ class CustomTableFilterModel extends Resource
                 'create' => true,
                 'validation' => '',
                 'conditional_logic' => [],
-                'has_conditional_logic' => false,
                 'wrapper' => '',
                 'on_index' => true,
                 'on_forms' => true,

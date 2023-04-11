@@ -204,8 +204,7 @@ class Field
                 'name' => 'Add Condition',
                 'type' => 'Eminiarts\\Aura\\Fields\\Repeater',
                 'validation' => '',
-                'conditional_logic' => [
-                ],
+                'conditional_logic' => [],
                 'style' => [
                     'width' => '100',
                 ],
@@ -217,8 +216,7 @@ class Field
                 'type' => 'Eminiarts\\Aura\\Fields\\Text',
                 'validation' => '',
                 'instructions' => 'Slug of the field to check. You can also use "role"',
-                'conditional_logic' => [
-                ],
+                'conditional_logic' => [],
                 'slug' => 'field',
                 'style' => [
                     'width' => '33',
@@ -237,8 +235,7 @@ class Field
                     '<' => '<',
                     '<=' => '<=',
                 ],
-                'conditional_logic' => [
-                ],
+                'conditional_logic' => [],
                 'slug' => 'operator',
                 'style' => [
                     'width' => '33',
@@ -249,8 +246,7 @@ class Field
                 'name' => 'Value',
                 'type' => 'Eminiarts\\Aura\\Fields\\Text',
                 'validation' => '',
-                'conditional_logic' => [
-                ],
+                'conditional_logic' => [],
                 'slug' => 'value',
                 'style' => [
                     'width' => '33',
