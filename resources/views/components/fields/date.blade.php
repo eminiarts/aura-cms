@@ -9,10 +9,14 @@
             inline: false,
 
             dateFormat: '{{ optional($field)['format'] ?? 'd.m.Y' }}',
+            altInput: true,
+            altFormat: '{{ optional($field)['display_format'] ?? 'd.m.Y' }}',
             enableTime: @js(optional($field)['enable_time']),
-            minDate: '{{ today()->format( optional($field)['format'] ?? 'd.m.Y' ) }}',
             @if (optional($field)['maxDate'])
-            maxDate: '{{ now()->addDays( optional($field)['maxDate'] ?? '365' )->format( optional($field)['format'] ?? 'd.m.Y' ) }}',
+            minDate: '{{ today()->format( optional($field)['format'] ?? 'd.m.Y' ) }}',
+            @endif
+            @if (optional($field)['maxDate'])
+            maxDate: '{{ now()->addDays( optional($field)['maxDate'] ?? 'false' )->format( optional($field)['format'] ?? 'd.m.Y' ) }}',
             @endif
             'locale': {
                 'firstDayOfWeek': {{ optional($field)['weekStartsOn'] ?? '1' }} // start week on Monday
@@ -21,6 +25,7 @@
         });
     "
     @change="$dispatch('input', $event.target.value)"
+    wire:ignore
     class="flex rounded-md shadow-sm"
 >
     <span class="inline-flex items-center px-3 text-gray-500 border border-r-0 border-gray-500/30 dark:border-gray-700 rounded-l-md bg-gray-50 dark:bg-gray-700 sm:text-sm">
@@ -32,19 +37,7 @@
     <input
         wire:model.defer="post.fields.{{ optional($field)['slug'] }}"
         x-ref="input"
-        class="w-full px-3 py-2 bg-white border border-gray-500/30 rounded-none shadow-xs appearance-none dark:border-gray-700 rounded-r-md focus:border-primary-300 focus:outline-none ring-gray-900/10 focus:ring focus:ring-primary-300 focus:ring-opacity-50 dark:focus:ring-primary-500 dark:focus:ring-opacity-50 dark:bg-gray-900"
+        class="w-full px-3 py-2 bg-white border rounded-none shadow-xs appearance-none border-gray-500/30 dark:border-gray-700 rounded-r-md focus:border-primary-300 focus:outline-none ring-gray-900/10 focus:ring focus:ring-primary-300 focus:ring-opacity-50 dark:focus:ring-primary-500 dark:focus:ring-opacity-50 dark:bg-gray-900"
     />
 </div>
 </x-aura::fields.wrapper>
-
-@push('styles')
-    @once
-
-    @endonce
-@endpush
-
-@push('scripts')
-    @once
-        {{-- <script src="https://unpkg.com/moment"></script> --}}
-    @endonce
-@endpush

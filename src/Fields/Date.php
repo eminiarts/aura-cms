@@ -31,13 +31,22 @@ class Date extends Field
                 'validation' => '',
                 'slug' => 'format',
                 'default' => 'd.m.Y',
-                'instructions' => 'The format of the date. Default is d.m.Y. See <a href="https://www.php.net/manual/en/function.date.php" target="_blank">PHP Date</a> for more information.',
+                'instructions' => 'The format of how the date gets stored in the DB. Default is d.m.Y. See <a href="https://www.php.net/manual/en/function.date.php" target="_blank">PHP Date</a> for more information.',
+            ],
+            [
+                'name' => 'Display Format',
+
+                'type' => 'Eminiarts\\Aura\\Fields\\Text',
+                'validation' => '',
+                'slug' => 'display_format',
+                'default' => 'd.m.Y',
+                'instructions' => 'How the Date gets displayed. Default is d.m.Y. See <a href="https://www.php.net/manual/en/function.date.php" target="_blank">PHP Date</a> for more information.',
             ],
             [
                 'label' => 'Enable Time',
                 'name' => 'Enable Time',
 
-                'type' => 'Eminiarts\\Aura\\Fields\\Checkbox',
+                'type' => 'Eminiarts\\Aura\\Fields\\Boolean',
                 'validation' => '',
                 'options' => [
                     'true' => 'Enable time',
