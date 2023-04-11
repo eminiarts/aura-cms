@@ -48,8 +48,7 @@ class CustomResource extends Resource
                 'type' => 'Eminiarts\\Aura\\Fields\\LivewireComponent',
                 'component' => 'custom-resource-view',
                 'validation' => '',
-                'conditional_logic' => [
-                ],
+                'conditional_logic' => [],
                 'slug' => 'custom-livewire-view',
             ],
         ];

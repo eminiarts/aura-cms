@@ -14,18 +14,14 @@ class Plain
                 'type' => 'Eminiarts\\Aura\\Fields\\Panel',
                 'validation' => '',
                 'on_index' => true,
-                'has_conditional_logic' => false,
-                'conditional_logic' => [
-                ],
+                'conditional_logic' => [],
                 'slug' => 'panel-1',
             ],
             [
                 'name' => 'Text',
                 'type' => 'Eminiarts\\Aura\\Fields\\Text',
                 'on_index' => true,
-                'has_conditional_logic' => false,
-                'conditional_logic' => [
-                ],
+                'conditional_logic' => [],
                 'slug' => 'title',
                 'style' => [
                     'width' => '100',

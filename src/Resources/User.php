@@ -138,7 +138,6 @@ class User extends UserModel
                 'type' => 'Eminiarts\\Aura\\Fields\\AdvancedSelect',
                 'validation' => 'required',
                 'conditional_logic' => [],
-                'has_conditional_logic' => false,
                 'wrapper' => '',
                 'on_index' => false,
                 'on_forms' => true,
@@ -149,8 +148,7 @@ class User extends UserModel
                 'name' => 'Password',
                 'type' => 'Eminiarts\\Aura\\Fields\\Password',
                 'validation' => '',
-                'conditional_logic' => [
-                ],
+                'conditional_logic' => [],
                 'slug' => 'password',
                 'on_index' => false,
                 'on_view' => false,
@@ -159,8 +157,7 @@ class User extends UserModel
                 'name' => 'Send Welcome Email',
                 'type' => 'Eminiarts\\Aura\\Fields\\Boolean',
                 'validation' => '',
-                'conditional_logic' => [
-                ],
+                'conditional_logic' => [],
                 'on_edit' => false,
                 'on_view' => false,
                 'on_index' => false,
@@ -187,16 +184,14 @@ class User extends UserModel
                 'name' => 'Notifications via Email',
                 'type' => 'Eminiarts\\Aura\\Fields\\Boolean',
                 'validation' => '',
-                'conditional_logic' => [
-                ],
+                'conditional_logic' => [],
                 'slug' => 'notifications_via_email',
             ],
             [
                 'name' => 'Notifications via SMS',
                 'type' => 'Eminiarts\\Aura\\Fields\\Boolean',
                 'validation' => '',
-                'conditional_logic' => [
-                ],
+                'conditional_logic' => [],
                 'slug' => 'notifications_via_sms',
             ],
             [
@@ -211,7 +206,6 @@ class User extends UserModel
                 'type' => 'Eminiarts\\Aura\\Fields\\HasMany',
                 'resource' => 'Eminiarts\\Aura\\Resources\\Post',
                 'validation' => '',
-                'has_conditional_logic' => false,
                 'wrapper' => '',
                 'on_index' => false,
                 'on_forms' => true,
@@ -263,8 +257,7 @@ class User extends UserModel
                 'type' => 'Eminiarts\\Aura\\Fields\\LivewireComponent',
                 'component' => 'aura::user-two-factor-authentication-form',
                 'validation' => '',
-                'conditional_logic' => [
-                ],
+                'conditional_logic' => [],
                 'slug' => '2fa',
             ],
 
