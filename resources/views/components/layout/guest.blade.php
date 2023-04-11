@@ -15,7 +15,7 @@
 
     </head>
     <body class="font-sans antialiased text-gray-900 bg-black dark">
-        <div class="relative overflow-hidden bg-black bg-[url('/img/landing-page/bgop1.png')] bg-cover bg-no-repeat bg-opacity-50 bg-bottom isolate">
+        <div class="relative overflow-hidden bg-black bg-[url('/vendor/aura/assets/img/bgop1.jpg')] bg-cover bg-no-repeat bg-opacity-50 bg-bottom isolate">
       <div class="absolute inset-0 bg-black/40 -z-10"></div>
 
         <div class="flex flex-col items-center min-h-screen pt-6 bg-bottom bg-no-repeat bg-cover sm:justify-center sm:pt-0">
