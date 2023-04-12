@@ -35,6 +35,8 @@ class CreatePosttype extends ModalComponent
 
     public function mount()
     {
+        abort_if(app()->environment('production'), 403);
+
         abort_unless(auth()->user()->resource->isSuperAdmin(), 403);
     }
 

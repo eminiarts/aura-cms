@@ -99,12 +99,14 @@
                 <div>Settings</div>
             </x-aura::navigation.item>
 
+            @local
             <x-aura::navigation.item class="cursor-pointer" onclick="Livewire.emit('openModal', 'aura::create-posttype')">
                 <div class="{{ $iconClass }}">
                     <x-aura::icon icon="collection" />
                 </div>
                 <div>Create Posttype</div>
             </x-aura::navigation.item>
+            @endlocal
         @endif
 
         @php
