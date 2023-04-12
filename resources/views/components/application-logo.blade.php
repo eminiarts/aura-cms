@@ -2,7 +2,7 @@
 use Eminiarts\Aura\Resources\Attachment;
 @endphp
 
-@if ($image = Attachment::find(Aura::option('login-logo'))->first()->path())
+@if (false && $image = Attachment::find(Aura::option('login-logo'))->first()->path())
     <a href="/">
         <img src="{{ $image }}" alt="{{ config('app.name', 'Aura CMS') }}" class="h-10 fill-current text-slate-100 dark:text-gray-100" />
     </a>

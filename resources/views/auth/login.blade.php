@@ -5,9 +5,8 @@
     <form method="POST" action="">
         @csrf
 
-        <div class="mt-6 mb-8 text-center">
+        <div class="mt-4 mb-6 text-center">
             <h1 class="mb-2 text-2xl font-semibold">Login</h1>
-            <h2 class="text-gray-600">Please enter your details.</h2>
         </div>
 
         <!-- Email Address -->
@@ -35,7 +34,7 @@
             <div class="block mt-4">
                 <label for="remember_me" class="inline-flex items-center">
                     <input id="remember_me" type="checkbox" class="rounded shadow-sm text-primary-600 border-gray-500/30 focus:ring-primary-500" name="remember">
-                    <span class="ml-2 text-sm text-gray-600">{{ __('Remember me') }}</span>
+                    <span class="ml-2 text-sm text-gray-600 dark:text-gray-400">{{ __('Remember me') }}</span>
                 </label>
             </div>
 
