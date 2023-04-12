@@ -10,7 +10,7 @@
             <x-aura::input-error :messages="$errors->get('team')" class="mt-2" />
         </div>
         @endif
-     
+
         <!-- Name -->
         <div class="mt-4">
             <x-aura::input-label for="name" :value="__('Name')" />
@@ -49,7 +49,7 @@
         </div>
 
         <div class="flex items-center justify-end mt-4">
-            <a class="underline text-sm text-gray-600 hover:text-gray-900 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500" href="/login">
+            <a class="underline text-sm text-gray-600 hover:text-gray-900 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500" href="/login">
                 {{ __('Already registered?') }}
             </a>
 

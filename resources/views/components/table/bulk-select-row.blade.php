@@ -20,7 +20,7 @@ $rows = $this->rows;
         count($selected)
     )
 )
-<div class="p-2 bg-indigo-50 dark:bg-gray-900 dark:text-white">
+<div class="p-2 bg-primary-50 dark:bg-gray-900 dark:text-white">
   @if ((!$paginationEnabled && $selectPage) || (count($selected) && $paginationEnabled && !$selectAll && !$selectPage))
     <div>
       <span>

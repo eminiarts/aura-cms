@@ -237,6 +237,19 @@ class AuraConfig extends Component
                 'slug' => 'login-panel',
             ],
             [
+                'name' => 'Darkmode',
+                'type' => 'Eminiarts\\Aura\\Fields\\Radio',
+                'options' => [
+                    'auto' => 'Auto',
+                    'light' => 'Light',
+                    'dark' => 'Dark',
+                ],
+                'slug' => 'darkmode-type',
+                'style' => [
+                    'width' => '33',
+                ],
+            ],
+            [
                 'name' => 'Login Logo',
                 'type' => 'Eminiarts\\Aura\\Fields\\Image',
                 'slug' => 'login-logo',
