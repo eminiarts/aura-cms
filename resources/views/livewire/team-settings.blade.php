@@ -2,8 +2,8 @@
     @section('title', 'Edit Settings • ')
 
     <div>
-        <h1 class="text-3xl font-semibold">Settings</h1>
-        <h3>Set all the team related options </h3>
+        <h1 class="text-3xl font-semibold">Theme Options</h1>
+        <h3>Configure Logo and Theme. These Settings are applied for this team</h3>
     </div>
 
     @foreach($this->fieldsForView as $key => $field)
@@ -33,7 +33,7 @@
         Save
     </x-aura::button>
 
-    <div class="flex mt-4 space-x-4">
+    {{-- <div class="flex mt-4 space-x-4">
         <div class="w-12 h-12 rounded bg-sidebar-bg"></div>
     </div>
 
@@ -61,5 +61,5 @@
         <div class="w-12 h-12 bg-gray-700 rounded"></div>
         <div class="w-12 h-12 bg-gray-800 rounded"></div>
         <div class="w-12 h-12 bg-gray-900 rounded"></div>
-    </div>
+    </div> --}}
 </div>
