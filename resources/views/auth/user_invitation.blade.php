@@ -16,7 +16,7 @@
             <x-aura::text-input id="email" class="block mt-1 w-full bg-gray-800 opacity-50" type="email" name="email" :value="$teamInvitation->email" disabled />
             <x-aura::input-error :messages="$errors->get('email')" class="mt-2" />
         </div>
-     
+
         <!-- Name -->
         <div class="mt-4">
             <x-aura::input-label for="name" :value="__('Name')" />
@@ -48,7 +48,7 @@
         </div>
 
         <div class="flex items-center justify-end mt-4">
-            <a class="underline text-sm text-gray-600 hover:text-gray-900 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500" href="{{ route('aura.login') }}">
+            <a class="underline text-sm text-gray-600 hover:text-gray-900 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500" href="{{ route('aura.login') }}">
                 {{ __('Already registered?') }}
             </a>
 

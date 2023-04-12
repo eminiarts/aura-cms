@@ -1,6 +1,7 @@
 @php
     use Eminiarts\Aura\TransformColor;
 @endphp
+
 @if($settings)
 <style>
 
