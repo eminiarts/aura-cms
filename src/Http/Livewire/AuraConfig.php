@@ -4,6 +4,7 @@ namespace Eminiarts\Aura\Http\Livewire;
 
 use Eminiarts\Aura\Facades\Aura;
 use Eminiarts\Aura\Traits\InputFields;
+use Eminiarts\Aura\Traits\MediaFields;
 use Eminiarts\Aura\Traits\RepeaterFields;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Cache;
@@ -12,6 +13,7 @@ use Livewire\Component;
 class AuraConfig extends Component
 {
     use InputFields;
+    use MediaFields;
     use RepeaterFields;
 
     public $config;
@@ -21,6 +23,8 @@ class AuraConfig extends Component
     public $post = [
         'fields' => [],
     ];
+
+    protected $listeners = ['updateField' => 'updateField'];
 
     public static function getFields()
     {
@@ -220,6 +224,100 @@ class AuraConfig extends Component
                     'width' => '100',
                 ],
             ],
+
+            [
+                'type' => 'Eminiarts\\Aura\\Fields\\Tab',
+                'name' => 'Login',
+                'slug' => 'tab-login',
+                'global' => true,
+            ],
+            [
+                'type' => 'Eminiarts\\Aura\\Fields\\Panel',
+                'name' => 'Login Settings',
+                'slug' => 'login-panel',
+            ],
+            [
+                'name' => 'Login Logo',
+                'type' => 'Eminiarts\\Aura\\Fields\\Image',
+                'slug' => 'login-logo',
+                'style' => [
+                    'width' => '50',
+                ],
+            ],
+            [
+                'name' => 'Login Logo (Darkmode)',
+                'type' => 'Eminiarts\\Aura\\Fields\\Image',
+                'slug' => 'login-logo-darkmode',
+                'style' => [
+                    'width' => '50',
+                ],
+            ],
+
+            [
+                'name' => 'Login Background',
+                'type' => 'Eminiarts\\Aura\\Fields\\Image',
+                'slug' => 'login-bg',
+                'style' => [
+                    'width' => '50',
+                ],
+            ],
+            [
+                'name' => 'Login Background (Darkmode)',
+                'type' => 'Eminiarts\\Aura\\Fields\\Image',
+                'slug' => 'login-bg-darkmode',
+                'style' => [
+                    'width' => '50',
+                ],
+            ],
+
+            [
+                'name' => 'Login Color Palette',
+                'type' => 'Eminiarts\\Aura\\Fields\\Select',
+                'options' => [
+                    'aura' => 'Aura',
+                    'red' => 'Red',
+                    'orange' => 'Orange',
+                    'amber' => 'Amber',
+                    'yellow' => 'Yellow',
+                    'lime' => 'Lime',
+                    'green' => 'Green',
+                    'emerald' => 'Emerald',
+                    'teal' => 'Teal',
+                    'cyan' => 'Cyan',
+                    'sky' => 'Sky',
+                    'blue' => 'Blue',
+                    'indigo' => 'Indigo',
+                    'violet' => 'Violet',
+                    'purple' => 'Purple',
+                    'fuchsia' => 'Fuchsia',
+                    'pink' => 'Pink',
+                    'rose' => 'Rose',
+                    'mountain-meadow' => 'Mountain Meadow',
+                    'sandal' => 'Sandal',
+                    'slate' => 'Slate',
+                    'gray' => 'Gray',
+                    'zinc' => 'Zinc',
+                    'neutral' => 'Neutral',
+                    'stone' => 'Stone',
+                ],
+                'slug' => 'color-palette',
+            ],
+            [
+                'name' => 'Login Gray Color Palette',
+                'type' => 'Eminiarts\\Aura\\Fields\\Select',
+                'options' => [
+                    'slate' => 'Slate',
+                    'purple-slate' => 'Purple Slate',
+                    'gray' => 'Gray',
+                    'zinc' => 'Zinc',
+                    'neutral' => 'Neutral',
+                    'stone' => 'Stone',
+                    'blue' => 'Blue',
+                    'smaragd' => 'Smaragd',
+                ],
+                'slug' => 'gray-color-palette',
+            ],
+
         ];
     }
 
