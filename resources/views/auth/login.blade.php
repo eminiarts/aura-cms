@@ -1,4 +1,4 @@
-<x-aura::layout.guest>
+<x-aura::layout.login>
     <!-- Session Status -->
     <x-aura::auth-session-status class="mb-4" :status="session('status')" />
 
@@ -59,4 +59,4 @@
 
             </div>
     </form>
-</x-aura::layout.guest>
+</x-aura::layout.login>
