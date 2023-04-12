@@ -135,10 +135,4 @@
         @endif
     @endsuperadmin
 
-    <div class="mt-6">
-        <x-aura::navigation.item route="aura.logout">
-            <div>Logout</div>
-        </x-aura::navigation.item>
-    </div>
-
 </div>

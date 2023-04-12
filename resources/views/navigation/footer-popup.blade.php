@@ -1,10 +1,5 @@
 <div class="w-60 dark:bg-gray-700">
-  <div class="block px-4 py-2 text-xs text-gray-400 dark:text-gray-500">
-      {{ __('Manage Profile') }}
-  </div>
-  <x-aura::dropdown-link href="{{ route('aura.profile') }}">
-      {{ __('View Profile') }}
-  </x-aura::dropdown-link>
+  
 
   <!-- Team Management -->
   <div class="block px-4 py-2 text-xs text-gray-400 dark:text-gray-500">
@@ -36,4 +31,15 @@
       <x-aura::switchable-team :team="$team" />
   @endforeach
   @endif
+
+  <div class="block px-4 py-2 text-xs text-gray-400 dark:text-gray-500">
+      {{ __('Manage Profile') }}
+  </div>
+  <x-aura::dropdown-link href="{{ route('aura.profile') }}">
+      {{ __('View Profile') }}
+  </x-aura::dropdown-link>
+  <x-aura::dropdown-link href="{{ route('aura.logout') }}">
+      {{ __('Logout') }}
+  </x-aura::dropdown-link>
+
 </div>
