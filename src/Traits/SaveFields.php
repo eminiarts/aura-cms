@@ -75,39 +75,53 @@ trait SaveFields
 
     public function saveProps($props)
     {
+
         $a = new \ReflectionClass($this->model::class);
 
         $file = file_get_contents($a->getFileName());
 
         $replacement = $props;
 
-        $matches = [];
+        $patterns = [
+            'type' => "/type = '([^']*)'/",
+            'group' => "/group = '([^']*)'/",
+            'dropdown' => "/dropdown = '([^']*)'/",
+            'sort' => "/sort = ([^;]*);/",
+            'slug' => "/slug = '([^']*)'/",
+            'icon' => "/public function getIcon\(\)[\n\r\s+]*\{[\n\r\s+]*return '([^']*)';/"
+        ];
 
-        preg_match("/type = '(.*?)'/", $file, $matches['type']);
-        preg_match("/slug = '(.*?)'/", $file, $matches['slug']);
-        preg_match("/public function getIcon\(\)[\n\r\s+]*\{[\n\r\s+]*return '(.*?)';/", $file, $matches['icon']);
+        $replacements = [
+            'type' => "type = '" . htmlspecialchars($replacement['type']) . "'",
+            'group' => "group = '" . htmlspecialchars($replacement['group']) . "'",
+            'dropdown' => "dropdown = '" . htmlspecialchars($replacement['dropdown']) . "'",
+            'sort' => "sort = " . htmlspecialchars($replacement['sort']) . ";",
+            'slug' => "slug = '" . htmlspecialchars($replacement['slug']) . "'",
+            'icon' => "public function getIcon()\n    {\n        return '" . htmlspecialchars($replacement['icon']) . "';"
+        ];
 
-        $replaced = Str::replace(
-            $matches['type'][1],
-            htmlspecialchars($replacement['type']),
-            $file
-        );
+        $replaced = $file;
 
-        $replaced = Str::replace(
-            $matches['slug'][1],
-            htmlspecialchars($replacement['slug']),
-            $replaced
-        );
+        foreach ($patterns as $key => $pattern) {
+            if (preg_match($pattern, $file) && isset($replacements[$key])) {
+                $replaced = preg_replace($pattern, $replacements[$key], $replaced);
+            }
+        }
 
-        $replaced = Str::replace(
-            $matches['icon'][1],
-            strip_tags(Str::replace('\'', '"', $replacement['icon']), '<a><altGlyph><altGlyphDef><altGlyphItem><animate><animateColor><animateMotion><animateTransform><circle><clipPath><color-profile><cursor><defs><desc><ellipse><feBlend><feColorMatrix><feComponentTransfer><feComposite><feConvolveMatrix><feDiffuseLighting><feDisplacementMap><feDistantLight><feFlood><feFuncA><feFuncB><feFuncG><feFuncR><feGaussianBlur><feImage><feMerge><feMergeNode><feMorphology><feOffset><fePointLight><feSpecularLighting><feSpotLight><feTile><feTurbulence><filter><font><font-face><font-face-format><font-face-name><font-face-src><font-face-uri><foreignObject><g><glyph><glyphRef><hkern><image><line><linearGradient><marker><mask><metadata><missing-glyph><mpath><path><pattern><polygon><polyline><radialGradient><rect><set><stop><style><svg><switch><symbol><text><textPath><title><tref><tspan><use><view><vkern>'),
-            $replaced
-        );
+        dd($replaced);
 
         file_put_contents($a->getFileName(), $replaced);
 
         $this->notify('Saved Props successfully.');
+
+
+        // $replaced = Str::replace(
+        //     $matches['icon'][1],
+        //     strip_tags(Str::replace('\'', '"', $replacement['icon']), '<a><altGlyph><altGlyphDef><altGlyphItem><animate><animateColor><animateMotion><animateTransform><circle><clipPath><color-profile><cursor><defs><desc><ellipse><feBlend><feColorMatrix><feComponentTransfer><feComposite><feConvolveMatrix><feDiffuseLighting><feDisplacementMap><feDistantLight><feFlood><feFuncA><feFuncB><feFuncG><feFuncR><feGaussianBlur><feImage><feMerge><feMergeNode><feMorphology><feOffset><fePointLight><feSpecularLighting><feSpotLight><feTile><feTurbulence><filter><font><font-face><font-face-format><font-face-name><font-face-src><font-face-uri><foreignObject><g><glyph><glyphRef><hkern><image><line><linearGradient><marker><mask><metadata><missing-glyph><mpath><path><pattern><polygon><polyline><radialGradient><rect><set><stop><style><svg><switch><symbol><text><textPath><title><tref><tspan><use><view><vkern>'),
+        //     $replaced
+        // );
+
+
     }
 
      public function setKeysToFields($fields)
