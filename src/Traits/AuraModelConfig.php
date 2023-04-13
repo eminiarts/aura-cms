@@ -265,6 +265,9 @@ trait AuraModelConfig
         return static::$type;
     }
 
+
+
+
     public static function getWidgets(): array
     {
         return [];
@@ -441,7 +444,7 @@ trait AuraModelConfig
         }
     }
 
-    protected static function getSort(): ?int
+    public static function getSort(): ?int
     {
         return static::$sort;
     }

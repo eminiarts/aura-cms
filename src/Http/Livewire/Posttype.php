@@ -314,6 +314,9 @@ class Posttype extends Component
             'type' => $this->model->getType(),
             'slug' => $this->model->getSlug(),
             'icon' => $this->model->getIcon(),
+            'group' => $this->model->getGroup(),
+            'dropdown' => $this->model->getDropdown(),
+            'sort' => $this->model->getSort(),
         ];
     }
 
@@ -372,6 +375,9 @@ class Posttype extends Component
             'postTypeFields.type' => 'required|regex:/^[a-zA-Z]+$/',
             'postTypeFields.slug' => 'required',
             'postTypeFields.icon' => 'required',
+            'postTypeFields.group' => '',
+            'postTypeFields.dropdown' => '',
+            'postTypeFields.sort' => '',
             'fields.*.name' => '',
             'fields.*.slug' => [
                 'required',
