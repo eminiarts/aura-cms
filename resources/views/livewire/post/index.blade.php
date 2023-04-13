@@ -8,12 +8,14 @@
         </x-aura::breadcrumbs.li>
 
         <div>
+            @local
             @if($post->isAppResource())
             <x-aura::button.transparent :href="route('aura.posttype.edit', $slug)" size="" >
                 <x-aura::icon icon="cog" class="mr-2" />
                 Edit Posttype
             </x-aura::button.transparent>
             @endif
+            @endlocal
         </div>
     </div>
 
