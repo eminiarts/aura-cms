@@ -274,7 +274,8 @@ class User extends UserModel
         ];
     }
 
-    public function getInitials() {
+    public function getInitials()
+    {
         $name = $this->name;
         $words = explode(' ', $name);
         $initials = '';
@@ -305,7 +306,7 @@ class User extends UserModel
         if($attachments) {
             $attachment = $attachments->first();
 
-             return $attachment->path('thumbnail');
+            return $attachment->path('thumbnail');
         }
         return 'https://ui-avatars.com/api/?name=' . $this->getInitials() . '';
     }
@@ -376,8 +377,7 @@ class User extends UserModel
         foreach ($roles as $role) {
             $permissions = $role->fields['permissions'];
 
-            ray('roles', $permissions);
-
+            // ray('roles', $permissions);
 
             if (empty($permissions)) {
                 continue;

@@ -38,7 +38,7 @@ test('Default Team Settings are created', function () {
 
     // Default Team Settings
     Livewire::test(TeamSettings::class)
-        ->assertSee('Set all the team related options')
+        ->assertSee('Theme Options')
         ->assertSee('primary')
         ->assertSet('post.fields.darkmode-type', 'auto')
         ->assertSet('post.fields.sidebar-type', 'primary')

@@ -112,7 +112,7 @@ class ResourcePolicy
      * @param  \App\Models\Post  $resource
      * @return \Illuminate\Auth\Access\Response|bool
      */
-    public function view(User $user, Resource $resource)
+    public function view(User $user, $resource)
     {
         // Scoped Posts
         if ($user->resource->hasPermissionTo('scope', $resource) && $user->resource->hasPermissionTo('view', $resource)) {
@@ -137,7 +137,7 @@ class ResourcePolicy
      */
     public function viewAny(User $user, $resource)
     {
-        ray('hier im view any', $user, $resource);
+        // ray('hier im view any', $user, $resource);
         if ($user->resource->hasPermissionTo('viewAny', $resource)) {
             return true;
         }
