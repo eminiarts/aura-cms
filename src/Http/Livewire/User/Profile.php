@@ -4,6 +4,7 @@ namespace Eminiarts\Aura\Http\Livewire\User;
 
 use Eminiarts\Aura\Resources\User;
 use Eminiarts\Aura\Traits\InputFields;
+use Eminiarts\Aura\Traits\MediaFields;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Redirect;
@@ -14,6 +15,7 @@ use Livewire\Component;
 class Profile extends Component
 {
     use InputFields;
+    use MediaFields;
 
     public $confirmingUserDeletion = false;
 
@@ -82,6 +84,16 @@ class Profile extends Component
                 ],
             ],
             [
+                'name' => 'Avatar',
+                'type' => 'Eminiarts\\Aura\\Fields\\Image',
+                'validation' => '',
+                'conditional_logic' => [],
+                'slug' => 'avatar',
+                'style' => [
+                    'width' => '100',
+                ],
+            ],
+            [
                 'name' => 'Name',
                 'type' => 'Eminiarts\\Aura\\Fields\\Text',
                 'validation' => 'required',
@@ -118,14 +130,14 @@ class Profile extends Component
             [
                 'name' => 'Current Password',
                 'type' => 'Eminiarts\\Aura\\Fields\\Password',
-                'validation' => 'current_password',
+                'validation' => ['required_with:post.fields.password', 'current_password'],
                 'slug' => 'current_password',
                 'on_index' => false,
             ],
             [
                 'name' => 'New Password',
                 'type' => 'Eminiarts\\Aura\\Fields\\Password',
-                'validation' => ['required_with:current_password', 'confirmed', Password::min(8)],
+                'validation' => ['nullable', 'confirmed', Password::min(8)],
                 'slug' => 'password',
                 'on_index' => false,
             ],
@@ -200,9 +212,11 @@ class Profile extends Component
 
     public function mount()
     {
-        $this->model = auth()->user();
+        $this->model = auth()->user()->resource;
 
-        $this->post['fields'] = $this->model->attributesToArray();
+        $this->post = $this->model->attributesToArray();
+
+        // dd($this->post['fields'], $this->model);
     }
 
     public function render()
@@ -229,24 +243,30 @@ class Profile extends Component
 
     public function save()
     {
-        // dd($this->post['fields'], $this->rules());
-
+        ray($this->post['fields'], $this->rules());
         $this->validate();
 
         // if $this->post['fields']['current_password'] and  is set, save password
         if (optional($this->post['fields'])['current_password'] && optional($this->post['fields'])['password']) {
+
+
             $this->model->update([
                 'password' => bcrypt($this->post['fields']['password']),
             ]);
+
 
             // unset password fields
             unset($this->post['fields']['current_password']);
             unset($this->post['fields']['password']);
             unset($this->post['fields']['password_confirmation']);
         }
+        // dd('here2', $this->post['fields']);
+        if (!$this->post['fields']['password'] || empty($this->post['fields']['password'])) {
+            unset($this->post['fields']['password']);
+        }
+        $this->model->update($this->post);
 
-        $this->model->update($this->post['fields']);
-
+        // dd($this->post['fields'], $this->rules(), $this->model);
         return $this->notify('Successfully updated.');
     }
 }

@@ -44,64 +44,58 @@
         use Eminiarts\Aura\Resources\Attachment;
         @endphp
 
+        @if (
+            ($image = Attachment::find(Aura::option('login-bg'))) &&
+            $image->isNotEmpty() &&
+            ($imageDark = Attachment::find(Aura::option('login-bg-darkmode'))) &&
+            $imageDark->isNotEmpty()
+        )
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                const images = document.querySelectorAll('[data-darkmode-image]')
+                const darkmode = window.matchMedia('(prefers-color-scheme: dark)').matches
+
+                console.log(images);
+
+                images.forEach(image => {
+                    if (document.documentElement.classList.contains('dark')) {
+                        image.style.backgroundImage = `url(${image.dataset.darkmodeImage})`
+                    }
+                })
+            })
+        </script>
+        @endif
+
         <div class="relative overflow-hidden bg-gray-100 bg-bottom bg-no-repeat bg-cover group dark:bg-gray-900 isolate"
-            @if ($image = Attachment::find(Aura::option('login-bg'))->first()->path())
-            {{-- style="background-image: url('{{ $image }}');" --}}
+
+            {{-- @if ($image = Attachment::find(Aura::option('login-bg')))
+            style="background-image: url('{{ $image->first()->path() }}');"
             @else
-            {{-- style="background-image: url('/vendor/aura/assets/img/bgop1.jpg');" --}}
+            {{-- style="background-image: url('/vendor/aura/assets/img/bgop1.jpg');"
+            @endif --}}
+
+            @if (
+                ($image = Attachment::find(Aura::option('login-bg'))) &&
+                $image->isNotEmpty() &&
+                ($imageDark = Attachment::find(Aura::option('login-bg-darkmode'))) &&
+                $imageDark->isNotEmpty()
+            )
+                style="background-image: url('{{ $image->first()->path() }}');"
+                data-darkmode-image="{{ $imageDark->first()->path() }}"
+            @elseif (
+                ($image = Attachment::find(Aura::option('login-bg'))) &&
+                $image->isNotEmpty()
+            )
+                style="background-image: url('{{ $image->first()->path() }}');"
+            @elseif (
+                ($imageDark = Attachment::find(Aura::option('login-bg-darkmode'))) &&
+                $imageDark->isNotEmpty()
+            )
+                style="background-image: url('{{ $imageDark->first()->path() }}');"
+            @else
             @endif
         >
-
-        {{-- <div class="pointer-events-none">
-            <div class="absolute inset-0 rounded-2xl transition duration-300 [mask-image:linear-gradient(135deg,white,transparent)] group-hover:opacity-50">
-                <svg aria-hidden="true" class="absolute inset-x-0 inset-y-[-30%] h-[160%] w-full skew-y-[-18deg] fill-red-500/[0.5] stroke-red-500/95 dark:fill-white/1 dark:stroke-white/2.5">
-                    <defs>
-                        <pattern id=":R56hd6:" width="72" height="56" patternUnits="userSpaceOnUse" x="50%" y="16"><path d="M.5 56V.5H72" fill="none"></path></pattern>
-                    </defs>
-
-                    <rect width="100%" height="100%" stroke-width="0" fill="url(#:R56hd6:)"></rect>
-
-                    <svg x="50%" y="16" class="overflow-visible">
-                        <rect stroke-width="0" width="73" height="57" x="0" y="56"></rect>
-                        <rect stroke-width="0" width="73" height="57" x="72" y="168"></rect>
-                    </svg>
-                </svg>
-            </div>
-        </div> --}}
-
-        {{-- <div class="pointer-events-none">
-            <div class="absolute inset-0 rounded-2xl transition duration-300 [mask-image:linear-gradient(135deg,white,transparent)] group-hover:opacity-50">
-                <svg aria-hidden="true" class="absolute inset-x-0 inset-y-0 h-full w-full stroke-gray-500/95 dark:stroke-white/2.5" fill="none">
-                    <defs>
-                        <pattern id="trianglePattern" width="30" height="26" patternUnits="userSpaceOnUse" patternTransform="translate(0, -1)">
-                            <g>
-                                <path d="M 15 0 L 30 25 L 0 25 Z"></path>
-                                <use href="#tri" x="15" y="13"></use>
-                            </g>
-                        </pattern>
-                    </defs>
-                    <rect width="100%" height="100%" fill="url(#trianglePattern)"></rect>
-                </svg>
-            </div>
-        </div> --}}
-
-        {{-- <div class="pointer-events-none">
-            <div class="absolute inset-0 rounded-2xl transition duration-300 [mask-image:linear-gradient(135deg,white,transparent)] group-hover:opacity-50">
-                <svg aria-hidden="true" class="absolute inset-x-0 inset-y-0 h-full w-full stroke-gray-500/95 dark:stroke-white/2.5" fill="none" stroke-width="1">
-                    <defs>
-                        <pattern id="trianglePattern" width="30" height="26" patternUnits="userSpaceOnUse" patternTransform="translate(15, -1)">
-                            <g>
-                                <path d="M 15 0 L 30 25 L 0 25 Z" stroke="currentColor"></path>
-                                <use href="#tri" x="15" y="13"></use>
-                            </g>
-                        </pattern>
-                    </defs>
-                    <rect width="100%" height="100%" fill="url(#trianglePattern)"></rect>
-                </svg>
-            </div>
-        </div> --}}
-
-
+        @if (!$image || !$image->isNotEmpty() || !$imageDark || !$imageDark->isNotEmpty())
         <div class="pointer-events-none">
             <div class="absolute inset-0 transition duration-300 [mask-image:linear-gradient(180deg,rgba(255,255,255,0.8),rgba(255,255,255,0.3))] transform opacity-90 group-hover:opacity-100">
                 <svg aria-hidden="true" class="absolute inset-x-0 inset-y-0 w-full h-full text-gray-200/70 dark:text-gray-700/70" fill="none" stroke-width="1">
@@ -124,6 +118,7 @@
                 </svg>
             </div>
         </div>
+        @endif
 
 
 

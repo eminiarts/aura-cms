@@ -112,6 +112,16 @@ class User extends UserModel
                 ],
             ],
             [
+                'name' => 'Avatar',
+                'type' => 'Eminiarts\\Aura\\Fields\\Image',
+                'validation' => '',
+                'conditional_logic' => [],
+                'slug' => 'avatar',
+                'style' => [
+                    'width' => '100',
+                ],
+            ],
+            [
                 'name' => 'Name',
                 'type' => 'Eminiarts\\Aura\\Fields\\Text',
                 'validation' => 'required',
@@ -220,9 +230,9 @@ class User extends UserModel
                 'slug' => 'tab-Teams',
                 'global' => true,
                 'conditional_logic' => [
-                    function () {
-                        return config('aura.teams');
-                    },
+                    // function () {
+                    //     return config('aura.teams');
+                    // },
                 ],
             ],
             [
@@ -235,9 +245,9 @@ class User extends UserModel
                 'on_index' => false,
                 'on_forms' => true,
                 'conditional_logic' => [
-                    function () {
-                        return config('aura.teams');
-                    },
+                    // function () {
+                    //     return config('aura.teams');
+                    // },
                 ],
                 'on_view' => true,
                 'style' => [
