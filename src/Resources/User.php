@@ -274,6 +274,42 @@ class User extends UserModel
         ];
     }
 
+    public function getInitials() {
+        $name = $this->name;
+        $words = explode(' ', $name);
+        $initials = '';
+
+        foreach ($words as $word) {
+            if (strlen($initials) < 2) {
+                $initials .= strtoupper(substr($word, 0, 1));
+            } else {
+                break;
+            }
+        }
+
+        return $initials;
+    }
+
+    public function getAvatarUrlAttribute()
+    {
+        if(!$this->avatar) {
+            return 'https://ui-avatars.com/api/?name=' . $this->getInitials() . '';
+        }
+
+        // json decode the meta value
+        $meta = json_decode($this->avatar);
+
+
+        // get the attachment from the meta
+        $attachment = Attachment::find($meta)->first();
+        // dd($attachment->path(), $attachment->thumbnail());
+
+        // if there is an attachment, return the url
+        if ($attachment) {
+            return $attachment->path('thumbnail');
+        }
+    }
+
     public function getFieldsAttribute()
     {
         $meta = $this->meta->pluck('value', 'key');

@@ -60,6 +60,8 @@ it('updates the user password', function () {
 it('deletes the user account', function () {
     $user = $this->user;
 
+    $request = $this->get(route('aura.profile'));
+
     $this->get(route('aura.profile'))->assertSeeLivewire('aura::profile');
 
     Livewire::actingAs($this->user)->test(Profile::class)

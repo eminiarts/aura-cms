@@ -71,7 +71,7 @@ class GenerateImageThumbnail implements ShouldQueue
                     $constraint->upsize();
                 });
 
-                Storage::put($size['name'].'/'.basename($this->attachment->url), (string) $image->encode());
+                Storage::put('public/' . $size['name'].'/'.basename($this->attachment->url), (string) $image->encode());
             }
         }
     }

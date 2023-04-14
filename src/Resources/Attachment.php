@@ -232,8 +232,13 @@ class Attachment extends Resource
         return Str::startsWith($this->mime_type, 'image/');
     }
 
-    public function path()
+    public function path($size = null)
     {
+        if ($size) {
+            $url = Str::after($this->url, 'media/');
+            return asset('storage/'. $size .'/'. $url);
+        }
+
         return asset('storage/'.$this->url);
     }
 
