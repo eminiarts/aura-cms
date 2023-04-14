@@ -187,8 +187,9 @@ class AuraServiceProvider extends PackageServiceProvider
 
     public function packageBooted()
     {
-        Component::macro('notify', function ($message) {
-            $this->dispatchBrowserEvent('notify', $message);
+        Component::macro('notify', function ($message, $type = 'success') {
+            ray('notify', $message, $type);
+            $this->dispatchBrowserEvent('notify', ['message' => $message, 'type' => $type]);
         });
 
         // Search in multiple columns

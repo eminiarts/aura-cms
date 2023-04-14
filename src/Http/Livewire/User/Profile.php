@@ -99,7 +99,7 @@ class Profile extends Component
                         });
 
                     }
-            ],
+                ],
                 'conditional_logic' => [],
                 'slug' => 'avatar',
                 'style' => [

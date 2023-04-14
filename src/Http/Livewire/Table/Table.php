@@ -354,16 +354,6 @@ class Table extends Component
      */
     public function selectRows($ids)
     {
-        ray('selectRows', $ids);
-
-        if (optional($this->field)['max'] && count($ids) > $this->field['max']) {
-            $this->selected = array_slice($ids, 0, $this->field['max']);
-            ray('sliced', $this->selected);
-
-            $this->emit('selectedRows', $this->selected);
-            $this->notify('You can only select '.$this->field['max'].' items.');
-            return;
-        }
         $this->selected = $ids;
     }
 
@@ -396,7 +386,7 @@ class Table extends Component
             $this->selected = array_slice($this->selected, 0, $this->field['max']);
 
             $this->emit('selectedRows', $this->selected);
-            $this->notify('You can only select '.$this->field['max'].' items.');
+            $this->notify('You can only select '.$this->field['max'].' items.', 'error');
         } else {
             $this->emit('selectedRows', $this->selected);
         }
