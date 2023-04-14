@@ -1,6 +1,6 @@
 ## options
 
-`max`
+### max
 
 You can set the max attribute on the image field.
 
@@ -17,6 +17,7 @@ return [
 ];
 ```
 
+### validation
 
 You can validate the max attribute in the form request.
 
@@ -24,8 +25,24 @@ You can validate the max attribute in the form request.
 'validation' => 'array|max:1',
 ```
 
-If you want to validate the file type, you can use the `mimes` rule.
+Here's an example of the Avatar field.
 
 ```php
-'validation' => 'array|mimes:jpeg,png',
+    [
+        'name' => 'Avatar',
+        'type' => 'Eminiarts\\Aura\\Fields\\Image',
+        'max' => '1',
+        'validation' => ['array','max:1',
+            function (string $attribute, mixed $value, Closure $fail) {
+                // Check if the attachment is an image
+                Attachment::find($value)->each(function ($attachment) use ($fail, $attribute) {
+                    if (! $attachment->isImage()) {
+                        $fail("The {$attribute} is not an image.");
+                    }
+                });
+
+            }
+    ],
 ```
+
+Because we only save the attachment id in the database, we need to check if the attachment is an image. If it's not, we throw an error.
