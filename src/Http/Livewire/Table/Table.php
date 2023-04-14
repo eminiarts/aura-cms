@@ -341,6 +341,7 @@ class Table extends Component
      */
     public function selectRow($id)
     {
+        ray('selectRow', $id);
         $this->selected = $id;
         $this->lastClickedRow = $id;
     }
@@ -353,6 +354,16 @@ class Table extends Component
      */
     public function selectRows($ids)
     {
+        ray('selectRows', $ids);
+
+        if (optional($this->field)['max'] && count($ids) > $this->field['max']) {
+            $this->selected = array_slice($ids, 0, $this->field['max']);
+            ray('sliced', $this->selected);
+
+            $this->emit('selectedRows', $this->selected);
+            $this->notify('You can only select '.$this->field['max'].' items.');
+            return;
+        }
         $this->selected = $ids;
     }
 
@@ -380,12 +391,19 @@ class Table extends Component
         $this->selectAll = false;
         $this->selectPage = false;
 
-        $this->emit('selectedRows', $this->selected);
+        // Only allow the max number of selected rows.
+        if (optional($this->field)['max'] && count($this->selected) > $this->field['max']) {
+            $this->selected = array_slice($this->selected, 0, $this->field['max']);
+
+            $this->emit('selectedRows', $this->selected);
+            $this->notify('You can only select '.$this->field['max'].' items.');
+        } else {
+            $this->emit('selectedRows', $this->selected);
+        }
     }
 
     public function getParentModelProperty()
     {
         return $this->parent;
     }
-
 }

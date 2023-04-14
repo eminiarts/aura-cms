@@ -1,7 +1,7 @@
 <div>
     <div wire:key="media-notifications">
         {{-- @dump(count($media)) --}}
-        {{-- @dd($media) --}}
+        {{-- @dump($field) --}}
         <div wire:key="{{ str()->random(4) }}">
             @if($media && count($media))
                 <div
@@ -113,7 +113,7 @@
 
             <div class="mt-2">
                 @if($table)
-                    <livewire:aura::table :model="$post" />
+                    <livewire:aura::table :model="$post" :field="$field" />
                 @endif
 
 
