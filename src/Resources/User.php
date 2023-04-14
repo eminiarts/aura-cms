@@ -299,15 +299,15 @@ class User extends UserModel
         // json decode the meta value
         $meta = json_decode($this->avatar);
 
-
         // get the attachment from the meta
-        $attachment = Attachment::find($meta)->first();
-        // dd($attachment->path(), $attachment->thumbnail());
+        $attachments = Attachment::find($meta);
 
-        // if there is an attachment, return the url
-        if ($attachment) {
-            return $attachment->path('thumbnail');
+        if($attachments) {
+            $attachment = $attachments->first();
+
+             return $attachment->path('thumbnail');
         }
+        return 'https://ui-avatars.com/api/?name=' . $this->getInitials() . '';
     }
 
     public function getFieldsAttribute()
