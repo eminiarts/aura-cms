@@ -81,31 +81,74 @@ trait SaveFields
 
         $replacement = $props;
 
+        $patterns = [
+            'type' => "/type = ['\"]([^'\"]*)['\"]/",
+            'group' => "/group = ['\"]([^'\"]*)['\"]/",
+            'dropdown' => "/dropdown = ['\"]([^'\"]*)['\"]/",
+            'sort' => "/sort = (.*?);/",
+            'slug' => "/slug = ['\"]([^'\"]*)['\"]/",
+            'icon' => "/public function getIcon\(\)[\n\r\s+]*\{[\n\r\s+]*return ['\"](.*?)['\"];/",
+        ];
+
+        $replacements = [
+            'type' => "type = '" . htmlspecialchars($replacement['type']) . "'",
+            'group' => "group = '" . htmlspecialchars($replacement['group']) . "'",
+            'dropdown' => "dropdown = '" . htmlspecialchars($replacement['dropdown']) . "'",
+            'sort' => "sort = " . htmlspecialchars($replacement['sort']) . ";",
+            'slug' => "slug = '" . htmlspecialchars($replacement['slug']) . "'",
+            'icon' => "public function getIcon()\n    {\n        return '" . ($replacement['icon']) . "';"
+        ];
+
+        $replaced = $file;
+
         $matches = [];
+        foreach ($patterns as $key => $pattern) {
+            preg_match($pattern, $file, $matches[$key]);
+        }
 
-        preg_match("/type = '(.*?)'/", $file, $matches['type']);
-        preg_match("/slug = '(.*?)'/", $file, $matches['slug']);
-        preg_match("/public function getIcon\(\)[\n\r\s+]*\{[\n\r\s+]*return '(.*?)';/", $file, $matches['icon']);
+        foreach ($patterns as $key => $pattern) {
 
-        $replaced = Str::replace(
-            $matches['type'][1],
-            htmlspecialchars($replacement['type']),
-            $file
-        );
+            if($key == 'icon') {
+                // dump($replacements[$key]);
+                $replaced = preg_replace($pattern, strip_tags($replacements[$key], '<a><altGlyph><altGlyphDef><altGlyphItem><animate><animateColor><animateMotion><animateTransform><circle><clipPath><color-profile><cursor><defs><desc><ellipse><feBlend><feColorMatrix><feComponentTransfer><feComposite><feConvolveMatrix><feDiffuseLighting><feDisplacementMap><feDistantLight><feFlood><feFuncA><feFuncB><feFuncG><feFuncR><feGaussianBlur><feImage><feMerge><feMergeNode><feMorphology><feOffset><fePointLight><feSpecularLighting><feSpotLight><feTile><feTurbulence><filter><font><font-face><font-face-format><font-face-name><font-face-src><font-face-uri><foreignObject><g><glyph><glyphRef><hkern><image><line><linearGradient><marker><mask><metadata><missing-glyph><mpath><path><pattern><polygon><polyline><radialGradient><rect><set><stop><style><svg><switch><symbol><text><textPath><title><tref><tspan><use><view><vkern>'), $replaced);
+                continue;
+            }
 
-        $replaced = Str::replace(
-            $matches['slug'][1],
-            htmlspecialchars($replacement['slug']),
-            $replaced
-        );
+            if(in_array($key, ['group', 'dropdown','sort'])) {
 
-        $replaced = Str::replace(
-            $matches['icon'][1],
-            strip_tags(Str::replace('\'', '"', $replacement['icon']), '<a><altGlyph><altGlyphDef><altGlyphItem><animate><animateColor><animateMotion><animateTransform><circle><clipPath><color-profile><cursor><defs><desc><ellipse><feBlend><feColorMatrix><feComponentTransfer><feComposite><feConvolveMatrix><feDiffuseLighting><feDisplacementMap><feDistantLight><feFlood><feFuncA><feFuncB><feFuncG><feFuncR><feGaussianBlur><feImage><feMerge><feMergeNode><feMorphology><feOffset><fePointLight><feSpecularLighting><feSpotLight><feTile><feTurbulence><filter><font><font-face><font-face-format><font-face-name><font-face-src><font-face-uri><foreignObject><g><glyph><glyphRef><hkern><image><line><linearGradient><marker><mask><metadata><missing-glyph><mpath><path><pattern><polygon><polyline><radialGradient><rect><set><stop><style><svg><switch><symbol><text><textPath><title><tref><tspan><use><view><vkern>'),
-            $replaced
-        );
+                if (isset($replacement[$key])) {
+                    if (isset($matches[$key][1]) || (isset($matches[$key][0]) && $matches[$key][0] == "''")) {
+                        // Replace existing line
+                        $replaced = Str::replace(
+                            $matches[$key][1],
+                            htmlspecialchars($replacement[$key]),
+                            $replaced
+                        );
+                    } else {
+
+                        // Don't add empty lines
+                        if(empty(htmlspecialchars($replacement[$key]))) {
+                            continue;
+                        }
+
+                        // Add missing line
+                        $lineToAdd = "protected static ?string \${$key} = '" . htmlspecialchars($replacement[$key]) . "';\n";
+                        $replaced = preg_replace('/(public\s+static\s+\?string\s+\$slug\s+=\s+[^;\n]+;)/', "$1\n{$lineToAdd}", $replaced);
+                    }
+                }
+
+                continue;
+            }
+
+            if (preg_match($pattern, $file) && isset($replacements[$key])) {
+                $replaced = preg_replace($pattern, $replacements[$key], $replaced);
+            }
+        }
 
         file_put_contents($a->getFileName(), $replaced);
+
+        // Run "pint" on the migration file
+        exec('./vendor/bin/pint '.$a->getFileName());
 
         $this->notify('Saved Props successfully.');
     }

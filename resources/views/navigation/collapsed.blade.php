@@ -135,9 +135,11 @@
         <x-aura::icon icon="collection" />
     </x-aura::navigation.item-icon> --}}
 
+    @local
     <x-aura::navigation.item-icon onclick="Livewire.emit('openModal', 'create-posttype')" tooltip="Create Posttype" :strict="false">
         <x-aura::icon icon="collection" />
     </x-aura::navigation.item-icon>
+    @endlocal
 
     {{-- <x-aura::navigation.item-icon route="charts" tooltip="Charts" :strict="false">
         <x-aura::icon icon="adjustments" />
