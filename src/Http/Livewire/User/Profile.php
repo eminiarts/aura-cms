@@ -2,15 +2,17 @@
 
 namespace Eminiarts\Aura\Http\Livewire\User;
 
+use Closure;
+use Livewire\Component;
+use Illuminate\Support\Str;
+use Illuminate\Http\Request;
 use Eminiarts\Aura\Resources\User;
+use Illuminate\Support\Facades\Auth;
 use Eminiarts\Aura\Traits\InputFields;
 use Eminiarts\Aura\Traits\MediaFields;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
+use Eminiarts\Aura\Resources\Attachment;
 use Illuminate\Support\Facades\Redirect;
-use Illuminate\Support\Str;
 use Illuminate\Validation\Rules\Password;
-use Livewire\Component;
 
 class Profile extends Component
 {
@@ -87,7 +89,17 @@ class Profile extends Component
                 'name' => 'Avatar',
                 'type' => 'Eminiarts\\Aura\\Fields\\Image',
                 'max' => '1',
-                'validation' => '',
+                'validation' => ['array','max:1',
+                    // function (string $attribute, mixed $value, Closure $fail) {
+                    //     // Check if the attachment is an image
+                    //     Attachment::find($value)->each(function ($attachment) use ($fail, $attribute) {
+                    //         if (! $attachment->isImage()) {
+                    //             $fail("The {$attribute} is not an image.");
+                    //         }
+                    //     });
+
+                    // }
+            ],
                 'conditional_logic' => [],
                 'slug' => 'avatar',
                 'style' => [

@@ -4,15 +4,12 @@
         x-data="{
             selected: @entangle('selected'),
             rows: @js($this->rows->pluck('id')->toArray()), //.map(item => item.toString()),
-            field: @entangle('field'),
             lastSelectedId: null,
 
             init() {
-
                 Livewire.on('selectedRows', (updatedSelected) => {
                     this.selected = updatedSelected;
                 });
-
             },
             toggleRow(event, id) {
                 this.$nextTick(() => {
