@@ -88,7 +88,7 @@ class Edit extends Component
     public function save()
     {
         // dump('saving', $this->post);
-        // dd($this->rules(), $this->post);
+         dd($this->rules(), $this->post);
 
         $this->validate();
 

@@ -2,6 +2,8 @@
 @php
     $name = 'post.fields.'  . optional($field)['slug'];
 
+    // dd($name);
+
     $groups = app($field['resource'])->get()->map(function($item, $key) {
         return [
             'name' => $item->fields['name'],
