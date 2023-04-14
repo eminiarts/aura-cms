@@ -89,10 +89,14 @@ class Profile extends Component
                 'name' => 'Avatar',
                 'type' => 'Eminiarts\\Aura\\Fields\\Image',
                 'max' => '1',
-                'validation' => ['array','max:1',
+                'validation' => ['nullable','array','max:1',
                     function (string $attribute, mixed $value, Closure $fail) {
+
+                        if(!$value) {
+                            return;
+                        }
                         // Check if the attachment is an image
-                        Attachment::find($value)->each(function ($attachment) use ($fail, $attribute) {
+                        Attachment::findOrFail($value)->each(function ($attachment) use ($fail, $attribute) {
                             if (! $attachment->isImage()) {
                                 $fail("The {$attribute} is not an image.");
                             }
