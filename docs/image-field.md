@@ -23,3 +23,9 @@ You can validate the max attribute in the form request.
 ```php
 'validation' => 'array|max:1',
 ```
+
+If you want to validate the file type, you can use the `mimes` rule.
+
+```php
+'validation' => 'array|mimes:jpeg,png',
+```

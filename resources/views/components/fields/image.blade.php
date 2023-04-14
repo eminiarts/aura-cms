@@ -22,6 +22,8 @@ if($selected) {
 }
 @endphp
 
+@dump($field)
+
 <div class="relative w-full">
 
     <x-aura::fields.wrapper :field="$field">
