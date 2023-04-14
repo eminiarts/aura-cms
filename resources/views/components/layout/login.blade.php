@@ -16,9 +16,9 @@
         @php
 
             $settings = [
-                'darkmode-type' => Aura::option('darkmode-type'),
-                'color-palette' => Aura::option('color-palette'),
-                'gray-color-palette' => Aura::option('gray-color-palette'),
+                'darkmode-type' => app('aura')::option('darkmode-type'),
+                'color-palette' => app('aura')::option('color-palette'),
+                'gray-color-palette' => app('aura')::option('gray-color-palette'),
             ];
         @endphp
 
@@ -45,9 +45,9 @@
         @endphp
 
         @if (
-            ($image = Attachment::find(Aura::option('login-bg'))) &&
+            ($image = Attachment::find(app('aura')::option('login-bg'))) &&
             $image->isNotEmpty() &&
-            ($imageDark = Attachment::find(Aura::option('login-bg-darkmode'))) &&
+            ($imageDark = Attachment::find(app('aura')::option('login-bg-darkmode'))) &&
             $imageDark->isNotEmpty()
         )
         <script>
@@ -68,27 +68,27 @@
 
         <div class="relative overflow-hidden bg-gray-100 bg-bottom bg-no-repeat bg-cover group dark:bg-gray-900 isolate"
 
-            {{-- @if ($image = Attachment::find(Aura::option('login-bg')))
+            {{-- @if ($image = Attachment::find(app('aura')::option('login-bg')))
             style="background-image: url('{{ $image->first()->path() }}');"
             @else
             {{-- style="background-image: url('/vendor/aura/assets/img/bgop1.jpg');"
             @endif --}}
 
             @if (
-                ($image = Attachment::find(Aura::option('login-bg'))) &&
+                ($image = Attachment::find(app('aura')::option('login-bg'))) &&
                 $image->isNotEmpty() &&
-                ($imageDark = Attachment::find(Aura::option('login-bg-darkmode'))) &&
+                ($imageDark = Attachment::find(app('aura')::option('login-bg-darkmode'))) &&
                 $imageDark->isNotEmpty()
             )
                 style="background-image: url('{{ $image->first()->path() }}');"
                 data-darkmode-image="{{ $imageDark->first()->path() }}"
             @elseif (
-                ($image = Attachment::find(Aura::option('login-bg'))) &&
+                ($image = Attachment::find(app('aura')::option('login-bg'))) &&
                 $image->isNotEmpty()
             )
                 style="background-image: url('{{ $image->first()->path() }}');"
             @elseif (
-                ($imageDark = Attachment::find(Aura::option('login-bg-darkmode'))) &&
+                ($imageDark = Attachment::find(app('aura')::option('login-bg-darkmode'))) &&
                 $imageDark->isNotEmpty()
             )
                 style="background-image: url('{{ $imageDark->first()->path() }}');"
