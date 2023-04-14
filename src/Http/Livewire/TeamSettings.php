@@ -393,6 +393,8 @@ class TeamSettings extends Component
     {
         abort_unless(auth()->user()->resource->isSuperAdmin(), 403);
 
+        // dd('no abort');
+
         $valueString = json_encode(
             [
                 'darkmode-type' => 'auto',
