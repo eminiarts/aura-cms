@@ -1,4 +1,5 @@
 <div wire:key="table-{{$model->getType()}}">
+    {{-- @dump($field) --}}
     @if($model->getContextMenu())
     <div x-data="contextMenu()" @contextmenu="openContextMenu($event)" @click.away="closeContextMenu" @keydown.escape="closeContextMenu">
     @else
@@ -89,6 +90,8 @@
                 })
             }
         }">
+
+
 
             {{-- if a view exists: aura.$model->pluralName().header, load it  --}}
             @if(View::exists($view = 'aura.' . $model->getType() . '.header'))

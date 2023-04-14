@@ -86,6 +86,7 @@ class Profile extends Component
             [
                 'name' => 'Avatar',
                 'type' => 'Eminiarts\\Aura\\Fields\\Image',
+                'max' => '1',
                 'validation' => '',
                 'conditional_logic' => [],
                 'slug' => 'avatar',
@@ -261,9 +262,10 @@ class Profile extends Component
             unset($this->post['fields']['password_confirmation']);
         }
         // dd('here2', $this->post['fields']);
-        if (!$this->post['fields']['password'] || empty($this->post['fields']['password'])) {
+        if (empty(optional($this->post['fields'])['password'])) {
             unset($this->post['fields']['password']);
         }
+
         $this->model->update($this->post);
 
         // dd($this->post['fields'], $this->rules(), $this->model);

@@ -1,13 +1,18 @@
 <div>
-
     <div
         class="grid flex-1 grid-cols-5 gap-4 p-4"
         x-data="{
             selected: @entangle('selected'),
             rows: @js($this->rows->pluck('id')->toArray()), //.map(item => item.toString()),
+            field: @entangle('field'),
             lastSelectedId: null,
 
             init() {
+
+                Livewire.on('selectedRows', (updatedSelected) => {
+                    this.selected = updatedSelected;
+                });
+
             },
             toggleRow(event, id) {
                 this.$nextTick(() => {
@@ -46,7 +51,7 @@
                 <div class="shrink-0">
                     <x-aura::input.checkbox
                         id="checkbox_{{ $row->id }}"
-                        x-model="selected"
+                        x-model.debounce.150ms="selected"
                         :value="$row->id"
                         x-on:click="toggleRow($event, {{ $row->id }})"
                     />
@@ -72,7 +77,7 @@
         @empty
 
             <div class="col-span-5">
-                <div class="py-8 text-center bg-white dark:bg-gray-900 mx-auto">
+                <div class="py-8 mx-auto text-center bg-white dark:bg-gray-900">
                 <svg class="w-12 h-12 mx-auto text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"
                     xmlns="http://www.w3.org/2000/svg">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -89,6 +94,11 @@
     </div>
 
     {{ $this->rows->links() }}
+
+
+    <div>
+        {{ count($selected) }} selected
+    </div>
 
 </div>
 

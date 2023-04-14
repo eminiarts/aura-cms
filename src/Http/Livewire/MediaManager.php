@@ -49,6 +49,7 @@ class MediaManager extends ModalComponent
     // Select Attachment
     public function selectAttachment($ids)
     {
+        ray('selectAttachment', $ids);
         $this->selected = $ids;
     }
 

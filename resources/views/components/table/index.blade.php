@@ -15,6 +15,7 @@
             class="min-w-full overflow-hidden overflow-x-auto align-middle border border-gray-400/30 sm:rounded-lg dark:border-gray-700">
             <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700" x-data="{
                 selected: @entangle('selected'),
+                field: @entangle('field'),
                 rows: @js($this->rows->pluck('id')->toArray()), //.map(item => item.toString()),
                 lastSelectedId: null,
 
