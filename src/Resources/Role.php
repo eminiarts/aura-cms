@@ -100,11 +100,11 @@ class Role extends Resource
                 'type' => 'Eminiarts\\Aura\\Fields\\Permissions',
                 'validation' => '',
                 'conditional_logic' => [
-                    [
-                        'field' => 'super_admin',
-                        'operator' => '!=',
-                        'value' => '1',
-                    ],
+                    // [
+                    //     'field' => 'super_admin',
+                    //     'operator' => '!=',
+                    //     'value' => '1',
+                    // ],
                 ],
                 'slug' => 'permissions',
                 'resource' => 'Eminiarts\\Aura\\Resources\\Permission',

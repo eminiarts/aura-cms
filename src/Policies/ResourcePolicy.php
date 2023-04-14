@@ -137,6 +137,7 @@ class ResourcePolicy
      */
     public function viewAny(User $user, $resource)
     {
+        ray('hier im view any', $user, $resource);
         if ($user->resource->hasPermissionTo('viewAny', $resource)) {
             return true;
         }
