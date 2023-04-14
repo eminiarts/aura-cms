@@ -3,9 +3,9 @@ use Eminiarts\Aura\Resources\Attachment;
 @endphp
 
 @if (
-    ($image = Attachment::find(Aura::option('login-logo'))) &&
+    ($image = Attachment::find(app('aura')::option('login-logo'))) &&
     $image->isNotEmpty() &&
-    ($imageDark = Attachment::find(Aura::option('login-logo-darkmode'))) &&
+    ($imageDark = Attachment::find(app('aura')::option('login-logo-darkmode'))) &&
     $imageDark->isNotEmpty()
 )
     <a href="/">
@@ -13,14 +13,14 @@ use Eminiarts\Aura\Resources\Attachment;
         <img src="{{ optional($imageDark->first())->path() }}" alt="{{ config('app.name', 'Aura CMS') }}" class="hidden h-10 dark:block" />
     </a>
 @elseif (
-    ($image = Attachment::find(Aura::option('login-logo'))) &&
+    ($image = Attachment::find(app('aura')::option('login-logo'))) &&
     $image->isNotEmpty()
 )
     <a href="/">
         <img src="{{ $image->first()->path() }}" alt="{{ config('app.name', 'Aura CMS') }}" class="h-10" />
     </a>
 @elseif (
-    ($imageDark = Attachment::find(Aura::option('login-logo-darkmode'))) &&
+    ($imageDark = Attachment::find(app('aura')::option('login-logo-darkmode'))) &&
     $imageDark->isNotEmpty()
 )
     <a href="/">
