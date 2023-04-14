@@ -30,6 +30,8 @@ trait AuraModelConfig
 
     public static bool $usesMeta = true;
 
+    public static $contextMenu = true;
+
     public array $widgetSettings = [
         'default' => '30d',
         'options' => [
@@ -444,5 +446,10 @@ trait AuraModelConfig
     protected static function getSort(): ?int
     {
         return static::$sort;
+    }
+
+    public static function getContextMenu()
+    {
+        return static::$contextMenu;
     }
 }

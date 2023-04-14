@@ -4,9 +4,11 @@
 'slug'
 ])
 
-<div class="mx-auto max-w-8xl">
+<div class="mx-auto max-w-8xl" wire:key="table-index-{{ str()->random(4) }}">
 
-    @include('aura::components.table.bulk-select-row')
+    <div>
+        @include('aura::components.table.bulk-select-row')
+    </div>
 
     <div class="flex flex-col mt-2">
         <div
@@ -72,7 +74,6 @@
                                 <x-aura::icon icon="edit" />
                             </a>
                             @else
-
 
                             <div class="flex space-x-2">
 

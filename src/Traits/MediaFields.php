@@ -46,6 +46,7 @@ trait MediaFields
 
     public function updateField($data)
     {
+        // dd($data);
         $this->post['fields'][$data['slug']] = $data['value'];
         // $this->save();
 

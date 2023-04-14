@@ -278,6 +278,9 @@ class Table extends Component
 
     public function mount($query = null)
     {
+        if ($this->parentModel) {
+            // dd($this->parentModel);
+        }
         $this->emit('tableMounted');
 
         $this->setTaxonomyFilters();
@@ -304,7 +307,9 @@ class Table extends Component
      */
     public function render()
     {
-        return view('aura::livewire.table.table');
+        return view('aura::livewire.table.table', [
+            'parent' => $this->parent,
+        ]);
     }
 
     /**
@@ -377,4 +382,10 @@ class Table extends Component
 
         $this->emit('selectedRows', $this->selected);
     }
+
+    public function getParentModelProperty()
+    {
+        return $this->parent;
+    }
+
 }

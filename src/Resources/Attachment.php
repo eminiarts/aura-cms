@@ -20,6 +20,8 @@ class Attachment extends Resource
 
     public static string $type = 'Attachment';
 
+    public static $contextMenu = false;
+
     public function defaultPerPage()
     {
         return 25;
