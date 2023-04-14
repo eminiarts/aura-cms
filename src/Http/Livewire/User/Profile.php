@@ -90,15 +90,15 @@ class Profile extends Component
                 'type' => 'Eminiarts\\Aura\\Fields\\Image',
                 'max' => '1',
                 'validation' => ['array','max:1',
-                    // function (string $attribute, mixed $value, Closure $fail) {
-                    //     // Check if the attachment is an image
-                    //     Attachment::find($value)->each(function ($attachment) use ($fail, $attribute) {
-                    //         if (! $attachment->isImage()) {
-                    //             $fail("The {$attribute} is not an image.");
-                    //         }
-                    //     });
+                    function (string $attribute, mixed $value, Closure $fail) {
+                        // Check if the attachment is an image
+                        Attachment::find($value)->each(function ($attachment) use ($fail, $attribute) {
+                            if (! $attachment->isImage()) {
+                                $fail("The {$attribute} is not an image.");
+                            }
+                        });
 
-                    // }
+                    }
             ],
                 'conditional_logic' => [],
                 'slug' => 'avatar',
