@@ -9,7 +9,7 @@ use Eminiarts\Aura\Http\Livewire\CreatePosttype;
 
 use function Pest\Livewire\livewire;
 
-uses()->group('current');
+//uses()->group('current');
 
 // Before each test, create a Superadmin and login
 beforeEach(function () {
