@@ -22,8 +22,8 @@ class Image extends Field
         $attachment = Attachment::find($firstImageValue);
 
         if ($attachment) {
-            $url = $attachment->path();
-            $imageHtml = "<img src='{$url}' class='w-32 h-32 object-cover rounded-lg shadow-lg'>";
+            $url = $attachment->path('thumbnail');
+            $imageHtml = "<img src='{$url}' class='object-cover w-32 h-32 rounded-lg shadow-lg'>";
         } else {
             return $value;
         }
@@ -31,7 +31,7 @@ class Image extends Field
         $additionalImagesCount = count($values);
         $circleHtml = '';
         if ($additionalImagesCount > 0) {
-            $circleHtml = "<div class='h-10 w-10 bg-gray-200 text-center flex items-center justify-center rounded-full text-gray-800 font-bold'>+{$additionalImagesCount}</div>";
+            $circleHtml = "<div class='flex items-center justify-center w-10 h-10 font-bold text-center text-gray-800 bg-gray-200 rounded-full'>+{$additionalImagesCount}</div>";
         }
 
         return "<div class='flex items-center space-x-2'>{$imageHtml}{$circleHtml}</div>";
