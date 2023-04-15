@@ -2,11 +2,12 @@
 
 namespace Eminiarts\Aura\Operations;
 
-use Aura\Flows\Resources\Operation;
 use Eminiarts\Aura\Models\User;
-use Eminiarts\Aura\Notifications\FlowNotification;
 use Eminiarts\Aura\Resources\Role;
+use Illuminate\Support\Facades\DB;
+use Aura\Flows\Resources\Operation;
 use Illuminate\Support\Facades\Blade;
+use Eminiarts\Aura\Notifications\FlowNotification;
 
 class Notification extends BaseOperation
 {
@@ -89,7 +90,6 @@ class Notification extends BaseOperation
 
             // Get all users with this role
 
-            // dd('hier', $role->toArray(), $role->users->toArray());
             $users = $role->users;
             // foreach user send the notification
             foreach ($users as $user) {
