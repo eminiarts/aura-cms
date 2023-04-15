@@ -53,6 +53,10 @@ class TriggerFlowOnCreatePostEvent implements ShouldQueue
                 // Get the Operation
                 $operation = $flow->operation;
 
+                if(!$operation) {
+                    continue;
+                }
+
                 // Create a Flow Log
                 $flowLog = $flow->logs()->create([
                     'post_id' => $this->post->id,
