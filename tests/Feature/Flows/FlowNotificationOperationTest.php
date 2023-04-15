@@ -4,6 +4,7 @@ use Aura\Flows\Resources\Flow;
 use Eminiarts\Aura\Models\User;
 use Eminiarts\Aura\Resources\Post;
 use Eminiarts\Aura\Resources\Role;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
