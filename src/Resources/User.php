@@ -230,9 +230,9 @@ class User extends UserModel
                 'slug' => 'tab-Teams',
                 'global' => true,
                 'conditional_logic' => [
-                    // function () {
-                    //     return config('aura.teams');
-                    // },
+                    function () {
+                        return config('aura.teams');
+                    },
                 ],
             ],
             [
@@ -245,9 +245,9 @@ class User extends UserModel
                 'on_index' => false,
                 'on_forms' => true,
                 'conditional_logic' => [
-                    // function () {
-                    //     return config('aura.teams');
-                    // },
+                    function () {
+                        return config('aura.teams');
+                    },
                 ],
                 'on_view' => true,
                 'style' => [

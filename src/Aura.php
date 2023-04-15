@@ -349,7 +349,12 @@ class Aura
     public function options()
     {
         return Cache::rememberForever('aura-settings', function () {
-            $option = Option::withoutGlobalScopes([TeamScope::class])->where('name', 'aura-settings')->where('team_id', 0)->first();
+            $option = Option::withoutGlobalScopes([TeamScope::class])
+            ->where('name', 'aura-settings')
+            ->when(config('aura.teams'), function ($query, string $role) {
+                $query->where('team_id', 0);
+            })
+            ->first();
 
             if ($option && is_string($option->value)) {
                 return json_decode($option->value, true);
