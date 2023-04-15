@@ -38,7 +38,7 @@ test('Default Team Settings are created', function () {
 
     // Default Team Settings
     Livewire::test(TeamSettings::class)
-        ->assertSee('Set all the team related options')
+        ->assertSee('Theme Options')
         ->assertSee('primary')
         ->assertSet('post.fields.darkmode-type', 'auto')
         ->assertSet('post.fields.sidebar-type', 'primary')
@@ -71,10 +71,12 @@ test('Team Settings can be saved', function () {
     $firstTeam = $teams->first();
     $secondTeam = $teams->last();
 
-    // create a entry in team_user table with team_id and user_id
+    // we need to create a role for the second team
+    $role2 = Role::create(['type' => 'Role', 'title' => 'Super Admin', 'slug' => 'super_admin', 'description' => 'Super Admin has can perform everything.', 'super_admin' => true, 'permissions' => []]);
+
     $this->user->teams()->attach([
-        $secondTeam->id => ['key' => 'roles', 'value' => $role->id],
-    ]);
+            $secondTeam->id => ['key' => 'roles', 'value' => $role2->id],
+        ]);
 
     // Default Team Settings
     Livewire::test(TeamSettings::class)
@@ -119,10 +121,10 @@ test('Team Settings can be saved', function () {
 
     $this->actingAs($this->user)
         ->get(route('aura.team.settings'))
-        ->assertSee('--primary-400: 82 139 255;');
+        ->assertSee('--primary-400: 60 126 244;');
 
     // assert DB has 1 record in options table
-    $this->assertDatabaseCount('options', 2);
+    $this->assertDatabaseCount('options', 1);
 
     // Switch back to first team
     $this->user->switchTeam($firstTeam);
