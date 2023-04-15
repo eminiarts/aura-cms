@@ -176,11 +176,11 @@ class Team extends Resource
         });
 
         static::created(function ($team) {
-            $user = auth()->user();
-
-            // Change the current team id of the user
-            $user->current_team_id = $team->id;
-            $user->save();
+            if($user = auth()->user()) {
+                // Change the current team id of the user
+                $user->current_team_id = $team->id;
+                $user->save();
+            }
 
             // Create a Super Admin role for the team
             $role = Role::create([
@@ -191,17 +191,23 @@ class Team extends Resource
                 'description' => 'Super Admin has can perform everything.',
                 'super_admin' => true,
                 'permissions' => [],
-                'user_id' => $user->id,
+                'user_id' => $user ? $user->id : null,
+                'team_id' => $team->id,
             ]);
 
             // Attach the current user to the team
-            $team->users()->attach($user->id, [
-                'key' => 'roles',
-                'value' => json_encode([$role->id]),
-            ]);
+            if($user) {
 
-            // Clear cache of Cache('user.'.$this->id.'.teams')
-            Cache::forget('user.'.$user->id.'.teams');
+                $team->users()->attach($user->id, [
+                             'key' => 'roles',
+                             'value' => $role->id,
+                         ]);
+
+                // Clear cache of Cache('user.'.$this->id.'.teams')
+                Cache::forget('user.'.$user->id.'.teams');
+
+            }
+
         });
 
         // static::updating(function ($team) {
