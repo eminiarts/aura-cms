@@ -45,6 +45,7 @@ class TriggerFlowOnCreatePostEvent implements ShouldQueue
 
         // dump(Flow::get());
 
+
         if ($flows && $flows->count() > 0) {
             // Trigger the Flow
             // get the Flow's Operation
@@ -52,6 +53,9 @@ class TriggerFlowOnCreatePostEvent implements ShouldQueue
             foreach ($flows as $flow) {
                 // Get the Operation
                 $operation = $flow->operation;
+
+
+                // dd($flow->toArray());
 
                 if(!$operation) {
                     continue;

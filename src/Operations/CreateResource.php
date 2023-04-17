@@ -37,12 +37,21 @@ class CreateResource extends BaseOperation
     {
         // dd('send notification', $operation->toArray(), $post->toArray(), $operationLog->toArray());
 
+        ray(Operation::find($operation->id)->toArray(), $operation->options['resource']);
+        ray('this should run', 'Eminiarts\\Aura\\Resources\\'.$post->type, $operation->options['resource'], $operation->options);
+
         // if $post->type is the same as $operation->options['resource'] then throw expception
         // dd($post->type, $operation->options['resource']);
 
         if ($operation->flow->options['event'] == 'created' && 'Eminiarts\\Aura\\Resources\\'.$post->type == $operation->options['resource']) {
             throw new \Exception('Cannot create post of same type');
         }
+
+
+
+
+        dd('hier running');
+
 
         // throw an exception if there is no message
         if ($operation->options['data'] == null) {
@@ -54,6 +63,13 @@ class CreateResource extends BaseOperation
             throw new \Exception('No Resource');
         }
         $resource = $operation->options['resource'];
+
+
+        ray('this should run', $operation, $post);
+
+
+        dd('hier running');
+
 
         // Create the Resource with the values
         $resource = app($resource)->create($values);
