@@ -68,7 +68,6 @@ test('flow - create resource operation', function () {
     // Assert operation options resource is Eminiarts\Aura\Resources\Attachment
     $this->assertEquals('Eminiarts\\Aura\\Resources\\Attachment', $flow->operations()->first()->options['resource']);
 
-
     // Create a Post
     $firstPost = Post::create([
         'title' => 'Test Post 1',
@@ -76,12 +75,6 @@ test('flow - create resource operation', function () {
         'type' => 'Post',
         'status' => 'published',
     ]);
-
-
-
-    // dd('hier');
-
-    ray($flow->operations()->first()->options, $flow->operations()->first()->id);
 
     // Assert Post is in DB
     $this->assertDatabaseHas('posts', ['title' => 'Test Post 1', 'type' => 'Post', 'status' => 'published']);
@@ -94,8 +87,6 @@ test('flow - create resource operation', function () {
 
     // Assert Flow Operation is triggered when Post is created
     $this->assertDatabaseHas('flow_operation_logs', ['operation_id' => $flow->operation_id]);
-
-    // dd($post->toArray(), $flow->toArray());
 });
 
 test('flow - cannot create post of same type on create', function () {
@@ -107,7 +98,7 @@ test('flow - cannot create post of same type on create', function () {
         'description' => 'Flow Description',
         'trigger' => 'post',
         'options' => [
-            'resource' => 'Post',
+            'resource' => Post::class,
             'event' => 'created',
             // Filter more specific
         ],
