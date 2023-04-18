@@ -1,5 +1,5 @@
 <div>
-    @section('title', 'All ' . Str::plural($slug) . ' • ')
+    @section('title', 'All ' . Str::plural($slug))
 
     <div class="flex items-start justify-between">
         <x-aura::breadcrumbs>

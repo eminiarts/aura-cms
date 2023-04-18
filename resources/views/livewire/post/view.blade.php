@@ -1,5 +1,5 @@
 <div>
-    @section('title', 'View '. $model->singularName() . ' • ' . $model->title . ' • ')
+    @section('title', 'View '. $model->singularName() . ' • ' . $model->title)
 
     @if(!$inModal)
     <x-aura::breadcrumbs>
@@ -11,6 +11,7 @@
 
     <div class="flex items-center justify-between my-8">
         <div>
+            @yield('view-header')
             <h1 class="text-3xl font-semibold">View {{ $model->singularName() }}</h1>
         </div>
 

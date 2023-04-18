@@ -10,7 +10,7 @@
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="csrf-token" content="{{ csrf_token() }}">
 
-        <title>@yield('title')Aura CMS</title>
+        <title>@yield('title') • Aura CMS</title>
 
         <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
         <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
@@ -168,19 +168,8 @@
           window.dispatchEvent(new Event('resize'));
       }, 100);
 
-
-
-
-
   </script>
 
-        <!-- Alpine Plugins -->
-        {{-- <script defer src="https://unpkg.com/@alpinejs/collapse@3.10.5/dist/cdn.min.js"></script>
-        <script defer src="https://unpkg.com/@alpinejs/ui@3.12.0-beta.0/dist/cdn.min.js"></script>
-
-        <script defer src="https://unpkg.com/@alpinejs/focus@3.12.0/dist/cdn.min.js"></script> --}}
-
         @vite(['resources/js/app.js'], 'vendor/aura')
-
     </body>
 </html>
