@@ -39,14 +39,13 @@ class TriggerFlowOnCreatePostEvent implements ShouldQueue
         // dump($this->post->type);
 
         $flows = Flow::where('trigger', 'post')
-            ->where('options->resource', $this->post->type)
+            ->where('options->resource', get_class($this->post))
             ->where('options->event', 'created')
             ->get();
 
-        // dump(Flow::get());
-
 
         if ($flows && $flows->count() > 0) {
+
             // Trigger the Flow
             // get the Flow's Operation
             // Run the Operation
