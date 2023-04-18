@@ -27,6 +27,8 @@ test('flow - create resource operation', function () {
         ],
     ]);
 
+    //ray()->showQueries();
+
     // Create Operation and Attach to Flow
     $flow->operations()->create([
         'name' => 'Create Data',
@@ -46,9 +48,12 @@ test('flow - create resource operation', function () {
 
     // dd($flow->operations);
 
-
     // Attach Operation_id to flow
     $flow->update(['operation_id' => $flow->operations()->first()->id]);
+
+
+    // ray()->stopShowingQueries();
+
 
     // Assert Flow has 1 Operation
     $this->assertEquals(1, $flow->operations()->count());
@@ -60,9 +65,9 @@ test('flow - create resource operation', function () {
     // Test $flow->operation_id is $flow->operations()->first()->id
     $this->assertEquals($flow->operation_id, $flow->operations()->first()->id);
 
+    // Assert operation options resource is Eminiarts\Aura\Resources\Attachment
+    $this->assertEquals('Eminiarts\\Aura\\Resources\\Attachment', $flow->operations()->first()->options['resource']);
 
-
-    ray()->showQueries();
 
     // Create a Post
     $firstPost = Post::create([
@@ -72,12 +77,11 @@ test('flow - create resource operation', function () {
         'status' => 'published',
     ]);
 
-    ray()->stopShowingQueries();
 
 
     // dd('hier');
 
-    dd($flow->operations()->first()->options);
+    ray($flow->operations()->first()->options, $flow->operations()->first()->id);
 
     // Assert Post is in DB
     $this->assertDatabaseHas('posts', ['title' => 'Test Post 1', 'type' => 'Post', 'status' => 'published']);
