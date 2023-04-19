@@ -15,14 +15,10 @@
             <h1 class="text-3xl font-semibold">Edit {{ $model->singularName() }}</h1>
         </div>
 
-         <x-aura::confirms-action wire:then="showRecoveryCodes" :confirmingPassword="true">
-                <x-aura::button.light class="mr-3">
-                    Confirm
-                </x-aura::button.light>
-            </x-aura::confirms-action>
+       
 
         <div class="flex items-center space-x-2">
-        <x-aura::dropdown width="w-96">
+        <x-aura::dropdown :closeOnSelect="true" width="w-96">
             <x-slot name="trigger">
                 <x-aura::button.transparent>
                         <x-aura::icon.dots class="w-5 h-5 mr-2" />
@@ -31,20 +27,24 @@
             </x-slot>
             <x-slot name="content">
                 <div class="px-2">
-                    @foreach($this->actions as $action => $label)
-                    <div wire:click="singleAction('{{ $action }}')" class="p-2 cursor-pointer hover:bg-primary-100">
-                        @if(is_array($label))
-                           <div class="flex flex-col {{ $label['class'] ?? ''}}">
+                    @foreach($this->actions as $action => $options)
+
+                    @if($options['confirm'] === true)
+                    <div @click="stopPropagation($event)">
+<x-aura::confirms-action wire:then="singleAction('{{ $action }}')" :confirmingPassword="true" :title="optional($options)['confirm-title']" :content="optional($options)['confirm-content']" :button="optional($options)['confirm-button']" >
+                        <div class="p-2 cursor-pointer hover:bg-primary-100">
+                        @if(is_array($options))
+                           <div class="flex flex-col {{ $options['class'] ?? ''}}">
                             <div class="flex space-x-2 items-center">
                                  <div class="shrink-0">
-                                    {!! $label['icon'] ?? '' !!}
-                                 @if(optional($label)['icon-view'])
-                                    @include($label['icon-view'])
+                                    {!! $options['icon'] ?? '' !!}
+                                 @if(optional($options)['icon-view'])
+                                    @include($options['icon-view'])
                                  @endif
                                  </div>
-                            <strong class="font-semibold">{{ $label['label'] ?? '' }} 
-                                @if(optional($label)['description'])
-                            <span class="text-sm text-gray-500 font-normal leading-tight inline-block">{{ $label['description'] ?? '' }}</span>
+                            <strong class="font-semibold">{{ $options['label'] ?? '' }} 
+                                @if(optional($options)['description'])
+                            <span class="text-sm text-gray-500 font-normal leading-tight inline-block">{{ $options['description'] ?? '' }}</span>
                             @endif
                             </strong>
                             </div>
@@ -54,6 +54,33 @@
                             {{ $label }}
                         @endif
                     </div>
+                    </x-aura::confirms-action>
+                    </div>
+                    
+                    @else
+                    <div wire:click="singleAction('{{ $action }}')" class="p-2 cursor-pointer hover:bg-primary-100">
+                        @if(is_array($options))
+                           <div class="flex flex-col {{ $options['class'] ?? ''}}">
+                            <div class="flex space-x-2 items-center">
+                                 <div class="shrink-0">
+                                    {!! $options['icon'] ?? '' !!}
+                                 @if(optional($options)['icon-view'])
+                                    @include($options['icon-view'])
+                                 @endif
+                                 </div>
+                            <strong class="font-semibold">{{ $options['label'] ?? '' }} 
+                                @if(optional($options)['description'])
+                            <span class="text-sm text-gray-500 font-normal leading-tight inline-block">{{ $options['description'] ?? '' }}</span>
+                            @endif
+                            </strong>
+                            </div>
+                            
+                           </div>
+                        @else
+                            {{ $label }}
+                        @endif
+                    </div>
+                    @endif
                     @endforeach
                 </div>
             </x-slot>

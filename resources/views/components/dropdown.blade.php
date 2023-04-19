@@ -1,4 +1,4 @@
-@props(['align' => 'right', 'width' => 'w-48', 'contentClasses' => 'py-1 bg-white dark:bg-gray-800 dark:text-gray-200'])
+@props(['align' => 'right', 'width' => 'w-48', 'contentClasses' => 'py-1 bg-white dark:bg-gray-800 dark:text-gray-200', 'closeOnSelect' => true])
 
 @php
 switch ($align) {
@@ -21,7 +21,12 @@ switch ($width) {
 }
 @endphp
 
-<div class="relative" x-data="{ open: false }" @click.outside="open = false" @close.stop="open = false">
+<div class="relative" x-data="{ 
+    open: false, 
+    stopPropagation(e) {
+        e.stopPropagation();
+    } 
+}" @click.outside="open = false" @close.stop="open = false">
     <div @click="open = ! open">
         {{ $trigger }}
     </div>
@@ -35,7 +40,10 @@ switch ($width) {
             x-transition:leave-end="transform opacity-0 scale-95"
             class="absolute z-50 mt-2 {{ $width }} rounded-md shadow-lg {{ $alignmentClasses }}"
             style="display: none;"
-            @click="open = false">
+            @if($closeOnSelect)
+            @click="open = false"
+            @endif
+            >
         <div class="rounded-md ring-1 ring-black ring-opacity-5 {{ $contentClasses }}">
             {{ $content }}
         </div>
