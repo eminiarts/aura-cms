@@ -29,7 +29,7 @@
                 <div class="px-2">
                     @foreach($this->actions as $action => $options)
 
-                    @if($options['confirm'] === true)
+                    @if(optional($options)['confirm'] === true)
                     <div @click="stopPropagation($event)">
 <x-aura::confirms-action wire:then="singleAction('{{ $action }}')" :confirmingPassword="true" :title="optional($options)['confirm-title']" :content="optional($options)['confirm-content']" :button="optional($options)['confirm-button']" >
                         <div class="p-2 cursor-pointer hover:bg-primary-100">
@@ -51,7 +51,7 @@
                             
                            </div>
                         @else
-                            {{ $label }}
+                            {{ $options }}
                         @endif
                     </div>
                     </x-aura::confirms-action>
@@ -77,7 +77,7 @@
                             
                            </div>
                         @else
-                            {{ $label }}
+                            {{ $options }}
                         @endif
                     </div>
                     @endif
