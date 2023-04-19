@@ -85,7 +85,7 @@ test('chained flow gets triggered on create post', function () {
         'description' => 'Test Flow Description',
         'trigger' => 'post',
         'options' => [
-            'resource' => 'Post',
+            'resource' => Post::class,
             'event' => 'created',
             // Filter more specific
         ],
@@ -157,8 +157,6 @@ test('chained flow gets triggered on create post', function () {
 
     // Assert Post is in DB
     $this->assertDatabaseHas('posts', ['title' => 'Test Post']);
-
-    // Assert Flow gets triggered when Post is created
 
     // Assert Message is in Laravel Log
     $this->assertStringContainsString('Test Message', file_get_contents(storage_path('logs/laravel.log')));
