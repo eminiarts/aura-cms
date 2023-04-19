@@ -15,6 +15,12 @@
             <h1 class="text-3xl font-semibold">Edit {{ $model->singularName() }}</h1>
         </div>
 
+         <x-aura::confirms-action wire:then="showRecoveryCodes" :confirmingPassword="true">
+                <x-aura::button.light class="mr-3">
+                    Confirm
+                </x-aura::button.light>
+            </x-aura::confirms-action>
+
         <div class="flex items-center space-x-2">
         <x-aura::dropdown width="w-96">
             <x-slot name="trigger">
@@ -29,7 +35,7 @@
                     <div wire:click="singleAction('{{ $action }}')" class="p-2 cursor-pointer hover:bg-primary-100">
                         @if(is_array($label))
                            <div class="flex flex-col {{ $label['class'] ?? ''}}">
-                            <div class="flex space-x-2">
+                            <div class="flex space-x-2 items-center">
                                  <div class="shrink-0">
                                     {!! $label['icon'] ?? '' !!}
                                  @if(optional($label)['icon-view'])

@@ -2,14 +2,15 @@
 
 namespace Eminiarts\Aura\Http\Livewire\Post;
 
-use Eminiarts\Aura\Facades\Aura;
+use Livewire\Component;
+use Illuminate\Support\Arr;
 use Eminiarts\Aura\Models\Post;
-use Eminiarts\Aura\Traits\InteractsWithFields;
+use Eminiarts\Aura\Facades\Aura;
 use Eminiarts\Aura\Traits\MediaFields;
 use Eminiarts\Aura\Traits\RepeaterFields;
+use Eminiarts\Aura\Traits\ConfirmsActions;
+use Eminiarts\Aura\Traits\InteractsWithFields;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
-use Illuminate\Support\Arr;
-use Livewire\Component;
 
 class Edit extends Component
 {
@@ -17,6 +18,7 @@ class Edit extends Component
     use InteractsWithFields;
     use MediaFields;
     use RepeaterFields;
+    use ConfirmsActions;
 
     public $inModal = false;
 
