@@ -22,7 +22,6 @@ test('flow - a flow can change data and pass it to the next operation', function
         'options' => [
             'resource' => Post::class,
             'event' => 'created',
-            // Filter more specific
         ],
     ]);
 
@@ -81,8 +80,6 @@ test('flow - a flow can change data and pass it to the next operation', function
         'status' => 'published',
     ]);
 
-    // dd($firstPost);
-
     // Expect $post->exists to be true
     expect($firstPost->exists)->toBeTrue();
 
@@ -96,10 +93,8 @@ test('flow - a flow can change data and pass it to the next operation', function
     $this->assertDatabaseHas('flow_operation_logs', ['operation_id' => $flow->operations()->first()->id]);
 
     // Assert Operation 2 Log options message in DB is correct
-    // dd last operation log
     $log = OperationLog::orderBy('id', 'desc')->first();
     expect($log->response['message'])->toBe('Updated Title: Updated Title');
 
-    // dd(OperationLog::orderBy('id', 'desc')->first());
     $this->assertDatabaseHas('flow_operation_logs', ['response->message' => 'Updated Title: Updated Title']);
 });
