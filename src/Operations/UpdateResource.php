@@ -101,7 +101,7 @@ class UpdateResource extends BaseOperation
             }
         }
 
-        dd('hier?');
+        // dd('hier?');
 
         // dump('hallo?', $resource);
         // Get the Resource
