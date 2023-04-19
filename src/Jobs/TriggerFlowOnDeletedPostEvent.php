@@ -40,7 +40,7 @@ class TriggerFlowOnDeletedPostEvent implements ShouldQueue
         // dump($this->post->type);
 
         $flows = Flow::where('trigger', 'post')
-            ->where('options->resource', $this->post->type)
+            ->where('options->resource', get_class($this->post))
             ->where('options->event', 'deleted')
             ->get();
 
