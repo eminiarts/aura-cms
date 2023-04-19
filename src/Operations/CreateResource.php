@@ -41,7 +41,7 @@ class CreateResource extends BaseOperation
         // if $post->type is the same as $operation->options['resource'] then throw expception
         // dd($post->type, $operation->options['resource']);
 
-        if ($operation->flow->options['event'] == 'created' && 'Eminiarts\\Aura\\Resources\\'.$post->type == $operation->options['resource']) {
+        if ($operation->flow->options['event'] == 'created' && get_class($post) == $operation->options['resource']) {
             throw new \Exception('Cannot create post of same type');
         }
 

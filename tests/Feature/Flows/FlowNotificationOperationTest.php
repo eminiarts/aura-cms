@@ -22,7 +22,7 @@ test('flow gets triggered on create post and sends a notification to a user', fu
         'description' => 'Notification Flow Description',
         'trigger' => 'post',
         'options' => [
-            'resource' => 'Post',
+            'resource' => Post::class,
             'event' => 'created',
         ],
     ]);
@@ -89,7 +89,7 @@ test('flow gets triggered on create post and sends a notification to a role', fu
         'description' => 'Notification Flow Description',
         'trigger' => 'post',
         'options' => [
-            'resource' => 'Post',
+            'resource' => Post::class,
             'event' => 'created',
         ],
     ]);

@@ -35,7 +35,7 @@ test('flow - get resources operation and manipulate them', function () {
         'description' => 'Get Children of created Post',
         'trigger' => 'post',
         'options' => [
-            'resource' => 'Post',
+            'resource' => Post::class,
             'event' => 'created',
         ],
     ]);
@@ -49,7 +49,7 @@ test('flow - get resources operation and manipulate them', function () {
             'x' => 2,
             'y' => 2,
 
-            'resource' => 'Eminiarts\\Aura\\Resources\\Post',
+            'resource' => Post::class,
             'resource_ids' => [$firstPost->id, $secondPost->id],
         ],
     ]);
@@ -67,7 +67,7 @@ test('flow - get resources operation and manipulate them', function () {
 
             'type' => 'custom',
 
-            'resource' => 'Eminiarts\\Aura\\Resources\\Post',
+            'resource' => Post::class,
             'resource_source' => $flow->operations()->first()->id,
             'resource_ids' => ['0'],
             'data' => [

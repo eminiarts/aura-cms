@@ -28,7 +28,7 @@ test('flow - data update operation', function () {
         'description' => 'Flow Description',
         'trigger' => 'post',
         'options' => [
-            'resource' => 'Post',
+            'resource' => Post::class,
             'event' => 'created',
             // Filter more specific
         ],
@@ -112,7 +112,7 @@ test('flow - data update multiple operation', function () {
         'description' => 'Flow Description',
         'trigger' => 'post',
         'options' => [
-            'resource' => 'Post',
+            'resource' => Post::class,
             'event' => 'created',
             // Filter more specific
         ],

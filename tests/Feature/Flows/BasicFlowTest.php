@@ -20,7 +20,7 @@ test('flow - log operation', function () {
         'description' => 'Test Flow Description',
         'trigger' => 'post',
         'options' => [
-            'resource' => 'Post',
+            'resource' => Post::class,
             'event' => 'created',
             // Filter more specific
         ],

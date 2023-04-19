@@ -39,7 +39,7 @@ test('flow - delete resource operation', function () {
         'description' => 'Flow Description',
         'trigger' => 'post',
         'options' => [
-            'resource' => 'Post',
+            'resource' => Post::class,
             'event' => 'created',
             // Filter more specific
         ],
@@ -47,7 +47,7 @@ test('flow - delete resource operation', function () {
 
     // Create Operation and Attach to Flow
     $flow->operations()->create([
-        'name' => 'Create Data',
+        'name' => 'Delete Data',
         'key' => 'test-operation',
         'type' => 'Eminiarts\\Aura\\Operations\\DeleteResource',
         'options' => [
@@ -67,7 +67,7 @@ test('flow - delete resource operation', function () {
 
     // Assert Flow and Operation are in DB
     $this->assertDatabaseHas('flows', ['name' => 'Flow']);
-    $this->assertDatabaseHas('flow_operations', ['name' => 'Create Data']);
+    $this->assertDatabaseHas('flow_operations', ['name' => 'Delete Data']);
 
     // Test $flow->operation_id is $flow->operations()->first()->id
     $this->assertEquals($flow->operation_id, $flow->operations()->first()->id);

@@ -20,7 +20,7 @@ test('flow - a flow can change data and pass it to the next operation', function
         'name' => 'Flow 1',
         'trigger' => 'post',
         'options' => [
-            'resource' => 'Post',
+            'resource' => Post::class,
             'event' => 'created',
             // Filter more specific
         ],
@@ -35,7 +35,7 @@ test('flow - a flow can change data and pass it to the next operation', function
             'x' => 2,
             'y' => 2,
 
-            'type' => 'Post',
+            'type' => Post::class,
             'data' => [
                 'title' => 'Updated Title',
                 'content' => 'Updated Content',
