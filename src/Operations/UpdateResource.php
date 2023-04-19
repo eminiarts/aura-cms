@@ -2,6 +2,7 @@
 
 namespace Eminiarts\Aura\Operations;
 
+use Eminiarts\Aura\Resources\Post;
 use Aura\Flows\Resources\Operation;
 
 class UpdateResource extends BaseOperation
@@ -68,8 +69,6 @@ class UpdateResource extends BaseOperation
         //     throw new \Exception('Cannot update post of same type');
         // }
 
-        ray($operation->toArray());
-
         if ($operation->options['type'] != Post::class) {
             // throw an exception if there is no message
             if ($operation->options['resource_ids'] == null) {
@@ -101,13 +100,8 @@ class UpdateResource extends BaseOperation
             }
         }
 
-        // dd('hier?');
-
-        // dump('hallo?', $resource);
         // Get the Resource
         $resources = app($resource)->find($ids);
-
-        // dd($resources);
 
         // Update the Resource
         $resources->each(function ($resource) use ($values) {
