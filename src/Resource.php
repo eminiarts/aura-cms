@@ -16,9 +16,9 @@ use Eminiarts\Aura\Models\Scopes\TypeScope;
 use Eminiarts\Aura\Traits\InitialPostFields;
 use Eminiarts\Aura\Traits\InteractsWithTable;
 use Eminiarts\Aura\Traits\SaveFieldAttributes;
-use Eminiarts\Aura\Jobs\TriggerFlowOnCreatePostEvent;
-use Eminiarts\Aura\Jobs\TriggerFlowOnUpdatePostEvent;
-use Eminiarts\Aura\Jobs\TriggerFlowOnDeletedPostEvent;
+use Aura\Flows\Jobs\TriggerFlowOnCreatePostEvent;
+use Aura\Flows\Jobs\TriggerFlowOnUpdatePostEvent;
+use Aura\Flows\Jobs\TriggerFlowOnDeletedPostEvent;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Concerns\HasTimestamps;
 
