@@ -17,6 +17,17 @@ class Post extends Resource
                'icon-view' => 'aura::components.actions.trash',
                'class' => 'hover:text-red-700 text-red-500 font-bold',
                'confirm' => true,
+               'confirm-title' => 'Delete Post?',
+               'confirm-content' => 'Are you sure you want to delete this post?',
+               'confirm-button' => 'Delete',
+           ],
+           'testAction' => [
+               'label' => 'Test Action',
+               'class' => 'hover:text-primary-700 text-primary-500 font-bold',
+               'confirm' => true,
+               'confirm-title' => 'Test Action Post?',
+               'confirm-content' => 'Are you sure you want to test Action?',
+               'confirm-button' => 'Yup',
            ],
        ];
 

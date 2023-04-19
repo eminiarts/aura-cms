@@ -20,7 +20,7 @@
     {{ $slot }}
 </span>
 
-@once
+{{-- @once --}}
 <x-aura::dialog-modal wire:model="confirmingAction">
     <x-slot name="title">
         {{ $title }}
@@ -42,4 +42,4 @@
         </x-aura::button.primary>
     </x-slot>
 </x-aura::dialog-modal>
-@endonce
+{{-- @endonce --}}
