@@ -2,12 +2,13 @@
 
 namespace Eminiarts\Aura\Http\Livewire;
 
+use Livewire\Component;
+use Illuminate\Support\Str;
 use Eminiarts\Aura\Facades\Aura;
 use Eminiarts\Aura\Traits\HasActions;
 use Eminiarts\Aura\Traits\SaveFields;
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
-use Illuminate\Support\Str;
-use Livewire\Component;
 
 class Posttype extends Component
 {
@@ -39,8 +40,8 @@ class Posttype extends Component
               'label' => 'Generate Migration',
               'class' => 'hover:text-primary-700 text-primary-500 font-bold',
               'confirm' => true,
-              'confirm-title' => 'Test Action Post?',
-              'confirm-content' => 'Are you sure you want to generate a Migration?',
+              'confirm-title' => 'Generate Resource Migration',
+              'confirm-content' => 'Are you sure you want to generate a Migration? Make sure to have a look at the migration file before running it.',
               'confirm-button' => 'Generate',
           ],
       ];
@@ -49,7 +50,11 @@ class Posttype extends Component
 
     public function generateMigration()
     {
-        dd('generate migration');
+        Artisan::call('aura:create-resource-migration', [
+            'resource' => $this->model::class,
+        ]);
+
+        $this->notify('Successfully generated migration for: '.$this->model->name);
     }
 
     public function delete()

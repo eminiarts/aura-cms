@@ -1,8 +1,8 @@
 @props(['id' => null, 'maxWidth' => null])
 
 <x-aura::jet-modal-js :id="$id" :maxWidth="$maxWidth" {{ $attributes }}>
-    <div class="px-6 py-4">
-        <div class="text-lg">
+    <div class="px-6 py-4 text-gray-900 dark:text-gray-100">
+        <div class="text-lg font-semibold">
             {{ $title }}
         </div>
 
