@@ -23,11 +23,11 @@
 {{-- @once --}}
 <x-aura::dialog-modal-js>
     <x-slot name="title">
-        {{ $title }}
+        {!! $title !!}
     </x-slot>
 
     <x-slot name="content">
-        {{ $content }}
+        {!! $content !!}
     </x-slot>
 
     <x-slot name="footer">

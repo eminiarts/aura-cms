@@ -354,7 +354,9 @@ trait AuraModelConfig
      */
     public function meta()
     {
-        return $this->hasMany(Meta::class, 'post_id')->whereIn('key', $this->getAccessibleFieldKeys());
+        return $this->hasMany(Meta::class, 'post_id')
+        //->whereIn('key', $this->getAccessibleFieldKeys())
+        ;
     }
 
     public function navigation()
