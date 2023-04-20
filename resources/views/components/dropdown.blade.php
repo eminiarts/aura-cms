@@ -26,7 +26,7 @@ switch ($width) {
     stopPropagation(e) {
         e.stopPropagation();
     } 
-}" @click.outside="open = false" @close.stop="open = false">
+}" @click.outside="open = false" @close.stop="open = false" x-on:action-confirmed.window="open=false;">
     <div @click="open = ! open">
         {{ $trigger }}
     </div>

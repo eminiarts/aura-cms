@@ -1,5 +1,5 @@
 <div class="flex items-center space-x-2">
-        <x-aura::dropdown :closeOnSelect="true" width="w-96">
+        <x-aura::dropdown width="w-96">
             <x-slot name="trigger">
                 <x-aura::button.transparent>
                         <x-aura::icon.dots class="w-5 h-5 mr-2" />

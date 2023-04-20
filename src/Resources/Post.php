@@ -35,6 +35,11 @@ class Post extends Resource
         'deleteSelected' => 'Delete',
     ];
 
+    public function testAction()
+    {
+        //dd('hier');
+    }
+
     public static $fields = [];
 
     public static ?string $slug = 'post';
