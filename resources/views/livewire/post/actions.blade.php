@@ -1,3 +1,4 @@
+@if(count($this->actions))
 <x-aura::dropdown width="w-96">
         <x-slot name="trigger">
             <x-aura::button.transparent>
@@ -74,3 +75,4 @@
             </div>
         </x-slot>
     </x-aura::dropdown>
+@endif
