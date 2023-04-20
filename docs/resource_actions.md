@@ -105,6 +105,7 @@ public array $actions = [
         'confirm-title' => 'Delete Post?',
         'confirm-content' => 'Are you sure you want to delete this post?',
         'confirm-button' => 'Delete',
+        'confirm-button-class' => 'bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded',
     ],
     'testAction' => [
         'label' => 'Test Action',
