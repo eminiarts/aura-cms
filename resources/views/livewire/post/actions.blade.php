@@ -1,5 +1,4 @@
-<div class="flex items-center space-x-2">
-    <x-aura::dropdown width="w-96">
+<x-aura::dropdown width="w-96">
         <x-slot name="trigger">
             <x-aura::button.transparent>
                 <x-aura::icon.dots class="w-5 h-5 mr-2" />
@@ -75,26 +74,3 @@
             </div>
         </x-slot>
     </x-aura::dropdown>
-    {{-- If the $model is an instance of User Resource, add a button to impersonate the user --}}
-    @if ($model instanceof Eminiarts\Aura\Resources\User)
-    <x-aura::button.transparent :href="route('impersonate', $model->id)">
-        <x-slot:icon>
-            <x-aura::icon class="w-5 h-5 mr-2" icon="user-impersonate" />
-        </x-slot:icon>
-        Impersonate
-    </x-aura::button.transparent>
-    @endif
-    <a href="{{ route('aura.post.view', [$slug, $model->id]) }}" class="text-gray-500 hover:text-gray-700">
-        <x-aura::button.transparent size="lg">
-            <x-aura::icon.view class="w-5 h-5 mr-2" />
-            View
-        </x-aura::button.transparent>
-    </a>
-
-    <x-aura::button size="lg" wire:click="save">
-        <div wire:loading>
-            <x-aura::icon.loading />
-        </div>
-        Save
-    </x-aura::button>
-</div>
