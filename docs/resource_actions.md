@@ -78,6 +78,49 @@ In this example, there are three actions defined: `publish`, `unpublish`, and `d
 
 Note that the `$actions` property is an optional property in the `Post` model, and you can define it or leave it undefined depending on your needs. If it's undefined, the dropdown menu will not be displayed.
 
+## Confirmation Dialogs
+
+You can add a confirmation dialog to your actions to ask users for confirmation before executing the action. To add a confirmation dialog, use the following properties in your `$actions` property:
+
+1.  `confirm`: Set this property to `true` to enable the confirmation dialog for the action. Default value is `false`.
+    
+2.  `confirm-title`: The title of the confirmation dialog. This property is optional; if not provided, a default title will be used.
+    
+3.  `confirm-content`: The content of the confirmation dialog. This property is optional; if not provided, a default content will be used.
+    
+4.  `confirm-button`: The text of the confirmation button. This property is optional; if not provided, a default button text will be used.
+    
+
+Here's an example of how to use the confirmation properties in your `$actions`:
+
+php
+
+```php
+public array $actions = [
+    'delete' => [
+        'label' => 'Delete',
+        'icon-view' => 'aura::components.actions.trash',
+        'class' => 'hover:text-red-700 text-red-500 font-bold',
+        'confirm' => true,
+        'confirm-title' => 'Delete Post?',
+        'confirm-content' => 'Are you sure you want to delete this post?',
+        'confirm-button' => 'Delete',
+    ],
+    'testAction' => [
+        'label' => 'Test Action',
+        'class' => 'hover:text-primary-700 text-primary-500 font-bold',
+        'confirm' => true,
+        'confirm-title' => 'Test Action Post?',
+        'confirm-content' => 'Are you sure you want to test Action?',
+        'confirm-button' => 'Yup',
+    ],
+];
+```
+
+In this example, the `delete` and `testAction` actions have confirmation dialogs enabled with custom titles, contents, and button texts. When a user clicks on one of these actions, they will be prompted with a confirmation dialog before the action is executed. If the user confirms, the action will proceed; otherwise, the action will be canceled.
+
+Remember that the `confirm`, `confirm-title`, `confirm-content`, and `confirm-button` properties are optional. If you don't provide a value for these properties, the default values will be used.
+
 ## Properties
 
 Here's a breakdown of the possible properties you can use in the `$actions` property:
@@ -90,6 +133,13 @@ Here's a breakdown of the possible properties you can use in the `$actions` prop
     
 4.  `class`: The CSS class or classes to be applied to the action element. This property is optional.
     
+5.  `confirm`: Set this property to `true` to enable the confirmation dialog for the action. Default value is `false`. This property is optional.
+    
+6.  `confirm-title`: The title of the confirmation dialog. This property is optional; if not provided, a default title will be used.
+    
+7.  `confirm-content`: The content of the confirmation dialog. This property is optional; if not provided, a default content will be used.
+    
+8.  `confirm-button`: The text of the confirmation button. This property is optional; if not provided, a default button text will be used.
 
 You can use any combination of these properties, depending on your needs. For example, if you want to display an icon with a label and apply a custom CSS class to the action element, you can define your `$actions` property like this:
 
