@@ -16,7 +16,8 @@
             <h1 class="text-3xl font-semibold">Edit {{ $model::getType() }} Fields</h1>
         </div>
 
-        <div>
+        <div class="flex items-center space-x-2">
+            @include('aura::livewire.post.actions')
             <x-aura::button size="lg" wire:click="save">
                 <div wire:loading>
                     <x-aura::icon.loading />
