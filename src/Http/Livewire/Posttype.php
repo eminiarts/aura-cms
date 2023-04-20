@@ -3,6 +3,7 @@
 namespace Eminiarts\Aura\Http\Livewire;
 
 use Eminiarts\Aura\Facades\Aura;
+use Eminiarts\Aura\Traits\HasActions;
 use Eminiarts\Aura\Traits\SaveFields;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Support\Str;
@@ -12,6 +13,57 @@ class Posttype extends Component
 {
     use AuthorizesRequests;
     use SaveFields;
+    use HasActions;
+
+    public function singleAction($action)
+    {
+        $this->{$action}();
+
+        $this->notify('Successfully ran: '.$action);
+    }
+
+    public function getActionsProperty()
+    {
+        return [
+          'delete' => [
+              'label' => 'Delete',
+              'icon-view' => 'aura::components.actions.trash',
+              'class' => 'hover:text-red-700 text-red-500 font-bold',
+              'confirm' => true,
+              'confirm-title' => 'Delete Posttype?',
+              'confirm-content' => 'Are you sure you want to delete this Posttype?',
+              'confirm-button' => 'Delete',
+               'confirm-button-class' => 'ml-3 bg-red-600 hover:bg-red-700',
+          ],
+          'generateMigration' => [
+              'label' => 'Generate Migration',
+              'class' => 'hover:text-primary-700 text-primary-500 font-bold',
+              'confirm' => true,
+              'confirm-title' => 'Test Action Post?',
+              'confirm-content' => 'Are you sure you want to generate a Migration?',
+              'confirm-button' => 'Generate',
+          ],
+      ];
+
+    }
+
+    public function generateMigration()
+    {
+        dd('generate migration');
+    }
+
+    public function delete()
+    {
+        $a = new \ReflectionClass($this->model::class);
+
+        // Delete file
+        unlink($a->getFileName());
+
+        $this->notify('Successfully deleted: '.$this->model->name);
+
+        return redirect()->route('aura.dashboard');
+    }
+
 
     public $fields = [];
 
