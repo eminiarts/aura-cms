@@ -169,30 +169,6 @@ trait AuraModelConfig
         return [];
     }
 
-    public function getFieldsAttribute()
-    {
-        $meta = $this->meta->pluck('value', 'key');
-
-        $defaultValues = $this->inputFields()->pluck('slug')->mapWithKeys(fn ($value, $key) => [$value => null])->map(fn ($value, $key) => $meta[$key] ?? $value)->map(function ($value, $key) {
-            // If the value is set on the model, use it
-            if (isset($this->attributes[$key])) {
-                return $this->attributes[$key];
-            }
-        });
-
-        $meta = $meta->map(function ($meta, $key) {
-            $class = $this->fieldClassBySlug($key);
-
-            if ($class && method_exists($class, 'get')) {
-                return $class->get($class, $meta);
-            }
-
-            return $meta;
-        });
-
-        return $defaultValues->merge($meta);
-    }
-
     public static function getGlobalSearch()
     {
         return static::$globalSearch;
