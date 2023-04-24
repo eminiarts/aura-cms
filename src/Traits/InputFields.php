@@ -9,6 +9,7 @@ use Eminiarts\Aura\Pipeline\AddIdsToFields;
 use Eminiarts\Aura\Pipeline\TransformSlugs;
 use Eminiarts\Aura\Pipeline\FilterEditFields;
 use Eminiarts\Aura\Pipeline\FilterViewFields;
+use Eminiarts\Aura\Traits\InputFieldsHelpers;
 use Eminiarts\Aura\Pipeline\FilterCreateFields;
 use Eminiarts\Aura\Pipeline\BuildTreeFromFields;
 use Eminiarts\Aura\Pipeline\RemoveValidationAttribute;

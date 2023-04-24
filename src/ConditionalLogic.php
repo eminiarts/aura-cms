@@ -87,12 +87,6 @@ class ConditionalLogic
             }
         }
 
-        if ($field['slug'] == 'primarySelect') {
-            ray($field, $model, $show);
-
-            dd('hier');
-        }
-
         return $show;
     }
 
