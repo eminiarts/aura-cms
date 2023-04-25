@@ -16,6 +16,7 @@ import flatpickr from "flatpickr";
 
 import Tagify from '@yaireo/tagify'
 
+
 window.Tagify = Tagify;
 
 window.Alpine = Alpine;

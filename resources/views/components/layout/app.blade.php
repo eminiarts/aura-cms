@@ -153,8 +153,6 @@
             }
         </script>
 
-        <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
-
   <script>
       // after 100ms trigger a window resize event to force the chart to redraw
       setTimeout(function() {
@@ -167,5 +165,6 @@
   </script>
 
         @vite(['resources/js/app.js'], 'vendor/aura')
+        @vite(['resources/js/apexcharts.js'], 'vendor/aura')
     </body>
 </html>
