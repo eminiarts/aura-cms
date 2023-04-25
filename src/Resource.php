@@ -148,10 +148,11 @@ class Resource extends Model
     {
         // if $this->usesMeta is false, then we don't want to load the meta
         if(optional($this)->meta && is_string($this->meta)) {
-            dd($this->meta);
+            // ray()->trace();
+            // dd($this->meta);
         }
 
-        if ($this->usesMeta() && optional($this)->meta) {
+        if ($this->usesMeta() && optional($this)->meta && !is_string($this->meta)) {
             $meta = $this->meta->pluck('value', 'key');
 
             // Cast Attributes
