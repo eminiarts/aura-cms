@@ -20,6 +20,7 @@ class Post extends Resource
                'confirm-title' => 'Delete Post?',
                'confirm-content' => 'Are you sure you want to delete this post?',
                'confirm-button' => 'Delete',
+                'confirm-button-class' => 'ml-3 bg-red-600 hover:bg-red-700',
            ],
            'testAction' => [
                'label' => 'Test Action',

@@ -3,6 +3,7 @@
     'title' => __('Confirm Action'), 
     'content' => __('Are you sure you want to perform this action?'), 
     'button' => __('Confirm'), 
+    'button_class' => 'ml-3', 
 ])
 
 @php
@@ -22,19 +23,19 @@
 {{-- @once --}}
 <x-aura::dialog-modal-js>
     <x-slot name="title">
-        {{ $title }}
+        {!! $title !!}
     </x-slot>
 
     <x-slot name="content">
-        {{ $content }}
+        {!! $content !!}
     </x-slot>
 
     <x-slot name="footer">
-        <x-aura::button.transparent wire:click="stopConfirmingAction" wire:loading.attr="disabled">
+        <x-aura::button.transparent x-on:click="showModal = false" wire:loading.attr="disabled">
             {{ __('Cancel') }}
         </x-aura::button.transparent>
 
-        <x-aura::button.primary class="ml-3" wire:click="confirmAction('{{ $confirmableId }}')" wire:loading.attr="disabled">
+        <x-aura::button.primary class="{{ $button_class }}" wire:click="confirmAction('{{ $confirmableId }}')" wire:loading.attr="disabled">
             {{ $button }}
         </x-aura::button.primary>
     </x-slot>

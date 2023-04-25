@@ -4,8 +4,46 @@ namespace Eminiarts\Aura;
 
 class ConditionalLogic
 {
+    private static $shouldDisplayFieldCache = [];
+
+    public static function clearConditionsCache()
+    {
+        self::$shouldDisplayFieldCache = [];
+    }
+
+    public static function shouldDisplayField($model, $field)
+    {
+        // Generate a unique cache key based on the model's class name, ID, and the field key.
+        $cacheKey = md5(json_encode($model) . '-' . json_encode($field));
+
+        // ray()->count();
+
+        // If the result is already in the cache, return it.
+        if (array_key_exists($cacheKey, self::$shouldDisplayFieldCache)) {
+            return self::$shouldDisplayFieldCache[$cacheKey];
+        }
+
+        // ray(md5(json_encode($model)), $field);
+
+        // ray()->count();
+
+        // Check Conditional Logic if the field should be displayed.
+        $result = self::checkCondition($model, $field);
+
+        // Before returning the result, store it in the cache.
+        self::$shouldDisplayFieldCache[$cacheKey] = $result;
+
+        return $result;
+    }
+
     public static function checkCondition($model, $field)
     {
+        // return true;
+        // ray()->count();
+        // ray($model, $field);
+
+        // dd('hier');
+
         $conditions = optional($field)['conditional_logic'];
 
         if (! $conditions) {
@@ -54,6 +92,8 @@ class ConditionalLogic
 
                     // if $model->fields is set, use that, otherwise, use $model['fields']
 
+                    // dd($condition);
+
                     if (optional($model)->fields) {
                         $fieldValue = $model->fields[$condition['field']];
                     } else {
@@ -85,12 +125,6 @@ class ConditionalLogic
             if (! $show) {
                 break;
             }
-        }
-
-        if ($field['slug'] == 'primarySelect') {
-            ray($field, $model, $show);
-
-            dd('hier');
         }
 
         return $show;

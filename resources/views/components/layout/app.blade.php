@@ -16,7 +16,7 @@
         <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
 
         <!-- Fonts -->
-        <link rel="stylesheet" href="/vendor/aura/assets/inter.css">
+        <link rel="stylesheet" href="/vendor/aura/public/inter.css">
 
         @livewireStyles
 
@@ -153,12 +153,6 @@
             }
         </script>
 
-        <script src="https://unpkg.com/@yaireo/tagify"></script>
-        <script src="https://unpkg.com/@yaireo/tagify/dist/tagify.polyfills.min.js"></script>
-        <link href="https://unpkg.com/@yaireo/tagify/dist/tagify.css" rel="stylesheet" type="text/css" />
-
-          <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
-
   <script>
       // after 100ms trigger a window resize event to force the chart to redraw
       setTimeout(function() {
@@ -171,5 +165,6 @@
   </script>
 
         @vite(['resources/js/app.js'], 'vendor/aura')
+        @vite(['resources/js/apexcharts.js'], 'vendor/aura')
     </body>
 </html>
