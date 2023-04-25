@@ -147,6 +147,10 @@ class Resource extends Model
     public function getFieldsAttribute()
     {
         // if $this->usesMeta is false, then we don't want to load the meta
+        if(optional($this)->meta && is_string($this->meta)) {
+            dd($this->meta);
+        }
+
         if ($this->usesMeta() && optional($this)->meta) {
             $meta = $this->meta->pluck('value', 'key');
 
@@ -247,6 +251,8 @@ class Resource extends Model
         $possibleRelationMethods = [$key, Str::camel($key)];
 
         foreach ($possibleRelationMethods as $method) {
+
+
             if ($method == 'taxonomy') {
                 continue;
             }

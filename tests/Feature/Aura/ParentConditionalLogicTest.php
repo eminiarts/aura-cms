@@ -1,14 +1,14 @@
 <?php
 
-use Eminiarts\Aura\Aura;
+use Eminiarts\Aura\Resource;
 use Eminiarts\Aura\Models\User;
-use Eminiarts\Aura\Pipeline\AddIdsToFields;
-use Eminiarts\Aura\Pipeline\ApplyParentConditionalLogic;
+use Eminiarts\Aura\Facades\Aura;
+use Eminiarts\Aura\Resources\Role;
 use Eminiarts\Aura\Pipeline\ApplyTabs;
 use Eminiarts\Aura\Pipeline\MapFields;
-use Eminiarts\Aura\Resource;
-use Eminiarts\Aura\Resources\Role;
+use Eminiarts\Aura\Pipeline\AddIdsToFields;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Eminiarts\Aura\Pipeline\ApplyParentConditionalLogic;
 
 uses(RefreshDatabase::class);
 
@@ -304,6 +304,9 @@ test('role condition as a Super Admin', function () {
     // Attach Super Admin Role to User
     // $user->resource()->update(['fields' => ['roles' => [$r->id]]]);
 
+    // Clear the cache
+    Aura::clearConditionsCache();
+
     // act as $this->user
     $this->actingAs($superAdmin);
 
@@ -341,6 +344,11 @@ test('role condition as a Admin', function () {
 
     $this->actingAs($user);
 
+
+    // Clear the cache
+    Aura::clearConditionsCache();
+
+
     // As an Admin, "Tab 1" should not be visible
     $this->assertFalse(Aura::checkCondition($model, $fields->firstWhere('slug', 'tab-1')));
 
@@ -365,6 +373,10 @@ test('role condition as a User', function () {
     ]);
 
     $this->actingAs($user = User::factory()->create());
+
+
+    // Clear the cache
+    Aura::clearConditionsCache();
 
     // As a User, fields with roles should not be visible
     $this->assertFalse(Aura::checkCondition($model, $fields->firstWhere('slug', 'tab-1')));
