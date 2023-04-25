@@ -2,7 +2,7 @@
 
 namespace Eminiarts\Aura\Database\Factories;
 
-use Eminiarts\Aura\Models\User;
+use Eminiarts\Aura\Resources\User;
 use Eminiarts\Aura\Resources\Team;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Str;
