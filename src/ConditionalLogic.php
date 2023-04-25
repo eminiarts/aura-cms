@@ -23,7 +23,10 @@ class ConditionalLogic
             return self::$shouldDisplayFieldCache[$cacheKey];
         }
 
-        // ray(md5(json_encode($model)), $field);
+        if($field == 'text3') {
+            ray(md5(json_encode($model)), $field);
+            ray()->trace();
+        }
 
         // ray()->count();
 
@@ -196,6 +199,8 @@ class ConditionalLogic
 
     private static function checkRoleCondition($condition)
     {
+        ray()->red('checkRoleCondition', $condition);
+
         switch ($condition['operator']) {
             case '==':
                 return auth()->user()->resource->hasRole($condition['value']);

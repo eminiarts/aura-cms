@@ -1,8 +1,9 @@
 <?php
 
+use Eminiarts\Aura\Resource;
 use Eminiarts\Aura\Models\Post;
 use Eminiarts\Aura\Models\User;
-use Eminiarts\Aura\Resource;
+use Eminiarts\Aura\Facades\Aura;
 use Eminiarts\Aura\Resources\Role;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
@@ -159,6 +160,7 @@ test('admin can get all fields except text1', function () {
 
     $post = $post->fresh();
 
+    Aura::clearConditionsCache();
     // Assert Post Meta are saved in DB
 
     expect($post->fields->count())->toBe(2);
@@ -186,6 +188,9 @@ test('user can get all fields except text1 and text2', function () {
     expect($post->exists)->toBeTrue();
 
     $post = $post->fresh();
+
+    Aura::clearConditionsCache();
+
 
     expect($post->fields->count())->toBe(1);
     expect($post->text1)->toBeNull();
