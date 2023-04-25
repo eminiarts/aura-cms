@@ -22,6 +22,9 @@ trait InputFields
     use InputFieldsTable;
     use InputFieldsValidation;
 
+    private $accessibleFieldKeysCache = null;
+    private $shouldDisplayFieldCache = [];
+
     public function createFields()
     {
         // Apply Conditional Logic of Parent Fields
@@ -141,24 +144,28 @@ trait InputFields
 
     public function getAccessibleFieldKeys()
     {
-        // Apply Conditional Logic of Parent Fields
-        $fields = $this->sendThroughPipeline($this->fieldsCollection(), [
-            ApplyTabs::class,
-            MapFields::class,
-            AddIdsToFields::class,
-            ApplyParentConditionalLogic::class,
-        ]);
+        if ($this->accessibleFieldKeysCache === null) {
+            // Apply Conditional Logic of Parent Fields
+            $fields = $this->sendThroughPipeline($this->fieldsCollection(), [
+                ApplyTabs::class,
+                MapFields::class,
+                AddIdsToFields::class,
+                ApplyParentConditionalLogic::class,
+            ]);
 
-        // Get all input fields
-        return $fields
-            ->filter(function ($field) {
-                return $field['field']->isInputField();
-                // return in_array($field['field']->type, ['input', 'repeater', 'group']);
-            })
-            ->pluck('slug')
-            ->filter(function ($field) {
-                return $this->shouldDisplayField($field);
-            })->toArray();
+            // Get all input fields
+            $this->accessibleFieldKeysCache = $fields
+                ->filter(function ($field) {
+                    return $field['field']->isInputField();
+                })
+                ->pluck('slug')
+                // ->filter(function ($field) {
+                //     return $this->shouldDisplayField($field);
+                // })
+                ->toArray();
+        }
+
+        return $this->accessibleFieldKeysCache;
     }
 
     public function getFieldsBeforeTree($fields = null)
@@ -261,8 +268,22 @@ trait InputFields
 
     public function shouldDisplayField($key)
     {
-        // Check Conditional Logic if the field should be displayed
-        return ConditionalLogic::checkCondition($this, $this->fieldBySlug($key));
+
+        // Use the static method in the ConditionalLogic class.
+        return ConditionalLogic::shouldDisplayField($this, $key);
+
+        // If the result is already in the cache, return it.
+        if (array_key_exists($key, $this->shouldDisplayFieldCache)) {
+            return $this->shouldDisplayFieldCache[$key];
+        }
+
+        // Check Conditional Logic if the field should be displayed.
+        $result = ConditionalLogic::checkCondition($this, $this->fieldBySlug($key));
+
+        // Before returning the result, store it in the cache.
+        $this->shouldDisplayFieldCache[$key] = $result;
+
+        return $result;
     }
 
     public function taxonomyFields()
