@@ -71,7 +71,7 @@
             {{-- @if ($image = Attachment::find(app('aura')::option('login-bg')))
             style="background-image: url('{{ $image->first()->path() }}');"
             @else
-            {{-- style="background-image: url('/vendor/aura/assets/img/bgop1.jpg');"
+            {{-- style="background-image: url('/vendor/aura/public/img/bgop1.jpg');"
             @endif --}}
 
             @if (

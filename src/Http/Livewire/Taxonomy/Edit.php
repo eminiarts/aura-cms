@@ -2,16 +2,18 @@
 
 namespace Eminiarts\Aura\Http\Livewire\Taxonomy;
 
+use Livewire\Component;
+use Illuminate\Support\Arr;
 use Eminiarts\Aura\Facades\Aura;
+use Eminiarts\Aura\Traits\HasActions;
 use Eminiarts\Aura\Traits\InteractsWithFields;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
-use Illuminate\Support\Arr;
-use Livewire\Component;
 
 class Edit extends Component
 {
     use AuthorizesRequests;
     use InteractsWithFields;
+    use HasActions;
 
     public $inModal = false;
 

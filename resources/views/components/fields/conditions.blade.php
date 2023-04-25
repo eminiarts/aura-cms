@@ -1,7 +1,7 @@
 @props(['field','model'])
 
 @php
-$show = \Eminiarts\Aura\Aura::checkCondition($model, $field);
+$show = app('aura')::checkCondition($model, $field['slug']);
 @endphp
 
 @if ($show)

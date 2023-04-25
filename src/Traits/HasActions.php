@@ -2,8 +2,13 @@
 
 namespace Eminiarts\Aura\Traits;
 
-trait ConfirmsActions
+trait HasActions
 {
+    public function getActionsProperty()
+    {
+        return $this->model->getActions();
+    }
+
     /**
      * Confirm the user's action.
      *
@@ -15,5 +20,12 @@ trait ConfirmsActions
             'id' => $id,
         ]);
 
+    }
+
+    public function singleAction($action)
+    {
+        $this->model->{$action}();
+
+        $this->notify('Successfully ran: '.$action);
     }
 }

@@ -187,6 +187,13 @@ class AuraServiceProvider extends PackageServiceProvider
 
     public function packageBooted()
     {
+        if ($this->app->runningInConsole()) {
+            $this->publishes([
+                $this->package->basePath('/../resources/dist') => public_path("vendor/{$this->package->shortName()}"),
+                $this->package->basePath('/../resources/public') => public_path("vendor/{$this->package->shortName()}/public"),
+            ], "{$this->package->shortName()}-assets");
+        }
+
         Component::macro('notify', function ($message, $type = 'success') {
             $this->dispatchBrowserEvent('notify', ['message' => $message, 'type' => $type]);
         });

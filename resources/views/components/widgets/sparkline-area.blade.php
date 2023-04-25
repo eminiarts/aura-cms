@@ -19,7 +19,7 @@
               values: {{ json_encode(array_values($this->values['current'])) }},
               labels: {{ json_encode(array_keys($this->values['current'])) }},
               init() {
-                  let chart = new ApexCharts(this.$refs.chart, this.options)
+                  let chart = new window.ApexCharts(this.$refs.chart, this.options)
 
                   chart.render()
 

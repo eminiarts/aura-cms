@@ -1,11 +1,16 @@
 {
   "resources/css/app.css": {
-    "file": "assets/app-0b6928d1.css",
+    "file": "assets/app-4861542c.css",
     "isEntry": true,
     "src": "resources/css/app.css"
   },
+  "resources/js/apexcharts.js": {
+    "file": "assets/apexcharts-d0415bd3.js",
+    "isEntry": true,
+    "src": "resources/js/apexcharts.js"
+  },
   "resources/js/app.js": {
-    "file": "assets/app-33415ffe.js",
+    "file": "assets/app-ed61a866.js",
     "isEntry": true,
     "src": "resources/js/app.js"
   }

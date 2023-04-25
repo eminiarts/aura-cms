@@ -160,7 +160,8 @@ test('admin can get all fields except text1', function () {
     $post = $post->fresh();
 
     // Assert Post Meta are saved in DB
-    expect($post->meta()->count())->toBe(2);
+
+    expect($post->fields->count())->toBe(2);
 
     //  Admin should not be able to call $post->text1, it should return null
     expect($post->text1)->toBeNull();
@@ -186,7 +187,7 @@ test('user can get all fields except text1 and text2', function () {
 
     $post = $post->fresh();
 
-    expect($post->meta()->count())->toBe(1);
+    expect($post->fields->count())->toBe(1);
     expect($post->text1)->toBeNull();
     expect($post->text2)->toBeNull();
     expect($post->text3)->toBe('Text 3');
