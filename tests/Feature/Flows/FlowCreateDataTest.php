@@ -7,12 +7,13 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
 
-uses()->group('flows');
+uses()->group('current');
 
 beforeEach(fn () => $this->actingAs($this->user = User::factory()->create()));
 
 test('flow - create resource operation', function () {
     createSuperAdmin();
+
 
     // Create Flow
     $flow = Flow::create([
@@ -20,11 +21,13 @@ test('flow - create resource operation', function () {
         'description' => 'Flow Description',
         'trigger' => 'post',
         'options' => [
-            'resource' => 'Post',
+            'resource' => Post::class,
             'event' => 'created',
             // Filter more specific
         ],
     ]);
+
+    //ray()->showQueries();
 
     // Create Operation and Attach to Flow
     $flow->operations()->create([
@@ -35,7 +38,7 @@ test('flow - create resource operation', function () {
             'x' => 2,
             'y' => 2,
 
-            'resource' => 'Eminiarts\\Aura\\Resources\\Page',
+            'resource' => 'Eminiarts\\Aura\\Resources\\Attachment',
             'data' => [
                 'title' => 'Post created by Flow',
                 'status' => 'draft',
@@ -43,8 +46,14 @@ test('flow - create resource operation', function () {
         ],
     ]);
 
+    // dd($flow->operations);
+
     // Attach Operation_id to flow
     $flow->update(['operation_id' => $flow->operations()->first()->id]);
+
+
+    // ray()->stopShowingQueries();
+
 
     // Assert Flow has 1 Operation
     $this->assertEquals(1, $flow->operations()->count());
@@ -56,6 +65,9 @@ test('flow - create resource operation', function () {
     // Test $flow->operation_id is $flow->operations()->first()->id
     $this->assertEquals($flow->operation_id, $flow->operations()->first()->id);
 
+    // Assert operation options resource is Eminiarts\Aura\Resources\Attachment
+    $this->assertEquals('Eminiarts\\Aura\\Resources\\Attachment', $flow->operations()->first()->options['resource']);
+
     // Create a Post
     $firstPost = Post::create([
         'title' => 'Test Post 1',
@@ -64,21 +76,17 @@ test('flow - create resource operation', function () {
         'status' => 'published',
     ]);
 
-    // dd('hier');
-
     // Assert Post is in DB
     $this->assertDatabaseHas('posts', ['title' => 'Test Post 1', 'type' => 'Post', 'status' => 'published']);
 
     // Assert Post 2 is in DB
-    $this->assertDatabaseHas('posts', ['title' => 'Post created by Flow', 'status' => 'draft', 'type' => 'Page']);
+    $this->assertDatabaseHas('posts', ['title' => 'Post created by Flow', 'status' => 'draft', 'type' => 'Attachment']);
 
     // Assert Flow is triggered when Post is created
     $this->assertDatabaseHas('flow_logs', ['flow_id' => $flow->id]);
 
     // Assert Flow Operation is triggered when Post is created
     $this->assertDatabaseHas('flow_operation_logs', ['operation_id' => $flow->operation_id]);
-
-    // dd($post->toArray(), $flow->toArray());
 });
 
 test('flow - cannot create post of same type on create', function () {
@@ -90,7 +98,7 @@ test('flow - cannot create post of same type on create', function () {
         'description' => 'Flow Description',
         'trigger' => 'post',
         'options' => [
-            'resource' => 'Post',
+            'resource' => Post::class,
             'event' => 'created',
             // Filter more specific
         ],

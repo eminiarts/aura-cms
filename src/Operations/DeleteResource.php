@@ -54,14 +54,18 @@ class DeleteResource extends BaseOperation
 
     public function run(Operation $operation, $post, $operationLog)
     {
-        // dd('delete resource', $operation->options['type'], $operation->toArray(), $post->toArray(), $operationLog->toArray());
+        ray('delete resource', $operation->options['type'], $operation->toArray(), $post->toArray(), $operationLog->toArray());
+
+        // dd($operation->flow->trigger == 'post' && get_class($post) == $operation->flow->options['resource'], get_class($post));
         // get the resource type of the post and the resource type of the flow trigger
         // throw an exception if the resource type of the post is the same as the resource type of the flow trigger
-        if ($operation->flow->trigger == 'post' && 'Eminiarts\\Aura\\Resources\\'.$post->type == $operation->flow->options['resource']) {
-            throw new \Exception('Cannot delete post of same type');
-        }
+        // if ($operation->flow->trigger == 'post' && get_class($post) == $operation->flow->options['resource']) {
+        //     throw new \Exception('Cannot delete post of same type');
+        // }
 
-        if (isset($operation->flow->options['event']) && $operation->flow->options['event'] == 'deleted' && 'Eminiarts\\Aura\\Resources\\'.$post->type == $operation->options['resource']) {
+        // dd('bish ier');
+
+        if (isset($operation->flow->options['event']) && $operation->flow->options['event'] == 'deleted' && get_class($post) == $operation->options['resource']) {
             throw new \Exception('Cannot delete post of same type');
         }
 
@@ -78,7 +82,7 @@ class DeleteResource extends BaseOperation
             $resource = $operation->options['resource'] ?? throw new \Exception('No Resource');
         } else {
             $ids = [$post->id];
-            $resource = 'Eminiarts\\Aura\\Resources\\'.$post->type;
+            $resource = get_class($post);
         }
 
         // Get the Resource

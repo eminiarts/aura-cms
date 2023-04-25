@@ -4,11 +4,12 @@ use Aura\Flows\Resources\Flow;
 use Eminiarts\Aura\Models\User;
 use Eminiarts\Aura\Resources\Post;
 use Eminiarts\Aura\Resources\Role;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
 
-uses()->group('flows');
+// uses()->group('current');
 
 beforeEach(fn () => $this->actingAs($this->user = User::factory()->create()));
 
@@ -21,7 +22,7 @@ test('flow gets triggered on create post and sends a notification to a user', fu
         'description' => 'Notification Flow Description',
         'trigger' => 'post',
         'options' => [
-            'resource' => 'Post',
+            'resource' => Post::class,
             'event' => 'created',
         ],
     ]);
@@ -88,7 +89,7 @@ test('flow gets triggered on create post and sends a notification to a role', fu
         'description' => 'Notification Flow Description',
         'trigger' => 'post',
         'options' => [
-            'resource' => 'Post',
+            'resource' => Post::class,
             'event' => 'created',
         ],
     ]);
@@ -103,7 +104,7 @@ test('flow gets triggered on create post and sends a notification to a role', fu
             'y' => 2,
             'message' => 'Post has been created',
             'type' => 'role',
-            'role_id' => Role::first()->id,
+            'role_id' => $this->user->resource->roles->first()->id,
         ],
     ]);
 
@@ -130,10 +131,6 @@ test('flow gets triggered on create post and sends a notification to a role', fu
 
     // Assert Post is in DB
     $this->assertDatabaseHas('posts', ['title' => 'Test Post']);
-
-    // how many users with role of ID 1 are there?
-
-    // dd(Role::first()->users()->count(), DB::table('notifications')->count());
 
     // Assert db notification  has one notification
     $this->assertEquals(1, DB::table('notifications')->count());

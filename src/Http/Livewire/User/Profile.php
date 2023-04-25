@@ -260,7 +260,7 @@ class Profile extends Component
 
     public function save()
     {
-        ray($this->post['fields'], $this->rules());
+        // ray($this->post['fields'], $this->rules());
         $this->validate();
 
         // if $this->post['fields']['current_password'] and  is set, save password

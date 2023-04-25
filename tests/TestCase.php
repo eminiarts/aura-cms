@@ -11,6 +11,7 @@ use Laravel\Fortify\FortifyServiceProvider;
 use Livewire\LivewireServiceProvider;
 use LivewireUI\Modal\LivewireModalServiceProvider;
 use Orchestra\Testbench\TestCase as Orchestra;
+use Spatie\LaravelRay\RayServiceProvider;
 
 class TestCase extends Orchestra
 {
@@ -48,6 +49,7 @@ class TestCase extends Orchestra
             ImageServiceProvider::class,
             // FortifyServiceProvider::class,
             EAFortifyServiceProvider::class,
+            RayServiceProvider::class,
         ];
     }
 }

@@ -5,9 +5,9 @@ namespace Eminiarts\Aura\Models;
 use Aura\Flows\Resources\Flow;
 use Eminiarts\Aura\Aura;
 use Eminiarts\Aura\BaseResource;
-use Eminiarts\Aura\Jobs\TriggerFlowOnCreatePostEvent;
-use Eminiarts\Aura\Jobs\TriggerFlowOnDeletedPostEvent;
-use Eminiarts\Aura\Jobs\TriggerFlowOnUpdatePostEvent;
+use Aura\Flows\Jobs\TriggerFlowOnCreatePostEvent;
+use Aura\Flows\Jobs\TriggerFlowOnDeletedPostEvent;
+use Aura\Flows\Jobs\TriggerFlowOnUpdatePostEvent;
 use Eminiarts\Aura\Models\Scopes\TeamScope;
 use Eminiarts\Aura\Models\Scopes\TypeScope;
 use Eminiarts\Aura\Resource;
@@ -153,7 +153,7 @@ class Post extends BaseResource
                 }
 
                 // if (optional($this->fieldBySlug($key))['type']) {
-            //     return app($this->fieldBySlug($key)['type'])->get($meta);
+                //     return app($this->fieldBySlug($key)['type'])->get($meta);
                 // }
 
                 return $meta;

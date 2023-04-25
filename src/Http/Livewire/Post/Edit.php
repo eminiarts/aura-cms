@@ -2,14 +2,15 @@
 
 namespace Eminiarts\Aura\Http\Livewire\Post;
 
-use Eminiarts\Aura\Facades\Aura;
+use Livewire\Component;
+use Illuminate\Support\Arr;
 use Eminiarts\Aura\Models\Post;
-use Eminiarts\Aura\Traits\InteractsWithFields;
+use Eminiarts\Aura\Facades\Aura;
 use Eminiarts\Aura\Traits\MediaFields;
 use Eminiarts\Aura\Traits\RepeaterFields;
+use Eminiarts\Aura\Traits\HasActions;
+use Eminiarts\Aura\Traits\InteractsWithFields;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
-use Illuminate\Support\Arr;
-use Livewire\Component;
 
 class Edit extends Component
 {
@@ -17,6 +18,7 @@ class Edit extends Component
     use InteractsWithFields;
     use MediaFields;
     use RepeaterFields;
+    use HasActions;
 
     public $inModal = false;
 
@@ -33,11 +35,6 @@ class Edit extends Component
     // Listen for selectedAttachment
     protected $listeners = ['updateField' => 'updateField'];
 
-    public function getActionsProperty()
-    {
-        return $this->model->getActions();
-    }
-
     public function getTaxonomiesProperty()
     {
         return $this->model->getTaxonomies();
@@ -47,19 +44,13 @@ class Edit extends Component
     {
         $this->slug = $slug;
 
-        // dd($slug);
-
         $this->model = Aura::findResourceBySlug($slug)->find($id);
-
-        // dd($this->model->toArray());
 
         // Authorize
         $this->authorize('update', $this->model);
 
         // Array instead of Eloquent Model
         $this->post = $this->model->attributesToArray();
-
-        // dd($this->post);
 
         $this->post['terms'] = $this->model->terms;
 
@@ -102,10 +93,5 @@ class Edit extends Component
         }
     }
 
-    public function singleAction($action)
-    {
-        $this->model->{$action}();
 
-        $this->notify('Successfully ran: '.$action);
-    }
 }

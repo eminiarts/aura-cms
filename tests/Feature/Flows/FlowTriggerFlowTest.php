@@ -19,7 +19,7 @@ test('flow - a flow can trigger another flow', function () {
         'name' => 'Flow 1',
         'trigger' => 'post',
         'options' => [
-            'resource' => 'Post',
+            'resource' => Post::class,
             'event' => 'created',
             // Filter more specific
         ],

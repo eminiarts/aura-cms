@@ -2,6 +2,7 @@
 
 namespace Eminiarts\Aura\Operations;
 
+use Eminiarts\Aura\Resources\Post;
 use Aura\Flows\Resources\Operation;
 
 class UpdateResource extends BaseOperation
@@ -63,11 +64,12 @@ class UpdateResource extends BaseOperation
     {
         // dd('send notification', $operation->toArray(), $post->toArray(), $operationLog->toArray());
         // dump('update resource', $operation->options);
-        if ($operation->flow->options['event'] == 'updated' && 'Eminiarts\\Aura\\Resources\\'.$post->type == $operation->options['resource']) {
-            throw new \Exception('Cannot update post of same type');
-        }
 
-        if ($operation->options['type'] != 'Post') {
+        // if ($operation->flow->options['event'] == 'updated' && get_class($post) == $operation->options['resource']) {
+        //     throw new \Exception('Cannot update post of same type');
+        // }
+
+        if ($operation->options['type'] != Post::class) {
             // throw an exception if there is no message
             if ($operation->options['resource_ids'] == null) {
                 throw new \Exception('No Resource Ids');
@@ -80,7 +82,7 @@ class UpdateResource extends BaseOperation
             $resource = $operation->options['resource'];
         } else {
             $ids = [$post->id];
-            $resource = 'Eminiarts\\Aura\\Resources\\'.$post->type;
+            $resource = get_class($post);
         }
 
         if ($operation->options['data'] == null) {
@@ -98,17 +100,14 @@ class UpdateResource extends BaseOperation
             }
         }
 
-        // dd('hier?');
-
-        // dump('hallo?', $resource);
         // Get the Resource
         $resources = app($resource)->find($ids);
 
-        // dd($resources);
-
         // Update the Resource
         $resources->each(function ($resource) use ($values) {
-            $resource->update($values);
+            // update the resource silently
+
+            $resource->updateQuietly($values);
         });
 
         // Update the operation_log

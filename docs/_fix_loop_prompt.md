@@ -1,56 +1,103 @@
-<?php
+I am working in Laravel. My request is taking > 10 seconds. I think I know where the problem is, but don’t know how to solve it yet. My Eloquent model has fields and a function which checks if the field should be displayd. the problem is that that function relies on the fields itself and gets in a loop.
 
-namespace Eminiarts\Aura;
+here’s the code of the functions in my eloquent model:
+
+```php
+ public function getFieldsAttribute()
+    {
+        if ($this->usesMeta() && optional($this)->meta) {
+            $meta = $this->meta->pluck('value', 'key');
+
+            $meta = $meta->map(function ($meta, $key) {
+                $class = $this->fieldClassBySlug($key);
+
+                if ($class && method_exists($class, 'get')) {
+                    return $class->get($class, $meta);
+                }
+
+                return $meta;
+            });
+        }
+
+        $defaultValues = $this->getFieldSlugs()->mapWithKeys(fn ($value, $key) => [$value => null])->map(fn ($value, $key) => $meta[$key] ?? $value)->map(function ($value, $key) {
+            if (in_array($key, $this->hidden)) {
+                return;
+            }
+
+            $method = 'get'.Str::studly($key).'Field';
+
+            if (method_exists($this, $method)) {
+                return $this->{$method}();
+            }
+
+            $class = $this->fieldClassBySlug($key);
+
+            if ($class && isset($this->{$key}) && method_exists($class, 'get')) {
+                return $class->get($class, $this->{$key});
+            }
+
+            if (isset($this->{$key})) {
+                return $this->{$key};
+            }
+
+            if (isset($this->attributes[$key])) {
+                return $this->attributes[$key];
+            }
+        });
+
+        return $defaultValues->merge($meta ?? [])->filter(function ($value, $key) {
+
+            // this gets called too much
+            if (! in_array($key, $this->getAccessibleFieldKeys())) {
+                return false;
+            }
+
+            return true;
+
+        });
+    }
+
+    public function getAccessibleFieldKeys()
+    {
+        // Apply Conditional Logic of Parent Fields
+        $fields = $this->sendThroughPipeline($this->fieldsCollection(), [
+            ApplyTabs::class,
+            MapFields::class,
+            AddIdsToFields::class,
+            ApplyParentConditionalLogic::class,
+        ]);
+
+        // Get all input fields
+        return $fields
+            ->filter(function ($field) {
+                return $field['field']->isInputField();
+            })
+            ->pluck('slug')
+            ->filter(function ($field) {
+                return $this->shouldDisplayField($field);
+            })->toArray();
+    }
+
+    public function shouldDisplayField($key)
+    {
+        // Check Conditional Logic if the field should be displayed. This itself relies on the fields, so it gets in a loop
+        return ConditionalLogic::checkCondition($this, $this->fieldBySlug($key));
+    }
+```
+
+ConditionalLogic.php
+```php
 
 class ConditionalLogic
 {
-    private static $shouldDisplayFieldCache = [];
-
-    public static function clearConditionsCache()
-    {
-        self::$shouldDisplayFieldCache = [];
-    }
-
-    public static function shouldDisplayField($model, $field)
-    {
-        // Generate a unique cache key based on the model's class name, ID, and the field key.
-        $cacheKey = md5(json_encode($model) . '-' . json_encode($field));
-
-        // ray()->count();
-
-        // If the result is already in the cache, return it.
-        if (array_key_exists($cacheKey, self::$shouldDisplayFieldCache)) {
-            return self::$shouldDisplayFieldCache[$cacheKey];
-        }
-
-        // ray(md5(json_encode($model)), $field);
-
-        // ray()->count();
-
-        // Check Conditional Logic if the field should be displayed.
-        $result = self::checkCondition($model, $field);
-
-        // Before returning the result, store it in the cache.
-        self::$shouldDisplayFieldCache[$cacheKey] = $result;
-
-        return $result;
-    }
-
     public static function checkCondition($model, $field)
     {
-        // return true;
-        // ray()->count();
-        // ray($model, $field);
-
-        // dd('hier');
-
         $conditions = optional($field)['conditional_logic'];
 
         if (! $conditions) {
             return true;
         }
 
-        // If this runs in a job, there is no user
         if (! auth()->user()) {
             return true;
         }
@@ -59,12 +106,10 @@ class ConditionalLogic
 
         foreach ($conditions as $condition) {
             if (! $model) {
-                // dd('break here', $model, $field);
                 $show = false;
                 break;
             }
 
-            // if condition is a closure, run it
             if ($condition instanceof \Closure) {
                 $show = $condition($model);
 
@@ -73,15 +118,12 @@ class ConditionalLogic
                 }
             }
 
-            // if $condition is not an array, break
             if (! is_array($condition)) {
-                // $show = false;
                 break;
             }
 
             switch ($condition['field']) {
                 case 'role':
-                    // Super Admins can do everything
                     if (auth()->user()->resource->isSuperAdmin()) {
                         break;
                     }
@@ -89,11 +131,6 @@ class ConditionalLogic
                     $show = ConditionalLogic::checkRoleCondition($condition);
                     break;
                 default:
-
-                    // if $model->fields is set, use that, otherwise, use $model['fields']
-
-                    // dd($condition);
-
                     if (optional($model)->fields) {
                         $fieldValue = $model->fields[$condition['field']];
                     } else {
@@ -105,7 +142,6 @@ class ConditionalLogic
                         }
                     }
 
-                    // If the $condition['field'] has a dot, undot array
                     if (str_contains($condition['field'], '.')) {
                         $fieldValue = data_get($model['fields'], $condition['field']);
                         $show = ConditionalLogic::checkFieldCondition($condition, $fieldValue);
@@ -153,12 +189,6 @@ class ConditionalLogic
 
             switch ($condition['field']) {
                 case 'role':
-
-                    // Super Admins can do everything
-                    if (auth()->user()->resource->isSuperAdmin()) {
-                        break;
-                    }
-
                     $show = ConditionalLogic::checkRoleCondition($condition);
                     break;
                 default:
@@ -206,3 +236,5 @@ class ConditionalLogic
         }
     }
 }
+
+```
