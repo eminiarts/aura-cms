@@ -16,7 +16,7 @@
         <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
 
         <!-- Fonts -->
-        <link rel="stylesheet" href="/vendor/aura/assets/inter.css">
+        <link rel="stylesheet" href="/vendor/aura/public/inter.css">
 
         @livewireStyles
 
