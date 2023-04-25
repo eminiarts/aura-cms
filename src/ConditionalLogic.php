@@ -16,8 +16,6 @@ class ConditionalLogic
         // Generate a unique cache key based on the model's class name, ID, and the field key.
         $cacheKey = md5(json_encode($model) . '-' . json_encode($field));
 
-        // ray()->count();
-
         // If the result is already in the cache, return it.
         if (array_key_exists($cacheKey, self::$shouldDisplayFieldCache)) {
             return self::$shouldDisplayFieldCache[$cacheKey];
@@ -82,19 +80,13 @@ class ConditionalLogic
                     break;
                 default:
 
-                    // if $model->fields is set, use that, otherwise, use $model['fields']
-
-                    // dd($condition);
-
                     if (optional($model)->getMeta()) {
                         $fieldValue = $model->getMeta($condition['field']);
-
 
                         if (! $fieldValue) {
                             $show = false;
                             break;
                         }
-
                     }
 
                     // If the $condition['field'] has a dot, undot array
