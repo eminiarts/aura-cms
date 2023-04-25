@@ -119,11 +119,7 @@ class Resource extends Model
 
     public function getFieldsAttribute()
     {
-        // if $this->usesMeta is false, then we don't want to load the meta
-        if(optional($this)->meta && is_string($this->meta)) {
-            // ray()->trace();
-            // dd($this->meta);
-        }
+        // ray('fields attribute');
 
         if ($this->usesMeta() && optional($this)->meta && !is_string($this->meta)) {
             $meta = $this->meta->pluck('value', 'key');
@@ -175,7 +171,11 @@ class Resource extends Model
             }
         });
 
+        // ray($defaultValues);
+
         return $defaultValues->merge($meta ?? [])->filter(function ($value, $key) {
+
+            // ray('before getAccessibleFieldKeys', $this->getAccessibleFieldKeys());
 
             if (! in_array($key, $this->getAccessibleFieldKeys())) {
                 return false;
