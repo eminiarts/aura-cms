@@ -23,11 +23,6 @@ class ConditionalLogic
             return self::$shouldDisplayFieldCache[$cacheKey];
         }
 
-        if($field == 'text3') {
-            ray(md5(json_encode($model)), $field);
-            ray()->trace();
-        }
-
         // ray()->count();
 
         // Check Conditional Logic if the field should be displayed.
@@ -41,12 +36,6 @@ class ConditionalLogic
 
     public static function checkCondition($model, $field)
     {
-        // return true;
-        // ray()->count();
-        // ray($model, $field);
-
-        // dd('hier');
-
         $conditions = optional($field)['conditional_logic'];
 
         if (! $conditions) {
@@ -97,26 +86,26 @@ class ConditionalLogic
 
                     // dd($condition);
 
-                    if (optional($model)->fields) {
-                        $fieldValue = $model->fields[$condition['field']];
-                    } else {
-                        $fieldValue = optional($model['fields'])[$condition['field']];
+                    if (optional($model)->getMeta()) {
+                        $fieldValue = $model->getMeta($condition['field']);
+
 
                         if (! $fieldValue) {
                             $show = false;
                             break;
                         }
+
                     }
 
                     // If the $condition['field'] has a dot, undot array
                     if (str_contains($condition['field'], '.')) {
-                        $fieldValue = data_get($model['fields'], $condition['field']);
+                        $fieldValue = data_get($model->getMeta()->toArray(), $condition['field']);
                         $show = ConditionalLogic::checkFieldCondition($condition, $fieldValue);
 
                         break;
                     }
 
-                    if (optional($model)->fields && ! array_key_exists($condition['field'], $model->fields->toArray())) {
+                    if (optional($model)->getMeta() && ! array_key_exists($condition['field'], $model->getMeta()->toArray())) {
                         $show = false; // The model does not have the field, so it does not match the condition
                         break;
                     }
@@ -199,7 +188,7 @@ class ConditionalLogic
 
     private static function checkRoleCondition($condition)
     {
-        ray()->red('checkRoleCondition', $condition);
+        // ray()->red('checkRoleCondition', $condition);
 
         switch ($condition['operator']) {
             case '==':

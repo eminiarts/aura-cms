@@ -159,6 +159,7 @@ trait InputFields
                 })
                 ->pluck('slug')
                 ->filter(function ($field) {
+                    // return true;
                     return $this->shouldDisplayField($this->fieldBySlug($field));
                 })
                 ->toArray();
