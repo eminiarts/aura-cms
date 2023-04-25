@@ -30,7 +30,7 @@ beforeEach(function () {
         'content' => 'Test Content A',
         'type' => 'Post',
         'status' => 'publish',
-        'meta' => 'B',
+        'metafield' => 'B',
         'terms' => [
             'tag' => [
                 'Tag 1', 'Tag 2', 'Tag 3',
@@ -43,7 +43,7 @@ beforeEach(function () {
         'content' => 'Test Content B',
         'type' => 'Post',
         'status' => 'publish',
-        'meta' => 'A',
+        'metafield' => 'A',
         'terms' => [
             'tag' => [
                 'Tag 3', 'Tag 4', 'Tag 5',
@@ -69,7 +69,7 @@ class TableSaveFilterModel extends Resource
                 'type' => 'Eminiarts\\Aura\\Fields\\Text',
                 'validation' => 'required',
                 'conditional_logic' => [],
-                'slug' => 'meta',
+                'slug' => 'metafield',
             ],
             [
                 'name' => 'Tags',
@@ -111,8 +111,8 @@ test('table filter - taxonomy filter', function () {
     $component->set('filters.custom.0.value', 'B');
     $component->set('filters.custom.0.operator', 'is');
 
-    // Expect filter.custom.0.name to be meta
-    expect($component->filters['custom'][0]['name'])->toBe('meta');
+    // Expect filter.custom.0.name to be metafield
+    expect($component->filters['custom'][0]['name'])->toBe('metafield');
 
     // Save Filters to DB
     $component->call('saveFilter');
@@ -154,7 +154,7 @@ test('table filter - taxonomy filter', function () {
     expect($filters['Test Filter']['taxonomy']['Tag'])->toHaveCount(1);
 
     expect($filters)->toHaveKey('Test Filter.taxonomy.Tag.0', '1');
-    expect($filters)->toHaveKey('Test Filter.custom.0.name', 'meta');
+    expect($filters)->toHaveKey('Test Filter.custom.0.name', 'metafield');
     expect($filters)->toHaveKey('Test Filter.custom.0.operator', 'is');
     expect($filters)->toHaveKey('Test Filter.custom.0.value', 'B');
 
@@ -180,7 +180,7 @@ test('table filter - taxonomy filter can be deleted', function () {
 
     DB::table('options')->insert([
         'name' => 'user.'.$this->user->id.'.Post.filters.Test Filter',
-        'value' => '{"taxonomy":{"Tag":[1]},"custom":[{"name":"meta","operator":"is","value":"B"}]}',
+        'value' => '{"taxonomy":{"Tag":[1]},"custom":[{"name":"metafield","operator":"is","value":"B"}]}',
         'team_id' => $this->user->currentTeam->id,
     ]);
 
@@ -246,7 +246,7 @@ test('table filter - filters can be reset', function () {
     // Visit the Post Index Page
     $component = Livewire::test(Table::class, ['query' => null, 'model' => $post]);
 
-    // Set custom filter 'meta' to 'B'
+    // Set custom filter 'metafield' to 'B'
     $component->call('addFilter');
 
     // $component->rows should have 1 item
