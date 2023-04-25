@@ -2,8 +2,8 @@
 
 namespace Eminiarts\Aura\Database\Factories;
 
-use Eminiarts\Aura\Models\User;
 use Eminiarts\Aura\Resources\Team;
+use Eminiarts\Aura\Resources\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 class TeamFactory extends Factory
@@ -24,7 +24,8 @@ class TeamFactory extends Factory
     {
         return [
             'name' => $this->faker->unique()->company(),
-            'user_id' => User::factory(),
+            'user_id' => 1,
+            // 'personal_team' => true,
         ];
     }
 }
