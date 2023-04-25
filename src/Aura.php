@@ -62,6 +62,11 @@ class Aura
         return ConditionalLogic::shouldDisplayField($model, $field);
     }
 
+    public function clearConditionsCache()
+    {
+        return ConditionalLogic::clearConditionsCache();
+    }
+
     public function findResourceBySlug($slug)
     {
         if (in_array($slug, $this->getResources())) {
