@@ -345,6 +345,7 @@ trait AuraModelConfig
             'slug' => $this->getSlug(),
             'sort' => $this->getSort(),
             'group' => $this->getGroup(),
+            'route' => $this->getIndexRoute(),
             'dropdown' => $this->getDropdown(),
             'showInNavigation' => $this->getShowInNavigation(),
         ];
@@ -353,6 +354,11 @@ trait AuraModelConfig
     public function pluralName(): string
     {
         return static::$pluralName ?? Str::plural($this->singularName());
+    }
+
+    public function getIndexRoute()
+    {
+        return route('aura.post.index', $this->getSlug());
     }
 
     public function rowView()
@@ -398,7 +404,9 @@ trait AuraModelConfig
 
     public function title()
     {
-        return $this->getType()." (#{$this->id})";
+        if(optional($this)->id) {
+            return $this->getType()." (#{$this->id})";
+        }
     }
 
     public static function usesCustomTable(): bool
