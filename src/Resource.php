@@ -38,7 +38,7 @@ class Resource extends Model
     use SaveTerms;
 
     protected $appends = ['fields'];
-    // protected $hidden = ['meta'];
+    protected $hidden = ['meta'];
 
     protected $fillable = ['title', 'content', 'type', 'status', 'fields', 'slug', 'user_id', 'parent_id', 'order', 'taxonomies', 'terms', 'team_id', 'first_taxonomy', 'created_at', 'updated_at', 'deleted_at'];
 
@@ -117,10 +117,8 @@ class Resource extends Model
         return $this->stripShortcodes($this->post_excerpt);
     }
 
-    public function getFieldsAttribute()
+    public function getMeta($key = null)
     {
-        // ray('fields attribute');
-
         if ($this->usesMeta() && optional($this)->meta && !is_string($this->meta)) {
             $meta = $this->meta->pluck('value', 'key');
 
@@ -134,7 +132,22 @@ class Resource extends Model
 
                 return $meta;
             });
+
+            if($key) {
+                return $meta[$key] ?? null;
+            }
+
+            return $meta;
         }
+
+        return collect();
+    }
+
+    public function getFieldsAttribute()
+    {
+        // ray('fields attribute');
+
+        $meta = $this->getMeta();
 
         $defaultValues = $this->getFieldSlugs()
         ->mapWithKeys(fn ($value, $key) => [$value => null])
@@ -154,11 +167,9 @@ class Resource extends Model
 
             $class = $this->fieldClassBySlug($key);
 
-
             if ($class && isset($this->{$key}) && method_exists($class, 'get')) {
                 return $class->get($class, $this->{$key} ?? null);
             }
-
 
             // if $this->{$key} is set, then we want to use that
             if (isset($this->{$key})) {
@@ -177,11 +188,11 @@ class Resource extends Model
 
             // ray('before getAccessibleFieldKeys', $this->getAccessibleFieldKeys());
 
-            // if (! in_array($key, $this->getAccessibleFieldKeys())) {
-            //     return false;
-            // }
-            return true;
+            if (! in_array($key, $this->getAccessibleFieldKeys())) {
+                return false;
+            }
 
+            return true;
         });
     }
 
