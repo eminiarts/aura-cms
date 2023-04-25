@@ -177,9 +177,9 @@ class Resource extends Model
 
             // ray('before getAccessibleFieldKeys', $this->getAccessibleFieldKeys());
 
-            if (! in_array($key, $this->getAccessibleFieldKeys())) {
-                return false;
-            }
+            // if (! in_array($key, $this->getAccessibleFieldKeys())) {
+            //     return false;
+            // }
             return true;
 
         });
