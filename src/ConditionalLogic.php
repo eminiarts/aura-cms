@@ -4,8 +4,49 @@ namespace Eminiarts\Aura;
 
 class ConditionalLogic
 {
+    private static $shouldDisplayFieldCache = [];
+
+    public static function shouldDisplayField($model, $field)
+    {
+        // Generate a unique cache key based on the model's class name, ID, and the field key.
+        // ray(optional($model)->id, $key);
+
+        if(is_array($field)) {
+            $key = $field['slug'];
+        } else {
+            $key = $field;
+        }
+
+        if(is_array($model)) {
+            $cacheKey = md5(json_encode($model)) . '-' . $key;
+        } else {
+            $cacheKey = get_class($model) . '-' . optional($model)->id . '-' . $key;
+        }
+
+        // If the result is already in the cache, return it.
+        if (array_key_exists($cacheKey, self::$shouldDisplayFieldCache)) {
+            return self::$shouldDisplayFieldCache[$cacheKey];
+        }
+
+
+        // Check Conditional Logic if the field should be displayed.
+        $result = self::checkCondition($model, $field);
+
+
+        // Before returning the result, store it in the cache.
+        self::$shouldDisplayFieldCache[$cacheKey] = $result;
+
+        return $result;
+    }
+
     public static function checkCondition($model, $field)
     {
+        // return true;
+        // ray()->count();
+        // ray($model, $field);
+
+        // dd('hier');
+
         $conditions = optional($field)['conditional_logic'];
 
         if (! $conditions) {
@@ -53,6 +94,8 @@ class ConditionalLogic
                 default:
 
                     // if $model->fields is set, use that, otherwise, use $model['fields']
+
+                    // dd($condition);
 
                     if (optional($model)->fields) {
                         $fieldValue = $model->fields[$condition['field']];

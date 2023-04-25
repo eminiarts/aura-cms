@@ -59,7 +59,7 @@ class Aura
 
     public static function checkCondition($model, $field)
     {
-        return ConditionalLogic::checkCondition($model, $field);
+        return ConditionalLogic::shouldDisplayField($model, $field);
     }
 
     public function findResourceBySlug($slug)
