@@ -1,8 +1,8 @@
 <?php
 
 use Aura\Flows\Resources\Flow;
-use Eminiarts\Aura\Jobs\RunOperation;
-use Eminiarts\Aura\Jobs\TriggerFlowOnCreatePostEvent;
+use Aura\Flows\Jobs\RunOperation;
+use Aura\Flows\Jobs\TriggerFlowOnCreatePostEvent;
 use Eminiarts\Aura\Models\User;
 use Eminiarts\Aura\Resources\Post;
 use Illuminate\Foundation\Testing\RefreshDatabase;

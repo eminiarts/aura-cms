@@ -42,7 +42,7 @@ test('flow - get resources operation', function () {
         'description' => 'Get Children of updated Post',
         'trigger' => 'post',
         'options' => [
-            'resource' => 'Post',
+            'resource' => Post::class,
             'event' => 'updated',
         ],
     ]);
@@ -92,6 +92,4 @@ test('flow - get resources operation', function () {
 
     // Assert Flow Operation is triggered when Post is created
     $this->assertDatabaseHas('flow_operation_logs', ['operation_id' => $flow->operation_id]);
-
-    // dd($post->toArray(), $flow->toArray());
 });

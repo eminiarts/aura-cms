@@ -30,6 +30,14 @@ class Team extends Resource
         'name', 'user_id', 'fields',
     ];
 
+    public array $actions = [
+           'delete' => [
+               'label' => 'Delete',
+               'icon-view' => 'aura::components.actions.trash',
+               'class' => 'hover:text-red-700 text-red-500 font-bold',
+           ],
+       ];
+
     protected $table = 'teams';
 
     protected static bool $title = false;

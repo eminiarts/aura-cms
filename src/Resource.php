@@ -16,9 +16,9 @@ use Eminiarts\Aura\Models\Scopes\TypeScope;
 use Eminiarts\Aura\Traits\InitialPostFields;
 use Eminiarts\Aura\Traits\InteractsWithTable;
 use Eminiarts\Aura\Traits\SaveFieldAttributes;
-use Eminiarts\Aura\Jobs\TriggerFlowOnCreatePostEvent;
-use Eminiarts\Aura\Jobs\TriggerFlowOnUpdatePostEvent;
-use Eminiarts\Aura\Jobs\TriggerFlowOnDeletedPostEvent;
+use Aura\Flows\Jobs\TriggerFlowOnCreatePostEvent;
+use Aura\Flows\Jobs\TriggerFlowOnUpdatePostEvent;
+use Aura\Flows\Jobs\TriggerFlowOnDeletedPostEvent;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Concerns\HasTimestamps;
 
@@ -38,6 +38,7 @@ class Resource extends Model
     use SaveTerms;
 
     protected $appends = ['fields'];
+    // protected $hidden = ['meta'];
 
     protected $fillable = ['title', 'content', 'type', 'status', 'fields', 'slug', 'user_id', 'parent_id', 'order', 'taxonomies', 'terms', 'team_id', 'first_taxonomy', 'created_at', 'updated_at', 'deleted_at'];
 
@@ -145,10 +146,13 @@ class Resource extends Model
 
     public function getFieldsAttribute()
     {
-        //$this->load('meta');
-
         // if $this->usesMeta is false, then we don't want to load the meta
-        if ($this->usesMeta() && optional($this)->meta) {
+        if(optional($this)->meta && is_string($this->meta)) {
+            // ray()->trace();
+            // dd($this->meta);
+        }
+
+        if ($this->usesMeta() && optional($this)->meta && !is_string($this->meta)) {
             $meta = $this->meta->pluck('value', 'key');
 
             // Cast Attributes
@@ -202,24 +206,13 @@ class Resource extends Model
             }
         });
 
-        return $defaultValues->merge($meta ?? []);
+        return $defaultValues->merge($meta ?? [])->filter(function ($value, $key) {
 
-        return  $defaultValues->merge($meta ?? [])->map(function ($value, $key) {
-            $class = $this->fieldClassBySlug($key);
-
-            if ($class && isset($this->{$key}) && method_exists($class, 'get') && $this->isRelation($key)) {
-                return $class->get($class, $this->{$key});
+            if (! in_array($key, $this->getAccessibleFieldKeys())) {
+                return false;
             }
+            return true;
 
-            // if $this->{$key} is set, then we want to use that
-            if (isset($this->{$key})) {
-                return $this->{$key};
-            }
-
-            // if $this->attributes[$key] is set, then we want to use that
-            if (isset($this->attributes[$key])) {
-                return $this->attributes[$key];
-            }
         });
     }
 
@@ -259,6 +252,8 @@ class Resource extends Model
         $possibleRelationMethods = [$key, Str::camel($key)];
 
         foreach ($possibleRelationMethods as $method) {
+
+
             if ($method == 'taxonomy') {
                 continue;
             }
