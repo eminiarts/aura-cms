@@ -59,30 +59,12 @@ class Resource extends Model
     {
         $value = parent::__get($key);
 
-
-        if($key == 'id') {
-            ray($key, $value, $this->attributes);
-        }
-
         if ($value) {
             return $value;
         }
 
         // Not sure if this is the best way to do this
         return $this->displayFieldValue($key, $value);
-
-        // For now
-        if ($value === null) {
-            return $this->displayFieldValue($key);
-
-            //return $this->meta->$key;
-        }
-
-        if ($value === null && ! property_exists($this, $key)) {
-            return $this->meta->$key;
-        }
-
-        return $value;
     }
 
     /**
@@ -176,9 +158,11 @@ class Resource extends Model
 
             $class = $this->fieldClassBySlug($key);
 
+
             if ($class && isset($this->{$key}) && method_exists($class, 'get')) {
-                return $class->get($class, $this->{$key});
+                return $class->get($class, $this->{$key} ?? null);
             }
+
 
             // if $this->{$key} is set, then we want to use that
             if (isset($this->{$key})) {
