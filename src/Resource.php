@@ -57,21 +57,12 @@ class Resource extends Model
      */
     public function __get($key)
     {
-        // Title is a special case, for now
-        // if ($key == 'title') {
-        //     //dd('title', $this->attributes, $this->getAttributeValue($key));
-        //     return $this->getAttributeValue($key);
-        // }
-
         $value = parent::__get($key);
 
-        //return $this->displayFieldValue($key);
 
-        // dump($key, $value);
-
-        // if (method_exists($this, $key)) {
-        //     dump('prop exists', $key, $value);
-        // }
+        if($key == 'id') {
+            ray($key, $value, $this->attributes);
+        }
 
         if ($value) {
             return $value;
@@ -163,20 +154,14 @@ class Resource extends Model
                     return $class->get($class, $meta);
                 }
 
-                // if (optional($this->fieldBySlug($key))['type']) {
-                //     return app($this->fieldBySlug($key)['type'])->get($meta);
-                // }
-
                 return $meta;
             });
         }
 
-        // This hydrates the models, is there a way without hydrating?
-        // $meta = $this->meta()->toBase()->get()->pluck('value', 'key');
-
-        // ray($this->getFieldSlugs());
-
-        $defaultValues = $this->getFieldSlugs()->mapWithKeys(fn ($value, $key) => [$value => null])->map(fn ($value, $key) => $meta[$key] ?? $value)->map(function ($value, $key) {
+        $defaultValues = $this->getFieldSlugs()
+        ->mapWithKeys(fn ($value, $key) => [$value => null])
+        ->map(fn ($value, $key) => $meta[$key] ?? $value)
+        ->map(function ($value, $key) {
             // if the value is in $this->hidden, set it to null
             if (in_array($key, $this->hidden)) {
                 return;
@@ -252,13 +237,14 @@ class Resource extends Model
         $possibleRelationMethods = [$key, Str::camel($key)];
 
         foreach ($possibleRelationMethods as $method) {
-
-
             if ($method == 'taxonomy') {
                 continue;
             }
 
+            // ray(in_array($method, $modelMethods) && ($this->{$method}() instanceof \Illuminate\Database\Eloquent\Relations\Relation), $method);
+
             if (in_array($method, $modelMethods) && ($this->{$method}() instanceof \Illuminate\Database\Eloquent\Relations\Relation)) {
+                // ray($key);
                 return true;
             }
         }
