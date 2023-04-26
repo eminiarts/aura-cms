@@ -13,6 +13,8 @@ class ConditionalLogic
 
     public static function shouldDisplayField($model, $field)
     {
+        // return true;
+
         // Generate a unique cache key based on the model's class name, ID, and the field key.
         $cacheKey = md5(json_encode($model) . '-' . json_encode($field));
 
@@ -21,7 +23,7 @@ class ConditionalLogic
             return self::$shouldDisplayFieldCache[$cacheKey];
         }
 
-        // ray()->count();
+        //ray()->count();
 
         // Check Conditional Logic if the field should be displayed.
         $result = self::checkCondition($model, $field);
