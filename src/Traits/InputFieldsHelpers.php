@@ -60,6 +60,7 @@ trait InputFieldsHelpers
 
     public function inputFields()
     {
+        // ray()->count();
         // $newFields = $this->sendThroughPipeline($this->newFields, [ApplyGroupedInputs::class]);
         return $this->getFieldsBeforeTree()->filter(fn ($item) => in_array($item['field_type'], ['input', 'repeater', 'group']));
     }

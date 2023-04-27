@@ -207,16 +207,16 @@ trait AuraModelConfig
         return static::$name;
     }
 
-    public static function getNextId()
-    {
-        $model = new static();
+    // public static function getNextId()
+    // {
+    //     $model = new static();
 
-        $query = "show table status like '".$model->getTable()."'";
+    //     $query = "show table status like '".$model->getTable()."'";
 
-        $statement = DB::select($query);
+    //     $statement = DB::select($query);
 
-        return $statement[0]->Auto_increment;
-    }
+    //     return $statement[0]->Auto_increment;
+    // }
 
     public static function getPluralName(): string
     {
