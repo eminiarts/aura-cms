@@ -2,8 +2,9 @@
 
 namespace Eminiarts\Aura\Traits;
 
-use Eminiarts\Aura\Pipeline\ApplyGroupedInputs;
 use Illuminate\Pipeline\Pipeline;
+use Illuminate\Support\Facades\Cache;
+use Eminiarts\Aura\Pipeline\ApplyGroupedInputs;
 
 trait InputFieldsHelpers
 {
@@ -73,11 +74,17 @@ trait InputFieldsHelpers
 
     public function mappedFields()
     {
-        return $this->fieldsCollection()->map(function ($item) {
-            $item['field'] = app($item['type'])->field($item);
-            $item['field_type'] = app($item['type'])->type;
+        // Generate a cache key based on the class and method name
+        $cacheKey = 'mappedFields-' . get_class($this);
 
-            return $item;
+        // Retrieve the cached result if available, otherwise execute the method and store the result in the cache
+        return Cache::remember($cacheKey, now()->addMinutes(60), function () {
+            return $this->fieldsCollection()->map(function ($item) {
+                $item['field'] = app($item['type'])->field($item);
+                $item['field_type'] = app($item['type'])->type;
+
+                return $item;
+            });
         });
     }
 

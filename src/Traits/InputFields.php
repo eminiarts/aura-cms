@@ -295,10 +295,4 @@ trait InputFields
         ]);
     }
 
-    // Display the value of a field in the index view
-    // $this->displayEmailField()
-    // $this->getEmailField()
-    // $this->setEmailField()
-    // $this->getUsersFieldValues()
-    // alternative: $this->queryForUsersField()
 }
