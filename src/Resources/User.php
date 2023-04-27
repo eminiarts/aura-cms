@@ -529,10 +529,17 @@ class User extends UserModel
         });
     }
 
-    protected function cachedRoles(): mixed
+   protected function cachedRoles(): mixed
+   {
+       return $this->roles;
+
+       return Cache::remember($this->getCacheKeyForRoles(), now()->addMinutes(60), function () {
+           return $this->roles;
+       });
+   }
+
+    protected function getCacheKeyForRoles(): string
     {
-        return Cache::remember($this->current_team_id.'.user.'.$this->id.'.roles', now()->addMinutes(60), function () {
-            return $this->roles;
-        });
+        return $this->current_team_id . '.user.' . $this->id . '.roles';
     }
 }
