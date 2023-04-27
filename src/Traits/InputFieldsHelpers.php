@@ -25,30 +25,31 @@ trait InputFieldsHelpers
     }
 
 
-    public function getFieldCacheKey($model)
+    public function getFieldCacheKey()
     {
-        return 'fieldsCollectionCache.' . get_class($model);
+        return 'fieldsCollectionCache.' . get_class($this);
     }
 
 
     public function fieldsCollection()
     {
-        return collect($this->getFields());
+        // return collect($this->getFields());
 
         // Generate the cache key based on the model class
-        $cacheKey = $this->getFieldCacheKey($this);
+        $cacheKey = $this->getFieldCacheKey();
 
         // Check if the cache already contains the result for this model class
-        if (app()->bound($cacheKey)) {
-            return app($cacheKey);
+        if (!app()->bound($cacheKey)) {
+            // If the cache doesn't contain the result, calculate it and store it in the cache
+            $fieldsCollection = collect($this->getFields());
+            app()->singleton($cacheKey, function () use ($fieldsCollection) {
+                return $fieldsCollection;
+            });
         }
 
-        // If the cache doesn't contain the result, calculate it and store it in the cache
-        $fieldsCollection = collect($this->getFields());
-        app()->instance($cacheKey, $fieldsCollection);
+        // Return the cached result
+        return app($cacheKey);
 
-        // Return the newly cached result
-        return $fieldsCollection;
     }
 
     public function findBySlug($array, $slug)
@@ -100,11 +101,12 @@ trait InputFieldsHelpers
 
     public function mappedFields()
     {
-        // Generate a cache key based on the class and method name
-        $cacheKey = 'mappedFields-' . get_class($this);
 
-        // Retrieve the cached result if available, otherwise execute the method and store the result in the cache
-        return Cache::remember($cacheKey, now()->addMinutes(60), function () {
+        // Generate the cache key based on the model class and method name
+        $cacheKey = $this->getFieldCacheKey() . '-mappedFields';
+
+        // Bind the mapped fields collection as a singleton if it's not already bound
+        app()->singletonIf($cacheKey, function () {
             return $this->fieldsCollection()->map(function ($item) {
                 $item['field'] = app($item['type'])->field($item);
                 $item['field_type'] = app($item['type'])->type;
@@ -112,6 +114,10 @@ trait InputFieldsHelpers
                 return $item;
             });
         });
+
+        // Return the cached result
+        return app($cacheKey);
+
     }
 
     public function sendThroughPipeline($fields, $pipes)
