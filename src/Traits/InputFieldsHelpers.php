@@ -24,18 +24,31 @@ trait InputFieldsHelpers
         return false;
     }
 
+
+    public function getFieldCacheKey($model)
+    {
+        return 'fieldsCollectionCache.' . get_class($model);
+    }
+
+
     public function fieldsCollection()
     {
-        // If the cache is not empty, return the cached result
-        if ($this->fieldsCollectionCache !== null) {
-            return $this->fieldsCollectionCache;
+        return collect($this->getFields());
+
+        // Generate the cache key based on the model class
+        $cacheKey = $this->getFieldCacheKey($this);
+
+        // Check if the cache already contains the result for this model class
+        if (app()->bound($cacheKey)) {
+            return app($cacheKey);
         }
 
-        // If the cache is empty, calculate the result and store it in the cache
-        $this->fieldsCollectionCache = collect($this->getFields());
+        // If the cache doesn't contain the result, calculate it and store it in the cache
+        $fieldsCollection = collect($this->getFields());
+        app()->instance($cacheKey, $fieldsCollection);
 
         // Return the newly cached result
-        return $this->fieldsCollectionCache;
+        return $fieldsCollection;
     }
 
     public function findBySlug($array, $slug)

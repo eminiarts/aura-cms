@@ -18,6 +18,11 @@ class Aura
 {
     use DefaultFields;
 
+    // public function __construct()
+    // {
+    //     ray('construct');
+    // }
+
     /**
     * The user model that should be used by Jetstream.
     *
@@ -259,7 +264,7 @@ class Aura
     public function getOption($name)
     {
         if (config('aura.teams')) {
-            return Cache::remember(auth()->user()->current_team_id.'.aura.team-settings', now()->addHour(), function () {
+            return Cache::remember(optional(auth()->user())->current_team_id.'.aura.team-settings', now()->addHour(), function () {
                 $option = Option::where('name', 'team-settings')->first();
 
                 if ($option && is_string($option->value)) {
