@@ -33,7 +33,7 @@ trait InputFieldsHelpers
 
     public function fieldsCollection()
     {
-        // return collect($this->getFields());
+        return collect($this->getFields());
 
         // Generate the cache key based on the model class
         $cacheKey = $this->getFieldCacheKey();
