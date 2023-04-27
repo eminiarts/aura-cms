@@ -1,6 +1,6 @@
-I am working in Laravel. My request is taking > 10 seconds. I think I know where the problem is, but don’t know how to solve it yet. My Eloquent model has a lot of functions, fields and a function which checks if the field should be displayd. the problem is that that function relies on the fields itself and gets in a loop.
+I am working in Laravel. My request is taking > 10 seconds. I think I know where the problem is, but don’t know how to solve it yet. My Eloquent model has a lot of functions, traits, fields and a function which checks if the field should be displayd. the problem is that that function relies on the fields itself and gets in a loop. I assume the main issue is the file trait InputFields.php (but i'm not entirely sure).
 
-I assume the main issue is the file trait InputFields.php. It sends the eloquent model fields through a pipeline. For example: 
+For example: 
 
 ```php
 return Product::with(['thumbnailMeta', 'attachments'])->get();
@@ -878,7 +878,7 @@ trait InputFieldsValidation
 }
 ```
 
-
+I am finish. Try to find the issue why the code is so slow. Any idea what I am doing wrong? If at any point you have some suggestions on how to improve it, please let me know.
 
 ________________________
 
