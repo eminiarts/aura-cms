@@ -8,6 +8,8 @@ use Eminiarts\Aura\Pipeline\ApplyGroupedInputs;
 
 trait InputFieldsHelpers
 {
+    protected $fieldsCollectionCache;
+
     public function fieldBySlug($slug)
     {
         return $this->fieldsCollection()->firstWhere('slug', $slug);
@@ -24,7 +26,16 @@ trait InputFieldsHelpers
 
     public function fieldsCollection()
     {
-        return collect($this->getFields());
+        // If the cache is not empty, return the cached result
+        if ($this->fieldsCollectionCache !== null) {
+            return $this->fieldsCollectionCache;
+        }
+
+        // If the cache is empty, calculate the result and store it in the cache
+        $this->fieldsCollectionCache = collect($this->getFields());
+
+        // Return the newly cached result
+        return $this->fieldsCollectionCache;
     }
 
     public function findBySlug($array, $slug)
@@ -44,7 +55,7 @@ trait InputFieldsHelpers
 
     public function getFieldSlugs()
     {
-        return $this->inputFields()->pluck('slug');
+        return $this->fieldsCollection()->pluck('slug');
     }
 
     public function getFieldValue($key)
@@ -62,6 +73,8 @@ trait InputFieldsHelpers
     public function inputFields()
     {
         // ray()->count();
+        // ray()->trace();
+        // dd('hier');
         // $newFields = $this->sendThroughPipeline($this->newFields, [ApplyGroupedInputs::class]);
         return $this->getFieldsBeforeTree()->filter(fn ($item) => in_array($item['field_type'], ['input', 'repeater', 'group']));
     }

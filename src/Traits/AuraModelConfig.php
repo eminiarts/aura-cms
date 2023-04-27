@@ -92,10 +92,10 @@ trait AuraModelConfig
      */
     public function __get($key)
     {
-        // Title is a special case, for now
-        if ($key == 'title') {
-            return $this->getAttributeValue($key);
-        }
+        // // Title is a special case, for now
+        // if ($key == 'title') {
+        //     return $this->getAttributeValue($key);
+        // }
 
         // Does not work atm
         // if ($key == 'roles') {
@@ -109,6 +109,7 @@ trait AuraModelConfig
             return $value;
         }
 
+        // ray()->count();
         return $this->displayFieldValue($key, $value);
     }
 

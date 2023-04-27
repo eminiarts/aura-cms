@@ -103,15 +103,6 @@ class Resource extends Model
     /**
      * @return string
      */
-    // public function getContentAttribute()
-    // {
-    //     return $this->content;
-    //     return $this->stripShortcodes($this->content);
-    // }
-
-    /**
-     * @return string
-     */
     public function getExcerptAttribute()
     {
         return $this->stripShortcodes($this->post_excerpt);
@@ -319,9 +310,5 @@ class Resource extends Model
         static::deleted(function ($post) {
             dispatch(new TriggerFlowOnDeletedPostEvent($post));
         });
-
-        // static::saving(function ($post) {
-        //     dd('da', $post);
-        // });
     }
 }
