@@ -268,6 +268,7 @@ trait InputFields
 
     public function shouldDisplayField($field)
     {
+        // return true;
         return ConditionalLogic::shouldDisplayField($this, $field);
     }
 
