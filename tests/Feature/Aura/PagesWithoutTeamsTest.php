@@ -14,6 +14,9 @@ test('Aura without teams - pages', function () {
     // Set config to not use teams
     config(['aura.teams' => false]);
 
+    // without exception handling
+    $this->withoutExceptionHandling();
+
     expect(config('aura.teams'))->toBeFalse();
 
     // Rerun migrations

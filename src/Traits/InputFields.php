@@ -275,7 +275,7 @@ trait InputFields
     public function taxonomyFields()
     {
         return $this->mappedFields()->filter(function ($field) {
-            if ($field['field']->isTaxonomyField()) {
+            if (optional(optional($field)['field'])->isTaxonomyField()) {
                 return true;
             }
 
