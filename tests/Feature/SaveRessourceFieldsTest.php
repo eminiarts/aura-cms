@@ -61,6 +61,8 @@ test('save defined fields', function () {
 
         $savedModel = SaveRessourceFieldsTestModel::first();
 
+        $savedModel->clearModelCache();
+
         $this->assertEquals($model->id, $savedModel->id);
         $this->assertEquals($savedModel->title, 'Test');
         $this->assertEquals($savedModel->text1, 'Test 1');
@@ -89,6 +91,8 @@ test('can not save fields that are not defined', function () {
     ]);
 
     $savedModel = SaveRessourceFieldsTestModel::first();
+
+    $savedModel->clearModelCache();
 
     $this->assertEquals($model->id, $savedModel->id);
     $this->assertEquals($savedModel->title, 'Test');
@@ -122,6 +126,8 @@ test('save defined meta fields even if not defined in fields array', function ()
     ]);
 
     $savedModel = SaveRessourceFieldsTestModel::first();
+
+    $savedModel->clearModelCache();
 
     $this->assertEquals($model->id, $savedModel->id);
     $this->assertEquals($savedModel->title, 'New Test');

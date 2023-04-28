@@ -99,6 +99,22 @@ trait InputFieldsHelpers
         return $this->mappedFields()->firstWhere('slug', $slug);
     }
 
+    public function clearModelCache()
+    {
+        // Generate the cache keys based on the model class
+        $fieldsCacheKey = $this->getFieldCacheKey();
+        $mappedFieldsCacheKey = $this->getFieldCacheKey() . '-mappedFields';
+
+        // Check if the cache keys are bound and remove them
+        if (app()->bound($fieldsCacheKey)) {
+            app()->offsetUnset($fieldsCacheKey);
+        }
+
+        if (app()->bound($mappedFieldsCacheKey)) {
+            app()->offsetUnset($mappedFieldsCacheKey);
+        }
+    }
+
     public function mappedFields()
     {
 
