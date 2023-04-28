@@ -42,34 +42,61 @@ test('save defined fields', function () {
     $this->withoutExceptionHandling();
     //$this->withExceptionHandling();
 
-    try {
-        $this->assertDatabaseMissing('posts', [
-            'type' => 'Model',
-        ]);
 
-        $model = SaveRessourceFieldsTestModel::create([
-            'title' => 'Test',
-            'fields' => [
-                'text1' => 'Test 1',
-                'text2' => 'Test 2',
-            ],
-        ]);
+    $this->assertDatabaseMissing('posts', [
+              'type' => 'Model',
+          ]);
 
-        $this->assertDatabaseHas('posts', [
-            'type' => 'Model',
-        ]);
+    $model = SaveRessourceFieldsTestModel::create([
+        'title' => 'Test',
+        'fields' => [
+            'text1' => 'Test 1',
+            'text2' => 'Test 2',
+        ],
+    ]);
 
-        $savedModel = SaveRessourceFieldsTestModel::first();
+    $this->assertDatabaseHas('posts', [
+        'type' => 'Model',
+    ]);
 
-        $savedModel->clearModelCache();
+    $savedModel = SaveRessourceFieldsTestModel::first();
 
-        $this->assertEquals($model->id, $savedModel->id);
-        $this->assertEquals($savedModel->title, 'Test');
-        $this->assertEquals($savedModel->text1, 'Test 1');
-        $this->assertEquals($savedModel->text2, 'Test 2');
-    } catch (\Throwable $th) {
-        dd($th);
-    }
+    $savedModel->clearModelCache();
+
+    $this->assertEquals($model->id, $savedModel->id);
+    $this->assertEquals($savedModel->title, 'Test');
+    $this->assertEquals($savedModel->text1, 'Test 1');
+    $this->assertEquals($savedModel->text2, 'Test 2');
+
+
+    // try {
+    //     $this->assertDatabaseMissing('posts', [
+    //         'type' => 'Model',
+    //     ]);
+
+    //     $model = SaveRessourceFieldsTestModel::create([
+    //         'title' => 'Test',
+    //         'fields' => [
+    //             'text1' => 'Test 1',
+    //             'text2' => 'Test 2',
+    //         ],
+    //     ]);
+
+    //     $this->assertDatabaseHas('posts', [
+    //         'type' => 'Model',
+    //     ]);
+
+    //     $savedModel = SaveRessourceFieldsTestModel::first();
+
+    //     $savedModel->clearModelCache();
+
+    //     $this->assertEquals($model->id, $savedModel->id);
+    //     $this->assertEquals($savedModel->title, 'Test');
+    //     $this->assertEquals($savedModel->text1, 'Test 1');
+    //     $this->assertEquals($savedModel->text2, 'Test 2');
+    // } catch (\Throwable $th) {
+    //     dd($th);
+    // }
 });
 
 test('can not save fields that are not defined', function () {

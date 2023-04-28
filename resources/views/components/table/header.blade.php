@@ -1,7 +1,7 @@
 <thead>
     <tr>
         <x-aura::table.heading class="w-8 pr-0 bg-gray-50 dark:bg-gray-800">
-            <x-aura::input.checkbox wire:model="selectPage" />
+                <x-aura::input.checkbox x-model="selectPage" x-on:click="selectAllRows" />
         </x-aura::table.heading>
 
         @foreach($this->headers as $key => $column)

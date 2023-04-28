@@ -39,17 +39,17 @@ trait BulkActions
             ->unless($this->selectAll, fn ($query) => $query->whereKey($this->selected));
     }
 
-    /**
-     * Handles selecting all or page rows
-     *
-     * @return void
-     */
-    public function renderingWithBulkActions()
-    {
-        if ($this->selectAll) {
-            $this->selectPageRows();
-        }
-    }
+    // /**
+    //  * Handles selecting all or page rows
+    //  *
+    //  * @return void
+    //  */
+    // public function renderingWithBulkActions()
+    // {
+    //     if ($this->selectAll) {
+    //         $this->selectPageRows();
+    //     }
+    // }
 
     /**
      * Selects all rows
@@ -58,21 +58,8 @@ trait BulkActions
      */
     public function selectAll()
     {
+        dd('selectAll');
         $this->selectAll = true;
-    }
-
-    /**
-     * Selects all rows in the current page
-     *
-     * @return void
-     */
-    public function selectPageRows()
-    {
-        $this->selected = collect($this->selected)
-                ->merge($this->rows->pluck('id')->map(fn ($id) => (string) $id))
-                ->unique()
-                ->values()
-                ->all();
     }
 
     // when page is updated, reset selectPage
