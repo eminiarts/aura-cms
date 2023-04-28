@@ -4,24 +4,33 @@
 'slug'
 ])
 
-<div class="mx-auto max-w-8xl" wire:key="table-index-{{ str()->random(4) }}">
-
-    <div>
-        @include('aura::components.table.bulk-select-row')
-    </div>
-
-    <div class="flex flex-col mt-2">
-        <div
-            class="min-w-full overflow-hidden overflow-x-auto align-middle border border-gray-400/30 sm:rounded-lg dark:border-gray-700">
-            <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700" x-data="{
-                selected: @entangle('selected'),
-                rows: @js($this->rows->pluck('id')->toArray()), //.map(item => item.toString()),
+<div class="mx-auto max-w-8xl" wire:key="table-index-{{ str()->random(4) }}" x-data="{
+                selected: @entangle('selected').defer,
+                rows: @js($this->rows->pluck('id')->toArray()), 
                 lastSelectedId: null,
+                total: @js($this->rows->total()),
+                selectPage: false,
+                selectAll: @entangle('selectAll'),
+
 
                 init() {
                       Livewire.on('selectedRows', (updatedSelected) => {
                             this.selected = updatedSelected;
                         });
+                },
+                selectAllRows() {
+                    this.$nextTick(() => {
+                        if (this.selectPage) {
+                            this.selected = this.rows.slice();
+                        } else {
+                            this.selected = [];
+                        }
+                    });
+                },
+                resetBulk() {
+                    this.selected = [];
+                    this.selectPage = false;
+                    this.selectAll = false;
                 },
                 toggleRow(event, id) {
                     this.$nextTick(() => {
@@ -53,6 +62,16 @@
                 }
 
             }">
+
+    <div>
+        @include('aura::components.table.bulk-select-row')
+    </div>
+        
+
+    <div class="flex flex-col mt-2">
+        <div
+            class="min-w-full overflow-hidden overflow-x-auto align-middle border border-gray-400/30 sm:rounded-lg dark:border-gray-700">
+            <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
                 {{-- <x-aura::table.header></x-aura::table.header> --}}
                 @include('aura::components.table.header')
 

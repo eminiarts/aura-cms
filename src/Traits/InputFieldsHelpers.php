@@ -101,6 +101,9 @@ trait InputFieldsHelpers
 
     public function clearModelCache()
     {
+        // set accessibleFieldKeysCache to null
+        $this->accessibleFieldKeysCache = null;
+
         // Generate the cache keys based on the model class
         $fieldsCacheKey = $this->getFieldCacheKey();
         $mappedFieldsCacheKey = $this->getFieldCacheKey() . '-mappedFields';
