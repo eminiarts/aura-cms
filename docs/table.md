@@ -4,7 +4,7 @@
 
 ## Filters
 
-## List Layout
+## Customize Row View
 
 You can customize the Row view
 
@@ -36,8 +36,9 @@ This is the default row view:
         @include('aura::components.table.row-action')
     </td>
 </tr>
-
 ```
+
+## Customize Table View
 
 Sometimes you want to modify the table view. You can do this by adding a `tableView()` method to your resource:
 
@@ -127,4 +128,15 @@ Create the view `/resources/views/attachment/grid.blade.php`. You will have acce
 
 </div>
 
+```
+
+## Customize Top Bar
+
+You can customize the top bar by adding a `tableTopBarView()` method to your resource:
+
+```php
+    public function tableTopBarView()
+    {
+        return 'admin.resource.top-bar';
+    }
 ```

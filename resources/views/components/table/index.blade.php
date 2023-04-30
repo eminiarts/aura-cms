@@ -66,9 +66,5 @@
     </div>
 
     @include($this->model->tableView())
-
-    {{-- @dump($this->model->tableView()) --}}
-
-     {{-- @include($this->model->tableView()) --}}
     
 </div>
