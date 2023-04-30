@@ -78,53 +78,7 @@
                 <tbody class="bg-white divide-y divide-gray-200 dark:bg-gray-900 dark:divide-gray-700">
 
                     @forelse($this->rows as $row)
-
-                    <tr class="bg-white dark:bg-gray-900" wire:key="{{ $row->id }}" data-id="{{ $row->id }}">
-
-                        <x-aura::table.cell class="pr-0">
-                            <x-aura::input.checkbox x-model="selected" :value="$row->id"
-                                x-on:click="toggleRow($event, {{ $row->id }})" />
-                        </x-aura::table.cell>
-
                         @include($row->rowView())
-
-                        <td>
-                            {{-- If createInModal is true, open a Modal --}}
-                            @if($this->editInModal)
-                            <a href="#"
-                                wire:click.prevent="$emit('openModal', 'aura::post-edit-modal', {{ json_encode(["post" => $row->id, 'type' => $row->getType()]) }})">
-                                <x-aura::icon icon="edit" />
-                            </a>
-                            @else
-
-                            <div class="flex space-x-2">
-
-                                @can('view', $row)
-                                <x-aura::tippy text="View" position="top" class="text-sm text-gray-400 bg-white">
-                                    <x-aura::button.transparent :href="$row->viewUrl()" size="xs">
-                                        <x-aura::icon icon="view" size="xs" />
-                                    </x-aura::button.transparent>
-                                </x-aura::tippy>
-                                @endcan
-
-
-                                @can('edit', $row)
-                                <x-aura::tippy text="Edit" position="top" class="text-sm text-gray-400 bg-white">
-                                    <x-aura::button.transparent :href="$row->editUrl()" size="xs">
-                                        <x-aura::icon icon="edit" size="xs" />
-                                    </x-aura::button.transparent>
-                                </x-aura::tippy>
-                                @endcan
-                            </div>
-
-
-                            {{-- <a href="{{ $row->editUrl() }}">
-                            <x-aura::icon icon="edit" />
-                            </a> --}}
-                            @endif
-                        </td>
-                    </tr>
-
                     @empty
 
                     <tr>
