@@ -39,6 +39,52 @@ This is the default row view:
 
 ```
 
+Sometimes you want to modify the table view. You can do this by adding a `tableView()` method to your resource:
+
+Default Table view:
+```php
+    public function tableView()
+    {
+        return 'aura::components.table.table';
+    }
+```
+
+Custom Table view:
+
+```php
+    public function tableView()
+    {
+        return 'admin.resource.table';
+    }
+```
+
+Create the view `/resources/views/admin/resource/table.blade.php`. You will have access to `$this->rows` of the Livewire component to access the rows. 
+
+This is an example of the default table view with ul/li:
+
+```php
+<div class="mt-2">
+    <div class="min-w-full overflow-hidden overflow-x-auto align-middle border border-gray-400/30 sm:rounded-lg dark:border-gray-700 px-4">
+        <ul role="list" class="divide-y divide-gray-100">
+            @forelse($this->rows as $row)
+            @include($row->rowView())
+            @empty
+
+            <li>
+                <div class="py-8 text-center bg-white dark:bg-gray-900">
+                    <h3 class="mt-2 text-sm font-medium text-gray-900">No entries available</h3>
+                </div>
+            </li>
+
+            @endforelse
+        </ul>
+    </div>
+
+    @include('aura::components.table.footer')
+</div>
+```
+
+
 ## Grid Layout
 If you want to add a grid Layout, add `tableGridView()`to your resource:
 ```php
