@@ -367,6 +367,11 @@ trait AuraModelConfig
         return 'aura::components.table.row';
     }
 
+    public function tableView()
+    {
+        return 'aura::components.table.table';
+    }
+
     public function saveMetaField(array $metaFields): void
     {
         $this->saveMetaFields($metaFields);
