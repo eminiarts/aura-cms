@@ -152,6 +152,17 @@ class Post extends Resource
                  ],
              ],
              [
+                 'name' => 'Title',
+                 'slug' => 'title',
+                 'type' => 'Eminiarts\\Aura\\Fields\\Text',
+                 'validation' => '',
+                 'conditional_logic' => [],
+                 'wrapper' => '',
+                 'on_index' => true,
+                 'on_forms' => true,
+                 'on_view' => true,
+             ],
+             [
                  'name' => 'Text',
                  'slug' => 'text',
                  'type' => 'Eminiarts\\Aura\\Fields\\Text',
@@ -168,8 +179,8 @@ class Post extends Resource
                  'validation' => 'required|alpha_dash',
                  'conditional_logic' => [
                  ],
-                 'slug' => 'slug2',
-                 'based_on' => 'text',
+                 'slug' => 'slug',
+                 'based_on' => 'title',
              ],
              [
                  'name' => 'Bild',
