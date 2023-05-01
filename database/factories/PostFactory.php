@@ -2,13 +2,21 @@
 
 namespace Eminiarts\Aura\Database\Factories;
 
+use Eminiarts\Aura\Resources\Post;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\Post>
+ * @extends \Illuminate\Database\Eloquent\Factories\Factory<\Eminiarts\Aura\Resources\Post>
  */
 class PostFactory extends Factory
 {
+    /**
+    * The name of the factory's corresponding model.
+    *
+    * @var string
+    */
+    protected $model = Post::class;
+
     /**
      * Define the model's default state.
      *
@@ -20,7 +28,7 @@ class PostFactory extends Factory
             'title' => $name = $this->faker->name(),
             'slug' => str($name)->slug(),
             'content' => $this->faker->paragraph(),
-            'type' => $this->faker->randomElement(['Post', 'Project', 'Invoice', 'Page', 'Post', 'Post']),
+            'type' => "Post", //$this->faker->randomElement(['Post', 'Project', 'Invoice', 'Page', 'Post', 'Post']),
             'user_id' => 1,
             'team_id' => 1,
             'description' => $this->faker->paragraph(),
