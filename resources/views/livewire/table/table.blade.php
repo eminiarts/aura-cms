@@ -7,7 +7,7 @@
 
     @include('aura::components.table.context-menu')
 
-        <main wire:key="table-main-{{ $model->getType() }}" wire:ignore class="" x-data="{
+        <main wire:key="table-main-{{ $model->getType() }}"  class="" x-data="{
             showFilters: false,
             toggleFilters() {
                 this.showFilters = !this.showFilters;
