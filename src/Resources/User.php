@@ -2,14 +2,16 @@
 
 namespace Eminiarts\Aura\Resources;
 
+use Illuminate\Support\Str;
 use Aura\Flows\Resources\Flow;
-use Eminiarts\Aura\Models\User as UserModel;
 use Eminiarts\Aura\Models\UserMeta;
-use Eminiarts\Aura\Traits\SaveFieldAttributes;
-use Eminiarts\Aura\Traits\SaveMetaFields;
 use Eminiarts\Aura\Traits\SaveTerms;
 use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Str;
+use Eminiarts\Aura\Traits\SaveMetaFields;
+use Eminiarts\Aura\Models\User as UserModel;
+use Eminiarts\Aura\Traits\SaveFieldAttributes;
+use Eminiarts\Aura\Database\Factories\UserFactory;
+use Illuminate\Database\Eloquent\Factories\Factory;
 
 class User extends UserModel
 {
@@ -71,9 +73,15 @@ class User extends UserModel
             'edit',
         ];
     }
-
-    public function getBulkActions()
+    /**
+     * Create a new factory instance for the model.
+     */
+    protected static function newFactory(): Factory
     {
+        return UserFactory::new();
+    }
+        public function getBulkActions()
+        {
         // get all flows with type "manual"
 
         $flows = Flow::where('trigger', 'manual')
