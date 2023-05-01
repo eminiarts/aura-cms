@@ -48,6 +48,10 @@ function something()
 
 function createSuperAdmin()
 {
+    $user = User::factory()->create();
+
+    // $this->acting
+
     // Create Team
     $team = Team::factory()->create();
 
