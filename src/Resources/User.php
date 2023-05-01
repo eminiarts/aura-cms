@@ -76,25 +76,25 @@ class User extends UserModel
     /**
      * Create a new factory instance for the model.
      */
-    protected static function newFactory(): Factory
+    protected static function newFactory()
     {
         return UserFactory::new();
     }
         public function getBulkActions()
         {
-        // get all flows with type "manual"
+            // get all flows with type "manual"
 
-        $flows = Flow::where('trigger', 'manual')
-            ->where('options->resource', $this->getType())
-            ->get();
+            $flows = Flow::where('trigger', 'manual')
+                ->where('options->resource', $this->getType())
+                ->get();
 
-        foreach ($flows as $flow) {
-            $this->bulkActions['callFlow.'.$flow->id] = $flow->name;
+            foreach ($flows as $flow) {
+                $this->bulkActions['callFlow.'.$flow->id] = $flow->name;
+            }
+
+            // dd($this->bulkActions);
+            return $this->bulkActions;
         }
-
-        // dd($this->bulkActions);
-        return $this->bulkActions;
-    }
 
     public function getEmailField($value)
     {
