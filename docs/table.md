@@ -4,21 +4,92 @@
 
 ## Filters
 
-## List Layout
+## Customize Row View
 
 You can customize the Row view
 
 ```php
+    // If you want to use /resources/views/attachment/row.blade.php
     public function tableRowView()
     {
         return 'attachment.row';
     }
 ```
 
+This is the default row view:
+
+```php
+<tr class="bg-white dark:bg-gray-900" wire:key="{{ $row->id }}" data-id="{{ $row->id }}">
+    <x-aura::table.cell class="pr-0">
+        <x-aura::input.checkbox x-model="selected" :value="$row->id" x-on:click="toggleRow($event, {{ $row->id }})" />
+    </x-aura::table.cell>
+
+    @foreach($this->headers as $key => $column)
+        @if(optional($this->columns)[$key])
+            <td class="px-6 py-4">
+                {!! $row->display($key) !!}
+            </td>
+        @endif
+    @endforeach
+
+    <td>
+        @include('aura::components.table.row-action')
+    </td>
+</tr>
+```
+
+## Customize Table View
+
+Sometimes you want to modify the table view. You can do this by adding a `tableView()` method to your resource:
+
+Default Table view:
+```php
+    public function tableView()
+    {
+        return 'aura::components.table.table';
+    }
+```
+
+Custom Table view:
+
+```php
+    public function tableView()
+    {
+        return 'admin.resource.table';
+    }
+```
+
+Create the view `/resources/views/admin/resource/table.blade.php`. You will have access to `$this->rows` of the Livewire component to access the rows. 
+
+This is an example of the default table view with ul/li:
+
+```php
+<div class="mt-2">
+    <div class="min-w-full overflow-hidden overflow-x-auto align-middle border border-gray-400/30 sm:rounded-lg dark:border-gray-700 px-4">
+        <ul role="list" class="divide-y divide-gray-100">
+            @forelse($this->rows as $row)
+            @include($row->rowView())
+            @empty
+
+            <li>
+                <div class="py-8 text-center bg-white dark:bg-gray-900">
+                    <h3 class="mt-2 text-sm font-medium text-gray-900">No entries available</h3>
+                </div>
+            </li>
+
+            @endforelse
+        </ul>
+    </div>
+
+    @include('aura::components.table.footer')
+</div>
+```
+
+
 ## Grid Layout
 If you want to add a grid Layout, add `tableGridView()`to your resource:
 ```php
-class Attachment extends Resource
+class Attachment extends Post
 {
     public function tableGridView()
     {
@@ -57,4 +128,15 @@ Create the view `/resources/views/attachment/grid.blade.php`. You will have acce
 
 </div>
 
+```
+
+## Customize Top Bar
+
+You can customize the top bar by adding a `tableTopBarView()` method to your resource:
+
+```php
+    public function tableTopBarView()
+    {
+        return 'admin.resource.top-bar';
+    }
 ```

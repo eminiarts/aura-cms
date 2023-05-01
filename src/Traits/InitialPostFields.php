@@ -32,10 +32,6 @@ trait InitialPostFields
             if ($post->getTable() == 'posts' && ! $post->slug) {
                 $post->slug = Str::slug($post->title);
             }
-
-            // if (! $post->published_at) {
-            //     $post->published_at = now();
-            // }
         });
     }
 }

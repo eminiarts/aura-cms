@@ -38,7 +38,7 @@ class Resource extends Model
     use SaveTerms;
 
     protected $appends = ['fields'];
-    // protected $hidden = ['meta'];
+    protected $hidden = ['meta'];
 
     protected $fillable = ['title', 'content', 'type', 'status', 'fields', 'slug', 'user_id', 'parent_id', 'order', 'taxonomies', 'terms', 'team_id', 'first_taxonomy', 'created_at', 'updated_at', 'deleted_at'];
 
@@ -57,21 +57,7 @@ class Resource extends Model
      */
     public function __get($key)
     {
-        // Title is a special case, for now
-        // if ($key == 'title') {
-        //     //dd('title', $this->attributes, $this->getAttributeValue($key));
-        //     return $this->getAttributeValue($key);
-        // }
-
         $value = parent::__get($key);
-
-        //return $this->displayFieldValue($key);
-
-        // dump($key, $value);
-
-        // if (method_exists($this, $key)) {
-        //     dump('prop exists', $key, $value);
-        // }
 
         if ($value) {
             return $value;
@@ -79,19 +65,6 @@ class Resource extends Model
 
         // Not sure if this is the best way to do this
         return $this->displayFieldValue($key, $value);
-
-        // For now
-        if ($value === null) {
-            return $this->displayFieldValue($key);
-
-            //return $this->meta->$key;
-        }
-
-        if ($value === null && ! property_exists($this, $key)) {
-            return $this->meta->$key;
-        }
-
-        return $value;
     }
 
     /**
@@ -130,28 +103,13 @@ class Resource extends Model
     /**
      * @return string
      */
-    // public function getContentAttribute()
-    // {
-    //     return $this->content;
-    //     return $this->stripShortcodes($this->content);
-    // }
-
-    /**
-     * @return string
-     */
     public function getExcerptAttribute()
     {
         return $this->stripShortcodes($this->post_excerpt);
     }
 
-    public function getFieldsAttribute()
+    public function getMeta($key = null)
     {
-        // if $this->usesMeta is false, then we don't want to load the meta
-        if(optional($this)->meta && is_string($this->meta)) {
-            // ray()->trace();
-            // dd($this->meta);
-        }
-
         if ($this->usesMeta() && optional($this)->meta && !is_string($this->meta)) {
             $meta = $this->meta->pluck('value', 'key');
 
@@ -163,20 +121,29 @@ class Resource extends Model
                     return $class->get($class, $meta);
                 }
 
-                // if (optional($this->fieldBySlug($key))['type']) {
-                //     return app($this->fieldBySlug($key)['type'])->get($meta);
-                // }
-
                 return $meta;
             });
+
+            if($key) {
+                return $meta[$key] ?? null;
+            }
+
+            return $meta;
         }
 
-        // This hydrates the models, is there a way without hydrating?
-        // $meta = $this->meta()->toBase()->get()->pluck('value', 'key');
+        return collect();
+    }
 
-        // ray($this->getFieldSlugs());
+    public function getFieldsAttribute()
+    {
+        // ray('fields attribute');
 
-        $defaultValues = $this->getFieldSlugs()->mapWithKeys(fn ($value, $key) => [$value => null])->map(fn ($value, $key) => $meta[$key] ?? $value)->map(function ($value, $key) {
+        $meta = $this->getMeta();
+
+        $defaultValues = $this->getFieldSlugs()
+        ->mapWithKeys(fn ($value, $key) => [$value => null])
+        ->map(fn ($value, $key) => $meta[$key] ?? $value)
+        ->map(function ($value, $key) {
             // if the value is in $this->hidden, set it to null
             if (in_array($key, $this->hidden)) {
                 return;
@@ -192,7 +159,7 @@ class Resource extends Model
             $class = $this->fieldClassBySlug($key);
 
             if ($class && isset($this->{$key}) && method_exists($class, 'get')) {
-                return $class->get($class, $this->{$key});
+                return $class->get($class, $this->{$key} ?? null);
             }
 
             // if $this->{$key} is set, then we want to use that
@@ -206,13 +173,17 @@ class Resource extends Model
             }
         });
 
+        // ray($defaultValues);
+
         return $defaultValues->merge($meta ?? [])->filter(function ($value, $key) {
+
+            // ray('before getAccessibleFieldKeys', $this->getAccessibleFieldKeys());
 
             if (! in_array($key, $this->getAccessibleFieldKeys())) {
                 return false;
             }
-            return true;
 
+            return true;
         });
     }
 
@@ -252,13 +223,14 @@ class Resource extends Model
         $possibleRelationMethods = [$key, Str::camel($key)];
 
         foreach ($possibleRelationMethods as $method) {
-
-
             if ($method == 'taxonomy') {
                 continue;
             }
 
+            // ray(in_array($method, $modelMethods) && ($this->{$method}() instanceof \Illuminate\Database\Eloquent\Relations\Relation), $method);
+
             if (in_array($method, $modelMethods) && ($this->{$method}() instanceof \Illuminate\Database\Eloquent\Relations\Relation)) {
+                // ray($key);
                 return true;
             }
         }
@@ -338,9 +310,5 @@ class Resource extends Model
         static::deleted(function ($post) {
             dispatch(new TriggerFlowOnDeletedPostEvent($post));
         });
-
-        // static::saving(function ($post) {
-        //     dd('da', $post);
-        // });
     }
 }

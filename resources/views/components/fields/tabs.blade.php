@@ -34,7 +34,6 @@
         role="tablist"
         class="flex items-stretch px-0 pt-3 mx-0 -mb-px space-x-0"
     >
-
         @foreach(collect($field['fields']) as $key => $tab)
 
         {{-- if there are no fields, continue --}}

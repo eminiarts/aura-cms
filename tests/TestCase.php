@@ -2,16 +2,15 @@
 
 namespace Eminiarts\Aura\Tests;
 
-use Eminiarts\Aura\AuraServiceProvider;
-use Eminiarts\Aura\Providers\FortifyServiceProvider as EAFortifyServiceProvider;
-use Illuminate\Database\Eloquent\Factories\Factory;
-use Intervention\Image\ImageServiceProvider;
-use Lab404\Impersonate\ImpersonateServiceProvider;
-use Laravel\Fortify\FortifyServiceProvider;
 use Livewire\LivewireServiceProvider;
-use LivewireUI\Modal\LivewireModalServiceProvider;
-use Orchestra\Testbench\TestCase as Orchestra;
+use Eminiarts\Aura\AuraServiceProvider;
 use Spatie\LaravelRay\RayServiceProvider;
+use Intervention\Image\ImageServiceProvider;
+use Orchestra\Testbench\TestCase as Orchestra;
+use Lab404\Impersonate\ImpersonateServiceProvider;
+use LivewireUI\Modal\LivewireModalServiceProvider;
+use Illuminate\Database\Eloquent\Factories\Factory;
+use Eminiarts\Aura\Providers\FortifyServiceProvider;
 
 class TestCase extends Orchestra
 {
@@ -47,8 +46,7 @@ class TestCase extends Orchestra
             ImpersonateServiceProvider::class,
             LivewireModalServiceProvider::class,
             ImageServiceProvider::class,
-            // FortifyServiceProvider::class,
-            EAFortifyServiceProvider::class,
+            FortifyServiceProvider::class,
             RayServiceProvider::class,
         ];
     }

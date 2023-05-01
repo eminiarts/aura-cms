@@ -14,6 +14,11 @@ import tippy from 'tippy.js';
 import flatpickr from "flatpickr";
 // import { German } from "flatpickr/dist/l10n/de.js"
 
+import Tagify from '@yaireo/tagify'
+
+
+window.Tagify = Tagify;
+
 window.Alpine = Alpine;
 
 window.Sortable = Sortable;

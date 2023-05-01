@@ -54,6 +54,11 @@ class Taxonomy extends Resource
     //     return $this->{$key};
     // }
 
+    public function getIndexRoute()
+    {
+        return route('aura.taxonomy.index', $this->getSlug());
+    }
+
     public function editUrl()
     {
         return route('aura.taxonomy.edit', ['slug' => $this->getType(), 'id' => $this->id]);

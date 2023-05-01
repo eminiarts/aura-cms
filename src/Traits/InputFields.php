@@ -23,7 +23,6 @@ trait InputFields
     use InputFieldsValidation;
 
     private $accessibleFieldKeysCache = null;
-    private $shouldDisplayFieldCache = [];
 
     public function createFields()
     {
@@ -42,7 +41,7 @@ trait InputFields
     public function displayFieldValue($key, $value = null)
     {
         // Check Conditional Logic if the field should be displayed
-        if (! $this->shouldDisplayField($key)) {
+        if (! $this->shouldDisplayField($this->fieldBySlug($key))) {
             return;
         }
 
@@ -159,9 +158,10 @@ trait InputFields
                     return $field['field']->isInputField();
                 })
                 ->pluck('slug')
-                // ->filter(function ($field) {
-                //     return $this->shouldDisplayField($field);
-                // })
+                ->filter(function ($field) {
+                    // return true;
+                    return $this->shouldDisplayField($this->fieldBySlug($field));
+                })
                 ->toArray();
         }
 
@@ -266,30 +266,16 @@ trait InputFields
         ]);
     }
 
-    public function shouldDisplayField($key)
+    public function shouldDisplayField($field)
     {
-
-        // Use the static method in the ConditionalLogic class.
-        return ConditionalLogic::shouldDisplayField($this, $key);
-
-        // If the result is already in the cache, return it.
-        if (array_key_exists($key, $this->shouldDisplayFieldCache)) {
-            return $this->shouldDisplayFieldCache[$key];
-        }
-
-        // Check Conditional Logic if the field should be displayed.
-        $result = ConditionalLogic::checkCondition($this, $this->fieldBySlug($key));
-
-        // Before returning the result, store it in the cache.
-        $this->shouldDisplayFieldCache[$key] = $result;
-
-        return $result;
+        // return true;
+        return ConditionalLogic::shouldDisplayField($this, $field);
     }
 
     public function taxonomyFields()
     {
         return $this->mappedFields()->filter(function ($field) {
-            if ($field['field']->isTaxonomyField()) {
+            if (optional(optional($field)['field'])->isTaxonomyField()) {
                 return true;
             }
 
@@ -310,10 +296,4 @@ trait InputFields
         ]);
     }
 
-    // Display the value of a field in the index view
-    // $this->displayEmailField()
-    // $this->getEmailField()
-    // $this->setEmailField()
-    // $this->getUsersFieldValues()
-    // alternative: $this->queryForUsersField()
 }

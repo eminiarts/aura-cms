@@ -92,7 +92,7 @@ trait AuraModelConfig
      */
     public function __get($key)
     {
-        // Title is a special case, for now
+        // // Title is a special case, for now
         if ($key == 'title') {
             return $this->getAttributeValue($key);
         }
@@ -109,6 +109,7 @@ trait AuraModelConfig
             return $value;
         }
 
+        // ray()->count();
         return $this->displayFieldValue($key, $value);
     }
 
@@ -207,16 +208,16 @@ trait AuraModelConfig
         return static::$name;
     }
 
-    public static function getNextId()
-    {
-        $model = new static();
+    // public static function getNextId()
+    // {
+    //     $model = new static();
 
-        $query = "show table status like '".$model->getTable()."'";
+    //     $query = "show table status like '".$model->getTable()."'";
 
-        $statement = DB::select($query);
+    //     $statement = DB::select($query);
 
-        return $statement[0]->Auto_increment;
-    }
+    //     return $statement[0]->Auto_increment;
+    // }
 
     public static function getPluralName(): string
     {
@@ -345,6 +346,7 @@ trait AuraModelConfig
             'slug' => $this->getSlug(),
             'sort' => $this->getSort(),
             'group' => $this->getGroup(),
+            'route' => $this->getIndexRoute(),
             'dropdown' => $this->getDropdown(),
             'showInNavigation' => $this->getShowInNavigation(),
         ];
@@ -355,9 +357,19 @@ trait AuraModelConfig
         return static::$pluralName ?? Str::plural($this->singularName());
     }
 
+    public function getIndexRoute()
+    {
+        return route('aura.post.index', $this->getSlug());
+    }
+
     public function rowView()
     {
         return 'aura::components.table.row';
+    }
+
+    public function tableView()
+    {
+        return 'aura::components.table.table';
     }
 
     public function saveMetaField(array $metaFields): void
@@ -380,6 +392,30 @@ trait AuraModelConfig
         return static::$singularName ?? Str::title(static::$slug);
     }
 
+    public function scopeWhereMeta($query, ...$args)
+    {
+        if (count($args) === 2) {
+            $key = $args[0];
+            $value = $args[1];
+
+            return $query->whereHas('meta', function ($query) use ($key, $value) {
+                $query->where('key', $key)->where('value', $value);
+            });
+        } elseif (count($args) === 1 && is_array($args[0])) {
+            $metaPairs = $args[0];
+
+            return $query->where(function ($query) use ($metaPairs) {
+                foreach ($metaPairs as $key => $value) {
+                    $query->whereHas('meta', function ($query) use ($key, $value) {
+                        $query->where('key', $key)->where('value', $value);
+                    });
+                }
+            });
+        }
+
+        return $query;
+    }
+
     public function team()
     {
         return $this->belongsTo(Team::class);
@@ -398,7 +434,9 @@ trait AuraModelConfig
 
     public function title()
     {
-        return $this->getType()." (#{$this->id})";
+        if(optional($this)->id) {
+            return $this->getType()." (#{$this->id})";
+        }
     }
 
     public static function usesCustomTable(): bool

@@ -13,19 +13,26 @@ class ConditionalLogic
 
     public static function shouldDisplayField($model, $field)
     {
-        // Generate a unique cache key based on the model's class name, ID, and the field key.
-        $cacheKey = md5(json_encode($model) . '-' . json_encode($field));
-
+        // return true;
         // ray()->count();
+        if(! $field) {
+            return true;
+        }
+
+        // Generate a unique cache key based on the model's class name, ID, and the field key.
+        if(is_string($field)) {
+            $cacheKey = md5(json_encode($field));
+        } else {
+            $cacheKey = md5(json_encode($field['slug']));
+        }
+
 
         // If the result is already in the cache, return it.
         if (array_key_exists($cacheKey, self::$shouldDisplayFieldCache)) {
             return self::$shouldDisplayFieldCache[$cacheKey];
         }
 
-        // ray(md5(json_encode($model)), $field);
-
-        // ray()->count();
+        //ray()->count();
 
         // Check Conditional Logic if the field should be displayed.
         $result = self::checkCondition($model, $field);
@@ -38,12 +45,6 @@ class ConditionalLogic
 
     public static function checkCondition($model, $field)
     {
-        // return true;
-        // ray()->count();
-        // ray($model, $field);
-
-        // dd('hier');
-
         $conditions = optional($field)['conditional_logic'];
 
         if (! $conditions) {
@@ -90,14 +91,8 @@ class ConditionalLogic
                     break;
                 default:
 
-                    // if $model->fields is set, use that, otherwise, use $model['fields']
-
-                    // dd($condition);
-
-                    if (optional($model)->fields) {
-                        $fieldValue = $model->fields[$condition['field']];
-                    } else {
-                        $fieldValue = optional($model['fields'])[$condition['field']];
+                    if (optional($model)->getMeta()) {
+                        $fieldValue = $model->getMeta($condition['field']);
 
                         if (! $fieldValue) {
                             $show = false;
@@ -107,13 +102,13 @@ class ConditionalLogic
 
                     // If the $condition['field'] has a dot, undot array
                     if (str_contains($condition['field'], '.')) {
-                        $fieldValue = data_get($model['fields'], $condition['field']);
+                        $fieldValue = data_get($model->getMeta()->toArray(), $condition['field']);
                         $show = ConditionalLogic::checkFieldCondition($condition, $fieldValue);
 
                         break;
                     }
 
-                    if (optional($model)->fields && ! array_key_exists($condition['field'], $model->fields->toArray())) {
+                    if (optional($model)->getMeta() && ! array_key_exists($condition['field'], $model->getMeta()->toArray())) {
                         $show = false; // The model does not have the field, so it does not match the condition
                         break;
                     }
@@ -196,6 +191,8 @@ class ConditionalLogic
 
     private static function checkRoleCondition($condition)
     {
+        // ray()->red('checkRoleCondition', $condition);
+
         switch ($condition['operator']) {
             case '==':
                 return auth()->user()->resource->hasRole($condition['value']);

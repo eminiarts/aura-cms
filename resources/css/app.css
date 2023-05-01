@@ -5,6 +5,8 @@
 @import 'tailwindcss/components';
 @import 'tailwindcss/utilities';
 
+@import '@yaireo/tagify/dist/tagify.css';
+
 [x-cloak] {
   display: none !important;
 }
