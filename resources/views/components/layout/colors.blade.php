@@ -4,7 +4,6 @@
 
 @if($settings)
 <style>
-
 :root {
     --primary-25: {{ TransformColor::hexToRgb('#fbfeff') }};
     --primary-50: {{ TransformColor::hexToRgb('#E9EEFD') }};
@@ -751,6 +750,49 @@
 }
 
 @endif
-
 </style>
 @endif
+
+<script>
+    function getCssVariableValue(variableName) {
+        var rgb = getComputedStyle(document.documentElement).getPropertyValue(variableName);
+
+        rgb = rgb.split(" ");
+
+        return rgbToHex(rgb[0], rgb[1], rgb[2]);
+    }
+
+    function rgbToHex(r, g, b) {
+        return "#" + (1 << 24 | r << 16 | g << 8 | b).toString(16).slice(1);
+    }
+
+    @if(optional($settings)['darkmode-type'] == 'dark')
+        document.documentElement.classList.add('dark')
+    @elseif (optional($settings)['darkmode-type'] == 'light')
+        document.documentElement.classList.remove('dark')
+        document.documentElement.classList.remove('light')
+    @else
+        if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+            document.documentElement.classList.add('dark')
+        }
+    @endif
+
+    const darkModeMediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+
+    function setFaviconBasedOnPreferredColorScheme(event) {
+        if (event.matches) {
+            // The user has set their browser to prefer dark mode, so show the darkmode favicon
+            document.querySelector("link[sizes='32x32']").href = '/favicon-darkmode-32x32.png';
+            document.querySelector("link[sizes='16x16']").href = '/favicon-darkmode-16x16.png';
+        } else {
+            // The user has set their browser to prefer light mode, so show the lightmode favicon
+            document.querySelector("link[sizes='32x32']").href = '/favicon-32x32.png';
+            document.querySelector("link[sizes='16x16']").href = '/favicon-16x16.png';
+        }
+    }
+
+    darkModeMediaQuery.addListener(setFaviconBasedOnPreferredColorScheme);
+
+    // Set the initial value
+    setFaviconBasedOnPreferredColorScheme(darkModeMediaQuery);
+</script>
