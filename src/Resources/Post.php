@@ -2,12 +2,13 @@
 
 namespace Eminiarts\Aura\Resources;
 
-use Aura\Flows\Resources\Flow;
 use Eminiarts\Aura\Resource;
-use Eminiarts\Aura\Widgets\AvgPostsNumber;
+use Aura\Flows\Resources\Flow;
 use Eminiarts\Aura\Widgets\PostChart;
-use Eminiarts\Aura\Widgets\SumPostsNumber;
 use Eminiarts\Aura\Widgets\TotalPosts;
+use Eminiarts\Aura\Widgets\AvgPostsNumber;
+use Eminiarts\Aura\Widgets\SumPostsNumber;
+use Eminiarts\Aura\Database\Factories\PostFactory;
 
 class Post extends Resource
 {
@@ -478,5 +479,14 @@ class Post extends Resource
     public function title()
     {
         return optional($this)->title." (Post #{$this->id})";
+    }
+
+    /**
+     * Create a new factory instance for the model.
+     *
+     */
+    protected static function newFactory()
+    {
+        return PostFactory::new();
     }
 }

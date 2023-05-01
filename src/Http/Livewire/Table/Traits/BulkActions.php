@@ -39,6 +39,21 @@ trait BulkActions
             ->unless($this->selectAll, fn ($query) => $query->whereKey($this->selected));
     }
 
+      /**
+     * Selects all rows in the current page
+     *
+     * @return void
+     */
+    public function selectPageRows()
+    {
+        $this->selected = collect($this->selected)
+                ->merge($this->rows->pluck('id')->map(fn ($id) => (string) $id))
+                ->unique()
+                ->values()
+                ->all();
+    }
+
+
     // /**
     //  * Handles selecting all or page rows
     //  *
