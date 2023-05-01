@@ -8,9 +8,7 @@ import focus from '@alpinejs/focus';
 import ui from '@alpinejs/ui';
 
 import { Sortable } from '@shopify/draggable';
-
 import tippy from 'tippy.js';
-
 import flatpickr from "flatpickr";
 // import { German } from "flatpickr/dist/l10n/de.js"
 
@@ -18,11 +16,8 @@ import Tagify from '@yaireo/tagify'
 
 
 window.Tagify = Tagify;
-
 window.Alpine = Alpine;
-
 window.Sortable = Sortable;
-
 window.tippy = tippy;
 
 // window.german = German;
@@ -86,10 +81,8 @@ Alpine.store('leftSidebar', {
 
 Alpine.start()
 
-console.log('Alpine.js started 3');
-
 function updateVisitedPages(title, url) {
-  console.log('updateVisitedPages');
+  // console.log('updateVisitedPages');
   const key = 'visitedPages';
   const maxVisitedPages = 5;
   let visitedPages = JSON.parse(localStorage.getItem(key)) || [];
@@ -108,7 +101,7 @@ function updateVisitedPages(title, url) {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-  console.log('DOMContentLoaded');
+  // console.log('DOMContentLoaded');
   const pageTitle = document.title;
   const pageUrl = window.location.href;
   updateVisitedPages(pageTitle, pageUrl);
