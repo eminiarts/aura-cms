@@ -158,7 +158,12 @@ class Resource extends Model
 
             $class = $this->fieldClassBySlug($key);
 
-            if ($class && isset($this->{$key}) && method_exists($class, 'get')) {
+            if ($key == 'submissions') {
+                // TODO: Temporary fix
+                return 'submissions';
+            }
+
+            if ($class && isset(optional($this)->{$key}) && method_exists($class, 'get')) {
                 return $class->get($class, $this->{$key} ?? null);
             }
 
