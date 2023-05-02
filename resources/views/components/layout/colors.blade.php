@@ -782,12 +782,12 @@
     function setFaviconBasedOnPreferredColorScheme(event) {
         if (event.matches) {
             // The user has set their browser to prefer dark mode, so show the darkmode favicon
-            document.querySelector("link[sizes='32x32']").href = '/favicon-darkmode-32x32.png';
-            document.querySelector("link[sizes='16x16']").href = '/favicon-darkmode-16x16.png';
+            document.querySelector("link[sizes='32x32']").href = '/vendor/aura/public/favicon-darkmode-32x32.png';
+            document.querySelector("link[sizes='16x16']").href = '/vendor/aura/public/favicon-darkmode-16x16.png';
         } else {
             // The user has set their browser to prefer light mode, so show the lightmode favicon
-            document.querySelector("link[sizes='32x32']").href = '/favicon-32x32.png';
-            document.querySelector("link[sizes='16x16']").href = '/favicon-16x16.png';
+            document.querySelector("link[sizes='32x32']").href = '/vendor/aura/public/favicon-32x32.png';
+            document.querySelector("link[sizes='16x16']").href = '/vendor/aura/public/favicon-16x16.png';
         }
     }
 
