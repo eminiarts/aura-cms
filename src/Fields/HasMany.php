@@ -20,6 +20,12 @@ class HasMany extends Field
 
         // if $field['relation'] is set, check if meta with key $field['relation'] exists, apply whereHas meta to the query
 
+        // if optional($field)['relation'] is closure
+        if (is_callable(optional($field)['relation'])) {
+            // dd('closure', $model, $query, $field);
+            return $field['relation']($query, $model);
+        }
+
         if (optional($field)['relation']) {
             return $query->whereHas('meta', function ($query) use ($field) {
                 $query->where('key', $field['relation']);
