@@ -11,5 +11,5 @@
 </style>
 
 <div class="px-2" id="post-field-{{ optional($field)['slug'] }}-wrapper">
-    @livewire($field['component'], ['model' => $this->model])
+    @livewire($field['component'], ['model' => $this->model, 'field' => $field])
 </div>

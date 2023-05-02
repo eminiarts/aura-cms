@@ -43,16 +43,4 @@ trait MediaFields
             'value' => $ids,
         ]);
     }
-
-    public function updateField($data)
-    {
-        // dd($data);
-        $this->post['fields'][$data['slug']] = $data['value'];
-        // $this->save();
-
-        $this->emit('selectedMediaUpdated', [
-            'slug' => $data['slug'],
-            'value' => $data['value'],
-        ]);
-    }
 }

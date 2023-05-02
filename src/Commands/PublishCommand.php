@@ -28,7 +28,7 @@ class PublishCommand extends Command
      */
     public function handle()
     {
-        $assetPath = public_path('vendor/aura/public');
+        $assetPath = public_path('vendor/aura/assets');
 
         if (File::exists($assetPath)) {
             File::deleteDirectory($assetPath);
