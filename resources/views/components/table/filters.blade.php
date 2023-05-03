@@ -89,21 +89,27 @@
 
         @endforelse
 
-        <x-aura::button.light size="xs" wire:click="addFilter" class="mt-4">Add Filter</x-aura::button.light>
+        <x-aura::button.light size="xs" wire:click="addFilter" class="mt-4">
+            {{ __('Add Filter') }}
+        </x-aura::button.light>
 
 
-        <x-aura::button.transparent size="xs" wire:click="resetFilter" class="mt-4">Reset Filter</x-aura::button.transparent>
+        <x-aura::button.transparent size="xs" wire:click="resetFilter" class="mt-4">
+            {{ __('Reset Filter') }}}
+        </x-aura::button.transparent>
 
 
         {{-- <x-aura::button.transparent size="xs" wire:click="saveFilter" class="mt-4">Save as Template</x-aura::button.transparent> --}}
 
         {{-- Save Filter Modal Button --}}
-        <x-aura::button.transparent size="xs" wire:click="$set('showSaveFilterModal', true)" class="mt-4">Save as Template</x-aura::button.transparent>
+        <x-aura::button.transparent size="xs" wire:click="$set('showSaveFilterModal', true)" class="mt-4">
+            {{ __('Save as Template') }}}
+        </x-aura::button.transparent>
 
         {{-- Ask for a name to save the filter --}}
         <x-aura::dialog-modal wire:model="showSaveFilterModal">
             <x-slot name="title">
-                Save Filter
+                {{ __('Save Filter') }}
             </x-slot>
 
             <x-slot name="content">
@@ -113,7 +119,7 @@
             </x-slot>
 
             <x-slot name="footer">
-                <x-aura::button.primary wire:click="saveFilter">Save as Template</x-aura::button.primary>
+                <x-aura::button.primary wire:click="saveFilter">{{ __('Save as Template') }}</x-aura::button.primary>
             </x-slot>
         </x-aura::dialog-modal>
 
@@ -126,4 +132,4 @@
     </div>
 
 
-    <x-aura::button.primary wire:click="search" class="mt-4">Search</x-aura::button.primary>
+    <x-aura::button.primary wire:click="search" class="mt-4">{{ __('Search') }}</x-aura::button.primary>

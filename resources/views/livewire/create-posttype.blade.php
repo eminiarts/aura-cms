@@ -1,5 +1,5 @@
 <div class="p-8">
-    <h2 class="text-3xl font-semibold"> Create Posttype </h2>
+    <h2 class="text-3xl font-semibold">{{ __('Create Posttype') }}</h2>
 
     <div class="mb-4 -mx-4">
         @foreach($this->fields as $key => $field)

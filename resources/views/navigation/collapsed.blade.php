@@ -42,7 +42,7 @@
                           <div class="{{ $iconClass }}">
                               {!! $resource['icon'] !!}
                           </div>
-                          <div>{{ $resource['name'] }}</div>
+                          <div>{{ __($resource['name']) }}</div>
                       </x-aura::navigation.item-dropdown>
                   @endforeach
               </x-aura::navigation.dropdown-icon>
@@ -136,7 +136,7 @@
     </x-aura::navigation.item-icon> --}}
 
     @local
-    <x-aura::navigation.item-icon onclick="Livewire.emit('openModal', 'create-posttype')" tooltip="Create Posttype" :strict="false">
+    <x-aura::navigation.item-icon onclick="Livewire.emit('openModal', 'create-posttype')" tooltip="{{ __('Create Posttype') }}" :strict="false">
         <x-aura::icon icon="collection" />
     </x-aura::navigation.item-icon>
     @endlocal

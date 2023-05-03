@@ -5,11 +5,9 @@
     <div wire:key="toggle-{{$group}}" wire:click="toggleGroup('{{$group}}')" class="cursor-pointer">
         <x-aura::navigation.heading>
             <div class="flex items-center justify-between">
-                <span>{{ $group }}</span>
+                <span>{{ __($group) }}</span>
 
                 @if ($this->isToggled($group))
-
-                {{-- <span>-</span> --}}
 
                 @else
 
@@ -79,7 +77,7 @@
     <div wire:key="toggle-{{$group}}" wire:click="toggleGroup('{{$group}}')" class="cursor-pointer">
         <x-aura::navigation.heading>
             <div class="flex items-center justify-between">
-                <span>{{ $group }}</span>
+                <span>{{ __($group) }}</span>
 
                 @if ($this->isToggled($group))
                 @else
@@ -95,7 +93,7 @@
         <div class="{{ $iconClass }}">
             <x-aura::icon icon="collection" />
         </div>
-        <div>Create Posttype</div>
+        <div>{{ __('Create Posttype') }}</div>
     </x-aura::navigation.item>
     @endlocal
 
@@ -103,7 +101,7 @@
         <div class="{{ $iconClass }}">
             <x-aura::icon icon="brush" />
         </div>
-        <div>Theme Options</div>
+        <div>{{ __('Theme Options') }}</div>
     </x-aura::navigation.item>
 
 
@@ -111,7 +109,7 @@
         <div class="{{ $iconClass }}">
             <x-aura::icon icon="adjustments" />
         </div>
-        <div>Global Config</div>
+        <div>{{ __('Global Config') }}</div>
     </x-aura::navigation.item>
     @endif
     @endsuperadmin
