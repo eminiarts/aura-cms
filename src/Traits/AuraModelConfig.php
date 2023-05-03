@@ -221,7 +221,8 @@ trait AuraModelConfig
 
     public static function getPluralName(): string
     {
-        return str(static::$type)->plural();
+
+        return static::$pluralName ?? str(static::$type)->plural();
     }
 
     public static function getSearchable(): array
@@ -243,9 +244,6 @@ trait AuraModelConfig
     {
         return static::$type;
     }
-
-
-
 
     public static function getWidgets(): array
     {
@@ -342,7 +340,7 @@ trait AuraModelConfig
             'icon' => $this->icon(),
             'resource' => get_class($this),
             'type' => $this->getType(),
-            'name' => $this->getName() ?? str($this->getType())->plural(),
+            'name' => $this->pluralName(),
             'slug' => $this->getSlug(),
             'sort' => $this->getSort(),
             'group' => $this->getGroup(),
@@ -352,7 +350,7 @@ trait AuraModelConfig
         ];
     }
 
-    public function pluralName(): string
+    public function pluralName()
     {
         return static::$pluralName ?? Str::plural($this->singularName());
     }
