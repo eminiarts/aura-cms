@@ -72,7 +72,7 @@
                                 <x-slot:icon>
                                     <x-aura::icon icon="plus" />
                                 </x-slot>
-                                <span>Create {{ $model->getName() }}</span>
+                                <span>{{ __('Create') }} {{ $model->getName() }}</span>
                             </x-aura::button>
                             </a>
                             @endif
@@ -99,7 +99,7 @@
                             </div>
                             <input type="text" id="table-search"
                                 class="bg-white-50 border border-gray-500/30 text-gray-900 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full md:w-80 pl-10 p-2.5  dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500"
-                                placeholder="Search for items" wire:model="search">
+                                placeholder="{{ __('Search for items') }}" wire:model="search">
                         </div>
                     </div>
 
@@ -134,7 +134,7 @@
                                     <x-slot:icon>
                                         <x-aura::icon icon="filter" />
                                         </x-slot>
-                                        Filters
+                                        {{ __('Filters') }}
                                 </x-aura::button.border>
                             </div>
                         </div>

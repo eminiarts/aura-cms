@@ -41,7 +41,7 @@
 
     <hr class="my-4 border-t border-gray-400/30 dark:border-gray-700">
 
-    <p class="block font-semibold">Custom Filters</p>
+    <p class="block font-semibold">{{ __('Custom Filters') }}</p>
 
      {{-- @dump( $filters) --}}
         {{-- @dump( $this->fieldsForFilter) --}}

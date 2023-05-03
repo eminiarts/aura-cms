@@ -352,7 +352,7 @@ trait AuraModelConfig
 
     public function pluralName()
     {
-        return static::$pluralName ?? Str::plural($this->singularName());
+        return __(static::$pluralName ?? Str::plural($this->singularName()));
     }
 
     public function getIndexRoute()
@@ -385,9 +385,9 @@ trait AuraModelConfig
         $this->taxonomyFields = array_merge($this->taxonomyFields, $taxonomyFields);
     }
 
-    public function singularName(): string
+    public function singularName()
     {
-        return static::$singularName ?? Str::title(static::$slug);
+        return __(static::$singularName ?? Str::title(static::$slug));
     }
 
     public function scopeWhereMeta($query, ...$args)
