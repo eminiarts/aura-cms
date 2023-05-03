@@ -10,7 +10,7 @@
                         </path>
                     </svg>
         </x-slot>
-        Settings
+        {{ __('Settings') }}
         </x-aura::button.border>
         </x-slot>
 
