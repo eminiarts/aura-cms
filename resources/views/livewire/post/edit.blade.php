@@ -1,5 +1,5 @@
 <div>
-    @section('title', __('Edit') . ' '. $model->singularName() . ' • ' . $model->title)
+    @section('title', __('Edit ' . $model->singularName()))
 
     @if(!$inModal)
     <x-aura::breadcrumbs>
