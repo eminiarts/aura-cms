@@ -37,8 +37,8 @@ test('table can be rendered', function () {
 
     // Visit the Post Index Page
     $this->get(route('aura.post.index', $post->type))
-    ->assertSeeLivewire('aura::post-index')
-    ->assertSeeLivewire('aura::table');
+        ->assertSeeLivewire('aura::post-index')
+        ->assertSeeLivewire('aura::table');
 });
 
 test('table shows all input fields', function () {
@@ -117,7 +117,7 @@ test('table custom user columns', function () {
 
     // Visit the Post Index Page
     $response = $this->get(route('aura.post.index', $post->type))
-    ->assertOk();
+        ->assertOk();
 });
 
 test('table custom user columns can be sorted', function () {
@@ -148,7 +148,7 @@ test('table custom user columns can be sorted', function () {
     auth()->user()->updateOption('columns_sort.'.$post->getType(), ['number', 'id', 'text']);
 
     $response = $this->get(route('aura.post.index', $post->type))
-            ->assertOk();
+        ->assertOk();
 
     // Assert see in order: id, text, number
     $response->assertSeeInOrder(['number', 'id', 'text']);

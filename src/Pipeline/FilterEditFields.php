@@ -20,6 +20,6 @@ class FilterEditFields implements Pipe
             return true;
         })->values();
 
-        return  $next($fields);
+        return $next($fields);
     }
 }

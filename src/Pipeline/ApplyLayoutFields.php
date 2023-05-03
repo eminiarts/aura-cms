@@ -77,6 +77,6 @@ class ApplyLayoutFields implements Pipe
             }
         }
 
-        return  $next($layouts);
+        return $next($layouts);
     }
 }

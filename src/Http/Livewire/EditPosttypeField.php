@@ -129,6 +129,7 @@ class EditPosttypeField extends Component
         // if $this->field is undefined, return
         if (! isset($this->field['type'])) {
             ray('no type');
+
             return;
         }
         ray($this->field['type']);

@@ -32,6 +32,6 @@ class BuildTreeFromFields implements Pipe
 
         $tree = array_values($tree);
 
-        return  $next($tree);
+        return $next($tree);
     }
 }

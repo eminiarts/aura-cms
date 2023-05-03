@@ -49,15 +49,15 @@ class BasicConditionalLogicOnFieldModel extends Resource
 }
 
 test('Field X gets shown when value of Y is true', function () {
-//    $model = new BasicConditionalLogicOnFieldModel();
-//
-//    $model->save();
-//
-//    $model->update([
-//        'fields' => [
-//            'text1' => 'test',
-//        ],
-//    ]);
+    //    $model = new BasicConditionalLogicOnFieldModel();
+    //
+    //    $model->save();
+    //
+    //    $model->update([
+    //        'fields' => [
+    //            'text1' => 'test',
+    //        ],
+    //    ]);
 
     // $this->assertCount(1, $fields);
 })->todo();

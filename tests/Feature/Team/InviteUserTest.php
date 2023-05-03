@@ -37,14 +37,14 @@ beforeEach(function () {
 test('user can be invited', function () {
     // Test InviteUser Livewire Component
     $component = Livewire::test(InviteUser::class, ['resource' => 'user'])
-    ->call('save')
-    ->assertHasErrors(['post.fields.email' => 'required'])
-    ->set('post.fields.email', 'test@test.ch')
-    ->call('save')
-    ->assertHasErrors(['post.fields.role' => 'required'])
-    ->set('post.fields.role', 1)
-    ->call('save')
-    ->assertHasNoErrors();
+        ->call('save')
+        ->assertHasErrors(['post.fields.email' => 'required'])
+        ->set('post.fields.email', 'test@test.ch')
+        ->call('save')
+        ->assertHasErrors(['post.fields.role' => 'required'])
+        ->set('post.fields.role', 1)
+        ->call('save')
+        ->assertHasNoErrors();
 
     // DB should have 1 TeamInvitation
     $this->assertEquals(1, TeamInvitation::count());
@@ -104,9 +104,9 @@ test('user email is prefilled in the registration', function () {
 
 test('user_invitations can be enabled', function () {
     livewire(AuraConfig::class)
-    ->set('post.fields.user_invitations', true)
-    ->call('save')
-    ->assertHasNoErrors();
+        ->set('post.fields.user_invitations', true)
+        ->call('save')
+        ->assertHasNoErrors();
 
     expect(Aura::option('user_invitations'))->toBeTrue();
 
@@ -115,9 +115,9 @@ test('user_invitations can be enabled', function () {
 
 test('user_invitations can be disabled', function () {
     livewire(AuraConfig::class)
-    ->set('post.fields.user_invitations', true)
-    ->call('save')
-    ->assertHasNoErrors();
+        ->set('post.fields.user_invitations', true)
+        ->call('save')
+        ->assertHasNoErrors();
 
     expect(Aura::option('user_invitations'))->toBeTrue();
 
@@ -215,12 +215,12 @@ test('email and role are required in the invite user component', function () {
     $user->teams()->attach($team->id);
 
     livewire(InviteUser::class, ['team' => $team])
-            ->set('post', ['fields' => [
-                'email' => 'invited@test.com',
-                'role' => Role::first()->id,
-            ]])
-            ->call('save')
-            ->assertHasErrors([
-                'post.fields.email',
-            ]);
+        ->set('post', ['fields' => [
+            'email' => 'invited@test.com',
+            'role' => Role::first()->id,
+        ]])
+        ->call('save')
+        ->assertHasErrors([
+            'post.fields.email',
+        ]);
 });

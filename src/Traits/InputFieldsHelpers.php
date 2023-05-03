@@ -2,13 +2,32 @@
 
 namespace Eminiarts\Aura\Traits;
 
+use Eminiarts\Aura\Pipeline\ApplyGroupedInputs;
 use Illuminate\Pipeline\Pipeline;
 use Illuminate\Support\Facades\Cache;
-use Eminiarts\Aura\Pipeline\ApplyGroupedInputs;
 
 trait InputFieldsHelpers
 {
     protected $fieldsCollectionCache;
+
+    public function clearModelCache()
+    {
+        // set accessibleFieldKeysCache to null
+        $this->accessibleFieldKeysCache = null;
+
+        // Generate the cache keys based on the model class
+        $fieldsCacheKey = $this->getFieldCacheKey();
+        $mappedFieldsCacheKey = $this->getFieldCacheKey().'-mappedFields';
+
+        // Check if the cache keys are bound and remove them
+        if (app()->bound($fieldsCacheKey)) {
+            app()->offsetUnset($fieldsCacheKey);
+        }
+
+        if (app()->bound($mappedFieldsCacheKey)) {
+            app()->offsetUnset($mappedFieldsCacheKey);
+        }
+    }
 
     public function fieldBySlug($slug)
     {
@@ -24,13 +43,6 @@ trait InputFieldsHelpers
         return false;
     }
 
-
-    public function getFieldCacheKey()
-    {
-        return 'fieldsCollectionCache.' . get_class($this);
-    }
-
-
     public function fieldsCollection()
     {
         return collect($this->getFields());
@@ -39,7 +51,7 @@ trait InputFieldsHelpers
         $cacheKey = $this->getFieldCacheKey();
 
         // Check if the cache already contains the result for this model class
-        if (!app()->bound($cacheKey)) {
+        if (! app()->bound($cacheKey)) {
             // If the cache doesn't contain the result, calculate it and store it in the cache
             $fieldsCollection = collect($this->getFields());
             app()->singleton($cacheKey, function () use ($fieldsCollection) {
@@ -65,6 +77,11 @@ trait InputFieldsHelpers
                 }
             }
         }
+    }
+
+    public function getFieldCacheKey()
+    {
+        return 'fieldsCollectionCache.'.get_class($this);
     }
 
     public function getFieldSlugs()
@@ -99,30 +116,11 @@ trait InputFieldsHelpers
         return $this->mappedFields()->firstWhere('slug', $slug);
     }
 
-    public function clearModelCache()
-    {
-        // set accessibleFieldKeysCache to null
-        $this->accessibleFieldKeysCache = null;
-
-        // Generate the cache keys based on the model class
-        $fieldsCacheKey = $this->getFieldCacheKey();
-        $mappedFieldsCacheKey = $this->getFieldCacheKey() . '-mappedFields';
-
-        // Check if the cache keys are bound and remove them
-        if (app()->bound($fieldsCacheKey)) {
-            app()->offsetUnset($fieldsCacheKey);
-        }
-
-        if (app()->bound($mappedFieldsCacheKey)) {
-            app()->offsetUnset($mappedFieldsCacheKey);
-        }
-    }
-
     public function mappedFields()
     {
 
         // Generate the cache key based on the model class and method name
-        $cacheKey = $this->getFieldCacheKey() . '-mappedFields';
+        $cacheKey = $this->getFieldCacheKey().'-mappedFields';
 
         // Bind the mapped fields collection as a singleton if it's not already bound
         app()->singletonIf($cacheKey, function () {
@@ -142,8 +140,8 @@ trait InputFieldsHelpers
     public function sendThroughPipeline($fields, $pipes)
     {
         return app(Pipeline::class)
-        ->send($fields)
-        ->through($pipes)
-        ->thenReturn();
+            ->send($fields)
+            ->through($pipes)
+            ->thenReturn();
     }
 }

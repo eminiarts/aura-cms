@@ -14,6 +14,8 @@ trait AuraModelConfig
 
     public array $bulkActions = [];
 
+    public static $contextMenu = true;
+
     public static $customTable = false;
 
     public static $globalSearch = true;
@@ -29,8 +31,6 @@ trait AuraModelConfig
     public array $taxonomyFields = [];
 
     public static bool $usesMeta = true;
-
-    public static $contextMenu = true;
 
     public array $widgetSettings = [
         'default' => '30d',
@@ -160,6 +160,11 @@ trait AuraModelConfig
         return $this->baseFillable;
     }
 
+    public static function getContextMenu()
+    {
+        return static::$contextMenu;
+    }
+
     public static function getDropdown()
     {
         return static::$dropdown;
@@ -190,10 +195,10 @@ trait AuraModelConfig
         });
 
         $fields = $fields->pluck('name', 'slug')
-        ->when($this->usesTitle(), function ($collection, $value) {
-            return $collection->prepend('title', 'title');
-        })
-        ->prepend('ID', 'id');
+            ->when($this->usesTitle(), function ($collection, $value) {
+                return $collection->prepend('title', 'title');
+            })
+            ->prepend('ID', 'id');
 
         return $fields;
     }
@@ -201,6 +206,11 @@ trait AuraModelConfig
     public function getIcon()
     {
         return '<svg class="w-5 h-5" viewBox="0 0 18 18" fill="none" stroke="currentColor" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M15.75 9a6.75 6.75 0 1 1-13.5 0 6.75 6.75 0 0 1 13.5 0Z" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+    }
+
+    public function getIndexRoute()
+    {
+        return route('aura.post.index', $this->getSlug());
     }
 
     public static function getName(): ?string
@@ -238,6 +248,11 @@ trait AuraModelConfig
     public static function getSlug(): string
     {
         return static::$slug;
+    }
+
+    public static function getSort(): ?int
+    {
+        return static::$sort;
     }
 
     public static function getType(): string
@@ -329,9 +344,8 @@ trait AuraModelConfig
      */
     public function meta()
     {
-        return $this->hasMany(Meta::class, 'post_id')
+        return $this->hasMany(Meta::class, 'post_id');
         //->whereIn('key', $this->getAccessibleFieldKeys())
-        ;
     }
 
     public function navigation()
@@ -355,19 +369,9 @@ trait AuraModelConfig
         return __(static::$pluralName ?? Str::plural($this->singularName()));
     }
 
-    public function getIndexRoute()
-    {
-        return route('aura.post.index', $this->getSlug());
-    }
-
     public function rowView()
     {
         return 'aura::components.table.row';
-    }
-
-    public function tableView()
-    {
-        return 'aura::components.table.table';
     }
 
     public function saveMetaField(array $metaFields): void
@@ -383,11 +387,6 @@ trait AuraModelConfig
     public function saveTaxonomyFields(array $taxonomyFields): void
     {
         $this->taxonomyFields = array_merge($this->taxonomyFields, $taxonomyFields);
-    }
-
-    public function singularName()
-    {
-        return __(static::$singularName ?? Str::title(static::$slug));
     }
 
     public function scopeWhereMeta($query, ...$args)
@@ -414,6 +413,16 @@ trait AuraModelConfig
         return $query;
     }
 
+    public function singularName()
+    {
+        return __(static::$singularName ?? Str::title(static::$slug));
+    }
+
+    public function tableView()
+    {
+        return 'aura::components.table.table';
+    }
+
     public function team()
     {
         return $this->belongsTo(Team::class);
@@ -432,7 +441,7 @@ trait AuraModelConfig
 
     public function title()
     {
-        if(optional($this)->id) {
+        if (optional($this)->id) {
             return $this->getType()." (#{$this->id})";
         }
     }
@@ -458,15 +467,5 @@ trait AuraModelConfig
         if ($this->getType() && $this->id) {
             return route('aura.post.view', ['slug' => $this->getType(), 'id' => $this->id]);
         }
-    }
-
-    public static function getSort(): ?int
-    {
-        return static::$sort;
-    }
-
-    public static function getContextMenu()
-    {
-        return static::$contextMenu;
     }
 }

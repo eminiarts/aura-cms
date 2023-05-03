@@ -6,43 +6,6 @@ class ConditionalLogic
 {
     private static $shouldDisplayFieldCache = [];
 
-    public static function clearConditionsCache()
-    {
-        self::$shouldDisplayFieldCache = [];
-    }
-
-    public static function shouldDisplayField($model, $field)
-    {
-        // return true;
-        // ray()->count();
-        if(! $field) {
-            return true;
-        }
-
-        // Generate a unique cache key based on the model's class name, ID, and the field key.
-        if(is_string($field)) {
-            $cacheKey = md5(json_encode($field));
-        } else {
-            $cacheKey = md5(json_encode($field['slug']));
-        }
-
-
-        // If the result is already in the cache, return it.
-        if (array_key_exists($cacheKey, self::$shouldDisplayFieldCache)) {
-            return self::$shouldDisplayFieldCache[$cacheKey];
-        }
-
-        //ray()->count();
-
-        // Check Conditional Logic if the field should be displayed.
-        $result = self::checkCondition($model, $field);
-
-        // Before returning the result, store it in the cache.
-        self::$shouldDisplayFieldCache[$cacheKey] = $result;
-
-        return $result;
-    }
-
     public static function checkCondition($model, $field)
     {
         $conditions = optional($field)['conditional_logic'];
@@ -125,6 +88,11 @@ class ConditionalLogic
         return $show;
     }
 
+    public static function clearConditionsCache()
+    {
+        self::$shouldDisplayFieldCache = [];
+    }
+
     public static function fieldIsVisibleTo($field, $user)
     {
         $conditions = optional($field)['conditional_logic'];
@@ -167,6 +135,37 @@ class ConditionalLogic
         }
 
         return $show;
+    }
+
+    public static function shouldDisplayField($model, $field)
+    {
+        // return true;
+        // ray()->count();
+        if (! $field) {
+            return true;
+        }
+
+        // Generate a unique cache key based on the model's class name, ID, and the field key.
+        if (is_string($field)) {
+            $cacheKey = md5(json_encode($field));
+        } else {
+            $cacheKey = md5(json_encode($field['slug']));
+        }
+
+        // If the result is already in the cache, return it.
+        if (array_key_exists($cacheKey, self::$shouldDisplayFieldCache)) {
+            return self::$shouldDisplayFieldCache[$cacheKey];
+        }
+
+        //ray()->count();
+
+        // Check Conditional Logic if the field should be displayed.
+        $result = self::checkCondition($model, $field);
+
+        // Before returning the result, store it in the cache.
+        self::$shouldDisplayFieldCache[$cacheKey] = $result;
+
+        return $result;
     }
 
     private static function checkFieldCondition($condition, $fieldValue)

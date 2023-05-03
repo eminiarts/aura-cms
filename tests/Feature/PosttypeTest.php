@@ -86,8 +86,8 @@ it('can mount the posttype component', function () {
 
 it('can add new tab', function () {
     Livewire::test(PosttypeFake::class, ['slug' => 'Model'])
-    ->call('addNewTab')
-    ->assertEmitted('openSlideOver');
+        ->call('addNewTab')
+        ->assertEmitted('openSlideOver');
 });
 
 it('current posttype fields', function () {
@@ -99,7 +99,7 @@ it('current posttype fields', function () {
 
 it('can add fields', function () {
     $component = Livewire::test(PosttypeFake::class, ['slug' => 'Model'])
-    ->call('addField', ...[2, 'new_field', 'Eminiarts\\Aura\\Fields\\Text', '']);
+        ->call('addField', ...[2, 'new_field', 'Eminiarts\\Aura\\Fields\\Text', '']);
 
     expect($component->fieldsArray)->toBeArray();
     expect($component->fieldsArray)->toHaveCount(4);
@@ -143,7 +143,7 @@ it('can save the posttype component', function () {
     ];
 
     Livewire::test(PosttypeFake::class, ['slug' => 'Model'])
-    ->set('postTypeFields', $postTypeFields)
-    ->call('save')
-    ->assertSet('postTypeFields', $postTypeFields);
+        ->set('postTypeFields', $postTypeFields)
+        ->call('save')
+        ->assertSet('postTypeFields', $postTypeFields);
 });

@@ -3,18 +3,17 @@
 namespace Eminiarts\Aura\Traits;
 
 use Eminiarts\Aura\ConditionalLogic;
-use Eminiarts\Aura\Pipeline\ApplyTabs;
-use Eminiarts\Aura\Pipeline\MapFields;
 use Eminiarts\Aura\Pipeline\AddIdsToFields;
-use Eminiarts\Aura\Pipeline\TransformSlugs;
-use Eminiarts\Aura\Pipeline\FilterEditFields;
-use Eminiarts\Aura\Pipeline\FilterViewFields;
-use Eminiarts\Aura\Traits\InputFieldsHelpers;
-use Eminiarts\Aura\Pipeline\FilterCreateFields;
-use Eminiarts\Aura\Pipeline\BuildTreeFromFields;
-use Eminiarts\Aura\Pipeline\RemoveValidationAttribute;
 use Eminiarts\Aura\Pipeline\ApplyParentConditionalLogic;
 use Eminiarts\Aura\Pipeline\ApplyParentDisplayAttributes;
+use Eminiarts\Aura\Pipeline\ApplyTabs;
+use Eminiarts\Aura\Pipeline\BuildTreeFromFields;
+use Eminiarts\Aura\Pipeline\FilterCreateFields;
+use Eminiarts\Aura\Pipeline\FilterEditFields;
+use Eminiarts\Aura\Pipeline\FilterViewFields;
+use Eminiarts\Aura\Pipeline\MapFields;
+use Eminiarts\Aura\Pipeline\RemoveValidationAttribute;
+use Eminiarts\Aura\Pipeline\TransformSlugs;
 
 trait InputFields
 {
@@ -295,5 +294,4 @@ trait InputFields
             BuildTreeFromFields::class,
         ]);
     }
-
 }

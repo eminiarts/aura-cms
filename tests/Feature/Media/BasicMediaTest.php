@@ -48,13 +48,13 @@ test('media page can be rendered', function () {
 
     // Visit the Attachment Index Page
     $response
-    ->assertOk()
+        ->assertOk()
     // Custom Index Page
-    ->assertSeeLivewire('aura::attachment-index')
+        ->assertSeeLivewire('aura::attachment-index')
     // Media Uploader
-    ->assertSeeLivewire('aura::media-uploader')
+        ->assertSeeLivewire('aura::media-uploader')
     // Media Grid View
-    ->assertSeeLivewire('aura::table');
+        ->assertSeeLivewire('aura::table');
 });
 
 test('media uploader', function () {
@@ -89,9 +89,9 @@ test('media grid view', function () {
     ]);
 
     $component = Livewire::test(Table::class, ['query' => null, 'model' => $attachment])
-            ->assertSet('tableView', $attachment->defaultTableView())
-            ->assertSet('perPage', $attachment->defaultPerPage())
-            ->assertSet('columns', $attachment->getDefaultColumns());
+        ->assertSet('tableView', $attachment->defaultTableView())
+        ->assertSet('perPage', $attachment->defaultPerPage())
+        ->assertSet('columns', $attachment->getDefaultColumns());
 
     expect($attachment->defaultTableView())->toBe('grid');
 });

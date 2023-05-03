@@ -37,7 +37,6 @@ class CreateResource extends BaseOperation
     {
         // dd('send notification', $operation->toArray(), $post->toArray(), $operationLog->toArray());
 
-
         // if $post->type is the same as $operation->options['resource'] then throw expception
         // dd($post->type, $operation->options['resource']);
 
@@ -55,7 +54,6 @@ class CreateResource extends BaseOperation
             throw new \Exception('No Resource');
         }
         $resource = $operation->options['resource'];
-
 
         // Create the Resource with the values
         $resource = app($resource)->create($values);

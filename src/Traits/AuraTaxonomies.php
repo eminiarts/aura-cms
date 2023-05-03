@@ -78,13 +78,13 @@ trait AuraTaxonomies
         $query->addSelect([
             'first_taxonomy' => Taxonomy::leftJoin('taxonomy_relations', function ($join) use ($relatable_type) {
                 $join->on('taxonomies.id', '=', 'taxonomy_relations.taxonomy_id')
-                ->where('taxonomy_relations.relatable_type', '=', $relatable_type);
+                    ->where('taxonomy_relations.relatable_type', '=', $relatable_type);
             })
-            ->where('taxonomy', $taxonomy)
-            ->whereColumn('relatable_id', 'posts.id')
-            ->orderBy('name', 'ASC')
-            ->select('name')
-            ->take(1),
+                ->where('taxonomy', $taxonomy)
+                ->whereColumn('relatable_id', 'posts.id')
+                ->orderBy('name', 'ASC')
+                ->select('name')
+                ->take(1),
         ]);
     }
 
@@ -92,12 +92,12 @@ trait AuraTaxonomies
     {
         $query->addSelect(
             ['first_taxonomy' => DB::table('taxonomy_relations')->leftJoin('taxonomies', 'taxonomy_relations.taxonomy_id', '=', 'taxonomies.id')
-            ->where('taxonomy_relations.relatable_type', '=', $relatable_type)
-            ->where('taxonomies.taxonomy', '=', $taxonomy)
-            ->whereColumn('relatable_id', 'posts.id')
-            ->orderBy('taxonomies.name', 'asc')
-            ->select('taxonomies.name')
-            ->limit(1)]
+                ->where('taxonomy_relations.relatable_type', '=', $relatable_type)
+                ->where('taxonomies.taxonomy', '=', $taxonomy)
+                ->whereColumn('relatable_id', 'posts.id')
+                ->orderBy('taxonomies.name', 'asc')
+                ->select('taxonomies.name')
+                ->limit(1)]
         );
     }
 

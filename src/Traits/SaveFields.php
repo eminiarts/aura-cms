@@ -85,18 +85,18 @@ trait SaveFields
             'type' => "/type = ['\"]([^'\"]*)['\"]/",
             'group' => "/group = ['\"]([^'\"]*)['\"]/",
             'dropdown' => "/dropdown = ['\"]([^'\"]*)['\"]/",
-            'sort' => "/sort = (.*?);/",
+            'sort' => '/sort = (.*?);/',
             'slug' => "/slug = ['\"]([^'\"]*)['\"]/",
             'icon' => "/public function getIcon\(\)[\n\r\s+]*\{[\n\r\s+]*return ['\"](.*?)['\"];/",
         ];
 
         $replacements = [
-            'type' => "type = '" . htmlspecialchars($replacement['type']) . "'",
-            'group' => "group = '" . htmlspecialchars($replacement['group']) . "'",
-            'dropdown' => "dropdown = '" . htmlspecialchars($replacement['dropdown']) . "'",
-            'sort' => "sort = " . htmlspecialchars($replacement['sort']) . ";",
-            'slug' => "slug = '" . htmlspecialchars($replacement['slug']) . "'",
-            'icon' => "public function getIcon()\n    {\n        return '" . ($replacement['icon']) . "';"
+            'type' => "type = '".htmlspecialchars($replacement['type'])."'",
+            'group' => "group = '".htmlspecialchars($replacement['group'])."'",
+            'dropdown' => "dropdown = '".htmlspecialchars($replacement['dropdown'])."'",
+            'sort' => 'sort = '.htmlspecialchars($replacement['sort']).';',
+            'slug' => "slug = '".htmlspecialchars($replacement['slug'])."'",
+            'icon' => "public function getIcon()\n    {\n        return '".($replacement['icon'])."';",
         ];
 
         $replaced = $file;
@@ -108,13 +108,14 @@ trait SaveFields
 
         foreach ($patterns as $key => $pattern) {
 
-            if($key == 'icon') {
+            if ($key == 'icon') {
                 // dump($replacements[$key]);
                 $replaced = preg_replace($pattern, strip_tags($replacements[$key], '<a><altGlyph><altGlyphDef><altGlyphItem><animate><animateColor><animateMotion><animateTransform><circle><clipPath><color-profile><cursor><defs><desc><ellipse><feBlend><feColorMatrix><feComponentTransfer><feComposite><feConvolveMatrix><feDiffuseLighting><feDisplacementMap><feDistantLight><feFlood><feFuncA><feFuncB><feFuncG><feFuncR><feGaussianBlur><feImage><feMerge><feMergeNode><feMorphology><feOffset><fePointLight><feSpecularLighting><feSpotLight><feTile><feTurbulence><filter><font><font-face><font-face-format><font-face-name><font-face-src><font-face-uri><foreignObject><g><glyph><glyphRef><hkern><image><line><linearGradient><marker><mask><metadata><missing-glyph><mpath><path><pattern><polygon><polyline><radialGradient><rect><set><stop><style><svg><switch><symbol><text><textPath><title><tref><tspan><use><view><vkern>'), $replaced);
+
                 continue;
             }
 
-            if(in_array($key, ['group', 'dropdown','sort'])) {
+            if (in_array($key, ['group', 'dropdown', 'sort'])) {
 
                 if (isset($replacement[$key])) {
                     if (isset($matches[$key][1]) || (isset($matches[$key][0]) && $matches[$key][0] == "''")) {
@@ -127,12 +128,12 @@ trait SaveFields
                     } else {
 
                         // Don't add empty lines
-                        if(empty(htmlspecialchars($replacement[$key]))) {
+                        if (empty(htmlspecialchars($replacement[$key]))) {
                             continue;
                         }
 
                         // Add missing line
-                        $lineToAdd = "protected static ?string \${$key} = '" . htmlspecialchars($replacement[$key]) . "';\n";
+                        $lineToAdd = "protected static ?string \${$key} = '".htmlspecialchars($replacement[$key])."';\n";
                         $replaced = preg_replace('/(public\s+static\s+\?string\s+\$slug\s+=\s+[^;\n]+;)/', "$1\n{$lineToAdd}", $replaced);
                     }
                 }

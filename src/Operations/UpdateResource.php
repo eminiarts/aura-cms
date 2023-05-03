@@ -2,8 +2,8 @@
 
 namespace Eminiarts\Aura\Operations;
 
-use Eminiarts\Aura\Resources\Post;
 use Aura\Flows\Resources\Operation;
+use Eminiarts\Aura\Resources\Post;
 
 class UpdateResource extends BaseOperation
 {

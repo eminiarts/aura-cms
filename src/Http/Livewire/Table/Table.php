@@ -235,6 +235,11 @@ class Table extends Component
         return $columns;
     }
 
+    public function getParentModelProperty()
+    {
+        return $this->parent;
+    }
+
     /**
      * Get the rows for the table.
      *
@@ -253,7 +258,7 @@ class Table extends Component
     public function getRowsQueryProperty()
     {
         $query = $this->model->query()
-        ->orderBy('id', 'desc');
+            ->orderBy('id', 'desc');
 
         if ($this->field && method_exists(app($this->field['type']), 'queryFor')) {
             $query = app($this->field['type'])->queryFor($this->parent, $query, $this->field);
@@ -390,10 +395,5 @@ class Table extends Component
         } else {
             $this->emit('selectedRows', $this->selected);
         }
-    }
-
-    public function getParentModelProperty()
-    {
-        return $this->parent;
     }
 }

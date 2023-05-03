@@ -11,10 +11,10 @@ use Illuminate\Database\Eloquent\Factories\Factory;
 class PostFactory extends Factory
 {
     /**
-    * The name of the factory's corresponding model.
-    *
-    * @var string
-    */
+     * The name of the factory's corresponding model.
+     *
+     * @var string
+     */
     protected $model = Post::class;
 
     /**
@@ -28,7 +28,7 @@ class PostFactory extends Factory
             'title' => $name = $this->faker->name(),
             'slug' => str($name)->slug(),
             'content' => $this->faker->paragraph(),
-            'type' => "Post", //$this->faker->randomElement(['Post', 'Project', 'Invoice', 'Page', 'Post', 'Post']),
+            'type' => 'Post', //$this->faker->randomElement(['Post', 'Project', 'Invoice', 'Page', 'Post', 'Post']),
             'user_id' => 1,
             'team_id' => 1,
             'description' => $this->faker->paragraph(),

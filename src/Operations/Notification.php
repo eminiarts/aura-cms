@@ -2,12 +2,11 @@
 
 namespace Eminiarts\Aura\Operations;
 
-use Eminiarts\Aura\Models\User;
-use Eminiarts\Aura\Resources\Role;
-use Illuminate\Support\Facades\DB;
 use Aura\Flows\Resources\Operation;
-use Illuminate\Support\Facades\Blade;
+use Eminiarts\Aura\Models\User;
 use Eminiarts\Aura\Notifications\FlowNotification;
+use Eminiarts\Aura\Resources\Role;
+use Illuminate\Support\Facades\Blade;
 
 class Notification extends BaseOperation
 {

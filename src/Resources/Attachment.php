@@ -12,6 +12,8 @@ class Attachment extends Resource
 {
     use DispatchesJobs;
 
+    public static $contextMenu = false;
+
     public static ?string $name = 'Media';
 
     public static ?string $slug = 'attachment';
@@ -19,8 +21,6 @@ class Attachment extends Resource
     public static ?int $sort = 2;
 
     public static string $type = 'Attachment';
-
-    public static $contextMenu = false;
 
     public function defaultPerPage()
     {
@@ -236,7 +236,8 @@ class Attachment extends Resource
     {
         if ($size) {
             $url = Str::after($this->url, 'media/');
-            return asset('storage/'. $size .'/'. $url);
+
+            return asset('storage/'.$size.'/'.$url);
         }
 
         return asset('storage/'.$this->url);

@@ -42,9 +42,9 @@ trait HasFields
     public function sendThroughPipeline($fields, $pipes)
     {
         return app(Pipeline::class)
-        ->send($fields)
-        ->through($pipes)
-        ->thenReturn();
+            ->send($fields)
+            ->through($pipes)
+            ->thenReturn();
     }
 
      public function validationAttributes()

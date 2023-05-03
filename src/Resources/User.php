@@ -2,16 +2,16 @@
 
 namespace Eminiarts\Aura\Resources;
 
-use Illuminate\Support\Str;
 use Aura\Flows\Resources\Flow;
-use Eminiarts\Aura\Models\UserMeta;
-use Eminiarts\Aura\Traits\SaveTerms;
-use Illuminate\Support\Facades\Cache;
-use Eminiarts\Aura\Traits\SaveMetaFields;
-use Eminiarts\Aura\Models\User as UserModel;
-use Eminiarts\Aura\Traits\SaveFieldAttributes;
 use Eminiarts\Aura\Database\Factories\UserFactory;
+use Eminiarts\Aura\Models\User as UserModel;
+use Eminiarts\Aura\Models\UserMeta;
+use Eminiarts\Aura\Traits\SaveFieldAttributes;
+use Eminiarts\Aura\Traits\SaveMetaFields;
+use Eminiarts\Aura\Traits\SaveTerms;
 use Illuminate\Database\Eloquent\Factories\Factory;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Str;
 
 class User extends UserModel
 {
@@ -73,13 +73,28 @@ class User extends UserModel
             'edit',
         ];
     }
-    /**
-     * Create a new factory instance for the model.
-     */
-    protected static function newFactory()
+
+    public function getAvatarUrlAttribute()
     {
-        return UserFactory::new();
+        if (! $this->avatar) {
+            return 'https://ui-avatars.com/api/?name='.$this->getInitials().'';
+        }
+
+        // json decode the meta value
+        $meta = json_decode($this->avatar);
+
+        // get the attachment from the meta
+        $attachments = Attachment::find($meta);
+
+        if ($attachments) {
+            $attachment = $attachments->first();
+
+            return $attachment->path('thumbnail');
+        }
+
+        return 'https://ui-avatars.com/api/?name='.$this->getInitials().'';
     }
+
         public function getBulkActions()
         {
             // get all flows with type "manual"
@@ -282,43 +297,6 @@ class User extends UserModel
         ];
     }
 
-    public function getInitials()
-    {
-        $name = $this->name;
-        $words = explode(' ', $name);
-        $initials = '';
-
-        foreach ($words as $word) {
-            if (strlen($initials) < 2) {
-                $initials .= strtoupper(substr($word, 0, 1));
-            } else {
-                break;
-            }
-        }
-
-        return $initials;
-    }
-
-    public function getAvatarUrlAttribute()
-    {
-        if(!$this->avatar) {
-            return 'https://ui-avatars.com/api/?name=' . $this->getInitials() . '';
-        }
-
-        // json decode the meta value
-        $meta = json_decode($this->avatar);
-
-        // get the attachment from the meta
-        $attachments = Attachment::find($meta);
-
-        if($attachments) {
-            $attachment = $attachments->first();
-
-            return $attachment->path('thumbnail');
-        }
-        return 'https://ui-avatars.com/api/?name=' . $this->getInitials() . '';
-    }
-
     public function getFieldsAttribute()
     {
         $meta = $this->meta->pluck('value', 'key');
@@ -363,6 +341,23 @@ class User extends UserModel
         return '<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>';
     }
 
+    public function getInitials()
+    {
+        $name = $this->name;
+        $words = explode(' ', $name);
+        $initials = '';
+
+        foreach ($words as $word) {
+            if (strlen($initials) < 2) {
+                $initials .= strtoupper(substr($word, 0, 1));
+            } else {
+                break;
+            }
+        }
+
+        return $initials;
+    }
+
     public function getRolesField()
     {
         return $this->roles->pluck('id')->toArray();
@@ -380,7 +375,6 @@ class User extends UserModel
         if (! $roles) {
             return false;
         }
-
 
         foreach ($roles as $role) {
             $permissions = $role->fields['permissions'];
@@ -456,7 +450,7 @@ class User extends UserModel
     public function roles()
     {
         $roles = $this->belongsToMany(Role::class, 'user_meta', 'user_id', 'value')
-                      ->wherePivot('key', 'roles');
+            ->wherePivot('key', 'roles');
 
         return config('aura.teams') ? $roles->wherePivot('team_id', $this->current_team_id) : $roles;
     }
@@ -538,6 +532,14 @@ class User extends UserModel
 
     protected function getCacheKeyForRoles(): string
     {
-        return $this->current_team_id . '.user.' . $this->id . '.roles';
+        return $this->current_team_id.'.user.'.$this->id.'.roles';
+    }
+
+    /**
+     * Create a new factory instance for the model.
+     */
+    protected static function newFactory()
+    {
+        return UserFactory::new();
     }
 }

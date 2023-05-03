@@ -16,6 +16,6 @@ class RemoveValidationAttribute implements Pipe
             return $field;
         });
 
-        return  $next($fields);
+        return $next($fields);
     }
 }

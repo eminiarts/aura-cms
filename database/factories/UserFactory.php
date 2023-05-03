@@ -2,8 +2,8 @@
 
 namespace Eminiarts\Aura\Database\Factories;
 
-use Eminiarts\Aura\Resources\User;
 use Eminiarts\Aura\Resources\Team;
+use Eminiarts\Aura\Resources\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Str;
 

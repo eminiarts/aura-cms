@@ -75,8 +75,8 @@ test('Team Settings can be saved', function () {
     $role2 = Role::create(['type' => 'Role', 'title' => 'Super Admin', 'slug' => 'super_admin', 'description' => 'Super Admin has can perform everything.', 'super_admin' => true, 'permissions' => []]);
 
     $this->user->teams()->attach([
-            $secondTeam->id => ['key' => 'roles', 'value' => $role2->id],
-        ]);
+        $secondTeam->id => ['key' => 'roles', 'value' => $role2->id],
+    ]);
 
     // Default Team Settings
     Livewire::test(TeamSettings::class)

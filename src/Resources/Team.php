@@ -18,6 +18,14 @@ class Team extends Resource
     use SaveMetaFields;
     use SaveTerms;
 
+    public array $actions = [
+        'delete' => [
+            'label' => 'Delete',
+            'icon-view' => 'aura::components.actions.trash',
+            'class' => 'hover:text-red-700 text-red-500 font-bold',
+        ],
+    ];
+
     public static $customTable = true;
 
     public static $globalSearch = false;
@@ -29,14 +37,6 @@ class Team extends Resource
     protected $fillable = [
         'name', 'user_id', 'fields',
     ];
-
-    public array $actions = [
-           'delete' => [
-               'label' => 'Delete',
-               'icon-view' => 'aura::components.actions.trash',
-               'class' => 'hover:text-red-700 text-red-500 font-bold',
-           ],
-       ];
 
     protected $table = 'teams';
 
@@ -184,7 +184,7 @@ class Team extends Resource
         });
 
         static::created(function ($team) {
-            if($user = auth()->user()) {
+            if ($user = auth()->user()) {
                 // Change the current team id of the user
                 $user->current_team_id = $team->id;
                 $user->save();
@@ -204,12 +204,12 @@ class Team extends Resource
             ]);
 
             // Attach the current user to the team
-            if($user) {
+            if ($user) {
 
                 $team->users()->attach($user->id, [
-                             'key' => 'roles',
-                             'value' => $role->id,
-                         ]);
+                    'key' => 'roles',
+                    'value' => $role->id,
+                ]);
 
                 // Clear cache of Cache('user.'.$this->id.'.teams')
                 Cache::forget('user.'.$user->id.'.teams');

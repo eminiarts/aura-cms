@@ -42,10 +42,9 @@ test('save defined fields', function () {
     $this->withoutExceptionHandling();
     //$this->withExceptionHandling();
 
-
     $this->assertDatabaseMissing('posts', [
-              'type' => 'Model',
-          ]);
+        'type' => 'Model',
+    ]);
 
     $model = SaveRessourceFieldsTestModel::create([
         'title' => 'Test',
@@ -67,7 +66,6 @@ test('save defined fields', function () {
     $this->assertEquals($savedModel->title, 'Test');
     $this->assertEquals($savedModel->text1, 'Test 1');
     $this->assertEquals($savedModel->text2, 'Test 2');
-
 
     // try {
     //     $this->assertDatabaseMissing('posts', [

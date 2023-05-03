@@ -32,24 +32,23 @@ test('table can be paginated', function () {
 
     // Visit the Post Index Page
     $this->get(route('aura.post.index', 'Post'))
-    ->assertSeeLivewire('aura::post-index')
-    ->assertSeeLivewire('aura::table');
+        ->assertSeeLivewire('aura::post-index')
+        ->assertSeeLivewire('aura::table');
 
     $eleven = Post::skip(10)->first();
 
     // Test the Table Component
     $component = Livewire::test(Table::class, ['query' => null, 'model' => new Post()])
     // ->assertSee('Showing 1 to 10 of 21 results')
-    ->assertSee('Showing')
-    ->assertSee('1')
-    ->assertSee('10')
-    ->assertSee('21')
-    ->assertSee('results')
-    ->assertSet('perPage', 10)
-    ->assertSet('page', 1)
-    ->call('setPage', 2)
-    ->assertSet('page', 2)
-    ->assertSee($eleven->title)
-    ;
+        ->assertSee('Showing')
+        ->assertSee('1')
+        ->assertSee('10')
+        ->assertSee('21')
+        ->assertSee('results')
+        ->assertSet('perPage', 10)
+        ->assertSet('page', 1)
+        ->call('setPage', 2)
+        ->assertSet('page', 2)
+        ->assertSee($eleven->title);
 
 });
