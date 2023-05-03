@@ -3,7 +3,7 @@
         <x-slot name="trigger">
             <x-aura::button.transparent>
                 <x-aura::icon.dots class="w-5 h-5 mr-2" />
-                Actions
+                {{ __('Actions') }}
             </x-aura::button.transparent>
         </x-slot>
         <x-slot name="content">
@@ -15,9 +15,9 @@
                     <x-aura::confirms-action 
                         wire:then="singleAction('{{ $action }}')" 
                         :confirmingPassword="true"
-                        :title="optional($options)['confirm-title']" 
-                        :content="optional($options)['confirm-content']"
-                        :button="optional($options)['confirm-button']"
+                        :title="__(optional($options)['confirm-title'])" 
+                        :content="__(optional($options)['confirm-content'])"
+                        :button="__(optional($options)['confirm-button'])"
                         :button_class="optional($options)['confirm-button-class']"
                     >
                         <div class="p-2 cursor-pointer hover:bg-primary-100">
@@ -30,10 +30,13 @@
                                         @include($options['icon-view'])
                                         @endif
                                     </div>
-                                    <strong class="font-semibold">{{ $options['label'] ?? '' }}
+                                    <strong class="font-semibold">
+                                        {{ __($options['label'] ?? '') }}
                                         @if(optional($options)['description'])
                                         <span
-                                            class="text-sm text-gray-500 font-normal leading-tight inline-block">{{ $options['description'] ?? '' }}</span>
+                                            class="text-sm text-gray-500 font-normal leading-tight inline-block">
+                                            {{ __(($options['description'] ?? '')) }}
+                                        </span>
                                         @endif
                                     </strong>
                                 </div>
