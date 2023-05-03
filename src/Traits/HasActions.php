@@ -4,11 +4,6 @@ namespace Eminiarts\Aura\Traits;
 
 trait HasActions
 {
-    public function getActionsProperty()
-    {
-        return $this->model->getActions();
-    }
-
     /**
      * Confirm the user's action.
      *
@@ -20,6 +15,11 @@ trait HasActions
             'id' => $id,
         ]);
 
+    }
+
+    public function getActionsProperty()
+    {
+        return $this->model->getActions();
     }
 
     public function singleAction($action)

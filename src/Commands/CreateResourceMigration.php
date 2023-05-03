@@ -103,12 +103,12 @@ class CreateResourceMigration extends Command
             'Eminiarts\Aura\Fields\Date' => "\$table->date('{$slug}')->nullable();\n",
             'Eminiarts\Aura\Fields\Textarea' => "\$table->text('{$slug}')->nullable();\n",
             'Eminiarts\Aura\Fields\Color' => "\$table->string('{$slug}')->nullable();\n",
-        // 'Eminiarts\Aura\Fields\Tags', 'Eminiarts\Aura\Fields\BelongsTo' => {
-        //     $relatedResource = $field['resource'];
-        //     $relatedModel = new $relatedResource();
-        //     $relatedTableName = $relatedModel->getTable();
-        //     return "{\$table}->foreignId('{$slug}')->nullable()->constrained('{$relatedTableName}')->onDelete('cascade');\n";
-        // },
+            // 'Eminiarts\Aura\Fields\Tags', 'Eminiarts\Aura\Fields\BelongsTo' => {
+            //     $relatedResource = $field['resource'];
+            //     $relatedModel = new $relatedResource();
+            //     $relatedTableName = $relatedModel->getTable();
+            //     return "{\$table}->foreignId('{$slug}')->nullable()->constrained('{$relatedTableName}')->onDelete('cascade');\n";
+            // },
             'Eminiarts\Aura\Fields\HasMany' => '', // No need to add anything to the schema for HasMany relationships
             default => "\$table->text('{$slug}')->nullable(); // Add your custom field type schema generation here for '{$slug}' with type '{$type}'\n",
         };

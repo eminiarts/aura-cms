@@ -30,15 +30,15 @@ class Sparkline extends Widget
         $method = $this->method;
 
         $query = $this->model->query()
-        ->where('created_at', '>=', $start)
-        ->where('created_at', '<', $end)
-        ->groupBy(DB::raw('DATE(created_at)'))
-        ->select(DB::raw('DATE(created_at) as date'));
+            ->where('created_at', '>=', $start)
+            ->where('created_at', '<', $end)
+            ->groupBy(DB::raw('DATE(created_at)'))
+            ->select(DB::raw('DATE(created_at) as date'));
 
         if ($column && $this->model->isMetaField($column)) {
             $query->leftJoin('post_meta', function ($join) use ($column) {
                 $join->on('posts.id', '=', 'post_meta.post_id')
-                ->where('post_meta.key', '=', $column);
+                    ->where('post_meta.key', '=', $column);
             });
 
             if (in_array($method, ['avg', 'sum', 'min', 'max'])) {

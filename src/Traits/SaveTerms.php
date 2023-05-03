@@ -30,10 +30,10 @@ trait SaveTerms
                     }
 
                     $values[] = collect($value)
-                    ->map(fn ($i) => trim($i))
-                    ->map(function ($item) use ($key) {
-                        return Aura::findTaxonomyBySlug($key)::firstOrCreate(['name' => $item])->id;
-                    })->mapWithKeys(fn ($i, $k) => [$i => ['order' => $k]])->toArray();
+                        ->map(fn ($i) => trim($i))
+                        ->map(function ($item) use ($key) {
+                            return Aura::findTaxonomyBySlug($key)::firstOrCreate(['name' => $item])->id;
+                        })->mapWithKeys(fn ($i, $k) => [$i => ['order' => $k]])->toArray();
 
                     continue;
 

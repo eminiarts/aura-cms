@@ -174,9 +174,9 @@ class AuraServiceProvider extends PackageServiceProvider
             ])
             ->hasInstallCommand(function (InstallCommand $command) {
                 $command
-                ->startWith(function (InstallCommand $command) {
-                    $command->info('Hello, thank you for installing Aura!');
-                })
+                    ->startWith(function (InstallCommand $command) {
+                        $command->info('Hello, thank you for installing Aura!');
+                    })
                     ->publishConfigFile()
                     ->publishMigrations()
                     ->askToRunMigrations()
@@ -231,8 +231,8 @@ class AuraServiceProvider extends PackageServiceProvider
         // })->toArray();
 
         $this
-        ->bootGate()
-        ->bootLivewireComponents();
+            ->bootGate()
+            ->bootLivewireComponents();
     }
 
     public function packageRegistered()

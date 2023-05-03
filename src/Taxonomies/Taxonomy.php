@@ -37,28 +37,6 @@ class Taxonomy extends Resource
         return route('aura.taxonomy.create', [$this->getType()]);
     }
 
-       /**
-     * Get the parent commentable model (post or video).
-     */
-    public function relatable()
-    {
-        return $this->morphTo();
-    }
-
-    // public function display($key)
-    // {
-    //     if ($this->fields && array_key_exists($key, $this->fields->toArray())) {
-    //         return $this->displayFieldValue($key, $this->fields[$key]);
-    //     }
-
-    //     return $this->{$key};
-    // }
-
-    public function getIndexRoute()
-    {
-        return route('aura.taxonomy.index', $this->getSlug());
-    }
-
     public function editUrl()
     {
         return route('aura.taxonomy.edit', ['slug' => $this->getType(), 'id' => $this->id]);
@@ -100,6 +78,20 @@ class Taxonomy extends Resource
         ];
     }
 
+    // public function display($key)
+    // {
+    //     if ($this->fields && array_key_exists($key, $this->fields->toArray())) {
+    //         return $this->displayFieldValue($key, $this->fields[$key]);
+    //     }
+
+    //     return $this->{$key};
+    // }
+
+    public function getIndexRoute()
+    {
+        return route('aura.taxonomy.index', $this->getSlug());
+    }
+
     // public function getHeaders()
     // {
     //     return $this->inputFields()
@@ -125,6 +117,14 @@ class Taxonomy extends Resource
     public function meta()
     {
         return $this->hasMany(TaxonomyMeta::class, 'taxonomy_id');
+    }
+
+    /**
+     * Get the parent commentable model (post or video).
+     */
+    public function relatable()
+    {
+        return $this->morphTo();
     }
 
     public function viewUrl()

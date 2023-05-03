@@ -12,10 +12,10 @@ beforeEach(fn () => $this->actingAs($this->user = User::factory()->create()));
 
 it('can create a user with all required fields', function () {
     $this->artisan('aura:user')
-         ->expectsQuestion('What is your name?', 'John Doe')
-         ->expectsQuestion('What is your email?', 'johndoe@example.com')
-         ->expectsQuestion('What is your password?', 'password')
-         ->assertExitCode(0);
+        ->expectsQuestion('What is your name?', 'John Doe')
+        ->expectsQuestion('What is your email?', 'johndoe@example.com')
+        ->expectsQuestion('What is your password?', 'password')
+        ->assertExitCode(0);
 
     $this->assertDatabaseHas('users', [
         'name' => 'John Doe',

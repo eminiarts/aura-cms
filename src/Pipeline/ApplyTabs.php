@@ -56,6 +56,6 @@ class ApplyTabs implements Pipe
         }
 
         // to the next pipe
-        return  $next($fields);
+        return $next($fields);
     }
 }

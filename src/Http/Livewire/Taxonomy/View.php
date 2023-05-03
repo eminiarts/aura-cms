@@ -2,19 +2,19 @@
 
 namespace Eminiarts\Aura\Http\Livewire\Taxonomy;
 
-use Livewire\Component;
 use Eminiarts\Aura\Facades\Aura;
 use Eminiarts\Aura\Traits\HasActions;
-use Eminiarts\Aura\Traits\RepeaterFields;
 use Eminiarts\Aura\Traits\InteractsWithFields;
+use Eminiarts\Aura\Traits\RepeaterFields;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
+use Livewire\Component;
 
 class View extends Component
 {
     use AuthorizesRequests;
+    use HasActions;
     use InteractsWithFields;
     use RepeaterFields;
-    use HasActions;
 
     public $inModal = false;
 

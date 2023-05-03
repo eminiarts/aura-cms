@@ -3,8 +3,6 @@
 namespace Eminiarts\Aura\Traits;
 
 use Illuminate\Support\Arr;
-use Illuminate\Support\Str;
-use Eminiarts\Aura\Traits\InputFields;
 
 trait FieldsOnComponent
 {

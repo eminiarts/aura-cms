@@ -25,6 +25,6 @@ class TransformSlugs implements Pipe
             return $item;
         });
 
-        return  $next($fields);
+        return $next($fields);
     }
 }

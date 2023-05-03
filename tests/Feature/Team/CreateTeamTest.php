@@ -28,9 +28,9 @@ test('team can be created', function () {
     expect($teams->count())->toBe(1);
 
     $component = livewire(Create::class, ['slug' => 'Team'])->set('post.fields.name', 'Test Team')
-    ->set('post.fields.description', 'Test Description')
-    ->call('save')
-    ->assertHasNoErrors();
+        ->set('post.fields.description', 'Test Description')
+        ->call('save')
+        ->assertHasNoErrors();
 
     $team = $this->user->fresh()->currentTeam;
 

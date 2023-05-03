@@ -10,7 +10,7 @@ class Permissions extends Field
 
     public function get($field, $value)
     {
-        if(is_array($value)) {
+        if (is_array($value)) {
             return $value;
         }
 

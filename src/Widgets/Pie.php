@@ -31,15 +31,15 @@ class Pie extends Widget
         $column = optional($this->widget)['column'];
 
         $posts = $this->model->query()
-        ->where('created_at', '>=', $start)
-        ->where('created_at', '<', $end);
+            ->where('created_at', '>=', $start)
+            ->where('created_at', '<', $end);
 
         if ($column && $this->model->isMetaField($column)) {
             $posts->select('posts.*', DB::raw("CAST(post_meta.value as SIGNED) as $column"))
-            ->leftJoin('post_meta', function ($join) use ($column) {
-                $join->on('posts.id', '=', 'post_meta.post_id')
-            ->where('post_meta.key', '=', $column);
-            });
+                ->leftJoin('post_meta', function ($join) use ($column) {
+                    $join->on('posts.id', '=', 'post_meta.post_id')
+                        ->where('post_meta.key', '=', $column);
+                });
         }
 
         return match ($this->method) {

@@ -2,45 +2,40 @@
 
 namespace Eminiarts\Aura\Resources;
 
-use Eminiarts\Aura\Resource;
 use Aura\Flows\Resources\Flow;
-use Eminiarts\Aura\Widgets\PostChart;
-use Eminiarts\Aura\Widgets\TotalPosts;
-use Eminiarts\Aura\Widgets\AvgPostsNumber;
-use Eminiarts\Aura\Widgets\SumPostsNumber;
 use Eminiarts\Aura\Database\Factories\PostFactory;
+use Eminiarts\Aura\Resource;
+use Eminiarts\Aura\Widgets\AvgPostsNumber;
+use Eminiarts\Aura\Widgets\PostChart;
+use Eminiarts\Aura\Widgets\SumPostsNumber;
+use Eminiarts\Aura\Widgets\TotalPosts;
 
 class Post extends Resource
 {
     public array $actions = [
-           'delete' => [
-               'label' => 'Delete',
-               'icon-view' => 'aura::components.actions.trash',
-               'class' => 'hover:text-red-700 text-red-500 font-bold',
-               'confirm' => true,
-               'confirm-title' => 'Delete Post?',
-               'confirm-content' => 'Are you sure you want to delete this post?',
-               'confirm-button' => 'Delete',
-                'confirm-button-class' => 'ml-3 bg-red-600 hover:bg-red-700',
-           ],
-           'testAction' => [
-               'label' => 'Test Action',
-               'class' => 'hover:text-primary-700 text-primary-500 font-bold',
-               'confirm' => true,
-               'confirm-title' => 'Test Action Post?',
-               'confirm-content' => 'Are you sure you want to test Action?',
-               'confirm-button' => 'Yup',
-           ],
-       ];
+        'delete' => [
+            'label' => 'Delete',
+            'icon-view' => 'aura::components.actions.trash',
+            'class' => 'hover:text-red-700 text-red-500 font-bold',
+            'confirm' => true,
+            'confirm-title' => 'Delete Post?',
+            'confirm-content' => 'Are you sure you want to delete this post?',
+            'confirm-button' => 'Delete',
+            'confirm-button-class' => 'ml-3 bg-red-600 hover:bg-red-700',
+        ],
+        'testAction' => [
+            'label' => 'Test Action',
+            'class' => 'hover:text-primary-700 text-primary-500 font-bold',
+            'confirm' => true,
+            'confirm-title' => 'Test Action Post?',
+            'confirm-content' => 'Are you sure you want to test Action?',
+            'confirm-button' => 'Yup',
+        ],
+    ];
 
     public array $bulkActions = [
         'deleteSelected' => 'Delete',
     ];
-
-    public function testAction()
-    {
-        //dd('hier');
-    }
 
     public static $fields = [];
 
@@ -477,6 +472,11 @@ class Post extends Resource
         ];
     }
 
+    public function testAction()
+    {
+        //dd('hier');
+    }
+
     // public static function getWidgets(): array
     // {
     //     return [
@@ -494,7 +494,6 @@ class Post extends Resource
 
     /**
      * Create a new factory instance for the model.
-     *
      */
     protected static function newFactory()
     {

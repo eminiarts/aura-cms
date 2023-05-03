@@ -2,12 +2,12 @@
 
 namespace Eminiarts\Aura\Models;
 
-use Aura\Flows\Resources\Flow;
-use Eminiarts\Aura\Aura;
-use Eminiarts\Aura\BaseResource;
 use Aura\Flows\Jobs\TriggerFlowOnCreatePostEvent;
 use Aura\Flows\Jobs\TriggerFlowOnDeletedPostEvent;
 use Aura\Flows\Jobs\TriggerFlowOnUpdatePostEvent;
+use Aura\Flows\Resources\Flow;
+use Eminiarts\Aura\Aura;
+use Eminiarts\Aura\BaseResource;
 use Eminiarts\Aura\Models\Scopes\TeamScope;
 use Eminiarts\Aura\Models\Scopes\TypeScope;
 use Eminiarts\Aura\Resource;
@@ -195,7 +195,7 @@ class Post extends BaseResource
 
         return $defaultValues->merge($meta ?? []);
 
-        return  $defaultValues->merge($meta ?? [])->map(function ($value, $key) {
+        return $defaultValues->merge($meta ?? [])->map(function ($value, $key) {
             $class = $this->fieldClassBySlug($key);
 
             if ($class && isset($this->{$key}) && method_exists($class, 'get') && $this->isRelation($key)) {

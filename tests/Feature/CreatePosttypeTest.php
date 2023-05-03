@@ -1,12 +1,9 @@
 <?php
 
-use Eminiarts\Aura\Resources\User;
-use Illuminate\Support\Facades\File;
-
-use Illuminate\Support\Facades\Artisan;
-
 use Eminiarts\Aura\Http\Livewire\CreatePosttype;
-
+use Eminiarts\Aura\Resources\User;
+use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\File;
 use function Pest\Livewire\livewire;
 
 //uses()->group('current');
@@ -25,8 +22,6 @@ beforeEach(function () {
     // Login
     $this->actingAs($this->user);
 });
-
-
 
 // make sure only superadmins can access this component
 test('user can not access component', function () {
@@ -54,7 +49,6 @@ test('call save should fail', function () {
         ->assertHasErrors(['post.fields.name' => 'required']);
 });
 
-
 test('set name and call save should pass and should call artisan', function () {
     // Create a mock for the Artisan facade
     $artisanMock = Mockery::mock();
@@ -78,7 +72,6 @@ test('set name and call save should pass and should call artisan', function () {
     // Verify the Artisan::call method was called as expected
     $artisanMock->shouldHaveReceived('call');
 });
-
 
 test('posttype file gets created correctly', function () {
     livewire(CreatePosttype::class)

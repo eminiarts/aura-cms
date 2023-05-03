@@ -24,10 +24,10 @@ class Aura
     // }
 
     /**
-    * The user model that should be used by Jetstream.
-    *
-    * @var string
-    */
+     * The user model that should be used by Jetstream.
+     *
+     * @var string
+     */
     public static $userModel = User::class;
 
     protected array $config = [];
@@ -41,12 +41,12 @@ class Aura
     protected array $widgets = [];
 
     /**
-    * Determine if Aura's published assets are up-to-date.
-    *
-    * @return bool
-    *
-    * @throws \RuntimeException
-    */
+     * Determine if Aura's published assets are up-to-date.
+     *
+     * @return bool
+     *
+     * @throws \RuntimeException
+     */
     public static function assetsAreCurrent()
     {
         if (app()->environment('testing')) {
@@ -106,6 +106,11 @@ class Aura
         }
     }
 
+    public static function findTemplateBySlug($slug)
+    {
+        return app('Eminiarts\Aura\Templates\\'.str($slug)->title);
+    }
+
     public function getAppFields()
     {
         $path = config('aura.fields.path');
@@ -120,21 +125,21 @@ class Aura
     public function getAppFiles($path, $filter, $namespace)
     {
         return collect(app(Filesystem::class)->allFiles($path))
-        ->map(function (SplFileInfo $file): string {
-            return (string) Str::of($file->getRelativePathname())
-            ->replace(['/', '.php'], ['\\', '']);
-        })
-        ->filter(fn (string $class): bool => $class != $filter)
-        ->map(fn ($item) => $namespace.'\\'.$item)
-        ->unique()->toArray();
+            ->map(function (SplFileInfo $file): string {
+                return (string) Str::of($file->getRelativePathname())
+                    ->replace(['/', '.php'], ['\\', '']);
+            })
+            ->filter(fn (string $class): bool => $class != $filter)
+            ->map(fn ($item) => $namespace.'\\'.$item)
+            ->unique()->toArray();
     }
 
     /**
-    * Register the App resources
-    *
-    * @param  array  $resources
-    * @return static
-    */
+     * Register the App resources
+     *
+     * @param  array  $resources
+     * @return static
+     */
     public function getAppResources()
     {
         $path = config('aura.resources.path');
@@ -147,11 +152,11 @@ class Aura
     }
 
     /**
-    * Register the App taxonomies
-    *
-    * @param  array  $resources
-    * @return static
-    */
+     * Register the App taxonomies
+     *
+     * @param  array  $resources
+     * @return static
+     */
     public function getAppTaxonomies()
     {
         $path = config('aura.taxonomies.path');
@@ -172,11 +177,6 @@ class Aura
         }
 
         return $this->getAppFiles($path, $filter = 'Widget', $namespace = config('aura.widgets.namespace'));
-    }
-
-    public static function findTemplateBySlug($slug)
-    {
-        return app('Eminiarts\Aura\Templates\\'.str($slug)->title);
     }
 
     public function getFields(): array
@@ -329,9 +329,9 @@ class Aura
         $resources = $resources->filter(function ($value, $key) use ($keys) {
             return $keys->contains($key);
         })
-        ->map(fn ($r) => app($r)->navigation())
-        ->filter(fn ($r) => $r['showInNavigation'] ?? true)
-        ->sortBy('sort');
+            ->map(fn ($r) => app($r)->navigation())
+            ->filter(fn ($r) => $r['showInNavigation'] ?? true)
+            ->sortBy('sort');
 
         $grouped = array_reduce(collect($resources)->toArray(), function ($carry, $item) {
             if ($item['dropdown'] !== false) {
@@ -360,11 +360,11 @@ class Aura
     {
         return Cache::rememberForever('aura-settings', function () {
             $option = Option::withoutGlobalScopes([TeamScope::class])
-            ->where('name', 'aura-settings')
-            ->when(config('aura.teams'), function ($query, string $role) {
-                $query->where('team_id', 0);
-            })
-            ->first();
+                ->where('name', 'aura-settings')
+                ->when(config('aura.teams'), function ($query, string $role) {
+                    $query->where('team_id', 0);
+                })
+                ->first();
 
             if ($option && is_string($option->value)) {
                 return json_decode($option->value, true);
@@ -420,10 +420,10 @@ class Aura
             $filesystem = app(Filesystem::class);
 
             return collect($filesystem->allFiles(app_path('Aura/Taxonomies')))
-            ->map(function (SplFileInfo $file): string {
-                return (string) Str::of($file->getRelativePathname())
-                ->replace(['/', '.php'], ['\\', '']);
-            })->filter(fn (string $class): bool => $class != 'Taxonomy')->toArray();
+                ->map(function (SplFileInfo $file): string {
+                    return (string) Str::of($file->getRelativePathname())
+                        ->replace(['/', '.php'], ['\\', '']);
+                })->filter(fn (string $class): bool => $class != 'Taxonomy')->toArray();
         });
     }
 
@@ -433,20 +433,20 @@ class Aura
             $filesystem = app(Filesystem::class);
 
             $files = collect($filesystem->allFiles(app_path('Aura/Templates')))
-            ->map(function (SplFileInfo $file): string {
-                return (string) Str::of($file->getRelativePathname())
-                ->replace(['/', '.php'], ['\\', '']);
-            })->filter(fn (string $class): bool => $class != 'Template');
+                ->map(function (SplFileInfo $file): string {
+                    return (string) Str::of($file->getRelativePathname())
+                        ->replace(['/', '.php'], ['\\', '']);
+                })->filter(fn (string $class): bool => $class != 'Template');
 
             return $files;
         });
     }
 
     /**
-    * Get the name of the user model used by the application.
-    *
-    * @return string
-    */
+     * Get the name of the user model used by the application.
+     *
+     * @return string
+     */
     public static function userModel()
     {
         return static::$userModel;

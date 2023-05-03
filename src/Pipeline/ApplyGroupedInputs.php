@@ -92,6 +92,6 @@ class ApplyGroupedInputs implements Pipe
 
         return $nestedArray;
 
-        return  $next($fields);
+        return $next($fields);
     }
 }

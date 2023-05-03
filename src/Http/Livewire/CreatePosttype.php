@@ -3,7 +3,6 @@
 namespace Eminiarts\Aura\Http\Livewire;
 
 use Eminiarts\Aura\Traits\FieldsOnComponent;
-use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Artisan;
 use LivewireUI\Modal\ModalComponent;
 

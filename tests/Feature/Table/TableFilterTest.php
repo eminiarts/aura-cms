@@ -93,9 +93,9 @@ test('table filter', function () {
 
     // Visit the Post Index Page
     $component = Livewire::test(Table::class, ['query' => null, 'model' => $post])
-    ->assertSet('tableView', $post->defaultTableView())
-    ->assertSet('perPage', $post->defaultPerPage())
-    ->assertSet('columns', $post->getDefaultColumns());
+        ->assertSet('tableView', $post->defaultTableView())
+        ->assertSet('perPage', $post->defaultPerPage())
+        ->assertSet('columns', $post->getDefaultColumns());
 
     // Filters should be "taxonomy" => array:2 [ "Tag" => [] ] "custom" => [] ]
     expect($component->filters)->toBeArray();

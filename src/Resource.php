@@ -2,25 +2,25 @@
 
 namespace Eminiarts\Aura;
 
-use Illuminate\Support\Str;
+use Aura\Flows\Jobs\TriggerFlowOnCreatePostEvent;
+use Aura\Flows\Jobs\TriggerFlowOnDeletedPostEvent;
+use Aura\Flows\Jobs\TriggerFlowOnUpdatePostEvent;
 use Aura\Flows\Resources\Flow;
-use Eminiarts\Aura\Resources\User;
-use Eminiarts\Aura\Traits\SaveTerms;
-use Eminiarts\Aura\Traits\InputFields;
-use Illuminate\Database\Eloquent\Model;
-use Eminiarts\Aura\Traits\AuraTaxonomies;
-use Eminiarts\Aura\Traits\SaveMetaFields;
-use Eminiarts\Aura\Traits\AuraModelConfig;
 use Eminiarts\Aura\Models\Scopes\TeamScope;
 use Eminiarts\Aura\Models\Scopes\TypeScope;
+use Eminiarts\Aura\Resources\User;
+use Eminiarts\Aura\Traits\AuraModelConfig;
+use Eminiarts\Aura\Traits\AuraTaxonomies;
 use Eminiarts\Aura\Traits\InitialPostFields;
+use Eminiarts\Aura\Traits\InputFields;
 use Eminiarts\Aura\Traits\InteractsWithTable;
 use Eminiarts\Aura\Traits\SaveFieldAttributes;
-use Aura\Flows\Jobs\TriggerFlowOnCreatePostEvent;
-use Aura\Flows\Jobs\TriggerFlowOnUpdatePostEvent;
-use Aura\Flows\Jobs\TriggerFlowOnDeletedPostEvent;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Eminiarts\Aura\Traits\SaveMetaFields;
+use Eminiarts\Aura\Traits\SaveTerms;
 use Illuminate\Database\Eloquent\Concerns\HasTimestamps;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Str;
 
 class Resource extends Model
 {
@@ -38,9 +38,10 @@ class Resource extends Model
     use SaveTerms;
 
     protected $appends = ['fields'];
-    protected $hidden = ['meta'];
 
     protected $fillable = ['title', 'content', 'type', 'status', 'fields', 'slug', 'user_id', 'parent_id', 'order', 'taxonomies', 'terms', 'team_id', 'first_taxonomy', 'created_at', 'updated_at', 'deleted_at'];
+
+    protected $hidden = ['meta'];
 
     /**
      * The table associated with the model.
@@ -108,32 +109,6 @@ class Resource extends Model
         return $this->stripShortcodes($this->post_excerpt);
     }
 
-    public function getMeta($key = null)
-    {
-        if ($this->usesMeta() && optional($this)->meta && !is_string($this->meta)) {
-            $meta = $this->meta->pluck('value', 'key');
-
-            // Cast Attributes
-            $meta = $meta->map(function ($meta, $key) {
-                $class = $this->fieldClassBySlug($key);
-
-                if ($class && method_exists($class, 'get')) {
-                    return $class->get($class, $meta);
-                }
-
-                return $meta;
-            });
-
-            if($key) {
-                return $meta[$key] ?? null;
-            }
-
-            return $meta;
-        }
-
-        return collect();
-    }
-
     public function getFieldsAttribute()
     {
         // ray('fields attribute');
@@ -141,42 +116,42 @@ class Resource extends Model
         $meta = $this->getMeta();
 
         $defaultValues = $this->getFieldSlugs()
-        ->mapWithKeys(fn ($value, $key) => [$value => null])
-        ->map(fn ($value, $key) => $meta[$key] ?? $value)
-        ->map(function ($value, $key) {
-            // if the value is in $this->hidden, set it to null
-            if (in_array($key, $this->hidden)) {
-                return;
-            }
+            ->mapWithKeys(fn ($value, $key) => [$value => null])
+            ->map(fn ($value, $key) => $meta[$key] ?? $value)
+            ->map(function ($value, $key) {
+                // if the value is in $this->hidden, set it to null
+                if (in_array($key, $this->hidden)) {
+                    return;
+                }
 
-            // if there is a function get{Slug}Field on the model, use it
-            $method = 'get'.Str::studly($key).'Field';
+                // if there is a function get{Slug}Field on the model, use it
+                $method = 'get'.Str::studly($key).'Field';
 
-            if (method_exists($this, $method)) {
-                return $this->{$method}();
-            }
+                if (method_exists($this, $method)) {
+                    return $this->{$method}();
+                }
 
-            $class = $this->fieldClassBySlug($key);
+                $class = $this->fieldClassBySlug($key);
 
-            if ($key == 'submissions') {
-                // TODO: Temporary fix
-                return 'submissions';
-            }
+                if ($key == 'submissions') {
+                    // TODO: Temporary fix
+                    return 'submissions';
+                }
 
-            if ($class && isset(optional($this)->{$key}) && method_exists($class, 'get')) {
-                return $class->get($class, $this->{$key} ?? null);
-            }
+                if ($class && isset(optional($this)->{$key}) && method_exists($class, 'get')) {
+                    return $class->get($class, $this->{$key} ?? null);
+                }
 
-            // if $this->{$key} is set, then we want to use that
-            if (isset($this->{$key})) {
-                return $this->{$key};
-            }
+                // if $this->{$key} is set, then we want to use that
+                if (isset($this->{$key})) {
+                    return $this->{$key};
+                }
 
-            // if $this->attributes[$key] is set, then we want to use that
-            if (isset($this->attributes[$key])) {
-                return $this->attributes[$key];
-            }
-        });
+                // if $this->attributes[$key] is set, then we want to use that
+                if (isset($this->attributes[$key])) {
+                    return $this->attributes[$key];
+                }
+            });
 
         // ray($defaultValues);
 
@@ -203,6 +178,32 @@ class Resource extends Model
         if ($this->thumbnail and $this->thumbnail->attachment) {
             return $this->thumbnail->attachment->guid;
         }
+    }
+
+    public function getMeta($key = null)
+    {
+        if ($this->usesMeta() && optional($this)->meta && ! is_string($this->meta)) {
+            $meta = $this->meta->pluck('value', 'key');
+
+            // Cast Attributes
+            $meta = $meta->map(function ($meta, $key) {
+                $class = $this->fieldClassBySlug($key);
+
+                if ($class && method_exists($class, 'get')) {
+                    return $class->get($class, $meta);
+                }
+
+                return $meta;
+            });
+
+            if ($key) {
+                return $meta[$key] ?? null;
+            }
+
+            return $meta;
+        }
+
+        return collect();
     }
 
     public function getSearchableFields()
@@ -280,7 +281,7 @@ class Resource extends Model
 
     public function widgets()
     {
-        if(! $this->getWidgets()) {
+        if (! $this->getWidgets()) {
             return;
         }
 

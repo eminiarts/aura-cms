@@ -17,8 +17,8 @@ trait InputFieldsTable
     public function getTableHeaders()
     {
         $fields = $this->inputFields()
-        ->pluck('name', 'slug')
-        ->prepend('ID', 'id');
+            ->pluck('name', 'slug')
+            ->prepend('ID', 'id');
 
         // filter out fields that are not on the index
         $fields = $fields->filter(function ($field, $slug) {

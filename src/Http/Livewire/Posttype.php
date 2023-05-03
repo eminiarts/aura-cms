@@ -2,74 +2,19 @@
 
 namespace Eminiarts\Aura\Http\Livewire;
 
-use Livewire\Component;
-use Illuminate\Support\Str;
 use Eminiarts\Aura\Facades\Aura;
 use Eminiarts\Aura\Traits\HasActions;
 use Eminiarts\Aura\Traits\SaveFields;
-use Illuminate\Support\Facades\Artisan;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
+use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Str;
+use Livewire\Component;
 
 class Posttype extends Component
 {
     use AuthorizesRequests;
-    use SaveFields;
     use HasActions;
-
-    public function singleAction($action)
-    {
-        $this->{$action}();
-
-        $this->notify('Successfully ran: '.$action);
-    }
-
-    public function getActionsProperty()
-    {
-        return [
-          'delete' => [
-              'label' => 'Delete',
-              'icon-view' => 'aura::components.actions.trash',
-              'class' => 'hover:text-red-700 text-red-500 font-bold',
-              'confirm' => true,
-              'confirm-title' => 'Delete Posttype?',
-              'confirm-content' => 'Are you sure you want to delete this Posttype?',
-              'confirm-button' => 'Delete',
-               'confirm-button-class' => 'ml-3 bg-red-600 hover:bg-red-700',
-          ],
-          'generateMigration' => [
-              'label' => 'Generate Migration',
-              'class' => 'hover:text-primary-700 text-primary-500 font-bold',
-              'confirm' => true,
-              'icon' => '<svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M14 20C14 21.1046 13.1046 22 12 22C10.8954 22 10 21.1046 10 20M14 20C14 18.8954 13.1046 18 12 18M14 20H21M10 20C10 18.8954 10.8954 18 12 18M10 20H3M12 18V14M21 5C21 6.65685 16.9706 8 12 8C7.02944 8 3 6.65685 3 5M21 5C21 3.34315 16.9706 2 12 2C7.02944 2 3 3.34315 3 5M21 5V11C21 12.66 17 14 12 14M3 5V11C3 12.66 7 14 12 14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
-              'confirm-title' => 'Generate Resource Migration',
-              'confirm-content' => 'Are you sure you want to generate a Migration? Make sure to have a look at the migration file before running it. You have to use the CustomTable trait in your resource class. Link to the documentation: <a href="https://eminiarts.com/docs/aura/resources#custom-tables">Custom Tables</a>',
-              'confirm-button' => 'Generate',
-          ],
-      ];
-
-    }
-
-    public function generateMigration()
-    {
-        Artisan::call('aura:create-resource-migration', [
-            'resource' => $this->model::class,
-        ]);
-
-        $this->notify('Successfully generated migration for: '.$this->model->name);
-    }
-
-    public function delete()
-    {
-        $a = new \ReflectionClass($this->model::class);
-
-        // Delete file
-        unlink($a->getFileName());
-
-        $this->notify('Successfully deleted: '.$this->model->name);
-
-        return redirect()->route('aura.dashboard');
-    }
-
+    use SaveFields;
 
     public $fields = [];
 
@@ -254,6 +199,18 @@ class Posttype extends Component
         return $count;
     }
 
+    public function delete()
+    {
+        $a = new \ReflectionClass($this->model::class);
+
+        // Delete file
+        unlink($a->getFileName());
+
+        $this->notify('Successfully deleted: '.$this->model->name);
+
+        return redirect()->route('aura.dashboard');
+    }
+
     public function deleteField($data)
     {
         $fields = collect($this->fieldsArray);
@@ -297,6 +254,41 @@ class Posttype extends Component
         $this->newFields = $this->model->mapToGroupedFields($this->fieldsArray);
 
         $this->emit('openSlideOver', 'edit-field', ['fieldSlug' => $field['slug'], 'slug' => $this->slug, 'field' => $field]);
+    }
+
+    public function generateMigration()
+    {
+        Artisan::call('aura:create-resource-migration', [
+            'resource' => $this->model::class,
+        ]);
+
+        $this->notify('Successfully generated migration for: '.$this->model->name);
+    }
+
+    public function getActionsProperty()
+    {
+        return [
+            'delete' => [
+                'label' => 'Delete',
+                'icon-view' => 'aura::components.actions.trash',
+                'class' => 'hover:text-red-700 text-red-500 font-bold',
+                'confirm' => true,
+                'confirm-title' => 'Delete Posttype?',
+                'confirm-content' => 'Are you sure you want to delete this Posttype?',
+                'confirm-button' => 'Delete',
+                'confirm-button-class' => 'ml-3 bg-red-600 hover:bg-red-700',
+            ],
+            'generateMigration' => [
+                'label' => 'Generate Migration',
+                'class' => 'hover:text-primary-700 text-primary-500 font-bold',
+                'confirm' => true,
+                'icon' => '<svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M14 20C14 21.1046 13.1046 22 12 22C10.8954 22 10 21.1046 10 20M14 20C14 18.8954 13.1046 18 12 18M14 20H21M10 20C10 18.8954 10.8954 18 12 18M10 20H3M12 18V14M21 5C21 6.65685 16.9706 8 12 8C7.02944 8 3 6.65685 3 5M21 5C21 3.34315 16.9706 2 12 2C7.02944 2 3 3.34315 3 5M21 5V11C21 12.66 17 14 12 14M3 5V11C3 12.66 7 14 12 14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+                'confirm-title' => 'Generate Resource Migration',
+                'confirm-content' => 'Are you sure you want to generate a Migration? Make sure to have a look at the migration file before running it. You have to use the CustomTable trait in your resource class. Link to the documentation: <a href="https://eminiarts.com/docs/aura/resources#custom-tables">Custom Tables</a>',
+                'confirm-button' => 'Generate',
+            ],
+        ];
+
     }
 
     public function getMappedFieldsProperty()
@@ -499,6 +491,13 @@ class Posttype extends Component
     {
         // get field with fieldSlug from this fieldsarray
         return $field = collect($this->fieldsArray)->where('slug', $slug)->first();
+    }
+
+    public function singleAction($action)
+    {
+        $this->{$action}();
+
+        $this->notify('Successfully ran: '.$action);
     }
 
     public function updateFields($fields)

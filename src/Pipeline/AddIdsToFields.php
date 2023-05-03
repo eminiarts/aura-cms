@@ -88,6 +88,6 @@ class AddIdsToFields implements Pipe
             return $item;
         });
 
-        return  $next($fields);
+        return $next($fields);
     }
 }

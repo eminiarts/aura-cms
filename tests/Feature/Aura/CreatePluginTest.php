@@ -16,15 +16,15 @@ it('creates a complete plugin', function () {
     $baseComposerJson = json_decode(File::get(base_path('composer.json')), true);
 
     $this->artisan('aura:plugin myvendor/mypackage')
-    ->expectsQuestion('Select the type of plugin you want to create', 'Complete plugin')
-    ->expectsOutput('Complete plugin created at '.$pluginDirectory)
-    ->expectsOutputToContain('Replacing placeholders')
-    ->expectsConfirmation('Do you want to append '.str($name)->title().'ServiceProvider to config/app.php?', 'no') // no, because it would adjust the config and make tests fail next time
-    ->expectsOutputToContain('Updating composer.json')
-    ->expectsOutputToContain('composer.json updated')
-    ->expectsOutputToContain('composer dump-autoload')
-    ->expectsOutput('Plugin created successfully!')
-    ->assertExitCode(0);
+        ->expectsQuestion('Select the type of plugin you want to create', 'Complete plugin')
+        ->expectsOutput('Complete plugin created at '.$pluginDirectory)
+        ->expectsOutputToContain('Replacing placeholders')
+        ->expectsConfirmation('Do you want to append '.str($name)->title().'ServiceProvider to config/app.php?', 'no') // no, because it would adjust the config and make tests fail next time
+        ->expectsOutputToContain('Updating composer.json')
+        ->expectsOutputToContain('composer.json updated')
+        ->expectsOutputToContain('composer dump-autoload')
+        ->expectsOutput('Plugin created successfully!')
+        ->assertExitCode(0);
 
     // Assert that the plugin directory and files were created correctly
     expect(File::exists("{$pluginDirectory}/src"))->toBeTrue();
@@ -65,15 +65,15 @@ it('creates a field plugin', function () {
     $baseComposerJson = json_decode(File::get(base_path('composer.json')), true);
 
     $this->artisan('aura:plugin myvendor/customfield')
-    ->expectsQuestion('Select the type of plugin you want to create', 'Field plugin')
-    ->expectsOutput('Field plugin created at '.$pluginDirectory)
-    ->expectsOutputToContain('Replacing placeholders')
-    ->expectsConfirmation('Do you want to append '.str($name)->title().'ServiceProvider to config/app.php?', 'no') // no, because it would adjust the config and make tests fail next time
-    ->expectsOutputToContain('Updating composer.json')
-    ->expectsOutputToContain('composer.json updated')
-    ->expectsOutputToContain('composer dump-autoload')
-    ->expectsOutput('Plugin created successfully!')
-    ->assertExitCode(0);
+        ->expectsQuestion('Select the type of plugin you want to create', 'Field plugin')
+        ->expectsOutput('Field plugin created at '.$pluginDirectory)
+        ->expectsOutputToContain('Replacing placeholders')
+        ->expectsConfirmation('Do you want to append '.str($name)->title().'ServiceProvider to config/app.php?', 'no') // no, because it would adjust the config and make tests fail next time
+        ->expectsOutputToContain('Updating composer.json')
+        ->expectsOutputToContain('composer.json updated')
+        ->expectsOutputToContain('composer dump-autoload')
+        ->expectsOutput('Plugin created successfully!')
+        ->assertExitCode(0);
 
     // Assert that the plugin directory and files were created correctly
     expect(File::exists("{$pluginDirectory}/src"))->toBeTrue();
@@ -118,15 +118,15 @@ it('creates a posttype plugin', function () {
     $baseComposerJson = json_decode(File::get(base_path('composer.json')), true);
 
     $this->artisan('aura:plugin myvendor/posttype')
-    ->expectsQuestion('Select the type of plugin you want to create', 'Posttype plugin')
-    ->expectsOutput('Posttype plugin created at '.$pluginDirectory)
-    ->expectsOutputToContain('Replacing placeholders')
-    ->expectsConfirmation('Do you want to append '.str($name)->title().'ServiceProvider to config/app.php?', 'no') // no, because it would adjust the config and make tests fail next time
-    ->expectsOutputToContain('Updating composer.json')
-    ->expectsOutputToContain('composer.json updated')
-    ->expectsOutputToContain('composer dump-autoload')
-    ->expectsOutput('Plugin created successfully!')
-    ->assertExitCode(0);
+        ->expectsQuestion('Select the type of plugin you want to create', 'Posttype plugin')
+        ->expectsOutput('Posttype plugin created at '.$pluginDirectory)
+        ->expectsOutputToContain('Replacing placeholders')
+        ->expectsConfirmation('Do you want to append '.str($name)->title().'ServiceProvider to config/app.php?', 'no') // no, because it would adjust the config and make tests fail next time
+        ->expectsOutputToContain('Updating composer.json')
+        ->expectsOutputToContain('composer.json updated')
+        ->expectsOutputToContain('composer dump-autoload')
+        ->expectsOutput('Plugin created successfully!')
+        ->assertExitCode(0);
 
     // Assert that the plugin directory and files were created correctly
     expect(File::exists("{$pluginDirectory}/src"))->toBeTrue();

@@ -2,17 +2,17 @@
 
 namespace Eminiarts\Aura\Providers;
 
-use Illuminate\Http\Request;
-use Laravel\Fortify\Fortify;
-use Laravel\Fortify\Features;
-use PragmaRX\Google2FA\Google2FA;
-use Illuminate\Support\ServiceProvider;
+use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Contracts\Cache\Repository;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
-use Illuminate\Auth\Notifications\ResetPassword;
-use Laravel\Fortify\TwoFactorAuthenticationProvider;
+use Illuminate\Support\ServiceProvider;
 use Laravel\Fortify\Contracts\TwoFactorAuthenticationProvider as TwoFactorAuthenticationProviderContract;
+use Laravel\Fortify\Features;
+use Laravel\Fortify\Fortify;
+use Laravel\Fortify\TwoFactorAuthenticationProvider;
+use PragmaRX\Google2FA\Google2FA;
 
 class FortifyServiceProvider extends ServiceProvider
 {
@@ -39,12 +39,10 @@ class FortifyServiceProvider extends ServiceProvider
             return view('aura::auth.login');
         });
 
-
         // Password reset link in email template...
         ResetPassword::createUrlUsing(static function ($notifiable, $token) {
             return route('aura.password.reset', $token);
         });
-
 
         // Set Configuration of fortify.features to [registration, email-verification and two-factor-authentication]
         app('config')->set('fortify.features', [

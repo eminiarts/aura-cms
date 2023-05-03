@@ -3,16 +3,16 @@
 namespace Eminiarts\Aura\Http\Livewire\User;
 
 use Closure;
-use Livewire\Component;
-use Illuminate\Support\Str;
-use Illuminate\Http\Request;
+use Eminiarts\Aura\Resources\Attachment;
 use Eminiarts\Aura\Resources\User;
-use Illuminate\Support\Facades\Auth;
 use Eminiarts\Aura\Traits\InputFields;
 use Eminiarts\Aura\Traits\MediaFields;
-use Eminiarts\Aura\Resources\Attachment;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Redirect;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rules\Password;
+use Livewire\Component;
 
 class Profile extends Component
 {
@@ -89,10 +89,10 @@ class Profile extends Component
                 'name' => 'Avatar',
                 'type' => 'Eminiarts\\Aura\\Fields\\Image',
                 'max' => '1',
-                'validation' => ['nullable','array','max:1',
+                'validation' => ['nullable', 'array', 'max:1',
                     function (string $attribute, mixed $value, Closure $fail) {
 
-                        if(!$value) {
+                        if (! $value) {
                             return;
                         }
                         // Check if the attachment is an image
@@ -102,7 +102,7 @@ class Profile extends Component
                             }
                         });
 
-                    }
+                    },
                 ],
                 'conditional_logic' => [],
                 'slug' => 'avatar',
@@ -266,11 +266,9 @@ class Profile extends Component
         // if $this->post['fields']['current_password'] and  is set, save password
         if (optional($this->post['fields'])['current_password'] && optional($this->post['fields'])['password']) {
 
-
             $this->model->update([
                 'password' => bcrypt($this->post['fields']['password']),
             ]);
-
 
             // unset password fields
             unset($this->post['fields']['current_password']);

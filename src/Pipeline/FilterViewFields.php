@@ -17,6 +17,6 @@ class FilterViewFields implements Pipe
             return true;
         });
 
-        return  $next($fields);
+        return $next($fields);
     }
 }
