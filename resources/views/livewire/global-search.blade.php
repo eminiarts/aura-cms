@@ -17,7 +17,7 @@
                         </svg>
                     </div>
 
-                    <input x-model.debounce.300ms="search" x-ref="searchField" class="py-4 px-2 focus:outline-none relative block w-full rounded-none rounded-t-md bg-transparent focus:z-10 focus:border-0 focus:!border-none sm:text-sm" style="border: none; box-shadow: none;" aria-autocomplete="list" aria-labelledby="docsearch-label" id="docsearch-input" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="Search Aura" maxlength="64" type="search"
+                    <input x-model.debounce.300ms="search" x-ref="searchField" class="py-4 px-2 focus:outline-none relative block w-full rounded-none rounded-t-md bg-transparent focus:z-10 focus:border-0 focus:!border-none sm:text-sm" style="border: none; box-shadow: none;" aria-autocomplete="list" aria-labelledby="docsearch-label" id="docsearch-input" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="{{ __('Search') }}" maxlength="64" type="search"
 
                         @keydown.arrow-up.prevent="selectPrevious()"
                         @keydown.arrow-down.prevent="selectNext()"
@@ -47,7 +47,9 @@
 
                         <template x-if="!search || search == ''">
                             <div>
-                                <div class="px-4 py-1 text-xs font-bold text-gray-700 bg-gray-100 heading-item">Last visited pages</div>
+                                <div class="px-4 py-1 text-xs font-bold text-gray-700 bg-gray-100 heading-item">
+                                    {{ __('Last visited pages') }}
+                                </div>
 
                                 <ul x-ref="commandList">
 
@@ -66,7 +68,9 @@
                                         </li>
                                     </template>
 
-                                    <div class="px-4 py-1 text-xs font-bold text-gray-700 bg-gray-100 heading-item">Bookmarks</div>
+                                    <div class="px-4 py-1 text-xs font-bold text-gray-700 bg-gray-100 heading-item">
+                                        {{ __('Bookmarks') }}
+                                    </div>
 
                                     {{-- Get user option bookmarks --}}
 

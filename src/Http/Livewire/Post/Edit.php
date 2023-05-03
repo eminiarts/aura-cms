@@ -85,7 +85,7 @@ class Edit extends Component
 
         $this->model->update($this->post);
 
-        $this->notify('Successfully updated.');
+        $this->notify(__('Successfully updated'));
 
         if ($this->inModal) {
             $this->emit('closeModal');

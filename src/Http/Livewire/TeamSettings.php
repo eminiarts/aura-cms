@@ -445,7 +445,7 @@ class TeamSettings extends Component
             Cache::forget('aura.team-settings');
         }
 
-        return $this->notify('Successfully updated.');
+        return $this->notify(__('Successfully updated'));
 
         // dd('hier')
 

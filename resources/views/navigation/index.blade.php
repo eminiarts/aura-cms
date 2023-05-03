@@ -1,4 +1,5 @@
 <div>
+    @ray(app('aura')::navigation() )
     @foreach(app('aura')::navigation() as $group => $resources)
 
     @if ($group !== '')
@@ -39,7 +40,7 @@
                     {!! $resource['items'][0]['icon'] !!}
                     @endif
                 </div>
-                <div>{{ $resource['dropdown'] }}</div>
+                <div>{{ __($resource['dropdown']) }}</div>
             </x-slot:title>
 
             @foreach($resource['items'] as $resource)
@@ -47,7 +48,7 @@
                 <div class="{{ $iconClass }}">
                     {!! $resource['icon'] !!}
                 </div>
-                <div>{{ $resource['name'] }}</div>
+                <div>{{ __($resource['name']) }}</div>
             </x-aura::navigation.item>
             @endforeach
         </x-aura::navigation.dropdown>
@@ -59,7 +60,7 @@
             <div class="{{ $iconClass }}">
                 {!! $resource['icon'] !!}
             </div>
-            <div>{{ $resource['name'] }}</div>
+            <div>{{ __($resource['name']) }}</div>
         </x-aura::navigation.item>
         @endcan
 

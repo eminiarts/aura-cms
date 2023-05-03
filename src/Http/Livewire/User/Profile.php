@@ -283,6 +283,6 @@ class Profile extends Component
         $this->model->update($this->post);
 
         // dd($this->post['fields'], $this->rules(), $this->model);
-        return $this->notify('Successfully updated.');
+        return $this->notify(__('Successfully updated'));
     }
 }
