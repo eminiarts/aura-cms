@@ -62,6 +62,6 @@ class Edit extends Component
 
         $this->model->update($this->post['fields']);
 
-        $this->notify('Successfully updated.');
+        $this->notify(__('Successfully updated'));
     }
 }

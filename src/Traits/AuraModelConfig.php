@@ -366,6 +366,7 @@ trait AuraModelConfig
 
     public function pluralName()
     {
+        return Str::plural($this->singularName());
         return __(static::$pluralName ?? Str::plural($this->singularName()));
     }
 
@@ -415,7 +416,7 @@ trait AuraModelConfig
 
     public function singularName()
     {
-        return __(static::$singularName ?? Str::title(static::$slug));
+        return static::$singularName ?? Str::title(static::$slug);
     }
 
     public function tableView()

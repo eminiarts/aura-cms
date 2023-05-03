@@ -148,7 +148,7 @@
                                             <span class="inline-flex rounded-md">
                                                 <button type="button"
                                                     class="inline-flex items-center px-3 py-2 text-sm font-medium leading-4 text-gray-700 transition bg-white border border-transparent rounded-md border-gray-500/30 hover:bg-gray-50 hover:text-gray-700 focus:outline-none focus:bg-gray-50 active:bg-gray-50 ">
-                                                    Actions
+                                                    {{ __('Actions') }}
 
 
                                                     <svg class="w-5 h-5 ml-2 -mr-1" xmlns="http://www.w3.org/2000/svg"

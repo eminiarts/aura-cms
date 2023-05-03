@@ -103,7 +103,7 @@ class UserSettings extends Component
 
         // $this->validate();
 
-        return $this->notify('Successfully updated.');
+        return $this->notify(__('Successfully updated'));
 
         // dd('hier')
 

@@ -1,18 +1,18 @@
 <div>
-    @section('title', 'Edit '. $model->singularName() . ' • ' . $model->title)
+    @section('title', __('Edit') . ' '. $model->singularName() . ' • ' . $model->title)
 
     @if(!$inModal)
     <x-aura::breadcrumbs>
         <x-aura::breadcrumbs.li :href="route('aura.dashboard')" title="" icon="dashboard"
             iconClass="text-gray-500 w-7 h-7 mr-0" />
-        <x-aura::breadcrumbs.li :href="route('aura.post.index', $slug)" :title="Str::plural($slug)" />
+        <x-aura::breadcrumbs.li :href="route('aura.post.index', $slug)" :title="__(Str::plural($slug))" />
         <x-aura::breadcrumbs.li :title="$model->title" />
     </x-aura::breadcrumbs>
     @endif
 
     <div class="flex items-center justify-between my-8">
         <div>
-            <h1 class="text-3xl font-semibold">Edit {{ $model->singularName() }}</h1>
+            <h1 class="text-3xl font-semibold">{{ __('Edit ' . $model->singularName()) }}</h1>
         </div>
 
         <div class="flex items-center space-x-2">
@@ -25,14 +25,14 @@
         <x-slot:icon>
             <x-aura::icon class="w-5 h-5 mr-2" icon="user-impersonate" />
         </x-slot:icon>
-        Impersonate
+        {{ __('Impersonate') }}
     </x-aura::button.transparent>
     @endif
 
     <a href="{{ route('aura.post.view', [$slug, $model->id]) }}" class="text-gray-500 hover:text-gray-700">
         <x-aura::button.transparent size="lg">
             <x-aura::icon.view class="w-5 h-5 mr-2" />
-            View
+            {{ __('View') }}
         </x-aura::button.transparent>
     </a>
 
@@ -40,7 +40,7 @@
         <div wire:loading>
             <x-aura::icon.loading />
         </div>
-        Save
+        {{ __('Save') }}
     </x-aura::button>
 </div>
 
@@ -77,8 +77,9 @@
             @if (count($errors->all()))
             <div class="block">
                 <div class="mt-8 form_errors">
-                    <strong class="block text-red-600">Unfortunately, there were still the following validation
-                        errors:</strong>
+                    <strong class="block text-red-600">
+                        {{ __('Unfortunately, there were still the following validation errors:') }}
+                    </strong>
                     <div class="prose text-red-600">
                         <ul>
                             @foreach ($errors->all() as $message)
