@@ -11,7 +11,7 @@
             <div class="shrink-0">
                 <x-aura::icon icon="edit" size="xs" />
             </div>
-            <span class="text-sm font-medium">Edit</span>
+            <span class="text-sm font-medium">{{ __('Edit') }}</span>
         </div>
     </a>
     @endcan
@@ -24,7 +24,7 @@
             <div class="shrink-0">
                 <x-aura::icon icon="view" size="xs" />
             </div>
-            <span class="text-sm font-medium">View</span>
+            <span class="text-sm font-medium">{{ __('View') }}</span>
         </div>
     </a>
     @endcan
@@ -76,7 +76,7 @@
                 }, true);
             },
             openContextMenu(event) {
-                const row = event.target.closest('tr');
+                const row = event.target.closest('.cm-table-row');
                 if (row) {
                     event.preventDefault();
                     this.$refs.contextMenu.style.top = event.clientY + 'px';

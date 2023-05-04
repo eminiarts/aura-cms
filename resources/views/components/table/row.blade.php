@@ -1,4 +1,4 @@
-<tr class="bg-white dark:bg-gray-900" wire:key="{{ $row->id }}" data-id="{{ $row->id }}">
+<tr class="bg-white cm-table-row dark:bg-gray-900" wire:key="{{ $row->id }}" data-id="{{ $row->id }}">
     <x-aura::table.cell class="pr-0">
         <x-aura::input.checkbox x-model="selected" :value="$row->id" x-on:click="toggleRow($event, {{ $row->id }})" />
     </x-aura::table.cell>
