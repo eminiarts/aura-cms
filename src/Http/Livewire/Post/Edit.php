@@ -54,9 +54,6 @@ class Edit extends Component
 
         $this->post['terms'] = $this->model->terms;
 
-        //dd($this->post->taxonomies);
-        // dd($this->post, $this->model->terms);
-
         // Set on model instead of here
         // if $this->post['terms']['tag'] is not set, set it to null
         $this->post['terms']['tag'] = $this->post['terms']['tag'] ?? null;
@@ -78,9 +75,6 @@ class Edit extends Component
 
     public function save()
     {
-        // dump('saving', $this->post);
-        //dd($this->rules(), $this->post);
-
         $this->validate();
 
         $this->model->update($this->post);
@@ -95,9 +89,7 @@ class Edit extends Component
 
     public function updateField($data)
     {
-        // dd($data);
         $this->post['fields'][$data['slug']] = $data['value'];
-        // $this->save();
 
         $this->emit('selectedMediaUpdated', [
             'slug' => $data['slug'],
