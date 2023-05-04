@@ -1,6 +1,5 @@
 <div>
-    
-
+    {{-- Be aware that this file opens a div which closes at the end --}}
     @include('aura::components.table.context-menu')
 
         <main wire:key="table-main-{{ $model->getType() }}"  class="" x-data="{
@@ -197,5 +196,5 @@
                     @include('aura::components.table.filters')
             </x-sidebar>
         </main>
-    </div>
+    </div> {{-- This closes the context menu --}}
 </div>
