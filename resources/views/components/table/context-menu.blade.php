@@ -53,7 +53,6 @@
             }
 }">
 
-</div>
 <div x-show="visible" x-ref="contextMenu"
     class="absolute z-10 w-48 py-2 mt-1 bg-white rounded-md shadow-lg dark:bg-gray-800 ring-1 ring-black ring-opacity-5"
     @click.away="closeContextMenu" x-cloak>
