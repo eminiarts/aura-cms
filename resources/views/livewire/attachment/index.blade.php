@@ -18,10 +18,14 @@
 
     </div>
 
-    @if($widgets = $post->getWidgets())
-    <x-aura::widgets :widgets="$widgets" />
-    @endif
+    <div wire:key="widgets">
+        @if($widgets = $post->getWidgets())
+        <x-aura::widgets :widgets="$widgets" />
+        @endif
+    </div>
 
-    <livewire:aura::media-uploader :table="true" :model="$post" />
+    <div wire:key="attachment-media-uploader">
+        <livewire:aura::media-uploader :table="true" :model="$post" />
+    </div>
 
 </div>

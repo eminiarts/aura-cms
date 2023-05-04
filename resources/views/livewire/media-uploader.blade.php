@@ -1,5 +1,5 @@
-<div wire:key="media-notifications-{{ microtime() }}">
-        <div wire:key="media-uploader-{{ microtime() }}">
+<div>
+        <div>
             @if($media && count($media))
             <div x-data="{ media: {{ json_encode($media) }}, loading: true }"
                 class="fixed inset-0 z-50 flex items-end px-4 py-6 pointer-events-none sm:items-start sm:p-6">
@@ -7,7 +7,7 @@
 
                     @foreach($media as $key => $file)
 
-                    <div wire:key="media-uploader-{{ $key }}-{{ microtime() }}"
+                    <div
                         class="relative w-full max-w-sm overflow-hidden bg-white rounded-lg shadow-lg pointer-events-auto ring-1 ring-black ring-opacity-5"
                         x-data="{loading: true}" x-show="loading" x-init="setTimeout(() => { loading = false }, 3000)"
                         x-transition:leave="transition ease-linear duration-1000" x-transition:leave-end="opacity-0">
@@ -49,11 +49,11 @@
             @endif
         </div>
 
-        <div wire:key="errors">
+        <div>
             @error('media.*') <span class="error">{{ $message }}</span> @enderror
         </div>
 
-        <div wire:key="uploader-alpine{{ microtime() }}" x-data="{
+        <div x-data="{
             isDropping: false,
             isUploading: false,
             progress: 0,
@@ -105,7 +105,7 @@
 
             <div class="mt-2">
                 <div wire:key="media-uploader-table-{{ microtime() }}">
-                    @if($table)
+                    @if(!$table)
                     <livewire:aura::table :model="$post" :field="$field" />
                     @endif
                 </div>
@@ -143,7 +143,7 @@
                     </div>
                 </div>
 
-                <div wire:key="upload-wrapper">
+                <div>
                     @if($table)
 
                     <div class="flex items-center justify-between mt-6">
