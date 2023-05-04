@@ -23,4 +23,9 @@ trait InteractsWithTable
     {
         return 'attachment.row';
     }
+
+    public function showTableSettings()
+    {
+        return true;
+    }
 }

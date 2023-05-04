@@ -118,6 +118,8 @@ trait AuraModelConfig
         return route('aura.post.create', [$this->getType()]);
     }
 
+
+
     public function display($key)
     {
         if (array_key_exists($key, $this->fields->toArray())) {
