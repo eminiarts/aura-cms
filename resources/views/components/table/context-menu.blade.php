@@ -1,4 +1,59 @@
 @if($model->getContextMenu())
+<div @contextmenu="openContextMenu($event)" @click.away="closeContextMenu" @keydown.escape="closeContextMenu" x-data="{
+            visible: false,
+            currentRow: null,
+            init() {
+                document.addEventListener('scroll', () => {
+                    if (this.visible) {
+                        this.closeContextMenu();
+                    }
+                }, true);
+            },
+            openContextMenu(event) {
+                const row = event.target.closest('.cm-table-row');
+                if (row) {
+                    event.preventDefault();
+                    this.$refs.contextMenu.style.top = event.clientY + 'px';
+                    this.$refs.contextMenu.style.left = event.clientX + 'px';
+                    this.visible = true;
+                    this.currentRow = row.getAttribute('data-id');
+                    if(this.currentRow == null) {
+                        this.closeContextMenu();
+                    }
+                } else {
+                    this.closeContextMenu();
+                }
+            },
+            closeContextMenu() {
+                this.visible = false;
+            },
+            viewAction(e) {
+                if(!this.currentRow) {
+                    this.closeContextMenu();
+                    return;
+                }
+                @this.call('action', {action: 'view', id: this.currentRow});
+                this.closeContextMenu();
+            },
+            editAction() {
+                if(!this.currentRow) {
+                    this.closeContextMenu();
+                    return;
+                }
+                @this.call('action', {action: 'edit', id: this.currentRow});
+                this.closeContextMenu();
+            },
+            customAction(action) {
+                if(!this.currentRow) {
+                    this.closeContextMenu();
+                    return;
+                }
+                @this.call('action', {action: action, id: this.currentRow});
+                this.closeContextMenu();
+            }
+}">
+
+</div>
 <div x-show="visible" x-ref="contextMenu"
     class="absolute z-10 w-48 py-2 mt-1 bg-white rounded-md shadow-lg dark:bg-gray-800 ring-1 ring-black ring-opacity-5"
     @click.away="closeContextMenu" x-cloak>
@@ -60,64 +115,7 @@
         @endif
     </button>
     @endforeach
-
 </div>
-
-<script>
-    function contextMenu() {
-        return {
-            visible: false,
-            currentRow: null,
-            init() {
-                document.addEventListener('scroll', () => {
-                    if (this.visible) {
-                        this.closeContextMenu();
-                    }
-                }, true);
-            },
-            openContextMenu(event) {
-                const row = event.target.closest('.cm-table-row');
-                if (row) {
-                    event.preventDefault();
-                    this.$refs.contextMenu.style.top = event.clientY + 'px';
-                    this.$refs.contextMenu.style.left = event.clientX + 'px';
-                    this.visible = true;
-                    this.currentRow = row.getAttribute('data-id');
-                    if(this.currentRow == null) {
-                        this.closeContextMenu();
-                    }
-                } else {
-                    this.closeContextMenu();
-                }
-            },
-            closeContextMenu() {
-                this.visible = false;
-            },
-            viewAction(e) {
-                if(!this.currentRow) {
-                    this.closeContextMenu();
-                    return;
-                }
-                @this.call('action', {action: 'view', id: this.currentRow});
-                this.closeContextMenu();
-            },
-            editAction() {
-                if(!this.currentRow) {
-                    this.closeContextMenu();
-                    return;
-                }
-                @this.call('action', {action: 'edit', id: this.currentRow});
-                this.closeContextMenu();
-            },
-            customAction(action) {
-                if(!this.currentRow) {
-                    this.closeContextMenu();
-                    return;
-                }
-                @this.call('action', {action: action, id: this.currentRow});
-                this.closeContextMenu();
-            }
-        }
-    }
-</script>
+ @else
+<div>
 @endif
