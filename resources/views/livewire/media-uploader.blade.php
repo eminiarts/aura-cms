@@ -105,7 +105,7 @@
 
             <div class="mt-2">
                 <div wire:key="media-uploader-table-{{ microtime() }}">
-                    @if(!$table)
+                    @if($table)
                     <livewire:aura::table :model="$post" :field="$field" />
                     @endif
                 </div>
