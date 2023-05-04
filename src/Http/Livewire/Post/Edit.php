@@ -33,7 +33,7 @@ class Edit extends Component
     public $tax;
 
     // Listen for selectedAttachment
-    protected $listeners = ['updateField' => 'updateField'];
+    protected $listeners = ['updateField' => 'updateField', 'refreshComponent' => '$refresh'];
 
     public function getTaxonomiesProperty()
     {
