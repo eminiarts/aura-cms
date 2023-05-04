@@ -98,7 +98,7 @@
     </x-aura::navigation.item>
     @endlocal
 
-    <x-aura::navigation.item route="aura.team.settings">
+    <x-aura::navigation.item route="{{ route('aura.team.settings') }}">
         <div class="{{ $iconClass }}">
             <x-aura::icon icon="brush" />
         </div>
@@ -106,7 +106,7 @@
     </x-aura::navigation.item>
 
 
-    <x-aura::navigation.item route="aura.config">
+    <x-aura::navigation.item route="{{ route('aura.config') }}">
         <div class="{{ $iconClass }}">
             <x-aura::icon icon="adjustments" />
         </div>
