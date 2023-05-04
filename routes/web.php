@@ -55,7 +55,7 @@ Route::domain(config('aura.domain'))
             Route::get('/taxonomies/{slug}/{id}/edit', TaxonomyEdit::class)->name('taxonomy.edit');
             Route::get('/taxonomies/{slug}/{id}', TaxonomyView::class)->name('taxonomy.view');
 
-            Route::get('/Attachment', AttachmentIndex::class)->name('attachment.index');
+            Route::get('/attachment', AttachmentIndex::class)->name('attachment.index');
 
             Route::get('/{slug}', Index::class)->name('post.index');
             Route::get('/{slug}/create', Create::class)->name('post.create');

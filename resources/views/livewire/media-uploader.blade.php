@@ -1,67 +1,59 @@
-<div>
-    <div wire:key="media-notifications">
-        {{-- @dump(count($media)) --}}
-        {{-- @dump($field) --}}
-        <div wire:key="{{ str()->random(4) }}">
+<div wire:key="media-notifications-{{ microtime() }}">
+        <div wire:key="media-uploader-{{ microtime() }}">
             @if($media && count($media))
-                <div
-                    x-data="{ media: {{ json_encode($media) }}, loading: true }"
-                    class="fixed inset-0 z-50 flex items-end px-4 py-6 pointer-events-none sm:items-start sm:p-6"
-                >
-                    <div class="flex flex-col items-end w-full space-y-4 sm:items-end">
+            <div x-data="{ media: {{ json_encode($media) }}, loading: true }"
+                class="fixed inset-0 z-50 flex items-end px-4 py-6 pointer-events-none sm:items-start sm:p-6">
+                <div class="flex flex-col items-end w-full space-y-4 sm:items-end">
 
-                        @foreach($media as $file)
+                    @foreach($media as $key => $file)
 
-                        <div
-                            wire:key="{{ str()->random(4) }}"
-                            class="relative w-full max-w-sm overflow-hidden bg-white rounded-lg shadow-lg pointer-events-auto ring-1 ring-black ring-opacity-5"
-                            x-data="{loading: true}"
-                            x-show="loading"
-                            x-init="setTimeout(() => { loading = false }, 3000)"
-                            x-transition:leave="transition ease-linear duration-1000"
-                            x-transition:leave-end="opacity-0"
-                        >
-                            <div class="p-4">
-                                <div class="flex items-start">
-                                    <div class="flex-shrink-0">
-                                        <svg class="w-6 h-6 text-green-400" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
-                                            <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                        </svg>
-                                    </div>
-                                    <div class="ml-3 w-0 flex-1 pt-0.5">
-                                        <p class="text-sm font-medium text-gray-900">Successfully uploaded</p>
-                                        <p class="mt-1 text-sm text-gray-500">{{ $file->getClientOriginalName() }}</p>
-                                    </div>
-                                    <div class="flex flex-shrink-0 ml-4">
-                                        <button type="button" class="inline-flex text-gray-400 bg-white rounded-md hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2">
+                    <div wire:key="media-uploader-{{ $key }}-{{ microtime() }}"
+                        class="relative w-full max-w-sm overflow-hidden bg-white rounded-lg shadow-lg pointer-events-auto ring-1 ring-black ring-opacity-5"
+                        x-data="{loading: true}" x-show="loading" x-init="setTimeout(() => { loading = false }, 3000)"
+                        x-transition:leave="transition ease-linear duration-1000" x-transition:leave-end="opacity-0">
+                        <div class="p-4">
+                            <div class="flex items-start">
+                                <div class="flex-shrink-0">
+                                    <svg class="w-6 h-6 text-green-400" fill="none" viewBox="0 0 24 24"
+                                        stroke-width="1.5" stroke="currentColor" aria-hidden="true">
+                                        <path stroke-linecap="round" stroke-linejoin="round"
+                                            d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                    </svg>
+                                </div>
+                                <div class="ml-3 w-0 flex-1 pt-0.5">
+                                    <p class="text-sm font-medium text-gray-900">Successfully uploaded</p>
+                                    <p class="mt-1 text-sm text-gray-500">{{ $file->getClientOriginalName() }}</p>
+                                </div>
+                                <div class="flex flex-shrink-0 ml-4">
+                                    <button type="button"
+                                        class="inline-flex text-gray-400 bg-white rounded-md hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2">
                                         <span class="sr-only">Close</span>
                                         <svg class="w-5 h-5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                                            <path d="M6.28 5.22a.75.75 0 00-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 101.06 1.06L10 11.06l3.72 3.72a.75.75 0 101.06-1.06L11.06 10l3.72-3.72a.75.75 0 00-1.06-1.06L10 8.94 6.28 5.22z" />
+                                            <path
+                                                d="M6.28 5.22a.75.75 0 00-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 101.06 1.06L10 11.06l3.72 3.72a.75.75 0 101.06-1.06L11.06 10l3.72-3.72a.75.75 0 00-1.06-1.06L10 8.94 6.28 5.22z" />
                                         </svg>
-                                        </button>
-                                    </div>
+                                    </button>
                                 </div>
-                            </div>
-
-                            <div class="absolute bottom-0 left-0 w-full h-1">
-                                <div
-                                    class="h-1 origin-left bg-primary-200 animate-countdown"
-                                ></div>
                             </div>
                         </div>
 
-                        @endforeach
+                        <div class="absolute bottom-0 left-0 w-full h-1">
+                            <div class="h-1 origin-left bg-primary-200 animate-countdown"></div>
+                        </div>
                     </div>
 
+                    @endforeach
                 </div>
+
+            </div>
             @endif
         </div>
 
-        <div>
+        <div wire:key="errors">
             @error('media.*') <span class="error">{{ $message }}</span> @enderror
         </div>
 
-        <div x-data="{
+        <div wire:key="uploader-alpine{{ microtime() }}" x-data="{
             isDropping: false,
             isUploading: false,
             progress: 0,
@@ -112,19 +104,22 @@
         }">
 
             <div class="mt-2">
-                @if($table)
+                <div wire:key="media-uploader-table-{{ microtime() }}">
+                    @if($table)
                     <livewire:aura::table :model="$post" :field="$field" />
-                @endif
+                    @endif
+                </div>
 
 
 
                 @if($button)
-                    <x-aura::button.light wire:click="$emit('openModal', 'aura::media-manager', {{ json_encode(['field' => $field, 'slug' => $field['slug'], 'selected' => $selected]) }})">
+                <x-aura::button.light
+                    wire:click="$emit('openModal', 'aura::media-manager', {{ json_encode(['field' => $field, 'slug' => $field['slug'], 'selected' => $selected]) }})">
                     <x-slot:icon>
                         <x-aura::icon icon="media" class="" />
-                    </x-slot>
+                        </x-slot>
 
-                    <span>Media Manager</span>
+                        <span>Media Manager</span>
                 </x-aura::button.light>
                 @endif
             </div>
@@ -148,41 +143,30 @@
                     </div>
                 </div>
 
-                @if($table)
+                <div wire:key="upload-wrapper">
+                    @if($table)
 
-                <div class="flex items-center justify-between mt-6">
-                    <div>
+                    <div class="flex items-center justify-between mt-6">
                         <h1 class="text-3xl font-semibold">Attachments</h1>
 
-
-                        </h3>
-                    </div>
-
-                    <div>
                         <div>
+                            <label for="file-upload">
+                                <p class="mb-2 text-sm text-gray-500 dark:text-gray-400"><span
+                                        class="font-semibold">Click to
+                                        upload</span> or drag and drop</p>
 
-                            <div>
-                                <label for="file-upload">
-                                    <p class="mb-2 text-sm text-gray-500 dark:text-gray-400"><span
-                                            class="font-semibold">Click to
-                                            upload</span> or drag and drop</p>
-
-                                    <input type="file" id="file-upload" multiple @change="handleFileSelect"
-                                        class="hidden" wire:model.defer="media" />
-                                </label>
-                            </div>
-
-
+                                <input type="file" id="file-upload" multiple @change="handleFileSelect" class="hidden"
+                                    wire:model.defer="media" />
+                            </label>
                         </div>
                     </div>
-                </div>
 
-                @endif
+                    @endif
+                </div>
 
             </div>
 
         </div>
-    </div>
 
 
 
