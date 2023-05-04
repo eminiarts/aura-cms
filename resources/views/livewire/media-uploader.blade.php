@@ -89,13 +89,10 @@
                 )
             },
             dragover(event) {
-                console.log('dragover', event);
                 // check if is holding a file
                 if (event.dataTransfer.types.includes('Files')) {
                     {{-- event.preventDefault() --}}
-                    console.log('is holding a file');
                 } else {
-                    console.log('is not holding a file');
                 }
             },
             removeUpload(filename) {
@@ -104,13 +101,6 @@
         }">
 
             <div class="mt-2">
-                <div wire:key="media-uploader-table-{{ microtime() }}">
-                    @if($table)
-                    <livewire:aura::table :model="$post" :field="$field" />
-                    @endif
-                </div>
-
-
 
                 @if($button)
                 <x-aura::button.light
@@ -146,8 +136,12 @@
                 <div>
                     @if($table)
 
-                    <div class="flex items-center justify-between mt-6">
-                        <h1 class="text-3xl font-semibold">Attachments</h1>
+                    <div class="flex flex-col">
+                        <div class="flex items-center justify-between mt-6">
+                        <h1 class="text-3xl font-semibold">
+                            {{ __('Attachments') }}
+                        </h1>
+
 
                         <div>
                             <label for="file-upload">
@@ -160,6 +154,10 @@
                             </label>
                         </div>
                     </div>
+
+                        <livewire:aura::table :model="$post" :field="$field" />
+                    </div>
+
 
                     @endif
                 </div>
