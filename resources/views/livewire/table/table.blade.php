@@ -125,7 +125,7 @@
                                 </div>
                             @endif
 
-                            @if($tableView == 'list')
+                            @if($tableView == 'list' && $model->showTableSettings())
                             @include('aura::components.table.settings')
                             @endif
 
