@@ -1,9 +1,11 @@
-<div wire:key="table-{{$model->getType()}}">
-    @if($model->getContextMenu())
-    <div x-data="contextMenu()" @contextmenu="openContextMenu($event)" @click.away="closeContextMenu" @keydown.escape="closeContextMenu">
-    @else
+<div>
     <div>
-    @endif
+        @if($model->getContextMenu())
+        <div x-data="contextMenu()" @contextmenu="openContextMenu($event)" @click.away="closeContextMenu" @keydown.escape="closeContextMenu">
+        @else
+        <div>
+        @endif
+    </div>
 
     @include('aura::components.table.context-menu')
 
