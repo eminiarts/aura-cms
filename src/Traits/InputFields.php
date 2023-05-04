@@ -3,17 +3,18 @@
 namespace Eminiarts\Aura\Traits;
 
 use Eminiarts\Aura\ConditionalLogic;
-use Eminiarts\Aura\Pipeline\AddIdsToFields;
-use Eminiarts\Aura\Pipeline\ApplyParentConditionalLogic;
-use Eminiarts\Aura\Pipeline\ApplyParentDisplayAttributes;
 use Eminiarts\Aura\Pipeline\ApplyTabs;
-use Eminiarts\Aura\Pipeline\BuildTreeFromFields;
-use Eminiarts\Aura\Pipeline\FilterCreateFields;
+use Eminiarts\Aura\Pipeline\MapFields;
+use Eminiarts\Aura\Pipeline\AddIdsToFields;
+use Eminiarts\Aura\Pipeline\TransformSlugs;
 use Eminiarts\Aura\Pipeline\FilterEditFields;
 use Eminiarts\Aura\Pipeline\FilterViewFields;
-use Eminiarts\Aura\Pipeline\MapFields;
+use Eminiarts\Aura\Pipeline\FilterCreateFields;
+use Eminiarts\Aura\Pipeline\BuildTreeFromFields;
+use Eminiarts\Aura\Pipeline\RemoveClosureAttributes;
 use Eminiarts\Aura\Pipeline\RemoveValidationAttribute;
-use Eminiarts\Aura\Pipeline\TransformSlugs;
+use Eminiarts\Aura\Pipeline\ApplyParentConditionalLogic;
+use Eminiarts\Aura\Pipeline\ApplyParentDisplayAttributes;
 
 trait InputFields
 {
@@ -77,6 +78,7 @@ trait InputFields
             ApplyParentConditionalLogic::class,
             ApplyParentDisplayAttributes::class,
             FilterEditFields::class,
+            RemoveClosureAttributes::class,
             BuildTreeFromFields::class,
         ]);
     }
@@ -119,6 +121,8 @@ trait InputFields
                 BuildTreeFromFields::class,
             ];
         }
+
+        // dd('hier');
 
         return $this->sendThroughPipeline($fields, $pipes);
     }
@@ -186,6 +190,7 @@ trait InputFields
         ]);
     }
 
+    // Used in Posttype
     public function getFieldsForEdit($fields = null)
     {
         if (! $fields) {
@@ -198,6 +203,7 @@ trait InputFields
             AddIdsToFields::class,
             BuildTreeFromFields::class,
         ];
+
 
         return $this->sendThroughPipeline($fields, $pipes);
     }
