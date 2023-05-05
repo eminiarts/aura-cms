@@ -177,9 +177,12 @@
 
                             @else
                                 <div x-cloak class="w-full px-2">
-                                    <x-aura::button wire:click="insertTemplateFields({{ $tab['_id'] }}, '{{ $tab['slug'] }}', 'PanelWithSidebar')">PanelWithSidebar</x-aura::button>
 
-                                    <x-aura::posttype.add-field :id="$tab['_id']" :slug="$tab['slug']" :type="$tab['type']"/>
+                                    <span class="text-sm font-semibold">Presets</span>
+                                    <x-aura::button.transparent wire:click="insertTemplateFields({{ $tab['_id'] }}, '{{ $tab['slug'] }}', 'PanelWithSidebar')">Panel with Sidebar (70/30)</x-aura::button.transparent>
+                                    <x-aura::button.transparent wire:click="insertTemplateFields({{ $tab['_id'] }}, '{{ $tab['slug'] }}', 'Plain')">Simple Panel with Text</x-aura::button.transparent>
+
+                                    <x-aura::posttype.add-field :id="$tab['_id']" :slug="$tab['slug']" type="field"/>
                                 </div>
                             @endif
 
