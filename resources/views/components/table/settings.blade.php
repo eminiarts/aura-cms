@@ -42,8 +42,8 @@
                     @endforeach
                     @endif
 
-                    <div class="flex items-center">
-                        <x-aura::label value="Pro Seite" class="hidden mt-1 mr-2 sm:block" />
+                    <div class="flex items-center justify-between">
+                        <x-aura::label value="Pro Seite" />
                         <x-aura::input.group borderless inline paddingless for="perPage" label="">
                             <x-aura::input.select wire:model="perPage" id="perPage" class="rounded-md bg-gray-50 ">
                                 <option value="10">10</option>
