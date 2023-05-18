@@ -49,9 +49,64 @@ $settings = Aura::getOption('team-settings');
   </button>
 </div>
 
+
+<div
+    class="flex-shrink-0 overflow-x-visible aura-navigation-collapsed md:w-20"
+    x-bind:class="{
+        'hidden md:block': !$store.leftSidebar.on,
+        'hidden': $store.leftSidebar.on,
+    }"
+>
+  <div class="
+    fixed top-0 left-0 z-10 flex flex-col flex-shrink-0 w-20 h-screen overflow-x-visible  border-r  shadow-xl
+
+    @if ($sidebarType == 'primary')
+        text-white border-white bg-sidebar-bg dark:bg-gray-800 border-opacity-20 dark:border-gray-700 shadow-gray-400 md:shadow-none
+    @elseif ($sidebarType == 'light')
+        text-gray-900 border-gray-500/30 border-opacity-20 bg-gray-50 dark:bg-gray-800 dark:text-white dark:border-gray-700 shadow-gray-400 md:shadow-none
+    @elseif ($sidebarType == 'dark')
+        text-white border-white border-opacity-20 bg-gray-800 dark:bg-gray-800 dark:text-white dark:border-gray-700 shadow-gray-400 md:shadow-none
+    @endif
+
+    ">
+    <div class="flex-shrink-0 px-5 h-[4.5rem] w-full overflow-x-visible flex items-center">
+        {{-- <h1 class="text-2xl font-semibold">{{ config('app.name') }}</h1> --}}
+
+        <div>
+            <button
+                @click="$store.leftSidebar.toggle()"
+                type="button"
+                class="relative inline-flex items-center justify-center w-10 h-10 text-sm font-semibold border rounded-lg shadow-none select-none focus:outline-none focus:ring-2 focus:ring-offset-0
+                @if ($sidebarType == 'primary')
+                focus:ring-primary-500 border-primary-600 dark:border-gray-700 text-primary-200 dark:text-gray-500 hover:text-white dark:hover:text-white
+                @elseif ($sidebarType == 'light')
+                focus:ring-primary-500 border-gray-400/30 dark:border-gray-700 text-gray-600 dark:text-gray-500 hover:text-gray-300 dark:hover:text-white
+                @elseif ($sidebarType == 'dark')
+                focus:ring-primary-500 border-gray-700 text-gray-200 hover:text-white
+                @endif
+            ">
+                <x-aura::icon icon="plus" />
+            </button>
+        </div>
+
+    </div>
+
+    @include('aura::navigation.collapsed')
+
+    <div class="flex-shrink-0 px-5 h-[4.5rem] flex items-center border-t border-white border-opacity-20 dark:border-gray-700">
+        <x-aura::tippy-area text="{{ Auth::user()->name }}" position="top">
+            <x-slot name="title">
+            <img class="inline-block rounded-full h-9 w-9" src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80" alt="">
+            </x-slot::title>
+
+            @include('aura::navigation.footer-popup')
+        </x-aura::tippy-rea>
+    </div>
+  </div>
+</div>
+
 <div
     class="flex-shrink-0 hidden w-0 aura-navigation md:block md:w-72"
-
     x-bind:class="{
         'hidden md:hidden': !$store.leftSidebar.on,
         'block md:block': $store.leftSidebar.on,
@@ -225,58 +280,5 @@ $settings = Aura::getOption('team-settings');
   </div>
 </div>
 
-<div
-    class="flex-shrink-0 overflow-x-visible aura-navigation-collapsed md:w-20"
-    x-bind:class="{
-        'hidden md:block': !$store.leftSidebar.on,
-        'hidden': $store.leftSidebar.on,
-    }"
->
-  <div class="
-    fixed top-0 left-0 z-10 flex flex-col flex-shrink-0 w-20 h-screen overflow-x-visible  border-r  shadow-xl
 
-    @if ($sidebarType == 'primary')
-        text-white border-white bg-sidebar-bg dark:bg-gray-800 border-opacity-20 dark:border-gray-700 shadow-gray-400 md:shadow-none
-    @elseif ($sidebarType == 'light')
-        text-gray-900 border-gray-500/30 border-opacity-20 bg-gray-50 dark:bg-gray-800 dark:text-white dark:border-gray-700 shadow-gray-400 md:shadow-none
-    @elseif ($sidebarType == 'dark')
-        text-white border-white border-opacity-20 bg-gray-800 dark:bg-gray-800 dark:text-white dark:border-gray-700 shadow-gray-400 md:shadow-none
-    @endif
-
-    ">
-    <div class="flex-shrink-0 px-5 h-[4.5rem] w-full overflow-x-visible flex items-center">
-        {{-- <h1 class="text-2xl font-semibold">{{ config('app.name') }}</h1> --}}
-
-        <div>
-            <button
-                @click="$store.leftSidebar.toggle()"
-                type="button"
-                class="relative inline-flex items-center justify-center w-10 h-10 text-sm font-semibold border rounded-lg shadow-none select-none focus:outline-none focus:ring-2 focus:ring-offset-0
-                @if ($sidebarType == 'primary')
-                focus:ring-primary-500 border-primary-600 dark:border-gray-700 text-primary-200 dark:text-gray-500 hover:text-white dark:hover:text-white
-                @elseif ($sidebarType == 'light')
-                focus:ring-primary-500 border-gray-400/30 dark:border-gray-700 text-gray-600 dark:text-gray-500 hover:text-gray-300 dark:hover:text-white
-                @elseif ($sidebarType == 'dark')
-                focus:ring-primary-500 border-gray-700 text-gray-200 hover:text-white
-                @endif
-            ">
-                <x-aura::icon icon="plus" />
-            </button>
-        </div>
-
-    </div>
-
-    @include('aura::navigation.collapsed')
-
-    <div class="flex-shrink-0 px-5 h-[4.5rem] flex items-center border-t border-white border-opacity-20 dark:border-gray-700">
-        <x-aura::tippy-area text="{{ Auth::user()->name }}" position="top">
-            <x-slot name="title">
-            <img class="inline-block rounded-full h-9 w-9" src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80" alt="">
-            </x-slot::title>
-
-            @include('aura::navigation.footer-popup')
-        </x-aura::tippy-rea>
-    </div>
-  </div>
-</div>
 </div>

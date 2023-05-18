@@ -149,6 +149,9 @@ class Table extends Component
         $this->selectedRowsQuery->each(function ($item, $key) use ($action) {
             if (str_starts_with($action, 'callFlow.')) {
                 $item->callFlow(explode('.', $action)[1]);
+            } elseif (str_starts_with($action, 'multiple')) {
+                $posts = $this->selectedRowsQuery->get();
+                $item->{$action}($posts);
             } elseif (method_exists($item, $action)) {
                 $item->{$action}();
             }
