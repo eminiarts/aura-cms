@@ -285,4 +285,16 @@ class Profile extends Component
         // dd($this->post['fields'], $this->rules(), $this->model);
         return $this->notify(__('Successfully updated'));
     }
+
+    public function updateField($data)
+    {
+        // dd($data);
+        $this->post['fields'][$data['slug']] = $data['value'];
+        // $this->save();
+
+        $this->emit('selectedMediaUpdated', [
+            'slug' => $data['slug'],
+            'value' => $data['value'],
+        ]);
+    }
 }
