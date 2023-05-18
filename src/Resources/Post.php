@@ -2,6 +2,7 @@
 
 namespace Eminiarts\Aura\Resources;
 
+use Aura\Export\Traits\Exportable;
 use Aura\Flows\Resources\Flow;
 use Eminiarts\Aura\Database\Factories\PostFactory;
 use Eminiarts\Aura\Resource;
@@ -12,6 +13,8 @@ use Eminiarts\Aura\Widgets\TotalPosts;
 
 class Post extends Resource
 {
+    use Exportable;
+
     public array $actions = [
         'delete' => [
             'label' => 'Delete',
@@ -35,6 +38,7 @@ class Post extends Resource
 
     public array $bulkActions = [
         'deleteSelected' => 'Delete',
+        'multipleExportSelected' => 'Export',
     ];
 
     public static $fields = [];
