@@ -162,11 +162,12 @@ class Table extends Component
 
     public function openBulkActionModal($action, $data)
     {
-        ray($data, $this->selectedRowsQuery->get());
+        // ray($data, $this->selectedRowsQuery->get());
 
         $this->emit('openModal', $data['modal'], [
             'action' => $action,
             'selected' => $this->selectedRowsQuery->get(),
+            'model' => get_class($this->model),
         ]);
 
         // $emit('openModal', '{{ $data['modal'] }}', {{ json_encode(['action' => $action, 'selected' => $this->selectedRowsQuery->get()]) }})
