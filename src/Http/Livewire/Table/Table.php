@@ -392,6 +392,12 @@ class Table extends Component
         }
     }
 
+    public function getAllTableRows()
+    {
+        // dd('hier', $this->rowsQuery->pluck('id'));
+        return $this->rowsQuery->pluck('id')->toArray();
+    }
+
     /**
      * Update the selected rows in the table.
      *
