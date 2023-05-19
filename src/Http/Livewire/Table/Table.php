@@ -160,6 +160,18 @@ class Table extends Component
         $this->notify('Erfolgreich: '.$action);
     }
 
+    public function openBulkActionModal($action, $data)
+    {
+        ray($data, $this->selectedRowsQuery->get());
+
+        $this->emit('openModal', $data['modal'], [
+            'action' => $action,
+            'selected' => $this->selectedRowsQuery->get(),
+        ]);
+
+        // $emit('openModal', '{{ $data['modal'] }}', {{ json_encode(['action' => $action, 'selected' => $this->selectedRowsQuery->get()]) }})
+    }
+
     /**
      * Get the available bulk actions.
      *
