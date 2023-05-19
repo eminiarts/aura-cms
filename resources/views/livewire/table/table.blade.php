@@ -159,16 +159,26 @@
                                         <x-slot name="content">
                                             <div class="w-60">
                                                 <div class="py-1" role="none">
-
-                                                    @if($this->bulkActions)
-                                                    @foreach($this->bulkActions as $action => $label)
-                                                    <a wire:click="bulkAction('{{ $action }}')"
+                                                @if($this->bulkActions)
+                                                @foreach($this->bulkActions as $action => $data)
+                                                    @if(is_array($data) && isset($data['modal']))
+                                                        <!-- if it's an array and has a modal, then open the modal -->
+                                                        <a wire:click="openBulkActionModal('{{ $action }}', {{json_encode($data)}})"
                                                         class="flex items-center px-4 py-2 text-sm text-gray-700 group hover:bg-gray-100"
                                                         role="menuitem" tabindex="-1" id="menu-item-6">
-                                                        {{ $label }}
-                                                    </a>
-                                                    @endforeach
+                                                            {{ $data['label'] }}
+                                                        </a>
+                                                    @else
+                                                        <!-- if it's not an array, it's a string, so keep the old behavior -->
+                                                        <a wire:click="bulkAction('{{ $action }}')"
+                                                        class="flex items-center px-4 py-2 text-sm text-gray-700 group hover:bg-gray-100"
+                                                        role="menuitem" tabindex="-1" id="menu-item-6">
+                                                            {{ $data }}
+                                                        </a>
                                                     @endif
+                                                @endforeach
+                                            @endif
+
 
                                                 </div>
                                             </div>

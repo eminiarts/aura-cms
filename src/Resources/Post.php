@@ -38,7 +38,10 @@ class Post extends Resource
 
     public array $bulkActions = [
         'deleteSelected' => 'Delete',
-        'multipleExportSelected' => 'Export',
+        'multipleExportSelected' => [
+            'label' => 'Export',
+            'modal' => 'export::export-selected-modal',
+        ],
     ];
 
     public static $fields = [];
