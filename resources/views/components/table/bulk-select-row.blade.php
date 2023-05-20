@@ -1,4 +1,6 @@
-    <template x-if="selected && selected.length > 0">
+
+
+<template x-if="selected && selected.length > 0">
 
         <div class="p-2 bg-primary-50 dark:bg-gray-900 dark:text-white text-gray-900 rounded-lg text-sm">
 

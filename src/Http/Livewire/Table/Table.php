@@ -395,7 +395,7 @@ class Table extends Component
     public function getAllTableRows()
     {
         // dd('hier', $this->rowsQuery->pluck('id'));
-        return $this->rowsQuery->pluck('id')->toArray();
+        return $this->rowsQuery->pluck('id')->all();
     }
 
     /**
