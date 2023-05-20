@@ -47,11 +47,11 @@
         });
     },
 
-    selectCurrentPage() {
+   selectCurrentPage() {
     this.$nextTick(() => {
         if (this.selectPage) {
             // add this.rows to existing this.selected, unique
-            this.selected = [...new Set([...this.selected, ...this.rows])];
+            this.selected = Array.from(new Set([...this.selected.map(Number), ...this.rows.map(Number)]));
 
             // if all rows are selected, set this.selectAll to true
             this.selectAll = this.selected.length === this.total;
@@ -60,11 +60,14 @@
             this.selectAll = false;
 
             // remove this.rows from existing this.selected with new Set
-            this.selected = [...new Set([...this.selected].filter(item => !this.rows.includes(item)))];
+            this.selected = [...new Set([...this.selected.map(Number)].filter(item => !this.rows.map(Number).includes(item)))];
             console.log('selected on deselect', this.selected)
         }
     });
 },
+
+
+
 
     selectAllRows: async function () {
 
@@ -81,7 +84,8 @@
             this.$nextTick(() => {
 
                 // this.selected = allSelected with set
-                this.selected = [...new Set([...this.selected, ...allSelected])];
+                this.selected = [...new Set([...this.selected.map(Number), ...allSelected.map(Number)])];
+                this.selectPage = true;
             });
         },
    
