@@ -1,6 +1,6 @@
 <div x-data="{
     selected: @entangle('selected').defer,
-    rows: @js($this->rows->pluck('id')->toArray()), 
+    rows: @entangle('rowIds').defer, 
     lastSelectedId: null,
     total: @js($this->rows->total()),
     selectPage: false,
@@ -28,6 +28,10 @@
         });
 
         this.$watch('currentPage', (rows) => {
+
+            this.$nextTick(() => {
+
+
            console.log('currentPage', this.currentPage)
            console.log('rows', this.rows)
            console.log('selected', this.selected)
@@ -36,31 +40,49 @@
             this.selectPage = this.rows.every(row => this.selected.includes(row));
 
             console.log('every', this.rows.every(row => this.selected.includes(row)))
+
+            });
            
 
         });
     },
 
     selectCurrentPage() {
-         this.$nextTick(() => {
-                if (this.selectPage) {
-                    this.selected = this.rows.slice();
-                } else {
-                    this.selected = [];
-                }
-            });
-    },
+    this.$nextTick(() => {
+        if (this.selectPage) {
+            // add this.rows to existing this.selected, unique
+            this.selected = [...new Set([...this.selected, ...this.rows])];
+
+            // if all rows are selected, set this.selectAll to true
+            this.selectAll = this.selected.length === this.total;
+        } else {
+
+            this.selectAll = false;
+
+            // remove this.rows from existing this.selected with new Set
+            this.selected = [...new Set([...this.selected].filter(item => !this.rows.includes(item)))];
+            console.log('selected on deselect', this.selected)
+        }
+    });
+},
 
     selectAllRows: async function () {
 
+
             this.loading = true
 
-            this.selected = await $wire.getAllTableRows()
+            let allSelected = await $wire.getAllTableRows()
             this.selectAll = true
 
             console.log(this.selected, 'selected')
 
             this.loading = false
+
+            this.$nextTick(() => {
+
+                // this.selected = allSelected with set
+                this.selected = [...new Set([...this.selected, ...allSelected])];
+            });
         },
    
     resetBulk() {
@@ -68,6 +90,19 @@
         this.selectPage = false;
         this.selectAll = false;
     },
+
+     deselectRows(ids) {
+            for (id of ids) {
+                let index = this.selected.indexOf(id)
+
+                if (index === -1) {
+                    continue
+                }
+
+                this.selected.splice(index, 1)
+                {{-- this.toggleRow(false, id) --}}
+            }
+        },
     
     toggleRow(event, id) {
         this.$nextTick(() => {
