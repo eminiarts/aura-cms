@@ -1,6 +1,6 @@
 
 
-<template x-if="selected && selected.length > 0">
+<template x-if="selected && selected.length > 0" key="bulk-select">
 
         <div class="p-2 bg-primary-50 dark:bg-gray-900 dark:text-white text-gray-900 rounded-lg text-sm">
 
@@ -27,11 +27,11 @@
                 </div>
             </template>
 
-            <template x-if="selectAll">
+            <template x-if="selectAll" key="select-all">
                 <div>
                     <span>
                         You are currently selecting all
-                        <strong x-text="total"></strong>
+                        <strong x-text="selected.length"></strong>
                         rows.
                     </span>
 

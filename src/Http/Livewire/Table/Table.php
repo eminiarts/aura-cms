@@ -22,6 +22,8 @@ class Table extends Component
     use QueryFilters;
     use Sorting;
 
+    public $rowIds;
+
     /**
      * List of table columns.
      *
@@ -173,11 +175,16 @@ class Table extends Component
         // $emit('openModal', '{{ $data['modal'] }}', {{ json_encode(['action' => $action, 'selected' => $this->selectedRowsQuery->get()]) }})
     }
 
+    // public function getRowIdsProperty()
+    // {
+    //     return $this->rows->pluck('id')->toArray();
+    // }
+
     /**
-     * Get the available bulk actions.
-     *
-     * @return mixed
-     */
+         * Get the available bulk actions.
+         *
+         * @return mixed
+         */
     public function getBulkActionsProperty()
     {
         return $this->model->getBulkActions();
@@ -263,6 +270,8 @@ class Table extends Component
      */
     public function getRowsProperty()
     {
+        // return $this->rows->pluck('id')->toArray();
+
         return $this->rowsQuery->paginate($this->perPage);
     }
 
@@ -312,6 +321,8 @@ class Table extends Component
 
         $this->tableView = $this->model->defaultTableView();
 
+        $this->rowIds = $this->rows->pluck('id')->toArray();
+
         $this->perPage = $this->model->defaultPerPage();
 
         if (auth()->user()->getOptionColumns($this->model->getType())) {
@@ -319,6 +330,11 @@ class Table extends Component
         } else {
             $this->columns = $this->model->getDefaultColumns();
         }
+    }
+
+    public function updatedPage($page)
+    {
+        $this->rowIds = $this->rows->pluck('id')->toArray();
     }
 
     /**
