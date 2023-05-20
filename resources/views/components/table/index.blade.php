@@ -4,23 +4,47 @@
 'slug'
 ])
 
-<div class="mx-auto max-w-8xl" wire:key="table-index-{{ str()->random(4) }}" x-data="{
+<div class="mx-auto max-w-8xl" wire:key="table-index" x-data="{
     selected: @entangle('selected').defer,
     rows: @js($this->rows->pluck('id')->toArray()), 
     lastSelectedId: null,
     total: @js($this->rows->total()),
     selectPage: false,
-    selectAll: @entangle('selectAll'),
+    currentPage: @entangle('page'),
+    selectAll: @entangle('selectAll').defer,
     loading: false,
     
     init() {
         Livewire.on('selectedRows', (updatedSelected) => {
             this.selected = updatedSelected;
         });
+
+        console.log('init table');
         
         if(this.selectAll) {
             this.selectPage = true;
         }
+
+        // watch rows for changes
+        this.$watch('rows', (rows) => {
+           // Check if rows (array of ids) is included in this.selected. if so, set this.selectPage to true
+           console.log('watch rows', rows, this.selected)
+
+              //this.selectPage = rows.every(row => this.selected.includes(row.toString()));
+        });
+
+        this.$watch('currentPage', (rows) => {
+           console.log('currentPage', this.currentPage)
+           console.log('rows', this.rows)
+           console.log('selected', this.selected)
+
+           /// check if this.rows are in this.selected. if so, set this.selectPage to true
+            this.selectPage = this.rows.every(row => this.selected.includes(row));
+
+            console.log('every', this.rows.every(row => this.selected.includes(row)))
+           
+
+        });
     },
 
     selectCurrentPage() {
@@ -38,6 +62,7 @@
             this.loading = true
 
             this.selected = await $wire.getAllTableRows()
+            this.selectAll = true
 
             console.log(this.selected, 'selected')
 
@@ -76,11 +101,29 @@
             }
             
             this.lastSelectedId = id;
+
+            // Select All
+            if (this.selected.length === this.total) {
+                this.selectAll = true;
+            } else {
+                this.selectAll = false;
+            }
+
+            // Select Page
+            if (!this.selected.includes(id.toString())) {
+                this.selectPage = false;
+
+                console.log('deselect', id)
+            }
+
         });
     }
 }">
 
-<div>
+{{-- @dump($selected)
+@dump($selectAll) --}}
+
+<div wire:key="table-bulk-select">
     @include('aura::components.table.bulk-select-row')
 </div>
 
