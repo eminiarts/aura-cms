@@ -2,14 +2,15 @@
 
 namespace Eminiarts\Aura\Http\Livewire\Table;
 
-use Eminiarts\Aura\Http\Livewire\Table\Traits\BulkActions;
-use Eminiarts\Aura\Http\Livewire\Table\Traits\Filters;
-use Eminiarts\Aura\Http\Livewire\Table\Traits\PerPagePagination;
-use Eminiarts\Aura\Http\Livewire\Table\Traits\QueryFilters;
-use Eminiarts\Aura\Http\Livewire\Table\Traits\Sorting;
-use Eminiarts\Aura\Models\User;
-use Eminiarts\Aura\Resource;
 use Livewire\Component;
+use Eminiarts\Aura\Resource;
+use Eminiarts\Aura\Models\User;
+use Eminiarts\Aura\Http\Livewire\Table\Traits\Search;
+use Eminiarts\Aura\Http\Livewire\Table\Traits\Filters;
+use Eminiarts\Aura\Http\Livewire\Table\Traits\Sorting;
+use Eminiarts\Aura\Http\Livewire\Table\Traits\BulkActions;
+use Eminiarts\Aura\Http\Livewire\Table\Traits\QueryFilters;
+use Eminiarts\Aura\Http\Livewire\Table\Traits\PerPagePagination;
 
 /**
  * Class Table
@@ -20,7 +21,10 @@ class Table extends Component
     use Filters;
     use PerPagePagination;
     use QueryFilters;
+    use Search;
     use Sorting;
+
+    public $rowIds;
 
     /**
      * List of table columns.
@@ -173,11 +177,16 @@ class Table extends Component
         // $emit('openModal', '{{ $data['modal'] }}', {{ json_encode(['action' => $action, 'selected' => $this->selectedRowsQuery->get()]) }})
     }
 
+    // public function getRowIdsProperty()
+    // {
+    //     return $this->rows->pluck('id')->toArray();
+    // }
+
     /**
-     * Get the available bulk actions.
-     *
-     * @return mixed
-     */
+         * Get the available bulk actions.
+         *
+         * @return mixed
+         */
     public function getBulkActionsProperty()
     {
         return $this->model->getBulkActions();
@@ -284,9 +293,14 @@ class Table extends Component
             $query = $this->model->indexQuery($query);
         }
 
-        // when model is instance Post, eager load meta and taxonomies
+        // when model is instance Resource, eager load meta and taxonomies
         if ($this->model instanceof Resource) {
             $query = $query->with(['meta', 'taxonomies']);
+        }
+
+        // Search
+        if ($this->search) {
+            $query = $this->applySearch($query);
         }
 
         if ($this->filters) {
@@ -312,6 +326,8 @@ class Table extends Component
 
         $this->tableView = $this->model->defaultTableView();
 
+        $this->rowIds = $this->rows->pluck('id')->toArray();
+
         $this->perPage = $this->model->defaultPerPage();
 
         if (auth()->user()->getOptionColumns($this->model->getType())) {
@@ -319,6 +335,11 @@ class Table extends Component
         } else {
             $this->columns = $this->model->getDefaultColumns();
         }
+    }
+
+    public function updatedPage($page)
+    {
+        $this->rowIds = $this->rows->pluck('id')->toArray();
     }
 
     /**
@@ -342,16 +363,6 @@ class Table extends Component
     public function reorder($slugs)
     {
         auth()->user()->updateOption('columns_sort.'.$this->model->getType(), $slugs);
-    }
-
-    /**
-     * Search for data in the table.
-     *
-     * @return void
-     */
-    public function search()
-    {
-        // Code to implement the search functionality.
     }
 
     /**
@@ -395,7 +406,7 @@ class Table extends Component
     public function getAllTableRows()
     {
         // dd('hier', $this->rowsQuery->pluck('id'));
-        return $this->rowsQuery->pluck('id')->toArray();
+        return $this->rowsQuery->pluck('id')->all();
     }
 
     /**
