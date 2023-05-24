@@ -105,7 +105,7 @@ class AuraServiceProvider extends PackageServiceProvider
         Livewire::component('aura::post-edit', Edit::class);
         Livewire::component('aura::post-edit-modal', EditModal::class);
         Livewire::component('aura::post-view', View::class);
-        Livewire::component('aura::table', Table::class);
+        Livewire::component('aura::table', app(Table::class));
         Livewire::component('aura::navigation', Navigation::class);
         Livewire::component('aura::global-search', GlobalSearch::class);
         Livewire::component('aura::bookmark-page', BookmarkPage::class);

@@ -29,5 +29,15 @@ trait Search
         return $query;
     }
 
+    /**
+     * Search for data in the table.
+     *
+     * @return void
+     */
+    public function search()
+    {
+        // Code to implement the search functionality.
+    }
+
 
 }

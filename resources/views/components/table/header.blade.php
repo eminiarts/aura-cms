@@ -1,19 +1,51 @@
-<thead>
-    <tr>
-        <x-aura::table.heading class="w-8 pr-0 bg-gray-50 dark:bg-gray-800">
-                <x-aura::input.checkbox x-model="selectPage" x-on:click="selectCurrentPage" />
-        </x-aura::table.heading>
+{{ app('aura')::injectView('header_before') }}
 
-        @foreach($this->headers as $key => $column)
-            @if(optional($this->columns)[$key])
-                {{-- multi-column sorting? --}}
-                <x-aura::table.heading sortable wire:click="sortBy('{{ $key }}')" :direction="$sorts[$key] ?? null">{{ $column }}</x-aura::table.heading>
-                {{-- <th class="px-6 py-3 text-xs font-semibold text-left text-gray-600 bg-gray-50 dark:bg-gray-800 dark:text-gray-400 whitespace-nowrap">{{ $column }}</th> --}}
+{{-- if a view exists: aura.$model->pluralName().header, load it  --}}
+@if(View::exists($view = 'aura.' . $model->getType() . '.header'))
+@include($view)
+@elseif(View::exists('aura::' . $view))
+@include('aura::' . $view)
+@else
+<div class="flex items-center justify-between mt-6">
+    <div>
+        @if(optional(optional($this)->field)['name'])
+        <h1 class="text-3xl font-semibold">{{ __($this->field['name']) }}</h1>
+        @else
+        <h1 class="text-3xl font-semibold">{{ __($model->pluralName()) }}</h1>
+        @endif
+
+        @if(optional(optional($this)->field)['description'])
+        <span class="text-primary-500">{{ __($this->field['description']) }}</span>
+        @endif
+        </h3>
+    </div>
+
+    <div>
+        <div>
+            @if($this->createInModal)
+            <a href="#" wire:click.prevent="$emit('openModal', 'aura::post-create-modal', {{ json_encode(['type' => $this->model->getType(), 'params' => [
+                'for' => $this->field['relation'] ?? $parent->getType(), 'id' => $parent->id
+                ]]) }})">
+                <x-aura::button>
+                    <x-slot:icon>
+                        <x-aura::icon icon="plus" />
+                        </x-slot>
+                        <span>Create {{ $model->getName() }}</span>
+                </x-aura::button>
+            </a>
+            @else
+            <a href="{{ $this->createLink }}">
+                <x-aura::button>
+                    <x-slot:icon>
+                        <x-aura::icon icon="plus" />
+                        </x-slot>
+                        <span>{{ __('Create') }} {{ $model->getName() }}</span>
+                </x-aura::button>
+            </a>
             @endif
-        @endforeach
+        </div>
+    </div>
+</div>
+@endif
 
-        <th class="px-6 py-3 text-xs font-semibold text-left text-gray-600 bg-gray-50 dark:bg-gray-800 dark:text-gray-400">
-            {{ __('Actions') }}
-        </th>
-    </tr>
-</thead>
+{{ app('aura')::injectView('header_after') }}

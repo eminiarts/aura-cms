@@ -2,17 +2,20 @@
 
 namespace Eminiarts\Aura;
 
-use Eminiarts\Aura\Models\Scopes\TeamScope;
-use Eminiarts\Aura\Resources\Attachment;
-use Eminiarts\Aura\Resources\Option;
+use Closure;
+use RuntimeException;
+use Illuminate\Support\Str;
 use Eminiarts\Aura\Resources\User;
-use Eminiarts\Aura\Traits\DefaultFields;
+use Illuminate\Support\HtmlString;
+use Eminiarts\Aura\Resources\Option;
+use Illuminate\Support\Facades\File;
 use Illuminate\Filesystem\Filesystem;
 use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\File;
-use Illuminate\Support\Str;
-use RuntimeException;
+use Eminiarts\Aura\Resources\Attachment;
+use Eminiarts\Aura\Traits\DefaultFields;
 use Symfony\Component\Finder\SplFileInfo;
+use Illuminate\Contracts\Support\Htmlable;
+use Eminiarts\Aura\Models\Scopes\TeamScope;
 
 class Aura
 {
@@ -39,6 +42,8 @@ class Aura
     protected array $taxonomies = [];
 
     protected array $widgets = [];
+
+    protected array $injectViews = [];
 
     /**
      * Determine if Aura's published assets are up-to-date.
@@ -392,6 +397,21 @@ class Aura
     public function registerWidgets(array $widgets): void
     {
         $this->widgets = array_merge($this->widgets, $widgets);
+    }
+
+    public function registerInjectView(string $name, Closure $callback): void
+    {
+        $this->injectViews[$name][] = $callback;
+    }
+
+    public function injectView(string $name): Htmlable
+    {
+        $hooks = array_map(
+            fn (callable $hook): string => (string) app()->call($hook),
+            $this->injectViews[$name] ?? [],
+        );
+
+        return new HtmlString(implode('', $hooks));
     }
 
     public function setOption($key, $value)
