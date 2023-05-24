@@ -459,6 +459,7 @@ class User extends UserModel
     {
         // Save the roles
         if (config('aura.teams')) {
+            ray('user', $this->current_team_id, $this);
             $this->roles()->syncWithPivotValues($value, ['key' => 'roles', 'team_id' => $this->current_team_id]);
         } else {
             $this->roles()->syncWithPivotValues($value, ['key' => 'roles']);
@@ -492,6 +493,12 @@ class User extends UserModel
      */
     protected static function booted()
     {
+        static::creating(function ($user) {
+            if (!$user->current_team_id) {
+                $user->current_team_id = auth()->user()->current_team_id;
+            }
+        });
+
         static::saving(function ($user) {
             if (isset($user->attributes['fields'])) {
                 foreach ($user->attributes['fields'] as $key => $value) {

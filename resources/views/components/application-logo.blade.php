@@ -9,22 +9,22 @@ use Eminiarts\Aura\Resources\Attachment;
     $imageDark->isNotEmpty()
 )
     <a href="/">
-        <img src="{{ optional($image->first())->path() }}" alt="{{ config('app.name', 'Aura CMS') }}" class="block h-10 dark:hidden" />
-        <img src="{{ optional($imageDark->first())->path() }}" alt="{{ config('app.name', 'Aura CMS') }}" class="hidden h-10 dark:block" />
+        <img src="{{ optional($image->first())->path() }}" alt="{{ config('app.name', 'Aura CMS') }}" class="block w-full dark:hidden" />
+        <img src="{{ optional($imageDark->first())->path() }}" alt="{{ config('app.name', 'Aura CMS') }}" class="hidden w-full dark:block" />
     </a>
 @elseif (
     ($image = Attachment::find(app('aura')::option('login-logo'))) &&
     $image->isNotEmpty()
 )
     <a href="/">
-        <img src="{{ $image->first()->path() }}" alt="{{ config('app.name', 'Aura CMS') }}" class="h-10" />
+        <img src="{{ $image->first()->path() }}" alt="{{ config('app.name', 'Aura CMS') }}" class="w-full" />
     </a>
 @elseif (
     ($imageDark = Attachment::find(app('aura')::option('login-logo-darkmode'))) &&
     $imageDark->isNotEmpty()
 )
     <a href="/">
-        <img src="{{ $imageDark->first()->path() }}" alt="{{ config('app.name', 'Aura CMS') }}" class="h-10" />
+        <img src="{{ $imageDark->first()->path() }}" alt="{{ config('app.name', 'Aura CMS') }}" class="w-full" />
     </a>
 @else
 
