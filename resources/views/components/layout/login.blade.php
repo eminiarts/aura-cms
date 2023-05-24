@@ -129,7 +129,7 @@
         <div class="relative flex flex-col items-center min-h-screen pt-6 bg-bottom bg-no-repeat bg-cover sm:justify-center sm:pt-0">
             <div>
                 <a href="/">
-                    <x-aura::application-logo class="h-10 text-gray-600 fill-current dark:text-gray-100" />
+                    <x-aura::application-logo class="w-full text-gray-600 fill-current dark:text-gray-100" />
                 </a>
             </div>
 

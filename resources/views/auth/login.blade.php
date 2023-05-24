@@ -12,7 +12,7 @@
         <!-- Email Address -->
         <div>
             <x-aura::input-label class="sr-only" for="email" :value="__('Email')" />
-            <x-aura::input.text id="email" placeholder="Enter your email" class="block w-full mt-1" type="email" name="email" :value="old('email')" required autofocus />
+            <x-aura::input.text id="email" placeholder="{{ __('Enter your email') }}" class="block w-full mt-1" type="email" name="email" :value="old('email')" required autofocus />
             <x-aura::input-error :messages="optional($errors)->get('email')" class="mt-2" />
         </div>
 
@@ -23,7 +23,7 @@
             <x-aura::input.text id="password" class="block w-full mt-1"
                             type="password"
                             name="password"
-                            placeholder="Enter your password"
+                            placeholder="{{ __('Enter your password') }}"
                             required autocomplete="current-password" />
 
             <x-aura::input-error :messages="optional($errors)->get('password')" class="mt-2" />

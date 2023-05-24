@@ -76,6 +76,7 @@
             "providers": [
                 "Lab404\\Impersonate\\ImpersonateServiceProvider",
                 "Eminiarts\\Aura\\Providers\\FortifyServiceProvider",
+                "Aura\\Pro\\ProServiceProvider",
                 "Aura\\Flows\\FlowsServiceProvider",
                 "Aura\\Forms\\FormsServiceProvider",
                 "Aura\\Export\\ExportServiceProvider",
