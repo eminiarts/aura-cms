@@ -115,6 +115,8 @@ class Table extends Component
      */
     public $tableView;
 
+    protected $queryString = ['selectedFilter'];
+
     /**
      * List of events listened to by the component.
      *
