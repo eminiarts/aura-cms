@@ -154,6 +154,11 @@ trait Filters
      */
     public function updatedSelectedFilter($filter)
     {
-        $this->filters = $this->userFilters[$filter];
+        if($filter) {
+            $this->filters = $this->userFilters[$filter];
+        } else {
+            $this->reset('filters');
+        }
+
     }
 }

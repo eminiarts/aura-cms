@@ -322,6 +322,11 @@ class Table extends Component
 
         $this->setTaxonomyFilters();
 
+
+        if($this->selectedFilter) {
+            $this->filters = $this->userFilters[$this->selectedFilter];
+        }
+
         // dd($this->model);
 
         $this->query = $query;
