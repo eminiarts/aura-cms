@@ -55,11 +55,15 @@ class Table extends Component
     public $field;
 
     /**
-     * The name of the filter.
+     * The name of the filter in the modal.
      *
      * @var string
      */
-    public $filterName;
+    public $filter = [
+        'name' => '',
+        'public' => false,
+        'global' => false,
+    ];
 
     /**
      * The last clicked row.
@@ -88,7 +92,9 @@ class Table extends Component
      * @var array
      */
     public $rules = [
-        'filterName' => 'required',
+        'filter.name' => 'required',
+        'filter.global' => '',
+        'filter.public' => '',
         'filters.custom.*.name' => 'required',
         'filters.custom.*.operator' => 'required',
         'filters.custom.*.value' => 'required',

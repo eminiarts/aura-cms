@@ -232,4 +232,44 @@ class Team extends Resource
     {
         return TeamFactory::new();
     }
+
+    public function updateOption($option, $value)
+    {
+        $option = 'team.'.$this->id.'.'.$option;
+
+        Option::updateOrCreate(['name' => $option], ['value' => $value]);
+
+        // Clear the cache
+        Cache::forget($option);
+    }
+
+    public function getOption($option)
+    {
+        $option = 'team.'.$this->id.'.'.$option;
+
+        // If there is a * at the end of the option name, it means that it is a wildcard
+        // and we need to get all options that match the wildcard
+        if (substr($option, -1) == '*') {
+            $o = substr($option, 0, -1);
+
+            // Cache
+            $options = Cache::remember($option, now()->addHour(), function () use ($o) {
+                return Option::where('name', 'like', $o.'%')->get();
+            });
+
+            // Map the options, set the key to the option name (everything after last dot ".") and the value to the option value
+            return $options->mapWithKeys(function ($item, $key) {
+                return [str($item->name)->afterLast('.')->toString() => $item->value];
+            });
+        }
+
+        // Cache
+        $model = Cache::remember($option, now()->addHour(), function () use ($option) {
+            return Option::whereName($option)->first();
+        });
+
+        if ($model) {
+            return $model->value;
+        }
+    }
 }

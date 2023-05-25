@@ -90,7 +90,14 @@ trait Filters
      */
     public function getUserFiltersProperty()
     {
-        return auth()->user()->getOption($this->model->getType().'.filters.*') ?? [];
+        $userFilters = auth()->user()->getOption($this->model->getType().'.filters.*') ?? [];
+
+        $teamFilters = auth()->user()->currentTeam->getOption($this->model->getType().'.filters.*') ?? [];
+
+        // dd($userFilters, $teamFilters);
+
+        return array_merge($userFilters->toArray(), $teamFilters->toArray());
+
     }
 
     /**
@@ -123,18 +130,34 @@ trait Filters
      */
     public function saveFilter()
     {
-        $this->validate(['filterName' => 'required']);
+        $this->validate([
+            'filter.name' => 'required',
+            'filter.public' => 'required',
+            'filter.global' => 'required',
+        ]);
 
         if ($this->filters) {
-            auth()->user()->updateOption($this->model->getType().'.filters.'.$this->filterName, $this->filters);
+
+            // Save for Team
+            if($this->filter['global']) {
+                auth()->user()->currentTeam->updateOption($this->model->getType().'.filters.'.$this->filter['name'], $this->filters);
+
+            }
+            // Save for User
+            else {
+
+                auth()->user()->updateOption($this->model->getType().'.filters.'.$this->filter['name'], $this->filters);
+
+            }
+
         }
 
         $this->clearUserFiltersCache();
 
-        $this->selectedFilter = $this->filterName;
+        $this->selectedFilter = $this->filter['name'];
         $this->notify('Filter saved successfully!');
         $this->showSaveFilterModal = false;
-        $this->reset('filterName');
+        $this->reset('filter');
     }
 
     /**
