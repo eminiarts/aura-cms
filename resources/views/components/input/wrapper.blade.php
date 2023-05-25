@@ -12,11 +12,14 @@
 'name',
 ])
 
-<div >
+<div>
+
   <div class="flex justify-between items-center">
-    @if ($label)
+  @if ($label)
     <x-aura::fields.label :label="$label" />
-    @endif
+    @else
+    <div></div>
+  @endif
 
     @if($help)
 
@@ -28,8 +31,14 @@
     @endif
   </div>
 
+
   <div class="">
-    <x-aura::input.text :attributes="$attributes"></x-aura::input.text>
+
+    @if(isset($slot))
+       {{ $slot }}
+    @else
+      <x-aura::input.text :attributes="$attributes"></x-aura::input.text>
+    @endif
 
     @if($error)
       @error($error) <span class="error text-red-500 font-semibold text-sm">{{ $message }}</span> @enderror

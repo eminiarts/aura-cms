@@ -115,9 +115,31 @@
             </x-slot>
 
             <x-slot name="content">
-                <x-aura::input.text required wire:model.defer="filterName" error="filterName" placeholder="{{ __('Enter a Name for the Filter') }}"></x-aura::input.text>
+                <div>
+                    <div>
 
-                <x-aura::jet-input-error for="filterName" class="mt-2" />
+                        <x-aura::input.wrapper label="Filter Name" error="filter.name" :help="__('Enter a Filter Name')">
+                            
+                        <x-aura::input.text required wire:model.defer="filter.name" error="filter.name" :placeholder="__('Enter a Name for the Filter')"></x-aura::input.text>
+
+                         </x-aura::input.wrapper>
+
+                    </div>
+                    
+                    <div class="mt-4">
+                         <x-aura::input.wrapper label="{{ __('Table Tabs') }}" error="filter.global" :help="__('Show above the Table of the Index Page')">
+                            
+                            <x-aura::input.toggle wire:model.defer="filter.global" error="filter.global" label-after="Add this filter to the Tabs of the Index Page" ></x-aura::input.toggle>
+
+                         </x-aura::input.wrapper>
+                         
+                         <x-aura::input.wrapper label="{{ __('Public Filter') }}" error="filter.public" :help="__('Make this filter available for everyone')">
+                            
+                            <x-aura::input.toggle wire:model.defer="filter.public" error="filter.public" label-after="Make this filter available for everyone"></x-aura::input.toggle>
+
+                         </x-aura::input.wrapper>
+                    </div>
+                </div>
             </x-slot>
 
             <x-slot name="footer">
