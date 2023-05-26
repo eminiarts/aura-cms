@@ -239,7 +239,22 @@ class Team extends Resource
 
         Option::updateOrCreate(['name' => $option], ['value' => $value]);
 
-        // Clear the cache
+        Cache::forget($option);
+    }
+
+    public function clearCachedOption($option)
+    {
+        $option = 'team.'.$this->id.'.'.$option;
+
+        Cache::forget($option);
+    }
+
+    public function deleteOption($option)
+    {
+        $option = 'team.'.$this->id.'.'.$option;
+
+        Option::whereName($option)->delete();
+
         Cache::forget($option);
     }
 

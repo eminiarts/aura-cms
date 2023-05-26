@@ -48,27 +48,34 @@ trait Filters
     }
 
     /**
-     * Clear the user filters cache.
-     *
-     * @return void
-     */
-    public function clearUserFiltersCache()
-    {
-        Cache::forget('user.'.auth()->user()->id.'.'.$this->model->getType().'.filters.*');
-    }
-
-    /**
      * Delete a filter.
      *
      * @param  mixed  $filter
      * @return void
      */
-    public function deleteFilter($filter)
+    public function deleteFilter($filterName)
     {
-        auth()->user()->deleteOption($this->model->getType().'.filters.'.$filter);
+        // Retrieve the filter using the provided key
+        $filter = $this->userFilters[$filterName];
+
+        switch ($filter['type']) {
+            case 'user':
+                auth()->user()->deleteOption($this->model->getType().'.filters.'.$filterName);
+
+                break;
+            case 'team':
+                auth()->user()->currentTeam->deleteOption($this->model->getType().'.filters.'.$filterName);
+
+                break;
+            default:
+                // Handle unexpected type value
+                throw new \InvalidArgumentException("Invalid filter type: " . $filter['type']);
+        }
+
         $this->notify('Success: Filter deleted!');
-        $this->clearUserFiltersCache();
+        $this->clearFiltersCache();
         $this->reset('filters');
+        $this->reset('userFilters');
         $this->reset('selectedFilter');
         $this->setTaxonomyFilters();
     }
@@ -90,22 +97,31 @@ trait Filters
      */
     public function getUserFiltersProperty()
     {
-        $userFilters = auth()->user()->getOption($this->model->getType().'.filters.*') ?? [];
+        $userFilters = auth()->user()->getOption($this->model->getType().'.filters.*') ?? collect();
+        $teamFilters = auth()->user()->currentTeam->getOption($this->model->getType().'.filters.*') ?? collect();
 
-        $teamFilters = auth()->user()->currentTeam->getOption($this->model->getType().'.filters.*') ?? [];
+        // Add 'type' => 'user' to each user filter
+        $userFilters = $userFilters->map(function ($filter) {
+            $filter['type'] = 'user';
+            return $filter;
+        });
 
-        // dd($userFilters, $teamFilters);
+        // Add 'type' => 'team' to each team filter
+        $teamFilters = $teamFilters->map(function ($filter) {
+            $filter['type'] = 'team';
+            return $filter;
+        });
 
-        return array_merge($userFilters->toArray(), $teamFilters->toArray());
-
+        // Use concat to merge collections and convert to array
+        return $userFilters->merge($teamFilters)->toArray();
     }
 
     /**
-     * Remove a custom filter.
-     *
-     * @param  int  $index
-     * @return void
-     */
+         * Remove a custom filter.
+         *
+         * @param  int  $index
+         * @return void
+         */
     public function removeCustomFilter($index)
     {
         unset($this->filters['custom'][$index]);
@@ -141,23 +157,27 @@ trait Filters
             // Save for Team
             if($this->filter['global']) {
                 auth()->user()->currentTeam->updateOption($this->model->getType().'.filters.'.$this->filter['name'], $this->filters);
-
             }
             // Save for User
             else {
-
                 auth()->user()->updateOption($this->model->getType().'.filters.'.$this->filter['name'], $this->filters);
-
             }
 
         }
-
-        $this->clearUserFiltersCache();
 
         $this->selectedFilter = $this->filter['name'];
         $this->notify('Filter saved successfully!');
         $this->showSaveFilterModal = false;
         $this->reset('filter');
+
+        $this->clearFiltersCache();
+
+    }
+
+    public function clearFiltersCache()
+    {
+        auth()->user()->clearCachedOption($this->model->getType().'.filters.*');
+        auth()->user()->currentTeam->clearCachedOption($this->model->getType().'.filters.*');
     }
 
     /**
