@@ -75,9 +75,12 @@ trait Filters
         $this->notify('Success: Filter deleted!');
         $this->clearFiltersCache();
         $this->reset('filters');
-        $this->reset('userFilters');
+        // $this->reset('userFilters');
         $this->reset('selectedFilter');
         $this->setTaxonomyFilters();
+
+        // Refresh Component
+        $this->emit('refreshTable');
     }
 
     /**
