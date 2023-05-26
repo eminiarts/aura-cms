@@ -34,7 +34,7 @@
 
   <div class="">
 
-    @if(isset($slot))
+    @if(optional($slot))
        {{ $slot }}
     @else
       <x-aura::input.text :attributes="$attributes"></x-aura::input.text>

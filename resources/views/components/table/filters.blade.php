@@ -48,7 +48,7 @@
      {{-- @dump( $filters) --}}
         {{-- @dump( $this->fieldsForFilter) --}}
 
-        @forelse($filters['custom'] as $key => $filter)
+        @forelse($filters['custom'] as $key => $f)
 
         <div class="mt-6">
             <div class="flex justify-between">
@@ -82,7 +82,11 @@
 
             <div class="w-full mt-2 mb-0">
                 <div class="w-full">
-                    <x-aura::input.wrapper placeholder="Value" wire:model.defer="filters.custom.{{ $key}}.value" error="filters.custom.{{ $key }}.value"></x-aura::input.wrapper>
+                    <x-aura::input.wrapper placeholder="Value" wire:model.defer="filters.custom.{{ $key}}.value" error="filters.custom.{{ $key }}.value">
+                
+                    
+                        <x-aura::input.text :attributes="$attributes"></x-aura::input.text>
+                    </x-aura::input.wrapper>
                 </div>
             </div>
         </div>
