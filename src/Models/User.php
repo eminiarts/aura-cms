@@ -128,6 +128,9 @@ class User extends Authenticatable
         $option = 'user.'.$this->id.'.'.$option;
 
         Option::whereName($option)->delete();
+
+        Cache::forget($option);
+
     }
 
     public function getOption($option)
@@ -158,6 +161,13 @@ class User extends Authenticatable
         if ($model) {
             return $model->value;
         }
+    }
+
+    public function clearCachedOption($option)
+    {
+        $option = 'user.'.$this->id.'.'.$option;
+
+        Cache::forget($option);
     }
 
     public function getOptionBookmarks()
