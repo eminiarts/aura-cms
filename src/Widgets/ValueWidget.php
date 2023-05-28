@@ -27,6 +27,13 @@ class ValueWidget extends Widget
             ->where('created_at', '>=', $start)
             ->where('created_at', '<', $end);
 
+
+        // Apply the query scope if it's a string
+        if (optional($this->widget)['queryScope']) {
+            $posts->{$this->widget['queryScope']}();
+        }
+
+
         if ($column && $this->model->isMetaField($column)) {
             $posts->select('posts.*', DB::raw("CAST(post_meta.value as SIGNED) as $column"))
                 ->leftJoin('post_meta', function ($join) use ($column) {
