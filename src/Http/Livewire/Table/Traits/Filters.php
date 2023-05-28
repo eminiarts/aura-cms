@@ -116,7 +116,8 @@ trait Filters
         });
 
         // Use concat to merge collections and convert to array
-        return $userFilters->merge($teamFilters)->toArray();
+        return collect($userFilters)->merge($teamFilters)->toArray();
+
     }
 
     /**
@@ -153,17 +154,20 @@ trait Filters
             'filter.name' => 'required',
             'filter.public' => 'required',
             'filter.global' => 'required',
+            'filter.icon' => '',
         ]);
+
+        $newFilter = array_merge($this->filter, $this->filters);
 
         if ($this->filters) {
 
             // Save for Team
             if($this->filter['global']) {
-                auth()->user()->currentTeam->updateOption($this->model->getType().'.filters.'.$this->filter['name'], $this->filters);
+                auth()->user()->currentTeam->updateOption($this->model->getType().'.filters.'.$this->filter['name'], $newFilter);
             }
             // Save for User
             else {
-                auth()->user()->updateOption($this->model->getType().'.filters.'.$this->filter['name'], $this->filters);
+                auth()->user()->updateOption($this->model->getType().'.filters.'.$this->filter['name'], $newFilter);
             }
 
         }
