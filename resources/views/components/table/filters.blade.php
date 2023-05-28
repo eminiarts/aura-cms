@@ -120,9 +120,15 @@
                 <div>
                     <div>
 
-                        <x-aura::input.wrapper label="Filter Name" error="filter.name" :help="__('Enter a Filter Name')">
+                        <x-aura::input.wrapper label="Filter Name*" error="filter.name" :help="__('Enter a Filter Name')">
                             
                         <x-aura::input.text required wire:model.defer="filter.name" error="filter.name" :placeholder="__('Enter a Name for the Filter')"></x-aura::input.text>
+
+                         </x-aura::input.wrapper>
+
+                        <x-aura::input.wrapper label="Icon" error="filter.icon" :help="__('Icon (optional)')">
+                            
+                        <x-aura::input.text required wire:model.defer="filter.icon" error="filter.icon" :placeholder="__('Icon (optional)')"></x-aura::input.text>
 
                          </x-aura::input.wrapper>
 
@@ -148,8 +154,6 @@
                 <x-aura::button.primary wire:click="saveFilter">{{ __('Save as Template') }}</x-aura::button.primary>
             </x-slot>
         </x-aura::dialog-modal>
-
-
 
     </div>
 

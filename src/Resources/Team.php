@@ -269,7 +269,7 @@ class Team extends Resource
 
             // Cache
             $options = Cache::remember($option, now()->addHour(), function () use ($o) {
-                return Option::where('name', 'like', $o.'%')->get();
+                return Option::where('name', 'like', $o.'%')->orderBy('id')->get();
             });
 
             // Map the options, set the key to the option name (everything after last dot ".") and the value to the option value
