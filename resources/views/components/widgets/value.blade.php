@@ -27,6 +27,8 @@
                         {{ $change }}%
                     </div>
                 @else
+                    @if(optional($widget)['previous'] !== false)
+
                     @if($this->values['change'] >= 0)
                     <div
                         class="inline-flex items-baseline rounded-full px-2.5 py-0.5 text-sm font-medium bg-green-100 text-green-800 md:mt-2 lg:mt-0">
@@ -52,6 +54,8 @@
                         {{ $this->values['change'] }}%
                     </div>
                     @endif
+
+                    @endif
                 @endif
             </div>
         </div>
@@ -74,7 +78,9 @@
                     </div>
                 </div>
             @else
+                @if(optional($widget)['previous'] !== false)
                 <span class="text-sm font-medium text-gray-500">from {{ $this->values['previous'] }}</span>
+                @endif
             @endif
         </div>
 
