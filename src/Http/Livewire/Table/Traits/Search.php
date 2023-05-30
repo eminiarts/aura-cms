@@ -3,6 +3,7 @@
 namespace Eminiarts\Aura\Http\Livewire\Table\Traits;
 
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\DB;
 
 /**
  * Trait to handle search functionality.
@@ -31,17 +32,17 @@ trait Search
 
             if($metaFields->count() > 0) {
                 $query
-                ->select('posts.*', 'post_meta.id as post_meta_id', 'post_meta.post_id', 'post_meta.key', 'post_meta.value')
-                ->leftJoin('post_meta', function ($join) use ($metaFields) {
-                    $join->on('posts.id', '=', 'post_meta.post_id')
-                        ->whereIn('post_meta.key', $metaFields);
-                })->where(function ($query) {
-                    $query->where('posts.title', 'like', '%'.$this->search.'%')
-                        ->orWhere(function ($query) {
-                            $query->where('post_meta.value', 'LIKE', '%'.$this->search.'%');
-                        });
+
+                ->where(function ($query) use ($metaFields) {
+                    $query->where('posts.title', 'like', $this->search.'%')
+                          ->orWhereExists(function ($query) use ($metaFields) {
+                              $query->select(DB::raw(1))
+                                    ->from('post_meta')
+                                    ->where('posts.id', '=', DB::raw('post_meta.post_id'))
+                                    ->whereIn('post_meta.key', $metaFields)
+                                    ->where('post_meta.value', 'LIKE', $this->search.'%');
+                          });
                 })
-                           ->distinct()
                            //->orderBy('posts.id', 'desc')
                 ;
             }
