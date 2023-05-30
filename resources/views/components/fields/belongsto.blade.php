@@ -29,7 +29,7 @@ if(optional($field)['api']) {
 {{-- @dump($field['resource']) --}}
 {{-- @dump($this->post['fields'][$field['slug']]) --}}
 
-<div wire:key="belongsto-{{ $field['slug'] }}">
+<div wire:key="belongsto-{{ $field['slug'] }}" class="w-full">
     <x-aura::fields.wrapper :field="$field">
 
         {{-- @dump($this->post) --}}
