@@ -38,7 +38,7 @@
                     </div>
                 </x-slot>
             </x-aura::dropdown> --}}
-            <div class="w-60">
+            {{-- <div class="w-60">
                         <div class="p-4" role="none">
                             <div class="flex flex-col space-y-2">
                                 <label for="selected" class="block text-sm font-medium text-gray-700">Date Range:</label>
@@ -57,7 +57,7 @@
                                 </div>
                             </div>
                         </div>
-                    </div>
+                    </div> --}}
         </div>
     </div>
 
