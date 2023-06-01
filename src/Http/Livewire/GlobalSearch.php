@@ -18,7 +18,7 @@ class GlobalSearch extends Component
         if (! $this->search || $this->search === '') {
             return [];
         }
-        // dd('getSearchResultsProperty');
+
         // Get all accessible resources
         $resources = app('aura')::getResources();
 
@@ -29,8 +29,6 @@ class GlobalSearch extends Component
             // dump($resource::getSlug());
             return $resource::getSlug() !== 'resource' && $resource::getSlug() !== 'flow' && $resource::getSlug() !== 'flowlog' && $resource::getSlug() !== 'operation' && $resource::getSlug() !== 'flowoperation' && $resource::getSlug() !== 'operationlog' && $resource::getSlug() !== 'option' && $resource::getSlug() !== 'team' && $resource::getSlug() !== 'user' && $resource::getSlug() !== 'product';
         });
-
-        // dd($resources);
 
         $searchResults = collect([]);
 
@@ -46,13 +44,9 @@ class GlobalSearch extends Component
             if (app($resource)->getGlobalSearch() === false) {
                 continue;
             }
-            // dd($resource);
-
-            // ray('hier 2222', app($resource)->getSearchableFields(), $resource::getSlug());
 
             $searchableFields = app($resource)->getSearchableFields()->pluck('slug');
 
-            // ray($searchableFields);
 
             $metaFields = $searchableFields->filter(function ($field) use ($resource) {
                 // check if it is a meta field

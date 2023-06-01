@@ -19,11 +19,42 @@ trait Search
     {
 
         if ($this->search) {
-            $query->where(function ($query) {
-                foreach ($this->model->searchableColumns() as $column) {
-                    $query->orWhere($column, 'like', '%'.$this->search.'%');
-                }
+
+            $searchableFields = $this->model->getSearchableFields()->pluck('slug');
+
+
+            $metaFields = $searchableFields->filter(function ($field) {
+                return $this->model->isMetaField($field);
             });
+
+
+
+            if($metaFields->count() > 0) {
+                $query
+                ->select($this->model->getTable() . '.*')
+                ->leftJoin('post_meta', function ($join) use ($metaFields) {
+                    $join->on($this->model->getTable() . '.id', '=', 'post_meta.post_id')
+                        ->whereIn('post_meta.key', $metaFields);
+                })
+                ->where(function ($query) {
+                    $query->where($this->model->getTable() . '.title', 'like', '%'.$this->search.'%')
+                        ->orWhere(function ($query) {
+                            $query->where('post_meta.value', 'LIKE', '%'.$this->search.'%');
+                        });
+                })
+                        //    ->distinct()
+                         ->groupBy($this->model->getTable() . '.id')
+                           //->orderBy('posts.id', 'desc')
+                ;
+            }
+
+            // dd($searchableFields, $metaFields, $query);
+
+            // $query->where(function ($query) {
+            //     foreach ($this->model->searchableColumns() as $column) {
+            //         $query->orWhere($column, 'like', '%'.$this->search.'%');
+            //     }
+            // });
         }
 
         return $query;
