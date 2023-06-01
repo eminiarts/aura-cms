@@ -2,6 +2,9 @@
     use Eminiarts\Aura\TransformColor;
 @endphp
 
+
+
+
 @if($settings)
 <style>
 :root {
@@ -751,6 +754,49 @@
 
 @endif
 </style>
+
+@else
+
+<style>
+:root {
+    --primary-25: {{ TransformColor::hexToRgb('#fbfeff') }};
+    --primary-50: {{ TransformColor::hexToRgb('#E9EEFD') }};
+    --primary-100: {{ TransformColor::hexToRgb('#C9D9FB') }};
+    --primary-200: {{ TransformColor::hexToRgb('#A3BFF9') }};
+    --primary-300: {{ TransformColor::hexToRgb('#699EF6') }};
+    --primary-400: {{ TransformColor::hexToRgb('#3C7EF4') }};
+    --primary-500: {{ TransformColor::hexToRgb('#153AEF') }};
+    --primary-600: {{ TransformColor::hexToRgb('#0E30D7') }};
+    --primary-700: {{ TransformColor::hexToRgb('#0A25B9') }};
+    --primary-800: {{ TransformColor::hexToRgb('#071B9B') }};
+    --primary-900: {{ TransformColor::hexToRgb('#04127C') }};
+    --primary-950: {{ TransformColor::hexToRgb('#010850') }};
+
+
+    --sidebar-bg: var(--primary-700);
+    --sidebar-bg-hover: var(--primary-600);
+    --sidebar-bg-dropdown: var(--primary-800);
+
+    --sidebar-text: var(--primary-400);
+    --sidebar-icon: var(--primary-300);
+    --sidebar-icon-hover: var(--primary-200);
+}
+
+:root {
+    --gray-25: 250 250 255;
+    --gray-50: 249 250 251;
+    --gray-100: 241 245 249;
+    --gray-200: 226 232 240;
+    --gray-300: 203 213 225;
+    --gray-400: 148 163 184;
+    --gray-500: 100 116 139;
+    --gray-600: 71 85 105;
+    --gray-700: 52 65 85;
+    --gray-800: 30 41 59;
+    --gray-900: 15 23 42;
+}
+</style>
+
 @endif
 
 <script>
