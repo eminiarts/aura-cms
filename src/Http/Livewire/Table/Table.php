@@ -291,7 +291,7 @@ class Table extends Component
     public function getRowsQueryProperty()
     {
         $query = $this->model->query()
-            ->orderBy('id', 'desc');
+            ->orderBy($this->model->getTable().'.id', 'desc');
 
         if ($this->field && method_exists(app($this->field['type']), 'queryFor')) {
             $query = app($this->field['type'])->queryFor($this->parent, $query, $this->field);
