@@ -10,6 +10,12 @@ class ConditionalLogic
     {
         $conditions = optional($field)['conditional_logic'];
 
+
+        // if(optional($field)['slug'] == 'primary-25') {
+        //     dd('hier', $field, $conditions, $model);
+        // }
+
+
         if (! $conditions) {
             return true;
         }
@@ -54,30 +60,66 @@ class ConditionalLogic
                     break;
                 default:
 
-                    if (optional($model)->getMeta()) {
+                    // dd('hier', method_exists($model, 'getMeta'), $model->post['fields'], $condition);
+
+                    // Task for GPT: here, $fieldvalue is the value of the field that is being checked, $model->post['fields'][$condition['field']] is the value of the field that is being checked against
+                    // but the $model does not have a getMeta method, so it is not a post model
+                    // I need to allow for other models than posts, so I need to check if the model has post['fields]
+
+                    if (method_exists($model, 'getMeta')) {
+                        $fieldValue = $model->getMeta($condition['field']);
                         $fieldValue = $model->getMeta($condition['field']);
 
                         if (! $fieldValue) {
                             $show = false;
                             break;
                         }
-                    }
 
-                    // If the $condition['field'] has a dot, undot array
-                    if (str_contains($condition['field'], '.')) {
-                        $fieldValue = data_get($model->getMeta()->toArray(), $condition['field']);
+
+                        // If the $condition['field'] has a dot, undot array
+                        if (str_contains($condition['field'], '.')) {
+                            $fieldValue = data_get($model->getMeta()->toArray(), $condition['field']);
+                            $show = ConditionalLogic::checkFieldCondition($condition, $fieldValue);
+
+                            break;
+                        }
+
+                        if (optional($model)->getMeta() && ! array_key_exists($condition['field'], $model->getMeta()->toArray())) {
+                            $show = false; // The model does not have the field, so it does not match the condition
+                            break;
+                        }
+
+
                         $show = ConditionalLogic::checkFieldCondition($condition, $fieldValue);
+                        break;
 
+                    }
+
+                    // For Livewire components
+                    if (isset($model->post['fields'])) {
+                        $fieldValue = data_get($model->post['fields'], $condition['field']);
+
+                        if ($fieldValue === null) {
+                            $show = false;
+                            break;
+                        }
+
+                        if (str_contains($condition['field'], '.')) {
+                            $fieldValue = data_get($model->post['fields'], $condition['field']);
+                            $show = ConditionalLogic::checkFieldCondition($condition, $fieldValue);
+                            break;
+                        }
+
+                        if (! array_key_exists($condition['field'], $model->post['fields'])) {
+                            $show = false; // The model does not have the field, so it does not match the condition
+                            break;
+                        }
+
+                        $show = ConditionalLogic::checkFieldCondition($condition, $fieldValue);
                         break;
                     }
 
-                    if (optional($model)->getMeta() && ! array_key_exists($condition['field'], $model->getMeta()->toArray())) {
-                        $show = false; // The model does not have the field, so it does not match the condition
-                        break;
-                    }
 
-                    $show = ConditionalLogic::checkFieldCondition($condition, $fieldValue);
-                    break;
             }
 
             if (! $show) {
@@ -149,7 +191,7 @@ class ConditionalLogic
         if (is_string($field)) {
             $cacheKey = md5(json_encode($field));
         } else {
-            $cacheKey = md5(json_encode($field['slug']));
+            $cacheKey = md5(json_encode($field));
         }
 
         // If the result is already in the cache, return it.
