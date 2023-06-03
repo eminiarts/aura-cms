@@ -6,6 +6,8 @@
         <h3>Configure Logo and Theme. These Settings are applied for this team</h3>
     </div>
 
+    {{-- @dump($this->fieldsForView) --}}
+
     @foreach($this->fieldsForView as $key => $field)
     <style>
         #post-field-{{ optional($field)['slug'] }}-wrapper {
