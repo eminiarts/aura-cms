@@ -149,7 +149,7 @@ $settings = Eminiarts\Aura\Facades\Aura::getOption('team-settings');
           >
 
               <div class="flex items-center ml-0 font-semibold {{ $compact ? 'space-x-2 text-sm' : 'space-x-3 text-base' }}">
-                {{ __($title) }}
+                {{ $title }}
               </div>
 
               <span x-cloak x-show="expanded" aria-hidden="true" class="ml-4">
