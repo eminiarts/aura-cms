@@ -56,12 +56,19 @@ class Edit extends Component
         // Array instead of Eloquent Model
         $this->post = $this->model->attributesToArray();
 
+        // dd($this->model, $this->post);
+
         $this->post['terms'] = $this->model->terms;
 
         // Set on model instead of here
         // if $this->post['terms']['tag'] is not set, set it to null
         $this->post['terms']['tag'] = $this->post['terms']['tag'] ?? null;
         $this->post['terms']['category'] = $this->post['terms']['category'] ?? null;
+    }
+
+    public function updatedPost($value, $array)
+    {
+        // dd('updatedPostFields', $value, $array, $this->post);
     }
 
     public function render()

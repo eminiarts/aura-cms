@@ -228,6 +228,7 @@ class Field
                 'type' => 'Eminiarts\\Aura\\Fields\\Select',
                 'validation' => '',
                 'options' => [
+                    '' => 'Please Select',
                     '==' => '==',
                     '!=' => '!=',
                     '>' => '>',
