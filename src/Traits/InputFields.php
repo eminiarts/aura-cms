@@ -13,6 +13,7 @@ use Eminiarts\Aura\Pipeline\FilterCreateFields;
 use Eminiarts\Aura\Pipeline\BuildTreeFromFields;
 use Eminiarts\Aura\Pipeline\RemoveClosureAttributes;
 use Eminiarts\Aura\Pipeline\RemoveValidationAttribute;
+use Eminiarts\Aura\Pipeline\DoNotDeferConditionalLogic;
 use Eminiarts\Aura\Pipeline\ApplyParentConditionalLogic;
 use Eminiarts\Aura\Pipeline\ApplyParentDisplayAttributes;
 
@@ -32,6 +33,7 @@ trait InputFields
             MapFields::class,
             AddIdsToFields::class,
             ApplyParentConditionalLogic::class,
+            DoNotDeferConditionalLogic::class,
             ApplyParentDisplayAttributes::class,
             FilterCreateFields::class,
             BuildTreeFromFields::class,
@@ -76,6 +78,7 @@ trait InputFields
             MapFields::class,
             AddIdsToFields::class,
             ApplyParentConditionalLogic::class,
+            DoNotDeferConditionalLogic::class,
             ApplyParentDisplayAttributes::class,
             FilterEditFields::class,
             RemoveClosureAttributes::class,
@@ -115,6 +118,7 @@ trait InputFields
                 MapFields::class,
                 AddIdsToFields::class,
                 ApplyParentConditionalLogic::class,
+                DoNotDeferConditionalLogic::class,
                 ApplyParentDisplayAttributes::class,
                 FilterViewFields::class,
                 RemoveValidationAttribute::class,
@@ -153,6 +157,7 @@ trait InputFields
                 MapFields::class,
                 AddIdsToFields::class,
                 ApplyParentConditionalLogic::class,
+                DoNotDeferConditionalLogic::class,
             ]);
 
             // Get all input fields
@@ -187,6 +192,7 @@ trait InputFields
             AddIdsToFields::class,
             TransformSlugs::class,
             ApplyParentConditionalLogic::class,
+            DoNotDeferConditionalLogic::class,
         ]);
     }
 
@@ -230,6 +236,7 @@ trait InputFields
                 MapFields::class,
                 AddIdsToFields::class,
                 ApplyParentConditionalLogic::class,
+                DoNotDeferConditionalLogic::class,
                 ApplyParentDisplayAttributes::class,
                 FilterViewFields::class,
                 BuildTreeFromFields::class,
@@ -295,6 +302,7 @@ trait InputFields
             MapFields::class,
             AddIdsToFields::class,
             ApplyParentConditionalLogic::class,
+            DoNotDeferConditionalLogic::class,
             ApplyParentDisplayAttributes::class,
             FilterViewFields::class,
             BuildTreeFromFields::class,
