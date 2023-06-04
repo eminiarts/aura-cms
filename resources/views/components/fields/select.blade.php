@@ -32,7 +32,6 @@
             $optionGroup = true;
           @endphp
           <optgroup label="{{ $option }}">
-
         @else
 
             {{-- if key and values are set on the option, show it --}}
