@@ -459,7 +459,6 @@ class User extends UserModel
     {
         // Save the roles
         if (config('aura.teams')) {
-            ray('user', $this->current_team_id, $this);
             $this->roles()->syncWithPivotValues($value, ['key' => 'roles', 'team_id' => $this->current_team_id]);
         } else {
             $this->roles()->syncWithPivotValues($value, ['key' => 'roles']);

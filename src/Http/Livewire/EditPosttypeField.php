@@ -22,6 +22,8 @@ class EditPosttypeField extends Component
 
     public $post;
 
+    public $reservedWords = ['id', 'type', 'title'];
+
     // listener for newFields
     protected $listeners = ['newFields' => 'newFields'];
 
@@ -73,8 +75,6 @@ class EditPosttypeField extends Component
     {
         $field = collect($fields)->firstWhere('slug', $this->field['slug']);
 
-        ray('field', $field);
-
         if (! $field) {
             return;
         }
@@ -101,14 +101,31 @@ class EditPosttypeField extends Component
 
     public function rules()
     {
-        return Arr::dot([
+        $rules = Arr::dot([
             'post.fields' => app($this->field['type'])->validationRules(),
         ]);
+
+        $rules['post.fields.slug'] = [
+                'required',
+                function ($attribute, $value, $fail) {
+                    if (collect($this->post['fields'])->pluck('slug')->duplicates()->values()->contains($value)) {
+                        $fail('The '.$attribute.' can not be used twice.');
+                    }
+
+                    // check if slug is a reserved word with "in_array"
+                    if (in_array($value, $this->reservedWords)) {
+                        $fail('The '.$attribute.' can not be a reserved word.');
+                    }
+                },
+            ];
+
+        return $rules;
     }
+
+
 
     public function save()
     {
-        // dd($this->post['fields'], $this->rules());
         // Validate
         // remove all NULL values from $this->post['fields']
         $this->post['fields'] = array_filter($this->post['fields'], function ($value) {
@@ -125,17 +142,13 @@ class EditPosttypeField extends Component
 
     public function updatedField()
     {
-        //
         // if $this->field is undefined, return
         if (! isset($this->field['type'])) {
             ray('no type');
 
             return;
         }
-        ray($this->field['type']);
         $fields = app($this->field['type'])->inputFields()->pluck('slug');
-
-        // dd($fields, $this->post['fields']);
 
         // fields are not set on $this->post['fields'] set it to false
         foreach ($fields as $field) {
@@ -143,7 +156,6 @@ class EditPosttypeField extends Component
                 $this->post['fields'][$field] = null;
             }
         }
-        // dd('groupedFields', $fields, $this->post['fields']);
     }
 
     public function updateType()
@@ -151,13 +163,7 @@ class EditPosttypeField extends Component
         // Validate
         // $this->validate();
 
-        ray('updateType');
-
         // emit event to parent with slug and value
         $this->emit('saveField', ['slug' => $this->fieldSlug, 'value' => $this->post['fields']]);
-
-        // refresh component
-
-        // $this->emit('updatedOperation');
     }
 }

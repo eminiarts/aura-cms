@@ -7,7 +7,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
 
-uses()->group('current');
+// uses()->group('current');
 
 beforeEach(fn () => $this->actingAs($this->user = User::factory()->create()));
 

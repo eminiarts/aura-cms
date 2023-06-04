@@ -53,12 +53,11 @@
             @endif
             </div>
 
-            <div class="flex flex-wrap items-start -mx-2">
-
+            <div class="flex flex-wrap items-start -mx-2">                
            @foreach($this->createFields as $key => $field)
-            <x-aura::fields.conditions :field="$field" :model="$model">
+            @checkCondition($post['fields'], $field)
                     <x-dynamic-component :component="$field['field']->component" :field="$field" wire:key="post-field-{{ $key }}-{{ md5(json_encode($field)) }}" />
-            </x-aura::fields.conditions>
+            @endcheckCondition
             @endforeach
             </div>
 
