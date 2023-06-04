@@ -50,7 +50,7 @@
       @if(isset($slot))
        {{ $slot }}
       @else
-      NO SLOT DEFINED
+        @dump('NO SLOT DEFINED')
         <x-aura::input.text :attributes="$attributes"></x-aura::input.text>
       @endif
 

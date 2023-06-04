@@ -10,7 +10,7 @@
 
     error="post.fields.{{ optional($field)['slug'] }}" name="post_fields_{{ optional($field)['slug'] }}" id="post_fields_{{ optional($field)['slug'] }}" class="block w-full px-3 py-2 pl-3 pr-10 mt-1 text-base bg-white rounded-lg shadow-xs appearance-none border-gray-500/30 focus:border-primary-300 focus:outline-none ring-gray-900/10 focus:ring focus:ring-primary-300 focus:ring-opacity-50 dark:focus:ring-primary-500 dark:focus:ring-opacity-50 dark:bg-gray-900 dark:border-gray-700 sm:text-sm">
 
-    <option disabled>Select {{ optional($field)['name'] }}...</option>
+    <option  value="">Select {{ optional($field)['name'] }}...</option>
 
       @php
         $optionGroup = false;
@@ -23,7 +23,7 @@
 
       {{-- @dd($field['options']) --}}
       @foreach($options as $key => $option)
-        <!-- if key starts with "option_group" -->
+        {{-- <!-- if key starts with "option_group" --> --}}
         @if (Str::startsWith($key, 'option_group'))
           @if ($optionGroup)
             </optgroup>
@@ -44,7 +44,7 @@
             @endif
         @endif
 
-        <!-- If last option in loop -->
+        {{-- <!-- If last option in loop --> --}}
         @if ($loop->last && $optionGroup)
           </optgroup>
         @endif
