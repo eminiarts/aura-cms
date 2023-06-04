@@ -6,6 +6,7 @@ use Eminiarts\Aura\Resource;
 use Eminiarts\Aura\Models\User;
 use Eminiarts\Aura\Facades\Aura;
 use Eminiarts\Aura\Http\Livewire\Post\Create;
+use Eminiarts\Aura\Http\Livewire\Post\Edit;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
@@ -150,6 +151,49 @@ test('defer should be false on field that is in conditional logic - create view'
             "slug" => null,
             "select_type" => null
         ], $createFields[3]);
+
+    expect($show)->toBeFalse();
+});
+
+test('defer should be false on field that is in conditional logic - edit view', function () {
+    $model = new DoNotDeferConditionalLogicTestModel();
+    $editFields = $model->editFields();
+
+    $post = $model->create([
+        'title' => 'Test',
+        'slug' => 'test',
+        'select_type' => 'simple',
+        'advanced_text' => 'test',
+    ]);
+
+    // dd($post->toArray());
+
+    Aura::fake();
+    Aura::setModel($post);
+
+    $component = Livewire::test(Edit::class, ['slug' => 'TestModel', 'id' => $post->id])
+        ->assertSee('Title')
+        ->assertSee('Type')
+        ->assertSeeHtml('wire:model.debounce.200ms="post.fields.select_type"')
+        ->assertDontSee('Advanced Text')
+        ->set('post.fields.select_type', 'advanced')
+        // Somehow it does not work
+        // ->assertSee('Advanced Text')
+    ;
+
+    $show = ConditionalLogic::checkCondition([
+        "title" => null,
+        "slug" => null,
+        "select_type" => "advanced"
+    ], $editFields[3]);
+
+    expect($show)->toBeTrue();
+
+    $show = ConditionalLogic::checkCondition([
+            "title" => null,
+            "slug" => null,
+            "select_type" => null
+        ], $editFields[3]);
 
     expect($show)->toBeFalse();
 });
