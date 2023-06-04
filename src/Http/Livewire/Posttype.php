@@ -30,6 +30,8 @@ class Posttype extends Component
 
     public $slug;
 
+    public $reservedWords = ['id', 'type', 'title'];
+
     protected $listeners = ['refreshComponent' => '$refresh', 'savedField' => 'updateFields', 'saveField' => 'saveField', 'deleteField' => 'deleteField'];
 
     protected $newFields = [];
@@ -436,12 +438,9 @@ class Posttype extends Component
                         $fail('The '.$attribute.' can not be used twice.');
                     }
 
-                    if ($value == 'id') {
-                        $fail('The '.$attribute.' can not be "id".');
-                    }
-
-                    if ($value == 'title') {
-                        $fail('The '.$attribute.' can not be "title".');
+                    // check if slug is a reserved word with "in_array"
+                    if (in_array($value, $this->reservedWords)) {
+                        $fail('The '.$attribute.' can not be a reserved word.');
                     }
                 },
             ],
