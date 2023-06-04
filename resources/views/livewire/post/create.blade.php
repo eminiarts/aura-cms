@@ -16,10 +16,10 @@
 
         <div>
             <x-aura::button size="lg" wire:click="save">
-                <div wire:loading>
+                <div wire:loading wire:target="save">
                     <x-aura::icon.loading />
                 </div>
-                Save
+                {{ __('Save') }}
             </x-aura::button>
         </div>
     </div>
@@ -53,10 +53,12 @@
             @endif
             </div>
 
+            {{-- @dump($this->createFields) --}}
+
             <div class="flex flex-wrap items-start -mx-2">                
            @foreach($this->createFields as $key => $field)
             @checkCondition($post['fields'], $field)
-                    <x-dynamic-component :component="$field['field']->component" :field="$field" wire:key="post-field-{{ $key }}-{{ md5(json_encode($field)) }}" />
+                    <x-dynamic-component :component="$field['field']->component" :field="$field" wire:key="post-field-{{ $key }}" />
             @endcheckCondition
             @endforeach
             </div>
