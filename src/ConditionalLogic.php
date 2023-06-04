@@ -10,12 +10,6 @@ class ConditionalLogic
     {
         $conditions = optional($field)['conditional_logic'];
 
-
-        // if(optional($field)['slug'] == 'primary-25') {
-        //     dd('hier', $field, $conditions, $model);
-        // }
-
-
         if (! $conditions) {
             return true;
         }
@@ -66,15 +60,25 @@ class ConditionalLogic
                     // but the $model does not have a getMeta method, so it is not a post model
                     // I need to allow for other models than posts, so I need to check if the model has post['fields]
 
+                    if(is_array($model)) {
+                        ray($model, $condition);
+
+                        if(array_key_exists($condition['field'], $model)) {
+                            $show = ConditionalLogic::checkFieldCondition($condition, $model[$condition['field']]);
+                            break;
+                        }
+
+                        $show = false;
+                        break;
+                    }
+
                     if (method_exists($model, 'getMeta')) {
-                        $fieldValue = $model->getMeta($condition['field']);
                         $fieldValue = $model->getMeta($condition['field']);
 
                         if (! $fieldValue) {
                             $show = false;
                             break;
                         }
-
 
                         // If the $condition['field'] has a dot, undot array
                         if (str_contains($condition['field'], '.')) {
