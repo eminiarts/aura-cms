@@ -83,7 +83,7 @@
                 </div>
                 <div class="flex items-end w-full px-4 mb-0 md:w-1/3">
                     <div class="flex-1">
-                        <x-aura::input.text label="Sort" placeholder="Sort" wire:model.defer="postTypeFields.sort"></x-aura::input>
+                        <x-aura::input.number label="Sort" placeholder="Sort" wire:model.defer="postTypeFields.sort" />
                     </div>
                 </div>
 

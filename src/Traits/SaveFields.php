@@ -133,7 +133,12 @@ trait SaveFields
                         }
 
                         // Add missing line
-                        $lineToAdd = "protected static ?string \${$key} = '".htmlspecialchars($replacement[$key])."';\n";
+                        // if sort then add ?int instead of ?string
+                        if ($key == 'sort') {
+                            $lineToAdd = "protected static ?int \${$key} = ".htmlspecialchars($replacement[$key]).";\n";
+                        } else {
+                            $lineToAdd = "protected static ?string \${$key} = '".htmlspecialchars($replacement[$key])."';\n";
+                        }
                         $replaced = preg_replace('/(public\s+static\s+\?string\s+\$slug\s+=\s+[^;\n]+;)/', "$1\n{$lineToAdd}", $replaced);
                     }
                 }
