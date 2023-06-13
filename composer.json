@@ -51,7 +51,8 @@
             "Aura\\Flows\\": "plugins/aura/flows/src",
             "Aura\\Forms\\": "plugins/aura/forms/src",
             "Aura\\Pro\\": "plugins/aura/pro/src",
-            "Aura\\Export\\": "plugins/aura/export/src"
+            "Aura\\Export\\": "plugins/aura/export/src",
+            "Aura\\TextBlocks\\": "plugins/aura/text-blocks/src"
         }
     },
     "autoload-dev": {
@@ -81,7 +82,8 @@
                 "Aura\\Pro\\ProServiceProvider",
                 "Aura\\Flows\\FlowsServiceProvider",
                 "Aura\\Forms\\FormsServiceProvider",
-                "Aura\\Export\\ExportServiceProvider"
+                "Aura\\Export\\ExportServiceProvider",
+                "Aura\\TextBlocks\\TextBlocksServiceProvider"
             ],
             "aliases": {
                 "Aura": "Eminiarts\\Aura\\Facades\\Aura"
