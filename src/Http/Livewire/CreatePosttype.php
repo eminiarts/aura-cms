@@ -3,12 +3,15 @@
 namespace Eminiarts\Aura\Http\Livewire;
 
 use Eminiarts\Aura\Traits\FieldsOnComponent;
+use Eminiarts\Aura\Traits\InputFields;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Artisan;
 use LivewireUI\Modal\ModalComponent;
 
 class CreatePosttype extends ModalComponent
 {
     use FieldsOnComponent;
+    use InputFields;
 
     public $post;
 
@@ -19,7 +22,7 @@ class CreatePosttype extends ModalComponent
                 'name' => 'Name (Singular, e.g. Post)',
                 'instructions' => 'The name of the post type, shown in the admin panel.',
                 'type' => 'Eminiarts\\Aura\\Fields\\Text',
-                'validation' => 'required',
+                'validation' => 'required|alpha:ascii',
                 'slug' => 'name',
             ],
         ];
@@ -37,9 +40,18 @@ class CreatePosttype extends ModalComponent
         return view('aura::livewire.create-posttype');
     }
 
+    public function rules()
+    {
+        return Arr::dot([
+            'post.fields' => $this->validationRules(),
+        ]);
+    }
+
     public function save()
     {
         abort_unless(auth()->user()->resource->isSuperAdmin(), 403);
+
+        ray($this->validationRules());
 
         $this->validate();
 
