@@ -22,7 +22,7 @@ class EditPosttypeField extends Component
 
     public $post;
 
-    public $reservedWords = ['id', 'type', 'title'];
+    public $reservedWords = ['id', 'type'];
 
     // listener for newFields
     protected $listeners = ['newFields' => 'newFields'];
