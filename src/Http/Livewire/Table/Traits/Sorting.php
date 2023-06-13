@@ -46,9 +46,10 @@ trait Sorting
                         ->where('post_meta.key', '=', "$field");
                 })
                     ->select('posts.*')
-                    ->orderByRaw('CASE WHEN post_meta.value IS NULL THEN 1 WHEN post_meta.value = "" THEN 1 ELSE 0 END')
+                    // ->orderByRaw('CASE WHEN post_meta.value IS NULL THEN 1 WHEN post_meta.value = "" THEN 1 ELSE 0 END')
                     ->when($this->model->isNumberField($field), function ($query) use ($direction) {
-                        $query->orderByRaw('CAST(post_meta.value AS SIGNED) '.$direction);
+                        // $query->orderByRaw('CAST(post_meta.value AS SIGNED) '.$direction);
+                        $query->orderByRaw('CAST(post_meta.value AS DECIMAL(10,2)) '.$direction);
                     })
                     ->when(! $this->model->isNumberField($field), function ($query) use ($direction) {
                         $query->orderByRaw('CAST(post_meta.value AS CHAR) '.$direction);

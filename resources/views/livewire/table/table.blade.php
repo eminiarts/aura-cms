@@ -152,6 +152,8 @@
     {{-- Be aware that this file opens a div which closes at the end --}}
     @include('aura::components.table.context-menu')
 
+    {{-- @dump($sorts) --}}
+
     <main class="" x-data="{
     showFilters: false,
     toggleFilters() {

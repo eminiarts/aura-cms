@@ -70,7 +70,7 @@ trait AuraModelConfig
 
     protected static ?string $slug = null;
 
-    protected static ?int $sort = 1000;
+    protected static ?int $sort = 100;
 
     protected static bool $title = false;
 

@@ -494,7 +494,7 @@ class User extends UserModel
     {
         static::creating(function ($user) {
             if (!$user->current_team_id) {
-                $user->current_team_id = auth()->user()->current_team_id;
+                $user->current_team_id = auth()->user()?->current_team_id;
             }
         });
 

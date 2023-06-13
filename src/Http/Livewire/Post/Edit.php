@@ -98,13 +98,5 @@ class Edit extends Component
         }
     }
 
-    public function updateField($data)
-    {
-        $this->post['fields'][$data['slug']] = $data['value'];
-
-        $this->emit('selectedMediaUpdated', [
-            'slug' => $data['slug'],
-            'value' => $data['value'],
-        ]);
-    }
+    
 }
