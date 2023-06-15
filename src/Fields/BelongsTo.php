@@ -31,6 +31,8 @@ class BelongsTo extends Field
             // Get Str after last backslash from $field['resource']
             $model = Str::afterLast($field['resource'], '\\');
 
+            return $value;
+
             return "<a class='font-bold' href='".route('aura.post.edit', [$model, $value])."'>".optional(app($field['resource'])::find($value))->title().'</a>';
         }
 
