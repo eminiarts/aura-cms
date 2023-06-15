@@ -21,6 +21,7 @@ class MediaUploader extends Component
     public $selected;
 
     public $table = true;
+    public $upload = false;
 
     // listener selectedMediaUpdated
     protected $listeners = ['selectedMediaUpdated' => 'selectedMediaUpdated'];
