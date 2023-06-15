@@ -134,6 +134,20 @@
                 </div>
 
                 <div>
+
+                    @if($upload)
+
+                      <div>
+                            <label for="file-upload">
+                                <p class="mb-2 text-sm text-gray-500 dark:text-gray-400">Datei hierhin ziehen oder <span class="text-primary-400">hier klicken</span> um eine Datei hochzuladen.</p>
+
+                                <input type="file" id="file-upload" multiple @change="handleFileSelect" class="hidden"
+                                    wire:model.defer="media" />
+                            </label>
+                        </div>
+                        
+                    @endif
+
                     @if($table)
 
                     <div class="flex flex-col">
