@@ -88,6 +88,11 @@ class Edit extends Component
     {
         $this->validate();
 
+        unset($this->post['fields']['group']);
+        // dd($this->post);
+
+        // unset this post fields group
+
         $this->model->update($this->post);
 
         $this->notify(__('Successfully updated'));
@@ -98,5 +103,5 @@ class Edit extends Component
         }
     }
 
-    
+
 }

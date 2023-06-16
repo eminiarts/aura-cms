@@ -12,10 +12,14 @@
 
 <div class="px-2" id="post-field-{{ optional($field)['slug'] }}-wrapper">
     <div class="aura-card {{ $field['style']['class'] ?? '' }}">
-        @if($field['name'] != 'Main Panel')
-        <h2 class="font-semibold">{{ $field['name'] }}</h2>
+        <div class="mt-1 mb-2">
+          @if($field['name'] != 'Main Panel')
+        <div class="px-2">
+          <h2 class="font-semibold">{{ $field['name'] }}</h2>
+        </div>
         @endif
 
         <x-aura::fields.fields />
+        </div>
     </div>
 </div>
