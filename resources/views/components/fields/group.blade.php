@@ -20,9 +20,9 @@ $model = $this->model;
 </style>
 
 
-<div class="px-2 mt-4" id="post-field-{{ Str::slug(optional($field)['slug']) }}-wrapper">
+<div class="px-2" id="post-field-{{ Str::slug(optional($field)['slug']) }}-wrapper">
   <div class="p-0">
-    <h2 class="px-2 font-semibold">{{ $field['name'] }}</h2>
+    {{-- <h2 class="px-2 font-semibold">{{ $field['name'] }}</h2> --}}
     <div class="flex flex-wrap items-start -mx-2">
       @if(optional($field)['fields'])
       @foreach($field['fields'] as $key => $field)
