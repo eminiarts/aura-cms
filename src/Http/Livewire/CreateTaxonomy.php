@@ -53,7 +53,7 @@ class CreateTaxonomy extends ModalComponent
 
         $this->validate();
 
-        Artisan::call('aura:posttype', [
+        Artisan::call('aura:taxonomy', [
             'name' => $this->post['fields']['name'],
         ]);
 

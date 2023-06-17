@@ -277,7 +277,7 @@ class AuraServiceProvider extends PackageServiceProvider
 
         // Register App Resources
         Aura::registerResources(Aura::getAppResources());
-        Aura::registerResources(Aura::getAppTaxonomies());
+        Aura::registerTaxonomies(Aura::getAppTaxonomies());
         Aura::registerWidgets(Aura::getAppWidgets());
         Aura::registerFields(Aura::getAppFields());
     }
