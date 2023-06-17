@@ -95,6 +95,12 @@
         </div>
         <div>{{ __('Create Posttype') }}</div>
     </x-aura::navigation.item>
+    <x-aura::navigation.item class="cursor-pointer" onclick="Livewire.emit('openModal', 'aura::create-taxonomy')">
+        <div class="{{ $iconClass }}">
+            <x-aura::icon icon="collection" />
+        </div>
+        <div>{{ __('Create Taxonomy') }}</div>
+    </x-aura::navigation.item>
     @endlocal
 
     <x-aura::navigation.item route="{{ route('aura.team.settings') }}">

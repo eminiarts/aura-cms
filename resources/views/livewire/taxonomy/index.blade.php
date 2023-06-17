@@ -10,7 +10,7 @@
 
     </div>
 
-    @if($widgets = $taxonomy->getWidgets())
+    @if($widgets = $taxonomy?->getWidgets())
     <x-aura::widgets :widgets="$widgets" />
     @endif
 
