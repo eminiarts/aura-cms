@@ -58,6 +58,8 @@ trait Filters
         // Retrieve the filter using the provided key
         $filter = $this->userFilters[$filterName];
 
+        // dd('delete', $filterName, $filter, $this->userFilters);
+
         switch ($filter['type']) {
             case 'user':
                 auth()->user()->deleteOption($this->model->getType().'.filters.'.$filterName);
@@ -75,9 +77,16 @@ trait Filters
         $this->notify('Success: Filter deleted!');
         $this->clearFiltersCache();
         $this->reset('filters');
-        // $this->reset('userFilters');
+
+        $filters = $this->userFilters;
+
+        //$this->reset('userFilters');
+
         $this->reset('selectedFilter');
         $this->setTaxonomyFilters();
+
+        // Refresh userFilters
+        $this->userFilters = $this->getUserFiltersProperty();
 
         // Refresh Component
         $this->emit('refreshTable');
@@ -117,7 +126,13 @@ trait Filters
 
         // Use concat to merge collections and convert to array
         return collect($userFilters)->merge($teamFilters)->toArray();
+    }
 
+
+    public function clearFiltersCache()
+    {
+        auth()->user()->clearCachedOption($this->model->getType().'.filters.*');
+        auth()->user()->currentTeam->clearCachedOption($this->model->getType().'.filters.*');
     }
 
     /**
@@ -181,11 +196,6 @@ trait Filters
 
     }
 
-    public function clearFiltersCache()
-    {
-        auth()->user()->clearCachedOption($this->model->getType().'.filters.*');
-        auth()->user()->currentTeam->clearCachedOption($this->model->getType().'.filters.*');
-    }
 
     /**
      * Set taxonomy filters.
