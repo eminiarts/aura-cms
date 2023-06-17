@@ -24,6 +24,8 @@ class Option extends Resource
 
     protected $table = 'options';
 
+    protected static ?string $group = 'Aura';
+
     public static function getFields()
     {
         return [

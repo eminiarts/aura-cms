@@ -192,7 +192,7 @@ trait Filters
      */
     public function setTaxonomyFilters()
     {
-        $this->filters['taxonomy'] = $this->model->taxonomyFields()->pluck('model')->mapWithKeys(fn ($i) => [app($i)->getType() => []])->toArray();
+        $this->filters['taxonomy'] = $this->model?->taxonomyFields()->pluck('model')->mapWithKeys(fn ($i) => [app($i)->getType() => []])->toArray();
     }
 
     /**

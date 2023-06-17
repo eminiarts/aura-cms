@@ -8,7 +8,7 @@ use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Artisan;
 use LivewireUI\Modal\ModalComponent;
 
-class CreatePosttype extends ModalComponent
+class CreateTaxonomy extends ModalComponent
 {
     use FieldsOnComponent;
     use InputFields;
@@ -19,8 +19,8 @@ class CreatePosttype extends ModalComponent
     {
         return [
             [
-                'name' => 'Name (Singular, e.g. Post)',
-                'instructions' => 'The name of the post type, shown in the admin panel.',
+                'name' => 'Name (Singular, e.g. Tag)',
+                'instructions' => 'The name of the taxonomy, shown in the admin panel.',
                 'type' => 'Eminiarts\\Aura\\Fields\\Text',
                 'validation' => 'required|alpha:ascii',
                 'slug' => 'name',
@@ -37,7 +37,7 @@ class CreatePosttype extends ModalComponent
 
     public function render()
     {
-        return view('aura::livewire.create-posttype');
+        return view('aura::livewire.create-taxonomy');
     }
 
     public function rules()
@@ -53,7 +53,7 @@ class CreatePosttype extends ModalComponent
 
         $this->validate();
 
-        Artisan::call('aura:posttype', [
+        Artisan::call('aura:taxonomy', [
             'name' => $this->post['fields']['name'],
         ]);
 

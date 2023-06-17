@@ -17,7 +17,6 @@ class Index extends Component
         $this->taxonomy = Aura::findTaxonomyBySlug($slug);
 
         // Authorize
-
         // Array instead of Eloquent Model
         // $this->post = $this->model->toArray();
     }
