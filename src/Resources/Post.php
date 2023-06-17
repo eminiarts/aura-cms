@@ -187,6 +187,8 @@ class Post extends Resource
              [
                  'name' => 'Bild',
                  'type' => 'Eminiarts\\Aura\\Fields\\Image',
+                 'max' => 1,
+                 'upload' => true,
                  'validation' => '',
                  'conditional_logic' => [
                  ],

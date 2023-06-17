@@ -97,6 +97,43 @@ class AuraConfig extends Component
                     'width' => '100',
                 ],
             ],
+
+            [
+                'name' => 'App Logo',
+                'type' => 'Eminiarts\\Aura\\Fields\\Image',
+                'slug' => 'app-logo',
+                'style' => [
+                    'width' => '50',
+                ],
+            ],
+            [
+                'name' => 'App Logo (Darkmode)',
+                'type' => 'Eminiarts\\Aura\\Fields\\Image',
+                'slug' => 'app-logo-darkmode',
+                'style' => [
+                    'width' => '50',
+                ],
+            ],
+
+            [
+                'name' => 'App Favicon',
+                'type' => 'Eminiarts\\Aura\\Fields\\Image',
+                'slug' => 'app-favicon',
+                'style' => [
+                    'width' => '50',
+                ],
+            ],
+            [
+                'name' => 'App Favicon (Darkmode)',
+                'type' => 'Eminiarts\\Aura\\Fields\\Image',
+                'slug' => 'app-favicon-darkmode',
+                'style' => [
+                    'width' => '50',
+                ],
+            ],
+
+
+
             [
                 'name' => 'App Locale',
                 'type' => 'Eminiarts\\Aura\\Fields\\Text',
@@ -114,6 +151,14 @@ class AuraConfig extends Component
                 'style' => [
                     'width' => '100',
                 ],
+            ],
+
+
+            [
+                'type' => 'Eminiarts\\Aura\\Fields\\Tab',
+                'name' => 'Media Settings',
+                'slug' => 'tab-media',
+                'global' => true,
             ],
 
             [
