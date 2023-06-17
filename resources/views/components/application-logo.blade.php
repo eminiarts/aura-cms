@@ -1,15 +1,15 @@
 @php
     use Eminiarts\Aura\Resources\Attachment;
 
-    $appOptions = Aura::options();
+    $appOptions = app('aura')::options();
 
     $logo = $darkLogo = null;
 
-    if($loginLogo = $appOptions['login-logo']) {
+    if($loginLogo = optional($appOptions)['login-logo']) {
         $logo = optional(Attachment::find($loginLogo)->first())->path();
     }
 
-    if($loginLogoDark = $appOptions['login-logo-darkmode']) {
+    if($loginLogoDark = optional($appOptions)['login-logo-darkmode']) {
         $darkLogo = optional(Attachment::find($loginLogoDark)->first())->path();
     }
 
@@ -21,11 +21,11 @@
         $darkLogo = $logo;
     }
 
-    if (!$logo && $appLogo = $appOptions['app-logo']) {
+    if (!$logo && $appLogo = optional($appOptions)['app-logo']) {
         $logo = optional(Attachment::find($appLogo)->first())->path();
     }
 
-    if (!$darkLogo && $appLogoDark = $appOptions['app-logo-darkmode']) {
+    if (!$darkLogo && $appLogoDark = optional($appOptions)['app-logo-darkmode']) {
         $darkLogo = optional(Attachment::find($appLogoDark)->first())->path();
     }
 

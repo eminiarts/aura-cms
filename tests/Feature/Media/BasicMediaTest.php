@@ -44,8 +44,9 @@ test('media page can be rendered', function () {
     $this->withoutExceptionHandling();
 
     // Visit the Attachment Index Page
-    $response = $this->get(route('aura.post.index', $attachment->type));
+    $response = $this->get(route('aura.post.index', Str::slug($attachment->type)));
 
+    // dd($attachment->type);
     // Visit the Attachment Index Page
     $response
         ->assertOk()
