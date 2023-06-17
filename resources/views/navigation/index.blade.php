@@ -72,7 +72,7 @@
     @superadmin
 
     @php
-    $group = 'Aura';
+    $group = 'Settings';
     @endphp
     <div wire:key="toggle-{{$group}}" wire:click="toggleGroup('{{$group}}')" class="cursor-pointer">
         <x-aura::navigation.heading>
