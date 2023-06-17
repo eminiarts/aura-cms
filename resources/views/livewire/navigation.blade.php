@@ -5,6 +5,8 @@ use Eminiarts\Aura\Resources\Team;
 use Eminiarts\Aura\Facades\Aura;
 
 $settings = Aura::getOption('team-settings');
+$appSettings = Aura::options();
+
 @endphp
 
 

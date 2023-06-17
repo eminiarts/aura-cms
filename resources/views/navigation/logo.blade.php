@@ -1,29 +1,26 @@
-@if ($settings)
-   @if ($sidebarType == 'primary')
-        @if (isset($settings['app-logo-darkmode'][0]))
-            <img src="{{ asset('storage/' . app('aura')::getPath($settings['app-logo-darkmode'][0]) ) }}" alt="{{ $settings['title'] ?? '' }}" class="h-10">
-        @elseif (isset($settings['app-logo'][0]))
-            <img src="{{ asset('storage/' . app('aura')::getPath($settings['app-logo'][0]) ) }}" alt="{{ optional($settings)['title'] }}" class="h-10">
-        @endif
-    @elseif ($sidebarType == 'light')
-        @if (isset($settings['app-logo-darkmode'][0]) && isset($settings['app-logo'][0]))
-            <img class="hidden dark:block" src="{{ asset('storage/' . app('aura')::getPath($settings['app-logo-darkmode'][0]) ) }}" alt="{{ $settings['title'] ?? '' }}" class="h-10">
-            <img class="block dark:hidden" src="{{ asset('storage/' . app('aura')::getPath($settings['app-logo-darkmode'][0]) ) }}" alt="{{ $settings['title'] ?? '' }}" class="h-10">
-        @elseif (isset($settings['app-logo'][0]))
-            <img src="{{ asset('storage/' . app('aura')::getPath($settings['app-logo'][0]) ) }}" alt="{{ $settings['title'] ?? '' }}" class="h-10">
-        @endif
-    @elseif ($sidebarType == 'dark')
-        @if (isset($settings['app-logo-darkmode'][0]))
-            <img src="{{ asset('storage/' . app('aura')::getPath($settings['app-logo-darkmode'][0]) ) }}" alt="{{ $settings['title'] ?? '' }}" class="h-10">
-        @elseif (isset($settings['app-logo'][0]))
-            <img src="{{ asset('storage/' . app('aura')::getPath($settings['app-logo'][0]) ) }}" alt="{{ $settings['title'] ?? '' }}" class="h-10">
-        @endif
-    @endif
+@php
+    $logo = $darkLogo = null;
 
-    @if (!isset($settings['app-logo'][0]) && !isset($settings['app-darklogo'][0]))
-        <x-aura::application-logo class="h-10 text-gray-600 fill-current dark:text-gray-100" />
-    @endif
+    if($settings && (isset($settings['app-logo'][0]) || isset($settings['app-logo-darkmode'][0]))) {
+        $logo = isset($settings['app-logo'][0]) ? $settings['app-logo'][0] : null;
+        $darkLogo = isset($settings['app-logo-darkmode'][0]) ? $settings['app-logo-darkmode'][0] : null;
+    } elseif($appSettings && (isset($appSettings['app-logo'][0]) || isset($appSettings['app-logo-darkmode'][0]))) {
+        $logo = isset($appSettings['app-logo'][0]) ? $appSettings['app-logo'][0] : null;
+        $darkLogo = isset($appSettings['app-logo-darkmode'][0]) ? $appSettings['app-logo-darkmode'][0] : null;
+    }
+@endphp
 
+@if($logo || $darkLogo)
+    @if($sidebarType == 'light' && $logo && $darkLogo)
+        <img class="block h-10 dark:hidden" src="{{ asset('storage/' . app('aura')::getPath($logo)) }}" alt="{{ $settings['title'] ?? '' }}">
+        <img class="hidden h-10 dark:block" src="{{ asset('storage/' . app('aura')::getPath($darkLogo)) }}" alt="{{ $settings['title'] ?? '' }}">
+    @else
+        <img class="h-10" src="{{ asset('storage/' . app('aura')::getPath($darkLogo ? $darkLogo : $logo)) }}" alt="{{ $settings['title'] ?? '' }}">
+    @endif
 @else
-    <x-aura::application-logo class="h-10 text-gray-600 fill-current dark:text-gray-100" />
+    @if($sidebarType == 'light')
+        <x-aura::application-logo class="h-8 text-gray-700 fill-current dark:text-white" />
+    @else
+        <x-aura::application-logo class="h-8 text-white fill-current dark:text-white" />
+    @endif
 @endif
