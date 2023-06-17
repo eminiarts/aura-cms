@@ -1,12 +1,13 @@
 <?php
 
-use Eminiarts\Aura\Http\Livewire\Table\Table;
-use Eminiarts\Aura\Models\User;
+use Livewire\Livewire;
 use Eminiarts\Aura\Resource;
+use Eminiarts\Aura\Models\User;
 use Eminiarts\Aura\Resources\Post;
 use Eminiarts\Aura\Taxonomies\Tag;
+use Illuminate\Support\Facades\DB;
+use Eminiarts\Aura\Http\Livewire\Table\Table;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Livewire\Livewire;
 
 uses(RefreshDatabase::class);
 
@@ -117,11 +118,12 @@ test('table filter - taxonomy filter', function () {
     // Save Filters to DB
     $component->call('saveFilter');
 
-    // $filterName should be required, so it should have errors
-    $component->assertHasErrors('filterName');
+    // $filter.name should be required, so it should have errors
+    $component->assertHasErrors('filter.name');
 
-    // Set $filterName to 'Test Filter'
-    $component->set('filterName', 'Test Filter');
+    // Set $filter.name to 'Test Filter'
+    $component->set('filter.name', 'Test Filter');
+    $component->set('filter.type', 'user');
 
     // Save Filters to DB
     $component->call('saveFilter');
@@ -143,9 +145,6 @@ test('table filter - taxonomy filter', function () {
     // $filters should have a key 'Test Filter'
     expect($filters)->toHaveKey('Test Filter');
 
-    // $filters['Test Filter'] should have 2 items
-    expect($filters['Test Filter'])->toHaveCount(2);
-
     // $filters['Test Filter'][0] should have 2 items
     expect($filters['Test Filter']['taxonomy'])->toHaveCount(1);
     expect($filters['Test Filter']['custom'])->toHaveCount(1);
@@ -159,10 +158,11 @@ test('table filter - taxonomy filter', function () {
     expect($filters)->toHaveKey('Test Filter.custom.0.value', 'B');
 
     // Filters and $component->userFilters should be the same
-    expect($filters->toJson())->toBe($component->userFilters->toJson());
 
-    // Assert $filterName is empty
-    expect($component->filterName)->toBeNull();
+    expect($filters->toArray())->toBe($component->userFilters);
+
+    // Assert $filter.name is empty
+    expect($component->filter['name'])->toBeNull();
 
     // Component rows should have 1 item
     expect($component->rows->items())->toHaveCount(1);
