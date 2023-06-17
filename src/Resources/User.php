@@ -25,6 +25,8 @@ class User extends UserModel
 
     public static string $type = 'User';
 
+    protected static ?string $group = 'Aura';
+
     protected $appends = ['fields'];
 
     /**
