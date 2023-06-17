@@ -162,7 +162,7 @@ test('table filter - taxonomy filter', function () {
     expect($filters->toArray())->toBe($component->userFilters);
 
     // Assert $filter.name is empty
-    expect($component->filter['name'])->toBeNull();
+    expect($component->filter['name'])->toBe("");
 
     // Component rows should have 1 item
     expect($component->rows->items())->toHaveCount(1);
