@@ -19,6 +19,8 @@ class Permission extends Resource
 
     protected static string $type = 'Permission';
 
+    protected static ?string $group = 'Aura';
+
     public static function getFields()
     {
         return [

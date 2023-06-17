@@ -34,6 +34,8 @@ class Team extends Resource
 
     public static string $type = 'Team';
 
+    protected static ?string $group = 'Aura';
+
     protected $fillable = [
         'name', 'user_id', 'fields',
     ];
