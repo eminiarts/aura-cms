@@ -24,6 +24,8 @@
 
         @php
             $settings = Eminiarts\Aura\Facades\Aura::getOption('team-settings');
+
+            $appSettings = Eminiarts\Aura\Facades\Aura::options();
         @endphp
 
         @include('aura::components.layout.colors')

@@ -67,9 +67,16 @@ Alpine.data('aura', () => ({
 
 Alpine.store('leftSidebar', {
     init() {
-      console.log('leftSidebar init from store');
       // get value from localstorage
-      this.on = localStorage.getItem('leftSidebar') === 'true';
+      let storedValue = localStorage.getItem('leftSidebar');
+
+      // if storedValue is null (doesn't exist), set it to 'true'
+      if(storedValue === null) {
+          this.on = true;
+          localStorage.setItem('leftSidebar', this.on);
+      } else {
+          this.on = storedValue === 'true';
+      }
     },
     on: true,
     toggle() {

@@ -269,8 +269,8 @@ class Aura
     public function getOption($name)
     {
         if (config('aura.teams')) {
-            return Cache::remember(optional(auth()->user())->current_team_id.'.aura.team-settings', now()->addHour(), function () {
-                $option = Option::where('name', 'team-settings')->first();
+            return Cache::remember(optional(auth()->user())->current_team_id.'.aura.' . $name, now()->addHour(), function () use ($name) {
+                $option = Option::where('name', $name)->first();
 
                 if ($option && is_string($option->value)) {
                     $settings = json_decode($option->value, true);
@@ -281,8 +281,8 @@ class Aura
                 return $settings;
             });
         } else {
-            return Cache::remember('aura.team-settings', now()->addHour(), function () {
-                $option = Option::where('name', 'team-settings')->first();
+            return Cache::remember('aura.' . $name, now()->addHour(), function () use ($name) {
+                $option = Option::where('name', $name)->first();
 
                 if ($option && is_string($option->value)) {
                     $settings = json_decode($option->value, true);
