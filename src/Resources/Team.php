@@ -13,11 +13,6 @@ use Illuminate\Support\Facades\Cache;
 
 class Team extends Resource
 {
-    use HasFactory;
-    use SaveFieldAttributes;
-    use SaveMetaFields;
-    use SaveTerms;
-
     public array $actions = [
         'delete' => [
             'label' => 'Delete',
@@ -217,8 +212,38 @@ class Team extends Resource
                 Cache::forget('user.'.$user->id.'.teams');
 
             }
-
         });
+
+        static::deleted(function ($team) {
+            // Get all users who had the deleted team as their current team
+            $users = User::where('current_team_id', $team->id)->get();
+
+            // Loop through the users and update their current_team_id
+            foreach ($users as $user) {
+                $firstTeam = $user->teams()->first();
+                $user->current_team_id = $firstTeam ? $firstTeam->id : null;
+                $user->save();
+            }
+
+            // Delete all the team's roles
+            // $team->roles()->delete();
+
+            // Delete all the team's metas
+            $team->meta()->delete();
+
+            // Delete all the team's invitations
+            $team->teamInvitations()->delete();
+
+            // Delete all the team's options
+            Option::where('name', 'like', 'team.'.$team->id.'.%')->delete();
+
+            // Clear cache of Cache('user.'.$this->id.'.teams')
+            Cache::forget('user.'. auth()->user()->id.'.teams');
+
+            // Redirect to the dashboard
+            return redirect()->route('aura.dashboard');
+        });
+
 
         // static::updating(function ($team) {
         //     dd('uppdating');
