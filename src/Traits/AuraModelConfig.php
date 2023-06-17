@@ -220,17 +220,6 @@ trait AuraModelConfig
         return static::$name;
     }
 
-    // public static function getNextId()
-    // {
-    //     $model = new static();
-
-    //     $query = "show table status like '".$model->getTable()."'";
-
-    //     $statement = DB::select($query);
-
-    //     return $statement[0]->Auto_increment;
-    // }
-
     public static function getPluralName(): string
     {
 
@@ -431,17 +420,6 @@ trait AuraModelConfig
         return $this->belongsTo(Team::class);
     }
 
-    // public static function create($fields)
-    // {
-    //     $model = new static();
-
-    //     $model->save();
-
-    //     $model->update($fields);
-
-    //     return $model;
-    // }
-
     public function title()
     {
         if (optional($this)->id) {
@@ -451,7 +429,6 @@ trait AuraModelConfig
 
     public static function usesCustomTable(): bool
     {
-        // dd('usesCustomTable', static::$customTable, static::$taxonomy);
         return static::$customTable;
     }
 
