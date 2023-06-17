@@ -127,10 +127,12 @@
       <div class="absolute inset-0 bg-transparent dark:bg-transparent -z-10"></div>
 
         <div class="relative flex flex-col items-center min-h-screen pt-6 bg-bottom bg-no-repeat bg-cover sm:justify-center sm:pt-0">
-            <div>
-                <a href="/">
-                    <x-aura::application-logo class="w-full text-gray-600 fill-current dark:text-gray-100" />
-                </a>
+            <div class="flex justify-center w-full px-6 sm:max-w-md">
+                <div class="w-2/3">
+                    <a href="/">
+                        <x-aura::application-logo class="w-full text-gray-600 fill-current dark:text-gray-100" />
+                    </a>
+                </div>
             </div>
 
             <div class="w-full px-6 py-4 pb-6 mt-6 overflow-hidden border border-gray-300 shadow-md dark:border-gray-700 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm sm:max-w-md sm:rounded-2xl">

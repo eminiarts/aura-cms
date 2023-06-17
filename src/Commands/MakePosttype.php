@@ -61,7 +61,6 @@ class MakePosttype extends GeneratorCommand
         $stub = parent::replaceClass($stub, $name);
 
         $stub = str_replace('PostName', ucfirst($this->argument('name')), $stub);
-        $stub = str_replace('PostNameClass', str($this->argument('name'))->studly(), $stub);
         $stub = str_replace('PostSlug', str($this->argument('name'))->slug(), $stub);
 
         return $stub;

@@ -12,8 +12,39 @@
 
         <title>@yield('title') • Aura CMS</title>
 
-        <link rel="icon" type="image/png" sizes="32x32" href="/vendor/aura/public/favicon-32x32.png">
-        <link rel="icon" type="image/png" sizes="16x16" href="/vendor/aura/public/favicon-16x16.png">
+        @php
+            $settings = Eminiarts\Aura\Facades\Aura::getOption('team-settings');
+
+            $appSettings = Eminiarts\Aura\Facades\Aura::options();
+        @endphp
+
+        @php
+            use Eminiarts\Aura\Resources\Attachment;
+
+
+            $favicon = $darkFavicon = '/vendor/aura/public/favicon-32x32.png';
+
+            if(isset($appSettings['app-favicon'])) {
+                $appFavicon = $appSettings['app-favicon'];
+                $favicon = optional(Attachment::find($appFavicon)->first())->path();
+            }
+
+            if(isset($appSettings['app-favicon-darkmode'])) {
+                $appFaviconDark = $appSettings['app-favicon-darkmode'];
+                $darkFavicon = optional(Attachment::find($appFaviconDark)->first())->path();
+            }
+
+            if (!$favicon) {
+                $favicon = $darkFavicon;
+            }
+
+            if (!$darkFavicon) {
+                $darkFavicon = $favicon;
+            }
+
+        @endphp
+
+        <link rel="icon" type="image/png" sizes="32x32" href="{{ $favicon }}">
 
         <style>[x-cloak] { display: none !important; }</style>
         <link rel="stylesheet" href="/vendor/aura/public/inter.css">
@@ -21,12 +52,6 @@
         @livewireStyles
 
         @vite(['resources/css/app.css'], 'vendor/aura')
-
-        @php
-            $settings = Eminiarts\Aura\Facades\Aura::getOption('team-settings');
-
-            $appSettings = Eminiarts\Aura\Facades\Aura::options();
-        @endphp
 
         @include('aura::components.layout.colors')
 
@@ -115,6 +140,26 @@
       setTimeout(function() {
           window.dispatchEvent(new Event('resize'));
       }, 100);
+
+      const darkModeMediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+
+      console.log('darkModeMediaQuery', darkModeMediaQuery);
+
+        function setFaviconBasedOnPreferredColorScheme(event) {
+            if (event.matches) {
+                // The user has set their browser to prefer dark mode, so show the darkmode favicon
+                document.querySelector("link[sizes='32x32']").href = '{{ $darkFavicon }}';
+                console.log('set dark favicon', '{{ $darkFavicon }}');
+            } else {
+                // The user has set their browser to prefer light mode, so show the lightmode favicon
+                document.querySelector("link[sizes='32x32']").href = '{{ $favicon }}';
+            }
+        }
+
+        darkModeMediaQuery.addListener(setFaviconBasedOnPreferredColorScheme);
+
+        // Set the initial value
+        setFaviconBasedOnPreferredColorScheme(darkModeMediaQuery);
 
   </script>
 

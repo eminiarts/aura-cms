@@ -1,30 +1,48 @@
 @php
-use Eminiarts\Aura\Resources\Attachment;
+    use Eminiarts\Aura\Resources\Attachment;
+
+    $appOptions = Aura::options();
+
+    $logo = $darkLogo = null;
+
+    if($loginLogo = $appOptions['login-logo']) {
+        $logo = optional(Attachment::find($loginLogo)->first())->path();
+    }
+
+    if($loginLogoDark = $appOptions['login-logo-darkmode']) {
+        $darkLogo = optional(Attachment::find($loginLogoDark)->first())->path();
+    }
+
+    if (!$logo) {
+        $logo = $darkLogo;
+    }
+
+    if (!$darkLogo) {
+        $darkLogo = $logo;
+    }
+
+    if (!$logo && $appLogo = $appOptions['app-logo']) {
+        $logo = optional(Attachment::find($appLogo)->first())->path();
+    }
+
+    if (!$darkLogo && $appLogoDark = $appOptions['app-logo-darkmode']) {
+        $darkLogo = optional(Attachment::find($appLogoDark)->first())->path();
+    }
+
+    if (!$logo) {
+        $logo = $darkLogo;
+    }
+
+    if (!$darkLogo) {
+        $darkLogo = $logo;
+    }
+
 @endphp
 
-@if (
-    ($image = Attachment::find(app('aura')::option('login-logo'))) &&
-    $image->isNotEmpty() &&
-    ($imageDark = Attachment::find(app('aura')::option('login-logo-darkmode'))) &&
-    $imageDark->isNotEmpty()
-)
+@if($logo || $darkLogo)
     <a href="/">
-        <img src="{{ optional($image->first())->path() }}" alt="{{ config('app.name', 'Aura CMS') }}" class="block w-full dark:hidden" />
-        <img src="{{ optional($imageDark->first())->path() }}" alt="{{ config('app.name', 'Aura CMS') }}" class="hidden w-full dark:block" />
-    </a>
-@elseif (
-    ($image = Attachment::find(app('aura')::option('login-logo'))) &&
-    $image->isNotEmpty()
-)
-    <a href="/">
-        <img src="{{ $image->first()->path() }}" alt="{{ config('app.name', 'Aura CMS') }}" class="w-full" />
-    </a>
-@elseif (
-    ($imageDark = Attachment::find(app('aura')::option('login-logo-darkmode'))) &&
-    $imageDark->isNotEmpty()
-)
-    <a href="/">
-        <img src="{{ $imageDark->first()->path() }}" alt="{{ config('app.name', 'Aura CMS') }}" class="w-full" />
+        <img src="{{ $logo }}" alt="{{ config('app.name', 'Aura CMS') }}" class="block w-full dark:hidden" />
+        <img src="{{ $darkLogo }}" alt="{{ config('app.name', 'Aura CMS') }}" class="hidden w-full dark:block" />
     </a>
 @else
 
