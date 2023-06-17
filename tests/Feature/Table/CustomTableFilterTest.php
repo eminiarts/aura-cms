@@ -257,7 +257,7 @@ test('table filter - custom column on table - starts_with', function () {
     expect($component->rows->items())->toHaveCount(0);
 
     // Inspect sql
-    expect($component->rowsQuery->toSql())->toContain('select * from "custom_projects" where "status" like ? and "team_id" = ? order by "id" desc');
+    expect($component->rowsQuery->toSql())->toContain('select * from "custom_projects" where "status" like ? and "team_id" = ? order by "custom_projects"."id" desc');
 
     expect($component->rowsQuery->getBindings()[0])->toBe('zzz%');
 });
