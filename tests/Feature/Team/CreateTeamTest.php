@@ -3,6 +3,7 @@
 use Eminiarts\Aura\Http\Livewire\Post\Create;
 use Eminiarts\Aura\Models\User;
 use Eminiarts\Aura\Resources\Team;
+
 use function Pest\Livewire\livewire;
 
 // Before each test, create a Superadmin and login
@@ -60,5 +61,65 @@ test('team can be changed', function () {
     expect($this->user->fresh()->currentTeam->id)->toBe($team->id);
 });
 
+
 test('team can be deleted', function () {
-})->todo();
+    // Create a team to be deleted
+    $team = Team::create([
+        'name' => 'Team to be deleted',
+        'description' => 'This team should be deleted in this test',
+        'user_id' => $this->user->id,
+    ]);
+
+    // Assert that the team was created
+    expect(Team::where('name', 'Team to be deleted')->first())->not()->toBeNull();
+
+    // Count the user's teams before deletion
+    $initialCount = $this->user->fresh()->teams()->count();
+
+    // Delete the team using the delete method
+    $team->delete();
+
+    // Assert that the team was deleted
+    expect(Team::where('name', 'Team to be deleted')->first())->toBeNull();
+
+    // Assert that the user's teams count decreased by 1
+    expect($this->user->fresh()->teams()->count())->toBe($initialCount - 1);
+});
+
+
+test('check current users current_team_id is set correctly after deleting a team', function () {
+    // Create a team to be deleted
+    $team = Team::create([
+        'name' => 'Team to be deleted',
+        'description' => 'This team should be deleted in this test',
+        'user_id' => $this->user->id,
+    ]);
+
+    // Set the created team as the current team for the user
+    $this->user->current_team_id = $team->id;
+    $this->user->save();
+
+    // Assert that the team was created
+    expect(Team::where('name', 'Team to be deleted')->first())->not()->toBeNull();
+
+    // Assert that the user's current_team_id is set to the created team's id
+    expect($this->user->fresh()->current_team_id)->toBe($team->id);
+
+    // Count the user's teams before deletion
+    $initialCount = $this->user->fresh()->teams()->count();
+
+    // Delete the team using the delete method
+    $team->delete();
+
+    // Assert that the team was deleted
+    expect(Team::where('name', 'Team to be deleted')->first())->toBeNull();
+
+    // Assert that the user's teams count decreased by 1
+    expect($this->user->fresh()->teams()->count())->toBe($initialCount - 1);
+
+    // Assert that the user's current_team_id is not the deleted team's id
+    expect($this->user->fresh()->current_team_id)->not()->toBe($team->id);
+
+    // Assert that the user's current_team_id is set to the first team's id
+    expect($this->user->fresh()->current_team_id)->toBe($this->user->fresh()->teams()->first()->id);
+});
