@@ -17,6 +17,7 @@
         <x-aura::icon icon="dashboard2" />
     </x-aura::navigation.item-icon>
 
+
     @foreach(app('aura')::navigation() as $group => $resources)
       @foreach($resources as $resource)
 
@@ -126,14 +127,6 @@
         <hr class="w-full border-gray-700">
         @endif
     </div>
-
-    {{-- <x-aura::navigation.item-icon route="aura.components" tooltip="Components" :strict="false">
-        <x-aura::icon icon="color-swatch" />
-    </x-aura::navigation.item-icon> --}}
-
-    {{-- <x-aura::navigation.item-icon route="posttypes" tooltip="Posttypes" :strict="false">
-        <x-aura::icon icon="collection" />
-    </x-aura::navigation.item-icon> --}}
 
     @local
     <x-aura::navigation.item-icon onclick="Livewire.emit('openModal', 'create-posttype')" tooltip="{{ __('Create Posttype') }}" :strict="false">

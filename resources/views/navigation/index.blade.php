@@ -1,4 +1,5 @@
 <div>
+
     @foreach(app('aura')::navigation() as $group => $resources)
 
     @if ($group !== '')
