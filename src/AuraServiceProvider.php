@@ -9,6 +9,7 @@ use Eminiarts\Aura\Commands\CreateResourcePermissions;
 use Eminiarts\Aura\Commands\DatabaseToResources;
 use Eminiarts\Aura\Commands\MakeField;
 use Eminiarts\Aura\Commands\MakePosttype;
+use Eminiarts\Aura\Commands\MakeTaxonomy;
 use Eminiarts\Aura\Commands\MakeUser;
 use Eminiarts\Aura\Commands\PublishCommand;
 use Eminiarts\Aura\Commands\TransformTableToResource;
@@ -18,6 +19,7 @@ use Eminiarts\Aura\Http\Livewire\AuraConfig;
 use Eminiarts\Aura\Http\Livewire\BookmarkPage;
 use Eminiarts\Aura\Http\Livewire\CreateFlow;
 use Eminiarts\Aura\Http\Livewire\CreatePosttype;
+use Eminiarts\Aura\Http\Livewire\CreateTaxonomy;
 use Eminiarts\Aura\Http\Livewire\EditOperation;
 use Eminiarts\Aura\Http\Livewire\EditPosttypeField;
 use Eminiarts\Aura\Http\Livewire\GlobalSearch;
@@ -116,6 +118,7 @@ class AuraServiceProvider extends PackageServiceProvider
         Livewire::component('aura::attachment-index', AttachmentIndex::class);
         Livewire::component('aura::user-two-factor-authentication-form', TwoFactorAuthenticationForm::class);
         Livewire::component('aura::create-posttype', CreatePosttype::class);
+        Livewire::component('aura::create-taxonomy', CreateTaxonomy::class);
         Livewire::component('aura::edit-posttype', Posttype::class);
         Livewire::component('aura::taxonomy-index', TaxonomyIndex::class);
         Livewire::component('aura::taxonomy-edit', TaxonomyEdit::class);
@@ -163,6 +166,7 @@ class AuraServiceProvider extends PackageServiceProvider
             ->hasCommands([
                 AuraCommand::class,
                 MakePosttype::class,
+                MakeTaxonomy::class,
                 MakeUser::class,
                 CreateAuraPlugin::class,
                 MakeField::class,
