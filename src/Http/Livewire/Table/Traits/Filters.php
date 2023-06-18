@@ -110,7 +110,14 @@ trait Filters
     public function getUserFiltersProperty()
     {
         $userFilters = auth()->user()->getOption($this->model->getType().'.filters.*') ?? collect();
-        $teamFilters = auth()->user()->currentTeam->getOption($this->model->getType().'.filters.*') ?? collect();
+
+        $teamFilters = collect();
+
+        if (config('aura.teams')) {
+
+            $teamFilters = optional(auth()->user()->currentTeam)->getOption($this->model->getType().'.filters.*') ?? collect();
+
+        }
 
         // Add 'type' => 'user' to each user filter
         $userFilters = $userFilters->map(function ($filter) {
