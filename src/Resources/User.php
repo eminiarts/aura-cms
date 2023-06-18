@@ -495,7 +495,7 @@ class User extends UserModel
     protected static function booted()
     {
         static::creating(function ($user) {
-            if (!$user->current_team_id) {
+            if (config('aura.teams') && !$user->current_team_id) {
                 $user->current_team_id = auth()->user()?->current_team_id;
             }
         });
