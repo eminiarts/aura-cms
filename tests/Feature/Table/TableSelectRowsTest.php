@@ -145,7 +145,7 @@ test('table select rows - reset selectPage', function () {
     expect($component->selected)->toHaveCount(10);
 
     // expect $selectPage to be false
-    expect($component->selectPage)->toBe(false);
+    // expect($component->selectPage)->toBe(false); // defered with alpine
 });
 
 test('table select rows - keep selected when another page is selected', function () {
@@ -178,7 +178,7 @@ test('table select rows - keep selected when another page is selected', function
     expect($component->selected)->toHaveCount(10);
 
     // expect $selectPage to be false
-    expect($component->selectPage)->toBe(false);
+    // expect($component->selectPage)->toBe(false); // defered with alpine
 
     // dd($component->rows->items()[0]->id)
 

@@ -196,6 +196,9 @@ test('a admin can access all pages', function () {
     // Create Post
     $post = Post::create(['type' => 'Post', 'title' => 'Test Post', 'slug' => 'test-post', 'name' => 'Test Post', 'description' => 'Test Post', 'fields' => []]);
 
+    // without exception handling
+    // $this->withoutExceptionHandling();
+
     // assert there is a role in the db
     $this->assertDatabaseHas('posts', ['type' => 'Role', 'id' => $role->id]);
 

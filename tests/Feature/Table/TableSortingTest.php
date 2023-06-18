@@ -49,7 +49,7 @@ test('table default sorting', function () {
     // $component->sorts should be []
     $this->assertEmpty($component->sorts);
 
-    expect($component->rowsQuery->toSql())->toBe('select * from "posts" where "type" = ? and "team_id" = ? order by "id" desc limit 10 offset 0');
+    expect($component->rowsQuery->toSql())->toBe('select * from "posts" where "type" = ? and "team_id" = ? order by "posts"."id" desc limit 10 offset 0');
 
     // $compoent->rows->items() should be an array of posts
     $this->assertIsArray($component->rows->items());
@@ -242,7 +242,7 @@ test('table sorting by meta field - number', function () {
 
     // Inspect sql
     // SQL should contain: left join "post_meta" on "posts"."id" = "post_meta"."post_id" and "post_meta"."key" = ?
-    expect($component->rowsQuery->toSql())->toContain('CAST(post_meta.value AS SIGNED)');
+    expect($component->rowsQuery->toSql())->toContain('CAST(post_meta.value AS DECIMAL(10,2))');
 });
 
 test('table sorting by taxonomy field', function () {
