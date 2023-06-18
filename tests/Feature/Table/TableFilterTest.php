@@ -717,7 +717,7 @@ test('table filter - custom filter - is_not_empty', function () {
 
     //expect($component->rows->items())->toHaveCount(2);
 
-    expect($component->rowsQuery->toSql())->toBe('select * from "posts" where "type" = ? and "team_id" = ? order by "id" desc limit 10 offset 0');
+    expect($component->rowsQuery->toSql())->toBe('select * from "posts" where "type" = ? and "team_id" = ? order by "posts"."id" desc limit 10 offset 0');
 
     expect($component->rowsQuery->getBindings()[0])->toBe('Post');
     //expect($component->rowsQuery->getBindings()[1])->toBe('');

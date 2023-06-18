@@ -15,7 +15,7 @@ class DoNotDeferConditionalLogic implements Pipe
         // We need to set the defer property to false for all fields that are used in conditional logic
         $fields = $fields->map(function ($field) use ($conditionalLogicSlugs) {
 
-            if(in_array($field['slug'], $conditionalLogicSlugs)) {
+            if(in_array(optional($field)['slug'], $conditionalLogicSlugs)) {
                 $field['defer'] = false;
             }
 
