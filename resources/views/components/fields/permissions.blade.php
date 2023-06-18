@@ -2,7 +2,7 @@
 @php
     $name = 'post.fields.'  . optional($field)['slug'];
 
-    // dd($name);
+    //  dd($name);
 
     $groups = app($field['resource'])->get()->map(function($item, $key) {
         return [
@@ -20,9 +20,9 @@
     groups: @js($groups),
     field: @entangle($name).defer,
     init(){
-        console.log('init permissions', this.groups);
+      
         // if this.field is null, set it to an empty array
-        if (this.field === null) {
+        if (Array.isArray(this.field) && this.field.length === 0) {
             this.field = {};
         }
 
@@ -34,7 +34,6 @@
                 }
             }
         }
-
         // Remove any keys from this.field that are not in the groups items (item.slug)
         {{-- for (const [key, value] of Object.entries(this.field)) {
             if (!this.groups.flat().map(item => item.slug).includes(key)) {
@@ -44,8 +43,17 @@
     },
     selectAll(group){
         this.groups[group].forEach(item => {
+            if (item.slug.includes('scope')) {
+                return;
+            }
+
             this.field[item.slug] = true;
         });
+    },
+    selectAllGroups(){
+        for (const [key, value] of Object.entries(this.groups)) {
+            this.selectAll(key);
+        }
     },
     removeAll(group){
         this.groups[group].forEach(item => {
@@ -54,6 +62,15 @@
     },
 }">
 <x-aura::fields.wrapper :field="$field">
+
+    {{-- button to select all --}}
+     <div class="flex justify-end mb-2">
+        <x-aura::button.transparent @click="selectAllGroups()">
+            {{ __('Select all') }}
+        </x-aura::button.transparent>
+        
+    </div>
+
     @foreach($groups as $group => $items)
         <div class="flex flex-row justify-between py-6">
             <div class="w-1/3 pr-1.5">
