@@ -26,10 +26,9 @@
         "lab404/laravel-impersonate": "^1.7",
         "laravel/fortify": "^1.15",
         "laravel/sanctum": "^3.2",
-        "livewire/livewire": "^2.10",
+        "livewire/livewire": "^3.0@beta",
         "spatie/laravel-package-tools": "^1.14.1",
-        "spatie/ray": "^1.37",
-        "wire-elements/modal": "^1.0"
+        "spatie/ray": "^1.37"
     },
     "require-dev": {
         "laravel/dusk": "^7.7",
@@ -39,7 +38,7 @@
         "nunomaduro/larastan": "^2.0",
         "orchestra/testbench": "^8.0",
         "pestphp/pest": "^2.0",
-        "pestphp/pest-plugin-livewire": "^2.0",
+        "pestphp/pest-plugin-livewire": "^2.1",
         "phpstan/extension-installer": "^1.1",
         "phpstan/phpstan-deprecation-rules": "^1.0",
         "spatie/laravel-ray": "^1.32",
