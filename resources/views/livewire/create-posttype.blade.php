@@ -1,5 +1,5 @@
 <div class="p-8">
-    <h2 class="text-3xl font-semibold">{{ __('Create Posttype') }}</h2>
+    <h2 class="text-3xl font-semibold">{{ __('Create Resource') }}</h2>
     @if (count($errors->all()))
         <div class="block">
             <div class="mt-8 form_errors">

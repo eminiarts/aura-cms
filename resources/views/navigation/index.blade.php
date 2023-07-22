@@ -94,7 +94,7 @@
         <div class="{{ $iconClass }}">
             <x-aura::icon icon="collection" />
         </div>
-        <div>{{ __('Create Posttype') }}</div>
+        <div>{{ __('Create Resource') }}</div>
     </x-aura::navigation.item>
     <x-aura::navigation.item class="cursor-pointer" onclick="Livewire.emit('openModal', 'aura::create-taxonomy')">
         <div class="{{ $iconClass }}">
