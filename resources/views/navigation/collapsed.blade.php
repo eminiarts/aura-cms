@@ -129,7 +129,7 @@
     </div>
 
     @local
-    <x-aura::navigation.item-icon onclick="Livewire.emit('openModal', 'create-posttype')" tooltip="{{ __('Create Posttype') }}" :strict="false">
+    <x-aura::navigation.item-icon onclick="Livewire.emit('openModal', 'create-posttype')" tooltip="{{ __('Create Resource') }}" :strict="false">
         <x-aura::icon icon="collection" />
     </x-aura::navigation.item-icon>
     @endlocal
