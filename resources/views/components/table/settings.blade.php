@@ -23,7 +23,7 @@
                     <label class="flex items-center py-2 cursor-pointer space-1-2 hover:bg-gray-100 dark:hover:bg-gray-900 sortable"
                         for="colum_{{$key}}" id="{{ $key }}">
 
-                        <x-aura::input.checkbox wire:model="columns.{{ $key }}" value="true" id="colum_{{$key}}" />
+                        <x-aura::input.checkbox wire:model.live="columns.{{ $key }}" value="true" id="colum_{{$key}}" />
 
                         <span class="flex items-center flex-1 px-4 text-sm text-gray-700 dark:text-gray-200 group" role="menuitem"
                             tabindex="-1" id="menu-item-6">
@@ -45,7 +45,7 @@
                     <div class="flex items-center justify-between">
                         <x-aura::label value="{{ __('Per page') }}" />
                         <x-aura::input.group borderless inline paddingless for="perPage" label="">
-                            <x-aura::input.select wire:model="perPage" id="perPage" class="rounded-md bg-gray-50 ">
+                            <x-aura::input.select wire:model.live="perPage" id="perPage" class="rounded-md bg-gray-50 ">
                                 <option value="10">10</option>
                                 <option value="25">25</option>
                                 <option value="50">50</option>

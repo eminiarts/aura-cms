@@ -42,7 +42,7 @@ class Widgets extends Component
             $this->updateDates();
         }
 
-        $this->emit('dateFilterUpdated', $this->start, $this->end);
+        $this->dispatch('dateFilterUpdated', $this->start, $this->end);
     }
 
     protected function updateDates()

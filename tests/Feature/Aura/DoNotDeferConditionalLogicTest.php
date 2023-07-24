@@ -5,8 +5,8 @@ use Livewire\Livewire;
 use Eminiarts\Aura\Resource;
 use Eminiarts\Aura\Models\User;
 use Eminiarts\Aura\Facades\Aura;
-use Eminiarts\Aura\Http\Livewire\Post\Create;
-use Eminiarts\Aura\Http\Livewire\Post\Edit;
+use Eminiarts\Aura\Livewire\Post\Create;
+use Eminiarts\Aura\Livewire\Post\Edit;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);

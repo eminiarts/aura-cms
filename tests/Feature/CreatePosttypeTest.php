@@ -1,9 +1,10 @@
 <?php
 
-use Eminiarts\Aura\Http\Livewire\CreatePosttype;
+use Eminiarts\Aura\Livewire\CreatePosttype;
 use Eminiarts\Aura\Resources\User;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\File;
+
 use function Pest\Livewire\livewire;
 
 //uses()->group('current');

@@ -17,7 +17,7 @@
 </span>
 
 @once
-<x-aura::dialog-modal wire:model="confirmingPassword">
+<x-aura::dialog-modal wire:model.live="confirmingPassword">
     <x-slot name="title">
         {{ $title }}
     </x-slot>
@@ -29,7 +29,7 @@
         <div class="mt-4" x-data="{}" x-on:confirming-password.window="setTimeout(() => $refs.confirmable_password.focus(), 250)">
             <x-aura::input type="password" class="mt-1 block w-3/4" placeholder="{{ __('Password') }}"
                         x-ref="confirmable_password"
-                        wire:model.defer="confirmablePassword"
+                        wire:model="confirmablePassword"
                         wire:keydown.enter="confirmPassword" />
 
             <x-aura::simple-input-error for="confirmable_password" class="mt-2" />

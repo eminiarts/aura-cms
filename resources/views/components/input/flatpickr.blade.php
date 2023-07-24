@@ -12,7 +12,7 @@ $options = array_merge([
 
 <div wire:ignore>
     <input
-        x-data="{value: @entangle($attributes->wire('model')), instance: undefined}"
+        x-data="{value: @entangle($attributes->wire('model')).live, instance: undefined}"
         x-init="() => {
                 $watch('value', value => instance.setDate(value, true));
                 instance = flatpickr($refs.input, {{ json_encode((object)$options) }});

@@ -1,5 +1,5 @@
 <x-aura::fields.wrapper :field="$field">
-    {{-- <x-aura::input.date wire:model.defer="post.fields.{{ optional($field)['slug'] }}" error="post.fields.{{ optional($field)['slug'] }}" placeholder="{{ optional($field)['placeholder'] ?? optional($field)['name'] }}"></x-aura::input.date> --}}
+    {{-- <x-aura::input.date wire:model="post.fields.{{ optional($field)['slug'] }}" error="post.fields.{{ optional($field)['slug'] }}" placeholder="{{ optional($field)['placeholder'] ?? optional($field)['name'] }}"></x-aura::input.date> --}}
 
 
 <div
@@ -40,7 +40,7 @@
     </span>
 
     <input
-        wire:model.defer="post.fields.{{ optional($field)['slug'] }}"
+        wire:model="post.fields.{{ optional($field)['slug'] }}"
         x-ref="input"
         @if (optional($field)['disabled'])
         disabled

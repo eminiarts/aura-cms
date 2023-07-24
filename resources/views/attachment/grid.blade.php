@@ -2,7 +2,7 @@
     <div
         class="grid flex-1 grid-cols-5 gap-4 p-4"
         x-data="{
-            selected: @entangle('selected'),
+            selected: @entangle('selected').live,
             rows: @js($this->rows->pluck('id')->toArray()), //.map(item => item.toString()),
             lastSelectedId: null,
 
@@ -125,7 +125,7 @@
 {{--        this.selected = this.items.filter(item => item.classList.contains('selected')).map(item => item.dataset.id);--}}
 
 {{--        // emit the updated selected array to Livewire--}}
-{{--        this.$emit('updateSelected', this.selected);--}}
+{{--        this.$dispatch('updateSelected', this.selected);--}}
 {{--    }--}}
 {{--</script>--}}
 

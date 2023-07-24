@@ -2,7 +2,7 @@
 
 namespace Tests\Feature\Livewire;
 
-use Eminiarts\Aura\Http\Livewire\TeamSettings;
+use Eminiarts\Aura\Livewire\TeamSettings;
 use Eminiarts\Aura\Models\User;
 use Eminiarts\Aura\Resources\Option;
 use Eminiarts\Aura\Resources\Role;

@@ -1,7 +1,7 @@
 <?php
 
 use Eminiarts\Aura\Facades\Aura;
-use Eminiarts\Aura\Http\Livewire\Posttype;
+use Eminiarts\Aura\Livewire\Posttype;
 use Eminiarts\Aura\Models\Post;
 use Eminiarts\Aura\Resources\User;
 use Livewire\Livewire;

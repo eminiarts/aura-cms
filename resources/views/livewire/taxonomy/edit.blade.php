@@ -80,14 +80,14 @@
     @if($model::usesTitle())
     <div class="mb-4">
         <x-aura::fields.wrapper :field="['slug' => 'title']" wrapperClass="" class="-mx-4">
-            <x-aura::input.text label="Title" wire:model.defer="post.title" error="post.title" placeholder="Title">
+            <x-aura::input.text label="Title" wire:model="post.title" error="post.title" placeholder="Title">
             </x-aura::input.text>
         </x-aura::fields.wrapper>
     </div>
     @endif
 
     <div class="grid gap-6 mt-4 aura-edit-post-container sm:grid-cols-3" x-data="{
-    model: @entangle('post').defer,
+    model: @entangle('post'),
     init() {
         console.log('init post edit', this.model);
     }
