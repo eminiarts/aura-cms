@@ -15,7 +15,7 @@
     <div>
         <div>
             @if(app('aura')::option('user_invitations'))
-            <a href="#" wire:click.prevent="$emit('openModal', 'aura::invite-user')">
+            <a href="#" wire:click.prevent="$dispatch('openModal', 'aura::invite-user')">
                 <x-aura::button.light>
                     <x-slot:icon>
                         <x-aura::icon icon="plus" />
@@ -26,7 +26,7 @@
             @endif
 
             @if($this->createInModal)
-            <a href="#" wire:click.prevent="$emit('openModal', 'post.create-modal', {{ json_encode(['type' => $this->model->getType(), 'params' => [
+            <a href="#" wire:click.prevent="$dispatch('openModal', 'post.create-modal', {{ json_encode(['type' => $this->model->getType(), 'params' => [
             'for' => $this->parent->getType(), 'id' => $this->parent->id
             ]]) }})">
                 <x-aura::button>

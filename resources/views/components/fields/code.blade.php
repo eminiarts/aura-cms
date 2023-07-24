@@ -26,7 +26,7 @@
                     $dispatch('input', editor.getValue());
                 });
             "
-            wire:model.defer="post.fields.{{ optional($field)['slug'] }}"
+            wire:model="post.fields.{{ optional($field)['slug'] }}"
         >{{ optional($this->post['fields'])[$field['slug']] }}</div>
     </div>
     </div>

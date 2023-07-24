@@ -1,6 +1,6 @@
 @props(['key' => 'slideover'])
 
-<div x-data="{ open: @entangle('open').defer, key: '{{ $key }}', init() {
+<div x-data="{ open: @entangle('open'), key: '{{ $key }}', init() {
     {{-- console.log($root.getAttribute('wire:id')); --}}
 
     Livewire.on('openSlideOver', (id, params) => {

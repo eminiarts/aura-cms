@@ -15,7 +15,7 @@ $taxonomy = app($field['model']);
 wire:ignore
 x-data="{
     multiple: true,
-    value: @entangle('post.terms.' . $taxonomy::$slug).defer,
+    value: @entangle('post.terms.' . $taxonomy::$slug),
     options: {{ Js::from($values) }},
     init() {
         if (!this.value) {

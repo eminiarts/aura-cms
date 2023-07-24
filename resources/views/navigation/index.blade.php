@@ -90,13 +90,13 @@
 
     @if ($this->isToggled($group))
     @local
-    <x-aura::navigation.item class="cursor-pointer" onclick="Livewire.emit('openModal', 'aura::create-posttype')">
+    <x-aura::navigation.item class="cursor-pointer" onclick="Livewire.dispatch('openModal', 'aura::create-posttype')">
         <div class="{{ $iconClass }}">
             <x-aura::icon icon="collection" />
         </div>
         <div>{{ __('Create Resource') }}</div>
     </x-aura::navigation.item>
-    <x-aura::navigation.item class="cursor-pointer" onclick="Livewire.emit('openModal', 'aura::create-taxonomy')">
+    <x-aura::navigation.item class="cursor-pointer" onclick="Livewire.dispatch('openModal', 'aura::create-taxonomy')">
         <div class="{{ $iconClass }}">
             <x-aura::icon icon="collection" />
         </div>

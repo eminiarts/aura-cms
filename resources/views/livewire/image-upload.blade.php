@@ -17,7 +17,7 @@
             <div class="flex items-center justify-center h-40 bg-white rounded-sm text-center text-gray-500 cursor-pointer border border-dashed border-gray-900">
                 <div class="w-full flex items-center justify-center" style=""x-on:click="$refs.fileInput.click()"> Drag and drop to upload <br> or <br> Select Files </div>
 
-                    <input x-ref="fileInput" type="file" multiple wire:model="photos" class="hidden" />
+                    <input x-ref="fileInput" type="file" multiple wire:model.live="photos" class="hidden" />
 
                     <div class="">
                         <button x-on:click="open = !open" type="button" class="absolute top-0 right-0 p-2 rounded-sm text-gray-400 hover:text-gray-500 focus:outline-none">

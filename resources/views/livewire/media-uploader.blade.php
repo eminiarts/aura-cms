@@ -104,7 +104,7 @@
 
                 @if($button)
                 <x-aura::button.light
-                    wire:click="$emit('openModal', 'aura::media-manager', {{ json_encode(['field' => $field, 'slug' => $field['slug'], 'selected' => $selected]) }})">
+                    wire:click="$dispatch('openModal', 'aura::media-manager', {{ json_encode(['field' => $field, 'slug' => $field['slug'], 'selected' => $selected]) }})">
                     <x-slot:icon>
                         <x-aura::icon icon="media" class="" />
                         </x-slot>
@@ -142,7 +142,7 @@
                                 <p class="mb-2 text-sm text-gray-500 dark:text-gray-400">Datei hierhin ziehen oder <span class="text-primary-400">hier klicken</span> um eine Datei hochzuladen.</p>
 
                                 <input type="file" id="file-upload" multiple @change="handleFileSelect" class="hidden"
-                                    wire:model.defer="media" />
+                                    wire:model="media" />
                             </label>
                         </div>
                         
@@ -164,7 +164,7 @@
                                         upload</span> or drag and drop</p>
 
                                 <input type="file" id="file-upload" multiple @change="handleFileSelect" class="hidden"
-                                    wire:model.defer="media" />
+                                    wire:model="media" />
                             </label>
                         </div>
                     </div>

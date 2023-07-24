@@ -324,13 +324,13 @@
 
 <script>
 
-    document.addEventListener('livewire:load', function () {
+    document.addEventListener('livewire:init', function () {
         // Init alpine flow component
         Alpine.data('flow', function () {
             return {
 
-                operations: @entangle('operations').defer,
-                flow: @entangle('flow').defer,
+                operations: @entangle('operations'),
+                flow: @entangle('flow'),
                 selectedOperation: null,
                 draggingOperation: false,
                 connectingOperation: false,

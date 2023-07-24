@@ -97,8 +97,7 @@ if($selected) {
                         .map(el => el.id)
                         )
 
-                        // Livewire.emit('refreshComponent');
-                        // $emit('refreshComponent')
+                        // $dispatch('refreshComponent')
                     }, 0)
                 })
             }

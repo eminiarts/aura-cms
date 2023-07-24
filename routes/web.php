@@ -1,19 +1,19 @@
 <?php
 
 use Eminiarts\Aura\Http\Controllers\Api\FieldsController;
-use Eminiarts\Aura\Http\Livewire\Attachment\Index as AttachmentIndex;
-use Eminiarts\Aura\Http\Livewire\AuraConfig;
-use Eminiarts\Aura\Http\Livewire\Post\Create;
-use Eminiarts\Aura\Http\Livewire\Post\Edit;
-use Eminiarts\Aura\Http\Livewire\Post\Index;
-use Eminiarts\Aura\Http\Livewire\Post\View;
-use Eminiarts\Aura\Http\Livewire\Posttype;
-use Eminiarts\Aura\Http\Livewire\Taxonomy\Create as TaxonomyCreate;
-use Eminiarts\Aura\Http\Livewire\Taxonomy\Edit as TaxonomyEdit;
-use Eminiarts\Aura\Http\Livewire\Taxonomy\Index as TaxonomyIndex;
-use Eminiarts\Aura\Http\Livewire\Taxonomy\View as TaxonomyView;
-use Eminiarts\Aura\Http\Livewire\TeamSettings;
-use Eminiarts\Aura\Http\Livewire\User\Profile;
+use Eminiarts\Aura\Livewire\Attachment\Index as AttachmentIndex;
+use Eminiarts\Aura\Livewire\AuraConfig;
+use Eminiarts\Aura\Livewire\Post\Create;
+use Eminiarts\Aura\Livewire\Post\Edit;
+use Eminiarts\Aura\Livewire\Post\Index;
+use Eminiarts\Aura\Livewire\Post\View;
+use Eminiarts\Aura\Livewire\Posttype;
+use Eminiarts\Aura\Livewire\Taxonomy\Create as TaxonomyCreate;
+use Eminiarts\Aura\Livewire\Taxonomy\Edit as TaxonomyEdit;
+use Eminiarts\Aura\Livewire\Taxonomy\Index as TaxonomyIndex;
+use Eminiarts\Aura\Livewire\Taxonomy\View as TaxonomyView;
+use Eminiarts\Aura\Livewire\TeamSettings;
+use Eminiarts\Aura\Livewire\User\Profile;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware(config('aura.middleware.aura-guest'))->group(function () {
