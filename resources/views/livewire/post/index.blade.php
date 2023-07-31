@@ -35,7 +35,5 @@
 
     {{ app('aura')::injectView('widgets_after') }}
 
-    
-
-    <livewire:aura::table :model="$post" />
+    <livewire:aura::table :namespace="get_class($post)" />
 </div>
