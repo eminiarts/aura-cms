@@ -1,17 +1,17 @@
 <div class="">
-    @section('title', 'Create '. $model->singularName())
+    @section('title', 'Create '. $this->model->singularName())
 
     @if(!$inModal)
     <x-aura::breadcrumbs>
         <x-aura::breadcrumbs.li :href="route('aura.dashboard')" title="" icon="dashboard" iconClass="text-gray-500 w-7 h-7 mr-0" />
         <x-aura::breadcrumbs.li :href="route('aura.post.index', $slug)" :title="Str::plural($slug)" />
-        <x-aura::breadcrumbs.li title="Create {{ $model->singularName() }}" />
+        <x-aura::breadcrumbs.li title="Create {{ $this->model->singularName() }}" />
     </x-aura::breadcrumbs>
     @endif
 
     <div class="flex items-center justify-between {{ $inModal ? 'mb-8' : 'my-8'}}">
         <div>
-            <h1 class="text-3xl font-semibold">Create {{ $model->singularName() }}</h1>
+            <h1 class="text-3xl font-semibold">Create {{ $this->model->singularName() }}</h1>
         </div>
 
         <div>
@@ -24,7 +24,7 @@
         </div>
     </div>
 
-    @if($model::usesTitle())
+    @if($this->model::usesTitle())
     <div class="mb-4">
         <x-aura::fields.wrapper :field="['slug' => 'title']" wrapperClass="" class="-mx-4">
             <x-aura::input.text wire:model="post.title" error="post.title" placeholder="Title"></x-aura::input.text>
@@ -63,7 +63,7 @@
             @endforeach
             </div>
 
-            <div wire:key="errors-{{ md5(json_encode($model)) }}">
+            <div wire:key="errors-{{ md5(json_encode($this->model)) }}">
                 @if (count($errors->all()))
             <div class="block">
                 <div class="mt-8 form_errors">
