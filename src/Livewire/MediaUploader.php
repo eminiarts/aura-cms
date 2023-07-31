@@ -14,9 +14,11 @@ class MediaUploader extends Component
 
     public $field;
 
+    public $namespace = Attachment::class;
+
     public $media = [];
 
-    public Attachment $post;
+    protected $model;
 
     public $selected;
 
@@ -26,9 +28,9 @@ class MediaUploader extends Component
     // listener selectedMediaUpdated
     protected $listeners = ['selectedMediaUpdated' => 'selectedMediaUpdated'];
 
-    public function mount(Attachment $post)
+    public function mount()
     {
-        $this->post = $post;
+        $this->model = app($this->namespace);
     }
 
     public function render()
@@ -38,7 +40,6 @@ class MediaUploader extends Component
 
     public function selectedMediaUpdated($data)
     {
-        // dd($data);
         $this->selected = $data['value'];
     }
 

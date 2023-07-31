@@ -30,7 +30,7 @@
     {{ app('aura')::injectView('widgets_before') }}
 
     @if($widgets = $post->widgets())
-    @livewire('aura::widgets', ['widgets' => $widgets, 'model' => $post] )
+    @livewire('aura::widgets', ['widgets' => $widgets, 'model' => get_class($post)] )
     @endif
 
     {{ app('aura')::injectView('widgets_after') }}
