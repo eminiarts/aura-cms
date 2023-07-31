@@ -2,6 +2,7 @@
 
 namespace Eminiarts\Aura\Livewire\Table\Traits;
 
+use Livewire\Attributes\Computed;
 use Illuminate\Support\Facades\Cache;
 
 /**
@@ -86,28 +87,30 @@ trait Filters
         $this->setTaxonomyFilters();
 
         // Refresh userFilters
-        $this->userFilters = $this->getUserFiltersProperty();
+        $this->userFilters = $this->getUserFilters();
 
         // Refresh Component
         $this->dispatch('refreshTable');
     }
 
     /**
-     * Get the fields for filter property.
+     * Get the fields for filter .
      *
      * @return mixed
      */
-    public function getFieldsForFilterProperty()
+    #[Computed]
+    public function FieldsForFilter()
     {
         return $this->fields->pluck('name', 'slug');
     }
 
     /**
-     * Get the user filters property.
+     * Get the user filters .
      *
      * @return mixed
      */
-    public function getUserFiltersProperty()
+    #[Computed]
+    public function userFilters()
     {
         $userFilters = auth()->user()->getOption($this->model()->getType().'.filters.*') ?? collect();
 

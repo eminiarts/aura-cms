@@ -145,7 +145,7 @@ class Table extends Component
         // dd($data);
 
         if (method_exists($this->model, $data['action'])) {
-            return $this->model->find($data['id'])->{$data['action']}();
+            return $this->model()->find($data['id'])->{$data['action']}();
         }
     }
 
@@ -175,13 +175,13 @@ class Table extends Component
         $this->dispatch('openModal', $data['modal'], [
             'action' => $action,
             'selected' => $this->selectedRowsQuery->get(),
-            'model' => get_class($this->model),
+            'model' => get_class($this->model()),
         ]);
 
         // $dispatch('openModal', '{{ $data['modal'] }}', {{ json_encode(['action' => $action, 'selected' => $this->selectedRowsQuery->get()]) }})
     }
 
-    // public function getRowIdsProperty()
+    // public function getRowIds()
     // {
     //     return $this->rows->pluck('id')->toArray();
     // }
@@ -191,9 +191,10 @@ class Table extends Component
          *
          * @return mixed
          */
-    public function getBulkActionsProperty()
+    #[Computed]
+    public function bulkActions()
     {
-        return $this->model->getBulkActions();
+        return $this->model()->getBulkActions();
     }
 
     /**
@@ -201,21 +202,22 @@ class Table extends Component
      *
      * @return string
      */
-    public function getCreateLinkProperty()
+    #[Computed]
+    public function createLink()
     {
-        if ($this->model->createUrl()) {
-            return $this->model->createUrl();
+        if ($this->model()->createUrl()) {
+            return $this->model()->createUrl();
         }
 
         if ($this->parent) {
             return route('aura.post.create', [
-                'slug' => $this->model->getType(),
+                'slug' => $this->model()->getType(),
                 'for' => $this->parent->getType(),
                 'id' => $this->parent->id,
             ]);
         }
 
-        return route('aura.post.create', ['slug' => $this->model->getType()]);
+        return route('aura.post.create', ['slug' => $this->model()->getType()]);
     }
 
     /**
@@ -223,9 +225,10 @@ class Table extends Component
      *
      * @return mixed
      */
-    public function getFieldsProperty()
+    #[Computed]
+    public function fields()
     {
-        return $this->model->inputFields();
+        return $this->model()->inputFields();
     }
 
     /**
@@ -233,11 +236,12 @@ class Table extends Component
      *
      * @return mixed
      */
-    public function getHeadersProperty()
+    #[Computed]
+    public function headers()
     {
-        $headers = $this->model->getTableHeaders();
+        $headers = $this->model()->getTableHeaders();
 
-        if ($sort = auth()->user()->getOption('columns_sort.'.$this->model->getType())) {
+        if ($sort = auth()->user()->getOption('columns_sort.'.$this->model()->getType())) {
             $headers = $headers->sortBy(function ($value, $key) use ($sort) {
                 return array_search($key, $sort);
             });
@@ -251,11 +255,12 @@ class Table extends Component
      *
      * @return mixed
      */
-    public function modelColumnsProperty()
+    #[Computed]
+    public function modelColumns()
     {
-        $columns = collect($this->model->getColumns());
+        $columns = collect($this->model()->getColumns());
 
-        if ($sort = auth()->user()->getOption('columns_sort.'.$this->model->getType())) {
+        if ($sort = auth()->user()->getOption('columns_sort.'.$this->model()->getType())) {
             $columns = $columns->sortBy(function ($value, $key) use ($sort) {
                 return array_search($key, $sort);
             });
@@ -264,7 +269,7 @@ class Table extends Component
         return $columns;
     }
 
-    public function getParentModelProperty()
+    public function getParentModel()
     {
         return $this->parent;
     }
@@ -274,17 +279,19 @@ class Table extends Component
      *
      * @return mixed
      */
-    public function getRowsProperty()
+    #[Computed]
+    public function rows()
     {
         return $this->rowsQuery->paginate($this->perPage);
     }
 
     /**
-     * Get query property for the table data
+     * Get query  for the table data
      *
      * @return \Illuminate\Database\Eloquent\Builder
      */
-    public function getRowsQueryProperty()
+    #[Computed]
+    public function rowsQuery()
     {
         $query = $this->model()->query()
             ->orderBy($this->model()->getTable().'.id', 'desc');
@@ -317,11 +324,9 @@ class Table extends Component
 
     public function mount($query = null)
     {
-        if ($this->parentModel) {
-            // dd($this->parentModel);
-        }
-
-        $this->model = app($this->namespace);
+        // if ($this->parentModel) {
+        //     // dd($this->parentModel);
+        // }
 
         $this->dispatch('tableMounted');
 
@@ -332,23 +337,22 @@ class Table extends Component
             $this->filters = $this->userFilters[$this->selectedFilter];
         }
 
-        // dd($this->model);
-
         $this->query = $query;
 
-        $this->tableView = $this->model->defaultTableView();
+        $this->tableView = $this->model()->defaultTableView();
 
         $this->rowIds = $this->rows->pluck('id')->toArray();
 
-        $this->perPage = $this->model->defaultPerPage();
+        $this->perPage = $this->model()->defaultPerPage();
 
-        if (auth()->user()->getOptionColumns($this->model->getType())) {
-            $this->columns = auth()->user()->getOptionColumns($this->model->getType());
+        if (auth()->user()->getOptionColumns($this->model()->getType())) {
+            $this->columns = auth()->user()->getOptionColumns($this->model()->getType());
         } else {
-            $this->columns = $this->model->getDefaultColumns();
+            $this->columns = $this->model()->getDefaultColumns();
         }
     }
 
+    #[Computed]
     public function updatedPage($page)
     {
         $this->rowIds = $this->rows->pluck('id')->toArray();
@@ -363,7 +367,6 @@ class Table extends Component
     {
         return view('aura::livewire.table.table', [
             'parent' => $this->parent,
-            'model' => $this->model,
         ]);
     }
 
@@ -375,7 +378,7 @@ class Table extends Component
      */
     public function reorder($slugs)
     {
-        auth()->user()->updateOption('columns_sort.'.$this->model->getType(), $slugs);
+        auth()->user()->updateOption('columns_sort.'.$this->model()->getType(), $slugs);
     }
 
     /**
@@ -412,11 +415,12 @@ class Table extends Component
     {
         // Save the columns for the current user.
         if ($this->columns) {
-            auth()->user()->updateOption('columns.'.$this->model->getType(), $this->columns);
+            auth()->user()->updateOption('columns.'.$this->model()->getType(), $this->columns);
         }
     }
 
-    public function getAllTableRows()
+    #[Computed]
+    public function allTableRows()
     {
         // dd('hier', $this->rowsQuery->pluck('id'));
         return $this->rowsQuery->pluck('id')->all();
