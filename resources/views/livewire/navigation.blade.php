@@ -1,5 +1,5 @@
 
-<div>
+<div class="aura-navigation-wrapper">
 @php
 use Eminiarts\Aura\Resources\Team;
 use Eminiarts\Aura\Facades\Aura;
@@ -8,7 +8,6 @@ $settings = Aura::getOption('team-settings');
 $appSettings = Aura::options();
 
 @endphp
-
 
 @php
     if ($settings) {
@@ -72,8 +71,6 @@ $appSettings = Aura::options();
 
     ">
     <div class="flex-shrink-0 px-5 h-[4.5rem] w-full overflow-x-visible flex items-center">
-        {{-- <h1 class="text-2xl font-semibold">{{ config('app.name') }}</h1> --}}
-
         <div>
             <button
                 @click="$store.leftSidebar.toggle()"
@@ -136,10 +133,7 @@ $appSettings = Aura::options();
 
         <div class="flex flex-col px-5 space-y-1">
             <div class="flex-shrink-0 h-[4.5rem] flex items-center justify-between">
-            {{-- <h1 class="text-2xl font-semibold">{{ config('app.name') }}</h1> --}}
-
                 @include('aura::navigation.logo')
-
 
                 <div>
                     <button
@@ -160,8 +154,6 @@ $appSettings = Aura::options();
                 </div>
 
             </div>
-
-
 
             <button type="button" @click="$dispatch('search')"
                 class="
@@ -186,10 +178,6 @@ $appSettings = Aura::options();
                     shadow-sm py-1.5 pl-2 pr-3
                     rounded-md
             ">
-
-
-
-
                 <svg width="24" height="24" fill="none" aria-hidden="true" class="flex-none mr-3"><path d="m19 19-3.5-3.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path><circle cx="11" cy="11" r="6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></circle></svg>
                 {{ __('Search') }}
                 <span class="flex-none pl-3 ml-auto text-xs font-semibold">⌘K</span>
@@ -198,15 +186,7 @@ $appSettings = Aura::options();
         </div>
 
         <div class="flex flex-col px-4 space-y-1">
-
-            {{-- @includeIf('navigation.before') --}}
-
-
-            {{-- <x-aura::navigation /> --}}
-            @include('aura::navigation.index')
-
-            {{-- @includeIf('navigation.after') --}}
-
+            {{-- @include('aura::navigation.index') --}}
         </div>
     </div>
 
@@ -282,5 +262,5 @@ $appSettings = Aura::options();
   </div>
 </div>
 
-
-</div>
+ 
+</div> <!-- aura-navigation-wrapper -->
