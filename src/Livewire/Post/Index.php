@@ -12,7 +12,7 @@ class Index extends Component
 
     public $fields;
 
-    public $post;
+    protected $post;
 
     public $slug;
 
@@ -27,14 +27,16 @@ class Index extends Component
         }
 
         // Authorize if the User can see this Post
-        // ray('hierer', $this->post);
         $this->authorize('viewAny', $this->post);
 
-        $this->fields = $this->post->inputFields();
+        $this->fields = '';
+        // $this->fields = $this->post->inputFields();
+
+        // dd($this->fields);
     }
 
     public function render()
     {
-        return view('aura::livewire.post.index')->layout('aura::components.layout.app');
+        return view('aura::livewire.post.index', ['post' => $this->post])->layout('aura::components.layout.app');
     }
 }

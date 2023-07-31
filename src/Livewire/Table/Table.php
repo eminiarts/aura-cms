@@ -26,6 +26,8 @@ class Table extends Component
 
     public $rowIds;
 
+    public $namespace;
+
     /**
      * List of table columns.
      *
@@ -77,7 +79,7 @@ class Table extends Component
      *
      * @var \Illuminate\Database\Eloquent\Model
      */
-    public $model;
+    protected $model;
 
     /**
      * The parent of the table.
@@ -290,19 +292,19 @@ class Table extends Component
      */
     public function getRowsQueryProperty()
     {
-        $query = $this->model->query()
-            ->orderBy($this->model->getTable().'.id', 'desc');
+        $query = $this->getModel()->query()
+            ->orderBy($this->getModel()->getTable().'.id', 'desc');
 
         if ($this->field && method_exists(app($this->field['type']), 'queryFor')) {
             $query = app($this->field['type'])->queryFor($this->parent, $query, $this->field);
         }
 
-        if (method_exists($this->model, 'indexQuery')) {
-            $query = $this->model->indexQuery($query);
+        if (method_exists($this->getModel(), 'indexQuery')) {
+            $query = $this->getModel()->indexQuery($query);
         }
 
         // when model is instance Resource, eager load meta and taxonomies
-        if ($this->model instanceof Resource) {
+        if ($this->getModel() instanceof Resource) {
             $query = $query->with(['meta', 'taxonomies']);
         }
 
@@ -324,6 +326,9 @@ class Table extends Component
         if ($this->parentModel) {
             // dd($this->parentModel);
         }
+
+        $this->model = app($this->namespace);
+
         $this->dispatch('tableMounted');
 
         $this->setTaxonomyFilters();
@@ -364,6 +369,7 @@ class Table extends Component
     {
         return view('aura::livewire.table.table', [
             'parent' => $this->parent,
+            'model' => $this->model,
         ]);
     }
 
@@ -441,5 +447,15 @@ class Table extends Component
         } else {
             $this->dispatch('selectedRows', $this->selected);
         }
+    }
+
+    public function getModel()
+    {
+        return $this->model;
+    }
+
+    public function setModel($model)
+    {
+        $this->model = $model;
     }
 }
