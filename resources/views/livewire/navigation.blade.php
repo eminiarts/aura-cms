@@ -94,12 +94,16 @@ $appSettings = Aura::options();
 
     <div class="flex-shrink-0 px-5 h-[4.5rem] flex items-center border-t border-white border-opacity-20 dark:border-gray-700">
         <x-aura::tippy-area text="{{ Auth::user()->name }}" position="top">
-            <x-slot name="title">
+            <x-slot:title>
             <img class="inline-block rounded-full h-9 w-9" src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80" alt="">
-            </x-slot::title>
+            </x-slot:title>
 
+            
+        </x-aura::tippy-area>
+
+        <div>
             @include('aura::navigation.footer-popup')
-        </x-aura::tippy-rea>
+        </div>
     </div>
   </div>
 </div>
@@ -186,7 +190,7 @@ $appSettings = Aura::options();
         </div>
 
         <div class="flex flex-col px-4 space-y-1">
-            {{-- @include('aura::navigation.index') --}}
+            @include('aura::navigation.index')
         </div>
     </div>
 
@@ -242,9 +246,9 @@ $appSettings = Aura::options();
                     </div>
                 </x-slot:title>
 
-                @include('aura::navigation.footer-popup')
-
             </x-aura::navigation.team-switcher>
+
+            {{-- @include('aura::navigation.footer-popup') --}}
 
             <div class="ml-2">
                 <x-aura::tippy text="Notifications">
