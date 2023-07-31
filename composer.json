@@ -28,7 +28,8 @@
         "laravel/sanctum": "^3.2",
         "livewire/livewire": "^3.0@beta",
         "spatie/laravel-package-tools": "^1.14.1",
-        "spatie/ray": "^1.37"
+        "spatie/ray": "^1.37",
+        "wire-elements/modal": "^2.0@beta"
     },
     "require-dev": {
         "laravel/dusk": "^7.7",
