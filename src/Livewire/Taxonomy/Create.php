@@ -5,11 +5,10 @@ namespace Eminiarts\Aura\Livewire\Taxonomy;
 use Illuminate\Support\Arr;
 use Eminiarts\Aura\Facades\Aura;
 use LivewireUI\Modal\ModalComponent;
-use Eminiarts\Aura\Livewire\Modal;
 use Eminiarts\Aura\Traits\InteractsWithFields;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 
-class Create extends Modal
+class Create extends ModalComponent
 {
     use AuthorizesRequests;
     use InteractsWithFields;
@@ -36,7 +35,7 @@ class Create extends Modal
 
     public function render()
     {
-        return view('aura::livewire.taxonomy.create')->layout('aura::components.layout.app');
+        return view('aura::livewire.taxonomy.create');
     }
 
     public function rules()
