@@ -18,14 +18,11 @@ $settings = Eminiarts\Aura\Facades\Aura::getOption('team-settings');
     }
 @endphp
 
-{{-- @dump(Request::fullUrlIs($route ? route($route, $id) : '')) --}}
-{{-- {{ dump(route($route, $id)) }}
-@dump(Request::fullUrlIs(route($route, $id))) --}}
 @if ($sidebarType == 'primary')
 
 <a
   @if($route)
-  href="{{ $route }}"
+  href="{{ $route }}" wire:navigate
   tabindex="0"
   @endif
   {{$attributes->merge([
@@ -37,11 +34,10 @@ $settings = Eminiarts\Aura\Facades\Aura::getOption('team-settings');
   </div>
 </a>
 
-
 @elseif ($sidebarType == 'light')
 <a
   @if($route)
-  href="{{ $route }}"
+  href="{{ $route }}" wire:navigate
   tabindex="0"
   @endif
   {{$attributes->merge([
@@ -53,13 +49,11 @@ $settings = Eminiarts\Aura\Facades\Aura::getOption('team-settings');
   </div>
 </a>
 
-{{--
-    text-gray-900 border-gray-500/30 border-opacity-20 bg-gray-50 dark:bg-gray-800 dark:text-white dark:border-gray-700 shadow-gray-400 md:shadow-none --}}
 @elseif ($sidebarType == 'dark')
 
 <a
   @if($route)
-  href="{{ $route }}"
+  href="{{ $route }}" wire:navigate
   tabindex="1"
   @endif
   {{$attributes->merge([
@@ -71,6 +65,4 @@ $settings = Eminiarts\Aura\Facades\Aura::getOption('team-settings');
   </div>
 </a>
 
-{{--
-    text-white border-white border-opacity-20 bg-gray-800 dark:bg-gray-800 dark:text-white dark:border-gray-700 shadow-gray-400 md:shadow-none --}}
 @endif
