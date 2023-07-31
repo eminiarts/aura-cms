@@ -208,7 +208,7 @@
 
                     {{-- Columns --}}
                     <div class="flex space-x-2">
-                        @if($model->tableGridView())
+                        @if($this->model->tableGridView())
                         <div>
                             <span class="inline-flex rounded-md shadow-sm isolate">
                                 <button wire:click="$set('tableView', 'grid')" type="button"
@@ -226,7 +226,7 @@
                         </div>
                         @endif
 
-                        @if($tableView == 'list' && $model->showTableSettings())
+                        @if($tableView == 'list' && $this->model->showTableSettings())
                         @include('aura::components.table.settings')
                         @endif
 
@@ -297,7 +297,7 @@
             </div>
 
             @if($tableView == 'grid')
-            @include($model->tableGridView())
+            @include($this->model->tableGridView())
             @elseif($tableView == 'list')
             @include('aura::components.table.index')
             @endif

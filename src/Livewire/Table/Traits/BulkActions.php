@@ -33,7 +33,7 @@ trait BulkActions
      *
      * @return \Illuminate\Database\Eloquent\Builder
      */
-    public function getSelectedRowsQueryProperty()
+    public function getSelectedRowsQuery()
     {
         return (clone $this->rowsQuery)
             ->unless($this->selectAll, fn ($query) => $query->whereKey($this->selected));

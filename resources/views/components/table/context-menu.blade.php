@@ -57,7 +57,7 @@
     class="absolute z-10 w-48 py-2 mt-1 bg-white rounded-md shadow-lg dark:bg-gray-800 ring-1 ring-black ring-opacity-5"
     @click.away="closeContextMenu" x-cloak>
 
-    @can('update', $model)
+    @can('update', $this->model)
     <a href="#"
         class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700"
         @click="editAction">
@@ -70,7 +70,7 @@
     </a>
     @endcan
 
-    @can('view', $model)
+    @can('view', $this->model)
     <a href="#"
         class="block px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700"
         @click="viewAction">
@@ -83,11 +83,11 @@
     </a>
     @endcan
 
-    @if(count($model->getActions()))
+    @if(count($this->model->getActions()))
     <div class="border-t border-gray-100 dark:border-gray-700"></div>
     @endif
 
-    @foreach($model->getActions() as $action => $label)
+    @foreach($this->model->getActions() as $action => $label)
 
     <button @click="customAction('{{ $action }}')"
         class="block w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700">
