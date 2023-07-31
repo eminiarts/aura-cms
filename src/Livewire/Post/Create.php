@@ -2,14 +2,15 @@
 
 namespace Eminiarts\Aura\Livewire\Post;
 
-use Eminiarts\Aura\Facades\Aura;
+use Livewire\Component;
+use Illuminate\Support\Arr;
 use Eminiarts\Aura\Models\Post;
-use Eminiarts\Aura\Traits\InteractsWithFields;
+use Eminiarts\Aura\Facades\Aura;
+use Livewire\Attributes\Computed;
 use Eminiarts\Aura\Traits\MediaFields;
 use Eminiarts\Aura\Traits\RepeaterFields;
+use Eminiarts\Aura\Traits\InteractsWithFields;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
-use Illuminate\Support\Arr;
-use Livewire\Component;
 
 class Create extends Component
 {
@@ -19,8 +20,6 @@ class Create extends Component
     use RepeaterFields;
 
     public $inModal = false;
-
-    public $model;
 
     public $params;
 
@@ -40,11 +39,6 @@ class Create extends Component
     public function mount($slug)
     {
         $this->slug = $slug;
-
-        $this->model = Aura::findResourceBySlug($slug);
-
-        // dd($this->model->createFields());
-        //dd($this->model);
 
         // Authorize
         $this->authorize('create', $this->model);
@@ -75,6 +69,12 @@ class Create extends Component
         if ($for == 'User') {
             $this->post['fields']['user_id'] = (int) $id;
         }
+    }
+
+    #[Computed]
+    public function model()
+    {
+        return Aura::findResourceBySlug($this->slug);
     }
 
     public function render()
@@ -114,6 +114,4 @@ class Create extends Component
     {
         $this->model = $model;
     }
-
-
 }
