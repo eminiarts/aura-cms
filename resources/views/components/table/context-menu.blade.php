@@ -1,4 +1,4 @@
-@if($model->getContextMenu())
+@if($this->model->getContextMenu())
 <div @contextmenu="openContextMenu($event)" @click.away="closeContextMenu" @keydown.escape="closeContextMenu" x-data="{
             visible: false,
             currentRow: null,

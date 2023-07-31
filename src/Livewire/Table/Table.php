@@ -5,6 +5,7 @@ namespace Eminiarts\Aura\Livewire\Table;
 use Livewire\Component;
 use Eminiarts\Aura\Resource;
 use Eminiarts\Aura\Models\User;
+use Livewire\Attributes\Computed;
 use Eminiarts\Aura\Livewire\Table\Traits\Search;
 use Eminiarts\Aura\Livewire\Table\Traits\Filters;
 use Eminiarts\Aura\Livewire\Table\Traits\Sorting;
@@ -75,13 +76,6 @@ class Table extends Component
     public $lastClickedRow;
 
     /**
-     * The model of the table.
-     *
-     * @var \Illuminate\Database\Eloquent\Model
-     */
-    protected $model;
-
-    /**
      * The parent of the table.
      *
      * @var \Illuminate\Database\Eloquent\Model
@@ -140,11 +134,11 @@ class Table extends Component
     {
         // return redirect to post view
         if ($data['action'] == 'view') {
-            return redirect()->route('aura.post.view', ['slug' => $this->model->getType(), 'id' => $data['id']]);
+            return redirect()->route('aura.post.view', ['slug' => $this->model()->getType(), 'id' => $data['id']]);
         }
         // edit
         if ($data['action'] == 'edit') {
-            return redirect()->route('aura.post.edit', ['slug' => $this->model->getType(), 'id' => $data['id']]);
+            return redirect()->route('aura.post.edit', ['slug' => $this->model()->getType(), 'id' => $data['id']]);
         }
 
         // if custom
@@ -257,7 +251,7 @@ class Table extends Component
      *
      * @return mixed
      */
-    public function getModelColumnsProperty()
+    public function modelColumnsProperty()
     {
         $columns = collect($this->model->getColumns());
 
@@ -292,19 +286,19 @@ class Table extends Component
      */
     public function getRowsQueryProperty()
     {
-        $query = $this->getModel()->query()
-            ->orderBy($this->getModel()->getTable().'.id', 'desc');
+        $query = $this->model()->query()
+            ->orderBy($this->model()->getTable().'.id', 'desc');
 
         if ($this->field && method_exists(app($this->field['type']), 'queryFor')) {
             $query = app($this->field['type'])->queryFor($this->parent, $query, $this->field);
         }
 
-        if (method_exists($this->getModel(), 'indexQuery')) {
-            $query = $this->getModel()->indexQuery($query);
+        if (method_exists($this->model(), 'indexQuery')) {
+            $query = $this->model()->indexQuery($query);
         }
 
         // when model is instance Resource, eager load meta and taxonomies
-        if ($this->getModel() instanceof Resource) {
+        if ($this->model() instanceof Resource) {
             $query = $query->with(['meta', 'taxonomies']);
         }
 
@@ -449,13 +443,11 @@ class Table extends Component
         }
     }
 
-    public function getModel()
+
+    #[Computed]
+    public function model()
     {
-        return $this->model;
+        return app($this->namespace);
     }
 
-    public function setModel($model)
-    {
-        $this->model = $model;
-    }
 }
