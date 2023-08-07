@@ -182,6 +182,9 @@
 
         @include('aura::components.table.header')
 
+
+        @dump($this->getPage())
+
         <div class="mt-6">
 
             {{-- @dump($this->headers) --}}
@@ -310,7 +313,23 @@
                 </h3>
                 </x-slot>
                 @include('aura::components.table.filters')
-                </x-sidebar>
+                </x-aura::x-sidebar>
+
+                
+
+
+                <div>
+
+                    @forelse($data as $row)
+                    {{ $row->id }}
+                    @empty
+                    @endforelse
+                </div>
+                {{ $data->links() }}
+
+                {{-- button to handle setPageTen --}}
+                <button wire:click="setPageTen">Set Page Ten</button>
+
     </main>
 </div> {{-- This closes the context menu --}}
 </div>
