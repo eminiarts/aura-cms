@@ -182,12 +182,8 @@
 
         @include('aura::components.table.header')
 
-
-        @dump($this->getPage())
-
         <div class="mt-6">
 
-            {{-- @dump($this->headers) --}}
             <div class="flex flex-col justify-between w-full mb-4 md:items-center md:flex-row">
 
                 <div class="mb-4 md:mb-0">
