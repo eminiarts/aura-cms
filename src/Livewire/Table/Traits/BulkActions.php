@@ -76,12 +76,6 @@ trait BulkActions
             ->all();
     }
 
-    // when page is updated, reset selectPage
-    public function updatedPage()
-    {
-        // dd('updatedPage');
-        $this->selectPage = false;
-    }
 
     /**
      * Handles updates to selected rows

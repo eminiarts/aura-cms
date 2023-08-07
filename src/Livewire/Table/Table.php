@@ -197,6 +197,12 @@ class Table extends Component
         return $this->model()->getBulkActions();
     }
 
+    #[Computed]
+    public function page()
+    {
+        return $this->getPage();
+    }
+
     /**
      * Get the create link.
      *
@@ -352,11 +358,6 @@ class Table extends Component
         }
     }
 
-    #[Computed]
-    public function updatedPage($page)
-    {
-        $this->rowIds = $this->rows->pluck('id')->toArray();
-    }
 
     /**
      * Render the component view.
@@ -402,16 +403,7 @@ class Table extends Component
         $this->lastClickedRow = $id;
     }
 
-    /**
-     * Select multiple rows in the table.
-     *
-     * @param $ids array The ids of the rows to select.
-     * @return void
-     */
-    public function selectRows($ids)
-    {
-        $this->selected = $ids;
-    }
+
 
     /**
      * Update the columns in the table.
@@ -430,7 +422,6 @@ class Table extends Component
     #[Computed]
     public function allTableRows()
     {
-        // dd('hier', $this->rowsQuery->pluck('id'));
         return $this->rowsQuery->pluck('id')->all();
     }
 

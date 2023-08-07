@@ -68,7 +68,6 @@
     
     selectAllRows: async function () {
         
-        
         this.loading = true
         
         let allSelected = await $wire.getAllTableRows()
