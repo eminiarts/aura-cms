@@ -14,6 +14,7 @@
         });
         
         console.log('init table');
+        console.log(this.rows);
         
         if(this.selectAll) {
             this.selectPage = true;
@@ -70,7 +71,7 @@
         
         this.loading = true
         
-        let allSelected = await $wire.getAllTableRows()
+        let allSelected = await $wire.allTableRows()
         this.selectAll = true
         
         console.log(this.selected, 'selected')

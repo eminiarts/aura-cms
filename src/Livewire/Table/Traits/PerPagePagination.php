@@ -19,10 +19,12 @@ trait PerPagePagination
         ray('updated page: ' . $page);
 
         // $this->dispatch('refreshTable');
+        $this->page = $page;
+
 
         // unset($this->rows);
 
-        $this->selectPage = false;
+
     }
 
     public function updatingPage($page)
@@ -30,8 +32,8 @@ trait PerPagePagination
         // Runs before the page is updated for this component...
         ray('updating page: ' . $page);
         // $this->setPage($page);
-        $this->page = $page;
 
+        // $this->selectPage = false;
     }
 
     /**
