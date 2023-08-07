@@ -314,22 +314,6 @@
                 </x-slot>
                 @include('aura::components.table.filters')
                 </x-aura::x-sidebar>
-
-                
-
-
-                <div>
-
-                    @forelse($data as $row)
-                    {{ $row->id }}
-                    @empty
-                    @endforelse
-                </div>
-                {{ $data->links() }}
-
-                {{-- button to handle setPageTen --}}
-                <button wire:click="setPageTen">Set Page Ten</button>
-
     </main>
 </div> {{-- This closes the context menu --}}
 </div>
