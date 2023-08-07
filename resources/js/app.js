@@ -28,8 +28,6 @@ Alpine.plugin(collapse);
 Alpine.plugin(focus);
 Alpine.plugin(ui);
 
-Livewire.start();
-
 Alpine.data('aura', () => ({
   loading: false,
   success: false,
@@ -86,7 +84,7 @@ Alpine.store('leftSidebar', {
 })
 
 
-Alpine.start()
+// Alpine.start()
 
 function updateVisitedPages(title, url) {
   // console.log('updateVisitedPages');
@@ -113,3 +111,6 @@ document.addEventListener('DOMContentLoaded', () => {
   const pageUrl = window.location.href;
   updateVisitedPages(pageTitle, pageUrl);
 });
+
+
+Livewire.start();
