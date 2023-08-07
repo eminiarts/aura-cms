@@ -11,6 +11,24 @@ trait PerPagePagination
 {
     use WithPagination;
 
+    public function updatedPage($page)
+    {
+        // $this->render();
+        ray('updated page: ' . $page);
+
+        // $this->dispatch('refreshTable');
+
+        unset($this->rows);
+
+    }
+
+    public function updatingPage($page)
+    {
+        // Runs before the page is updated for this component...
+        ray('updating page: ' . $page);
+        // $this->setPage($page);
+    }
+
     /**
      * Number of items to be displayed per page.
      *

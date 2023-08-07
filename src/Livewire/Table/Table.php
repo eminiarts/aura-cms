@@ -282,7 +282,7 @@ class Table extends Component
     #[Computed]
     public function rows()
     {
-        return $this->rowsQuery->paginate($this->perPage);
+        return $this->rowsQuery->paginate(10);
     }
 
     /**
@@ -367,8 +367,16 @@ class Table extends Component
     {
         return view('aura::livewire.table.table', [
             'parent' => $this->parent,
+            'data' => $this->rows,
         ]);
     }
+
+    public function setPageTen()
+    {
+        $this->setPage(10);
+    }
+
+
 
     /**
      * Reorder the table columns.
