@@ -25,8 +25,6 @@ class Table extends Component
     use Search;
     use Sorting;
 
-    public $rowIds;
-
     public $namespace;
 
     /**
@@ -181,10 +179,11 @@ class Table extends Component
         // $dispatch('openModal', '{{ $data['modal'] }}', {{ json_encode(['action' => $action, 'selected' => $this->selectedRowsQuery->get()]) }})
     }
 
-    // public function getRowIds()
-    // {
-    //     return $this->rows->pluck('id')->toArray();
-    // }
+    #[Computed]
+    public function rowIds()
+    {
+        return $this->rows->pluck('id')->toArray();
+    }
 
     /**
          * Get the available bulk actions.
@@ -347,8 +346,6 @@ class Table extends Component
 
         $this->tableView = $this->model()->defaultTableView();
 
-        $this->rowIds = $this->rows->pluck('id')->toArray();
-
         $this->perPage = $this->model()->defaultPerPage();
 
         if (auth()->user()->getOptionColumns($this->model()->getType())) {
@@ -419,7 +416,7 @@ class Table extends Component
         }
     }
 
-    #[Computed]
+
     public function allTableRows()
     {
         return $this->rowsQuery->pluck('id')->all();
@@ -432,6 +429,8 @@ class Table extends Component
      */
     public function updatedSelected()
     {
+        return;
+
         $this->selectAll = false;
         $this->selectPage = false;
 
