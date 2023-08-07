@@ -22,7 +22,7 @@ $settings = Eminiarts\Aura\Facades\Aura::getOption('team-settings');
 
 <a
   @if($route)
-  href="{{ $route }}" wire:navigate
+  href="{{ $route }}" 
   tabindex="0"
   @endif
   {{$attributes->merge([
@@ -37,7 +37,7 @@ $settings = Eminiarts\Aura\Facades\Aura::getOption('team-settings');
 @elseif ($sidebarType == 'light')
 <a
   @if($route)
-  href="{{ $route }}" wire:navigate
+  href="{{ $route }}" 
   tabindex="0"
   @endif
   {{$attributes->merge([
@@ -53,7 +53,7 @@ $settings = Eminiarts\Aura\Facades\Aura::getOption('team-settings');
 
 <a
   @if($route)
-  href="{{ $route }}" wire:navigate
+  href="{{ $route }}" 
   tabindex="1"
   @endif
   {{$attributes->merge([
