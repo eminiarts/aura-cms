@@ -172,6 +172,21 @@ class Table extends Component
         $this->notify('Erfolgreich: '.$action);
     }
 
+    public function bulkCollectionAction($action)
+    {
+        //$action = $this->model->getBulkActions()[$action];
+        $ids = $this->selectedRowsQuery->pluck('id')->toArray();
+
+        $this->model->{$action}($ids);
+
+        // reset selected rows
+        $this->selected = [];
+
+        $this->notify('Erfolgreich: '.$action);
+
+        $this->emit('refreshTable');
+    }
+
     public function openBulkActionModal($action, $data)
     {
         // ray($data, $this->selectedRowsQuery->get());

@@ -1,6 +1,8 @@
 <div>
     @section('title', __('Edit ' . $model->singularName()))
 
+    {{ app('aura')::injectView('post_edit_breadcrumbs_before') }}
+
     @if(!$inModal)
     <x-aura::breadcrumbs>
         <x-aura::breadcrumbs.li :href="route('aura.dashboard')" title="" icon="dashboard"
@@ -10,9 +12,13 @@
     </x-aura::breadcrumbs>
     @endif
 
+    {{ app('aura')::injectView('post_edit_breadcrumbs_after') }}
+
     <div class="flex items-center justify-between my-8">
         <div>
+            {{ app('aura')::injectView('post_edit_title_before') }}
             <h1 class="text-3xl font-semibold">{{ __('Edit ' . $model->singularName()) }}</h1>
+            {{ app('aura')::injectView('post_edit_title_after') }}
         </div>
 
         <div class="flex items-center space-x-2">
