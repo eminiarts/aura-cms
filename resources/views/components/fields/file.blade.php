@@ -73,7 +73,6 @@ if($selected) {
 
 
 @once
-@push('scripts')
 
 <script>
     // when alpine is ready
@@ -113,5 +112,4 @@ if($selected) {
 
 </script>
 
-@endpush
 @endonce

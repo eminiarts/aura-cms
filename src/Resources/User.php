@@ -97,21 +97,21 @@ class User extends UserModel
         return 'https://ui-avatars.com/api/?name='.$this->getInitials().'';
     }
 
-        public function getBulkActions()
-        {
-            // get all flows with type "manual"
+    public function getBulkActions()
+    {
+        // get all flows with type "manual"
 
-            $flows = Flow::where('trigger', 'manual')
-                ->where('options->resource', $this->getType())
-                ->get();
+        $flows = Flow::where('trigger', 'manual')
+            ->where('options->resource', $this->getType())
+            ->get();
 
-            foreach ($flows as $flow) {
-                $this->bulkActions['callFlow.'.$flow->id] = $flow->name;
-            }
-
-            // dd($this->bulkActions);
-            return $this->bulkActions;
+        foreach ($flows as $flow) {
+            $this->bulkActions['callFlow.'.$flow->id] = $flow->name;
         }
+
+        // dd($this->bulkActions);
+        return $this->bulkActions;
+    }
 
     public function getEmailField($value)
     {
@@ -166,6 +166,18 @@ class User extends UserModel
                     'width' => '100',
                 ],
             ],
+
+            [
+                'name' => 'Signatur',
+                'type' => 'Eminiarts\\Aura\\Fields\\Wysiwyg',
+                'validation' => 'required',
+                'on_index' => true,
+                'slug' => 'signature',
+                'style' => [
+                    'width' => '100',
+                ],
+            ],
+
             [
                 'name' => 'Roles',
                 'slug' => 'roles',
@@ -480,12 +492,12 @@ class User extends UserModel
         return $this->name;
     }
 
-      public function widgets()
-      {
-          return collect($this->getWidgets())->map(function ($item) {
-              return $item;
-          });
-      }
+    public function widgets()
+    {
+        return collect($this->getWidgets())->map(function ($item) {
+            return $item;
+        });
+    }
 
     /**
      * The "booted" method of the model.
@@ -529,14 +541,14 @@ class User extends UserModel
         });
     }
 
-   protected function cachedRoles(): mixed
-   {
-       return $this->roles;
+    protected function cachedRoles(): mixed
+    {
+        return $this->roles;
 
-       return Cache::remember($this->getCacheKeyForRoles(), now()->addMinutes(60), function () {
-           return $this->roles;
-       });
-   }
+        return Cache::remember($this->getCacheKeyForRoles(), now()->addMinutes(60), function () {
+            return $this->roles;
+        });
+    }
 
     protected function getCacheKeyForRoles(): string
     {
