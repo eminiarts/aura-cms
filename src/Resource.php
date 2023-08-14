@@ -82,7 +82,7 @@ class Resource extends Model
      */
     public function children()
     {
-        return $this->hasMany(self::class, 'post_parent');
+        return $this->hasMany(get_class($this), 'parent_id');
     }
 
     public function getBulkActions()
@@ -257,7 +257,7 @@ class Resource extends Model
      */
     public function parent()
     {
-        return $this->belongsTo(self::class, 'post_parent');
+        return $this->belongsTo(get_class($this), 'parent_id');
     }
 
     /**
@@ -265,7 +265,7 @@ class Resource extends Model
      */
     public function revision()
     {
-        return $this->hasMany(self::class, 'post_parent')
+        return $this->hasMany(self::class, 'parent_id')
             ->where('post_type', 'revision');
     }
 

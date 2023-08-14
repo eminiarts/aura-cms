@@ -21,7 +21,6 @@
         @php
             use Eminiarts\Aura\Resources\Attachment;
 
-
             $favicon = $darkFavicon = '/vendor/aura/public/favicon-32x32.png';
 
             if(isset($appSettings['app-favicon'])) {
