@@ -25,8 +25,6 @@ class Table extends Component
     use Search;
     use Sorting;
 
-    public $rowIds;
-
     public $namespace;
 
     /**
@@ -181,10 +179,11 @@ class Table extends Component
         // $dispatch('openModal', '{{ $data['modal'] }}', {{ json_encode(['action' => $action, 'selected' => $this->selectedRowsQuery->get()]) }})
     }
 
-    // public function getRowIds()
-    // {
-    //     return $this->rows->pluck('id')->toArray();
-    // }
+    #[Computed]
+    public function rowIds()
+    {
+        return $this->rows->pluck('id')->toArray();
+    }
 
     /**
          * Get the available bulk actions.
@@ -195,6 +194,12 @@ class Table extends Component
     public function bulkActions()
     {
         return $this->model()->getBulkActions();
+    }
+
+    #[Computed]
+    public function page()
+    {
+        return $this->getPage();
     }
 
     /**
@@ -341,8 +346,6 @@ class Table extends Component
 
         $this->tableView = $this->model()->defaultTableView();
 
-        $this->rowIds = $this->rows->pluck('id')->toArray();
-
         $this->perPage = $this->model()->defaultPerPage();
 
         if (auth()->user()->getOptionColumns($this->model()->getType())) {
@@ -352,11 +355,6 @@ class Table extends Component
         }
     }
 
-    #[Computed]
-    public function updatedPage($page)
-    {
-        $this->rowIds = $this->rows->pluck('id')->toArray();
-    }
 
     /**
      * Render the component view.
@@ -402,16 +400,7 @@ class Table extends Component
         $this->lastClickedRow = $id;
     }
 
-    /**
-     * Select multiple rows in the table.
-     *
-     * @param $ids array The ids of the rows to select.
-     * @return void
-     */
-    public function selectRows($ids)
-    {
-        $this->selected = $ids;
-    }
+
 
     /**
      * Update the columns in the table.
@@ -427,10 +416,9 @@ class Table extends Component
         }
     }
 
-    #[Computed]
+
     public function allTableRows()
     {
-        // dd('hier', $this->rowsQuery->pluck('id'));
         return $this->rowsQuery->pluck('id')->all();
     }
 
@@ -441,6 +429,8 @@ class Table extends Component
      */
     public function updatedSelected()
     {
+        return;
+
         $this->selectAll = false;
         $this->selectPage = false;
 
