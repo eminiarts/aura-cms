@@ -55,6 +55,8 @@ class Table extends Component
      */
     public $field;
 
+    public $rowIds = [];
+
     /**
      * The name of the filter in the modal.
      *
@@ -177,12 +179,6 @@ class Table extends Component
         ]);
 
         // $dispatch('openModal', '{{ $data['modal'] }}', {{ json_encode(['action' => $action, 'selected' => $this->selectedRowsQuery->get()]) }})
-    }
-
-    #[Computed]
-    public function rowIds()
-    {
-        return $this->rows->pluck('id')->toArray();
     }
 
     /**
@@ -325,6 +321,11 @@ class Table extends Component
         }
 
         return $this->applySorting($query);
+    }
+
+    public function boot()
+    {
+        $this->rowIds = $this->rows->pluck('id')->toArray();
     }
 
     public function mount($query = null)

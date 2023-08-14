@@ -77,6 +77,8 @@ trait BulkActions
     }
 
 
+
+
     /**
      * Handles updates to selected rows
      *
