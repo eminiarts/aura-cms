@@ -103,6 +103,18 @@ class Edit extends Component
             $this->emit('closeModal');
             $this->emit('refreshTable');
         }
+
+
+        $this->emit('refreshComponent');
+
+        // Redirect to edit page
+
+        $this->redirect(route('aura.post.edit', [$this->slug, $this->model->id]));
+
+
+        $this->model = $this->model->fresh();
+        $this->post = $this->model->attributesToArray();
+
     }
 
 

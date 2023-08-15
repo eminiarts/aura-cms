@@ -1,4 +1,7 @@
-<div x-data="{
+<div
+
+wire:poll.10000ms
+x-data="{
     selected: @entangle('selected').defer,
     rows: @entangle('rowIds').defer, 
     lastSelectedId: null,
