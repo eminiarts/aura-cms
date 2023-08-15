@@ -149,13 +149,13 @@ class Aura
      */
     public function getAppResources()
     {
-        $path = config('aura.resources.path');
+        $path = config('aura.paths.resources.path');
 
         if (! file_exists($path)) {
             return [];
         }
 
-        return $this->getAppFiles($path, $filter = 'Resource', $namespace = config('aura.resources.namespace'));
+        return $this->getAppFiles($path, $filter = 'Resource', $namespace = config('aura.paths.resources.namespace'));
     }
 
     /**
