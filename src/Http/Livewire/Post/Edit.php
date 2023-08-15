@@ -10,6 +10,7 @@ use Eminiarts\Aura\Traits\MediaFields;
 use Eminiarts\Aura\Traits\RepeaterFields;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Support\Arr;
+use Illuminate\Support\Traits\Macroable;
 use Livewire\Component;
 
 class Edit extends Component
@@ -19,6 +20,7 @@ class Edit extends Component
     use InteractsWithFields;
     use MediaFields;
     use RepeaterFields;
+    // use Macroable;
 
     public $inModal = false;
 
@@ -89,7 +91,7 @@ class Edit extends Component
         $this->validate();
 
         unset($this->post['fields']['group']);
-        // dd($this->post);
+        // ray($this->post);
 
         // unset this post fields group
 

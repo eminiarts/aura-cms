@@ -1,5 +1,5 @@
 <x-aura::slide-over key="notifications" wire:key="notifications" >
-    <h1>Notifications</h1>
+    <h1>{{ __('Notifications') }}</h1>
 
     @foreach($this->fieldsForView as $key => $field)
     <style>
@@ -25,7 +25,7 @@
         <div wire:loading>
             <x-aura::icon.loading  />
         </div>
-        Mark all as read
+        {{ __('Mark all as read') }}
     </x-aura::button>
 
 </x-aura::slide-over>

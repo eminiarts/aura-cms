@@ -245,6 +245,20 @@ class Attachment extends Resource
         return asset('storage/'.$this->url);
     }
 
+
+    public function filePath($size = null)
+    {
+        // Base storage directory
+        $basePath = storage_path('app/public');
+
+        if ($size) {
+            $relativePath = Str::after($this->url, 'media/');
+            return $basePath . '/' . $size . '/' . $relativePath;
+        }
+
+        return $basePath . '/' . $this->url;
+    }
+
     public function tableGridView()
     {
         return 'aura::attachment.grid';
