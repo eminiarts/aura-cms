@@ -1,5 +1,7 @@
 <?php
 
+use Eminiarts\Aura\Resources\User;
+
 return [
     /*
     |--------------------------------------------------------------------------
@@ -50,6 +52,10 @@ return [
 
     'teams' => true,
 
+    'resources' => [
+        'user' => User::class,
+    ],
+
     /*
     |--------------------------------------------------------------------------
     | Resources
@@ -60,22 +66,24 @@ return [
     |
     */
 
-    'resources' => [
-        'namespace' => 'App\\Aura\\Resources',
-        'path' => app_path('Aura/Resources'),
-        'register' => [],
-    ],
+    'paths' => [
+        'resources' => [
+            'namespace' => 'App\\Aura\\Resources',
+            'path' => app_path('Aura/Resources'),
+            'register' => [],
+        ],
 
-    'taxonomies' => [
-        'namespace' => 'App\\Aura\\Taxonomies',
-        'path' => app_path('Aura/Taxonomies'),
-        'register' => [],
-    ],
+        'taxonomies' => [
+            'namespace' => 'App\\Aura\\Taxonomies',
+            'path' => app_path('Aura/Taxonomies'),
+            'register' => [],
+        ],
 
-    'fields' => [
-        'namespace' => 'App\\Aura\\Fields',
-        'path' => app_path('Aura/Fields'),
-        'register' => [],
+        'fields' => [
+            'namespace' => 'App\\Aura\\Fields',
+            'path' => app_path('Aura/Fields'),
+            'register' => [],
+        ],
     ],
 
     /*
