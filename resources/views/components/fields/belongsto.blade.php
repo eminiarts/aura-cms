@@ -26,14 +26,11 @@ if(optional($field)['api']) {
 
 @endphp
 
-{{-- @dump($field['resource']) --}}
-{{-- @dump($this->post['fields'][$field['slug']]) --}}
 
 <div wire:key="belongsto-{{ $field['slug'] }}" class="w-full">
     <x-aura::fields.wrapper :field="$field">
 
-        {{-- @dump($this->post) --}}
-        {{-- {{ $this->post['fields'][$field['slug']] }} --}}
+
         <div
             class="w-full"
             wire:ignore
@@ -45,6 +42,7 @@ if(optional($field)['api']) {
                 model: {{ Js::from($field['resource']) }},
                 field: {{ Js::from($field['type']) }},
                 slug: '{{ $field['slug'] }}',
+                disabled: {{ optional($field)['disabled'] ? 'true' : 'false' }},
                 csrf: document.querySelector('meta[name=\'csrf-token\']').getAttribute('content'),
 
                 search: null,
@@ -111,6 +109,7 @@ if(optional($field)['api']) {
 
                 <button
                     x-listbox:button
+                    :disabled="disabled"
                     class="
                         shadow-xs border border-gray-500/30 appearance-none px-3 py-2 focus:outline-none w-full ring-gray-900/10 focus:ring focus:border-primary-300 focus:ring-primary-300  focus:ring-opacity-50 dark:focus:ring-primary-500 dark:focus:ring-opacity-50 disabled:opacity-75 disabled:bg-gray-100 disabled:dark:bg-gray-800 bg-white dark:bg-gray-900 dark:border-gray-700 z-[1]
 
