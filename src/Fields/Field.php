@@ -34,6 +34,15 @@ class Field
         return $this->component;
     }
 
+    public function isDisabled($model, $field)
+    {
+        if (optional($field)['disabled'] instanceof \Closure) {
+            return $field['disabled']($model);
+        }
+
+        return $field['disabled'] ?? false;
+    }
+
     public function display($field, $value, $model)
     {
         return $value;

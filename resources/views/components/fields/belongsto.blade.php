@@ -12,6 +12,8 @@ if(optional($field)['api']) {
     $values = $field['field']->values($field['resource']);
 }
 
+$disabled = $field['field']->isDisabled($this->post, $field);
+
 // Paginate the results
 
 // For Users
@@ -42,7 +44,7 @@ if(optional($field)['api']) {
                 model: {{ Js::from($field['resource']) }},
                 field: {{ Js::from($field['type']) }},
                 slug: '{{ $field['slug'] }}',
-                disabled: {{ optional($field)['disabled'] ? 'true' : 'false' }},
+                disabled: @js($disabled),
                 csrf: document.querySelector('meta[name=\'csrf-token\']').getAttribute('content'),
 
                 search: null,
