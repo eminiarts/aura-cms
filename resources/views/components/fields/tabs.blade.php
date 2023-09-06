@@ -7,14 +7,13 @@
 
 <div
     x-data="{
-        selectedId: null,
+        selectedId: 'tab-1',
         init() {
             // Set the first available tab on the page on page load.
             this.$nextTick(() => this.select(this.$id('tab', 0)))
         },
         select(id) {
             this.selectedId = id
-            console.log('select', id);
         },
         isSelected(id) {
             return this.selectedId === id
