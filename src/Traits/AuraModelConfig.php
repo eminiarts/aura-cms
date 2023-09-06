@@ -415,6 +415,16 @@ trait AuraModelConfig
         return 'aura::components.table.table';
     }
 
+    public function editHeaderView()
+    {
+        return 'aura::livewire.post.edit-header';
+    }
+
+    public function viewHeaderView()
+    {
+        return 'aura::livewire.post.view-header';
+    }
+
     public function team()
     {
         return $this->belongsTo(Team::class);
