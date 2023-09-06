@@ -137,7 +137,7 @@
 
                 </div>
 
-                <div class="bg-white dark:bg-gray-900 h-[4px] w-full mt-0">
+                <div class="bg-transparent dark:bg-gray-900 h-[4px] w-full mt-0" x-show="isUploading">
                     <div class="bg-primary-500 h-[4px]" style="transition: width 0.5s" :style="`width: ${progress}%;`"
                         x-show="isUploading">
                     </div>
@@ -149,7 +149,7 @@
 
                       <div>
                             <label for="file-upload">
-                                <p class="mb-2 text-sm text-gray-500 dark:text-gray-400">Datei hierhin ziehen oder <span class="text-primary-400">hier klicken</span> um eine Datei hochzuladen.</p>
+                                <p class="mb-4 text-sm text-gray-900 dark:text-gray-400">Datei hierhin ziehen oder <span class="text-primary-400">hier klicken</span> um eine Datei hochzuladen.</p>
 
                                 {{-- <input type="file" id="file-upload" multiple @change="handleFileSelect" class="hidden"
                                     wire:model.defer="media" /> --}}
