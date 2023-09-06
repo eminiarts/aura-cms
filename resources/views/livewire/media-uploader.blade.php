@@ -61,7 +61,7 @@
                 console.log('file upload');
             },
             handleFileSelect(event) {
-                console.log('handleFileSelect');
+                console.log('handleFileSelect', event.target.files);
                 if (event.target.files.length) {
                     this.uploadFiles(event.target.files)
                 }
@@ -73,6 +73,7 @@
                 }
             },
             uploadFiles(files) {
+                console.log('upload files', files);
                 const $this = this
                 this.isUploading = true
                 @this.uploadMultiple('media', files,
