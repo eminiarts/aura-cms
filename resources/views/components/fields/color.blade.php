@@ -16,7 +16,7 @@
                 },
             }"
         >
-            <x-aura::input.text :disabled="optional($field)['disabled']" x-model="color" error="post.fields.{{ optional($field)['slug'] }}" placeholder="{{ optional($field)['placeholder'] ?? optional($field)['name'] }}" id="post-field-{{ optional($field)['slug'] }}"></x-aura::input.text>
+            <x-aura::input.text :disabled="$field['field']->isDisabled($this->post, $field)" x-model="color" error="post.fields.{{ optional($field)['slug'] }}" placeholder="{{ optional($field)['placeholder'] ?? optional($field)['name'] }}" id="post-field-{{ optional($field)['slug'] }}"></x-aura::input.text>
 
             <input type="color" x-model="color" class="absolute z-10 w-6 h-6 transform -translate-y-1/2 border-none rounded-full cursor-pointer top-1/2 right-4" />
         </div>
@@ -128,7 +128,7 @@
         </div>
 
         <div class="ml-2">
-            <x-aura::input.text :disabled="optional($field)['disabled']" x-model="selectedColor" error="post.fields.{{ optional($field)['slug'] }}" placeholder="{{ optional($field)['placeholder'] ?? optional($field)['name'] }}" id="post-field-{{ optional($field)['slug'] }}"></x-aura::input.text>
+            <x-aura::input.text :disabled="$field['field']->isDisabled($this->post, $field)" x-model="selectedColor" error="post.fields.{{ optional($field)['slug'] }}" placeholder="{{ optional($field)['placeholder'] ?? optional($field)['name'] }}" id="post-field-{{ optional($field)['slug'] }}"></x-aura::input.text>
         </div>
     </div>
 

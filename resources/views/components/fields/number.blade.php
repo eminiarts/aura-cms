@@ -1,6 +1,6 @@
 <x-aura::fields.wrapper :field="$field">
     <x-aura::input.text
-        :disabled="optional($field)['disabled']"
+        :disabled="$field['field']->isDisabled($this->post, $field)"
         suffix="{{ optional($field)['suffix'] }}"
         prefix="{{ optional($field)['prefix'] }}"
         type="number"
