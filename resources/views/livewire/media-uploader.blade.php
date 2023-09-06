@@ -63,9 +63,18 @@
             handleFileSelect(event) {
                 console.log('handleFileSelect', event.target.files);
                 if (event.target.files.length) {
-                    this.uploadFiles(event.target.files)
+                    Array.from(event.target.files).forEach(file => {
+                        @this.upload('media', file, (uploadedFilename) => {
+                            console.log('File uploaded:', uploadedFilename);
+                        }, () => {
+                            console.error('Upload error');
+                        }, (event) => {
+                            this.progress = event.detail.progress;
+                        });
+                    });
                 }
             },
+
             handleFileDrop(event) {
                 console.log('handlefiledrop');
                 if (event.dataTransfer.files.length > 0) {
@@ -142,8 +151,11 @@
                             <label for="file-upload">
                                 <p class="mb-2 text-sm text-gray-500 dark:text-gray-400">Datei hierhin ziehen oder <span class="text-primary-400">hier klicken</span> um eine Datei hochzuladen.</p>
 
-                                <input type="file" id="file-upload" multiple @change="handleFileSelect" class="hidden"
-                                    wire:model.defer="media" />
+                                {{-- <input type="file" id="file-upload" multiple @change="handleFileSelect" class="hidden"
+                                    wire:model.defer="media" /> --}}
+
+                                    <input type="file" id="file-upload" multiple @change="handleFileSelect" class="hidden" />
+
                             </label>
                         </div>
                         
