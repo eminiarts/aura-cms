@@ -22,42 +22,42 @@ class Notifications extends Component
         $this->open = true;
     }
 
-     public static function getFields()
-     {
-         return [
-             [
-                 'type' => 'Eminiarts\\Aura\\Fields\\Tab',
-                 'name' => 'Unread',
-                 'slug' => 'tab-unread',
-                 'global' => true,
-             ],
-             [
-                 'type' => 'Eminiarts\\Aura\\Fields\\View',
-                 'name' => 'Unread',
-                 'slug' => 'view-unread',
-                 'view' => 'aura::livewire.notifications-unread',
-             ],
-             [
-                 'type' => 'Eminiarts\\Aura\\Fields\\Tab',
-                 'name' => 'Read',
-                 'slug' => 'tab-read',
-                 'global' => true,
-             ],
-             [
-                 'type' => 'Eminiarts\\Aura\\Fields\\View',
-                 'name' => 'read',
-                 'slug' => 'view-unread',
-                 'view' => 'aura::livewire.notifications-read',
-             ],
-         ];
-     }
+    public static function getFields()
+    {
+        return [
+            [
+                'type' => 'Eminiarts\\Aura\\Fields\\Tab',
+                'name' => 'Unread',
+                'slug' => 'tab-unread',
+                'global' => true,
+            ],
+            [
+                'type' => 'Eminiarts\\Aura\\Fields\\View',
+                'name' => 'Unread',
+                'slug' => 'view-unread',
+                'view' => 'aura::livewire.notifications-unread',
+            ],
+            [
+                'type' => 'Eminiarts\\Aura\\Fields\\Tab',
+                'name' => 'Read',
+                'slug' => 'tab-read',
+                'global' => true,
+            ],
+            [
+                'type' => 'Eminiarts\\Aura\\Fields\\View',
+                'name' => 'read',
+                'slug' => 'view-unread',
+                'view' => 'aura::livewire.notifications-read',
+            ],
+        ];
+    }
 
-     public function getFieldsForViewProperty()
-     {
-         $fields = collect($this->mappedFields());
+    public function getFieldsForViewProperty()
+    {
+        $fields = collect($this->mappedFields());
 
-         return $this->fieldsForView($fields);
-     }
+        return $this->fieldsForView($fields);
+    }
 
     public function getFieldsProperty()
     {
@@ -68,11 +68,17 @@ class Notifications extends Component
 
     public function getNotificationsProperty()
     {
+        if (!auth()->check()) {
+            return [];
+        }
         return auth()->user()->readNotifications;
     }
 
     public function getUnreadNotificationsProperty()
     {
+        if (!auth()->check()) {
+            return [];
+        }
         return auth()->user()->unreadNotifications;
     }
 
