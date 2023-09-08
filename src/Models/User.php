@@ -267,7 +267,7 @@ class User extends Authenticatable
     public function resource()
     {
         // Return \Eminiarts\Aura\Resources\User for this user
-        return $this->hasOne(\Eminiarts\Aura\Resources\User::class, 'id', 'id');
+        return $this->hasOne(config('aura.resources.user'), 'id', 'id');
 
         // Cache the resource so we don't have to query the database every time
         return Cache::remember('user.resource.'.$this->id, now()->addHour(), function () {

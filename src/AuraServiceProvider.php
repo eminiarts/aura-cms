@@ -247,7 +247,7 @@ class AuraServiceProvider extends PackageServiceProvider
             return new Aura();
         });
 
-        // dd(config('aura.resources.user'), \Eminiarts\Aura\Resources\Role::class, );
+        // dd(config('aura.resources.user'));
 
         Aura::registerResources([
             \Eminiarts\Aura\Resources\Attachment::class,
@@ -255,7 +255,8 @@ class AuraServiceProvider extends PackageServiceProvider
             \Eminiarts\Aura\Resources\Post::class,
             \Eminiarts\Aura\Resources\Permission::class,
             \Eminiarts\Aura\Resources\Role::class,
-            \Eminiarts\Aura\Resources\User::class,
+            // \Eminiarts\Aura\Resources\User::class,
+            config('aura.resources.user'),
             // config('aura::resources.user'),
         ]);
 
