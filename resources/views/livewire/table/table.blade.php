@@ -320,7 +320,7 @@ x-data="{
                 </h3>
                 </x-slot>
                 @include('aura::components.table.filters')
-                </x-sidebar>
+        </x-aura::sidebar>
     </main>
 </div> {{-- This closes the context menu --}}
 </div>
