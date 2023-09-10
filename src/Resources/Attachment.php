@@ -22,7 +22,7 @@ class Attachment extends Resource
 
     public static string $type = 'Attachment';
 
-    protected static ?string $group = 'Aura';
+    protected static ?string $group = 'Admin';
 
     public function defaultPerPage()
     {

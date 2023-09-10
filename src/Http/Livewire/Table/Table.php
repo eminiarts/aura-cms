@@ -163,7 +163,9 @@ class Table extends Component
                 $item->callFlow(explode('.', $action)[1]);
             } elseif (str_starts_with($action, 'multiple')) {
                 $posts = $this->selectedRowsQuery->get();
-                $item->{$action}($posts);
+                $response = $item->{$action}($posts);
+
+                // dd($response);
             } elseif (method_exists($item, $action)) {
                 $item->{$action}();
             }
@@ -177,7 +179,12 @@ class Table extends Component
         //$action = $this->model->getBulkActions()[$action];
         $ids = $this->selectedRowsQuery->pluck('id')->toArray();
 
-        $this->model->{$action}($ids);
+        $response = $this->model->{$action}($ids);
+
+
+        if ($response instanceof \Symfony\Component\HttpFoundation\StreamedResponse) {
+            return $response;
+        }
 
         // reset selected rows
         $this->selected = [];

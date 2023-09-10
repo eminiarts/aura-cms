@@ -8,21 +8,19 @@
                 <div>
                     <template x-if="selected">
                         <span>
-                            You have selected
-                            <strong x-text="selected.length"></strong>
-                            <span x-text="selected.length === 1 ? 'row' : 'rows'"></span>.
+                            {{ __('You have selected') }} <strong x-text="selected.length"></strong>
+                            <span x-text="selected.length === 1 ? '{{ __('row') }}' : '{{ __('rows') }}'"></span>.
                         </span>
                     </template>
 
                     <button x-on:click="selectAllRows" type="button"
                         class="ml-1 text-sm font-medium leading-5 text-gray-700 text-primary-600 underline transition duration-150 ease-in-out focus:outline-none focus:text-gray-800 focus:underline dark:text-white dark:hover:text-gray-400">
-                        Select all <strong x-text="total"></strong>
-                        rows
+                        {{ __('Select all') }} 
                     </button>
 
                     <button x-on:click="resetBulk();" type="button"
                         class="ml-1 text-sm font-medium leading-5 text-gray-700 text-primary-600 underline transition duration-150 ease-in-out focus:outline-none focus:text-gray-800 focus:underline dark:text-white dark:hover:text-gray-400">
-                        Unselect All
+                        {{ __('Unselect All') }}
                     </button>
                 </div>
             </template>
@@ -30,14 +28,13 @@
             <template x-if="selectAll" key="select-all">
                 <div>
                     <span>
-                        You are currently selecting all
-                        <strong x-text="selected.length"></strong>
-                        rows.
+                        {{ __('You have selected all') }}
+                        {{-- <strong x-text="selected.length"></strong> --}}
                     </span>
 
                     <button x-on:click="resetBulk()" type="button"
                         class="ml-1 text-sm font-medium leading-5 text-gray-700 text-primary-600 underline transition duration-150 ease-in-out focus:outline-none focus:text-gray-800 focus:underline dark:text-white dark:hover:text-gray-400">
-                        Unselect All
+                        {{ __('Unselect All') }}
                     </button>
                 </div>
             </template>
