@@ -20,7 +20,7 @@
                                 </path>
                             </svg>
 
-                            <h3 class="mt-2 text-sm font-medium text-gray-900">No entries available</h3>
+                            <h3 class="mt-2 text-sm font-medium text-gray-900">{{ __('No entries available') }}</h3>
                         </div>
                     </td>
                 </tr>

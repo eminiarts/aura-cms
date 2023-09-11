@@ -34,14 +34,16 @@
                 </x-aura::button>
             </a>
             @else
-            <a href="{{ $this->createLink }}">
-                <x-aura::button>
-                    <x-slot:icon>
-                        <x-aura::icon icon="plus" />
-                        </x-slot>
-                        <span>{{ __('Create') }} {{ $model->getName() }}</span>
-                </x-aura::button>
-            </a>
+                @can('create', $model)
+                <a href="{{ $this->createLink }}">
+                    <x-aura::button>
+                        <x-slot:icon>
+                            <x-aura::icon icon="plus" />
+                            </x-slot>
+                            <span>{{ __('Create') }} {{ $model->getName() }}</span>
+                    </x-aura::button>
+                </a>
+                @endcan
             @endif
         </div>
     </div>
