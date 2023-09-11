@@ -15,7 +15,59 @@ class BelongsTo extends Field
     public function api($request)
     {
         // Get $searchable from $request->model
-        $searchableFields = app($request->model)->getSearchable();
+        $searchableFields = app($request->model)->getSearchableFields()->pluck('slug');
+
+
+        $metaFields = $searchableFields->filter(function ($field) use ($request) {
+            // check if it is a meta field
+            return app($request->model)->isMetaField($field);
+        });
+
+
+
+
+        $results = app($request->model)->select('posts.*')
+                        ->leftJoin('post_meta', function ($join) use ($metaFields) {
+                            $join->on('posts.id', '=', 'post_meta.post_id')
+                                ->whereIn('post_meta.key', $metaFields);
+                        })
+                        ->where(function ($query) use ($request) {
+                            $query->where('posts.title', 'like', '%'.$request->search.'%')
+                                ->orWhere(function ($query) use ($request) {
+                                    $query->where('post_meta.value', 'LIKE', '%'.$request->search.'%');
+                                });
+                        })
+                        ->distinct()
+                        ->take(20)
+                        ->get()->map(function ($item) {
+                            return [
+                                'id' => $item->id,
+                                'title' => $item->title(),
+                            ];
+                        })->toArray();
+
+
+        // Fetch the model instance using the ID from $request->value
+        if($request->id) {
+
+            $modelInstance = app($request->model)->find($request->id);
+
+            // Append the model instance to the results
+            $results[] = [
+                'id' => $modelInstance->id,
+                'title' => $modelInstance->title(),
+            ];
+
+
+        }
+
+
+
+        // $results = app($request->model)->searchIn($searchableFields, $request->search)->take(20)->get();
+
+        return collect($results)->unique('id')->values()->toArray();
+
+        // dd($searchableFields, $request->model, $request->search);
 
         return app($request->model)->searchIn($searchableFields, $request->search)->take(20)->get()->map(function ($item) {
             return [
@@ -65,5 +117,37 @@ class BelongsTo extends Field
                 'title' => $item->title(),
             ];
         })->toArray();
+    }
+
+    public function valuesForApi($model, $currentId)
+    {
+        $results = app($model)->take(20)->get()->map(function ($item) {
+            return [
+                'id' => $item->id,
+                'title' => $item->title(),
+            ];
+        })->toArray();
+
+
+        // Fetch the model instance using the ID from $request->value
+        if($currentId) {
+
+            $modelInstance = app($model)->find($currentId);
+
+            if(!$modelInstance) {
+                return $results;
+            }
+
+
+            // Append the model instance to the results
+            $results[] = [
+                'id' => $modelInstance->id,
+                'title' => $modelInstance->title(),
+            ];
+
+
+        }
+
+        return $results;
     }
 }
