@@ -1,11 +1,6 @@
 
 @php
 
-// dd($field['field']->values($field['resource']), $field);
-
-// Maybe set a custom display field for BelongsTo fields, eg. email instead of Title
-// $displayField = $field['field']->displayField ?? 'title';
-
 if(optional($field)['api']) {
 //  $values = [];
     $values = $field['field']->valuesForApi($field['resource'], $this->post['fields'][$field['slug']] ?? null);
@@ -15,17 +10,6 @@ if(optional($field)['api']) {
 
 $disabled = $field['field']->isDisabled($this->post, $field);
 
-// Paginate the results
-
-// For Users
-// $values = $field['field']->attributes['values']()->map(function($user) {
-//   return [
-//     'id' => $user->id,
-//     'name' => $user->name,
-//     'email' => $user->email,
-//     'avatar' => 'https://i.pravatar.cc/300'
-//   ];
-// })->toArray();
 
 @endphp
 
@@ -52,9 +36,16 @@ $disabled = $field['field']->isDisabled($this->post, $field);
 
                 get filteredItems() {
 
-                console.log(this.search);
+               
 
                     if (this.search) {
+
+
+                         console.log('filtered items');
+                console.log(this.search);
+                console.log(this.items);
+                console.log(this.items.filter(item => item.title.toLowerCase().includes(this.search.toLowerCase())));
+
                         return this.items.filter(item => item.title.toLowerCase().includes(this.search.toLowerCase()));
                     }
 
@@ -62,6 +53,8 @@ $disabled = $field['field']->isDisabled($this->post, $field);
                 },
 
                 init() {
+
+                    console.log('init belongsto', this.items);
                     // Get Values via API Fetch Call to /api/fields/{field}/values and pass this.model and this.slug as params
                     if (this.api) {
                         this.fetchApi();

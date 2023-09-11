@@ -148,6 +148,6 @@ class BelongsTo extends Field
 
         }
 
-        return $results;
+        return collect($results)->unique('id')->values()->toArray();
     }
 }
