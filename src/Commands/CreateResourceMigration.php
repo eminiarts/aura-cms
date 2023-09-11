@@ -95,7 +95,7 @@ class CreateResourceMigration extends Command
         $slug = $field['slug'];
 
         return match ($type) {
-            'Eminiarts\\Aura\\Fields\\Text' => "\$table->string('{$slug}');\n",
+            'Eminiarts\\Aura\\Fields\\Text' => "\$table->string('{$slug}')->nullable();\n",
             'Eminiarts\Aura\Fields\Slug' => "\$table->string('{$slug}')->unique();\n",
             'Eminiarts\Aura\Fields\Image' => "\$table->text('{$slug}')->nullable();\n",
             'Eminiarts\Aura\Fields\Password' => "\$table->string('{$slug}')->nullable();\n",

@@ -7,7 +7,8 @@
 // $displayField = $field['field']->displayField ?? 'title';
 
 if(optional($field)['api']) {
- $values = [];
+//  $values = [];
+    $values = $field['field']->valuesForApi($field['resource'], $this->post['fields'][$field['slug']] ?? null);
 } else {
     $values = $field['field']->values($field['resource']);
 }
@@ -28,7 +29,7 @@ $disabled = $field['field']->isDisabled($this->post, $field);
 
 @endphp
 
-
+{{-- @dump($this->post['fields'][$field['slug']]) --}}
 <div wire:key="belongsto-{{ $field['slug'] }}" class="w-full">
     <x-aura::fields.wrapper :field="$field">
 
@@ -77,11 +78,19 @@ $disabled = $field['field']->isDisabled($this->post, $field);
                 },
 
                 findItem(id) {
-                    return this.items.find(item => item.id === id).title;
+                    if (this.items) {
+                        let foundItem = this.items.find(item => item.id === id);
+                        return foundItem ? foundItem.title : null;
+                    }
+                    return null;
                 },
 
                 fetchApi() {
-                    fetch('/api/fields/values', {
+
+                    let currentId = this.value;
+                    let vm = this;
+
+                    fetch('/admin/api/fields/values', {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
@@ -92,11 +101,14 @@ $disabled = $field['field']->isDisabled($this->post, $field);
                             slug: this.slug,
                             field: this.field,
                             search: this.search,
+                            id: this.value,
                         }),
                     })
                     .then(response => response.json())
                     .then(data => {
-                        this.items = data;
+                        vm.items = data;
+                        vm.value = currentId;
+                        console.log('setting current id', currentId);
                     });
                 }
 
