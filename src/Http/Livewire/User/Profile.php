@@ -86,9 +86,8 @@ class Profile extends Component
                 ],
             ],
             [
-                'name' => 'Avatar',
+                'name' => 'Signatur',
                 'type' => 'Eminiarts\\Aura\\Fields\\Image',
-                'max' => '1',
                 'validation' => ['nullable', 'array', 'max:1',
                     function (string $attribute, mixed $value, Closure $fail) {
 
@@ -105,7 +104,7 @@ class Profile extends Component
                     },
                 ],
                 'conditional_logic' => [],
-                'slug' => 'avatar',
+                'slug' => 'signatur',
                 'style' => [
                     'width' => '100',
                 ],
@@ -260,8 +259,11 @@ class Profile extends Component
 
     public function save()
     {
+        // dd('save', $this->rules());
         // ray($this->post['fields'], $this->rules());
         $this->validate();
+
+        // dd('hier');
 
         // if $this->post['fields']['current_password'] and  is set, save password
         if (optional($this->post['fields'])['current_password'] && optional($this->post['fields'])['password']) {
