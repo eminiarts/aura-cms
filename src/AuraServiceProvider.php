@@ -222,7 +222,7 @@ class AuraServiceProvider extends PackageServiceProvider
         });
 
         Blade::if('local', function () {
-            return ! app()->environment('production');
+            return app()->environment('local');
         });
 
         Blade::if('production', function () {
