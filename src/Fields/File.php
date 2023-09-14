@@ -6,10 +6,14 @@ class File extends Field
 {
     public $component = 'aura::fields.file';
 
-    // public $view = 'components.fields.file';
+    public $view = 'aura::fields.view-value';
 
     public function get($field, $value)
     {
+        if (is_array($value)) {
+            return $value;
+        }
+
         return json_decode($value, true);
     }
 

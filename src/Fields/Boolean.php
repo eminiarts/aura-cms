@@ -6,7 +6,7 @@ class Boolean extends Field
 {
     public $component = 'aura::fields.boolean';
 
-    // public $view = 'components.fields.boolean';
+    public $view = 'aura::fields.view-value';
 
     public function get($field, $value)
     {
