@@ -132,7 +132,13 @@ class Table extends Component
         'refreshTable' => '$refresh',
         'selectedRows' => 'selectRows',
         'selectRowsRange' => 'selectRowsRange',
+        'refreshTableSelected' => 'refreshTableSelected',
     ];
+
+    public function refreshTableSelected()
+    {
+        $this->selected = [];
+    }
 
     public function action($data)
     {
@@ -200,7 +206,7 @@ class Table extends Component
 
         $this->emit('openModal', $data['modal'], [
             'action' => $action,
-            'selected' => $this->selectedRowsQuery->get(),
+            'selected' => $this->selectedRowsQuery->pluck('id'),
             'model' => get_class($this->model),
         ]);
 
