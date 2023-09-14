@@ -6,6 +6,8 @@ class Select extends Field
 {
     public $component = 'aura::fields.select';
 
+    public $view = 'aura::fields.view-value';
+
     public function getFields()
     {
         return array_merge(parent::getFields(), [
