@@ -58,6 +58,11 @@ return [
 
     'views' => [
         'layout' => 'aura::layouts.app',
+        'dashboard' => 'aura::dashboard',
+        'index' => 'aura::index',
+        'view' => 'aura::view',
+        'create' => 'aura::create',
+        'edit' => 'aura::edit',
     ],
 
     'resource-view-enabled' => true,
