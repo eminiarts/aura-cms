@@ -86,9 +86,13 @@ class AuraServiceProvider extends PackageServiceProvider
         Gate::policy(User::class, UserPolicy::class);
 
         Gate::before(function ($user, $ability) {
-            if ($user->resource->isSuperAdmin()) {
-                return true;
-            }
+            //  if ($ability == 'view' && config('aura.resource-view-enabled') === false) {
+            //     return false;
+            // }
+            
+            // if ($user->resource->isSuperAdmin()) {
+            //     return true;
+            // }
         });
 
         return $this;

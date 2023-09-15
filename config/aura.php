@@ -56,6 +56,15 @@ return [
         'user' => User::class,
     ],
 
+    'views' => [
+        'layout' => 'aura::layouts.app',
+    ],
+
+    'resource-view-enabled' => true,
+
+    'resource-edit-enabled' => true,
+
+
     /*
     |--------------------------------------------------------------------------
     | Resources

@@ -414,6 +414,23 @@ class User extends UserModel
         return false;
     }
 
+    public function hasAnyRole(array $roles): bool
+    {
+        $cachedRoles = $this->cachedRoles()->pluck('slug');
+
+        if (! $cachedRoles) {
+            return false;
+        }
+
+        foreach ($cachedRoles as $role) {
+            if (in_array($role, $roles)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     /**
      * Returns true if the user has at least one role that is a super admin.
      */

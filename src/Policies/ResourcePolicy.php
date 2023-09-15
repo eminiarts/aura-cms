@@ -17,6 +17,10 @@ class ResourcePolicy
      */
     public function create(User $user, $resource)
     {
+        if ($user->resource->isSuperAdmin()) {
+            return true;
+        }
+
         if ($user->resource->hasPermissionTo('create', $resource)) {
             return true;
         }
@@ -32,6 +36,10 @@ class ResourcePolicy
      */
     public function delete(User $user, Resource $resource)
     {
+        if ($user->resource->isSuperAdmin()) {
+            return true;
+        }
+
         // Scoped Posts
         if ($user->resource->hasPermissionTo('scope', $resource) && $user->resource->hasPermissionTo('delete', $resource)) {
             if ($resource->user_id == $user->id) {
@@ -71,6 +79,9 @@ class ResourcePolicy
      */
     public function restore(User $user, Resource $resource)
     {
+        if ($user->resource->isSuperAdmin()) {
+            return true;
+        }
         if ($user->resource->hasPermissionTo('restore', $resource)) {
             return true;
         }
@@ -86,6 +97,10 @@ class ResourcePolicy
      */
     public function update(User $user, $resource)
     {
+        if ($user->resource->isSuperAdmin()) {
+            return true;
+        }
+
         // Scoped Posts
         if ($user->resource->hasPermissionTo('scope', $resource) && $user->resource->hasPermissionTo('update', $resource)) {
             //dd('scope should be called', $resource->user_id == $user->id, $resource->user_id, $user->id);
@@ -114,6 +129,22 @@ class ResourcePolicy
      */
     public function view(User $user, $resource)
     {
+        // Check if the config resource view is enabled
+        if (config('aura.resource-view-enabled') === false) {
+            return false;
+        }
+
+        // Check if the resource view is enabled
+        if ($resource::$viewEnabled === false) {
+            return false;
+        }
+
+        // Check if the user is a superadmin
+        if ($user->resource->isSuperAdmin()) {
+            return true;
+        }
+        
+        
         // Scoped Posts
         if ($user->resource->hasPermissionTo('scope', $resource) && $user->resource->hasPermissionTo('view', $resource)) {
             if ($resource->user_id == $user->id) {
@@ -137,6 +168,10 @@ class ResourcePolicy
      */
     public function viewAny(User $user, $resource)
     {
+        if ($user->resource->isSuperAdmin()) {
+            return true;
+        }
+
         // ray('hier im view any', $user, $resource);
         if ($user->resource->hasPermissionTo('viewAny', $resource)) {
             return true;
