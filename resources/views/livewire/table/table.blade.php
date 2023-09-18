@@ -1,6 +1,6 @@
 <div
 
-wire:poll.10000ms
+{{-- wire:poll.10000ms --}}
 x-data="{
     selected: @entangle('selected').defer,
     rows: @entangle('rowIds').defer, 

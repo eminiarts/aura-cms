@@ -44,11 +44,6 @@ class Role extends Resource
         GenerateAllResourcePermissions::dispatch();
     }
 
-    public function delete()
-    {
-        dd('delete');
-    }
-
     public static function getFields()
     {
         return [

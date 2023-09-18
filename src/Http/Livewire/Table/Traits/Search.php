@@ -27,8 +27,6 @@ trait Search
                 return $this->model->isMetaField($field);
             });
 
-
-
             if($metaFields->count() > 0) {
                 $query
                 ->select($this->model->getTable() . '.*')

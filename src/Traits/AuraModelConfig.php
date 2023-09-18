@@ -424,6 +424,21 @@ trait AuraModelConfig
         return 'aura::livewire.post.edit-header';
     }
 
+    public function createView()
+    {
+        return 'aura::livewire.post.create';
+    }
+
+    public function editView()
+    {
+        return 'aura::livewire.post.edit';
+    }
+
+    public function indexView()
+    {
+        return 'aura::livewire.post.index';
+    }
+
     public function viewHeaderView()
     {
         return 'aura::livewire.post.view-header';
