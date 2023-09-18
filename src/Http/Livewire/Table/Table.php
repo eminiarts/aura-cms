@@ -26,6 +26,8 @@ class Table extends Component
 
     public $rowIds;
 
+    public $loaded = false;
+
     /**
      * List of table columns.
      *
@@ -134,6 +136,10 @@ class Table extends Component
         'selectRowsRange' => 'selectRowsRange',
         'refreshTableSelected' => 'refreshTableSelected',
     ];
+
+    public function loadTable() {
+        $this->loaded = true;
+    }
 
     public function refreshTableSelected()
     {
@@ -348,7 +354,7 @@ class Table extends Component
     }
 
     public function mount($query = null)
-    {
+    {        
         if ($this->parentModel) {
             // dd($this->parentModel);
         }

@@ -35,6 +35,6 @@ class Index extends Component
 
     public function render()
     {
-        return view('aura::livewire.post.index')->layout('aura::components.layout.app');
+        return view($this->post->indexView())->layout('aura::components.layout.app');
     }
 }
