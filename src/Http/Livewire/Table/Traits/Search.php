@@ -22,7 +22,6 @@ trait Search
 
             $searchableFields = $this->model->getSearchableFields()->pluck('slug');
 
-
             $metaFields = $searchableFields->filter(function ($field) {
                 return $this->model->isMetaField($field);
             });
@@ -40,20 +39,17 @@ trait Search
                             $query->where('post_meta.value', 'LIKE', '%'.$this->search.'%');
                         });
                 })
-                        //    ->distinct()
                          ->groupBy($this->model->getTable() . '.id')
-                           //->orderBy('posts.id', 'desc')
                 ;
             }
 
-            // dd($searchableFields, $metaFields, $query);
-
-            // $query->where(function ($query) {
-            //     foreach ($this->model->searchableColumns() as $column) {
-            //         $query->orWhere($column, 'like', '%'.$this->search.'%');
-            //     }
-            // });
+            // Check if there is a search method in the model (modifySearch()), and call it.
+            if (method_exists($this->model, 'modifySearch')) {
+                $query = $this->model->modifySearch($query, $this->search);
+            }
         }
+
+       
 
         return $query;
     }
