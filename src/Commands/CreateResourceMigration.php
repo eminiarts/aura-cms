@@ -165,6 +165,7 @@ class CreateResourceMigration extends Command
             'Eminiarts\\Aura\\Fields\\Textarea' => "\$table->text('{$slug}')->nullable();\n",
             'Eminiarts\\Aura\\Fields\\Color' => "\$table->string('{$slug}')->nullable();\n",
             'Eminiarts\\Aura\\Fields\\BelongsTo' => "\$table->foreignId('{$slug}')->nullable();\n",
+            'Eminiarts\\Aura\\Fields\\Boolean' => "\$table->boolean('{$slug}')->nullable();\n",
             // 'Eminiarts\Aura\Fields\Tags', 'Eminiarts\Aura\Fields\BelongsTo' => {
             //     $relatedResource = $field['resource'];
             //     $relatedModel = new $relatedResource();
