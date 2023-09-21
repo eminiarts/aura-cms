@@ -355,6 +355,10 @@ class Table extends Component
 
     public function mount($query = null)
     {        
+        // if(!$this->loaded) {
+        //     return;
+        // }
+
         if ($this->parentModel) {
             // dd($this->parentModel);
         }
