@@ -126,7 +126,7 @@ class CreateResourceMigration extends Command
         $content = $this->files->get($migrationFile);
 
         // Up method
-        $pattern = '/(public function up\(\): void[\s\S]*?Schema::table\(.*?function \(Blueprint \$table\) \{[\s\S]*?)\/\/([\s\S]*?\}\);[\s\S]*?\})/';
+        $pattern = '/(public function up\(\): void[\s\S]*?Schema::create\(.*?function \(Blueprint \$table\) \{[\s\S]*?)\/\/([\s\S]*?\}\);[\s\S]*?\})/';
         $replacement = '${1}'.$schema.'${2}';
         $replacedContent = preg_replace($pattern, $replacement, $content);
 
