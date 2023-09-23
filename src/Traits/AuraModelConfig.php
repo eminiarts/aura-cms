@@ -87,7 +87,7 @@ trait AuraModelConfig
         $this->baseFillable = $this->getFillable();
 
         // Merge fillable fields from fields
-        $this->mergeFillable($this->getFieldSlugs()->toArray());
+        $this->mergeFillable($this->inputFieldsSlugs()->toArray());
     }
 
     /**
