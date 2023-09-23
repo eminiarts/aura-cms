@@ -110,6 +110,12 @@ trait InputFieldsHelpers
         return $this->getFieldsBeforeTree()->filter(fn ($item) => in_array($item['field_type'], ['input', 'repeater', 'group']));
     }
 
+    public function inputFieldsSlugs()
+    {
+        
+        return $this->inputFields()->pluck('slug');
+    }
+
     public function mappedFieldBySlug($slug)
     {
         // dd($this->mappedFields(), $this->newFields);
