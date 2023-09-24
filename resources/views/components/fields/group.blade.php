@@ -26,7 +26,7 @@ $model = $this->model;
     <div class="flex flex-wrap items-start -mx-2">
       @if(optional($field)['fields'])
       @foreach($field['fields'] as $key => $field)
-      <x-aura::fields.conditions :field="$field" :model="$this->post">
+      <x-aura::fields.conditions :field="$field" :model="$this->model">
         <x-dynamic-component :component="$field['field']->component" :field="$field" />
         </x-aura::fields.conditions>
         @endforeach

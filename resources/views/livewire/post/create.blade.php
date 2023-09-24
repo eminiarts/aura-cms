@@ -57,7 +57,7 @@
 
             <div class="flex flex-wrap items-start -mx-2">                
            @foreach($this->createFields as $key => $field)
-            @checkCondition($post['fields'], $field)
+            @checkCondition($model, $field)
                     <x-dynamic-component :component="$field['field']->component" :field="$field" wire:key="post-field-{{ $key }}" />
             @endcheckCondition
             @endforeach

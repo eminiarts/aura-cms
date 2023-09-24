@@ -30,6 +30,8 @@ class ConditionalLogic
 
             // if condition is a closure, run it
             if ($condition instanceof \Closure) {
+
+
                 $show = $condition($model);
 
                 if ($show === false) {
