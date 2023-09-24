@@ -25,26 +25,39 @@ class BelongsTo extends Field
 
 
 
+        if(app($request->model)->usesCustomTable()) {
+            $results = app($request->model)->searchIn($searchableFields->toArray(), $request->search)->take(20)->get()->map(function ($item) {
+                return [
+                    'id' => $item->id,
+                    'title' => $item->title(),
+                ];
+            })->toArray();
 
-        $results = app($request->model)->select('posts.*')
-                        ->leftJoin('post_meta', function ($join) use ($metaFields) {
-                            $join->on('posts.id', '=', 'post_meta.post_id')
-                                ->whereIn('post_meta.key', $metaFields);
-                        })
-                        ->where(function ($query) use ($request) {
-                            $query->where('posts.title', 'like', '%'.$request->search.'%')
-                                ->orWhere(function ($query) use ($request) {
-                                    $query->where('post_meta.value', 'LIKE', '%'.$request->search.'%');
-                                });
-                        })
-                        ->distinct()
-                        ->take(20)
-                        ->get()->map(function ($item) {
-                            return [
-                                'id' => $item->id,
-                                'title' => $item->title(),
-                            ];
-                        })->toArray();
+        } else {
+
+            $results = app($request->model)->select('posts.*')
+                                   ->leftJoin('post_meta', function ($join) use ($metaFields) {
+                                       $join->on('posts.id', '=', 'post_meta.post_id')
+                                           ->whereIn('post_meta.key', $metaFields);
+                                   })
+                                   ->where(function ($query) use ($request) {
+                                       $query->where('posts.title', 'like', '%'.$request->search.'%')
+                                           ->orWhere(function ($query) use ($request) {
+                                               $query->where('post_meta.value', 'LIKE', '%'.$request->search.'%');
+                                           });
+                                   })
+                                   ->distinct()
+                                   ->take(20)
+                                   ->get()->map(function ($item) {
+                                       return [
+                                           'id' => $item->id,
+                                           'title' => $item->title(),
+                                       ];
+                                   })->toArray();
+
+        }
+
+
 
 
         // Fetch the model instance using the ID from $request->value
