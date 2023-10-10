@@ -80,15 +80,15 @@ trait AuraModelConfig
 
     public static $editEnabled = true;
 
-    // public function __construct(array $attributes = [])
-    // {
-    //     parent::__construct($attributes);
+    public function __construct(array $attributes = [])
+    {
+        parent::__construct($attributes);
 
-    //     $this->baseFillable = $this->getFillable();
+        $this->baseFillable = $this->getFillable();
 
-    //     // Merge fillable fields from fields
-    //     //$this->mergeFillable($this->inputFieldsSlugs()->toArray());
-    // }
+        // Merge fillable fields from fields
+        //$this->mergeFillable($this->inputFieldsSlugs()->toArray());
+    }
 
     /**
      * @param  string  $key

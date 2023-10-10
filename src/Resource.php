@@ -66,10 +66,12 @@ class Resource extends Model
             return $value;
         }
 
-        return $value;
+        // If the key is in the fields array, then we want to return that
+        if(is_null($value) && isset($this->fields[$key])) {
+            return $this->fields[$key];
+        }
 
-        // Not sure if this is the best way to do this
-        return $this->displayFieldValue($key, $value);
+        return $value;
     }
 
     /**

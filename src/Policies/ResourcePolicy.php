@@ -168,9 +168,6 @@ class ResourcePolicy
      */
     public function viewAny(User $user, $resource)
     {
-        // Temporary Fix
-        return true;
-
         if ($user->resource->isSuperAdmin()) {
             return true;
         }
