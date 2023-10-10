@@ -438,6 +438,7 @@ class User extends UserModel
     {
         $roles = $this->cachedRoles();
 
+
         if (! $roles) {
             return false;
         }
@@ -447,6 +448,8 @@ class User extends UserModel
                 return true;
             }
         }
+
+        // dump($roles->toArray());
 
         return false;
 
