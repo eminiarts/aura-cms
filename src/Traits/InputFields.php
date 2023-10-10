@@ -3,6 +3,7 @@
 namespace Eminiarts\Aura\Traits;
 
 use Eminiarts\Aura\ConditionalLogic;
+use Illuminate\Support\Facades\Cache;
 use Eminiarts\Aura\Pipeline\ApplyTabs;
 use Eminiarts\Aura\Pipeline\MapFields;
 use Eminiarts\Aura\Pipeline\AddIdsToFields;
@@ -42,6 +43,8 @@ trait InputFields
 
     public function displayFieldValue($key, $value = null)
     {
+        // return $value;
+
         // Check Conditional Logic if the field should be displayed
         if (! $this->shouldDisplayField($this->fieldBySlug($key))) {
             return;
@@ -131,26 +134,26 @@ trait InputFields
         return $this->sendThroughPipeline($fields, $pipes);
     }
 
-     public function fieldsHaveClosures($fields)
-     {
-         foreach ($fields as $field) {
-             foreach ($field as $value) {
-                 if (is_array($value)) {
-                     if ($this->fieldsHaveClosures([$value])) {
-                         return true;
-                     }
-                 } elseif ($value instanceof \Closure) {
-                     return true;
-                 }
-             }
-         }
+    public function fieldsHaveClosures($fields)
+    {
+        foreach ($fields as $field) {
+            foreach ($field as $value) {
+                if (is_array($value)) {
+                    if ($this->fieldsHaveClosures([$value])) {
+                        return true;
+                    }
+                } elseif ($value instanceof \Closure) {
+                    return true;
+                }
+            }
+        }
 
-         return false;
-     }
+        return false;
+    }
 
     public function getAccessibleFieldKeys()
     {
-        if ($this->accessibleFieldKeysCache === null) {
+        return Cache::remember(get_class($this) . '-accessibleFieldKeys', 3600, function () {
             // Apply Conditional Logic of Parent Fields
             $fields = $this->sendThroughPipeline($this->fieldsCollection(), [
                 ApplyTabs::class,
@@ -161,39 +164,51 @@ trait InputFields
             ]);
 
             // Get all input fields
-            $this->accessibleFieldKeysCache = $fields
+            return $this->accessibleFieldKeysCache = $fields
                 ->filter(function ($field) {
                     return $field['field']->isInputField();
                 })
                 ->pluck('slug')
-                ->filter(function ($field) {
-                    // return true;
-                    return $this->shouldDisplayField($this->fieldBySlug($field));
-                })
+                // ->filter(function ($field) {
+                //     // return true;
+                //     return $this->shouldDisplayField($this->fieldBySlug($field));
+                // })
                 ->toArray();
-        }
-
-        return $this->accessibleFieldKeysCache;
+        });
     }
 
     public function getFieldsBeforeTree($fields = null)
     {
-        // If fields is set and is an array, create a collection
-        if ($fields && is_array($fields)) {
-            $fields = collect($fields);
+        $cacheKey = get_class($this) . "-getFieldsBeforeTree";
+
+        if (! app()->bound($cacheKey)) {
+            // ray()->count();
+            // ray($cacheKey);
+            // If fields is set and is an array, create a collection
+            if ($fields && is_array($fields)) {
+                $fields = collect($fields);
+            }
+
+            if (! $fields) {
+                $fields = $this->fieldsCollection();
+            }
+
+            $fieldsBeforeTree = $this->sendThroughPipeline($fields, [
+                MapFields::class,
+                AddIdsToFields::class,
+                TransformSlugs::class,
+                ApplyParentConditionalLogic::class,
+                DoNotDeferConditionalLogic::class,
+            ]);
+
+            app()->singleton($cacheKey, function () use ($fieldsBeforeTree) {
+                return $fieldsBeforeTree;
+            });
+
         }
 
-        if (! $fields) {
-            $fields = $this->fieldsCollection();
-        }
+        return app($cacheKey);
 
-        return $this->sendThroughPipeline($fields, [
-            MapFields::class,
-            AddIdsToFields::class,
-            TransformSlugs::class,
-            ApplyParentConditionalLogic::class,
-            DoNotDeferConditionalLogic::class,
-        ]);
     }
 
     // Used in Posttype
@@ -221,6 +236,8 @@ trait InputFields
      */
     public function getGroupedFields($fields = null, $pipes = null): array
     {
+        // ray()->count();
+
         // If fields is set and is an array, create a collection
         if ($fields && is_array($fields)) {
             $fields = collect($fields);
@@ -265,6 +282,8 @@ trait InputFields
      */
     public function mapToGroupedFields($fields)
     {
+        // ray()->count();
+
         $fields = collect($fields)->map(function ($item) {
             $item['field'] = app($item['type'])->field($item);
             $item['field_type'] = app($item['type'])->type;

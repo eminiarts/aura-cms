@@ -36,31 +36,48 @@ trait InputFieldsHelpers
 
     public function fieldClassBySlug($slug)
     {
-        if (optional($this->fieldBySlug($slug))['type']) {
-            return app($this->fieldBySlug($slug)['type']);
-        }
 
-        return false;
+        $cacheKey = $this->getFieldCacheKey() . "fieldClassBySlug-" . $slug;
+
+        return Cache::remember($cacheKey, 3600, function () use ($slug) {
+            if (optional($this->fieldBySlug($slug))['type']) {
+                return app($this->fieldBySlug($slug)['type']);
+            }
+            return false;
+        });
+
+        // if (optional($this->fieldBySlug($slug))['type']) {
+        //     return app($this->fieldBySlug($slug)['type']);
+        // }
+        // return false;
     }
 
     public function fieldsCollection()
     {
         return collect($this->getFields());
 
-        // Generate the cache key based on the model class
+
         $cacheKey = $this->getFieldCacheKey();
 
-        // Check if the cache already contains the result for this model class
-        if (! app()->bound($cacheKey)) {
-            // If the cache doesn't contain the result, calculate it and store it in the cache
-            $fieldsCollection = collect($this->getFields());
-            app()->singleton($cacheKey, function () use ($fieldsCollection) {
-                return $fieldsCollection;
-            });
-        }
+        return Cache::remember($cacheKey, 3600, function () {
+            return collect($this->getFields());
+        });
 
-        // Return the cached result
-        return app($cacheKey);
+
+        // Generate the cache key based on the model class
+        // $cacheKey = $this->getFieldCacheKey();
+
+        // // Check if the cache already contains the result for this model class
+        // if (! app()->bound($cacheKey)) {
+        //     // If the cache doesn't contain the result, calculate it and store it in the cache
+        //     $fieldsCollection = collect($this->getFields());
+        //     app()->singleton($cacheKey, function () use ($fieldsCollection) {
+        //         return $fieldsCollection;
+        //     });
+        // }
+
+        // // Return the cached result
+        // return app($cacheKey);
 
     }
 
@@ -103,16 +120,12 @@ trait InputFieldsHelpers
 
     public function inputFields()
     {
-        // ray()->count();
-        // ray()->trace();
-        // dd('hier');
-        // $newFields = $this->sendThroughPipeline($this->newFields, [ApplyGroupedInputs::class]);
         return $this->getFieldsBeforeTree()->filter(fn ($item) => in_array($item['field_type'], ['input', 'repeater', 'group']));
     }
 
     public function inputFieldsSlugs()
     {
-        
+
         return $this->inputFields()->pluck('slug');
     }
 
@@ -128,18 +141,29 @@ trait InputFieldsHelpers
         // Generate the cache key based on the model class and method name
         $cacheKey = $this->getFieldCacheKey().'-mappedFields';
 
-        // Bind the mapped fields collection as a singleton if it's not already bound
-        app()->singletonIf($cacheKey, function () {
-            return $this->fieldsCollection()->map(function ($item) {
-                $item['field'] = app($item['type'])->field($item);
-                $item['field_type'] = app($item['type'])->type;
 
-                return $item;
-            });
+
+        return $this->fieldsCollection()->map(function ($item) {
+            $item['field'] = app($item['type'])->field($item);
+            $item['field_type'] = app($item['type'])->type;
+
+            return $item;
         });
 
-        // Return the cached result
-        return app($cacheKey);
+
+
+        // Bind the mapped fields collection as a singleton if it's not already bound
+        // app()->singletonIf($cacheKey, function () {
+        //     return $this->fieldsCollection()->map(function ($item) {
+        //         $item['field'] = app($item['type'])->field($item);
+        //         $item['field_type'] = app($item['type'])->type;
+
+        //         return $item;
+        //     });
+        // });
+
+        // // Return the cached result
+        // return app($cacheKey);
 
     }
 
