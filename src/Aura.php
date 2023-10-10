@@ -102,7 +102,7 @@ class Aura
             return Str::afterLast($resource, '\\');
         });
 
-        ray($taxonomies, $slug);
+        // ray($taxonomies, $slug);
 
         $index = $taxonomies->search(function ($item) use ($slug) {
             return Str::slug($item) == Str::slug($slug);
