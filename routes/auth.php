@@ -17,7 +17,7 @@ use Illuminate\Support\Facades\Route;
 Route::middleware('guest')->name('aura.')->group(function () {
     Route::get('register', [RegisteredUserController::class, 'create'])->name('register');
 
-    Route::post('register', [RegisteredUserController::class, 'store'])->name('register');
+    Route::post('register', [RegisteredUserController::class, 'store'])->name('register.post');
 
     Route::get('register/{team}/{teamInvitation}', [InvitationRegisterUserController::class, 'create'])->name('invitation.register')->middleware(['signed']);
 

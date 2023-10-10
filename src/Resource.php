@@ -43,6 +43,8 @@ class Resource extends Model
 
     protected $hidden = ['meta'];
 
+    public $fieldsAttributeCache;
+
     /**
      * The table associated with the model.
      *
@@ -63,6 +65,8 @@ class Resource extends Model
         if ($value) {
             return $value;
         }
+
+        return $value;
 
         // Not sure if this is the best way to do this
         return $this->displayFieldValue($key, $value);
@@ -111,60 +115,47 @@ class Resource extends Model
 
     public function getFieldsAttribute()
     {
-        // ray('fields attribute');
+        if (!isset($this->fieldsAttributeCache)) {
+            $meta = $this->getMeta();
 
-        $meta = $this->getMeta();
+            $defaultValues = $this->getFieldSlugs()
+                ->mapWithKeys(fn ($value, $key) => [$value => null])
+                ->map(fn ($value, $key) => $meta[$key] ?? $value)
+                ->map(function ($value, $key) {
+                    // if the value is in $this->hidden, set it to null
+                    if (in_array($key, $this->hidden)) {
+                        return;
+                    }
 
-        $defaultValues = $this->getFieldSlugs()
-            ->mapWithKeys(fn ($value, $key) => [$value => null])
-            ->map(fn ($value, $key) => $meta[$key] ?? $value)
-            ->map(function ($value, $key) {
-                // if the value is in $this->hidden, set it to null
-                if (in_array($key, $this->hidden)) {
-                    return;
+                    // if $this->{$key} is set, then we want to use that
+                    if (isset($this->{$key})) {
+                        return $this->{$key};
+                    }
+
+                    // if $this->attributes[$key] is set, then we want to use that
+                    if (isset($this->attributes[$key])) {
+                        return $this->attributes[$key];
+                    }
+
+                    // if there is a function get{Slug}Field on the model, use it
+                    $method = 'get'.Str::studly($key).'Field';
+
+                    if (method_exists($this, $method)) {
+                        return $this->{$method}();
+                    }
+                })
+            ;
+
+            $this->fieldsAttributeCache = $defaultValues->merge($meta ?? [])->filter(function ($value, $key) {
+                if (! in_array($key, $this->getAccessibleFieldKeys())) {
+                    return false;
                 }
 
-                // if there is a function get{Slug}Field on the model, use it
-                $method = 'get'.Str::studly($key).'Field';
-
-                if (method_exists($this, $method)) {
-                    return $this->{$method}();
-                }
-
-                $class = $this->fieldClassBySlug($key);
-
-                if ($key == 'submissions') {
-                    // TODO: Temporary fix
-                    return 'submissions';
-                }
-
-                if ($class && isset(optional($this)->{$key}) && method_exists($class, 'get')) {
-                    return $class->get($class, $this->{$key} ?? null);
-                }
-
-                // if $this->{$key} is set, then we want to use that
-                if (isset($this->{$key})) {
-                    return $this->{$key};
-                }
-
-                // if $this->attributes[$key] is set, then we want to use that
-                if (isset($this->attributes[$key])) {
-                    return $this->attributes[$key];
-                }
+                return true;
             });
+        }
 
-        // ray($defaultValues);
-
-        return $defaultValues->merge($meta ?? [])->filter(function ($value, $key) {
-
-            // ray('before getAccessibleFieldKeys', $this->getAccessibleFieldKeys());
-
-            if (! in_array($key, $this->getAccessibleFieldKeys())) {
-                return false;
-            }
-
-            return true;
-        });
+        return $this->fieldsAttributeCache;
     }
 
     /**
