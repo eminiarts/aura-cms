@@ -319,43 +319,48 @@ class Aura
 
     public function navigation()
     {
-        $resources = collect($this->getResources())->merge($this->getTaxonomies());
+        // Necessary to add TeamIds?
 
-        // filter resources by permission and check if user has viewAny permission
-        $resources = $resources->filter(function ($resource) {
-            $resource = app($resource);
+        return Cache::remember('user-' . auth()->id() . '-navigation', 3600, function () {
 
-            return auth()->user()->can('viewAny', $resource);
-        });
+            $resources = collect($this->getResources())->merge($this->getTaxonomies());
 
-        // If a Resource is overriden, we want to remove the original from the navigation
-        $keys = $resources->map(function ($resource) {
-            return Str::afterLast($resource, '\\');
-        })->reverse()->unique()->reverse()->keys();
+            // filter resources by permission and check if user has viewAny permission
+            $resources = $resources->filter(function ($resource) {
+                $resource = app($resource);
 
-        $resources = $resources->filter(function ($value, $key) use ($keys) {
-            return $keys->contains($key);
-        })
-            ->map(fn ($r) => app($r)->navigation())
-            ->filter(fn ($r) => $r['showInNavigation'] ?? true)
-            ->sortBy('sort');
+                return auth()->user()->can('viewAny', $resource);
+            });
 
-        $grouped = array_reduce(collect($resources)->toArray(), function ($carry, $item) {
-            if ($item['dropdown'] !== false) {
-                if (! isset($carry[$item['dropdown']])) {
-                    $carry[$item['dropdown']] = [];
+            // If a Resource is overriden, we want to remove the original from the navigation
+            $keys = $resources->map(function ($resource) {
+                return Str::afterLast($resource, '\\');
+            })->reverse()->unique()->reverse()->keys();
+
+            $resources = $resources->filter(function ($value, $key) use ($keys) {
+                return $keys->contains($key);
+            })
+                ->map(fn ($r) => app($r)->navigation())
+                ->filter(fn ($r) => $r['showInNavigation'] ?? true)
+                ->sortBy('sort');
+
+            $grouped = array_reduce(collect($resources)->toArray(), function ($carry, $item) {
+                if ($item['dropdown'] !== false) {
+                    if (! isset($carry[$item['dropdown']])) {
+                        $carry[$item['dropdown']] = [];
+                    }
+                    $carry[$item['dropdown']]['group'] = $item['group'];
+                    $carry[$item['dropdown']]['dropdown'] = $item['dropdown'];
+                    $carry[$item['dropdown']]['items'][] = $item;
+                } else {
+                    $carry[] = $item;
                 }
-                $carry[$item['dropdown']]['group'] = $item['group'];
-                $carry[$item['dropdown']]['dropdown'] = $item['dropdown'];
-                $carry[$item['dropdown']]['items'][] = $item;
-            } else {
-                $carry[] = $item;
-            }
 
-            return $carry;
-        }, []);
+                return $carry;
+            }, []);
 
-        return collect($grouped)->groupBy('group');
+            return collect($grouped)->groupBy('group');
+        });
     }
 
     public function option($key)

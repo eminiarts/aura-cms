@@ -33,7 +33,7 @@
         role="tablist"
         class="flex items-stretch px-0 pt-3 mx-0 -mb-px space-x-0"
     >
-        @foreach(collect($field['fields']) as $key => $tab)
+        @foreach(collect($field['fields'] ?? []) as $key => $tab)
 
         {{-- if there are no fields, continue --}}
         @if(!optional($tab)['fields'] || !count($tab['fields']))
@@ -77,7 +77,7 @@
     </ul>
 
     <div role="tabpanels" class="border-t rounded-b-lg border-gray-400/30 dark:border-gray-700">
-        @foreach($field['fields'] as $key => $field)
+        @foreach($field['fields'] ?? [] as $key => $field)
         <x-aura::fields.conditions :field="$field" :model="$model" wire:key="tab-section-condition-{{ $key }}-{{ $fieldHash }}">
             <section
                 x-show="isSelected($id('tab', {{ $key }}))"
