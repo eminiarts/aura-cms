@@ -8,19 +8,18 @@ class TransformSlugs implements Pipe
 {
     public function handle($fields, Closure $next)
     {
-        $fields = $fields->map(function ($item, $key) use ($fields) {
-            // get the parent
-            $parent = $fields->where('_id', $item['_parent_id'])->first();
+        // Create a map of field IDs to fields for quick lookup
+        $fieldsById = $fields->keyBy('_id');
 
-            // if the parent is a group, prepend the parent slug to the item slug
-            if (optional(optional($parent)['field'])->type == 'group') {
-                $item['slug'] = $parent['slug'].'.'.$item['slug'];
+        // Map over fields to adjust slugs based on parent
+        $fields = $fields->map(function ($item) use ($fieldsById) {
+            // Get the parent field using the lookup map
+            $parent = $fieldsById->get($item['_parent_id']);
+
+            // If the parent is a group, prepend the parent slug to the item slug
+            if (isset($parent->field) && $parent->field->type === 'group') {
+                $item['slug'] = $parent->slug . '.' . $item['slug'];
             }
-
-            // if the parent is a group, prepend the parent slug to the item slug
-            // if (optional(optional($parent)['field'])->type == 'repeater') {
-            //     $item['slug'] = $parent['slug'] . '.*.' . $item['slug'];
-            // }
 
             return $item;
         });
