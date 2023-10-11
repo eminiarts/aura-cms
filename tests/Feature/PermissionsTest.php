@@ -1,8 +1,8 @@
 <?php
 
-use Eminiarts\Aura\Models\User;
 use Eminiarts\Aura\Resources\Post;
 use Eminiarts\Aura\Resources\Role;
+use Eminiarts\Aura\Resources\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
@@ -28,20 +28,23 @@ test('a super admin can perform any action', function () {
 
     $user->update(['fields' => ['roles' => [$r->id]]]);
 
+    // dd(auth()->user()->can('viewAny', $user));
+
     // Assert User can do everything with users
-    $this->assertTrue($this->user->can('viewAny-users'));
-    $this->assertTrue($this->user->can('view-users'));
-    $this->assertTrue($this->user->can('create-users'));
-    $this->assertTrue($this->user->can('update-users'));
-    $this->assertTrue($this->user->can('restore-users'));
-    $this->assertTrue($this->user->can('delete-users'));
-    $this->assertTrue($this->user->can('forceDelete-users'));
+    expect($this->user->can('viewAny', $user))->toBeTrue();
+    expect($this->user->can('view', $user))->toBeTrue();
+    expect($this->user->can('create', $user))->toBeTrue();
+    expect($this->user->can('update', $user))->toBeTrue();
+    expect($this->user->can('restore', $user))->toBeTrue();
+    expect($this->user->can('delete', $user))->toBeTrue();
+    expect($this->user->can('forceDelete', $user))->toBeTrue();
+
 
     // Assert User can List posts
-    $this->assertTrue($this->user->can('viewAny-posts'));
+    expect($this->user->hasPermission('viewAny-posts'))->toBeTrue();
 
     // User can Do anything
-    $this->assertTrue($this->user->can('do-anything'));
+    expect($this->user->hasPermission('do-anything'))->toBeTrue();
 });
 
 test('a admin can perform assigned actions', function () {
@@ -215,6 +218,7 @@ test('a admin can access all pages', function () {
     $user->update(['fields' => ['roles' => [$r->id]]]);
 
     $user->refresh();
+
 
     // Access Index Page
     $response = $this->actingAs($user)->get(route('aura.post.index', ['slug' => $post->type]));
