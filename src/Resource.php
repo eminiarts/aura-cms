@@ -148,13 +148,14 @@ class Resource extends Model
                 })
             ;
 
-            $this->fieldsAttributeCache = $defaultValues->merge($meta ?? [])->filter(function ($value, $key) {
-                if (! in_array($key, $this->getAccessibleFieldKeys())) {
-                    return false;
-                }
-
-                return true;
-            });
+            $this->fieldsAttributeCache = $defaultValues->merge($meta ?? [])
+            // ->filter(function ($value, $key) {
+            //     if (! in_array($key, $this->inputFieldsSlugs())) {
+            //         return false;
+            //     }
+            //     return true;
+            // })
+            ;
         }
 
         return $this->fieldsAttributeCache;

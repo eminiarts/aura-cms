@@ -285,7 +285,7 @@ trait AuraModelConfig
         }
 
         // If the key is in the fields, it is a meta field
-        if (in_array($key, $this->getAccessibleFieldKeys())) {
+        if (in_array($key, $this->inputFieldsSlugs())) {
             return true;
         }
     }
@@ -317,7 +317,7 @@ trait AuraModelConfig
     public function isTaxonomyField($key)
     {
         // Check if the Field is a taxonomy 'type' => 'Eminiarts\\Aura\\Fields\\Tags',
-        if (in_array($key, $this->getAccessibleFieldKeys())) {
+        if (in_array($key, $this->inputFieldsSlugs())) {
             $field = $this->fieldBySlug($key);
 
             // Atm only tags, refactor later
@@ -342,7 +342,7 @@ trait AuraModelConfig
     public function meta()
     {
         return $this->hasMany(Meta::class, 'post_id');
-        //->whereIn('key', $this->getAccessibleFieldKeys())
+        //->whereIn('key', $this->inputFieldsSlugs())
     }
 
     public function navigation()
