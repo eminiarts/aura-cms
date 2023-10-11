@@ -8,127 +8,62 @@ class ConditionalLogic
 
     public static function checkCondition($model, $field)
     {
-        // ray('checkCondition', $field, get_class($model));
-
-        $conditions = optional($field)['conditional_logic'];
-
-        if (! $conditions) {
+        $conditions = $field['conditional_logic'] ?? null;
+        if (!$conditions || !auth()->user()) {
             return true;
         }
-
-        // If this runs in a job, there is no user, not sure how to fix it yet
-        if (! auth()->user()) {
-            return true;
-        }
-
-        $show = true;
 
         foreach ($conditions as $condition) {
-            if (! $model) {
-                // dd('break here', $model, $field);
-                $show = false;
-                break;
+            if (!$model || $condition instanceof \Closure) {
+                return $condition($model) === false ? false : true;
             }
 
-            // if condition is a closure, run it
-            if ($condition instanceof \Closure) {
-
-
-                $show = $condition($model);
-
-                if ($show === false) {
-                    break;
-                }
+            if (!is_array($condition)) {
+                continue;
             }
 
-            // if $condition is not an array, break
-            if (! is_array($condition)) {
-                // $show = false;
-                break;
-            }
+            $show = match ($condition['field']) {
+                'role' => self::handleRoleCondition($condition),
+                default => self::handleDefaultCondition($model, $condition)
+            };
 
-            switch ($condition['field']) {
-                case 'role':
-                    // Super Admins can do everything
-                    if (auth()->user()->resource->isSuperAdmin()) {
-                        break;
-                    }
-
-                    $show = ConditionalLogic::checkRoleCondition($condition);
-                    break;
-                default:
-
-                    if(is_array($model)) {
-
-                        if(array_key_exists($condition['field'], $model)) {
-                            $show = ConditionalLogic::checkFieldCondition($condition, $model[$condition['field']]);
-                            break;
-                        }
-
-                        $show = false;
-                        break;
-                    }
-
-                    if (method_exists($model, 'getMeta')) {
-                        $fieldValue = $model->getMeta($condition['field']);
-
-                        if (! $fieldValue) {
-                            $show = false;
-                            break;
-                        }
-
-                        // If the $condition['field'] has a dot, undot array
-                        if (str_contains($condition['field'], '.')) {
-                            $fieldValue = data_get($model->getMeta()->toArray(), $condition['field']);
-                            $show = ConditionalLogic::checkFieldCondition($condition, $fieldValue);
-
-                            break;
-                        }
-
-                        if (optional($model)->getMeta() && ! array_key_exists($condition['field'], $model->getMeta()->toArray())) {
-                            $show = false; // The model does not have the field, so it does not match the condition
-                            break;
-                        }
-
-
-                        $show = ConditionalLogic::checkFieldCondition($condition, $fieldValue);
-                        break;
-
-                    }
-
-                    // For Livewire components
-                    if (isset($model->post['fields'])) {
-                        $fieldValue = data_get($model->post['fields'], $condition['field']);
-
-                        if ($fieldValue === null) {
-                            $show = false;
-                            break;
-                        }
-
-                        if (str_contains($condition['field'], '.')) {
-                            $fieldValue = data_get($model->post['fields'], $condition['field']);
-                            $show = ConditionalLogic::checkFieldCondition($condition, $fieldValue);
-                            break;
-                        }
-
-                        if (! array_key_exists($condition['field'], $model->post['fields'])) {
-                            $show = false; // The model does not have the field, so it does not match the condition
-                            break;
-                        }
-
-                        $show = ConditionalLogic::checkFieldCondition($condition, $fieldValue);
-                        break;
-                    }
-
-
-            }
-
-            if (! $show) {
-                break;
+            if (!$show) {
+                return false;
             }
         }
 
-        return $show;
+        return true;
+    }
+
+    private static function handleRoleCondition($condition)
+    {
+        if (auth()->user()->resource->isSuperAdmin()) {
+            return true;
+        }
+        return self::checkRoleCondition($condition);
+    }
+
+    private static function handleDefaultCondition($model, $condition)
+    {
+        if (is_array($model) && array_key_exists($condition['field'], $model)) {
+            return self::checkFieldCondition($condition, $model[$condition['field']]);
+        }
+
+        $fieldValue = method_exists($model, 'getMeta')
+            ? $model->getMeta($condition['field'])
+            : data_get($model->post['fields'] ?? [], $condition['field']);
+
+        if (!$fieldValue) {
+            return false;
+        }
+
+        if (str_contains($condition['field'], '.')) {
+            $fieldValue = is_array($model)
+                ? data_get($model, $condition['field'])
+                : data_get($model->getMeta()->toArray(), $condition['field']);
+        }
+
+        return self::checkFieldCondition($condition, $fieldValue);
     }
 
     public static function clearConditionsCache()
@@ -138,110 +73,54 @@ class ConditionalLogic
 
     public static function fieldIsVisibleTo($field, $user)
     {
-        $conditions = optional($field)['conditional_logic'];
-
-        if (! $conditions) {
+        $conditions = $field['conditional_logic'] ?? null;
+        if (!$conditions || $user->resource->isSuperAdmin()) {
             return true;
         }
-
-        // Super Admins can view everything
-        if ($user->resource->isSuperAdmin()) {
-            return true;
-        }
-
-        $show = true;
 
         foreach ($conditions as $condition) {
-            if (! $field) {
-                $show = false;
-                break;
+            if (!$field) {
+                return false;
             }
-
-            switch ($condition['field']) {
-                case 'role':
-
-                    // Super Admins can do everything
-                    if (auth()->user()->resource->isSuperAdmin()) {
-                        break;
-                    }
-
-                    $show = ConditionalLogic::checkRoleCondition($condition);
-                    break;
-                default:
-
-                    break;
-            }
-
-            if (! $show) {
-                break;
+            if ($condition['field'] === 'role' && !self::checkRoleCondition($condition)) {
+                return false;
             }
         }
 
-        return $show;
+        return true;
     }
 
     public static function shouldDisplayField($model, $field)
     {
-        // return true;
-        // ray()->count();
-        if (! $field) {
+        if (!$field) {
             return true;
         }
 
-        // Generate a unique cache key based on the model's class name, ID, and the field key.
-        if (is_string($field)) {
-            $cacheKey = md5(get_class($model) . json_encode($field));
-        } else {
-            $cacheKey = md5(get_class($model) . json_encode($field));
-        }
+        $cacheKey = md5(get_class($model) . json_encode($field));
 
-        // If the result is already in the cache, return it.
-        if (array_key_exists($cacheKey, self::$shouldDisplayFieldCache)) {
-            return self::$shouldDisplayFieldCache[$cacheKey];
-        }
-
-        //ray()->count();
-
-        // Check Conditional Logic if the field should be displayed.
-        $result = self::checkCondition($model, $field);
-
-        // Before returning the result, store it in the cache.
-        self::$shouldDisplayFieldCache[$cacheKey] = $result;
-
-        return $result;
+        return self::$shouldDisplayFieldCache[$cacheKey]
+            ??= self::checkCondition($model, $field);
     }
 
     private static function checkFieldCondition($condition, $fieldValue)
     {
-        switch ($condition['operator']) {
-            case '==':
-                return $fieldValue == $condition['value'];
-            case '!=':
-                return $fieldValue != $condition['value'];
-            case '<=':
-                return $fieldValue <= $condition['value'];
-            case '>':
-                return $fieldValue > $condition['value'];
-            case '<':
-                return $fieldValue < $condition['value'];
-            case '>=':
-                return $fieldValue >= $condition['value'];
-            default:
-                return false;
-        }
+        return match ($condition['operator']) {
+            '==' => $fieldValue == $condition['value'],
+            '!=' => $fieldValue != $condition['value'],
+            '<=' => $fieldValue <= $condition['value'],
+            '>' => $fieldValue > $condition['value'],
+            '<' => $fieldValue < $condition['value'],
+            '>=' => $fieldValue >= $condition['value'],
+            default => false
+        };
     }
 
     private static function checkRoleCondition($condition)
     {
-        // ray()->red('checkRoleCondition', $condition);
-
-        switch ($condition['operator']) {
-            case '==':
-                return auth()->user()->resource->hasRole($condition['value']);
-            case '!=':
-                return ! auth()->user()->resource->hasRole($condition['value']);
-            default:
-                return false;
-        }
+        return match ($condition['operator']) {
+            '==' => auth()->user()->resource->hasRole($condition['value']),
+            '!=' => !auth()->user()->resource->hasRole($condition['value']),
+            default => false
+        };
     }
 }
