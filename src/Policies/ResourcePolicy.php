@@ -144,7 +144,6 @@ class ResourcePolicy
             return true;
         }
 
-
         // Scoped Posts
         if ($user->resource->hasPermissionTo('scope', $resource) && $user->resource->hasPermissionTo('view', $resource)) {
             if ($resource->user_id == $user->id) {

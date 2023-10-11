@@ -9,16 +9,16 @@ class ConditionalLogic
     public static function checkCondition($model, $field)
     {
         $conditions = $field['conditional_logic'] ?? null;
-        if (!$conditions || !auth()->user()) {
+        if (! $conditions || ! auth()->user()) {
             return true;
         }
 
         foreach ($conditions as $condition) {
-            if (!$model || $condition instanceof \Closure) {
+            if (! $model || $condition instanceof \Closure) {
                 return $condition($model) === false ? false : true;
             }
 
-            if (!is_array($condition)) {
+            if (! is_array($condition)) {
                 continue;
             }
 
@@ -27,43 +27,12 @@ class ConditionalLogic
                 default => self::handleDefaultCondition($model, $condition)
             };
 
-            if (!$show) {
+            if (! $show) {
                 return false;
             }
         }
 
         return true;
-    }
-
-    private static function handleRoleCondition($condition)
-    {
-        if (auth()->user()->resource->isSuperAdmin()) {
-            return true;
-        }
-        return self::checkRoleCondition($condition);
-    }
-
-    private static function handleDefaultCondition($model, $condition)
-    {
-        if (is_array($model) && array_key_exists($condition['field'], $model)) {
-            return self::checkFieldCondition($condition, $model[$condition['field']]);
-        }
-
-        $fieldValue = method_exists($model, 'getMeta')
-            ? $model->getMeta($condition['field'])
-            : data_get($model->post['fields'] ?? [], $condition['field']);
-
-        if (!$fieldValue) {
-            return false;
-        }
-
-        if (str_contains($condition['field'], '.')) {
-            $fieldValue = is_array($model)
-                ? data_get($model, $condition['field'])
-                : data_get($model->getMeta()->toArray(), $condition['field']);
-        }
-
-        return self::checkFieldCondition($condition, $fieldValue);
     }
 
     public static function clearConditionsCache()
@@ -74,15 +43,15 @@ class ConditionalLogic
     public static function fieldIsVisibleTo($field, $user)
     {
         $conditions = $field['conditional_logic'] ?? null;
-        if (!$conditions || $user->resource->isSuperAdmin()) {
+        if (! $conditions || $user->resource->isSuperAdmin()) {
             return true;
         }
 
         foreach ($conditions as $condition) {
-            if (!$field) {
+            if (! $field) {
                 return false;
             }
-            if ($condition['field'] === 'role' && !self::checkRoleCondition($condition)) {
+            if ($condition['field'] === 'role' && ! self::checkRoleCondition($condition)) {
                 return false;
             }
         }
@@ -92,11 +61,11 @@ class ConditionalLogic
 
     public static function shouldDisplayField($model, $field)
     {
-        if (!$field) {
+        if (! $field) {
             return true;
         }
 
-        $cacheKey = md5(get_class($model) . json_encode($field));
+        $cacheKey = md5(get_class($model).json_encode($field));
 
         return self::$shouldDisplayFieldCache[$cacheKey]
             ??= self::checkCondition($model, $field);
@@ -119,8 +88,40 @@ class ConditionalLogic
     {
         return match ($condition['operator']) {
             '==' => auth()->user()->resource->hasRole($condition['value']),
-            '!=' => !auth()->user()->resource->hasRole($condition['value']),
+            '!=' => ! auth()->user()->resource->hasRole($condition['value']),
             default => false
         };
+    }
+
+    private static function handleDefaultCondition($model, $condition)
+    {
+        if (is_array($model) && array_key_exists($condition['field'], $model)) {
+            return self::checkFieldCondition($condition, $model[$condition['field']]);
+        }
+
+        $fieldValue = method_exists($model, 'getMeta')
+            ? $model->getMeta($condition['field'])
+            : data_get($model->post['fields'] ?? [], $condition['field']);
+
+        if (! $fieldValue) {
+            return false;
+        }
+
+        if (str_contains($condition['field'], '.')) {
+            $fieldValue = is_array($model)
+                ? data_get($model, $condition['field'])
+                : data_get($model->getMeta()->toArray(), $condition['field']);
+        }
+
+        return self::checkFieldCondition($condition, $fieldValue);
+    }
+
+    private static function handleRoleCondition($condition)
+    {
+        if (auth()->user()->resource->isSuperAdmin()) {
+            return true;
+        }
+
+        return self::checkRoleCondition($condition);
     }
 }

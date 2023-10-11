@@ -2,8 +2,6 @@
 
 namespace Eminiarts\Aura\Http\Livewire\Table\Traits;
 
-use Illuminate\Support\Facades\Cache;
-
 /**
  * Trait for handling filters in Livewire Table component.
  */
@@ -47,6 +45,12 @@ trait Filters
         ];
     }
 
+    public function clearFiltersCache()
+    {
+        auth()->user()->clearCachedOption($this->model->getType().'.filters.*');
+        auth()->user()->currentTeam->clearCachedOption($this->model->getType().'.filters.*');
+    }
+
     /**
      * Delete a filter.
      *
@@ -71,7 +75,7 @@ trait Filters
                 break;
             default:
                 // Handle unexpected type value
-                throw new \InvalidArgumentException("Invalid filter type: " . $filter['type']);
+                throw new \InvalidArgumentException('Invalid filter type: '.$filter['type']);
         }
 
         $this->notify('Success: Filter deleted!');
@@ -122,12 +126,14 @@ trait Filters
         // Add 'type' => 'user' to each user filter
         $userFilters = $userFilters->map(function ($filter) {
             $filter['type'] = 'user';
+
             return $filter;
         });
 
         // Add 'type' => 'team' to each team filter
         $teamFilters = $teamFilters->map(function ($filter) {
             $filter['type'] = 'team';
+
             return $filter;
         });
 
@@ -135,19 +141,12 @@ trait Filters
         return collect($userFilters)->merge($teamFilters)->toArray();
     }
 
-
-    public function clearFiltersCache()
-    {
-        auth()->user()->clearCachedOption($this->model->getType().'.filters.*');
-        auth()->user()->currentTeam->clearCachedOption($this->model->getType().'.filters.*');
-    }
-
     /**
-         * Remove a custom filter.
-         *
-         * @param  int  $index
-         * @return void
-         */
+     * Remove a custom filter.
+     *
+     * @param  int  $index
+     * @return void
+     */
     public function removeCustomFilter($index)
     {
         unset($this->filters['custom'][$index]);
@@ -184,7 +183,7 @@ trait Filters
         if ($this->filters) {
 
             // Save for Team
-            if($this->filter['global']) {
+            if ($this->filter['global']) {
                 auth()->user()->currentTeam->updateOption($this->model->getType().'.filters.'.$this->filter['name'], $newFilter);
             }
             // Save for User
@@ -203,7 +202,6 @@ trait Filters
 
     }
 
-
     /**
      * Set taxonomy filters.
      */
@@ -221,7 +219,7 @@ trait Filters
      */
     public function updatedSelectedFilter($filter)
     {
-        if($filter) {
+        if ($filter) {
             $this->filters = $this->userFilters[$filter];
         } else {
             $this->reset('filters');

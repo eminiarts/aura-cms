@@ -132,8 +132,6 @@ class AuraConfig extends Component
                 ],
             ],
 
-
-
             [
                 'name' => 'App Locale',
                 'type' => 'Eminiarts\\Aura\\Fields\\Text',
@@ -152,7 +150,6 @@ class AuraConfig extends Component
                     'width' => '100',
                 ],
             ],
-
 
             [
                 'type' => 'Eminiarts\\Aura\\Fields\\Tab',

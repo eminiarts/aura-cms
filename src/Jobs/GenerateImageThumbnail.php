@@ -63,7 +63,7 @@ class GenerateImageThumbnail implements ShouldQueue
             foreach ($settings['thumbnails'] as $size) {
                 if (file_exists($this->attachment->path())) {
                     $image = Image::make($this->attachment->path());
-                      $width = $size['width'];
+                    $width = $size['width'];
 
                     $height = $size['height'];
 
@@ -77,7 +77,6 @@ class GenerateImageThumbnail implements ShouldQueue
                     // throw new \Exception('File does not exist at path: ' . $this->attachment->path());
                 }
 
-              
             }
         }
     }
