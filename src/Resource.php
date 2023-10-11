@@ -149,12 +149,9 @@ class Resource extends Model
             ;
 
             $this->fieldsAttributeCache = $defaultValues->merge($meta ?? [])
-            // ->filter(function ($value, $key) {
-            //     if (! in_array($key, $this->inputFieldsSlugs())) {
-            //         return false;
-            //     }
-            //     return true;
-            // })
+            ->filter(function ($value, $key) {
+                return $this->shouldDisplayField($this->fieldBySlug($key));
+            })
             ;
         }
 
