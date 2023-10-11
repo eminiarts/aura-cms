@@ -109,6 +109,34 @@ trait InputFields
         return $field;
     }
 
+    // public function getAccessibleFieldKeys()
+    // {
+    //     if ($this->accessibleFieldKeysCache === null) {
+    //         // Apply Conditional Logic of Parent Fields
+    //         $fields = $this->sendThroughPipeline($this->fieldsCollection(), [
+    //             ApplyTabs::class,
+    //             MapFields::class,
+    //             AddIdsToFields::class,
+    //             ApplyParentConditionalLogic::class,
+    //             DoNotDeferConditionalLogic::class,
+    //         ]);
+
+    //         // Get all input fields
+    //         $this->accessibleFieldKeysCache = $fields
+    //             ->filter(function ($field) {
+    //                 return $field['field']->isInputField();
+    //             })
+    //             ->pluck('slug')
+    //             ->filter(function ($field) {
+    //                 // return true;
+    //                 return $this->shouldDisplayField($this->fieldBySlug($field));
+    //             })
+    //             ->toArray();
+    //     }
+
+    //     return $this->accessibleFieldKeysCache;
+    // }
+
     public function fieldsForView($fields = null, $pipes = null)
     {
         if (! $fields) {
@@ -128,8 +156,6 @@ trait InputFields
                 BuildTreeFromFields::class,
             ];
         }
-
-        // dd('hier');
 
         return $this->sendThroughPipeline($fields, $pipes);
     }
@@ -275,7 +301,6 @@ trait InputFields
 
     public function shouldDisplayField($field)
     {
-        // return true;
         return ConditionalLogic::shouldDisplayField($this, $field);
     }
 
