@@ -4,6 +4,8 @@ namespace Eminiarts\Aura\Pipeline;
 
 use Closure;
 
+use InvalidArgumentException;
+
 class AddIdsToFields implements Pipe
 {
     public function handle($fields, Closure $next)
@@ -27,18 +29,6 @@ class AddIdsToFields implements Pipe
 
                 return $item;
             }
-
-            // if (optional($item)['global'] === true && ! $globalTabs) {
-            //     if ($item['field']->type == 'tabs') {
-            //         $globalTabs = $item;
-            //     }
-
-            //     $item['_parent_id'] = null;
-            //     $currentParent = $item;
-            //     $parentPanel = null;
-
-            //     return $item;
-            // }
 
             if ($item['field']->type !== 'panel' && $item['field']->group === true) {
                 if (optional($item)['global']) {
@@ -103,14 +93,13 @@ class AddIdsToFields implements Pipe
                 $parentPanel = $item;
                 $parentTab = null;
             } else {
-                dd('should never come to here');
+
+                throw new InvalidArgumentException('Unexpected field configuration.');
             }
 
             return $item;
         });
 
-
-        // dd($fields);
 
         return $next($fields);
     }
