@@ -370,6 +370,35 @@ class User extends UserModel
         return [];
     }
 
+    public function hasPermission($permission)
+    {
+        $roles = $this->cachedRoles();
+
+        if (! $roles) {
+            return false;
+        }
+
+        foreach ($roles as $role) {
+            if ($role->super_admin) {
+                return true;
+            }
+
+            $permissions = $role->fields['permissions'];
+
+            if (empty($permissions)) {
+                continue;
+            }
+
+            foreach ($permissions as $p => $value) {
+                if ($p == $permission && $value == true) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
     public function hasPermissionTo($ability, $post): bool
     {
         $roles = $this->cachedRoles();

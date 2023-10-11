@@ -10,7 +10,7 @@ use Eminiarts\Aura\Pipeline\ApplyGroupedInputs;
 trait InputFieldsHelpers
 {
     protected static $inputFieldSlugs = [];
-    protected static $fieldsCollection = [];
+    protected static $fieldsCollectionCache = [];
     protected static $fieldClassesBySlug = [];
 
     public function clearModelCache()
@@ -66,15 +66,16 @@ trait InputFieldsHelpers
 
     public function fieldsCollection()
     {
+        // return collect($this->getFields());
         $class = get_class($this);
 
-        if (isset(self::$fieldsCollection[$class])) {
-            return self::$fieldsCollection[$class];
+        if (isset(self::$fieldsCollectionCache[$class])) {
+            return self::$fieldsCollectionCache[$class];
         }
 
-        self::$fieldsCollection[$class] = collect($this->getFields());
+        self::$fieldsCollectionCache[$class] = collect($this->getFields());
 
-        return self::$fieldsCollection[$class];
+        return self::$fieldsCollectionCache[$class];
     }
 
     public function findBySlug($array, $slug)
@@ -159,8 +160,9 @@ trait InputFieldsHelpers
 
     public function sendThroughPipeline($fields, $pipes)
     {
+        // dump('sendThroughPipeline');
         return app(Pipeline::class)
-            ->send($fields)
+            ->send(clone $fields)
             ->through($pipes)
             ->thenReturn();
     }
