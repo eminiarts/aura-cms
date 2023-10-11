@@ -14,9 +14,9 @@ class TeamInvitation extends Resource
 
     public static string $type = 'TeamInvitation';
 
-    protected static bool $showInNavigation = false;
-
     protected static ?string $group = 'Aura';
+
+    protected static bool $showInNavigation = false;
 
     public static function getFields()
     {

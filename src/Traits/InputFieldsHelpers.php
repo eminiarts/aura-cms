@@ -3,15 +3,15 @@
 namespace Eminiarts\Aura\Traits;
 
 use Illuminate\Pipeline\Pipeline;
-use Eminiarts\Aura\Resources\Role;
 use Illuminate\Support\Facades\Cache;
-use Eminiarts\Aura\Pipeline\ApplyGroupedInputs;
 
 trait InputFieldsHelpers
 {
-    protected static $inputFieldSlugs = [];
-    protected static $fieldsCollectionCache = [];
     protected static $fieldClassesBySlug = [];
+
+    protected static $fieldsCollectionCache = [];
+
+    protected static $inputFieldSlugs = [];
 
     public function clearModelCache()
     {
@@ -42,7 +42,7 @@ trait InputFieldsHelpers
         $class = get_class($this);
 
         // Construct a unique key using the class name and the slug
-        $key = $class . '-' . $slug;
+        $key = $class.'-'.$slug;
 
         // If this key exists in the static array, return the cached result
         if (isset(self::$fieldClassesBySlug[$key])) {

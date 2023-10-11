@@ -36,7 +36,7 @@ class AddIdsToFields implements Pipe
 
             if ($itemFieldType !== 'panel' && $itemFieldGroup === true) {
                 if ($itemGlobal) {
-                    if($itemFieldType === 'group') {
+                    if ($itemFieldType === 'group') {
                         $item['_parent_id'] = $currentParent['_parent_id'];
                         $currentParent = $item;
                         $parentPanel = null;

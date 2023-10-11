@@ -18,7 +18,7 @@ class TransformSlugs implements Pipe
 
             // If the parent is a group, prepend the parent slug to the item slug
             if (isset($parent->field) && $parent->field->type === 'group') {
-                $item['slug'] = $parent->slug . '.' . $item['slug'];
+                $item['slug'] = $parent->slug.'.'.$item['slug'];
             }
 
             return $item;

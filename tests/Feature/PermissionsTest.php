@@ -39,7 +39,6 @@ test('a super admin can perform any action', function () {
     expect($this->user->can('delete', $user))->toBeTrue();
     expect($this->user->can('forceDelete', $user))->toBeTrue();
 
-
     // Assert User can List posts
     expect($this->user->hasPermission('viewAny-posts'))->toBeTrue();
 
@@ -218,7 +217,6 @@ test('a admin can access all pages', function () {
     $user->update(['fields' => ['roles' => [$r->id]]]);
 
     $user->refresh();
-
 
     // Access Index Page
     $response = $this->actingAs($user)->get(route('aura.post.index', ['slug' => $post->type]));

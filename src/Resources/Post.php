@@ -48,8 +48,6 @@ class Post extends Resource
 
     public static ?string $slug = 'post';
 
-    protected static ?string $group = 'Aura';
-
     public static ?int $sort = 50;
 
     public static string $type = 'Post';
@@ -75,6 +73,8 @@ class Post extends Resource
             'custom' => 'Custom',
         ],
     ];
+
+    protected static ?string $group = 'Aura';
 
     protected static array $searchable = [
         'title',

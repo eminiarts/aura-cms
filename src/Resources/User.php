@@ -25,8 +25,6 @@ class User extends UserModel
 
     public static string $type = 'User';
 
-    protected static ?string $group = 'Admin';
-
     protected $appends = ['fields'];
 
     /**
@@ -48,6 +46,8 @@ class User extends UserModel
     protected $fillable = [
         'name', 'email', 'password', 'fields', 'current_team_id',
     ];
+
+    protected static ?string $group = 'Admin';
 
     /**
      * The attributes that should be hidden for serialization.
@@ -370,6 +370,23 @@ class User extends UserModel
         return [];
     }
 
+    public function hasAnyRole(array $roles): bool
+    {
+        $cachedRoles = $this->cachedRoles()->pluck('slug');
+
+        if (! $cachedRoles) {
+            return false;
+        }
+
+        foreach ($cachedRoles as $role) {
+            if (in_array($role, $roles)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     public function hasPermission($permission)
     {
         $roles = $this->cachedRoles();
@@ -443,30 +460,12 @@ class User extends UserModel
         return false;
     }
 
-    public function hasAnyRole(array $roles): bool
-    {
-        $cachedRoles = $this->cachedRoles()->pluck('slug');
-
-        if (! $cachedRoles) {
-            return false;
-        }
-
-        foreach ($cachedRoles as $role) {
-            if (in_array($role, $roles)) {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
     /**
      * Returns true if the user has at least one role that is a super admin.
      */
     public function isSuperAdmin(): bool
     {
         $roles = $this->cachedRoles();
-
 
         if (! $roles) {
             return false;
@@ -544,7 +543,7 @@ class User extends UserModel
     protected static function booted()
     {
         static::creating(function ($user) {
-            if (config('aura.teams') && !$user->current_team_id) {
+            if (config('aura.teams') && ! $user->current_team_id) {
                 $user->current_team_id = auth()->user()?->current_team_id;
             }
         });

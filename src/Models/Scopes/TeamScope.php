@@ -27,7 +27,7 @@ class TeamScope implements Scope
         if (auth()->user() && $model instanceof \Eminiarts\Aura\Resources\Role) {
             return $builder->where('posts.team_id', auth()->user()->current_team_id);
         }
-        
+
         if (auth()->user() && $model->getTable() == 'posts') {
             return $builder->where('posts.team_id', auth()->user()->current_team_id);
         }

@@ -47,14 +47,14 @@ trait HasFields
             ->thenReturn();
     }
 
-     public function validationAttributes()
-     {
-         $attributes = [];
+    public function validationAttributes()
+    {
+        $attributes = [];
 
-         foreach ($this->model->inputFields() as $field) {
-             $attributes['post.fields.'.$field['slug']] = $field['slug'];
-         }
+        foreach ($this->model->inputFields() as $field) {
+            $attributes['post.fields.'.$field['slug']] = $field['slug'];
+        }
 
-         return $attributes;
-     }
+        return $attributes;
+    }
 }
