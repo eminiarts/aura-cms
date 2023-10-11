@@ -8,13 +8,15 @@ class ConditionalLogic
 
     public static function checkCondition($model, $field)
     {
+        // ray('checkCondition', $field, get_class($model));
+
         $conditions = optional($field)['conditional_logic'];
 
         if (! $conditions) {
             return true;
         }
 
-        // If this runs in a job, there is no user
+        // If this runs in a job, there is no user, not sure how to fix it yet
         if (! auth()->user()) {
             return true;
         }
@@ -188,9 +190,9 @@ class ConditionalLogic
 
         // Generate a unique cache key based on the model's class name, ID, and the field key.
         if (is_string($field)) {
-            $cacheKey = md5(json_encode($field));
+            $cacheKey = md5(get_class($model) . json_encode($field));
         } else {
-            $cacheKey = md5(json_encode($field));
+            $cacheKey = md5(get_class($model) . json_encode($field));
         }
 
         // If the result is already in the cache, return it.
