@@ -106,23 +106,21 @@ class EditPosttypeField extends Component
         ]);
 
         $rules['post.fields.slug'] = [
-                'required',
-                function ($attribute, $value, $fail) {
-                    if (collect($this->post['fields'])->pluck('slug')->duplicates()->values()->contains($value)) {
-                        $fail('The '.$attribute.' can not be used twice.');
-                    }
+            'required',
+            function ($attribute, $value, $fail) {
+                if (collect($this->post['fields'])->pluck('slug')->duplicates()->values()->contains($value)) {
+                    $fail('The '.$attribute.' can not be used twice.');
+                }
 
-                    // check if slug is a reserved word with "in_array"
-                    if (in_array($value, $this->reservedWords)) {
-                        $fail('The '.$attribute.' can not be a reserved word.');
-                    }
-                },
-            ];
+                // check if slug is a reserved word with "in_array"
+                if (in_array($value, $this->reservedWords)) {
+                    $fail('The '.$attribute.' can not be a reserved word.');
+                }
+            },
+        ];
 
         return $rules;
     }
-
-
 
     public function save()
     {

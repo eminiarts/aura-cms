@@ -37,13 +37,13 @@ class Resource extends Model
     use SaveMetaFields;
     use SaveTerms;
 
+    public $fieldsAttributeCache;
+
     protected $appends = ['fields'];
 
     protected $fillable = ['title', 'content', 'type', 'status', 'fields', 'slug', 'user_id', 'parent_id', 'order', 'taxonomies', 'terms', 'team_id', 'first_taxonomy', 'created_at', 'updated_at', 'deleted_at'];
 
     protected $hidden = ['meta'];
-
-    public $fieldsAttributeCache;
 
     /**
      * The table associated with the model.
@@ -67,7 +67,7 @@ class Resource extends Model
         }
 
         // If the key is in the fields array, then we want to return that
-        if(is_null($value) && isset($this->fields[$key])) {
+        if (is_null($value) && isset($this->fields[$key])) {
             return $this->fields[$key];
         }
 
@@ -117,7 +117,7 @@ class Resource extends Model
 
     public function getFieldsAttribute()
     {
-        if (!isset($this->fieldsAttributeCache)) {
+        if (! isset($this->fieldsAttributeCache)) {
             $meta = $this->getMeta();
 
             $defaultValues = $this->getFieldSlugs()
@@ -145,14 +145,12 @@ class Resource extends Model
                     if (method_exists($this, $method)) {
                         return $this->{$method}();
                     }
-                })
-            ;
+                });
 
             $this->fieldsAttributeCache = $defaultValues->merge($meta ?? [])
-            ->filter(function ($value, $key) {
-                return $this->shouldDisplayField($this->fieldBySlug($key));
-            })
-            ;
+                ->filter(function ($value, $key) {
+                    return $this->shouldDisplayField($this->fieldBySlug($key));
+                });
         }
 
         return $this->fieldsAttributeCache;
@@ -297,7 +295,7 @@ class Resource extends Model
         static::addGlobalScope(new TeamScope());
 
         static::creating(function ($model) {
-            if (!$model->team_id) {
+            if (! $model->team_id) {
                 $model->team_id = 1;
             }
         });

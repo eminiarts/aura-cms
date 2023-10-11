@@ -61,6 +61,7 @@ trait QueryFilters
     {
         if ($filter['operator'] == 'is_empty') {
             $this->applyIsEmptyMetaFilter($query, $filter);
+
             // where
             // where not exists
             // or where key = name AND value = null

@@ -37,13 +37,13 @@ class Image extends Field
         return "<div class='flex items-center space-x-2'>{$imageHtml}{$circleHtml}</div>";
     }
 
-     public function get($field, $value)
-     {
-         return json_decode($value, true);
-     }
+    public function get($field, $value)
+    {
+        return json_decode($value, true);
+    }
 
-     public function set($value)
-     {
-         return json_encode($value);
-     }
+    public function set($value)
+    {
+        return json_encode($value);
+    }
 }

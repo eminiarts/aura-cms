@@ -85,7 +85,7 @@ class CreateResourceMigration extends Command
                 'type' => 'Eminiarts\\Aura\\Fields\\Number',
                 'slug' => 'order',
             ],
-             
+
         ]);
 
         $fields = $resource->inputFields();
@@ -96,7 +96,7 @@ class CreateResourceMigration extends Command
                 'type' => 'Eminiarts\\Aura\\Fields\\ForeignId',
                 'slug' => 'user_id',
             ],
-             [
+            [
                 'name' => 'Team Id',
                 'type' => 'Eminiarts\\Aura\\Fields\\ForeignId',
                 'slug' => 'team_id',
