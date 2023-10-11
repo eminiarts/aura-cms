@@ -56,6 +56,10 @@ test('table shows all input fields', function () {
     // Visit the Post Index Page
     $response = $this->get(route('aura.post.index', $post->type));
 
+    // dd($response->content());
+
+    $response->assertOk();
+
     // Assert that all input fields are shown
     $response->assertSee('ID');
     $response->assertSee('Text');
