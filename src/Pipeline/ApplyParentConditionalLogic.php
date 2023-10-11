@@ -6,6 +6,19 @@ use Closure;
 
 class ApplyParentConditionalLogic implements Pipe
 {
+    public function getParentIds($parentIdMap, $id): array
+    {
+        $parentIds = [];
+        $currentId = $id;
+
+        while (isset($parentIdMap[$currentId])) {
+            $currentId = $parentIdMap[$currentId];
+            $parentIds[] = $currentId;
+        }
+
+        return $parentIds;
+    }
+
     public function handle($fields, Closure $next)
     {
         // Build a map of field IDs to parent IDs
@@ -32,18 +45,5 @@ class ApplyParentConditionalLogic implements Pipe
         });
 
         return $next($fields);
-    }
-
-    public function getParentIds($parentIdMap, $id): array
-    {
-        $parentIds = [];
-        $currentId = $id;
-
-        while (isset($parentIdMap[$currentId])) {
-            $currentId = $parentIdMap[$currentId];
-            $parentIds[] = $currentId;
-        }
-
-        return $parentIds;
     }
 }

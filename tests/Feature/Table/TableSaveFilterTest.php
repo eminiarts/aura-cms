@@ -1,13 +1,13 @@
 <?php
 
-use Livewire\Livewire;
-use Eminiarts\Aura\Resource;
+use Eminiarts\Aura\Http\Livewire\Table\Table;
 use Eminiarts\Aura\Models\User;
+use Eminiarts\Aura\Resource;
 use Eminiarts\Aura\Resources\Post;
 use Eminiarts\Aura\Taxonomies\Tag;
-use Illuminate\Support\Facades\DB;
-use Eminiarts\Aura\Http\Livewire\Table\Table;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
+use Livewire\Livewire;
 
 uses(RefreshDatabase::class);
 
@@ -162,7 +162,7 @@ test('table filter - taxonomy filter', function () {
     expect($filters->toArray())->toBe($component->userFilters);
 
     // Assert $filter.name is empty
-    expect($component->filter['name'])->toBe("");
+    expect($component->filter['name'])->toBe('');
 
     // Component rows should have 1 item
     expect($component->rows->items())->toHaveCount(1);
