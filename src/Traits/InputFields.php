@@ -151,29 +151,7 @@ trait InputFields
         return false;
     }
 
-    public function getAccessibleFieldKeys()
-    {
-        // Apply Conditional Logic of Parent Fields
-        // $fields = $this->sendThroughPipeline($this->fieldsCollection(), [
-        //     ApplyTabs::class,
-        //     MapFields::class,
-        //     AddIdsToFields::class,
-        //     ApplyParentConditionalLogic::class,
-        //     DoNotDeferConditionalLogic::class,
-        // ]);
 
-        // Get all input fields
-        return $this->mappedFields()
-            ->filter(function ($field) {
-                return $field['field']->isInputField();
-            })
-            ->pluck('slug')
-            // ->filter(function ($field) {
-            //     // return true;
-            //     return $this->shouldDisplayField($this->fieldBySlug($field));
-            // })
-            ->toArray();
-    }
 
     public function getFieldsBeforeTree($fields = null)
     {
