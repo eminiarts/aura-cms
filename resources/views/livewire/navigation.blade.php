@@ -199,7 +199,7 @@ $appSettings = Aura::options();
 
         <div class="flex flex-col px-4 space-y-1">
 
-            {{-- @includeIf('navigation.before') --}}
+            @includeIf('navigation.before')
 
 
             {{-- <x-aura::navigation /> --}}
