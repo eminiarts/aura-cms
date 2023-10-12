@@ -5,7 +5,6 @@ namespace Eminiarts\Aura\Traits;
 use Eminiarts\Aura\ConditionalLogic;
 use Eminiarts\Aura\Models\Meta;
 use Eminiarts\Aura\Resources\Team;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 trait AuraModelConfig
@@ -17,6 +16,8 @@ trait AuraModelConfig
     public static $contextMenu = true;
 
     public static $customTable = false;
+
+    public static $editEnabled = true;
 
     public static $globalSearch = true;
 
@@ -31,6 +32,8 @@ trait AuraModelConfig
     public array $taxonomyFields = [];
 
     public static bool $usesMeta = true;
+
+    public static $viewEnabled = true;
 
     public array $widgetSettings = [
         'default' => '30d',
@@ -76,10 +79,6 @@ trait AuraModelConfig
 
     protected static string $type = 'Resource';
 
-    public static $viewEnabled = true;
-    
-    public static $editEnabled = true;
-
     public function __construct(array $attributes = [])
     {
         parent::__construct($attributes);
@@ -87,7 +86,9 @@ trait AuraModelConfig
         $this->baseFillable = $this->getFillable();
 
         // Merge fillable fields from fields
-        $this->mergeFillable($this->getFieldSlugs()->toArray());
+        // ray()->count();
+        // dd($this->inputFieldsSlugs());
+        $this->mergeFillable($this->inputFieldsSlugs());
     }
 
     /**
@@ -122,7 +123,10 @@ trait AuraModelConfig
         return route('aura.post.create', [$this->getType()]);
     }
 
-
+    public function createView()
+    {
+        return 'aura::livewire.post.create';
+    }
 
     public function display($key)
     {
@@ -149,11 +153,21 @@ trait AuraModelConfig
         }
     }
 
+    public function editHeaderView()
+    {
+        return 'aura::livewire.post.edit-header';
+    }
+
     public function editUrl()
     {
         if ($this->getType() && $this->id) {
             return route('aura.post.edit', ['slug' => $this->getType(), 'id' => $this->id]);
         }
+    }
+
+    public function editView()
+    {
+        return 'aura::livewire.post.edit';
     }
 
     public function getActions()
@@ -265,6 +279,11 @@ trait AuraModelConfig
         return $this->getIcon();
     }
 
+    public function indexView()
+    {
+        return 'aura::livewire.post.index';
+    }
+
     public function isAppResource()
     {
         return Str::startsWith(get_class($this), 'App');
@@ -283,7 +302,7 @@ trait AuraModelConfig
         }
 
         // If the key is in the fields, it is a meta field
-        if (in_array($key, $this->getAccessibleFieldKeys())) {
+        if (in_array($key, $this->inputFieldsSlugs())) {
             return true;
         }
     }
@@ -315,7 +334,7 @@ trait AuraModelConfig
     public function isTaxonomyField($key)
     {
         // Check if the Field is a taxonomy 'type' => 'Eminiarts\\Aura\\Fields\\Tags',
-        if (in_array($key, $this->getAccessibleFieldKeys())) {
+        if (in_array($key, $this->inputFieldsSlugs())) {
             $field = $this->fieldBySlug($key);
 
             // Atm only tags, refactor later
@@ -340,7 +359,7 @@ trait AuraModelConfig
     public function meta()
     {
         return $this->hasMany(Meta::class, 'post_id');
-        //->whereIn('key', $this->getAccessibleFieldKeys())
+        //->whereIn('key', $this->inputFieldsSlugs())
     }
 
     public function navigation()
@@ -362,6 +381,7 @@ trait AuraModelConfig
     public function pluralName()
     {
         return Str::plural($this->singularName());
+
         return __(static::$pluralName ?? Str::plural($this->singularName()));
     }
 
@@ -419,31 +439,6 @@ trait AuraModelConfig
         return 'aura::components.table.table';
     }
 
-    public function editHeaderView()
-    {
-        return 'aura::livewire.post.edit-header';
-    }
-
-    public function createView()
-    {
-        return 'aura::livewire.post.create';
-    }
-
-    public function editView()
-    {
-        return 'aura::livewire.post.edit';
-    }
-
-    public function indexView()
-    {
-        return 'aura::livewire.post.index';
-    }
-
-    public function viewHeaderView()
-    {
-        return 'aura::livewire.post.view-header';
-    }
-
     public function team()
     {
         return $this->belongsTo(Team::class);
@@ -469,6 +464,11 @@ trait AuraModelConfig
     public static function usesTitle(): bool
     {
         return static::$title;
+    }
+
+    public function viewHeaderView()
+    {
+        return 'aura::livewire.post.view-header';
     }
 
     public function viewUrl()

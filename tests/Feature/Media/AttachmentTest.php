@@ -84,7 +84,8 @@ it('checks mime_type of image and pdf', function () {
 
     $attachment->mime_type = 'application/pdf';
     $attachment->save();
-    $this->assertFalse($attachment->isImage());
+
+    $this->assertFalse($attachment->fresh()->isImage());
 });
 
 it('gets attachment path', function () {

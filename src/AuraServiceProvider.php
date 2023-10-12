@@ -89,7 +89,7 @@ class AuraServiceProvider extends PackageServiceProvider
             //  if ($ability == 'view' && config('aura.resource-view-enabled') === false) {
             //     return false;
             // }
-            
+
             // if ($user->resource->isSuperAdmin()) {
             //     return true;
             // }

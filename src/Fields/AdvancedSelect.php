@@ -35,7 +35,6 @@ class AdvancedSelect extends Field
 
         return $item->title;
 
-
         return $items->pluck('name')->map(function ($value) {
             return "<span class='px-2 py-1 text-xs text-white rounded-full bg-primary-500 whitespace-nowrap'>$value</span>";
         })->implode(' ');

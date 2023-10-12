@@ -21,6 +21,7 @@ class MediaUploader extends Component
     public $selected;
 
     public $table = true;
+
     public $upload = false;
 
     // listener selectedMediaUpdated
@@ -50,7 +51,6 @@ class MediaUploader extends Component
 
         $attachments = [];
 
-
         foreach ($this->media as $key => $media) {
             $url = $media->store('media', 'public');
 
@@ -61,7 +61,6 @@ class MediaUploader extends Component
                 'size' => $media->getSize(),
                 'mime_type' => $media->getMimeType(),
             ]);
-
 
             // Unset the processed file
             unset($this->media[$key]);

@@ -28,9 +28,9 @@ class Posttype extends Component
 
     public $postTypeFields = [];
 
-    public $slug;
-
     public $reservedWords = ['id', 'type'];
+
+    public $slug;
 
     protected $listeners = ['refreshComponent' => '$refresh', 'savedField' => 'updateFields', 'saveField' => 'saveField', 'deleteField' => 'deleteField'];
 

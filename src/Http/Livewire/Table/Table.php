@@ -2,15 +2,15 @@
 
 namespace Eminiarts\Aura\Http\Livewire\Table;
 
-use Livewire\Component;
-use Eminiarts\Aura\Resource;
-use Eminiarts\Aura\Models\User;
-use Eminiarts\Aura\Http\Livewire\Table\Traits\Search;
-use Eminiarts\Aura\Http\Livewire\Table\Traits\Filters;
-use Eminiarts\Aura\Http\Livewire\Table\Traits\Sorting;
 use Eminiarts\Aura\Http\Livewire\Table\Traits\BulkActions;
-use Eminiarts\Aura\Http\Livewire\Table\Traits\QueryFilters;
+use Eminiarts\Aura\Http\Livewire\Table\Traits\Filters;
 use Eminiarts\Aura\Http\Livewire\Table\Traits\PerPagePagination;
+use Eminiarts\Aura\Http\Livewire\Table\Traits\QueryFilters;
+use Eminiarts\Aura\Http\Livewire\Table\Traits\Search;
+use Eminiarts\Aura\Http\Livewire\Table\Traits\Sorting;
+use Eminiarts\Aura\Models\User;
+use Eminiarts\Aura\Resource;
+use Livewire\Component;
 
 /**
  * Class Table
@@ -23,10 +23,6 @@ class Table extends Component
     use QueryFilters;
     use Search;
     use Sorting;
-
-    public $rowIds;
-
-    public $loaded = false;
 
     /**
      * List of table columns.
@@ -74,6 +70,8 @@ class Table extends Component
      */
     public $lastClickedRow;
 
+    public $loaded = false;
+
     /**
      * The model of the table.
      *
@@ -87,6 +85,8 @@ class Table extends Component
      * @var \Illuminate\Database\Eloquent\Model
      */
     public $parent;
+
+    public $rowIds;
 
     /**
      * Validation rules.
@@ -123,8 +123,6 @@ class Table extends Component
      */
     public $tableView;
 
-    protected $queryString = ['selectedFilter'];
-
     /**
      * List of events listened to by the component.
      *
@@ -137,14 +135,7 @@ class Table extends Component
         'refreshTableSelected' => 'refreshTableSelected',
     ];
 
-    public function loadTable() {
-        $this->loaded = true;
-    }
-
-    public function refreshTableSelected()
-    {
-        $this->selected = [];
-    }
+    protected $queryString = ['selectedFilter'];
 
     public function action($data)
     {
@@ -193,7 +184,6 @@ class Table extends Component
 
         $response = $this->model->{$action}($ids);
 
-
         if ($response instanceof \Symfony\Component\HttpFoundation\StreamedResponse) {
             return $response;
         }
@@ -206,17 +196,10 @@ class Table extends Component
         $this->emit('refreshTable');
     }
 
-    public function openBulkActionModal($action, $data)
+    public function getAllTableRows()
     {
-        // ray($data, $this->selectedRowsQuery->get());
-
-        $this->emit('openModal', $data['modal'], [
-            'action' => $action,
-            'selected' => $this->selectedRowsQuery->pluck('id'),
-            'model' => get_class($this->model),
-        ]);
-
-        // $emit('openModal', '{{ $data['modal'] }}', {{ json_encode(['action' => $action, 'selected' => $this->selectedRowsQuery->get()]) }})
+        // dd('hier', $this->rowsQuery->pluck('id'));
+        return $this->rowsQuery->pluck('id')->all();
     }
 
     // public function getRowIdsProperty()
@@ -225,10 +208,10 @@ class Table extends Component
     // }
 
     /**
-         * Get the available bulk actions.
-         *
-         * @return mixed
-         */
+     * Get the available bulk actions.
+     *
+     * @return mixed
+     */
     public function getBulkActionsProperty()
     {
         return $this->model->getBulkActions();
@@ -353,8 +336,17 @@ class Table extends Component
         return $this->applySorting($query);
     }
 
+    public function loadTable()
+    {
+        $this->loaded = true;
+    }
+
     public function mount($query = null)
-    {        
+    {
+        // if(!$this->loaded) {
+        //     return;
+        // }
+
         if ($this->parentModel) {
             // dd($this->parentModel);
         }
@@ -362,8 +354,7 @@ class Table extends Component
 
         $this->setTaxonomyFilters();
 
-
-        if($this->selectedFilter) {
+        if ($this->selectedFilter) {
             $this->filters = $this->userFilters[$this->selectedFilter];
         }
 
@@ -384,9 +375,22 @@ class Table extends Component
         }
     }
 
-    public function updatedPage($page)
+    public function openBulkActionModal($action, $data)
     {
-        $this->rowIds = $this->rows->pluck('id')->toArray();
+        // ray($data, $this->selectedRowsQuery->get());
+
+        $this->emit('openModal', $data['modal'], [
+            'action' => $action,
+            'selected' => $this->selectedRowsQuery->pluck('id'),
+            'model' => get_class($this->model),
+        ]);
+
+        // $emit('openModal', '{{ $data['modal'] }}', {{ json_encode(['action' => $action, 'selected' => $this->selectedRowsQuery->get()]) }})
+    }
+
+    public function refreshTableSelected()
+    {
+        $this->selected = [];
     }
 
     /**
@@ -450,10 +454,9 @@ class Table extends Component
         }
     }
 
-    public function getAllTableRows()
+    public function updatedPage($page)
     {
-        // dd('hier', $this->rowsQuery->pluck('id'));
-        return $this->rowsQuery->pluck('id')->all();
+        $this->rowIds = $this->rows->pluck('id')->toArray();
     }
 
     /**

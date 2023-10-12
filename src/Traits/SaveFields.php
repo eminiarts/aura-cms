@@ -159,20 +159,20 @@ trait SaveFields
         $this->notify('Saved Props successfully.');
     }
 
-     public function setKeysToFields($fields)
-     {
-         $group = null;
+    public function setKeysToFields($fields)
+    {
+        $group = null;
 
-         return $fields;
+        return $fields;
 
-         return collect($fields)->mapWithKeys(function ($item, $key) use (&$group) {
-             if (app($item['type'])->group) {
-                 $group = $item['slug'];
+        return collect($fields)->mapWithKeys(function ($item, $key) use (&$group) {
+            if (app($item['type'])->group) {
+                $group = $item['slug'];
 
-                 return [$item['slug'] => $item];
-             }
+                return [$item['slug'] => $item];
+            }
 
-             return [$group.'.'.$item['slug'] => $item];
-         })->toArray();
-     }
+            return [$group.'.'.$item['slug'] => $item];
+        })->toArray();
+    }
 }
