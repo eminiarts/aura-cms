@@ -44,12 +44,12 @@ class Json extends Field
         ]);
     }
 
-      public function set($value)
-      {
-          if (is_array($value)) {
-              return json_encode($value);
-          }
+    public function set($value)
+    {
+        if (is_array($value)) {
+            return json_encode($value);
+        }
 
-          return $value;
-      }
+        return $value;
+    }
 }

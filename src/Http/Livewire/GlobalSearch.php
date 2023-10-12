@@ -47,7 +47,6 @@ class GlobalSearch extends Component
 
             $searchableFields = app($resource)->getSearchableFields()->pluck('slug');
 
-
             $metaFields = $searchableFields->filter(function ($field) use ($resource) {
                 // check if it is a meta field
                 return app($resource)->isMetaField($field);

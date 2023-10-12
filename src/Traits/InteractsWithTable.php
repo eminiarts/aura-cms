@@ -14,6 +14,11 @@ trait InteractsWithTable
         return 'list';
     }
 
+    public function showTableSettings()
+    {
+        return true;
+    }
+
     public function tableGridView()
     {
         return false;
@@ -22,10 +27,5 @@ trait InteractsWithTable
     public function tableRowView()
     {
         return 'attachment.row';
-    }
-
-    public function showTableSettings()
-    {
-        return true;
     }
 }

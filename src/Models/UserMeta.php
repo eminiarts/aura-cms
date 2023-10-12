@@ -32,7 +32,7 @@ class UserMeta extends Meta
         static::addGlobalScope(new TeamScope());
 
         static::saving(function ($post) {
-            ray(config('aura.teams'), $post->team_id, auth()->user(), $post);
+            // ray(config('aura.teams'), $post->team_id, auth()->user(), $post);
             if (config('aura.teams') && ! $post->team_id && auth()->user()) {
                 $post->team_id = auth()->user()->current_team_id;
             }

@@ -22,9 +22,9 @@ class Option extends Resource
 
     protected $fillable = ['name', 'value', 'team_id'];
 
-    protected $table = 'options';
-
     protected static ?string $group = 'Aura';
+
+    protected $table = 'options';
 
     public static function getFields()
     {

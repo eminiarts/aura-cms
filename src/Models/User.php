@@ -95,6 +95,13 @@ class User extends Authenticatable
         return $this->resource->isSuperAdmin();
     }
 
+    public function clearCachedOption($option)
+    {
+        $option = 'user.'.$this->id.'.'.$option;
+
+        Cache::forget($option);
+    }
+
     // Reset to default create Method from Laravel
     public static function create($fields)
     {
@@ -161,13 +168,6 @@ class User extends Authenticatable
         if ($model) {
             return $model->value;
         }
-    }
-
-    public function clearCachedOption($option)
-    {
-        $option = 'user.'.$this->id.'.'.$option;
-
-        Cache::forget($option);
     }
 
     public function getOptionBookmarks()

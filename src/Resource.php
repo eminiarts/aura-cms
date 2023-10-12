@@ -37,6 +37,8 @@ class Resource extends Model
     use SaveMetaFields;
     use SaveTerms;
 
+    public $fieldsAttributeCache;
+
     protected $appends = ['fields'];
 
     protected $fillable = ['title', 'content', 'type', 'status', 'fields', 'slug', 'user_id', 'parent_id', 'order', 'taxonomies', 'terms', 'team_id', 'first_taxonomy', 'created_at', 'updated_at', 'deleted_at'];
@@ -64,8 +66,12 @@ class Resource extends Model
             return $value;
         }
 
-        // Not sure if this is the best way to do this
-        return $this->displayFieldValue($key, $value);
+        // If the key is in the fields array, then we want to return that
+        if (is_null($value) && isset($this->fields[$key])) {
+            return $this->fields[$key];
+        }
+
+        return $value;
     }
 
     /**
@@ -111,60 +117,43 @@ class Resource extends Model
 
     public function getFieldsAttribute()
     {
-        // ray('fields attribute');
+        if (! isset($this->fieldsAttributeCache)) {
+            $meta = $this->getMeta();
 
-        $meta = $this->getMeta();
+            $defaultValues = $this->getFieldSlugs()
+                ->mapWithKeys(fn ($value, $key) => [$value => null])
+                ->map(fn ($value, $key) => $meta[$key] ?? $value)
+                ->map(function ($value, $key) {
+                    // if the value is in $this->hidden, set it to null
+                    if (in_array($key, $this->hidden)) {
+                        return;
+                    }
 
-        $defaultValues = $this->getFieldSlugs()
-            ->mapWithKeys(fn ($value, $key) => [$value => null])
-            ->map(fn ($value, $key) => $meta[$key] ?? $value)
-            ->map(function ($value, $key) {
-                // if the value is in $this->hidden, set it to null
-                if (in_array($key, $this->hidden)) {
-                    return;
-                }
+                    // if $this->{$key} is set, then we want to use that
+                    if (isset($this->{$key})) {
+                        return $this->{$key};
+                    }
 
-                // if there is a function get{Slug}Field on the model, use it
-                $method = 'get'.Str::studly($key).'Field';
+                    // if $this->attributes[$key] is set, then we want to use that
+                    if (isset($this->attributes[$key])) {
+                        return $this->attributes[$key];
+                    }
 
-                if (method_exists($this, $method)) {
-                    return $this->{$method}();
-                }
+                    // if there is a function get{Slug}Field on the model, use it
+                    $method = 'get'.Str::studly($key).'Field';
 
-                $class = $this->fieldClassBySlug($key);
+                    if (method_exists($this, $method)) {
+                        return $this->{$method}();
+                    }
+                });
 
-                if ($key == 'submissions') {
-                    // TODO: Temporary fix
-                    return 'submissions';
-                }
+            $this->fieldsAttributeCache = $defaultValues->merge($meta ?? [])
+                ->filter(function ($value, $key) {
+                    return $this->shouldDisplayField($this->fieldBySlug($key));
+                });
+        }
 
-                if ($class && isset(optional($this)->{$key}) && method_exists($class, 'get')) {
-                    return $class->get($class, $this->{$key} ?? null);
-                }
-
-                // if $this->{$key} is set, then we want to use that
-                if (isset($this->{$key})) {
-                    return $this->{$key};
-                }
-
-                // if $this->attributes[$key] is set, then we want to use that
-                if (isset($this->attributes[$key])) {
-                    return $this->attributes[$key];
-                }
-            });
-
-        // ray($defaultValues);
-
-        return $defaultValues->merge($meta ?? [])->filter(function ($value, $key) {
-
-            // ray('before getAccessibleFieldKeys', $this->getAccessibleFieldKeys());
-
-            if (! in_array($key, $this->getAccessibleFieldKeys())) {
-                return false;
-            }
-
-            return true;
-        });
+        return $this->fieldsAttributeCache;
     }
 
     /**
@@ -306,7 +295,7 @@ class Resource extends Model
         static::addGlobalScope(new TeamScope());
 
         static::creating(function ($model) {
-            if (!$model->team_id) {
+            if (! $model->team_id) {
                 $model->team_id = 1;
             }
         });

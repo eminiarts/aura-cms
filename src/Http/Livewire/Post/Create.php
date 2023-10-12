@@ -114,6 +114,4 @@ class Create extends Component
     {
         $this->model = $model;
     }
-
-
 }

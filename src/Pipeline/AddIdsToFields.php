@@ -3,6 +3,7 @@
 namespace Eminiarts\Aura\Pipeline;
 
 use Closure;
+use InvalidArgumentException;
 
 class AddIdsToFields implements Pipe
 {
@@ -15,9 +16,14 @@ class AddIdsToFields implements Pipe
 
         $fields = collect($fields)->values()->map(function ($item, $key) use (&$currentParent, &$globalTabs, &$parentPanel, &$parentTab) {
             $item['_id'] = $key + 1;
+            $itemField = $item['field'];
+            $itemFieldType = $itemField->type;
+            $itemFieldGroup = $itemField->group;
+            $itemGlobal = optional($item)['global'];
+            $itemNested = optional($item)['nested'];
 
-            if (optional($item)['global'] === true && ! $globalTabs) {
-                if ($item['field']->type == 'tabs') {
+            if ($itemGlobal === true && ! $globalTabs) {
+                if ($itemFieldType == 'tabs') {
                     $globalTabs = $item;
                 }
 
@@ -28,23 +34,9 @@ class AddIdsToFields implements Pipe
                 return $item;
             }
 
-            // if (optional($item)['global'] === true && ! $globalTabs) {
-            //     if ($item['field']->type == 'tabs') {
-            //         $globalTabs = $item;
-            //     }
-
-            //     $item['_parent_id'] = null;
-            //     $currentParent = $item;
-            //     $parentPanel = null;
-
-            //     return $item;
-            // }
-
-            if ($item['field']->type !== 'panel' && $item['field']->group === true) {
-                if (optional($item)['global']) {
-
-                    // If type = group
-                    if($item['field']->type === 'group') {
+            if ($itemFieldType !== 'panel' && $itemFieldGroup === true) {
+                if ($itemGlobal) {
+                    if ($itemFieldType === 'group') {
                         $item['_parent_id'] = $currentParent['_parent_id'];
                         $currentParent = $item;
                         $parentPanel = null;
@@ -52,65 +44,42 @@ class AddIdsToFields implements Pipe
                         $item['_parent_id'] = optional($globalTabs)['_id'];
                         $parentPanel = null;
                     }
-
-                }
-                // Same Level Grouping
-                elseif (optional($currentParent)['type'] == $item['type']) {
-                    // Easier Option for now, should refactor
+                } elseif (optional($currentParent)['type'] == $itemFieldType) {
                     $item['_parent_id'] = $currentParent['_parent_id'];
-                }
-                // Parent Tab
-                elseif ($item['field']->type == 'tab') {
-                    if ($parentTab) {
-                        $item['_parent_id'] = $parentTab['_parent_id'];
-                    } else {
-                        $item['_parent_id'] = optional($currentParent)['_id'];
-                    }
+                } elseif ($itemFieldType == 'tab') {
+                    $item['_parent_id'] = $parentTab ? $parentTab['_parent_id'] : optional($currentParent)['_id'];
                     $parentTab = $item;
-                }
-                // Nested False
-                elseif (optional($item)['nested'] === false) {
-                    // dd($item);
+                } elseif ($itemNested === false) {
+                    $item['_parent_id'] = optional($currentParent)['_id'];
+                } else {
                     $item['_parent_id'] = optional($currentParent)['_id'];
                 }
 
-                // If Tab is set to Global, set it to GlobalTabs
-                else {
-                    $item['_parent_id'] = optional($currentParent)['_id'];
-                }
-
-                if (optional($item)['nested'] === true) {
+                if ($itemNested === true) {
                     $item['_parent_id'] = optional($currentParent)['_id'];
                 }
 
                 $currentParent = $item;
-            } elseif ($item['field']->type !== 'panel' && $item['field']->group === false) {
+            } elseif ($itemFieldType !== 'panel' && $itemFieldGroup === false) {
                 $item['_parent_id'] = optional($currentParent)['_id'];
-            } elseif ($item['field']->type == 'panel') {
-                if (optional($item)['global']) {
+            } elseif ($itemFieldType == 'panel') {
+                if ($itemGlobal) {
                     $item['_parent_id'] = null;
                     $parentPanel = null;
                     $currentParent = null;
-                }
-
-                if ($parentPanel) {
-                    $item['_parent_id'] = $parentPanel['_parent_id'];
                 } else {
-                    $item['_parent_id'] = optional($currentParent)['_id'];
+                    $item['_parent_id'] = $parentPanel ? $parentPanel['_parent_id'] : optional($currentParent)['_id'];
                 }
 
                 $currentParent = $item;
                 $parentPanel = $item;
                 $parentTab = null;
             } else {
-                dd('should never come to here');
+                throw new InvalidArgumentException('Unexpected field configuration.');
             }
 
             return $item;
         });
-
-
-        // dd($fields);
 
         return $next($fields);
     }

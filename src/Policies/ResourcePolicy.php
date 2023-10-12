@@ -34,7 +34,7 @@ class ResourcePolicy
      * @param  \App\Models\Post  $resource
      * @return \Illuminate\Auth\Access\Response|bool
      */
-    public function delete(User $user, Resource $resource)
+    public function delete(User $user, $resource)
     {
         if ($user->resource->isSuperAdmin()) {
             return true;
@@ -62,8 +62,12 @@ class ResourcePolicy
      * @param  \App\Models\Post  $resource
      * @return \Illuminate\Auth\Access\Response|bool
      */
-    public function forceDelete(User $user, Resource $resource)
+    public function forceDelete(User $user, $resource)
     {
+        if ($user->resource->isSuperAdmin()) {
+            return true;
+        }
+
         if ($user->resource->hasPermissionTo('forceDelete', $resource)) {
             return true;
         }
@@ -77,7 +81,7 @@ class ResourcePolicy
      * @param  \App\Models\Post  $resource
      * @return \Illuminate\Auth\Access\Response|bool
      */
-    public function restore(User $user, Resource $resource)
+    public function restore(User $user, $resource)
     {
         if ($user->resource->isSuperAdmin()) {
             return true;
@@ -103,8 +107,6 @@ class ResourcePolicy
 
         // Scoped Posts
         if ($user->resource->hasPermissionTo('scope', $resource) && $user->resource->hasPermissionTo('update', $resource)) {
-            //dd('scope should be called', $resource->user_id == $user->id, $resource->user_id, $user->id);
-
             if ($resource->user_id == $user->id) {
                 return true;
             } else {
@@ -115,8 +117,6 @@ class ResourcePolicy
         if ($user->resource->hasPermissionTo('update', $resource)) {
             return true;
         }
-
-        // dd('hier', $user->resource->hasPermissionTo('update', $resource), $resource);
 
         return false;
     }
@@ -143,8 +143,7 @@ class ResourcePolicy
         if ($user->resource->isSuperAdmin()) {
             return true;
         }
-        
-        
+
         // Scoped Posts
         if ($user->resource->hasPermissionTo('scope', $resource) && $user->resource->hasPermissionTo('view', $resource)) {
             if ($resource->user_id == $user->id) {

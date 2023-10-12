@@ -28,8 +28,12 @@ class TeamScope implements Scope
             return $builder->where('posts.team_id', auth()->user()->current_team_id);
         }
 
+        if (auth()->user() && $model->getTable() == 'posts') {
+            return $builder->where('posts.team_id', auth()->user()->current_team_id);
+        }
+
         if (auth()->user()) {
-            return $builder->whereTeamId(auth()->user()->current_team_id);
+            return $builder->where('team_id', auth()->user()->current_team_id);
         }
 
         // Check access?

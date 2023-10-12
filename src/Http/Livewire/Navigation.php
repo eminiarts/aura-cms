@@ -10,7 +10,7 @@ class Navigation extends Component
 
     public function isToggled($group)
     {
-        return !in_array($group, $this->toggledGroups);
+        return ! in_array($group, $this->toggledGroups);
     }
 
     public function mount($query = null)
