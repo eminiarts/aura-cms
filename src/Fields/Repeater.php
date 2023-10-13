@@ -10,6 +10,9 @@ class Repeater extends Field
 
     public string $type = 'repeater';
 
+    // public bool $showChildrenOnIndex = false;
+    // TODO: $showChildrenOnIndex should be applied to children
+
     // public $view = 'components.fields.repeater';
 
     public function get($field, $value)
