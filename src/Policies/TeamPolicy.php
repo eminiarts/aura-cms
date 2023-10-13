@@ -20,6 +20,11 @@ class TeamPolicy
         return $user->ownsTeam($team);
     }
 
+    public function inviteUsers(User $user, Team $team)
+    {
+        return $user->ownsTeam($team);
+    }
+
     /**
      * Determine whether the user can create models.
      *
