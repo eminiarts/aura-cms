@@ -59,7 +59,69 @@ test('user can be invited', function () {
 });
 
 test('user gets correct role', function () {
-})->todo();
+
+    // Test InviteUser Livewire Component
+    $component = Livewire::test(InviteUser::class, ['resource' => 'user'])
+        ->call('save')
+        ->assertHasErrors(['post.fields.email' => 'required'])
+        ->set('post.fields.email', 'test@test.ch')
+        ->call('save')
+        ->assertHasErrors(['post.fields.role' => 'required'])
+        ->set('post.fields.role', 1)
+        ->call('save')
+        ->assertHasNoErrors();
+
+    // DB should have 1 TeamInvitation
+    $this->assertEquals(1, TeamInvitation::count());
+
+    $invitation = TeamInvitation::first();
+
+    $invitation->fresh();
+
+    // DB should have 1 TeamInvitation with correct email
+    expect($invitation->email)->toBe('test@test.ch');
+
+    // Go to the Registration Page and make sure it works
+    $url = URL::signedRoute('aura.invitation.register', [$invitation->team, $invitation]);
+
+    // Log out
+    $this->app['auth']->logout();
+
+    // As a Guest
+    $this->assertGuest();
+
+    // Visit $url and assert Ok
+    $response = $this->get($url);
+
+    dd($response->exception->getMessage());
+
+    $response->assertOk();
+
+    // Register the user and see if the role is correct
+    // Register the user and see if the role is correct
+    $this->post($url, [
+        'name' => 'Test User',
+        'password' => 'password',
+        'password_confirmation' => 'password',
+    ])->assertOk();
+
+    // Check if the user is created in the database
+    $this->assertDatabaseHas('users', [
+        'name' => 'Test User',
+        'email' => 'test@test.ch',
+    ]);
+
+
+
+    // Check if the user is logged in
+
+    // Check if the Team Invitation is deleted
+
+    // Check if the user has the correct role
+
+
+
+});
 
 test('Team Invitation can be created', function () {
     $team = $this->user->currentTeam;

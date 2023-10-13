@@ -2,9 +2,6 @@
     use Eminiarts\Aura\TransformColor;
 @endphp
 
-
-
-
 @if($settings)
 <style>
 :root {
@@ -822,6 +819,5 @@
             document.documentElement.classList.add('dark')
         }
     @endif
-
 
 </script>
