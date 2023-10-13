@@ -21,11 +21,11 @@ Route::middleware('guest')->name('aura.')->group(function () {
 
     Route::get('register/{team}/{teamInvitation}', [InvitationRegisterUserController::class, 'create'])->name('invitation.register')->middleware(['signed']);
 
-    Route::post('register/{team}/{teamInvitation}', [InvitationRegisterUserController::class, 'store'])->middleware(['signed']);
+    Route::post('register/{team}/{teamInvitation}', [InvitationRegisterUserController::class, 'store'])->middleware(['signed'])->name('invitation.register.post');
 
     Route::get('login', [AuthenticatedSessionController::class, 'create'])->name('login');
 
-    Route::post('login', [AuthenticatedSessionController::class, 'store']);
+    Route::post('login', [AuthenticatedSessionController::class, 'store'])->name('login.post');
 
     Route::get('forgot-password', [PasswordResetLinkController::class, 'create'])->name('password.request');
 
