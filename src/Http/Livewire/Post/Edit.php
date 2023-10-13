@@ -106,7 +106,7 @@ class Edit extends Component
 
     public function render()
     {
-        return view('aura::livewire.post.edit')->layout('aura::components.layout.app');
+        return view($this->model->editView())->layout('aura::components.layout.app');
     }
 
     public function rules()

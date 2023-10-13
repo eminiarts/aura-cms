@@ -170,6 +170,11 @@ trait AuraModelConfig
         return 'aura::livewire.post.edit';
     }
 
+    public function viewView()
+    {
+        return 'aura::livewire.post.view';
+    }
+
     public function getActions()
     {
         return $this->actions;

@@ -156,18 +156,18 @@ class Resource extends Model
         return $this->fieldsAttributeCache;
     }
 
-    /**
-     * Gets the featured image if any
-     * Looks in meta the _thumbnail_id field.
-     *
-     * @return string
-     */
-    public function getImageAttribute()
-    {
-        if ($this->thumbnail and $this->thumbnail->attachment) {
-            return $this->thumbnail->attachment->guid;
-        }
-    }
+    // /**
+    //  * Gets the featured image if any
+    //  * Looks in meta the _thumbnail_id field.
+    //  *
+    //  * @return string
+    //  */
+    // public function getImageAttribute()
+    // {
+    //     if ($this->thumbnail and $this->thumbnail->attachment) {
+    //         return $this->thumbnail->attachment->guid;
+    //     }
+    // }
 
     public function getMeta($key = null)
     {
