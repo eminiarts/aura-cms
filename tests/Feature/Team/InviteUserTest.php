@@ -62,6 +62,15 @@ test('user can be invited', function () {
 
 test('user gets correct role', function () {
 
+    // Create a new Role
+    $role = Role::create([
+        'title' => 'Test Role',
+        'slug' => 'test_role',
+        'permissions' => [
+            'test_permission' => true,
+        ],
+    ]);
+
     // Test InviteUser Livewire Component
     $component = Livewire::test(InviteUser::class, ['resource' => 'user'])
         ->call('save')
@@ -69,7 +78,7 @@ test('user gets correct role', function () {
         ->set('post.fields.email', 'test@test.ch')
         ->call('save')
         ->assertHasErrors(['post.fields.role' => 'required'])
-        ->set('post.fields.role', 1)
+        ->set('post.fields.role', $role->id)
         ->call('save')
         ->assertHasNoErrors();
 
@@ -95,17 +104,14 @@ test('user gets correct role', function () {
     // Visit $url and assert Ok
     $response = $this->get($url);
 
-    // dd($response->exception->getMessage());
-
     $response->assertOk();
 
     // Register the user and see if the role is correct
-    // Register the user and see if the role is correct
-    $this->post($url, [
+    $response = $this->post($url, [
         'name' => 'Test User',
         'password' => 'password',
         'password_confirmation' => 'password',
-    ])->assertOk();
+    ]);
 
     // Check if the user is created in the database
     $this->assertDatabaseHas('users', [
@@ -113,16 +119,22 @@ test('user gets correct role', function () {
         'email' => 'test@test.ch',
     ]);
 
+    // Assert that the user is logged in
+    $this->assertAuthenticated();
 
-
-    // Check if the user is logged in
+    // Assert is on dashboard
+    $response->assertRedirect(RouteServiceProvider::HOME);
 
     // Check if the Team Invitation is deleted
+    $this->assertDatabaseMissing('team_invitations', [
+        'email' => 'test@test.ch',
+    ]);
 
     // Check if the user has the correct role
+    $user = User::where('email', 'test@test.ch')->first();
 
-
-
+    expect($user->hasRole('test_role'))->toBeTrue();
+    expect($user->hasRole('super_admin'))->toBeFalse();
 });
 
 test('Team Invitation can be created', function () {
