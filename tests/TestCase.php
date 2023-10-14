@@ -2,15 +2,16 @@
 
 namespace Eminiarts\Aura\Tests;
 
-use Eminiarts\Aura\AuraServiceProvider;
-use Eminiarts\Aura\Providers\FortifyServiceProvider;
-use Illuminate\Database\Eloquent\Factories\Factory;
-use Intervention\Image\ImageServiceProvider;
-use Lab404\Impersonate\ImpersonateServiceProvider;
 use Livewire\LivewireServiceProvider;
-use LivewireUI\Modal\LivewireModalServiceProvider;
-use Orchestra\Testbench\TestCase as Orchestra;
+use Eminiarts\Aura\AuraServiceProvider;
+use Eminiarts\Aura\Providers\AuthServiceProvider;
 use Spatie\LaravelRay\RayServiceProvider;
+use Laravel\Fortify\FortifyServiceProvider;
+use Intervention\Image\ImageServiceProvider;
+use Orchestra\Testbench\TestCase as Orchestra;
+use Lab404\Impersonate\ImpersonateServiceProvider;
+use LivewireUI\Modal\LivewireModalServiceProvider;
+use Illuminate\Database\Eloquent\Factories\Factory;
 
 class TestCase extends Orchestra
 {
@@ -41,12 +42,13 @@ class TestCase extends Orchestra
     protected function getPackageProviders($app)
     {
         return [
-            AuraServiceProvider::class,
             LivewireServiceProvider::class,
             ImpersonateServiceProvider::class,
             LivewireModalServiceProvider::class,
             ImageServiceProvider::class,
             FortifyServiceProvider::class,
+            AuthServiceProvider::class,
+            AuraServiceProvider::class,
             RayServiceProvider::class,
         ];
     }

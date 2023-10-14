@@ -195,6 +195,7 @@ class AuraServiceProvider extends PackageServiceProvider
 
     public function packageBooted()
     {
+        // ray('package booted');
         if ($this->app->runningInConsole()) {
             $this->publishes([
                 $this->package->basePath('/../resources/dist') => public_path("vendor/{$this->package->shortName()}"),

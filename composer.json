@@ -78,7 +78,7 @@
         "laravel": {
             "providers": [
                 "Lab404\\Impersonate\\ImpersonateServiceProvider",
-                "Eminiarts\\Aura\\Providers\\FortifyServiceProvider",
+                "Eminiarts\\Aura\\Providers\\AuthServiceProvider",
                 "Eminiarts\\Aura\\AuraServiceProvider",
                 "Aura\\Pro\\ProServiceProvider",
                 "Aura\\Flows\\FlowsServiceProvider",

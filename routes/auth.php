@@ -1,20 +1,25 @@
 <?php
 
-use Eminiarts\Aura\Http\Controllers\Auth\AuthenticatedSessionController;
-use Eminiarts\Aura\Http\Controllers\Auth\ConfirmablePasswordController;
-use Eminiarts\Aura\Http\Controllers\Auth\EmailVerificationNotificationController;
-use Eminiarts\Aura\Http\Controllers\Auth\EmailVerificationPromptController;
-use Eminiarts\Aura\Http\Controllers\Auth\InvitationRegisterUserController;
-use Eminiarts\Aura\Http\Controllers\Auth\NewPasswordController;
+use Laravel\Fortify\Fortify;
+use Illuminate\Support\Facades\Route;
+use Eminiarts\Aura\Http\Controllers\SwitchTeamController;
 use Eminiarts\Aura\Http\Controllers\Auth\PasswordController;
-use Eminiarts\Aura\Http\Controllers\Auth\PasswordResetLinkController;
+use Eminiarts\Aura\Http\Controllers\Auth\NewPasswordController;
+use Eminiarts\Aura\Http\Controllers\Auth\VerifyEmailController;
 use Eminiarts\Aura\Http\Controllers\Auth\RegisteredUserController;
 use Eminiarts\Aura\Http\Controllers\Auth\TeamInvitationController;
-use Eminiarts\Aura\Http\Controllers\Auth\VerifyEmailController;
-use Eminiarts\Aura\Http\Controllers\SwitchTeamController;
-use Illuminate\Support\Facades\Route;
+use Laravel\Fortify\Http\Controllers\AuthenticatedSessionController;
+use Eminiarts\Aura\Http\Controllers\Auth\PasswordResetLinkController;
+use Eminiarts\Aura\Http\Controllers\Auth\ConfirmablePasswordController;
+use Eminiarts\Aura\Http\Controllers\Auth\InvitationRegisterUserController;
+use Eminiarts\Aura\Http\Controllers\Auth\EmailVerificationPromptController;
+use Eminiarts\Aura\Http\Controllers\Auth\EmailVerificationNotificationController;
+
+Route::get('logout', [AuthenticatedSessionController::class, 'destroy'])->name('logout');
+
 
 Route::middleware('guest')->name('aura.')->group(function () {
+
     Route::get('register', [RegisteredUserController::class, 'create'])->name('register');
 
     Route::post('register', [RegisteredUserController::class, 'store'])->name('register.post');
@@ -22,10 +27,6 @@ Route::middleware('guest')->name('aura.')->group(function () {
     Route::get('register/{team}/{teamInvitation}', [InvitationRegisterUserController::class, 'create'])->name('invitation.register')->middleware(['signed']);
 
     Route::post('register/{team}/{teamInvitation}', [InvitationRegisterUserController::class, 'store'])->middleware(['signed'])->name('invitation.register.post');
-
-    Route::get('login', [AuthenticatedSessionController::class, 'create'])->name('login');
-
-    Route::post('login', [AuthenticatedSessionController::class, 'store'])->name('login.post');
 
     Route::get('forgot-password', [PasswordResetLinkController::class, 'create'])->name('password.request');
 
@@ -48,10 +49,6 @@ Route::middleware('auth')->name('aura.')->group(function () {
     Route::post('confirm-password', [ConfirmablePasswordController::class, 'store']);
 
     Route::put('password', [PasswordController::class, 'update'])->name('password.update');
-
-    Route::post('logout', [AuthenticatedSessionController::class, 'destroy']);
-
-    Route::get('logout', [AuthenticatedSessionController::class, 'destroy'])->name('logout');
 
     // If has Team Features
     Route::put('/current-team', [SwitchTeamController::class, 'update'])->name('current-team.update');

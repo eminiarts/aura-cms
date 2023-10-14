@@ -1,17 +1,19 @@
 <?php
 
+use Livewire\Livewire;
 use Eminiarts\Aura\Facades\Aura;
-use Eminiarts\Aura\Http\Livewire\AuraConfig;
-use Eminiarts\Aura\Http\Livewire\User\InviteUser;
-use Eminiarts\Aura\Providers\RouteServiceProvider;
 use Eminiarts\Aura\Resources\Role;
 use Eminiarts\Aura\Resources\Team;
-use Eminiarts\Aura\Resources\TeamInvitation;
 use Eminiarts\Aura\Resources\User;
-use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\URL;
-use Livewire\Livewire;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Artisan;
+use Eminiarts\Aura\Http\Livewire\AuraConfig;
+use Eminiarts\Aura\Resources\TeamInvitation;
+use Eminiarts\Aura\Http\Livewire\User\InviteUser;
+use Eminiarts\Aura\Providers\RouteServiceProvider;
+
+use Illuminate\Foundation\Testing\RefreshDatabase;
 
 use function Pest\Livewire\livewire;
 
@@ -93,7 +95,7 @@ test('user gets correct role', function () {
     // Visit $url and assert Ok
     $response = $this->get($url);
 
-    dd($response->exception->getMessage());
+    // dd($response->exception->getMessage());
 
     $response->assertOk();
 
