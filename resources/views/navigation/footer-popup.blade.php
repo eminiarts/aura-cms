@@ -38,7 +38,7 @@
   {{-- <x-aura::dropdown-link href="{{ route('aura.profile') }}">
       {{ __('View Profile') }}
   </x-aura::dropdown-link> --}}
-  <x-aura::dropdown-link href="{{ route('aura.logout') }}">
+  <x-aura::dropdown-link href="{{ route('logout') }}">
       {{ __('Logout') }}
   </x-aura::dropdown-link>
 
