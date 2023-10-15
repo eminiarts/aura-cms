@@ -15,7 +15,7 @@ test('Aura without teams - pages', function () {
     config(['aura.teams' => false]);
 
     // without exception handling
-    $this->withoutExceptionHandling();
+    // $this->withoutExceptionHandling();
 
     expect(config('aura.teams'))->toBeFalse();
 

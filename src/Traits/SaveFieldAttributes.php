@@ -19,7 +19,8 @@ trait SaveFieldAttributes
                 $post->attributes['fields'] = [];
             }
 
-            $post->getFieldSlugs()->each(function ($slug) use ($post) {
+
+            collect($post->inputFieldsSlugs())->each(function ($slug) use ($post) {
                 if (optional($post->attributes)[$slug]) {
                     $class = $post->fieldClassBySlug($slug);
 
