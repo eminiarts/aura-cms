@@ -13,24 +13,24 @@ trait InputFieldsHelpers
 
     protected static $inputFieldSlugs = [];
 
-    public function clearModelCache()
-    {
-        // set accessibleFieldKeysCache to null
-        $this->accessibleFieldKeysCache = null;
+    // public function clearModelCache()
+    // {
+    //     // set accessibleFieldKeysCache to null
+    //     $this->accessibleFieldKeysCache = null;
 
-        // Generate the cache keys based on the model class
-        $fieldsCacheKey = $this->getFieldCacheKey();
-        $mappedFieldsCacheKey = $this->getFieldCacheKey().'-mappedFields';
+    //     // Generate the cache keys based on the model class
+    //     $fieldsCacheKey = $this->getFieldCacheKey();
+    //     $mappedFieldsCacheKey = $this->getFieldCacheKey().'-mappedFields';
 
-        // Check if the cache keys are bound and remove them
-        if (app()->bound($fieldsCacheKey)) {
-            app()->offsetUnset($fieldsCacheKey);
-        }
+    //     // Check if the cache keys are bound and remove them
+    //     if (app()->bound($fieldsCacheKey)) {
+    //         app()->offsetUnset($fieldsCacheKey);
+    //     }
 
-        if (app()->bound($mappedFieldsCacheKey)) {
-            app()->offsetUnset($mappedFieldsCacheKey);
-        }
-    }
+    //     if (app()->bound($mappedFieldsCacheKey)) {
+    //         app()->offsetUnset($mappedFieldsCacheKey);
+    //     }
+    // }
 
     public function fieldBySlug($slug)
     {
