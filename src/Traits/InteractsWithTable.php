@@ -28,4 +28,9 @@ trait InteractsWithTable
     {
         return 'attachment.row';
     }
+
+    public function tableView()
+    {
+        return 'aura::components.table.table';
+    }
 }

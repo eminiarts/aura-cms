@@ -304,9 +304,9 @@ class Resource extends Model
         static::addGlobalScope(new TeamScope());
 
         static::creating(function ($model) {
-            if (! $model->team_id) {
-                $model->team_id = 1;
-            }
+            // if (! $model->team_id) {
+            //     $model->team_id = 1;
+            // }
         });
 
         static::created(function ($post) {

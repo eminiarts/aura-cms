@@ -439,10 +439,7 @@ trait AuraModelConfig
         return static::$singularName ?? Str::title(static::$slug);
     }
 
-    public function tableView()
-    {
-        return 'aura::components.table.table';
-    }
+
 
     public function team()
     {
