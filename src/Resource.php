@@ -120,7 +120,7 @@ class Resource extends Model
         if (! isset($this->fieldsAttributeCache)) {
             $meta = $this->getMeta();
 
-            $defaultValues = $this->getFieldSlugs()
+            $defaultValues = collect($this->inputFieldsSlugs())
                 ->mapWithKeys(fn ($value, $key) => [$value => null])
                 ->map(fn ($value, $key) => $meta[$key] ?? $value)
                 ->map(function ($value, $key) {
@@ -145,6 +145,15 @@ class Resource extends Model
                     if (method_exists($this, $method)) {
                         return $this->{$method}();
                     }
+
+                    $class = $this->fieldClassBySlug($key);
+
+                    if ($class && isset(optional($this)->{$key}) && method_exists($class, 'get')) {
+                        dd('get here');
+                        return $class->get($class, $this->{$key} ?? null);
+                    }
+
+
                 });
 
             $this->fieldsAttributeCache = $defaultValues->merge($meta ?? [])
