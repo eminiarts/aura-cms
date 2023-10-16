@@ -15,7 +15,7 @@ trait InputFieldsHelpers
 
     protected static $inputFieldSlugs = [];
 
-
+    protected static $mappedFields = [];
 
     public function fieldBySlug($slug)
     {
@@ -132,26 +132,21 @@ trait InputFieldsHelpers
 
     public function mappedFields()
     {
-        return $this->fieldsCollection()->map(function ($item) {
+        // mappedFields
+        $class = get_class($this);
+
+        if (isset(self::$mappedFields[$class])) {
+            return self::$mappedFields[$class];
+        }
+
+        self::$mappedFields[$class] =  $this->fieldsCollection()->map(function ($item) {
             $item['field'] = app($item['type'])->field($item);
             $item['field_type'] = app($item['type'])->type;
 
             return $item;
         });
 
-        // Bind the mapped fields collection as a singleton if it's not already bound
-        // app()->singletonIf($cacheKey, function () {
-        //     return $this->fieldsCollection()->map(function ($item) {
-        //         $item['field'] = app($item['type'])->field($item);
-        //         $item['field_type'] = app($item['type'])->type;
-
-        //         return $item;
-        //     });
-        // });
-
-        // // Return the cached result
-        // return app($cacheKey);
-
+        return self::$mappedFields[$class];
     }
 
     public function sendThroughPipeline($fields, $pipes)
