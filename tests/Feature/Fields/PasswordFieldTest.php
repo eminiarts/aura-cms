@@ -40,6 +40,8 @@ class PasswordFieldModel extends Resource
 
     public static string $type = 'PasswordModel';
 
+    protected $hidden = ['password'];
+
     public static function getFields()
     {
         return [
@@ -109,6 +111,8 @@ test('password field gets not overwritten if saved as null', function () {
 
     $this->assertTrue(Hash::check('123456789', $post->password));
 
+    // dump($post->password);
+
     $model = PasswordFieldModel::query();
     $slug = 'PasswordModel';
 
@@ -129,8 +133,10 @@ test('password field gets not overwritten if saved as null', function () {
 
     $post = PasswordFieldModel::first();
 
+    // dump($post->fields['password']);
+
     // Assert Password is still 123456789
-    $this->assertTrue(Hash::check('123456789', $model->fields['password']));
+    $this->assertTrue(Hash::check('123456789', $post->fields['password']));
 
     $this->assertTrue(Hash::check('123456789', $post->password));
 });

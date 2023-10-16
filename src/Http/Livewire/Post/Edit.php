@@ -94,7 +94,10 @@ class Edit extends Component
         // Array instead of Eloquent Model
         $this->post = $this->model->attributesToArray();
 
-        // dd($this->model, $this->post);
+        // foreach fields, call the hydration method on the field
+        $this->initializeModelFields();
+
+        // foreach fields, call the hydration method on the field
 
         $this->post['terms'] = $this->model->terms;
 
@@ -102,6 +105,17 @@ class Edit extends Component
         // if $this->post['terms']['tag'] is not set, set it to null
         $this->post['terms']['tag'] = $this->post['terms']['tag'] ?? null;
         $this->post['terms']['category'] = $this->post['terms']['category'] ?? null;
+
+    }
+
+    public function initializeModelFields()
+    {
+        foreach ($this->model->inputFields() as $field) {
+            // If the method exists in the field type, call it directly.
+            if (method_exists($field['field'], 'hydrate')) {
+                $this->post['fields'][$field['slug']] = $field['field']->hydrate();
+            }
+        }
     }
 
     public function render()

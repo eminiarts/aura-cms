@@ -123,10 +123,11 @@ class Resource extends Model
             $defaultValues = collect($this->inputFieldsSlugs())
                 ->mapWithKeys(fn ($value, $key) => [$value => null])
                 ->map(fn ($value, $key) => $meta[$key] ?? $value)
+                // ->dd()
                 ->map(function ($value, $key) {
                     // if the value is in $this->hidden, set it to null
                     if (in_array($key, $this->hidden)) {
-                        return;
+                        // return null;
                     }
 
                     // if $this->{$key} is set, then we want to use that
@@ -153,13 +154,12 @@ class Resource extends Model
                         return $class->get($class, $this->{$key} ?? null);
                     }
 
-
+                    return $value;
                 });
 
-            $this->fieldsAttributeCache = $defaultValues->merge($meta ?? [])
-                ->filter(function ($value, $key) {
-                    return $this->shouldDisplayField($this->fieldBySlug($key));
-                });
+            $this->fieldsAttributeCache = $defaultValues->filter(function ($value, $key) {
+                return $this->shouldDisplayField($this->fieldBySlug($key));
+            });
         }
 
         return $this->fieldsAttributeCache;
