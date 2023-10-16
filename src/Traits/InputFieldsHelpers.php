@@ -7,42 +7,38 @@ use Illuminate\Support\Facades\Cache;
 
 trait InputFieldsHelpers
 {
+    protected static $fieldsBySlug = [];
+
     protected static $fieldClassesBySlug = [];
 
     protected static $fieldsCollectionCache = [];
 
     protected static $inputFieldSlugs = [];
 
-    // public function clearModelCache()
-    // {
-    //     // set accessibleFieldKeysCache to null
-    //     $this->accessibleFieldKeysCache = null;
 
-    //     // Generate the cache keys based on the model class
-    //     $fieldsCacheKey = $this->getFieldCacheKey();
-    //     $mappedFieldsCacheKey = $this->getFieldCacheKey().'-mappedFields';
-
-    //     // Check if the cache keys are bound and remove them
-    //     if (app()->bound($fieldsCacheKey)) {
-    //         app()->offsetUnset($fieldsCacheKey);
-    //     }
-
-    //     if (app()->bound($mappedFieldsCacheKey)) {
-    //         app()->offsetUnset($mappedFieldsCacheKey);
-    //     }
-    // }
 
     public function fieldBySlug($slug)
     {
-        return $this->fieldsCollection()->firstWhere('slug', $slug);
+
+        // Construct a unique key using the class name and the slug
+        $key = get_class($this) . '-' . $slug;
+
+        // If this key exists in the static array, return the cached result
+        if (isset(self::$fieldsBySlug[$key])) {
+            return self::$fieldsBySlug[$key];
+        }
+
+        $result = $this->fieldsCollection()->firstWhere('slug', $slug);
+
+        self::$fieldsBySlug[$key] = $result;
+
+        return $result;
     }
 
     public function fieldClassBySlug($slug)
     {
-        $class = get_class($this);
-
         // Construct a unique key using the class name and the slug
-        $key = $class.'-'.$slug;
+        $key = get_class($this) . '-' . $slug;
 
         // If this key exists in the static array, return the cached result
         if (isset(self::$fieldClassesBySlug[$key])) {
