@@ -43,7 +43,7 @@ class BelongsTo extends Field
         });
 
         if (app($request->model)->usesCustomTable()) {
-            $results = app($request->model)->searchIn($searchableFields->toArray(), $request->search)->take(20)->get()->map(function ($item) {
+            $results = app($request->model)->searchIn($searchableFields->toArray(), $request->search)->take(50)->get()->map(function ($item) {
                 return [
                     'id' => $item->id,
                     'title' => $item->title(),
