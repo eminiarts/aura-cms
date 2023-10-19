@@ -135,7 +135,7 @@ class Edit extends Component
     {
         $this->validate();
 
-        // unset($this->post['fields']['group']);
+        unset($this->post['fields']['group']);
 
         // unset this post fields group
 
