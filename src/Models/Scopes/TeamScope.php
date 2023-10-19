@@ -33,7 +33,7 @@ class TeamScope implements Scope
         }
 
         if (auth()->user()) {
-            return $builder->where('team_id', auth()->user()->current_team_id);
+            return $builder->where($model->getTable() . '.team_id', auth()->user()->current_team_id);
         }
 
         // Check access?
