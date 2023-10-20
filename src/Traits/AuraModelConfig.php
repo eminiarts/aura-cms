@@ -95,28 +95,28 @@ trait AuraModelConfig
      * @param  string  $key
      * @return mixed
      */
-    public function __get($key)
-    {
-        // // Title is a special case, for now
-        if ($key == 'title') {
-            return $this->getAttributeValue($key);
-        }
+    // public function __get($key)
+    // {
+    //     // // Title is a special case, for now
+    //     if ($key == 'title') {
+    //         return $this->getAttributeValue($key);
+    //     }
 
-        // Does not work atm
-        // if ($key == 'roles') {
-        //     return;
-        //     return $this->getRolesField();
-        // }
+    //     // Does not work atm
+    //     // if ($key == 'roles') {
+    //     //     return;
+    //     //     return $this->getRolesField();
+    //     // }
 
-        $value = parent::__get($key);
+    //     $value = parent::__get($key);
 
-        if ($value) {
-            return $value;
-        }
+    //     if ($value) {
+    //         return $value;
+    //     }
 
-        // ray()->count();
-        return $this->displayFieldValue($key, $value);
-    }
+    //     // ray()->count();
+    //     return $this->displayFieldValue($key, $value);
+    // }
 
     public function createUrl()
     {
