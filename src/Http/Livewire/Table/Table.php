@@ -323,14 +323,18 @@ class Table extends Component
             $query = $query->with(['meta', 'taxonomies']);
         }
 
-        // Search
-        if ($this->search) {
-            $query = $this->applySearch($query);
-        }
+       
 
         if ($this->filters) {
             $query = $this->applyTaxonomyFilter($query);
             $query = $this->applyCustomFilter($query);
+        }
+
+        // Search
+        if ($this->search) {
+            $query = $this->applySearch($query);
+
+            // return $query;
         }
 
         return $this->applySorting($query);
