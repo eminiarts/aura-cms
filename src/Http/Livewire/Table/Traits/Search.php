@@ -17,7 +17,6 @@ trait Search
     {
 
         if ($this->search) {
-
             $searchableFields = $this->model->getSearchableFields()->pluck('slug');
 
             $metaFields = $searchableFields->filter(function ($field) {
@@ -32,6 +31,8 @@ trait Search
                             ->whereIn('post_meta.key', $metaFields);
                     })
                     ->where(function ($query) {
+                        // Todo: Meta fields on Custom Tables may not have a title field. 
+
                         $query->where($this->model->getTable().'.title', 'like', '%'.$this->search.'%')
                             ->orWhere(function ($query) {
                                 $query->where('post_meta.value', 'LIKE', '%'.$this->search.'%');
@@ -40,8 +41,23 @@ trait Search
                     ->groupBy($this->model->getTable().'.id');
             }
 
+            if ($searchableFields->count() > 0) {
+                $query->where(function ($query) use ($searchableFields, $metaFields) {
+                    foreach ($searchableFields as $field) {
+
+                        // if $field is in $metaFields, continue
+                        if ($metaFields->contains($field)) {
+                            continue;
+                        }
+
+                        $query->orWhere($this->model->getTable() . '.' . $field, 'like', '%'.$this->search.'%');
+                    }
+                });
+            }
+
             // Check if there is a search method in the model (modifySearch()), and call it.
             if (method_exists($this->model, 'modifySearch')) {
+                // dump('modify search');
                 $query = $this->model->modifySearch($query, $this->search);
             }
         }
