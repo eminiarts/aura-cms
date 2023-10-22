@@ -58,7 +58,7 @@ trait InputFields
 
         // Maybe delete this one?
         if (optional($this->fieldBySlug($key))['display'] && $value) {
-            return $this->fieldBySlug($key)['display']($value);
+            return $this->fieldBySlug($key)['display']($value, $this);
         }
 
         if ($value === null && optional(optional($this)->meta)->$key) {
