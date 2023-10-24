@@ -363,6 +363,10 @@ trait AuraModelConfig
      */
     public function meta()
     {
+        if(!$this->usesMeta()) {
+            return;
+        }
+
         return $this->hasMany(Meta::class, 'post_id');
         //->whereIn('key', $this->inputFieldsSlugs())
     }

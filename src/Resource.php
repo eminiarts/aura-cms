@@ -115,6 +115,11 @@ class Resource extends Model
         return $this->stripShortcodes($this->post_excerpt);
     }
 
+    public function clearFieldsAttributeCache()
+    {
+        $this->fieldsAttributeCache = null;
+    }
+
     public function getFieldsAttribute()
     {
         if (! isset($this->fieldsAttributeCache)) {
@@ -307,6 +312,10 @@ class Resource extends Model
             // if (! $model->team_id) {
             //     $model->team_id = 1;
             // }
+        });
+
+        static::saved(function ($model) {
+            $model->clearFieldsAttributeCache();
         });
 
         static::created(function ($post) {
