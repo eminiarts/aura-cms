@@ -74,7 +74,10 @@ trait SaveMetaFields
                         continue;
                     }
 
-                    $post->meta()->updateOrCreate(['key' => $key], ['value' => $value]);
+                    if($post->usesMeta()) {
+                        $post->meta()->updateOrCreate(['key' => $key], ['value' => $value]);
+                    }
+
                 }
 
                 // Reload relation

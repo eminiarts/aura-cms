@@ -137,14 +137,21 @@ class Edit extends Component
 
         unset($this->post['fields']['group']);
 
+
         // unset this post fields group
 
         if($this->model->usesCustomTable()) {
-            $this->model->update($this->post['fields']);
+
+            // dd('save', $this->post['fields']);
+
+            $this->model->update(['fields' => $this->post['fields']]);
+
+
+            // $this->model->update($this->post['fields']);
         } else {
             $this->model->update($this->post);
         }
-        
+
 
         $this->notify(__('Successfully updated'));
 
