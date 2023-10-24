@@ -320,10 +320,15 @@ class Table extends Component
 
         // when model is instance Resource, eager load meta and taxonomies
         if ($this->model instanceof Resource) {
-            $query = $query->with(['meta', 'taxonomies']);
+            $query = $query->with(['taxonomies']);
         }
 
-       
+        // when model is instance Resource, eager load meta and taxonomies
+        if ($this->model->usesMeta()) {
+            $query = $query->with(['meta']);
+        }
+
+
 
         if ($this->filters) {
             $query = $this->applyTaxonomyFilter($query);

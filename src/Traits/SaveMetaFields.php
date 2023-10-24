@@ -78,7 +78,7 @@ trait SaveMetaFields
                 }
 
                 // Reload relation
-                $post->load('meta');
+                // $post->load('meta');
             }
         });
     }
