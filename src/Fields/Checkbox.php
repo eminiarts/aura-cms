@@ -8,6 +8,11 @@ class Checkbox extends Field
 
     // public $view = 'components.fields.checkbox';
 
+    public function get($field, $value)
+    {
+        return json_decode($value, true);
+    }
+
     public function getFields()
     {
         return array_merge(parent::getFields(), [
