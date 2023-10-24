@@ -277,7 +277,7 @@ class Aura
                 if ($option && is_string($option->value)) {
                     $settings = json_decode($option->value, true);
                 } else {
-                    return [];
+                    $settings = $option->value;
                 }
 
                 return $settings;
@@ -289,7 +289,7 @@ class Aura
                 if ($option && is_string($option->value)) {
                     $settings = json_decode($option->value, true);
                 } else {
-                    return [];
+                    $settings = $option->value;
                 }
 
                 return $settings;
