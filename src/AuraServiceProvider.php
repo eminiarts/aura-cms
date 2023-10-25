@@ -218,8 +218,8 @@ class AuraServiceProvider extends PackageServiceProvider
         });
 
         // CheckCondition Blade Directive
-        Blade::if('checkCondition', function ($model, $field) {
-            return \Eminiarts\Aura\Aura::checkCondition($model, $field);
+        Blade::if('checkCondition', function ($model, $field, $post = null) {
+            return \Eminiarts\Aura\Aura::checkCondition($model, $field, $post);
         });
 
         Blade::if('superadmin', function () {

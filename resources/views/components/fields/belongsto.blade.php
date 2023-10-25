@@ -22,7 +22,13 @@ $disabled = $field['field']->isDisabled($this->post, $field);
             class="w-full"
             wire:ignore
             x-data="{
-                value: $wire.entangle('post.fields.{{ $field['slug'] }}'),
+                @if(optional($field)['defer'] === false)
+        value: $wire.entangle('post.fields.{{ optional($field)['slug'] }}'),
+        @else
+        value: $wire.entangle('post.fields.{{ optional($field)['slug'] }}').defer,
+        @endif
+                {{-- value: $wire.entangle('post.fields.{{ $field['slug'] }}'), --}}
+
                 items: {{ Js::from($values) }},
 
                 api: {{ optional($field)['api'] ? 'true' : 'false' }},
@@ -36,15 +42,11 @@ $disabled = $field['field']->isDisabled($this->post, $field);
 
                 get filteredItems() {
 
-               
-
                     if (this.search) {
-
-
-                         console.log('filtered items');
+                         {{-- console.log('filtered items');
                 console.log(this.search);
                 console.log(this.items);
-                console.log(this.items.filter(item => item.title.toLowerCase().includes(this.search.toLowerCase())));
+                console.log(this.items.filter(item => item.title.toLowerCase().includes(this.search.toLowerCase()))); --}}
 
                         return this.items.filter(item => item.title.toLowerCase().includes(this.search.toLowerCase()));
                     }
