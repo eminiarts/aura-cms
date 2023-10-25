@@ -50,7 +50,7 @@
             }
         @endphp
 
-        <x-aura::fields.conditions :field="$tab" :model="$model" wire:key="tab-{{ $key }}-{{ $fieldHash }}">
+        @checkCondition($this->model ?? $model, $tab, $this->post)
             <li wire:key="tab-item-{{ $key }}-{{ $fieldHash }}">
                 <button
                     :id="$id('tab', {{ $key }})"
@@ -64,14 +64,14 @@
                     class="inline-flex px-4 pb-2.5 {{ $tabHasErrors ? '!text-red-500 border-red-500' : '' }}"
                     role="tab"
                 >
-                    <span>{{ $tab['name'] }}</span>
+                    <span class="tab">{{ $tab['name'] }}</span>
                     @if($tabHasErrors)
                         <x-aura::icon icon="exclamation" size="sm" class="ml-2" />
                     @endif
 
                 </button>
             </li>
-        </x-aura::fields.conditions>
+        @endcheckCondition
         @endforeach
 
     </ul>
