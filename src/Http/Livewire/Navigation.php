@@ -17,7 +17,7 @@ class Navigation extends Component
     {
         $this->emit('NavigationMounted');
 
-        if (auth()->user()->getOptionSidebar()) {
+        if (auth()->check() && auth()->user()->getOptionSidebar()) {
             $this->toggledGroups = auth()->user()->getOptionSidebar();
             // ray($this->toggledGroups);
         } else {
