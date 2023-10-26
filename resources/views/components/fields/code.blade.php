@@ -50,9 +50,9 @@
 @push('scripts')
     @once
         <!-- import the ace ext-emmet.js -->
-        {{-- <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.14.0/ace.min.js" integrity="sha512-s57ywpCtz+4PU992Bg1rDtr6+1z38gO2mS92agz2nqQcuMQ6IvgLWoQ2SFpImvg1rbgqBKeSEq0d9bo9NtBY0w==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.14.0/ext-emmet.min.js" integrity="sha512-xbrBbnLPHPCwK4PZpXL4GN9UHCHAvJGroy3WyfltNhPKqyqw/EFgBrLhMkTIsGuqfBsIQY/VdnxfNe/SFQzJyQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.14.0/ext-language_tools.min.js" integrity="sha512-o/VD0e6Ld6RjhcgZJWVv/1MfV03mjhk3zWBA41/6iYShAb/3ruD8wlSU+HyqBYlLr+IAwdBKx4Kl4w08ROJuTw==" crossorigin="anonymous" referrerpolicy="no-referrer"></script> --}}
+        <script src="/js/ace/ace.min.js" integrity="sha512-s57ywpCtz+4PU992Bg1rDtr6+1z38gO2mS92agz2nqQcuMQ6IvgLWoQ2SFpImvg1rbgqBKeSEq0d9bo9NtBY0w==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+        <script src="/js/ace/ext-emmet.min.js" integrity="sha512-xbrBbnLPHPCwK4PZpXL4GN9UHCHAvJGroy3WyfltNhPKqyqw/EFgBrLhMkTIsGuqfBsIQY/VdnxfNe/SFQzJyQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+        <script src="/js/ace/ext-language_tools.min.js" integrity="sha512-o/VD0e6Ld6RjhcgZJWVv/1MfV03mjhk3zWBA41/6iYShAb/3ruD8wlSU+HyqBYlLr+IAwdBKx4Kl4w08ROJuTw==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 
     @endonce
 @endpush
