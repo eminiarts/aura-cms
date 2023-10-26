@@ -46,6 +46,10 @@ class Edit extends Component
     {
         $this->model = $this->model->fresh();
         $this->post = $this->model->attributesToArray();
+        // The GET method is not supported for this route. Only POST is supported.
+        // Therefore, we cannot use redirect()->to(url()->current()).
+        // Instead, we will refresh the component.
+        $this->emit('refreshComponent');
     }
 
     public function callMethod($method, $params = [], $captureReturnValueCallback = null)
