@@ -39,7 +39,14 @@ class Edit extends Component
         'updateField' => 'updateField',
         'saveModel' => 'save',
         'refreshComponent' => '$refresh',
+        'reload',
     ];
+
+    public function reload()
+    {
+        $this->model = $this->model->fresh();
+        $this->post = $this->model->attributesToArray();
+    }
 
     public function callMethod($method, $params = [], $captureReturnValueCallback = null)
     {

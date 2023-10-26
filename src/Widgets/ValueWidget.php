@@ -24,8 +24,9 @@ class ValueWidget extends Widget
         $column = optional($this->widget)['column'];
 
         $posts = $this->model->query()
-            ->where('created_at', '>=', $start)
-            ->where('created_at', '<', $end);
+            // ->where('created_at', '>=', $start)
+            // ->where('created_at', '<', $end)
+        ;
 
         // Apply the query scope if it's a string
         if (optional($this->widget)['queryScope']) {
