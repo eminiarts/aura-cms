@@ -6,8 +6,11 @@ class ConditionalLogic
 {
     private static $shouldDisplayFieldCache = [];
 
-    public static function checkCondition($model, $field)
+    public static function checkCondition($model, $field, $post = null)
     {
+
+        // ray('checkCondition', $field);
+
         $conditions = $field['conditional_logic'] ?? null;
         if (! $conditions || ! auth()->user()) {
             return true;
@@ -15,7 +18,7 @@ class ConditionalLogic
 
         foreach ($conditions as $condition) {
             if (! $model || $condition instanceof \Closure) {
-                return $condition($model) === false ? false : true;
+                return $condition($model, $post) === false ? false : true;
             }
 
             if (! is_array($condition)) {
@@ -24,7 +27,7 @@ class ConditionalLogic
 
             $show = match ($condition['field']) {
                 'role' => self::handleRoleCondition($condition),
-                default => self::handleDefaultCondition($model, $condition)
+                default => self::handleDefaultCondition($model, $condition, $post)
             };
 
             if (! $show) {
@@ -59,16 +62,24 @@ class ConditionalLogic
         return true;
     }
 
-    public static function shouldDisplayField($model, $field)
+    public static function shouldDisplayField($model, $field, $post = null)
     {
+        // ray('shouldDisplayField', $model, $field, $post);
+
         if (! $field) {
             return true;
         }
 
-        $cacheKey = md5(get_class($model).json_encode($field));
+        if (empty($field['conditional_logic'])) {
+            return true;
+        }
+
+
+
+        $cacheKey = md5(get_class($model).json_encode($field).json_encode($post));
 
         return self::$shouldDisplayFieldCache[$cacheKey]
-            ??= self::checkCondition($model, $field);
+            ??= self::checkCondition($model, $field, $post);
     }
 
     private static function checkFieldCondition($condition, $fieldValue)
@@ -93,8 +104,12 @@ class ConditionalLogic
         };
     }
 
-    private static function handleDefaultCondition($model, $condition)
+    private static function handleDefaultCondition($model, $condition, $post)
     {
+        // if($post) {
+        //     $model = $post;
+        // }
+
         if (is_array($model) && array_key_exists($condition['field'], $model)) {
             return self::checkFieldCondition($condition, $model[$condition['field']]);
         }

@@ -67,9 +67,9 @@ class Aura
         return File::get($publishedPath) === File::get(__DIR__.'/../resources/dist/manifest.json');
     }
 
-    public static function checkCondition($model, $field)
+    public static function checkCondition($model, $field, $post = null)
     {
-        return ConditionalLogic::shouldDisplayField($model, $field);
+        return ConditionalLogic::shouldDisplayField($model, $field, $post);
     }
 
     public function clearConditionsCache()
