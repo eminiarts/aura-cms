@@ -99,12 +99,20 @@ class GlobalSearch extends Component
 
     public function mount()
     {
-        $this->bookmarks = auth()->user()->getOptionBookmarks();
+        if(auth()->check()) {
+            $this->bookmarks = auth()->user()->getOptionBookmarks();
+        } else {
+            $this->bookmarks = [];
+        }
     }
 
     public function render()
     {
-        $this->bookmarks = auth()->user()->getOptionBookmarks();
+        if(auth()->check()) {
+            $this->bookmarks = auth()->user()->getOptionBookmarks();
+        } else {
+            $this->bookmarks = [];
+        }
 
         return view('aura::livewire.global-search');
     }

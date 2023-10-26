@@ -67,7 +67,12 @@
             class="flex flex-col items-stretch h-screen overflow-hidden md:flex-row"
         >
 
-            <livewire:aura::navigation />
+
+            @if(auth()->check())
+                <livewire:aura::navigation />
+            @else
+                <x-aura::navigation.guest />
+            @endif
 
 
             <div class="flex flex-col flex-grow w-screen h-screen aura-content">
