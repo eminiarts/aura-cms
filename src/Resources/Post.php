@@ -52,6 +52,8 @@ class Post extends Resource
 
     public static string $type = 'Post';
 
+    protected $hidden = ['password'];
+
     public array $widgetSettings = [
         'default' => '30d',
         'options' => [
@@ -201,6 +203,9 @@ class Post extends Resource
                 'conditional_logic' => [
                 ],
                 'slug' => 'password',
+                'hydrate' => function ($set, $model, $state, $get) {
+                    dd('hier set');
+                },
                 'on_index' => false,
                 'on_forms' => true,
                 'on_view' => false,
@@ -344,30 +349,30 @@ class Post extends Resource
                     'width' => '100',
                 ],
             ],
-            [
-                'name' => 'Created at',
-                'slug' => 'created_at',
-                'type' => 'Eminiarts\\Aura\\Fields\\Date',
-                'validation' => '',
-                'enable_time' => true,
-                'conditional_logic' => [],
-                'wrapper' => '',
-                'on_index' => true,
-                'on_forms' => true,
-                'on_view' => true,
-            ],
-            [
-                'name' => 'Updated at',
-                'slug' => 'updated_at',
-                'type' => 'Eminiarts\\Aura\\Fields\\Date',
-                'validation' => '',
-                'conditional_logic' => [],
-                'wrapper' => '',
-                'enable_time' => true,
-                'on_index' => true,
-                'on_forms' => true,
-                'on_view' => true,
-            ],
+            // [
+            //     'name' => 'Created at',
+            //     'slug' => 'created_at',
+            //     'type' => 'Eminiarts\\Aura\\Fields\\Date',
+            //     'validation' => '',
+            //     'enable_time' => true,
+            //     'conditional_logic' => [],
+            //     'wrapper' => '',
+            //     'on_index' => true,
+            //     'on_forms' => true,
+            //     'on_view' => true,
+            // ],
+            // [
+            //     'name' => 'Updated at',
+            //     'slug' => 'updated_at',
+            //     'type' => 'Eminiarts\\Aura\\Fields\\Date',
+            //     'validation' => '',
+            //     'conditional_logic' => [],
+            //     'wrapper' => '',
+            //     'enable_time' => true,
+            //     'on_index' => true,
+            //     'on_forms' => true,
+            //     'on_view' => true,
+            // ],
         ];
     }
 
