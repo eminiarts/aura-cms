@@ -19,6 +19,15 @@ class File extends Field
 
     public function set($value)
     {
-        return json_encode($value);
+        // dump('setting file here', $value);
+        if (is_null($value)) {
+            return null;
+        }
+
+        if (is_array($value)) {
+            return json_encode($value);
+        }
+
+        return $value;
     }
 }
