@@ -148,7 +148,7 @@ class Edit extends Component
 
         unset($this->post['fields']['group']);
 
-        // dd('save', $this->post);
+        //dd('save', $this->post);
 
         // unset this post fields group
 
@@ -156,7 +156,10 @@ class Edit extends Component
 
             // dd('save', $this->post['fields']);
 
-            $this->model->update(['fields' => $this->post['fields']]);
+            // ray('update', $this->post['fields']);
+
+            $this->model->update($this->post['fields']);
+            // $this->model->update(['fields' => $this->post['fields']]);
 
 
             // $this->model->update($this->post['fields']);

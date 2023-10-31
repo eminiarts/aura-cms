@@ -94,7 +94,19 @@ class Create extends Component
     {
         $this->validate();
 
-        $model = $this->model->create($this->post);
+        // dd('save', $this->post);
+
+        if($this->model->usesCustomTable()) {
+
+            $model = $this->model->create($this->post['fields']);
+
+        } else {
+
+            $model = $this->model->create($this->post);
+
+        }
+
+
 
         $this->notify('Successfully created.');
 
