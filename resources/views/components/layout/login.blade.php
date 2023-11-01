@@ -55,8 +55,6 @@
                 const images = document.querySelectorAll('[data-darkmode-image]')
                 const darkmode = window.matchMedia('(prefers-color-scheme: dark)').matches
 
-                console.log(images);
-
                 images.forEach(image => {
                     if (document.documentElement.classList.contains('dark')) {
                         image.style.backgroundImage = `url(${image.dataset.darkmodeImage})`
@@ -119,10 +117,6 @@
             </div>
         </div>
         @endif
-
-
-
-
 
       <div class="absolute inset-0 bg-transparent dark:bg-transparent -z-10"></div>
 
