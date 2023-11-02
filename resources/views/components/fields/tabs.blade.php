@@ -13,7 +13,8 @@
             this.$nextTick(() => this.select(this.$id('tab', 0)))
         },
         select(id) {
-            this.selectedId = id
+            this.selectedId = id;
+            window.dispatchEvent(new Event('resize'));
         },
         isSelected(id) {
             return this.selectedId === id
