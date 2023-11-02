@@ -10,7 +10,9 @@ class Json extends Field
 
     public function get($field, $value)
     {
-        return $value;
+        if (is_array($value)) {
+            return $value;
+        }
 
         return json_decode($value, true);
     }
