@@ -46,6 +46,6 @@ class TeamInvitation extends Mailable
             ]),
             'userExists' => User::where('email', $this->invitation->email)->exists(),
             'acceptUrl' => URL::signedRoute('aura.team-invitations.accept', ['invitation' => $this->invitation]),
-        ])->subject(__('Aura CMS - You have been invited to '.$this->invitation->team->name));
+        ])->subject(__(config('app.name') . ' - You have been invited to '.$this->invitation->team->name));
     }
 }
