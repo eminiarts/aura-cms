@@ -46,7 +46,13 @@ class Role extends Resource
 
     public function title()
     {
-        return $this->title . " (#{$this->id})";
+        if (isset($this->title)) {
+            return $this->title . " (#{$this->id})";
+        } elseif (isset($this->name)) {
+            return $this->name . " (#{$this->id})";
+        } else {
+            return "Role (#{$this->id})";
+        }
     }
 
     public static function getFields()
@@ -68,7 +74,7 @@ class Role extends Resource
                 'slug' => 'name',
                 'type' => 'Eminiarts\\Aura\\Fields\\Text',
                 'validation' => 'required',
-                'on_index' => false,
+                'on_index' => true,
                 'style' => [
                     'width' => '100',
                 ],

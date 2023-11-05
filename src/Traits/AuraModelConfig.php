@@ -177,7 +177,13 @@ trait AuraModelConfig
 
     public function getActions()
     {
-        return $this->actions;
+        if (method_exists($this, 'actions')) {
+            return $this->actions();
+        }
+
+        if (property_exists($this, 'actions')) {
+            return $this->actions;
+        }
     }
 
     public function getBaseFillable()
