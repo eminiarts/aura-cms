@@ -27,17 +27,17 @@ class AdvancedSelect extends Field
             return;
         }
 
-        $item = app($field['resource'])->find($value);
+        $items = app($field['resource'])->find($value);
 
-        if (! $item) {
+        if (! $items) {
             return;
         }
 
-        return $item->title;
+        // return $item->title;
 
-        return $items->pluck('name')->map(function ($value) {
-            return "<span class='px-2 py-1 text-xs text-white rounded-full bg-primary-500 whitespace-nowrap'>$value</span>";
-        })->implode(' ');
+        return $items->map(function ($item) {
+            return $item->title();
+        })->implode(', ');
     }
 
     public function get($field, $value)

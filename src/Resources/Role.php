@@ -44,6 +44,11 @@ class Role extends Resource
         GenerateAllResourcePermissions::dispatch();
     }
 
+    public function title()
+    {
+        return $this->title . " (#{$this->id})";
+    }
+
     public static function getFields()
     {
         return [
