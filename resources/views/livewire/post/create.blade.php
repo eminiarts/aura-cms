@@ -1,17 +1,17 @@
 <div class="">
-    @section('title', 'Create '. $model->singularName())
+    @section('title', __('Create ' . $model->singularName()))
 
     @if(!$inModal)
     <x-aura::breadcrumbs>
         <x-aura::breadcrumbs.li :href="route('aura.dashboard')" title="" icon="dashboard" iconClass="text-gray-500 w-7 h-7 mr-0" />
-        <x-aura::breadcrumbs.li :href="route('aura.post.index', $slug)" :title="Str::plural($slug)" />
-        <x-aura::breadcrumbs.li title="Create {{ $model->singularName() }}" />
+        <x-aura::breadcrumbs.li :href="route('aura.post.index', $slug)" :title="__(Str::plural($slug))" />
+        <x-aura::breadcrumbs.li title="{{ __('Create ' . $model->singularName()) }}" />
     </x-aura::breadcrumbs>
     @endif
 
     <div class="flex items-center justify-between {{ $inModal ? 'mb-8' : 'my-8'}}">
         <div>
-            <h1 class="text-3xl font-semibold">Create {{ $model->singularName() }}</h1>
+            <h1 class="text-3xl font-semibold">{{ __('Create ' . $model->singularName()) }}</h1>
         </div>
 
         <div>
