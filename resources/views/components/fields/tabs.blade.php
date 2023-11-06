@@ -65,7 +65,7 @@
                     class="inline-flex px-4 pb-2.5 {{ $tabHasErrors ? '!text-red-500 border-red-500' : '' }}"
                     role="tab"
                 >
-                    <span class="tab">{{ $tab['name'] }}</span>
+                    <span class="tab">{{ __($tab['name']) }}</span>
                     @if($tabHasErrors)
                         <x-aura::icon icon="exclamation" size="sm" class="ml-2" />
                     @endif
