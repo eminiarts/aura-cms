@@ -24,7 +24,7 @@ class TeamPolicy
     {
         // ray('team policy', $user->resource->hasPermissionTo('invite-users', $team));
 
-        if($user->resource->hasPermissionTo('invite users', $team)) {
+        if($user->resource->hasPermissionTo('invite-users', $team)) {
             return true;
         }
 
