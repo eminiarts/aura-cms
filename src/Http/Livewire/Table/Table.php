@@ -329,7 +329,6 @@ class Table extends Component
         }
 
 
-
         if ($this->filters) {
             $query = $this->applyTaxonomyFilter($query);
             $query = $this->applyCustomFilter($query);

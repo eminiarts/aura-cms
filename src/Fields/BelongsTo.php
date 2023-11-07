@@ -10,6 +10,8 @@ class BelongsTo extends Field
 
     public bool $group = false;
 
+    public $view = 'aura::fields.view-value';
+
     // public $view = 'components.fields.belongsto';
 
     public function getFields()

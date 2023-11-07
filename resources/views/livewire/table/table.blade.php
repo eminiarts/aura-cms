@@ -289,7 +289,7 @@ x-data="{
                                             <a wire:click="bulkAction('{{ $action }}')"
                                                 class="flex items-center px-4 py-2 text-sm text-gray-700 group hover:bg-gray-100 cursor-pointer"
                                                 role="menuitem" tabindex="-1" id="menu-item-6">
-                                                {{ $data }}
+                                                {{ is_array($data) ? $data['label'] : $data }}
                                             </a>
                                             @endif
                                             @endforeach
