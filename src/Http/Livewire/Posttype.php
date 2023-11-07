@@ -460,6 +460,16 @@ class Posttype extends Component
         }
         // $this->model->save();
 
+        $fields = collect($this->fieldsArray);
+
+        $fields = $fields->toArray();
+
+        $this->fieldsArray = $fields;
+
+        $this->saveFields($this->fieldsArray);
+
+        $this->newFields = $this->model->mapToGroupedFields($this->fieldsArray);
+
         $this->saveProps($this->postTypeFields);
     }
 
