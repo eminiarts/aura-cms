@@ -7,7 +7,7 @@
 @php
     $label = optional($field)['name'];
 
-    if($label) {
+    if($label && is_string(__($label))) {
         $label = __($label);
     }
 
