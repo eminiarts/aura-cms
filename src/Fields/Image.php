@@ -46,4 +46,49 @@ class Image extends Field
     {
         return json_encode($value);
     }
+
+    public function getFields()
+    {
+        return array_merge(parent::getFields(), [
+            [
+                'label' => 'Image',
+                'name' => 'Image',
+                'type' => 'Eminiarts\\Aura\\Fields\\Tab',
+                'slug' => 'image-tab',
+                'style' => [],
+            ],
+
+            [
+                'name' => 'Use Media Manager',
+                'type' => 'Eminiarts\\Aura\\Fields\\Boolean',
+                'slug' => 'use_media_manager',
+            ],
+
+            // min and max numbers for allowed number of files
+            [
+                'name' => 'Min Files',
+                'type' => 'Eminiarts\\Aura\\Fields\\Number',
+                'validation' => '',
+                'slug' => 'min_files',
+                'instructions' => 'Minimum number of files allowed',
+            ],
+            [
+                'name' => 'Max Files',
+                'type' => 'Eminiarts\\Aura\\Fields\\Number',
+                'validation' => '',
+                'slug' => 'max_files',
+                'instructions' => 'Maximum number of files allowed',
+            ],
+
+            // allowed file types
+            [
+                'name' => 'Allowed File Types',
+                'type' => 'Eminiarts\\Aura\\Fields\\Text',
+                'validation' => '',
+                'slug' => 'allowed_file_types',
+                'instructions' => 'Comma separated list of allowed file types. Example: jpg, png, gif',
+            ],
+
+        ]);
+    }
 }
