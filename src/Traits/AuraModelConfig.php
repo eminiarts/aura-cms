@@ -186,6 +186,17 @@ trait AuraModelConfig
         }
     }
 
+    public function getBulkActions()
+    {
+        if (method_exists($this, 'bulkActions')) {
+            return $this->bulkActions();
+        }
+
+        if (property_exists($this, 'bulkActions')) {
+            return $this->bulkActions;
+        }
+    }
+
     public function getBaseFillable()
     {
         return $this->baseFillable;

@@ -83,11 +83,10 @@
     </a>
     @endcan
 
-    @if(count($model->getActions()))
+    @if(count($model->getBulkActions()))
     <div class="border-t border-gray-100 dark:border-gray-700"></div>
-    @endif
 
-    @foreach($model->getActions() as $action => $label)
+    @foreach($model->getBulkActions() as $action => $label)
 
     <button @click="customAction('{{ $action }}')"
         class="block w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700">
@@ -114,6 +113,9 @@
         @endif
     </button>
     @endforeach
+
+    @endif
+
 </div>
  @else
 <div>
