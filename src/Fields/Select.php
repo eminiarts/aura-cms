@@ -20,15 +20,13 @@ class Select extends Field
             ],
 
             [
-                'label' => 'options',
-                'name' => 'options',
+                'name' => 'Options',
                 'type' => 'Eminiarts\\Aura\\Fields\\Repeater',
                 'validation' => '',
                 'slug' => 'options',
             ],
             [
-                'label' => 'Key',
-                'name' => 'key',
+                'name' => 'Key',
                 'type' => 'Eminiarts\\Aura\\Fields\\Text',
                 'validation' => '',
                 'slug' => 'key',
@@ -38,8 +36,7 @@ class Select extends Field
 
             ],
             [
-                'label' => 'Value',
-                'name' => 'value',
+                'name' => 'Value',
                 'type' => 'Eminiarts\\Aura\\Fields\\Text',
                 'validation' => '',
                 'slug' => 'value',
