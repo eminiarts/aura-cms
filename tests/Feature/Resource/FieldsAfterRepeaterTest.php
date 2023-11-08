@@ -1,24 +1,25 @@
 <?php
 
-namespace Eminiarts\Aura\Fields;
+use Eminiarts\Aura\Pipeline\AddIdsToFields;
+use Eminiarts\Aura\Pipeline\ApplyParentConditionalLogic;
+use Eminiarts\Aura\Pipeline\ApplyParentDisplayAttributes;
+use Eminiarts\Aura\Pipeline\ApplyTabs;
+use Eminiarts\Aura\Pipeline\FilterCreateFields;
+use Eminiarts\Aura\Pipeline\MapFields;
+use Eminiarts\Aura\Resource;
 
-class Select extends Field
+// current
+// uses()->group('current');
+
+class FieldsAfterRepeaterModel extends Resource
 {
-    public $component = 'aura::fields.select';
+    public static ?string $slug = 'page';
 
-    public $view = 'aura::fields.view-value';
+    public static string $type = 'Page';
 
-    public function getFields()
+    public static function getFields()
     {
-        return array_merge(parent::getFields(), [
-            [
-                'label' => 'Select',
-                'name' => 'Select',
-                'type' => 'Eminiarts\\Aura\\Fields\\Tab',
-                'slug' => 'select',
-                'style' => [],
-            ],
-
+        return [
             [
                 'name' => 'Options',
                 'type' => 'Eminiarts\\Aura\\Fields\\Repeater',
@@ -54,20 +55,23 @@ class Select extends Field
                 'slug' => 'multiple',
                 'instructions' => 'Allow multiple selections?',
             ],
-
-        ]);
-    }
-
-    // public $view = 'components.fields.select';
-
-    public function options($model, $field)
-    {
-        // if get"$field->slug"Options is defined on the model, use that
-        if (method_exists($model, 'get'.ucfirst($field['slug']).'Options')) {
-            return $model->{'get'.ucfirst($field['slug']).'Options'}();
-        }
-
-        // return the options defined in the field
-        return $field['options'] ?? [];
+        ];
     }
 }
+
+test('multiple should be after the repeater', function () {
+    $model = new FieldsAfterRepeaterModel();
+
+    $fields = $model->createFields();
+    ray()->clearScreen();
+    ray($fields);
+
+    // expect count to be 1
+    expect(count($fields))->toBe(2);
+
+    // $fields[0]['fields'] should have 1 field
+    expect(count($fields[0]['fields']))->toBe(2);
+
+    // slug should be tab-2
+    expect($fields[1]['slug'])->toBe('multiple');
+});

@@ -100,6 +100,8 @@ class Posttype extends Component
         // $this->emit('refreshComponent');
 
         $this->emit('openSlideOver', 'edit-field', ['fieldSlug' => $field['slug'], 'slug' => $this->slug, 'field' => $field]);
+
+        $this->emit('finishedSavingFields');
     }
 
     public function addNewTab()
@@ -138,6 +140,8 @@ class Posttype extends Component
         // $this->emit('refreshComponent');
 
         $this->emit('openSlideOver', 'edit-field', ['fieldSlug' => $globalTab['slug'], 'slug' => $this->slug, 'field' => $globalTab]);
+
+        $this->emit('finishedSavingFields');
     }
 
     public function addTemplateFields($slug)
@@ -174,9 +178,11 @@ class Posttype extends Component
         $this->saveFields($this->fieldsArray);
 
         $this->newFields = $this->model->mapToGroupedFields($this->fieldsArray);
+
+        $this->emit('finishedSavingFields');
     }
 
-    public function authorize()
+    public function checkAuthorization()
     {
         if (config('aura.posttype_editor') == false) {
             abort(403, 'Posttype Editor is turned off.');
@@ -228,6 +234,8 @@ class Posttype extends Component
         $this->saveFields($this->fieldsArray);
 
         $this->newFields = $this->model->mapToGroupedFields($this->fieldsArray);
+
+        $this->emit('finishedSavingFields');
     }
 
     public function duplicateField($id, $slug)
@@ -256,6 +264,8 @@ class Posttype extends Component
         $this->newFields = $this->model->mapToGroupedFields($this->fieldsArray);
 
         $this->emit('openSlideOver', 'edit-field', ['fieldSlug' => $field['slug'], 'slug' => $this->slug, 'field' => $field]);
+
+        $this->emit('finishedSavingFields');
     }
 
     public function generateMigration()
@@ -331,6 +341,8 @@ class Posttype extends Component
         $this->saveFields($this->fieldsArray);
 
         $this->newFields = $this->model->mapToGroupedFields($this->fieldsArray);
+
+        $this->emit('finishedSavingFields');
     }
 
     public function mount($slug)
@@ -339,7 +351,7 @@ class Posttype extends Component
 
         $this->model = Aura::findResourceBySlug($slug);
 
-        $this->authorize();
+        $this->checkAuthorization();
 
         // Check if fields have closures
         if ($this->model->fieldsHaveClosures($this->model->getFields())) {
@@ -348,7 +360,7 @@ class Posttype extends Component
 
         $this->fieldsArray = $this->model->getFields();
 
-        if (count($this->mappedFields) > 0 && $this->mappedFields[0]['type'] == "Eminiarts\Aura\Fields\Tab" && $this->mappedFields[0]['global']) {
+        if (count($this->mappedFields) > 0 && $this->mappedFields[0]['type'] == "Eminiarts\Aura\Fields\Tab" && array_key_exists('global', $this->mappedFields[0]) && $this->mappedFields[0]['global']) {
             $this->hasGlobalTabs = true;
 
             // Global Tabs
@@ -419,6 +431,8 @@ class Posttype extends Component
         $this->saveFields($this->fieldsArray);
 
         $this->newFields = $this->model->mapToGroupedFields($this->fieldsArray);
+
+        $this->emit('finishedSavingFields');
     }
 
     public function rules()
@@ -492,8 +506,11 @@ class Posttype extends Component
 
         $this->newFields = $this->model->mapToGroupedFields($this->fieldsArray);
 
+        ray($this->fieldsArray);
+
         // emit new fields
         $this->emit('newFields', $this->fieldsArray);
+        $this->emit('finishedSavingFields');
     }
 
     public function sendField($slug)

@@ -18,6 +18,18 @@ class AddIdsToFields implements Pipe
         $fields = collect($fields)->values()->map(function ($item, $key) use (&$currentParent, &$globalTabs, &$parentPanel, &$parentTab) {
             $item['_id'] = $key + 1;
 
+            $shouldNotBeNested = !empty($item['exclude_from_nesting']) && $item['exclude_from_nesting'] === true;
+
+            if ($shouldNotBeNested) {
+                // Set the parent ID to the one before the current parent if it's set, or null
+                $item['_parent_id'] = $currentParent ? $currentParent['_parent_id'] : null;
+
+                $currentParent = $item;
+
+                return $item;
+            }
+
+
             if (optional($item)['global'] === true && ! $globalTabs) {
                 if ($item['field']->type == 'tabs') {
                     $globalTabs = $item;
