@@ -19,6 +19,14 @@ class Number extends Field
                 'style' => [],
             ],
             [
+                'name' => 'Default Value',
+                'type' => 'Eminiarts\\Aura\\Fields\\Text',
+                'validation' => '',
+                'instructions' => 'Default value on create',
+                'exclude_from_nesting' => true,
+                'slug' => 'default',
+            ],
+            [
                 'name' => 'Placeholder',
                 'type' => 'Eminiarts\\Aura\\Fields\\Text',
                 'validation' => '',
