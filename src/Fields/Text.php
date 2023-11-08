@@ -23,7 +23,6 @@ class Text extends Field
                 'type' => 'Eminiarts\\Aura\\Fields\\Text',
                 'validation' => '',
                 'instructions' => 'Default value on create',
-                'exclude_from_nesting' => true,
                 'slug' => 'default',
             ],
             [
@@ -49,6 +48,16 @@ class Text extends Field
                 'slug' => 'suffix',
                 'style' => [
                     'width' => '50',
+                ],
+
+            ],
+            [
+                'name' => 'Max Length',
+                'type' => 'Eminiarts\\Aura\\Fields\\Number',
+                'validation' => '',
+                'slug' => 'max_length',
+                'style' => [
+                    'width' => '100',
                 ],
 
             ],
