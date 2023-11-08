@@ -70,6 +70,8 @@ trait SaveFields
 
         file_put_contents($a->getFileName(), $replaced);
 
+        // sleep(3);
+
         $this->notify('Saved successfully.');
     }
 
@@ -156,7 +158,9 @@ trait SaveFields
         // Run "pint" on the migration file
         exec('./vendor/bin/pint '.$a->getFileName());
 
-        $this->notify('Saved Props successfully.');
+        sleep(1);
+
+        // $this->notify('Saved Props successfully.');
     }
 
     public function setKeysToFields($fields)

@@ -20,7 +20,7 @@
     <option  value="">Select {{ optional($field)['name'] }}...</option>
     @endif
 
-      
+
 
       @php
         $optionGroup = false;
@@ -46,7 +46,7 @@
 
             {{-- if key and values are set on the option, show it --}}
             @if (is_array($option))
-              <option value="{{ $option['key'] }}">{{ $option['value'] }}</option>
+              <option value="{{ $option['value'] }}">{{ $option['name'] }}</option>
             @else
 
             <option value="{{ $key }}">{{ $option }}</option>

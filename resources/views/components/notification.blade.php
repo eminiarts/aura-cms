@@ -37,11 +37,6 @@
             let index = this.messages.indexOf(message);
             let elapsedTime = new Date() - this.startTimes[index];
             let progress = Math.max(0, (((this.durations[index] - elapsedTime) / this.totalDuration)) * 100);
-            console.log('message', message);
-            console.log('index', index);
-            console.log('elapsedTime', elapsedTime);
-            console.log('this.durations[index]', this.durations[index]);
-            console.log('progress', progress);
 
             return progress;
         },

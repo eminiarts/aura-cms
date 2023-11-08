@@ -11,7 +11,32 @@
         <h3 class="text-xl font-semibold">Edit Post Type</h3>
     </x-slot> --}}
 
-    <div class="flex items-center justify-between my-8">
+    <div x-data="{
+        fileSaved: false,
+        init() {
+            console.log('init filesaved');
+            // Listen for the beforeunload event on the window
+            var vm = this;
+            window.addEventListener('beforeunload', function (event) {
+                console.log('vm.fileSaved', vm.fileSaved);
+
+                if (vm.fileSaved) {
+                    event.preventDefault();
+                    event.returnValue = 'You have unsaved changes. Are you sure you want to leave this page?';
+                }
+            });
+
+            // Listen for the livewire event savedField
+            window.livewire.on('finishedSavingFields', () => {
+                console.log('finishedSavingFields');
+                vm.fileSaved = true;
+                setTimeout(() => {
+                    vm.fileSaved = false;
+                }, 4000);
+            });
+        }
+
+    }" class="flex items-center justify-between my-8">
         <div>
             <h1 class="text-3xl font-semibold">Edit {{ $model::getType() }} Fields</h1>
         </div>
@@ -70,7 +95,7 @@
                         </span>
                     </div>
                 </div>
-                
+
                 <div class="flex items-end w-full px-4 mb-0 md:w-1/3">
                     <div class="flex-1">
                         <x-aura::input.text label="Group" placeholder="Group" wire:model.defer="postTypeFields.group"></x-aura::input>
