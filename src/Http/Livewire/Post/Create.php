@@ -75,6 +75,10 @@ class Create extends Component
         if ($for == 'User') {
             $this->post['fields']['user_id'] = (int) $id;
         }
+
+        // Initialize the post fields with defaults
+        $this->initializeFieldsWithDefaults();
+
     }
 
     public function render()
@@ -125,5 +129,17 @@ class Create extends Component
     public function setModel($model)
     {
         $this->model = $model;
+    }
+
+    protected function initializeFieldsWithDefaults()
+    {
+        $fields = $this->model->getFields(); // Assume this returns the fields configurations
+
+        foreach ($fields as $field) {
+            $slug = $field['slug'] ?? null;
+            if ($slug && !isset($this->post['fields'][$slug]) && isset($field['default'])) {
+                $this->post['fields'][$slug] = $field['default'];
+            }
+        }
     }
 }

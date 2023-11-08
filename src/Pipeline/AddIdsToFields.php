@@ -24,7 +24,9 @@ class AddIdsToFields implements Pipe
                 // Set the parent ID to the one before the current parent if it's set, or null
                 $item['_parent_id'] = $currentParent ? $currentParent['_parent_id'] : null;
 
-                $currentParent = $item;
+                if ($item['field']->group === true) {
+                    $currentParent = $item;
+                }
 
                 return $item;
             }

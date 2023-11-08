@@ -47,11 +47,20 @@ class Select extends Field
             ],
 
             [
-                'name' => 'Multiple',
+                'name' => 'Default Value',
+                'type' => 'Eminiarts\\Aura\\Fields\\Text',
+                'validation' => '',
+                'instructions' => 'Default value on create',
+                'exclude_from_nesting' => true,
+                'slug' => 'default',
+            ],
+
+            [
+                'name' => 'Allow Multiple',
                 'type' => 'Eminiarts\\Aura\\Fields\\Boolean',
                 'validation' => '',
                 'exclude_from_nesting' => true,
-                'slug' => 'multiple',
+                'slug' => 'allow_multiple',
                 'instructions' => 'Allow multiple selections?',
             ],
 
