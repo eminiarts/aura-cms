@@ -1,4 +1,4 @@
-<div class="px-2">
+<div class="p-2">
     <div class="mb-4 text-sm">{{ __('Permanently delete your account.') }}</div>
     <div>
          <div class="max-w-xl text-sm text-gray-600">
