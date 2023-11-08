@@ -49,8 +49,27 @@ class Number extends Field
                 'style' => [
                     'width' => '50',
                 ],
-
             ],
+
+            // minimum value and maximum value as number fields
+            // [
+            //     'name' => 'Minimum Value',
+            //     'type' => 'Eminiarts\\Aura\\Fields\\Number',
+            //     'validation' => '',
+            //     'slug' => 'min',
+            //     'style' => [
+            //         'width' => '50',
+            //     ],
+            // ],
+            // [
+            //     'name' => 'Maximum Value',
+            //     'type' => 'Eminiarts\\Aura\\Fields\\Number',
+            //     'validation' => '',
+            //     'slug' => 'max',
+            //     'style' => [
+            //         'width' => '50',
+            //     ],
+            // ],
         ]);
     }
 

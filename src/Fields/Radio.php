@@ -55,14 +55,6 @@ class Radio extends Field
                 'slug' => 'default',
             ],
 
-            [
-                'name' => 'Allow Multiple',
-                'type' => 'Eminiarts\\Aura\\Fields\\Boolean',
-                'validation' => '',
-                'exclude_from_nesting' => true,
-                'slug' => 'allow_multiple',
-                'instructions' => 'Allow multiple selections?',
-            ],
 
         ]);
     }

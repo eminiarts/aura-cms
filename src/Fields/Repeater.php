@@ -33,6 +33,27 @@ class Repeater extends Field
 
         return array_merge($fields, [
 
+            [
+                'name' => 'Min Entries',
+                'type' => 'Eminiarts\\Aura\\Fields\\Number',
+                'validation' => '',
+                'slug' => 'min',
+                'default' => 0,
+                'style' => [
+                    'width' => '50',
+                ],
+            ],
+            [
+                'name' => 'Max Entries',
+                'type' => 'Eminiarts\\Aura\\Fields\\Number',
+                'validation' => '',
+                'slug' => 'max',
+                'default' => 0,
+                'style' => [
+                    'width' => '50',
+                ],
+            ],
+
         ]);
     }
 

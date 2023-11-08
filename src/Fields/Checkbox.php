@@ -33,19 +33,7 @@ class Checkbox extends Field
 
             ],
             [
-                'label' => 'Key',
-                'name' => 'key',
-                'type' => 'Eminiarts\\Aura\\Fields\\Text',
-                'validation' => '',
-                'slug' => 'key',
-                'style' => [
-                    'width' => '50',
-                ],
-
-            ],
-            [
-                'label' => 'Value',
-                'name' => 'value',
+                'name' => 'Value',
                 'type' => 'Eminiarts\\Aura\\Fields\\Text',
                 'validation' => '',
                 'slug' => 'value',
@@ -53,6 +41,24 @@ class Checkbox extends Field
                     'width' => '50',
                 ],
 
+            ],
+            [
+                'name' => 'Name',
+                'type' => 'Eminiarts\\Aura\\Fields\\Text',
+                'validation' => '',
+                'slug' => 'name',
+                'style' => [
+                    'width' => '50',
+                ],
+
+            ],
+            [
+                'name' => 'Default Value',
+                'type' => 'Eminiarts\\Aura\\Fields\\Text',
+                'validation' => '',
+                'instructions' => 'Default value on create',
+                'exclude_from_nesting' => true,
+                'slug' => 'default',
             ],
         ]);
     }
