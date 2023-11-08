@@ -1,5 +1,4 @@
 @php
-  ray($label);
   $label = is_array($label) ? 'Array' : $label;
   $label = $label ?? 'Label';
 @endphp
