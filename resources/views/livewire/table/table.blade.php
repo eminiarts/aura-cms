@@ -16,16 +16,17 @@ x-data="{
             this.selected = updatedSelected;
         });
         
-        console.log('init table');
-        
         if(this.selectAll) {
             this.selectPage = true;
         }
 
+        @if($field)
+        {{-- Need to refactor this maybe because it's field specific --}}
         this.$watch('selected', value => {
             // Emit an event with the new value
-            this.$dispatch('selection-changed', value);
+            this.$dispatch('selection-changed', { selected: value, slug: '{{ $field['slug'] }}' });
         });
+        @endif
         
         // watch rows for changes
         this.$watch('rows', (rows) => {

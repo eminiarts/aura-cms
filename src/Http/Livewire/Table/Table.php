@@ -139,9 +139,17 @@ class Table extends Component
         'selectedRows' => 'selectRows',
         'selectRowsRange' => 'selectRowsRange',
         'refreshTableSelected' => 'refreshTableSelected',
+        'selectFieldRows',
     ];
 
     protected $queryString = ['selectedFilter'];
+
+    public function selectFieldRows($data)
+    {
+        if($data['slug'] == $this->field['slug']) {
+            $this->selected = $data['value'];
+        }
+    }
 
     public function action($data)
     {
@@ -438,7 +446,7 @@ class Table extends Component
      */
     public function selectRow($id)
     {
-        ray('selectRow', $id);
+        // ray('selectRow', $id);
         $this->selected = $id;
         $this->lastClickedRow = $id;
     }
@@ -483,7 +491,7 @@ class Table extends Component
         $this->selectAll = false;
         $this->selectPage = false;
 
-        ray('updated selected');
+        // ray('updated selected');
 
         // Only allow the max number of selected rows.
         if (optional($this->field)['max'] && count($this->selected) > $this->field['max']) {
