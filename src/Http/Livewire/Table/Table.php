@@ -72,6 +72,12 @@ class Table extends Component
 
     public $loaded = false;
 
+    public $post;
+
+    public $headerView = 'aura::components.table.header';
+    public $filterView = 'aura::components.table.filter';
+    public $bulkActionsView = 'aura::components.table.bulkActions';
+
     /**
      * The model of the table.
      *
@@ -311,7 +317,7 @@ class Table extends Component
             ->orderBy($this->model->getTable().'.id', 'desc');
 
         if ($this->field && method_exists(app($this->field['type']), 'queryFor')) {
-            $query = app($this->field['type'])->queryFor($this->parent, $query, $this->field);
+            $query = app($this->field['type'])->queryFor($query, $this);
         }
 
         if (method_exists($this->model, 'indexQuery')) {
@@ -476,6 +482,8 @@ class Table extends Component
     {
         $this->selectAll = false;
         $this->selectPage = false;
+
+        ray('updated selected');
 
         // Only allow the max number of selected rows.
         if (optional($this->field)['max'] && count($this->selected) > $this->field['max']) {
