@@ -1,7 +1,5 @@
 <?php
 
-use Eminiarts\Aura\Resources\User;
-
 return [
     /*
     |--------------------------------------------------------------------------
@@ -53,7 +51,9 @@ return [
     'teams' => true,
 
     'resources' => [
-        'user' => User::class,
+        'user' => Eminiarts\Aura\Resources\User::class,
+        'team' => Eminiarts\Aura\Resources\Team::class,
+        'team-invitation' => Eminiarts\Aura\Resources\TeamInvitation::class,
     ],
 
     'views' => [

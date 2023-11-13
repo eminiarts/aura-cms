@@ -267,8 +267,8 @@ class AuraServiceProvider extends PackageServiceProvider
 
         if (config('aura.teams')) {
             Aura::registerResources([
-                \Eminiarts\Aura\Resources\Team::class,
-                \Eminiarts\Aura\Resources\TeamInvitation::class,
+                config('aura.resources.team'),
+                config('aura.resources.team-invitation'),
             ]);
         }
 
