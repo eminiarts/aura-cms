@@ -127,7 +127,7 @@ class User extends Authenticatable
             $this->switchTeam($this->personalTeam());
         }
 
-        return $this->belongsTo(Team::class, 'current_team_id');
+        return $this->belongsTo(config('aura.resources.team'), 'current_team_id');
     }
 
     public function deleteOption($option)
