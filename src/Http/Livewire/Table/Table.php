@@ -77,6 +77,7 @@ class Table extends Component
     public $headerView = 'aura::components.table.header';
     public $filterView = 'aura::components.table.filter';
     public $bulkActionsView = 'aura::components.table.bulkActions';
+    public $tableIndexView = 'aura::components.table.index';
 
     /**
      * The model of the table.

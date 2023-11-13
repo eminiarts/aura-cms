@@ -260,7 +260,7 @@ x-data="{
             @if($tableView == 'grid')
             @include($model->tableGridView())
             @elseif($tableView == 'list')
-            @include('aura::components.table.index')
+            @include($this->tableIndexView)
             @endif
 
         </div>
