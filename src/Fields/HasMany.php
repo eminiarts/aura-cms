@@ -16,18 +16,23 @@ class HasMany extends Field
 
     public function queryFor($query, $component)
     {
-        // ray('hier', $model, $query, $field);
+
+        $field = $component->field;
+        $model = $component->model;
+
+        if(optional($component)->parent) {
+            $field = $component->parent->fieldBySlug($field['slug']);
+            $model = $component->parent;
+        }
 
         // if $field['relation'] is set, check if meta with key $field['relation'] exists, apply whereHas meta to the query
 
         // if optional($field)['relation'] is closure
-        if (is_callable(optional($component->field)['relation'])) {
-            // dd('closure', $model, $query, $field);
-            return $component->field['relation']($query, $component->model);
+        if (is_callable(optional($field)['relation'])) {
+            return $field['relation']($query, $model);
         }
 
-        $field = $component->field;
-        $model = $component->model;
+
 
         if (optional($component->field)['relation']) {
             return $query->whereHas('meta', function ($query) use ($field) {
