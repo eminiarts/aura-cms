@@ -380,7 +380,9 @@ class Table extends Component
         $this->setTaxonomyFilters();
 
         if ($this->selectedFilter) {
-            $this->filters = $this->userFilters[$this->selectedFilter];
+            if (array_key_exists($this->selectedFilter, $this->userFilters)) {
+                $this->filters = $this->userFilters[$this->selectedFilter];
+            }
         }
 
         // dd($this->model);
