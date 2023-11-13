@@ -1,5 +1,5 @@
 <div
-
+@selectfieldrows.window="selectRows($event.detail)"
 {{-- wire:poll.10000ms --}}
 x-data="{
     selected: @entangle('selected').defer,
@@ -11,10 +11,17 @@ x-data="{
     selectAll: @entangle('selectAll').defer,
     loading: false, 
     oldSelected: null,
+
+    selectRows(detail) {
+        if(detail.slug == '{{ $field['slug'] }}') {
+            this.selected = detail.value
+        }
+    },
     
+
     init() {
         Livewire.on('selectedRows', (updatedSelected) => {
-            this.selected = updatedSelected;
+           // this.selected = updatedSelected;
         });
         
         if(this.selectAll) {
@@ -25,24 +32,17 @@ x-data="{
         {{-- Need to refactor this maybe because it's field specific --}}
         this.$watch('selected', value => {
             // Emit an event with the new value
-            console.log('....selected', value, this.selected)
 
-            {{-- if(value != this.selected) {
-                this.$dispatch('selection-changed', { selected: value, slug: '{{ $field['slug'] }}' });
-            } --}}
-
-              if(value != this.oldSelected) {
-                this.$dispatch('selection-changed', { selected: value, slug: '{{ $field['slug'] }}' });
-            }
-            
-            this.oldSelected = value; 
+             this.$dispatch('selection-changed', { selected: value, slug: '{{ $field['slug'] }}' });
         });
+
+         
         @endif
         
         // watch rows for changes
         this.$watch('rows', (rows) => {
             // Check if rows (array of ids) is included in this.selected. if so, set this.selectPage to true
-            console.log('watch rows', rows, this.selected)
+            {{-- console.log('watch rows', rows, this.selected) --}}
             
             //this.selectPage = rows.every(row => this.selected.includes(row.toString()));
         });
@@ -52,14 +52,14 @@ x-data="{
             this.$nextTick(() => {
                 
                 
-                console.log('currentPage', this.currentPage)
+                {{-- console.log('currentPage', this.currentPage)
                 console.log('rows', this.rows)
-                console.log('selected', this.selected)
+                console.log('selected', this.selected) --}}
                 
                 /// check if this.rows are in this.selected. if so, set this.selectPage to true
                 this.selectPage = this.rows.every(row => this.selected.includes(row));
                 
-                console.log('every', this.rows.every(row => this.selected.includes(row)))
+                {{-- console.log('every', this.rows.every(row => this.selected.includes(row))) --}}
                 
             });
             
@@ -94,7 +94,7 @@ x-data="{
         let allSelected = await $wire.getAllTableRows()
         this.selectAll = true
         
-        console.log(this.selected, 'selected')
+        {{-- console.log(this.selected, 'selected') --}}
         
         this.loading = false
         
@@ -163,7 +163,7 @@ x-data="{
             if (!this.selected.includes(id.toString())) {
                 this.selectPage = false;
                 
-                console.log('deselect', id)
+                {{-- console.log('deselect', id) --}}
             }
             
         });
