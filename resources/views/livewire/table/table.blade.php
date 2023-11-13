@@ -9,7 +9,8 @@ x-data="{
     selectPage: false,
     currentPage: @entangle('page'),
     selectAll: @entangle('selectAll').defer,
-    loading: false,
+    loading: false, 
+    oldSelected: null,
     
     init() {
         Livewire.on('selectedRows', (updatedSelected) => {
@@ -24,7 +25,17 @@ x-data="{
         {{-- Need to refactor this maybe because it's field specific --}}
         this.$watch('selected', value => {
             // Emit an event with the new value
-            this.$dispatch('selection-changed', { selected: value, slug: '{{ $field['slug'] }}' });
+            console.log('....selected', value, this.selected)
+
+            {{-- if(value != this.selected) {
+                this.$dispatch('selection-changed', { selected: value, slug: '{{ $field['slug'] }}' });
+            } --}}
+
+              if(value != this.oldSelected) {
+                this.$dispatch('selection-changed', { selected: value, slug: '{{ $field['slug'] }}' });
+            }
+            
+            this.oldSelected = value; 
         });
         @endif
         
