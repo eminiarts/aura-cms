@@ -75,7 +75,6 @@ trait SaveMetaFields
                     }
 
                     if($post->usesMeta()) {
-                        ray('saving meta', $key, $value);
                         $post->meta()->updateOrCreate(['key' => $key], ['value' => $value]);
                     }
 
