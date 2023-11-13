@@ -147,7 +147,7 @@ class Table extends Component
     public function selectFieldRows($data)
     {
         if($data['slug'] == $this->field['slug']) {
-            ray('selectFieldRows', $data);
+            // ray('selectFieldRows', $data);
 
             $this->selected = $data['value'];
         }
@@ -502,7 +502,7 @@ class Table extends Component
             $this->emit('selectedRows', $this->selected);
             $this->notify('You can only select '.$this->field['max'].' items.', 'error');
         } else {
-            $this->emit('selectedRows', $this->selected);
+            // $this->emit('selectedRows', $this->selected);
         }
     }
 }
