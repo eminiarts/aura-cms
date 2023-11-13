@@ -12,11 +12,13 @@ x-data="{
     loading: false, 
     oldSelected: null,
 
+    @if($field)
     selectRows(detail) {
         if(detail.slug == '{{ $field['slug'] }}') {
             this.selected = detail.value
         }
     },
+    @endif
     
 
     init() {
