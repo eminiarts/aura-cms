@@ -14,26 +14,29 @@ class HasMany extends Field
 
     // public $view = 'components.fields.hasmany';
 
-    public function queryFor($model, $query, $field)
+    public function queryFor($query, $component)
     {
         // ray('hier', $model, $query, $field);
 
         // if $field['relation'] is set, check if meta with key $field['relation'] exists, apply whereHas meta to the query
 
         // if optional($field)['relation'] is closure
-        if (is_callable(optional($field)['relation'])) {
+        if (is_callable(optional($component->field)['relation'])) {
             // dd('closure', $model, $query, $field);
-            return $field['relation']($query, $model);
+            return $component->field['relation']($query, $component->model);
         }
 
-        if (optional($field)['relation']) {
+        $field = $component->field;
+        $model = $component->model;
+
+        if (optional($component->field)['relation']) {
             return $query->whereHas('meta', function ($query) use ($field) {
                 $query->where('key', $field['relation']);
             });
         }
 
         if ($model instanceof \Eminiarts\Aura\Resources\User) {
-            return $query->where('user_id', $model->id);
+            return $query;
         }
 
         if ($model instanceof \Eminiarts\Aura\Resources\Team) {

@@ -147,6 +147,8 @@ class Table extends Component
     public function selectFieldRows($data)
     {
         if($data['slug'] == $this->field['slug']) {
+            ray('selectFieldRows', $data);
+
             $this->selected = $data['value'];
         }
     }
