@@ -7,6 +7,7 @@
 
 $attachment = Eminiarts\Aura\Resources\Attachment::find($id);
 $url = null;
+
 if ($attachment) {
     $url = $attachment->path($size);
 }

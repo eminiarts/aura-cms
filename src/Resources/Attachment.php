@@ -253,7 +253,11 @@ class Attachment extends Resource
         if ($size) {
             $url = Str::after($this->url, 'media/');
 
-            return asset('storage/'.$size.'/'.$url);
+            $assetPath = 'storage/'.$size.'/'.$url;
+
+            if (file_exists(public_path($assetPath))) {
+                return asset($assetPath);
+            }
         }
 
         return asset('storage/'.$this->url);
