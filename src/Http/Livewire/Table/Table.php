@@ -332,7 +332,7 @@ class Table extends Component
         }
 
         if (method_exists($this->model, 'indexQuery')) {
-            $query = $this->model->indexQuery($query);
+            $query = $this->model->indexQuery($query, $this);
         }
 
         // when model is instance Resource, eager load meta and taxonomies
