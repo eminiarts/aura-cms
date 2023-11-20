@@ -61,7 +61,7 @@ test('vendor resource can not be edited', function () {
 });
 
 test('edit posttype should be allowed', function () {
-    $config = config('aura.posttype_editor');
+    $config = config('aura.features.posttype_editor');
 
     $this->assertTrue($config);
 });
@@ -69,9 +69,9 @@ test('edit posttype should be allowed', function () {
 test('edit posttype can be turned off in config', function () {
     createSuperAdmin();
 
-    config(['aura.posttype_editor' => false]);
+    config(['aura.features.posttype_editor' => false]);
 
-    $config = config('aura.posttype_editor');
+    $config = config('aura.features.posttype_editor');
 
     $this->assertFalse($config);
 
@@ -88,9 +88,9 @@ test('edit posttype should not be available in production', function () {
     config(['app.env' => 'production']);
 
     // Set aura.posttype_editor to true
-    config(['aura.posttype_editor' => false]);
+    config(['aura.features.posttype_editor' => false]);
 
-    $config = config('aura.posttype_editor');
+    $config = config('aura.features.posttype_editor');
 
     $this->assertFalse($config);
 });

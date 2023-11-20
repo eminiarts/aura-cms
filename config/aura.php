@@ -65,9 +65,23 @@ return [
         'edit' => 'aura::edit',
     ],
 
-    'resource-view-enabled' => true,
+    'features' => [
+        'global_search' => true,
+        'notifications' => true,
 
-    'resource-edit-enabled' => true,
+        'plugins' => true,
+        'posttype_editor' => config('app.env') == 'production' ? false : true,
+        'theme_options' => true,
+        'global_config' => true,
+
+        'user_profile' => true,
+
+        'create_resource' => true,
+        'create_taxonomy' => true,
+
+        'resource_view' => true,
+        'resource_edit' => true,
+    ],
 
     /*
     |--------------------------------------------------------------------------
@@ -114,8 +128,6 @@ return [
         'path' => app_path('Aura/Widgets'),
         'register' => [],
     ],
-
-    'posttype_editor' => config('app.env') == 'production' ? false : true,
 
     /*
     |--------------------------------------------------------------------------

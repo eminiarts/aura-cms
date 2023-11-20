@@ -184,7 +184,7 @@ class Posttype extends Component
 
     public function checkAuthorization()
     {
-        if (config('aura.posttype_editor') == false) {
+        if (config('aura.features.posttype_editor') == false) {
             abort(403, 'Posttype Editor is turned off.');
         }
 
