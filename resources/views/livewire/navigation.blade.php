@@ -48,7 +48,7 @@ $appSettings = Aura::options();
 
 
 <div
-    class="flex-shrink-0 overflow-x-visible aura-navigation-collapsed md:w-20"
+    class="overflow-x-visible flex-shrink-0 aura-navigation-collapsed md:w-20"
     x-bind:class="{
         'hidden md:block': !$store.leftSidebar.on,
         'hidden': $store.leftSidebar.on,
@@ -93,7 +93,7 @@ $appSettings = Aura::options();
     <div class="flex-shrink-0 px-5 h-[4.5rem] flex items-center border-t border-white border-opacity-20 dark:border-gray-700">
         <x-aura::tippy-area text="{{ Auth::user()->name }}" position="top">
             <x-slot name="title">
-            <img class="inline-block rounded-full h-9 w-9" src="{{ Auth::user()->resource->avatarUrl }}" alt="">
+            <img class="inline-block w-9 h-9 rounded-full" src="{{ Auth::user()->resource->avatarUrl }}" alt="">
             </x-slot::title>
 
             @include('aura::navigation.footer-popup')
@@ -103,7 +103,7 @@ $appSettings = Aura::options();
 </div>
 
 <div
-    class="flex-shrink-0 hidden w-0 aura-navigation md:block md:w-72"
+    class="hidden flex-shrink-0 w-0 aura-navigation md:block md:w-72"
     x-bind:class="{
         'hidden md:hidden': !$store.leftSidebar.on,
         'block md:block': $store.leftSidebar.on,
@@ -216,7 +216,7 @@ $appSettings = Aura::options();
     ">
 
         @impersonating($guard = null)
-            <x-aura::button.primary :href="route('impersonate.leave')" class="w-full my-2" size="xs">
+            <x-aura::button.primary :href="route('impersonate.leave')" class="my-2 w-full" size="xs">
                 <x-slot:icon>
                     <x-aura::icon icon="user-impersonate" size="xs" />
                 </x-slot:icon>
@@ -225,13 +225,13 @@ $appSettings = Aura::options();
         @endImpersonating
 
         @if(config('aura.teams') && Auth::user()->currentTeam)
-        <div class="flex items-center justify-between w-full">
+        <div class="flex justify-between items-center w-full">
             <x-aura::navigation.team-switcher>
                 <x-slot:title>
-                    <div class="flex-shrink block w-full group">
+                    <div class="block flex-shrink w-full group">
                         <div class="flex items-center">
                             <div>
-                                <img class="inline-block rounded-full h-9 w-9" src="{{ auth()->user()->resource->avatarUrl }}" alt="">
+                                <img class="inline-block w-9 h-9 rounded-full" src="{{ auth()->user()->resource->avatarUrl }}" alt="">
                             </div>
                             <div class="ml-3">
                                 <p class="text-sm font-medium
@@ -263,14 +263,52 @@ $appSettings = Aura::options();
 
             <div class="ml-2">
                 <x-aura::tippy text="Notifications">
-                    <x-aura::button.primary @click="Livewire.emit('openSlideOver', 'notifications')" class="w-full my-2" size="xs">
+                    <x-aura::button.primary @click="Livewire.emit('openSlideOver', 'notifications')" class="my-2 w-full" size="xs">
                         <x-aura::icon icon="notifications" size="xs" />
                     </x-aura::button.primary>
                 </x-aura::tippy>
             </div>
         </div>
         @else
-        Without Teams
+        <div class="flex justify-between items-center w-full">
+
+            <x-aura::navigation.team-switcher>
+                <x-slot:title>
+                    <div class="block flex-shrink w-full group">
+                        <div class="flex items-center">
+                            <div>
+                                <img class="inline-block w-9 h-9 rounded-full" src="{{ auth()->user()->resource->avatarUrl }}" alt="">
+                            </div>
+                            <div class="ml-3">
+                                <p class="text-sm font-medium
+                                    @if ($sidebarType == 'primary')
+                                        text-white
+                                    @elseif ($sidebarType == 'light')
+                                        text-gray-900
+                                    @elseif ($sidebarType == 'dark')
+                                        text-white
+                                    @endif
+                                ">{{ Auth::user()->name }}</p>
+
+                            </div>
+                        </div>
+                    </div>
+                </x-slot:title>
+
+                @include('aura::navigation.footer-popup')
+
+            </x-aura::navigation.team-switcher>
+
+            @if(config('aura.features.notifications'))
+                <div class="ml-2">
+                    <x-aura::tippy text="Notifications">
+                        <x-aura::button.primary @click="Livewire.emit('openSlideOver', 'notifications')" class="my-2 w-full" size="xs">
+                            <x-aura::icon icon="notifications" size="xs" />
+                        </x-aura::button.primary>
+                    </x-aura::tippy>
+                </div>
+            @endif
+        </div>
         @endif
 
     </div>

@@ -49,6 +49,13 @@ class Profile extends Component
         $this->confirmingUserDeletion = true;
     }
 
+    public function checkAuthorization()
+    {
+        if (config('aura.features.user_profile') == false) {
+            abort(403, 'User profile is turned off.');
+        }
+    }
+
     /**
      * Delete the current user.
      */
@@ -228,6 +235,8 @@ class Profile extends Component
 
     public function mount()
     {
+        $this->checkAuthorization();
+
         $this->model = auth()->user()->resource;
 
         $this->post = $this->model->attributesToArray();
