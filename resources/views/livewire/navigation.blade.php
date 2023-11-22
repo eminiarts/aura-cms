@@ -66,9 +66,9 @@ $appSettings = Aura::options();
     @endif
 
     ">
+
     <div class="flex-shrink-0 px-5 h-[4.5rem] w-full overflow-x-visible flex items-center">
         {{-- <h1 class="text-2xl font-semibold">{{ config('app.name') }}</h1> --}}
-
         <div>
             <button
                 @click="$store.leftSidebar.toggle()"
@@ -102,6 +102,7 @@ $appSettings = Aura::options();
   </div>
 </div>
 
+
 <div
     class="hidden flex-shrink-0 w-0 aura-navigation md:block md:w-72"
     x-bind:class="{
@@ -131,10 +132,8 @@ $appSettings = Aura::options();
 
         <div class="flex flex-col px-5 space-y-1">
             <div class="flex-shrink-0 h-[4.5rem] flex items-center justify-between">
-            {{-- <h1 class="text-2xl font-semibold">{{ config('app.name') }}</h1> --}}
 
                 @include('aura::navigation.logo')
-
 
                 <div>
                     <button
@@ -156,39 +155,35 @@ $appSettings = Aura::options();
 
             </div>
 
+            @if(config('aura.features.search'))
+                <button type="button" @click="$dispatch('search')"
+                    class="
+                        @if ($sidebarType == 'primary')
+                            text-primary-200/40 hover:text-primary-200/70
+                            ring-primary-200/40 hover:ring-primary-200/70
+                        @elseif ($sidebarType == 'light')
+                            text-gray-400/60 hover:text-gray-400/90
+                            ring-gray-400/40 hover:ring-gray-400/70
+                        @elseif ($sidebarType == 'dark')
+                            bg-gray-800 highlight-white/5
+                            text-white/40 hover:text-white/70
+                            ring-white/30 hover:ring-white/70
+                        @endif
 
+                        dark:bg-gray-800 dark:highlight-white/5
+                        dark:text-white/40 dark:hover:text-white/70
+                        dark:ring-white/30 dark:hover:ring-white/70
 
-            <button type="button" @click="$dispatch('search')"
-                class="
-                    @if ($sidebarType == 'primary')
-                        text-primary-200/40 hover:text-primary-200/70
-                        ring-primary-200/40 hover:ring-primary-200/70
-                    @elseif ($sidebarType == 'light')
-                        text-gray-400/60 hover:text-gray-400/90
-                        ring-gray-400/40 hover:ring-gray-400/70
-                    @elseif ($sidebarType == 'dark')
-                        bg-gray-800 highlight-white/5
-                        text-white/40 hover:text-white/70
-                        ring-white/30 hover:ring-white/70
-                    @endif
-
-                    dark:bg-gray-800 dark:highlight-white/5
-                    dark:text-white/40 dark:hover:text-white/70
-                    dark:ring-white/30 dark:hover:ring-white/70
-
-                    ring-1
-                    hidden w-full lg:flex items-center text-sm leading-6
-                    shadow-sm py-1.5 pl-2 pr-3
-                    rounded-md
-            ">
-
-
-
-
-                <svg width="24" height="24" fill="none" aria-hidden="true" class="flex-none mr-3"><path d="m19 19-3.5-3.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path><circle cx="11" cy="11" r="6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></circle></svg>
-                {{ __('Search') }}
-                <span class="flex-none pl-3 ml-auto text-xs font-semibold">⌘K</span>
-            </button>
+                        ring-1
+                        hidden w-full lg:flex items-center text-sm leading-6
+                        shadow-sm py-1.5 pl-2 pr-3
+                        rounded-md
+                ">
+                    <svg width="24" height="24" fill="none" aria-hidden="true" class="flex-none mr-3"><path d="m19 19-3.5-3.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path><circle cx="11" cy="11" r="6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></circle></svg>
+                    {{ __('Search') }}
+                    <span class="flex-none pl-3 ml-auto text-xs font-semibold">⌘K</span>
+                </button>
+            @endif
 
         </div>
 
@@ -196,11 +191,9 @@ $appSettings = Aura::options();
 
             @includeIf('navigation.before')
 
-
-            {{-- <x-aura::navigation /> --}}
             @include('aura::navigation.index')
 
-            {{-- @includeIf('navigation.after') --}}
+            @includeIf('navigation.after')
 
         </div>
     </div>
