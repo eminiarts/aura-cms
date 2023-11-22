@@ -20,7 +20,7 @@
 
                     <button x-on:click="resetBulk();" type="button"
                         class="ml-1 text-sm font-medium leading-5 text-gray-700 text-primary-600 underline transition duration-150 ease-in-out focus:outline-none focus:text-gray-800 focus:underline dark:text-white dark:hover:text-gray-400">
-                        {{ __('Unselect All') }}
+                        {{ __('Unselect all') }}
                     </button>
                 </div>
             </template>
@@ -34,7 +34,7 @@
 
                     <button x-on:click="resetBulk()" type="button"
                         class="ml-1 text-sm font-medium leading-5 text-gray-700 text-primary-600 underline transition duration-150 ease-in-out focus:outline-none focus:text-gray-800 focus:underline dark:text-white dark:hover:text-gray-400">
-                        {{ __('Unselect All') }}
+                        {{ __('Unselect all') }}
                     </button>
                 </div>
             </template>
