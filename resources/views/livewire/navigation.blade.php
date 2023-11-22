@@ -95,7 +95,7 @@ $appSettings = Aura::options();
             <x-slot name="title">
             <img class="inline-block rounded-full h-9 w-9" src="{{ Auth::user()->resource->avatarUrl }}" alt="">
             </x-slot::title>
-
+            
             @include('aura::navigation.footer-popup')
         </x-aura::tippy-rea>
     </div>
