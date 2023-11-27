@@ -80,6 +80,8 @@ trait SaveMetaFields
 
                 }
 
+                $post->fireModelEvent('metaSaved');
+
                 // Reload relation
                 // $post->load('meta');
             }
