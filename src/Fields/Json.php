@@ -10,7 +10,7 @@ class Json extends Field
 
     public function get($field, $value)
     {
-        if (is_array($value)) {
+        if (is_array($value) || $value === null) {
             return $value;
         }
 

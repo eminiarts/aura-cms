@@ -32,8 +32,6 @@ class HasMany extends Field
             return $field['relation']($query, $model);
         }
 
-
-
         if (optional($component->field)['relation']) {
             return $query->whereHas('meta', function ($query) use ($field) {
                 $query->where('key', $field['relation']);

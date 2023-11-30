@@ -31,7 +31,9 @@ trait HasActions
 
     public function singleAction($action)
     {
-        $this->model->{$action}();
+        $response = $this->model->{$action}();
+
+        dd($response);
 
         $this->notify('Successfully ran: '.$action);
     }
