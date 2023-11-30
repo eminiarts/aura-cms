@@ -455,6 +455,17 @@ trait AuraModelConfig
         return $query;
     }
 
+    public function scopeWhereInMeta($query, $field, $values)
+    {
+        if (!is_array($values)) {
+            $values = [$values];
+        }
+
+        return $query->whereHas('meta', function ($query) use ($field, $values) {
+            $query->where('key', $field)->whereIn('value', $values);
+        });
+    }
+
     public function singularName()
     {
         return static::$singularName ?? Str::title(static::$slug);
