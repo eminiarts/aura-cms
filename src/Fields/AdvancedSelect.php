@@ -46,7 +46,11 @@ class AdvancedSelect extends Field
             return;
         }
 
-        return json_decode($value, true);
+        if (is_string($value)) {
+            return json_decode($value, true);
+        }
+
+        return $value;
     }
 
     public function getFields()
