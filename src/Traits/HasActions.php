@@ -33,7 +33,6 @@ trait HasActions
     {
         $response = $this->model->{$action}();
 
-        dd($response);
 
         $this->notify('Successfully ran: '.$action);
     }
