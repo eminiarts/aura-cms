@@ -55,7 +55,7 @@ class Edit extends Component
     public function callMethod($method, $params = [], $captureReturnValueCallback = null)
     {
         // If the method exists in this component, call it directly.
-        if (method_exists($this, $method) || ! optional($params)[0]) {
+        if (method_exists($this, $method) || !optional($params)[0]) {
             return parent::callMethod($method, $params, $captureReturnValueCallback);
         }
 
@@ -111,6 +111,9 @@ class Edit extends Component
         // foreach fields, call the hydration method on the field
 
         $this->post['terms'] = $this->model->terms;
+
+
+        // dd('mount', $this->post, $this->model);
 
         // Set on model instead of here
         // if $this->post['terms']['tag'] is not set, set it to null
@@ -181,7 +184,7 @@ class Edit extends Component
             $this->emit('closeModal');
             $this->emit('refreshTable');
         }
-// ray('refresh');
+        // ray('refresh');
 
         $this->emit('refreshComponent');
 
