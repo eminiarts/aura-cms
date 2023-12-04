@@ -96,6 +96,8 @@ class Create extends Component
 
     public function save()
     {
+        // dd($this->rules());
+
         $this->validate();
 
         // dd('save', $this->post);
