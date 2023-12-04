@@ -13,6 +13,8 @@ class TeamInvitation extends Resource
 
     protected static $dropdown = 'Users';
 
+    protected static bool $showInNavigation = false;
+
     protected static ?string $group = 'Aura';
 
     /**
