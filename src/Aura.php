@@ -60,7 +60,7 @@ class Aura
 
         $publishedPath = public_path('vendor/aura/manifest.json');
 
-        if (! File::exists($publishedPath)) {
+        if (!File::exists($publishedPath)) {
             throw new RuntimeException('Aura CMS assets are not published. Please run: php artisan aura:publish');
         }
 
@@ -122,7 +122,7 @@ class Aura
     {
         $path = config('aura.fields.path');
 
-        if (! file_exists($path)) {
+        if (!file_exists($path)) {
             return [];
         }
 
@@ -151,7 +151,7 @@ class Aura
     {
         $path = config('aura.paths.resources.path');
 
-        if (! file_exists($path)) {
+        if (!file_exists($path)) {
             return [];
         }
 
@@ -168,7 +168,7 @@ class Aura
     {
         $path = config('aura.taxonomies.path');
 
-        if (! file_exists($path)) {
+        if (!file_exists($path)) {
             return [];
         }
 
@@ -179,7 +179,7 @@ class Aura
     {
         $path = config('aura.widgets.path');
 
-        if (! file_exists($path)) {
+        if (!file_exists($path)) {
             return [];
         }
 
@@ -354,9 +354,11 @@ class Aura
                 ->filter(fn ($r) => $r['showInNavigation'] ?? true)
                 ->sortBy('sort');
 
+            $resources = app('hook_manager')->applyHooks('navigation', $resources->values());
+
             $grouped = array_reduce(collect($resources)->toArray(), function ($carry, $item) {
                 if ($item['dropdown'] !== false) {
-                    if (! isset($carry[$item['dropdown']])) {
+                    if (!isset($carry[$item['dropdown']])) {
                         $carry[$item['dropdown']] = [];
                     }
                     $carry[$item['dropdown']]['group'] = $item['group'];
@@ -488,7 +490,7 @@ class Aura
 
     public function varexport($expression, $return = false)
     {
-        if (! is_array($expression)) {
+        if (!is_array($expression)) {
             return var_export($expression, $return);
         }
         $export = var_export($expression, true);
