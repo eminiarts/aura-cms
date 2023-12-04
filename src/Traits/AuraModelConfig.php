@@ -370,7 +370,7 @@ trait AuraModelConfig
 
     public function isVendorResource()
     {
-        return ! $this->isAppResource();
+        return !$this->isAppResource();
     }
 
     /**
