@@ -6,7 +6,7 @@
                 <strong class="block text-red-600">
                     {{ __('Unfortunately, there were still the following validation errors:') }}
                 </strong>
-                <div class="prose text-red-600">
+                <div class="text-red-600 prose">
                     <ul>
                         @foreach ($errors->all() as $message)
                         <li>{{ $message }}</li>
@@ -17,7 +17,7 @@
         </div>
     @endif
 
-    <div class="mb-4 -mx-4">
+    <div class="-mx-4 mb-4">
         @foreach($this->fields as $key => $field)
         <style>
             #post-field-{{ optional($field)['slug'] }}-wrapper {
@@ -41,7 +41,7 @@
         <div wire:loading>
             <x-aura::icon.loading  />
         </div>
-        Save
+        {{ __('Save') }}
     </x-aura::button>
 
 </div>
