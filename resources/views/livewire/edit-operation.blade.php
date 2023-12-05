@@ -59,11 +59,11 @@
             <x-slot:icon>
                 <x-aura::icon.edit class="w-5 h-5" />
             </x-slot>
-            Save
+            {{ __('Save') }}
         </x-aura::button>
 
         <x-aura::button.border wire:click="validateBeforeClosing()">
-            Cancel
+            {{ __('Cancel') }}
         </x-aura::button.border>
   </div>
 </x-aura::slide-over>

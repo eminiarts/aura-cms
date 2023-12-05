@@ -10,7 +10,7 @@
     </x-aura::breadcrumbs>
     @endif
 
-    <div class="flex items-center justify-between my-8">
+    <div class="flex justify-between items-center my-8">
         <div>
             <h1 class="text-3xl font-semibold">Edit {{ $model->singularName() }}</h1>
         </div>
@@ -19,7 +19,7 @@
         <x-aura::dropdown width="w-96">
             <x-slot name="trigger">
                 <x-aura::button.transparent>
-                        <x-aura::icon.dots class="w-5 h-5 mr-2" />
+                        <x-aura::icon.dots class="mr-2 w-5 h-5" />
                 Actions
                 </x-aura::button.transparent>
             </x-slot>
@@ -36,13 +36,13 @@
                                     @include($label['icon-view'])
                                  @endif
                                  </div>
-                            <strong class="font-semibold">{{ $label['label'] ?? '' }} 
+                            <strong class="font-semibold">{{ $label['label'] ?? '' }}
                                 @if(optional($label)['description'])
-                            <span class="text-sm text-gray-500 font-normal leading-tight inline-block">{{ $label['description'] ?? '' }}</span>
+                            <span class="inline-block text-sm font-normal leading-tight text-gray-500">{{ $label['description'] ?? '' }}</span>
                             @endif
                             </strong>
                             </div>
-                            
+
                            </div>
                         @else
                             {{ $label }}
@@ -56,15 +56,15 @@
             @if ($model instanceof Eminiarts\Aura\Resources\User)
             <x-aura::button.transparent :href="route('impersonate', $model->id)" :id="$model->id">
                 <x-slot:icon>
-                    <x-aura::icon class="w-5 h-5 mr-2" icon="user-impersonate" />
+                    <x-aura::icon class="mr-2 w-5 h-5" icon="user-impersonate" />
                 </x-slot:icon>
                 Impersonate
             </x-aura::button.transparent>
             @endif
             <a href="{{ route('aura.taxonomy.view', [$slug, $model->id]) }}" class="text-gray-500 hover:text-gray-700">
                 <x-aura::button.transparent size="lg">
-                    <x-aura::icon.view class="w-5 h-5 mr-2" />
-                    View
+                    <x-aura::icon.view class="mr-2 w-5 h-5" />
+                    {{ __('View') }}
                 </x-aura::button.transparent>
             </a>
 
@@ -72,7 +72,7 @@
                 <div wire:loading>
                     <x-aura::icon.loading />
                 </div>
-                Save
+                {{ __('Save') }}
             </x-aura::button>
         </div>
     </div>
@@ -110,7 +110,7 @@
                 <div class="mt-8 form_errors">
                     <strong class="block text-red-600">Unfortunately, there were still the following validation
                         errors:</strong>
-                    <div class="prose text-red-600">
+                    <div class="text-red-600 prose">
                         <ul>
                             @foreach ($errors->all() as $message)
                             <li>{{ $message }}</li>
