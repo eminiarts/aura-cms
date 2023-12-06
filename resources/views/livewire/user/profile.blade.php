@@ -1,10 +1,14 @@
 <div>
     @section('title', 'Profile • ')
 
+    {{ app('aura')::injectView('profile_before_header') }}
+
     <div>
         <h1 class="text-3xl font-semibold">{{ __('Profile') }}</h1>
         <h3> {{ __('Update your account\'s profile information and email address.') }}</h3>
     </div>
+
+    {{ app('aura')::injectView('profile_after_header') }}
 
     @if (count($errors->all()))
             <div class="block">
