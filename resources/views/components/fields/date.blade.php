@@ -45,7 +45,7 @@
         @if ($field['field']->isDisabled($this->post, $field))
         disabled
         @endif
-        class="w-full px-3 py-2 bg-white border rounded-none shadow-xs appearance-none disabled:opacity-50 disabled:cursor-not-allowed border-gray-500/30 dark:border-gray-700 rounded-r-md focus:border-primary-300 focus:outline-none ring-gray-900/10 focus:ring focus:ring-primary-300 focus:ring-opacity-50 dark:focus:ring-primary-500 dark:focus:ring-opacity-50 dark:bg-gray-900"
+        class="px-3 py-2 w-full bg-white rounded-none rounded-r-md border appearance-none shadow-xs disabled:opacity-50 disabled:cursor-not-allowed border-gray-500/30 dark:border-gray-700 focus:border-primary-300 focus:outline-none ring-gray-900/10 focus:ring focus:ring-primary-300 focus:ring-opacity-50 dark:focus:ring-primary-500 dark:focus:ring-opacity-50 dark:bg-gray-900"
     />
 </div>
 </x-aura::fields.wrapper>
