@@ -17,7 +17,7 @@ class ResourcePolicy
      */
     public function create(User $user, $resource)
     {
-        if($resource::$createEnabled === false) {
+        if ($resource::$createEnabled === false) {
             return false;
         }
 
@@ -105,7 +105,7 @@ class ResourcePolicy
      */
     public function update(User $user, $resource)
     {
-        if($resource::$editEnabled === false) {
+        if ($resource::$editEnabled === false) {
             return false;
         }
 
@@ -175,7 +175,7 @@ class ResourcePolicy
      */
     public function viewAny(User $user, $resource)
     {
-        if($resource::$indexViewEnabled === false) {
+        if ($resource::$indexViewEnabled === false) {
             return false;
         }
 

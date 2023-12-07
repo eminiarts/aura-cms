@@ -24,22 +24,6 @@ class TeamPolicy
         return $user->ownsTeam($team);
     }
 
-    public function inviteUsers(User $user, Team $team)
-    {
-        // ray('team policy', $user->resource->hasPermissionTo('invite-users', $team));
-
-        if ($user->resource->isSuperAdmin()) {
-            return true;
-        }
-
-
-        if($user->resource->hasPermissionTo('invite-users', $team)) {
-            return true;
-        }
-
-        return $user->ownsTeam($team);
-    }
-
     /**
      * Determine whether the user can create models.
      *
@@ -64,6 +48,21 @@ class TeamPolicy
     public function delete(User $user, Team $team)
     {
         if ($user->resource->isSuperAdmin()) {
+            return true;
+        }
+
+        return $user->ownsTeam($team);
+    }
+
+    public function inviteUsers(User $user, Team $team)
+    {
+        // ray('team policy', $user->resource->hasPermissionTo('invite-users', $team));
+
+        if ($user->resource->isSuperAdmin()) {
+            return true;
+        }
+
+        if ($user->resource->hasPermissionTo('invite-users', $team)) {
             return true;
         }
 
@@ -122,7 +121,6 @@ class TeamPolicy
         // if ($user->resource->isSuperAdmin()) {
         //     return true;
         // }
-
 
         return $user->belongsToTeam($team);
     }

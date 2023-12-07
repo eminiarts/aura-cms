@@ -70,6 +70,5 @@ class View extends Component
         // }
         return view($this->model->viewView())->layout('aura::components.layout.app');
 
-
     }
 }

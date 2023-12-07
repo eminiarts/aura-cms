@@ -398,11 +398,11 @@ class TeamSettings extends Component
         // dd('no abort');
 
         $valueString = [
-                'darkmode-type' => 'auto',
-                'sidebar-type' => 'primary',
-                'color-palette' => 'aura',
-                'gray-color-palette' => 'slate',
-            ];
+            'darkmode-type' => 'auto',
+            'sidebar-type' => 'primary',
+            'color-palette' => 'aura',
+            'gray-color-palette' => 'slate',
+        ];
 
         $this->model = Option::firstOrCreate([
             'name' => 'team-settings',

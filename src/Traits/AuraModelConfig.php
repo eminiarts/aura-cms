@@ -15,9 +15,15 @@ trait AuraModelConfig
 
     public static $contextMenu = true;
 
+    public static $createEnabled = true;
+
     public static $customTable = false;
 
+    public static $editEnabled = true;
+
     public static $globalSearch = true;
+
+    public static bool $indexViewEnabled = true;
 
     public array $metaFields = [];
 
@@ -32,12 +38,6 @@ trait AuraModelConfig
     public static bool $usesMeta = true;
 
     public static $viewEnabled = true;
-
-    public static $createEnabled = true;
-
-    public static $editEnabled = true;
-
-    public static bool $indexViewEnabled = true;
 
     public array $widgetSettings = [
         'default' => '30d',
@@ -174,11 +174,6 @@ trait AuraModelConfig
         return 'aura::livewire.post.edit';
     }
 
-    public function viewView()
-    {
-        return 'aura::livewire.post.view';
-    }
-
     public function getActions()
     {
         if (method_exists($this, 'actions')) {
@@ -190,6 +185,11 @@ trait AuraModelConfig
         }
     }
 
+    public function getBaseFillable()
+    {
+        return $this->baseFillable;
+    }
+
     public function getBulkActions()
     {
         if (method_exists($this, 'bulkActions')) {
@@ -199,11 +199,6 @@ trait AuraModelConfig
         if (property_exists($this, 'bulkActions')) {
             return $this->bulkActions;
         }
-    }
-
-    public function getBaseFillable()
-    {
-        return $this->baseFillable;
     }
 
     public static function getContextMenu()
@@ -374,7 +369,7 @@ trait AuraModelConfig
 
     public function isVendorResource()
     {
-        return !$this->isAppResource();
+        return ! $this->isAppResource();
     }
 
     /**
@@ -384,7 +379,7 @@ trait AuraModelConfig
      */
     public function meta()
     {
-        if(!$this->usesMeta()) {
+        if (! $this->usesMeta()) {
             return;
         }
 
@@ -435,6 +430,17 @@ trait AuraModelConfig
         $this->taxonomyFields = array_merge($this->taxonomyFields, $taxonomyFields);
     }
 
+    public function scopeWhereInMeta($query, $field, $values)
+    {
+        if (! is_array($values)) {
+            $values = [$values];
+        }
+
+        return $query->whereHas('meta', function ($query) use ($field, $values) {
+            $query->where('key', $field)->whereIn('value', $values);
+        });
+    }
+
     public function scopeWhereMeta($query, ...$args)
     {
         if (count($args) === 2) {
@@ -459,23 +465,10 @@ trait AuraModelConfig
         return $query;
     }
 
-    public function scopeWhereInMeta($query, $field, $values)
-    {
-        if (!is_array($values)) {
-            $values = [$values];
-        }
-
-        return $query->whereHas('meta', function ($query) use ($field, $values) {
-            $query->where('key', $field)->whereIn('value', $values);
-        });
-    }
-
     public function singularName()
     {
         return static::$singularName ?? Str::title(static::$slug);
     }
-
-
 
     public function team()
     {
@@ -514,5 +507,10 @@ trait AuraModelConfig
         if ($this->getType() && $this->id) {
             return route('aura.post.view', ['slug' => $this->getType(), 'id' => $this->id]);
         }
+    }
+
+    public function viewView()
+    {
+        return 'aura::livewire.post.view';
     }
 }

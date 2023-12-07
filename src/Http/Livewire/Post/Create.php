@@ -99,7 +99,7 @@ class Create extends Component
 
         // dd('save', $this->post);
 
-        if($this->model->usesCustomTable()) {
+        if ($this->model->usesCustomTable()) {
 
             $model = $this->model->create($this->post['fields']);
 
@@ -108,8 +108,6 @@ class Create extends Component
             $model = $this->model->create($this->post);
 
         }
-
-
 
         $this->notify('Successfully created.');
 
@@ -136,7 +134,7 @@ class Create extends Component
 
         foreach ($fields as $field) {
             $slug = $field['slug'] ?? null;
-            if ($slug && !isset($this->post['fields'][$slug]) && isset($field['default'])) {
+            if ($slug && ! isset($this->post['fields'][$slug]) && isset($field['default'])) {
                 $this->post['fields'][$slug] = $field['default'];
             }
         }

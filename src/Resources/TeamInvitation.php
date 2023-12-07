@@ -3,29 +3,18 @@
 namespace Eminiarts\Aura\Resources;
 
 use Eminiarts\Aura\Resource;
-use Eminiarts\Aura\Resources\Team;
 
 class TeamInvitation extends Resource
 {
-    public static string $type = 'Team Invitation';
-
     public static ?string $slug = 'teaminvitation';
+
+    public static string $type = 'Team Invitation';
 
     protected static $dropdown = 'Users';
 
-    protected static bool $showInNavigation = false;
-
     protected static ?string $group = 'Aura';
 
-    /**
-     * Get the team that the invitation belongs to.
-     *
-     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
-     */
-    public function team()
-    {
-        return $this->belongsTo(Team::class);
-    }
+    protected static bool $showInNavigation = false;
 
     public static function getFields()
     {
@@ -52,5 +41,15 @@ class TeamInvitation extends Resource
                 ],
             ],
         ];
+    }
+
+    /**
+     * Get the team that the invitation belongs to.
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
+     */
+    public function team()
+    {
+        return $this->belongsTo(Team::class);
     }
 }
