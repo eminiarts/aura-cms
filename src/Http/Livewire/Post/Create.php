@@ -43,9 +43,6 @@ class Create extends Component
 
         $this->model = Aura::findResourceBySlug($slug);
 
-        // dd($this->model->createFields());
-        //dd($this->model);
-
         // Authorize
         $this->authorize('create', $this->model);
 

@@ -54,6 +54,16 @@ return [
         'user' => Eminiarts\Aura\Resources\User::class,
         'team' => Eminiarts\Aura\Resources\Team::class,
         'team-invitation' => Eminiarts\Aura\Resources\TeamInvitation::class,
+        'role' => Eminiarts\Aura\Resources\Role::class,
+        'permission' => Eminiarts\Aura\Resources\Permission::class,
+        'post' => Eminiarts\Aura\Resources\Post::class,
+        'option' => Eminiarts\Aura\Resources\Option::class,
+        'attachment' => Eminiarts\Aura\Resources\Attachment::class,
+    ],
+
+    'taxonomies' => [
+        'category' => Eminiarts\Aura\Taxonomies\Category::class,
+        'tag' => Eminiarts\Aura\Taxonomies\Tag::class,
     ],
 
     'views' => [
@@ -63,6 +73,7 @@ return [
         'view' => 'aura::view',
         'create' => 'aura::create',
         'edit' => 'aura::edit',
+        'navigation' => 'aura::components.navigation',
     ],
 
     'features' => [
@@ -70,6 +81,9 @@ return [
         'notifications' => true,
 
         'plugins' => true,
+        'flows' => false,
+        'forms' => true,
+
         'posttype_editor' => config('app.env') == 'production' ? false : true,
         'theme_options' => true,
         'global_config' => true,

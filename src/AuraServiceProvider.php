@@ -264,15 +264,15 @@ class AuraServiceProvider extends PackageServiceProvider
         // dd(config('aura.resources.user'));
 
         Aura::registerResources([
-            \Eminiarts\Aura\Resources\Attachment::class,
-            \Eminiarts\Aura\Resources\Option::class,
-            \Eminiarts\Aura\Resources\Post::class,
-            \Eminiarts\Aura\Resources\Permission::class,
-            \Eminiarts\Aura\Resources\Role::class,
-            // \Eminiarts\Aura\Resources\User::class,
+            config('aura.resources.attachment'),
+            config('aura.resources.option'),
+            config('aura.resources.post'),
+            config('aura.resources.permission'),
+            config('aura.resources.role'),
             config('aura.resources.user'),
-            // config('aura::resources.user'),
         ]);
+
+        // dd(config('aura.resources.post'));
 
         if (config('aura.teams')) {
             Aura::registerResources([
@@ -282,8 +282,8 @@ class AuraServiceProvider extends PackageServiceProvider
         }
 
         Aura::registerTaxonomies([
-            \Eminiarts\Aura\Taxonomies\Tag::class,
-            \Eminiarts\Aura\Taxonomies\Category::class,
+            config('aura.taxonomies.tag'),
+            config('aura.taxonomies.category'),
         ]);
 
         // Register Fields from src/Fields
