@@ -17,6 +17,10 @@ class ResourcePolicy
      */
     public function create(User $user, $resource)
     {
+        if($resource::$createEnabled === false) {
+            return false;
+        }
+
         if ($user->resource->isSuperAdmin()) {
             return true;
         }
@@ -101,6 +105,10 @@ class ResourcePolicy
      */
     public function update(User $user, $resource)
     {
+        if($resource::$editEnabled === false) {
+            return false;
+        }
+
         if ($user->resource->isSuperAdmin()) {
             return true;
         }
@@ -167,6 +175,10 @@ class ResourcePolicy
      */
     public function viewAny(User $user, $resource)
     {
+        if($resource::$indexViewEnabled === false) {
+            return false;
+        }
+
         if ($user->resource->isSuperAdmin()) {
             return true;
         }

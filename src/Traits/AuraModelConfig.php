@@ -17,8 +17,6 @@ trait AuraModelConfig
 
     public static $customTable = false;
 
-    public static $editEnabled = true;
-
     public static $globalSearch = true;
 
     public array $metaFields = [];
@@ -34,6 +32,12 @@ trait AuraModelConfig
     public static bool $usesMeta = true;
 
     public static $viewEnabled = true;
+
+    public static $createEnabled = true;
+
+    public static $editEnabled = true;
+
+    public static bool $indexViewEnabled = true;
 
     public array $widgetSettings = [
         'default' => '30d',
