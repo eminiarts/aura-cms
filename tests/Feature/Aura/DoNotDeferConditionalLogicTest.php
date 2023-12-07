@@ -73,12 +73,12 @@ class DoNotDeferConditionalLogicTestModel extends Resource
                 'searchable' => false,
                 'options' => [
                     [
+                        'name' => 'simple',
                         'value' => 'simple',
-                        'key' => 'simple',
                     ],
                     [
+                        'name' => 'advanced',
                         'value' => 'advanced',
-                        'key' => 'advanced',
                     ],
                 ],
             ],
