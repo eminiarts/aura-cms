@@ -1,22 +1,20 @@
 <?php
 
-use Laravel\Fortify\Fortify;
-use Illuminate\Support\Facades\Route;
-use Eminiarts\Aura\Http\Controllers\SwitchTeamController;
-use Eminiarts\Aura\Http\Controllers\Auth\PasswordController;
+use Eminiarts\Aura\Http\Controllers\Auth\ConfirmablePasswordController;
+use Eminiarts\Aura\Http\Controllers\Auth\EmailVerificationNotificationController;
+use Eminiarts\Aura\Http\Controllers\Auth\EmailVerificationPromptController;
+use Eminiarts\Aura\Http\Controllers\Auth\InvitationRegisterUserController;
 use Eminiarts\Aura\Http\Controllers\Auth\NewPasswordController;
-use Eminiarts\Aura\Http\Controllers\Auth\VerifyEmailController;
+use Eminiarts\Aura\Http\Controllers\Auth\PasswordController;
+use Eminiarts\Aura\Http\Controllers\Auth\PasswordResetLinkController;
 use Eminiarts\Aura\Http\Controllers\Auth\RegisteredUserController;
 use Eminiarts\Aura\Http\Controllers\Auth\TeamInvitationController;
+use Eminiarts\Aura\Http\Controllers\Auth\VerifyEmailController;
+use Eminiarts\Aura\Http\Controllers\SwitchTeamController;
+use Illuminate\Support\Facades\Route;
 use Laravel\Fortify\Http\Controllers\AuthenticatedSessionController;
-use Eminiarts\Aura\Http\Controllers\Auth\PasswordResetLinkController;
-use Eminiarts\Aura\Http\Controllers\Auth\ConfirmablePasswordController;
-use Eminiarts\Aura\Http\Controllers\Auth\InvitationRegisterUserController;
-use Eminiarts\Aura\Http\Controllers\Auth\EmailVerificationPromptController;
-use Eminiarts\Aura\Http\Controllers\Auth\EmailVerificationNotificationController;
 
 Route::get('logout', [AuthenticatedSessionController::class, 'destroy'])->name('logout');
-
 
 Route::middleware('guest')->name('aura.')->group(function () {
 
