@@ -116,8 +116,6 @@ class TeamPolicy
      */
     public function view(User $user, Team $team)
     {
-        ray('view team', $team->id, $user->resource->isSuperAdmin(), $user->belongsToTeam($team));
-
         // if ($user->resource->isSuperAdmin()) {
         //     return true;
         // }
