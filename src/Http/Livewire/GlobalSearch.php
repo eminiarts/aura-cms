@@ -99,7 +99,7 @@ class GlobalSearch extends Component
 
     public function mount()
     {
-        if(auth()->check()) {
+        if (auth()->check()) {
             $this->bookmarks = auth()->user()->getOptionBookmarks();
         } else {
             $this->bookmarks = [];
@@ -108,7 +108,7 @@ class GlobalSearch extends Component
 
     public function render()
     {
-        if(auth()->check()) {
+        if (auth()->check()) {
             $this->bookmarks = auth()->user()->getOptionBookmarks();
         } else {
             $this->bookmarks = [];

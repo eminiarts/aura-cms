@@ -21,7 +21,7 @@ class File extends Field
     {
         // dump('setting file here', $value);
         if (is_null($value)) {
-            return null;
+            return;
         }
 
         if (is_array($value)) {

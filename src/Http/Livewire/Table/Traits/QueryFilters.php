@@ -23,9 +23,9 @@ trait QueryFilters
                 continue;
             }
 
-            if($this->model->usesCustomTable()) {
+            if ($this->model->usesCustomTable()) {
                 $query = $this->applyTableFieldFilter($query, $filter);
-            } else if ($this->model->isTableField($filter['name'])) {
+            } elseif ($this->model->isTableField($filter['name'])) {
                 $query = $this->applyTableFieldFilter($query, $filter);
             } else {
                 $query = $this->applyMetaFieldFilter($query, $filter);
@@ -34,7 +34,7 @@ trait QueryFilters
 
         // More advanced Search
         if ($this->search) {
-         //   $query->where($this->model->getTable() . '.title', 'LIKE', $this->search.'%');
+            //   $query->where($this->model->getTable() . '.title', 'LIKE', $this->search.'%');
         }
 
         return $query;

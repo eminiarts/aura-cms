@@ -6,15 +6,9 @@ class ID extends Field
 {
     public $component = 'aura::fields.text';
 
-    public $view = 'aura::fields.view-value';
+    public $on_forms = false;
 
     public string $type = 'input';
 
-    public $on_forms = false;
-
-
-
-
-
-
+    public $view = 'aura::fields.view-value';
 }

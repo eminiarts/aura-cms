@@ -8,22 +8,13 @@ class Checkbox extends Field
 
     // public $view = 'components.fields.checkbox';
 
-     public function get($field, $value)
+    public function get($field, $value)
     {
         if (is_array($value) || $value === null) {
             return $value;
         }
 
         return json_decode($value, true);
-    }
-
-     public function set($value)
-    {
-        if (is_array($value)) {
-            return json_encode($value);
-        }
-
-        return $value;
     }
 
     public function getFields()
@@ -74,5 +65,14 @@ class Checkbox extends Field
                 'slug' => 'default',
             ],
         ]);
+    }
+
+    public function set($value)
+    {
+        if (is_array($value)) {
+            return json_encode($value);
+        }
+
+        return $value;
     }
 }

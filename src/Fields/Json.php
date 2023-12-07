@@ -8,6 +8,11 @@ class Json extends Field
 
     public $view = 'aura::fields.view-value';
 
+    public function display($field, $value, $model)
+    {
+        return json_encode($value);
+    }
+
     public function get($field, $value)
     {
         if (is_array($value) || $value === null) {
@@ -15,11 +20,6 @@ class Json extends Field
         }
 
         return json_decode($value, true);
-    }
-
-    public function display($field, $value, $model)
-    {
-        return json_encode($value);
     }
 
     public function getFields()
