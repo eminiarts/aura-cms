@@ -2,25 +2,26 @@
 
 namespace Eminiarts\Aura;
 
-use Aura\Flows\Jobs\TriggerFlowOnCreatePostEvent;
-use Aura\Flows\Jobs\TriggerFlowOnDeletedPostEvent;
-use Aura\Flows\Jobs\TriggerFlowOnUpdatePostEvent;
+use Illuminate\Support\Str;
 use Aura\Flows\Resources\Flow;
+use Eminiarts\Aura\Resources\User;
+use Illuminate\Support\Facades\DB;
+use Eminiarts\Aura\Traits\SaveTerms;
+use Eminiarts\Aura\Traits\InputFields;
+use Illuminate\Database\Eloquent\Model;
+use Eminiarts\Aura\Traits\AuraTaxonomies;
+use Eminiarts\Aura\Traits\SaveMetaFields;
+use Eminiarts\Aura\Traits\AuraModelConfig;
 use Eminiarts\Aura\Models\Scopes\TeamScope;
 use Eminiarts\Aura\Models\Scopes\TypeScope;
-use Eminiarts\Aura\Resources\User;
-use Eminiarts\Aura\Traits\AuraModelConfig;
-use Eminiarts\Aura\Traits\AuraTaxonomies;
 use Eminiarts\Aura\Traits\InitialPostFields;
-use Eminiarts\Aura\Traits\InputFields;
 use Eminiarts\Aura\Traits\InteractsWithTable;
 use Eminiarts\Aura\Traits\SaveFieldAttributes;
-use Eminiarts\Aura\Traits\SaveMetaFields;
-use Eminiarts\Aura\Traits\SaveTerms;
-use Illuminate\Database\Eloquent\Concerns\HasTimestamps;
+use Aura\Flows\Jobs\TriggerFlowOnCreatePostEvent;
+use Aura\Flows\Jobs\TriggerFlowOnUpdatePostEvent;
+use Aura\Flows\Jobs\TriggerFlowOnDeletedPostEvent;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Str;
+use Illuminate\Database\Eloquent\Concerns\HasTimestamps;
 
 class Resource extends Model
 {
@@ -118,11 +119,17 @@ class Resource extends Model
     public function clearFieldsAttributeCache()
     {
         $this->fieldsAttributeCache = null;
+
+        if($this->usesMeta()) {
+            $this->load('meta'); // This will refresh only the 'meta' relationship
+        }
+
+        // $this->refresh();
     }
 
     public function getFieldsAttribute()
     {
-        if (! isset($this->fieldsAttributeCache)) {
+        if (!isset($this->fieldsAttributeCache) || $this->fieldsAttributeCache === null) {
             $meta = $this->getMeta();
 
             $defaultValues = collect($this->inputFieldsSlugs())
@@ -197,7 +204,8 @@ class Resource extends Model
 
     public function getMeta($key = null)
     {
-        if ($this->usesMeta() && optional($this)->meta && ! is_string($this->meta)) {
+        if ($this->usesMeta() && optional($this)->meta && !is_string($this->meta)) {
+
             $meta = $this->meta->pluck('value', 'key');
 
             // Cast Attributes
@@ -226,7 +234,7 @@ class Resource extends Model
         // get input fields and remove the ones that are not searchable
         $fields = $this->inputFields()->filter(function ($field) {
             // if $field is array or undefined, then we don't want to use it
-            if (! is_array($field) || ! isset($field['searchable'])) {
+            if (!is_array($field) || !isset($field['searchable'])) {
                 return false;
             }
 
@@ -296,7 +304,7 @@ class Resource extends Model
 
     public function widgets()
     {
-        if (! $this->getWidgets()) {
+        if (!$this->getWidgets()) {
             return;
         }
 
@@ -314,7 +322,7 @@ class Resource extends Model
      */
     protected static function booted()
     {
-        if (! static::$customTable) {
+        if (!static::$customTable) {
             static::addGlobalScope(new TypeScope());
         }
 
