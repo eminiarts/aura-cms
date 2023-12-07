@@ -23,7 +23,7 @@ class Password extends Field
     // Initialize the field on a LiveWire component
     public function hydrate()
     {
-        return null;
+
     }
 
     public function set($value)

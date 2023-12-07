@@ -31,7 +31,7 @@ trait Search
                             ->whereIn('post_meta.key', $metaFields);
                     })
                     ->where(function ($query) {
-                        // Todo: Meta fields on Custom Tables may not have a title field. 
+                        // Todo: Meta fields on Custom Tables may not have a title field.
 
                         $query->where($this->model->getTable().'.title', 'like', '%'.$this->search.'%')
                             ->orWhere(function ($query) {
@@ -50,7 +50,7 @@ trait Search
                             continue;
                         }
 
-                        $query->orWhere($this->model->getTable() . '.' . $field, 'like', '%'.$this->search.'%');
+                        $query->orWhere($this->model->getTable().'.'.$field, 'like', '%'.$this->search.'%');
                     }
                 });
             }

@@ -20,7 +20,7 @@ class HasMany extends Field
         $field = $component->field;
         $model = $component->model;
 
-        if(optional($component)->parent) {
+        if (optional($component)->parent) {
             $field = $component->parent->fieldBySlug($field['slug']);
             $model = $component->parent;
         }

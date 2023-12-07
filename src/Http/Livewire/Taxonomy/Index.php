@@ -16,7 +16,7 @@ class Index extends Component
         $this->slug = $slug;
         $this->taxonomy = Aura::findTaxonomyBySlug($slug);
 
-        abort_if(!$this->taxonomy, 404, 'Taxonomy not found.');
+        abort_if(! $this->taxonomy, 404, 'Taxonomy not found.');
     }
 
     public function render()

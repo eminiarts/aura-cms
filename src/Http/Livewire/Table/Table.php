@@ -24,6 +24,8 @@ class Table extends Component
     use Search;
     use Sorting;
 
+    public $bulkActionsView = 'aura::components.table.bulkActions';
+
     /**
      * List of table columns.
      *
@@ -63,6 +65,10 @@ class Table extends Component
         'global' => false,
     ];
 
+    public $filterView = 'aura::components.table.filter';
+
+    public $headerView = 'aura::components.table.header';
+
     /**
      * The last clicked row.
      *
@@ -71,13 +77,6 @@ class Table extends Component
     public $lastClickedRow;
 
     public $loaded = false;
-
-    public $post;
-
-    public $headerView = 'aura::components.table.header';
-    public $filterView = 'aura::components.table.filter';
-    public $bulkActionsView = 'aura::components.table.bulkActions';
-    public $tableIndexView = 'aura::components.table.index';
 
     /**
      * The model of the table.
@@ -92,6 +91,8 @@ class Table extends Component
      * @var \Illuminate\Database\Eloquent\Model
      */
     public $parent;
+
+    public $post;
 
     public $rowIds;
 
@@ -123,6 +124,8 @@ class Table extends Component
      */
     public $settings;
 
+    public $tableIndexView = 'aura::components.table.index';
+
     /**
      * The view of the table.
      *
@@ -144,15 +147,6 @@ class Table extends Component
     ];
 
     protected $queryString = ['selectedFilter'];
-
-    public function selectFieldRows($data)
-    {
-        if($data['slug'] == $this->field['slug']) {
-            // ray('selectFieldRows', $data);
-
-            $this->selected = $data['value'];
-        }
-    }
 
     public function action($data)
     {
@@ -345,7 +339,6 @@ class Table extends Component
             $query = $query->with(['meta']);
         }
 
-
         if ($this->filters) {
             $query = $this->applyTaxonomyFilter($query);
             $query = $this->applyCustomFilter($query);
@@ -441,6 +434,15 @@ class Table extends Component
     public function reorder($slugs)
     {
         auth()->user()->updateOption('columns_sort.'.$this->model->getType(), $slugs);
+    }
+
+    public function selectFieldRows($data)
+    {
+        if ($data['slug'] == $this->field['slug']) {
+            // ray('selectFieldRows', $data);
+
+            $this->selected = $data['value'];
+        }
     }
 
     /**
