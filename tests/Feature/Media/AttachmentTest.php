@@ -1,10 +1,11 @@
 <?php
 
 use Eminiarts\Aura\Models\User;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Eminiarts\Aura\Resources\Attachment;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Http\UploadedFile;
-use Illuminate\Support\Facades\Storage;
 
 uses(RefreshDatabase::class);
 
@@ -30,6 +31,14 @@ it('creates an attachment', function () {
         'mime_type' => 'image/jpeg',
         'size' => 12345,
     ]);
+
+
+    // Access to undeclared static property is not possible.
+    // If you need to debug the fieldsAttributeCache, you should instantiate the object and access the property on the instance.
+
+
+
+    // ray($attachment->fieldsAttributeCache);
 
     expect($attachment)->toBeInstanceOf(Attachment::class);
     expect($attachment->name)->toEqual('Test Attachment');
