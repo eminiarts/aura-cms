@@ -103,7 +103,7 @@ test('Team Settings can be saved', function () {
     // dd($option->value, json_encode($option->value));
 
     // assertJSON option value darkmode-type is auto
-    $this->assertJsonStringEqualsJsonString(json_encode($option->value), '{"app-logo":null,"app-logo-darkmode":null,"timezone1":null,"timezone":null,"darkmode-type":"light","color-palette":"red","primary-25":null,"primary-50":null,"primary-100":null,"primary-200":null,"primary-300":null,"primary-400":null,"primary-500":null,"primary-600":null,"primary-700":null,"primary-800":null,"primary-900":null,"gray-color-palette":"zinc","gray-25":null,"gray-50":null,"gray-100":null,"gray-200":null,"gray-300":null,"gray-400":null,"gray-500":null,"gray-600":null,"gray-700":null,"gray-800":null,"gray-900":null}');
+    $this->assertJsonStringEqualsJsonString(json_encode($option->value), '{"darkmode-type":"light","sidebar-type":"light","color-palette":"red","gray-color-palette":"zinc"}');
 
     // acting as $this->user, get team-settings page and assertSee "--primary-400: #f87171;" in html
     $this->actingAs($this->user)
