@@ -26,7 +26,7 @@ class Index extends Component
             return redirect()->route('aura.dashboard');
         }
 
-        if (!$this->post::$indexViewEnabled) {
+        if (! $this->post::$indexViewEnabled) {
             return redirect()->route('aura.dashboard');
         }
 

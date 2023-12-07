@@ -52,8 +52,6 @@ class Post extends Resource
 
     public static string $type = 'Post';
 
-    protected $hidden = ['password'];
-
     public array $widgetSettings = [
         'default' => '30d',
         'options' => [
@@ -77,6 +75,8 @@ class Post extends Resource
     ];
 
     protected static ?string $group = 'Aura';
+
+    protected $hidden = ['password'];
 
     protected static array $searchable = [
         'title',

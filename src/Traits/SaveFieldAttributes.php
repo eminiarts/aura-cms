@@ -16,18 +16,16 @@ trait SaveFieldAttributes
     {
         static::saving(function ($post) {
 
-
-            if (!optional($post->attributes)['fields']) {
+            if (! optional($post->attributes)['fields']) {
                 $post->attributes['fields'] = [];
             }
-
 
             collect($post->inputFieldsSlugs())->each(function ($slug) use ($post) {
                 if (optional($post->attributes)[$slug]) {
                     $class = $post->fieldClassBySlug($slug);
 
                     // Do not continue if the Field is not found
-                    if (!$class) {
+                    if (! $class) {
                         return;
                     }
 
@@ -36,7 +34,7 @@ trait SaveFieldAttributes
                         return;
                     }
 
-                    if (!array_key_exists($slug, $post->attributes['fields'])) {
+                    if (! array_key_exists($slug, $post->attributes['fields'])) {
                         $post->attributes['fields'][$slug] = $post->attributes[$slug];
                     }
                 }

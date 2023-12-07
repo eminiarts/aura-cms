@@ -18,7 +18,7 @@ trait SaveMetaFields
                     $class = $post->fieldClassBySlug($key);
 
                     // Do not continue if the Field is not found
-                    if (!$class) {
+                    if (! $class) {
                         continue;
                     }
 
@@ -54,7 +54,6 @@ trait SaveMetaFields
                         continue;
                     }
 
-
                     // Save the meta field to the model, so it can be saved in the Meta table
                     $post->saveMetaField([$key => $value]);
                 }
@@ -77,7 +76,7 @@ trait SaveMetaFields
                         continue;
                     }
 
-                    if($post->usesMeta()) {
+                    if ($post->usesMeta()) {
                         $post->meta()->updateOrCreate(['key' => $key], ['value' => $value]);
                     }
 

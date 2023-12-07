@@ -37,6 +37,13 @@ class Profile extends Component
     // Listen for selectedAttachment
     protected $listeners = ['updateField' => 'updateField'];
 
+    public function checkAuthorization()
+    {
+        if (config('aura.features.user_profile') == false) {
+            abort(403, 'User profile is turned off.');
+        }
+    }
+
     /**
      * Confirm that the user would like to delete their account.
      *
@@ -47,13 +54,6 @@ class Profile extends Component
         $this->dispatchBrowserEvent('confirming-delete-user');
 
         $this->confirmingUserDeletion = true;
-    }
-
-    public function checkAuthorization()
-    {
-        if (config('aura.features.user_profile') == false) {
-            abort(403, 'User profile is turned off.');
-        }
     }
 
     /**
