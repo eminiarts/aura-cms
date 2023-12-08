@@ -27,7 +27,7 @@
 
                         <span class="flex flex-1 items-center px-4 text-sm text-gray-700 dark:text-gray-200 group" role="menuitem"
                             tabindex="-1" id="menu-item-6">
-                            {{ $label }}
+                            {{ __($label) }}
                         </span>
 
                         <div class="cursor-move drag-handle">
