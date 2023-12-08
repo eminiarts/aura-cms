@@ -16,21 +16,21 @@
         {{ app('aura')::injectView('breadcrumbs_after') }}
 
         <div>
-            @local
-            @if($post->isAppResource())
-            <x-aura::button.transparent :href="route('aura.posttype.edit', $slug)" size="">
-                <x-aura::icon icon="cog" class="mr-2" />
-                {{ __('Edit Posttype') }}
-            </x-aura::button.transparent>
+            @if (config('aura.features.posttype_editor'))
+                    @if ($post->isAppResource())
+                        <x-aura::button.transparent :href="route('aura.posttype.edit', $slug)" size="">
+                            <x-aura::icon icon="cog" class="mr-2" />
+                            {{ __('Edit Posttype') }}
+                        </x-aura::button.transparent>
+                    @endif
             @endif
-            @endlocal
         </div>
     </div>
 
     {{ app('aura')::injectView('widgets_before') }}
 
-    @if($widgets = $post->widgets())
-    @livewire('aura::widgets', ['widgets' => $widgets, 'model' => $post] )
+    @if ($widgets = $post->widgets())
+        @livewire('aura::widgets', ['widgets' => $widgets, 'model' => $post])
     @endif
 
     {{ app('aura')::injectView('widgets_after') }}

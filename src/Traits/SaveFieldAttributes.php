@@ -15,10 +15,10 @@ trait SaveFieldAttributes
     protected static function bootSaveFieldAttributes()
     {
         static::saving(function ($post) {
+
             if (! optional($post->attributes)['fields']) {
                 $post->attributes['fields'] = [];
             }
-
 
             collect($post->inputFieldsSlugs())->each(function ($slug) use ($post) {
                 if (optional($post->attributes)[$slug]) {

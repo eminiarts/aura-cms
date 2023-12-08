@@ -185,7 +185,7 @@ class Posttype extends Component
     public function checkAuthorization()
     {
         if (config('aura.features.posttype_editor') == false) {
-            abort(403, 'Posttype Editor is turned off.');
+            abort(404);
         }
 
         if ($this->model->isVendorResource()) {

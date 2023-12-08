@@ -76,6 +76,11 @@ class User extends UserModel
         ];
     }
 
+    public function clearFieldsAttributeCache()
+    {
+        // Do we need to extend user instead of resource?
+    }
+
     public function getAvatarUrlAttribute()
     {
         if (! $this->avatar) {

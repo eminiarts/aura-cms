@@ -46,11 +46,6 @@ class Image extends Field
         return $value;
     }
 
-    public function set($value)
-    {
-        return json_encode($value);
-    }
-
     public function getFields()
     {
         return array_merge(parent::getFields(), [
@@ -94,5 +89,10 @@ class Image extends Field
             ],
 
         ]);
+    }
+
+    public function set($value)
+    {
+        return json_encode($value);
     }
 }

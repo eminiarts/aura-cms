@@ -17,7 +17,7 @@ class Repeater extends Field
 
     public function get($field, $value)
     {
-        if(is_array($value)) {
+        if (is_array($value)) {
             return $value;
         }
 
@@ -28,7 +28,7 @@ class Repeater extends Field
     {
         $fields = collect(parent::getFields())->filter(function ($field) {
             // check if the slug of the field starts with "on", if yes filter it out
-            return !str_starts_with($field['slug'], 'on_');
+            return ! str_starts_with($field['slug'], 'on_');
         })->toArray();
 
         return array_merge($fields, [
@@ -70,7 +70,7 @@ class Repeater extends Field
         $new = collect();
 
         // dd($values, $fields, $field, $slug);
-        if (!$values) {
+        if (! $values) {
             return $fields;
         }
 

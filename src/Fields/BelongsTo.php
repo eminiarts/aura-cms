@@ -12,28 +12,6 @@ class BelongsTo extends Field
 
     public $view = 'aura::fields.view-value';
 
-    // public $view = 'components.fields.belongsto';
-
-    public function getFields()
-    {
-        return array_merge(parent::getFields(), [
-            [
-                'label' => 'Belongs To',
-                'name' => 'Belongs To',
-                'type' => 'Eminiarts\\Aura\\Fields\\Tab',
-                'slug' => 'tab-belongsTo',
-                'style' => [],
-            ],
-            [
-                'label' => 'Resource',
-                'name' => 'resource',
-                'type' => 'Eminiarts\\Aura\\Fields\\Text',
-                'validation' => '',
-                'slug' => 'resource',
-            ],
-        ]);
-    }
-
     public function api($request)
     {
         // Get $searchable from $request->model
@@ -120,6 +98,28 @@ class BelongsTo extends Field
     public function get($field, $value)
     {
         return json_decode($value, true);
+    }
+
+    // public $view = 'components.fields.belongsto';
+
+    public function getFields()
+    {
+        return array_merge(parent::getFields(), [
+            [
+                'label' => 'Belongs To',
+                'name' => 'Belongs To',
+                'type' => 'Eminiarts\\Aura\\Fields\\Tab',
+                'slug' => 'tab-belongsTo',
+                'style' => [],
+            ],
+            [
+                'label' => 'Resource',
+                'name' => 'resource',
+                'type' => 'Eminiarts\\Aura\\Fields\\Text',
+                'validation' => '',
+                'slug' => 'resource',
+            ],
+        ]);
     }
 
     public function queryFor($model)
