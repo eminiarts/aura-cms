@@ -25,6 +25,7 @@ trait HasActions
             if (isset($item['conditional_logic'])) {
                 return $item['conditional_logic']();
             }
+
             return true;
         })->all();
     }
@@ -32,7 +33,6 @@ trait HasActions
     public function singleAction($action)
     {
         $response = $this->model->{$action}();
-
 
         $this->notify('Successfully ran: '.$action);
     }

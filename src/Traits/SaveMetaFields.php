@@ -59,6 +59,8 @@ trait SaveMetaFields
                 }
 
                 unset($post->attributes['fields']);
+
+                $post->clearFieldsAttributeCache();
             }
         });
 
@@ -74,7 +76,7 @@ trait SaveMetaFields
                         continue;
                     }
 
-                    if($post->usesMeta()) {
+                    if ($post->usesMeta()) {
                         $post->meta()->updateOrCreate(['key' => $key], ['value' => $value]);
                     }
 

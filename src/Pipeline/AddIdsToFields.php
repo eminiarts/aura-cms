@@ -3,7 +3,6 @@
 namespace Eminiarts\Aura\Pipeline;
 
 use Closure;
-
 use InvalidArgumentException;
 
 class AddIdsToFields implements Pipe
@@ -18,7 +17,7 @@ class AddIdsToFields implements Pipe
         $fields = collect($fields)->values()->map(function ($item, $key) use (&$currentParent, &$globalTabs, &$parentPanel, &$parentTab) {
             $item['_id'] = $key + 1;
 
-            $shouldNotBeNested = !empty(optional($item)['exclude_from_nesting']) && $item['exclude_from_nesting'] === true;
+            $shouldNotBeNested = ! empty(optional($item)['exclude_from_nesting']) && $item['exclude_from_nesting'] === true;
 
             if ($shouldNotBeNested) {
                 // Set the parent ID to the one before the current parent if it's set, or null
@@ -30,7 +29,6 @@ class AddIdsToFields implements Pipe
 
                 return $item;
             }
-
 
             if (optional($item)['global'] === true && ! $globalTabs) {
                 if ($item['field']->type == 'tabs') {
@@ -48,7 +46,7 @@ class AddIdsToFields implements Pipe
                 if (optional($item)['global']) {
 
                     // If type = group
-                    if($item['field']->type === 'group') {
+                    if ($item['field']->type === 'group') {
                         $item['_parent_id'] = $currentParent['_parent_id'];
                         $currentParent = $item;
                         $parentPanel = null;
@@ -113,7 +111,6 @@ class AddIdsToFields implements Pipe
 
             return $item;
         });
-
 
         return $next($fields);
     }

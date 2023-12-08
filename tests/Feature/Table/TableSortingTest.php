@@ -303,7 +303,7 @@ test('table sorting by taxonomy field', function () {
     expect($component->rows->items()[1]->id)->toBe($post->id);
 
     // SQL should contain left join
-    expect($component->rowsQuery->toSql())->toContain('select "posts".*, (select "name" from "taxonomies" left join "taxonomy_relations" on "taxonomies"."id" = "taxonomy_relations"."taxonomy_id" and "taxonomy_relations"."relatable_type" = ? where "taxonomy" = ? and "relatable_id" = "posts"."id" and "team_id" = ? order by "name" asc limit 1) as "first_taxonomy" from "posts" where "posts"."type" = ?');
+    expect($component->rowsQuery->toSql())->toContain('select "posts".*, (select "name" from "taxonomies" left join "taxonomy_relations" on "taxonomies"."id" = "taxonomy_relations"."taxonomy_id" and "taxonomy_relations"."relatable_type" = ? where "taxonomy" = ? and "relatable_id" = "posts"."id" and "taxonomies"."team_id" = ? order by "name" asc limit 1) as "first_taxonomy" from "posts" where "posts"."type" = ?');
 
     // Binding should be: ["meta","Post",1]
     expect($component->rowsQuery->getBindings()[0])->toBe('MetaSortingModel');

@@ -55,7 +55,6 @@ class Radio extends Field
                 'slug' => 'default',
             ],
 
-
         ]);
     }
 }

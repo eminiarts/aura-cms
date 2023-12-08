@@ -26,6 +26,10 @@ class Index extends Component
             return redirect()->route('aura.dashboard');
         }
 
+        if (! $this->post::$indexViewEnabled) {
+            return redirect()->route('aura.dashboard');
+        }
+
         // Authorize if the User can see this Post
         // ray('hierer', $this->post);
         $this->authorize('viewAny', $this->post);

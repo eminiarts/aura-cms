@@ -18,6 +18,7 @@ class HookManager
                 $data = call_user_func($callback, $data);
             }
         }
+
         return $data;
     }
 }

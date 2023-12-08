@@ -42,20 +42,10 @@ class Edit extends Component
         'reload',
     ];
 
-    public function reload()
-    {
-        $this->model = $this->model->fresh();
-        $this->post = $this->model->attributesToArray();
-        // The GET method is not supported for this route. Only POST is supported.
-        // Therefore, we cannot use redirect()->to(url()->current()).
-        // Instead, we will refresh the component.
-        $this->emit('refreshComponent');
-    }
-
     public function callMethod($method, $params = [], $captureReturnValueCallback = null)
     {
         // If the method exists in this component, call it directly.
-        if (method_exists($this, $method) || !optional($params)[0]) {
+        if (method_exists($this, $method) || ! optional($params)[0]) {
             return parent::callMethod($method, $params, $captureReturnValueCallback);
         }
 
@@ -93,6 +83,16 @@ class Edit extends Component
         return $this->model->getTaxonomies();
     }
 
+    public function initializeModelFields()
+    {
+        foreach ($this->model->inputFields() as $field) {
+            // If the method exists in the field type, call it directly.
+            if (method_exists($field['field'], 'hydrate')) {
+                $this->post['fields'][$field['slug']] = $field['field']->hydrate();
+            }
+        }
+    }
+
     public function mount($slug, $id)
     {
         $this->slug = $slug;
@@ -112,7 +112,6 @@ class Edit extends Component
 
         $this->post['terms'] = $this->model->terms;
 
-
         // dd('mount', $this->post, $this->model);
 
         // Set on model instead of here
@@ -122,14 +121,14 @@ class Edit extends Component
 
     }
 
-    public function initializeModelFields()
+    public function reload()
     {
-        foreach ($this->model->inputFields() as $field) {
-            // If the method exists in the field type, call it directly.
-            if (method_exists($field['field'], 'hydrate')) {
-                $this->post['fields'][$field['slug']] = $field['field']->hydrate();
-            }
-        }
+        $this->model = $this->model->fresh();
+        $this->post = $this->model->attributesToArray();
+        // The GET method is not supported for this route. Only POST is supported.
+        // Therefore, we cannot use redirect()->to(url()->current()).
+        // Instead, we will refresh the component.
+        $this->emit('refreshComponent');
     }
 
     public function render()
@@ -157,7 +156,7 @@ class Edit extends Component
 
         // unset this post fields group
 
-        if($this->model->usesCustomTable()) {
+        if ($this->model->usesCustomTable()) {
 
             // ray('custom table');
 
@@ -166,10 +165,9 @@ class Edit extends Component
             // ray('update', $this->post['fields']);
 
             $this->model->update($this->post['fields']);
-        // $this->model->update(['fields' => $this->post['fields']]);
+            // $this->model->update(['fields' => $this->post['fields']]);
 
-
-        // $this->model->update($this->post['fields']);
+            // $this->model->update($this->post['fields']);
         } else {
             // ray('no custom table');
             // ray($this->post);
@@ -189,7 +187,6 @@ class Edit extends Component
         $this->emit('refreshComponent');
 
         // Redirect to edit page
-
 
         // ray('before redirect');
 

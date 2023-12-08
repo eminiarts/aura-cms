@@ -3,13 +3,12 @@
 namespace Eminiarts\Aura\Traits;
 
 use Illuminate\Pipeline\Pipeline;
-use Illuminate\Support\Facades\Cache;
 
 trait InputFieldsHelpers
 {
-    protected static $fieldsBySlug = [];
-
     protected static $fieldClassesBySlug = [];
+
+    protected static $fieldsBySlug = [];
 
     protected static $fieldsCollectionCache = [];
 
@@ -21,7 +20,7 @@ trait InputFieldsHelpers
     {
 
         // Construct a unique key using the class name and the slug
-        $key = get_class($this) . '-' . $slug;
+        $key = get_class($this).'-'.$slug;
 
         // If this key exists in the static array, return the cached result
         if (isset(self::$fieldsBySlug[$key])) {
@@ -38,7 +37,7 @@ trait InputFieldsHelpers
     public function fieldClassBySlug($slug)
     {
         // Construct a unique key using the class name and the slug
-        $key = get_class($this) . '-' . $slug;
+        $key = get_class($this).'-'.$slug;
 
         // If this key exists in the static array, return the cached result
         if (isset(self::$fieldClassesBySlug[$key])) {
@@ -139,7 +138,7 @@ trait InputFieldsHelpers
             return self::$mappedFields[$class];
         }
 
-        self::$mappedFields[$class] =  $this->fieldsCollection()->map(function ($item) {
+        self::$mappedFields[$class] = $this->fieldsCollection()->map(function ($item) {
             $item['field'] = app($item['type'])->field($item);
             $item['field_type'] = app($item['type'])->type;
 

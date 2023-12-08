@@ -154,11 +154,11 @@ class CustomTableFilterModel extends Resource
         static::addGlobalScope(new TeamScope());
 
         static::saving(function ($post) {
-            if (! $post->team_id && auth()->user()) {
+            if (!$post->team_id && auth()->user()) {
                 $post->team_id = auth()->user()->current_team_id;
             }
 
-            if (! $post->user_id && auth()->user()) {
+            if (!$post->user_id && auth()->user()) {
                 $post->user_id = auth()->user()->id;
             }
 
@@ -257,7 +257,7 @@ test('table filter - custom column on table - starts_with', function () {
     expect($component->rows->items())->toHaveCount(0);
 
     // Inspect sql
-    expect($component->rowsQuery->toSql())->toContain('select * from "custom_projects" where "status" like ? and "team_id" = ? order by "custom_projects"."id" desc');
+    expect($component->rowsQuery->toSql())->toContain('select * from "custom_projects" where "status" like ? and "custom_projects"."team_id" = ? order by "custom_projects"."id" desc');
 
     expect($component->rowsQuery->getBindings()[0])->toBe('zzz%');
 });

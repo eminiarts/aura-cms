@@ -78,9 +78,7 @@ test('edit posttype can be turned off in config', function () {
     // visit edit posttype page
     $response = $this->get(route('aura.posttype.edit', 'user'));
 
-    $response->assertForbidden();
-
-    expect($response->exception->getMessage())->toBe('Posttype Editor is turned off.');
+    $response->assertStatus(404);
 });
 
 test('edit posttype should not be available in production', function () {

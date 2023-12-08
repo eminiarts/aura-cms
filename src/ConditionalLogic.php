@@ -74,8 +74,6 @@ class ConditionalLogic
             return true;
         }
 
-
-
         $cacheKey = md5(get_class($model).json_encode($field).json_encode($post));
 
         return self::$shouldDisplayFieldCache[$cacheKey]

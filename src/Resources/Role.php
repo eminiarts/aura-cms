@@ -44,17 +44,6 @@ class Role extends Resource
         GenerateAllResourcePermissions::dispatch();
     }
 
-    public function title()
-    {
-        if (isset($this->title)) {
-            return $this->title . " (#{$this->id})";
-        } elseif (isset($this->name)) {
-            return $this->name . " (#{$this->id})";
-        } else {
-            return "Role (#{$this->id})";
-        }
-    }
-
     public static function getFields()
     {
         return [
@@ -138,6 +127,17 @@ class Role extends Resource
     public function meta()
     {
         return $this->hasMany(Meta::class, 'post_id');
+    }
+
+    public function title()
+    {
+        if (isset($this->title)) {
+            return $this->title." (#{$this->id})";
+        } elseif (isset($this->name)) {
+            return $this->name." (#{$this->id})";
+        } else {
+            return "Role (#{$this->id})";
+        }
     }
 
     public function users()

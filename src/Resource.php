@@ -91,6 +91,17 @@ class Resource extends Model
         return $this->hasMany(get_class($this), 'parent_id');
     }
 
+    public function clearFieldsAttributeCache()
+    {
+        $this->fieldsAttributeCache = null;
+
+        if ($this->usesMeta()) {
+            $this->load('meta'); // This will refresh only the 'meta' relationship
+        }
+
+        // $this->refresh();
+    }
+
     public function getBulkActions()
     {
         // get all flows with type "manual"
@@ -115,14 +126,9 @@ class Resource extends Model
         return $this->stripShortcodes($this->post_excerpt);
     }
 
-    public function clearFieldsAttributeCache()
-    {
-        $this->fieldsAttributeCache = null;
-    }
-
     public function getFieldsAttribute()
     {
-        if (! isset($this->fieldsAttributeCache)) {
+        if (! isset($this->fieldsAttributeCache) || $this->fieldsAttributeCache === null) {
             $meta = $this->getMeta();
 
             $defaultValues = collect($this->inputFieldsSlugs())
@@ -164,10 +170,9 @@ class Resource extends Model
 
                     $class = $this->fieldClassBySlug($key);
 
-
-
                     if ($class && isset(optional($this)->{$key}) && method_exists($class, 'get')) {
                         dd('get here');
+
                         return $class->get($class, $this->{$key} ?? null);
                     }
 
@@ -198,6 +203,7 @@ class Resource extends Model
     public function getMeta($key = null)
     {
         if ($this->usesMeta() && optional($this)->meta && ! is_string($this->meta)) {
+
             $meta = $this->meta->pluck('value', 'key');
 
             // Cast Attributes
