@@ -2,16 +2,17 @@
 
 namespace Eminiarts\Aura\Tests;
 
-use Eminiarts\Aura\AuraServiceProvider;
-use Eminiarts\Aura\Providers\AuthServiceProvider;
-use Illuminate\Database\Eloquent\Factories\Factory;
-use Intervention\Image\ImageServiceProvider;
-use Lab404\Impersonate\ImpersonateServiceProvider;
-use Laravel\Fortify\FortifyServiceProvider;
+use ReflectionObject;
 use Livewire\LivewireServiceProvider;
-use LivewireUI\Modal\LivewireModalServiceProvider;
-use Orchestra\Testbench\TestCase as Orchestra;
+use Eminiarts\Aura\AuraServiceProvider;
 use Spatie\LaravelRay\RayServiceProvider;
+use Laravel\Fortify\FortifyServiceProvider;
+use Intervention\Image\ImageServiceProvider;
+use Orchestra\Testbench\TestCase as Orchestra;
+use Eminiarts\Aura\Providers\AuthServiceProvider;
+use Lab404\Impersonate\ImpersonateServiceProvider;
+use LivewireUI\Modal\LivewireModalServiceProvider;
+use Illuminate\Database\Eloquent\Factories\Factory;
 
 class TestCase extends Orchestra
 {
@@ -38,6 +39,20 @@ class TestCase extends Orchestra
         $migration2 = include __DIR__.'/../database/migrations/create_flows_table.php.stub';
         $migration2->up();
     }
+
+    // protected function tearDown(): void
+    // {
+    //     $refl = new ReflectionObject($this);
+    //     foreach ($refl->getProperties() as $prop) {
+    //         if (!$prop->isStatic() && 0 !== strpos($prop->getDeclaringClass()->getName(), 'PHPUnit_')) {
+    //             $prop->setAccessible(true);
+    //             $prop->setValue($this, null);
+    //         }
+    //     }
+
+    //     parent::tearDown();
+
+    // }
 
     protected function getPackageProviders($app)
     {

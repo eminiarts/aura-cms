@@ -47,7 +47,7 @@ class Edit extends Component
     public function callMethod($method, $params = [], $captureReturnValueCallback = null)
     {
         // If the method exists in this component, call it directly.
-        if (method_exists($this, $method) || ! optional($params)[0]) {
+        if (method_exists($this, $method) || !optional($params)[0]) {
             return parent::callMethod($method, $params, $captureReturnValueCallback);
         }
 
@@ -175,9 +175,9 @@ class Edit extends Component
             // ray('update', $this->post['fields']);
 
             $this->model->update($this->post['fields']);
-            // $this->model->update(['fields' => $this->post['fields']]);
+        // $this->model->update(['fields' => $this->post['fields']]);
 
-            // $this->model->update($this->post['fields']);
+        // $this->model->update($this->post['fields']);
         } else {
             // ray('no custom table');
             // ray($this->post);
