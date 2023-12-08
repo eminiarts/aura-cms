@@ -2,16 +2,17 @@
 
 namespace Eminiarts\Aura\Http\Livewire\Post;
 
-use Eminiarts\Aura\Facades\Aura;
-use Eminiarts\Aura\Models\Post;
-use Eminiarts\Aura\Traits\HasActions;
-use Eminiarts\Aura\Traits\InteractsWithFields;
-use Eminiarts\Aura\Traits\MediaFields;
-use Eminiarts\Aura\Traits\RepeaterFields;
-use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
-use Illuminate\Support\Arr;
-use Illuminate\Support\Traits\Macroable;
 use Livewire\Component;
+use Illuminate\Support\Arr;
+use Livewire\WithFileUploads;
+use Eminiarts\Aura\Models\Post;
+use Eminiarts\Aura\Facades\Aura;
+use Eminiarts\Aura\Traits\HasActions;
+use Eminiarts\Aura\Traits\MediaFields;
+use Illuminate\Support\Traits\Macroable;
+use Eminiarts\Aura\Traits\RepeaterFields;
+use Eminiarts\Aura\Traits\InteractsWithFields;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 
 class Edit extends Component
 {
@@ -21,6 +22,7 @@ class Edit extends Component
     use MediaFields;
     use RepeaterFields;
     // use Macroable;
+    use WithFileUploads;
 
     public $inModal = false;
 
@@ -149,6 +151,14 @@ class Edit extends Component
         $this->validate();
 
         unset($this->post['fields']['group']);
+
+        if (isset($this->post['fields']['mzkb_pdf'])) {
+            $mzkb_pdf = $this->post['fields']['mzkb_pdf'];
+            if (! is_string($mzkb_pdf)) {
+                $mzkb_pdfPath = $mzkb_pdf->store('profile', 'public');
+                $this->post['fields']['mzkb_pdf'] = $mzkb_pdfPath;
+            }
+        }
 
         // ray('after validate');
 
