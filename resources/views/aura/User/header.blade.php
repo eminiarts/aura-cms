@@ -1,4 +1,4 @@
-<div class="flex items-center justify-between mt-6">
+<div class="flex justify-between items-center mt-6">
     <div>
          @if(optional(optional($this)->field)['name'])
                 <h1 class="text-3xl font-semibold">{{ $this->field['name'] }}</h1>
@@ -33,7 +33,7 @@
                     <x-slot:icon>
                         <x-aura::icon icon="plus" />
                         </x-slot>
-                        <span>Create {{ $model->singularName() }}</span>
+                        <span>{{ __('Create :modelName', ['modelName' => $model->singularName()]) }}</span>
                 </x-aura::button>
             </a>
             @else
@@ -42,7 +42,7 @@
                     <x-slot:icon>
                         <x-aura::icon icon="plus" />
                         </x-slot>
-                        <span>Create {{ $model->singularName() }}</span>
+                        <span>{{ __('Create :modelName', ['modelName' => $model->singularName()]) }}</span>
                 </x-aura::button>
             </a>
             @endif

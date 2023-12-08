@@ -40,7 +40,7 @@
 
         <div class="relative select-none" wire:key="grid_{{ $row->id }}">
             <label for="checkbox_{{ $row->id }}" class="cursor-pointer" x-on:click="toggleRow($event, {{ $row->id }})">
-            <div class="block w-full overflow-hidden rounded-lg group aspect-w-10 aspect-h-7 bg-gray-50 focus-within:ring-2 focus-within:ring-primary-500 focus-within:ring-offset-2 focus-within:ring-offset-gray-100">
+            <div class="block overflow-hidden w-full bg-gray-50 rounded-lg group aspect-w-10 aspect-h-7 focus-within:ring-2 focus-within:ring-primary-500 focus-within:ring-offset-2 focus-within:ring-offset-gray-100">
                 @include('aura::attachment.thumbnail')
             </div>
             </label>
@@ -54,8 +54,8 @@
                     />
                 </div>
 
-                <div class="flex-1 overflow-hidden truncate">
-                    <div class="w-full overflow-hidden truncate">
+                <div class="overflow-hidden flex-1 truncate">
+                    <div class="overflow-hidden w-full truncate">
                         <div class="max-w-[10rem]">
                             <p class="block overflow-hidden text-sm font-medium truncate pointer-events-none">{{ $row->title ?? '' }}</p>
                         </div>
@@ -75,7 +75,7 @@
 
             <div class="col-span-5">
                 <div class="py-8 mx-auto text-center bg-white dark:bg-gray-900">
-                <svg class="w-12 h-12 mx-auto text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                <svg class="mx-auto w-12 h-12 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"
                     xmlns="http://www.w3.org/2000/svg">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                         d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636">
@@ -97,8 +97,8 @@
         @php
             // ray($selected)
         @endphp
-        @if(is_int($selected) || is_array($selected))$
-        {{ count($selected) }} selected
+        @if(is_int($selected) || is_array($selected))
+        {{ count($selected) }} {{ __('selected') }}
         @endif
     </div>
 

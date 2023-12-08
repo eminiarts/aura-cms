@@ -95,7 +95,7 @@ $appSettings = Aura::options();
             <x-slot name="title">
             <img class="inline-block w-9 h-9 rounded-full" src="{{ Auth::user()->resource->avatarUrl }}" alt="">
             </x-slot::title>
-            
+
             @include('aura::navigation.footer-popup')
         </x-aura::tippy-rea>
     </div>
@@ -255,7 +255,7 @@ $appSettings = Aura::options();
             </x-aura::navigation.team-switcher>
 
             <div class="ml-2">
-                <x-aura::tippy text="Notifications">
+                <x-aura::tippy text="{{ __('Notifications') }}">
                     <x-aura::button.primary @click="Livewire.emit('openSlideOver', 'notifications')" class="my-2 w-full" size="xs">
                         <x-aura::icon icon="notifications" size="xs" />
                     </x-aura::button.primary>
@@ -294,7 +294,7 @@ $appSettings = Aura::options();
 
             @if(config('aura.features.notifications'))
                 <div class="ml-2">
-                    <x-aura::tippy text="Notifications">
+                    <x-aura::tippy text="{{ __('Notifications') }}">
                         <x-aura::button.primary @click="Livewire.emit('openSlideOver', 'notifications')" class="my-2 w-full" size="xs">
                             <x-aura::icon icon="notifications" size="xs" />
                         </x-aura::button.primary>

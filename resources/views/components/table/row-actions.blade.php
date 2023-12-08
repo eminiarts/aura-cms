@@ -4,9 +4,9 @@
     <x-aura::icon icon="edit" />
 </a>
 @else
-<div class="flex space-x-2 justify-end pr-4">
+<div class="flex justify-end pr-4 space-x-2">
     @can('view', $row)
-    <x-aura::tippy text="View" position="top" class="text-sm text-gray-400 bg-white">
+    <x-aura::tippy text="{{ __('View') }}" position="top" class="text-sm text-gray-400 bg-white">
         <x-aura::button.transparent :href="$row->viewUrl()" size="xs">
             <x-aura::icon icon="view" size="xs" />
         </x-aura::button.transparent>
@@ -14,7 +14,7 @@
     @endcan
 
     @can('update', $row)
-    <x-aura::tippy text="Edit" position="top" class="text-sm text-gray-400 bg-white">
+    <x-aura::tippy text="{{ __('Edit') }}" position="top" class="text-sm text-gray-400 bg-white">
         <x-aura::button.transparent :href="$row->editUrl()" size="xs">
             <x-aura::icon icon="edit" size="xs" />
         </x-aura::button.transparent>

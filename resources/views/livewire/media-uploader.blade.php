@@ -2,13 +2,13 @@
         <div>
             @if($media && count($media))
             <div x-data="{ media: {{ json_encode($media) }}, loading: true }"
-                class="fixed inset-0 z-50 flex items-end px-4 py-6 pointer-events-none sm:items-start sm:p-6">
-                <div class="flex flex-col items-end w-full space-y-4 sm:items-end">
+                class="flex fixed inset-0 z-50 items-end px-4 py-6 pointer-events-none sm:items-start sm:p-6">
+                <div class="flex flex-col items-end space-y-4 w-full sm:items-end">
 
                     @foreach($media as $key => $file)
 
                     <div
-                        class="relative w-full max-w-sm overflow-hidden bg-white rounded-lg shadow-lg pointer-events-auto ring-1 ring-black ring-opacity-5"
+                        class="overflow-hidden relative w-full max-w-sm bg-white rounded-lg ring-1 ring-black ring-opacity-5 shadow-lg pointer-events-auto"
                         x-data="{loading: true}" x-show="loading" x-init="setTimeout(() => { loading = false }, 3000)"
                         x-transition:leave="transition ease-linear duration-1000" x-transition:leave-end="opacity-0">
                         <div class="p-4">
@@ -20,7 +20,7 @@
                                             d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                                     </svg>
                                 </div>
-                                <div class="ml-3 w-0 flex-1 pt-0.5">
+                                <div class="flex-1 pt-0.5 ml-3 w-0">
                                     <p class="text-sm font-medium text-gray-900">Successfully uploaded</p>
                                     <p class="mt-1 text-sm text-gray-500">{{ $file->getClientOriginalName() }}</p>
                                 </div>
@@ -128,8 +128,8 @@
                 x-on:dragover.prevent="isDropping = true; console.log('dragover'); dragover($event);"
                 x-on:dragleave.prevent="isDropping = false; console.log('dragleave');">
 
-                <div class="flex items-center justify-center w-full mb-4" x-cloak>
-                    <div class="absolute top-0 bottom-0 left-0 right-0 z-30 flex items-center justify-center bg-primary-400 opacity-90"
+                <div class="flex justify-center items-center mb-4 w-full" x-cloak>
+                    <div class="flex absolute top-0 right-0 bottom-0 left-0 z-30 justify-center items-center opacity-90 bg-primary-400"
                         x-show="isDropping">
                         <span class="text-3xl text-white">Release file to upload!</span>
                     </div>
@@ -158,13 +158,13 @@
 
                             </label>
                         </div>
-                        
+
                     @endif
 
                     @if($table)
 
                     <div class="flex flex-col">
-                        <div class="flex items-center justify-between mt-6">
+                        <div class="flex justify-between items-center mt-6">
                         <h1 class="text-3xl font-semibold">
                             {{ __('Attachments') }}
                         </h1>
@@ -173,8 +173,7 @@
                         <div>
                             <label for="file-upload">
                                 <p class="mb-2 text-sm text-gray-500 dark:text-gray-400"><span
-                                        class="font-semibold">Click to
-                                        upload</span> or drag and drop</p>
+                                        class="font-semibold">{{ __('Click to upload or drag and drop') }}</span></p>
 
                                 <input type="file" id="file-upload" multiple @change="handleFileSelect" class="hidden"
                                     wire:model.defer="media" />
