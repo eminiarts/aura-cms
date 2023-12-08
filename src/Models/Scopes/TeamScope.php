@@ -15,6 +15,7 @@ class TeamScope implements Scope
      */
     public function apply(Builder $builder, Model $model)
     {
+
         if (config('aura.teams') === false) {
             return $builder;
         }
@@ -24,15 +25,19 @@ class TeamScope implements Scope
             return $builder->whereId(auth()->user()->current_team_id);
         }
 
-        if (auth()->user() && $model instanceof \Eminiarts\Aura\Resources\Role) {
+        if ($model instanceof \Eminiarts\Aura\Resources\Role) {
             return $builder->where('posts.team_id', auth()->user()->current_team_id);
         }
 
-        if (auth()->user() && $model->getTable() == 'posts') {
-            return $builder->where('posts.team_id', auth()->user()->current_team_id);
-        }
+        // if (auth()->user() && $model->getTable() == 'posts') {
+        //     return $builder->where('posts.team_id', auth()->user()->current_team_id);
+        // }
 
-        if (auth()->user()) {
+        // if(auth()->guest()) {
+        //     return $builder;
+        // }
+
+        if ($model->getTable() == 'posts') {
             return $builder->where($model->getTable() . '.team_id', auth()->user()->current_team_id);
         }
 
