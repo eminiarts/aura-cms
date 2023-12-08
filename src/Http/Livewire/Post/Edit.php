@@ -200,8 +200,7 @@ class Edit extends Component
 
         // ray('before redirect');
 
-        $this->redirect(route('aura.post.edit', [$this->slug, $this->model->id]));
-
+        // $this->redirect(route('aura.post.edit', [$this->slug, $this->model->id]));
         $this->model = $this->model->fresh();
         $this->post = $this->model->attributesToArray();
 
