@@ -98,12 +98,12 @@ class Profile extends Component
                 'validation' => ['nullable', 'array', 'max:1',
                     function (string $attribute, mixed $value, Closure $fail) {
 
-                        if (! $value) {
+                        if (!$value) {
                             return;
                         }
                         // Check if the attachment is an image
                         Attachment::findOrFail($value)->each(function ($attachment) use ($fail, $attribute) {
-                            if (! $attachment->isImage()) {
+                            if (!$attachment->isImage()) {
                                 $fail("The {$attribute} is not an image.");
                             }
                         });
@@ -167,7 +167,7 @@ class Profile extends Component
             [
                 'name' => 'Confirm Password',
                 'type' => 'Eminiarts\\Aura\\Fields\\Password',
-                'validation' => ['required_with:password', 'same:password'],
+                'validation' => ['required_with:post.fields.password', 'same:post.fields.password'],
                 'slug' => 'password_confirmation',
                 'on_index' => false,
             ],
