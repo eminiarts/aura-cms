@@ -170,14 +170,12 @@
 
 @push('styles')
     @once
-
-
-        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@simonwep/pickr/dist/themes/nano.min.css"/> <!-- 'nano' theme -->
+        <link rel="stylesheet" href="/js/pickr/nano.min.css"/> <!-- 'nano' theme -->
     @endonce
 @endpush
 
 @push('scripts')
     @once
-        <script src="https://cdn.jsdelivr.net/npm/@simonwep/pickr/dist/pickr.min.js"></script>
+        <script src="/js/pickr/pickr.min.js"></script>
     @endonce
 @endpush
