@@ -84,7 +84,7 @@ class User extends UserModel
 
     public function getAvatarUrlAttribute()
     {
-        if (! $this->avatar) {
+        if (!$this->avatar) {
             return 'https://ui-avatars.com/api/?name='.$this->getInitials().'';
         }
 
@@ -290,7 +290,7 @@ class User extends UserModel
                 'type' => 'Eminiarts\\Aura\\Fields\\Tab',
                 'name' => '2FA',
                 'label' => 'Tab',
-                'slug' => '2fa',
+                'slug' => '2fa-tab',
                 'global' => true,
                 'on_view' => false,
             ],
@@ -322,7 +322,7 @@ class User extends UserModel
             }
         });
 
-        if (! $meta->isEmpty()) {
+        if (!$meta->isEmpty()) {
             // Cast Attributes
             $meta = $meta->map(function ($value, $key) {
                 // if there is a function get{Slug}Field on the model, use it
@@ -381,7 +381,7 @@ class User extends UserModel
     {
         $cachedRoles = $this->cachedRoles()->pluck('slug');
 
-        if (! $cachedRoles) {
+        if (!$cachedRoles) {
             return false;
         }
 
@@ -398,7 +398,7 @@ class User extends UserModel
     {
         $roles = $this->cachedRoles();
 
-        if (! $roles) {
+        if (!$roles) {
             return false;
         }
 
@@ -427,7 +427,7 @@ class User extends UserModel
     {
         $roles = $this->cachedRoles();
 
-        if (! $roles) {
+        if (!$roles) {
             return false;
         }
 
@@ -454,7 +454,7 @@ class User extends UserModel
     {
         $roles = $this->cachedRoles();
 
-        if (! $roles) {
+        if (!$roles) {
             return false;
         }
 
@@ -474,7 +474,7 @@ class User extends UserModel
     {
         $roles = $this->cachedRoles();
 
-        if (! $roles) {
+        if (!$roles) {
             return false;
         }
 
@@ -550,7 +550,7 @@ class User extends UserModel
     protected static function booted()
     {
         static::creating(function ($user) {
-            if (config('aura.teams') && ! $user->current_team_id) {
+            if (config('aura.teams') && !$user->current_team_id) {
                 $user->current_team_id = auth()->user()?->current_team_id;
             }
         });

@@ -25,6 +25,12 @@ class GenerateAllResourcePermissions implements ShouldQueue
     public function handle()
     {
         foreach (array_merge(Aura::getResources(), Aura::getTaxonomies()) as $resource) {
+
+            // Skip if the resource is not a Aura Resource
+            if (!is_subclass_of($resource, \Eminiarts\Aura\Resource::class)) {
+                continue;
+            }
+
             $r = app($resource);
 
             Permission::firstOrCreate(
