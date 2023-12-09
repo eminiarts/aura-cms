@@ -95,52 +95,52 @@ class Team extends Resource
                     'width' => '100',
                 ],
             ],
-            [
-                'type' => 'Eminiarts\\Aura\\Fields\\Tab',
-                'name' => 'Users',
-                'slug' => 'tab-users',
-                'global' => true,
-                'on_create' => false,
-            ],
-            [
-                'name' => 'Users',
-                'slug' => 'users',
-                'type' => 'Eminiarts\\Aura\\Fields\\HasMany',
-                'resource' => 'Eminiarts\\Aura\\Resources\\User',
-                'validation' => '',
-                'conditional_logic' => [],
-                'on_index' => false,
-                'on_forms' => true,
-                'on_view' => true,
-                'style' => [
-                    'width' => '100',
-                    'class' => '!p-4',
-                ],
-            ],
-            [
-                'name' => 'Invitations',
-                'slug' => 'tab-Invitations',
-                'type' => 'Eminiarts\\Aura\\Fields\\Tab',
-                'global' => true,
-                'validation' => '',
-                'conditional_logic' => [],
-                'on_create' => false,
-            ],
-            [
-                'name' => 'Invitations',
-                'slug' => 'Invitations',
-                'type' => 'Eminiarts\\Aura\\Fields\\HasMany',
-                'resource' => 'Eminiarts\\Aura\\Resources\\TeamInvitation',
-                'validation' => '',
-                'conditional_logic' => [],
-                'on_index' => false,
-                'on_forms' => true,
-                'on_view' => true,
-                'style' => [
-                    'width' => '100',
-                    'class' => '!p-4',
-                ],
-            ],
+            // [
+            //     'type' => 'Eminiarts\\Aura\\Fields\\Tab',
+            //     'name' => 'Users',
+            //     'slug' => 'tab-users',
+            //     'global' => true,
+            //     'on_create' => false,
+            // ],
+            // [
+            //     'name' => 'Users',
+            //     'slug' => 'users',
+            //     'type' => 'Eminiarts\\Aura\\Fields\\HasMany',
+            //     'resource' => 'Eminiarts\\Aura\\Resources\\User',
+            //     'validation' => '',
+            //     'conditional_logic' => [],
+            //     'on_index' => false,
+            //     'on_forms' => true,
+            //     'on_view' => true,
+            //     'style' => [
+            //         'width' => '100',
+            //         'class' => '!p-4',
+            //     ],
+            // ],
+            // [
+            //     'name' => 'Invitations',
+            //     'slug' => 'tab-Invitations',
+            //     'type' => 'Eminiarts\\Aura\\Fields\\Tab',
+            //     'global' => true,
+            //     'validation' => '',
+            //     'conditional_logic' => [],
+            //     'on_create' => false,
+            // ],
+            // [
+            //     'name' => 'Invitations',
+            //     'slug' => 'Invitations',
+            //     'type' => 'Eminiarts\\Aura\\Fields\\HasMany',
+            //     'resource' => 'Eminiarts\\Aura\\Resources\\TeamInvitation',
+            //     'validation' => '',
+            //     'conditional_logic' => [],
+            //     'on_index' => false,
+            //     'on_forms' => true,
+            //     'on_view' => true,
+            //     'style' => [
+            //         'width' => '100',
+            //         'class' => '!p-4',
+            //     ],
+            // ],
         ];
     }
 
@@ -222,7 +222,7 @@ class Team extends Resource
             unset($team->type);
             unset($team->team_id);
 
-            if (! $team->user_id && auth()->user()) {
+            if (!$team->user_id && auth()->user()) {
                 $team->user_id = auth()->user()->id;
             }
         });
