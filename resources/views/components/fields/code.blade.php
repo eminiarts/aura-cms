@@ -6,7 +6,7 @@
             id="editor"
             wire:ignore
             x-init="
-            ace.config.set('basePath', 'https://cdnjs.cloudflare.com/ajax/libs/ace/1.14.0/');
+            ace.config.set('basePath', '{{ asset('js/ace/') }}');
                 editor = ace.edit($refs.aceEditor);
                 editor.setTheme('ace/theme/github');
                 editor.setOptions({
