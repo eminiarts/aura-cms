@@ -160,14 +160,14 @@ class Profile extends Component
             [
                 'name' => 'New Password',
                 'type' => 'Eminiarts\\Aura\\Fields\\Password',
-                'validation' => ['nullable', 'confirmed', Password::min(8)],
+                'validation' => ['nullable', 'confirmed', Password::min(12)->mixedCase()->numbers()->symbols()->uncompromised()],
                 'slug' => 'password',
                 'on_index' => false,
             ],
             [
                 'name' => 'Confirm Password',
                 'type' => 'Eminiarts\\Aura\\Fields\\Password',
-                'validation' => '',
+                'validation' => ['required_with:password', 'same:password'],
                 'slug' => 'password_confirmation',
                 'on_index' => false,
             ],

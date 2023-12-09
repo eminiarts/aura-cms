@@ -12,6 +12,7 @@ use Eminiarts\Aura\Traits\SaveTerms;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rules\Password;
 
 class User extends UserModel
 {
@@ -187,9 +188,10 @@ class User extends UserModel
             [
                 'name' => 'Password',
                 'type' => 'Eminiarts\\Aura\\Fields\\Password',
-                'validation' => '',
+                'validation' => ['nullable', Password::min(12)->mixedCase()->numbers()->symbols()->uncompromised()],
                 'conditional_logic' => [],
                 'slug' => 'password',
+                'on_forms' => false,
                 'on_index' => false,
                 'on_view' => false,
             ],
