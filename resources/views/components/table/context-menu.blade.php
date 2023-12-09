@@ -83,7 +83,7 @@
     </a>
     @endcan
 
-    @if(count($model->getBulkActions()))
+    {{-- @if(count($model->getBulkActions()))
     <div class="border-t border-gray-100 dark:border-gray-700"></div>
 
     @foreach($model->getBulkActions() as $action => $label)
@@ -114,7 +114,7 @@
     </button>
     @endforeach
 
-    @endif
+    @endif --}}
 
 </div>
  @else
