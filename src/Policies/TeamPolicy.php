@@ -120,6 +120,12 @@ class TeamPolicy
         //     return true;
         // }
 
+        // Check if the resource view is enabled
+        if ($team::$viewEnabled === false) {
+            return false;
+        }
+
+
         return $user->belongsToTeam($team);
     }
 
