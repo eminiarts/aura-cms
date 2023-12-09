@@ -125,7 +125,7 @@
                 <div class="flex justify-center items-center mb-4 w-full" x-cloak>
                     <div class="flex absolute top-0 right-0 bottom-0 left-0 z-30 justify-center items-center opacity-90 bg-primary-400"
                         x-show="isDropping">
-                        <span class="text-3xl text-white">Release file to upload!</span>
+                        <span class="text-3xl text-white">{{ __('Release file to upload!') }}</span>
                     </div>
 
 
