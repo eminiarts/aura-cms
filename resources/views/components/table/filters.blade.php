@@ -41,7 +41,7 @@
     @empty
     @endforelse
 
-    <hr class="my-4 border-t border-gray-400/30 dark:border-gray-700">
+    {{-- <hr class="my-4 border-t border-gray-400/30 dark:border-gray-700"> --}}
 
     <p class="block font-semibold">{{ __('Custom Filters') }}</p>
 
@@ -71,12 +71,12 @@
 
             <div class="w-full mt-2 mb-0">
                 <select wire:model.defer="filters.custom.{{ $key}}.operator" id="filters_operator_{{ $key}}" name="filters_operator_{{ $key}}" class="block w-full py-2 pl-3 pr-10 mt-1 text-base border-gray-500/30 rounded-md focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm">
-                    <option value="contains">contains</option>
-                    <option value="does_not_contain">does not contain</option>
-                    <option value="is">is</option>
-                    <option value="starts_with">starts with</option>
-                    <option value="ends_with">ends with</option>
-                    <option value="is_empty">is_empty</option>
+                    <option value="contains">{{ __('contains') }}</option>
+                    <option value="does_not_contain">{{ __('does not contain') }}</option>
+                    <option value="is">{{ __('is') }}</option>
+                    <option value="starts_with">{{ __('starts with') }}</option>
+                    <option value="ends_with">{{ __('ends with') }}</option>
+                    <option value="is_empty">{{ __('is empty') }}</option>
                 </select>
             </div>
 
