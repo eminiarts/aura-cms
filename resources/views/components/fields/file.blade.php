@@ -74,7 +74,6 @@ if($selected) {
         // define an alpinejs component named 'userDropdown'
         Alpine.data('orderMedia', () => ({
             init() {
-                // console.log('init orderMedia');
                 var container = this.$refs.container;
                 // get data-slug attribute from container
                 var slug = container.getAttribute('data-slug');
@@ -87,10 +86,6 @@ if($selected) {
                 });
                 sortable.on('sortable:stop', () => {
                     setTimeout(() => {
-                        // console.log('reordered!', slug, Array.from(container.querySelectorAll('.draggable-item'))
-                        // .map(el => el.id)
-                        // );
-
                         @this.reorderMedia(
                         slug,
                         Array.from(container.querySelectorAll('.draggable-item'))

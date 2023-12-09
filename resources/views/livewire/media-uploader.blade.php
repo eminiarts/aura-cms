@@ -58,14 +58,11 @@
             isUploading: false,
             progress: 0,
             init() {
-                console.log('file upload');
             },
             handleFileSelect(event) {
-                console.log('handleFileSelect', event.target.files);
                 if (event.target.files.length) {
                     Array.from(event.target.files).forEach(file => {
                         @this.upload('media', file, (uploadedFilename) => {
-                            console.log('File uploaded:', uploadedFilename);
                         }, () => {
                             console.error('Upload error');
                         }, (event) => {
@@ -76,13 +73,11 @@
             },
 
             handleFileDrop(event) {
-                console.log('handlefiledrop');
                 if (event.dataTransfer.files.length > 0) {
                     this.uploadFiles(event.dataTransfer.files)
                 }
             },
             uploadFiles(files) {
-                console.log('upload files', files);
                 const $this = this
                 this.isUploading = true
                 @this.uploadMultiple('media', files,
@@ -91,7 +86,6 @@
                     $this.progress = 0
                 },
                 function (error) { //an error occured
-                    console.log('error', error)
                 },
                 function (event) { //upload progress was made
                     $this.progress = event.detail.progress
@@ -125,8 +119,8 @@
             </div>
 
             <div class="" x-on:drop="isDropping = false" x-on:drop.prevent="handleFileDrop($event)"
-                x-on:dragover.prevent="isDropping = true; console.log('dragover'); dragover($event);"
-                x-on:dragleave.prevent="isDropping = false; console.log('dragleave');">
+                x-on:dragover.prevent="isDropping = true; dragover($event);"
+                x-on:dragleave.prevent="isDropping = false; ">
 
                 <div class="flex justify-center items-center mb-4 w-full" x-cloak>
                     <div class="flex absolute top-0 right-0 bottom-0 left-0 z-30 justify-center items-center opacity-90 bg-primary-400"

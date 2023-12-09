@@ -175,7 +175,6 @@
             visitedPages: [],
 
 			init() {
-				console.log('init search');
                 this.$refs.searchContainer.style.display = 'block';
                 this.loadVisitedPages();
 			},
@@ -209,8 +208,6 @@
             },
 
             openSelectedResult(e) {
-                console.log('openSelectedResult');
-
                 if (this.selectedIndex > -1) {
                     if (this.$refs.searchList.children.length > 0) {
                         var link = this.$refs.searchList.querySelectorAll('.select-item')[this.selectedIndex].querySelector('a');

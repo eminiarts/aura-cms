@@ -11,8 +11,6 @@ x-data="{
     options: {{ Js::from($values) }},
     init() {
         
-        console.log(this.options);
-        
         this.$nextTick(() => {
             let choices = new Choices(this.$refs.select, {
                 addItems: true,

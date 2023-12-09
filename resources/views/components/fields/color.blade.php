@@ -4,11 +4,8 @@
             x-data="{
                 color: $wire.entangle('post.fields.{{ optional($field)['slug'] }}').defer,
                 init () {
-                    // console.log('init color', this.color);
-
                     // watch color for changes  and update the input
                     this.$watch('color', value => {
-                        // console.log('color changed', value);
                         this.$nextTick(() => {
                             $dispatch('input', this.color);
                         });
@@ -71,7 +68,6 @@
                         }
                     }
                 }).on('save', (color, source, instance) => {
-                    // console.log('Event: change', color.toHEXA().toString());
                     @if (optional($field)['format'] == 'hex')
                         this.selectedColor = color.toHEXA().toString();
                         $dispatch('input', color.toHEXA().toString());
@@ -95,7 +91,6 @@
 
                 // watch color for changes  and update the input
                 this.$watch('selectedColor', value => {
-                    // console.log('color changed', value);
                     this.$nextTick(() => {
                         // trim the value and all characters after the 9th
                         this.selectedColor = this.selectedColor.substring(0, 9);

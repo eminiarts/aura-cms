@@ -42,8 +42,6 @@ $values = $field['field']->values($field['model']);
 
         get filteredItems() {
 
-          console.log(this.search);
-
             if (this.search) {
                 return this.items.filter(item => item.title.toLowerCase().includes(this.search.toLowerCase()));
             }

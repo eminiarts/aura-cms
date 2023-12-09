@@ -15,7 +15,7 @@
     {{ $attributes->wire('then') }}
     x-ref="span"
     x-on:click="showModal = true"
-    x-on:action-confirmed.window="console.log($event.detail.id); setTimeout(() => $event.detail.id === '{{ $confirmableId }}' && $refs.span.dispatchEvent(new CustomEvent('then', { bubbles: false })), 250); showModal = false;"
+    x-on:action-confirmed.window="setTimeout(() => $event.detail.id === '{{ $confirmableId }}' && $refs.span.dispatchEvent(new CustomEvent('then', { bubbles: false })), 250); showModal = false;"
 >
     {{ $slot }}
 </span>

@@ -348,10 +348,6 @@
                 constructedArrows: '',
 
                 init() {
-                    console.log('init');
-                    console.log(this.operations);
-                    console.log(this.flow);
-
                     this.furthestX = this.getFurthestX();
                     this.furthestY = this.getFurthestY();
 
@@ -360,10 +356,8 @@
 
                     this.constructedArrows = this.constructArrows();
 
-                    // console.log('furthest', this.furthestX, this.furthestY);
                 },
                 selectOperation(operation) {
-                    // console.log('select operation', operation);
                     @this.selectOperation(operation.id);
                 },
                 getFurthestX() {
@@ -575,8 +569,6 @@
                 },
 
                 cancelMove(event) {
-                    console.log('cancelMove');
-
                     if (this.connectingFlow) {
 
                         let target = event.target;
@@ -602,15 +594,11 @@
                         this.selectedOperation = null;
                         this.draggingOperation = false;
 
-                        // console.log('remove arrow');
                         this.constructArrowToMouse();
                         return;
                     }
 
                     if (this.connectingOperation) {
-                        console.log(event);
-                        console.log('cancelMove', this.connectingOperation);
-
                         // get the data-operation attribute from the event target
                         // check if event.target has the data-operation attribute, if not, check the parent until it is found
                         let target = event.target;
@@ -628,15 +616,10 @@
                             operationId = target.getAttribute('data-operation');
                         }
 
-                        console.log('operationId', operationId);
-
                         @this.connectOperation(this.connectingOperation.operation, this.connectingOperation.id,  operationId);
 
                         // refresh the operations from livewire
-
-
                         this.connectingOperation = false;
-                        // console.log('remove arrow');
                         this.constructArrowToMouse();
                     }
 

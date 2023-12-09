@@ -28,7 +28,6 @@
     <div class="grid gap-6 mt-4 aura-edit-post-container sm:grid-cols-3" x-data="{
     model: @entangle('post').defer,
     init() {
-        console.log('init post edit', this.model);
     }
 }">
 
