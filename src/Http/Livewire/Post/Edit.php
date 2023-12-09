@@ -2,17 +2,17 @@
 
 namespace Eminiarts\Aura\Http\Livewire\Post;
 
-use Livewire\Component;
-use Illuminate\Support\Arr;
-use Livewire\WithFileUploads;
-use Eminiarts\Aura\Models\Post;
 use Eminiarts\Aura\Facades\Aura;
+use Eminiarts\Aura\Models\Post;
 use Eminiarts\Aura\Traits\HasActions;
-use Eminiarts\Aura\Traits\MediaFields;
-use Illuminate\Support\Traits\Macroable;
-use Eminiarts\Aura\Traits\RepeaterFields;
 use Eminiarts\Aura\Traits\InteractsWithFields;
+use Eminiarts\Aura\Traits\MediaFields;
+use Eminiarts\Aura\Traits\RepeaterFields;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
+use Illuminate\Support\Arr;
+use Illuminate\Support\Traits\Macroable;
+use Livewire\Component;
+use Livewire\WithFileUploads;
 
 class Edit extends Component
 {
@@ -21,6 +21,7 @@ class Edit extends Component
     use InteractsWithFields;
     use MediaFields;
     use RepeaterFields;
+
     // use Macroable;
     use WithFileUploads;
 
@@ -42,22 +43,13 @@ class Edit extends Component
         'saveModel' => 'save',
         'refreshComponent' => '$refresh',
         'reload',
-        'saveBeforeAction'
+        'saveBeforeAction',
     ];
-
-    public function saveBeforeAction($method)
-    {
-        // Call the save method
-        $this->save();
-
-        // Emit the 'savedForAction' event with the $method parameter
-        $this->emit('savedForAction', $method);
-    }
 
     public function callMethod($method, $params = [], $captureReturnValueCallback = null)
     {
         // If the method exists in this component, call it directly.
-        if (method_exists($this, $method) || !optional($params)[0]) {
+        if (method_exists($this, $method) || ! optional($params)[0]) {
             return parent::callMethod($method, $params, $captureReturnValueCallback);
         }
 
@@ -164,7 +156,7 @@ class Edit extends Component
 
         if (isset($this->post['fields']['mzkb_pdf'])) {
             $mzkb_pdf = $this->post['fields']['mzkb_pdf'];
-            if (!is_string($mzkb_pdf)) {
+            if (! is_string($mzkb_pdf)) {
                 $mzkb_pdfPath = $mzkb_pdf->store('profile', 'public');
                 $this->post['fields']['mzkb_pdf'] = $mzkb_pdfPath;
             }
@@ -214,6 +206,15 @@ class Edit extends Component
         // $this->model = $this->model->fresh();
         // $this->post = $this->model->attributesToArray();
 
+    }
+
+    public function saveBeforeAction($method)
+    {
+        // Call the save method
+        $this->save();
+
+        // Emit the 'savedForAction' event with the $method parameter
+        $this->emit('savedForAction', $method);
     }
 
     public function updatedPost($value, $array)

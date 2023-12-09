@@ -179,7 +179,7 @@ class Table extends Component
                 $posts = $this->selectedRowsQuery->get();
                 $response = $item->{$action}($posts);
 
-                // dd($response);
+            // dd($response);
             } elseif (method_exists($item, $action)) {
                 $item->{$action}();
             }

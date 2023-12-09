@@ -154,11 +154,11 @@ class CustomTableFilterModel extends Resource
         static::addGlobalScope(new TeamScope());
 
         static::saving(function ($post) {
-            if (!$post->team_id && auth()->user()) {
+            if (! $post->team_id && auth()->user()) {
                 $post->team_id = auth()->user()->current_team_id;
             }
 
-            if (!$post->user_id && auth()->user()) {
+            if (! $post->user_id && auth()->user()) {
                 $post->user_id = auth()->user()->id;
             }
 
