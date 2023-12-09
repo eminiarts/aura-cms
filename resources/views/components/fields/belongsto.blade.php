@@ -43,11 +43,6 @@ $disabled = $field['field']->isDisabled($this->post, $field);
                 get filteredItems() {
 
                     if (this.search) {
-                         {{-- console.log('filtered items');
-                console.log(this.search);
-                console.log(this.items);
-                console.log(this.items.filter(item => item.title.toLowerCase().includes(this.search.toLowerCase()))); --}}
-
                         return this.items.filter(item => item.title.toLowerCase().includes(this.search.toLowerCase()));
                     }
 
@@ -56,7 +51,6 @@ $disabled = $field['field']->isDisabled($this->post, $field);
 
                 init() {
 
-                    console.log('init belongsto', this.items);
                     // Get Values via API Fetch Call to /api/fields/{field}/values and pass this.model and this.slug as params
                     if (this.api) {
                         this.fetchApi();
@@ -104,7 +98,6 @@ $disabled = $field['field']->isDisabled($this->post, $field);
                     .then(data => {
                         vm.items = data;
                         vm.value = currentId;
-                        console.log('setting current id', currentId);
                     });
                 }
 

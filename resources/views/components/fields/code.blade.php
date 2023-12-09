@@ -22,7 +22,6 @@
                 });
                 editor.session.setMode('ace/mode/{{ $field['language'] ?? 'html' }}');
                 editor.on('change', function () {
-                    console.log('code', editor.getValue());
                     $dispatch('input', editor.getValue());
                 });
             "

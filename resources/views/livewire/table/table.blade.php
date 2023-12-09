@@ -44,7 +44,6 @@ x-data="{
         // watch rows for changes
         this.$watch('rows', (rows) => {
             // Check if rows (array of ids) is included in this.selected. if so, set this.selectPage to true
-            {{-- console.log('watch rows', rows, this.selected) --}}
 
             //this.selectPage = rows.every(row => this.selected.includes(row.toString()));
         });
@@ -52,16 +51,7 @@ x-data="{
         this.$watch('currentPage', (rows) => {
 
             this.$nextTick(() => {
-
-
-                {{-- console.log('currentPage', this.currentPage)
-                console.log('rows', this.rows)
-                console.log('selected', this.selected) --}}
-
-                /// check if this.rows are in this.selected. if so, set this.selectPage to true
                 this.selectPage = this.rows.every(row => this.selected.includes(row));
-
-                {{-- console.log('every', this.rows.every(row => this.selected.includes(row))) --}}
 
             });
 
@@ -83,25 +73,20 @@ x-data="{
 
                 // remove this.rows from existing this.selected with new Set
                 this.selected = [...new Set([...this.selected.map(Number)].filter(item => !this.rows.map(Number).includes(item)))];
-                console.log('selected on deselect', this.selected)
             }
         });
     },
 
     selectAllRows: async function () {
 
-
         this.loading = true
 
         let allSelected = await $wire.getAllTableRows()
         this.selectAll = true
 
-        {{-- console.log(this.selected, 'selected') --}}
-
         this.loading = false
 
         this.$nextTick(() => {
-
             // this.selected = allSelected with set
             this.selected = [...new Set([...this.selected.map(Number), ...allSelected.map(Number)])];
             this.selectPage = true;
@@ -164,8 +149,6 @@ x-data="{
             // Select Page
             if (!this.selected.includes(id.toString())) {
                 this.selectPage = false;
-
-                {{-- console.log('deselect', id) --}}
             }
 
         });

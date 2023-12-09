@@ -143,7 +143,6 @@
                 return items.filter(item => item.title.toLowerCase().includes(this.search.toLowerCase()));
             }
             if (items.length === 0) {
-                console.log('hier no items');
 
                 if(this.selectedItems && this.selectedItems.length > 0) {
                     return this.selectedItems;

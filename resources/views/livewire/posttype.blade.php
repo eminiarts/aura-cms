@@ -14,11 +14,9 @@
     <div x-data="{
         fileSaved: false,
         init() {
-            console.log('init filesaved');
             // Listen for the beforeunload event on the window
             var vm = this;
             window.addEventListener('beforeunload', function (event) {
-                console.log('vm.fileSaved', vm.fileSaved);
 
                 if (vm.fileSaved) {
                     event.preventDefault();
@@ -28,7 +26,6 @@
 
             // Listen for the livewire event savedField
             window.livewire.on('finishedSavingFields', () => {
-                console.log('finishedSavingFields');
                 vm.fileSaved = true;
                 setTimeout(() => {
                     vm.fileSaved = false;
@@ -130,7 +127,6 @@
                     tabs: @entangle('globalTabs') ,
 
                     init() {
-                        console.log('init tabs', this.tabs, this.activeTab);
                     }
                 }
             ">
@@ -358,7 +354,6 @@
                 Alpine.data('posttype', () => ({
                     init() {
                         Alpine.nextTick(() => {
-                            console.log('init posttype!');
                             const sortable = new window.Sortable(document.querySelectorAll('.draggable-container'), {
                                 draggable: '.draggable-item',
                                 handle: '.draggable-handle',
@@ -369,7 +364,6 @@
 
                             sortable.on('sortable:stop', () => {
                                 Alpine.nextTick(() => {
-                                    console.log('reorder', Array.from(document.querySelectorAll('.reorder-item')).map(el => el.id));
                                     @this.reorder(
                                         Array.from(document.querySelectorAll('.reorder-item')).map(el => el.id)
                                     )

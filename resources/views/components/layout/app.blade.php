@@ -147,13 +147,10 @@
 
       const darkModeMediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
 
-      console.log('darkModeMediaQuery', darkModeMediaQuery);
-
         function setFaviconBasedOnPreferredColorScheme(event) {
             if (event.matches) {
                 // The user has set their browser to prefer dark mode, so show the darkmode favicon
                 document.querySelector("link[sizes='32x32']").href = '{{ $darkFavicon }}';
-                console.log('set dark favicon', '{{ $darkFavicon }}');
             } else {
                 // The user has set their browser to prefer light mode, so show the lightmode favicon
                 document.querySelector("link[sizes='32x32']").href = '{{ $favicon }}';

@@ -62,7 +62,6 @@
                 // watch the element for changes of the value
                 basedOn.addEventListener('input', (event) => {
                     // if the custom value is not set, update the value
-                    console.log('change', event.target.value, this.custom);
                     if (! this.custom) {
                         this.value = this.slugify(event.target.value)
                         $dispatch('input', this.value);
