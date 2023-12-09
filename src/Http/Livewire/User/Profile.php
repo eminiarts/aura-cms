@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\Redirect;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rules\Password;
 use Livewire\Component;
+use Illuminate\Support\Facades\DB;
 
 class Profile extends Component
 {
@@ -24,10 +25,10 @@ class Profile extends Component
     public $model;
 
     /**
-     * The user's current password.
-     *
-     * @var string
-     */
+    * The user's current password.
+    *
+    * @var string
+    */
     public $password = '';
 
     public $post = [
@@ -45,10 +46,10 @@ class Profile extends Component
     }
 
     /**
-     * Confirm that the user would like to delete their account.
-     *
-     * @return void
-     */
+    * Confirm that the user would like to delete their account.
+    *
+    * @return void
+    */
     public function confirmUserDeletion()
     {
         $this->dispatchBrowserEvent('confirming-delete-user');
@@ -57,8 +58,8 @@ class Profile extends Component
     }
 
     /**
-     * Delete the current user.
-     */
+    * Delete the current user.
+    */
     public function deleteUser(Request $request)
     {
         $this->validate(['password' => ['required', 'current_password']]);
@@ -96,127 +97,127 @@ class Profile extends Component
                 'name' => 'Signatur',
                 'type' => 'Eminiarts\\Aura\\Fields\\Image',
                 'validation' => ['nullable', 'array', 'max:1',
-                    function (string $attribute, mixed $value, Closure $fail) {
+                function (string $attribute, mixed $value, Closure $fail) {
 
-                        if (!$value) {
-                            return;
+                    if (!$value) {
+                        return;
+                    }
+                    // Check if the attachment is an image
+                    Attachment::findOrFail($value)->each(function ($attachment) use ($fail, $attribute) {
+                        if (!$attachment->isImage()) {
+                            $fail("The {$attribute} is not an image.");
                         }
-                        // Check if the attachment is an image
-                        Attachment::findOrFail($value)->each(function ($attachment) use ($fail, $attribute) {
-                            if (!$attachment->isImage()) {
-                                $fail("The {$attribute} is not an image.");
-                            }
-                        });
+                    });
 
-                    },
-                ],
-                'conditional_logic' => [],
-                'slug' => 'signatur',
-                'style' => [
-                    'width' => '100',
-                ],
+                },
             ],
-            [
-                'name' => 'Name',
-                'type' => 'Eminiarts\\Aura\\Fields\\Text',
-                'validation' => 'required',
-                'on_index' => true,
-                'slug' => 'name',
-                'style' => [
-                    'width' => '100',
-                ],
+            'conditional_logic' => [],
+            'slug' => 'signatur',
+            'style' => [
+                'width' => '100',
             ],
-            [
-                'name' => 'Email',
-                'type' => 'Eminiarts\\Aura\\Fields\\Text',
-                'validation' => 'required|email',
-                'on_index' => true,
-                'slug' => 'email',
-                'style' => [
-                    'width' => '100',
-                ],
+        ],
+        [
+            'name' => 'Name',
+            'type' => 'Eminiarts\\Aura\\Fields\\Text',
+            'validation' => 'required',
+            'on_index' => true,
+            'slug' => 'name',
+            'style' => [
+                'width' => '100',
             ],
-            [
-                'type' => 'Eminiarts\\Aura\\Fields\\Tab',
-                'name' => 'Password',
-                'slug' => 'tab-password',
-                'global' => true,
+        ],
+        [
+            'name' => 'Email',
+            'type' => 'Eminiarts\\Aura\\Fields\\Text',
+            'validation' => 'required|email',
+            'on_index' => true,
+            'slug' => 'email',
+            'style' => [
+                'width' => '100',
             ],
-            [
-                'name' => 'Change Password',
-                'type' => 'Eminiarts\\Aura\\Fields\\Panel',
-                'slug' => 'user-details',
-                'style' => [
-                    'width' => '100',
-                ],
+        ],
+        [
+            'type' => 'Eminiarts\\Aura\\Fields\\Tab',
+            'name' => 'Password',
+            'slug' => 'tab-password',
+            'global' => true,
+        ],
+        [
+            'name' => 'Change Password',
+            'type' => 'Eminiarts\\Aura\\Fields\\Panel',
+            'slug' => 'user-details',
+            'style' => [
+                'width' => '100',
             ],
-            [
-                'name' => 'Current Password',
-                'type' => 'Eminiarts\\Aura\\Fields\\Password',
-                'validation' => ['required_with:post.fields.password', 'current_password'],
-                'slug' => 'current_password',
-                'on_index' => false,
+        ],
+        [
+            'name' => 'Current Password',
+            'type' => 'Eminiarts\\Aura\\Fields\\Password',
+            'validation' => ['required_with:post.fields.password', 'current_password'],
+            'slug' => 'current_password',
+            'on_index' => false,
+        ],
+        [
+            'name' => 'New Password',
+            'type' => 'Eminiarts\\Aura\\Fields\\Password',
+            'validation' => ['nullable', 'confirmed', Password::min(12)->mixedCase()->numbers()->symbols()->uncompromised()],
+            'slug' => 'password',
+            'on_index' => false,
+        ],
+        [
+            'name' => 'Confirm Password',
+            'type' => 'Eminiarts\\Aura\\Fields\\Password',
+            'validation' => ['required_with:post.fields.password', 'same:post.fields.password'],
+            'slug' => 'password_confirmation',
+            'on_index' => false,
+        ],
+        [
+            'type' => 'Eminiarts\\Aura\\Fields\\Tab',
+            'name' => '2FA',
+            'slug' => '2fa',
+            'global' => true,
+        ],
+        [
+            'name' => 'Two Factor Authentication',
+            'type' => 'Eminiarts\\Aura\\Fields\\Panel',
+            'slug' => 'user-2fa',
+            'style' => [
+                'width' => '100',
             ],
-            [
-                'name' => 'New Password',
-                'type' => 'Eminiarts\\Aura\\Fields\\Password',
-                'validation' => ['nullable', 'confirmed', Password::min(12)->mixedCase()->numbers()->symbols()->uncompromised()],
-                'slug' => 'password',
-                'on_index' => false,
+        ],
+        [
+            'name' => '2FA',
+            'type' => 'Eminiarts\\Aura\\Fields\\LivewireComponent',
+            'component' => 'aura::user-two-factor-authentication-form',
+            'validation' => '',
+            'conditional_logic' => [],
+            'slug' => '2fa',
+        ],
+        [
+            'type' => 'Eminiarts\\Aura\\Fields\\Tab',
+            'name' => 'Delete',
+            'slug' => 'delete-tab',
+            'global' => true,
+        ],
+        [
+            'name' => 'Delete Account',
+            'type' => 'Eminiarts\\Aura\\Fields\\Panel',
+            'slug' => 'user-delete-panel',
+            'style' => [
+                'width' => '100',
             ],
-            [
-                'name' => 'Confirm Password',
-                'type' => 'Eminiarts\\Aura\\Fields\\Password',
-                'validation' => ['required_with:post.fields.password', 'same:post.fields.password'],
-                'slug' => 'password_confirmation',
-                'on_index' => false,
-            ],
-            [
-                'type' => 'Eminiarts\\Aura\\Fields\\Tab',
-                'name' => '2FA',
-                'slug' => '2fa',
-                'global' => true,
-            ],
-            [
-                'name' => 'Two Factor Authentication',
-                'type' => 'Eminiarts\\Aura\\Fields\\Panel',
-                'slug' => 'user-2fa',
-                'style' => [
-                    'width' => '100',
-                ],
-            ],
-            [
-                'name' => '2FA',
-                'type' => 'Eminiarts\\Aura\\Fields\\LivewireComponent',
-                'component' => 'aura::user-two-factor-authentication-form',
-                'validation' => '',
-                'conditional_logic' => [],
-                'slug' => '2fa',
-            ],
-            [
-                'type' => 'Eminiarts\\Aura\\Fields\\Tab',
-                'name' => 'Delete',
-                'slug' => 'delete-tab',
-                'global' => true,
-            ],
-            [
-                'name' => 'Delete Account',
-                'type' => 'Eminiarts\\Aura\\Fields\\Panel',
-                'slug' => 'user-delete-panel',
-                'style' => [
-                    'width' => '100',
-                ],
-            ],
-            [
-                'name' => '2FA',
-                'type' => 'Eminiarts\\Aura\\Fields\\View',
-                'view' => 'aura::profile.delete-user-form',
-                'validation' => '',
-                'conditional_logic' => [],
-                'slug' => '2fa',
-            ],
+        ],
+        [
+            'name' => '2FA',
+            'type' => 'Eminiarts\\Aura\\Fields\\View',
+            'view' => 'aura::profile.delete-user-form',
+            'validation' => '',
+            'conditional_logic' => [],
+            'slug' => '2fa',
+        ],
 
-        ];
+    ];
     }
 
     public function getFieldsForViewProperty()
@@ -266,6 +267,14 @@ class Profile extends Component
         return $this->postFieldValidationRules();
     }
 
+    public function logoutOtherBrowserSessions()
+    {
+        DB::connection(config('session.connection'))->table(config('session.table', 'sessions'))
+        ->where('user_id', Auth::user()->getAuthIdentifier())
+        ->where('id', '!=', request()->session()->getId())
+        ->delete();
+    }
+
     public function save()
     {
         // dd('save', $this->rules());
@@ -285,6 +294,12 @@ class Profile extends Component
             unset($this->post['fields']['current_password']);
             unset($this->post['fields']['password']);
             unset($this->post['fields']['password_confirmation']);
+
+            // Logout other devices
+
+            $this->logoutOtherBrowserSessions();
+
+
         }
         // dd('here2', $this->post['fields']);
         if (empty(optional($this->post['fields'])['password'])) {
