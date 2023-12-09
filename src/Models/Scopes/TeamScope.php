@@ -37,7 +37,16 @@ class TeamScope implements Scope
         //     return $builder;
         // }
 
+
+        // ray('team scope', $model->getTable(), request(), auth()->user());
+
+
+
         if (auth()->user() && $model->getTable() == 'posts') {
+            return $builder->where($model->getTable() . '.team_id', auth()->user()->current_team_id);
+        }
+
+        if (auth()->user()) {
             return $builder->where($model->getTable() . '.team_id', auth()->user()->current_team_id);
         }
 

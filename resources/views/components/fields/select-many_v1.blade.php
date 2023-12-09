@@ -84,6 +84,7 @@ if(optional($field)['api']) {
             
             fetch('/admin/api/fields/values', {
                 method: 'POST',
+                credentials: 'include',
                 headers: {
                     'Content-Type': 'application/json',
                     'x-CSRF-TOKEN': this.csrf,

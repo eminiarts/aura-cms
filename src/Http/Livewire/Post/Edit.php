@@ -42,12 +42,22 @@ class Edit extends Component
         'saveModel' => 'save',
         'refreshComponent' => '$refresh',
         'reload',
+        'saveBeforeAction'
     ];
+
+    public function saveBeforeAction($method)
+    {
+        // Call the save method
+        $this->save();
+
+        // Emit the 'savedForAction' event with the $method parameter
+        $this->emit('savedForAction', $method);
+    }
 
     public function callMethod($method, $params = [], $captureReturnValueCallback = null)
     {
         // If the method exists in this component, call it directly.
-        if (method_exists($this, $method) || ! optional($params)[0]) {
+        if (method_exists($this, $method) || !optional($params)[0]) {
             return parent::callMethod($method, $params, $captureReturnValueCallback);
         }
 
@@ -154,7 +164,7 @@ class Edit extends Component
 
         if (isset($this->post['fields']['mzkb_pdf'])) {
             $mzkb_pdf = $this->post['fields']['mzkb_pdf'];
-            if (! is_string($mzkb_pdf)) {
+            if (!is_string($mzkb_pdf)) {
                 $mzkb_pdfPath = $mzkb_pdf->store('profile', 'public');
                 $this->post['fields']['mzkb_pdf'] = $mzkb_pdfPath;
             }
@@ -175,9 +185,9 @@ class Edit extends Component
             // ray('update', $this->post['fields']);
 
             $this->model->update($this->post['fields']);
-            // $this->model->update(['fields' => $this->post['fields']]);
+        // $this->model->update(['fields' => $this->post['fields']]);
 
-            // $this->model->update($this->post['fields']);
+        // $this->model->update($this->post['fields']);
         } else {
             // ray('no custom table');
             // ray($this->post);
@@ -201,8 +211,8 @@ class Edit extends Component
         // ray('before redirect');
 
         // $this->redirect(route('aura.post.edit', [$this->slug, $this->model->id]));
-        $this->model = $this->model->fresh();
-        $this->post = $this->model->attributesToArray();
+        // $this->model = $this->model->fresh();
+        // $this->post = $this->model->attributesToArray();
 
     }
 
