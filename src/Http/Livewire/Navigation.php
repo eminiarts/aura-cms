@@ -19,7 +19,7 @@ class Navigation extends Component
 
         if (auth()->check() && auth()->user()->getOptionSidebar()) {
             $this->toggledGroups = auth()->user()->getOptionSidebar();
-            // ray($this->toggledGroups);
+        // ray($this->toggledGroups);
         } else {
             $this->toggledGroups = [];
         }
