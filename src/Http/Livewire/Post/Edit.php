@@ -154,11 +154,13 @@ class Edit extends Component
 
         unset($this->post['fields']['group']);
 
-        if (isset($this->post['fields']['mzkb_pdf'])) {
-            $mzkb_pdf = $this->post['fields']['mzkb_pdf'];
-            if (! is_string($mzkb_pdf)) {
-                $mzkb_pdfPath = $mzkb_pdf->store('profile', 'public');
-                $this->post['fields']['mzkb_pdf'] = $mzkb_pdfPath;
+        if (isset($this->post['fields']['signed_mzkb_pdf'])) {
+            $signed_mzkb_pdf = $this->post['fields']['signed_mzkb_pdf'];
+            if (! is_string($signed_mzkb_pdf)) {
+                
+                $signed_mzkb_pdfPath = $signed_mzkb_pdf->store('mzkb', 'public');
+
+                $this->post['fields']['signed_mzkb_pdf'] = 'app/public/'. $signed_mzkb_pdfPath;
             }
         }
 
@@ -192,7 +194,7 @@ class Edit extends Component
         // if ($this->model->getType() === 'Report') {
         //     $this->redirect(route('aura.post.edit', [$this->slug, $this->model->id]));
         // }
-        
+
         // $this->model = $this->model->fresh();
         // $this->post = $this->model->attributesToArray();
 
