@@ -195,8 +195,8 @@ class Edit extends Component
         //     $this->redirect(route('aura.post.edit', [$this->slug, $this->model->id]));
         // }
 
-        // $this->model = $this->model->fresh();
-        // $this->post = $this->model->attributesToArray();
+        $this->model = $this->model->refresh();
+        $this->post = $this->model->attributesToArray();
 
     }
 
