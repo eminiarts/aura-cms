@@ -3,7 +3,7 @@
 @endphp
 
 @if($settings)
-<style>
+<style nonce="{{ csp_nonce() }}">
 :root {
     --primary-25: {{ TransformColor::hexToRgb('#fbfeff') }};
     --primary-50: {{ TransformColor::hexToRgb('#E9EEFD') }};
@@ -754,7 +754,7 @@
 
 @else
 
-<style>
+<style nonce="{{ csp_nonce() }}">
 :root {
     --primary-25: {{ TransformColor::hexToRgb('#fbfeff') }};
     --primary-50: {{ TransformColor::hexToRgb('#E9EEFD') }};
@@ -796,7 +796,7 @@
 
 @endif
 
-<script>
+<script nonce="{{ csp_nonce() }}">
     function getCssVariableValue(variableName) {
         var rgb = getComputedStyle(document.documentElement).getPropertyValue(variableName);
 

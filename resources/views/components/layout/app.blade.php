@@ -1,7 +1,7 @@
 @props([
     'header' => null,
     'sidebar' => null,
-]) 
+])
 
 <!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
@@ -45,7 +45,7 @@
 
         <link rel="icon" type="image/png" sizes="32x32" href="{{ $favicon }}">
 
-        <style>[x-cloak] { display: none !important; }</style>
+        <style nonce="{{ csp_nonce() }}">[x-cloak] { display: none !important; }</style>
         <link rel="stylesheet" href="/vendor/aura/public/inter.css">
 
         @livewireStyles
@@ -128,7 +128,7 @@
 
         @stack('scripts')
 
-        <script>
+        <script nonce="{{ csp_nonce() }}">
             if (localStorage.getItem('leftSidebar') === 'true') {
                 document.querySelector('.aura-navigation-collapsed').setAttribute('x-cloak', '');
             } else {
@@ -136,7 +136,7 @@
             }
         </script>
 
-  <script>
+  <script nonce="{{ csp_nonce() }}">
       // after 100ms trigger a window resize event to force the chart to redraw
       setTimeout(function() {
           window.dispatchEvent(new Event('resize'));

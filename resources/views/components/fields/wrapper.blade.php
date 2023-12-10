@@ -24,7 +24,7 @@
 
 <div id="post-field-{{ $slug }}-wrapper"
         class="{{ $wrapperClass }}">
-        <style>
+        <style nonce="{{ csp_nonce() }}">
   #post-field-{{ $slug }}-wrapper {
     width: {{ optional(optional($field)['style'])['width'] ?? '100' }}%;
   }

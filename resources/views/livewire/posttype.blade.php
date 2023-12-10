@@ -174,7 +174,7 @@
                             @foreach($tab['fields'] as $field)
 
                                 <div class="post-field-{{ optional($field)['slug'] }}-wrapper px-2 reorder-item draggable-item" id="field_{{ $field['_id'] }}" wire:key="pt-field-{{ $tab['_id'] }}">
-                                    <style>
+                                    <style nonce="{{ csp_nonce() }}">
                                     .post-field-{{ optional($field)['slug'] }}-wrapper {
                                         width: {{ optional(optional($field)['style'])['width'] ?? '100' }}%;
                                     }
@@ -237,7 +237,7 @@
                     @foreach($this->mappedFields as $field)
 
                         <div class="px-2 reorder-item draggable-item post-field-{{ optional($field)['slug'] }}-wrapper" id="field_{{ $field['_id'] }}" wire:key="pt-field-{{ $field['_id'] }}">
-                            <style>
+                            <style nonce="{{ csp_nonce() }}">
                                 .post-field-{{ optional($field)['slug'] }}-wrapper {
                                     width: {{ optional(optional($field)['style'])['width'] ?? '100' }}%;
                                 }
@@ -347,7 +347,7 @@
     @once
     @push('scripts')
 
-        <script>
+        <script nonce="{{ csp_nonce() }}">
             // when alpine is ready
             document.addEventListener('alpine:init', () => {
                 // define an alpinejs component named 'userDropdown'
@@ -375,7 +375,7 @@
             })
         </script>
 
-        <style>
+        <style nonce="{{ csp_nonce() }}">
             .draggable--original *{
                 opacity: 0.5;
             }

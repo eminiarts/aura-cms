@@ -35,7 +35,7 @@
     {{-- @dump($this->groupedFields) --}}
 
       @foreach($this->model->getGroupedFields() as $key => $field)
-        <style>
+        <style nonce="{{ csp_nonce() }}">
         #post-field-{{ optional($field)['slug'] }}-wrapper {
           width: {{ optional(optional($field)['style'])['width'] ?? '100' }}%;
         }

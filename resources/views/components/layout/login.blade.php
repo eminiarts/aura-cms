@@ -24,7 +24,7 @@
 
         @include('aura::components.layout.colors')
 
-        <script>
+        <script nonce="{{ csp_nonce() }}">
             @if(optional($settings)['darkmode-type'] == 'dark')
                 document.documentElement.classList.add('dark')
             @elseif (optional($settings)['darkmode-type'] == 'light')
@@ -50,7 +50,7 @@
             ($imageDark = Attachment::find(app('aura')::option('login-bg-darkmode'))) &&
             $imageDark->isNotEmpty()
         )
-        <script>
+        <script nonce="{{ csp_nonce() }}">
             document.addEventListener('DOMContentLoaded', function() {
                 const images = document.querySelectorAll('[data-darkmode-image]')
                 const darkmode = window.matchMedia('(prefers-color-scheme: dark)').matches
@@ -64,14 +64,14 @@
         </script>
         @endif
 
-        <div class="relative overflow-hidden bg-gray-100 bg-bottom bg-no-repeat bg-cover group dark:bg-gray-900 isolate"
+        <div class="isolate overflow-hidden relative bg-gray-100 bg-bottom bg-no-repeat bg-cover group dark:bg-gray-900"
 
             {{-- @if ($image = Attachment::find(app('aura')::option('login-bg')))
             style="background-image: url('{{ $image->first()->path() }}');"
             @else
             {{-- style="background-image: url('/vendor/aura/public/img/bgop1.jpg');"
             @endif --}}
-
+            nonce="{{ csp_nonce() }}"
             @if (
                 ($image = Attachment::find(app('aura')::option('login-bg'))) &&
                 $image->isNotEmpty() &&
@@ -120,8 +120,8 @@
 
       <div class="absolute inset-0 bg-transparent dark:bg-transparent -z-10"></div>
 
-        <div class="relative flex flex-col items-center min-h-screen pt-6 bg-bottom bg-no-repeat bg-cover sm:justify-center sm:pt-0">
-            <div class="flex justify-center w-full px-6 sm:max-w-md">
+        <div class="flex relative flex-col items-center pt-6 min-h-screen bg-bottom bg-no-repeat bg-cover sm:justify-center sm:pt-0">
+            <div class="flex justify-center px-6 w-full sm:max-w-md">
                 <div class="w-2/3">
                     <a href="/">
                         <x-aura::application-logo class="w-full text-gray-600 fill-current dark:text-gray-100" />
@@ -129,7 +129,7 @@
                 </div>
             </div>
 
-            <div class="w-full px-6 py-4 pb-6 mt-6 overflow-hidden border border-gray-300 shadow-md dark:border-gray-700 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm sm:max-w-md sm:rounded-2xl">
+            <div class="overflow-hidden px-6 py-4 pb-6 mt-6 w-full border border-gray-300 shadow-md backdrop-blur-sm dark:border-gray-700 bg-white/80 dark:bg-gray-800/80 sm:max-w-md sm:rounded-2xl">
                 {{ $slot }}
             </div>
         </div>
