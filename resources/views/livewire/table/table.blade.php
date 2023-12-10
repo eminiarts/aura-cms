@@ -35,7 +35,8 @@ x-data="{
         this.$watch('selected', value => {
             // Emit an event with the new value
 
-             this.$dispatch('selection-changed', { selected: value, slug: '{{ $field['slug'] }}' });
+             this.$dispatch('selectionChanged', { selected: value, slug: '{{ $field['slug'] }}' });
+             console.log('selectionChanged', value, '{{ $field['slug'] }}');
         });
         @endif
 
