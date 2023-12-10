@@ -70,13 +70,7 @@ class User extends UserModel
 
     protected $with = ['meta'];
 
-    public function actions()
-    {
-        return [
-            'edit',
-        ];
-    }
-
+    
     public function clearFieldsAttributeCache()
     {
         // Do we need to extend user instead of resource?
@@ -191,7 +185,9 @@ class User extends UserModel
                 'validation' => ['nullable', Password::min(12)->mixedCase()->numbers()->symbols()->uncompromised()],
                 'conditional_logic' => [],
                 'slug' => 'password',
-                'on_forms' => false,
+                'on_forms' => true,
+                'on_edit' => false,
+                'on_create' => true,
                 'on_index' => false,
                 'on_view' => false,
             ],
