@@ -15,6 +15,7 @@ if(!$iconClass){
     @if($href)
     <a href="{{ $href }}"
         class="inline-flex items-center text-sm font-medium text-gray-700 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white">
+        <span class="sr-only">{{ __('Go to home') }}</span>
         <x-aura::icon :icon="$icon" size="xs" :iconClass="$iconClass" />
         {!! $title !!}
     </a>

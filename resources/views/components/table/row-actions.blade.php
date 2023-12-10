@@ -9,6 +9,7 @@
     <x-aura::tippy text="{{ __('View') }}" position="top" class="text-sm text-gray-400 bg-white">
         <x-aura::button.transparent :href="$row->viewUrl()" size="xs">
             <x-aura::icon icon="view" size="xs" />
+            <span class="sr-only">{{ __('View') }}</span>
         </x-aura::button.transparent>
     </x-aura::tippy>
     @endcan
@@ -17,6 +18,7 @@
     <x-aura::tippy text="{{ __('Edit') }}" position="top" class="text-sm text-gray-400 bg-white">
         <x-aura::button.transparent :href="$row->editUrl()" size="xs">
             <x-aura::icon icon="edit" size="xs" />
+            <span class="sr-only">{{ __('Edit') }}</span>
         </x-aura::button.transparent>
     </x-aura::tippy>
     @endcan
