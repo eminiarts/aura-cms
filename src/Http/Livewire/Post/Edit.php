@@ -189,9 +189,10 @@ class Edit extends Component
 
         // Redirect to edit page
 
-        if ($this->model->getType() === 'Report') {
-            $this->redirect(route('aura.post.edit', [$this->slug, $this->model->id]));
-        }
+        // if ($this->model->getType() === 'Report') {
+        //     $this->redirect(route('aura.post.edit', [$this->slug, $this->model->id]));
+        // }
+        
         // $this->model = $this->model->fresh();
         // $this->post = $this->model->attributesToArray();
 
