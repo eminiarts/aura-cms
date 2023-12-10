@@ -1,4 +1,17 @@
-<div class="p-8 w-full">
+<div class="p-8 w-full" x-data="{ 
+    
+    init() {
+        {{-- @this.on('selection-changed', payload => {
+            console.log('chatch me outside')
+
+        }); --}}
+    },
+    changeSelected(event) {
+        console.log('changeSelected', event.detail)
+        {{-- @this.set('selected', event.detail) --}}
+    },
+
+}" @selectionChanged.window="console.log('hererererererrerererererer')">
     <div class="">
         <livewire:aura::media-uploader :field="$field" :selected="$selected" :table="true" :model="app('Eminiarts\Aura\Resources\Attachment')" />
     </div>
