@@ -25,11 +25,11 @@
             </div>
             <div class="pl-1.5 w-2/3">
                 @foreach($items as $item)
-                    <div class="flex items-center mb-2">
+                    <div class="flex items-center mb-2 @unless(optional($this->post['fields']['permissions'])[$item['slug']]) opacity-50 line-through @endunless" >
                         @if(optional($this->post['fields']['permissions'])[$item['slug']])
-                            <span class="text-green-500">&#10004;</span> <!-- This is a check mark -->
+                        <x-aura::icon.check class="mr-2 w-5 h-5" />
                         @else
-                            <span class="text-red-500">&#10006;</span> <!-- This is an x mark -->
+                            <x-aura::icon.close class="mr-2 w-5 h-5" />
                         @endif
                         <label class="block ml-3 text-sm leading-5 text-gray-700 cursor-pointer dark:text-gray-200">
                             {{ $item['name'] }}
