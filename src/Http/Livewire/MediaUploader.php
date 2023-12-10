@@ -40,6 +40,7 @@ class MediaUploader extends Component
     public function selectedMediaUpdated($data)
     {
         // dd($data);
+        ray('selectedMediaUpdated', $data);
         $this->selected = $data['value'];
     }
 

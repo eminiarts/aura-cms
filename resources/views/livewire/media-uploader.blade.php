@@ -53,7 +53,8 @@
             @error('media.*') <span class="error">{{ $message }}</span> @enderror
         </div>
 
-        <div x-data="{
+        <div
+            x-data="{
             isDropping: false,
             isUploading: false,
             progress: 0,
@@ -102,25 +103,25 @@
             removeUpload(filename) {
                 @this.removeUpload('files', filename)
             },
-        }">
-
-            <div class="mt-2">
-
-                @if($button)
-                <x-aura::button.light
-                    wire:click="$emit('openModal', 'aura::media-manager', {{ json_encode(['field' => $field, 'slug' => $field['slug'], 'selected' => $selected]) }})">
-                    <x-slot:icon>
-                        <x-aura::icon icon="media" class="" />
-                        </x-slot>
-
-                        <span>Media Manager</span>
-                </x-aura::button.light>
-                @endif
-            </div>
+        }"
+        >
 
             <div class="" x-on:drop="isDropping = false" x-on:drop.prevent="handleFileDrop($event)"
                 x-on:dragover.prevent="isDropping = true; dragover($event);"
                 x-on:dragleave.prevent="isDropping = false; ">
+
+                <div class="mt-2">
+                    @if($button)
+                        <x-aura::button.light
+                            wire:click="$emit('openModal', 'aura::media-manager', {{ json_encode(['field' => $field, 'slug' => $field['slug'], 'selected' => $selected]) }})">
+                            <x-slot:icon>
+                                <x-aura::icon icon="media" class="" />
+                                </x-slot>
+
+                                <span>Media Manager</span>
+                        </x-aura::button.light>
+                    @endif
+                </div>
 
                 <div class="flex justify-center items-center mb-4 w-full" x-cloak>
                     <div class="flex absolute top-0 right-0 bottom-0 left-0 z-30 justify-center items-center opacity-90 bg-primary-400"
@@ -185,6 +186,8 @@
 
                         <livewire:aura::table :model="$post" :field="$field" />
                     </div>
+
+                    Selected: {{ count($selected) }}
 
 
                     @endif

@@ -48,7 +48,7 @@
         <style nonce="{{ csp_nonce() }}">[x-cloak] { display: none !important; }</style>
         <link rel="stylesheet" href="/vendor/aura/public/inter.css">
 
-        @livewireStyles
+        @livewireStyles(['nonce' => csp_nonce()])
 
         @vite(['resources/css/app.css'], 'vendor/aura')
 
@@ -65,7 +65,7 @@
             @keydown.window.prevent.cmd.k="$dispatch('search')"
             @keydown.window.escape="closeSearch()"
             @inset-sidebar.window="insetSidebar(event)"
-            class="flex flex-col items-stretch h-screen overflow-hidden md:flex-row"
+            class="flex overflow-hidden flex-col items-stretch h-screen md:flex-row"
         >
 
 
@@ -85,7 +85,7 @@
                 @endif
 
 
-                <div class="flex-1 overflow-y-auto">
+                <div class="overflow-y-auto flex-1">
                     <div class="p-5 md:p-8">
                         {{ $slot }}
                     </div>
@@ -122,7 +122,7 @@
 
         <livewire:aura::notifications />
 
-        @livewireScripts
+        @livewireScripts(['nonce' => csp_nonce()])
 
         @livewire('livewire-ui-modal')
 

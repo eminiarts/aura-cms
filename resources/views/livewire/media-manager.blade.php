@@ -1,7 +1,9 @@
-<div class="w-full p-8">
+<div class="p-8 w-full">
     <div class="">
         <livewire:aura::media-uploader :field="$field" :selected="$selected" :table="true" :model="app('Eminiarts\Aura\Resources\Attachment')" />
     </div>
+
+    Selected: {{ count($selected) }}
 
     {{-- Footer with 2 buttons: close and select --}}
     <div class="flex justify-end mt-4">
