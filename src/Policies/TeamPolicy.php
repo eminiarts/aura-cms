@@ -60,8 +60,6 @@ class TeamPolicy
 
     public function inviteUsers(User $user, Team $team)
     {
-        // ray('team policy', $user->resource->hasPermissionTo('invite-users', $team));
-
         if ($user->resource->isSuperAdmin()) {
             return true;
         }

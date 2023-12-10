@@ -254,10 +254,7 @@ class Resource extends Model
                 continue;
             }
 
-            // ray(in_array($method, $modelMethods) && ($this->{$method}() instanceof \Illuminate\Database\Eloquent\Relations\Relation), $method);
-
             if (in_array($method, $modelMethods) && ($this->{$method}() instanceof \Illuminate\Database\Eloquent\Relations\Relation)) {
-                // ray($key);
                 return true;
             }
         }

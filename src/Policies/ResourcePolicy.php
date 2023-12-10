@@ -183,7 +183,6 @@ class ResourcePolicy
             return true;
         }
 
-        // ray('hier im view any', $user, $resource);
         if ($user->resource->hasPermissionTo('viewAny', $resource)) {
             return true;
         }

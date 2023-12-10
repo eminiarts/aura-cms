@@ -281,7 +281,6 @@ class Profile extends Component
     public function save()
     {
         // dd('save', $this->rules());
-        // ray($this->post['fields'], $this->rules());
         $this->validate();
 
         // dd('hier');

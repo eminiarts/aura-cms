@@ -181,8 +181,6 @@ trait InputFields
         $cacheKey = get_class($this).'-getFieldsBeforeTree';
 
         if (! app()->bound($cacheKey)) {
-            // ray()->count();
-            // ray($cacheKey);
             // If fields is set and is an array, create a collection
             if ($fields && is_array($fields)) {
                 $fields = collect($fields);
@@ -234,8 +232,6 @@ trait InputFields
      */
     public function getGroupedFields($fields = null, $pipes = null): array
     {
-        // ray()->count();
-
         // If fields is set and is an array, create a collection
         if ($fields && is_array($fields)) {
             $fields = collect($fields);
@@ -280,8 +276,6 @@ trait InputFields
      */
     public function mapToGroupedFields($fields)
     {
-        // ray()->count();
-
         $fields = collect($fields)->map(function ($item) {
             $item['field'] = app($item['type'])->field($item);
             $item['field_type'] = app($item['type'])->type;

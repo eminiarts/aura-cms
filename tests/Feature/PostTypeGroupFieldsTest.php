@@ -131,8 +131,6 @@ test('fields get grouped when field group is true', function () {
 
     $fields = $model->getGroupedFields();
 
-    //    ray($fields);
-
     $this->assertCount(1, $fields);
     $this->assertCount(2, $fields[0]['fields']);
     $this->assertEquals($fields[0]['fields'][0]['name'], 'Tab 1');

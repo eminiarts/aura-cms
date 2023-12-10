@@ -162,31 +162,21 @@ class Edit extends Component
             }
         }
 
-        // ray('after validate');
-
-        // dd('save', $this->post, $this->rules());
-
         // unset this post fields group
 
         if ($this->model->usesCustomTable()) {
 
-            // ray('custom table');
 
             // dd('save', $this->post['fields']);
 
-            // ray('update', $this->post['fields']);
 
             $this->model->update($this->post['fields']);
         // $this->model->update(['fields' => $this->post['fields']]);
 
         // $this->model->update($this->post['fields']);
         } else {
-            // ray('no custom table');
-            // ray($this->post);
             $this->model->update($this->post);
         }
-
-        // ray('after update');
 
         $this->notify(__('Successfully updated'));
 
@@ -194,13 +184,11 @@ class Edit extends Component
             $this->emit('closeModal');
             $this->emit('refreshTable');
         }
-        // ray('refresh');
 
         $this->emit('refreshComponent');
 
         // Redirect to edit page
 
-        // ray('before redirect');
         if ($this->model->getType() === 'Report') {
             $this->redirect(route('aura.post.edit', [$this->slug, $this->model->id]));
         }

@@ -57,8 +57,6 @@ test('multiple should be after the repeater', function () {
     $model = new FieldsAfterRepeaterModel();
 
     $fields = $model->createFields();
-    ray()->clearScreen();
-    ray($fields);
 
     // expect count to be 1
     expect(count($fields))->toBe(2);
