@@ -17,8 +17,8 @@ $maxWidth = [
     x-on:keydown.escape.window="showModal = false"
     x-show="showModal"
     id="{{ $id }}"
-    class="hidden overflow-y-auto fixed inset-0 z-50 px-4 py-6 jetstream-modal sm:px-0"
-    x-cloak
+    class="overflow-y-auto fixed inset-0 z-50 px-4 py-6 jetstream-modal sm:px-0"
+    style="display: none;"
 >
     <div x-show="showModal" class="fixed inset-0 transition-all transform" x-on:click="showModal = false" x-transition:enter="ease-out duration-300"
                     x-transition:enter-start="opacity-0"

@@ -37,8 +37,6 @@ x-data="{
 
              this.$dispatch('selection-changed', { selected: value, slug: '{{ $field['slug'] }}' });
         });
-
-
         @endif
 
         // watch rows for changes
@@ -259,4 +257,6 @@ x-data="{
         </x-aura::sidebar>
     </main>
 </div> {{-- This closes the context menu --}}
+
+    Selected 3: {{ count($selected) }}
 </div>
