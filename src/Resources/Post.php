@@ -86,7 +86,6 @@ class Post extends Resource
     public function callFlow($flowId)
     {
         $flow = Flow::find($flowId);
-        // dd('callManualFlow', $flow->name);
         $operation = $flow->operation;
 
         // Create a Flow Log
@@ -126,7 +125,6 @@ class Post extends Resource
             $this->bulkActions['callFlow.'.$flow->id] = $flow->name;
         }
 
-        // dd($this->bulkActions);
         return $this->bulkActions;
     }
 
@@ -204,7 +202,6 @@ class Post extends Resource
                 ],
                 'slug' => 'password',
                 'hydrate' => function ($set, $model, $state, $get) {
-                    dd('hier set');
                 },
                 'on_index' => false,
                 'on_forms' => true,
@@ -488,7 +485,6 @@ class Post extends Resource
 
     public function testAction()
     {
-        //dd('hier');
     }
 
     // public static function getWidgets(): array
