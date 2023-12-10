@@ -37,7 +37,6 @@ x-data="{
 
              this.$dispatch('selection-changed', { selected: value, slug: '{{ $field['slug'] }}' });
              this.$dispatch('foo');
-             console.log('selectionChanged', value, '{{ $field['slug'] }}');
         });
         @endif
 
