@@ -48,14 +48,14 @@ it('updates the user profile', function () {
 it('updates the user password', function () {
     livewire(Profile::class)
         ->set('post.fields.current_password', 'password')
-        ->set('post.fields.password', 'new-password')
-        ->set('post.fields.password_confirmation', 'new-password')
+        ->set('post.fields.password', 'new-Password123*&*&!!!')
+        ->set('post.fields.password_confirmation', 'new-Password123*&*&!!!')
         ->call('save')
         ->assertHasNoErrors();
 
     $user = auth()->user()->fresh();
 
-    expect(Hash::check('new-password', $user->password))->toBeTrue();
+    expect(Hash::check('new-Password123*&*&!!!', $user->password))->toBeTrue();
 });
 
 it('deletes the user account', function () {
