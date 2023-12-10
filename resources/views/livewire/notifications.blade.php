@@ -2,11 +2,11 @@
     <h1>{{ __('Notifications') }}</h1>
 
     @foreach($this->fieldsForView as $key => $field)
-    <style>
+    <style nonce="{{ csp_nonce() }}">
         #post-field-{{ optional($field)['slug'] }}-wrapper {
             width: {{ optional(optional($field)['style'])['width'] ?? '100' }}%;
         }
-        
+
         @media screen and (max-width: 768px) {
             #post-field-{{ optional($field)['slug'] }}-wrapper {
                 width: 100%;
@@ -20,7 +20,7 @@
         </div>
     {{-- </x-aura::fields.conditions> --}}
     @endforeach
-    
+
     <x-aura::button wire:click="markAllAsRead">
         <div wire:loading>
             <x-aura::icon.loading  />

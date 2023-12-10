@@ -54,7 +54,7 @@
         }
     }"
     @notify.window="let message = $event.detail; messages.push(message); addTimer(message);"
-    class="fixed inset-0 z-50 flex flex-col items-end justify-center px-4 py-6 space-y-4 pointer-events-none sm:p-6 sm:justify-start"
+    class="flex fixed inset-0 z-50 flex-col justify-center items-end px-4 py-6 space-y-4 pointer-events-none sm:p-6 sm:justify-start"
 >
     <template x-for="(message, messageIndex) in messages" :key="messageIndex" hidden>
         <div
@@ -87,7 +87,7 @@
                             </div>
                         </div>
 
-                        <div class="ml-3 w-0 flex-1 pt-0.5">
+                        <div class="flex-1 pt-0.5 ml-3 w-0">
                             <p x-text="message.message" class="text-sm font-medium leading-5 text-gray-900"></p>
                         </div>
                         <div class="flex flex-shrink-0 ml-4">
@@ -100,7 +100,7 @@
                     </div>
                 </div>
                 <div class="relative h-0.5 bg-white">
-                    <div :style="'width:' + progress[messages.indexOf(message)] + '%'" class="absolute left-0 h-0.5 bg-gray-300"></div>
+                    <div nonce="{{ csp_nonce() }}" :style="'width:' + progress[messages.indexOf(message)] + '%'" class="absolute left-0 h-0.5 bg-gray-300"></div>
                 </div>
             </div>
         </div>

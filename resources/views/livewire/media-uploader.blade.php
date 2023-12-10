@@ -132,8 +132,16 @@
                 </div>
 
                 <div class="bg-transparent dark:bg-gray-900 h-[4px] w-full mt-0" x-show="isUploading">
-                    <div class="bg-primary-500 h-[4px]" style="transition: width 0.5s" :style="`width: ${progress}%;`"
-                        x-show="isUploading">
+                    <style nonce="{{ csp_nonce() }}">
+                        .progress-bar::before {
+                            content: '';
+                            display: block;
+                            height: 100%;
+                            transition: width 0.5s;
+                            width: 0%;
+                        }
+                    </style>
+                    <div class="bg-primary-500 h-[4px] progress-bar" :style="`width: ${progress}%;`" x-show="isUploading">
                     </div>
                 </div>
 

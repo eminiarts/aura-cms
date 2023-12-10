@@ -9,7 +9,7 @@
     {{-- @dump($this->fieldsForView) --}}
 
     @foreach($this->fieldsForView as $key => $field)
-    <style>
+    <style nonce="{{ csp_nonce() }}">
         #post-field-{{ optional($field)['slug'] }}-wrapper {
             width: {{ optional(optional($field)['style'])['width'] ?? '100' }}%;
         }

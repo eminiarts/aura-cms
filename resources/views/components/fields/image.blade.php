@@ -69,7 +69,7 @@ if($selected) {
     @once
     @push('scripts')
 
-    <script>
+    <script nonce="{{ csp_nonce() }}">
         document.addEventListener('alpine:init', () => {
             Alpine.data('orderMedia', () => ({
                 init() {

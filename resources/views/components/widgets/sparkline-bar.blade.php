@@ -2,7 +2,7 @@
   <div>
     @if($loaded)
   <div class="p-2">
-    <div class="flex items-start justify-between mb-4">
+    <div class="flex justify-between items-start mb-4">
       <span class="text-sm font-semibold">{{ $widget['name'] }}</span>
 
       {{-- <div class="flex items-baseline text-4xl font-medium">
@@ -16,6 +16,7 @@
 
           <div
           style="height: 80px;"
+          nonce="{{ csp_nonce() }}"
           x-data="{
               values: {{ json_encode(array_values($this->values['current'])) }},
               labels: {{ json_encode(array_keys($this->values['current'])) }},
@@ -64,7 +65,7 @@
                   }
                 }
               }"
-              class="w-full px-2"
+              class="px-2 w-full"
               >
               <div x-ref="chart" class="bg-white rounded-lg dark:bg-gray-800"></div>
           </div>
@@ -76,8 +77,8 @@
       </div>
 
       {{-- <div>
-        <div class="inline-flex items-baseline rounded-full px-2.5 py-0.5 text-sm font-medium bg-green-100 text-green-800 md:mt-2 lg:mt-0">
-        <svg class="-ml-1 mr-0.5 h-5 w-5 flex-shrink-0 self-center text-green-500" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+        <div class="inline-flex items-baseline px-2.5 py-0.5 text-sm font-medium text-green-800 bg-green-100 rounded-full md:mt-2 lg:mt-0">
+        <svg class="flex-shrink-0 self-center mr-0.5 -ml-1 w-5 h-5 text-green-500" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
           <path fill-rule="evenodd" d="M10 17a.75.75 0 01-.75-.75V5.612L5.29 9.77a.75.75 0 01-1.08-1.04l5.25-5.5a.75.75 0 011.08 0l5.25 5.5a.75.75 0 11-1.08 1.04l-3.96-4.158V16.25A.75.75 0 0110 17z" clip-rule="evenodd" />
         </svg>
         <span class="sr-only"> Increased by </span>
@@ -93,7 +94,7 @@
   </div>
   @else
   <div class="p-2 animate-pulse">
-    <div class="flex items-baseline justify-between mt-2 mb-6">
+    <div class="flex justify-between items-baseline mt-2 mb-6">
         <div class="w-32 h-4 bg-gray-200 rounded"></div>
         <div class="w-8 h-4 bg-gray-200 rounded"></div>
     </div>
