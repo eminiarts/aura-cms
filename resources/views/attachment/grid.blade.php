@@ -107,7 +107,7 @@
 @push('scripts')
 
 {{--<!-- in your Livewire component's JavaScript script -->--}}
-{{--<script nonce="{{ csp_nonce() }}">--}}
+{{--<script >--}}
 {{--    function selectRange(id) {--}}
 {{--        // get the index of the selected item--}}
 {{--        const index = this.items.indexOf(id);--}}

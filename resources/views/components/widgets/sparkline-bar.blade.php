@@ -16,7 +16,7 @@
 
           <div
           style="height: 80px;"
-          nonce="{{ csp_nonce() }}"
+          
           x-data="{
               values: {{ json_encode(array_values($this->values['current'])) }},
               labels: {{ json_encode(array_keys($this->values['current'])) }},

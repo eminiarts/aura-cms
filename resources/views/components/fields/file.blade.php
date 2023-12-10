@@ -68,7 +68,7 @@ if($selected) {
 @once
 @push('scripts')
 
-<script nonce="{{ csp_nonce() }}">
+<script >
     // when alpine is ready
     document.addEventListener('alpine:init', () => {
         // define an alpinejs component named 'userDropdown'

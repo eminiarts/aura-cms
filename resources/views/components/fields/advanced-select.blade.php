@@ -32,7 +32,7 @@
 
 <x-aura::fields.wrapper :field="$field">
 
-  <style nonce="{{ csp_nonce() }}">
+  <style >
     .dragging-item {
       position: absolute;
       pointer-events: none;

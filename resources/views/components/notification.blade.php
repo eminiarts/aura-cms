@@ -100,7 +100,7 @@
                     </div>
                 </div>
                 <div class="relative h-0.5 bg-white">
-                    <div nonce="{{ csp_nonce() }}" :style="'width:' + progress[messages.indexOf(message)] + '%'" class="absolute left-0 h-0.5 bg-gray-300"></div>
+                    <div  :style="'width:' + progress[messages.indexOf(message)] + '%'" class="absolute left-0 h-0.5 bg-gray-300"></div>
                 </div>
             </div>
         </div>

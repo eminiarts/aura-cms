@@ -45,7 +45,7 @@
 
         <link rel="icon" type="image/png" sizes="32x32" href="{{ $favicon }}">
 
-        <style nonce="{{ csp_nonce() }}">[x-cloak] { display: none !important; }</style>
+        <style >[x-cloak] { display: none !important; }</style>
         <link rel="stylesheet" href="/vendor/aura/public/inter.css">
 
         @livewireStyles(['nonce' => csp_nonce()])
@@ -128,7 +128,7 @@
 
         @stack('scripts')
 
-        <script nonce="{{ csp_nonce() }}">
+        <script >
             if (localStorage.getItem('leftSidebar') === 'true') {
                 document.querySelector('.aura-navigation-collapsed').setAttribute('x-cloak', '');
             } else {
@@ -136,7 +136,7 @@
             }
         </script>
 
-  <script nonce="{{ csp_nonce() }}">
+  <script >
       // after 100ms trigger a window resize event to force the chart to redraw
       setTimeout(function() {
           window.dispatchEvent(new Event('resize'));

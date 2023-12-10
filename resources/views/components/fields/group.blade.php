@@ -7,7 +7,7 @@ if (!isset($this->post['fields'][$slug])) {
 $model = $this->model;
 @endphp
 
-<style nonce="{{ csp_nonce() }}">
+<style >
   #post-field-{{ Str::slug(optional($field)['slug']) }}-wrapper {
     width: {{ optional(optional($field)['style'])['width'] ?? '100' }}%;
   }

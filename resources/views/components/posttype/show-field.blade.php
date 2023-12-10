@@ -48,7 +48,7 @@
               style="width: {{ optional(optional($f)['style'])['width'] ?? '100' }}%;"
               id="field_{{ optional($f)['_id'] }}"
               class="px-4 reorder-item draggable-item"
-              nonce="{{ csp_nonce() }}"
+              
             >
               @include('aura::components.posttype.show-field', ['field' => $f, 'slug' => $slug])
             </div>

@@ -14,7 +14,7 @@
     <div
         x-show="open"
         style="display: none"
-        nonce="{{ csp_nonce() }}"
+        
         x-on:keydown.escape.prevent.stop="open = false"
         role="dialog"
         aria-modal="true"

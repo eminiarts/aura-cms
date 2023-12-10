@@ -1,11 +1,11 @@
 <div>
-    <style nonce="{{ csp_nonce() }}">
+    <style >
         .search-list-icon svg {
             width: 1.5rem;
             height: 1.5rem;
         }
     </style>
-    <div x-show="show" x-data="globalSearch" x-ref="searchContainer" nonce="{{ csp_nonce() }}" style="display: none;" @search.window="openSearch()" @keydown.escape.window="closeSearch()" @keydown.cmd.1.prevent="openBookmark(1)" @keydown.cmd.2.prevent="openBookmark(2)" @keydown.cmd.3.prevent="openBookmark(3)" @keydown.cmd.4.prevent="openBookmark(4)" @keydown.cmd.5.prevent="openBookmark(5)" @keydown.cmd.6.prevent="openBookmark(6)" @keydown.cmd.7.prevent="openBookmark(7)" @keydown.cmd.8.prevent="openBookmark(8)" @keydown.cmd.9.prevent="openBookmark(9)">
+    <div x-show="show" x-data="globalSearch" x-ref="searchContainer"  style="display: none;" @search.window="openSearch()" @keydown.escape.window="closeSearch()" @keydown.cmd.1.prevent="openBookmark(1)" @keydown.cmd.2.prevent="openBookmark(2)" @keydown.cmd.3.prevent="openBookmark(3)" @keydown.cmd.4.prevent="openBookmark(4)" @keydown.cmd.5.prevent="openBookmark(5)" @keydown.cmd.6.prevent="openBookmark(6)" @keydown.cmd.7.prevent="openBookmark(7)" @keydown.cmd.8.prevent="openBookmark(8)" @keydown.cmd.9.prevent="openBookmark(9)">
     <div class="fixed inset-0 z-30">
         <div class="absolute inset-0 backdrop-blur-sm bg-black/10"></div>
         <div class="flex absolute inset-0 justify-center items-center">
@@ -17,7 +17,7 @@
                         </svg>
                     </div>
 
-                    <input x-model.debounce.300ms="search" x-ref="searchField" class="py-4 px-2 focus:outline-none relative block w-full rounded-none rounded-t-md bg-transparent focus:z-10 focus:border-0 focus:!border-none sm:text-sm" nonce="{{ csp_nonce() }}" style="border: none; box-shadow: none;" aria-autocomplete="list" aria-labelledby="docsearch-label" id="docsearch-input" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="{{ __('Search') }}" maxlength="64" type="search"
+                    <input x-model.debounce.300ms="search" x-ref="searchField" class="py-4 px-2 focus:outline-none relative block w-full rounded-none rounded-t-md bg-transparent focus:z-10 focus:border-0 focus:!border-none sm:text-sm"  style="border: none; box-shadow: none;" aria-autocomplete="list" aria-labelledby="docsearch-label" id="docsearch-input" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="{{ __('Search') }}" maxlength="64" type="search"
 
                         @keydown.arrow-up.prevent="selectPrevious()"
                         @keydown.arrow-down.prevent="selectNext()"
@@ -160,7 +160,7 @@
 </div>
 
 
-<script nonce="{{ csp_nonce() }}">
+<script >
 	document.addEventListener('alpine:init', () => {
 		Alpine.data('globalSearch', () => ({
             loading: false,

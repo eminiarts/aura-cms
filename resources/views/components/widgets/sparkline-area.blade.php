@@ -15,7 +15,7 @@
 
         <div class="-mx-6 -mb-6">
             <div class="w-full">
-                <div style="height: 80px;" nonce="{{ csp_nonce() }}" x-data="{
+                <div style="height: 80px;"  x-data="{
               values: {{ json_encode(array_values($this->values['current'])) }},
               labels: {{ json_encode(array_keys($this->values['current'])) }},
               init() {
@@ -144,9 +144,9 @@
         <svg viewBox="0 0 300 80" preserveAspectRatio="none" class="w-full h-16">
             <defs>
                 <linearGradient id="grad" x1="0%" y1="0%" x2="0%" y2="100%">
-                    <stop offset="0%" nonce="{{ csp_nonce() }}" style="stop-color:#e2e8f0;stop-opacity:1" />
-                    <stop offset="30%" nonce="{{ csp_nonce() }}" style="stop-color:#e2e8f0;stop-opacity:0.5" />
-                    <stop offset="70%" nonce="{{ csp_nonce() }}" style="stop-color:#e2e8f0;stop-opacity:0" />
+                    <stop offset="0%"  style="stop-color:#e2e8f0;stop-opacity:1" />
+                    <stop offset="30%"  style="stop-color:#e2e8f0;stop-opacity:0.5" />
+                    <stop offset="70%"  style="stop-color:#e2e8f0;stop-opacity:0" />
                 </linearGradient>
             </defs>
             <g fill="none" stroke="#e2e8f0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">

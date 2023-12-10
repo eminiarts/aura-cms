@@ -24,7 +24,7 @@
 
         @include('aura::components.layout.colors')
 
-        <script nonce="{{ csp_nonce() }}">
+        <script >
             @if(optional($settings)['darkmode-type'] == 'dark')
                 document.documentElement.classList.add('dark')
             @elseif (optional($settings)['darkmode-type'] == 'light')
@@ -50,7 +50,7 @@
             ($imageDark = Attachment::find(app('aura')::option('login-bg-darkmode'))) &&
             $imageDark->isNotEmpty()
         )
-        <script nonce="{{ csp_nonce() }}">
+        <script >
             document.addEventListener('DOMContentLoaded', function() {
                 const images = document.querySelectorAll('[data-darkmode-image]')
                 const darkmode = window.matchMedia('(prefers-color-scheme: dark)').matches
@@ -71,7 +71,7 @@
             @else
             {{-- style="background-image: url('/vendor/aura/public/img/bgop1.jpg');"
             @endif --}}
-            nonce="{{ csp_nonce() }}"
+            
             @if (
                 ($image = Attachment::find(app('aura')::option('login-bg'))) &&
                 $image->isNotEmpty() &&

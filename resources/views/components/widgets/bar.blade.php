@@ -13,7 +13,7 @@
 
     <div class="">
       <div class="w-full">
-          <style nonce="{{ csp_nonce() }}">
+          <style >
             .apexcharts-tooltip-text,
 .apexcharts-tooltip-series,
 .apexcharts-tooltip-y-group,
