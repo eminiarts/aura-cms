@@ -20,6 +20,11 @@ class Option extends Resource
         'value' => 'array',
     ];
 
+    public static function byName($name)
+    {
+        return static::where('name', $name)->first();
+    }
+
     protected $fillable = ['name', 'value', 'team_id'];
 
     protected static ?string $group = 'Aura';
