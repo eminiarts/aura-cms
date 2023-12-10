@@ -29,11 +29,12 @@ class TeamPolicy
      *
      * @return mixed
      */
-    public function create(User $user)
+    public function create(User $user, $team)
     {
-        // if ($resource::$createEnabled === false) {
-        //     return false;
-        // }
+
+        if ($team::$createEnabled === false) {
+            return false;
+        }
 
         // if ($user->resource->isSuperAdmin()) {
         //     return true;
@@ -41,7 +42,7 @@ class TeamPolicy
 
         // todo: maybe do this as a setting
 
-        return false;
+        return true;
     }
 
     /**
