@@ -40,8 +40,6 @@ class Donut extends Widget
             $query->where('relatable_type', get_class($this->model));
         }])->get();
 
-        dd($taxonomies->toArray());
-
         $posts = $this->model->query()
             ->where('created_at', '>=', $start)
             ->where('created_at', '<', $end);

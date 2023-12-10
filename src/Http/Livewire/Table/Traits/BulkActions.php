@@ -58,7 +58,6 @@ trait BulkActions
      */
     public function selectAll()
     {
-        dd('selectAll');
         $this->selectAll = true;
     }
 
@@ -79,7 +78,6 @@ trait BulkActions
     // when page is updated, reset selectPage
     public function updatedPage()
     {
-        // dd('updatedPage');
         $this->selectPage = false;
     }
 

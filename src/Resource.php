@@ -114,7 +114,6 @@ class Resource extends Model
         //     $this->bulkActions['callManualFlow'] = $flow->name;
         // }
 
-        // dd($this->bulkActions);
         return $this->bulkActions;
     }
 
@@ -134,7 +133,6 @@ class Resource extends Model
             $defaultValues = collect($this->inputFieldsSlugs())
                 ->mapWithKeys(fn ($value, $key) => [$value => null])
                 ->map(fn ($value, $key) => $meta[$key] ?? $value)
-                //  ->dd()
                 ->map(function ($value, $key) {
                     // if the value is in $this->hidden, set it to null
                     if (in_array($key, $this->hidden)) {
@@ -171,8 +169,6 @@ class Resource extends Model
                     $class = $this->fieldClassBySlug($key);
 
                     if ($class && isset(optional($this)->{$key}) && method_exists($class, 'get')) {
-                        dd('get here');
-
                         return $class->get($class, $this->{$key} ?? null);
                     }
 
