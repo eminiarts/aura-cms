@@ -35,7 +35,6 @@ class MediaManager extends ModalComponent
     public function select()
     {
         // Emit update Field
-        ray('emit updateField', $this->selected);
         $this->emit('updateField', [
             'slug' => $this->fieldSlug,
             'value' => $this->selected,

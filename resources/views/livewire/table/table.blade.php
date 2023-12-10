@@ -258,5 +258,4 @@ x-data="{
     </main>
 </div> {{-- This closes the context menu --}}
 
-    Selected 3: {{ count($selected) }}
 </div>
