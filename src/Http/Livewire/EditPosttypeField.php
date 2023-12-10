@@ -33,8 +33,6 @@ class EditPosttypeField extends Component
         $this->post['fields'] = $params['field'];
         $this->field = $params['field'];
 
-        ray('params', $params);
-
         // Check if field is an input field
         if (app($this->field['type'])->isInputField()) {
             // if $this->post['fields']['on_index'] is not set, set it to true (default)
@@ -87,8 +85,6 @@ class EditPosttypeField extends Component
 
         $this->field = $field;
         $this->post['fields'] = $field;
-        ray('newFields', $field, $this->field, $this->post['fields']);
-
         $this->updatedField();
 
         // $this->emit('refreshComponent');
@@ -142,7 +138,6 @@ class EditPosttypeField extends Component
     {
         // if $this->field is undefined, return
         if (! isset($this->field['type'])) {
-            ray('no type');
 
             return;
         }

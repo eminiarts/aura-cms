@@ -23,7 +23,6 @@ class Aura
 
     // public function __construct()
     // {
-    //     ray('construct');
     // }
 
     /**
@@ -101,8 +100,6 @@ class Aura
         $taxonomies = collect($this->getTaxonomies())->map(function ($resource) {
             return Str::afterLast($resource, '\\');
         });
-
-        // ray($taxonomies, $slug);
 
         $index = $taxonomies->search(function ($item) use ($slug) {
             return Str::slug($item) == Str::slug($slug);

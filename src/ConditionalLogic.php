@@ -8,9 +8,6 @@ class ConditionalLogic
 
     public static function checkCondition($model, $field, $post = null)
     {
-
-        // ray('checkCondition', $field);
-
         $conditions = $field['conditional_logic'] ?? null;
         if (! $conditions || ! auth()->user()) {
             return true;
@@ -64,8 +61,6 @@ class ConditionalLogic
 
     public static function shouldDisplayField($model, $field, $post = null)
     {
-        // ray('shouldDisplayField', $model, $field, $post);
-
         if (! $field) {
             return true;
         }

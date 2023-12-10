@@ -31,7 +31,6 @@ class Index extends Component
         }
 
         // Authorize if the User can see this Post
-        // ray('hierer', $this->post);
         $this->authorize('viewAny', $this->post);
 
         $this->fields = $this->post->inputFields();

@@ -52,8 +52,6 @@ class GlobalSearch extends Component
                 return app($resource)->isMetaField($field);
             });
 
-            // ray($metaFields);
-
             $results = $model->select('posts.*')
                 ->leftJoin('post_meta', function ($join) use ($metaFields) {
                     $join->on('posts.id', '=', 'post_meta.post_id')

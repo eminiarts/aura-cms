@@ -48,7 +48,7 @@
         <style >[x-cloak] { display: none !important; }</style>
         <link rel="stylesheet" href="/vendor/aura/public/inter.css">
 
-        @livewireStyles(['nonce' => csp_nonce()])
+        @livewireStyles
 
         @vite(['resources/css/app.css'], 'vendor/aura')
 
@@ -122,7 +122,7 @@
 
         <livewire:aura::notifications />
 
-        @livewireScripts(['nonce' => csp_nonce()])
+        @livewireScripts
 
         @livewire('livewire-ui-modal')
 

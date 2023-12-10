@@ -95,7 +95,6 @@
 
     <div>
         @php
-            // ray($selected)
         @endphp
         @if(is_int($selected) || is_array($selected))
         {{ count($selected) }} {{ __('selected') }}

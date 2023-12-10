@@ -434,8 +434,6 @@ class User extends UserModel
         foreach ($roles as $role) {
             $permissions = $role->fields['permissions'];
 
-            // ray('roles', $permissions);
-
             if (empty($permissions)) {
                 continue;
             }

@@ -50,8 +50,6 @@ test('flow - create resource operation', function () {
     // Attach Operation_id to flow
     $flow->update(['operation_id' => $flow->operations()->first()->id]);
 
-    // ray()->stopShowingQueries();
-
     // Assert Flow has 1 Operation
     $this->assertEquals(1, $flow->operations()->count());
 

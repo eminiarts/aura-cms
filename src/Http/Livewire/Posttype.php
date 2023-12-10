@@ -416,8 +416,6 @@ class Posttype extends Component
             return (int) Str::after($id, 'field_') - 1;
         });
 
-        // ray($ids);
-
         $fields = array_values($this->fieldsArray);
 
         $fields = $ids->map(function ($id) use ($fields) {
@@ -505,8 +503,6 @@ class Posttype extends Component
         $this->saveFields($this->fieldsArray);
 
         $this->newFields = $this->model->mapToGroupedFields($this->fieldsArray);
-
-        ray($this->fieldsArray);
 
         // emit new fields
         $this->emit('newFields', $this->fieldsArray);

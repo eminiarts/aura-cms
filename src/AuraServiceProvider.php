@@ -72,8 +72,6 @@ class AuraServiceProvider extends PackageServiceProvider
     public function boot()
     {
         parent::boot();
-
-        // ray('boot');
     }
 
     public function bootGate()
@@ -157,8 +155,6 @@ class AuraServiceProvider extends PackageServiceProvider
     */
     public function configurePackage(Package $package): void
     {
-        // ray('configuring package');
-
         $package
             ->name('aura')
             ->hasConfigFile()
@@ -195,7 +191,6 @@ class AuraServiceProvider extends PackageServiceProvider
 
     public function packageBooted()
     {
-        // ray('package booted');
         if ($this->app->runningInConsole()) {
             $this->publishes([
                 $this->package->basePath('/../resources/dist') => public_path("vendor/{$this->package->shortName()}"),
@@ -297,7 +292,6 @@ class AuraServiceProvider extends PackageServiceProvider
 
     public function registeringPackage()
     {
-        // ray('registering package');
         //$package->hasRoute('web');
         //$this->loadRoutesFrom(__DIR__.'/../routes/web.php');
     }

@@ -90,8 +90,6 @@ trait AuraModelConfig
         $this->baseFillable = $this->getFillable();
 
         // Merge fillable fields from fields
-        // ray()->count();
-        // dd($this->inputFieldsSlugs());
         $this->mergeFillable($this->inputFieldsSlugs());
     }
 
@@ -118,7 +116,6 @@ trait AuraModelConfig
     //         return $value;
     //     }
 
-    //     // ray()->count();
     //     return $this->displayFieldValue($key, $value);
     // }
 

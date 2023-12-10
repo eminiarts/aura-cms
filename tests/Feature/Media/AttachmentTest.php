@@ -34,8 +34,6 @@ it('creates an attachment', function () {
     // Access to undeclared static property is not possible.
     // If you need to debug the fieldsAttributeCache, you should instantiate the object and access the property on the instance.
 
-    // ray($attachment->fieldsAttributeCache);
-
     expect($attachment)->toBeInstanceOf(Attachment::class);
     expect($attachment->name)->toEqual('Test Attachment');
 });

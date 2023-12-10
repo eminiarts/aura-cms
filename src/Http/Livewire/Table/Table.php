@@ -397,7 +397,6 @@ class Table extends Component
 
     public function openBulkActionModal($action, $data)
     {
-        // ray($data, $this->selectedRowsQuery->get());
 
         $this->emit('openModal', $data['modal'], [
             'action' => $action,
@@ -439,7 +438,6 @@ class Table extends Component
     public function selectFieldRows($data)
     {
         if ($data['slug'] == $this->field['slug']) {
-            // ray('selectFieldRows', $data);
 
             $this->selected = $data['value'];
         }
@@ -453,7 +451,6 @@ class Table extends Component
      */
     public function selectRow($id)
     {
-        // ray('selectRow', $id);
         $this->selected = $id;
         $this->lastClickedRow = $id;
     }
@@ -497,8 +494,6 @@ class Table extends Component
     {
         $this->selectAll = false;
         $this->selectPage = false;
-
-        // ray('updated selected');
 
         // Only allow the max number of selected rows.
         if (optional($this->field)['max'] && count($this->selected) > $this->field['max']) {
