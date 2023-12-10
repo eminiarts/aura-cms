@@ -31,9 +31,13 @@ class TeamPolicy
      */
     public function create(User $user)
     {
-        if ($user->resource->isSuperAdmin()) {
-            return true;
-        }
+        // if ($resource::$createEnabled === false) {
+        //     return false;
+        // }
+
+        // if ($user->resource->isSuperAdmin()) {
+        //     return true;
+        // }
 
         // todo: maybe do this as a setting
 
@@ -91,6 +95,10 @@ class TeamPolicy
      */
     public function update(User $user, Team $team)
     {
+        if ($team::$editEnabled === false) {
+            return false;
+        }
+
         return $user->ownsTeam($team);
     }
 
@@ -136,6 +144,9 @@ class TeamPolicy
      */
     public function viewAny(User $user, Team $team)
     {
+        if ($team::$indexViewEnabled === false) {
+            return false;
+        }
 
         if ($user->resource->isSuperAdmin()) {
             return true;
