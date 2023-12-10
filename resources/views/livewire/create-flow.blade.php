@@ -1,7 +1,7 @@
 <div class="">
 
 
-<style nonce="{{ csp_nonce() }}">
+<style >
     .flows:before {
         position: absolute;
         top: -4px;
@@ -51,7 +51,7 @@
 
 <div class="overflow-x-auto overflow-y-hidden w-full bg-gray-50 rounded-xl border-2 border-gray-500/30">
     <div x-data="flow"
-    class="w-full relative grid text-gray-900 grid-rows-[repeat(auto-fill,20px)] grid-cols-[repeat(auto-fill,20px)] flows" x-ref="flows" @mousemove="moveOperation($event)" @mouseup="cancelMove($event)" nonce="{{ csp_nonce() }}" :style="{'width' : canvasWidth + 'px', 'height' : canvasHeight + 'px' }">
+    class="w-full relative grid text-gray-900 grid-rows-[repeat(auto-fill,20px)] grid-cols-[repeat(auto-fill,20px)] flows" x-ref="flows" @mousemove="moveOperation($event)" @mouseup="cancelMove($event)"  :style="{'width' : canvasWidth + 'px', 'height' : canvasHeight + 'px' }">
 
     <!-- position absoult, svg -->
     <div class="absolute top-0 left-0 w-full h-full">
@@ -71,7 +71,7 @@
     <div
         x-cloak
         class="relative col-span-8 p-4 bg-white rounded-lg border-2 shadow-md cursor-move select-none border-primary-400 row-span-9 operation" :data-operation="flow.id"
-        nonce="{{ csp_nonce() }}"
+        
         :style="{ '--pos-x': 2, '--pos-y': 2 }"
 
         :class="{'selected': selectedOperation === flow }"
@@ -140,7 +140,7 @@
             <div
                 x-cloak
                 class="relative col-span-8 p-4 bg-white rounded-lg border-2 shadow-md cursor-move select-none border-gray-500/30 row-span-9 operation" :data-operation="operation.id"
-                nonce="{{ csp_nonce() }}"
+                
                 :style="{ '--pos-x': operation.options.x, '--pos-y': operation.options.y }"
 
                 :class="{'selected': selectedOperation === operation }"
@@ -250,7 +250,7 @@
 
 {{-- <button wire:click="createOperation" class="p-2 text-white bg-blue-500 rounded-full">Create Operation</button> --}}
 
-<script nonce="{{ csp_nonce() }}">
+<script >
     class Vector2 {
         x = 0;
         y = 0;
@@ -322,7 +322,7 @@
 </script>
 
 
-<script nonce="{{ csp_nonce() }}">
+<script >
 
     document.addEventListener('livewire:load', function () {
         // Init alpine flow component

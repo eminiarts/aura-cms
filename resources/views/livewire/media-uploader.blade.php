@@ -132,7 +132,7 @@
                 </div>
 
                 <div class="bg-transparent dark:bg-gray-900 h-[4px] w-full mt-0" x-show="isUploading">
-                    <style nonce="{{ csp_nonce() }}">
+                    <style >
                         .progress-bar::before {
                             content: '';
                             display: block;

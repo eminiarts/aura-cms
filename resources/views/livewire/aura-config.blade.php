@@ -17,7 +17,7 @@
     </div>
 
     @foreach($this->fieldsForView as $key => $field)
-    <style nonce="{{ csp_nonce() }}">
+    <style >
         #post-field- {
                 {
                 optional($field)['slug']

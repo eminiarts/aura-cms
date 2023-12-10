@@ -1,4 +1,4 @@
-<style nonce="{{ csp_nonce() }}">
+<style >
   #post-field-{{ optional($field)['slug'] }}-wrapper {
     width: {{ optional(optional($field)['style'])['width'] ?? '100' }}%;
   }

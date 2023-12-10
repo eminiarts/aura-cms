@@ -23,7 +23,7 @@
     {{-- @dump($post) --}}
     {{-- @dump($this->fields) --}}
 
-    <style nonce="{{ csp_nonce() }}">
+    <style >
         .aura-view-post-container input, .aura-input {
             border: 0 !important;
             background-color: var(--gray-100)!important;

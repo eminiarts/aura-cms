@@ -19,7 +19,7 @@
 
     <div class="-mx-4 mb-4">
         @foreach($this->fields as $key => $field)
-        <style nonce="{{ csp_nonce() }}">
+        <style >
             #post-field-{{ optional($field)['slug'] }}-wrapper {
                 width: {{ optional(optional($field)['style'])['width'] ?? '100' }}%;
             }

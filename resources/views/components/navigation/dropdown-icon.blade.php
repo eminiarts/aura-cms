@@ -60,7 +60,7 @@ $settings = Eminiarts\Aura\Facades\Aura::getOption('team-settings');
 
 </div>
 
-<script nonce="{{ csp_nonce() }}">
+<script >
   // when alpine is ready
   document.addEventListener('alpine:init', () => {
     // define an alpinejs component named 'userDropdown'
