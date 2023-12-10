@@ -14,6 +14,16 @@ trait InteractsWithTable
         return 'list';
     }
 
+    public function defaultTableSort()
+    {
+        return 'id';
+    }
+
+    public function defaultTableSortDirection()
+    {
+        return 'desc';
+    }
+
     public function showTableSettings()
     {
         return true;
