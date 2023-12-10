@@ -103,8 +103,7 @@
             removeUpload(filename) {
                 @this.removeUpload('files', filename)
             },
-        }"
-        >
+        }">
 
             <div class="" x-on:drop="isDropping = false" x-on:drop.prevent="handleFileDrop($event)"
                 x-on:dragover.prevent="isDropping = true; dragover($event);"
@@ -186,8 +185,6 @@
 
                         <livewire:aura::table :model="$post" :field="$field" />
                     </div>
-
-                    Selected: {{ count($selected) }}
 
 
                     @endif

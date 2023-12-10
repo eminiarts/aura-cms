@@ -3,8 +3,6 @@
         <livewire:aura::media-uploader :field="$field" :selected="$selected" :table="true" :model="app('Eminiarts\Aura\Resources\Attachment')" />
     </div>
 
-    Selected: {{ count($selected) }}
-
     {{-- Footer with 2 buttons: close and select --}}
     <div class="flex justify-end mt-4">
         <x-aura::button class="ml-4" wire:click="$emit('closeModal')">
