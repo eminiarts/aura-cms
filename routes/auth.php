@@ -14,7 +14,7 @@ use Eminiarts\Aura\Http\Controllers\SwitchTeamController;
 use Illuminate\Support\Facades\Route;
 use Laravel\Fortify\Http\Controllers\AuthenticatedSessionController;
 
-Route::get('logout', [AuthenticatedSessionController::class, 'destroy'])->name('logout');
+Route::get('logout', [AuthenticatedSessionController::class, 'destroy'])->name('aura.logout');
 
 Route::middleware('guest')->name('aura.')->group(function () {
 
