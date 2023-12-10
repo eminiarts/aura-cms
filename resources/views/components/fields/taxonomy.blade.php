@@ -10,7 +10,7 @@ x-data="{
     value: $wire.entangle('post.terms.{{ $taxonomy->title }}').defer,
     options: {{ Js::from($values) }},
     init() {
-        
+
         this.$nextTick(() => {
             let choices = new Choices(this.$refs.select, {
                 addItems: true,
@@ -18,10 +18,10 @@ x-data="{
     {{-- removeItemButton: true, --}}
     editItems: true,
             })
-            
+
             let refreshChoices = () => {
                 let selection = this.multiple ? this.value : [this.value]
-                
+
                 choices.clearStore()
                 choices.setChoices(this.options.map(({ value, label }) => ({
                     value,
@@ -29,26 +29,26 @@ x-data="{
                     selected: selection.includes(value),
                 })))
             }
-            
+
             refreshChoices()
-            
+
             this.$refs.select.addEventListener('change', () => {
                 this.value = choices.getValue(true)
             })
-            
+
             this.$watch('value', () => refreshChoices())
             this.$watch('options', () => refreshChoices())
         })
     }
 }"
-class="max-w-sm mx-auto"
+class="mx-auto max-w-sm"
 >
 <select x-ref="select" :multiple="multiple" ></select>
 
 @once
 @push('scripts')
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/choices.js/public/assets/styles/choices.min.css" />
-<script src="https://cdn.jsdelivr.net/npm/choices.js/public/assets/scripts/choices.min.js"></script>
+<link rel="stylesheet" href="/public/js/choicesJS/choices.min.css" />
+<script src="/public/js/choicesJS/choices.min.js"></script>
 @endpush
-@endonce 
+@endonce
 </div>
