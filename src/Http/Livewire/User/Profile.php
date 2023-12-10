@@ -269,10 +269,13 @@ class Profile extends Component
 
     public function logoutOtherBrowserSessions()
     {
-        DB::connection(config('session.connection'))->table(config('session.table', 'sessions'))
-        ->where('user_id', Auth::user()->getAuthIdentifier())
-        ->where('id', '!=', request()->session()->getId())
-        ->delete();
+        if (request()->hasSession()) {
+            // dd('here');
+            DB::connection(config('session.connection'))->table(config('session.table', 'sessions'))
+            ->where('user_id', Auth::user()->getAuthIdentifier())
+            ->where('id', '!=', request()->session()->getId())
+            ->delete();
+        }
     }
 
     public function save()
