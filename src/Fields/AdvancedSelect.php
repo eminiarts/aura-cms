@@ -35,9 +35,13 @@ class AdvancedSelect extends Field
 
         // return $item->title;
 
-        return $items->map(function ($item) {
-            return $item->title();
-        })->implode(', ');
+        if ($items instanceof \Illuminate\Support\Collection) {
+            return $items->map(function ($item) {
+                return $item->title();
+            })->implode(', ');
+        }
+
+        return $items->title();
     }
 
     public function get($field, $value)
