@@ -154,8 +154,8 @@ class Edit extends Component
 
         unset($this->post['fields']['group']);
 
-        if (isset($this->post['fields']['signed_mzkb_pdf'])) {
-            $signed_mzkb_pdf = $this->post['fields']['signed_mzkb_pdf'];
+        if (isset($this->post['fields']['signed_mzkb_pdf_file'])) {
+            $signed_mzkb_pdf = $this->post['fields']['signed_mzkb_pdf_file'];
             if (! is_string($signed_mzkb_pdf)) {
                 
                 $signed_mzkb_pdfPath = $signed_mzkb_pdf->store('mzkb', 'public');
