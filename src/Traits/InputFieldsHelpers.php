@@ -2,66 +2,75 @@
 
 namespace Eminiarts\Aura\Traits;
 
-use Eminiarts\Aura\Pipeline\ApplyGroupedInputs;
 use Illuminate\Pipeline\Pipeline;
-use Illuminate\Support\Facades\Cache;
 
 trait InputFieldsHelpers
 {
-    protected $fieldsCollectionCache;
+    protected static $fieldClassesBySlug = [];
 
-    public function clearModelCache()
-    {
-        // set accessibleFieldKeysCache to null
-        $this->accessibleFieldKeysCache = null;
+    protected static $fieldsBySlug = [];
 
-        // Generate the cache keys based on the model class
-        $fieldsCacheKey = $this->getFieldCacheKey();
-        $mappedFieldsCacheKey = $this->getFieldCacheKey().'-mappedFields';
+    protected static $fieldsCollectionCache = [];
 
-        // Check if the cache keys are bound and remove them
-        if (app()->bound($fieldsCacheKey)) {
-            app()->offsetUnset($fieldsCacheKey);
-        }
+    protected static $inputFieldSlugs = [];
 
-        if (app()->bound($mappedFieldsCacheKey)) {
-            app()->offsetUnset($mappedFieldsCacheKey);
-        }
-    }
+    protected static $mappedFields = [];
 
     public function fieldBySlug($slug)
     {
-        return $this->fieldsCollection()->firstWhere('slug', $slug);
+
+        // Construct a unique key using the class name and the slug
+        $key = get_class($this).'-'.$slug;
+
+        // If this key exists in the static array, return the cached result
+        if (isset(self::$fieldsBySlug[$key])) {
+            return self::$fieldsBySlug[$key];
+        }
+
+        $result = $this->fieldsCollection()->firstWhere('slug', $slug);
+
+        self::$fieldsBySlug[$key] = $result;
+
+        return $result;
     }
 
     public function fieldClassBySlug($slug)
     {
-        if (optional($this->fieldBySlug($slug))['type']) {
-            return app($this->fieldBySlug($slug)['type']);
+        // Construct a unique key using the class name and the slug
+        $key = get_class($this).'-'.$slug;
+
+        // If this key exists in the static array, return the cached result
+        if (isset(self::$fieldClassesBySlug[$key])) {
+            return self::$fieldClassesBySlug[$key];
         }
 
-        return false;
+        // Otherwise, perform the original operation
+        $field = $this->fieldBySlug($slug);
+        $result = false;
+
+        if (optional($field)['type']) {
+            $result = app($field['type']);
+        }
+
+        // Store the result in the static array
+        self::$fieldClassesBySlug[$key] = $result;
+
+        // Return the result
+        return $result;
     }
 
     public function fieldsCollection()
     {
-        return collect($this->getFields());
+        // return collect($this->getFields());
+        $class = get_class($this);
 
-        // Generate the cache key based on the model class
-        $cacheKey = $this->getFieldCacheKey();
-
-        // Check if the cache already contains the result for this model class
-        if (! app()->bound($cacheKey)) {
-            // If the cache doesn't contain the result, calculate it and store it in the cache
-            $fieldsCollection = collect($this->getFields());
-            app()->singleton($cacheKey, function () use ($fieldsCollection) {
-                return $fieldsCollection;
-            });
+        if (isset(self::$fieldsCollectionCache[$class])) {
+            return self::$fieldsCollectionCache[$class];
         }
 
-        // Return the cached result
-        return app($cacheKey);
+        self::$fieldsCollectionCache[$class] = collect($this->getFields());
 
+        return self::$fieldsCollectionCache[$class];
     }
 
     public function findBySlug($array, $slug)
@@ -77,11 +86,6 @@ trait InputFieldsHelpers
                 }
             }
         }
-    }
-
-    public function getFieldCacheKey()
-    {
-        return 'fieldsCollectionCache.'.get_class($this);
     }
 
     public function getFieldSlugs()
@@ -103,11 +107,20 @@ trait InputFieldsHelpers
 
     public function inputFields()
     {
-        // ray()->count();
-        // ray()->trace();
-        // dd('hier');
-        // $newFields = $this->sendThroughPipeline($this->newFields, [ApplyGroupedInputs::class]);
         return $this->getFieldsBeforeTree()->filter(fn ($item) => in_array($item['field_type'], ['input', 'repeater', 'group']));
+    }
+
+    public function inputFieldsSlugs()
+    {
+        $class = get_class($this);
+
+        if (isset(self::$inputFieldSlugs[$class])) {
+            return self::$inputFieldSlugs[$class];
+        }
+
+        self::$inputFieldSlugs[$class] = $this->inputFields()->pluck('slug')->toArray();
+
+        return self::$inputFieldSlugs[$class];
     }
 
     public function mappedFieldBySlug($slug)
@@ -118,29 +131,28 @@ trait InputFieldsHelpers
 
     public function mappedFields()
     {
+        // mappedFields
+        $class = get_class($this);
 
-        // Generate the cache key based on the model class and method name
-        $cacheKey = $this->getFieldCacheKey().'-mappedFields';
+        if (isset(self::$mappedFields[$class])) {
+            return self::$mappedFields[$class];
+        }
 
-        // Bind the mapped fields collection as a singleton if it's not already bound
-        app()->singletonIf($cacheKey, function () {
-            return $this->fieldsCollection()->map(function ($item) {
-                $item['field'] = app($item['type'])->field($item);
-                $item['field_type'] = app($item['type'])->type;
+        self::$mappedFields[$class] = $this->fieldsCollection()->map(function ($item) {
+            $item['field'] = app($item['type'])->field($item);
+            $item['field_type'] = app($item['type'])->type;
 
-                return $item;
-            });
+            return $item;
         });
 
-        // Return the cached result
-        return app($cacheKey);
-
+        return self::$mappedFields[$class];
     }
 
     public function sendThroughPipeline($fields, $pipes)
     {
+        // dump('sendThroughPipeline');
         return app(Pipeline::class)
-            ->send($fields)
+            ->send(clone $fields)
             ->through($pipes)
             ->thenReturn();
     }

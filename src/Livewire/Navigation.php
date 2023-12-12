@@ -10,16 +10,15 @@ class Navigation extends Component
 
     public function isToggled($group)
     {
-        return !in_array($group, $this->toggledGroups);
+        return ! in_array($group, $this->toggledGroups);
     }
 
     public function mount($query = null)
     {
         $this->dispatch('NavigationMounted');
 
-        if (auth()->user()->getOptionSidebar()) {
+        if (auth()->check() && auth()->user()->getOptionSidebar()) {
             $this->toggledGroups = auth()->user()->getOptionSidebar();
-            ray($this->toggledGroups);
         } else {
             $this->toggledGroups = [];
         }

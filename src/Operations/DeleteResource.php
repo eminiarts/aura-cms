@@ -54,7 +54,6 @@ class DeleteResource extends BaseOperation
 
     public function run(Operation $operation, $post, $operationLog)
     {
-        ray('delete resource', $operation->options['type'], $operation->toArray(), $post->toArray(), $operationLog->toArray());
 
         // dd($operation->flow->trigger == 'post' && get_class($post) == $operation->flow->options['resource'], get_class($post));
         // get the resource type of the post and the resource type of the flow trigger

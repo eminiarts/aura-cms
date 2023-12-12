@@ -47,13 +47,10 @@ class GlobalSearch extends Component
 
             $searchableFields = app($resource)->getSearchableFields()->pluck('slug');
 
-
             $metaFields = $searchableFields->filter(function ($field) use ($resource) {
                 // check if it is a meta field
                 return app($resource)->isMetaField($field);
             });
-
-            // ray($metaFields);
 
             $results = $model->select('posts.*')
                 ->leftJoin('post_meta', function ($join) use ($metaFields) {
@@ -100,12 +97,20 @@ class GlobalSearch extends Component
 
     public function mount()
     {
-        $this->bookmarks = auth()->user()->getOptionBookmarks();
+        if (auth()->check()) {
+            $this->bookmarks = auth()->user()->getOptionBookmarks();
+        } else {
+            $this->bookmarks = [];
+        }
     }
 
     public function render()
     {
-        $this->bookmarks = auth()->user()->getOptionBookmarks();
+        if (auth()->check()) {
+            $this->bookmarks = auth()->user()->getOptionBookmarks();
+        } else {
+            $this->bookmarks = [];
+        }
 
         return view('aura::livewire.global-search');
     }

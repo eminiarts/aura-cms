@@ -2,11 +2,8 @@
     use Eminiarts\Aura\TransformColor;
 @endphp
 
-
-
-
 @if($settings)
-<style>
+<style >
 :root {
     --primary-25: {{ TransformColor::hexToRgb('#fbfeff') }};
     --primary-50: {{ TransformColor::hexToRgb('#E9EEFD') }};
@@ -757,7 +754,7 @@
 
 @else
 
-<style>
+<style >
 :root {
     --primary-25: {{ TransformColor::hexToRgb('#fbfeff') }};
     --primary-50: {{ TransformColor::hexToRgb('#E9EEFD') }};
@@ -799,7 +796,7 @@
 
 @endif
 
-<script>
+<script >
     function getCssVariableValue(variableName) {
         var rgb = getComputedStyle(document.documentElement).getPropertyValue(variableName);
 
@@ -822,6 +819,5 @@
             document.documentElement.classList.add('dark')
         }
     @endif
-
 
 </script>

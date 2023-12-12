@@ -72,8 +72,6 @@ class AuraServiceProvider extends PackageServiceProvider
     public function boot()
     {
         parent::boot();
-
-        // ray('boot');
     }
 
     public function bootGate()
@@ -86,9 +84,13 @@ class AuraServiceProvider extends PackageServiceProvider
         Gate::policy(User::class, UserPolicy::class);
 
         Gate::before(function ($user, $ability) {
-            if ($user->resource->isSuperAdmin()) {
-                return true;
-            }
+            //  if ($ability == 'view' && config('aura.resource-view-enabled') === false) {
+            //     return false;
+            // }
+
+            // if ($user->resource->isSuperAdmin()) {
+            //     return true;
+            // }
         });
 
         return $this;
@@ -153,8 +155,6 @@ class AuraServiceProvider extends PackageServiceProvider
     */
     public function configurePackage(Package $package): void
     {
-        // ray('configuring package');
-
         $package
             ->name('aura')
             ->hasConfigFile()
@@ -213,8 +213,8 @@ class AuraServiceProvider extends PackageServiceProvider
         });
 
         // CheckCondition Blade Directive
-        Blade::if('checkCondition', function ($model, $field) {
-            return \Eminiarts\Aura\Aura::checkCondition($model, $field);
+        Blade::if('checkCondition', function ($model, $field, $post = null) {
+            return \Eminiarts\Aura\Aura::checkCondition($model, $field, $post);
         });
 
         Blade::if('superadmin', function () {
@@ -222,7 +222,7 @@ class AuraServiceProvider extends PackageServiceProvider
         });
 
         Blade::if('local', function () {
-            return ! app()->environment('production');
+            return app()->environment('local');
         });
 
         Blade::if('production', function () {
@@ -243,29 +243,37 @@ class AuraServiceProvider extends PackageServiceProvider
     {
         parent::packageRegistered();
 
+        $this->app->singleton('hook_manager', function ($app) {
+            return new HookManager();
+        });
+
         $this->app->scoped('aura', function (): Aura {
             return new Aura();
         });
 
+        // dd(config('aura.resources.user'));
+
         Aura::registerResources([
-            \Eminiarts\Aura\Resources\Attachment::class,
-            \Eminiarts\Aura\Resources\Option::class,
-            \Eminiarts\Aura\Resources\Post::class,
-            \Eminiarts\Aura\Resources\Permission::class,
-            \Eminiarts\Aura\Resources\Role::class,
-            \Eminiarts\Aura\Resources\User::class,
+            config('aura.resources.attachment'),
+            config('aura.resources.option'),
+            config('aura.resources.post'),
+            config('aura.resources.permission'),
+            config('aura.resources.role'),
+            config('aura.resources.user'),
         ]);
+
+        // dd(config('aura.resources.post'));
 
         if (config('aura.teams')) {
             Aura::registerResources([
-                \Eminiarts\Aura\Resources\Team::class,
-                \Eminiarts\Aura\Resources\TeamInvitation::class,
+                config('aura.resources.team'),
+                config('aura.resources.team-invitation'),
             ]);
         }
 
         Aura::registerTaxonomies([
-            \Eminiarts\Aura\Taxonomies\Tag::class,
-            \Eminiarts\Aura\Taxonomies\Category::class,
+            config('aura.taxonomies.tag'),
+            config('aura.taxonomies.category'),
         ]);
 
         // Register Fields from src/Fields
@@ -284,7 +292,6 @@ class AuraServiceProvider extends PackageServiceProvider
 
     public function registeringPackage()
     {
-        // ray('registering package');
         //$package->hasRoute('web');
         //$this->loadRoutesFrom(__DIR__.'/../routes/web.php');
     }

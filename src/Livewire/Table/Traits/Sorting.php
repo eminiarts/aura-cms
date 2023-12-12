@@ -64,6 +64,11 @@ trait Sorting
             }
         }
 
+        $query->getQuery()->orders = null;
+        
+        // default sort
+        $query->orderBy($this->model->getTable().'.'.$this->model->defaultTableSort(), $this->model->defaultTableSortDirection());
+
         return $query;
     }
 

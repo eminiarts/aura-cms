@@ -4,11 +4,8 @@
             x-data="{
                 color: $wire.entangle('post.fields.{{ optional($field)['slug'] }}').defer,
                 init () {
-                    // console.log('init color', this.color);
-
                     // watch color for changes  and update the input
                     this.$watch('color', value => {
-                        // console.log('color changed', value);
                         this.$nextTick(() => {
                             $dispatch('input', this.color);
                         });
@@ -16,7 +13,7 @@
                 },
             }"
         >
-            <x-aura::input.text :disabled="optional($field)['disabled']" x-model="color" error="post.fields.{{ optional($field)['slug'] }}" placeholder="{{ optional($field)['placeholder'] ?? optional($field)['name'] }}" id="post-field-{{ optional($field)['slug'] }}"></x-aura::input.text>
+            <x-aura::input.text :disabled="$field['field']->isDisabled($this->post, $field)" x-model="color" error="post.fields.{{ optional($field)['slug'] }}" placeholder="{{ optional($field)['placeholder'] ?? optional($field)['name'] }}" id="post-field-{{ optional($field)['slug'] }}"></x-aura::input.text>
 
             <input type="color" x-model="color" class="absolute z-10 w-6 h-6 transform -translate-y-1/2 border-none rounded-full cursor-pointer top-1/2 right-4" />
         </div>
@@ -71,7 +68,6 @@
                         }
                     }
                 }).on('save', (color, source, instance) => {
-                    // console.log('Event: change', color.toHEXA().toString());
                     @if (optional($field)['format'] == 'hex')
                         this.selectedColor = color.toHEXA().toString();
                         $dispatch('input', color.toHEXA().toString());
@@ -95,7 +91,6 @@
 
                 // watch color for changes  and update the input
                 this.$watch('selectedColor', value => {
-                    // console.log('color changed', value);
                     this.$nextTick(() => {
                         // trim the value and all characters after the 9th
                         this.selectedColor = this.selectedColor.substring(0, 9);
@@ -128,7 +123,7 @@
         </div>
 
         <div class="ml-2">
-            <x-aura::input.text :disabled="optional($field)['disabled']" x-model="selectedColor" error="post.fields.{{ optional($field)['slug'] }}" placeholder="{{ optional($field)['placeholder'] ?? optional($field)['name'] }}" id="post-field-{{ optional($field)['slug'] }}"></x-aura::input.text>
+            <x-aura::input.text :disabled="$field['field']->isDisabled($this->post, $field)" x-model="selectedColor" error="post.fields.{{ optional($field)['slug'] }}" placeholder="{{ optional($field)['placeholder'] ?? optional($field)['name'] }}" id="post-field-{{ optional($field)['slug'] }}"></x-aura::input.text>
         </div>
     </div>
 
@@ -138,7 +133,7 @@
 
 
 {{-- border-gray-500/30 focus:border-primary-300 focus:ring focus:ring-primary-300  focus:ring-opacity-50 dark:focus:ring-primary-500 dark:focus:ring-opacity-50 rounded-md shadow-sm --}}
-<style>
+<style >
         .pcr-app .pcr-interaction .pcr-result {
             border: 1px solid rgb(var(--gray-300));
             border-radius: 0.5rem;
@@ -175,14 +170,12 @@
 
 @push('styles')
     @once
-
-
-        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@simonwep/pickr/dist/themes/nano.min.css"/> <!-- 'nano' theme -->
+        <link rel="stylesheet" href="/js/pickr/nano.min.css"/> <!-- 'nano' theme -->
     @endonce
 @endpush
 
 @push('scripts')
     @once
-        <script src="https://cdn.jsdelivr.net/npm/@simonwep/pickr/dist/pickr.min.js"></script>
+        <script src="/js/pickr/pickr.min.js"></script>
     @endonce
 @endpush

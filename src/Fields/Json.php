@@ -6,11 +6,18 @@ class Json extends Field
 {
     public $component = 'aura::fields.code';
 
-    // public $view = 'components.fields.code';
+    public $view = 'aura::fields.view-value';
+
+    public function display($field, $value, $model)
+    {
+        return json_encode($value);
+    }
 
     public function get($field, $value)
     {
-        return $value;
+        if (is_array($value) || $value === null) {
+            return $value;
+        }
 
         return json_decode($value, true);
     }
@@ -44,12 +51,12 @@ class Json extends Field
         ]);
     }
 
-      public function set($value)
-      {
-          if (is_array($value)) {
-              return json_encode($value);
-          }
+    public function set($value)
+    {
+        if (is_array($value)) {
+            return json_encode($value);
+        }
 
-          return $value;
-      }
+        return $value;
+    }
 }

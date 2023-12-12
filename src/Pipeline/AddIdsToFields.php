@@ -3,6 +3,7 @@
 namespace Eminiarts\Aura\Pipeline;
 
 use Closure;
+use InvalidArgumentException;
 
 class AddIdsToFields implements Pipe
 {
@@ -16,6 +17,19 @@ class AddIdsToFields implements Pipe
         $fields = collect($fields)->values()->map(function ($item, $key) use (&$currentParent, &$globalTabs, &$parentPanel, &$parentTab) {
             $item['_id'] = $key + 1;
 
+            $shouldNotBeNested = ! empty(optional($item)['exclude_from_nesting']) && $item['exclude_from_nesting'] === true;
+
+            if ($shouldNotBeNested) {
+                // Set the parent ID to the one before the current parent if it's set, or null
+                $item['_parent_id'] = $currentParent ? $currentParent['_parent_id'] : null;
+
+                if ($item['field']->group === true) {
+                    $currentParent = $item;
+                }
+
+                return $item;
+            }
+
             if (optional($item)['global'] === true && ! $globalTabs) {
                 if ($item['field']->type == 'tabs') {
                     $globalTabs = $item;
@@ -28,23 +42,11 @@ class AddIdsToFields implements Pipe
                 return $item;
             }
 
-            // if (optional($item)['global'] === true && ! $globalTabs) {
-            //     if ($item['field']->type == 'tabs') {
-            //         $globalTabs = $item;
-            //     }
-
-            //     $item['_parent_id'] = null;
-            //     $currentParent = $item;
-            //     $parentPanel = null;
-
-            //     return $item;
-            // }
-
             if ($item['field']->type !== 'panel' && $item['field']->group === true) {
                 if (optional($item)['global']) {
 
                     // If type = group
-                    if($item['field']->type === 'group') {
+                    if ($item['field']->type === 'group') {
                         $item['_parent_id'] = $currentParent['_parent_id'];
                         $currentParent = $item;
                         $parentPanel = null;
@@ -103,14 +105,12 @@ class AddIdsToFields implements Pipe
                 $parentPanel = $item;
                 $parentTab = null;
             } else {
-                dd('should never come to here');
+
+                throw new InvalidArgumentException('Unexpected field configuration.');
             }
 
             return $item;
         });
-
-
-        // dd($fields);
 
         return $next($fields);
     }

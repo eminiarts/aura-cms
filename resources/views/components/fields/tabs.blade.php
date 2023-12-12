@@ -7,14 +7,14 @@
 
 <div
     x-data="{
-        selectedId: null,
+        selectedId: 'tab-1',
         init() {
             // Set the first available tab on the page on page load.
             this.$nextTick(() => this.select(this.$id('tab', 0)))
         },
         select(id) {
-            this.selectedId = id
-            console.log('select', id);
+            this.selectedId = id;
+            window.dispatchEvent(new Event('resize'));
         },
         isSelected(id) {
             return this.selectedId === id
@@ -34,7 +34,7 @@
         role="tablist"
         class="flex items-stretch px-0 pt-3 mx-0 -mb-px space-x-0"
     >
-        @foreach(collect($field['fields']) as $key => $tab)
+        @foreach(collect($field['fields'] ?? []) as $key => $tab)
 
         {{-- if there are no fields, continue --}}
         @if(!optional($tab)['fields'] || !count($tab['fields']))
@@ -51,7 +51,7 @@
             }
         @endphp
 
-        <x-aura::fields.conditions :field="$tab" :model="$model" wire:key="tab-{{ $key }}-{{ $fieldHash }}">
+        @checkCondition($this->model ?? $model, $tab, $this->post)
             <li wire:key="tab-item-{{ $key }}-{{ $fieldHash }}">
                 <button
                     :id="$id('tab', {{ $key }})"
@@ -65,20 +65,20 @@
                     class="inline-flex px-4 pb-2.5 {{ $tabHasErrors ? '!text-red-500 border-red-500' : '' }}"
                     role="tab"
                 >
-                    <span>{{ $tab['name'] }}</span>
+                    <span class="tab">{{ __($tab['name']) }}</span>
                     @if($tabHasErrors)
                         <x-aura::icon icon="exclamation" size="sm" class="ml-2" />
                     @endif
 
                 </button>
             </li>
-        </x-aura::fields.conditions>
+        @endcheckCondition
         @endforeach
 
     </ul>
 
     <div role="tabpanels" class="border-t rounded-b-lg border-gray-400/30 dark:border-gray-700">
-        @foreach($field['fields'] as $key => $field)
+        @foreach($field['fields'] ?? [] as $key => $field)
         <x-aura::fields.conditions :field="$field" :model="$model" wire:key="tab-section-condition-{{ $key }}-{{ $fieldHash }}">
             <section
                 x-show="isSelected($id('tab', {{ $key }}))"

@@ -1,10 +1,11 @@
 <x-aura::fields.wrapper :field="$field">
     <x-aura::input.text
-        :disabled="optional($field)['disabled']"
+        :disabled="$field['field']->isDisabled($this->post, $field)"
         suffix="{{ optional($field)['suffix'] }}"
         prefix="{{ optional($field)['prefix'] }}"
         type="number"
-        wire:model="post.fields.{{ optional($field)['slug'] }}"
+        placeholder="{{ optional($field)['placeholder'] ?? optional($field)['name'] }}"
+        wire:model.defer="post.fields.{{ optional($field)['slug'] }}"
         error="post.fields.{{ optional($field)['slug'] }}"
     ></x-aura::input.text>
 </x-aura::fields.wrapper>

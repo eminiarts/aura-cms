@@ -17,7 +17,7 @@
     </div>
 
     @foreach($this->fieldsForView as $key => $field)
-    <style>
+    <style >
         #post-field- {
                 {
                 optional($field)['slug']

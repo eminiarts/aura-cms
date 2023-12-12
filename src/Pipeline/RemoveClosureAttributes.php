@@ -17,6 +17,10 @@ class RemoveClosureAttributes implements Pipe
                 unset($field['relation']);
             }
 
+            if (isset($field['conditional_logic']) && $field['conditional_logic'] instanceof Closure) {
+                unset($field['conditional_logic']);
+            }
+
             return $field;
         });
 

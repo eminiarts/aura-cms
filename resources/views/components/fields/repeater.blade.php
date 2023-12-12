@@ -10,25 +10,28 @@
 <x-aura::fields.wrapper :field="$field">
 
     <div class="flex flex-col">
-
+        <ul role="list" class="overflow-hidden bg-white divide-y divide-gray-100 shadow-sm ring-1 ring-gray-900/5 sm:rounded-xl">
         @if(optional($values) && $values)
             @foreach($field['field']->transform($field, $values) as $key => $group)
-                <div class="flex flex-wrap items-center -mx-0" wire:key="repeater-{{ $key }}">
+                <li class="relative flex justify-between pb-4 pr-4 gap-x-6 hover:bg-gray-50">
+                    <div class="flex flex-wrap items-center -mx-0" wire:key="repeater-{{ $key }}">
 
-                    <div class="flex flex-wrap items-center flex-1 space-x-0">
-                    @foreach($group as $field)
-                        <x-dynamic-component :component="$field['field']->component" :field="$field" />
-                    @endforeach
-                    </div>
+                        <div class="flex flex-wrap items-center flex-1 space-x-0">
+                        @foreach($group as $field)
+                            <x-dynamic-component :component="$field['field']->component" :field="$field" />
+                        @endforeach
+                        </div>
 
-                    <div class="w-4 mt-10 ml-4">
-                        <x-aura::icon icon="chevron-up" size="xs" class="text-gray-300 cursor-pointer hover:text-gray-500" wire:click="moveRepeaterUp('{{ $slug }}', '{{ $key }}')"></x-aura::icon>
-                        <x-aura::icon icon="minus" size="xs" class="text-gray-300 cursor-pointer hover:text-red-500" wire:click="removeRepeater('{{ $slug }}', '{{ $key }}')"></x-aura::icon>
-                        <x-aura::icon icon="chevron-down" size="xs" class="text-gray-300 cursor-pointer hover:text-gray-500" wire:click="moveRepeaterDown('{{ $slug }}', '{{ $key }}')"></x-aura::icon>
+                        <div class="w-4 mt-10 ml-4">
+                            <x-aura::icon icon="chevron-up" size="xs" class="text-gray-300 cursor-pointer hover:text-gray-500" wire:click="moveRepeaterUp('{{ $slug }}', '{{ $key }}')"></x-aura::icon>
+                            <x-aura::icon icon="minus" size="xs" class="text-gray-300 cursor-pointer hover:text-red-500" wire:click="removeRepeater('{{ $slug }}', '{{ $key }}')"></x-aura::icon>
+                            <x-aura::icon icon="chevron-down" size="xs" class="text-gray-300 cursor-pointer hover:text-gray-500" wire:click="moveRepeaterDown('{{ $slug }}', '{{ $key }}')"></x-aura::icon>
+                        </div>
                     </div>
-                </div>
+                </li>
             @endforeach
         @endif
+        </ul>
     </div>
 
     <div class="mt-4">

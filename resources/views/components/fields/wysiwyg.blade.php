@@ -5,7 +5,6 @@
                 let quill = new Quill(this.$refs.quill, { theme: 'snow' })
 
                 quill.on('text-change', function () {
-                    console.log(quill.root.innerHTML);
                     $dispatch('input', quill.root.innerHTML);
                 });
             },
@@ -24,12 +23,12 @@
 
 @push('styles')
     @once
-        <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
+        <link href="/js/quill/quill.css" rel="stylesheet">
     @endonce
 @endpush
 
 @push('scripts')
     @once
-        <script src="https://cdn.quilljs.com/1.3.6/quill.js"></script>
+        <script src="/js/quill/quill.min.js"></script>
     @endonce
 @endpush

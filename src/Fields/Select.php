@@ -6,6 +6,8 @@ class Select extends Field
 {
     public $component = 'aura::fields.select';
 
+    public $view = 'aura::fields.view-value';
+
     public function getFields()
     {
         return array_merge(parent::getFields(), [
@@ -18,26 +20,13 @@ class Select extends Field
             ],
 
             [
-                'label' => 'options',
-                'name' => 'options',
+                'name' => 'Options',
                 'type' => 'Eminiarts\\Aura\\Fields\\Repeater',
                 'validation' => '',
                 'slug' => 'options',
             ],
             [
-                'label' => 'Key',
-                'name' => 'key',
-                'type' => 'Eminiarts\\Aura\\Fields\\Text',
-                'validation' => '',
-                'slug' => 'key',
-                'style' => [
-                    'width' => '50',
-                ],
-
-            ],
-            [
-                'label' => 'Value',
-                'name' => 'value',
+                'name' => 'Value',
                 'type' => 'Eminiarts\\Aura\\Fields\\Text',
                 'validation' => '',
                 'slug' => 'value',
@@ -46,6 +35,35 @@ class Select extends Field
                 ],
 
             ],
+            [
+                'name' => 'Name',
+                'type' => 'Eminiarts\\Aura\\Fields\\Text',
+                'validation' => '',
+                'slug' => 'name',
+                'style' => [
+                    'width' => '50',
+                ],
+
+            ],
+
+            [
+                'name' => 'Default Value',
+                'type' => 'Eminiarts\\Aura\\Fields\\Text',
+                'validation' => '',
+                'instructions' => 'Default value on create',
+                'exclude_from_nesting' => true,
+                'slug' => 'default',
+            ],
+
+            [
+                'name' => 'Allow Multiple',
+                'type' => 'Eminiarts\\Aura\\Fields\\Boolean',
+                'validation' => '',
+                'exclude_from_nesting' => true,
+                'slug' => 'allow_multiple',
+                'instructions' => 'Allow multiple selections?',
+            ],
+
         ]);
     }
 

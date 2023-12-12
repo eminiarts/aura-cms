@@ -2,6 +2,18 @@
 
 ## Customize Post - Index
 
+## Customize Post Edit - Header
+
+```php
+    public function editHeaderView()
+    {
+        return 'aura::livewire.post.edit-header';
+    }
+```
+
+You can customize the Post Header view by changing the `editHeaderView()` Method in your Resource.
+
+
 ## Customize Post - View
 
 You can customize the Post view by either changing Fields or you can change the Post View alltogether.

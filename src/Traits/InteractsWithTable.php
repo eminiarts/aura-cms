@@ -14,6 +14,21 @@ trait InteractsWithTable
         return 'list';
     }
 
+    public function defaultTableSort()
+    {
+        return 'id';
+    }
+
+    public function defaultTableSortDirection()
+    {
+        return 'desc';
+    }
+
+    public function showTableSettings()
+    {
+        return true;
+    }
+
     public function tableGridView()
     {
         return false;
@@ -24,8 +39,8 @@ trait InteractsWithTable
         return 'attachment.row';
     }
 
-    public function showTableSettings()
+    public function tableView()
     {
-        return true;
+        return 'aura::components.table.table';
     }
 }

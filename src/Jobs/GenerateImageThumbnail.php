@@ -61,17 +61,22 @@ class GenerateImageThumbnail implements ShouldQueue
         // Generate the thumbnails
         if ($settings && $settings['thumbnails']) {
             foreach ($settings['thumbnails'] as $size) {
-                $image = Image::make($this->attachment->path());
+                if (file_exists($this->attachment->path())) {
+                    $image = Image::make($this->attachment->path());
+                    $width = $size['width'];
 
-                $width = $size['width'];
-                $height = $size['height'];
+                    $height = $size['height'];
 
-                $image->fit($width, $height, function ($constraint) {
-                    $constraint->aspectRatio();
-                    $constraint->upsize();
-                });
+                    $image->fit($width, $height, function ($constraint) {
+                        $constraint->aspectRatio();
+                        $constraint->upsize();
+                    });
 
-                Storage::put('public/'.$size['name'].'/'.basename($this->attachment->url), (string) $image->encode());
+                    Storage::put('public/'.$size['name'].'/'.basename($this->attachment->url), (string) $image->encode());
+                } else {
+                    // throw new \Exception('File does not exist at path: ' . $this->attachment->path());
+                }
+
             }
         }
     }

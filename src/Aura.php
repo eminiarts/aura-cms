@@ -3,19 +3,19 @@
 namespace Eminiarts\Aura;
 
 use Closure;
-use RuntimeException;
-use Illuminate\Support\Str;
-use Eminiarts\Aura\Resources\User;
-use Illuminate\Support\HtmlString;
+use Eminiarts\Aura\Models\Scopes\TeamScope;
+use Eminiarts\Aura\Resources\Attachment;
 use Eminiarts\Aura\Resources\Option;
-use Illuminate\Support\Facades\File;
+use Eminiarts\Aura\Resources\User;
+use Eminiarts\Aura\Traits\DefaultFields;
+use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Filesystem\Filesystem;
 use Illuminate\Support\Facades\Cache;
-use Eminiarts\Aura\Resources\Attachment;
-use Eminiarts\Aura\Traits\DefaultFields;
+use Illuminate\Support\Facades\File;
+use Illuminate\Support\HtmlString;
+use Illuminate\Support\Str;
+use RuntimeException;
 use Symfony\Component\Finder\SplFileInfo;
-use Illuminate\Contracts\Support\Htmlable;
-use Eminiarts\Aura\Models\Scopes\TeamScope;
 
 class Aura
 {
@@ -23,7 +23,6 @@ class Aura
 
     // public function __construct()
     // {
-    //     ray('construct');
     // }
 
     /**
@@ -37,13 +36,13 @@ class Aura
 
     protected array $fields = [];
 
+    protected array $injectViews = [];
+
     protected array $resources = [];
 
     protected array $taxonomies = [];
 
     protected array $widgets = [];
-
-    protected array $injectViews = [];
 
     /**
      * Determine if Aura's published assets are up-to-date.
@@ -67,9 +66,9 @@ class Aura
         return File::get($publishedPath) === File::get(__DIR__.'/../resources/dist/manifest.json');
     }
 
-    public static function checkCondition($model, $field)
+    public static function checkCondition($model, $field, $post = null)
     {
-        return ConditionalLogic::shouldDisplayField($model, $field);
+        return ConditionalLogic::shouldDisplayField($model, $field, $post);
     }
 
     public function clearConditionsCache()
@@ -101,8 +100,6 @@ class Aura
         $taxonomies = collect($this->getTaxonomies())->map(function ($resource) {
             return Str::afterLast($resource, '\\');
         });
-
-        ray($taxonomies, $slug);
 
         $index = $taxonomies->search(function ($item) use ($slug) {
             return Str::slug($item) == Str::slug($slug);
@@ -149,13 +146,13 @@ class Aura
      */
     public function getAppResources()
     {
-        $path = config('aura.resources.path');
+        $path = config('aura.paths.resources.path');
 
         if (! file_exists($path)) {
             return [];
         }
 
-        return $this->getAppFiles($path, $filter = 'Resource', $namespace = config('aura.resources.namespace'));
+        return $this->getAppFiles($path, $filter = 'Resource', $namespace = config('aura.paths.resources.namespace'));
     }
 
     /**
@@ -271,25 +268,25 @@ class Aura
     public function getOption($name)
     {
         if (config('aura.teams')) {
-            return Cache::remember(optional(auth()->user())->current_team_id.'.aura.' . $name, now()->addHour(), function () use ($name) {
+            return Cache::remember(optional(auth()->user())->current_team_id.'.aura.'.$name, now()->addHour(), function () use ($name) {
                 $option = Option::where('name', $name)->first();
 
                 if ($option && is_string($option->value)) {
                     $settings = json_decode($option->value, true);
                 } else {
-                    return [];
+                    $settings = $option->value ?? null;
                 }
 
                 return $settings;
             });
         } else {
-            return Cache::remember('aura.' . $name, now()->addHour(), function () use ($name) {
+            return Cache::remember('aura.'.$name, now()->addHour(), function () use ($name) {
                 $option = Option::where('name', $name)->first();
 
                 if ($option && is_string($option->value)) {
                     $settings = json_decode($option->value, true);
                 } else {
-                    return [];
+                    $settings = $option->value ?? null;
                 }
 
                 return $settings;
@@ -317,45 +314,62 @@ class Aura
         return array_unique($this->widgets);
     }
 
+    public function injectView(string $name): Htmlable
+    {
+        $hooks = array_map(
+            fn (callable $hook): string => (string) app()->call($hook),
+            $this->injectViews[$name] ?? [],
+        );
+
+        return new HtmlString(implode('', $hooks));
+    }
+
     public function navigation()
     {
-        $resources = collect($this->getResources())->merge($this->getTaxonomies());
+        // Necessary to add TeamIds?
 
-        // filter resources by permission and check if user has viewAny permission
-        $resources = $resources->filter(function ($resource) {
-            $resource = app($resource);
+        return Cache::remember('user-'.auth()->id().'-navigation', 3600, function () {
 
-            return auth()->user()->can('viewAny', $resource);
-        });
+            $resources = collect($this->getResources())->merge($this->getTaxonomies());
 
-        // If a Resource is overriden, we want to remove the original from the navigation
-        $keys = $resources->map(function ($resource) {
-            return Str::afterLast($resource, '\\');
-        })->reverse()->unique()->reverse()->keys();
+            // filter resources by permission and check if user has viewAny permission
+            $resources = $resources->filter(function ($resource) {
+                $resource = app($resource);
 
-        $resources = $resources->filter(function ($value, $key) use ($keys) {
-            return $keys->contains($key);
-        })
-            ->map(fn ($r) => app($r)->navigation())
-            ->filter(fn ($r) => $r['showInNavigation'] ?? true)
-            ->sortBy('sort');
+                return auth()->user()->can('viewAny', $resource);
+            });
 
-        $grouped = array_reduce(collect($resources)->toArray(), function ($carry, $item) {
-            if ($item['dropdown'] !== false) {
-                if (! isset($carry[$item['dropdown']])) {
-                    $carry[$item['dropdown']] = [];
+            // If a Resource is overriden, we want to remove the original from the navigation
+            $keys = $resources->map(function ($resource) {
+                return Str::afterLast($resource, '\\');
+            })->reverse()->unique()->reverse()->keys();
+
+            $resources = $resources->filter(function ($value, $key) use ($keys) {
+                return $keys->contains($key);
+            })
+                ->map(fn ($r) => app($r)->navigation())
+                ->filter(fn ($r) => $r['showInNavigation'] ?? true)
+                ->sortBy('sort');
+
+            $resources = app('hook_manager')->applyHooks('navigation', $resources->values());
+
+            $grouped = array_reduce(collect($resources)->toArray(), function ($carry, $item) {
+                if ($item['dropdown'] !== false) {
+                    if (! isset($carry[$item['dropdown']])) {
+                        $carry[$item['dropdown']] = [];
+                    }
+                    $carry[$item['dropdown']]['group'] = $item['group'];
+                    $carry[$item['dropdown']]['dropdown'] = $item['dropdown'];
+                    $carry[$item['dropdown']]['items'][] = $item;
+                } else {
+                    $carry[] = $item;
                 }
-                $carry[$item['dropdown']]['group'] = $item['group'];
-                $carry[$item['dropdown']]['dropdown'] = $item['dropdown'];
-                $carry[$item['dropdown']]['items'][] = $item;
-            } else {
-                $carry[] = $item;
-            }
 
-            return $carry;
-        }, []);
+                return $carry;
+            }, []);
 
-        return collect($grouped)->groupBy('group');
+            return collect($grouped)->groupBy('group');
+        });
     }
 
     public function option($key)
@@ -386,6 +400,11 @@ class Aura
         $this->fields = array_merge($this->fields, $fields);
     }
 
+    public function registerInjectView(string $name, Closure $callback): void
+    {
+        $this->injectViews[$name][] = $callback;
+    }
+
     public function registerResources(array $resources): void
     {
         $this->resources = array_merge($this->resources, $resources);
@@ -399,21 +418,6 @@ class Aura
     public function registerWidgets(array $widgets): void
     {
         $this->widgets = array_merge($this->widgets, $widgets);
-    }
-
-    public function registerInjectView(string $name, Closure $callback): void
-    {
-        $this->injectViews[$name][] = $callback;
-    }
-
-    public function injectView(string $name): Htmlable
-    {
-        $hooks = array_map(
-            fn (callable $hook): string => (string) app()->call($hook),
-            $this->injectViews[$name] ?? [],
-        );
-
-        return new HtmlString(implode('', $hooks));
     }
 
     public function setOption($key, $value)

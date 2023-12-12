@@ -40,6 +40,8 @@ class Create extends Component
     {
         $this->slug = $slug;
 
+        $this->model = Aura::findResourceBySlug($slug);
+
         // Authorize
         $this->authorize('create', $this->model);
 
@@ -69,6 +71,10 @@ class Create extends Component
         if ($for == 'User') {
             $this->post['fields']['user_id'] = (int) $id;
         }
+
+        // Initialize the post fields with defaults
+        $this->initializeFieldsWithDefaults();
+
     }
 
     #[Computed]
@@ -92,9 +98,21 @@ class Create extends Component
 
     public function save()
     {
+        // dd($this->rules());
+
         $this->validate();
 
-        $model = $this->model->create($this->post);
+        // dd('save', $this->post);
+
+        if ($this->model->usesCustomTable()) {
+
+            $model = $this->model->create($this->post['fields']);
+
+        } else {
+
+            $model = $this->model->create($this->post);
+
+        }
 
         $this->notify('Successfully created.');
 
@@ -113,5 +131,17 @@ class Create extends Component
     public function setModel($model)
     {
         $this->model = $model;
+    }
+
+    protected function initializeFieldsWithDefaults()
+    {
+        $fields = $this->model->getFields(); // Assume this returns the fields configurations
+
+        foreach ($fields as $field) {
+            $slug = $field['slug'] ?? null;
+            if ($slug && !isset($this->post['fields'][$slug]) && isset($field['default'])) {
+                $this->post['fields'][$slug] = $field['default'];
+            }
+        }
     }
 }

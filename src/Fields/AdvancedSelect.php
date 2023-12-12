@@ -33,9 +33,15 @@ class AdvancedSelect extends Field
             return;
         }
 
-        return $items->pluck('name')->map(function ($value) {
-            return "<span class='px-2 py-1 text-xs text-white rounded-full bg-primary-500 whitespace-nowrap'>$value</span>";
-        })->implode(' ');
+        // return $item->title;
+
+        if ($items instanceof \Illuminate\Support\Collection) {
+            return $items->map(function ($item) {
+                return $item->title();
+            })->implode(', ');
+        }
+
+        return $items->title();
     }
 
     public function get($field, $value)
@@ -44,7 +50,11 @@ class AdvancedSelect extends Field
             return;
         }
 
-        return json_decode($value, true);
+        if (is_string($value)) {
+            return json_decode($value, true);
+        }
+
+        return $value;
     }
 
     public function getFields()

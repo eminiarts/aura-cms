@@ -8,6 +8,8 @@ class LivewireComponent extends Field
 
     // public $view = 'components.fields.livewire-component';
 
+    public string $type = 'livewire-component';
+
     public function getFields()
     {
         return array_merge(parent::getFields(), [

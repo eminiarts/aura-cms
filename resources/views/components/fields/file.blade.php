@@ -24,19 +24,19 @@ if($selected) {
         <div x-data="orderMedia" x-ref="container" data-slug="{{ $field['slug'] }}" class="flex flex-col px-0 mt-0 draggable-container">
             @foreach($files as $file)
             {{-- @dump($file) --}}
-            <div class="w-full mb-2 draggable-item"  wire:key="{{ $field['slug'] }}_file_{{ $file->id }}" id="{{ $field['slug'] }}_file_{{ $file->id }}">
+            <div class="mb-2 w-full draggable-item"  wire:key="{{ $field['slug'] }}_file_{{ $file->id }}" id="{{ $field['slug'] }}_file_{{ $file->id }}">
 
-                <div class="relative flex items-start justify-between">
+                <div class="flex relative justify-between items-start">
 
                     <div
-                    class="flex items-start justify-between w-full p-3 overflow-hidden bg-gray-100 rounded-lg cursor-move draggable-handle group">
+                    class="flex overflow-hidden justify-between items-start p-3 w-full bg-gray-100 rounded-lg cursor-move draggable-handle group">
 
-                        <div class="flex items-start w-full space-x-3">
-                            <div class="flex items-center justify-center w-8 h-8 mt-1 rounded-full shrink-0 bg-primary-100 text-primary-400">
+                        <div class="flex items-start space-x-3 w-full">
+                            <div class="flex justify-center items-center mt-1 w-8 h-8 rounded-full shrink-0 bg-primary-100 text-primary-400">
                                 @include('aura::attachment.icon', ['class' => 'h-4 w-4', 'attachment' => $file])
                             </div>
 
-                            <div class="flex-1 overflow-hidden text-sm truncate text-ellipsis whitespace-nowrap">
+                            <div class="overflow-hidden flex-1 text-sm truncate whitespace-nowrap text-ellipsis">
                                 <div class="block mb-1">
                                     <span class="">{{ $file->title }}</span>
                                 </div>
@@ -75,13 +75,12 @@ if($selected) {
 @once
 @push('scripts')
 
-<script>
+<script >
     // when alpine is ready
     document.addEventListener('alpine:init', () => {
         // define an alpinejs component named 'userDropdown'
         Alpine.data('orderMedia', () => ({
             init() {
-                // console.log('init orderMedia');
                 var container = this.$refs.container;
                 // get data-slug attribute from container
                 var slug = container.getAttribute('data-slug');
@@ -94,10 +93,6 @@ if($selected) {
                 });
                 sortable.on('sortable:stop', () => {
                     setTimeout(() => {
-                        // console.log('reordered!', slug, Array.from(container.querySelectorAll('.draggable-item'))
-                        // .map(el => el.id)
-                        // );
-
                         @this.reorderMedia(
                         slug,
                         Array.from(container.querySelectorAll('.draggable-item'))

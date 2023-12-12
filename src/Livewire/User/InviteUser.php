@@ -4,7 +4,6 @@ namespace Eminiarts\Aura\Livewire\User;
 
 use Eminiarts\Aura\Mail\TeamInvitation;
 use Eminiarts\Aura\Resources\Role;
-use Eminiarts\Aura\Resources\Team;
 use Eminiarts\Aura\Traits\InputFields;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Support\Arr;
@@ -71,7 +70,7 @@ class InviteUser extends ModalComponent
                     $fail('User already exists.');
                 }
 
-                if ($team->teamInvitations()->where('email', $value)->exists()) {
+                if ($team->teamInvitations()->whereMeta('email', $value)->exists()) {
                     $fail('User already invited.');
                 }
             },
@@ -84,11 +83,10 @@ class InviteUser extends ModalComponent
     {
         $this->validate();
 
+        $team = auth()->user()->currentTeam;
         // dd($this->rules());
 
-        $this->authorize('invite-users', Team::class);
-
-        $team = auth()->user()->currentTeam;
+        $this->authorize('invite-users', $team);
 
         $invitation = $team->teamInvitations()->create([
             'email' => $email = $this->post['fields']['email'],

@@ -52,8 +52,7 @@
             "Aura\\Flows\\": "plugins/aura/flows/src",
             "Aura\\Forms\\": "plugins/aura/forms/src",
             "Aura\\Pro\\": "plugins/aura/pro/src",
-            "Aura\\Export\\": "plugins/aura/export/src",
-            "Aura\\TextBlocks\\": "plugins/aura/text-blocks/src"
+            "Aura\\Export\\": "plugins/aura/export/src"
         }
     },
     "autoload-dev": {
@@ -78,13 +77,12 @@
         "laravel": {
             "providers": [
                 "Lab404\\Impersonate\\ImpersonateServiceProvider",
-                "Eminiarts\\Aura\\Providers\\FortifyServiceProvider",
+                "Eminiarts\\Aura\\Providers\\AuthServiceProvider",
                 "Eminiarts\\Aura\\AuraServiceProvider",
                 "Aura\\Pro\\ProServiceProvider",
                 "Aura\\Flows\\FlowsServiceProvider",
                 "Aura\\Forms\\FormsServiceProvider",
-                "Aura\\Export\\ExportServiceProvider",
-                "Aura\\TextBlocks\\TextBlocksServiceProvider"
+                "Aura\\Export\\ExportServiceProvider"
             ],
             "aliases": {
                 "Aura": "Eminiarts\\Aura\\Facades\\Aura"

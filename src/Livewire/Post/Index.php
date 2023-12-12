@@ -26,6 +26,10 @@ class Index extends Component
             return redirect()->route('aura.dashboard');
         }
 
+        if (!$this->post::$indexViewEnabled) {
+            return redirect()->route('aura.dashboard');
+        }
+
         // Authorize if the User can see this Post
         $this->authorize('viewAny', $this->post);
 
@@ -37,6 +41,6 @@ class Index extends Component
 
     public function render()
     {
-        return view('aura::livewire.post.index', ['post' => $this->post])->layout('aura::components.layout.app');
+        return view($this->post->indexView())->layout('aura::components.layout.app');
     }
 }

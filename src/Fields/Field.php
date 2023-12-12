@@ -37,6 +37,10 @@ class Field implements Wireable
 
     public function display($field, $value, $model)
     {
+        if (optional($field)['display_view']) {
+            return view($field['display_view'], ['row' => $model, 'field' => $field])->render();
+        }
+
         return $value;
     }
 
@@ -257,6 +261,15 @@ class Field implements Wireable
             ],
 
         ];
+    }
+
+    public function isDisabled($model, $field)
+    {
+        if (optional($field)['disabled'] instanceof \Closure) {
+            return $field['disabled']($model);
+        }
+
+        return $field['disabled'] ?? false;
     }
 
     public function isInputField()

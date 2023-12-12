@@ -1,16 +1,16 @@
 <div class="p-8">
     <h2 class="text-3xl font-semibold"> Invite User </h2>
-    
+
     <div class="flex flex-wrap">
-        
-        <div class="w-1/3">
+
+        <div class="w-1/3 pr-4">
             <div class="mb-4 -mx-4">
                 @foreach($this->fields as $key => $field)
-                <style>
+                <style >
                     #post-field-{{ optional($field)['slug'] }}-wrapper {
                         width: {{ optional(optional($field)['style'])['width'] ?? '100' }}%;
                     }
-                    
+
                     @media screen and (max-width: 768px) {
                         #post-field-{{ optional($field)['slug'] }}-wrapper {
                             width: 100%;
@@ -23,7 +23,7 @@
                 </div>
                 @endforeach
             </div>
-            
+
             <x-aura::button size="xl" wire:click="save">
             <div wire:loading>
                 <x-aura::icon.loading  />
@@ -31,9 +31,8 @@
             Invite
         </x-aura::button>
     </div>
-    
+
     <div class="w-2/3">
-        Team Invitations
         <livewire:aura::table :model="app('Eminiarts\Aura\Resources\TeamInvitation')"/>
     </div>
 </div>

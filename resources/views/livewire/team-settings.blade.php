@@ -9,7 +9,7 @@
     {{-- @dump($this->fieldsForView) --}}
 
     @foreach($this->fieldsForView as $key => $field)
-    <style>
+    <style >
         #post-field-{{ optional($field)['slug'] }}-wrapper {
             width: {{ optional(optional($field)['style'])['width'] ?? '100' }}%;
         }
@@ -32,7 +32,7 @@
         <div wire:loading>
             <x-aura::icon.loading  />
         </div>
-        Save
+        {{ __('Save') }}
     </x-aura::button>
 
     {{-- <div class="flex mt-4 space-x-4">
@@ -53,7 +53,7 @@
     </div>
 
     <div class="flex mt-4 space-x-4">
-        <div class="w-12 h-12 rounded bg-gray-50"></div>
+        <div class="w-12 h-12 bg-gray-50 rounded"></div>
         <div class="w-12 h-12 bg-gray-100 rounded"></div>
         <div class="w-12 h-12 bg-gray-200 rounded"></div>
         <div class="w-12 h-12 bg-gray-300 rounded"></div>

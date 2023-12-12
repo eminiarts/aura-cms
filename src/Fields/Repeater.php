@@ -10,10 +10,17 @@ class Repeater extends Field
 
     public string $type = 'repeater';
 
+    // public bool $showChildrenOnIndex = false;
+    // TODO: $showChildrenOnIndex should be applied to children
+
     // public $view = 'components.fields.repeater';
 
     public function get($field, $value)
     {
+        if (is_array($value)) {
+            return $value;
+        }
+
         return json_decode($value, true);
     }
 
@@ -25,6 +32,27 @@ class Repeater extends Field
         })->toArray();
 
         return array_merge($fields, [
+
+            [
+                'name' => 'Min Entries',
+                'type' => 'Eminiarts\\Aura\\Fields\\Number',
+                'validation' => '',
+                'slug' => 'min',
+                'default' => 0,
+                'style' => [
+                    'width' => '50',
+                ],
+            ],
+            [
+                'name' => 'Max Entries',
+                'type' => 'Eminiarts\\Aura\\Fields\\Number',
+                'validation' => '',
+                'slug' => 'max',
+                'default' => 0,
+                'style' => [
+                    'width' => '50',
+                ],
+            ],
 
         ]);
     }

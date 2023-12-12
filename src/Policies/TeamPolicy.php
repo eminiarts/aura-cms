@@ -17,6 +17,10 @@ class TeamPolicy
      */
     public function addTeamMember(User $user, Team $team)
     {
+        if ($user->resource->isSuperAdmin()) {
+            return true;
+        }
+
         return $user->ownsTeam($team);
     }
 
@@ -25,8 +29,19 @@ class TeamPolicy
      *
      * @return mixed
      */
-    public function create(User $user)
+    public function create(User $user, $team)
     {
+
+        if ($team::$createEnabled === false) {
+            return false;
+        }
+
+        // if ($user->resource->isSuperAdmin()) {
+        //     return true;
+        // }
+
+        // todo: maybe do this as a setting
+
         return true;
     }
 
@@ -37,6 +52,23 @@ class TeamPolicy
      */
     public function delete(User $user, Team $team)
     {
+        if ($user->resource->isSuperAdmin()) {
+            return true;
+        }
+
+        return $user->ownsTeam($team);
+    }
+
+    public function inviteUsers(User $user, Team $team)
+    {
+        if ($user->resource->isSuperAdmin()) {
+            return true;
+        }
+
+        if ($user->resource->hasPermissionTo('invite-users', $team)) {
+            return true;
+        }
+
         return $user->ownsTeam($team);
     }
 
@@ -47,6 +79,11 @@ class TeamPolicy
      */
     public function removeTeamMember(User $user, Team $team)
     {
+
+        if ($user->resource->isSuperAdmin()) {
+            return true;
+        }
+
         return $user->ownsTeam($team);
     }
 
@@ -57,6 +94,10 @@ class TeamPolicy
      */
     public function update(User $user, Team $team)
     {
+        if ($team::$editEnabled === false) {
+            return false;
+        }
+
         return $user->ownsTeam($team);
     }
 
@@ -67,6 +108,11 @@ class TeamPolicy
      */
     public function updateTeamMember(User $user, Team $team)
     {
+
+        if ($user->resource->isSuperAdmin()) {
+            return true;
+        }
+
         return $user->ownsTeam($team);
     }
 
@@ -77,6 +123,16 @@ class TeamPolicy
      */
     public function view(User $user, Team $team)
     {
+        // if ($user->resource->isSuperAdmin()) {
+        //     return true;
+        // }
+
+        // Check if the resource view is enabled
+        if ($team::$viewEnabled === false) {
+            return false;
+        }
+
+
         return $user->belongsToTeam($team);
     }
 
@@ -87,6 +143,14 @@ class TeamPolicy
      */
     public function viewAny(User $user, Team $team)
     {
+        if ($team::$indexViewEnabled === false) {
+            return false;
+        }
+
+        if ($user->resource->isSuperAdmin()) {
+            return true;
+        }
+
         return $user->ownsTeam($team);
     }
 }

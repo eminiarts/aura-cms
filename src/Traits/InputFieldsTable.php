@@ -17,6 +17,9 @@ trait InputFieldsTable
     public function getTableHeaders()
     {
         $fields = $this->inputFields()
+            ->filter(function ($field) {
+                return $field['field_type'] !== 'repeater';
+            })
             ->pluck('name', 'slug')
             ->prepend('ID', 'id');
 

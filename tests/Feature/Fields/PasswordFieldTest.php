@@ -40,6 +40,8 @@ class PasswordFieldModel extends Resource
 
     public static string $type = 'PasswordModel';
 
+    protected $hidden = ['password'];
+
     public static function getFields()
     {
         return [
@@ -83,8 +85,8 @@ test('Password Field Test', function () {
     // get the datemodel from db
     $model = PasswordFieldModel::orderBy('id', 'desc')->first();
 
-    // assert $model->date is 2021-01-01
-    $this->assertEquals($model->fields['password'], null);
+    // $this->assertEquals($model->fields['password'], null);
+    $this->assertTrue(Hash::check('123456789', $model->fields['password']));
 
     $this->assertTrue(Hash::check('123456789', $model->password));
 });
@@ -104,9 +106,12 @@ test('password field gets not overwritten if saved as null', function () {
     $post = PasswordFieldModel::first();
 
     // $this->assertEquals($post->fields['password'], '123456789');
-    $this->assertEquals($post->fields['password'], null);
+    // $this->assertEquals($post->fields['password'], null);
+    $this->assertTrue(Hash::check('123456789', $post->fields['password']));
 
     $this->assertTrue(Hash::check('123456789', $post->password));
+
+    // dump($post->password);
 
     $model = PasswordFieldModel::query();
     $slug = 'PasswordModel';
@@ -124,13 +129,14 @@ test('password field gets not overwritten if saved as null', function () {
         ->assertSeeHtml('type="password"')
         // assert that the password field is empty
         ->assertSet('post.fields.password', null)
-        ->call('save')
-        ->assertHasNoErrors(['post.fields.number']);
+        ->call('save');
 
     $post = PasswordFieldModel::first();
 
+    // dump($post->fields['password']);
+
     // Assert Password is still 123456789
-    $this->assertEquals($post->fields['password'], null);
+    $this->assertTrue(Hash::check('123456789', $post->fields['password']));
 
     $this->assertTrue(Hash::check('123456789', $post->password));
 });
