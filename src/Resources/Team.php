@@ -5,10 +5,6 @@ namespace Eminiarts\Aura\Resources;
 use Eminiarts\Aura\Database\Factories\TeamFactory;
 use Eminiarts\Aura\Models\TeamMeta;
 use Eminiarts\Aura\Resource;
-use Eminiarts\Aura\Traits\SaveFieldAttributes;
-use Eminiarts\Aura\Traits\SaveMetaFields;
-use Eminiarts\Aura\Traits\SaveTerms;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Support\Facades\Cache;
 
 class Team extends Resource
@@ -29,21 +25,37 @@ class Team extends Resource
 
     public static string $type = 'Team';
 
-    protected static ?string $group = 'Aura';
-
     protected $fillable = [
         'name', 'user_id', 'fields',
     ];
 
+    protected static ?string $group = 'Aura';
+
     protected $table = 'teams';
 
     protected static bool $title = false;
+
+    public function clearCachedOption($option)
+    {
+        $option = 'team.'.$this->id.'.'.$option;
+
+        Cache::forget($option);
+    }
 
     public function customPermissions()
     {
         return [
             'invite-users' => 'Invite users to team',
         ];
+    }
+
+    public function deleteOption($option)
+    {
+        $option = 'team.'.$this->id.'.'.$option;
+
+        Option::whereName($option)->delete();
+
+        Cache::forget($option);
     }
 
     public static function getFields()
@@ -83,58 +95,88 @@ class Team extends Resource
                     'width' => '100',
                 ],
             ],
-            [
-                'type' => 'Eminiarts\\Aura\\Fields\\Tab',
-                'name' => 'Users',
-                'slug' => 'tab-users',
-                'global' => true,
-                'on_create' => false,
-            ],
-            [
-                'name' => 'Users',
-                'slug' => 'users',
-                'type' => 'Eminiarts\\Aura\\Fields\\HasMany',
-                'resource' => 'Eminiarts\\Aura\\Resources\\User',
-                'validation' => '',
-                'conditional_logic' => [],
-                'on_index' => false,
-                'on_forms' => true,
-                'on_view' => true,
-                'style' => [
-                    'width' => '100',
-                    'class' => '!p-4',
-                ],
-            ],
-            [
-                'name' => 'Invitations',
-                'slug' => 'tab-Invitations',
-                'type' => 'Eminiarts\\Aura\\Fields\\Tab',
-                'global' => true,
-                'validation' => '',
-                'conditional_logic' => [],
-                'on_create' => false,
-            ],
-            [
-                'name' => 'Invitations',
-                'slug' => 'Invitations',
-                'type' => 'Eminiarts\\Aura\\Fields\\HasMany',
-                'resource' => 'Eminiarts\\Aura\\Resources\\TeamInvitation',
-                'validation' => '',
-                'conditional_logic' => [],
-                'on_index' => false,
-                'on_forms' => true,
-                'on_view' => true,
-                'style' => [
-                    'width' => '100',
-                    'class' => '!p-4',
-                ],
-            ],
+            // [
+            //     'type' => 'Eminiarts\\Aura\\Fields\\Tab',
+            //     'name' => 'Users',
+            //     'slug' => 'tab-users',
+            //     'global' => true,
+            //     'on_create' => false,
+            // ],
+            // [
+            //     'name' => 'Users',
+            //     'slug' => 'users',
+            //     'type' => 'Eminiarts\\Aura\\Fields\\HasMany',
+            //     'resource' => 'Eminiarts\\Aura\\Resources\\User',
+            //     'validation' => '',
+            //     'conditional_logic' => [],
+            //     'on_index' => false,
+            //     'on_forms' => true,
+            //     'on_view' => true,
+            //     'style' => [
+            //         'width' => '100',
+            //         'class' => '!p-4',
+            //     ],
+            // ],
+            // [
+            //     'name' => 'Invitations',
+            //     'slug' => 'tab-Invitations',
+            //     'type' => 'Eminiarts\\Aura\\Fields\\Tab',
+            //     'global' => true,
+            //     'validation' => '',
+            //     'conditional_logic' => [],
+            //     'on_create' => false,
+            // ],
+            // [
+            //     'name' => 'Invitations',
+            //     'slug' => 'Invitations',
+            //     'type' => 'Eminiarts\\Aura\\Fields\\HasMany',
+            //     'resource' => 'Eminiarts\\Aura\\Resources\\TeamInvitation',
+            //     'validation' => '',
+            //     'conditional_logic' => [],
+            //     'on_index' => false,
+            //     'on_forms' => true,
+            //     'on_view' => true,
+            //     'style' => [
+            //         'width' => '100',
+            //         'class' => '!p-4',
+            //     ],
+            // ],
         ];
     }
 
     public function getIcon()
     {
         return '<svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M15 21V15.6C15 15.0399 15 14.7599 14.891 14.546C14.7951 14.3578 14.6422 14.2049 14.454 14.109C14.2401 14 13.9601 14 13.4 14H10.6C10.0399 14 9.75992 14 9.54601 14.109C9.35785 14.2049 9.20487 14.3578 9.10899 14.546C9 14.7599 9 15.0399 9 15.6V21M19 21V6.2C19 5.0799 19 4.51984 18.782 4.09202C18.5903 3.71569 18.2843 3.40973 17.908 3.21799C17.4802 3 16.9201 3 15.8 3H8.2C7.07989 3 6.51984 3 6.09202 3.21799C5.71569 3.40973 5.40973 3.71569 5.21799 4.09202C5 4.51984 5 5.0799 5 6.2V21M21 21H3M9.5 8H9.51M14.5 8H14.51M10 8C10 8.27614 9.77614 8.5 9.5 8.5C9.22386 8.5 9 8.27614 9 8C9 7.72386 9.22386 7.5 9.5 7.5C9.77614 7.5 10 7.72386 10 8ZM15 8C15 8.27614 14.7761 8.5 14.5 8.5C14.2239 8.5 14 8.27614 14 8C14 7.72386 14.2239 7.5 14.5 7.5C14.7761 7.5 15 7.72386 15 8Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+    }
+
+    public function getOption($option)
+    {
+        $option = 'team.'.$this->id.'.'.$option;
+
+        // If there is a * at the end of the option name, it means that it is a wildcard
+        // and we need to get all options that match the wildcard
+        if (substr($option, -1) == '*') {
+            $o = substr($option, 0, -1);
+
+            // Cache
+            $options = Cache::remember($option, now()->addHour(), function () use ($o) {
+                return Option::where('name', 'like', $o.'%')->orderBy('id')->get();
+            });
+
+            // Map the options, set the key to the option name (everything after last dot ".") and the value to the option value
+            return $options->mapWithKeys(function ($item, $key) {
+                return [str($item->name)->afterLast('.')->toString() => $item->value];
+            });
+        }
+
+        // Cache
+        $model = Cache::remember($option, now()->addHour(), function () use ($option) {
+            return Option::whereName($option)->first();
+        });
+
+        if ($model) {
+            return $model->value;
+        }
     }
 
     public static function getWidgets(): array
@@ -157,6 +199,15 @@ class Team extends Resource
         return $this->name;
     }
 
+    public function updateOption($option, $value)
+    {
+        $option = 'team.'.$this->id.'.'.$option;
+
+        Option::updateOrCreate(['name' => $option], ['value' => $value]);
+
+        Cache::forget($option);
+    }
+
     public function users()
     {
         return $this->belongsToMany(User::class, 'user_meta', 'team_id', 'user_id')->wherePivot('key', 'roles');
@@ -171,7 +222,7 @@ class Team extends Resource
             unset($team->type);
             unset($team->team_id);
 
-            if (! $team->user_id && auth()->user()) {
+            if (!$team->user_id && auth()->user()) {
                 $team->user_id = auth()->user()->id;
             }
         });
@@ -238,12 +289,11 @@ class Team extends Resource
             Option::where('name', 'like', 'team.'.$team->id.'.%')->delete();
 
             // Clear cache of Cache('user.'.$this->id.'.teams')
-            Cache::forget('user.'. auth()->user()->id.'.teams');
+            Cache::forget('user.'.auth()->user()->id.'.teams');
 
             // Redirect to the dashboard
             return redirect()->route('aura.dashboard');
         });
-
 
         // static::updating(function ($team) {
         //     dd('uppdating');
@@ -258,60 +308,5 @@ class Team extends Resource
     protected static function newFactory()
     {
         return TeamFactory::new();
-    }
-
-    public function updateOption($option, $value)
-    {
-        $option = 'team.'.$this->id.'.'.$option;
-
-        Option::updateOrCreate(['name' => $option], ['value' => $value]);
-
-        Cache::forget($option);
-    }
-
-    public function clearCachedOption($option)
-    {
-        $option = 'team.'.$this->id.'.'.$option;
-
-        Cache::forget($option);
-    }
-
-    public function deleteOption($option)
-    {
-        $option = 'team.'.$this->id.'.'.$option;
-
-        Option::whereName($option)->delete();
-
-        Cache::forget($option);
-    }
-
-    public function getOption($option)
-    {
-        $option = 'team.'.$this->id.'.'.$option;
-
-        // If there is a * at the end of the option name, it means that it is a wildcard
-        // and we need to get all options that match the wildcard
-        if (substr($option, -1) == '*') {
-            $o = substr($option, 0, -1);
-
-            // Cache
-            $options = Cache::remember($option, now()->addHour(), function () use ($o) {
-                return Option::where('name', 'like', $o.'%')->orderBy('id')->get();
-            });
-
-            // Map the options, set the key to the option name (everything after last dot ".") and the value to the option value
-            return $options->mapWithKeys(function ($item, $key) {
-                return [str($item->name)->afterLast('.')->toString() => $item->value];
-            });
-        }
-
-        // Cache
-        $model = Cache::remember($option, now()->addHour(), function () use ($option) {
-            return Option::whereName($option)->first();
-        });
-
-        if ($model) {
-            return $model->value;
-        }
     }
 }

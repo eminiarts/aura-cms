@@ -6,17 +6,15 @@ use Eminiarts\Aura\Resource;
 
 class TeamInvitation extends Resource
 {
-    public static $globalSearch = false;
+    public static ?string $slug = 'teaminvitation';
 
-    public static $singularName = 'Team Invitation';
+    public static string $type = 'Team Invitation';
 
-    public static ?string $slug = 'TeamInvitation';
-
-    public static string $type = 'TeamInvitation';
-
-    protected static bool $showInNavigation = false;
+    protected static $dropdown = 'Users';
 
     protected static ?string $group = 'Aura';
+
+    protected static bool $showInNavigation = false;
 
     public static function getFields()
     {
@@ -25,29 +23,33 @@ class TeamInvitation extends Resource
                 'name' => 'Email',
                 'slug' => 'email',
                 'type' => 'Eminiarts\\Aura\\Fields\\Email',
-                'validation' => 'required|email|unique:users,email',
+                'validation' => 'required',
                 'conditional_logic' => [],
+                'wrapper' => '',
                 'on_index' => true,
                 'on_forms' => true,
                 'on_view' => true,
-                'style' => [
-                    'width' => '50',
-                ],
             ],
             [
                 'name' => 'Role',
-                'type' => 'Eminiarts\\Aura\\Fields\\Select',
-                'validation' => 'required',
                 'slug' => 'role',
+                'type' => 'Eminiarts\\Aura\\Fields\\Text',
+                'validation' => 'required',
+                'on_index' => false,
                 'style' => [
-                    'width' => '50',
+                    'width' => '100',
                 ],
             ],
         ];
     }
 
-    public function getRoleOptions()
+    /**
+     * Get the team that the invitation belongs to.
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
+     */
+    public function team()
     {
-        return Role::get()->pluck('title', 'id')->toArray();
+        return $this->belongsTo(Team::class);
     }
 }

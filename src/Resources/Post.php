@@ -48,8 +48,6 @@ class Post extends Resource
 
     public static ?string $slug = 'post';
 
-    protected static ?string $group = 'Aura';
-
     public static ?int $sort = 50;
 
     public static string $type = 'Post';
@@ -76,6 +74,10 @@ class Post extends Resource
         ],
     ];
 
+    protected static ?string $group = 'Aura';
+
+    protected $hidden = ['password'];
+
     protected static array $searchable = [
         'title',
         'content',
@@ -84,7 +86,6 @@ class Post extends Resource
     public function callFlow($flowId)
     {
         $flow = Flow::find($flowId);
-        // dd('callManualFlow', $flow->name);
         $operation = $flow->operation;
 
         // Create a Flow Log
@@ -124,252 +125,253 @@ class Post extends Resource
             $this->bulkActions['callFlow.'.$flow->id] = $flow->name;
         }
 
-        // dd($this->bulkActions);
         return $this->bulkActions;
     }
 
-     public static function getFields()
-     {
-         return [
-             [
-                 'name' => 'Tab',
-                 'type' => 'Eminiarts\\Aura\\Fields\\Tab',
-                 'validation' => '',
-                 'on_index' => true,
-                 'global' => true,
-                 'conditional_logic' => [
-                 ],
-                 'slug' => 'tab1',
-             ],
-             [
-                 'name' => 'Panel',
-                 'type' => 'Eminiarts\\Aura\\Fields\\Panel',
-                 'validation' => '',
-                 'on_index' => true,
-                 'conditional_logic' => [
-                 ],
-                 'slug' => 'panel1',
-                 'style' => [
-                     'width' => '70',
-                 ],
-             ],
-             [
-                 'name' => 'Title',
-                 'slug' => 'title',
-                 'type' => 'Eminiarts\\Aura\\Fields\\Text',
-                 'validation' => '',
-                 'conditional_logic' => [],
-                 'wrapper' => '',
-                 'on_index' => true,
-                 'on_forms' => true,
-                 'on_view' => true,
-             ],
-             [
-                 'name' => 'Text',
-                 'slug' => 'text',
-                 'type' => 'Eminiarts\\Aura\\Fields\\Text',
-                 'validation' => '',
-                 'conditional_logic' => [],
-                 'wrapper' => '',
-                 'on_index' => true,
-                 'on_forms' => true,
-                 'on_view' => true,
-             ],
-             [
-                 'name' => 'Slug for Test',
-                 'type' => 'Eminiarts\\Aura\\Fields\\Slug',
-                 'validation' => 'required|alpha_dash',
-                 'conditional_logic' => [
-                 ],
-                 'slug' => 'slug',
-                 'based_on' => 'title',
-             ],
-             [
-                 'name' => 'Bild',
-                 'type' => 'Eminiarts\\Aura\\Fields\\Image',
-                 'max' => 1,
-                 'upload' => true,
-                 'validation' => '',
-                 'conditional_logic' => [
-                 ],
-                 'slug' => 'image',
-             ],
-             [
-                 'name' => 'Password for Test',
-                 'type' => 'Eminiarts\\Aura\\Fields\\Password',
-                 'validation' => 'nullable|min:8',
-                 'conditional_logic' => [
-                 ],
-                 'slug' => 'password',
-                 'on_index' => false,
-                 'on_forms' => true,
-                 'on_view' => false,
-             ],
-             [
-                 'name' => 'Number',
-                 'type' => 'Eminiarts\\Aura\\Fields\\Number',
-                 'validation' => '',
-                 'conditional_logic' => [
-                 ],
-                 'slug' => 'number',
-                 'on_view' => true,
-                 'on_forms' => true,
-                 'on_index' => true,
-             ],
-             [
-                 'name' => 'Date',
-                 'type' => 'Eminiarts\\Aura\\Fields\\Date',
-                 'validation' => '',
-                 'conditional_logic' => [
-                 ],
-                 'slug' => 'date',
-                 'format' => 'y-m-d',
-             ],
-             [
-                 'name' => 'Description',
-                 'type' => 'Eminiarts\\Aura\\Fields\\Textarea',
-                 'validation' => '',
-                 'conditional_logic' => [
-                 ],
-                 'slug' => 'description',
-                 'style' => [
-                     'width' => '100',
-                 ],
-                 'on_index' => true,
-                 'on_forms' => true,
-                 'on_view' => true,
-             ],
-             //  [
-             //      'name' => 'Color',
-             //      'type' => 'Eminiarts\\Aura\\Fields\\Color',
-             //      'validation' => '',
-             //      'conditional_logic' => [
-             //      ],
-             //      'slug' => 'color',
-             //      'on_index' => true,
-             //      'on_forms' => true,
-             //      'on_view' => true,
-             //      'format' => 'hex',
-             //  ],
-             [
-                 'name' => 'Sidebar',
-                 'type' => 'Eminiarts\\Aura\\Fields\\Panel',
-                 'validation' => '',
-                 'on_index' => true,
-                 'conditional_logic' => [
-                 ],
-                 'slug' => 'sidebar',
-                 'style' => [
-                     'width' => '30',
-                 ],
-             ],
-             [
-                 'name' => 'Tags',
-                 'slug' => 'tags',
-                 'type' => 'Eminiarts\\Aura\\Fields\\Tags',
-                 'model' => 'Eminiarts\\Aura\\Taxonomies\\Tag',
-                 'create' => true,
-                 'validation' => '',
-                 'conditional_logic' => [],
-                 'wrapper' => '',
-                 'on_index' => true,
-                 'on_forms' => true,
-                 'on_view' => true,
-             ],
-             [
-                 'name' => 'Categories',
-                 'slug' => 'categories',
-                 'type' => 'Eminiarts\\Aura\\Fields\\Tags',
-                 'model' => 'Eminiarts\\Aura\\Taxonomies\\Category',
-                 'create' => true,
-                 'validation' => '',
-                 'conditional_logic' => [],
-                 'wrapper' => '',
-                 'on_index' => true,
-                 'on_forms' => true,
-                 'on_view' => true,
-             ],
-             //  [
-             //      'name' => 'Team',
-             //      'slug' => 'team_id',
-             //      'type' => 'Eminiarts\\Aura\\Fields\\BelongsTo',
-             //      'resource' => 'Eminiarts\\Aura\\Resources\\Team',
-             //      'validation' => '',
-             //      'conditional_logic' => [
-             //          [
-             //              'field' => 'role',
-             //              'operator' => '==',
-             //              'value' => 'super_admin',
-             //          ],
-             //      ],
-             //      'wrapper' => '',
-             //      'on_index' => true,
-             //      'on_forms' => true,
-             //      'on_view' => true,
-             //  ],
-             [
-                 'name' => 'User',
-                 'slug' => 'user_id',
-                 'type' => 'Eminiarts\\Aura\\Fields\\BelongsTo',
-                 'resource' => 'Eminiarts\\Aura\\Resources\\User',
-                 'validation' => '',
-                 'conditional_logic' => [],
-                 'wrapper' => '',
-                 'on_index' => true,
-                 'on_forms' => true,
-                 'on_view' => true,
-             ],
-             [
-                 'name' => 'Attachments',
-                 'type' => 'Eminiarts\\Aura\\Fields\\Tab',
-                 'validation' => '',
-                 'on_index' => true,
-                 'global' => true,
-                 'conditional_logic' => [
-                 ],
-                 'slug' => 'tab2',
-             ],
-             [
-                 'name' => 'Attachments',
-                 'slug' => 'attachments',
-                 'type' => 'Eminiarts\\Aura\\Fields\\HasMany',
-                 'resource' => 'Eminiarts\\Aura\\Resources\\Attachment',
-                 'validation' => '',
-                 'conditional_logic' => [],
-                 'wrapper' => '',
-                 'on_index' => false,
-                 'on_forms' => true,
-                 'on_view' => true,
-                 'style' => [
-                     'width' => '100',
-                 ],
-             ],
-             [
-                 'name' => 'Created at',
-                 'slug' => 'created_at',
-                 'type' => 'Eminiarts\\Aura\\Fields\\Date',
-                 'validation' => '',
-                 'enable_time' => true,
-                 'conditional_logic' => [],
-                 'wrapper' => '',
-                 'on_index' => true,
-                 'on_forms' => true,
-                 'on_view' => true,
-             ],
-             [
-                 'name' => 'Updated at',
-                 'slug' => 'updated_at',
-                 'type' => 'Eminiarts\\Aura\\Fields\\Date',
-                 'validation' => '',
-                 'conditional_logic' => [],
-                 'wrapper' => '',
-                 'enable_time' => true,
-                 'on_index' => true,
-                 'on_forms' => true,
-                 'on_view' => true,
-             ],
-         ];
-     }
+    public static function getFields()
+    {
+        return [
+            [
+                'name' => 'Tab',
+                'type' => 'Eminiarts\\Aura\\Fields\\Tab',
+                'validation' => '',
+                'on_index' => true,
+                'global' => true,
+                'conditional_logic' => [
+                ],
+                'slug' => 'tab1',
+            ],
+            [
+                'name' => 'Panel',
+                'type' => 'Eminiarts\\Aura\\Fields\\Panel',
+                'validation' => '',
+                'on_index' => true,
+                'conditional_logic' => [
+                ],
+                'slug' => 'panel1',
+                'style' => [
+                    'width' => '70',
+                ],
+            ],
+            [
+                'name' => 'Title',
+                'slug' => 'title',
+                'type' => 'Eminiarts\\Aura\\Fields\\Text',
+                'validation' => '',
+                'conditional_logic' => [],
+                'wrapper' => '',
+                'on_index' => true,
+                'on_forms' => true,
+                'on_view' => true,
+            ],
+            [
+                'name' => 'Text',
+                'slug' => 'text',
+                'type' => 'Eminiarts\\Aura\\Fields\\Text',
+                'validation' => '',
+                'conditional_logic' => [],
+                'wrapper' => '',
+                'on_index' => true,
+                'on_forms' => true,
+                'on_view' => true,
+            ],
+            [
+                'name' => 'Slug for Test',
+                'type' => 'Eminiarts\\Aura\\Fields\\Slug',
+                'validation' => 'required|alpha_dash',
+                'conditional_logic' => [
+                ],
+                'slug' => 'slug',
+                'based_on' => 'title',
+            ],
+            [
+                'name' => 'Bild',
+                'type' => 'Eminiarts\\Aura\\Fields\\Image',
+                'max' => 1,
+                'upload' => true,
+                'validation' => '',
+                'conditional_logic' => [
+                ],
+                'slug' => 'image',
+            ],
+            [
+                'name' => 'Password for Test',
+                'type' => 'Eminiarts\\Aura\\Fields\\Password',
+                'validation' => 'nullable|min:8',
+                'conditional_logic' => [
+                ],
+                'slug' => 'password',
+                'hydrate' => function ($set, $model, $state, $get) {
+                },
+                'on_index' => false,
+                'on_forms' => true,
+                'on_view' => false,
+            ],
+            [
+                'name' => 'Number',
+                'type' => 'Eminiarts\\Aura\\Fields\\Number',
+                'validation' => '',
+                'conditional_logic' => [
+                ],
+                'slug' => 'number',
+                'on_view' => true,
+                'on_forms' => true,
+                'on_index' => true,
+            ],
+            [
+                'name' => 'Date',
+                'type' => 'Eminiarts\\Aura\\Fields\\Date',
+                'validation' => '',
+                'conditional_logic' => [
+                ],
+                'slug' => 'date',
+                'format' => 'y-m-d',
+            ],
+            [
+                'name' => 'Description',
+                'type' => 'Eminiarts\\Aura\\Fields\\Textarea',
+                'validation' => '',
+                'conditional_logic' => [
+                ],
+                'slug' => 'description',
+                'style' => [
+                    'width' => '100',
+                ],
+                'on_index' => true,
+                'on_forms' => true,
+                'on_view' => true,
+            ],
+            //  [
+            //      'name' => 'Color',
+            //      'type' => 'Eminiarts\\Aura\\Fields\\Color',
+            //      'validation' => '',
+            //      'conditional_logic' => [
+            //      ],
+            //      'slug' => 'color',
+            //      'on_index' => true,
+            //      'on_forms' => true,
+            //      'on_view' => true,
+            //      'format' => 'hex',
+            //  ],
+            [
+                'name' => 'Sidebar',
+                'type' => 'Eminiarts\\Aura\\Fields\\Panel',
+                'validation' => '',
+                'on_index' => true,
+                'conditional_logic' => [
+                ],
+                'slug' => 'sidebar',
+                'style' => [
+                    'width' => '30',
+                ],
+            ],
+            [
+                'name' => 'Tags',
+                'slug' => 'tags',
+                'type' => 'Eminiarts\\Aura\\Fields\\Tags',
+                'model' => 'Eminiarts\\Aura\\Taxonomies\\Tag',
+                'create' => true,
+                'validation' => '',
+                'conditional_logic' => [],
+                'wrapper' => '',
+                'on_index' => true,
+                'on_forms' => true,
+                'on_view' => true,
+            ],
+            [
+                'name' => 'Categories',
+                'slug' => 'categories',
+                'type' => 'Eminiarts\\Aura\\Fields\\Tags',
+                'model' => 'Eminiarts\\Aura\\Taxonomies\\Category',
+                'create' => true,
+                'validation' => '',
+                'conditional_logic' => [],
+                'wrapper' => '',
+                'on_index' => true,
+                'on_forms' => true,
+                'on_view' => true,
+            ],
+            //  [
+            //      'name' => 'Team',
+            //      'slug' => 'team_id',
+            //      'type' => 'Eminiarts\\Aura\\Fields\\BelongsTo',
+            //      'resource' => 'Eminiarts\\Aura\\Resources\\Team',
+            //      'validation' => '',
+            //      'conditional_logic' => [
+            //          [
+            //              'field' => 'role',
+            //              'operator' => '==',
+            //              'value' => 'super_admin',
+            //          ],
+            //      ],
+            //      'wrapper' => '',
+            //      'on_index' => true,
+            //      'on_forms' => true,
+            //      'on_view' => true,
+            //  ],
+            [
+                'name' => 'User',
+                'slug' => 'user_id',
+                'type' => 'Eminiarts\\Aura\\Fields\\BelongsTo',
+                'resource' => 'Eminiarts\\Aura\\Resources\\User',
+                'validation' => '',
+                'conditional_logic' => [],
+                'wrapper' => '',
+                'on_index' => true,
+                'on_forms' => true,
+                'on_view' => true,
+            ],
+            [
+                'name' => 'Attachments',
+                'type' => 'Eminiarts\\Aura\\Fields\\Tab',
+                'validation' => '',
+                'on_index' => true,
+                'global' => true,
+                'conditional_logic' => [
+                ],
+                'slug' => 'tab2',
+            ],
+            [
+                'name' => 'Attachments',
+                'slug' => 'attachments',
+                'type' => 'Eminiarts\\Aura\\Fields\\HasMany',
+                'resource' => 'Eminiarts\\Aura\\Resources\\Attachment',
+                'validation' => '',
+                'conditional_logic' => [],
+                'wrapper' => '',
+                'on_index' => false,
+                'on_forms' => true,
+                'on_view' => true,
+                'style' => [
+                    'width' => '100',
+                ],
+            ],
+            // [
+            //     'name' => 'Created at',
+            //     'slug' => 'created_at',
+            //     'type' => 'Eminiarts\\Aura\\Fields\\Date',
+            //     'validation' => '',
+            //     'enable_time' => true,
+            //     'conditional_logic' => [],
+            //     'wrapper' => '',
+            //     'on_index' => true,
+            //     'on_forms' => true,
+            //     'on_view' => true,
+            // ],
+            // [
+            //     'name' => 'Updated at',
+            //     'slug' => 'updated_at',
+            //     'type' => 'Eminiarts\\Aura\\Fields\\Date',
+            //     'validation' => '',
+            //     'conditional_logic' => [],
+            //     'wrapper' => '',
+            //     'enable_time' => true,
+            //     'on_index' => true,
+            //     'on_forms' => true,
+            //     'on_view' => true,
+            // ],
+        ];
+    }
 
     public function getIcon()
     {
@@ -483,7 +485,6 @@ class Post extends Resource
 
     public function testAction()
     {
-        //dd('hier');
     }
 
     // public static function getWidgets(): array

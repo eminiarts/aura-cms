@@ -14,7 +14,7 @@ use Laravel\Fortify\Fortify;
 use Laravel\Fortify\TwoFactorAuthenticationProvider;
 use PragmaRX\Google2FA\Google2FA;
 
-class FortifyServiceProvider extends ServiceProvider
+class AuthServiceProvider extends ServiceProvider
 {
     /**
      * Bootstrap any application services.

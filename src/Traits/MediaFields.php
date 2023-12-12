@@ -48,7 +48,10 @@ trait MediaFields
     {
         $this->post['fields'][$data['slug']] = $data['value'];
 
-        ray('updateField', $data);
+        $this->emit('fieldUpdated', [
+            'slug' => $data['slug'],
+            'value' => $data['value'],
+        ]);
 
         $this->dispatch('selectedMediaUpdated', [
             'slug' => $data['slug'],

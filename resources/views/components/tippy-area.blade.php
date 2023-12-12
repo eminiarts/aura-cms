@@ -3,19 +3,21 @@
   'position' => 'top'
 ])
 
+@php
 
+$id = rand(5000, 6000);
 
-<div x-data="userDropdown" x-ref="this">
+@endphp
+
+<div x-data="userDropdown{{$id}}" x-ref="this">
   {{ $title }}
 </div>
 
-@push('scripts')
-    @once
-<script>
+<script >
   // when alpine is ready
   document.addEventListener('alpine:init', () => {
     // define an alpinejs component named 'userDropdown'
-    Alpine.data('userDropdown', () => ({
+    Alpine.data('userDropdown{{$id}}', () => ({
       open: false,
       init() {
         // when the component is initialized, add a click event listener to the document
@@ -33,6 +35,3 @@
   })
 
 </script>
-
-    @endonce
-@endpush

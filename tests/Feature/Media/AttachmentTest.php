@@ -31,6 +31,9 @@ it('creates an attachment', function () {
         'size' => 12345,
     ]);
 
+    // Access to undeclared static property is not possible.
+    // If you need to debug the fieldsAttributeCache, you should instantiate the object and access the property on the instance.
+
     expect($attachment)->toBeInstanceOf(Attachment::class);
     expect($attachment->name)->toEqual('Test Attachment');
 });
@@ -84,7 +87,8 @@ it('checks mime_type of image and pdf', function () {
 
     $attachment->mime_type = 'application/pdf';
     $attachment->save();
-    $this->assertFalse($attachment->isImage());
+
+    $this->assertFalse($attachment->fresh()->isImage());
 });
 
 it('gets attachment path', function () {

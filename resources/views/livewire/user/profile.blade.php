@@ -1,17 +1,20 @@
 <div>
     @section('title', 'Profile • ')
 
+    {{ app('aura')::injectView('profile_before_header') }}
+
     <div>
-        <h1 class="text-3xl font-semibold">Profile</h1>
-        <h3> Update your account's profile information and email address.</h3>
+        <h1 class="text-3xl font-semibold">{{ __('Profile') }}</h1>
+        <h3> {{ __('Update your account\'s profile information and email address.') }}</h3>
     </div>
+
+    {{ app('aura')::injectView('profile_after_header') }}
 
     @if (count($errors->all()))
             <div class="block">
                 <div class="mt-8 form_errors">
-                    <strong class="block text-red-600">Unfortunately, there were still the following validation
-                        errors:</strong>
-                    <div class="prose text-red-600">
+                    <strong class="block text-red-600">{{ __('Unfortunately, there were still the following validation errors:') }}</strong>
+                    <div class="text-red-600 prose">
                         <ul>
                             @foreach ($errors->all() as $message)
                             <li>{{ $message }}</li>
@@ -23,7 +26,7 @@
             @endif
 
     @foreach($this->fieldsForView as $key => $field)
-    <style>
+    <style >
         #post-field-{{ optional($field)['slug'] }}-wrapper {
             width: {{ optional(optional($field)['style'])['width'] ?? '100' }}%;
         }
@@ -46,6 +49,6 @@
         <div wire:loading>
             <x-aura::icon.loading  />
         </div>
-        Save
+        {{ __('Save') }}
     </x-aura::button>
 </div>

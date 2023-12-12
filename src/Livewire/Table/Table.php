@@ -26,6 +26,7 @@ class Table extends Component
     use Sorting;
 
     public $namespace;
+    public $bulkActionsView = 'aura::components.table.bulkActions';
 
     /**
      * List of table columns.
@@ -68,6 +69,10 @@ class Table extends Component
         'global' => false,
     ];
 
+    public $filterView = 'aura::components.table.filter';
+
+    public $headerView = 'aura::components.table.header';
+
     /**
      * The last clicked row.
      *
@@ -75,12 +80,18 @@ class Table extends Component
      */
     public $lastClickedRow;
 
+    public $loaded = false;
+
     /**
      * The parent of the table.
      *
      * @var \Illuminate\Database\Eloquent\Model
      */
     public $parent;
+
+    public $post;
+
+    public $rowIds;
 
     /**
      * Validation rules.
@@ -110,14 +121,14 @@ class Table extends Component
      */
     public $settings;
 
+    public $tableIndexView = 'aura::components.table.index';
+
     /**
      * The view of the table.
      *
      * @var string
      */
     public $tableView;
-
-    protected $queryString = ['selectedFilter'];
 
     /**
      * List of events listened to by the component.
@@ -128,7 +139,11 @@ class Table extends Component
         'refreshTable' => '$refresh',
         'selectedRows' => 'selectRows',
         'selectRowsRange' => 'selectRowsRange',
+        'refreshTableSelected' => 'refreshTableSelected',
+        'selectFieldRows',
     ];
+
+    protected $queryString = ['selectedFilter'];
 
     public function action($data)
     {
@@ -159,7 +174,9 @@ class Table extends Component
                 $item->callFlow(explode('.', $action)[1]);
             } elseif (str_starts_with($action, 'multiple')) {
                 $posts = $this->selectedRowsQuery->get();
-                $item->{$action}($posts);
+                $response = $item->{$action}($posts);
+
+            // dd($response);
             } elseif (method_exists($item, $action)) {
                 $item->{$action}();
             }
@@ -168,17 +185,38 @@ class Table extends Component
         $this->notify('Erfolgreich: '.$action);
     }
 
-    public function openBulkActionModal($action, $data)
+    public function bulkCollectionAction($action)
     {
-        // ray($data, $this->selectedRowsQuery->get());
+        //$action = $this->model->getBulkActions()[$action];
+        $ids = $this->selectedRowsQuery->pluck('id')->toArray();
 
-        $this->dispatch('openModal', $data['modal'], [
-            'action' => $action,
-            'selected' => $this->selectedRowsQuery->get(),
-            'model' => get_class($this->model()),
-        ]);
+        // Which one is correct here?
+
+        // $this->dispatch('openModal', $data['modal'], [
+        //     'action' => $action,
+        //     'selected' => $this->selectedRowsQuery->get(),
+        //     'model' => get_class($this->model()),
+        // ]);
 
         // $dispatch('openModal', '{{ $data['modal'] }}', {{ json_encode(['action' => $action, 'selected' => $this->selectedRowsQuery->get()]) }})
+        $response = $this->model->{$action}($ids);
+
+        if ($response instanceof \Symfony\Component\HttpFoundation\StreamedResponse) {
+            return $response;
+        }
+
+        // reset selected rows
+        $this->selected = [];
+
+        $this->notify('Erfolgreich: '.$action);
+
+        $this->emit('refreshTable');
+    }
+
+    public function getAllTableRows()
+    {
+        // dd('hier', $this->rowsQuery->pluck('id'));
+        return $this->rowsQuery->pluck('id')->all();
     }
 
     /**
@@ -298,26 +336,33 @@ class Table extends Component
             ->orderBy($this->model()->getTable().'.id', 'desc');
 
         if ($this->field && method_exists(app($this->field['type']), 'queryFor')) {
-            $query = app($this->field['type'])->queryFor($this->parent, $query, $this->field);
+            $query = app($this->field['type'])->queryFor($query, $this);
         }
 
-        if (method_exists($this->model(), 'indexQuery')) {
-            $query = $this->model()->indexQuery($query);
+        if (method_exists($this->model, 'indexQuery')) {
+            $query = $this->model->indexQuery($query, $this);
         }
 
         // when model is instance Resource, eager load meta and taxonomies
-        if ($this->model() instanceof Resource) {
-            $query = $query->with(['meta', 'taxonomies']);
+        if ($this->model instanceof Resource) {
+            $query = $query->with(['taxonomies']);
         }
 
-        // Search
-        if ($this->search) {
-            $query = $this->applySearch($query);
+        // when model is instance Resource, eager load meta and taxonomies
+        if ($this->model->usesMeta()) {
+            $query = $query->with(['meta']);
         }
 
         if ($this->filters) {
             $query = $this->applyTaxonomyFilter($query);
             $query = $this->applyCustomFilter($query);
+        }
+
+        // Search
+        if ($this->search) {
+            $query = $this->applySearch($query);
+
+            // return $query;
         }
 
         return $this->applySorting($query);
@@ -326,6 +371,11 @@ class Table extends Component
     public function boot()
     {
         $this->rowIds = $this->rows->pluck('id')->toArray();
+    }
+
+    public function loadTable()
+    {
+        $this->loaded = true;
     }
 
     public function mount($query = null)
@@ -338,9 +388,10 @@ class Table extends Component
 
         $this->setTaxonomyFilters();
 
-
-        if($this->selectedFilter) {
-            $this->filters = $this->userFilters[$this->selectedFilter];
+        if ($this->selectedFilter) {
+            if (array_key_exists($this->selectedFilter, $this->userFilters)) {
+                $this->filters = $this->userFilters[$this->selectedFilter];
+            }
         }
 
         $this->query = $query;
@@ -356,6 +407,22 @@ class Table extends Component
         }
     }
 
+    public function openBulkActionModal($action, $data)
+    {
+
+        $this->emit('openModal', $data['modal'], [
+            'action' => $action,
+            'selected' => $this->selectedRowsQuery->pluck('id'),
+            'model' => get_class($this->model),
+        ]);
+
+        // $emit('openModal', '{{ $data['modal'] }}', {{ json_encode(['action' => $action, 'selected' => $this->selectedRowsQuery->get()]) }})
+    }
+
+    public function refreshTableSelected()
+    {
+        $this->selected = [];
+    }
 
     /**
      * Render the component view.
@@ -388,6 +455,14 @@ class Table extends Component
         auth()->user()->updateOption('columns_sort.'.$this->model()->getType(), $slugs);
     }
 
+    public function selectFieldRows($data)
+    {
+        if ($data['slug'] == $this->field['slug']) {
+
+            $this->selected = $data['value'];
+        }
+    }
+
     /**
      * Select a single row in the table.
      *
@@ -396,7 +471,6 @@ class Table extends Component
      */
     public function selectRow($id)
     {
-        ray('selectRow', $id);
         $this->selected = $id;
         $this->lastClickedRow = $id;
     }
@@ -421,6 +495,11 @@ class Table extends Component
     public function allTableRows()
     {
         return $this->rowsQuery->pluck('id')->all();
+    }
+
+    public function updatedPage($page)
+    {
+        $this->rowIds = $this->rows->pluck('id')->toArray();
     }
 
     /**

@@ -37,6 +37,8 @@ class Resource extends Model
     use SaveMetaFields;
     use SaveTerms;
 
+    public $fieldsAttributeCache;
+
     protected $appends = ['fields'];
 
     protected $fillable = ['title', 'content', 'type', 'status', 'fields', 'slug', 'user_id', 'parent_id', 'order', 'taxonomies', 'terms', 'team_id', 'first_taxonomy', 'created_at', 'updated_at', 'deleted_at'];
@@ -64,8 +66,12 @@ class Resource extends Model
             return $value;
         }
 
-        // Not sure if this is the best way to do this
-        return $this->displayFieldValue($key, $value);
+        // If the key is in the fields array, then we want to return that
+        if (is_null($value) && isset($this->fields[$key])) {
+            return $this->fields[$key];
+        }
+
+        return $value;
     }
 
     /**
@@ -82,7 +88,18 @@ class Resource extends Model
      */
     public function children()
     {
-        return $this->hasMany(self::class, 'post_parent');
+        return $this->hasMany(get_class($this), 'parent_id');
+    }
+
+    public function clearFieldsAttributeCache()
+    {
+        $this->fieldsAttributeCache = null;
+
+        if ($this->usesMeta()) {
+            $this->load('meta'); // This will refresh only the 'meta' relationship
+        }
+
+        // $this->refresh();
     }
 
     public function getBulkActions()
@@ -97,7 +114,6 @@ class Resource extends Model
         //     $this->bulkActions['callManualFlow'] = $flow->name;
         // }
 
-        // dd($this->bulkActions);
         return $this->bulkActions;
     }
 
@@ -111,78 +127,79 @@ class Resource extends Model
 
     public function getFieldsAttribute()
     {
-        // ray('fields attribute');
+        if (! isset($this->fieldsAttributeCache) || $this->fieldsAttributeCache === null) {
+            $meta = $this->getMeta();
 
-        $meta = $this->getMeta();
+            $defaultValues = collect($this->inputFieldsSlugs())
+                ->mapWithKeys(fn ($value, $key) => [$value => null])
+                ->map(fn ($value, $key) => $meta[$key] ?? $value)
+                ->map(function ($value, $key) {
+                    // if the value is in $this->hidden, set it to null
+                    if (in_array($key, $this->hidden)) {
+                        // return null;
+                    }
 
-        $defaultValues = $this->getFieldSlugs()
-            ->mapWithKeys(fn ($value, $key) => [$value => null])
-            ->map(fn ($value, $key) => $meta[$key] ?? $value)
-            ->map(function ($value, $key) {
-                // if the value is in $this->hidden, set it to null
-                if (in_array($key, $this->hidden)) {
-                    return;
-                }
+                    $class = $this->fieldClassBySlug($key);
 
-                // if there is a function get{Slug}Field on the model, use it
-                $method = 'get'.Str::studly($key).'Field';
+                    if ($class && isset($this->{$key}) && method_exists($class, 'get')) {
+                        return $class->get($class, $this->{$key});
+                    }
 
-                if (method_exists($this, $method)) {
-                    return $this->{$method}();
-                }
+                    // if $this->{$key} is set, then we want to use that
+                    if (isset($this->{$key})) {
+                        return $this->{$key};
+                    }
 
-                $class = $this->fieldClassBySlug($key);
+                    if ($class && isset($this->attributes[$key]) && method_exists($class, 'get')) {
+                        return $class->get($class, $this->attributes[$key]);
+                    }
 
-                if ($key == 'submissions') {
-                    // TODO: Temporary fix
-                    return 'submissions';
-                }
+                    // if $this->attributes[$key] is set, then we want to use that
+                    if (isset($this->attributes[$key])) {
+                        return $this->attributes[$key];
+                    }
 
-                if ($class && isset(optional($this)->{$key}) && method_exists($class, 'get')) {
-                    return $class->get($class, $this->{$key} ?? null);
-                }
+                    // if there is a function get{Slug}Field on the model, use it
+                    $method = 'get'.Str::studly($key).'Field';
 
-                // if $this->{$key} is set, then we want to use that
-                if (isset($this->{$key})) {
-                    return $this->{$key};
-                }
+                    if (method_exists($this, $method)) {
+                        return $this->{$method}();
+                    }
 
-                // if $this->attributes[$key] is set, then we want to use that
-                if (isset($this->attributes[$key])) {
-                    return $this->attributes[$key];
-                }
+                    $class = $this->fieldClassBySlug($key);
+
+                    if ($class && isset(optional($this)->{$key}) && method_exists($class, 'get')) {
+                        return $class->get($class, $this->{$key} ?? null);
+                    }
+
+                    return $value;
+                });
+
+            $this->fieldsAttributeCache = $defaultValues->filter(function ($value, $key) {
+                return $this->shouldDisplayField($this->fieldBySlug($key));
             });
-
-        // ray($defaultValues);
-
-        return $defaultValues->merge($meta ?? [])->filter(function ($value, $key) {
-
-            // ray('before getAccessibleFieldKeys', $this->getAccessibleFieldKeys());
-
-            if (! in_array($key, $this->getAccessibleFieldKeys())) {
-                return false;
-            }
-
-            return true;
-        });
-    }
-
-    /**
-     * Gets the featured image if any
-     * Looks in meta the _thumbnail_id field.
-     *
-     * @return string
-     */
-    public function getImageAttribute()
-    {
-        if ($this->thumbnail and $this->thumbnail->attachment) {
-            return $this->thumbnail->attachment->guid;
         }
+
+        return $this->fieldsAttributeCache;
     }
+
+    // /**
+    //  * Gets the featured image if any
+    //  * Looks in meta the _thumbnail_id field.
+    //  *
+    //  * @return string
+    //  */
+    // public function getImageAttribute()
+    // {
+    //     if ($this->thumbnail and $this->thumbnail->attachment) {
+    //         return $this->thumbnail->attachment->guid;
+    //     }
+    // }
 
     public function getMeta($key = null)
     {
         if ($this->usesMeta() && optional($this)->meta && ! is_string($this->meta)) {
+
             $meta = $this->meta->pluck('value', 'key');
 
             // Cast Attributes
@@ -233,10 +250,7 @@ class Resource extends Model
                 continue;
             }
 
-            // ray(in_array($method, $modelMethods) && ($this->{$method}() instanceof \Illuminate\Database\Eloquent\Relations\Relation), $method);
-
             if (in_array($method, $modelMethods) && ($this->{$method}() instanceof \Illuminate\Database\Eloquent\Relations\Relation)) {
-                // ray($key);
                 return true;
             }
         }
@@ -257,7 +271,7 @@ class Resource extends Model
      */
     public function parent()
     {
-        return $this->belongsTo(self::class, 'post_parent');
+        return $this->belongsTo(get_class($this), 'parent_id');
     }
 
     /**
@@ -265,7 +279,7 @@ class Resource extends Model
      */
     public function revision()
     {
-        return $this->hasMany(self::class, 'post_parent')
+        return $this->hasMany(self::class, 'parent_id')
             ->where('post_type', 'revision');
     }
 
@@ -276,7 +290,7 @@ class Resource extends Model
      */
     public function user()
     {
-        return $this->belongsTo(User::class);
+        return $this->belongsTo(config('aura.resources.user'));
     }
 
     public function widgets()
@@ -304,6 +318,16 @@ class Resource extends Model
         }
 
         static::addGlobalScope(new TeamScope());
+
+        static::creating(function ($model) {
+            // if (! $model->team_id) {
+            //     $model->team_id = 1;
+            // }
+        });
+
+        static::saved(function ($model) {
+            $model->clearFieldsAttributeCache();
+        });
 
         static::created(function ($post) {
             dispatch(new TriggerFlowOnCreatePostEvent($post));

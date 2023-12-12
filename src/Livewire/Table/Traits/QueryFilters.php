@@ -23,7 +23,9 @@ trait QueryFilters
                 continue;
             }
 
-            if ($this->model->isTableField($filter['name'])) {
+            if ($this->model->usesCustomTable()) {
+                $query = $this->applyTableFieldFilter($query, $filter);
+            } elseif ($this->model->isTableField($filter['name'])) {
                 $query = $this->applyTableFieldFilter($query, $filter);
             } else {
                 $query = $this->applyMetaFieldFilter($query, $filter);
@@ -32,7 +34,7 @@ trait QueryFilters
 
         // More advanced Search
         if ($this->search) {
-            $query->where('title', 'LIKE', $this->search.'%');
+            //   $query->where($this->model->getTable() . '.title', 'LIKE', $this->search.'%');
         }
 
         return $query;
@@ -61,6 +63,7 @@ trait QueryFilters
     {
         if ($filter['operator'] == 'is_empty') {
             $this->applyIsEmptyMetaFilter($query, $filter);
+
             // where
             // where not exists
             // or where key = name AND value = null

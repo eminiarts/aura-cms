@@ -15,50 +15,61 @@ class Number extends Field
                 'label' => 'Number',
                 'name' => 'Number',
                 'type' => 'Eminiarts\\Aura\\Fields\\Tab',
-                'slug' => 'number',
+                'slug' => 'number-tab',
                 'style' => [],
             ],
             [
-                'name' => 'Add on text',
+                'name' => 'Default Value',
                 'type' => 'Eminiarts\\Aura\\Fields\\Text',
                 'validation' => '',
-                'slug' => 'test',
-                'conditional_logic' => [],
-                'default' => 'Hallo',
+                'instructions' => 'Default value on create',
+                'exclude_from_nesting' => true,
+                'slug' => 'default',
             ],
-            // [
-            //     'name' => 'Number',
-            //     'type' => 'Eminiarts\\Aura\\Fields\\Tab',
-            //     'slug' => 'number-tab',
-            //     'style' => [],
-            // ],
-            // [
-            //     'name' => 'Add on',
+            [
+                'name' => 'Placeholder',
+                'type' => 'Eminiarts\\Aura\\Fields\\Text',
+                'validation' => '',
+                'slug' => 'placeholder',
+            ],
+            [
+                'name' => 'Prefix',
+                'type' => 'Eminiarts\\Aura\\Fields\\Text',
+                'validation' => '',
+                'slug' => 'prefix',
+                'style' => [
+                    'width' => '50',
+                ],
+            ],
+            [
+                'name' => 'Suffix',
+                'type' => 'Eminiarts\\Aura\\Fields\\Text',
+                'validation' => '',
+                'slug' => 'suffix',
+                'style' => [
+                    'width' => '50',
+                ],
+            ],
 
-            //     'type' => 'Eminiarts\\Aura\\Fields\\Radio',
+            // minimum value and maximum value as number fields
+            // [
+            //     'name' => 'Minimum Value',
+            //     'type' => 'Eminiarts\\Aura\\Fields\\Number',
             //     'validation' => '',
-            //     'slug' => 'number-add-on',
-            //     'default' => 'none',
-            //     'instructions' => 'Add an add on to the number field',
-            //     'options' => [
-            //         'none' => 'None',
-            //         'prefix' => 'Prefix',
-            //         'suffix' => 'Suffix',
+            //     'slug' => 'min',
+            //     'style' => [
+            //         'width' => '50',
             //     ],
             // ],
             // [
-            //     'name' => 'Add on text',
-            //     'type' => 'Eminiarts\\Aura\\Fields\\Text',
+            //     'name' => 'Maximum Value',
+            //     'type' => 'Eminiarts\\Aura\\Fields\\Number',
             //     'validation' => '',
-            //     'slug' => 'number-add-on-text',
-            //     'conditional_logic' => [
-            //         [
-            //             'field' => 'number-add-on',
-            //             'operator' => '!=',
-            //             'value' => 'none',
-            //         ]
+            //     'slug' => 'max',
+            //     'style' => [
+            //         'width' => '50',
             //     ],
-            // ]
+            // ],
         ]);
     }
 

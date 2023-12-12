@@ -59,6 +59,8 @@ trait SaveMetaFields
                 }
 
                 unset($post->attributes['fields']);
+
+                $post->clearFieldsAttributeCache();
             }
         });
 
@@ -74,11 +76,16 @@ trait SaveMetaFields
                         continue;
                     }
 
-                    $post->meta()->updateOrCreate(['key' => $key], ['value' => $value]);
+                    if ($post->usesMeta()) {
+                        $post->meta()->updateOrCreate(['key' => $key], ['value' => $value]);
+                    }
+
                 }
 
+                $post->fireModelEvent('metaSaved');
+
                 // Reload relation
-                $post->load('meta');
+                // $post->load('meta');
             }
         });
     }

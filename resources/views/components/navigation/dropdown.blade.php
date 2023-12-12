@@ -39,7 +39,7 @@ $settings = Eminiarts\Aura\Facades\Aura::getOption('team-settings');
           <button
               x-on:click="expanded = !expanded"
               :aria-expanded="expanded"
-              class="flex items-center justify-between w-full transition duration-150 ease-in-out rounded-lg"
+              class="flex justify-between items-center w-full rounded-lg transition duration-150 ease-in-out"
               :class="{
                   'bg-sidebar-bg dark:bg-gray-800 hover:bg-sidebar-bg-hover': expanded,
                   'bg-sidebar-bg dark:bg-gray-800 hover:bg-sidebar-bg-hover': !expanded,
@@ -60,7 +60,7 @@ $settings = Eminiarts\Aura\Facades\Aura::getOption('team-settings');
               </span>
           </button>
 
-        <div x-show="expanded" x-ref="container" x-cloak class="p-2 " x-aura::collapse>
+        <div x-show="expanded" x-ref="container" x-cloak class="p-2" x-aura::collapse>
             {{$slot}}
         </div>
     </div>
@@ -88,7 +88,7 @@ $settings = Eminiarts\Aura\Facades\Aura::getOption('team-settings');
           <button
               x-on:click="expanded = !expanded"
               :aria-expanded="expanded"
-              class="flex items-center justify-between w-full transition duration-150 ease-in-out rounded-lg"
+              class="flex justify-between items-center w-full rounded-lg transition duration-150 ease-in-out"
               :class="{
                   'bg-gray-50 text-gray-900 dark:text-white dark:bg-gray-800 dark:hover:bg-gray-900 hover:bg-gray-200': expanded,
                   'bg-gray-50 text-gray-900 dark:text-white dark:bg-gray-800 dark:hover:bg-gray-900 hover:bg-gray-200': !expanded,
@@ -138,7 +138,7 @@ $settings = Eminiarts\Aura\Facades\Aura::getOption('team-settings');
           <button
               x-on:click="expanded = !expanded"
               :aria-expanded="expanded"
-              class="flex items-center justify-between w-full transition duration-150 ease-in-out rounded-lg"
+              class="flex justify-between items-center w-full rounded-lg transition duration-150 ease-in-out"
               :class="{
                   'bg-gray-800 hover:bg-gray-900': expanded,
                   'bg-gray-800 hover:bg-gray-900': !expanded,

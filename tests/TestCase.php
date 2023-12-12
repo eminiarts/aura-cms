@@ -3,13 +3,15 @@
 namespace Eminiarts\Aura\Tests;
 
 use Eminiarts\Aura\AuraServiceProvider;
-use Eminiarts\Aura\Providers\FortifyServiceProvider;
+use Eminiarts\Aura\Providers\AuthServiceProvider;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Intervention\Image\ImageServiceProvider;
 use Lab404\Impersonate\ImpersonateServiceProvider;
+use Laravel\Fortify\FortifyServiceProvider;
 use Livewire\LivewireServiceProvider;
 use LivewireUI\Modal\LivewireModalServiceProvider;
 use Orchestra\Testbench\TestCase as Orchestra;
+use ReflectionObject;
 use Spatie\LaravelRay\RayServiceProvider;
 
 class TestCase extends Orchestra
@@ -38,15 +40,30 @@ class TestCase extends Orchestra
         $migration2->up();
     }
 
+    // protected function tearDown(): void
+    // {
+    //     $refl = new ReflectionObject($this);
+    //     foreach ($refl->getProperties() as $prop) {
+    //         if (!$prop->isStatic() && 0 !== strpos($prop->getDeclaringClass()->getName(), 'PHPUnit_')) {
+    //             $prop->setAccessible(true);
+    //             $prop->setValue($this, null);
+    //         }
+    //     }
+
+    //     parent::tearDown();
+
+    // }
+
     protected function getPackageProviders($app)
     {
         return [
-            AuraServiceProvider::class,
             LivewireServiceProvider::class,
             ImpersonateServiceProvider::class,
             LivewireModalServiceProvider::class,
             ImageServiceProvider::class,
             FortifyServiceProvider::class,
+            AuthServiceProvider::class,
+            AuraServiceProvider::class,
             RayServiceProvider::class,
         ];
     }

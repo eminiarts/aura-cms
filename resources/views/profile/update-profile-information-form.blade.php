@@ -13,7 +13,7 @@
             <div x-data="{photoName: null, photoPreview: null}" class="col-span-6 sm:col-span-4">
                 <!-- Profile Photo File Input -->
                 <input type="file" class="hidden"
-                            wire:model.live="photo"
+                            wire:model="photo"
                             x-ref="photo"
                             x-on:change="
                                     photoName = $refs.photo.files[0].name;
@@ -28,12 +28,12 @@
 
                 <!-- Current Profile Photo -->
                 <div class="mt-2" x-show="! photoPreview">
-                    <img src="{{ $this->user->profile_photo_url }}" alt="{{ $this->user->name }}" class="rounded-full h-20 w-20 object-cover">
+                    <img src="{{ $this->user->profile_photo_url }}" alt="{{ $this->user->name }}" class="object-cover w-20 h-20 rounded-full">
                 </div>
 
                 <!-- New Profile Photo Preview -->
-                <div class="mt-2" x-show="photoPreview" style="display: none;">
-                    <span class="block rounded-full w-20 h-20 bg-cover bg-no-repeat bg-center"
+                <div class="mt-2" x-show="photoPreview"  style="display: none;">
+                    <span class="block w-20 h-20 bg-center bg-no-repeat bg-cover rounded-full" 
                           x-bind:style="'background-image: url(\'' + photoPreview + '\');'">
                     </span>
                 </div>
@@ -55,14 +55,14 @@
         <!-- Name -->
         <div class="col-span-6 sm:col-span-4">
             <x-aura::label for="name" value="{{ __('Name') }}" />
-            <x-aura::jet-input id="name" type="text" class="mt-1 block w-full" wire:model="state.name" autocomplete="name" />
+            <x-aura::jet-input id="name" type="text" class="block mt-1 w-full" wire:model.defer="state.name" autocomplete="name" />
             <x-aura::jet-input-error for="name" class="mt-2" />
         </div>
 
         <!-- Email -->
         <div class="col-span-6 sm:col-span-4">
             <x-aura::label for="email" value="{{ __('Email') }}" />
-            <x-aura::jet-input id="email" type="email" class="mt-1 block w-full" wire:model="state.email" />
+            <x-aura::jet-input id="email" type="email" class="block mt-1 w-full" wire:model.defer="state.email" />
             <x-aura::jet-input-error for="email" class="mt-2" />
         </div>
     </x-slot>

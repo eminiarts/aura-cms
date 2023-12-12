@@ -391,18 +391,19 @@ class TeamSettings extends Component
 
     public function mount()
     {
+        abort_unless(config('aura.features.theme_options'), 404);
+
         abort_unless(auth()->user()->resource->isSuperAdmin(), 403);
 
         // dd('no abort');
 
-        $valueString = json_encode(
-            [
-                'darkmode-type' => 'auto',
-                'sidebar-type' => 'primary',
-                'color-palette' => 'aura',
-                'gray-color-palette' => 'slate',
-            ]
-        );
+        $valueString = [
+            'darkmode-type' => 'auto',
+            'sidebar-type' => 'primary',
+            'color-palette' => 'aura',
+            'gray-color-palette' => 'slate',
+        ];
+
         $this->model = Option::firstOrCreate([
             'name' => 'team-settings',
         ], [
@@ -415,7 +416,11 @@ class TeamSettings extends Component
             $this->post['fields'] = $this->inputFields()->mapWithKeys(function ($field) {
                 return [$field['slug'] => $this->post['fields'][$field['slug']] ?? null];
             })->toArray();
+        } else {
+            $this->post['fields'] = $this->model->value;
         }
+
+        // dd($this->post['fields'], $this->model->value);
     }
 
     public function render()
@@ -434,8 +439,11 @@ class TeamSettings extends Component
     {
         // Save Fields as team-settings in Option table
         $option = 'team-settings';
-        $value = json_encode($this->post['fields']);
-        $o = Option::updateOrCreate(['name' => $option], ['value' => $value]);
+
+        // $value = json_encode($this->post['fields']);
+        // dd($value);
+
+        $o = Option::updateOrCreate(['name' => $option], ['value' => $this->post['fields']]);
 
         // $this->validate();
 

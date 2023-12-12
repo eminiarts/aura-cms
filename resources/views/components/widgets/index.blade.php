@@ -66,7 +66,7 @@
         {{-- Conditions --}}
         {{-- Widget Style Width --}}
         <div class="px-2" wire-key="widget-{{ $widget['slug'] }}-wrapper" id="widget-{{ $widget['slug'] }}-wrapper">
-            <style>
+            <style >
                 #widget-{{ $widget['slug'] }}-wrapper {
                     width: {{ optional(optional($widget)['style'])['width'] ?? '100' }}%;
                 }

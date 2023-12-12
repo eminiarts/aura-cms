@@ -61,7 +61,6 @@ test('team can be changed', function () {
     expect($this->user->fresh()->currentTeam->id)->toBe($team->id);
 });
 
-
 test('team can be deleted', function () {
     // Create a team to be deleted
     $team = Team::create([
@@ -85,7 +84,6 @@ test('team can be deleted', function () {
     // Assert that the user's teams count decreased by 1
     expect($this->user->fresh()->teams()->count())->toBe($initialCount - 1);
 });
-
 
 test('check current users current_team_id is set correctly after deleting a team', function () {
     // Create a team to be deleted

@@ -40,7 +40,6 @@ Alpine.data('aura', () => ({
   showFilters: false,
 
   init() {
-    console.log('aura init from data');
   },
 
 
@@ -87,7 +86,6 @@ Alpine.store('leftSidebar', {
 // Alpine.start()
 
 function updateVisitedPages(title, url) {
-  // console.log('updateVisitedPages');
   const key = 'visitedPages';
   const maxVisitedPages = 5;
   let visitedPages = JSON.parse(localStorage.getItem(key)) || [];
@@ -106,7 +104,6 @@ function updateVisitedPages(title, url) {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-  // console.log('DOMContentLoaded');
   const pageTitle = document.title;
   const pageUrl = window.location.href;
   updateVisitedPages(pageTitle, pageUrl);

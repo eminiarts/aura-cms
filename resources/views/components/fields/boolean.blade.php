@@ -1,5 +1,11 @@
 <x-aura::fields.wrapper :field="$field">
-    <div x-data="{ value: $wire.entangle('post.fields.{{ optional($field)['slug'] }}').defer }"
+    <div x-data="{ 
+        @if(optional($field)['defer'] === false)
+        value: $wire.entangle('post.fields.{{ optional($field)['slug'] }}'),
+        @else
+        value: $wire.entangle('post.fields.{{ optional($field)['slug'] }}').defer,
+        @endif
+    }"
         class="" x-id="['boolean']">
         <button x-ref="toggle" @click="value = ! value" type="button" role="switch" :aria-checked="value"
             :aria-labelledby="$id('boolean')"

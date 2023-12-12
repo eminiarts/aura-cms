@@ -50,6 +50,53 @@ return [
 
     'teams' => true,
 
+    'resources' => [
+        'user' => Eminiarts\Aura\Resources\User::class,
+        'team' => Eminiarts\Aura\Resources\Team::class,
+        'team-invitation' => Eminiarts\Aura\Resources\TeamInvitation::class,
+        'role' => Eminiarts\Aura\Resources\Role::class,
+        'permission' => Eminiarts\Aura\Resources\Permission::class,
+        'post' => Eminiarts\Aura\Resources\Post::class,
+        'option' => Eminiarts\Aura\Resources\Option::class,
+        'attachment' => Eminiarts\Aura\Resources\Attachment::class,
+    ],
+
+    'taxonomies' => [
+        'category' => Eminiarts\Aura\Taxonomies\Category::class,
+        'tag' => Eminiarts\Aura\Taxonomies\Tag::class,
+    ],
+
+    'views' => [
+        'layout' => 'aura::layouts.app',
+        'dashboard' => 'aura::dashboard',
+        'index' => 'aura::index',
+        'view' => 'aura::view',
+        'create' => 'aura::create',
+        'edit' => 'aura::edit',
+        'navigation' => 'aura::components.navigation',
+    ],
+
+    'features' => [
+        'global_search' => true,
+        'notifications' => true,
+
+        'plugins' => true,
+        'flows' => false,
+        'forms' => true,
+
+        'posttype_editor' => config('app.env') == 'production' ? false : true,
+        'theme_options' => true,
+        'global_config' => true,
+
+        'user_profile' => true,
+
+        'create_resource' => true,
+        'create_taxonomy' => true,
+
+        'resource_view' => true,
+        'resource_edit' => true,
+    ],
+
     /*
     |--------------------------------------------------------------------------
     | Resources
@@ -60,22 +107,24 @@ return [
     |
     */
 
-    'resources' => [
-        'namespace' => 'App\\Aura\\Resources',
-        'path' => app_path('Aura/Resources'),
-        'register' => [],
-    ],
+    'paths' => [
+        'resources' => [
+            'namespace' => 'App\\Aura\\Resources',
+            'path' => app_path('Aura/Resources'),
+            'register' => [],
+        ],
 
-    'taxonomies' => [
-        'namespace' => 'App\\Aura\\Taxonomies',
-        'path' => app_path('Aura/Taxonomies'),
-        'register' => [],
-    ],
+        'taxonomies' => [
+            'namespace' => 'App\\Aura\\Taxonomies',
+            'path' => app_path('Aura/Taxonomies'),
+            'register' => [],
+        ],
 
-    'fields' => [
-        'namespace' => 'App\\Aura\\Fields',
-        'path' => app_path('Aura/Fields'),
-        'register' => [],
+        'fields' => [
+            'namespace' => 'App\\Aura\\Fields',
+            'path' => app_path('Aura/Fields'),
+            'register' => [],
+        ],
     ],
 
     /*
@@ -93,8 +142,6 @@ return [
         'path' => app_path('Aura/Widgets'),
         'register' => [],
     ],
-
-    'posttype_editor' => config('app.env') == 'production' ? false : true,
 
     /*
     |--------------------------------------------------------------------------

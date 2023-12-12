@@ -50,8 +50,6 @@ function createSuperAdmin()
 {
     $user = User::factory()->create();
 
-    // $this->acting
-
     // Create Team
     $team = Team::factory()->create();
 
@@ -64,4 +62,6 @@ function createSuperAdmin()
 
     // create a entry in team_user table with team_id and user_id
     $user->teams()->attach($team->id);
+
+    return $user;
 }

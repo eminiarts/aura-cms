@@ -1,13 +1,13 @@
 <?php
 
 use Eminiarts\Aura\ConditionalLogic;
-use Livewire\Livewire;
-use Eminiarts\Aura\Resource;
-use Eminiarts\Aura\Models\User;
 use Eminiarts\Aura\Facades\Aura;
 use Eminiarts\Aura\Livewire\Post\Create;
 use Eminiarts\Aura\Livewire\Post\Edit;
+use Eminiarts\Aura\Models\User;
+use Eminiarts\Aura\Resource;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Livewire\Livewire;
 
 uses(RefreshDatabase::class);
 
@@ -73,12 +73,12 @@ class DoNotDeferConditionalLogicTestModel extends Resource
                 'searchable' => false,
                 'options' => [
                     [
+                        'name' => 'simple',
                         'value' => 'simple',
-                        'key' => 'simple',
                     ],
                     [
+                        'name' => 'advanced',
                         'value' => 'advanced',
-                        'key' => 'advanced',
                     ],
                 ],
             ],
@@ -120,7 +120,6 @@ test('defer should be false on field that is in conditional logic', function () 
 
 });
 
-
 test('defer should be false on field that is in conditional logic - create view', function () {
     $model = new DoNotDeferConditionalLogicTestModel();
     $createFields = $model->createFields();
@@ -133,24 +132,23 @@ test('defer should be false on field that is in conditional logic - create view'
         ->assertSee('Type')
         ->assertSeeHtml('wire:model.debounce.200ms="post.fields.select_type"')
         ->assertDontSee('Advanced Text')
-        ->set('post.fields.select_type', 'advanced')
-        // Somehow it does not work
-        // ->assertSee('Advanced Text')
-    ;
+        ->set('post.fields.select_type', 'advanced');
+    // Somehow it does not work
+    // ->assertSee('Advanced Text')
 
     $show = ConditionalLogic::checkCondition([
-        "title" => null,
-        "slug" => null,
-        "select_type" => "advanced"
+        'title' => null,
+        'slug' => null,
+        'select_type' => 'advanced',
     ], $createFields[3]);
 
     expect($show)->toBeTrue();
 
     $show = ConditionalLogic::checkCondition([
-            "title" => null,
-            "slug" => null,
-            "select_type" => null
-        ], $createFields[3]);
+        'title' => null,
+        'slug' => null,
+        'select_type' => null,
+    ], $createFields[3]);
 
     expect($show)->toBeFalse();
 });
@@ -176,24 +174,23 @@ test('defer should be false on field that is in conditional logic - edit view', 
         ->assertSee('Type')
         ->assertSeeHtml('wire:model.debounce.200ms="post.fields.select_type"')
         ->assertDontSee('Advanced Text')
-        ->set('post.fields.select_type', 'advanced')
-        // Somehow it does not work
-        // ->assertSee('Advanced Text')
-    ;
+        ->set('post.fields.select_type', 'advanced');
+    // Somehow it does not work
+    // ->assertSee('Advanced Text')
 
     $show = ConditionalLogic::checkCondition([
-        "title" => null,
-        "slug" => null,
-        "select_type" => "advanced"
+        'title' => null,
+        'slug' => null,
+        'select_type' => 'advanced',
     ], $editFields[3]);
 
     expect($show)->toBeTrue();
 
     $show = ConditionalLogic::checkCondition([
-            "title" => null,
-            "slug" => null,
-            "select_type" => null
-        ], $editFields[3]);
+        'title' => null,
+        'slug' => null,
+        'select_type' => null,
+    ], $editFields[3]);
 
     expect($show)->toBeFalse();
 });
