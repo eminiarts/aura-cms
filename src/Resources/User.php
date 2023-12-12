@@ -50,6 +50,22 @@ class User extends UserModel
 
     protected static ?string $group = 'Admin';
 
+      public function getSearchableFields()
+    {
+        // get input fields and remove the ones that are not searchable
+        $fields = $this->inputFields()->filter(function ($field) {
+            // if $field is array or undefined, then we don't want to use it
+            if (!is_array($field) || !isset($field['searchable'])) {
+                return false;
+            }
+
+            return $field['searchable'];
+        });
+
+
+        return $fields;
+    }
+
     /**
      * The attributes that should be hidden for serialization.
      *
@@ -151,6 +167,7 @@ class User extends UserModel
                 'type' => 'Eminiarts\\Aura\\Fields\\Text',
                 'validation' => 'required',
                 'on_index' => true,
+                'searchable' => true,
                 'slug' => 'name',
                 'style' => [
                     'width' => '100',
@@ -161,6 +178,7 @@ class User extends UserModel
                 'type' => 'Eminiarts\\Aura\\Fields\\Text',
                 'validation' => 'required|email',
                 'on_index' => true,
+                'searchable' => true,
                 'slug' => 'email',
                 'style' => [
                     'width' => '100',
@@ -177,7 +195,7 @@ class User extends UserModel
                 'on_index' => false,
                 'on_forms' => true,
                 'on_view' => true,
-                'searchable' => true,
+                'searchable' => false,
             ],
             [
                 'name' => 'Password',
