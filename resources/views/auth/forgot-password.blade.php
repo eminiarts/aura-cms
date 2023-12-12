@@ -8,7 +8,6 @@
 
     <form method="POST" action="{{ route('aura.password.email') }}">
         @csrf
-
         <!-- Email Address -->
         <div>
             <x-aura::input-label for="email" :value="__('Email')" />
