@@ -82,6 +82,7 @@ class Attachment extends Resource
                 'type' => 'Eminiarts\\Aura\\Fields\\Text',
                 'validation' => 'required',
                 'on_index' => true,
+                'searchable' => true,
                 'slug' => 'name',
                 'style' => [
                     'width' => '100',
@@ -90,6 +91,7 @@ class Attachment extends Resource
             [
                 'name' => 'Url',
                 'type' => 'Eminiarts\\Aura\\Fields\\ViewValue',
+                'searchable' => true,
                 'validation' => 'required',
                 'on_index' => true,
                 'slug' => 'url',
@@ -112,6 +114,7 @@ class Attachment extends Resource
                 'name' => 'Mime Type',
                 'type' => 'Eminiarts\\Aura\\Fields\\ViewValue',
                 'validation' => 'required',
+                'searchable' => true,
                 'on_index' => true,
                 'slug' => 'mime_type',
                 'style' => [
