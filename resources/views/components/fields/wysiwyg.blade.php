@@ -1,19 +1,21 @@
 <x-aura::fields.wrapper :field="$field">
     <div
+    wire:ignore
         x-data="{
+            value: $wire.entangle('post.fields.{{ $field['slug'] }}').defer,
             init() {
                 let quill = new Quill(this.$refs.quill, { theme: 'snow' })
 
+                vm = this;
+
                 quill.on('text-change', function () {
-                    $dispatch('input', quill.root.innerHTML);
+                    vm.value = quill.root.innerHTML;
                 });
             },
         }"
-       x-ref="quill"
-       wire:ignore
-       wire:model.defer="post.fields.{{ optional($field)['slug'] }}"
+      x-ref="quill"
     >
-        {!! $this->post['fields'][$field['slug']] !!}
+            {!! $this->post['fields'][$field['slug']] !!}
     </div>
 </x-aura::fields.wrapper>
 
