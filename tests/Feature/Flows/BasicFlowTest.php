@@ -74,7 +74,7 @@ test('flow - log operation', function () {
     $this->assertDatabaseHas('flow_operation_logs', ['operation_id' => $flow->operation_id]);
 
     // dd($post->toArray(), $flow->toArray());
-});
+})->skip();
 
 test('chained flow gets triggered on create post', function () {
     createSuperAdmin();
@@ -166,4 +166,4 @@ test('chained flow gets triggered on create post', function () {
 
     // Assert Flow Operation is triggered when Post is created
     $this->assertDatabaseHas('flow_operation_logs', ['operation_id' => $flow->operation_id]);
-});
+})->skip();

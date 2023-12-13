@@ -289,17 +289,17 @@ class Post extends BaseResource
 
         static::addGlobalScope(new TeamScope());
 
-        static::created(function ($post) {
-            dispatch(new TriggerFlowOnCreatePostEvent($post));
-        });
+        // static::created(function ($post) {
+        //     dispatch(new TriggerFlowOnCreatePostEvent($post));
+        // });
 
-        static::updated(function ($post) {
-            dispatch(new TriggerFlowOnUpdatePostEvent($post));
-        });
+        // static::updated(function ($post) {
+        //     dispatch(new TriggerFlowOnUpdatePostEvent($post));
+        // });
 
-        static::deleted(function ($post) {
-            dispatch(new TriggerFlowOnDeletedPostEvent($post));
-        });
+        // static::deleted(function ($post) {
+        //     dispatch(new TriggerFlowOnDeletedPostEvent($post));
+        // });
 
         // static::saving(function ($post) {
         //     dd('da', $post);

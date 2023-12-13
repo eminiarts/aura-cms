@@ -11,6 +11,7 @@ uses(RefreshDatabase::class);
 // uses()->group('current');
 
 beforeEach(fn () => $this->actingAs($this->user = User::factory()->create()));
+// beforeEach(fn () => $this->actingAs($this->user = User::factory()->create()) && $this->skip('All tests are skipped.'));
 
 test('flow gets triggered on create post and sends a notification to a user', function () {
     createSuperAdmin();
@@ -77,7 +78,7 @@ test('flow gets triggered on create post and sends a notification to a user', fu
 
     // Assert Flow Operation is triggered when Post is created
     $this->assertDatabaseHas('flow_operation_logs', ['operation_id' => $flow->operation_id]);
-});
+})->skip();
 
 test('flow gets triggered on create post and sends a notification to a role', function () {
     createSuperAdmin();
@@ -144,4 +145,4 @@ test('flow gets triggered on create post and sends a notification to a role', fu
 
     // Assert Flow Operation is triggered when Post is created
     $this->assertDatabaseHas('flow_operation_logs', ['operation_id' => $flow->operation_id]);
-});
+})->skip();

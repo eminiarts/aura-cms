@@ -329,16 +329,16 @@ class Resource extends Model
             $model->clearFieldsAttributeCache();
         });
 
-        static::created(function ($post) {
-            dispatch(new TriggerFlowOnCreatePostEvent($post));
-        });
+        // static::created(function ($post) {
+        //     dispatch(new TriggerFlowOnCreatePostEvent($post));
+        // });
 
-        static::updated(function ($post) {
-            dispatch(new TriggerFlowOnUpdatePostEvent($post));
-        });
+        // static::updated(function ($post) {
+        //     dispatch(new TriggerFlowOnUpdatePostEvent($post));
+        // });
 
-        static::deleted(function ($post) {
-            dispatch(new TriggerFlowOnDeletedPostEvent($post));
-        });
+        // static::deleted(function ($post) {
+        //     dispatch(new TriggerFlowOnDeletedPostEvent($post));
+        // });
     }
 }
