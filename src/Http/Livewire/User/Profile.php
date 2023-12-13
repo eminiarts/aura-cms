@@ -24,6 +24,17 @@ class Profile extends Component
 
     public $model;
 
+    // protected $validationAttributes = [
+    //     'post.fields.signatur' => 'signatur',
+    // ];
+
+    // protected function validationAttributes()
+    // {
+    //     return [
+    //         'post.fields.signatur' => __('Signature'),
+    //     ];
+    // }
+
     /**
     * The user's current password.
     *
@@ -105,7 +116,7 @@ class Profile extends Component
                     // Check if the attachment is an image
                     Attachment::findOrFail($value)->each(function ($attachment) use ($fail, $attribute) {
                         if (!$attachment->isImage()) {
-                            $fail("The {$attribute} is not an image.");
+                            $fail(__('The :attribute is not an image.', ['attribute' => $attribute]));
                         }
                     });
 
