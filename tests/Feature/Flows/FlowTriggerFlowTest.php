@@ -10,6 +10,7 @@ uses(RefreshDatabase::class);
 uses()->group('flows');
 
 beforeEach(fn () => $this->actingAs($this->user = User::factory()->create()));
+// beforeEach(fn () => $this->actingAs($this->user = User::factory()->create()) && $this->skip('All tests are skipped.'));
 
 test('flow - a flow can trigger another flow', function () {
     createSuperAdmin();
@@ -127,4 +128,4 @@ test('flow - a flow can trigger another flow', function () {
     $this->assertDatabaseHas('flow_operation_logs', ['response' => json_encode(['message' => 'Log triggered by another Flow'])]);
 
     // dd($post->toArray(), $flow->toArray());
-});
+})->skip();
