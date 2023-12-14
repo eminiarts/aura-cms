@@ -40,8 +40,8 @@
 
             <!-- Forgot Password? -->
             <div class="block mt-4">
-                @if (Route::has('password.request'))
-                    <a class="text-sm text-gray-600 underline rounded-md hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500" href="{{ route('password.request') }}">
+                @if (Route::has('aura.password.request'))
+                    <a class="text-sm text-gray-600 underline rounded-md hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500" href="{{ route('aura.password.request') }}">
                         {{ __('Forgot your password?') }}
                     </a>
                 @endif
