@@ -47,7 +47,6 @@ class TeamScope implements Scope
         }
 
         // Check access?
-
         return $builder;
     }
 }
