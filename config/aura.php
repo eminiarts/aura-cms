@@ -50,6 +50,8 @@ return [
 
     'teams' => true,
 
+    'dashboard_component' => Eminiarts\Aura\Http\Livewire\Dashboard::class,
+
     'resources' => [
         'user' => Eminiarts\Aura\Resources\User::class,
         'team' => Eminiarts\Aura\Resources\Team::class,
