@@ -116,7 +116,7 @@ class AuraServiceProvider extends PackageServiceProvider
         Livewire::component('aura::notifications', Notifications::class);
         Livewire::component('aura::edit-posttype-field', EditPosttypeField::class);
         Livewire::component('aura::media-manager', MediaManager::class);
-        Livewire::component('aura::media-uploader', MediaUploader::class);
+        Livewire::component('aura::media-uploader', app(MediaUploader::class));
         Livewire::component('aura::attachment-index', AttachmentIndex::class);
         Livewire::component('aura::user-two-factor-authentication-form', TwoFactorAuthenticationForm::class);
         Livewire::component('aura::create-posttype', CreatePosttype::class);
