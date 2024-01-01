@@ -19,33 +19,33 @@
 
         @if ($this->isToggled($group))
             @local
-                <x-aura::navigation.item class="cursor-pointer" onclick="Livewire.emit('openModal', 'aura::create-posttype')">
+                <x-aura::navigation.item class="cursor-pointer" onclick="Livewire.emit('openModal', 'aura::create-posttype')" :tooltip="__('Create Resource')">
                     <div class="{{ $iconClass }}">
                         <x-aura::icon icon="collection" />
                     </div>
-                    <div>{{ __('Create Resource') }}</div>
+                    <div class="hide-collapsed">{{ __('Create Resource') }}</div>
                 </x-aura::navigation.item>
-                <x-aura::navigation.item class="cursor-pointer" onclick="Livewire.emit('openModal', 'aura::create-taxonomy')">
+                <x-aura::navigation.item class="cursor-pointer" onclick="Livewire.emit('openModal', 'aura::create-taxonomy')" :tooltip="__('Create Taxonomy')">
                     <div class="{{ $iconClass }}">
                         <x-aura::icon icon="collection" />
                     </div>
-                    <div>{{ __('Create Taxonomy') }}</div>
+                    <div class="hide-collapsed">{{ __('Create Taxonomy') }}</div>
                 </x-aura::navigation.item>
             @endlocal
 
-            <x-aura::navigation.item route="{{ route('aura.team.settings') }}">
+            <x-aura::navigation.item route="{{ route('aura.team.settings') }}" :tooltip="__('Theme Options')">
                 <div class="{{ $iconClass }}">
                     <x-aura::icon icon="brush" />
                 </div>
-                <div>{{ __('Theme Options') }}</div>
+                <div class="hide-collapsed">{{ __('Theme Options') }}</div>
             </x-aura::navigation.item>
 
 
-            <x-aura::navigation.item route="{{ route('aura.config') }}">
+            <x-aura::navigation.item route="{{ route('aura.config') }}" :tooltip="__('Global Config')">
                 <div class="{{ $iconClass }}">
                     <x-aura::icon icon="adjustments" />
                 </div>
-                <div>{{ __('Global Config') }}</div>
+                <div class="hide-collapsed">{{ __('Global Config') }}</div>
             </x-aura::navigation.item>
         @endif
     @endsuperadmin
