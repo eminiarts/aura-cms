@@ -3,6 +3,7 @@
 use Eminiarts\Aura\Http\Controllers\Api\FieldsController;
 use Eminiarts\Aura\Http\Livewire\Attachment\Index as AttachmentIndex;
 use Eminiarts\Aura\Http\Livewire\AuraConfig;
+use Eminiarts\Aura\Http\Livewire\Dashboard;
 use Eminiarts\Aura\Http\Livewire\Post\Create;
 use Eminiarts\Aura\Http\Livewire\Post\Edit;
 use Eminiarts\Aura\Http\Livewire\Post\Index;
@@ -34,9 +35,7 @@ Route::domain(config('aura.domain'))
 
         Route::prefix(config('aura.path'))->group(function () {
 
-            Route::get('/', function () {
-                return view('aura::dashboard');
-            })->name('dashboard');
+            Route::get('/', config('aura.dashboard_component'))->name('dashboard');
 
             // route for api/fields/values which calls Api\FieldsController@values
             Route::post('/api/fields/values', [FieldsController::class, 'values'])->name('api.fields.values');

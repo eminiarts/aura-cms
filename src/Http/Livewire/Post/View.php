@@ -27,7 +27,11 @@ class View extends Component
     public $tax;
 
     // Listen for selectedAttachment
-    protected $listeners = ['updateField' => 'updateField'];
+    protected $listeners = [
+        'updateField' => 'updateField',
+        'refreshComponent' => '$refresh',
+        'reload'
+    ];
 
     public function getField($slug)
     {
@@ -70,5 +74,13 @@ class View extends Component
         // }
         return view($this->model->viewView())->layout('aura::components.layout.app');
 
+    }
+
+    public function reload()
+    {
+        $this->model = $this->model->fresh();
+        $this->post = $this->model->attributesToArray();
+
+        $this->emit('refreshComponent');
     }
 }

@@ -20,6 +20,7 @@ use Eminiarts\Aura\Http\Livewire\BookmarkPage;
 use Eminiarts\Aura\Http\Livewire\CreateFlow;
 use Eminiarts\Aura\Http\Livewire\CreatePosttype;
 use Eminiarts\Aura\Http\Livewire\CreateTaxonomy;
+use Eminiarts\Aura\Http\Livewire\Dashboard;
 use Eminiarts\Aura\Http\Livewire\EditOperation;
 use Eminiarts\Aura\Http\Livewire\EditPosttypeField;
 use Eminiarts\Aura\Http\Livewire\GlobalSearch;
@@ -113,6 +114,7 @@ class AuraServiceProvider extends PackageServiceProvider
         Livewire::component('aura::navigation', Navigation::class);
         Livewire::component('aura::global-search', GlobalSearch::class);
         Livewire::component('aura::bookmark-page', BookmarkPage::class);
+        Livewire::component('aura::dashboard', Dashboard::class);
         Livewire::component('aura::notifications', Notifications::class);
         Livewire::component('aura::edit-posttype-field', EditPosttypeField::class);
         Livewire::component('aura::media-manager', MediaManager::class);
