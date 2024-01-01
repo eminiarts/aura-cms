@@ -4,15 +4,8 @@
         @if ($group !== '')
             <div wire:key="toggle-{{ $group }}" wire:click="toggleGroup('{{ $group }}')"
                 class="cursor-pointer">
-                <x-aura::navigation.heading>
-                    <div class="flex justify-between items-center">
-                        <span>{{ __($group) }}</span>
-
-                        @if ($this->isToggled($group))
-                        @else
-                            <span>+</span>
-                        @endif
-                    </div>
+                <x-aura::navigation.heading :toggled="$this->isToggled($group)">
+                    {{ __($group) }}
                 </x-aura::navigation.heading>
             </div>
         @endif
@@ -35,7 +28,7 @@
                                         {!! $resource['items'][0]['icon'] !!}
                                     @endif
                                 </div>
-                                <div>{{ __($resource['dropdown']) }}</div>
+                                <div class="hide-collapsed">{{ __($resource['dropdown']) }}</div>
                             </x-slot:title>
 
                             @foreach ($resource['items'] as $resource)
@@ -43,18 +36,18 @@
                                     <div class="{{ $iconClass }}">
                                         {!! $resource['icon'] !!}
                                     </div>
-                                    <div>{{ __($resource['name']) }}</div>
+                                    <div class="hide-collapsed">{{ __($resource['name']) }}</div>
                                 </x-aura::navigation.item>
                             @endforeach
                         </x-aura::navigation.dropdown>
                     @else
                         {{-- @dd($resource) --}}
                         @can('viewAny', app($resource['resource']))
-                            <x-aura::navigation.item :route="$resource['route']" :strict="false">
+                            <x-aura::navigation.item :route="$resource['route']" :strict="false" :tooltip="__($resource['name'])">
                                 <div class="{{ $iconClass }}">
                                     {!! $resource['icon'] !!}
                                 </div>
-                                <div>{{ __($resource['name']) }}</div>
+                                <div class="hide-collapsed">{{ __($resource['name']) }}</div>
                             </x-aura::navigation.item>
                         @endcan
                     @endif
