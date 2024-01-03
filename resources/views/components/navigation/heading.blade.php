@@ -1,5 +1,6 @@
 @props([
   'toggled' => false,
+  'compact' => false,
 ])
 
 @php
@@ -25,18 +26,28 @@ $settings = Eminiarts\Aura\Facades\Aura::getOption('team-settings');
   @endif
 ">
   <x-aura::tippy text="Test" position="right">
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" class="w-4 h-4 show-collapsed">
-      <path d="M8 2a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3ZM8 6.5a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3ZM9.5 12.5a1.5 1.5 0 1 0-3 0 1.5 1.5 0 0 0 3 0Z" />
-    </svg>
+    <div x-cloak class="py-2 -mt-2 mb-2 show-collapsed">
+      <div class="w-full border-b
+        @if ($sidebarType == 'primary')
+          border-sidebar-text dark:border-gray-500
+        @elseif ($sidebarType == 'light')
+          border-gray-400 dark:border-gray-500
+        @elseif ($sidebarType == 'dark')
+          border-gray-500
+        @endif
+      "></div>
+    </div>
   </x-aura::tippy>
 
-  <div class="flex justify-between items-center hide-collapsed">
-      <h5 class="text-xs font-semibold tracking-wide uppercase select-none">{{ $slot }}</h5>
+  <div class="hide-collapsed">
+    <div class="flex justify-between items-center w-full">
+        <h5 class="{{ $compact ? 'text-2xs font-medium' : 'text-xs font-semibold' }} tracking-wide uppercase select-none">{{ $slot }}</h5>
 
-      @if ($toggled)
-      @else
-          <span>+</span>
-      @endif
+        @if ($toggled)
+        @else
+            <span>+</span>
+        @endif
+    </div>
   </div>
 
 
