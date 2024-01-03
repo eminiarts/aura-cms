@@ -475,7 +475,7 @@ trait AuraModelConfig
     public function title()
     {
         if (optional($this)->id) {
-            return __($this->getType()) ." (#{$this->id})";
+            return __($this->getType())." (#{$this->id})";
         }
     }
 
