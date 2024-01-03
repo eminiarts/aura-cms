@@ -132,7 +132,7 @@ class AuraServiceProvider extends PackageServiceProvider
         Livewire::component('aura::invite-user', InviteUser::class);
         Livewire::component('aura::config', AuraConfig::class);
 
-        Livewire::component('aura::profile', Profile::class);
+        Livewire::component('aura::profile', app(Profile::class));
 
         // Flows
         Livewire::component('aura::create-flow', CreateFlow::class);
