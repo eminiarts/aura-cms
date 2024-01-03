@@ -83,7 +83,9 @@
 
 }
 
-
+.show-collapsed {
+    @apply hidden;
+}
 .open-sidebar .show-collapsed {
     @apply hidden;
 }

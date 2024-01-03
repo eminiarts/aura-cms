@@ -353,8 +353,12 @@ class Aura
 
             $resources = app('hook_manager')->applyHooks('navigation', $resources->values());
 
+            $resources = $resources->sortBy('sort');
+
+            ray($resources);
+
             $grouped = array_reduce(collect($resources)->toArray(), function ($carry, $item) {
-                if ($item['dropdown'] !== false) {
+                if (isset($item['dropdown']) && $item['dropdown'] !== false) {
                     if (! isset($carry[$item['dropdown']])) {
                         $carry[$item['dropdown']] = [];
                     }

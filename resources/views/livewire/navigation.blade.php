@@ -7,8 +7,9 @@ use Eminiarts\Aura\Facades\Aura;
 $settings = Aura::getOption('team-settings');
 $appSettings = Aura::options();
 
-@endphp
+$compact = false;
 
+@endphp
 
 
     <div class="flex md:hidden justify-between py-5 px-5
@@ -87,14 +88,14 @@ $appSettings = Aura::options();
 
 
     <div
-        class="flex-shrink-0 w-0 aura-navigation"
+        class="overflow-x-visible flex-shrink-0 w-0 aura-navigation"
         x-bind:class="{
-            'open-sidebar md:w-72': !$store.leftSidebar.on,
+            'open-sidebar {{ $compact ? 'md:w-56' : 'md:w-72' }}': !$store.leftSidebar.on,
             'closed-sidebar w-20': $store.leftSidebar.on,
         }"
     >
         <div
-            class="fixed top-0 left-0 z-10 flex flex-col flex-shrink-0 h-screen overflow-y-auto border-r shadow-xl w-72
+            class="fixed top-0 left-0 z-10 flex flex-col flex-shrink-0 h-screen border-r shadow-xl {{ $compact ? 'w-56' : 'w-72' }}
                 @if ($sidebarType == 'primary')
                     text-white border-white border-opacity-20 bg-sidebar-bg dark:bg-gray-800 dark:border-gray-700 shadow-gray-400 md:shadow-none
                 @elseif ($sidebarType == 'light')
@@ -104,12 +105,12 @@ $appSettings = Aura::options();
                 @endif
             "
             x-bind:class="{
-                'w-72': !$store.leftSidebar.on,
+                '{{ $compact ? 'w-56' : 'w-72' }}': !$store.leftSidebar.on,
                 'w-20': $store.leftSidebar.on,
             }"
         >
 
-            <div class="flex flex-col flex-1 px-0 pt-0 pb-5 space-y-1 overflow-y-auto scrollbar-thin
+            <div class="flex flex-col flex-1 px-0 pt-0 pb-5 space-y-1 overflow-y-auto overflow-x-visible scrollbar-thin
                 @if ($sidebarType == 'primary')
                     scrollbar-thumb-primary-500 scrollbar-track-primary-700 dark:scrollbar-thumb-gray-900 dark:scrollbar-track-gray-800
                 @elseif ($sidebarType == 'light')
@@ -119,12 +120,12 @@ $appSettings = Aura::options();
                 @endif
             ">
 
-                <div class="flex flex-col px-5 space-y-1">
+                <div class="flex flex-col {{ $compact ? 'px-3' : 'px-5' }} space-y-1">
                     <div class="flex-shrink-0 h-[4.5rem] flex items-center justify-between">
 
                         @include('aura::navigation.logo')
 
-                        <div>
+                        <div class="ml-4">
                             <button
                                 @click="$store.leftSidebar.toggle()"
                                 type="button"
@@ -176,7 +177,7 @@ $appSettings = Aura::options();
 
                 </div>
 
-                <div class="flex flex-col px-4 space-y-1">
+                <div class="flex flex-col {{ $compact ? 'px-2' : 'px-4' }} space-y-1">
 
                     @includeIf('navigation.before')
 
@@ -187,7 +188,7 @@ $appSettings = Aura::options();
                 </div>
             </div>
 
-            <div class="flex-shrink-0 px-5 min-h-[4.5rem] py-2 flex items-center border-t
+            <div class="hide-collapsed flex-shrink-0 {{ $compact ? 'px-3' : 'px-5' }} min-h-[4.5rem] py-2 flex items-center border-t
                 @if ($sidebarType == 'primary')
                     border-white border-opacity-20 dark:border-gray-700
                 @elseif ($sidebarType == 'light')
