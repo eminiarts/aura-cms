@@ -2,6 +2,7 @@
 
 namespace Eminiarts\Aura;
 
+use Eminiarts\Aura\Navigation\Navigation as AuraNavigation;
 use Eminiarts\Aura\Commands\AuraCommand;
 use Eminiarts\Aura\Commands\CreateAuraPlugin;
 use Eminiarts\Aura\Commands\CreateResourceMigration;
@@ -189,6 +190,7 @@ class AuraServiceProvider extends PackageServiceProvider
                     ->copyAndRegisterServiceProviderInApp()
                     ->askToStarRepoOnGitHub('eminiarts/aura-cms');
             });
+
     }
 
     public function packageBooted()
@@ -247,6 +249,18 @@ class AuraServiceProvider extends PackageServiceProvider
 
         $this->app->singleton('hook_manager', function ($app) {
             return new HookManager();
+        });
+
+        $this->app->singleton('dynamicFunctions', function ($app) {
+            return new \Eminiarts\Aura\Facades\DynamicFunctions();
+        });
+
+        $this->app->singleton('dynamic_functions', function ($app) {
+            return new DynamicFunctions();
+        });
+
+        $this->app->singleton('navigation', function ($app) {
+            return new AuraNavigation();
         });
 
         $this->app->scoped('aura', function (): Aura {

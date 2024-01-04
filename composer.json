@@ -78,6 +78,7 @@
             "providers": [
                 "Lab404\\Impersonate\\ImpersonateServiceProvider",
                 "Eminiarts\\Aura\\Providers\\AuthServiceProvider",
+                "Eminiarts\\Aura\\Providers\\AppServiceProvider",
                 "Eminiarts\\Aura\\AuraServiceProvider",
                 "Aura\\Pro\\ProServiceProvider",
                 "Aura\\Flows\\FlowsServiceProvider",
