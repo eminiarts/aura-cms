@@ -125,7 +125,7 @@ $compact = false;
 
                         @include('aura::navigation.logo')
 
-                        <div class="ml-4">
+                        <div>
                             <button
                                 @click="$store.leftSidebar.toggle()"
                                 type="button"
@@ -139,7 +139,14 @@ $compact = false;
                                 focus:ring-primary-500 border-gray-700 text-gray-600 hover:text-gray-200
                                 @endif
                             ">
-                                <x-aura::icon icon="minus" />
+                                <div class="hide-collapsed">
+                                    <x-aura::icon icon="minus" />
+                                </div>
+
+                                <div class="show-collapsed">
+                                    <x-aura::icon icon="plus" />
+                                </div>
+
                             </button>
                         </div>
 
