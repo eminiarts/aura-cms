@@ -64,19 +64,31 @@
                                 </x-aura::navigation.item>
                             @endcan
                         @else
-                            <x-aura::navigation.item :route="$resource['route']" :strict="false" :tooltip="__($resource['name'])" :compact="$compact" :badge="$resource['badge'] ?? null" :badgeColor="$resource['badgeColor'] ?? null">
-                                <div class="{{ $iconClass }}">
-                                    {!! $resource['icon'] !!}
-                                </div>
-                                <div class="hide-collapsed">{{ __($resource['name']) }}</div>
+
+                            <x-aura::navigation.item :route="$resource['route']" :strict="false" :tooltip="__($resource['name'])" :compact="$compact" :badge="$resource['badge'] ?? null" :badgeColor="$resource['badgeColor'] ?? null" :onclick="$resource['onclick'] ?? ''"
+
+                            >
+                                @if($resource['icon'] !== '')
+                                    <div class="{{ $iconClass }}">
+                                        {!! Blade::render($resource['icon']) !!}
+                                    </div>
+                                    <div class="hide-collapsed">{{ __($resource['name']) }}</div>
+                                @else
+                                    <div>
+                                        <div class="hidden show-collapsed text-xl text-center w-6 {{ $iconClass }}">
+                                            {{ strtoupper(substr($resource['name'], 0, 1)) }}
+                                        </div>
+                                        <div class="hide-collapsed">{{ __($resource['name']) }}</div>
+                                    </div>
+                                @endif
+
                             </x-aura::navigation.item>
                         @endif
                     @endif
+
                 @endforeach
             </div>
         @endif
     @endforeach
-
-   @include('aura::navigation.settings')
 
 </div>
