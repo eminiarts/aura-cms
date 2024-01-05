@@ -24,7 +24,7 @@ class AppServiceProvider extends ServiceProvider
             "onclick" => "Livewire.emit('openModal', 'aura::create-posttype')",
             "route" => false,
             "conditional_logic" => DynamicFunctions::add(function() {
-              return auth()->user()->isSuperAdmin();
+              return auth()->user()->resource->isSuperAdmin();
             })
         ],
         [
@@ -36,7 +36,7 @@ class AppServiceProvider extends ServiceProvider
             "onclick" => "Livewire.emit('openModal', 'aura::create-taxonomy')",
             "route" => false,
             "conditional_logic" => DynamicFunctions::add(function() {
-              return auth()->user()->isSuperAdmin();
+              return auth()->user()->resource->isSuperAdmin();
             })
         ],
         [
@@ -47,7 +47,7 @@ class AppServiceProvider extends ServiceProvider
             "sort" => 300,
             "route" => 'aura.team.settings',
             "conditional_logic" => DynamicFunctions::add(function() {
-              return auth()->user()->isSuperAdmin();
+              return auth()->user()->resource->isSuperAdmin();
             })
         ],
         [
@@ -58,7 +58,7 @@ class AppServiceProvider extends ServiceProvider
             "sort" => 300,
             "route" => "aura.config",
             "conditional_logic" => DynamicFunctions::add(function() {
-              return auth()->user()->isSuperAdmin();
+              return auth()->user()->resource->isSuperAdmin();
             })
         ],
     ]);
