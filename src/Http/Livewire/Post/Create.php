@@ -30,11 +30,23 @@ class Create extends Component
 
     public $tax;
 
-    protected $listeners = ['updateField' => 'updateField'];
+    public $showSaveButton = true;
+
+    protected $listeners = ['updateField' => 'updateField', 'showSaveButton', 'hideSaveButton'];
 
     public function getTaxonomiesProperty()
     {
         return $this->model->getTaxonomies();
+    }
+
+    public function showSaveButton() {
+        ray('showSaveButton');
+        $this->showSaveButton = true;
+    }
+
+    public function hideSaveButton() {
+        ray('hideSaveButton');
+        $this->showSaveButton = false;
     }
 
     public function mount($slug)
