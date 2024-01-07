@@ -54,6 +54,9 @@ Alpine.data('aura', () => ({
     setTimeout(function() {
       body.style.paddingRight = sidebar.offsetWidth + 'px';
     }, 10);
+    setTimeout(function() {
+      body.style.paddingRight = sidebar.offsetWidth + 'px';
+    }, 50);
 
   },
   toggleRightSidebar() {
