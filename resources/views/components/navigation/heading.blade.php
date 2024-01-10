@@ -25,8 +25,8 @@ $settings = Eminiarts\Aura\Facades\Aura::getOption('team-settings');
     text-gray-500
   @endif
 ">
-  <x-aura::tippy text="Test" position="right">
-    <div x-cloak class="py-2 -mt-2 mb-2 show-collapsed">
+  <x-aura::tippy text="{{ $slot }}" position="right">
+    <div x-cloak class="py-2 -mt-2 mb-2 h-0 show-collapsed">
       <div class="w-full border-b
         @if ($sidebarType == 'primary')
           border-sidebar-text dark:border-gray-500
