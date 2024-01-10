@@ -14,8 +14,8 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot()
     {
-      Navigation::add([
-        [
+      Navigation::add(array_filter([
+        config('aura.features.create_resource') ? [
             "icon" => "<x-aura::icon icon='collection' />",
             "name" => "Create Resource",
             "slug" => "create_resource",
@@ -26,8 +26,8 @@ class AppServiceProvider extends ServiceProvider
             "conditional_logic" => DynamicFunctions::add(function() {
               return auth()->user()->resource->isSuperAdmin();
             })
-        ],
-        [
+        ] : null,
+        config('aura.features.create_taxonomy') ? [
             "icon" => "<x-aura::icon icon='collection' />",
             "name" => "Create Taxonomy",
             "slug" => "create_taxonomy",
@@ -38,8 +38,8 @@ class AppServiceProvider extends ServiceProvider
             "conditional_logic" => DynamicFunctions::add(function() {
               return auth()->user()->resource->isSuperAdmin();
             })
-        ],
-        [
+        ] : null,
+        config('aura.features.theme_options') ? [
             "icon" => "<x-aura::icon icon='brush' />",
             "name" => "Theme Options",
             "slug" => "theme_options",
@@ -49,8 +49,8 @@ class AppServiceProvider extends ServiceProvider
             "conditional_logic" => DynamicFunctions::add(function() {
               return auth()->user()->resource->isSuperAdmin();
             })
-        ],
-        [
+        ] : null,
+        config('aura.features.global_config') ? [
             "icon" => "<x-aura::icon icon='adjustments' />",
             "name" => "Global Config",
             "slug" => "global_config",
@@ -60,8 +60,8 @@ class AppServiceProvider extends ServiceProvider
             "conditional_logic" => DynamicFunctions::add(function() {
               return auth()->user()->resource->isSuperAdmin();
             })
-        ],
-    ]);
+        ] : null,
+    ]));
 
     }
 

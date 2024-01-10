@@ -12,7 +12,7 @@ $compact = false;
 @endphp
 
 
-    <div class="flex md:hidden justify-between py-5 px-5
+    <div class="flex md:hidden justify-between py-3 px-5
         @if ($sidebarType == 'primary')
             text-white border-white border-opacity-20 bg-sidebar-bg dark:bg-gray-800 dark:border-gray-700 shadow-gray-400 md:shadow-none
         @elseif ($sidebarType == 'light')
@@ -35,60 +35,9 @@ $compact = false;
 
     </div>
 
-
-    {{-- <div
-        class="overflow-x-visible flex-shrink-0 aura-navigation-collapsed md:w-20"
-        x-bind:class="{
-            'hidden md:block': !$store.leftSidebar.on,
-            'hidden': $store.leftSidebar.on,
-        }"
-    >
-        <div class="
-            fixed top-0 left-0 z-10 flex flex-col flex-shrink-0 w-20 h-screen overflow-x-visible  border-r  shadow-xl
-
-            @if ($sidebarType == 'primary')
-                text-white border-white bg-sidebar-bg dark:bg-gray-800 border-opacity-20 dark:border-gray-700 shadow-gray-400 md:shadow-none
-            @elseif ($sidebarType == 'light')
-                text-gray-900 border-gray-500/30 border-opacity-20 bg-gray-50 dark:bg-gray-800 dark:text-white dark:border-gray-700 shadow-gray-400 md:shadow-none
-            @elseif ($sidebarType == 'dark')
-                text-white border-white border-opacity-20 bg-gray-800 dark:bg-gray-800 dark:text-white dark:border-gray-700 shadow-gray-400 md:shadow-none
-            @endif
-        ">
-
-            <div class="flex-shrink-0 px-5 h-[4.5rem] w-full overflow-x-visible flex items-center">
-                <button
-                    @click="$store.leftSidebar.toggle()"
-                    type="button"
-                    class="relative inline-flex items-center justify-center w-10 h-10 text-sm font-semibold border rounded-lg shadow-none select-none focus:outline-none focus:ring-2 focus:ring-offset-0
-                    @if ($sidebarType == 'primary')
-                    focus:ring-primary-500 border-primary-600 dark:border-gray-700 text-primary-200 dark:text-gray-500 hover:text-white dark:hover:text-white
-                    @elseif ($sidebarType == 'light')
-                    focus:ring-primary-500 border-gray-400/30 dark:border-gray-700 text-gray-600 dark:text-gray-500 hover:text-gray-300 dark:hover:text-white
-                    @elseif ($sidebarType == 'dark')
-                    focus:ring-primary-500 border-gray-700 text-gray-200 hover:text-white
-                    @endif
-                ">
-                    <x-aura::icon icon="plus" />
-                </button>
-            </div>
-
-            @include('aura::navigation.collapsed')
-
-            <div class="flex-shrink-0 px-5 h-[4.5rem] flex items-center border-t border-white border-opacity-20 dark:border-gray-700">
-                <x-aura::tippy-area text="{{ Auth::user()->name }}" position="top">
-                    <x-slot name="title">
-                    <img class="inline-block w-9 h-9 rounded-full" src="{{ Auth::user()->resource->avatarUrl }}" alt="">
-                    </x-slot::title>
-
-                    @include('aura::navigation.footer-popup')
-                </x-aura::tippy-rea>
-            </div>
-        </div>
-    </div> --}}
-
-
     <div
-        class="overflow-x-visible flex-shrink-0 w-0 aura-navigation"
+        class="overflow-x-visible flex-shrink-0 aura-navigation {{ $compact ? 'md:w-56' : 'md:w-72' }}"
+        x-cloak
         x-bind:class="{
             'open-sidebar {{ $compact ? 'md:w-56' : 'md:w-72' }}': !$store.leftSidebar.on,
             'closed-sidebar w-20': $store.leftSidebar.on,
@@ -123,7 +72,9 @@ $compact = false;
                 <div class="flex flex-col {{ $compact ? 'px-3' : 'px-5' }} space-y-1">
                     <div class="flex-shrink-0 h-[4.5rem] flex items-center justify-between">
 
-                        @include('aura::navigation.logo')
+                        <div class="hide-collapsed">
+                            @include('aura::navigation.logo')
+                        </div>
 
                         <div>
                             <button
