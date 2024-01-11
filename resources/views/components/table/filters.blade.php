@@ -1,6 +1,3 @@
-
-
-
 <div>
     <div>
         {{-- select dropdown with filters @foreach($this->userFilters as $userFilter)--}}
@@ -9,16 +6,16 @@
                 {{ __('Select a filter') }}
             </option>
             @foreach($this->userFilters as $name => $userFilter)
-            <option value="{{ $name }}">{{ $name }}</option>
+            <option value="{{ $name }}">{{ $userFilter['name'] }}</option>
             @endforeach
         </select>
 
         {{-- if a filter is selected show the filter --}}
         @if($this->selectedFilter)
         <div class="flex items-center justify-between my-4">
-            <h4 class="font-semibold text-primary-600">Filter: {{ $this->selectedFilter }}</h4>
+            <h4 class="font-semibold text-primary-600">Filter: {{ $this->userFilters[$this->selectedFilter]['name'] }}</h4>
             <x-aura::button.transparent size="xs" wire:click="deleteFilter('{{ $this->selectedFilter }}')">
-            <x-aura::icon icon="trash" size="xs"/> Delete Filter
+            <x-aura::icon icon="trash" size="xs"/> {{ __('Delete Filter') }}
         </x-aura::button.transparent>
         </div>
         @endif
