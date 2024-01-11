@@ -62,7 +62,11 @@ trait Filters
     public function deleteFilter($filterName)
     {
         // Retrieve the filter using the provided key
-        $filter = $this->userFilters[$filterName];
+        $filter = $this->userFilters[$filterName] ?? null;
+        
+        if (!$filter) {
+            throw new \InvalidArgumentException('Invalid filter name: '.$filterName);
+        }
 
         // dd('delete', $filterName, $filter, $this->userFilters);
 
