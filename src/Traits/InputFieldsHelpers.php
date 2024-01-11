@@ -107,7 +107,12 @@ trait InputFieldsHelpers
 
     public function inputFields()
     {
-        return $this->getFieldsBeforeTree()->filter(fn ($item) => in_array($item['field_type'], ['input', 'repeater', 'group']));
+        return $this->getFieldsBeforeTree()->filter(fn ($item) => in_array($item['field_type'], ['input']));
+    }
+
+    public function indexHeaderFields()
+    {
+        return $this->getFieldsBeforeTree()->filter(fn ($item) => in_array($item['field_type'], ['input', 'index']));
     }
 
     public function inputFieldsSlugs()
