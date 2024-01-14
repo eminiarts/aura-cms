@@ -13,8 +13,6 @@
         init() {
             // Set the first available tab on the page on page load.
             this.$nextTick(() => this.select(this.$id('tab', 0)))
-            console.log('inital hideSaveButton');
-            {{-- @this.emit('hideSaveButton'); // Hide otherwise --}}
         },
         select(id, index) {
             this.selectedId = id;
@@ -24,14 +22,6 @@
                 console.log('index', index, this.currentIndex)
                 this.currentIndex = index;
             }
-
-            if(this.currentIndex === this.totalTabs - 1) {
-                {{-- @this.emit('showSaveButton'); --}}
-                {{-- @this.emit('showSaveButton'); // Show save button on last tab --}}
-            } else {
-                console.log('hideSaveButton');
-                {{-- @this.emit('hideSaveButton'); // Hide otherwise --}}
-            }
         },
         isSelected(id) {
             return this.selectedId === id
@@ -40,15 +30,6 @@
     x-id="['tab']"
     class="mx-0 mt-0 w-full"
 >
-    @if(optional($field)['sequential'])
-    <div class="flex justify-between">
-        <x-aura::button x-show="currentIndex > 0" @click="select($id('tab', currentIndex - 1), currentIndex - 1)">Previous</x-aura::button>
-        <div x-show="currentIndex == 0"></div>
-
-        <x-aura::button x-show="currentIndex < totalTabs - 1" @click="select($id('tab', currentIndex + 1), currentIndex + 1)">Next</x-aura::button>
-        <div x-show="currentIndex == totalTabs - 1"></div>
-    </div>
-    @endif
 
     <ul
         x-ref="tablist"
