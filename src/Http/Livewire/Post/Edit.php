@@ -185,8 +185,6 @@ class Edit extends Component
             $this->emit('refreshTable');
         }
 
-        $this->emit('refreshComponent');
-
         // Redirect to edit page
 
         // if ($this->model->getType() === 'Report') {
@@ -195,6 +193,8 @@ class Edit extends Component
 
         $this->model = $this->model->refresh();
         $this->post = $this->model->attributesToArray();
+        
+        $this->emit('refreshComponent');
 
     }
 
