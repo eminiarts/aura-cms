@@ -40,6 +40,8 @@ class Table extends Component
      */
     public $createInModal = false;
 
+    public $disabled;
+
     /**
      * Indicates if the Edit Component should be in a Modal.
      *
@@ -364,6 +366,7 @@ class Table extends Component
         // if(!$this->loaded) {
         //     return;
         // }
+
 
         if ($this->parentModel) {
             // dd($this->parentModel);

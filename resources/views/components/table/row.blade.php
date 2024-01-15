@@ -1,6 +1,6 @@
 <tr class="bg-white cm-table-row dark:bg-gray-900" wire:key="{{ $row->id }}" data-id="{{ $row->id }}">
     <x-aura::table.cell class="pr-0">
-        <x-aura::input.checkbox x-model="selected" :label="$row->id" hideLabel :value="$row->id" x-on:click="toggleRow($event, {{ $row->id }})" />
+        <x-aura::input.checkbox x-model="selected" :disabled="$this->disabled" :label="$row->id" hideLabel :value="$row->id" x-on:click="toggleRow($event, {{ $row->id }})" />
     </x-aura::table.cell>
 
     @foreach($this->headers as $key => $column)
