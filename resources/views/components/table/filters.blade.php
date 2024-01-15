@@ -71,6 +71,7 @@
                     <option value="contains">{{ __('contains') }}</option>
                     <option value="does_not_contain">{{ __('does not contain') }}</option>
                     <option value="is">{{ __('is') }}</option>
+                    <option value="is_not">{{ __('is not') }}</option>
                     <option value="starts_with">{{ __('starts with') }}</option>
                     <option value="ends_with">{{ __('ends with') }}</option>
                     <option value="is_empty">{{ __('is empty') }}</option>
