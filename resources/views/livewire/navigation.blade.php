@@ -202,6 +202,7 @@ $compact = false;
 
                     </x-aura::navigation.team-switcher>
 
+                    @if(config('aura.features.notifications'))
                     <div class="ml-2">
                         <x-aura::tippy text="{{ __('Notifications') }}">
                             <x-aura::button.primary @click="Livewire.emit('openSlideOver', 'notifications')" class="my-2 w-full" size="xs">
@@ -209,6 +210,7 @@ $compact = false;
                             </x-aura::button.primary>
                         </x-aura::tippy>
                     </div>
+                    @endif
                 </div>
                 @else
                 <div class="flex justify-between items-center w-full">
