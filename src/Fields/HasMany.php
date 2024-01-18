@@ -32,6 +32,8 @@ class HasMany extends Field
             return $field['relation']($query, $model);
         }
 
+        ray($component->field);
+
         if (optional($component->field)['relation']) {
 
             if ($model->id) {
