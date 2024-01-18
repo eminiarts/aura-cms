@@ -333,18 +333,13 @@ class Table extends Component
             $query = $this->model->indexQuery($query, $this);
         }
 
-        // when model is instance Resource, eager load meta and taxonomies
-        if ($this->model instanceof Resource) {
-            $query = $query->with(['taxonomies']);
-        }
-
-        // when model is instance Resource, eager load meta and taxonomies
+        // when model is instance Resource, eager load meta
         if ($this->model->usesMeta()) {
             $query = $query->with(['meta']);
         }
 
         if ($this->filters) {
-            $query = $this->applyTaxonomyFilter($query);
+            // $query = $this->applyTaxonomyFilter($query);
             $query = $this->applyCustomFilter($query);
         }
 

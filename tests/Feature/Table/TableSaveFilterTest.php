@@ -4,7 +4,7 @@ use Eminiarts\Aura\Http\Livewire\Table\Table;
 use Eminiarts\Aura\Models\User;
 use Eminiarts\Aura\Resource;
 use Eminiarts\Aura\Resources\Post;
-use Eminiarts\Aura\Taxonomies\Tag;
+use Eminiarts\Aura\Resources\Tag;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Livewire\Livewire;
@@ -76,7 +76,7 @@ class TableSaveFilterModel extends Resource
                 'name' => 'Tags',
                 'slug' => 'tags',
                 'type' => 'Eminiarts\\Aura\\Fields\\Tags',
-                'model' => 'Eminiarts\\Aura\\Taxonomies\\Tag',
+                'model' => 'Eminiarts\\Aura\\Resources\\Tag',
                 'create' => true,
                 'validation' => '',
                 'conditional_logic' => [],

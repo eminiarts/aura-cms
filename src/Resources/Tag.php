@@ -1,8 +1,10 @@
 <?php
 
-namespace Eminiarts\Aura\Taxonomies;
+namespace Eminiarts\Aura\Resources;
 
-class Tag extends Taxonomy
+use Eminiarts\Aura\Resource;
+
+class Tag extends Resource
 {
     public static $hierarchical = false;
 

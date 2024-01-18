@@ -10,7 +10,6 @@ use Eminiarts\Aura\Models\Scopes\TeamScope;
 use Eminiarts\Aura\Models\Scopes\TypeScope;
 use Eminiarts\Aura\Resources\User;
 use Eminiarts\Aura\Traits\AuraModelConfig;
-use Eminiarts\Aura\Traits\AuraTaxonomies;
 use Eminiarts\Aura\Traits\InitialPostFields;
 use Eminiarts\Aura\Traits\InputFields;
 use Eminiarts\Aura\Traits\InteractsWithTable;
@@ -25,7 +24,6 @@ use Illuminate\Support\Str;
 class Resource extends Model
 {
     use AuraModelConfig;
-    use AuraTaxonomies;
     use HasFactory;
     use HasTimestamps;
 
@@ -35,13 +33,12 @@ class Resource extends Model
     use InteractsWithTable;
     use SaveFieldAttributes;
     use SaveMetaFields;
-    use SaveTerms;
 
     public $fieldsAttributeCache;
 
     protected $appends = ['fields'];
 
-    protected $fillable = ['title', 'content', 'type', 'status', 'fields', 'slug', 'user_id', 'parent_id', 'order', 'taxonomies', 'terms', 'team_id', 'first_taxonomy', 'created_at', 'updated_at', 'deleted_at'];
+    protected $fillable = ['title', 'content', 'type', 'status', 'fields', 'slug', 'user_id', 'parent_id', 'order', 'terms', 'team_id', 'first_taxonomy', 'created_at', 'updated_at', 'deleted_at'];
 
     protected $hidden = ['meta'];
 
@@ -246,9 +243,6 @@ class Resource extends Model
         $possibleRelationMethods = [$key, Str::camel($key)];
 
         foreach ($possibleRelationMethods as $method) {
-            if ($method == 'taxonomy') {
-                continue;
-            }
 
             if (in_array($method, $modelMethods) && ($this->{$method}() instanceof \Illuminate\Database\Eloquent\Relations\Relation)) {
                 return true;

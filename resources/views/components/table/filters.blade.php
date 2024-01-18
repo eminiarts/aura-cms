@@ -155,9 +155,4 @@
 
     </div>
 
-    <div class="mt-16">
-        {{-- Taxonomies --}}
-    </div>
-
-
     <x-aura::button.primary wire:click="search" class="mt-4">{{ __('Search') }}</x-aura::button.primary>

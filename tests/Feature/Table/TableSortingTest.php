@@ -116,7 +116,7 @@ class MetaSortingModel extends Resource
                 'name' => 'Tags',
                 'slug' => 'tags',
                 'type' => 'Eminiarts\\Aura\\Fields\\Tags',
-                'model' => 'Eminiarts\\Aura\\Taxonomies\\Tag',
+                'model' => 'Eminiarts\\Aura\\Resources\\Tag',
                 'create' => true,
                 'validation' => '',
                 'conditional_logic' => [],
@@ -276,7 +276,6 @@ test('table sorting by taxonomy field', function () {
     expect($post->isTaxonomyField('tags'))->toBeTrue();
     expect($post->isMetaField('tags'))->toBeFalse();
 
-    // dump($post->taxonomies);
     // dd($post->terms);
 
     // Visit the Post Index Page

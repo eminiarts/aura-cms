@@ -18,7 +18,6 @@ class User extends UserModel
 {
     use SaveFieldAttributes;
     use SaveMetaFields;
-    use SaveTerms;
 
     public static ?string $slug = 'user';
 

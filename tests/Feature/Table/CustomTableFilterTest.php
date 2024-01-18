@@ -132,7 +132,7 @@ class CustomTableFilterModel extends Resource
                 'name' => 'Tags',
                 'slug' => 'tags',
                 'type' => 'Eminiarts\\Aura\\Fields\\Tags',
-                'model' => 'Eminiarts\\Aura\\Taxonomies\\Tag',
+                'model' => 'Eminiarts\\Aura\\Resources\\Tag',
                 'create' => true,
                 'validation' => '',
                 'conditional_logic' => [],
