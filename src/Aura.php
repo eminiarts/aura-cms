@@ -246,19 +246,25 @@ class Aura
 
                 return $settings;
             });
-        } else {
+        }
+
             return Cache::remember('aura.'.$name, now()->addHour(), function () use ($name) {
+
                 $option = Option::where('name', $name)->first();
 
-                if ($option && is_string($option->value)) {
-                    $settings = json_decode($option->value, true);
+                if ($option) {
+                    if (is_string($option->value)) {
+                        $settings = json_decode($option->value, true);
+                    } else {
+                        $settings = $option->value;
+                    }
                 } else {
-                    $settings = $option->value ?? null;
+                    $settings = [];
                 }
 
                 return $settings;
             });
-        }
+        
     }
 
     public static function getPath($id)

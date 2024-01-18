@@ -33,9 +33,13 @@ class HasMany extends Field
         }
 
         if (optional($component->field)['relation']) {
-            return $query->whereHas('meta', function ($query) use ($field) {
-                $query->where('key', $field['relation']);
-            });
+
+            if ($model->id) {
+                return $query->whereHas('meta', function ($query) use ($field, $model) {
+                    $query->where('key', $field['relation'])
+                          ->where('value', $model->id);
+                });
+            }
         }
 
         if ($model instanceof \Eminiarts\Aura\Resources\User) {

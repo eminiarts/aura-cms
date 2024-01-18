@@ -44,8 +44,6 @@ class Create extends Component
         // Array instead of Eloquent Model
         $this->post = $this->model->toArray();
 
-        $this->post['terms'] = $this->model->terms;
-
         // get "for" and "id" params from url
         $for = request()->get('for');
         $id = request()->get('id');
@@ -81,7 +79,6 @@ class Create extends Component
     public function rules()
     {
         return Arr::dot([
-            'post.terms' => '',
             'post.fields' => $this->model->validationRules(),
         ]);
     }

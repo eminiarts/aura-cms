@@ -28,7 +28,6 @@ class Post extends BaseResource
     use InitialPostFields;
     use SaveFieldAttributes;
     use SaveMetaFields;
-    use SaveTerms;
 
     protected $appends = ['fields'];
 
