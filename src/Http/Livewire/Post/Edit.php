@@ -109,15 +109,10 @@ class Edit extends Component
 
         // foreach fields, call the hydration method on the field
 
-        $this->post['terms'] = $this->model->terms;
-
         // dd('mount', $this->post, $this->model);
 
         // Set on model instead of here
         // if $this->post['terms']['tag'] is not set, set it to null
-        $this->post['terms']['tag'] = $this->post['terms']['tag'] ?? null;
-        $this->post['terms']['category'] = $this->post['terms']['category'] ?? null;
-
     }
 
     public function reload()
