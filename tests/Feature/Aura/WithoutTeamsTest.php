@@ -57,7 +57,6 @@ test('Aura without teams - table columns', function () {
     // expect user table not to have current_team_id
     expect(Schema::hasColumn('users', 'current_team_id'))->toBeFalse();
     expect(Schema::hasColumn('posts', 'team_id'))->toBeFalse();
-    expect(Schema::hasColumn('taxonomies', 'team_id'))->toBeFalse();
     expect(Schema::hasColumn('user_meta', 'team_id'))->toBeFalse();
 });
 

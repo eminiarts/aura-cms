@@ -82,11 +82,6 @@ class Edit extends Component
         return parent::callMethod($method, $params, $captureReturnValueCallback);
     }
 
-    public function getTaxonomiesProperty()
-    {
-        return $this->model->getTaxonomies();
-    }
-
     public function initializeModelFields()
     {
         foreach ($this->model->inputFields() as $field) {

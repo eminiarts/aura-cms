@@ -38,11 +38,6 @@ class View extends Component
         return $this->post['fields'][$slug];
     }
 
-    public function getTaxonomiesProperty()
-    {
-        return $this->model->getTaxonomies();
-    }
-
     public function mount($slug, $id)
     {
         $this->slug = $slug;

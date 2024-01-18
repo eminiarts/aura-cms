@@ -190,26 +190,4 @@ trait QueryFilters
         //         return $query;
     }
 
-    /**
-     * Apply taxonomy filter to the query
-     *
-     * @param  \Illuminate\Database\Eloquent\Builder  $query
-     * @return \Illuminate\Database\Eloquent\Builder
-     */
-    protected function applyTaxonomyFilter(Builder $query)
-    {
-        if ($this->filters['taxonomy']) {
-            foreach ($this->filters['taxonomy'] as $taxonomy) {
-                if (! $taxonomy) {
-                    continue;
-                }
-
-                $query->whereHas('taxonomies', function (Builder $query) use ($taxonomy) {
-                    $query->whereIn('id', $taxonomy);
-                });
-            }
-        }
-
-        return $query;
-    }
 }

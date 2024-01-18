@@ -5,7 +5,7 @@ use Eminiarts\Aura\Resources\Permission;
 use Eminiarts\Aura\Resources\Post;
 use Eminiarts\Aura\Resources\Role;
 use Eminiarts\Aura\Resources\User;
-use Eminiarts\Aura\Taxonomies\Tag;
+use Eminiarts\Aura\Resources\Tag;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
@@ -99,11 +99,10 @@ test('Check Aura Pages (with Teams)', function () {
     $this->get(route('aura.post.view', ['slug' => 'Permission', 'id' => $permission->id]))->assertOk();
     $this->get(route('aura.post.view', ['slug' => 'Option', 'id' => $option->id]))->assertOk();
 
-    // Taxonomies
-    $this->get(route('aura.taxonomy.index', ['slug' => 'Tag']))->assertOk();
-    $this->get(route('aura.taxonomy.index', ['slug' => 'Category']))->assertOk();
-    $this->get(route('aura.taxonomy.create', ['slug' => 'Tag']))->assertOk();
-    $this->get(route('aura.taxonomy.create', ['slug' => 'Category']))->assertOk();
+    $this->get(route('aura.post.index', ['slug' => 'Tag']))->assertOk();
+    $this->get(route('aura.post.index', ['slug' => 'Category']))->assertOk();
+    $this->get(route('aura.post.create', ['slug' => 'Tag']))->assertOk();
+    $this->get(route('aura.post.create', ['slug' => 'Category']))->assertOk();
 
     $tag = Tag::create([
         'name' => 'Test Taxonomy',

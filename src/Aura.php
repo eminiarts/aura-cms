@@ -40,8 +40,6 @@ class Aura
 
     protected array $resources = [];
 
-    protected array $taxonomies = [];
-
     protected array $widgets = [];
 
     /**
@@ -95,21 +93,6 @@ class Aura
         }
     }
 
-    public function findTaxonomyBySlug($slug)
-    {
-        $taxonomies = collect($this->getTaxonomies())->map(function ($resource) {
-            return Str::afterLast($resource, '\\');
-        });
-
-        $index = $taxonomies->search(function ($item) use ($slug) {
-            return Str::slug($item) == Str::slug($slug);
-        });
-
-        if ($index !== false) {
-            return app($this->getTaxonomies()[$index]);
-        }
-    }
-
     public static function findTemplateBySlug($slug)
     {
         return app('Eminiarts\Aura\Templates\\'.str($slug)->title);
@@ -154,25 +137,6 @@ class Aura
         }
 
         return $this->getAppFiles($path, $filter = 'Resource', $namespace = config('aura.paths.resources.namespace'));
-    }
-
-    /**
-     * Register the App taxonomies
-     *
-     * @param  array  $resources
-     * @return static
-     */
-    public function getAppTaxonomies()
-    {
-        $path = config('aura.paths.taxonomies.path');
-
-
-        if (! file_exists($path)) {
-            return [];
-        }
-
-
-        return $this->getAppFiles($path, $filter = 'Taxonomy', $namespace = config('aura.paths.taxonomies.namespace'));
     }
 
     public function getAppWidgets()
@@ -307,10 +271,6 @@ class Aura
         return array_unique($this->resources);
     }
 
-    public function getTaxonomies(): array
-    {
-        return array_unique($this->taxonomies);
-    }
 
     public function getWidgets(): array
     {
@@ -333,7 +293,7 @@ class Aura
 
         return Cache::remember('user-'.auth()->id().'-navigation', 3600, function () {
 
-            $resources = collect($this->getResources())->merge($this->getTaxonomies());
+            $resources = collect($this->getResources());
 
             // filter resources by permission and check if user has viewAny permission
             $resources = $resources->filter(function ($resource) {
@@ -413,10 +373,6 @@ class Aura
         $this->resources = array_merge($this->resources, $resources);
     }
 
-    public function registerTaxonomies(array $taxonomies): void
-    {
-        $this->taxonomies = array_merge($this->taxonomies, $taxonomies);
-    }
 
     public function registerWidgets(array $widgets): void
     {
@@ -439,21 +395,6 @@ class Aura
         $option->save();
 
         Cache::forget('aura-settings');
-    }
-
-    public function taxonomies()
-    {
-        return $this->getTaxonomies();
-
-        return Cache::remember('aura.taxonomies', now()->addHour(), function () {
-            $filesystem = app(Filesystem::class);
-
-            return collect($filesystem->allFiles(app_path('Aura/Taxonomies')))
-                ->map(function (SplFileInfo $file): string {
-                    return (string) Str::of($file->getRelativePathname())
-                        ->replace(['/', '.php'], ['\\', '']);
-                })->filter(fn (string $class): bool => $class != 'Taxonomy')->toArray();
-        });
     }
 
     public static function templates()

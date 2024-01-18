@@ -32,11 +32,6 @@ class Create extends Component
 
     protected $listeners = ['updateField' => 'updateField'];
 
-    public function getTaxonomiesProperty()
-    {
-        return $this->model->getTaxonomies();
-    }
-
     public function mount($slug)
     {
         $this->slug = $slug;

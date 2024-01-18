@@ -32,7 +32,7 @@ class Post extends BaseResource
 
     protected $appends = ['fields'];
 
-    protected $fillable = ['title', 'content', 'type', 'status', 'fields', 'slug', 'user_id', 'parent_id', 'order', 'taxonomies', 'terms', 'team_id', 'first_taxonomy'];
+    protected $fillable = ['title', 'content', 'type', 'status', 'fields', 'slug', 'user_id', 'parent_id', 'order', 'terms', 'team_id', 'first_taxonomy'];
 
     /**
      * The table associated with the model.
