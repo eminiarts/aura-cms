@@ -2,6 +2,7 @@
     {{ app('aura')::injectView('header_before') }}
 @endif
 
+@if ($this->settings['header'])
 {{-- if a view exists: aura.$model->pluralName().header, load it  --}}
 @if (View::exists($view = 'aura.' . $model->getType() . '.header'))
     @include($view)
@@ -61,6 +62,7 @@
             </div>
         @endif
     </div>
+@endif
 @endif
 @if ($this->settings['header_after'])
     {{ app('aura')::injectView('header_after') }}
