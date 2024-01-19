@@ -41,6 +41,11 @@ trait Settings
             'actions' => true,
             'selectable' => true,
             'default_view' => 'list',
+            'header_before' => true,
+            'header_after' => true,
+            'table_before' => true,
+            'table_after' => true,
+            'create' => true,
             'views'=> [
                 'table' => 'aura::components.table.table',
                 'list' => 'aura::components.table.list',
