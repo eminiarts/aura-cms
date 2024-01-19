@@ -50,22 +50,6 @@ class User extends UserModel
 
     protected static ?string $group = 'Admin';
 
-      public function getSearchableFields()
-    {
-        // get input fields and remove the ones that are not searchable
-        $fields = $this->inputFields()->filter(function ($field) {
-            // if $field is array or undefined, then we don't want to use it
-            if (!is_array($field) || !isset($field['searchable'])) {
-                return false;
-            }
-
-            return $field['searchable'];
-        });
-
-
-        return $fields;
-    }
-
     /**
      * The attributes that should be hidden for serialization.
      *
@@ -86,7 +70,6 @@ class User extends UserModel
 
     protected $with = ['meta'];
 
-    
     public function clearFieldsAttributeCache()
     {
         // Do we need to extend user instead of resource?
@@ -94,7 +77,7 @@ class User extends UserModel
 
     public function getAvatarUrlAttribute()
     {
-        if (!$this->avatar) {
+        if (! $this->avatar) {
             return 'https://ui-avatars.com/api/?name='.$this->getInitials().'';
         }
 
@@ -336,7 +319,7 @@ class User extends UserModel
             }
         });
 
-        if (!$meta->isEmpty()) {
+        if (! $meta->isEmpty()) {
             // Cast Attributes
             $meta = $meta->map(function ($value, $key) {
                 // if there is a function get{Slug}Field on the model, use it
@@ -386,6 +369,21 @@ class User extends UserModel
         return $this->roles->pluck('id')->toArray();
     }
 
+    public function getSearchableFields()
+    {
+        // get input fields and remove the ones that are not searchable
+        $fields = $this->inputFields()->filter(function ($field) {
+            // if $field is array or undefined, then we don't want to use it
+            if (! is_array($field) || ! isset($field['searchable'])) {
+                return false;
+            }
+
+            return $field['searchable'];
+        });
+
+        return $fields;
+    }
+
     public static function getWidgets(): array
     {
         return [];
@@ -395,7 +393,7 @@ class User extends UserModel
     {
         $cachedRoles = $this->cachedRoles()->pluck('slug');
 
-        if (!$cachedRoles) {
+        if (! $cachedRoles) {
             return false;
         }
 
@@ -412,7 +410,7 @@ class User extends UserModel
     {
         $roles = $this->cachedRoles();
 
-        if (!$roles) {
+        if (! $roles) {
             return false;
         }
 
@@ -441,7 +439,7 @@ class User extends UserModel
     {
         $roles = $this->cachedRoles();
 
-        if (!$roles) {
+        if (! $roles) {
             return false;
         }
 
@@ -466,7 +464,7 @@ class User extends UserModel
     {
         $roles = $this->cachedRoles();
 
-        if (!$roles) {
+        if (! $roles) {
             return false;
         }
 
@@ -486,7 +484,7 @@ class User extends UserModel
     {
         $roles = $this->cachedRoles();
 
-        if (!$roles) {
+        if (! $roles) {
             return false;
         }
 
@@ -562,7 +560,7 @@ class User extends UserModel
     protected static function booted()
     {
         static::creating(function ($user) {
-            if (config('aura.teams') && !$user->current_team_id) {
+            if (config('aura.teams') && ! $user->current_team_id) {
                 $user->current_team_id = auth()->user()?->current_team_id;
             }
         });

@@ -41,7 +41,7 @@ class PosttypeTestModel extends Post
                 'style' => [
                 ],
             ],
-            [
+            [ 
                 'name' => 'Total',
                 'type' => 'Eminiarts\\Aura\\Fields\\Text',
                 'validation' => 'numeric',

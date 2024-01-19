@@ -181,7 +181,7 @@ class Table extends Component
                 $posts = $this->selectedRowsQuery->get();
                 $response = $item->{$action}($posts);
 
-            // dd($response);
+                // dd($response);
             } elseif (method_exists($item, $action)) {
                 $item->{$action}();
             }
@@ -271,11 +271,15 @@ class Table extends Component
     {
         $headers = $this->model->getTableHeaders();
 
+        // ray($headers)->blue();
+
         if ($sort = auth()->user()->getOption('columns_sort.'.$this->model->getType())) {
             $headers = $headers->sortBy(function ($value, $key) use ($sort) {
                 return array_search($key, $sort);
             });
         }
+
+        // ray($headers)->green();
 
         return $headers;
     }

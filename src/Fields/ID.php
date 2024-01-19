@@ -8,7 +8,7 @@ class ID extends Field
 
     public $on_forms = false;
 
-    public string $type = 'input';
+    public string $type = 'index';
 
     public $view = 'aura::fields.view-value';
 }

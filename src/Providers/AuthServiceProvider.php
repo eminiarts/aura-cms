@@ -47,7 +47,7 @@ class AuthServiceProvider extends ServiceProvider
         // Set Configuration of fortify.features to [registration, email-verification and two-factor-authentication]
         app('config')->set('fortify.features', [
             //Features::registration(),
-            //Features::emailVerification(),
+            Features::emailVerification(),
             Features::twoFactorAuthentication([
                 'confirm' => true,
                 'confirmPassword' => true,

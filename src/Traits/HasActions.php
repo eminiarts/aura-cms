@@ -34,6 +34,10 @@ trait HasActions
     {
         $response = $this->model->{$action}();
 
-        $this->notify('Successfully ran: '.$action);
+        if ($response instanceof \Illuminate\Http\RedirectResponse) {
+            return $response; // Perform the redirect.
+        }
+
+        $this->notify(__('Successfully ran: :action', ['action' => __($action)]));
     }
 }

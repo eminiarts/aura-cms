@@ -89,6 +89,9 @@ trait QueryFilters
                 case 'is':
                     $query->where('value', '=', $filter['value']);
                     break;
+                case 'is_not':
+                    $query->where('value', '!=', $filter['value']);
+                    break;
                 case 'greater_than':
                     $query->where('value', '>', $filter['value']);
                     break;
@@ -123,6 +126,9 @@ trait QueryFilters
                 break;
             case 'is':
                 $query->where($filter['name'], '=', $filter['value']);
+                break;
+            case 'is_not':
+                $query->where($filter['name'], '!=', $filter['value']);
                 break;
             case 'greater_than':
                 $query->where($filter['name'], '>', $filter['value']);

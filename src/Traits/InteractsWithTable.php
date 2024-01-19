@@ -9,11 +9,6 @@ trait InteractsWithTable
         return 10;
     }
 
-    public function defaultTableView()
-    {
-        return 'list';
-    }
-
     public function defaultTableSort()
     {
         return 'id';
@@ -22,6 +17,11 @@ trait InteractsWithTable
     public function defaultTableSortDirection()
     {
         return 'desc';
+    }
+
+    public function defaultTableView()
+    {
+        return 'list';
     }
 
     public function showTableSettings()
