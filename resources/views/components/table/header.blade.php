@@ -1,4 +1,6 @@
+@if($this->settings['header_before'])
 {{ app('aura')::injectView('header_before') }}
+@endif
 
 {{-- if a view exists: aura.$model->pluralName().header, load it  --}}
 @if(View::exists($view = 'aura.' . $model->getType() . '.header'))
@@ -7,6 +9,8 @@
 @include('aura::' . $view)
 @else
 <div class="flex items-center justify-between mt-6">
+
+    @if($this->settings['title'])
     <div>
         @if(optional(optional($this)->field)['name'])
         <h1 class="text-3xl font-semibold">{{ __($this->field['name']) }}</h1>
@@ -19,7 +23,10 @@
         @endif
         </h3>
     </div>
+    @endif
 
+
+    @if($this->settings['create'])
     <div>
         <div>
             @if($this->createInModal)
@@ -47,7 +54,9 @@
             @endif
         </div>
     </div>
+    @endif
 </div>
 @endif
-
+@if($this->settings['header_after'])
 {{ app('aura')::injectView('header_after') }}
+@endif
