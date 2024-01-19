@@ -2,15 +2,17 @@
 
 namespace Eminiarts\Aura\Http\Livewire\Table;
 
-use Eminiarts\Aura\Http\Livewire\Table\Traits\BulkActions;
-use Eminiarts\Aura\Http\Livewire\Table\Traits\Filters;
-use Eminiarts\Aura\Http\Livewire\Table\Traits\PerPagePagination;
-use Eminiarts\Aura\Http\Livewire\Table\Traits\QueryFilters;
-use Eminiarts\Aura\Http\Livewire\Table\Traits\Search;
-use Eminiarts\Aura\Http\Livewire\Table\Traits\Sorting;
-use Eminiarts\Aura\Models\User;
-use Eminiarts\Aura\Resource;
 use Livewire\Component;
+use Eminiarts\Aura\Resource;
+use Eminiarts\Aura\Models\User;
+use Eminiarts\Aura\Http\Livewire\Table\Traits\Search;
+use Eminiarts\Aura\Http\Livewire\Table\Traits\Select;
+use Eminiarts\Aura\Http\Livewire\Table\Traits\Filters;
+use Eminiarts\Aura\Http\Livewire\Table\Traits\Sorting;
+use Eminiarts\Aura\Http\Livewire\Table\Traits\Settings;
+use Eminiarts\Aura\Http\Livewire\Table\Traits\BulkActions;
+use Eminiarts\Aura\Http\Livewire\Table\Traits\QueryFilters;
+use Eminiarts\Aura\Http\Livewire\Table\Traits\PerPagePagination;
 
 /**
  * Class Table
@@ -23,8 +25,9 @@ class Table extends Component
     use QueryFilters;
     use Search;
     use Sorting;
+    use Settings;
+    use Select;
 
-    public $bulkActionsView = 'aura::components.table.bulkActions';
 
     /**
      * List of table columns.
@@ -66,7 +69,6 @@ class Table extends Component
     ];
 
     public $filterView = 'aura::components.table.filter';
-
     public $headerView = 'aura::components.table.header';
 
     /**
@@ -166,50 +168,9 @@ class Table extends Component
             return $this->model->find($data['id'])->{$data['action']}();
         }
     }
-
-    /**
-     * Handle bulk action on the selected rows.
-     */
-    public function bulkAction(string $action)
-    {
-        $this->selectedRowsQuery->each(function ($item, $key) use ($action) {
-            if (str_starts_with($action, 'callFlow.')) {
-                $item->callFlow(explode('.', $action)[1]);
-            } elseif (str_starts_with($action, 'multiple')) {
-                $posts = $this->selectedRowsQuery->get();
-                $response = $item->{$action}($posts);
-
-            // dd($response);
-            } elseif (method_exists($item, $action)) {
-                $item->{$action}();
-            }
-        });
-
-        $this->notify('Erfolgreich: '.$action);
-    }
-
-    public function bulkCollectionAction($action)
-    {
-        //$action = $this->model->getBulkActions()[$action];
-        $ids = $this->selectedRowsQuery->pluck('id')->toArray();
-
-        $response = $this->model->{$action}($ids);
-
-        if ($response instanceof \Symfony\Component\HttpFoundation\StreamedResponse) {
-            return $response;
-        }
-
-        // reset selected rows
-        $this->selected = [];
-
-        $this->notify('Erfolgreich: '.$action);
-
-        $this->emit('refreshTable');
-    }
-
+    
     public function getAllTableRows()
     {
-        // dd('hier', $this->rowsQuery->pluck('id'));
         return $this->rowsQuery->pluck('id')->all();
     }
 
@@ -218,15 +179,7 @@ class Table extends Component
     //     return $this->rows->pluck('id')->toArray();
     // }
 
-    /**
-     * Get the available bulk actions.
-     *
-     * @return mixed
-     */
-    public function getBulkActionsProperty()
-    {
-        return $this->model->getBulkActions();
-    }
+  
 
     /**
      * Get the create link.
@@ -394,6 +347,9 @@ class Table extends Component
         } else {
             $this->columns = $this->model->getDefaultColumns();
         }
+        
+
+        $this->initiateSettings();
     }
 
     public function openBulkActionModal($action, $data)
@@ -506,4 +462,6 @@ class Table extends Component
             // $this->emit('selectedRows', $this->selected);
         }
     }
+
+   
 }
