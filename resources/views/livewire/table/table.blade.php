@@ -20,7 +20,6 @@ x-data="{
     },
     @endif
 
-
     init() {
         Livewire.on('selectedRows', (updatedSelected) => {
            // this.selected = updatedSelected;
