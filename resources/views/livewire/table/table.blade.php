@@ -185,7 +185,7 @@ x-data="{
 }">
         @include($this->settings['views']['header'])
 
-        <div class="mt-6">
+        <div class="mt-4">
 
             <div class="flex flex-col justify-between mb-4 w-full md:items-center md:flex-row">
 
