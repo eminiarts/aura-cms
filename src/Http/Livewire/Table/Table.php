@@ -68,9 +68,6 @@ class Table extends Component
         'global' => false,
     ];
 
-    public $filterView = 'aura::components.table.filter';
-    public $headerView = 'aura::components.table.header';
-
     /**
      * The last clicked row.
      *

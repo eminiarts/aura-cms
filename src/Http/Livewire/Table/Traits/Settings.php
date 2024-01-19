@@ -4,8 +4,6 @@ namespace Eminiarts\Aura\Http\Livewire\Table\Traits;
 
 trait Settings
 {
-    //  public $defaultSettings;
-    
     public function initiateSettings() {
         $this->settings = $this->array_merge_recursive_distinct($this->defaultSettings(), $this->settings ?: []);
     }
