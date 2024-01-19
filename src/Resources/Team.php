@@ -222,7 +222,7 @@ class Team extends Resource
             unset($team->type);
             unset($team->team_id);
 
-            if (!$team->user_id && auth()->user()) {
+            if (! $team->user_id && auth()->user()) {
                 $team->user_id = auth()->user()->id;
             }
         });

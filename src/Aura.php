@@ -128,6 +128,7 @@ class Aura
 
     public function getAppFiles($path, $filter, $namespace)
     {
+
         return collect(app(Filesystem::class)->allFiles($path))
             ->map(function (SplFileInfo $file): string {
                 return (string) Str::of($file->getRelativePathname())
@@ -163,13 +164,15 @@ class Aura
      */
     public function getAppTaxonomies()
     {
-        $path = config('aura.taxonomies.path');
+        $path = config('aura.paths.taxonomies.path');
+
 
         if (! file_exists($path)) {
             return [];
         }
 
-        return $this->getAppFiles($path, $filter = 'Taxonomy', $namespace = config('aura.taxonomies.namespace'));
+
+        return $this->getAppFiles($path, $filter = 'Taxonomy', $namespace = config('aura.paths.taxonomies.namespace'));
     }
 
     public function getAppWidgets()

@@ -12,10 +12,10 @@ class BookmarkPage extends Component
 
     public function getIsBookmarkedProperty()
     {
-        if (!auth()->check()) {
+        if (! auth()->check()) {
             return false;
         }
-        
+
         $bookmarks = auth()->user()->getOptionBookmarks();
         $bookmarkUrls = array_column($bookmarks, 'url');
         $key = array_search($this->site['url'], $bookmarkUrls);

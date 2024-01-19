@@ -132,7 +132,6 @@ class TeamPolicy
             return false;
         }
 
-
         return $user->belongsToTeam($team);
     }
 

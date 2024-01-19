@@ -157,10 +157,10 @@ class Edit extends Component
         if (isset($this->post['fields']['signed_mzkb_pdf_file'])) {
             $signed_mzkb_pdf = $this->post['fields']['signed_mzkb_pdf_file'];
             if (! is_string($signed_mzkb_pdf)) {
-                
+
                 $signed_mzkb_pdfPath = $signed_mzkb_pdf->store('mzkb', 'public');
 
-                $this->post['fields']['signed_mzkb_pdf'] = 'app/public/'. $signed_mzkb_pdfPath;
+                $this->post['fields']['signed_mzkb_pdf'] = 'app/public/'.$signed_mzkb_pdfPath;
             }
         }
 
@@ -168,9 +168,7 @@ class Edit extends Component
 
         if ($this->model->usesCustomTable()) {
 
-
             // dd('save', $this->post['fields']);
-
 
             $this->model->update($this->post['fields']);
         // $this->model->update(['fields' => $this->post['fields']]);
@@ -187,8 +185,6 @@ class Edit extends Component
             $this->emit('refreshTable');
         }
 
-        $this->emit('refreshComponent');
-
         // Redirect to edit page
 
         // if ($this->model->getType() === 'Report') {
@@ -197,6 +193,8 @@ class Edit extends Component
 
         $this->model = $this->model->refresh();
         $this->post = $this->model->attributesToArray();
+        
+        $this->emit('refreshComponent');
 
     }
 
