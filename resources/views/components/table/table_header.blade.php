@@ -1,8 +1,10 @@
 <thead>
     <tr>
+        @if($this->settings['selectable'])
         <x-aura::table.heading class="w-8 pr-0 bg-gray-50 dark:bg-gray-800">
                 <x-aura::input.checkbox x-model="selectPage" x-on:click="selectCurrentPage" />
         </x-aura::table.heading>
+        @endif
 
         @foreach($this->headers as $key => $column)
             @if(optional($this->columns)[$key])
