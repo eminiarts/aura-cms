@@ -186,7 +186,7 @@ x-data="{
 
         <div class="mt-4">
 
-            <div class="flex flex-col justify-between mb-4 w-full md:items-center md:flex-row">
+            <div class="flex flex-col justify-between w-full md:items-center md:flex-row">
 
                 @if($this->settings['search'])
                 <div class="mb-4 md:mb-0">
