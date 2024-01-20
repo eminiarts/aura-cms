@@ -211,13 +211,6 @@ trait Filters
 
     }
 
-    /**
-     * Set taxonomy filters.
-     */
-    public function setTaxonomyFilters()
-    {
-        $this->filters['taxonomy'] = $this->model?->taxonomyFields()->pluck('model')->mapWithKeys(fn ($i) => [app($i)->getType() => []])->toArray();
-    }
 
     /**
      * Update the selected filter.
