@@ -28,7 +28,6 @@ class Table extends Component
     use Settings;
     use Select;
 
-
     /**
      * List of table columns.
      *
@@ -217,12 +216,12 @@ class Table extends Component
      */
     public function getHeadersProperty()
     {
-        $headers = $this->model->getTableHeaders();
+        $headers = $this->settings['columns'];
 
-        // ray($headers)->blue();
+        ray($headers)->blue();
 
         if ($sort = auth()->user()->getOption('columns_sort.'.$this->model->getType())) {
-            $headers = $headers->sortBy(function ($value, $key) use ($sort) {
+            $headers = collect($headers)->sortBy(function ($value, $key) use ($sort) {
                 return array_search($key, $sort);
             });
         }
@@ -314,22 +313,13 @@ class Table extends Component
         //     return;
         // }
 
-        // ray()->clearScreen();
-
-        if ($this->parentModel) {
-            // dd($this->parentModel);
-        }
         $this->emit('tableMounted');
-
-        $this->setTaxonomyFilters();
 
         if ($this->selectedFilter) {
             if (array_key_exists($this->selectedFilter, $this->userFilters)) {
                 $this->filters = $this->userFilters[$this->selectedFilter];
             }
         }
-
-        // dd($this->model);
 
         $this->query = $query;
 
