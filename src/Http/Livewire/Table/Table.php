@@ -5,6 +5,7 @@ namespace Eminiarts\Aura\Http\Livewire\Table;
 use Livewire\Component;
 use Eminiarts\Aura\Resource;
 use Eminiarts\Aura\Models\User;
+use Eminiarts\Aura\Facades\Aura;
 use Eminiarts\Aura\Http\Livewire\Table\Traits\Search;
 use Eminiarts\Aura\Http\Livewire\Table\Traits\Select;
 use Eminiarts\Aura\Http\Livewire\Table\Traits\Filters;
@@ -218,15 +219,17 @@ class Table extends Component
     {
         $headers = $this->settings['columns'];
 
-        ray($headers)->blue();
-
-        if ($sort = auth()->user()->getOption('columns_sort.'.$this->model->getType())) {
+        if ($this->settings['sort_columns'] && $this->settings['sort_columns_key'] && $sort = Aura::getOption($this->settings['sort_columns_key'])) {
             $headers = collect($headers)->sortBy(function ($value, $key) use ($sort) {
                 return array_search($key, $sort);
             });
         }
 
-        // ray($headers)->green();
+        if ($this->settings['sort_columns'] && $this->settings['sort_columns_user_key'] && $sort = auth()->user()->getOption($this->settings['sort_columns_user_key'])) {
+            $headers = collect($headers)->sortBy(function ($value, $key) use ($sort) {
+                return array_search($key, $sort);
+            });
+        }
 
         return $headers;
     }
