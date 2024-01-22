@@ -52,13 +52,16 @@ class Resource extends Model
 
     public function __call($method, $parameters)
     {
-        ray($method);
-        //dd($method);
-        // // Check if the method matches a field slug
-        // if ($field = $this->getFieldBySlug($method)) {
-        //     // Handle the relationship based on the field definition
-        //     return $this->handleDynamicRelationship($field);
-        // }
+        if ($this->getFieldSlugs()->contains($method)) {
+            
+            $fieldClass = $this->fieldClassBySlug($method);
+
+            if ($fieldClass->isRelation()) {
+                $field = $this->fieldBySlug($method);
+
+                return $fieldClass->relationship($this, $field);
+            }
+        }
 
         // Default behavior for methods not handled dynamically
         return parent::__call($method, $parameters);
@@ -82,23 +85,15 @@ class Resource extends Model
         }
 
         if ($this->getFieldSlugs()->contains($key)) {
-            $field = $this->fieldBySlug($key);
             $fieldClass = $this->fieldClassBySlug($key);
-            $groupedField = $this->groupedFieldBySlug($key);
+            // $groupedField = $this->groupedFieldBySlug($key);
 
             if ($fieldClass->isRelation()) {
-                ray($fieldClass->get($this, $field));
+                $field = $this->fieldBySlug($key);
 
-                // return $this->handleDynamicRelationship($field);
                 return $fieldClass->get($this, $field);
             }
-
-            // ray($field, $fieldClass, $groupedField);
         }
-
-        // ray($key, $this->getFieldSlugs(), $this);
-
-        // Check if there is a field with the slug $key
 
         return $value;
     }

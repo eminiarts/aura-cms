@@ -15,24 +15,30 @@ class HasMany extends Field
 
     // public $view = 'components.fields.hasmany';
 
-    public function get($model, $field)
+    public function relationship($model, $field)
     {
-        ray($field, $model);
-
         // If it's a meta field
         if ($model->usesMeta()) {
             return $model->hasManyThrough(
                 $field['resource'],
                 Meta::class,
                 'value',     // Foreign key on the post_meta table
-                'id',          // Foreign key on the reviews table
-                'id',          // Local key on the products table
-                'post_id'        // Local key on the post_meta table
-            )->where('post_meta.key', $field['relation'])->get();
+                'id',        // Foreign key on the reviews table
+                'id',        // Local key on the products table
+                'post_id'    // Local key on the post_meta table
+            )->where('post_meta.key', $field['relation']);
         }
 
-        return $model->hasMany($field['resource'], $field['relation'])->get();
+        return $model->hasMany($field['resource'], $field['relation']);
+    }
 
+    public function get($model, $field)
+    {
+        // ray($field, $model);
+
+        $relationshipQuery = $this->relationship($model, $field);
+
+        return $relationshipQuery->get();
     }
 
     public function queryFor($query, $component)
