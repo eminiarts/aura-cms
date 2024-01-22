@@ -63,8 +63,8 @@ trait Filters
     {
         // Retrieve the filter using the provided key
         $filter = $this->userFilters[$filterName] ?? null;
-        
-        if (!$filter) {
+
+        if (! $filter) {
             throw new \InvalidArgumentException('Invalid filter name: '.$filterName);
         }
 
@@ -210,7 +210,6 @@ trait Filters
         $this->clearFiltersCache();
 
     }
-
 
     /**
      * Update the selected filter.

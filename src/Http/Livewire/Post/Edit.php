@@ -183,7 +183,7 @@ class Edit extends Component
 
         $this->model = $this->model->refresh();
         $this->post = $this->model->attributesToArray();
-        
+
         $this->emit('refreshComponent');
 
     }
