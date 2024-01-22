@@ -2,10 +2,10 @@
 
 use Eminiarts\Aura\Resource;
 use Eminiarts\Aura\Traits\InputFields;
-use Eminiarts\Aura\Traits\InputFieldsTable;
 use Eminiarts\Aura\Traits\InputFieldsHelpers;
-use Eminiarts\Aura\Traits\InteractsWithTable;
+use Eminiarts\Aura\Traits\InputFieldsTable;
 use Eminiarts\Aura\Traits\InputFieldsValidation;
+use Eminiarts\Aura\Traits\InteractsWithTable;
 
 class TestInputFieldsClass extends Resource
 {

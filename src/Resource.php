@@ -15,7 +15,6 @@ use Eminiarts\Aura\Traits\InputFields;
 use Eminiarts\Aura\Traits\InteractsWithTable;
 use Eminiarts\Aura\Traits\SaveFieldAttributes;
 use Eminiarts\Aura\Traits\SaveMetaFields;
-use Eminiarts\Aura\Traits\SaveTerms;
 use Illuminate\Database\Eloquent\Concerns\HasTimestamps;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -51,6 +50,20 @@ class Resource extends Model
 
     protected $with = ['meta'];
 
+    public function __call($method, $parameters)
+    {
+        ray($method);
+        //dd($method);
+        // // Check if the method matches a field slug
+        // if ($field = $this->getFieldBySlug($method)) {
+        //     // Handle the relationship based on the field definition
+        //     return $this->handleDynamicRelationship($field);
+        // }
+
+        // Default behavior for methods not handled dynamically
+        return parent::__call($method, $parameters);
+    }
+
     /**
      * @param  string  $key
      * @return mixed
@@ -67,6 +80,25 @@ class Resource extends Model
         if (is_null($value) && isset($this->fields[$key])) {
             return $this->fields[$key];
         }
+
+        if ($this->getFieldSlugs()->contains($key)) {
+            $field = $this->fieldBySlug($key);
+            $fieldClass = $this->fieldClassBySlug($key);
+            $groupedField = $this->groupedFieldBySlug($key);
+
+            if ($fieldClass->isRelation()) {
+                ray($fieldClass->get($this, $field));
+
+                // return $this->handleDynamicRelationship($field);
+                return $fieldClass->get($this, $field);
+            }
+
+            // ray($field, $fieldClass, $groupedField);
+        }
+
+        // ray($key, $this->getFieldSlugs(), $this);
+
+        // Check if there is a field with the slug $key
 
         return $value;
     }
