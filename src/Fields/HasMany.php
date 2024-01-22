@@ -3,6 +3,7 @@
 namespace Eminiarts\Aura\Fields;
 
 use Aura\Flows\Resources\Operation;
+use Eminiarts\Aura\Models\Meta;
 
 class HasMany extends Field
 {
@@ -13,6 +14,26 @@ class HasMany extends Field
     public string $type = 'relation';
 
     // public $view = 'components.fields.hasmany';
+
+    public function get($model, $field)
+    {
+        ray($field, $model);
+
+        // If it's a meta field
+        if ($model->usesMeta()) {
+            return $model->hasManyThrough(
+                $field['resource'],
+                Meta::class,
+                'value',     // Foreign key on the post_meta table
+                'id',          // Foreign key on the reviews table
+                'id',          // Local key on the products table
+                'post_id'        // Local key on the post_meta table
+            )->where('post_meta.key', $field['relation'])->get();
+        }
+
+        return $model->hasMany($field['resource'], $field['relation'])->get();
+
+    }
 
     public function queryFor($query, $component)
     {
@@ -32,14 +53,14 @@ class HasMany extends Field
             return $field['relation']($query, $model);
         }
 
-        ray($component->field);
+        // ray($component->field);
 
         if (optional($component->field)['relation']) {
 
             if ($model->id) {
                 return $query->whereHas('meta', function ($query) use ($field, $model) {
                     $query->where('key', $field['relation'])
-                          ->where('value', $model->id);
+                        ->where('value', $model->id);
                 });
             }
         }
