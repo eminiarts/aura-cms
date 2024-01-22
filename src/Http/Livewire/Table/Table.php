@@ -2,18 +2,18 @@
 
 namespace Eminiarts\Aura\Http\Livewire\Table;
 
-use Livewire\Component;
-use Eminiarts\Aura\Resource;
-use Eminiarts\Aura\Models\User;
 use Eminiarts\Aura\Facades\Aura;
+use Eminiarts\Aura\Http\Livewire\Table\Traits\BulkActions;
+use Eminiarts\Aura\Http\Livewire\Table\Traits\Filters;
+use Eminiarts\Aura\Http\Livewire\Table\Traits\PerPagePagination;
+use Eminiarts\Aura\Http\Livewire\Table\Traits\QueryFilters;
 use Eminiarts\Aura\Http\Livewire\Table\Traits\Search;
 use Eminiarts\Aura\Http\Livewire\Table\Traits\Select;
-use Eminiarts\Aura\Http\Livewire\Table\Traits\Filters;
-use Eminiarts\Aura\Http\Livewire\Table\Traits\Sorting;
 use Eminiarts\Aura\Http\Livewire\Table\Traits\Settings;
-use Eminiarts\Aura\Http\Livewire\Table\Traits\BulkActions;
-use Eminiarts\Aura\Http\Livewire\Table\Traits\QueryFilters;
-use Eminiarts\Aura\Http\Livewire\Table\Traits\PerPagePagination;
+use Eminiarts\Aura\Http\Livewire\Table\Traits\Sorting;
+use Eminiarts\Aura\Models\User;
+use Eminiarts\Aura\Resource;
+use Livewire\Component;
 
 /**
  * Class Table
@@ -25,9 +25,9 @@ class Table extends Component
     use PerPagePagination;
     use QueryFilters;
     use Search;
-    use Sorting;
-    use Settings;
     use Select;
+    use Settings;
+    use Sorting;
 
     /**
      * List of table columns.
@@ -165,7 +165,7 @@ class Table extends Component
             return $this->model->find($data['id'])->{$data['action']}();
         }
     }
-    
+
     public function getAllTableRows()
     {
         return $this->rowsQuery->pluck('id')->all();
@@ -175,8 +175,6 @@ class Table extends Component
     // {
     //     return $this->rows->pluck('id')->toArray();
     // }
-
-  
 
     /**
      * Get the create link.
@@ -337,7 +335,6 @@ class Table extends Component
         } else {
             $this->columns = $this->model->getDefaultColumns();
         }
-        
 
         $this->initiateSettings();
     }
@@ -452,6 +449,4 @@ class Table extends Component
             // $this->emit('selectedRows', $this->selected);
         }
     }
-
-   
 }

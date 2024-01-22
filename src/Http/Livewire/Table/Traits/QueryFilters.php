@@ -189,5 +189,4 @@ trait QueryFilters
         //     default:
         //         return $query;
     }
-
 }

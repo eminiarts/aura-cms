@@ -7,18 +7,7 @@ namespace Eminiarts\Aura\Http\Livewire\Table\Traits;
  */
 trait BulkActions
 {
-
     public $bulkActionsView = 'aura::components.table.bulkActions';
-
-      /**
-     * Get the available bulk actions.
-     *
-     * @return mixed
-     */
-    public function getBulkActionsProperty()
-    {
-        return $this->model->getBulkActions();
-    }
 
     /**
      * Handle bulk action on the selected rows.
@@ -60,4 +49,13 @@ trait BulkActions
         $this->emit('refreshTable');
     }
 
+    /**
+     * Get the available bulk actions.
+     *
+     * @return mixed
+     */
+    public function getBulkActionsProperty()
+    {
+        return $this->model->getBulkActions();
+    }
 }

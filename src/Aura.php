@@ -248,23 +248,23 @@ class Aura
             });
         }
 
-            return Cache::remember('aura.'.$name, now()->addHour(), function () use ($name) {
+        return Cache::remember('aura.'.$name, now()->addHour(), function () use ($name) {
 
-                $option = Option::where('name', $name)->first();
+            $option = Option::where('name', $name)->first();
 
-                if ($option) {
-                    if (is_string($option->value)) {
-                        $settings = json_decode($option->value, true);
-                    } else {
-                        $settings = $option->value;
-                    }
+            if ($option) {
+                if (is_string($option->value)) {
+                    $settings = json_decode($option->value, true);
                 } else {
-                    $settings = [];
+                    $settings = $option->value;
                 }
+            } else {
+                $settings = [];
+            }
 
-                return $settings;
-            });
-        
+            return $settings;
+        });
+
     }
 
     public static function getPath($id)
@@ -276,7 +276,6 @@ class Aura
     {
         return array_unique($this->resources);
     }
-
 
     public function getWidgets(): array
     {
@@ -378,7 +377,6 @@ class Aura
     {
         $this->resources = array_merge($this->resources, $resources);
     }
-
 
     public function registerWidgets(array $widgets): void
     {
