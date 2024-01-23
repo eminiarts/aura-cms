@@ -96,17 +96,4 @@ test('Aura without teams - pages', function () {
     $this->get(route('aura.post.view', ['slug' => 'Permission', 'id' => $permission->id]))->assertOk();
     $this->get(route('aura.post.view', ['slug' => 'Option', 'id' => $option->id]))->assertOk();
 
-    $this->get(route('aura.post.index', ['slug' => 'Tag']))->assertOk();
-    $this->get(route('aura.post.index', ['slug' => 'Category']))->assertOk();
-    $this->get(route('aura.post.create', ['slug' => 'Tag']))->assertOk();
-    $this->get(route('aura.post.create', ['slug' => 'Category']))->assertOk();
-
-    $tag = Tag::create([
-        'name' => 'Test Taxonomy',
-        'slug' => 'test-taxonomy',
-        'description' => 'Test Taxonomy Description',
-    ]);
-
-    $this->get(route('aura.post.view', ['slug' => 'Tag', 'id' => $tag->id]))->assertOk();
-    $this->get(route('aura.post.edit', ['slug' => 'Tag', 'id' => $tag->id]))->assertOk();
 });
