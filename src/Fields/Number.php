@@ -73,6 +73,11 @@ class Number extends Field
         ]);
     }
 
+    public function set($value)
+    {
+        return (int) $value;
+    }
+
     public function value($value)
     {
         return (int) $value;
