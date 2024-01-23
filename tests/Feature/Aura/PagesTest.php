@@ -1,11 +1,12 @@
 <?php
 
-use Eminiarts\Aura\Resources\Option;
-use Eminiarts\Aura\Resources\Permission;
+use Eminiarts\Aura\Facades\Aura;
+use Eminiarts\Aura\Resources\Tag;
 use Eminiarts\Aura\Resources\Post;
 use Eminiarts\Aura\Resources\Role;
-use Eminiarts\Aura\Resources\Tag;
 use Eminiarts\Aura\Resources\User;
+use Eminiarts\Aura\Resources\Option;
+use Eminiarts\Aura\Resources\Permission;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
@@ -50,7 +51,10 @@ test('Check Post Create Pages', function ($postType) {
 
 // Test Post Edit and View Pages
 test('Check Post Edit and View Pages', function ($postType) {
-    $post = createPost($postType); // Assumes a helper method to create a post
+    $this->withoutExceptionHandling();
+    // $post = createPost($postType); // Assumes a helper method to create a post
+
+    $post = Aura::findResourceBySlug($postType)->factory()->create();
 
     $this->get(route('aura.post.edit', ['slug' => $postType, 'id' => $post->id]))->assertOk();
     $this->get(route('aura.post.view', ['slug' => $postType, 'id' => $post->id]))->assertOk();
