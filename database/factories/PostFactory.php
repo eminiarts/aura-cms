@@ -34,18 +34,6 @@ class PostFactory extends Factory
             'description' => $this->faker->paragraph(),
             'number' => $this->faker->randomNumber(),
             'text' => $this->faker->sentence(),
-            'terms' => [
-                'Tag' => [
-                    'tag1',
-                    'tag2',
-                    'tag3',
-                ],
-                'Category' => [
-                    'category1',
-                    'category2',
-                    'category3',
-                ],
-            ],
             'parent_id' => null,
             'order' => null,
 
