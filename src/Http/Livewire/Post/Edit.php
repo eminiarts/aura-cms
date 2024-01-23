@@ -98,7 +98,10 @@ class Edit extends Component
 
         $this->model = Aura::findResourceBySlug($slug)->find($id);
 
+        ray($this->model);
+
         // Authorize
+        ray($this->authorize('update', $this->model));
         $this->authorize('update', $this->model);
 
         // Array instead of Eloquent Model

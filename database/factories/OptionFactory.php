@@ -2,6 +2,7 @@
 
 namespace Eminiarts\Aura\Database\Factories;
 
+use Eminiarts\Aura\Resources\Option;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -9,6 +10,8 @@ use Illuminate\Database\Eloquent\Factories\Factory;
  */
 class OptionFactory extends Factory
 {
+    protected $model = Option::class;
+
     /**
      * Define the model's default state.
      *
@@ -17,7 +20,8 @@ class OptionFactory extends Factory
     public function definition()
     {
         return [
-            //
+            'name' => $this->faker->word,
+            'value' => $this->faker->text,
         ];
     }
 }
