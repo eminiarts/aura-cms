@@ -4,10 +4,10 @@ namespace Eminiarts\Aura\Http\Controllers\Auth;
 
 use Eminiarts\Aura\Facades\Aura;
 use Eminiarts\Aura\Http\Controllers\Controller;
-use Eminiarts\Aura\Models\User;
 use Eminiarts\Aura\Providers\RouteServiceProvider;
 use Eminiarts\Aura\Resources\Role;
 use Eminiarts\Aura\Resources\Team;
+use Eminiarts\Aura\Resources\User;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -38,7 +38,8 @@ class RegisteredUserController extends Controller
      */
     public function store(Request $request)
     {
-        ray('r', $request);
+        ray('r', config('aura.teams'));
+
         abort_if(! Aura::option('team_registration'), 404);
 
         if (config('aura.teams')) {
@@ -71,22 +72,25 @@ class RegisteredUserController extends Controller
 
             $user->update(['fields' => ['roles' => [$role->id]]]);
         } else {
+            ray('else');
             // no aura.teams
             $request->validate([
                 'name' => ['required', 'string', 'max:255'],
                 'email' => ['required', 'string', 'email', 'max:255', 'unique:'.User::class],
                 'password' => ['required', 'confirmed', Rules\Password::defaults()],
             ]);
+            ray('validate');
 
             $user = User::create([
                 'name' => $request->name,
                 'email' => $request->email,
                 'password' => Hash::make($request->password),
             ]);
-
-            $user->save();
+            ray($user);
 
             $role = Role::where('slug', 'user')->firstOrFail();
+
+            ray('test', $role);
 
             $user->update(['fields' => ['roles' => [$role->id]]]);
         }
@@ -94,6 +98,7 @@ class RegisteredUserController extends Controller
         event(new Registered($user));
 
         Auth::login($user);
+        ray('login');
 
         return redirect(RouteServiceProvider::HOME);
     }
