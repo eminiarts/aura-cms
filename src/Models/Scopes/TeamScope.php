@@ -21,11 +21,11 @@ class TeamScope implements Scope
         }
 
         // If the Model is a Team Resource, don't apply the scope
-        if ($model instanceof \Eminiarts\Aura\Resources\Team) {
+        if (auth()->user() && $model instanceof \Eminiarts\Aura\Resources\Team) {
             return $builder->whereId(auth()->user()->current_team_id);
         }
 
-        if ($model instanceof \Eminiarts\Aura\Resources\Role) {
+        if (auth()->user() && $model instanceof \Eminiarts\Aura\Resources\Role) {
             return $builder->where('posts.team_id', auth()->user()->current_team_id);
         }
 
