@@ -38,36 +38,58 @@ class RegisteredUserController extends Controller
      */
     public function store(Request $request)
     {
+        ray('r', $request);
         abort_if(! Aura::option('team_registration'), 404);
 
-        $request->validate([
-            'name' => ['required', 'string', 'max:255'],
-            'team' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'string', 'email', 'max:255', 'unique:'.User::class],
-            'password' => ['required', 'confirmed', Rules\Password::defaults()],
-        ]);
+        if (config('aura.teams')) {
+            $request->validate([
+                'name' => ['required', 'string', 'max:255'],
+                'team' => ['required', 'string', 'max:255'],
+                'email' => ['required', 'string', 'email', 'max:255', 'unique:'.User::class],
+                'password' => ['required', 'confirmed', Rules\Password::defaults()],
+            ]);
 
-        $user = User::create([
-            'name' => $request->name,
-            'email' => $request->email,
-            'password' => Hash::make($request->password),
-        ]);
+            $user = User::create([
+                'name' => $request->name,
+                'email' => $request->email,
+                'password' => Hash::make($request->password),
+            ]);
 
-        $team = Team::create([
-            'name' => $request->team,
-            'user_id' => $user->id,
-            'created_at' => now(),
-            'updated_at' => now(),
-        ]);
+            $team = Team::create([
+                'name' => $request->team,
+                'user_id' => $user->id,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
 
-        $user->current_team_id = $team->id;
+            $user->current_team_id = $team->id;
 
-        $user->save();
+            $user->save();
 
-        // Create Role
-        $role = Role::create(['type' => 'Role', 'title' => 'Super Admin', 'slug' => 'super_admin', 'name' => 'Super Admin', 'description' => 'Super Admin has can perform everything.', 'super_admin' => true, 'permissions' => [], 'team_id' => $team->id, 'user_id' => $user->id]);
+            // Create Role
+            $role = Role::create(['type' => 'Role', 'title' => 'Super Admin', 'slug' => 'super_admin', 'name' => 'Super Admin', 'description' => 'Super Admin has can perform everything.', 'super_admin' => true, 'permissions' => [], 'team_id' => $team->id, 'user_id' => $user->id]);
 
-        $user->update(['fields' => ['roles' => [$role->id]]]);
+            $user->update(['fields' => ['roles' => [$role->id]]]);
+        } else {
+            // no aura.teams
+            $request->validate([
+                'name' => ['required', 'string', 'max:255'],
+                'email' => ['required', 'string', 'email', 'max:255', 'unique:'.User::class],
+                'password' => ['required', 'confirmed', Rules\Password::defaults()],
+            ]);
+
+            $user = User::create([
+                'name' => $request->name,
+                'email' => $request->email,
+                'password' => Hash::make($request->password),
+            ]);
+
+            $user->save();
+
+            $role = Role::where('slug', 'user')->firstOrFail();
+
+            $user->update(['fields' => ['roles' => [$role->id]]]);
+        }
 
         event(new Registered($user));
 
