@@ -9,16 +9,34 @@ $appSettings = Aura::options();
 
 $sidebarToggled = auth()->check() ? auth()->user()->getOptionSidebarToggled() : true;
 
+// ray($sidebarToggled);
+
 $compact = false;
 
 @endphp
-
+<style>
+    @media screen (max-width: 768px){
+        .mobile-load-hidden {
+            display: none !important;
+        }
+    }
+</style>
 <div
     x-data="{
-        sidebarToggled: @entangle('sidebarToggled'),
+        sidebarToggled: {{ $sidebarToggled ? 'true' : 'false' }},
+        init() {
+            console.log(this.sidebarToggled);
+            this.$nextTick(() => {
+                document.querySelectorAll('.mobile-load-hidden').forEach((el) => {
+                    el.classList.remove('mobile-load-hidden');
+                });
+
+                if (window.innerWidth < 768) this.sidebarToggled = false;
+            });
+        },
         toggleSidebar() {
             this.sidebarToggled = !this.sidebarToggled;
-            $wire.toggleSidebar();
+            {{-- $wire.toggleSidebar(); --}}
         }
     }">
 
@@ -36,7 +54,7 @@ $compact = false;
         </div>
 
         <!-- Button to toggle the sidebar -->
-        <button x-on:click="toggleSidebar()">
+        <button class="mt-12" x-on:click="toggleSidebar()">
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
             <path d="M3 12H15M3 6H21M3 18H21" stroke="currentcolor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
         </svg>
@@ -46,14 +64,15 @@ $compact = false;
     </div>
 
     <div
-        class="overflow-x-visible flex-shrink-0 aura-navigation {{ $compact ? 'md:w-56' : 'md:w-72' }}"
+        class="mobile-load-hidden overflow-x-visible flex-shrink-0 aura-navigation {{ $sidebarToggled ? ($compact ? 'open-sidebar md:w-56' : 'open-sidebar md:w-72') : 'closed-sidebar w-20' }}"
+
         x-bind:class="{
-            'open-sidebar {{ $compact ? 'md:w-56' : 'md:w-72' }}': !sidebarToggled,
-            'closed-sidebar w-20': sidebarToggled,
+            'open-sidebar {{ $compact ? 'md:w-56' : 'md:w-72' }}': sidebarToggled,
+            'closed-sidebar w-20': !sidebarToggled,
         }"
     >
         <div
-            class="fixed top-0 left-0 z-10 flex flex-col flex-shrink-0 h-screen border-r shadow-xl {{ $compact ? 'w-56' : 'w-72' }}
+            class="fixed top-0 left-0 z-10 flex flex-col flex-shrink-0 h-screen border-r shadow-xl {{ $sidebarToggled ? ($compact ? 'open-sidebar w-56' : 'open-sidebar w-72') : 'closed-sidebar w-20' }}
                 @if ($sidebarType == 'primary')
                     text-white border-white border-opacity-20 bg-sidebar-bg dark:bg-gray-800 dark:border-gray-700 shadow-gray-400 md:shadow-none
                 @elseif ($sidebarType == 'light')
@@ -63,8 +82,8 @@ $compact = false;
                 @endif
             "
             x-bind:class="{
-                '{{ $compact ? 'w-56' : 'w-72' }}': !sidebarToggled,
-                'w-20': sidebarToggled,
+                '{{ $compact ? 'w-56' : 'w-72' }}': sidebarToggled,
+                'w-20': !sidebarToggled,
             }"
         >
 
@@ -89,7 +108,7 @@ $compact = false;
                             <button
                                 @click="toggleSidebar()"
                                 type="button"
-                                class="relative inline-flex items-center justify-center w-10 h-10 text-sm font-semibold border rounded-lg shadow-none select-none focus:outline-none focus:ring-2
+                                class="mt-12 relative inline-flex items-center justify-center w-10 h-10 text-sm font-semibold border rounded-lg shadow-none select-none focus:outline-none focus:ring-2
 
                                 @if ($sidebarType == 'primary')
                                 focus:ring-primary-500 border-primary-600 dark:border-gray-700 text-primary-200 dark:text-gray-600 hover:text-white dark:hover:text-gray-200

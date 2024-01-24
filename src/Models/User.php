@@ -223,7 +223,7 @@ class User extends Authenticatable
             return $option->value;
         }
 
-        return [];
+        return true;
     }
 
     public function getTeams()
