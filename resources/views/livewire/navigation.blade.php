@@ -7,10 +7,20 @@ use Eminiarts\Aura\Facades\Aura;
 $settings = Aura::getOption('team-settings');
 $appSettings = Aura::options();
 
+$sidebarToggled = auth()->check() ? auth()->user()->getOptionSidebarToggled() : true;
+
 $compact = false;
 
 @endphp
 
+<div
+    x-data="{
+        sidebarToggled: @entangle('sidebarToggled'),
+        toggleSidebar() {
+            this.sidebarToggled = !this.sidebarToggled;
+            $wire.toggleSidebar();
+        }
+    }">
 
     <div class="flex md:hidden justify-between py-3 px-5
         @if ($sidebarType == 'primary')
@@ -26,7 +36,7 @@ $compact = false;
         </div>
 
         <!-- Button to toggle the sidebar -->
-        <button x-on:click="$store.leftSidebar.toggle()">
+        <button x-on:click="toggleSidebar()">
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
             <path d="M3 12H15M3 6H21M3 18H21" stroke="currentcolor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
         </svg>
@@ -37,10 +47,9 @@ $compact = false;
 
     <div
         class="overflow-x-visible flex-shrink-0 aura-navigation {{ $compact ? 'md:w-56' : 'md:w-72' }}"
-        x-cloak
         x-bind:class="{
-            'open-sidebar {{ $compact ? 'md:w-56' : 'md:w-72' }}': !$store.leftSidebar.on,
-            'closed-sidebar w-20': $store.leftSidebar.on,
+            'open-sidebar {{ $compact ? 'md:w-56' : 'md:w-72' }}': !sidebarToggled,
+            'closed-sidebar w-20': sidebarToggled,
         }"
     >
         <div
@@ -54,8 +63,8 @@ $compact = false;
                 @endif
             "
             x-bind:class="{
-                '{{ $compact ? 'w-56' : 'w-72' }}': !$store.leftSidebar.on,
-                'w-20': $store.leftSidebar.on,
+                '{{ $compact ? 'w-56' : 'w-72' }}': !sidebarToggled,
+                'w-20': sidebarToggled,
             }"
         >
 
@@ -78,7 +87,7 @@ $compact = false;
 
                         <div>
                             <button
-                                @click="$store.leftSidebar.toggle()"
+                                @click="toggleSidebar()"
                                 type="button"
                                 class="relative inline-flex items-center justify-center w-10 h-10 text-sm font-semibold border rounded-lg shadow-none select-none focus:outline-none focus:ring-2
 
@@ -258,5 +267,5 @@ $compact = false;
         </div>
     </div>
 
-
+</div>
 </div>

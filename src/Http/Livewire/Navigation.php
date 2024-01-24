@@ -10,6 +10,7 @@ class Navigation extends Component
     public $toggledGroups = [];
     public $sidebarType;
     public $iconClass;
+    public $sidebarToggled;
 
     public function isToggled($group)
     {
@@ -22,8 +23,10 @@ class Navigation extends Component
 
         if (auth()->check() && auth()->user()->getOptionSidebar()) {
             $this->toggledGroups = auth()->user()->getOptionSidebar();
+            $this->sidebarToggled = auth()->user()->getOptionSidebarToggled();
         } else {
             $this->toggledGroups = [];
+            $this->sidebarToggled = true;
         }
 
         $this->sidebarType = $this->getSidebarType();
@@ -33,6 +36,13 @@ class Navigation extends Component
     public function render()
     {
         return view('aura::livewire.navigation');
+    }
+
+    public function toggleSidebar()
+    {
+        $this->sidebarToggled = !$this->sidebarToggled;
+
+        auth()->user()->updateOption('sidebarToggled', $this->sidebarToggled);
     }
 
     public function toggleGroup($group)
