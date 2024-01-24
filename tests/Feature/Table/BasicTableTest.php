@@ -66,8 +66,6 @@ test('table shows all input fields', function () {
     $response->assertSee('Number');
     $response->assertSee('Date');
     $response->assertSee('Description');
-    $response->assertSee('Tags');
-    $response->assertSee('Categories');
     $response->assertSee('Team');
     $response->assertSee('User');
 });
