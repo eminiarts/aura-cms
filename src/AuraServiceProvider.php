@@ -250,6 +250,7 @@ class AuraServiceProvider extends PackageServiceProvider
             config('aura.resources.permission'),
             config('aura.resources.role'),
             config('aura.resources.user'),
+            config('aura.resources.tag'),
         ]);
 
         // dd(config('aura.resources.post'));
