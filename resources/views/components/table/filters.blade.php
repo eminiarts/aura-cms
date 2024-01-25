@@ -1,6 +1,3 @@
-
-
-
 <div>
     <div>
         {{-- select dropdown with filters @foreach($this->userFilters as $userFilter)--}}
@@ -9,33 +6,38 @@
                 {{ __('Select a filter') }}
             </option>
             @foreach($this->userFilters as $name => $userFilter)
-            <option value="{{ $name }}">{{ $name }}</option>
+            <option value="{{ $name }}">{{ $userFilter['name'] }}</option>
             @endforeach
         </select>
 
         {{-- if a filter is selected show the filter --}}
         @if($this->selectedFilter)
         <div class="flex items-center justify-between my-4">
-            <h4 class="font-semibold text-primary-600">Filter: {{ $this->selectedFilter }}</h4>
+            <h4 class="font-semibold text-primary-600">Filter: {{ $this->userFilters[$this->selectedFilter]['name'] }}</h4>
             <x-aura::button.transparent size="xs" wire:click="deleteFilter('{{ $this->selectedFilter }}')">
-            <x-aura::icon icon="trash" size="xs"/> Delete Filter
+            <x-aura::icon icon="trash" size="xs"/> {{ __('Delete Filter') }}
         </x-aura::button.transparent>
         </div>
         @endif
 
 
     </div>
+
     <hr class="my-4 border-t border-gray-400/30 dark:border-gray-700">
 
     @forelse($this->model->taxonomyFields() as $field)
     <div>
         <h4 class="my-4 font-semibold text-primary-600">{{ $field['name'] }}</h4>
         <div class="flex flex-col space-y-2">
-            @foreach (app($field['model'])->get() as $taxonomy)
-            <div class="flex items-center">
-                <x-aura::input.checkbox wire:model="filters.taxonomy.{{ $taxonomy->taxonomy }}" name="taxonomy_{{ $taxonomy->id }}" id="taxonomy_{{ $taxonomy->id }}" :label="$taxonomy->name" :value="$taxonomy->id" />
-            </div>
-            @endforeach
+            @if(array_key_exists('resource', $field))
+                @foreach (app($field['resource'])->get() as $taxonomy)
+                <div class="flex items-center">
+                    <x-aura::input.checkbox wire:model="filters.taxonomy.{{ $field['slug'] }}" name="taxonomy_{{ $taxonomy->id }}" id="taxonomy_{{ $taxonomy->id }}" :label="$taxonomy->title" :value="$taxonomy->id" />
+                </div>
+                @endforeach
+            @else
+                {{-- The 'resource' key is not defined in the $field array --}}
+            @endif
         </div>
     </div>
     @empty
@@ -74,6 +76,7 @@
                     <option value="contains">{{ __('contains') }}</option>
                     <option value="does_not_contain">{{ __('does not contain') }}</option>
                     <option value="is">{{ __('is') }}</option>
+                    <option value="is_not">{{ __('is not') }}</option>
                     <option value="starts_with">{{ __('starts with') }}</option>
                     <option value="ends_with">{{ __('ends with') }}</option>
                     <option value="is_empty">{{ __('is empty') }}</option>
@@ -156,10 +159,5 @@
         </x-aura::dialog-modal>
 
     </div>
-
-    <div class="mt-16">
-        {{-- Taxonomies --}}
-    </div>
-
 
     <x-aura::button.primary wire:click="search" class="mt-4">{{ __('Search') }}</x-aura::button.primary>

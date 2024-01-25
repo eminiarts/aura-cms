@@ -1,13 +1,9 @@
 <x-aura::fields.wrapper :field="$field">
-    {{-- <x-aura::input.date wire:model="post.fields.{{ optional($field)['slug'] }}" error="post.fields.{{ optional($field)['slug'] }}" placeholder="{{ optional($field)['placeholder'] ?? optional($field)['name'] }}"></x-aura::input.date> --}}
-
-
 <div
     x-data
     x-init="
         window.flatpickr($refs.input, {
             inline: false,
-
             dateFormat: '{{ optional($field)['format'] ?? 'd.m.Y' }}',
             altInput: true,
             altFormat: '{{ optional($field)['display_format'] ?? 'd.m.Y' }}',

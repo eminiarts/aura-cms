@@ -28,7 +28,7 @@ class Field implements Wireable
 
     public function component()
     {
-        if ($this->view && is_string(request()->route()->action['uses']) && str(request()->route()->action['uses'])->contains(View::class)) {
+        if ($this->view && is_string(request()->route()->action['uses']) && str(request()->route()->action['uses'])->contains('View')) {
             return $this->view;
         }
 
@@ -275,6 +275,11 @@ class Field implements Wireable
     public function isInputField()
     {
         return in_array($this->type, ['input', 'repeater', 'group']);
+    }
+
+    public function isRelation()
+    {
+        return in_array($this->type, ['relation']);
     }
 
     public function isTaxonomyField()

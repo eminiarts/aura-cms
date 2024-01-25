@@ -35,7 +35,7 @@
     }
   }
 </style>
-  <div class="flex items-center justify-between">
+  <div class="flex justify-between items-center">
     @if ($label && $showLabel)
       <x-aura::fields.label :label="$label" />
     @endif

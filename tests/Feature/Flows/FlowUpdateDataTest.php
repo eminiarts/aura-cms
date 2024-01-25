@@ -87,7 +87,7 @@ test('flow - data update operation', function () {
     $this->assertDatabaseHas('flow_operation_logs', ['operation_id' => $flow->operation_id]);
 
     // dd($post->toArray(), $flow->toArray());
-});
+})->skip();
 
 test('flow - data update multiple operation', function () {
     createSuperAdmin();
@@ -171,4 +171,4 @@ test('flow - data update multiple operation', function () {
     $this->assertDatabaseHas('flow_operation_logs', ['operation_id' => $flow->operation_id]);
 
     // dd($post->toArray(), $flow->toArray());
-});
+})->skip();

@@ -12,7 +12,7 @@
         <!-- Email Address -->
         <div>
             <x-aura::input-label class="sr-only" for="email" :value="__('Email')" />
-            <x-aura::input.text id="email" placeholder="{{ __('Enter your email') }}" class="block w-full mt-1" type="email" name="email" :value="old('email')" required autofocus />
+            <x-aura::input.text id="email" placeholder="{{ __('Enter your email') }}" class="block mt-1 w-full" type="email" name="email" :value="old('email')" required autofocus />
             <x-aura::input-error :messages="optional($errors)->get('email')" class="mt-2" />
         </div>
 
@@ -20,7 +20,7 @@
         <div class="mt-0">
             <x-aura::input-label class="sr-only" for="password" :value="__('Password')" />
 
-            <x-aura::input.text id="password" class="block w-full mt-1"
+            <x-aura::input.text id="password" class="block mt-1 w-full"
                             type="password"
                             name="password"
                             placeholder="{{ __('Enter your password') }}"
@@ -40,22 +40,27 @@
 
             <!-- Forgot Password? -->
             <div class="block mt-4">
-                @if (Route::has('password.request'))
-                    <a class="text-sm text-gray-600 underline rounded-md hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500" href="{{ route('password.request') }}">
+                @if (Route::has('aura.password.request'))
+                    <a class="text-sm text-gray-600 underline rounded-md hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500" href="{{ route('aura.password.request') }}">
                         {{ __('Forgot your password?') }}
                     </a>
                 @endif
             </div>
         </div>
 
-        <div class="flex items-center justify-end mt-4">
+        <div class="flex justify-end items-center mt-4">
             <x-aura::button type="submit" block>{{ __('Log in') }}</x-aura::button>
         </div>
-        {{-- <div class="flex items-center justify-end mt-4">
+
+        <div class="mt-2 text-sm">
+    You don't have an account yet? <a class="text-primary-600" href="/register">Register.</a>
+</div>
+        {{-- <div class="flex justify-end items-center mt-4">
             <x-aura::button.border type="submit" block>{{ __('Log in with Google') }}</x-aura::button.border>
         </div> --}}
         <div>
 
             </div>
     </form>
+
 </x-aura::layout.login>

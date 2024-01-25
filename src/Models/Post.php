@@ -14,7 +14,6 @@ use Eminiarts\Aura\Resource;
 use Eminiarts\Aura\Traits\InitialPostFields;
 use Eminiarts\Aura\Traits\SaveFieldAttributes;
 use Eminiarts\Aura\Traits\SaveMetaFields;
-use Eminiarts\Aura\Traits\SaveTerms;
 use Illuminate\Database\Eloquent\Concerns\HasTimestamps;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Support\Str;
@@ -28,11 +27,10 @@ class Post extends BaseResource
     use InitialPostFields;
     use SaveFieldAttributes;
     use SaveMetaFields;
-    use SaveTerms;
 
     protected $appends = ['fields'];
 
-    protected $fillable = ['title', 'content', 'type', 'status', 'fields', 'slug', 'user_id', 'parent_id', 'order', 'taxonomies', 'terms', 'team_id', 'first_taxonomy'];
+    protected $fillable = ['title', 'content', 'type', 'status', 'fields', 'slug', 'user_id', 'parent_id', 'order', 'terms', 'team_id', 'first_taxonomy'];
 
     /**
      * The table associated with the model.
@@ -289,17 +287,17 @@ class Post extends BaseResource
 
         static::addGlobalScope(new TeamScope());
 
-        static::created(function ($post) {
-            dispatch(new TriggerFlowOnCreatePostEvent($post));
-        });
+        // static::created(function ($post) {
+        //     dispatch(new TriggerFlowOnCreatePostEvent($post));
+        // });
 
-        static::updated(function ($post) {
-            dispatch(new TriggerFlowOnUpdatePostEvent($post));
-        });
+        // static::updated(function ($post) {
+        //     dispatch(new TriggerFlowOnUpdatePostEvent($post));
+        // });
 
-        static::deleted(function ($post) {
-            dispatch(new TriggerFlowOnDeletedPostEvent($post));
-        });
+        // static::deleted(function ($post) {
+        //     dispatch(new TriggerFlowOnDeletedPostEvent($post));
+        // });
 
         // static::saving(function ($post) {
         //     dd('da', $post);

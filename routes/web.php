@@ -1,19 +1,15 @@
 <?php
 
 use Eminiarts\Aura\Http\Controllers\Api\FieldsController;
-use Eminiarts\Aura\Livewire\Attachment\Index as AttachmentIndex;
-use Eminiarts\Aura\Livewire\AuraConfig;
-use Eminiarts\Aura\Livewire\Post\Create;
-use Eminiarts\Aura\Livewire\Post\Edit;
-use Eminiarts\Aura\Livewire\Post\Index;
-use Eminiarts\Aura\Livewire\Post\View;
-use Eminiarts\Aura\Livewire\Posttype;
-use Eminiarts\Aura\Livewire\Taxonomy\Create as TaxonomyCreate;
-use Eminiarts\Aura\Livewire\Taxonomy\Edit as TaxonomyEdit;
-use Eminiarts\Aura\Livewire\Taxonomy\Index as TaxonomyIndex;
-use Eminiarts\Aura\Livewire\Taxonomy\View as TaxonomyView;
-use Eminiarts\Aura\Livewire\TeamSettings;
-use Eminiarts\Aura\Livewire\User\Profile;
+use Eminiarts\Aura\Http\Livewire\Attachment\Index as AttachmentIndex;
+use Eminiarts\Aura\Http\Livewire\AuraConfig;
+use Eminiarts\Aura\Http\Livewire\Post\Create;
+use Eminiarts\Aura\Http\Livewire\Post\Edit;
+use Eminiarts\Aura\Http\Livewire\Post\Index;
+use Eminiarts\Aura\Http\Livewire\Post\View;
+use Eminiarts\Aura\Http\Livewire\Posttype;
+use Eminiarts\Aura\Http\Livewire\TeamSettings;
+use Eminiarts\Aura\Http\Livewire\User\Profile;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware(config('aura.middleware.aura-guest'))->group(function () {
@@ -34,9 +30,7 @@ Route::domain(config('aura.domain'))
 
         Route::prefix(config('aura.path'))->group(function () {
 
-            Route::get('/', function () {
-                return view('aura::dashboard');
-            })->name('dashboard');
+            Route::get('/', config('aura.dashboard_component'))->name('dashboard');
 
             // route for api/fields/values which calls Api\FieldsController@values
             Route::post('/api/fields/values', [FieldsController::class, 'values'])->name('api.fields.values');
@@ -51,10 +45,6 @@ Route::domain(config('aura.domain'))
             Route::get('/aura-config', AuraConfig::class)->name('config');
 
             Route::get('/posttypes/{slug}', Posttype::class)->name('posttype.edit');
-            Route::get('/taxonomies/{slug}', TaxonomyIndex::class)->name('taxonomy.index');
-            Route::get('/taxonomies/{slug}/create', TaxonomyCreate::class)->name('taxonomy.create');
-            Route::get('/taxonomies/{slug}/{id}/edit', TaxonomyEdit::class)->name('taxonomy.edit');
-            Route::get('/taxonomies/{slug}/{id}', TaxonomyView::class)->name('taxonomy.view');
 
             Route::get('/attachment', AttachmentIndex::class)->name('attachment.index');
 

@@ -40,8 +40,6 @@ class Aura
 
     protected array $resources = [];
 
-    protected array $taxonomies = [];
-
     protected array $widgets = [];
 
     /**
@@ -95,21 +93,6 @@ class Aura
         }
     }
 
-    public function findTaxonomyBySlug($slug)
-    {
-        $taxonomies = collect($this->getTaxonomies())->map(function ($resource) {
-            return Str::afterLast($resource, '\\');
-        });
-
-        $index = $taxonomies->search(function ($item) use ($slug) {
-            return Str::slug($item) == Str::slug($slug);
-        });
-
-        if ($index !== false) {
-            return app($this->getTaxonomies()[$index]);
-        }
-    }
-
     public static function findTemplateBySlug($slug)
     {
         return app('Eminiarts\Aura\Templates\\'.str($slug)->title);
@@ -128,6 +111,7 @@ class Aura
 
     public function getAppFiles($path, $filter, $namespace)
     {
+
         return collect(app(Filesystem::class)->allFiles($path))
             ->map(function (SplFileInfo $file): string {
                 return (string) Str::of($file->getRelativePathname())
@@ -153,23 +137,6 @@ class Aura
         }
 
         return $this->getAppFiles($path, $filter = 'Resource', $namespace = config('aura.paths.resources.namespace'));
-    }
-
-    /**
-     * Register the App taxonomies
-     *
-     * @param  array  $resources
-     * @return static
-     */
-    public function getAppTaxonomies()
-    {
-        $path = config('aura.taxonomies.path');
-
-        if (! file_exists($path)) {
-            return [];
-        }
-
-        return $this->getAppFiles($path, $filter = 'Taxonomy', $namespace = config('aura.taxonomies.namespace'));
     }
 
     public function getAppWidgets()
@@ -279,19 +246,25 @@ class Aura
 
                 return $settings;
             });
-        } else {
-            return Cache::remember('aura.'.$name, now()->addHour(), function () use ($name) {
-                $option = Option::where('name', $name)->first();
+        }
 
-                if ($option && is_string($option->value)) {
+        return Cache::remember('aura.'.$name, now()->addHour(), function () use ($name) {
+
+            $option = Option::where('name', $name)->first();
+
+            if ($option) {
+                if (is_string($option->value)) {
                     $settings = json_decode($option->value, true);
                 } else {
-                    $settings = $option->value ?? null;
+                    $settings = $option->value;
                 }
+            } else {
+                $settings = [];
+            }
 
-                return $settings;
-            });
-        }
+            return $settings;
+        });
+
     }
 
     public static function getPath($id)
@@ -302,11 +275,6 @@ class Aura
     public function getResources(): array
     {
         return array_unique($this->resources);
-    }
-
-    public function getTaxonomies(): array
-    {
-        return array_unique($this->taxonomies);
     }
 
     public function getWidgets(): array
@@ -330,7 +298,7 @@ class Aura
 
         return Cache::remember('user-'.auth()->id().'-navigation', 3600, function () {
 
-            $resources = collect($this->getResources())->merge($this->getTaxonomies());
+            $resources = collect($this->getResources());
 
             // filter resources by permission and check if user has viewAny permission
             $resources = $resources->filter(function ($resource) {
@@ -353,8 +321,15 @@ class Aura
 
             $resources = app('hook_manager')->applyHooks('navigation', $resources->values());
 
+            $resources = $resources->sortBy('sort')->filter(function($value, $key) {
+                if (isset($value['conditional_logic'])) {
+                    return app('dynamicFunctions')::call($value['conditional_logic']);
+                }
+                return true;
+            });
+
             $grouped = array_reduce(collect($resources)->toArray(), function ($carry, $item) {
-                if ($item['dropdown'] !== false) {
+                if (isset($item['dropdown']) && $item['dropdown'] !== false) {
                     if (! isset($carry[$item['dropdown']])) {
                         $carry[$item['dropdown']] = [];
                     }
@@ -410,11 +385,6 @@ class Aura
         $this->resources = array_merge($this->resources, $resources);
     }
 
-    public function registerTaxonomies(array $taxonomies): void
-    {
-        $this->taxonomies = array_merge($this->taxonomies, $taxonomies);
-    }
-
     public function registerWidgets(array $widgets): void
     {
         $this->widgets = array_merge($this->widgets, $widgets);
@@ -436,21 +406,6 @@ class Aura
         $option->save();
 
         Cache::forget('aura-settings');
-    }
-
-    public function taxonomies()
-    {
-        return $this->getTaxonomies();
-
-        return Cache::remember('aura.taxonomies', now()->addHour(), function () {
-            $filesystem = app(Filesystem::class);
-
-            return collect($filesystem->allFiles(app_path('Aura/Taxonomies')))
-                ->map(function (SplFileInfo $file): string {
-                    return (string) Str::of($file->getRelativePathname())
-                        ->replace(['/', '.php'], ['\\', '']);
-                })->filter(fn (string $class): bool => $class != 'Taxonomy')->toArray();
-        });
     }
 
     public static function templates()

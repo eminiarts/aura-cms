@@ -71,7 +71,7 @@
             @else
             {{-- style="background-image: url('/vendor/aura/public/img/bgop1.jpg');"
             @endif --}}
-            
+
             @if (
                 ($image = Attachment::find(app('aura')::option('login-bg'))) &&
                 $image->isNotEmpty() &&
@@ -132,6 +132,8 @@
             <div class="overflow-hidden px-6 py-4 pb-6 mt-6 w-full border border-gray-300 shadow-md backdrop-blur-sm dark:border-gray-700 bg-white/80 dark:bg-gray-800/80 sm:max-w-md sm:rounded-2xl">
                 {{ $slot }}
             </div>
+
+
         </div>
     </div>
     </body>
