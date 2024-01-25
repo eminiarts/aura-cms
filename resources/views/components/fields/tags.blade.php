@@ -1,13 +1,15 @@
 
 @php
-$values = app($field['resource'])->pluck('title', 'id')->toArray();
+$values = app($field['resource'])->get()->map(function ($tag) {
+    return ['id' => $tag->id, 'value' => $tag->title];
+})->toArray();
 
 $taxonomy = app($field['resource']);
 
 @endphp
 
-{{-- @dump($this->post['terms']) --}}
-{{-- @dump($taxonomy) --}}
+{{-- @dump($this->post['fields'])
+@dump($values) --}}
 
 <x-aura::fields.wrapper :field="$field">
 <div
@@ -15,18 +17,27 @@ wire:ignore
 x-data="{
     multiple: true,
     value: @entangle('post.fields.' . $field['slug']).defer,
-    options: {{ Js::from($values) }},
+    options: @js($values),
     init() {
         if (!this.value) {
             this.value = [];
         }
+
         this.$nextTick(() => {
-            // Transform the value to an array of tag objects with id and value properties
-            const tagValues = JSON.parse(this.value).map(id => ({id: id, value: this.options[id]}));
+
+            let tagValues = [];
+
+            if(this.value.length > 0) {
+                tagValues = JSON.parse(this.value).map(id => {
+                    let option = this.options.find(option => option.id === id);
+                    return option ? {id: id, value: option.value} : {};
+                });
+            } 
+           
             this.$refs.tags.value = JSON.stringify(tagValues);
 
             var tagify = new window.Tagify(this.$refs.tags, {
-                whitelist: Object.entries(this.options).map(([id, value]) => ({id: id, value: value})),
+                whitelist: this.options,
                 maxTags: 10,
                 value: tagValues,
                 originalInputValueFormat: valuesArr => valuesArr.map(item => item.id),

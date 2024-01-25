@@ -25,7 +25,7 @@ class Tags extends Field
         if (!is_array($value) || count($value) === 0) {
             return '';
         }
-        
+
         return app($field['resource'])->query()->whereIn('id', $value)->pluck('title')->map(function ($v) {
             return "<span class='px-2 py-1 text-xs text-white rounded-full bg-primary-500 whitespace-nowrap'>$v</span>";
         })->implode(' ');
@@ -63,7 +63,9 @@ class Tags extends Field
             }
         })->toArray();
 
-        ray('values', $value);
+        if (is_array($value)) {
+            return json_encode($value);
+        }
 
         return $value;
     }
