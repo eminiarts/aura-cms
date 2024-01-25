@@ -21,13 +21,20 @@ class Navigation extends Component
     {
         $this->emit('NavigationMounted');
 
+        // ray('mount', auth()->user()->getOptionSidebarToggled());
+
         if (auth()->check() && auth()->user()->getOptionSidebar()) {
             $this->toggledGroups = auth()->user()->getOptionSidebar();
-            $this->sidebarToggled = auth()->user()->getOptionSidebarToggled();
         } else {
             $this->toggledGroups = [];
-            $this->sidebarToggled = true;
+            // $this->sidebarToggled = true;
         }
+
+        if (auth()->check()) {
+            $this->sidebarToggled = auth()->user()->getOptionSidebarToggled();
+        }
+
+        // ray('mount2', auth()->user()->getOptionSidebar(), $this->sidebarToggled);
 
         $this->sidebarType = $this->getSidebarType();
         $this->iconClass = $this->getIconClass($this->sidebarType);
@@ -40,7 +47,11 @@ class Navigation extends Component
 
     public function toggleSidebar()
     {
+        ray('toggleSidebar1', $this->sidebarToggled);
+
         $this->sidebarToggled = !$this->sidebarToggled;
+
+        ray('toggleSidebar2', $this->sidebarToggled);
 
         auth()->user()->updateOption('sidebarToggled', $this->sidebarToggled);
     }
