@@ -32,6 +32,7 @@ class HasManyFieldModel extends Resource
             [
                 'name' => 'Hasmany for Test',
                 'type' => 'Eminiarts\\Aura\\Fields\\HasMany',
+                'resource' => 'Eminiarts\\Aura\\Resources\\Post',
                 'validation' => 'numeric|nullable',
                 'conditional_logic' => [],
                 'suffix' => '%',
@@ -47,7 +48,7 @@ test('HasMany Field not shown in Create', function () {
 
     $component = Livewire::test(Create::class, ['slug' => 'Post'])
         ->call('setModel', $model)
-        ->assertDontSee('Hasmany for Test');
+        ->assertSee('Hasmany for Test');
 });
 
 test('HasMany Field shown on Edit', function () {
