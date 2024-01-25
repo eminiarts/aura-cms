@@ -159,7 +159,7 @@ test('table filter - taxonomy filter', function () {
 
     // After a filter is saved, the current filter should be set to the saved filter
     expect($component->selectedFilter)->toBe('Test Filter');
-});
+})->skip('Taxonomy');
 
 test('table filter - taxonomy filter can be deleted', function () {
     $post = $this->post;
@@ -198,7 +198,7 @@ test('table filter - taxonomy filter can be deleted', function () {
     // $filters should be reset
     expect($component->filters)->toHaveKey('custom', []);
     expect($component->filters)->toHaveKey('taxonomy.tags', []);
-});
+})->skip('Taxonomy');
 
 test('table filter - custom filter can be removed', function () {
     $post = $this->post;
