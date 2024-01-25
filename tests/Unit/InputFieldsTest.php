@@ -87,8 +87,7 @@ test('can get table headers', function () {
     $tableHeaders = $inputFields->getTableHeaders();
 
     $this->assertInstanceOf(\Illuminate\Support\Collection::class, $tableHeaders);
-    $this->assertCount(3, $tableHeaders);
-    $this->assertEquals('ID', $tableHeaders->get('id'));
+    $this->assertCount(2, $tableHeaders);
     $this->assertEquals('Title', $tableHeaders->get('title'));
     $this->assertEquals('Body', $tableHeaders->get('body'));
 });

@@ -38,7 +38,7 @@ class Resource extends Model
 
     protected $appends = ['fields'];
 
-    protected $fillable = ['title', 'content', 'type', 'status', 'fields', 'slug', 'user_id', 'parent_id', 'order', 'terms', 'team_id', 'first_taxonomy', 'created_at', 'updated_at', 'deleted_at'];
+    protected $fillable = ['title', 'content', 'type', 'status', 'fields', 'slug', 'user_id', 'parent_id', 'order', 'team_id', 'first_taxonomy', 'created_at', 'updated_at', 'deleted_at'];
 
     protected $hidden = ['meta'];
 
