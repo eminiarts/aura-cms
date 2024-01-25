@@ -13,7 +13,7 @@ uses(RefreshDatabase::class);
 // Before each test, create a Superadmin and login
 beforeEach(function () {
     // Create User
-    $this->actingAs($this->user = User::factory()->create());
+    $this->actingAs($this->user = createSuperAdmin());
 
     // Create Team and assign to user
     createSuperAdmin();

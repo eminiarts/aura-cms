@@ -75,7 +75,7 @@ class Number extends Field
 
     public function set($value)
     {
-        return (int) $value;
+        return $value;
     }
 
     public function value($value)
