@@ -1,10 +1,11 @@
 <?php
 
-use Eminiarts\Aura\Http\Livewire\Post\Create;
 use Eminiarts\Aura\Models\User;
 use Eminiarts\Aura\Resources\Team;
+use Illuminate\Support\Facades\DB;
 
 use function Pest\Livewire\livewire;
+use Eminiarts\Aura\Http\Livewire\Post\Create;
 
 // Before each test, create a Superadmin and login
 beforeEach(function () {
@@ -17,11 +18,15 @@ test('team can be created', function () {
 
     // Expect 1 team
     expect($teams->count())->toBe(1);
+    expect( DB::table('posts')->where('type', 'Role')->count())->toBe(1);
 
-    $component = livewire(Create::class, ['slug' => 'Team'])->set('post.fields.name', 'Test Team')
+    $component = livewire(Create::class, ['slug' => 'Team'])
+        ->set('post.fields.name', 'Test Team')
         ->set('post.fields.description', 'Test Description')
         ->call('save')
         ->assertHasNoErrors();
+
+        $this->user->refresh();
 
     $team = $this->user->fresh()->currentTeam;
 

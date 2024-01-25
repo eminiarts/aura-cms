@@ -253,7 +253,6 @@ class Team extends Resource
 
             // Attach the current user to the team
             if ($user) {
-
                 $team->users()->attach($user->id, [
                     'key' => 'roles',
                     'value' => $role->id,
@@ -261,7 +260,6 @@ class Team extends Resource
 
                 // Clear cache of Cache('user.'.$this->id.'.teams')
                 Cache::forget('user.'.$user->id.'.teams');
-
             }
         });
 

@@ -55,20 +55,10 @@ function createSuperAdmin()
 {
     $user = User::factory()->create();
 
+    auth()->login($user);
+
     // Create Team
     $team = Team::factory()->create();
-
-    // Set current_team_id of the user
-    $user->update(['current_team_id' => $team->id]);
-
-    // Create Role
-    $role = Role::create(['team_id' => $team->id, 'type' => 'Role', 'title' => 'Super Admin', 'slug' => 'super_admin', 'description' => 'Super Admin has can perform everything.', 'super_admin' => true, 'permissions' => []]);
-
-    // Attach to User
-    $user->update(['fields' => ['roles' => [$role->id]]]);
-
-    // create a entry in team_user table with team_id and user_id
-    $user->teams()->attach($team->id);
 
     $user->refresh();
 
