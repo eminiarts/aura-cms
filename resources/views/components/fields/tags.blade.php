@@ -1,10 +1,9 @@
 
 @php
-$values = app($field['model'])->pluck('name')->toArray();
+$values = app($field['resource'])->pluck('title', 'id')->toArray();
 
-$taxonomy = app($field['model']);
+$taxonomy = app($field['resource']);
 
-// dd($taxonomy::$slug, $values);
 @endphp
 
 {{-- @dump($this->post['terms']) --}}
@@ -15,39 +14,35 @@ $taxonomy = app($field['model']);
 wire:ignore
 x-data="{
     multiple: true,
-    value: @entangle('post.terms.' . $taxonomy::$slug).defer,
+    value: @entangle('post.fields.' . $field['slug']).defer,
     options: {{ Js::from($values) }},
     init() {
         if (!this.value) {
             this.value = [];
         }
         this.$nextTick(() => {
-
-            this.$refs.tags.value = this.value;
+            // Transform the value to an array of tag objects with id and value properties
+            const tagValues = JSON.parse(this.value).map(id => ({id: id, value: this.options[id]}));
+            this.$refs.tags.value = JSON.stringify(tagValues);
 
             var tagify = new window.Tagify(this.$refs.tags, {
-                whitelist: this.options,
+                whitelist: Object.entries(this.options).map(([id, value]) => ({id: id, value: value})),
                 maxTags: 10,
-                value: this.value,
-                originalInputValueFormat: valuesArr => valuesArr.map(item => item.value),
+                value: tagValues,
+                originalInputValueFormat: valuesArr => valuesArr.map(item => item.id),
                 dropdown: {
                     maxItems: 20,
                     classname: 'tags-look',
                     enabled: 0,
                     closeOnSelect: false
                 }
-            })
-
-            let refreshOptions = () => {
-                let selection = this.multiple ? this.value : [this.value]
-            }
-
-            refreshOptions()
+            });
 
             this.$refs.tags.addEventListener('change', (e) => {
+                // Update the value to be an array of selected tag values
                 this.value = tagify.value.map(item => item.value);
-            })
-        })
+            });
+        });
     }
 }"
 class=""
