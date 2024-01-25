@@ -11,32 +11,46 @@ $sidebarToggled = auth()->check() ? auth()->user()->getOptionSidebarToggled() : 
 
 // ray($sidebarToggled);
 
+// dump($sidebarToggled);
+
 $compact = false;
 
 @endphp
+
 <style>
-    @media screen (max-width: 768px){
+    @media screen and (max-width: 768px){
         .mobile-load-hidden {
             display: none !important;
         }
     }
 </style>
+
 <div
     x-data="{
         sidebarToggled: {{ $sidebarToggled ? 'true' : 'false' }},
         init() {
-            console.log(this.sidebarToggled);
+            console.log('init', this.sidebarToggled);
+
             this.$nextTick(() => {
                 document.querySelectorAll('.mobile-load-hidden').forEach((el) => {
                     el.classList.remove('mobile-load-hidden');
                 });
 
-                if (window.innerWidth < 768) this.sidebarToggled = false;
+                if (window.innerWidth < 768) {
+                    this.sidebarToggled = false;
+                }
             });
         },
-        toggleSidebar() {
-            this.sidebarToggled = !this.sidebarToggled;
-            {{-- $wire.toggleSidebar(); --}}
+        toggleSidebar: async function() {
+            if (window.innerWidth < 768) {
+                console.log('toggleSidebar async mobile');
+                this.sidebarToggled = !this.sidebarToggled;
+            } else {
+                this.sidebarToggled = !this.sidebarToggled;
+                console.log('toggleSidebar async desktop1', this.sidebarToggled);
+                await $wire.toggleSidebar();
+                console.log('toggleSidebar async deskto2', this.sidebarToggled);
+            }
         }
     }">
 
@@ -54,7 +68,7 @@ $compact = false;
         </div>
 
         <!-- Button to toggle the sidebar -->
-        <button class="mt-12" x-on:click="toggleSidebar()">
+        <button x-on:click="toggleSidebar()">
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
             <path d="M3 12H15M3 6H21M3 18H21" stroke="currentcolor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
         </svg>
@@ -72,7 +86,7 @@ $compact = false;
         }"
     >
         <div
-            class="fixed top-0 left-0 z-10 flex flex-col flex-shrink-0 h-screen border-r shadow-xl {{ $sidebarToggled ? ($compact ? 'open-sidebar w-56' : 'open-sidebar w-72') : 'closed-sidebar w-20' }}
+            class="fixed top-0 left-0 z-10 flex flex-col flex-shrink-0 h-screen border-r shadow-xl {{ $sidebarToggled ? ($compact ? 'w-56' : 'w-72') : 'w-20' }}
                 @if ($sidebarType == 'primary')
                     text-white border-white border-opacity-20 bg-sidebar-bg dark:bg-gray-800 dark:border-gray-700 shadow-gray-400 md:shadow-none
                 @elseif ($sidebarType == 'light')
@@ -108,7 +122,7 @@ $compact = false;
                             <button
                                 @click="toggleSidebar()"
                                 type="button"
-                                class="mt-12 relative inline-flex items-center justify-center w-10 h-10 text-sm font-semibold border rounded-lg shadow-none select-none focus:outline-none focus:ring-2
+                                class="relative inline-flex items-center justify-center w-10 h-10 text-sm font-semibold border rounded-lg shadow-none select-none focus:outline-none focus:ring-2
 
                                 @if ($sidebarType == 'primary')
                                 focus:ring-primary-500 border-primary-600 dark:border-gray-700 text-primary-200 dark:text-gray-600 hover:text-white dark:hover:text-gray-200
@@ -174,7 +188,7 @@ $compact = false;
                 </div>
             </div>
 
-            <div class="hide-collapsed flex-shrink-0 {{ $compact ? 'px-3' : 'px-5' }} min-h-[4.5rem] py-2 flex items-center border-t
+            <div class=" flex-shrink-0 {{ $compact ? 'px-3' : 'px-5' }} min-h-[4.5rem] py-2 flex items-center border-t
                 @if ($sidebarType == 'primary')
                     border-white border-opacity-20 dark:border-gray-700
                 @elseif ($sidebarType == 'light')
@@ -194,83 +208,43 @@ $compact = false;
                 @endImpersonating
 
                 @if(config('aura.teams') && Auth::user()->currentTeam)
-                <div class="flex justify-between items-center w-full">
-                    <x-aura::navigation.team-switcher>
-                        <x-slot:title>
-                            <div class="block flex-shrink w-full group">
-                                <div class="flex items-center">
-                                    <div>
-                                        <img class="inline-block w-9 h-9 rounded-full" src="{{ auth()->user()->resource->avatarUrl }}" alt="">
-                                    </div>
-                                    <div class="ml-3">
-                                        <p class="text-sm font-medium
-                                            @if ($sidebarType == 'primary')
-                                                text-white
-                                            @elseif ($sidebarType == 'light')
-                                                text-gray-900
-                                            @elseif ($sidebarType == 'dark')
-                                                text-white
-                                            @endif
-                                        ">{{ Auth::user()->name }}</p>
-                                        <p class="text-xs font-medium
-                                            @if ($sidebarType == 'primary')
-                                                group-hover:text-white text-primary-200 dark:text-gray-500
-                                            @elseif ($sidebarType == 'light')
-                                                group-hover:text-gray-500 text-gray-400 dark:text-gray-500
-                                            @elseif ($sidebarType == 'dark')
-                                                group-hover:text-white text-gray-500
-                                            @endif
-                                        ">{{ Auth::user()->currentTeam->name }}</p>
-                                    </div>
-                                </div>
-                            </div>
-                        </x-slot:title>
-
-                        @include('aura::navigation.footer-popup')
-
-                    </x-aura::navigation.team-switcher>
-
-                    @if(config('aura.features.notifications'))
-                    <div class="ml-2">
-                        <x-aura::tippy text="{{ __('Notifications') }}">
-                            <x-aura::button.primary @click="Livewire.emit('openSlideOver', 'notifications')" class="my-2 w-full" size="xs">
-                                <x-aura::icon icon="notifications" size="xs" />
-                            </x-aura::button.primary>
-                        </x-aura::tippy>
-                    </div>
-                    @endif
-                </div>
-                @else
-                <div class="flex justify-between items-center w-full">
-
-                    <x-aura::navigation.team-switcher>
-                        <x-slot:title>
-                            <div class="block flex-shrink w-full group">
-                                <div class="flex items-center">
-                                    <div>
-                                        <img class="inline-block w-9 h-9 rounded-full" src="{{ auth()->user()->resource->avatarUrl }}" alt="">
-                                    </div>
-                                    <div class="ml-3">
-                                        <p class="text-sm font-medium
-                                            @if ($sidebarType == 'primary')
-                                                text-white
-                                            @elseif ($sidebarType == 'light')
-                                                text-gray-900
-                                            @elseif ($sidebarType == 'dark')
-                                                text-white
-                                            @endif
-                                        ">{{ Auth::user()->name }}</p>
-
+                    <div class="flex justify-between items-center w-full">
+                        <x-aura::navigation.team-switcher>
+                            <x-slot:title>
+                                <div class="block flex-shrink w-full group">
+                                    <div class="flex items-center">
+                                        <div>
+                                            <img class="inline-block w-9 h-9 rounded-full" src="{{ auth()->user()->resource->avatarUrl }}" alt="">
+                                        </div>
+                                        <div class="ml-3 hide-collapsed">
+                                            <p class="text-sm font-medium
+                                                @if ($sidebarType == 'primary')
+                                                    text-white
+                                                @elseif ($sidebarType == 'light')
+                                                    text-gray-900
+                                                @elseif ($sidebarType == 'dark')
+                                                    text-white
+                                                @endif
+                                            ">{{ Auth::user()->name }}</p>
+                                            <p class="text-xs font-medium
+                                                @if ($sidebarType == 'primary')
+                                                    text-primary-200 dark:text-gray-500
+                                                @elseif ($sidebarType == 'light')
+                                                    text-gray-400 dark:text-gray-500
+                                                @elseif ($sidebarType == 'dark')
+                                                    text-gray-500
+                                                @endif
+                                            ">{{ Auth::user()->currentTeam->name }}</p>
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
-                        </x-slot:title>
+                            </x-slot:title>
 
-                        @include('aura::navigation.footer-popup')
+                            @include('aura::navigation.footer-popup')
 
-                    </x-aura::navigation.team-switcher>
+                        </x-aura::navigation.team-switcher>
 
-                    @if(config('aura.features.notifications'))
+                        @if(config('aura.features.notifications'))
                         <div class="ml-2">
                             <x-aura::tippy text="{{ __('Notifications') }}">
                                 <x-aura::button.primary @click="Livewire.emit('openSlideOver', 'notifications')" class="my-2 w-full" size="xs">
@@ -278,8 +252,48 @@ $compact = false;
                                 </x-aura::button.primary>
                             </x-aura::tippy>
                         </div>
-                    @endif
-                </div>
+                        @endif
+                    </div>
+                @else
+                    <div class="flex justify-between items-center w-full">
+
+                        <x-aura::navigation.team-switcher>
+                            <x-slot:title>
+                                <div class="block flex-shrink w-full group">
+                                    <div class="flex items-center">
+                                        <div>
+                                            <img class="inline-block w-9 h-9 rounded-full" src="{{ auth()->user()->resource->avatarUrl }}" alt="">
+                                        </div>
+                                        <div class="ml-3 hide-collapsed">
+                                            <p class="text-sm font-medium
+                                                @if ($sidebarType == 'primary')
+                                                    text-white
+                                                @elseif ($sidebarType == 'light')
+                                                    text-gray-900
+                                                @elseif ($sidebarType == 'dark')
+                                                    text-white
+                                                @endif
+                                            ">{{ Auth::user()->name }}</p>
+
+                                        </div>
+                                    </div>
+                                </div>
+                            </x-slot:title>
+
+                            @include('aura::navigation.footer-popup')
+
+                        </x-aura::navigation.team-switcher>
+
+                        @if(config('aura.features.notifications'))
+                            <div class="ml-2">
+                                <x-aura::tippy text="{{ __('Notifications') }}">
+                                    <x-aura::button.primary @click="Livewire.emit('openSlideOver', 'notifications')" class="my-2 w-full" size="xs">
+                                        <x-aura::icon icon="notifications" size="xs" />
+                                    </x-aura::button.primary>
+                                </x-aura::tippy>
+                            </div>
+                        @endif
+                    </div>
                 @endif
 
             </div>
