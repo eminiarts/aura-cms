@@ -22,15 +22,17 @@
 
 
     </div>
+
+    @dump($this->filters)
     <hr class="my-4 border-t border-gray-400/30 dark:border-gray-700">
 
     @forelse($this->model->taxonomyFields() as $field)
     <div>
         <h4 class="my-4 font-semibold text-primary-600">{{ $field['name'] }}</h4>
         <div class="flex flex-col space-y-2">
-            @foreach (app($field['model'])->get() as $taxonomy)
+            @foreach (app($field['resource'])->get() as $taxonomy)
             <div class="flex items-center">
-                <x-aura::input.checkbox wire:model="filters.taxonomy.{{ $taxonomy->taxonomy }}" name="taxonomy_{{ $taxonomy->id }}" id="taxonomy_{{ $taxonomy->id }}" :label="$taxonomy->name" :value="$taxonomy->id" />
+                <x-aura::input.checkbox wire:model="filters.taxonomy.{{ $field['slug'] }}" name="taxonomy_{{ $taxonomy->id }}" id="taxonomy_{{ $taxonomy->id }}" :label="$taxonomy->title" :value="$taxonomy->id" />
             </div>
             @endforeach
         </div>

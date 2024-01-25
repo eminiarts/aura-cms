@@ -166,7 +166,18 @@ trait Filters
     public function resetFilter()
     {
         $this->reset('filters');
-        // $this->setTaxonomyFilters();
+         $this->setTaxonomyFilters();
+    }
+
+     /**
+     * Set taxonomy filters.
+     */
+    public function setTaxonomyFilters()
+    {
+        $this->filters['taxonomy'] = $this->model?->taxonomyFields()
+            ->values()
+            ->mapWithKeys(fn($field) => [$field['slug'] => []])
+            ->toArray();
     }
 
     /**

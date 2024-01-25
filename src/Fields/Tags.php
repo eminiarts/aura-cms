@@ -8,6 +8,8 @@ class Tags extends Field
 {
     public $component = 'aura::fields.tags';
 
+    public bool $taxonomy = true;
+
     public string $type = 'input';
 
     // public $view = 'components.fields.tags';
