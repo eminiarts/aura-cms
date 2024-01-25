@@ -9,6 +9,8 @@ class HasMany extends Field
 {
     public $component = 'aura::fields.has-many';
 
+    public $view = 'aura::fields.has-many-view';
+
     public bool $group = false;
 
     public string $type = 'relation';

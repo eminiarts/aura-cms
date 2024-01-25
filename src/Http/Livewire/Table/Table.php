@@ -43,6 +43,8 @@ class Table extends Component
      */
     public $createInModal = false;
 
+    public $disabled;
+
     /**
      * Indicates if the Edit Component should be in a Modal.
      *

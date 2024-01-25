@@ -321,8 +321,15 @@ class Aura
 
             $resources = app('hook_manager')->applyHooks('navigation', $resources->values());
 
+            $resources = $resources->sortBy('sort')->filter(function($value, $key) {
+                if (isset($value['conditional_logic'])) {
+                    return app('dynamicFunctions')::call($value['conditional_logic']);
+                }
+                return true;
+            });
+
             $grouped = array_reduce(collect($resources)->toArray(), function ($carry, $item) {
-                if ($item['dropdown'] !== false) {
+                if (isset($item['dropdown']) && $item['dropdown'] !== false) {
                     if (! isset($carry[$item['dropdown']])) {
                         $carry[$item['dropdown']] = [];
                     }

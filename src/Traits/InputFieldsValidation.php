@@ -56,6 +56,7 @@ trait InputFieldsValidation
             })
             ->toArray();
 
+
         return $fields;
     }
 }

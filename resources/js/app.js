@@ -14,7 +14,6 @@ import flatpickr from "flatpickr";
 
 import Tagify from '@yaireo/tagify'
 
-
 window.Tagify = Tagify;
 window.Alpine = Alpine;
 window.Sortable = Sortable;
@@ -24,11 +23,9 @@ window.tippy = tippy;
 window.flatpickr = flatpickr;
 // flatpickr.localize(German); // default locale is now German
 
-
 Alpine.plugin(collapse);
 Alpine.plugin(focus);
 Alpine.plugin(ui);
-
 
 Alpine.data('aura', () => ({
   loading: false,
@@ -43,7 +40,6 @@ Alpine.data('aura', () => ({
 
   init() {
   },
-
 
   search() {
     $dispatch('search');
@@ -92,7 +88,6 @@ Alpine.store('leftSidebar', {
         localStorage.setItem('leftSidebar', this.on);
     }
 })
-
 
 Alpine.start()
 

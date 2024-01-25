@@ -6,6 +6,7 @@ use Aura\Flows\Jobs\TriggerFlowOnCreatePostEvent;
 use Aura\Flows\Jobs\TriggerFlowOnDeletedPostEvent;
 use Aura\Flows\Jobs\TriggerFlowOnUpdatePostEvent;
 use Aura\Flows\Resources\Flow;
+use Eminiarts\Aura\Models\Scopes\ScopedScope;
 use Eminiarts\Aura\Models\Scopes\TeamScope;
 use Eminiarts\Aura\Models\Scopes\TypeScope;
 use Eminiarts\Aura\Resources\User;
@@ -341,6 +342,8 @@ class Resource extends Model
         }
 
         static::addGlobalScope(new TeamScope());
+
+        static::addGlobalScope(new ScopedScope());
 
         static::creating(function ($model) {
             // if (! $model->team_id) {

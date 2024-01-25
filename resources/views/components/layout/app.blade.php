@@ -60,7 +60,6 @@
 
         <div
             x-data="aura"
-            x-init="if (window.innerWidth < 768) $store.leftSidebar.on = false"
             @keydown.window.slash="$dispatch('search')"
             @keydown.window.prevent.cmd.k="$dispatch('search')"
             @keydown.window.escape="closeSearch()"
@@ -127,14 +126,6 @@
         @livewire('livewire-ui-modal')
 
         @stack('scripts')
-
-        <script >
-            if (localStorage.getItem('leftSidebar') === 'true') {
-                document.querySelector('.aura-navigation-collapsed').setAttribute('x-cloak', '');
-            } else {
-                document.querySelector('.aura-navigation').setAttribute('x-cloak', '');
-            }
-        </script>
 
   <script >
       // after 100ms trigger a window resize event to force the chart to redraw

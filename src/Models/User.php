@@ -210,6 +210,20 @@ class User extends Authenticatable
         return [];
     }
 
+    public function getOptionSidebarToggled()
+    {
+        // Cache
+        $option = Cache::remember('user.'.$this->id.'.sidebarToggled', now()->addHour(), function () {
+            return Option::whereName('user.'.$this->id.'.sidebarToggled')->first();
+        });
+
+        if ($option) {
+            return $option->value;
+        }
+
+        return true;
+    }
+
     public function getTeams()
     {
         if (! config('aura.teams')) {

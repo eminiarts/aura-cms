@@ -78,6 +78,7 @@ return [
     'features' => [
         'global_search' => true,
         'notifications' => true,
+        'bookmarks' => true,
 
         'plugins' => true,
         'flows' => false,
