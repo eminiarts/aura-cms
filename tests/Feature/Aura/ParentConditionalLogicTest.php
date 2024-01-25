@@ -12,7 +12,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
 
-beforeEach(fn () => $this->actingAs($this->user = User::factory()->create()));
+beforeEach(fn () => $this->actingAs($this->user = createSuperAdmin()));
 
 class ParentConditionalLogicModel extends Resource
 {
@@ -278,7 +278,7 @@ test('fields merge parent conditional logic - more advanced Example', function (
 });
 
 test('role condition as a Super Admin', function () {
-    createSuperAdmin();
+    
 
     $model = new AdvancedParentConditionalLogicModel();
 
