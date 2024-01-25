@@ -27,16 +27,15 @@ class View extends Component
     public $tax;
 
     // Listen for selectedAttachment
-    protected $listeners = ['updateField' => 'updateField'];
+    protected $listeners = [
+        'updateField' => 'updateField',
+        'refreshComponent' => '$refresh',
+        'reload',
+    ];
 
     public function getField($slug)
     {
         return $this->post['fields'][$slug];
-    }
-
-    public function getTaxonomiesProperty()
-    {
-        return $this->model->getTaxonomies();
     }
 
     public function mount($slug, $id)
@@ -54,6 +53,14 @@ class View extends Component
         $this->post['terms'] = $this->model->terms;
         $this->post['terms']['tag'] = $this->post['terms']['tag'] ?? null;
         $this->post['terms']['category'] = $this->post['terms']['category'] ?? null;
+    }
+
+    public function reload()
+    {
+        $this->model = $this->model->fresh();
+        $this->post = $this->model->attributesToArray();
+
+        $this->emit('refreshComponent');
     }
 
     public function render()

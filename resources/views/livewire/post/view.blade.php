@@ -52,11 +52,13 @@
     <div class="grid gap-6 mt-4 aura-view-post-container sm:grid-cols-3" x-data="{
          init() {
             const container = document.querySelector('.aura-view-post-container');
-                        const inputs = container.querySelectorAll('input, select, textarea, .aura-input');
+            const inputs = container.querySelectorAll('input, select, textarea, .aura-input');
 
 
             inputs.forEach((input) => {
-                input.setAttribute('readonly', true);
+                if (!input.hasAttribute('readonly')) {
+                    input.setAttribute('readonly', true);
+                }
             });
         }
     }">
@@ -76,7 +78,7 @@
                 <div class="mt-8 form_errors">
                     <strong class="block text-red-600">Unfortunately, there were still the following validation
                         errors:</strong>
-                    <div class="prose text-red-600">
+                    <div class="text-red-600 prose">
                         <ul>
                             @foreach ($errors->all() as $message)
                             <li>{{ $message }}</li>

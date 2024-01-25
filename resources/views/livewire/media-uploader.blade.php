@@ -80,6 +80,9 @@
             },
             uploadFiles(files) {
                 const $this = this
+
+                console.log('upload multiple')
+                
                 this.isUploading = true
                 @this.uploadMultiple('media', files,
                 function (success) { //upload was a success and was finished

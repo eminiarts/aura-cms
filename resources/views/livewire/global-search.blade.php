@@ -1,4 +1,5 @@
 <div>
+    @if(config('aura.features.global_search'))
     <style >
         .search-list-icon svg {
             width: 1.5rem;
@@ -230,5 +231,5 @@
 
 	})
 </script>
-
+    @endif
 </div>

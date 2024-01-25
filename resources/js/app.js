@@ -13,7 +13,6 @@ import flatpickr from "flatpickr";
 
 import Tagify from '@yaireo/tagify'
 
-
 window.Tagify = Tagify;
 window.Alpine = Alpine;
 window.Sortable = Sortable;
@@ -22,7 +21,6 @@ window.tippy = tippy;
 // window.german = German;
 window.flatpickr = flatpickr;
 // flatpickr.localize(German); // default locale is now German
-
 
 Alpine.plugin(collapse);
 Alpine.plugin(focus);
@@ -42,7 +40,6 @@ Alpine.data('aura', () => ({
   init() {
   },
 
-
   search() {
     $dispatch('search');
   },
@@ -52,6 +49,15 @@ Alpine.data('aura', () => ({
     setTimeout(function() {
       body.style.paddingRight = sidebar.offsetWidth + 'px';
     }, 10);
+    setTimeout(function() {
+      body.style.paddingRight = sidebar.offsetWidth + 'px';
+    }, 50);
+    setTimeout(function() {
+      body.style.paddingRight = sidebar.offsetWidth + 'px';
+    }, 100);
+    setTimeout(function() {
+      body.style.paddingRight = sidebar.offsetWidth + 'px';
+    }, 250);
 
   },
   toggleRightSidebar() {
@@ -82,8 +88,7 @@ Alpine.store('leftSidebar', {
     }
 })
 
-
-// Alpine.start()
+Alpine.start()
 
 function updateVisitedPages(title, url) {
   const key = 'visitedPages';

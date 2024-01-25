@@ -2,6 +2,17 @@
 
 namespace Eminiarts\Aura\Livewire\Table;
 
+use Eminiarts\Aura\Facades\Aura;
+use Eminiarts\Aura\Http\Livewire\Table\Traits\BulkActions;
+use Eminiarts\Aura\Http\Livewire\Table\Traits\Filters;
+use Eminiarts\Aura\Http\Livewire\Table\Traits\PerPagePagination;
+use Eminiarts\Aura\Http\Livewire\Table\Traits\QueryFilters;
+use Eminiarts\Aura\Http\Livewire\Table\Traits\Search;
+use Eminiarts\Aura\Http\Livewire\Table\Traits\Select;
+use Eminiarts\Aura\Http\Livewire\Table\Traits\Settings;
+use Eminiarts\Aura\Http\Livewire\Table\Traits\Sorting;
+use Eminiarts\Aura\Models\User;
+use Eminiarts\Aura\Resource;
 use Livewire\Component;
 use Eminiarts\Aura\Resource;
 use Eminiarts\Aura\Models\User;
@@ -23,6 +34,8 @@ class Table extends Component
     use PerPagePagination;
     use QueryFilters;
     use Search;
+    use Select;
+    use Settings;
     use Sorting;
 
     public $namespace;
@@ -41,6 +54,8 @@ class Table extends Component
      * @var bool
      */
     public $createInModal = false;
+
+    public $disabled;
 
     /**
      * Indicates if the Edit Component should be in a Modal.
@@ -68,10 +83,6 @@ class Table extends Component
         'public' => false,
         'global' => false,
     ];
-
-    public $filterView = 'aura::components.table.filter';
-
-    public $headerView = 'aura::components.table.header';
 
     /**
      * The last clicked row.
@@ -164,76 +175,9 @@ class Table extends Component
         }
     }
 
-    /**
-     * Handle bulk action on the selected rows.
-     */
-    public function bulkAction(string $action)
-    {
-        $this->selectedRowsQuery->each(function ($item, $key) use ($action) {
-            if (str_starts_with($action, 'callFlow.')) {
-                $item->callFlow(explode('.', $action)[1]);
-            } elseif (str_starts_with($action, 'multiple')) {
-                $posts = $this->selectedRowsQuery->get();
-                $response = $item->{$action}($posts);
-
-            // dd($response);
-            } elseif (method_exists($item, $action)) {
-                $item->{$action}();
-            }
-        });
-
-        $this->notify('Erfolgreich: '.$action);
-    }
-
-    public function bulkCollectionAction($action)
-    {
-        //$action = $this->model->getBulkActions()[$action];
-        $ids = $this->selectedRowsQuery->pluck('id')->toArray();
-
-        // Which one is correct here?
-
-        // $this->dispatch('openModal', $data['modal'], [
-        //     'action' => $action,
-        //     'selected' => $this->selectedRowsQuery->get(),
-        //     'model' => get_class($this->model()),
-        // ]);
-
-        // $dispatch('openModal', '{{ $data['modal'] }}', {{ json_encode(['action' => $action, 'selected' => $this->selectedRowsQuery->get()]) }})
-        $response = $this->model->{$action}($ids);
-
-        if ($response instanceof \Symfony\Component\HttpFoundation\StreamedResponse) {
-            return $response;
-        }
-
-        // reset selected rows
-        $this->selected = [];
-
-        $this->notify('Erfolgreich: '.$action);
-
-        $this->emit('refreshTable');
-    }
-
     public function getAllTableRows()
     {
-        // dd('hier', $this->rowsQuery->pluck('id'));
         return $this->rowsQuery->pluck('id')->all();
-    }
-
-    /**
-         * Get the available bulk actions.
-         *
-         * @return mixed
-         */
-    #[Computed]
-    public function bulkActions()
-    {
-        return $this->model()->getBulkActions();
-    }
-
-    #[Computed]
-    public function page()
-    {
-        return $this->getPage();
     }
 
     /**
@@ -278,10 +222,16 @@ class Table extends Component
     #[Computed]
     public function headers()
     {
-        $headers = $this->model()->getTableHeaders();
+        $headers = $this->settings['columns'];
 
-        if ($sort = auth()->user()->getOption('columns_sort.'.$this->model()->getType())) {
-            $headers = $headers->sortBy(function ($value, $key) use ($sort) {
+        if ($this->settings['sort_columns'] && $this->settings['sort_columns_key'] && $sort = Aura::getOption($this->settings['sort_columns_key'])) {
+            $headers = collect($headers)->sortBy(function ($value, $key) use ($sort) {
+                return array_search($key, $sort);
+            });
+        }
+
+        if ($this->settings['sort_columns'] && $this->settings['sort_columns_user_key'] && $sort = auth()->user()->getOption($this->settings['sort_columns_user_key'])) {
+            $headers = collect($headers)->sortBy(function ($value, $key) use ($sort) {
                 return array_search($key, $sort);
             });
         }
@@ -343,12 +293,7 @@ class Table extends Component
             $query = $this->model->indexQuery($query, $this);
         }
 
-        // when model is instance Resource, eager load meta and taxonomies
-        if ($this->model instanceof Resource) {
-            $query = $query->with(['taxonomies']);
-        }
-
-        // when model is instance Resource, eager load meta and taxonomies
+        // when model is instance Resource, eager load meta
         if ($this->model->usesMeta()) {
             $query = $query->with(['meta']);
         }
@@ -384,9 +329,7 @@ class Table extends Component
         //     // dd($this->parentModel);
         // }
 
-        $this->dispatch('tableMounted');
-
-        $this->setTaxonomyFilters();
+        $this->emit('tableMounted');
 
         if ($this->selectedFilter) {
             if (array_key_exists($this->selectedFilter, $this->userFilters)) {
@@ -405,6 +348,10 @@ class Table extends Component
         } else {
             $this->columns = $this->model()->getDefaultColumns();
         }
+
+        $this->initiateSettings();
+
+        $this->setTaxonomyFilters();
     }
 
     public function openBulkActionModal($action, $data)

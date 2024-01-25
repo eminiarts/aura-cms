@@ -5,7 +5,6 @@ namespace Eminiarts\Aura\Models;
 use Eminiarts\Aura\Resources\Option;
 use Eminiarts\Aura\Resources\Team;
 use Eminiarts\Aura\Traits\AuraModelConfig;
-use Eminiarts\Aura\Traits\AuraTaxonomies;
 use Eminiarts\Aura\Traits\InputFields;
 use Eminiarts\Aura\Traits\InteractsWithTable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -20,7 +19,6 @@ class User extends Authenticatable
 {
     // Aura
     use AuraModelConfig;
-    use AuraTaxonomies;
     use HasApiTokens;
     use HasFactory;
     use Impersonate;
@@ -210,6 +208,20 @@ class User extends Authenticatable
         }
 
         return [];
+    }
+
+    public function getOptionSidebarToggled()
+    {
+        // Cache
+        $option = Cache::remember('user.'.$this->id.'.sidebarToggled', now()->addHour(), function () {
+            return Option::whereName('user.'.$this->id.'.sidebarToggled')->first();
+        });
+
+        if ($option) {
+            return $option->value;
+        }
+
+        return true;
     }
 
     public function getTeams()
