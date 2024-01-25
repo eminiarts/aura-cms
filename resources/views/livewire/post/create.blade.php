@@ -15,12 +15,14 @@
         </div>
 
         <div>
+            @if($showSaveButton)
             <x-aura::button size="lg" wire:click="save">
                 <div wire:loading wire:target="save">
                     <x-aura::icon.loading />
                 </div>
                 {{ __('Save') }}
             </x-aura::button>
+            @endif
         </div>
     </div>
 
@@ -41,7 +43,7 @@
             <div class="block">
                 <div class="mt-8 form_errors">
                     <strong class="block text-red-600">{{ __('Unfortunately, there were still the following validation errors:') }}</strong>
-                    <div class="prose text-red-600">
+                    <div class="text-red-600 prose">
                         <ul>
                             @foreach ($errors->all() as $message)
                             <li>{{ $message }}</li>
@@ -55,7 +57,7 @@
 
             {{-- @dump($this->createFields) --}}
 
-            <div class="flex flex-wrap items-start -mx-2">                
+            <div class="flex flex-wrap items-start -mx-2">
            @foreach($this->createFields as $key => $field)
             @checkCondition($model, $field, $post)
                     <x-dynamic-component :component="$field['field']->component" :field="$field" wire:key="post-field-{{ $key }}" />
@@ -68,7 +70,7 @@
             <div class="block">
                 <div class="mt-8 form_errors">
                     <strong class="block text-red-600">{{ __('Unfortunately, there were still the following validation errors:') }}</strong>
-                    <div class="prose text-red-600">
+                    <div class="text-red-600 prose">
                         <ul>
                             @foreach ($errors->all() as $message)
                             <li>{{ $message }}</li>

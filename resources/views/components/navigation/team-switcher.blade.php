@@ -27,12 +27,12 @@ $settings = Eminiarts\Aura\Facades\Aura::getOption('team-settings');
         flex items-center justify-between w-full cursor-pointer text-sm font-semibold rounded-lg
         @if ($sidebarType == 'primary')
           text-white
-          bg-sidebar-bg dark:bg-gray-800 hover:bg-sidebar-bg-hover
-          dark:bg-gray-800 dark:hover:bg-gray-900
+          bg-sidebar-bg dark:bg-gray-800
+          dark:bg-gray-800
         @elseif ($sidebarType == 'light')
           text-gray-700
-          bg-gray-50 hover:bg-gray-200
-          dark:bg-gray-800 dark:hover:bg-gray-900
+          bg-gray-50
+          dark:bg-gray-800
         @elseif ($sidebarType == 'dark')
           text-white
           bg-gray-800 hover:bg-gray-900
@@ -40,7 +40,7 @@ $settings = Eminiarts\Aura\Facades\Aura::getOption('team-settings');
       ">
         <span>{{ $title }}</span>
 
-        <div>
+        <div class="hide-collapsed">
           <!-- svg chevron up down -->
           <x-aura::icon.chevron-up class="w-5 h-5" />
         </div>

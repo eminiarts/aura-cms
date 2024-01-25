@@ -1,9 +1,5 @@
 <tr class="bg-white cm-table-row dark:bg-gray-900" wire:key="{{ $row->id }}" data-id="{{ $row->id }}">
 
-    @php
-    // ray($row)
-    @endphp
-
     @if ($this->settings['selectable'])
         <x-aura::table.cell class="pr-0">
             <x-aura::input.checkbox x-model="selected" :label="$row->id" hideLabel :value="$row->id"

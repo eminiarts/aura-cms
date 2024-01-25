@@ -397,7 +397,17 @@ trait AuraModelConfig
             'route' => $this->getIndexRoute(),
             'dropdown' => $this->getDropdown(),
             'showInNavigation' => $this->getShowInNavigation(),
+            'badge' => $this->getBadge(),
+            'badgeColor' => $this->getBadgeColor(),
         ];
+    }
+
+    public function getBadge() {
+        return null;
+    }
+
+    public function getBadgeColor() {
+        return null;
     }
 
     public function pluralName()
