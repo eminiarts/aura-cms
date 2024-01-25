@@ -289,7 +289,7 @@ class Table extends Component
         }
 
         if ($this->filters) {
-            // $query = $this->applyTaxonomyFilter($query);
+            $query = $this->applyTaxonomyFilter($query);
             $query = $this->applyCustomFilter($query);
         }
 
@@ -337,6 +337,8 @@ class Table extends Component
         }
 
         $this->initiateSettings();
+
+        $this->setTaxonomyFilters();
     }
 
     public function openBulkActionModal($action, $data)
