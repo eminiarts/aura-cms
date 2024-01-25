@@ -63,6 +63,8 @@ class Resource extends Model
             }
         }
 
+        // ray($method);
+
         // Default behavior for methods not handled dynamically
         return parent::__call($method, $parameters);
     }
