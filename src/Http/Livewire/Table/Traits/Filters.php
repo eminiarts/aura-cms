@@ -93,7 +93,6 @@ trait Filters
         //$this->reset('userFilters');
 
         $this->reset('selectedFilter');
-        $this->setTaxonomyFilters();
 
         // Refresh userFilters
         $this->userFilters = $this->getUserFiltersProperty();
@@ -167,7 +166,7 @@ trait Filters
     public function resetFilter()
     {
         $this->reset('filters');
-        $this->setTaxonomyFilters();
+        // $this->setTaxonomyFilters();
     }
 
     /**

@@ -39,7 +39,7 @@ class Tags extends Field
 
     public function set($value, $field)
     {
-        ray('set tags', $value, $field);
+        // ray('set tags', $value, $field);
 
         if (is_string($value)) {
             $value = json_decode($value, true);
