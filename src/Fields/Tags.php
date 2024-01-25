@@ -14,11 +14,20 @@ class Tags extends Field
 
     public function display($field, $value, $model)
     {
-        // Get Taxonomy Name from Model, e.g. 'Tag' from 'App\Models\Tag'
-        $taxonomy = Str::afterLast($field['resource'], '\\');
+        if (is_string($value)) {
+            $value = json_decode($value, true);
+        }
 
-        return $model->taxonomy($taxonomy)->pluck('title')->map(function ($value) {
-            return "<span class='px-2 py-1 text-xs text-white rounded-full bg-primary-500 whitespace-nowrap'>$value</span>";
+        //  dd($value, app($field['resource'])->whereIn('id',$value)->pluck('title')->map(function ($value) {
+        //     return "<span class='px-2 py-1 text-xs text-white rounded-full bg-primary-500 whitespace-nowrap'>$value</span>";
+        // })->implode(' '));
+
+        if (!is_array($value) || count($value) === 0) {
+            return '';
+        }
+        
+        return app($field['resource'])->query()->whereIn('id', $value)->pluck('title')->map(function ($v) {
+            return "<span class='px-2 py-1 text-xs text-white rounded-full bg-primary-500 whitespace-nowrap'>$v</span>";
         })->implode(' ');
     }
 
