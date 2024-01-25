@@ -2,6 +2,7 @@
 
 namespace Eminiarts\Aura\Http\Livewire\Table\Traits;
 
+use DB;
 use Illuminate\Contracts\Database\Eloquent\Builder;
 
 trait QueryFilters
@@ -206,13 +207,25 @@ trait QueryFilters
                     continue;
                 }
 
-                $query->join('post_meta', 'posts.id', '=', 'post_meta.post_id')
-                      ->where('post_meta.key', $key)
-                      ->where(function ($query) use ($taxonomy) {
-                          foreach ($taxonomy as $value) {
-                              $query->orWhereRaw('JSON_CONTAINS(CAST(post_meta.value as JSON), \'' . json_encode($value) . '\')');
-                          }
-                      });
+                $query->whereExists(function ($subQuery) use ($key, $taxonomy) {
+    $subQuery->select(DB::raw(1))
+             ->from('post_meta')
+             ->where('post_meta.post_id', '=', DB::raw('posts.id'))
+             ->where('post_meta.key', $key)
+             ->where(function ($subQuery) use ($taxonomy) {
+                 foreach ($taxonomy as $value) {
+                     $subQuery->orWhereRaw('JSON_CONTAINS(CAST(post_meta.value as JSON), ?)', [(string)$value]);
+                 }
+             });
+});
+
+                // $query->join('post_meta', 'posts.id', '=', 'post_meta.post_id')
+                //       ->where('post_meta.key', $key)
+                //       ->where(function ($query) use ($taxonomy) {
+                //           foreach ($taxonomy as $value) {
+                //               $query->orWhereRaw('JSON_CONTAINS(CAST(post_meta.value as JSON), ?)', [(string)$value]);
+                //           }
+                //       });
 
                 // $query->whereHas('taxonomies', function (Builder $query) use ($taxonomy) {
                 //     $query->whereIn('id', $taxonomy);
