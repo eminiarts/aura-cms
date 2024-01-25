@@ -2,24 +2,25 @@
 
 namespace Eminiarts\Aura;
 
-use Aura\Flows\Jobs\TriggerFlowOnCreatePostEvent;
-use Aura\Flows\Jobs\TriggerFlowOnDeletedPostEvent;
-use Aura\Flows\Jobs\TriggerFlowOnUpdatePostEvent;
+use Illuminate\Support\Str;
 use Aura\Flows\Resources\Flow;
-use Eminiarts\Aura\Models\Scopes\ScopedScope;
+use Eminiarts\Aura\Resources\User;
+use Illuminate\Support\Facades\DB;
+use Eminiarts\Aura\Traits\InputFields;
+use Illuminate\Database\Eloquent\Model;
+use Eminiarts\Aura\Traits\SaveMetaFields;
+use Eminiarts\Aura\Traits\AuraModelConfig;
 use Eminiarts\Aura\Models\Scopes\TeamScope;
 use Eminiarts\Aura\Models\Scopes\TypeScope;
-use Eminiarts\Aura\Resources\User;
-use Eminiarts\Aura\Traits\AuraModelConfig;
 use Eminiarts\Aura\Traits\InitialPostFields;
-use Eminiarts\Aura\Traits\InputFields;
+use Eminiarts\Aura\Models\Scopes\ScopedScope;
 use Eminiarts\Aura\Traits\InteractsWithTable;
 use Eminiarts\Aura\Traits\SaveFieldAttributes;
-use Eminiarts\Aura\Traits\SaveMetaFields;
-use Illuminate\Database\Eloquent\Concerns\HasTimestamps;
+use Aura\Flows\Jobs\TriggerFlowOnCreatePostEvent;
+use Aura\Flows\Jobs\TriggerFlowOnUpdatePostEvent;
+use Aura\Flows\Jobs\TriggerFlowOnDeletedPostEvent;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Str;
+use Illuminate\Database\Eloquent\Concerns\HasTimestamps;
 
 class Resource extends Model
 {
@@ -367,4 +368,22 @@ class Resource extends Model
         //     dispatch(new TriggerFlowOnDeletedPostEvent($post));
         // });
     }
+
+
+     public function scopeWithFirstTaxonomy($query, $key, $taxonomy)
+{
+    $query->whereExists(function ($subQuery) use ($key, $taxonomy) {
+        $subQuery->select(DB::raw(1))
+                 ->from('post_meta')
+                 ->where('post_meta.post_id', '=', DB::raw('posts.id'))
+                 ->where('post_meta.key', $key)
+                 ->where(function ($subQuery) use ($taxonomy) {
+                     if (is_array($taxonomy) || is_object($taxonomy)) {
+                         foreach ($taxonomy as $value) {
+                             $subQuery->orWhereRaw('JSON_CONTAINS(CAST(post_meta.value as JSON), ?)', [(string)$value]);
+                         }
+                     }
+                 });
+    })->select('posts.*');
+}
 }
