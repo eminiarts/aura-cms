@@ -1,7 +1,7 @@
 <tr class="bg-white cm-table-row dark:bg-gray-900" wire:key="{{ $row->id }}" data-id="{{ $row->id }}">
 
     @php
-    ray($row)
+    // ray($row)
     @endphp
 
     @if ($this->settings['selectable'])

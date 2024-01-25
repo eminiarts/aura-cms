@@ -84,10 +84,10 @@ test('table filter - taxonomy filter', function () {
     $component = Livewire::test(Table::class, ['query' => null, 'model' => $post]);
 
     // Get Tag 1 from DB
-    $tag1 = Tag::where('name', 'Tag 1')->first();
+    $tag1 = Tag::where('title', 'Tag 1')->first();
 
     // Apply Tag 1 filter, set $filters['taxonomy']['tag'] to [$tag1->id]
-    $component->set('filters.taxonomy.Tag', [$tag1->id]);
+    $component->set('filters.taxonomy.tags', [$tag1->id]);
 
     // $component->rows should have 1 item
     expect($component->rows->items())->toHaveCount(1);
@@ -137,9 +137,9 @@ test('table filter - taxonomy filter', function () {
     expect($filters['Test Filter']['custom'])->toHaveCount(1);
 
     // $filters['Test Filter'][0]['taxonomy'] should have 1 item
-    expect($filters['Test Filter']['taxonomy']['Tag'])->toHaveCount(1);
+    expect($filters['Test Filter']['taxonomy']['tags'])->toHaveCount(1);
 
-    expect($filters)->toHaveKey('Test Filter.taxonomy.Tag.0', '1');
+    expect($filters)->toHaveKey('Test Filter.taxonomy.tags.0', '1');
     expect($filters)->toHaveKey('Test Filter.custom.0.name', 'metafield');
     expect($filters)->toHaveKey('Test Filter.custom.0.operator', 'is');
     expect($filters)->toHaveKey('Test Filter.custom.0.value', 'B');
@@ -167,7 +167,7 @@ test('table filter - taxonomy filter can be deleted', function () {
 
     DB::table('options')->insert([
         'name' => 'user.'.$this->user->id.'.Post.filters.Test Filter',
-        'value' => '{"taxonomy":{"Tag":[1]},"custom":[{"name":"metafield","operator":"is","value":"B"}]}',
+        'value' => '{"taxonomy":{"tags":[1]},"custom":[{"name":"metafield","operator":"is","value":"B"}]}',
         'team_id' => $this->user->currentTeam->id,
     ]);
 
@@ -197,7 +197,7 @@ test('table filter - taxonomy filter can be deleted', function () {
 
     // $filters should be reset
     expect($component->filters)->toHaveKey('custom', []);
-    expect($component->filters)->toHaveKey('taxonomy.Tag', []);
+    expect($component->filters)->toHaveKey('taxonomy.tags', []);
 });
 
 test('table filter - custom filter can be removed', function () {
