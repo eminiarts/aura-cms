@@ -189,4 +189,37 @@ trait QueryFilters
         //     default:
         //         return $query;
     }
+
+    /**
+     * Apply taxonomy filter to the query
+     *
+     * @param  \Illuminate\Database\Eloquent\Builder  $query
+     * @return \Illuminate\Database\Eloquent\Builder
+     */
+    protected function applyTaxonomyFilter(Builder $query)
+    {
+        if ($this->filters['taxonomy']) {
+            foreach ($this->filters['taxonomy'] as $key => $taxonomy) {
+
+
+                if (! $taxonomy) {
+                    continue;
+                }
+
+                $query->join('post_meta', 'posts.id', '=', 'post_meta.post_id')
+                      ->where('post_meta.key', $key)
+                      ->where(function ($query) use ($taxonomy) {
+                          foreach ($taxonomy as $value) {
+                              $query->orWhereRaw('JSON_CONTAINS(CAST(post_meta.value as JSON), \'' . json_encode($value) . '\')');
+                          }
+                      });
+
+                // $query->whereHas('taxonomies', function (Builder $query) use ($taxonomy) {
+                //     $query->whereIn('id', $taxonomy);
+                // });
+            }
+        }
+
+        return $query;
+    }
 }
