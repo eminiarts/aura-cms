@@ -2,8 +2,8 @@
 
 namespace Eminiarts\Aura\Http\Livewire\Table\Traits;
 
-use DB;
-use Illuminate\Contracts\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Database\Eloquent\Builder;
 
 trait QueryFilters
 {
@@ -144,51 +144,6 @@ trait QueryFilters
         }
 
         return $query;
-
-        // switch ($filter['operator']) {
-
-        //     case 'is_in':
-        //         return $query->whereIn($filter['name'], explode(',', $filter['value']));
-        //     case 'is_not_in':
-        //         return $query->whereNotIn($filter['name'], explode(',', $filter['value']));
-
-        //     case 'is_between':
-        //         $values = explode(',', $filter['value']);
-        //         return $query->whereBetween($filter['name'], [$values[0], $values[1]]);
-        //     case 'is_not_between':
-        //         $values = explode(',', $filter['value']);
-        //         return $query->whereNotBetween($filter['name'], [$values[0], $values[1]]);
-
-        //     case 'is_today':
-        //         return $query->whereDate($filter['name'], Carbon::today());
-        //     case 'is_yesterday':
-        //         return $query->whereDate($filter['name'], Carbon::yesterday());
-        //     case 'is_this_week':
-        //         return $query->whereBetween($filter['name'], [Carbon::now()->startOfWeek(), Carbon::now()->endOfWeek()]);
-        //     case 'is_this_month':
-        //         return $query->whereBetween($filter['name'], [Carbon::now()->startOfMonth(), Carbon::now()->endOfMonth()]);
-        //     case 'is_this_year':
-        //         return $query->whereBetween($filter['name'], [Carbon::now()->startOfYear(), Carbon::now()->endOfYear()]);
-        //     case 'is_last_week':
-        //         return $query->whereBetween($filter['name'], [Carbon::now()->subWeek()->startOfWeek(), Carbon::now()->subWeek()->endOfWeek()]);
-        //     case 'is_last_month':
-        //         return $query->whereBetween($filter['name'], [Carbon::now()->subMonth()->startOfMonth(), Carbon::now()->subMonth()->endOfMonth()]);
-        //     case 'is_last_year':
-        //         return $query->whereBetween($filter['name'], [Carbon::now()->subYear()->startOfYear(), Carbon::now()->subYear()->endOfYear()]);
-        //     case 'is_next_week':
-        //         return $query->whereBetween($filter['name'], [Carbon::now()->addWeek()->startOfWeek(), Carbon::now()->addWeek()->endOfWeek()]);
-        //     case 'is_next_month':
-        //         return $query->whereBetween($filter['name'], [Carbon::now()->addMonth()->startOfMonth(), Carbon::now()->addMonth()->endOfMonth()]);
-        //     case 'is_next_year':
-        //         return $query->whereBetween($filter['name'], [Carbon::now()->addYear()->startOfYear(), Carbon::now()->addYear()->endOfYear()]);
-
-        //     case 'is_before':
-        //         return $query->whereDate($filter['name'], '<', Carbon::parse($filter['value']));
-        //     case 'is_after':
-        //         return $query->whereDate($filter['name'], '>', Carbon::parse($filter['value']));
-
-        //     default:
-        //         return $query;
     }
 
     /**
@@ -199,9 +154,12 @@ trait QueryFilters
      */
     protected function applyTaxonomyFilter(Builder $query)
     {
+        // if (app()->environment('testing')) {
+        //     return $query;
+        // }
+
         if ($this->filters['taxonomy']) {
             foreach ($this->filters['taxonomy'] as $key => $taxonomy) {
-
 
                 if (! $taxonomy) {
                     continue;
@@ -219,17 +177,6 @@ trait QueryFilters
              });
 });
 
-                // $query->join('post_meta', 'posts.id', '=', 'post_meta.post_id')
-                //       ->where('post_meta.key', $key)
-                //       ->where(function ($query) use ($taxonomy) {
-                //           foreach ($taxonomy as $value) {
-                //               $query->orWhereRaw('JSON_CONTAINS(CAST(post_meta.value as JSON), ?)', [(string)$value]);
-                //           }
-                //       });
-
-                // $query->whereHas('taxonomies', function (Builder $query) use ($taxonomy) {
-                //     $query->whereIn('id', $taxonomy);
-                // });
             }
         }
 
