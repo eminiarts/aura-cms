@@ -32,11 +32,9 @@ beforeEach(function () {
         'type' => 'Post',
         'status' => 'publish',
         'metafield' => 'B',
-        'terms' => [
             'tag' => [
                 'Tag 1', 'Tag 2', 'Tag 3',
             ],
-        ],
     ]);
 
     $this->post2 = TableSaveFilterModel::create([
@@ -45,10 +43,8 @@ beforeEach(function () {
         'type' => 'Post',
         'status' => 'publish',
         'metafield' => 'A',
-        'terms' => [
-            'tag' => [
-                'Tag 3', 'Tag 4', 'Tag 5',
-            ],
+        'tag' => [
+            'Tag 3', 'Tag 4', 'Tag 5',
         ],
     ]);
 });
