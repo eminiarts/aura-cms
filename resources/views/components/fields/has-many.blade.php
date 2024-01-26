@@ -2,9 +2,11 @@
     <div class="w-full px-2 {{ $field['style']['class'] ?? '' }}">
 
         {{-- @dump($field) --}}
+            unset($field['conditional_logic']);
+        @endphp
 
         <livewire:aura::table 
-        wire:key="has-many-{{ $field['slug'] ?? '' }}" 
+        
         :model="app($field['resource'])" 
         :field="$field" 
         :editInModal="true" 
