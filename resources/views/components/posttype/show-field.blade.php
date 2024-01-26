@@ -33,7 +33,7 @@
         <div>
           {{-- <button wire:click='$dispatch("openModal", "delete-user", {{ json_encode(["user" => $user->id]) }})'>Delete User</button> --}}
           <x-aura::tippy text="Edit field">
-            <x-aura::button.border wire:click="$dispatch('openSlideOver', 'edit-field', {{ json_encode(['fieldSlug' => $field['slug'], 'slug' => $slug, 'field' => $this->sendField($field['slug'])]) }})">
+            <x-aura::button.border wire:click="$dispatch('openSlideOver', { component: 'edit-field', arguments: { fieldSlug: '{{ $field['slug'] }}', slug: '{{ $slug }}', field: @js($this->sendField($field['slug'])) } })">
               <x-aura::icon.edit class="w-5 h-5" />
             </x-aura::button.border>
           </x-aura::tippy>
@@ -116,8 +116,8 @@
               </x-aura::tippy>
 
               <x-aura::tippy text="Edit field">
-                <x-aura::button.border size="xs" wire:click="$dispatch('openSlideOver', 'edit-field', {{ json_encode(['fieldSlug' => $field['slug'], 'slug' => $slug, 'field' => $this->sendField($field['slug'])]) }})">
-                        <x-aura::icon.edit class="w-4 h-4" />
+                <x-aura::button.border size="xs" wire:click="$dispatch('openSlideOver', { component: 'edit-field', parameters: { fieldSlug: '{{ $field['slug'] }}', slug: '{{ $slug }}', field: @json($this->sendField($field['slug'])) } })">
+                    <x-aura::icon.edit class="w-4 h-4" />
                 </x-aura::button.border>
               </x-aura::tippy>
           </div>

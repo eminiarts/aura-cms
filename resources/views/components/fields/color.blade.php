@@ -7,7 +7,7 @@
                     // watch color for changes  and update the input
                     this.$watch('color', value => {
                         this.$nextTick(() => {
-                            $dispatch('input', this.color);
+                            $dispatch('input', { value: this.color });
                         });
                     });
                 },
@@ -70,22 +70,22 @@
                 }).on('save', (color, source, instance) => {
                     @if (optional($field)['format'] == 'hex')
                         this.selectedColor = color.toHEXA().toString();
-                        $dispatch('input', color.toHEXA().toString());
+                        $dispatch('input', { value: this.selectedColor });
                     @elseif (optional($field)['format'] == 'rgb')
                         this.selectedColor = color.toRGBA().toString(0);
-                        $dispatch('input', color.toRGBA().toString(0));
+                        $dispatch('input', { value: this.selectedColor });
                     @elseif (optional($field)['format'] == 'hsl')
                         this.selectedColor = color.toHSLA().toString(0);
-                        $dispatch('input', color.toHSLA().toString(0));
+                        $dispatch('input', { value: this.selectedColor });
                     @elseif (optional($field)['format'] == 'hsv')
                         this.selectedColor = color.toHSVA().toString(0);
-                        $dispatch('input', color.toHSVA().toString(0));
+                        $dispatch('input', { value: this.selectedColor });
                     @elseif (optional($field)['format'] == 'cmyk')
                         this.selectedColor = color.toCMYK().toString(0);
-                        $dispatch('input', color.toCMYK().toString(0));
+                        $dispatch('input', { value: this.selectedColor });
                     @else
                         this.selectedColor = color.toHEXA().toString();
-                        $dispatch('input', color.toHEXA().toString());
+                        $dispatch('input', { value: this.selectedColor });
                     @endif
                 });
 

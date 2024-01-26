@@ -115,12 +115,12 @@
                 <div class="mt-2">
                     @if($button)
                         <x-aura::button.light
-                            wire:click="$emit('openModal', 'aura::media-manager', {{ json_encode(['field' => $field, 'slug' => $field['slug'], 'selected' => $selected]) }})">
+                            wire:click="$dispatch('openModal', { component: 'aura::media-manager', arguments: { field: @js($field), slug: @js($field['slug']), selected: @js($selected) }})">
                             <x-slot:icon>
                                 <x-aura::icon icon="media" class="" />
-                                </x-slot>
+                            </x-slot>
 
-                                <span>Media Manager</span>
+                            <span>Media Manager</span>
                         </x-aura::button.light>
                     @endif
                 </div>

@@ -21,7 +21,7 @@
             'disable': []
         });
     "
-    @change="$dispatch('input', $event.target.value)"
+    @change="$dispatch('input', { value: $event.target.value })"
     wire:ignore
     class="flex rounded-md shadow-sm"
 >

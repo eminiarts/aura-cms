@@ -346,14 +346,11 @@ class Table extends Component
 
     public function openBulkActionModal($action, $data)
     {
-
         $this->dispatch('openModal', $data['modal'], [
             'action' => $action,
             'selected' => $this->selectedRowsQuery->pluck('id'),
             'model' => get_class($this->model),
         ]);
-
-        // $emit('openModal', '{{ $data['modal'] }}', {{ json_encode(['action' => $action, 'selected' => $this->selectedRowsQuery->get()]) }})
     }
 
     public function refreshTableSelected()
