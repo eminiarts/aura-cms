@@ -1,6 +1,6 @@
 <?php
 
-namespace Eminiarts\Aura\Http\Livewire\Table\Traits;
+namespace Eminiarts\Aura\Livewire\Table\Traits;
 
 trait Settings
 {

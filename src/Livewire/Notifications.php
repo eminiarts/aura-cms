@@ -68,11 +68,19 @@ class Notifications extends Component
 
     public function getNotificationsProperty()
     {
+        if (! auth()->check()) {
+            return [];
+        }
+
         return auth()->user()->readNotifications;
     }
 
     public function getUnreadNotificationsProperty()
     {
+        if (! auth()->check()) {
+            return [];
+        }
+
         return auth()->user()->unreadNotifications;
     }
 

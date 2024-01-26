@@ -3,26 +3,18 @@
 namespace Eminiarts\Aura\Livewire\Table;
 
 use Eminiarts\Aura\Facades\Aura;
-use Eminiarts\Aura\Http\Livewire\Table\Traits\BulkActions;
-use Eminiarts\Aura\Http\Livewire\Table\Traits\Filters;
-use Eminiarts\Aura\Http\Livewire\Table\Traits\PerPagePagination;
-use Eminiarts\Aura\Http\Livewire\Table\Traits\QueryFilters;
-use Eminiarts\Aura\Http\Livewire\Table\Traits\Search;
-use Eminiarts\Aura\Http\Livewire\Table\Traits\Select;
-use Eminiarts\Aura\Http\Livewire\Table\Traits\Settings;
-use Eminiarts\Aura\Http\Livewire\Table\Traits\Sorting;
+use Eminiarts\Aura\Livewire\Table\Traits\BulkActions;
+use Eminiarts\Aura\Livewire\Table\Traits\Filters;
+use Eminiarts\Aura\Livewire\Table\Traits\PerPagePagination;
+use Eminiarts\Aura\Livewire\Table\Traits\QueryFilters;
+use Eminiarts\Aura\Livewire\Table\Traits\Search;
+use Eminiarts\Aura\Livewire\Table\Traits\Select;
+use Eminiarts\Aura\Livewire\Table\Traits\Settings;
+use Eminiarts\Aura\Livewire\Table\Traits\Sorting;
 use Eminiarts\Aura\Models\User;
 use Eminiarts\Aura\Resource;
 use Livewire\Component;
-use Eminiarts\Aura\Resource;
-use Eminiarts\Aura\Models\User;
 use Livewire\Attributes\Computed;
-use Eminiarts\Aura\Livewire\Table\Traits\Search;
-use Eminiarts\Aura\Livewire\Table\Traits\Filters;
-use Eminiarts\Aura\Livewire\Table\Traits\Sorting;
-use Eminiarts\Aura\Livewire\Table\Traits\BulkActions;
-use Eminiarts\Aura\Livewire\Table\Traits\QueryFilters;
-use Eminiarts\Aura\Livewire\Table\Traits\PerPagePagination;
 
 /**
  * Class Table
@@ -70,8 +62,6 @@ class Table extends Component
      * @var string
      */
     public $field;
-
-    public $rowIds = [];
 
     /**
      * The name of the filter in the modal.
