@@ -39,7 +39,7 @@ class Resource extends Model
 
     protected $appends = ['fields'];
 
-    protected $fillable = ['title', 'content', 'type', 'status', 'fields', 'slug', 'user_id', 'parent_id', 'order', 'team_id', 'first_taxonomy', 'created_at', 'updated_at', 'deleted_at'];
+    protected $fillable = ['title', 'content', 'type', 'status', 'fields', 'slug', 'user_id', 'parent_id', 'order', 'team_id', 'created_at', 'updated_at', 'deleted_at'];
 
     protected $hidden = ['meta'];
 
@@ -55,7 +55,7 @@ class Resource extends Model
     public function __call($method, $parameters)
     {
         if ($this->getFieldSlugs()->contains($method)) {
-            
+
             $fieldClass = $this->fieldClassBySlug($method);
 
             if ($fieldClass->isRelation()) {
@@ -370,20 +370,5 @@ class Resource extends Model
     }
 
 
-     public function scopeWithFirstTaxonomy($query, $key, $taxonomy)
-{
-    $query->whereExists(function ($subQuery) use ($key, $taxonomy) {
-        $subQuery->select(DB::raw(1))
-                 ->from('post_meta')
-                 ->where('post_meta.post_id', '=', DB::raw('posts.id'))
-                 ->where('post_meta.key', $key)
-                 ->where(function ($subQuery) use ($taxonomy) {
-                     if (is_array($taxonomy) || is_object($taxonomy)) {
-                         foreach ($taxonomy as $value) {
-                             $subQuery->orWhereRaw('JSON_CONTAINS(CAST(post_meta.value as JSON), ?)', [(string)$value]);
-                         }
-                     }
-                 });
-    })->select('posts.*');
-}
+
 }

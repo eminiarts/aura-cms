@@ -27,18 +27,7 @@ class AppServiceProvider extends ServiceProvider
               return auth()->user()->resource->isSuperAdmin();
             })
         ] : null,
-        config('aura.features.create_taxonomy') ? [
-            "icon" => "<x-aura::icon icon='collection' />",
-            "name" => "Create Taxonomy",
-            "slug" => "create_taxonomy",
-            "group" => "settings",
-            "sort" => 300,
-            "onclick" => "Livewire.emit('openModal', 'aura::create-taxonomy')",
-            "route" => false,
-            "conditional_logic" => DynamicFunctions::add(function() {
-              return auth()->user()->resource->isSuperAdmin();
-            })
-        ] : null,
+
         config('aura.features.theme_options') ? [
             "icon" => "<x-aura::icon icon='brush' />",
             "name" => "Theme Options",
