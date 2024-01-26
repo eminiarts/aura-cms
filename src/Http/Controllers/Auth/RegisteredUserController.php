@@ -24,7 +24,7 @@ class RegisteredUserController extends Controller
     public function create()
     {
         // If team registration is disabled, we show a 404 page.
-        abort_if(! Aura::option('team_registration'), 404);
+        abort_if(! config('aura.features.register'), 404);
 
         return view('aura::auth.register');
     }
@@ -38,9 +38,9 @@ class RegisteredUserController extends Controller
      */
     public function store(Request $request)
     {
-        ray('r', config('aura.teams'));
+        ray('r', config('aura.teams'), Aura::option('team_registration'));
 
-        abort_if(! Aura::option('team_registration'), 404);
+        abort_if(! config('aura.features.register'), 404);
 
         if (config('aura.teams')) {
             $request->validate([

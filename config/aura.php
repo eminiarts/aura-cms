@@ -94,6 +94,8 @@ return [
 
         'resource_view' => true,
         'resource_edit' => true,
+
+        'register' => true,
     ],
 
     /*
