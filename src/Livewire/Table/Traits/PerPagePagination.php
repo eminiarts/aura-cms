@@ -64,16 +64,7 @@ trait PerPagePagination
         $this->perPage = session()->get('perPage', $this->perPage);
     }
 
-    /**
-     * Pagination theme.
-     *
-     * @var string
-     */
-    public function paginationView()
-    {
-        return 'aura::aura.pagination';
-    }
-
+   
     /**
      * Update the per-page pagination data in the session.
      *

@@ -30,7 +30,8 @@ class Table extends Component
     use Settings;
     use Sorting;
 
-    public $namespace;
+    public $model;
+
     public $bulkActionsView = 'aura::components.table.bulkActions';
 
     /**
@@ -91,6 +92,8 @@ class Table extends Component
     public $parent;
 
     public $post;
+
+    public $query;
 
     public $rowIds;
 
@@ -463,7 +466,9 @@ class Table extends Component
     #[Computed]
     public function model()
     {
-        return app($this->namespace);
+        // ray('hier', $this->model);
+
+        return $this->model;
     }
 
 }
