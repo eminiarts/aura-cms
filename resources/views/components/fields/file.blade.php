@@ -98,8 +98,6 @@ if($selected) {
                         Array.from(container.querySelectorAll('.draggable-item'))
                         .map(el => el.id)
                         )
-
-                        // $dispatch('refreshComponent')
                     }, 0)
                 })
             }

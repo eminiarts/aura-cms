@@ -470,8 +470,7 @@
     </div>
 
     @if($create)
-<button wire:click.prevent="$dispatch('openModal', 'aura::post-create-modal', {{ json_encode(['type' => $field['resource'], 'params' => [ 'for' => $field['slug'] ]
-]) }})" class="text-sm cursor-pointer text-bold">
+<button wire:click="$dispatch('openModal', { component: 'aura::post-create-modal', arguments: { type: '{{ $field['resource'] }}', params: { 'for': '{{ $field['slug'] }}' } }})" class="text-sm cursor-pointer text-bold">
     + {{ __('Create') }}
 </button>
 @endif

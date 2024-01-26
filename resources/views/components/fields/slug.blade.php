@@ -56,7 +56,7 @@
 
                 if (! this.custom) {
                     this.value = this.slugify(basedOn.value)
-                    $dispatch('input', this.value);
+                    $dispatch('input', { value: this.value });
                 } else {
                 }
                 // watch the element for changes of the value
@@ -64,7 +64,7 @@
                     // if the custom value is not set, update the value
                     if (! this.custom) {
                         this.value = this.slugify(event.target.value)
-                        $dispatch('input', this.value);
+                        $dispatch('input', { value: this.value });
                     }
                 })
 

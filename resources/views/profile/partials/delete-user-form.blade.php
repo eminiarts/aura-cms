@@ -11,7 +11,7 @@
 
     <x-aura::danger-button
         x-data=""
-        x-on:click.prevent="$dispatch('open-modal', 'confirm-user-deletion')"
+        x-on:click.prevent="$dispatch('open-modal', { component: 'confirm-user-deletion' })"
     >{{ __('Delete Account') }}</x-aura::danger-button>
 
     <x-aura::modal name="confirm-user-deletion" :show="$errors->userDeletion->isNotEmpty()" focusable>

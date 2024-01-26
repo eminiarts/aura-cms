@@ -22,7 +22,7 @@
                 });
                 editor.session.setMode('ace/mode/{{ $field['language'] ?? 'html' }}');
                 editor.on('change', function () {
-                    $dispatch('input', editor.getValue());
+                    $dispatch('input', { value: editor.getValue() });
                 });
             "
             wire:model="post.fields.{{ optional($field)['slug'] }}"
