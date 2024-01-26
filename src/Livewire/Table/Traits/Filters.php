@@ -2,10 +2,11 @@
 
 namespace Eminiarts\Aura\Livewire\Table\Traits;
 
-use Livewire\Attributes\Computed;
-use Illuminate\Support\Facades\Cache;
-
 use Illuminate\Support\Str;
+use Livewire\Attributes\Computed;
+
+use Livewire\Attributes\Reactive;
+use Illuminate\Support\Facades\Cache;
 
 /**
  * Trait for handling filters in Livewire Table component.
@@ -17,6 +18,7 @@ trait Filters
      *
      * @var array
      */
+    // #[Reactive] 
     public $filters = [
         'taxonomy' => [],
         'custom' => [],
