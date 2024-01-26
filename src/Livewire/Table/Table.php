@@ -292,6 +292,8 @@ class Table extends Component
         }
 
         if ($this->filters) {
+        //    ray('applying filters here', $this->filters);
+            
             $query = $this->applyTaxonomyFilter($query);
             $query = $this->applyCustomFilter($query);
         }

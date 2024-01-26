@@ -73,8 +73,9 @@ trait Search
      *
      * @return void
      */
-    public function search()
+    public function startSearching()
     {
-        // Code to implement the search functionality.
+        unset($this->rowsQuery);
+        unset($this->rows);
     }
 }

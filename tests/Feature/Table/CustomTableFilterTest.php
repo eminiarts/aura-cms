@@ -175,15 +175,21 @@ test('table filter - custom column on table - contains', function () {
     $component->set('filters.custom.0.operator', 'contains');
     $component->set('filters.custom.0.value', 'Post 1');
 
+    $component->call('startSearching');
+
     expect($component->rows->items())->toHaveCount(1);
     expect($component->rows->items()[0]->id)->toBe($post->id);
 
     $component->set('filters.custom.0.value', 'Post 2');
 
+    $component->call('startSearching');
+
     expect($component->rows->items())->toHaveCount(1);
     expect($component->rows->items()[0]->id)->toBe($post2->id);
 
     $component->set('filters.custom.0.value', 'Post 3');
+
+    $component->call('startSearching');
 
     expect($component->rows->items())->toHaveCount(0);
 });
@@ -202,15 +208,21 @@ test('table filter - custom column on table - does_not_contain', function () {
     $component->set('filters.custom.0.operator', 'does_not_contain');
     $component->set('filters.custom.0.value', 'Post 1');
 
+    $component->call('startSearching');
+
     expect($component->rows->items())->toHaveCount(1);
     expect($component->rows->items()[0]->id)->toBe($post2->id);
 
     $component->set('filters.custom.0.value', 'Post 2');
 
+    $component->call('startSearching');
+
     expect($component->rows->items())->toHaveCount(1);
     expect($component->rows->items()[0]->id)->toBe($post->id);
 
     $component->set('filters.custom.0.value', 'Post 3');
+
+    $component->call('startSearching');
 
     expect($component->rows->items())->toHaveCount(2);
 });
@@ -234,15 +246,19 @@ test('table filter - custom column on table - starts_with', function () {
     $component->set('filters.custom.0.name', 'status');
     $component->set('filters.custom.0.value', 'pub');
 
+    $component->call('startSearching');
+
     expect($component->rows->items())->toHaveCount(1);
     expect($component->rows->items()[0]->id)->toBe($post->id);
 
     $component->set('filters.custom.0.value', 'dra');
+    $component->call('startSearching');
 
     expect($component->rows->items())->toHaveCount(1);
     expect($component->rows->items()[0]->id)->toBe($post2->id);
 
     $component->set('filters.custom.0.value', 'zzz');
+    $component->call('startSearching');
 
     expect($component->rows->items())->toHaveCount(0);
 

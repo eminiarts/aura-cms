@@ -144,6 +144,8 @@ test('table filter - custom filter - contains', function () {
     // expect the first item value to be "A"
     expect($component->filters['custom'][0]['value'])->toBe('A');
 
+    $component->call('startSearching');
+
     // $component->rows should have 2 items
     expect($component->rows->items())->toHaveCount(1);
 
@@ -153,6 +155,8 @@ test('table filter - custom filter - contains', function () {
     // Change Filter to "B"
     $component->set('filters.custom.0.value', 'B');
 
+    $component->call('startSearching');
+
     // $component->rows should have 1 item
     expect($component->rows->items())->toHaveCount(1);
 
@@ -161,6 +165,8 @@ test('table filter - custom filter - contains', function () {
 
     // Change Filter to "C"
     $component->set('filters.custom.0.value', 'C');
+
+    $component->call('startSearching');
 
     // $component->rows should have 0 items
     expect($component->rows->items())->toHaveCount(0);
@@ -213,6 +219,8 @@ test('table filter - custom filter - does_not_contain', function () {
 
     $component->set('filters.custom.0.value', 'A');
 
+    $component->call('startSearching');
+
     expect($component->filters['custom'][0]['value'])->toBe('A');
 
     expect($component->rows->items())->toHaveCount(1);
@@ -221,11 +229,15 @@ test('table filter - custom filter - does_not_contain', function () {
 
     $component->set('filters.custom.0.value', 'B');
 
+    $component->call('startSearching');
+
     expect($component->rows->items())->toHaveCount(1);
 
     expect($component->rows->items()[0]->id)->toBe($post2->id);
 
     $component->set('filters.custom.0.value', 'C');
+
+    $component->call('startSearching');
 
     expect($component->rows->items())->toHaveCount(2);
 
@@ -284,6 +296,8 @@ test('table filter - custom filter - starts_with', function () {
     // On the component, set $filter['custom'][0]['value'] to "A"
     $component->set('filters.custom.0.value', 'A');
 
+    $component->call('startSearching');
+
     // expect the first item value to be "A"
     expect($component->filters['custom'][0]['value'])->toBe('A');
 
@@ -296,6 +310,8 @@ test('table filter - custom filter - starts_with', function () {
     // Change Filter to "B"
     $component->set('filters.custom.0.value', 'B');
 
+    $component->call('startSearching');
+
     // $component->rows should have 1 item
     expect($component->rows->items())->toHaveCount(1);
 
@@ -304,6 +320,8 @@ test('table filter - custom filter - starts_with', function () {
 
     // Change Filter to "C"
     $component->set('filters.custom.0.value', 'C');
+
+    $component->call('startSearching');
 
     // $component->rows should have 0 items
     expect($component->rows->items())->toHaveCount(0);
@@ -364,6 +382,8 @@ test('table filter - custom filter - ends_with', function () {
 
     $component->set('filters.custom.0.value', 'meta');
 
+    $component->call('startSearching');
+
     expect($component->filters['custom'][0]['value'])->toBe('meta');
 
     expect($component->rows->items())->toHaveCount(1);
@@ -372,11 +392,15 @@ test('table filter - custom filter - ends_with', function () {
 
     $component->set('filters.custom.0.value', 'amazing');
 
+    $component->call('startSearching');
+
     expect($component->rows->items())->toHaveCount(1);
 
     expect($component->rows->items()[0]->id)->toBe($post->id);
 
     $component->set('filters.custom.0.value', 'C');
+
+    $component->call('startSearching');
 
     expect($component->rows->items())->toHaveCount(0);
 
@@ -425,6 +449,8 @@ test('table filter - custom filter - is', function () {
 
     $component->set('filters.custom.0.value', 'A custom meta');
 
+    $component->call('startSearching');
+
     expect($component->filters['custom'][0]['value'])->toBe('A custom meta');
 
     expect($component->rows->items())->toHaveCount(1);
@@ -433,11 +459,15 @@ test('table filter - custom filter - is', function () {
 
     $component->set('filters.custom.0.value', 'B amazing');
 
+    $component->call('startSearching');
+
     expect($component->rows->items())->toHaveCount(1);
 
     expect($component->rows->items()[0]->id)->toBe($post->id);
 
     $component->set('filters.custom.0.value', 'A custom');
+
+    $component->call('startSearching');
 
     expect($component->rows->items())->toHaveCount(0);
 
@@ -487,6 +517,8 @@ test('table filter - custom filter - greater_than', function () {
 
     $component->set('filters.custom.0.value', '150');
 
+    $component->call('startSearching');
+
     expect($component->filters['custom'][0]['value'])->toBe('150');
 
     expect($component->rows->items())->toHaveCount(1);
@@ -494,6 +526,8 @@ test('table filter - custom filter - greater_than', function () {
     expect($component->rows->items()[0]->id)->toBe($post2->id);
 
     $component->set('filters.custom.0.value', '200');
+
+    $component->call('startSearching');
 
     expect($component->rows->items())->toHaveCount(0);
 
@@ -537,6 +571,8 @@ test('table filter - custom filter - less_than', function () {
 
     $component->set('filters.custom.0.value', '150');
 
+    $component->call('startSearching');
+
     expect($component->filters['custom'][0]['value'])->toBe('150');
 
     expect($component->rows->items())->toHaveCount(1);
@@ -544,6 +580,8 @@ test('table filter - custom filter - less_than', function () {
     expect($component->rows->items()[0]->id)->toBe($post->id);
 
     $component->set('filters.custom.0.value', '100');
+
+    $component->call('startSearching');
 
     expect($component->rows->items())->toHaveCount(0);
 
@@ -587,6 +625,8 @@ test('table filter - custom filter - is_empty', function () {
     $component->set('filters.custom.0.operator', 'is_empty');
 
     $component->set('filters.custom.0.name', 'number');
+
+    $component->call('startSearching');
 
     expect($component->filters['custom'][0]['value'])->toBeNull();
 
@@ -644,6 +684,8 @@ test('table filter - custom filter - is_not_empty', function () {
 
     $component->set('filters.custom.0.value', '200');
 
+    $component->call('startSearching');
+
     expect($component->filters['custom'][0]['value'])->toBe('200');
 
     expect($component->rows->items())->toHaveCount(1);
@@ -658,6 +700,8 @@ test('table filter - custom filter - is_not_empty', function () {
     }
 
     $component->set('filters.custom.0.value', '');
+
+    $component->call('startSearching');
 
     expect($component->rows->items())->toHaveCount(2);
 
