@@ -29,6 +29,8 @@ class Create extends Component
 
     public $tax;
 
+    public $model;
+
     public $showSaveButton = true;
 
     protected $listeners = ['updateField' => 'updateField'];
@@ -72,11 +74,7 @@ class Create extends Component
 
     }
 
-    #[Computed]
-    public function model()
-    {
-        return Aura::findResourceBySlug($this->slug);
-    }
+    
 
     public function render()
     {
