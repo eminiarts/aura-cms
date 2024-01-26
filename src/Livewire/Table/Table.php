@@ -381,7 +381,10 @@ class Table extends Component
         $this->setPage(10);
     }
 
-
+    public function refreshRows() {
+        unset($this->rowsQuery);
+        unset($this->rows);
+    }
 
     /**
      * Reorder the table columns.

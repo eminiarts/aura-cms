@@ -68,6 +68,7 @@ trait Search
         return $query;
     }
 
+   
     /**
      * Search for data in the table.
      *
@@ -75,7 +76,6 @@ trait Search
      */
     public function startSearching()
     {
-        unset($this->rowsQuery);
-        unset($this->rows);
+        $this->refreshRows();
     }
 }
