@@ -80,6 +80,8 @@ trait Sorting
      */
     public function sortBy($field)
     {
+        $this->refreshRows();
+
         $this->sorts = collect($this->sorts)->filter(function ($value, $key) use ($field) {
             return $key === $field;
         })->toArray();
