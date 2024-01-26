@@ -298,11 +298,11 @@ class Attachment extends Resource
         parent::booted();
 
         // when model saved and status is "eingang" and doctor_id is set, change status to "erstellt"
-        static::creating(function ($model) {
-            if (! $model->team_id) {
-                $model->team_id = 1;
-            }
-        });
+        // static::creating(function ($model) {
+        //     if (! $model->team_id) {
+        //         $model->team_id = 1;
+        //     }
+        // });
 
         static::saved(function (Attachment $attachment) {
             // Check if the attachment has a file

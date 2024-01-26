@@ -7,104 +7,55 @@ namespace Eminiarts\Aura\Http\Livewire\Table\Traits;
  */
 trait BulkActions
 {
-    /**
-     * Indicates if all rows should be selected
-     *
-     * @var bool
-     */
-    public $selectAll = false;
+    public $bulkActionsView = 'aura::components.table.bulkActions';
 
     /**
-     * Array of selected row IDs
-     *
-     * @var array
+     * Handle bulk action on the selected rows.
      */
-    public $selected = [];
-
-    /**
-     * Indicates if all rows in the current page should be selected
-     *
-     * @var bool
-     */
-    public $selectPage = false;
-
-    /**
-     * Gets a query for selected rows
-     *
-     * @return \Illuminate\Database\Eloquent\Builder
-     */
-    public function getSelectedRowsQueryProperty()
+    public function bulkAction(string $action)
     {
-        return (clone $this->rowsQuery)
-            ->unless($this->selectAll, fn ($query) => $query->whereKey($this->selected));
+        $this->selectedRowsQuery->each(function ($item, $key) use ($action) {
+            if (str_starts_with($action, 'callFlow.')) {
+                $item->callFlow(explode('.', $action)[1]);
+            } elseif (str_starts_with($action, 'multiple')) {
+                $posts = $this->selectedRowsQuery->get();
+                $response = $item->{$action}($posts);
+
+            // dd($response);
+            } elseif (method_exists($item, $action)) {
+                $item->{$action}();
+            }
+        });
+
+        $this->notify('Erfolgreich: '.$action);
     }
 
-    // /**
-    //  * Handles selecting all or page rows
-    //  *
-    //  * @return void
-    //  */
-    // public function renderingWithBulkActions()
-    // {
-    //     if ($this->selectAll) {
-    //         $this->selectPageRows();
-    //     }
-    // }
-
-    /**
-     * Selects all rows
-     *
-     * @return void
-     */
-    public function selectAll()
+    public function bulkCollectionAction($action)
     {
-        $this->selectAll = true;
-    }
+        //$action = $this->model->getBulkActions()[$action];
+        $ids = $this->selectedRowsQuery->pluck('id')->toArray();
 
-    /**
-     * Selects all rows in the current page
-     *
-     * @return void
-     */
-    public function selectPageRows()
-    {
-        $this->selected = collect($this->selected)
-            ->merge($this->rows->pluck('id')->map(fn ($id) => (string) $id))
-            ->unique()
-            ->values()
-            ->all();
-    }
+        $response = $this->model->{$action}($ids);
 
-    // when page is updated, reset selectPage
-    public function updatedPage()
-    {
-        $this->selectPage = false;
-    }
-
-    /**
-     * Handles updates to selected rows
-     *
-     * @return void
-     */
-    public function updatedSelected()
-    {
-        $this->selectAll = false;
-        $this->selectPage = false;
-    }
-
-    /**
-     * Handles updates to selecting all rows in the current page
-     *
-     * @param  bool  $value
-     * @return void
-     */
-    public function updatedSelectPage($value)
-    {
-        if ($value) {
-            return $this->selectPageRows();
+        if ($response instanceof \Symfony\Component\HttpFoundation\StreamedResponse) {
+            return $response;
         }
 
-        $this->selectAll = false;
+        // reset selected rows
         $this->selected = [];
+
+        $this->notify('Erfolgreich: '.$action);
+
+        $this->emit('refreshTable');
+    }
+
+    /**
+     * Get the available bulk actions.
+     *
+     * @return mixed
+     */
+    public function getBulkActionsProperty()
+    {
+        return $this->model->getBulkActions();
     }
 }

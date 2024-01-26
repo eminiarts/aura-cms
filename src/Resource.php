@@ -2,31 +2,29 @@
 
 namespace Eminiarts\Aura;
 
-use Aura\Flows\Jobs\TriggerFlowOnCreatePostEvent;
-use Aura\Flows\Jobs\TriggerFlowOnDeletedPostEvent;
-use Aura\Flows\Jobs\TriggerFlowOnUpdatePostEvent;
+use Illuminate\Support\Str;
 use Aura\Flows\Resources\Flow;
-use Eminiarts\Aura\Models\Scopes\ScopedScope;
+use Eminiarts\Aura\Resources\User;
+use Illuminate\Support\Facades\DB;
+use Eminiarts\Aura\Traits\InputFields;
+use Illuminate\Database\Eloquent\Model;
+use Eminiarts\Aura\Traits\SaveMetaFields;
+use Eminiarts\Aura\Traits\AuraModelConfig;
 use Eminiarts\Aura\Models\Scopes\TeamScope;
 use Eminiarts\Aura\Models\Scopes\TypeScope;
-use Eminiarts\Aura\Resources\User;
-use Eminiarts\Aura\Traits\AuraModelConfig;
-use Eminiarts\Aura\Traits\AuraTaxonomies;
 use Eminiarts\Aura\Traits\InitialPostFields;
-use Eminiarts\Aura\Traits\InputFields;
+use Eminiarts\Aura\Models\Scopes\ScopedScope;
 use Eminiarts\Aura\Traits\InteractsWithTable;
 use Eminiarts\Aura\Traits\SaveFieldAttributes;
-use Eminiarts\Aura\Traits\SaveMetaFields;
-use Eminiarts\Aura\Traits\SaveTerms;
-use Illuminate\Database\Eloquent\Concerns\HasTimestamps;
+use Aura\Flows\Jobs\TriggerFlowOnCreatePostEvent;
+use Aura\Flows\Jobs\TriggerFlowOnUpdatePostEvent;
+use Aura\Flows\Jobs\TriggerFlowOnDeletedPostEvent;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Str;
+use Illuminate\Database\Eloquent\Concerns\HasTimestamps;
 
 class Resource extends Model
 {
     use AuraModelConfig;
-    use AuraTaxonomies;
     use HasFactory;
     use HasTimestamps;
 
@@ -36,13 +34,12 @@ class Resource extends Model
     use InteractsWithTable;
     use SaveFieldAttributes;
     use SaveMetaFields;
-    use SaveTerms;
 
     public $fieldsAttributeCache;
 
     protected $appends = ['fields'];
 
-    protected $fillable = ['title', 'content', 'type', 'status', 'fields', 'slug', 'user_id', 'parent_id', 'order', 'taxonomies', 'terms', 'team_id', 'first_taxonomy', 'created_at', 'updated_at', 'deleted_at'];
+    protected $fillable = ['title', 'content', 'type', 'status', 'fields', 'slug', 'user_id', 'parent_id', 'order', 'team_id', 'first_taxonomy', 'created_at', 'updated_at', 'deleted_at'];
 
     protected $hidden = ['meta'];
 
@@ -54,6 +51,25 @@ class Resource extends Model
     protected $table = 'posts';
 
     protected $with = ['meta'];
+
+    public function __call($method, $parameters)
+    {
+        if ($this->getFieldSlugs()->contains($method)) {
+            
+            $fieldClass = $this->fieldClassBySlug($method);
+
+            if ($fieldClass->isRelation()) {
+                $field = $this->fieldBySlug($method);
+
+                return $fieldClass->relationship($this, $field);
+            }
+        }
+
+        // ray($method);
+
+        // Default behavior for methods not handled dynamically
+        return parent::__call($method, $parameters);
+    }
 
     /**
      * @param  string  $key
@@ -70,6 +86,17 @@ class Resource extends Model
         // If the key is in the fields array, then we want to return that
         if (is_null($value) && isset($this->fields[$key])) {
             return $this->fields[$key];
+        }
+
+        if ($this->getFieldSlugs()->contains($key)) {
+            $fieldClass = $this->fieldClassBySlug($key);
+            // $groupedField = $this->groupedFieldBySlug($key);
+
+            if ($fieldClass->isRelation()) {
+                $field = $this->fieldBySlug($key);
+
+                return $fieldClass->get($this, $field);
+            }
         }
 
         return $value;
@@ -247,9 +274,6 @@ class Resource extends Model
         $possibleRelationMethods = [$key, Str::camel($key)];
 
         foreach ($possibleRelationMethods as $method) {
-            if ($method == 'taxonomy') {
-                continue;
-            }
 
             if (in_array($method, $modelMethods) && ($this->{$method}() instanceof \Illuminate\Database\Eloquent\Relations\Relation)) {
                 return true;
@@ -344,4 +368,22 @@ class Resource extends Model
         //     dispatch(new TriggerFlowOnDeletedPostEvent($post));
         // });
     }
+
+
+     public function scopeWithFirstTaxonomy($query, $key, $taxonomy)
+{
+    $query->whereExists(function ($subQuery) use ($key, $taxonomy) {
+        $subQuery->select(DB::raw(1))
+                 ->from('post_meta')
+                 ->where('post_meta.post_id', '=', DB::raw('posts.id'))
+                 ->where('post_meta.key', $key)
+                 ->where(function ($subQuery) use ($taxonomy) {
+                     if (is_array($taxonomy) || is_object($taxonomy)) {
+                         foreach ($taxonomy as $value) {
+                             $subQuery->orWhereRaw('JSON_CONTAINS(CAST(post_meta.value as JSON), ?)', [(string)$value]);
+                         }
+                     }
+                 });
+    })->select('posts.*');
+}
 }

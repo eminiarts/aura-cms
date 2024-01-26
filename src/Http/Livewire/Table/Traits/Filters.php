@@ -63,8 +63,8 @@ trait Filters
     {
         // Retrieve the filter using the provided key
         $filter = $this->userFilters[$filterName] ?? null;
-        
-        if (!$filter) {
+
+        if (! $filter) {
             throw new \InvalidArgumentException('Invalid filter name: '.$filterName);
         }
 
@@ -93,7 +93,6 @@ trait Filters
         //$this->reset('userFilters');
 
         $this->reset('selectedFilter');
-        $this->setTaxonomyFilters();
 
         // Refresh userFilters
         $this->userFilters = $this->getUserFiltersProperty();
@@ -167,7 +166,18 @@ trait Filters
     public function resetFilter()
     {
         $this->reset('filters');
-        $this->setTaxonomyFilters();
+         $this->setTaxonomyFilters();
+    }
+
+     /**
+     * Set taxonomy filters.
+     */
+    public function setTaxonomyFilters()
+    {
+        $this->filters['taxonomy'] = $this->model?->taxonomyFields()
+            ->values()
+            ->mapWithKeys(fn($field) => [$field['slug'] => []])
+            ->toArray();
     }
 
     /**
@@ -209,14 +219,6 @@ trait Filters
 
         $this->clearFiltersCache();
 
-    }
-
-    /**
-     * Set taxonomy filters.
-     */
-    public function setTaxonomyFilters()
-    {
-        $this->filters['taxonomy'] = $this->model?->taxonomyFields()->pluck('model')->mapWithKeys(fn ($i) => [app($i)->getType() => []])->toArray();
     }
 
     /**

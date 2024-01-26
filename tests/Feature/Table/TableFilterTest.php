@@ -11,17 +11,7 @@ uses(RefreshDatabase::class);
 
 // Before each test, create a Superadmin and login
 beforeEach(function () {
-    // Create User
-    $this->actingAs($this->user = User::factory()->create());
-
-    // Create Team and assign to user
-    createSuperAdmin();
-
-    // Refresh User
-    $this->user = $this->user->refresh();
-
-    // Login
-    $this->actingAs($this->user);
+    $this->actingAs($this->user = createSuperAdmin());
 });
 
 // Create Resource for this test
@@ -47,7 +37,7 @@ class TableFilterModel extends Resource
                 'name' => 'Tags',
                 'slug' => 'tags',
                 'type' => 'Eminiarts\\Aura\\Fields\\Tags',
-                'model' => 'Eminiarts\\Aura\\Taxonomies\\Tag',
+                'resource' => 'Eminiarts\\Aura\\Resources\\Tag',
                 'create' => true,
                 'validation' => '',
                 'conditional_logic' => [],
@@ -68,10 +58,8 @@ test('table filter', function () {
         'type' => 'Post',
         'status' => 'publish',
         'meta' => 'B',
-        'terms' => [
-            'tag' => [
-                'Tag 1', 'Tag 2', 'Tag 3',
-            ],
+        'tags' => [
+            'Tag 1', 'Tag 2', 'Tag 3',
         ],
     ]);
 
@@ -81,10 +69,8 @@ test('table filter', function () {
         'type' => 'Post',
         'status' => 'publish',
         'meta' => 'A',
-        'terms' => [
-            'tag' => [
-                'Tag 3', 'Tag 4', 'Tag 5',
-            ],
+        'tags' => [
+            'Tag 3', 'Tag 4', 'Tag 5',
         ],
     ]);
 
@@ -106,8 +92,8 @@ test('table filter', function () {
     // Taxonomy Filters should be "Tag" => []
     expect($component->filters['taxonomy'])->toBeArray();
     expect($component->filters['taxonomy'])->toHaveCount(1);
-    expect($component->filters['taxonomy'])->not()->toHaveKey('Category');
-    expect($component->filters['taxonomy'])->toHaveKey('Tag');
+    expect($component->filters['taxonomy'])->not()->toHaveKey('categories');
+    expect($component->filters['taxonomy'])->toHaveKey('tags');
 });
 
 test('table filter - custom filter - contains', function () {
@@ -118,10 +104,8 @@ test('table filter - custom filter - contains', function () {
         'type' => 'Post',
         'status' => 'publish',
         'meta' => 'B',
-        'terms' => [
-            'tag' => [
-                'Tag 1', 'Tag 2', 'Tag 3',
-            ],
+        'tags' => [
+            'Tag 1', 'Tag 2', 'Tag 3',
         ],
     ]);
 
@@ -131,10 +115,8 @@ test('table filter - custom filter - contains', function () {
         'type' => 'Post',
         'status' => 'publish',
         'meta' => 'A',
-        'terms' => [
-            'tag' => [
-                'Tag 3', 'Tag 4', 'Tag 5',
-            ],
+        'tags' => [
+            'Tag 3', 'Tag 4', 'Tag 5',
         ],
     ]);
 
@@ -199,10 +181,8 @@ test('table filter - custom filter - does_not_contain', function () {
         'type' => 'Post',
         'status' => 'publish',
         'meta' => 'B',
-        'terms' => [
-            'tag' => [
-                'Tag 1', 'Tag 2', 'Tag 3',
-            ],
+        'tags' => [
+            'Tag 1', 'Tag 2', 'Tag 3',
         ],
     ]);
 
@@ -212,10 +192,8 @@ test('table filter - custom filter - does_not_contain', function () {
         'type' => 'Post',
         'status' => 'publish',
         'meta' => 'A',
-        'terms' => [
-            'tag' => [
-                'Tag 3', 'Tag 4', 'Tag 5',
-            ],
+        'tags' => [
+            'Tag 3', 'Tag 4', 'Tag 5',
         ],
     ]);
 
@@ -266,10 +244,8 @@ test('table filter - custom filter - starts_with', function () {
         'type' => 'Post',
         'status' => 'publish',
         'meta' => 'B amazing',
-        'terms' => [
-            'tag' => [
-                'Tag 1', 'Tag 2', 'Tag 3',
-            ],
+        'tags' => [
+            'Tag 1', 'Tag 2', 'Tag 3',
         ],
     ]);
 
@@ -279,10 +255,8 @@ test('table filter - custom filter - starts_with', function () {
         'type' => 'Post',
         'status' => 'publish',
         'meta' => 'A custom meta',
-        'terms' => [
-            'tag' => [
-                'Tag 3', 'Tag 4', 'Tag 5',
-            ],
+        'tags' => [
+            'Tag 3', 'Tag 4', 'Tag 5',
         ],
     ]);
 
@@ -358,10 +332,8 @@ test('table filter - custom filter - ends_with', function () {
         'type' => 'Post',
         'status' => 'publish',
         'meta' => 'B amazing',
-        'terms' => [
-            'tag' => [
-                'Tag 1', 'Tag 2', 'Tag 3',
-            ],
+        'tags' => [
+            'Tag 1', 'Tag 2', 'Tag 3',
         ],
     ]);
 
@@ -371,10 +343,8 @@ test('table filter - custom filter - ends_with', function () {
         'type' => 'Post',
         'status' => 'publish',
         'meta' => 'A custom meta',
-        'terms' => [
-            'tag' => [
-                'Tag 3', 'Tag 4', 'Tag 5',
-            ],
+        'tags' => [
+            'Tag 3', 'Tag 4', 'Tag 5',
         ],
     ]);
 
@@ -423,10 +393,8 @@ test('table filter - custom filter - is', function () {
         'type' => 'Post',
         'status' => 'publish',
         'meta' => 'B amazing',
-        'terms' => [
-            'tag' => [
-                'Tag 1', 'Tag 2', 'Tag 3',
-            ],
+        'tags' => [
+            'Tag 1', 'Tag 2', 'Tag 3',
         ],
     ]);
 
@@ -436,10 +404,8 @@ test('table filter - custom filter - is', function () {
         'type' => 'Post',
         'status' => 'publish',
         'meta' => 'A custom meta',
-        'terms' => [
-            'tag' => [
-                'Tag 3', 'Tag 4', 'Tag 5',
-            ],
+        'tags' => [
+            'Tag 3', 'Tag 4', 'Tag 5',
         ],
     ]);
 
@@ -489,10 +455,8 @@ test('table filter - custom filter - greater_than', function () {
         'type' => 'Post',
         'status' => 'publish',
         'meta' => '100',
-        'terms' => [
-            'tag' => [
-                'Tag 1', 'Tag 2', 'Tag 3',
-            ],
+        'tags' => [
+            'Tag 1', 'Tag 2', 'Tag 3',
         ],
     ]);
 
@@ -502,10 +466,8 @@ test('table filter - custom filter - greater_than', function () {
         'type' => 'Post',
         'status' => 'publish',
         'meta' => '200',
-        'terms' => [
-            'tag' => [
-                'Tag 3', 'Tag 4', 'Tag 5',
-            ],
+        'tags' => [
+            'Tag 3', 'Tag 4', 'Tag 5',
         ],
     ]);
 
@@ -549,10 +511,8 @@ test('table filter - custom filter - less_than', function () {
         'type' => 'Post',
         'status' => 'publish',
         'meta' => '100',
-        'terms' => [
-            'tag' => [
-                'Tag 1', 'Tag 2', 'Tag 3',
-            ],
+        'tags' => [
+            'Tag 1', 'Tag 2', 'Tag 3',
         ],
     ]);
 
@@ -562,10 +522,8 @@ test('table filter - custom filter - less_than', function () {
         'type' => 'Post',
         'status' => 'publish',
         'meta' => '200',
-        'terms' => [
-            'tag' => [
-                'Tag 3', 'Tag 4', 'Tag 5',
-            ],
+        'tags' => [
+            'Tag 3', 'Tag 4', 'Tag 5',
         ],
     ]);
 
@@ -603,10 +561,8 @@ test('table filter - custom filter - is_empty', function () {
         'type' => 'Post',
         'status' => 'publish',
         'meta' => '',
-        'terms' => [
-            'tag' => [
-                'Tag 1', 'Tag 2', 'Tag 3',
-            ],
+        'tags' => [
+            'Tag 1', 'Tag 2', 'Tag 3',
         ],
     ]);
 
@@ -617,10 +573,8 @@ test('table filter - custom filter - is_empty', function () {
         'status' => 'publish',
         'meta' => '200',
         'number' => 100,
-        'terms' => [
-            'tag' => [
-                'Tag 3', 'Tag 4', 'Tag 5',
-            ],
+        'tags' => [
+            'Tag 3', 'Tag 4', 'Tag 5',
         ],
     ]);
 
@@ -658,10 +612,8 @@ test('table filter - custom filter - is_not_empty', function () {
         'type' => 'Post',
         'status' => 'publish',
         'meta' => '',
-        'terms' => [
-            'tag' => [
-                'Tag 1', 'Tag 2', 'Tag 3',
-            ],
+        'tags' => [
+            'Tag 1', 'Tag 2', 'Tag 3',
         ],
     ]);
 
@@ -671,10 +623,8 @@ test('table filter - custom filter - is_not_empty', function () {
         'type' => 'Post',
         'status' => 'publish',
         'meta' => '200',
-        'terms' => [
-            'tag' => [
-                'Tag 3', 'Tag 4', 'Tag 5',
-            ],
+        'tags' => [
+            'Tag 3', 'Tag 4', 'Tag 5',
         ],
     ]);
 

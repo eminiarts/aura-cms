@@ -1,13 +1,13 @@
 <?php
 
-use Eminiarts\Aura\Models\Taxonomy;
+use Eminiarts\Aura\Resource;
 use Eminiarts\Aura\Traits\InputFields;
 use Eminiarts\Aura\Traits\InputFieldsHelpers;
 use Eminiarts\Aura\Traits\InputFieldsTable;
 use Eminiarts\Aura\Traits\InputFieldsValidation;
 use Eminiarts\Aura\Traits\InteractsWithTable;
 
-class TestInputFieldsClass extends Taxonomy
+class TestInputFieldsClass extends Resource
 {
     use InputFields;
     use InputFieldsHelpers;
@@ -15,7 +15,7 @@ class TestInputFieldsClass extends Taxonomy
     use InputFieldsValidation;
     use InteractsWithTable;
 
-    public function getFields()
+    public static function getFields()
     {
         return [
             [
@@ -33,7 +33,7 @@ class TestInputFieldsClass extends Taxonomy
         ];
     }
 }
-class TestInputFieldsClass2 extends Taxonomy
+class TestInputFieldsClass2 extends Resource
 {
     use InputFields;
     use InputFieldsHelpers;
@@ -41,7 +41,7 @@ class TestInputFieldsClass2 extends Taxonomy
     use InputFieldsValidation;
     use InteractsWithTable;
 
-    public function getFields()
+    public static function getFields()
     {
         return [
             [
@@ -87,8 +87,7 @@ test('can get table headers', function () {
     $tableHeaders = $inputFields->getTableHeaders();
 
     $this->assertInstanceOf(\Illuminate\Support\Collection::class, $tableHeaders);
-    $this->assertCount(3, $tableHeaders);
-    $this->assertEquals('ID', $tableHeaders->get('id'));
+    $this->assertCount(2, $tableHeaders);
     $this->assertEquals('Title', $tableHeaders->get('title'));
     $this->assertEquals('Body', $tableHeaders->get('body'));
 });

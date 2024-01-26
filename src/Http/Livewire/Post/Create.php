@@ -32,22 +32,7 @@ class Create extends Component
 
     public $showSaveButton = true;
 
-    protected $listeners = ['updateField' => 'updateField', 'showSaveButton', 'hideSaveButton'];
-
-    public function getTaxonomiesProperty()
-    {
-        return $this->model->getTaxonomies();
-    }
-
-    public function showSaveButton() {
-        ray('showSaveButton');
-        $this->showSaveButton = true;
-    }
-
-    public function hideSaveButton() {
-        ray('hideSaveButton');
-        $this->showSaveButton = false;
-    }
+    protected $listeners = ['updateField' => 'updateField'];
 
     public function mount($slug)
     {
@@ -60,8 +45,6 @@ class Create extends Component
 
         // Array instead of Eloquent Model
         $this->post = $this->model->toArray();
-
-        $this->post['terms'] = $this->model->terms;
 
         // get "for" and "id" params from url
         $for = request()->get('for');
@@ -98,7 +81,6 @@ class Create extends Component
     public function rules()
     {
         return Arr::dot([
-            'post.terms' => '',
             'post.fields' => $this->model->validationRules(),
         ]);
     }
