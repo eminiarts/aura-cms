@@ -52,6 +52,8 @@
 
         @include('aura::components.layout.colors')
 
+        @livewireStyles
+
         @stack('styles')
     </head>
     <body class="overflow-hidden antialiased text-gray-800 bg-white dark:bg-gray-900 dark:text-gray-200">
