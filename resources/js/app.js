@@ -88,7 +88,6 @@ Alpine.store('leftSidebar', {
     }
 })
 
-Alpine.start()
 
 function updateVisitedPages(title, url) {
   const key = 'visitedPages';
