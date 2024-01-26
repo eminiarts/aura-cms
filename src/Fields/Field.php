@@ -275,6 +275,11 @@ class Field
         return in_array($this->type, ['input', 'repeater', 'group']);
     }
 
+    public function isRelation()
+    {
+        return in_array($this->type, ['relation']);
+    }
+
     public function isTaxonomyField()
     {
         return $this->taxonomy;

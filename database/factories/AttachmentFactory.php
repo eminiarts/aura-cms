@@ -3,19 +3,20 @@
 namespace Eminiarts\Aura\Database\Factories;
 
 use Eminiarts\Aura\Resources\Post;
+use Eminiarts\Aura\Resources\Attachment;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
  * @extends \Illuminate\Database\Eloquent\Factories\Factory<\Eminiarts\Aura\Resources\Post>
  */
-class PostFactory extends Factory
+class AttachmentFactory extends Factory
 {
     /**
      * The name of the factory's corresponding model.
      *
      * @var string
      */
-    protected $model = Post::class;
+    protected $model = Attachment::class;
 
     /**
      * Define the model's default state.
@@ -28,7 +29,7 @@ class PostFactory extends Factory
             'title' => $name = $this->faker->name(),
             'slug' => str($name)->slug(),
             'content' => $this->faker->paragraph(),
-            'type' => 'Post',
+            'type' => 'Attachment', 
             'user_id' => 1,
             'team_id' => 1,
             'parent_id' => null,

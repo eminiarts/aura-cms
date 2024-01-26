@@ -61,11 +61,8 @@ return [
         'post' => Eminiarts\Aura\Resources\Post::class,
         'option' => Eminiarts\Aura\Resources\Option::class,
         'attachment' => Eminiarts\Aura\Resources\Attachment::class,
-    ],
-
-    'taxonomies' => [
-        'category' => Eminiarts\Aura\Taxonomies\Category::class,
-        'tag' => Eminiarts\Aura\Taxonomies\Tag::class,
+        'category' => Eminiarts\Aura\Resources\Category::class,
+        'tag' => Eminiarts\Aura\Resources\Tag::class,
     ],
 
     'views' => [
@@ -94,7 +91,6 @@ return [
         'user_profile' => true,
 
         'create_resource' => true,
-        'create_taxonomy' => true,
 
         'resource_view' => true,
         'resource_edit' => true,
@@ -114,12 +110,6 @@ return [
         'resources' => [
             'namespace' => 'App\\Aura\\Resources',
             'path' => app_path('Aura/Resources'),
-            'register' => [],
-        ],
-
-        'taxonomies' => [
-            'namespace' => 'App\\Aura\\Taxonomies',
-            'path' => app_path('Aura/Taxonomies'),
             'register' => [],
         ],
 

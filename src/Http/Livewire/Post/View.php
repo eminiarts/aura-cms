@@ -30,17 +30,12 @@ class View extends Component
     protected $listeners = [
         'updateField' => 'updateField',
         'refreshComponent' => '$refresh',
-        'reload'
+        'reload',
     ];
 
     public function getField($slug)
     {
         return $this->post['fields'][$slug];
-    }
-
-    public function getTaxonomiesProperty()
-    {
-        return $this->model->getTaxonomies();
     }
 
     public function mount($slug, $id)
@@ -60,6 +55,14 @@ class View extends Component
         $this->post['terms']['category'] = $this->post['terms']['category'] ?? null;
     }
 
+    public function reload()
+    {
+        $this->model = $this->model->fresh();
+        $this->post = $this->model->attributesToArray();
+
+        $this->emit('refreshComponent');
+    }
+
     public function render()
     {
         // $view = "aura.{$this->slug}.view";
@@ -74,13 +77,5 @@ class View extends Component
         // }
         return view($this->model->viewView())->layout('aura::components.layout.app');
 
-    }
-
-    public function reload()
-    {
-        $this->model = $this->model->fresh();
-        $this->post = $this->model->attributesToArray();
-
-        $this->emit('refreshComponent');
     }
 }

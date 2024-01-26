@@ -3,16 +3,11 @@
 use Eminiarts\Aura\Http\Controllers\Api\FieldsController;
 use Eminiarts\Aura\Http\Livewire\Attachment\Index as AttachmentIndex;
 use Eminiarts\Aura\Http\Livewire\AuraConfig;
-use Eminiarts\Aura\Http\Livewire\Dashboard;
 use Eminiarts\Aura\Http\Livewire\Post\Create;
 use Eminiarts\Aura\Http\Livewire\Post\Edit;
 use Eminiarts\Aura\Http\Livewire\Post\Index;
 use Eminiarts\Aura\Http\Livewire\Post\View;
 use Eminiarts\Aura\Http\Livewire\Posttype;
-use Eminiarts\Aura\Http\Livewire\Taxonomy\Create as TaxonomyCreate;
-use Eminiarts\Aura\Http\Livewire\Taxonomy\Edit as TaxonomyEdit;
-use Eminiarts\Aura\Http\Livewire\Taxonomy\Index as TaxonomyIndex;
-use Eminiarts\Aura\Http\Livewire\Taxonomy\View as TaxonomyView;
 use Eminiarts\Aura\Http\Livewire\TeamSettings;
 use Eminiarts\Aura\Http\Livewire\User\Profile;
 use Illuminate\Support\Facades\Route;
@@ -50,10 +45,6 @@ Route::domain(config('aura.domain'))
             Route::get('/aura-config', AuraConfig::class)->name('config');
 
             Route::get('/posttypes/{slug}', Posttype::class)->name('posttype.edit');
-            Route::get('/taxonomies/{slug}', TaxonomyIndex::class)->name('taxonomy.index');
-            Route::get('/taxonomies/{slug}/create', TaxonomyCreate::class)->name('taxonomy.create');
-            Route::get('/taxonomies/{slug}/{id}/edit', TaxonomyEdit::class)->name('taxonomy.edit');
-            Route::get('/taxonomies/{slug}/{id}', TaxonomyView::class)->name('taxonomy.view');
 
             Route::get('/attachment', AttachmentIndex::class)->name('attachment.index');
 

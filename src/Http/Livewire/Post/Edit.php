@@ -82,11 +82,6 @@ class Edit extends Component
         return parent::callMethod($method, $params, $captureReturnValueCallback);
     }
 
-    public function getTaxonomiesProperty()
-    {
-        return $this->model->getTaxonomies();
-    }
-
     public function initializeModelFields()
     {
         foreach ($this->model->inputFields() as $field) {
@@ -114,15 +109,10 @@ class Edit extends Component
 
         // foreach fields, call the hydration method on the field
 
-        $this->post['terms'] = $this->model->terms;
-
         // dd('mount', $this->post, $this->model);
 
         // Set on model instead of here
         // if $this->post['terms']['tag'] is not set, set it to null
-        $this->post['terms']['tag'] = $this->post['terms']['tag'] ?? null;
-        $this->post['terms']['category'] = $this->post['terms']['category'] ?? null;
-
     }
 
     public function reload()
@@ -152,28 +142,15 @@ class Edit extends Component
     {
         $this->validate();
 
+        ray()->clearScreen();
+        ray('saving', $this->post, $this->model);
+
         unset($this->post['fields']['group']);
 
-        if (isset($this->post['fields']['signed_mzkb_pdf_file'])) {
-            $signed_mzkb_pdf = $this->post['fields']['signed_mzkb_pdf_file'];
-            if (! is_string($signed_mzkb_pdf)) {
-
-                $signed_mzkb_pdfPath = $signed_mzkb_pdf->store('mzkb', 'public');
-
-                $this->post['fields']['signed_mzkb_pdf'] = 'app/public/'.$signed_mzkb_pdfPath;
-            }
-        }
 
         // unset this post fields group
-
         if ($this->model->usesCustomTable()) {
-
-            // dd('save', $this->post['fields']);
-
             $this->model->update($this->post['fields']);
-        // $this->model->update(['fields' => $this->post['fields']]);
-
-        // $this->model->update($this->post['fields']);
         } else {
             $this->model->update($this->post);
         }
@@ -185,17 +162,11 @@ class Edit extends Component
             $this->emit('refreshTable');
         }
 
-        // Redirect to edit page
-
-        // if ($this->model->getType() === 'Report') {
-        //     $this->redirect(route('aura.post.edit', [$this->slug, $this->model->id]));
-        // }
 
         $this->model = $this->model->refresh();
         $this->post = $this->model->attributesToArray();
-        
-        $this->emit('refreshComponent');
 
+        $this->emit('refreshComponent');
     }
 
     public function saveBeforeAction($method)

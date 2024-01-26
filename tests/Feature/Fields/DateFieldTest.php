@@ -13,7 +13,7 @@ use Livewire\Livewire;
 
 uses(RefreshDatabase::class);
 
-beforeEach(fn () => $this->actingAs($this->user = User::factory()->create()));
+beforeEach(fn () => $this->actingAs($this->user = createSuperAdmin()));
 
 class DateFieldModel extends Resource
 {
@@ -39,8 +39,7 @@ class DateFieldModel extends Resource
 }
 
 test('Date Field in Livewire Component', function () {
-    createSuperAdmin();
-
+    
     // $this->withoutExceptionHandling();
 
     $model = new DateFieldModel();
@@ -72,7 +71,6 @@ test('Date Field in Livewire Component', function () {
 });
 
 test('Date Field in View', function () {
-    createSuperAdmin();
 
     $model = new DateFieldModel();
 

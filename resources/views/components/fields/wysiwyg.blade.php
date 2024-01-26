@@ -4,16 +4,16 @@
         x-data="{
             value: $wire.entangle('post.fields.{{ $field['slug'] }}').defer,
             init() {
-                let quill = new Quill(this.$refs.quill, { theme: 'snow' })
+                let quill{{ $field['slug'] }} = new Quill(this.$refs['quill-{{ $field['slug'] }}'], { theme: 'snow' })
 
                 vm = this;
 
-                quill.on('text-change', function () {
-                    vm.value = quill.root.innerHTML;
+                quill{{ $field['slug'] }}.on('text-change', function () {
+                    vm.value = quill{{ $field['slug'] }}.root.innerHTML;
                 });
             },
         }"
-      x-ref="quill"
+      x-ref="quill-{{ $field['slug'] }}"
     >
             {!! $this->post['fields'][$field['slug']] !!}
     </div>

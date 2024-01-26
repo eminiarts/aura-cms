@@ -20,7 +20,6 @@ x-data="{
     },
     @endif
 
-
     init() {
         Livewire.on('selectedRows', (updatedSelected) => {
            // this.selected = updatedSelected;
@@ -156,7 +155,7 @@ x-data="{
     {{-- Be aware that this file opens a div which closes at the end --}}
     @include('aura::components.table.context-menu')
 
-    {{-- @dump($sorts) --}}
+    {{-- @dump($settings) --}}
 
     <main class="" x-data="{
     showFilters: false,
@@ -183,14 +182,13 @@ x-data="{
         })
     }
 }">
+        @include($this->settings['views']['header'])
 
-        @include($this->headerView)
+        <div class="mt-4">
 
-        <div class="mt-6">
+            <div class="flex flex-col justify-between w-full md:items-center md:flex-row">
 
-            {{-- @dump($this->headers) --}}
-            <div class="flex flex-col justify-between mb-4 w-full md:items-center md:flex-row">
-
+                @if($this->settings['search'])
                 <div class="mb-4 md:mb-0">
                     <label for="table-search" class="sr-only">Search</label>
                     <div class="relative mt-1">
@@ -207,10 +205,12 @@ x-data="{
                             placeholder="{{ __('Search for items') }}" wire:model="search">
                     </div>
                 </div>
+                @endif
 
                 <div class="flex justify-end items-center space-x-4">
 
                     {{-- Columns --}}
+                    @if($this->settings['settings'] || $this->settings['filters'])
                     <div class="flex space-x-2">
                         @if($model->tableGridView())
                         <div>
@@ -230,14 +230,19 @@ x-data="{
                         </div>
                         @endif
 
-                        @if($tableView == 'list' && $model->showTableSettings())
-                        @include('aura::components.table.settings')
+                        @if($this->settings['settings'])
+                            @if($tableView == 'list' && $model->showTableSettings())
+                            @include('aura::components.table.settings')
+                            @endif
                         @endif
 
-                        @include($this->filterView)
+                        @if($this->settings['filters'])
+                            @include($this->settings['views']['filter'])
+                        @endif
                     </div>
+                    @endif
 
-                    @include($this->bulkActionsView)
+                    @include($this->settings['views']['bulkActions'])
                 </div>
             </div>
 
