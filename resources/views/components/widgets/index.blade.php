@@ -78,7 +78,7 @@
                 }
             </style>
            <div wire:key="widgets_component_{{ $key }}">
-            @livewire(\Livewire\Livewire::component($widget['type']), ['widget' => $widget, 'model' => $model, 'start' => $start, 'end' => $end], key($widget['slug'] . microtime()))
+            @livewire($widget['type'], ['widget' => $widget, 'model' => $model, 'start' => $start, 'end' => $end], key($widget['slug']))
            </div>
         </div>
         @endforeach

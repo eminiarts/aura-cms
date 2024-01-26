@@ -165,7 +165,7 @@ x-data="{
     },
     init() {
 
-        Livewire.emit('tableMounted')
+        Livewire.dispatch('tableMounted')
 
         const sortable = new window.Sortable(document.querySelectorAll('.sortable-wrapper'), {
             draggable: '.sortable',
