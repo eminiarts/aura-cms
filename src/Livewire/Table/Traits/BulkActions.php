@@ -46,7 +46,7 @@ trait BulkActions
 
         $this->notify('Erfolgreich: '.$action);
 
-        $this->emit('refreshTable');
+        $this->dispatch('refreshTable');
     }
 
     /**

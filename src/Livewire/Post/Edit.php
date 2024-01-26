@@ -122,7 +122,7 @@ class Edit extends Component
         // The GET method is not supported for this route. Only POST is supported.
         // Therefore, we cannot use redirect()->to(url()->current()).
         // Instead, we will refresh the component.
-        $this->emit('refreshComponent');
+        $this->dispatch('refreshComponent');
     }
 
     public function render()
@@ -166,7 +166,7 @@ class Edit extends Component
         $this->model = $this->model->refresh();
         $this->post = $this->model->attributesToArray();
 
-        $this->emit('refreshComponent');
+        $this->dispatch('refreshComponent');
     }
 
     public function saveBeforeAction($method)
@@ -175,7 +175,7 @@ class Edit extends Component
         $this->save();
 
         // Emit the 'savedForAction' event with the $method parameter
-        $this->emit('savedForAction', $method);
+        $this->dispatch('savedForAction', $method);
     }
 
     public function updatedPost($value, $array)

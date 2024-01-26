@@ -180,7 +180,7 @@ class Posttype extends Component
 
         $this->newFields = $this->model->mapToGroupedFields($this->fieldsArray);
 
-        $this->emit('finishedSavingFields');
+        $this->dispatch('finishedSavingFields');
     }
 
     public function checkAuthorization()
@@ -236,7 +236,7 @@ class Posttype extends Component
 
         $this->newFields = $this->model->mapToGroupedFields($this->fieldsArray);
 
-        $this->emit('finishedSavingFields');
+        $this->dispatch('finishedSavingFields');
     }
 
     public function duplicateField($id, $slug)
@@ -344,7 +344,7 @@ class Posttype extends Component
 
         $this->newFields = $this->model->mapToGroupedFields($this->fieldsArray);
 
-        $this->emit('finishedSavingFields');
+        $this->dispatch('finishedSavingFields');
     }
 
     public function mount($slug)
@@ -432,7 +432,7 @@ class Posttype extends Component
 
         $this->newFields = $this->model->mapToGroupedFields($this->fieldsArray);
 
-        $this->emit('finishedSavingFields');
+        $this->dispatch('finishedSavingFields');
     }
 
     public function rules()

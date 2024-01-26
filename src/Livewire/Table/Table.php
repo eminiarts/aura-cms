@@ -319,7 +319,7 @@ class Table extends Component
         //     // dd($this->parentModel);
         // }
 
-        $this->emit('tableMounted');
+        $this->dispatch('tableMounted');
 
         if ($this->selectedFilter) {
             if (array_key_exists($this->selectedFilter, $this->userFilters)) {
@@ -347,7 +347,7 @@ class Table extends Component
     public function openBulkActionModal($action, $data)
     {
 
-        $this->emit('openModal', $data['modal'], [
+        $this->dispatch('openModal', $data['modal'], [
             'action' => $action,
             'selected' => $this->selectedRowsQuery->pluck('id'),
             'model' => get_class($this->model),
