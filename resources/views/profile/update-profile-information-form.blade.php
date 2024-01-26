@@ -55,14 +55,14 @@
         <!-- Name -->
         <div class="col-span-6 sm:col-span-4">
             <x-aura::label for="name" value="{{ __('Name') }}" />
-            <x-aura::jet-input id="name" type="text" class="block mt-1 w-full" wire:model.defer="state.name" autocomplete="name" />
+            <x-aura::jet-input id="name" type="text" class="block mt-1 w-full" wire:model="state.name" autocomplete="name" />
             <x-aura::jet-input-error for="name" class="mt-2" />
         </div>
 
         <!-- Email -->
         <div class="col-span-6 sm:col-span-4">
             <x-aura::label for="email" value="{{ __('Email') }}" />
-            <x-aura::jet-input id="email" type="email" class="block mt-1 w-full" wire:model.defer="state.email" />
+            <x-aura::jet-input id="email" type="email" class="block mt-1 w-full" wire:model="state.email" />
             <x-aura::jet-input-error for="email" class="mt-2" />
         </div>
     </x-slot>

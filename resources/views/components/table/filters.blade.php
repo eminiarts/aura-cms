@@ -64,7 +64,7 @@
             </div>
 
             <div class="w-full mt-2 mb-0">
-                <select wire:model.defer="filters.custom.{{ $key }}.name" id="filters_field_{{ $key}}" name="filters_field_{{ $key}}" class="block w-full py-2 pl-3 pr-10 mt-1 text-base border-gray-500/30 rounded-md focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm">
+                <select wire:model="filters.custom.{{ $key }}.name" id="filters_field_{{ $key}}" name="filters_field_{{ $key}}" class="block w-full py-2 pl-3 pr-10 mt-1 text-base border-gray-500/30 rounded-md focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm">
                     @foreach($this->fieldsForFilter as $slug => $name)
                     <option value="{{ $slug }}">{{ $name }}</option>
                     @endforeach
@@ -72,7 +72,7 @@
             </div>
 
             <div class="w-full mt-2 mb-0">
-                <select wire:model.defer="filters.custom.{{ $key}}.operator" id="filters_operator_{{ $key}}" name="filters_operator_{{ $key}}" class="block w-full py-2 pl-3 pr-10 mt-1 text-base border-gray-500/30 rounded-md focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm">
+                <select wire:model="filters.custom.{{ $key}}.operator" id="filters_operator_{{ $key}}" name="filters_operator_{{ $key}}" class="block w-full py-2 pl-3 pr-10 mt-1 text-base border-gray-500/30 rounded-md focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm">
                     <option value="contains">{{ __('contains') }}</option>
                     <option value="does_not_contain">{{ __('does not contain') }}</option>
                     <option value="is">{{ __('is') }}</option>
@@ -86,7 +86,7 @@
             <div class="w-full mt-2 mb-0">
                 <div class="w-full">
                     <x-aura::input.wrapper placeholder="Value" error="filters.custom.{{ $key }}.value">
-                        <x-aura::input.text wire:model.defer="filters.custom.{{ $key}}.value"></x-aura::input.text>
+                        <x-aura::input.text wire:model="filters.custom.{{ $key}}.value"></x-aura::input.text>
                     </x-aura::input.wrapper>
                 </div>
             </div>
@@ -125,13 +125,13 @@
 
                         <x-aura::input.wrapper label="Filter Name*" error="filter.name" :help="__('Enter a Filter Name')">
                             
-                        <x-aura::input.text required wire:model.defer="filter.name" error="filter.name" :placeholder="__('Enter a Name for the Filter')"></x-aura::input.text>
+                        <x-aura::input.text required wire:model="filter.name" error="filter.name" :placeholder="__('Enter a Name for the Filter')"></x-aura::input.text>
 
                          </x-aura::input.wrapper>
 
                         <x-aura::input.wrapper label="Icon" error="filter.icon" :help="__('Icon (optional)')">
                             
-                        <x-aura::input.text required wire:model.defer="filter.icon" error="filter.icon" :placeholder="__('Icon (optional)')"></x-aura::input.text>
+                        <x-aura::input.text required wire:model="filter.icon" error="filter.icon" :placeholder="__('Icon (optional)')"></x-aura::input.text>
 
                          </x-aura::input.wrapper>
 
@@ -140,13 +140,13 @@
                     <div class="mt-4">
                          <x-aura::input.wrapper label="{{ __('Table Tabs') }}" error="filter.global" :help="__('Show above the Table of the Index Page')">
                             
-                            <x-aura::input.toggle wire:model.defer="filter.global" error="filter.global" label-after="Add this filter to the Tabs of the Index Page" ></x-aura::input.toggle>
+                            <x-aura::input.toggle wire:model="filter.global" error="filter.global" label-after="Add this filter to the Tabs of the Index Page" ></x-aura::input.toggle>
 
                          </x-aura::input.wrapper>
                          
                          <x-aura::input.wrapper label="{{ __('Public Filter') }}" error="filter.public" :help="__('Make this filter available for everyone')">
                             
-                            <x-aura::input.toggle wire:model.defer="filter.public" error="filter.public" label-after="Make this filter available for everyone"></x-aura::input.toggle>
+                            <x-aura::input.toggle wire:model="filter.public" error="filter.public" label-after="Make this filter available for everyone"></x-aura::input.toggle>
 
                          </x-aura::input.wrapper>
                     </div>

@@ -29,7 +29,7 @@
     @if($model::usesTitle())
     <div class="mb-4">
         <x-aura::fields.wrapper :field="['slug' => 'title']" wrapperClass="" class="-mx-4">
-            <x-aura::input.text wire:model.defer="post.title" error="post.title" placeholder="Title"></x-aura::input.text>
+            <x-aura::input.text wire:model="post.title" error="post.title" placeholder="Title"></x-aura::input.text>
         </x-aura::fields.wrapper>
     </div>
     @endif
