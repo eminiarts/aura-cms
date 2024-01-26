@@ -78,7 +78,7 @@ test('table filter - select rows', function () {
     expect($component->selected)->toBe([]);
 
     // We should be on Page 1
-    expect($component->page)->toBe(1);
+    expect($component->paginators['page'])->toBe(1);
 
     // Select first 2 rows
     $component->set('selected', [$component->rows->items()[0]->id, $component->rows->items()[1]->id]);
@@ -93,13 +93,13 @@ test('table filter - select rows', function () {
     expect($component->selected)->toBe([$component->rows->items()[0]->id, $component->rows->items()[1]->id, $component->rows->items()[2]->id, $component->rows->items()[3]->id, $component->rows->items()[4]->id]);
 
     // Change to Page 2
-    $component->set('page', 2);
+    $component->call('setPage', 2);
 
     // $selected should have 5 items
     expect($component->selected)->toHaveCount(5);
 
     // Go back to page 1
-    $component->set('page', 1);
+    $component->call('setPage', 1);
 
     // $selected should have 5 items
     expect($component->selected)->toHaveCount(5);
@@ -117,7 +117,7 @@ test('table select rows - reset selectPage', function () {
     expect($component->selectPage)->toBe(false);
 
     // We should be on Page 1
-    expect($component->page)->toBe(1);
+    expect($component->paginators['page'])->toBe(1);
 
     // set selectPage to true
     $component->set('selectPage', true);
@@ -129,7 +129,7 @@ test('table select rows - reset selectPage', function () {
     expect($component->selectPage)->toBe(true);
 
     // go to page 2
-    $component->set('page', 2);
+    $component->call('setPage', 2);
 
     // expect $selected to be an array with 10 items
     expect($component->selected)->toHaveCount(10);
@@ -150,7 +150,7 @@ test('table select rows - keep selected when another page is selected', function
     expect($component->selectPage)->toBe(false);
 
     // We should be on Page 1
-    expect($component->page)->toBe(1);
+    expect($component->paginators['page'])->toBe(1);
 
     // set selectPage to true
     $component->set('selectPage', true);
@@ -162,7 +162,7 @@ test('table select rows - keep selected when another page is selected', function
     expect($component->selectPage)->toBe(true);
 
     // go to page 2
-    $component->set('page', 2);
+    $component->call('setPage', 2);
 
     // expect $selected to be an array with 10 items
     expect($component->selected)->toHaveCount(10);
