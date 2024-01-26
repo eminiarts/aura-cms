@@ -48,14 +48,12 @@
                         </a>
                     @else
                         @can('create', $model)
-                            <a href="{{ $this->createLink }}">
-                                <x-aura::button>
+                                <x-aura::button href="{{ $this->createLink }}" >
                                     <x-slot:icon>
                                         <x-aura::icon icon="plus" />
                                     </x-slot>
                                     <span>{{ __('Create') }} {{ $model->getName() }}</span>
                                 </x-aura::button>
-                            </a>
                         @endcan
                     @endif
                 </div>

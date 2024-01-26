@@ -30,8 +30,10 @@ class EditPosttypeField extends Component
     public function activate($params)
     {
         $this->fieldSlug = $params['fieldSlug'];
-        $this->post['fields'] = $params['field'];
-        $this->field = $params['field'];
+        $this->post['fields'] = json_decode($params['field'], true);
+        $this->field = json_decode($params['field'], true);
+
+        dd($this->field, $params['field']);
 
         // Check if field is an input field
         if (app($this->field['type'])->isInputField()) {

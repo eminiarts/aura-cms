@@ -25,7 +25,7 @@
             });
 
             // Listen for the livewire event savedField
-            window.livewire.on('finishedSavingFields', () => {
+            $wire.on('finishedSavingFields', () => {
                 vm.fileSaved = true;
                 setTimeout(() => {
                     vm.fileSaved = false;
