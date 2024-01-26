@@ -2,13 +2,13 @@
 @selectfieldrows.window="selectRows($event.detail)"
 {{-- wire:poll.10000ms --}}
 x-data="{
-    selected: @entangle('selected').defer,
-    rows: @entangle('rowIds').defer,
+    selected: @entangle('selected'),
+    rows: @entangle('rowIds'),
     lastSelectedId: null,
     total: @js($this->rows->total()),
     selectPage: false,
-    currentPage: @entangle('page'),
-    selectAll: @entangle('selectAll').defer,
+    currentPage: @entangle('page').live,
+    selectAll: @entangle('selectAll'),
     loading: false,
     oldSelected: null,
 

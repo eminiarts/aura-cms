@@ -157,7 +157,7 @@
                                 <p class="mb-4 text-sm text-gray-900 dark:text-gray-400">Datei hierhin ziehen oder <span class="text-primary-400">hier klicken</span> um eine Datei hochzuladen.</p>
 
                                 {{-- <input type="file" id="file-upload" multiple @change="handleFileSelect" class="hidden"
-                                    wire:model.defer="media" /> --}}
+                                    wire:model="media" /> --}}
 
                                     <input type="file" id="file-upload" multiple @change="handleFileSelect" class="hidden" />
 
@@ -181,7 +181,7 @@
                                         class="font-semibold">{{ __('Click to upload or drag and drop') }}</span></p>
 
                                 <input type="file" id="file-upload" multiple @change="handleFileSelect" class="hidden"
-                                    wire:model.defer="media" />
+                                    wire:model="media" />
                             </label>
                         </div>
                     </div>

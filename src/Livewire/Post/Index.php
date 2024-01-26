@@ -12,7 +12,7 @@ class Index extends Component
 
     public $fields;
 
-    protected $post;
+    public $post;
 
     public $slug;
 
