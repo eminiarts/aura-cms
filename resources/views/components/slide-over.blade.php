@@ -1,9 +1,13 @@
 @props(['key' => 'slideover'])
 
 <div x-data="{ open: @entangle('open'), key: '{{ $key }}', init() {
-    Livewire.on('openSlideOver', (id, params) => {
-        if(id == this.key) {
-            @this.activate(params);
+    Livewire.on('openSlideOver', (data) => {
+        console.log('open slide over', data);
+
+
+        if(data.component == this.key) {
+            console.log('get here?');
+            @this.activate(data.parameters);
         }
     });
 
