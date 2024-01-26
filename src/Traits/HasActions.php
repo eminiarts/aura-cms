@@ -11,7 +11,7 @@ trait HasActions
      */
     public function confirmAction($id)
     {
-        $this->dispatchBrowserEvent('action-confirmed', [
+        $this->dispatch('action-confirmed', [
             'id' => $id,
         ]);
 

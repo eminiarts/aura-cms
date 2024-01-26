@@ -60,7 +60,7 @@ class View extends Component
         $this->model = $this->model->fresh();
         $this->post = $this->model->attributesToArray();
 
-        $this->emit('refreshComponent');
+        $this->dispatch('refreshComponent');
     }
 
     public function render()
