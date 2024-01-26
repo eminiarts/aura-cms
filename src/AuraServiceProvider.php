@@ -191,7 +191,7 @@ class AuraServiceProvider extends PackageServiceProvider
         }
 
         Component::macro('notify', function ($message, $type = 'success') {
-            $this->dispatch('notify', ['message' => $message, 'type' => $type]);
+            $this->dispatch('notify', message: $message, type: $type);
         });
 
         // Search in multiple columns
