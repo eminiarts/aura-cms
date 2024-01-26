@@ -2,7 +2,7 @@
 
 namespace Tests\Feature\Livewire;
 
-use Eminiarts\Aura\Http\Livewire\Post\Create;
+use Eminiarts\Aura\Livewire\Post\Create;
 use Eminiarts\Aura\Models\User;
 use Eminiarts\Aura\Resource;
 use Eminiarts\Aura\Resources\Team;

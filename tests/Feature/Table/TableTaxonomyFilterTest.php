@@ -7,10 +7,10 @@ use Eminiarts\Aura\Resources\Tag;
 use Eminiarts\Aura\Resources\Post;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use Eminiarts\Aura\Http\Livewire\Table\Table;
+use Eminiarts\Aura\Livewire\Table\Table;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Contracts\Database\Eloquent\Builder;
-use Eminiarts\Aura\Http\Livewire\Table\Traits\QueryFilters;
+use Eminiarts\Aura\Livewire\Table\Traits\QueryFilters;
 
 uses(RefreshDatabase::class);
 

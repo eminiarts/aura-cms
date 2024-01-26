@@ -5,7 +5,7 @@ use Eminiarts\Aura\Resources\Team;
 use Illuminate\Support\Facades\DB;
 
 use function Pest\Livewire\livewire;
-use Eminiarts\Aura\Http\Livewire\Post\Create;
+use Eminiarts\Aura\Livewire\Post\Create;
 
 // Before each test, create a Superadmin and login
 beforeEach(function () {
