@@ -22,7 +22,7 @@ trait Sorting
      * @param  \Illuminate\Database\Eloquent\Builder  $query
      * @return \Illuminate\Database\Eloquent\Builder
      */
-    public function applySorting($query)
+    protected function applySorting($query)
     {
         if ($this->sorts) {
             $query->getQuery()->orders = null;
@@ -78,7 +78,7 @@ trait Sorting
      * @param  string  $field
      * @return void
      */
-    public function sortBy($field)
+    protected function sortBy($field)
     {
         $this->refreshRows();
 

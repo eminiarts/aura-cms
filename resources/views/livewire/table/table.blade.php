@@ -5,7 +5,7 @@ x-data="{
     selected: @entangle('selected'),
     rows: @entangle('rowIds'),
     lastSelectedId: null,
-    total: @js($this->rows->total()),
+    total: @js($rows->total()),
     selectPage: false,
     currentPage: @entangle('page').live,
     selectAll: @entangle('selectAll'),

@@ -261,19 +261,7 @@ class Table extends Component
      *
      * @return mixed
      */
-    #[Computed]
-    public function rows()
-    {
-        return $this->rowsQuery->paginate(10);
-    }
-
-    /**
-     * Get query  for the table data
-     *
-     * @return \Illuminate\Database\Eloquent\Builder
-     */
-    #[Computed]
-    public function rowsQuery()
+    protected function rows()
     {
         $query = $this->model()->query()
             ->orderBy($this->model()->getTable().'.id', 'desc');
@@ -292,8 +280,6 @@ class Table extends Component
         }
 
         if ($this->filters) {
-        //    ray('applying filters here', $this->filters);
-            
             $query = $this->applyTaxonomyFilter($query);
             $query = $this->applyCustomFilter($query);
         }
@@ -301,16 +287,18 @@ class Table extends Component
         // Search
         if ($this->search) {
             $query = $this->applySearch($query);
-
-            // return $query;
         }
 
-        return $this->applySorting($query);
+        $query = $this->applySorting($query);
+
+        $query = $query->paginate(10);
+
+        return $query;
     }
 
     public function boot()
     {
-        $this->rowIds = $this->rows->pluck('id')->toArray();
+        $this->rowIds = $this->rows()->pluck('id')->toArray();
     }
 
     public function loadTable()
@@ -372,7 +360,7 @@ class Table extends Component
     {
         return view('aura::livewire.table.table', [
             'parent' => $this->parent,
-            'data' => $this->rows,
+            'rows' => $this->rows(),
         ]);
     }
 
@@ -436,12 +424,12 @@ class Table extends Component
 
     public function allTableRows()
     {
-        return $this->rowsQuery->pluck('id')->all();
+        return $this->rowsQuery()->pluck('id')->all();
     }
 
     public function updatedPage($page)
     {
-        $this->rowIds = $this->rows->pluck('id')->toArray();
+        $this->rowIds = $this->rows()->pluck('id')->toArray();
     }
 
     /**

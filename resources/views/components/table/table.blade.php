@@ -7,9 +7,7 @@
 
             <tbody class="bg-white divide-y divide-gray-200 dark:bg-gray-900 dark:divide-gray-700">
 
-                {{-- @dump($this->rows) --}}
-
-                @forelse($this->rows as $row)
+                @forelse($rows as $row)
                     @include($row->rowView())
                 @empty
 
