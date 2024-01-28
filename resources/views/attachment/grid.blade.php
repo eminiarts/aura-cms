@@ -3,7 +3,7 @@
         class="grid flex-1 grid-cols-5 gap-4 p-4"
         x-data="{
             selected: @entangle('selected').live,
-            rows: @js($this->rows->pluck('id')->toArray()), //.map(item => item.toString()),
+            rows: @entangle('rowIds'),
             lastSelectedId: null,
 
             init() {
@@ -36,7 +36,7 @@
         }"
     >
 
-        @forelse($this->rows as $row)
+        @forelse($rows as $row)
 
         <div class="relative select-none" wire:key="grid_{{ $row->id }}">
             <label for="checkbox_{{ $row->id }}" class="cursor-pointer" x-on:click="toggleRow($event, {{ $row->id }})">
@@ -90,7 +90,7 @@
 
     </div>
 
-    {{ $this->rows->links() }}
+    {{ $rows->links() }}
 
 
     <div>
