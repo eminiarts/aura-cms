@@ -351,6 +351,11 @@ class Table extends Component
         $this->selected = [];
     }
 
+    public function getRows()
+    {
+        return $this->rows();
+    }
+
     /**
      * Render the component view.
      *
