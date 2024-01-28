@@ -1,8 +1,8 @@
 @checkCondition($this->model, $field, $this->post)
     <div class="w-full px-2 {{ $field['style']['class'] ?? '' }}">
 
-        {{-- @dump($field) --}}
-            unset($field['conditional_logic']);
+        @php
+        unset($field['conditional_logic']);
         @endphp
 
         <livewire:aura::table 
