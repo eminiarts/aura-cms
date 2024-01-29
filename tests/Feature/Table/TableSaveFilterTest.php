@@ -250,7 +250,7 @@ test('table filter - filters can be reset', function () {
     $component->call('startSearching');
 
     // $component->rows should have 2 items
-    expect($component->getRows()->items())->toHaveCount(2);
+    expect($component->getRows())->toHaveCount(2);
 
     // $component->filters should have 0 items
     expect($component->filters['custom'])->toHaveCount(0);
