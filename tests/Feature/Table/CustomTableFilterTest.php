@@ -280,8 +280,6 @@ test('table filter - custom column on table - starts_with', function () {
         return count($rows->items()) == 0;
     });
 
-    ray('hier');
-
     // Start listening to SQL queries
     // $queries = [];
     // DB::listen(function ($query) use (&$queries) {
