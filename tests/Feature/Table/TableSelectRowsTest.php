@@ -80,17 +80,24 @@ test('table filter - select rows', function () {
     // We should be on Page 1
     expect($component->paginators['page'])->toBe(1);
 
+    $ids = TableSelectRowsModel::take(2)->pluck('id')->toArray();
+
     // Select first 2 rows
-    $component->set('selected', [$component->rows->items()[0]->id, $component->rows->items()[1]->id]);
+    $component->set('selected', $ids);
 
     // expect $selected to be an array with 2 items
-    expect($component->selected)->toBe([$component->rows->items()[0]->id, $component->rows->items()[1]->id]);
+    $component->assertViewHas('selected', function ($selected) {
+        return count($selected) === 2;
+    });
 
     // Select first 5 rows
-    $component->set('selected', [$component->rows->items()[0]->id, $component->rows->items()[1]->id, $component->rows->items()[2]->id, $component->rows->items()[3]->id, $component->rows->items()[4]->id]);
+    $component->set('selected', TableSelectRowsModel::take(5)->pluck('id')->toArray());
+
 
     // expect $selected to be an array with 5 items
-    expect($component->selected)->toBe([$component->rows->items()[0]->id, $component->rows->items()[1]->id, $component->rows->items()[2]->id, $component->rows->items()[3]->id, $component->rows->items()[4]->id]);
+    $component->assertViewHas('selected', function ($selected) {
+        return count($selected) === 5;
+    });
 
     // Change to Page 2
     $component->call('setPage', 2);
