@@ -78,10 +78,8 @@ trait Sorting
      * @param  string  $field
      * @return void
      */
-    protected function sortBy($field)
+    public function sortBy($field)
     {
-        $this->refreshRows();
-
         $this->sorts = collect($this->sorts)->filter(function ($value, $key) use ($field) {
             return $key === $field;
         })->toArray();
