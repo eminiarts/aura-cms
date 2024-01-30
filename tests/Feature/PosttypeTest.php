@@ -77,7 +77,7 @@ it('can mount the posttype component', function () {
 it('can add new tab', function () {
     Livewire::test(PosttypeFake::class, ['slug' => 'Model'])
         ->call('addNewTab')
-        ->assertEmitted('openSlideOver');
+        ->assertDispatched('openSlideOver');
 });
 
 it('current posttype fields', function () {
