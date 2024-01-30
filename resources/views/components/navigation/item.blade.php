@@ -7,7 +7,8 @@
   'compact' => false,
   'badge' => false,
   'badgeColor' => 'primary',
-  'onclick' => false
+  'onclick' => false,
+  'href' => null
 ])
 
 @php
@@ -19,6 +20,15 @@
     $isActive = false;
 
     if (Request::url() == $route || Request::routeIs($route)) {
+        $isActive = true;
+    }
+    if (Request::url() == $href || Request::routeIs($href)) {
+        $isActive = true;
+    }
+    $currentUrl = Request::url();
+    $expectedUrl = Request::getSchemeAndHttpHost() . $href;
+    $expectedRoute = Request::getSchemeAndHttpHost() . $route;
+    if ($currentUrl == $expectedUrl || $currentUrl == $expectedRoute) {
         $isActive = true;
     }
 
@@ -51,7 +61,9 @@
 
         @if(Route::has($route))
           href="{{ route($route) }}"
-        @elseif ($route)
+        @elseif($href)
+          href="{{ $href }}"
+        @elseif($route)
           href="{{ $route }}"
         @endif
         tabindex="{{ $route ? '0' : '' }}"
@@ -80,6 +92,8 @@
         href="{{ route($route) }}"
       @elseif ($route)
         href="{{ $route }}"
+      @elseif($href)
+        href="{{ $href }}"
       @endif
       tabindex="{{ $route ? '0' : '' }}"
       @class([
