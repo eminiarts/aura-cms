@@ -21,19 +21,7 @@ class AppServiceProvider extends ServiceProvider
             "slug" => "create_resource",
             "group" => "settings",
             "sort" => 300,
-            "onclick" => "Livewire.emit('openModal', 'aura::create-posttype')",
-            "route" => false,
-            "conditional_logic" => DynamicFunctions::add(function() {
-              return auth()->user()->resource->isSuperAdmin();
-            })
-        ] : null,
-        config('aura.features.create_taxonomy') ? [
-            "icon" => "<x-aura::icon icon='collection' />",
-            "name" => "Create Taxonomy",
-            "slug" => "create_taxonomy",
-            "group" => "settings",
-            "sort" => 300,
-            "onclick" => "Livewire.emit('openModal', 'aura::create-taxonomy')",
+            "onclick" => "Livewire.dispatch('openModal', { component : 'aura::create-posttype' })",
             "route" => false,
             "conditional_logic" => DynamicFunctions::add(function() {
               return auth()->user()->resource->isSuperAdmin();
