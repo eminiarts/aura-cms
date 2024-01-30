@@ -34,6 +34,7 @@
         <div class="col-span-1 mx-0 sm:col-span-3">
 
             {{-- @dump($this->post) --}}
+            {{-- @dump($this->rules()) --}}
             
             <div class="flex flex-wrap items-start -mx-2">
                 @foreach($this->editFields as $key => $field)
