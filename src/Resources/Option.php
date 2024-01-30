@@ -22,9 +22,14 @@ class Option extends Resource
 
     protected $fillable = ['name', 'value', 'team_id'];
 
+    protected static ?string $group = 'Aura';
+
     protected $table = 'options';
 
-    protected static ?string $group = 'Aura';
+    public static function byName($name)
+    {
+        return static::where('name', $name)->first();
+    }
 
     public static function getFields()
     {

@@ -1,124 +1,94 @@
 <div>
-
-    @foreach(app('aura')::navigation() as $group => $resources)
-
-    @if ($group !== '')
-    <div wire:key="toggle-{{$group}}" wire:click="toggleGroup('{{$group}}')" class="cursor-pointer">
-        <x-aura::navigation.heading>
-            <div class="flex items-center justify-between">
-                <span>{{ __($group) }}</span>
-
-                @if ($this->isToggled($group))
-
-                @else
-
-                <span>+</span>
-
-                @endif
+    @foreach (app('aura')::navigation() as $group => $resources)
+        @if ($group !== '')
+            <div wire:key="toggle-{{ $group }}" wire:click="toggleGroup('{{ $group }}')"
+                class="cursor-pointer">
+                <x-aura::navigation.heading :toggled="$this->isToggled($group)" :compact="$compact">
+                    {{ __($group) }}
+                </x-aura::navigation.heading>
             </div>
-        </x-aura::navigation.heading>
-    </div>
-    @endif
-
-    @if ($this->isToggled($group))
-    <div class="flex flex-col space-y-1">
-        @foreach($resources as $resource)
-
-        @if (isset($resource['dropdown']) && $resource['dropdown'] !== false)
-
-        <x-aura::navigation.dropdown>
-            <x-slot:title>
-                <div class="{{ $iconClass }}">
-
-                    @php
-                    $iconView = 'aura::aura.navigation.icons.' . Str::slug($resource['dropdown'] );
-                    @endphp
-
-                    @includeIf($iconView, ['class' => 'w-6 h-6'])
-
-                    @if(! View::exists($iconView))
-                    {!! $resource['items'][0]['icon'] !!}
-                    @endif
-                </div>
-                <div>{{ __($resource['dropdown']) }}</div>
-            </x-slot:title>
-
-            @foreach($resource['items'] as $resource)
-            <x-aura::navigation.item :route="$resource['route']" :strict="false">
-                <div class="{{ $iconClass }}">
-                    {!! $resource['icon'] !!}
-                </div>
-                <div>{{ __($resource['name']) }}</div>
-            </x-aura::navigation.item>
-            @endforeach
-        </x-aura::navigation.dropdown>
-
-        @else
-        {{-- @dd($resource) --}}
-        @can('viewAny', app($resource['resource']))
-        <x-aura::navigation.item :route="$resource['route']" :strict="false">
-            <div class="{{ $iconClass }}">
-                {!! $resource['icon'] !!}
-            </div>
-            <div>{{ __($resource['name']) }}</div>
-        </x-aura::navigation.item>
-        @endcan
-
         @endif
-        @endforeach
-    </div>
-    @endif
-    @endforeach
 
-    @superadmin
+        @if ($this->isToggled($group))
+            <div class="flex flex-col {{ $compact ? 'space-y-0.5' : 'space-y-1' }}">
+                @foreach ($resources as $resource)
+                    @if (isset($resource['dropdown']) && $resource['dropdown'] !== false)
+                        <x-aura::navigation.dropdown :compact="$compact">
+                            <x-slot:title>
+                                <div class="{{ $iconClass }}">
 
-    @php
-    $group = 'Settings';
-    @endphp
-    <div wire:key="toggle-{{$group}}" wire:click="toggleGroup('{{$group}}')" class="cursor-pointer">
-        <x-aura::navigation.heading>
-            <div class="flex items-center justify-between">
-                <span>{{ __($group) }}</span>
+                                    @php
+                                        $iconView = 'aura::aura.navigation.icons.' . Str::slug($resource['dropdown']);
+                                    @endphp
 
-                @if ($this->isToggled($group))
-                @else
-                <span>+</span>
-                @endif
+                                    @includeIf($iconView, ['class' => 'w-6 h-6'])
+
+                                    @if (!View::exists($iconView))
+                                        {!! $resource['items'][0]['icon'] !!}
+                                    @endif
+                                </div>
+                                <div class="hide-collapsed">{{ __($resource['dropdown']) }}</div>
+                            </x-slot:title>
+
+                            <x-slot:mobile>
+
+                                @foreach($resource['items'] as $r)
+                                    <x-aura::navigation.item-dropdown route="aura.post.index" :id="$r['type']" :strict="false" :compact="$compact">
+                                        <div class="{{ $iconClass }}">
+                                            {!! $r['icon'] !!}
+                                        </div>
+                                        <div>{{ __($r['name']) }}</div>
+                                    </x-aura::navigation.item-dropdown>
+                                @endforeach
+
+                            </x-slot:mobile>
+
+                            @foreach ($resource['items'] as $r)
+                                <x-aura::navigation.item :route="$r['route']" :strict="false" :compact="$compact">
+                                    <div class="{{ $iconClass }}">
+                                        {!! $r['icon'] !!}
+                                    </div>
+                                    <div class="hide-collapsed">{{ __($r['name']) }}</div>
+                                </x-aura::navigation.item>
+                            @endforeach
+                        </x-aura::navigation.dropdown>
+                    @else
+                        {{-- @dd($resource) --}}
+                        @if(isset($resource['resource']))
+                            @can('viewAny', app($resource['resource']))
+                                <x-aura::navigation.item :route="$resource['route']" :strict="false" :tooltip="__($resource['name'])" :compact="$compact" :badge="$resource['badge'] ?? null" :badgeColor="$resource['badgeColor'] ?? null">
+                                    <div class="{{ $iconClass }}">
+                                        {!! $resource['icon'] !!}
+                                    </div>
+                                    <div class="hide-collapsed">{{ __($resource['name']) }}</div>
+                                </x-aura::navigation.item>
+                            @endcan
+                        @else
+
+                            <x-aura::navigation.item :route="$resource['route']" :strict="false" :tooltip="__($resource['name'])" :compact="$compact" :badge="$resource['badge'] ?? null" :badgeColor="$resource['badgeColor'] ?? null" :onclick="$resource['onclick'] ?? ''"
+
+                            >
+                                @if($resource['icon'] !== '')
+                                    <div class="{{ $iconClass }}">
+                                        {!! Blade::render($resource['icon']) !!}
+                                    </div>
+                                    <div class="hide-collapsed">{{ __($resource['name']) }}</div>
+                                @else
+                                    <div>
+                                        <div class="hidden show-collapsed text-xl text-center w-6 {{ $iconClass }}">
+                                            {{ strtoupper(substr($resource['name'], 0, 1)) }}
+                                        </div>
+                                        <div class="hide-collapsed">{{ __($resource['name']) }}</div>
+                                    </div>
+                                @endif
+
+                            </x-aura::navigation.item>
+                        @endif
+                    @endif
+
+                @endforeach
             </div>
-        </x-aura::navigation.heading>
-    </div>
-
-    @if ($this->isToggled($group))
-    @local
-    <x-aura::navigation.item class="cursor-pointer" onclick="Livewire.dispatch('openModal', 'aura::create-posttype')">
-        <div class="{{ $iconClass }}">
-            <x-aura::icon icon="collection" />
-        </div>
-        <div>{{ __('Create Resource') }}</div>
-    </x-aura::navigation.item>
-    <x-aura::navigation.item class="cursor-pointer" onclick="Livewire.dispatch('openModal', 'aura::create-taxonomy')">
-        <div class="{{ $iconClass }}">
-            <x-aura::icon icon="collection" />
-        </div>
-        <div>{{ __('Create Taxonomy') }}</div>
-    </x-aura::navigation.item>
-    @endlocal
-
-    <x-aura::navigation.item route="{{ route('aura.team.settings') }}">
-        <div class="{{ $iconClass }}">
-            <x-aura::icon icon="brush" />
-        </div>
-        <div>{{ __('Theme Options') }}</div>
-    </x-aura::navigation.item>
-
-
-    <x-aura::navigation.item route="{{ route('aura.config') }}">
-        <div class="{{ $iconClass }}">
-            <x-aura::icon icon="adjustments" />
-        </div>
-        <div>{{ __('Global Config') }}</div>
-    </x-aura::navigation.item>
-    @endif
-    @endsuperadmin
+        @endif
+    @endforeach
 
 </div>

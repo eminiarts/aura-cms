@@ -20,7 +20,7 @@
     groups: @js($groups),
     field: @entangle($name),
     init(){
-      
+
         // if this.field is null, set it to an empty array
         if (Array.isArray(this.field) && this.field.length === 0) {
             this.field = {};
@@ -68,23 +68,23 @@
         <x-aura::button.transparent @click="selectAllGroups()">
             {{ __('Select all') }}
         </x-aura::button.transparent>
-        
+
     </div>
 
     @foreach($groups as $group => $items)
         <div class="flex flex-row justify-between py-6">
-            <div class="w-1/3 pr-1.5">
+            <div class="pr-1.5 w-1/3">
                 <h4 class="font-bold">{{ $group  }}</h4>
                 <div class="flex space-x-2">
-                    <div class="text-sm text-gray-500 cursor-pointer" @click="selectAll('{{ $group }}')">Select all</div>
+                    <div class="text-sm text-gray-500 cursor-pointer" @click="selectAll('{{ $group }}')">{{ __('Select all') }}</div>
                     <span>|</span>
-                    <div class="text-sm text-gray-500 cursor-pointer" @click="removeAll('{{ $group }}')">Remove all</div>
+                    <div class="text-sm text-gray-500 cursor-pointer" @click="removeAll('{{ $group }}')">{{ __('Remove all') }}</div>
                 </div>
             </div>
-            <div class="w-2/3 pl-1.5">
+            <div class="pl-1.5 w-2/3">
                 @foreach($items as $item)
-                    <div class="flex items-center mb-2 ">
-                        <input x-model="field['{{ $item['slug'] }}']" type="checkbox" id="permissions_{{ $item['slug'] }}" class="w-5 h-5 transition duration-150 ease-in-out bg-gray-100 rounded cursor-pointer border-gray-500/30 form-checkbox text-primary-600 focus:ring-primary-500">
+                    <div class="flex items-center mb-2">
+                        <input x-model="field['{{ $item['slug'] }}']" type="checkbox" id="permissions_{{ $item['slug'] }}" class="w-5 h-5 bg-gray-100 rounded transition duration-150 ease-in-out cursor-pointer border-gray-500/30 form-checkbox text-primary-600 focus:ring-primary-500">
                         <label for="permissions_{{ $item['slug'] }}" class="block ml-3 text-sm leading-5 text-gray-700 cursor-pointer dark:text-gray-200">
                             {{ $item['name'] }}
                             <span class="block text-xs text-gray-400">{{ $item['description'] }}</span>

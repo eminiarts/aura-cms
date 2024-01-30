@@ -11,7 +11,7 @@ trait HasActions
      */
     public function confirmAction($id)
     {
-        $this->dispatchBrowserEvent('action-confirmed', [
+        $this->dispatch('action-confirmed', [
             'id' => $id,
         ]);
 
@@ -19,13 +19,25 @@ trait HasActions
 
     public function getActionsProperty()
     {
-        return $this->model->getActions();
+        $actions = $this->model->getActions();
+
+        return collect($actions)->filter(function ($item) {
+            if (isset($item['conditional_logic'])) {
+                return $item['conditional_logic']();
+            }
+
+            return true;
+        })->all();
     }
 
     public function singleAction($action)
     {
-        $this->model->{$action}();
+        $response = $this->model->{$action}();
 
-        $this->notify('Successfully ran: '.$action);
+        if ($response instanceof \Illuminate\Http\RedirectResponse) {
+            return $response; // Perform the redirect.
+        }
+
+        $this->notify(__('Successfully ran: :action', ['action' => __($action)]));
     }
 }

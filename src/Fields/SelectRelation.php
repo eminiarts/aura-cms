@@ -8,7 +8,7 @@ class SelectRelation extends Field
 
     // public $view = 'components.fields.select-relation';
 
-    public function display($field, $value)
+    public function display($field, $value, $model)
     {
         if (! $value) {
             return;

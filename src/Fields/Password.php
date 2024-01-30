@@ -10,14 +10,20 @@ class Password extends Field
 
     public $view = 'aura::fields.view-value';
 
-    public function get($field, $value)
-    {
-    }
+    // public function get($field, $value)
+    // {
+    // }
 
     public function getFields()
     {
         return array_merge(parent::getFields(), [
         ]);
+    }
+
+    // Initialize the field on a LiveWire component
+    public function hydrate()
+    {
+
     }
 
     public function set($value)

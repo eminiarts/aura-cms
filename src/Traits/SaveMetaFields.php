@@ -11,8 +11,6 @@ trait SaveMetaFields
     {
         static::saving(function ($post) {
             if (isset($post->attributes['fields'])) {
-                // dump('saving', $post->attributes['fields']);
-                //ray('fields in savemetafields', $post->attributes['fields']);
 
                 foreach ($post->attributes['fields'] as $key => $value) {
                     $class = $post->fieldClassBySlug($key);
@@ -44,7 +42,7 @@ trait SaveMetaFields
                     }
 
                     if (method_exists($class, 'set')) {
-                        $value = $class->set($value);
+                        $value = $class->set($value, $post->fieldBySlug($key));
                     }
 
                     // If the field exists in the $post->getBaseFillable(), it should be safed in the table instead of the meta table
@@ -59,6 +57,8 @@ trait SaveMetaFields
                 }
 
                 unset($post->attributes['fields']);
+
+                $post->clearFieldsAttributeCache();
             }
         });
 
@@ -74,11 +74,16 @@ trait SaveMetaFields
                         continue;
                     }
 
-                    $post->meta()->updateOrCreate(['key' => $key], ['value' => $value]);
+                    if ($post->usesMeta()) {
+                        $post->meta()->updateOrCreate(['key' => $key], ['value' => $value]);
+                    }
+
                 }
 
+                $post->fireModelEvent('metaSaved');
+
                 // Reload relation
-                $post->load('meta');
+                // $post->load('meta');
             }
         });
     }

@@ -2,13 +2,13 @@
         <div>
             @if($media && count($media))
             <div x-data="{ media: {{ json_encode($media) }}, loading: true }"
-                class="fixed inset-0 z-50 flex items-end px-4 py-6 pointer-events-none sm:items-start sm:p-6">
-                <div class="flex flex-col items-end w-full space-y-4 sm:items-end">
+                class="flex fixed inset-0 z-50 items-end px-4 py-6 pointer-events-none sm:items-start sm:p-6">
+                <div class="flex flex-col items-end space-y-4 w-full sm:items-end">
 
                     @foreach($media as $key => $file)
 
                     <div
-                        class="relative w-full max-w-sm overflow-hidden bg-white rounded-lg shadow-lg pointer-events-auto ring-1 ring-black ring-opacity-5"
+                        class="overflow-hidden relative w-full max-w-sm bg-white rounded-lg ring-1 ring-black ring-opacity-5 shadow-lg pointer-events-auto"
                         x-data="{loading: true}" x-show="loading" x-init="setTimeout(() => { loading = false }, 3000)"
                         x-transition:leave="transition ease-linear duration-1000" x-transition:leave-end="opacity-0">
                         <div class="p-4">
@@ -20,7 +20,7 @@
                                             d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                                     </svg>
                                 </div>
-                                <div class="ml-3 w-0 flex-1 pt-0.5">
+                                <div class="flex-1 pt-0.5 ml-3 w-0">
                                     <p class="text-sm font-medium text-gray-900">Successfully uploaded</p>
                                     <p class="mt-1 text-sm text-gray-500">{{ $file->getClientOriginalName() }}</p>
                                 </div>
@@ -53,27 +53,36 @@
             @error('media.*') <span class="error">{{ $message }}</span> @enderror
         </div>
 
-        <div x-data="{
+        <div
+            x-data="{
             isDropping: false,
             isUploading: false,
             progress: 0,
             init() {
-                console.log('file upload');
             },
             handleFileSelect(event) {
-                console.log('handleFileSelect');
                 if (event.target.files.length) {
-                    this.uploadFiles(event.target.files)
+                    Array.from(event.target.files).forEach(file => {
+                        @this.upload('media', file, (uploadedFilename) => {
+                        }, () => {
+                            console.error('Upload error');
+                        }, (event) => {
+                            this.progress = event.detail.progress;
+                        });
+                    });
                 }
             },
+
             handleFileDrop(event) {
-                console.log('handlefiledrop');
                 if (event.dataTransfer.files.length > 0) {
                     this.uploadFiles(event.dataTransfer.files)
                 }
             },
             uploadFiles(files) {
                 const $this = this
+
+                console.log('upload multiple')
+                
                 this.isUploading = true
                 @this.uploadMultiple('media', files,
                 function (success) { //upload was a success and was finished
@@ -81,7 +90,6 @@
                     $this.progress = 0
                 },
                 function (error) { //an error occured
-                    console.log('error', error)
                 },
                 function (event) { //upload progress was made
                     $this.progress = event.detail.progress
@@ -100,36 +108,43 @@
             },
         }">
 
-            <div class="mt-2">
-
-                @if($button)
-                <x-aura::button.light
-                    wire:click="$dispatch('openModal', 'aura::media-manager', {{ json_encode(['field' => $field, 'slug' => $field['slug'], 'selected' => $selected]) }})">
-                    <x-slot:icon>
-                        <x-aura::icon icon="media" class="" />
-                        </x-slot>
-
-                        <span>Media Manager</span>
-                </x-aura::button.light>
-                @endif
-            </div>
-
             <div class="" x-on:drop="isDropping = false" x-on:drop.prevent="handleFileDrop($event)"
-                x-on:dragover.prevent="isDropping = true; console.log('dragover'); dragover($event);"
-                x-on:dragleave.prevent="isDropping = false; console.log('dragleave');">
+                x-on:dragover.prevent="isDropping = true; dragover($event);"
+                x-on:dragleave.prevent="isDropping = false; ">
 
-                <div class="flex items-center justify-center w-full mb-4" x-cloak>
-                    <div class="absolute top-0 bottom-0 left-0 right-0 z-30 flex items-center justify-center bg-primary-400 opacity-90"
+                <div class="mt-2">
+                    @if($button)
+                        <x-aura::button.light
+                            wire:click="$dispatch('openModal', { component: 'aura::media-manager', arguments: { field: '{{ json_encode($field) }}', slug: '{{ $field['slug'] }}', selected: '{{ json_encode($selected) }}' }})">
+                            <x-slot:icon>
+                                <x-aura::icon icon="media" class="" />
+                            </x-slot>
+
+                            <span>Media Manager</span>
+                        </x-aura::button.light>
+                    @endif
+                </div>
+
+                <div class="flex justify-center items-center mb-4 w-full" x-cloak>
+                    <div class="flex absolute top-0 right-0 bottom-0 left-0 z-30 justify-center items-center opacity-90 bg-primary-400"
                         x-show="isDropping">
-                        <span class="text-3xl text-white">Release file to upload!</span>
+                        <span class="text-3xl text-white">{{ __('Release file to upload!') }}</span>
                     </div>
 
 
                 </div>
 
-                <div class="bg-white dark:bg-gray-900 h-[4px] w-full mt-0">
-                    <div class="bg-primary-500 h-[4px]" style="transition: width 0.5s" :style="`width: ${progress}%;`"
-                        x-show="isUploading">
+                <div class="bg-transparent dark:bg-gray-900 h-[4px] w-full mt-0" x-show="isUploading">
+                    <style >
+                        .progress-bar::before {
+                            content: '';
+                            display: block;
+                            height: 100%;
+                            transition: width 0.5s;
+                            width: 0%;
+                        }
+                    </style>
+                    <div class="bg-primary-500 h-[4px] progress-bar" :style="`width: ${progress}%;`" x-show="isUploading">
                     </div>
                 </div>
 
@@ -139,19 +154,22 @@
 
                       <div>
                             <label for="file-upload">
-                                <p class="mb-2 text-sm text-gray-500 dark:text-gray-400">Datei hierhin ziehen oder <span class="text-primary-400">hier klicken</span> um eine Datei hochzuladen.</p>
+                                <p class="mb-4 text-sm text-gray-900 dark:text-gray-400">Datei hierhin ziehen oder <span class="text-primary-400">hier klicken</span> um eine Datei hochzuladen.</p>
 
-                                <input type="file" id="file-upload" multiple @change="handleFileSelect" class="hidden"
-                                    wire:model="media" />
+                                {{-- <input type="file" id="file-upload" multiple @change="handleFileSelect" class="hidden"
+                                    wire:model="media" /> --}}
+
+                                    <input type="file" id="file-upload" multiple @change="handleFileSelect" class="hidden" />
+
                             </label>
                         </div>
-                        
+
                     @endif
 
                     @if($table)
 
                     <div class="flex flex-col">
-                        <div class="flex items-center justify-between mt-6">
+                        <div class="flex justify-between items-center mt-6">
                         <h1 class="text-3xl font-semibold">
                             {{ __('Attachments') }}
                         </h1>
@@ -160,8 +178,7 @@
                         <div>
                             <label for="file-upload">
                                 <p class="mb-2 text-sm text-gray-500 dark:text-gray-400"><span
-                                        class="font-semibold">Click to
-                                        upload</span> or drag and drop</p>
+                                        class="font-semibold">{{ __('Click to upload or drag and drop') }}</span></p>
 
                                 <input type="file" id="file-upload" multiple @change="handleFileSelect" class="hidden"
                                     wire:model="media" />
@@ -169,7 +186,7 @@
                         </div>
                     </div>
 
-                        <livewire:aura::table :model="$post" :field="$field" />
+                        <livewire:aura::table :model="$model" :field="$field" />
                     </div>
 
 

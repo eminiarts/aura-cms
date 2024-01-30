@@ -1,8 +1,10 @@
 <?php
 
-namespace Eminiarts\Aura\Taxonomies;
+namespace Eminiarts\Aura\Resources;
 
-class Category extends Taxonomy
+use Eminiarts\Aura\Resource;
+
+class Category extends Resource
 {
     public static $hierarchical = true;
 

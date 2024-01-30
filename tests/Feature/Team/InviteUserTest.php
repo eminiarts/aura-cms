@@ -19,17 +19,7 @@ uses(RefreshDatabase::class);
 
 // Before each test, create a Superadmin and login
 beforeEach(function () {
-    // Create User
-    $this->actingAs($this->user = User::factory()->create());
-
-    // Create Team and assign to user
-    createSuperAdmin();
-
-    // Refresh User
-    $this->user = $this->user->refresh();
-
-    // Login
-    $this->actingAs($this->user);
+    $this->actingAs($this->user = createSuperAdmin());
 
     // Enable Team Registration
     Aura::setOption('team_registration', true);
@@ -59,7 +49,81 @@ test('user can be invited', function () {
 });
 
 test('user gets correct role', function () {
-})->todo();
+
+    // Create a new Role
+    $role = Role::create([
+        'title' => 'Test Role',
+        'slug' => 'test_role',
+        'permissions' => [
+            'test_permission' => true,
+        ],
+    ]);
+
+    // Test InviteUser Livewire Component
+    $component = Livewire::test(InviteUser::class, ['resource' => 'user'])
+        ->call('save')
+        ->assertHasErrors(['post.fields.email' => 'required'])
+        ->set('post.fields.email', 'test@test.ch')
+        ->call('save')
+        ->assertHasErrors(['post.fields.role' => 'required'])
+        ->set('post.fields.role', $role->id)
+        ->call('save')
+        ->assertHasNoErrors();
+
+    // DB should have 1 TeamInvitation
+    $this->assertEquals(1, TeamInvitation::count());
+
+    $invitation = TeamInvitation::first();
+
+    $invitation->fresh();
+
+    // DB should have 1 TeamInvitation with correct email
+    expect($invitation->email)->toBe('test@test.ch');
+
+    // Go to the Registration Page and make sure it works
+    $url = URL::signedRoute('aura.invitation.register', [$invitation->team, $invitation]);
+
+    // Log out
+    $this->app['auth']->logout();
+
+    // As a Guest
+    $this->assertGuest();
+
+    // Visit $url and assert Ok
+    $response = $this->get($url);
+
+    $response->assertOk();
+
+    // Register the user and see if the role is correct
+    $response = $this->post($url, [
+        'name' => 'Test User',
+        'password' => 'password',
+        'password_confirmation' => 'password',
+    ]);
+
+    // Check if the user is created in the database
+    $this->assertDatabaseHas('users', [
+        'name' => 'Test User',
+        'email' => 'test@test.ch',
+    ]);
+
+    // Assert that the user is logged in
+    $this->assertAuthenticated();
+
+    // Assert is on dashboard
+    $response->assertRedirect(RouteServiceProvider::HOME);
+
+    // Check if the Team Invitation is deleted
+    $this->assertDatabaseMissing('team_invitations', [
+        'email' => 'test@test.ch',
+    ]);
+
+    // Check if the user has the correct role
+    $user = User::where('email', 'test@test.ch')->first();
+
+    expect($user->hasRole('test_role'))->toBeTrue();
+    expect($user->hasRole('super_admin'))->toBeFalse();
+});
 
 test('Team Invitation can be created', function () {
     $team = $this->user->currentTeam;

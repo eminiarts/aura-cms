@@ -10,17 +10,7 @@ uses(RefreshDatabase::class);
 
 // Before each test, create a Superadmin and login
 beforeEach(function () {
-    // Create User
-    $this->actingAs($this->user = User::factory()->create());
-
-    // Create Team and assign to user
-    createSuperAdmin();
-
-    // Refresh User
-    $this->user = $this->user->refresh();
-
-    // Login
-    $this->actingAs($this->user);
+    $this->actingAs($this->user = createSuperAdmin());
 });
 
 test('table can be rendered', function () {
@@ -56,14 +46,16 @@ test('table shows all input fields', function () {
     // Visit the Post Index Page
     $response = $this->get(route('aura.post.index', $post->type));
 
+    // dd($response->content());
+
+    $response->assertOk();
+
     // Assert that all input fields are shown
     $response->assertSee('ID');
     $response->assertSee('Text');
     $response->assertSee('Number');
     $response->assertSee('Date');
     $response->assertSee('Description');
-    $response->assertSee('Tags');
-    $response->assertSee('Categories');
     $response->assertSee('Team');
     $response->assertSee('User');
 });

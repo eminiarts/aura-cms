@@ -8,6 +8,8 @@ class View extends Field
 
     // public $view = 'components.fields.view';
 
+    public string $type = 'view';
+
     public function getFields()
     {
         return array_merge(parent::getFields(), [

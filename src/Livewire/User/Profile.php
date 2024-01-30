@@ -9,6 +9,7 @@ use Eminiarts\Aura\Traits\InputFields;
 use Eminiarts\Aura\Traits\MediaFields;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Redirect;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rules\Password;
@@ -22,6 +23,17 @@ class Profile extends Component
     public $confirmingUserDeletion = false;
 
     public $model;
+
+    // protected $validationAttributes = [
+    //     'post.fields.signatur' => 'signatur',
+    // ];
+
+    // protected function validationAttributes()
+    // {
+    //     return [
+    //         'post.fields.signatur' => __('Signature'),
+    //     ];
+    // }
 
     /**
      * The user's current password.
@@ -37,6 +49,13 @@ class Profile extends Component
     // Listen for selectedAttachment
     protected $listeners = ['updateField' => 'updateField'];
 
+    public function checkAuthorization()
+    {
+        if (config('aura.features.user_profile') == false) {
+            abort(403, 'User profile is turned off.');
+        }
+    }
+
     /**
      * Confirm that the user would like to delete their account.
      *
@@ -44,7 +63,7 @@ class Profile extends Component
      */
     public function confirmUserDeletion()
     {
-        $this->dispatchBrowserEvent('confirming-delete-user');
+        $this->dispatch('confirming-delete-user');
 
         $this->confirmingUserDeletion = true;
     }
@@ -86,9 +105,8 @@ class Profile extends Component
                 ],
             ],
             [
-                'name' => 'Avatar',
+                'name' => 'Signatur',
                 'type' => 'Eminiarts\\Aura\\Fields\\Image',
-                'max' => '1',
                 'validation' => ['nullable', 'array', 'max:1',
                     function (string $attribute, mixed $value, Closure $fail) {
 
@@ -98,14 +116,14 @@ class Profile extends Component
                         // Check if the attachment is an image
                         Attachment::findOrFail($value)->each(function ($attachment) use ($fail, $attribute) {
                             if (! $attachment->isImage()) {
-                                $fail("The {$attribute} is not an image.");
+                                $fail(__('The :attribute is not an image.', ['attribute' => $attribute]));
                             }
                         });
 
                     },
                 ],
                 'conditional_logic' => [],
-                'slug' => 'avatar',
+                'slug' => 'signatur',
                 'style' => [
                     'width' => '100',
                 ],
@@ -154,14 +172,14 @@ class Profile extends Component
             [
                 'name' => 'New Password',
                 'type' => 'Eminiarts\\Aura\\Fields\\Password',
-                'validation' => ['nullable', 'confirmed', Password::min(8)],
+                'validation' => ['nullable', 'confirmed', Password::min(12)->mixedCase()->numbers()->symbols()->uncompromised()],
                 'slug' => 'password',
                 'on_index' => false,
             ],
             [
                 'name' => 'Confirm Password',
                 'type' => 'Eminiarts\\Aura\\Fields\\Password',
-                'validation' => '',
+                'validation' => ['required_with:post.fields.password', 'same:post.fields.password'],
                 'slug' => 'password_confirmation',
                 'on_index' => false,
             ],
@@ -227,8 +245,21 @@ class Profile extends Component
         });
     }
 
+    public function logoutOtherBrowserSessions()
+    {
+        if (request()->hasSession()) {
+            // dd('here');
+            DB::connection(config('session.connection'))->table(config('session.table', 'sessions'))
+                ->where('user_id', Auth::user()->getAuthIdentifier())
+                ->where('id', '!=', request()->session()->getId())
+                ->delete();
+        }
+    }
+
     public function mount()
     {
+        $this->checkAuthorization();
+
         $this->model = auth()->user()->resource;
 
         $this->post = $this->model->attributesToArray();
@@ -260,8 +291,10 @@ class Profile extends Component
 
     public function save()
     {
-        // ray($this->post['fields'], $this->rules());
+        // dd('save', $this->rules());
         $this->validate();
+
+        // dd('hier');
 
         // if $this->post['fields']['current_password'] and  is set, save password
         if (optional($this->post['fields'])['current_password'] && optional($this->post['fields'])['password']) {
@@ -274,6 +307,11 @@ class Profile extends Component
             unset($this->post['fields']['current_password']);
             unset($this->post['fields']['password']);
             unset($this->post['fields']['password_confirmation']);
+
+            // Logout other devices
+
+            $this->logoutOtherBrowserSessions();
+
         }
         // dd('here2', $this->post['fields']);
         if (empty(optional($this->post['fields'])['password'])) {

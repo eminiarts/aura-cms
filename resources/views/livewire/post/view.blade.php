@@ -5,31 +5,11 @@
     <x-aura::breadcrumbs>
         <x-aura::breadcrumbs.li :href="route('aura.dashboard')" title="" icon="dashboard" iconClass="text-gray-500 w-7 h-7 mr-0" />
         <x-aura::breadcrumbs.li :href="route('aura.post.index', $slug)" :title="__(Str::plural($slug))" />
-        <x-aura::breadcrumbs.li :title="$model->title" />
+        <x-aura::breadcrumbs.li :title="$model->title()" />
     </x-aura::breadcrumbs>
     @endif
 
-    <div class="flex items-center justify-between my-8">
-        <div>
-            @yield('view-header')
-            <h1 class="text-3xl font-semibold">
-                {{ __('View ' . $model->singularName()) }}
-            </h1>
-        </div>
-
-        <div class="flex items-center space-x-2">
-            @include('aura::livewire.post.actions')
-
-            @can('update', $model)
-            <a href="{{ route('aura.post.edit', [$slug, $model->id]) }}" class="text-gray-500 hover:text-gray-700">
-                <x-aura::button size="lg">
-                    <x-aura::icon.edit class="w-5 h-5 mr-2" />
-                    {{ __('Edit') }}
-                </x-aura::button>
-            </a>
-            @endcan
-        </div>
-    </div>
+    @include($model->viewHeaderView())
 
     @if($model::usesTitle())
     <div class="mb-4">
@@ -43,7 +23,7 @@
     {{-- @dump($post) --}}
     {{-- @dump($this->fields) --}}
 
-    <style>
+    <style >
         .aura-view-post-container input, .aura-input {
             border: 0 !important;
             background-color: var(--gray-100)!important;
@@ -72,11 +52,13 @@
     <div class="grid gap-6 mt-4 aura-view-post-container sm:grid-cols-3" x-data="{
          init() {
             const container = document.querySelector('.aura-view-post-container');
-                        const inputs = container.querySelectorAll('input, select, textarea, .aura-input');
+            const inputs = container.querySelectorAll('input, select, textarea, .aura-input');
 
 
             inputs.forEach((input) => {
-                input.setAttribute('readonly', true);
+                if (!input.hasAttribute('readonly')) {
+                    input.setAttribute('readonly', true);
+                }
             });
         }
     }">
@@ -96,7 +78,7 @@
                 <div class="mt-8 form_errors">
                     <strong class="block text-red-600">Unfortunately, there were still the following validation
                         errors:</strong>
-                    <div class="prose text-red-600">
+                    <div class="text-red-600 prose">
                         <ul>
                             @foreach ($errors->all() as $message)
                             <li>{{ $message }}</li>

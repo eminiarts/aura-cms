@@ -1,24 +1,15 @@
 <?php
 
-use Eminiarts\Aura\Livewire\Post\Create;
 use Eminiarts\Aura\Models\User;
 use Eminiarts\Aura\Resources\Team;
+use Illuminate\Support\Facades\DB;
 
 use function Pest\Livewire\livewire;
+use Eminiarts\Aura\Livewire\Post\Create;
 
 // Before each test, create a Superadmin and login
 beforeEach(function () {
-    // Create User
-    $this->actingAs($this->user = User::factory()->create());
-
-    // Create Team and assign to user
-    createSuperAdmin();
-
-    // Refresh User
-    $this->user = $this->user->refresh();
-
-    // Login
-    $this->actingAs($this->user);
+    $this->actingAs($this->user = createSuperAdmin());
 });
 
 test('team can be created', function () {
@@ -27,11 +18,15 @@ test('team can be created', function () {
 
     // Expect 1 team
     expect($teams->count())->toBe(1);
+    expect( DB::table('posts')->where('type', 'Role')->count())->toBe(1);
 
-    $component = livewire(Create::class, ['slug' => 'Team'])->set('post.fields.name', 'Test Team')
+    $component = livewire(Create::class, ['slug' => 'Team'])
+        ->set('post.fields.name', 'Test Team')
         ->set('post.fields.description', 'Test Description')
         ->call('save')
         ->assertHasNoErrors();
+
+        $this->user->refresh();
 
     $team = $this->user->fresh()->currentTeam;
 
@@ -61,7 +56,6 @@ test('team can be changed', function () {
     expect($this->user->fresh()->currentTeam->id)->toBe($team->id);
 });
 
-
 test('team can be deleted', function () {
     // Create a team to be deleted
     $team = Team::create([
@@ -85,7 +79,6 @@ test('team can be deleted', function () {
     // Assert that the user's teams count decreased by 1
     expect($this->user->fresh()->teams()->count())->toBe($initialCount - 1);
 });
-
 
 test('check current users current_team_id is set correctly after deleting a team', function () {
     // Create a team to be deleted

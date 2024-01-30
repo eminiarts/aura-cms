@@ -8,13 +8,15 @@
   @endif
 ">
 
-    <x-aura::navigation.item-icon @click="$dispatch('search')" class="cursor-pointer" tooltip="Search">
+    {{-- <x-aura::navigation.item-icon @click="$dispatch('search')" class="cursor-pointer" tooltip="Search">
         <x-aura::icon icon="search" />
     </x-aura::navigation.item-icon>
 
+
     <x-aura::navigation.item-icon route="aura.dashboard" tooltip="aura.dashboard">
         <x-aura::icon icon="dashboard2" />
-    </x-aura::navigation.item-icon>
+    </x-aura::navigation.item-icon> --}}
+
 
     @foreach(app('aura')::navigation() as $group => $resources)
       @foreach($resources as $resource)
@@ -23,6 +25,7 @@
               <x-aura::navigation.dropdown-icon>
                   <x-slot:title>
                       <div>
+
                           @php
                               $iconView = 'aura::aura.navigation.icons.' . Str::slug($resource['dropdown'] );
                           @endphp
@@ -66,62 +69,5 @@
       </div>
     @endforeach
 
-
-    @foreach(app('aura')::getTaxonomies() as $taxonomy)
-        <x-aura::navigation.item-icon route="aura.taxonomy.index" :id="$taxonomy" :tooltip="$taxonomy" :strict="false">
-            <x-aura::icon icon="circle" />
-        </x-aura::navigation.item-icon>
-    @endforeach
-
-    <div class="w-full px-2 py-2">
-        @if ($sidebarType == 'primary')
-        <hr class="w-full border-primary-500 dark:border-gray-700">
-        @elseif ($sidebarType == 'light')
-        <hr class="w-full border-gray-500/30 dark:border-gray-700">
-        @elseif ($sidebarType == 'dark')
-        <hr class="w-full border-gray-700">
-        @endif
-    </div>
-
-    <x-aura::navigation.dropdown-icon>
-
-        <x-slot:title>
-            <x-aura::icon icon="circle" />
-        </x-slot:title>
-
-        <x-aura::navigation.item-dropdown route="aura.dashboard" compact>
-            <div>All users</div>
-        </x-aura::navigation.item-dropdown>
-        <x-aura::navigation.item-dropdown route="aura.dashboard" compact>
-            <div>Teams</div>
-        </x-aura::navigation.item-dropdown>
-        <x-aura::navigation.item-dropdown route="aura.dashboard" compact>
-            <div>Roles</div>
-        </x-aura::navigation.item-dropdown>
-        <x-aura::navigation.item-dropdown route="aura.dashboard" compact>
-            <div>Permissions</div>
-        </x-aura::navigation.item-dropdown>
-
-    </x-aura::navigation.dropdown-icon>
-
-    <div class="w-full px-2 py-2">
-        @if ($sidebarType == 'primary')
-        <hr class="w-full border-primary-500 dark:border-gray-700">
-        @elseif ($sidebarType == 'light')
-        <hr class="w-full border-gray-500/30 dark:border-gray-700">
-        @elseif ($sidebarType == 'dark')
-        <hr class="w-full border-gray-700">
-        @endif
-    </div>
-
-    @local
-    <x-aura::navigation.item-icon onclick="Livewire.emit('openModal', 'create-posttype')" tooltip="{{ __('Create Resource') }}" :strict="false">
-        <x-aura::icon icon="collection" />
-    </x-aura::navigation.item-icon>
-    @endlocal
-
-    <x-aura::navigation.item-icon route="aura.team.settings" tooltip="Team Settings" :strict="false">
-        <x-aura::icon icon="adjustments" />
-    </x-aura::navigation.item-icon>
 
 </div>

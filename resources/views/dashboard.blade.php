@@ -1,15 +1,13 @@
 <x-aura::layout.app>
-    <x-slot name="header">
-        <h2 class="text-xl font-semibold leading-tight text-gray-800">
-            {{ __('Dashboard') }}
-        </h2>
-    </x-slot>
+    @php
+        $dashboardComponent = config('aura.dashboard_component');
+    @endphp
 
-    <div class="py-0">
-        <div class="mx-auto max-w-7xl">
-            <div class="aura-card">
-                Dashboard folgt...
-            </div>
-        </div>
-    </div>
+    @if($dashboardComponent && class_exists($dashboardComponent))
+        @livewire($dashboardComponent)
+    @else
+        <p>No custom dashboard component defined.</p>
+        {{-- @livewire(Eminiarts\Aura\Livewire\Dashboard::class); --}}
+    @endif
+
 </x-aura::layout.app>

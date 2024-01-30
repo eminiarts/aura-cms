@@ -1,30 +1,32 @@
 <div class="">
-    @section('title', 'Create '. $this->model->singularName())
+    @section('title', __('Create ' . $model->singularName()))
 
     @if(!$inModal)
     <x-aura::breadcrumbs>
         <x-aura::breadcrumbs.li :href="route('aura.dashboard')" title="" icon="dashboard" iconClass="text-gray-500 w-7 h-7 mr-0" />
-        <x-aura::breadcrumbs.li :href="route('aura.post.index', $slug)" :title="Str::plural($slug)" />
-        <x-aura::breadcrumbs.li title="Create {{ $this->model->singularName() }}" />
+        <x-aura::breadcrumbs.li :href="route('aura.post.index', $slug)" :title="__(Str::plural($slug))" />
+        <x-aura::breadcrumbs.li title="{{ __('Create ' . $model->singularName()) }}" />
     </x-aura::breadcrumbs>
     @endif
 
     <div class="flex items-center justify-between {{ $inModal ? 'mb-8' : 'my-8'}}">
         <div>
-            <h1 class="text-3xl font-semibold">Create {{ $this->model->singularName() }}</h1>
+            <h1 class="text-3xl font-semibold">{{ __('Create ' . $model->singularName()) }}</h1>
         </div>
 
         <div>
+            @if($showSaveButton)
             <x-aura::button size="lg" wire:click="save">
                 <div wire:loading wire:target="save">
                     <x-aura::icon.loading />
                 </div>
                 {{ __('Save') }}
             </x-aura::button>
+            @endif
         </div>
     </div>
 
-    @if($this->model::usesTitle())
+    @if($model::usesTitle())
     <div class="mb-4">
         <x-aura::fields.wrapper :field="['slug' => 'title']" wrapperClass="" class="-mx-4">
             <x-aura::input.text wire:model="post.title" error="post.title" placeholder="Title"></x-aura::input.text>
@@ -37,11 +39,11 @@
 
             <div>
                 @if (count($errors->all()))
+
             <div class="block">
                 <div class="mt-8 form_errors">
-                    <strong class="block text-red-600">Unfortunately, there were still the following validation
-                        errors:</strong>
-                    <div class="prose text-red-600">
+                    <strong class="block text-red-600">{{ __('Unfortunately, there were still the following validation errors:') }}</strong>
+                    <div class="text-red-600 prose">
                         <ul>
                             @foreach ($errors->all() as $message)
                             <li>{{ $message }}</li>
@@ -55,21 +57,20 @@
 
             {{-- @dump($this->createFields) --}}
 
-            <div class="flex flex-wrap items-start -mx-2">                
+            <div class="flex flex-wrap items-start -mx-2">
            @foreach($this->createFields as $key => $field)
-            @checkCondition($post['fields'], $field)
+            @checkCondition($model, $field, $post)
                     <x-dynamic-component :component="$field['field']->component" :field="$field" wire:key="post-field-{{ $key }}" />
             @endcheckCondition
             @endforeach
             </div>
 
-            <div wire:key="errors-{{ md5(json_encode($this->model)) }}">
+            <div wire:key="errors-{{ md5(json_encode($model)) }}">
                 @if (count($errors->all()))
             <div class="block">
                 <div class="mt-8 form_errors">
-                    <strong class="block text-red-600">Unfortunately, there were still the following validation
-                        errors:</strong>
-                    <div class="prose text-red-600">
+                    <strong class="block text-red-600">{{ __('Unfortunately, there were still the following validation errors:') }}</strong>
+                    <div class="text-red-600 prose">
                         <ul>
                             @foreach ($errors->all() as $message)
                             <li>{{ $message }}</li>

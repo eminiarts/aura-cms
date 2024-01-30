@@ -1,6 +1,11 @@
 @props(['field','model'])
 @php
-$show = app('aura')::checkCondition($model, $field);
+if($model) {
+    $show = app('aura')::checkCondition($model, $field);
+} else {
+    $show = true;
+}
+
 @endphp
 
 @if ($show)

@@ -16,3 +16,5 @@
 `table_before`
 `table_after`
 
+`post_edit_title_before`
+`post_edit_title_after`

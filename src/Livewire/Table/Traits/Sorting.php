@@ -22,7 +22,7 @@ trait Sorting
      * @param  \Illuminate\Database\Eloquent\Builder  $query
      * @return \Illuminate\Database\Eloquent\Builder
      */
-    public function applySorting($query)
+    protected function applySorting($query)
     {
         if ($this->sorts) {
             $query->getQuery()->orders = null;
@@ -63,6 +63,11 @@ trait Sorting
                 return $query;
             }
         }
+
+        $query->getQuery()->orders = null;
+
+        // default sort
+        $query->orderBy($this->model->getTable().'.'.$this->model->defaultTableSort(), $this->model->defaultTableSortDirection());
 
         return $query;
     }

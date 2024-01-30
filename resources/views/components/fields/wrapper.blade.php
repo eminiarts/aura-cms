@@ -7,6 +7,10 @@
 @php
     $label = optional($field)['name'];
 
+    if($label && is_string(__($label))) {
+        $label = __($label);
+    }
+
     // if the field is required, add a * to the label
     if (is_string(optional($field)['validation']) && str(optional($field)['validation'])->contains('required')) {
         $label .= '*';
@@ -20,7 +24,7 @@
 
 <div id="post-field-{{ $slug }}-wrapper"
         class="{{ $wrapperClass }}">
-        <style>
+        <style >
   #post-field-{{ $slug }}-wrapper {
     width: {{ optional(optional($field)['style'])['width'] ?? '100' }}%;
   }
@@ -31,7 +35,7 @@
     }
   }
 </style>
-  <div class="flex items-center justify-between">
+  <div class="flex justify-between items-center">
     @if ($label && $showLabel)
       <x-aura::fields.label :label="$label" />
     @endif

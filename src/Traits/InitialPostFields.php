@@ -25,7 +25,7 @@ trait InitialPostFields
                 $post->team_id = auth()->user()->current_team_id;
             }
 
-            if (! $post->type) {
+            if (! $post->type && ! $post::usesCustomTable()) {
                 $post->type = $post::$type;
             }
 

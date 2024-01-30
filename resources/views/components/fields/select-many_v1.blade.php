@@ -48,7 +48,6 @@ if(optional($field)['api']) {
 
          init() {
 
-            console.log(this.value, 'initial value');
             // Get Values via API Fetch Call to /api/fields/{field}/values and pass this.model and this.slug as params
             
                 if (this.api) {
@@ -64,7 +63,6 @@ if(optional($field)['api']) {
 
             this.$watch('value', () => {
                 this.$nextTick(() => {
-                   console.log('value changed', this.value);
 
                 this.value.forEach(value => {
                     if (!this.selectedItems.find(item => item.id === value)) {
@@ -72,7 +70,6 @@ if(optional($field)['api']) {
                     }
                 });
 
-                console.log(this.selectedItems);
                 });
 
             });
@@ -84,6 +81,7 @@ if(optional($field)['api']) {
             
             fetch('/admin/api/fields/values', {
                 method: 'POST',
+                credentials: 'include',
                 headers: {
                     'Content-Type': 'application/json',
                     'x-CSRF-TOKEN': this.csrf,
@@ -105,14 +103,11 @@ if(optional($field)['api']) {
                     {{-- this.$refs.listbox.dispatchEvent(new Event('alpine:init')); --}}
                 });
 
-                // refresh the alpinejs component
                 
             });
         },
 
         get filteredItems() {
-
-            
             // merge selectedItems with items
             var items = this.items;
             
@@ -120,9 +115,6 @@ if(optional($field)['api']) {
                 items = items.filter(item => item.title.toLowerCase().includes(this.search.toLowerCase()));
             }
             
-            console.log('search here');
-            console.log(this.search, items);
-
             // if this.items length is 0, return selectedItems
             if (items.length === 0) {
                 return this.selectedItems;
@@ -143,8 +135,6 @@ if(optional($field)['api']) {
             if (this.selectedItems.length === 0) {
                 return;
             }
-
-            console.log('selectedItem', id, this.selectedItems, this.selectedItems.find(item => item.id === id).title);
 
             return this.selectedItems.find(item => item.id === id).title;
         },
@@ -222,7 +212,6 @@ if(optional($field)['api']) {
             <template x-for="item in filteredItems" :key="item.id">
                 <li
                     x-listbox:option
-                    x-init="console.log('list', $listboxOption.$refs)"
                     :value="item.id"
                     :class="{
                         'bg-primary-500 hover:bg-primary-100': $listboxOption.isActive,

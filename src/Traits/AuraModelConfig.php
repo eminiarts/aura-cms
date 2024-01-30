@@ -5,7 +5,6 @@ namespace Eminiarts\Aura\Traits;
 use Eminiarts\Aura\ConditionalLogic;
 use Eminiarts\Aura\Models\Meta;
 use Eminiarts\Aura\Resources\Team;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 trait AuraModelConfig
@@ -16,9 +15,15 @@ trait AuraModelConfig
 
     public static $contextMenu = true;
 
+    public static $createEnabled = true;
+
     public static $customTable = false;
 
+    public static $editEnabled = true;
+
     public static $globalSearch = true;
+
+    public static bool $indexViewEnabled = true;
 
     public array $metaFields = [];
 
@@ -31,6 +36,8 @@ trait AuraModelConfig
     public array $taxonomyFields = [];
 
     public static bool $usesMeta = true;
+
+    public static $viewEnabled = true;
 
     public array $widgetSettings = [
         'default' => '30d',
@@ -83,42 +90,44 @@ trait AuraModelConfig
         $this->baseFillable = $this->getFillable();
 
         // Merge fillable fields from fields
-        $this->mergeFillable($this->getFieldSlugs()->toArray());
+        $this->mergeFillable($this->inputFieldsSlugs());
     }
 
     /**
      * @param  string  $key
      * @return mixed
      */
-    public function __get($key)
-    {
-        // // Title is a special case, for now
-        if ($key == 'title') {
-            return $this->getAttributeValue($key);
-        }
+    // public function __get($key)
+    // {
+    //     // // Title is a special case, for now
+    //     if ($key == 'title') {
+    //         return $this->getAttributeValue($key);
+    //     }
 
-        // Does not work atm
-        // if ($key == 'roles') {
-        //     return;
-        //     return $this->getRolesField();
-        // }
+    //     // Does not work atm
+    //     // if ($key == 'roles') {
+    //     //     return;
+    //     //     return $this->getRolesField();
+    //     // }
 
-        $value = parent::__get($key);
+    //     $value = parent::__get($key);
 
-        if ($value) {
-            return $value;
-        }
+    //     if ($value) {
+    //         return $value;
+    //     }
 
-        // ray()->count();
-        return $this->displayFieldValue($key, $value);
-    }
+    //     return $this->displayFieldValue($key, $value);
+    // }
 
     public function createUrl()
     {
         return route('aura.post.create', [$this->getType()]);
     }
 
-
+    public function createView()
+    {
+        return 'aura::livewire.post.create';
+    }
 
     public function display($key)
     {
@@ -145,6 +154,11 @@ trait AuraModelConfig
         }
     }
 
+    public function editHeaderView()
+    {
+        return 'aura::livewire.post.edit-header';
+    }
+
     public function editUrl()
     {
         if ($this->getType() && $this->id) {
@@ -152,14 +166,36 @@ trait AuraModelConfig
         }
     }
 
+    public function editView()
+    {
+        return 'aura::livewire.post.edit';
+    }
+
     public function getActions()
     {
-        return $this->actions;
+        if (method_exists($this, 'actions')) {
+            return $this->actions();
+        }
+
+        if (property_exists($this, 'actions')) {
+            return $this->actions;
+        }
     }
 
     public function getBaseFillable()
     {
         return $this->baseFillable;
+    }
+
+    public function getBulkActions()
+    {
+        if (method_exists($this, 'bulkActions')) {
+            return $this->bulkActions();
+        }
+
+        if (property_exists($this, 'bulkActions')) {
+            return $this->bulkActions;
+        }
     }
 
     public static function getContextMenu()
@@ -261,6 +297,11 @@ trait AuraModelConfig
         return $this->getIcon();
     }
 
+    public function indexView()
+    {
+        return 'aura::livewire.post.index';
+    }
+
     public function isAppResource()
     {
         return Str::startsWith(get_class($this), 'App');
@@ -279,7 +320,7 @@ trait AuraModelConfig
         }
 
         // If the key is in the fields, it is a meta field
-        if (in_array($key, $this->getAccessibleFieldKeys())) {
+        if (in_array($key, $this->inputFieldsSlugs())) {
             return true;
         }
     }
@@ -311,7 +352,7 @@ trait AuraModelConfig
     public function isTaxonomyField($key)
     {
         // Check if the Field is a taxonomy 'type' => 'Eminiarts\\Aura\\Fields\\Tags',
-        if (in_array($key, $this->getAccessibleFieldKeys())) {
+        if (in_array($key, $this->inputFieldsSlugs())) {
             $field = $this->fieldBySlug($key);
 
             // Atm only tags, refactor later
@@ -335,8 +376,12 @@ trait AuraModelConfig
      */
     public function meta()
     {
+        if (! $this->usesMeta()) {
+            return;
+        }
+
         return $this->hasMany(Meta::class, 'post_id');
-        //->whereIn('key', $this->getAccessibleFieldKeys())
+        //->whereIn('key', $this->inputFieldsSlugs())
     }
 
     public function navigation()
@@ -352,12 +397,23 @@ trait AuraModelConfig
             'route' => $this->getIndexRoute(),
             'dropdown' => $this->getDropdown(),
             'showInNavigation' => $this->getShowInNavigation(),
+            'badge' => $this->getBadge(),
+            'badgeColor' => $this->getBadgeColor(),
         ];
+    }
+
+    public function getBadge() {
+        return null;
+    }
+
+    public function getBadgeColor() {
+        return null;
     }
 
     public function pluralName()
     {
         return Str::plural($this->singularName());
+
         return __(static::$pluralName ?? Str::plural($this->singularName()));
     }
 
@@ -379,6 +435,17 @@ trait AuraModelConfig
     public function saveTaxonomyFields(array $taxonomyFields): void
     {
         $this->taxonomyFields = array_merge($this->taxonomyFields, $taxonomyFields);
+    }
+
+    public function scopeWhereInMeta($query, $field, $values)
+    {
+        if (! is_array($values)) {
+            $values = [$values];
+        }
+
+        return $query->whereHas('meta', function ($query) use ($field, $values) {
+            $query->where('key', $field)->whereIn('value', $values);
+        });
     }
 
     public function scopeWhereMeta($query, ...$args)
@@ -410,11 +477,6 @@ trait AuraModelConfig
         return static::$singularName ?? Str::title(static::$slug);
     }
 
-    public function tableView()
-    {
-        return 'aura::components.table.table';
-    }
-
     public function team()
     {
         return $this->belongsTo(Team::class);
@@ -423,7 +485,7 @@ trait AuraModelConfig
     public function title()
     {
         if (optional($this)->id) {
-            return $this->getType()." (#{$this->id})";
+            return __($this->getType())." (#{$this->id})";
         }
     }
 
@@ -442,10 +504,20 @@ trait AuraModelConfig
         return static::$title;
     }
 
+    public function viewHeaderView()
+    {
+        return 'aura::livewire.post.view-header';
+    }
+
     public function viewUrl()
     {
         if ($this->getType() && $this->id) {
             return route('aura.post.view', ['slug' => $this->getType(), 'id' => $this->id]);
         }
+    }
+
+    public function viewView()
+    {
+        return 'aura::livewire.post.view';
     }
 }

@@ -2,16 +2,19 @@
 
 namespace Eminiarts\Aura\Livewire\Table;
 
-use Livewire\Component;
-use Eminiarts\Aura\Resource;
-use Eminiarts\Aura\Models\User;
-use Livewire\Attributes\Computed;
-use Eminiarts\Aura\Livewire\Table\Traits\Search;
-use Eminiarts\Aura\Livewire\Table\Traits\Filters;
-use Eminiarts\Aura\Livewire\Table\Traits\Sorting;
+use Eminiarts\Aura\Facades\Aura;
 use Eminiarts\Aura\Livewire\Table\Traits\BulkActions;
-use Eminiarts\Aura\Livewire\Table\Traits\QueryFilters;
+use Eminiarts\Aura\Livewire\Table\Traits\Filters;
 use Eminiarts\Aura\Livewire\Table\Traits\PerPagePagination;
+use Eminiarts\Aura\Livewire\Table\Traits\QueryFilters;
+use Eminiarts\Aura\Livewire\Table\Traits\Search;
+use Eminiarts\Aura\Livewire\Table\Traits\Select;
+use Eminiarts\Aura\Livewire\Table\Traits\Settings;
+use Eminiarts\Aura\Livewire\Table\Traits\Sorting;
+use Eminiarts\Aura\Models\User;
+use Eminiarts\Aura\Resource;
+use Livewire\Component;
+use Livewire\Attributes\Computed;
 
 /**
  * Class Table
@@ -23,9 +26,13 @@ class Table extends Component
     use PerPagePagination;
     use QueryFilters;
     use Search;
+    use Select;
+    use Settings;
     use Sorting;
 
-    public $namespace;
+    public $model;
+
+    public $bulkActionsView = 'aura::components.table.bulkActions';
 
     /**
      * List of table columns.
@@ -40,6 +47,8 @@ class Table extends Component
      * @var bool
      */
     public $createInModal = false;
+
+    public $disabled;
 
     /**
      * Indicates if the Edit Component should be in a Modal.
@@ -73,12 +82,20 @@ class Table extends Component
      */
     public $lastClickedRow;
 
+    public $loaded = false;
+
     /**
      * The parent of the table.
      *
      * @var \Illuminate\Database\Eloquent\Model
      */
     public $parent;
+
+    public $post;
+
+    public $query;
+
+    public $rowIds;
 
     /**
      * Validation rules.
@@ -108,14 +125,14 @@ class Table extends Component
      */
     public $settings;
 
+    public $tableIndexView = 'aura::components.table.index';
+
     /**
      * The view of the table.
      *
      * @var string
      */
     public $tableView;
-
-    protected $queryString = ['selectedFilter'];
 
     /**
      * List of events listened to by the component.
@@ -126,7 +143,11 @@ class Table extends Component
         'refreshTable' => '$refresh',
         'selectedRows' => 'selectRows',
         'selectRowsRange' => 'selectRowsRange',
+        'refreshTableSelected' => 'refreshTableSelected',
+        'selectFieldRows',
     ];
+
+    protected $queryString = ['selectedFilter'];
 
     public function action($data)
     {
@@ -147,59 +168,9 @@ class Table extends Component
         }
     }
 
-    /**
-     * Handle bulk action on the selected rows.
-     */
-    public function bulkAction(string $action)
+    public function getAllTableRows()
     {
-        $this->selectedRowsQuery->each(function ($item, $key) use ($action) {
-            if (str_starts_with($action, 'callFlow.')) {
-                $item->callFlow(explode('.', $action)[1]);
-            } elseif (str_starts_with($action, 'multiple')) {
-                $posts = $this->selectedRowsQuery->get();
-                $item->{$action}($posts);
-            } elseif (method_exists($item, $action)) {
-                $item->{$action}();
-            }
-        });
-
-        $this->notify('Erfolgreich: '.$action);
-    }
-
-    public function openBulkActionModal($action, $data)
-    {
-        // ray($data, $this->selectedRowsQuery->get());
-
-        $this->dispatch('openModal', $data['modal'], [
-            'action' => $action,
-            'selected' => $this->selectedRowsQuery->get(),
-            'model' => get_class($this->model()),
-        ]);
-
-        // $dispatch('openModal', '{{ $data['modal'] }}', {{ json_encode(['action' => $action, 'selected' => $this->selectedRowsQuery->get()]) }})
-    }
-
-    #[Computed]
-    public function rowIds()
-    {
-        return $this->rows->pluck('id')->toArray();
-    }
-
-    /**
-         * Get the available bulk actions.
-         *
-         * @return mixed
-         */
-    #[Computed]
-    public function bulkActions()
-    {
-        return $this->model()->getBulkActions();
-    }
-
-    #[Computed]
-    public function page()
-    {
-        return $this->getPage();
+        return $this->rowsQuery->pluck('id')->all();
     }
 
     /**
@@ -244,10 +215,16 @@ class Table extends Component
     #[Computed]
     public function headers()
     {
-        $headers = $this->model()->getTableHeaders();
+        $headers = $this->settings['columns'];
 
-        if ($sort = auth()->user()->getOption('columns_sort.'.$this->model()->getType())) {
-            $headers = $headers->sortBy(function ($value, $key) use ($sort) {
+        if ($this->settings['sort_columns'] && $this->settings['sort_columns_key'] && $sort = Aura::getOption($this->settings['sort_columns_key'])) {
+            $headers = collect($headers)->sortBy(function ($value, $key) use ($sort) {
+                return array_search($key, $sort);
+            });
+        }
+
+        if ($this->settings['sort_columns'] && $this->settings['sort_columns_user_key'] && $sort = auth()->user()->getOption($this->settings['sort_columns_user_key'])) {
+            $headers = collect($headers)->sortBy(function ($value, $key) use ($sort) {
                 return array_search($key, $sort);
             });
         }
@@ -284,39 +261,22 @@ class Table extends Component
      *
      * @return mixed
      */
-    #[Computed]
-    public function rows()
-    {
-        return $this->rowsQuery->paginate(10);
-    }
-
-    /**
-     * Get query  for the table data
-     *
-     * @return \Illuminate\Database\Eloquent\Builder
-     */
-    #[Computed]
-    public function rowsQuery()
+    protected function rows()
     {
         $query = $this->model()->query()
             ->orderBy($this->model()->getTable().'.id', 'desc');
 
         if ($this->field && method_exists(app($this->field['type']), 'queryFor')) {
-            $query = app($this->field['type'])->queryFor($this->parent, $query, $this->field);
+            $query = app($this->field['type'])->queryFor($query, $this);
         }
 
-        if (method_exists($this->model(), 'indexQuery')) {
-            $query = $this->model()->indexQuery($query);
+        if (method_exists($this->model, 'indexQuery')) {
+            $query = $this->model->indexQuery($query, $this);
         }
 
-        // when model is instance Resource, eager load meta and taxonomies
-        if ($this->model() instanceof Resource) {
-            $query = $query->with(['meta', 'taxonomies']);
-        }
-
-        // Search
-        if ($this->search) {
-            $query = $this->applySearch($query);
+        // when model is instance Resource, eager load meta
+        if ($this->model->usesMeta()) {
+            $query = $query->with(['meta']);
         }
 
         if ($this->filters) {
@@ -324,7 +284,26 @@ class Table extends Component
             $query = $this->applyCustomFilter($query);
         }
 
-        return $this->applySorting($query);
+        // Search
+        if ($this->search) {
+            $query = $this->applySearch($query);
+        }
+
+        $query = $this->applySorting($query);
+
+        $query = $query->paginate(10);
+
+        return $query;
+    }
+
+    public function boot()
+    {
+        $this->rowIds = $this->rows()->pluck('id')->toArray();
+    }
+
+    public function loadTable()
+    {
+        $this->loaded = true;
     }
 
     public function mount($query = null)
@@ -335,11 +314,10 @@ class Table extends Component
 
         $this->dispatch('tableMounted');
 
-        $this->setTaxonomyFilters();
-
-
-        if($this->selectedFilter) {
-            $this->filters = $this->userFilters[$this->selectedFilter];
+        if ($this->selectedFilter) {
+            if (array_key_exists($this->selectedFilter, $this->userFilters)) {
+                $this->filters = $this->userFilters[$this->selectedFilter];
+            }
         }
 
         $this->query = $query;
@@ -353,8 +331,30 @@ class Table extends Component
         } else {
             $this->columns = $this->model()->getDefaultColumns();
         }
+
+        $this->initiateSettings();
+
+        $this->setTaxonomyFilters();
     }
 
+    public function openBulkActionModal($action, $data)
+    {
+        $this->dispatch('openModal', $data['modal'], [
+            'action' => $action,
+            'selected' => $this->selectedRowsQuery->pluck('id'),
+            'model' => get_class($this->model),
+        ]);
+    }
+
+    public function refreshTableSelected()
+    {
+        $this->selected = [];
+    }
+
+    public function getRows()
+    {
+        return $this->rows();
+    }
 
     /**
      * Render the component view.
@@ -365,7 +365,7 @@ class Table extends Component
     {
         return view('aura::livewire.table.table', [
             'parent' => $this->parent,
-            'data' => $this->rows,
+            'rows' => $this->rows(),
         ]);
     }
 
@@ -374,7 +374,10 @@ class Table extends Component
         $this->setPage(10);
     }
 
-
+    public function refreshRows() {
+        unset($this->rowsQuery);
+        unset($this->rows);
+    }
 
     /**
      * Reorder the table columns.
@@ -387,6 +390,14 @@ class Table extends Component
         auth()->user()->updateOption('columns_sort.'.$this->model()->getType(), $slugs);
     }
 
+    public function selectFieldRows($data)
+    {
+        if ($data['slug'] == $this->field['slug']) {
+
+            $this->selected = $data['value'];
+        }
+    }
+
     /**
      * Select a single row in the table.
      *
@@ -395,7 +406,6 @@ class Table extends Component
      */
     public function selectRow($id)
     {
-        ray('selectRow', $id);
         $this->selected = $id;
         $this->lastClickedRow = $id;
     }
@@ -419,7 +429,12 @@ class Table extends Component
 
     public function allTableRows()
     {
-        return $this->rowsQuery->pluck('id')->all();
+        return $this->rowsQuery()->pluck('id')->all();
+    }
+
+    public function updatedPage($page)
+    {
+        $this->rowIds = $this->rows()->pluck('id')->toArray();
     }
 
     /**
@@ -449,7 +464,9 @@ class Table extends Component
     #[Computed]
     public function model()
     {
-        return app($this->namespace);
+        // ray('hier', $this->model);
+
+        return $this->model;
     }
 
 }

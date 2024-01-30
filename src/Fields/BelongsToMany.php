@@ -12,8 +12,11 @@ class BelongsToMany extends Field
 
     // public $view = 'components.fields.hasmany';
 
-    public function queryFor($model, $query)
+    public function queryFor($query, $component)
     {
+        $field = $component->field;
+        $model = $component->model;
+
         if ($model instanceof \Eminiarts\Aura\Resources\User) {
             return $query->where('user_id', $model->id);
         }

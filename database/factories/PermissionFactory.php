@@ -2,6 +2,7 @@
 
 namespace Eminiarts\Aura\Database\Factories;
 
+use Eminiarts\Aura\Resources\Permission;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -9,6 +10,8 @@ use Illuminate\Database\Eloquent\Factories\Factory;
  */
 class PermissionFactory extends Factory
 {
+    protected $model = Permission::class;
+
     /**
      * Define the model's default state.
      *
@@ -20,13 +23,11 @@ class PermissionFactory extends Factory
             'title' => $name = $this->faker->name(),
             'name' => str($name)->slug(),
             'content' => $this->faker->paragraph(),
-            'type' => $this->faker->randomElement(['Post', 'Project', 'Invoice', 'Post', 'Post']),
+            'type' => 'Permission',
             'user_id' => 1,
             'parent_id' => null,
             'order' => null,
-            'fields' => [
-                'group' => $this->faker->randomElement(['Post', 'Project', 'Invoice', 'Post']),
-            ],
+            
         ];
     }
 }

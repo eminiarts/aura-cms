@@ -13,13 +13,13 @@ class Permission extends Resource
 
     protected static $dropdown = 'Users';
 
+    protected static ?string $group = 'Aura';
+
     protected static ?int $sort = 3;
 
     protected static bool $title = false;
 
     protected static string $type = 'Permission';
-
-    protected static ?string $group = 'Aura';
 
     public static function getFields()
     {

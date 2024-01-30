@@ -21,10 +21,13 @@ class MediaManager extends ModalComponent
         return '7xl';
     }
 
-    public function mount($slug, $selected)
+    public function mount($slug, $selected, $field)
     {
         $this->selected = $selected;
         $this->fieldSlug = $slug;
+
+        $this->field = json_decode($field, true);
+
     }
 
     public function render()

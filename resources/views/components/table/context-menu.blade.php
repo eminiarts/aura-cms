@@ -1,4 +1,4 @@
-@if($this->model->getContextMenu())
+@if($model->getContextMenu())
 <div @contextmenu="openContextMenu($event)" @click.away="closeContextMenu" @keydown.escape="closeContextMenu" x-data="{
             visible: false,
             currentRow: null,
@@ -54,14 +54,14 @@
 }">
 
 <div x-show="visible" x-ref="contextMenu"
-    class="absolute z-10 w-48 py-2 mt-1 bg-white rounded-md shadow-lg dark:bg-gray-800 ring-1 ring-black ring-opacity-5"
+    class="absolute z-10 py-2 mt-1 w-48 bg-white rounded-md ring-1 ring-black ring-opacity-5 shadow-lg dark:bg-gray-800"
     @click.away="closeContextMenu" x-cloak>
 
-    @can('update', $this->model)
+    @can('update', $model)
     <a href="#"
         class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700"
         @click="editAction">
-        <div class="flex items-center space-x-2">
+        <div class="flex justify-start items-center space-x-2">
             <div class="shrink-0">
                 <x-aura::icon icon="edit" size="xs" />
             </div>
@@ -70,11 +70,11 @@
     </a>
     @endcan
 
-    @can('view', $this->model)
+    @can('view', $model)
     <a href="#"
         class="block px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700"
         @click="viewAction">
-        <div class="flex items-center space-x-2">
+        <div class="flex justify-start items-center space-x-2">
             <div class="shrink-0">
                 <x-aura::icon icon="view" size="xs" />
             </div>
@@ -83,27 +83,26 @@
     </a>
     @endcan
 
-    @if(count($this->model->getActions()))
+    {{-- @if(count($model->getBulkActions()))
     <div class="border-t border-gray-100 dark:border-gray-700"></div>
-    @endif
 
-    @foreach($this->model->getActions() as $action => $label)
+    @foreach($model->getBulkActions() as $action => $label)
 
     <button @click="customAction('{{ $action }}')"
-        class="block w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700">
+        class="flex justify-start px-4 py-2 w-full text-sm font-medium text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700">
         @if(is_array($label))
         <div class="flex flex-col {{ $label['class'] ?? ''}}">
-            <div class="flex items-center space-x-2">
+            <div class="flex justify-start items-center space-x-2">
                 <div class="shrink-0">
                     {!! $label['icon'] ?? '' !!}
                     @if(optional($label)['icon-view'])
                     @include($label['icon-view'])
                     @endif
                 </div>
-                <span class="text-sm font-medium">{{ $label['label'] ?? '' }}
+                <span>{{ $label['label'] ?? '' }}
                     @if(optional($label)['description'])
                     <span
-                        class="inline-block text-sm font-normal leading-tight text-gray-500">{{ $label['description'] ?? '' }}</span>
+                        class="inline-block">{{ $label['description'] ?? '' }}</span>
                     @endif
                 </span>
             </div>
@@ -114,6 +113,9 @@
         @endif
     </button>
     @endforeach
+
+    @endif --}}
+
 </div>
  @else
 <div>

@@ -59,17 +59,7 @@ class PosttypeTestModel extends Post
 
 // Before each test, create a Superadmin and login
 beforeEach(function () {
-    // Create User
-    $this->actingAs($this->user = User::factory()->create());
-
-    // Create Team and assign to user
-    createSuperAdmin();
-
-    // Refresh User
-    $this->user = $this->user->refresh();
-
-    // Login
-    $this->actingAs($this->user);
+    $this->actingAs($this->user = createSuperAdmin());
 
     $appResource = new PosttypeTestModel();
 
@@ -87,7 +77,7 @@ it('can mount the posttype component', function () {
 it('can add new tab', function () {
     Livewire::test(PosttypeFake::class, ['slug' => 'Model'])
         ->call('addNewTab')
-        ->assertEmitted('openSlideOver');
+        ->assertDispatched('openSlideOver');
 });
 
 it('current posttype fields', function () {

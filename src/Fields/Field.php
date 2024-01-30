@@ -28,7 +28,7 @@ class Field implements Wireable
 
     public function component()
     {
-        if ($this->view && is_string(request()->route()->action['uses']) && str(request()->route()->action['uses'])->contains(View::class)) {
+        if ($this->view && is_string(request()->route()->action['uses']) && str(request()->route()->action['uses'])->contains('View')) {
             return $this->view;
         }
 
@@ -37,6 +37,10 @@ class Field implements Wireable
 
     public function display($field, $value, $model)
     {
+        if (optional($field)['display_view']) {
+            return view($field['display_view'], ['row' => $model, 'field' => $field])->render();
+        }
+
         return $value;
     }
 
@@ -259,9 +263,23 @@ class Field implements Wireable
         ];
     }
 
+    public function isDisabled($model, $field)
+    {
+        if (optional($field)['disabled'] instanceof \Closure) {
+            return $field['disabled']($model);
+        }
+
+        return $field['disabled'] ?? false;
+    }
+
     public function isInputField()
     {
         return in_array($this->type, ['input', 'repeater', 'group']);
+    }
+
+    public function isRelation()
+    {
+        return in_array($this->type, ['relation']);
     }
 
     public function isTaxonomyField()

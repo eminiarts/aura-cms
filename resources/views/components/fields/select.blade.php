@@ -2,15 +2,25 @@
   <div class="relative">
 
     <select
+
+      @if($disabled = $field['field']->isDisabled($this->post, $field))
+      disabled
+      @endif
       @if(optional($field)['defer'] === false)
       wire:model.debounce.200ms="post.fields.{{ optional($field)['slug'] }}"
       @else
       wire:model="post.fields.{{ optional($field)['slug'] }}"
       @endif
 
-    error="post.fields.{{ optional($field)['slug'] }}" name="post_fields_{{ optional($field)['slug'] }}" id="post_fields_{{ optional($field)['slug'] }}" class="block w-full px-3 py-2 pl-3 pr-10 mt-1 text-base bg-white rounded-lg shadow-xs appearance-none border-gray-500/30 focus:border-primary-300 focus:outline-none ring-gray-900/10 focus:ring focus:ring-primary-300 focus:ring-opacity-50 dark:focus:ring-primary-500 dark:focus:ring-opacity-50 dark:bg-gray-900 dark:border-gray-700 sm:text-sm">
+    error="post.fields.{{ optional($field)['slug'] }}" name="post_fields_{{ optional($field)['slug'] }}" id="post_fields_{{ optional($field)['slug'] }}" class="block w-full px-3 py-2 pl-3 pr-10 mt-1 text-base bg-white rounded-lg shadow-xs appearance-none border-gray-500/30 focus:border-primary-300 focus:outline-none ring-gray-900/10 focus:ring focus:ring-primary-300 focus:ring-opacity-50 dark:focus:ring-primary-500 dark:focus:ring-opacity-50 dark:bg-gray-900 dark:border-gray-700 sm:text-sm disabled:cursor-not-allowed disabled:opacity-75 disabled:bg-gray-100 disabled:dark:bg-gray-800">
 
+    @if(optional($field)['placeholder'])
+    <option  value="">{{ optional($field)['placeholder'] }}</option>
+    @else
     <option  value="">Select {{ optional($field)['name'] }}...</option>
+    @endif
+
+
 
       @php
         $optionGroup = false;
@@ -36,7 +46,7 @@
 
             {{-- if key and values are set on the option, show it --}}
             @if (is_array($option))
-              <option value="{{ $option['key'] }}">{{ $option['value'] }}</option>
+              <option value="{{ $option['value'] }}">{{ $option['name'] }}</option>
             @else
 
             <option value="{{ $key }}">{{ $option }}</option>

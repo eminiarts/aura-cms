@@ -3,10 +3,13 @@
 namespace Eminiarts\Aura\Fields;
 
 use Aura\Flows\Resources\Operation;
+use Eminiarts\Aura\Models\Meta;
 
 class HasMany extends Field
 {
     public $component = 'aura::fields.has-many';
+
+    public $view = 'aura::fields.has-many-view';
 
     public bool $group = false;
 
@@ -14,26 +17,64 @@ class HasMany extends Field
 
     // public $view = 'components.fields.hasmany';
 
-    public function queryFor($model, $query, $field)
+    public function relationship($model, $field)
     {
-        // ray('hier', $model, $query, $field);
+        // If it's a meta field
+        if ($model->usesMeta()) {
+            return $model->hasManyThrough(
+                $field['resource'],
+                Meta::class,
+                'value',     // Foreign key on the post_meta table
+                'id',        // Foreign key on the reviews table
+                'id',        // Local key on the products table
+                'post_id'    // Local key on the post_meta table
+            )->where('post_meta.key', $field['relation']);
+        }
+
+        return $model->hasMany($field['resource'], $field['relation']);
+    }
+
+    public function get($model, $field)
+    {
+        // ray($field, $model);
+
+        $relationshipQuery = $this->relationship($model, $field);
+
+        return $relationshipQuery->get();
+    }
+
+    public function queryFor($query, $component)
+    {
+
+        $field = $component->field;
+        $model = $component->model;
+
+        if (optional($component)->parent) {
+            $field = $component->parent->fieldBySlug($field['slug']);
+            $model = $component->parent;
+        }
 
         // if $field['relation'] is set, check if meta with key $field['relation'] exists, apply whereHas meta to the query
 
         // if optional($field)['relation'] is closure
         if (is_callable(optional($field)['relation'])) {
-            // dd('closure', $model, $query, $field);
             return $field['relation']($query, $model);
         }
 
-        if (optional($field)['relation']) {
-            return $query->whereHas('meta', function ($query) use ($field) {
-                $query->where('key', $field['relation']);
-            });
+        // ray($component->field);
+
+        if (optional($component->field)['relation']) {
+
+            if ($model->id) {
+                return $query->whereHas('meta', function ($query) use ($field, $model) {
+                    $query->where('key', $field['relation'])
+                        ->where('value', $model->id);
+                });
+            }
         }
 
         if ($model instanceof \Eminiarts\Aura\Resources\User) {
-            return $query->where('user_id', $model->id);
+            return $query;
         }
 
         if ($model instanceof \Eminiarts\Aura\Resources\Team) {

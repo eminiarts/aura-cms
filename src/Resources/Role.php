@@ -27,8 +27,6 @@ class Role extends Resource
 
     public static $globalSearch = false;
 
-    protected static ?string $group = 'Aura';
-
     public static ?string $slug = 'role';
 
     public static ?int $sort = 2;
@@ -37,16 +35,13 @@ class Role extends Resource
 
     protected static $dropdown = 'Users';
 
+    protected static ?string $group = 'Aura';
+
     protected $with = ['meta'];
 
     public function createMissingPermissions()
     {
         GenerateAllResourcePermissions::dispatch();
-    }
-
-    public function delete()
-    {
-        dd('delete');
     }
 
     public static function getFields()
@@ -68,7 +63,7 @@ class Role extends Resource
                 'slug' => 'name',
                 'type' => 'Eminiarts\\Aura\\Fields\\Text',
                 'validation' => 'required',
-                'on_index' => false,
+                'on_index' => true,
                 'style' => [
                     'width' => '100',
                 ],
@@ -132,6 +127,17 @@ class Role extends Resource
     public function meta()
     {
         return $this->hasMany(Meta::class, 'post_id');
+    }
+
+    public function title()
+    {
+        if (isset($this->title)) {
+            return $this->title." (#{$this->id})";
+        } elseif (isset($this->name)) {
+            return $this->name." (#{$this->id})";
+        } else {
+            return "Role (#{$this->id})";
+        }
     }
 
     public function users()

@@ -33,8 +33,6 @@ class EditPosttypeField extends Component
         $this->post['fields'] = $params['field'];
         $this->field = $params['field'];
 
-        ray('params', $params);
-
         // Check if field is an input field
         if (app($this->field['type'])->isInputField()) {
             // if $this->post['fields']['on_index'] is not set, set it to true (default)
@@ -87,8 +85,6 @@ class EditPosttypeField extends Component
 
         $this->field = $field;
         $this->post['fields'] = $field;
-        ray('newFields', $field, $this->field, $this->post['fields']);
-
         $this->updatedField();
 
         // $this->dispatch('refreshComponent');
@@ -106,23 +102,21 @@ class EditPosttypeField extends Component
         ]);
 
         $rules['post.fields.slug'] = [
-                'required',
-                function ($attribute, $value, $fail) {
-                    if (collect($this->post['fields'])->pluck('slug')->duplicates()->values()->contains($value)) {
-                        $fail('The '.$attribute.' can not be used twice.');
-                    }
+            'required',
+            function ($attribute, $value, $fail) {
+                if (collect($this->post['fields'])->pluck('slug')->duplicates()->values()->contains($value)) {
+                    $fail('The '.$attribute.' can not be used twice.');
+                }
 
-                    // check if slug is a reserved word with "in_array"
-                    if (in_array($value, $this->reservedWords)) {
-                        $fail('The '.$attribute.' can not be a reserved word.');
-                    }
-                },
-            ];
+                // check if slug is a reserved word with "in_array"
+                if (in_array($value, $this->reservedWords)) {
+                    $fail('The '.$attribute.' can not be a reserved word.');
+                }
+            },
+        ];
 
         return $rules;
     }
-
-
 
     public function save()
     {
@@ -144,7 +138,6 @@ class EditPosttypeField extends Component
     {
         // if $this->field is undefined, return
         if (! isset($this->field['type'])) {
-            ray('no type');
 
             return;
         }

@@ -70,6 +70,8 @@ trait SaveFields
 
         file_put_contents($a->getFileName(), $replaced);
 
+        // sleep(3);
+
         $this->notify('Saved successfully.');
     }
 
@@ -110,7 +112,7 @@ trait SaveFields
 
             if ($key == 'icon') {
                 // dump($replacements[$key]);
-                $replaced = preg_replace($pattern, strip_tags($replacements[$key], '<a><altGlyph><altGlyphDef><altGlyphItem><animate><animateColor><animateMotion><animateTransform><circle><clipPath><color-profile><cursor><defs><desc><ellipse><feBlend><feColorMatrix><feComponentTransfer><feComposite><feConvolveMatrix><feDiffuseLighting><feDisplacementMap><feDistantLight><feFlood><feFuncA><feFuncB><feFuncG><feFuncR><feGaussianBlur><feImage><feMerge><feMergeNode><feMorphology><feOffset><fePointLight><feSpecularLighting><feSpotLight><feTile><feTurbulence><filter><font><font-face><font-face-format><font-face-name><font-face-src><font-face-uri><foreignObject><g><glyph><glyphRef><hkern><image><line><linearGradient><marker><mask><metadata><missing-glyph><mpath><path><pattern><polygon><polyline><radialGradient><rect><set><stop><style><svg><switch><symbol><text><textPath><title><tref><tspan><use><view><vkern>'), $replaced);
+                $replaced = preg_replace($pattern, strip_tags($replacements[$key], '<a><altGlyph><altGlyphDef><altGlyphItem><animate><animateColor><animateMotion><animateTransform><circle><clipPath><color-profile><cursor><defs><desc><ellipse><feBlend><feColorMatrix><feComponentTransfer><feComposite><feConvolveMatrix><feDiffuseLighting><feDisplacementMap><feDistantLight><feFlood><feFuncA><feFuncB><feFuncG><feFuncR><feGaussianBlur><feImage><feMerge><feMergeNode><feMorphology><feOffset><fePointLight><feSpecularLighting><feSpotLight><feTile><feTurbulence><filter><font><font-face><font-face-format><font-face-name><font-face-src><font-face-uri><foreignObject><g><glyph><glyphRef><hkern><image><line><linearGradient><marker><mask><metadata><missing-glyph><mpath><path><pattern><polygon><polyline><radialGradient><rect><set><stop><style nonce="{{ csp_nonce() }}"><svg><switch><symbol><text><textPath><title><tref><tspan><use><view><vkern>'), $replaced);
 
                 continue;
             }
@@ -156,23 +158,25 @@ trait SaveFields
         // Run "pint" on the migration file
         exec('./vendor/bin/pint '.$a->getFileName());
 
-        $this->notify('Saved Props successfully.');
+        sleep(1);
+
+        // $this->notify('Saved Props successfully.');
     }
 
-     public function setKeysToFields($fields)
-     {
-         $group = null;
+    public function setKeysToFields($fields)
+    {
+        $group = null;
 
-         return $fields;
+        return $fields;
 
-         return collect($fields)->mapWithKeys(function ($item, $key) use (&$group) {
-             if (app($item['type'])->group) {
-                 $group = $item['slug'];
+        return collect($fields)->mapWithKeys(function ($item, $key) use (&$group) {
+            if (app($item['type'])->group) {
+                $group = $item['slug'];
 
-                 return [$item['slug'] => $item];
-             }
+                return [$item['slug'] => $item];
+            }
 
-             return [$group.'.'.$item['slug'] => $item];
-         })->toArray();
-     }
+            return [$group.'.'.$item['slug'] => $item];
+        })->toArray();
+    }
 }
