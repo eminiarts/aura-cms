@@ -1,5 +1,4 @@
 @props(['key' => 'slideover'])
-
 <div x-data="{ open: @entangle('open'), key: '{{ $key }}', init() {
     Livewire.on('openSlideOver', (data) => {
         console.log('open slide over', data);
@@ -17,7 +16,6 @@
     <div
         x-show="open"
         style="display: none"
-        
         x-on:keydown.escape.prevent.stop="open = false"
         role="dialog"
         aria-modal="true"
