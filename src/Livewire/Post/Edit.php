@@ -109,7 +109,7 @@ class Edit extends Component
 
         // foreach fields, call the hydration method on the field
 
-        // dd('mount', $this->post, $this->model);
+        ray('mount', $this->post, $this->model);
 
         // Set on model instead of here
         // if $this->post['terms']['tag'] is not set, set it to null
@@ -135,6 +135,9 @@ class Edit extends Component
         return Arr::dot([
             'post.terms' => '',
             'post.fields' => $this->model->validationRules(),
+            'post.fields.variations.*.name' => '',
+            'post.fields.variations.*.price' => '',
+            'post.fields.variations.*.value' => '',
         ]);
     }
 

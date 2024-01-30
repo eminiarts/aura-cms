@@ -8,7 +8,7 @@ class Repeater extends Field
 
     public bool $group = true;
 
-    public string $type = 'repeater';
+    public string $type = 'input';
 
     // public bool $showChildrenOnIndex = false;
     // TODO: $showChildrenOnIndex should be applied to children
