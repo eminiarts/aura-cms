@@ -116,9 +116,11 @@
               </x-aura::tippy>
 
               <x-aura::tippy text="Edit field">
-                <x-aura::button.border size="xs" wire:click="$dispatch('openSlideOver', { component: 'edit-field', parameters: { fieldSlug: '{{ $field['slug'] }}', slug: '{{ $slug }}', field: '{{ addslashes(json_encode($this->sendField($field['slug']))) }}' } })">
+                <div wire:click="$dispatch('openSlideOver', { component: 'edit-field', parameters: { fieldSlug: '{{ $field['slug'] }}', slug: '{{ $slug }}', field: @js($this->sendField($field['slug'])) }})">
+                <x-aura::button.border size="xs">
                     <x-aura::icon.edit class="w-4 h-4" />
                 </x-aura::button.border>
+                </div>
               </x-aura::tippy>
           </div>
         </div>
