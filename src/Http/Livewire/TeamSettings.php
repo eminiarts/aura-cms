@@ -114,6 +114,11 @@ class TeamSettings extends Component
                 ],
             ],
             [
+                'type' => 'Eminiarts\\Aura\\Fields\\Tab',
+                'name' => 'Color Theme',
+                'slug' => 'tab-primary-colors-theme',
+            ],
+            [
                 'name' => 'Primary Color Palette',
                 'type' => 'Eminiarts\\Aura\\Fields\\Select',
                 'options' => [
@@ -150,13 +155,11 @@ class TeamSettings extends Component
                 'type' => 'Eminiarts\\Aura\\Fields\\Tab',
                 'name' => 'Custom Colors',
                 'slug' => 'tab-primary-colors-lightmode',
-                'conditional_logic' => [
-                    [
-                        'field' => 'color-palette',
-                        'operator' => '==',
-                        'value' => 'custom',
-                    ],
-                ],
+                'conditional_logic' => function($model, $post) {
+                    if($post && $post['fields'] && $post['fields']['color-palette']) {
+                        return $post['fields']['color-palette'] == 'custom';
+                    }
+                },
             ],
             [
                 'name' => 'Primary 25',
@@ -255,6 +258,12 @@ class TeamSettings extends Component
                     'width' => '33',
                 ],
             ],
+
+            [
+                'type' => 'Eminiarts\\Aura\\Fields\\Tab',
+                'name' => 'Gray Colors',
+                'slug' => 'tab-primary-gray-colors-theme',
+            ],
             [
                 'name' => 'Gray Color Palette',
                 'type' => 'Eminiarts\\Aura\\Fields\\Select',
@@ -271,18 +280,18 @@ class TeamSettings extends Component
                 ],
                 'slug' => 'gray-color-palette',
             ],
+
             [
                 'type' => 'Eminiarts\\Aura\\Fields\\Tab',
                 'name' => 'Custom Colors',
-                'slug' => 'tab-primary-colors-lightmode',
-                'conditional_logic' => [
-                    [
-                        'field' => 'gray-color-palette',
-                        'operator' => '==',
-                        'value' => 'custom',
-                    ],
-                ],
+                'slug' => 'tab-gray-colors-custom-tab',
+                'conditional_logic' => function($model, $post) {
+                    if($post && $post['fields'] && $post['fields']['gray-color-palette']) {
+                        return $post['fields']['gray-color-palette'] == 'custom';
+                    }
+                },
             ],
+
             [
                 'name' => 'Gray 25',
                 'type' => 'Eminiarts\\Aura\\Fields\\Color',
@@ -410,6 +419,7 @@ class TeamSettings extends Component
             'value' => $valueString,
         ]);
 
+
         if (is_string($this->model->value)) {
             $this->post['fields'] = json_decode($this->model->value, true);
             // set default values of fields if not set to null
@@ -417,8 +427,13 @@ class TeamSettings extends Component
                 return [$field['slug'] => $this->post['fields'][$field['slug']] ?? null];
             })->toArray();
         } else {
-            $this->post['fields'] = $this->model->value;
+            $this->post['fields'] = $this->inputFields()->mapWithKeys(function ($field) {
+                return [$field['slug'] => $this->model->value[$field['slug']] ?? ''];
+            })->toArray();
+
         }
+
+        // dd($this->model, $this->model->value, $this->inputFields(), $this->post['fields']);
 
         // dd($this->post['fields'], $this->model->value);
     }
@@ -440,7 +455,7 @@ class TeamSettings extends Component
         // Save Fields as team-settings in Option table
         $option = 'team-settings';
 
-        // $value = json_encode($this->post['fields']);
+        $value = json_encode($this->post['fields']);
         // dd($value);
 
         $o = Option::updateOrCreate(['name' => $option], ['value' => $this->post['fields']]);
