@@ -19,6 +19,17 @@
         </div>
     @else
 
+
+        @once
+        @push('styles')
+                <link rel="stylesheet" href="/js/pickr/nano.min.css"/> <!-- 'nano' theme -->
+        @endpush
+
+        @push('scripts')
+                <script src="/js/pickr/pickr.min.js"></script>
+        @endpush
+    @endonce
+    
     <div wire:ignore class="flex items-center"
         x-data="{
             selectedColor: $wire.entangle('post.fields.{{ optional($field)['slug'] }}').defer,
@@ -168,14 +179,4 @@
         }
     </style>
 
-@push('styles')
-    @once
-        <link rel="stylesheet" href="/js/pickr/nano.min.css"/> <!-- 'nano' theme -->
-    @endonce
-@endpush
 
-@push('scripts')
-    @once
-        <script src="/js/pickr/pickr.min.js"></script>
-    @endonce
-@endpush
