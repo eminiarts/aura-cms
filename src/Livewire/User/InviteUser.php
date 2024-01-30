@@ -15,7 +15,12 @@ class InviteUser extends ModalComponent
     use AuthorizesRequests;
     use InputFields;
 
-    public $post;
+    public $post = [
+        'fields' => [
+            'email' => '',
+            'role' => '',
+        ],
+    ];
 
     public static function getFields()
     {
