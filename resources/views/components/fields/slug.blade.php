@@ -22,8 +22,8 @@
                     .replace(/[\u0300-\u036f]/g, '')
                     .toLowerCase()
                     .trim()
-                    .replace(/[\s\W-]+/g, '-')
-                    .replace(/&/g, '-and-')
+                    .replace(/[\s\W-]+/g, '_')
+                    .replace(/&/g, '_and_')
             },
 
             slugifyTyping (value) {
@@ -32,16 +32,23 @@
                     .normalize('NFD')
                     .replace(/[\u0300-\u036f]/g, '')
                     .toLowerCase()
-                    .replace(/[\s\W-]+/g, '-')
+                    .replace(/[\s\W-]+/g, '_')
                     .trim()
-                    .replace(/&/g, '-and-')
+                    .replace(/&/g, '_and_')
+            },
+
+            toggleCustom() {
+                this.custom = ! this.custom;
+
+                if (!this.custom) {
+                    const basedOn = document.getElementById('post-field-{{ optional($field)['based_on'] }}')
+                    this.value = this.slugify(basedOn.value);
+                }
             },
 
             init () {
                 // get the element of id post-field-based_on
                 const basedOn = document.getElementById('post-field-{{ optional($field)['based_on'] }}')
-
-                console.log('basedOn', basedOn, 'value', this.value, 'post-field-{{ optional($field)['based_on'] }}');
 
                 if (this.value != this.slugify(basedOn.value) && basedOn.value != '') {
                     this.custom = true
@@ -49,16 +56,15 @@
 
                 if (! this.custom) {
                     this.value = this.slugify(basedOn.value)
-                    $dispatch('input', this.value);
+                    $dispatch('input', { value: this.value });
                 } else {
                 }
                 // watch the element for changes of the value
                 basedOn.addEventListener('input', (event) => {
                     // if the custom value is not set, update the value
-                    console.log('change', event.target.value, this.custom);
                     if (! this.custom) {
                         this.value = this.slugify(event.target.value)
-                        $dispatch('input', this.value);
+                        $dispatch('input', { value: this.value });
                     }
                 })
 
@@ -79,7 +85,7 @@
         </div>
 
         <div class="flex flex-col">
-            <button x-ref="toggle" @click="custom = ! custom" type="button" role="switch" :aria-checked="custom"
+            <button x-ref="toggle" @click="toggleCustom()" type="button" role="switch" :aria-checked="custom"
                 :aria-labelledby="$id('boolean')"
                 :class="custom ? 'bg-primary-600 border border-primary-900/50 dark:border-gray-900' : 'bg-gray-300 shadow-inner border border-gray-500/30'"
                 class="relative inline-flex px-0 py-1 rounded-full w-14">

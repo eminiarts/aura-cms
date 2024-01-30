@@ -15,6 +15,6 @@ class TypeScope implements Scope
      */
     public function apply(Builder $builder, Model $model)
     {
-        return $builder->where('type', $model::getType());
+        return $builder->where('posts.type', $model::getType());
     }
 }

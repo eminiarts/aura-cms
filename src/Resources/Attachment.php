@@ -22,7 +22,7 @@ class Attachment extends Resource
 
     public static string $type = 'Attachment';
 
-    protected static ?string $group = 'Aura';
+    protected static ?string $group = 'Admin';
 
     public function defaultPerPage()
     {
@@ -32,6 +32,20 @@ class Attachment extends Resource
     public function defaultTableView()
     {
         return 'grid';
+    }
+
+    public function filePath($size = null)
+    {
+        // Base storage directory
+        $basePath = storage_path('app/public');
+
+        if ($size) {
+            $relativePath = Str::after($this->url, 'media/');
+
+            return $basePath.'/'.$size.'/'.$relativePath;
+        }
+
+        return $basePath.'/'.$this->url;
     }
 
     public static function getFields()
@@ -68,6 +82,7 @@ class Attachment extends Resource
                 'type' => 'Eminiarts\\Aura\\Fields\\Text',
                 'validation' => 'required',
                 'on_index' => true,
+                'searchable' => true,
                 'slug' => 'name',
                 'style' => [
                     'width' => '100',
@@ -76,6 +91,7 @@ class Attachment extends Resource
             [
                 'name' => 'Url',
                 'type' => 'Eminiarts\\Aura\\Fields\\ViewValue',
+                'searchable' => true,
                 'validation' => 'required',
                 'on_index' => true,
                 'slug' => 'url',
@@ -98,6 +114,7 @@ class Attachment extends Resource
                 'name' => 'Mime Type',
                 'type' => 'Eminiarts\\Aura\\Fields\\ViewValue',
                 'validation' => 'required',
+                'searchable' => true,
                 'on_index' => true,
                 'slug' => 'mime_type',
                 'style' => [
@@ -114,36 +131,36 @@ class Attachment extends Resource
                     'width' => '33',
                 ],
             ],
-            [
-                'name' => 'Created at',
-                'slug' => 'created_at',
-                'type' => 'Eminiarts\\Aura\\Fields\\Date',
-                'validation' => '',
-                'enable_time' => true,
-                'conditional_logic' => [],
-                'wrapper' => '',
-                'on_index' => true,
-                'on_forms' => true,
-                'on_view' => true,
-                'style' => [
-                    'width' => '50',
-                ],
-            ],
-            [
-                'name' => 'Updated at',
-                'slug' => 'updated_at',
-                'type' => 'Eminiarts\\Aura\\Fields\\Date',
-                'validation' => '',
-                'conditional_logic' => [],
-                'wrapper' => '',
-                'enable_time' => true,
-                'on_index' => true,
-                'on_forms' => true,
-                'on_view' => true,
-                'style' => [
-                    'width' => '50',
-                ],
-            ],
+            // [
+            //     'name' => 'Created at',
+            //     'slug' => 'created_at',
+            //     'type' => 'Eminiarts\\Aura\\Fields\\Date',
+            //     'validation' => '',
+            //     'enable_time' => true,
+            //     'conditional_logic' => [],
+            //     'wrapper' => '',
+            //     'on_index' => true,
+            //     'on_forms' => true,
+            //     'on_view' => true,
+            //     'style' => [
+            //         'width' => '50',
+            //     ],
+            // ],
+            // [
+            //     'name' => 'Updated at',
+            //     'slug' => 'updated_at',
+            //     'type' => 'Eminiarts\\Aura\\Fields\\Date',
+            //     'validation' => '',
+            //     'conditional_logic' => [],
+            //     'wrapper' => '',
+            //     'enable_time' => true,
+            //     'on_index' => true,
+            //     'on_forms' => true,
+            //     'on_view' => true,
+            //     'style' => [
+            //         'width' => '50',
+            //     ],
+            // ],
         ];
     }
 
@@ -239,7 +256,11 @@ class Attachment extends Resource
         if ($size) {
             $url = Str::after($this->url, 'media/');
 
-            return asset('storage/'.$size.'/'.$url);
+            $assetPath = 'storage/'.$size.'/'.$url;
+
+            if (file_exists(public_path($assetPath))) {
+                return asset($assetPath);
+            }
         }
 
         return asset('storage/'.$this->url);
@@ -275,6 +296,13 @@ class Attachment extends Resource
     protected static function booted()
     {
         parent::booted();
+
+        // when model saved and status is "eingang" and doctor_id is set, change status to "erstellt"
+        // static::creating(function ($model) {
+        //     if (! $model->team_id) {
+        //         $model->team_id = 1;
+        //     }
+        // });
 
         static::saved(function (Attachment $attachment) {
             // Check if the attachment has a file

@@ -14,7 +14,7 @@ use Laravel\Fortify\Fortify;
 use Laravel\Fortify\TwoFactorAuthenticationProvider;
 use PragmaRX\Google2FA\Google2FA;
 
-class FortifyServiceProvider extends ServiceProvider
+class AuthServiceProvider extends ServiceProvider
 {
     /**
      * Bootstrap any application services.
@@ -47,7 +47,7 @@ class FortifyServiceProvider extends ServiceProvider
         // Set Configuration of fortify.features to [registration, email-verification and two-factor-authentication]
         app('config')->set('fortify.features', [
             //Features::registration(),
-            //Features::emailVerification(),
+            Features::emailVerification(),
             Features::twoFactorAuthentication([
                 'confirm' => true,
                 'confirmPassword' => true,

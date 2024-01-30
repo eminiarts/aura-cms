@@ -2,7 +2,10 @@
 
 namespace Eminiarts\Aura\Livewire\Table\Traits;
 
+use Illuminate\Support\Str;
 use Livewire\Attributes\Computed;
+
+use Livewire\Attributes\Reactive;
 use Illuminate\Support\Facades\Cache;
 
 /**
@@ -15,6 +18,7 @@ trait Filters
      *
      * @var array
      */
+    // #[Reactive] 
     public $filters = [
         'taxonomy' => [],
         'custom' => [],
@@ -48,6 +52,12 @@ trait Filters
         ];
     }
 
+    public function clearFiltersCache()
+    {
+        auth()->user()->clearCachedOption($this->model->getType().'.filters.*');
+        auth()->user()->currentTeam->clearCachedOption($this->model->getType().'.filters.*');
+    }
+
     /**
      * Delete a filter.
      *
@@ -57,7 +67,11 @@ trait Filters
     public function deleteFilter($filterName)
     {
         // Retrieve the filter using the provided key
-        $filter = $this->userFilters[$filterName];
+        $filter = $this->userFilters[$filterName] ?? null;
+
+        if (! $filter) {
+            throw new \InvalidArgumentException('Invalid filter name: '.$filterName);
+        }
 
         // dd('delete', $filterName, $filter, $this->userFilters);
 
@@ -72,7 +86,7 @@ trait Filters
                 break;
             default:
                 // Handle unexpected type value
-                throw new \InvalidArgumentException("Invalid filter type: " . $filter['type']);
+                throw new \InvalidArgumentException('Invalid filter type: '.$filter['type']);
         }
 
         $this->notify('Success: Filter deleted!');
@@ -84,7 +98,6 @@ trait Filters
         //$this->reset('userFilters');
 
         $this->reset('selectedFilter');
-        $this->setTaxonomyFilters();
 
         // Refresh userFilters
         $this->userFilters = $this->getUserFilters();
@@ -125,12 +138,14 @@ trait Filters
         // Add 'type' => 'user' to each user filter
         $userFilters = $userFilters->map(function ($filter) {
             $filter['type'] = 'user';
+
             return $filter;
         });
 
         // Add 'type' => 'team' to each team filter
         $teamFilters = $teamFilters->map(function ($filter) {
             $filter['type'] = 'team';
+
             return $filter;
         });
 
@@ -138,19 +153,12 @@ trait Filters
         return collect($userFilters)->merge($teamFilters)->toArray();
     }
 
-
-    public function clearFiltersCache()
-    {
-        auth()->user()->clearCachedOption($this->model->getType().'.filters.*');
-        auth()->user()->currentTeam->clearCachedOption($this->model->getType().'.filters.*');
-    }
-
     /**
-         * Remove a custom filter.
-         *
-         * @param  int  $index
-         * @return void
-         */
+     * Remove a custom filter.
+     *
+     * @param  int  $index
+     * @return void
+     */
     public function removeCustomFilter($index)
     {
         unset($this->filters['custom'][$index]);
@@ -169,6 +177,17 @@ trait Filters
     }
 
     /**
+    * Set taxonomy filters.
+    */
+    public function setTaxonomyFilters()
+    {
+        $this->filters['taxonomy'] = $this->model?->taxonomyFields()
+            ->values()
+            ->mapWithKeys(fn ($field) => [$field['slug'] => []])
+            ->toArray();
+    }
+
+    /**
      * Save the selected filter.
      *
      * Validate the filter name is required, save the filter per user, and set the selected filter.
@@ -182,37 +201,31 @@ trait Filters
             'filter.icon' => '',
         ]);
 
-        $newFilter = array_merge($this->filter, $this->filters);
+        $newFilter = array_merge($this->filters, $this->filter);
+
+        // ray($newFilter)->green();
+        // ray($this->filter, $this->filters)->red();
 
         if ($this->filters) {
 
             // Save for Team
-            if($this->filter['global']) {
-                auth()->user()->currentTeam->updateOption($this->model->getType().'.filters.'.$this->filter['name'], $newFilter);
+            if ($this->filter['global']) {
+                auth()->user()->currentTeam->updateOption($this->model->getType().'.filters.'.Str::slug($this->filter['name']), $newFilter);
             }
             // Save for User
             else {
-                auth()->user()->updateOption($this->model->getType().'.filters.'.$this->filter['name'], $newFilter);
+                auth()->user()->updateOption($this->model->getType().'.filters.'.Str::slug($this->filter['name']), $newFilter);
             }
 
         }
 
-        $this->selectedFilter = $this->filter['name'];
+        $this->selectedFilter = Str::slug($this->filter['name']);
         $this->notify('Filter saved successfully!');
         $this->showSaveFilterModal = false;
         $this->reset('filter');
 
         $this->clearFiltersCache();
 
-    }
-
-
-    /**
-     * Set taxonomy filters.
-     */
-    public function setTaxonomyFilters()
-    {
-        $this->filters['taxonomy'] = optional($this->model())->taxonomyFields()->pluck('model')->mapWithKeys(fn ($i) => [app($i)->getType() => []])->toArray();
     }
 
     /**
@@ -224,7 +237,7 @@ trait Filters
      */
     public function updatedSelectedFilter($filter)
     {
-        if($filter) {
+        if ($filter) {
             $this->filters = $this->userFilters[$filter];
         } else {
             $this->reset('filters');

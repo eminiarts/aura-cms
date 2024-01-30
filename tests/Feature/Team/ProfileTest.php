@@ -10,17 +10,7 @@ use function Pest\Livewire\livewire;
 
 // Before each test, create a Superadmin and login
 beforeEach(function () {
-    // Create User
-    $this->actingAs($this->user = User::factory()->create());
-
-    // Create Team and assign to user
-    createSuperAdmin();
-
-    // Refresh User
-    $this->user = $this->user->refresh();
-
-    // Login
-    $this->actingAs($this->user);
+    $this->actingAs($this->user = createSuperAdmin());
 });
 
 it('renders the profile component', function () {
@@ -48,14 +38,14 @@ it('updates the user profile', function () {
 it('updates the user password', function () {
     livewire(Profile::class)
         ->set('post.fields.current_password', 'password')
-        ->set('post.fields.password', 'new-password')
-        ->set('post.fields.password_confirmation', 'new-password')
+        ->set('post.fields.password', 'new-Password123*&*&!!!')
+        ->set('post.fields.password_confirmation', 'new-Password123*&*&!!!')
         ->call('save')
         ->assertHasNoErrors();
 
     $user = auth()->user()->fresh();
 
-    expect(Hash::check('new-password', $user->password))->toBeTrue();
+    expect(Hash::check('new-Password123*&*&!!!', $user->password))->toBeTrue();
 });
 
 it('deletes the user account', function () {

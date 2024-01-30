@@ -2,6 +2,7 @@
 
 namespace Eminiarts\Aura;
 
+use Eminiarts\Aura\Navigation\Navigation as AuraNavigation;
 use Eminiarts\Aura\Commands\AuraCommand;
 use Eminiarts\Aura\Commands\CreateAuraPlugin;
 use Eminiarts\Aura\Commands\CreateResourceMigration;
@@ -9,7 +10,6 @@ use Eminiarts\Aura\Commands\CreateResourcePermissions;
 use Eminiarts\Aura\Commands\DatabaseToResources;
 use Eminiarts\Aura\Commands\MakeField;
 use Eminiarts\Aura\Commands\MakePosttype;
-use Eminiarts\Aura\Commands\MakeTaxonomy;
 use Eminiarts\Aura\Commands\MakeUser;
 use Eminiarts\Aura\Commands\PublishCommand;
 use Eminiarts\Aura\Commands\TransformTableToResource;
@@ -19,7 +19,7 @@ use Eminiarts\Aura\Livewire\AuraConfig;
 use Eminiarts\Aura\Livewire\BookmarkPage;
 use Eminiarts\Aura\Livewire\CreateFlow;
 use Eminiarts\Aura\Livewire\CreatePosttype;
-use Eminiarts\Aura\Livewire\CreateTaxonomy;
+use Eminiarts\Aura\Livewire\Dashboard;
 use Eminiarts\Aura\Livewire\EditOperation;
 use Eminiarts\Aura\Livewire\EditPosttypeField;
 use Eminiarts\Aura\Livewire\GlobalSearch;
@@ -35,10 +35,6 @@ use Eminiarts\Aura\Livewire\Post\Index;
 use Eminiarts\Aura\Livewire\Post\View;
 use Eminiarts\Aura\Livewire\Posttype;
 use Eminiarts\Aura\Livewire\Table\Table;
-use Eminiarts\Aura\Livewire\Taxonomy\Create as TaxonomyCreate;
-use Eminiarts\Aura\Livewire\Taxonomy\Edit as TaxonomyEdit;
-use Eminiarts\Aura\Livewire\Taxonomy\Index as TaxonomyIndex;
-use Eminiarts\Aura\Livewire\Taxonomy\View as TaxonomyView;
 use Eminiarts\Aura\Livewire\TeamSettings;
 use Eminiarts\Aura\Livewire\User\InviteUser;
 use Eminiarts\Aura\Livewire\User\Profile;
@@ -72,8 +68,6 @@ class AuraServiceProvider extends PackageServiceProvider
     public function boot()
     {
         parent::boot();
-
-        // ray('boot');
     }
 
     public function bootGate()
@@ -86,9 +80,13 @@ class AuraServiceProvider extends PackageServiceProvider
         Gate::policy(User::class, UserPolicy::class);
 
         Gate::before(function ($user, $ability) {
-            if ($user->resource->isSuperAdmin()) {
-                return true;
-            }
+            //  if ($ability == 'view' && config('aura.resource-view-enabled') === false) {
+            //     return false;
+            // }
+
+            // if ($user->resource->isSuperAdmin()) {
+            //     return true;
+            // }
         });
 
         return $this;
@@ -111,24 +109,20 @@ class AuraServiceProvider extends PackageServiceProvider
         Livewire::component('aura::navigation', Navigation::class);
         Livewire::component('aura::global-search', GlobalSearch::class);
         Livewire::component('aura::bookmark-page', BookmarkPage::class);
+        Livewire::component('aura::dashboard', Dashboard::class);
         Livewire::component('aura::notifications', Notifications::class);
         Livewire::component('aura::edit-posttype-field', EditPosttypeField::class);
         Livewire::component('aura::media-manager', MediaManager::class);
-        Livewire::component('aura::media-uploader', MediaUploader::class);
+        Livewire::component('aura::media-uploader', app(MediaUploader::class));
         Livewire::component('aura::attachment-index', AttachmentIndex::class);
         Livewire::component('aura::user-two-factor-authentication-form', TwoFactorAuthenticationForm::class);
         Livewire::component('aura::create-posttype', CreatePosttype::class);
-        Livewire::component('aura::create-taxonomy', CreateTaxonomy::class);
         Livewire::component('aura::edit-posttype', Posttype::class);
-        Livewire::component('aura::taxonomy-index', TaxonomyIndex::class);
-        Livewire::component('aura::taxonomy-edit', TaxonomyEdit::class);
-        Livewire::component('aura::taxonomy-create', TaxonomyCreate::class);
-        Livewire::component('aura::taxonomy-view', TaxonomyView::class);
         Livewire::component('aura::team-settings', TeamSettings::class);
         Livewire::component('aura::invite-user', InviteUser::class);
         Livewire::component('aura::config', AuraConfig::class);
 
-        Livewire::component('aura::profile', Profile::class);
+        Livewire::component('aura::profile', app(Profile::class));
 
         // Flows
         Livewire::component('aura::create-flow', CreateFlow::class);
@@ -153,8 +147,6 @@ class AuraServiceProvider extends PackageServiceProvider
     */
     public function configurePackage(Package $package): void
     {
-        // ray('configuring package');
-
         $package
             ->name('aura')
             ->hasConfigFile()
@@ -166,7 +158,6 @@ class AuraServiceProvider extends PackageServiceProvider
             ->hasCommands([
                 AuraCommand::class,
                 MakePosttype::class,
-                MakeTaxonomy::class,
                 MakeUser::class,
                 CreateAuraPlugin::class,
                 MakeField::class,
@@ -187,6 +178,7 @@ class AuraServiceProvider extends PackageServiceProvider
                     ->copyAndRegisterServiceProviderInApp()
                     ->askToStarRepoOnGitHub('eminiarts/aura-cms');
             });
+
     }
 
     public function packageBooted()
@@ -199,7 +191,7 @@ class AuraServiceProvider extends PackageServiceProvider
         }
 
         Component::macro('notify', function ($message, $type = 'success') {
-            $this->dispatchBrowserEvent('notify', ['message' => $message, 'type' => $type]);
+            $this->dispatch('notify', message: $message, type: $type);
         });
 
         // Search in multiple columns
@@ -213,8 +205,8 @@ class AuraServiceProvider extends PackageServiceProvider
         });
 
         // CheckCondition Blade Directive
-        Blade::if('checkCondition', function ($model, $field) {
-            return \Eminiarts\Aura\Aura::checkCondition($model, $field);
+        Blade::if('checkCondition', function ($model, $field, $post = null) {
+            return \Eminiarts\Aura\Aura::checkCondition($model, $field, $post);
         });
 
         Blade::if('superadmin', function () {
@@ -222,7 +214,7 @@ class AuraServiceProvider extends PackageServiceProvider
         });
 
         Blade::if('local', function () {
-            return ! app()->environment('production');
+            return app()->environment('local');
         });
 
         Blade::if('production', function () {
@@ -243,30 +235,46 @@ class AuraServiceProvider extends PackageServiceProvider
     {
         parent::packageRegistered();
 
+        $this->app->singleton('hook_manager', function ($app) {
+            return new HookManager();
+        });
+
+        $this->app->singleton('dynamicFunctions', function ($app) {
+            return new \Eminiarts\Aura\Facades\DynamicFunctions();
+        });
+
+        $this->app->singleton('dynamic_functions', function ($app) {
+            return new DynamicFunctions();
+        });
+
+        $this->app->singleton('navigation', function ($app) {
+            return new AuraNavigation();
+        });
+
         $this->app->scoped('aura', function (): Aura {
             return new Aura();
         });
 
+        // dd(config('aura.resources.user'));
+
         Aura::registerResources([
-            \Eminiarts\Aura\Resources\Attachment::class,
-            \Eminiarts\Aura\Resources\Option::class,
-            \Eminiarts\Aura\Resources\Post::class,
-            \Eminiarts\Aura\Resources\Permission::class,
-            \Eminiarts\Aura\Resources\Role::class,
-            \Eminiarts\Aura\Resources\User::class,
+            config('aura.resources.attachment'),
+            config('aura.resources.option'),
+            config('aura.resources.post'),
+            config('aura.resources.permission'),
+            config('aura.resources.role'),
+            config('aura.resources.user'),
+            config('aura.resources.tag'),
         ]);
+
+        // dd(config('aura.resources.post'));
 
         if (config('aura.teams')) {
             Aura::registerResources([
-                \Eminiarts\Aura\Resources\Team::class,
-                \Eminiarts\Aura\Resources\TeamInvitation::class,
+                config('aura.resources.team'),
+                config('aura.resources.team-invitation'),
             ]);
         }
-
-        Aura::registerTaxonomies([
-            \Eminiarts\Aura\Taxonomies\Tag::class,
-            \Eminiarts\Aura\Taxonomies\Category::class,
-        ]);
 
         // Register Fields from src/Fields
         $fields = collect(app('files')->files(__DIR__.'/Fields'))->map(function ($field) {
@@ -277,14 +285,12 @@ class AuraServiceProvider extends PackageServiceProvider
 
         // Register App Resources
         Aura::registerResources(Aura::getAppResources());
-        Aura::registerTaxonomies(Aura::getAppTaxonomies());
         Aura::registerWidgets(Aura::getAppWidgets());
         Aura::registerFields(Aura::getAppFields());
     }
 
     public function registeringPackage()
     {
-        // ray('registering package');
         //$package->hasRoute('web');
         //$this->loadRoutesFrom(__DIR__.'/../routes/web.php');
     }

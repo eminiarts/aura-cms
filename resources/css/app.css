@@ -44,7 +44,7 @@
 }
 
 .aura-card {
-    @apply p-4 mb-8 bg-white border shadow-sm border-gray-400/30 rounded-xl;
+    @apply p-4 mb-8 bg-white rounded-xl border shadow-sm border-gray-400/30;
 }
 
 .dark .aura-card {
@@ -52,7 +52,7 @@
 }
 
 .aura-card-small {
-    @apply p-2 bg-white border rounded-lg shadow-sm border-gray-400/30;
+    @apply p-2 bg-white rounded-lg border shadow-sm border-gray-400/30;
 }
 .dark .aura-card-small {
     @apply bg-gray-900 border-gray-700;
@@ -77,4 +77,33 @@
 
 .sidebar-item-icon svg {
     @apply w-6 h-6;
+}
+
+.open-sidebar {
+
+}
+
+
+.show-collapsed {
+    @apply hidden;
+}
+.open-sidebar .show-collapsed {
+    @apply hidden;
+}
+.open-sidebar .hide-collapsed {
+    @apply block;
+}
+
+.closed-sidebar .show-collapsed {
+    @apply block;
+}
+
+.closed-sidebar .hide-collapsed {
+    @apply hidden;
+}
+
+@media screen and (max-width: 768px) {
+    .closed-sidebar {
+        display: none;
+    }
 }

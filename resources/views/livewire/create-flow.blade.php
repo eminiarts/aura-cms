@@ -1,7 +1,7 @@
 <div class="">
 
 
-<style>
+<style >
     .flows:before {
         position: absolute;
         top: -4px;
@@ -49,9 +49,9 @@
 
 {{-- @dump($flow->toArray()) --}}
 
-<div class="w-full overflow-x-auto overflow-y-hidden border-2 border-gray-500/30 bg-gray-50 rounded-xl">
+<div class="overflow-x-auto overflow-y-hidden w-full bg-gray-50 rounded-xl border-2 border-gray-500/30">
     <div x-data="flow"
-    class="w-full relative grid text-gray-900 grid-rows-[repeat(auto-fill,20px)] grid-cols-[repeat(auto-fill,20px)] flows" x-ref="flows" @mousemove="moveOperation($event)" @mouseup="cancelMove($event)" :style="{'width' : canvasWidth + 'px', 'height' : canvasHeight + 'px' }">
+    class="w-full relative grid text-gray-900 grid-rows-[repeat(auto-fill,20px)] grid-cols-[repeat(auto-fill,20px)] flows" x-ref="flows" @mousemove="moveOperation($event)" @mouseup="cancelMove($event)"  :style="{'width' : canvasWidth + 'px', 'height' : canvasHeight + 'px' }">
 
     <!-- position absoult, svg -->
     <div class="absolute top-0 left-0 w-full h-full">
@@ -70,8 +70,8 @@
 
     <div
         x-cloak
-        class="relative col-span-8 p-4 bg-white border-2 rounded-lg shadow-md cursor-move select-none border-primary-400 row-span-9 operation" :data-operation="flow.id"
-
+        class="relative col-span-8 p-4 bg-white rounded-lg border-2 shadow-md cursor-move select-none border-primary-400 row-span-9 operation" :data-operation="flow.id"
+        
         :style="{ '--pos-x': 2, '--pos-y': 2 }"
 
         :class="{'selected': selectedOperation === flow }"
@@ -105,7 +105,7 @@
                 class="absolute top-[30px] right-[-0.5rem] connect-resolve"
                 @mousedown="connectFlowResolve($event)"
                 >
-                <div class="w-4 h-4 bg-white border-2 border-red-500 rounded-full"></div>
+                <div class="w-4 h-4 bg-white rounded-full border-2 border-red-500"></div>
             </div>
         </template>
         <template x-if="!flow.operation_id">
@@ -115,7 +115,7 @@
                 class="absolute top-[30px] right-[-0.5rem] connect-resolve"
                 @mousedown="connectFlowResolve($event)"
                 >
-                <div class="w-4 h-4 bg-white border-2 rounded-full border-primary-400"></div>
+                <div class="w-4 h-4 bg-white rounded-full border-2 border-primary-400"></div>
             </div>
             <div
                 x-data x-ref="this" x-init="tippy($refs.this, { content: 'Click to add operation', arrow: false, theme: 'aura', placement: 'top', offset: [0, 8], })"
@@ -123,7 +123,7 @@
                 @mousedown="addResolveFlow($event)"
                 >
 
-                <div class="flex items-center justify-center w-4 h-4 font-semibold leading-none text-gray-300 bg-white border-2 border-gray-500/30 rounded-full group-hover:border-primary-400 group-hover:text-primary-500"> <span class="inline-block mt-[-1px]">+</span> </div>
+                <div class="flex justify-center items-center w-4 h-4 font-semibold leading-none text-gray-300 bg-white rounded-full border-2 border-gray-500/30 group-hover:border-primary-400 group-hover:text-primary-500"> <span class="inline-block mt-[-1px]">+</span> </div>
             </div>
             </div>
         </template>
@@ -139,8 +139,8 @@
         <template x-for="operation in operations" :key="operation.id">
             <div
                 x-cloak
-                class="relative col-span-8 p-4 bg-white border-2 border-gray-500/30 rounded-lg shadow-md cursor-move select-none row-span-9 operation" :data-operation="operation.id"
-
+                class="relative col-span-8 p-4 bg-white rounded-lg border-2 shadow-md cursor-move select-none border-gray-500/30 row-span-9 operation" :data-operation="operation.id"
+                
                 :style="{ '--pos-x': operation.options.x, '--pos-y': operation.options.y }"
 
                 :class="{'selected': selectedOperation === operation }"
@@ -169,7 +169,7 @@
 
                 <template x-if="operation.type == 'Eminiarts\\Aura\\Operations\\Log'">
                     <div class="mt-2">
-                        <label class="font-semibold text-gray-900 ">Message</label>
+                        <label class="font-semibold text-gray-900">Message</label>
                         <div class="text-gray-500 select-text" x-text="operation.options.message"></div>
                     </div>
                 </template>
@@ -177,7 +177,7 @@
 
 
             <div class="absolute top-[30px] left-[-0.5rem] connect-to">
-                <div class="w-4 h-4 bg-white border-2 border-gray-500 rounded-full"></div>
+                <div class="w-4 h-4 bg-white rounded-full border-2 border-gray-500"></div>
             </div>
 
             <template x-if="operation.resolve_id">
@@ -185,7 +185,7 @@
                     class="absolute top-[30px] right-[-0.5rem] connect-resolve"
                     @mousedown="connectResolve($event, operation)"
                     >
-                    <div class="w-4 h-4 bg-white border-2 rounded-full border-primary-400"></div>
+                    <div class="w-4 h-4 bg-white rounded-full border-2 border-primary-400"></div>
                 </div>
             </template>
             <template x-if="!operation.resolve_id">
@@ -195,7 +195,7 @@
                     class="absolute top-[30px] right-[-0.5rem] connect-resolve"
                     @mousedown="connectResolve($event, operation)"
                     >
-                    <div class="w-4 h-4 bg-white border-2 rounded-full border-primary-400"></div>
+                    <div class="w-4 h-4 bg-white rounded-full border-2 border-primary-400"></div>
                 </div>
                 <div
                     x-data x-ref="this" x-init="tippy($refs.this, { content: 'Click to add operation', arrow: false, theme: 'aura', placement: 'top', offset: [0, 8], })"
@@ -203,7 +203,7 @@
                     @mousedown="addResolve($event, operation)"
                     >
 
-                    <div class="flex items-center justify-center w-4 h-4 font-semibold leading-none text-gray-300 bg-white border-2 border-gray-500/30 rounded-full group-hover:border-primary-400 group-hover:text-primary-500"> <span class="inline-block mt-[-1px]">+</span> </div>
+                    <div class="flex justify-center items-center w-4 h-4 font-semibold leading-none text-gray-300 bg-white rounded-full border-2 border-gray-500/30 group-hover:border-primary-400 group-hover:text-primary-500"> <span class="inline-block mt-[-1px]">+</span> </div>
                 </div>
                 </div>
             </template>
@@ -213,7 +213,7 @@
                     class="absolute bottom-[30px] right-[-0.5rem] connect-reject"
                     @mousedown="connectReject($event, operation)"
                     >
-                    <div class="w-4 h-4 bg-white border-2 border-red-400 rounded-full"></div>
+                    <div class="w-4 h-4 bg-white rounded-full border-2 border-red-400"></div>
                 </div>
             </template>
             <template x-if="!operation.reject_id">
@@ -223,7 +223,7 @@
                     class="absolute bottom-[30px] right-[-0.5rem] connect-reject"
                     @mousedown="connectReject($event, operation)"
                     >
-                    <div class="w-4 h-4 bg-white border-2 border-red-400 rounded-full"></div>
+                    <div class="w-4 h-4 bg-white rounded-full border-2 border-red-400"></div>
                 </div>
                 <div
                     x-data x-ref="this" x-init="tippy($refs.this, { content: 'Click to add operation', arrow: false, theme: 'aura', placement: 'top', offset: [0, 8], })"
@@ -231,7 +231,7 @@
                     @mousedown="addReject($event, operation)"
                     >
 
-                    <div class="flex items-center justify-center w-4 h-4 font-semibold leading-none text-gray-300 bg-white border-2 border-gray-500/30 rounded-full group-hover:border-red-400 group-hover:text-red-500"> <span class="inline-block mt-[-1px]">+</span></div>
+                    <div class="flex justify-center items-center w-4 h-4 font-semibold leading-none text-gray-300 bg-white rounded-full border-2 border-gray-500/30 group-hover:border-red-400 group-hover:text-red-500"> <span class="inline-block mt-[-1px]">+</span></div>
                 </div>
                 </div>
             </template>
@@ -250,7 +250,7 @@
 
 {{-- <button wire:click="createOperation" class="p-2 text-white bg-blue-500 rounded-full">Create Operation</button> --}}
 
-<script>
+<script >
     class Vector2 {
         x = 0;
         y = 0;
@@ -322,7 +322,7 @@
 </script>
 
 
-<script>
+<script >
 
     document.addEventListener('livewire:init', function () {
         // Init alpine flow component
@@ -348,10 +348,6 @@
                 constructedArrows: '',
 
                 init() {
-                    console.log('init');
-                    console.log(this.operations);
-                    console.log(this.flow);
-
                     this.furthestX = this.getFurthestX();
                     this.furthestY = this.getFurthestY();
 
@@ -360,10 +356,8 @@
 
                     this.constructedArrows = this.constructArrows();
 
-                    // console.log('furthest', this.furthestX, this.furthestY);
                 },
                 selectOperation(operation) {
-                    // console.log('select operation', operation);
                     @this.selectOperation(operation.id);
                 },
                 getFurthestX() {
@@ -575,8 +569,6 @@
                 },
 
                 cancelMove(event) {
-                    console.log('cancelMove');
-
                     if (this.connectingFlow) {
 
                         let target = event.target;
@@ -602,15 +594,11 @@
                         this.selectedOperation = null;
                         this.draggingOperation = false;
 
-                        // console.log('remove arrow');
                         this.constructArrowToMouse();
                         return;
                     }
 
                     if (this.connectingOperation) {
-                        console.log(event);
-                        console.log('cancelMove', this.connectingOperation);
-
                         // get the data-operation attribute from the event target
                         // check if event.target has the data-operation attribute, if not, check the parent until it is found
                         let target = event.target;
@@ -628,15 +616,10 @@
                             operationId = target.getAttribute('data-operation');
                         }
 
-                        console.log('operationId', operationId);
-
                         @this.connectOperation(this.connectingOperation.operation, this.connectingOperation.id,  operationId);
 
                         // refresh the operations from livewire
-
-
                         this.connectingOperation = false;
-                        // console.log('remove arrow');
                         this.constructArrowToMouse();
                     }
 

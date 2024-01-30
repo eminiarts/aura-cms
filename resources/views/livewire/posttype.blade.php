@@ -11,7 +11,29 @@
         <h3 class="text-xl font-semibold">Edit Post Type</h3>
     </x-slot> --}}
 
-    <div class="flex items-center justify-between my-8">
+    <div x-data="{
+        fileSaved: false,
+        init() {
+            // Listen for the beforeunload event on the window
+            var vm = this;
+            window.addEventListener('beforeunload', function (event) {
+
+                if (vm.fileSaved) {
+                    event.preventDefault();
+                    event.returnValue = 'You have unsaved changes. Are you sure you want to leave this page?';
+                }
+            });
+
+            // Listen for the livewire event savedField
+            $wire.on('finishedSavingFields', () => {
+                vm.fileSaved = true;
+                setTimeout(() => {
+                    vm.fileSaved = false;
+                }, 4000);
+            });
+        }
+
+    }" class="flex items-center justify-between my-8">
         <div>
             <h1 class="text-3xl font-semibold">Edit {{ $model::getType() }} Fields</h1>
         </div>
@@ -70,7 +92,7 @@
                         </span>
                     </div>
                 </div>
-                
+
                 <div class="flex items-end w-full px-4 mb-0 md:w-1/3">
                     <div class="flex-1">
                         <x-aura::input.text label="Group" placeholder="Group" wire:model="postTypeFields.group"></x-aura::input>
@@ -105,7 +127,6 @@
                     tabs: @entangle('globalTabs').live,
 
                     init() {
-                        console.log('init tabs', this.tabs, this.activeTab);
                     }
                 }
             ">
@@ -153,7 +174,7 @@
                             @foreach($tab['fields'] as $field)
 
                                 <div class="post-field-{{ optional($field)['slug'] }}-wrapper px-2 reorder-item draggable-item" id="field_{{ $field['_id'] }}" wire:key="pt-field-{{ $tab['_id'] }}">
-                                    <style>
+                                    <style >
                                     .post-field-{{ optional($field)['slug'] }}-wrapper {
                                         width: {{ optional(optional($field)['style'])['width'] ?? '100' }}%;
                                     }
@@ -216,7 +237,7 @@
                     @foreach($this->mappedFields as $field)
 
                         <div class="px-2 reorder-item draggable-item post-field-{{ optional($field)['slug'] }}-wrapper" id="field_{{ $field['_id'] }}" wire:key="pt-field-{{ $field['_id'] }}">
-                            <style>
+                            <style >
                                 .post-field-{{ optional($field)['slug'] }}-wrapper {
                                     width: {{ optional(optional($field)['style'])['width'] ?? '100' }}%;
                                 }
@@ -326,14 +347,13 @@
     @once
     @push('scripts')
 
-        <script>
+        <script >
             // when alpine is ready
             document.addEventListener('alpine:init', () => {
                 // define an alpinejs component named 'userDropdown'
                 Alpine.data('posttype', () => ({
                     init() {
                         Alpine.nextTick(() => {
-                            console.log('init posttype!');
                             const sortable = new window.Sortable(document.querySelectorAll('.draggable-container'), {
                                 draggable: '.draggable-item',
                                 handle: '.draggable-handle',
@@ -344,7 +364,6 @@
 
                             sortable.on('sortable:stop', () => {
                                 Alpine.nextTick(() => {
-                                    console.log('reorder', Array.from(document.querySelectorAll('.reorder-item')).map(el => el.id));
                                     @this.reorder(
                                         Array.from(document.querySelectorAll('.reorder-item')).map(el => el.id)
                                     )
@@ -356,7 +375,7 @@
             })
         </script>
 
-        <style>
+        <style >
             .draggable--original *{
                 opacity: 0.5;
             }

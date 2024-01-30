@@ -10,12 +10,68 @@ class BelongsTo extends Field
 
     public bool $group = false;
 
-    // public $view = 'components.fields.belongsto';
+    public $view = 'aura::fields.view-value';
 
     public function api($request)
     {
         // Get $searchable from $request->model
-        $searchableFields = app($request->model)->getSearchable();
+        $searchableFields = app($request->model)->getSearchableFields()->pluck('slug');
+
+        $metaFields = $searchableFields->filter(function ($field) use ($request) {
+            // check if it is a meta field
+            return app($request->model)->isMetaField($field);
+        });
+
+        if (app($request->model)->usesCustomTable()) {
+            $results = app($request->model)->searchIn($searchableFields->toArray(), $request->search)->take(50)->get()->map(function ($item) {
+                return [
+                    'id' => $item->id,
+                    'title' => $item->title(),
+                ];
+            })->toArray();
+
+        } else {
+
+            $results = app($request->model)->select('posts.*')
+                ->leftJoin('post_meta', function ($join) use ($metaFields) {
+                    $join->on('posts.id', '=', 'post_meta.post_id')
+                        ->whereIn('post_meta.key', $metaFields);
+                })
+                ->where(function ($query) use ($request) {
+                    $query->where('posts.title', 'like', '%'.$request->search.'%')
+                        ->orWhere(function ($query) use ($request) {
+                            $query->where('post_meta.value', 'LIKE', '%'.$request->search.'%');
+                        });
+                })
+                ->distinct()
+                ->take(20)
+                ->get()->map(function ($item) {
+                    return [
+                        'id' => $item->id,
+                        'title' => $item->title(),
+                    ];
+                })->toArray();
+
+        }
+
+        // Fetch the model instance using the ID from $request->value
+        if ($request->id) {
+
+            $modelInstance = app($request->model)->find($request->id);
+
+            // Append the model instance to the results
+            $results[] = [
+                'id' => $modelInstance->id,
+                'title' => $modelInstance->title(),
+            ];
+
+        }
+
+        // $results = app($request->model)->searchIn($searchableFields, $request->search)->take(20)->get();
+
+        return collect($results)->unique('id')->values()->toArray();
+
+        // dd($searchableFields, $request->model, $request->search);
 
         return app($request->model)->searchIn($searchableFields, $request->search)->take(20)->get()->map(function ($item) {
             return [
@@ -31,9 +87,9 @@ class BelongsTo extends Field
             // Get Str after last backslash from $field['resource']
             $model = Str::afterLast($field['resource'], '\\');
 
-            return $value;
+            // return $value;
 
-            return "<a class='font-bold' href='".route('aura.post.edit', [$model, $value])."'>".optional(app($field['resource'])::find($value))->title().'</a>';
+            return "<a class='font-semibold' href='".route('aura.post.edit', [$model, $value])."'>".optional(app($field['resource'])::find($value))->title().'</a>';
         }
 
         return $value;
@@ -44,6 +100,28 @@ class BelongsTo extends Field
         return json_decode($value, true);
     }
 
+    // public $view = 'components.fields.belongsto';
+
+    public function getFields()
+    {
+        return array_merge(parent::getFields(), [
+            [
+                'label' => 'Belongs To',
+                'name' => 'Belongs To',
+                'type' => 'Eminiarts\\Aura\\Fields\\Tab',
+                'slug' => 'tab-belongsTo',
+                'style' => [],
+            ],
+            [
+                'label' => 'Resource',
+                'name' => 'resource',
+                'type' => 'Eminiarts\\Aura\\Fields\\Text',
+                'validation' => '',
+                'slug' => 'resource',
+            ],
+        ]);
+    }
+
     public function queryFor($model)
     {
         return function ($query) use ($model) {
@@ -51,11 +129,11 @@ class BelongsTo extends Field
         };
     }
 
-     public function set($value)
-     {
-         // Set the value to the id of the model
-         return $value;
-     }
+    public function set($value)
+    {
+        // Set the value to the id of the model
+        return $value;
+    }
 
     public function values($model)
     {
@@ -65,5 +143,34 @@ class BelongsTo extends Field
                 'title' => $item->title(),
             ];
         })->toArray();
+    }
+
+    public function valuesForApi($model, $currentId)
+    {
+        $results = app($model)->take(20)->get()->map(function ($item) {
+            return [
+                'id' => $item->id,
+                'title' => $item->title(),
+            ];
+        })->toArray();
+
+        // Fetch the model instance using the ID from $request->value
+        if ($currentId) {
+
+            $modelInstance = app($model)->find($currentId);
+
+            if (! $modelInstance) {
+                return $results;
+            }
+
+            // Append the model instance to the results
+            $results[] = [
+                'id' => $modelInstance->id,
+                'title' => $modelInstance->title(),
+            ];
+
+        }
+
+        return collect($results)->unique('id')->values()->toArray();
     }
 }

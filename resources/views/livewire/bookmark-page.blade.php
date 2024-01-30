@@ -1,5 +1,6 @@
 <div class="text-gray-300">
-    <button wire:click="toggleBookmark" class="flex items-center justify-center ml-2 focus:outline-none w-7 h-7" :class="{'text-primary-600': {{ !$this->isBookmarked ? 'true' : 'false' }}, 'text-gray-300': {{ $this->isBookmarked ? 'true' : 'false' }} }">
+    @if(config('aura.features.bookmarks'))
+    <button wire:click="toggleBookmark" class="flex justify-center items-center ml-2 w-7 h-7 focus:outline-none" :class="{'text-primary-600': {{ !$this->isBookmarked ? 'true' : 'false' }}, 'text-gray-300': {{ $this->isBookmarked ? 'true' : 'false' }} }">
 
         @if(!$this->isBookmarked)
             <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -13,4 +14,5 @@
         @endif
 
     </button>
+    @endif
 </div>

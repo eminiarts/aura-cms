@@ -11,31 +11,6 @@ trait PerPagePagination
 {
     use WithPagination;
 
-    public $page;
-
-    public function updatedPage($page)
-    {
-        // $this->render();
-        ray('updated page: ' . $page);
-
-        // $this->dispatch('refreshTable');
-        $this->page = $page;
-
-
-        // unset($this->rows);
-
-
-    }
-
-    public function updatingPage($page)
-    {
-        // Runs before the page is updated for this component...
-        ray('updating page: ' . $page);
-        // $this->setPage($page);
-
-        // $this->selectPage = false;
-    }
-
     /**
      * Number of items to be displayed per page.
      *
@@ -64,16 +39,7 @@ trait PerPagePagination
         $this->perPage = session()->get('perPage', $this->perPage);
     }
 
-    /**
-     * Pagination theme.
-     *
-     * @var string
-     */
-    public function paginationView()
-    {
-        return 'aura::aura.pagination';
-    }
-
+   
     /**
      * Update the per-page pagination data in the session.
      *

@@ -13,7 +13,7 @@
 
     <div class="">
       <div class="w-full">
-          <style>
+          <style >
             .apexcharts-tooltip-text,
 .apexcharts-tooltip-series,
 .apexcharts-tooltip-y-group,

@@ -5,7 +5,6 @@ namespace Eminiarts\Aura\Models;
 use Eminiarts\Aura\Resources\Option;
 use Eminiarts\Aura\Resources\Team;
 use Eminiarts\Aura\Traits\AuraModelConfig;
-use Eminiarts\Aura\Traits\AuraTaxonomies;
 use Eminiarts\Aura\Traits\InputFields;
 use Eminiarts\Aura\Traits\InteractsWithTable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -20,7 +19,6 @@ class User extends Authenticatable
 {
     // Aura
     use AuraModelConfig;
-    use AuraTaxonomies;
     use HasApiTokens;
     use HasFactory;
     use Impersonate;
@@ -85,14 +83,21 @@ class User extends Authenticatable
         });
     }
 
-    public function canBeImpersonated(): bool
+    public function canBeImpersonated()
     {
         return ! $this->resource->isSuperAdmin();
     }
 
-    public function canImpersonate(): bool
+    public function canImpersonate()
     {
         return $this->resource->isSuperAdmin();
+    }
+
+    public function clearCachedOption($option)
+    {
+        $option = 'user.'.$this->id.'.'.$option;
+
+        Cache::forget($option);
     }
 
     // Reset to default create Method from Laravel
@@ -120,7 +125,7 @@ class User extends Authenticatable
             $this->switchTeam($this->personalTeam());
         }
 
-        return $this->belongsTo(Team::class, 'current_team_id');
+        return $this->belongsTo(config('aura.resources.team'), 'current_team_id');
     }
 
     public function deleteOption($option)
@@ -163,13 +168,6 @@ class User extends Authenticatable
         }
     }
 
-    public function clearCachedOption($option)
-    {
-        $option = 'user.'.$this->id.'.'.$option;
-
-        Cache::forget($option);
-    }
-
     public function getOptionBookmarks()
     {
         // Cache
@@ -210,6 +208,20 @@ class User extends Authenticatable
         }
 
         return [];
+    }
+
+    public function getOptionSidebarToggled()
+    {
+        // Cache
+        $option = Cache::remember('user.'.$this->id.'.sidebarToggled', now()->addHour(), function () {
+            return Option::whereName('user.'.$this->id.'.sidebarToggled')->first();
+        });
+
+        if ($option) {
+            return $option->value;
+        }
+
+        return true;
     }
 
     public function getTeams()
@@ -267,7 +279,11 @@ class User extends Authenticatable
     public function resource()
     {
         // Return \Eminiarts\Aura\Resources\User for this user
-        return $this->hasOne(\Eminiarts\Aura\Resources\User::class, 'id', 'id');
+        if (config('aura.resources.user')) {
+            return $this->hasOne(config('aura.resources.user'), 'id', 'id');
+        } else {
+            return $this->hasOne(\Eminiarts\Aura\Resources\User::class, 'id', 'id');
+        }
 
         // Cache the resource so we don't have to query the database every time
         return Cache::remember('user.resource.'.$this->id, now()->addHour(), function () {

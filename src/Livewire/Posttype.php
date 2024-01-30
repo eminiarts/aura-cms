@@ -28,9 +28,9 @@ class Posttype extends Component
 
     public $postTypeFields = [];
 
-    public $slug;
-
     public $reservedWords = ['id', 'type'];
+
+    public $slug;
 
     protected $listeners = ['refreshComponent' => '$refresh', 'savedField' => 'updateFields', 'saveField' => 'saveField', 'deleteField' => 'deleteField'];
 
@@ -100,6 +100,8 @@ class Posttype extends Component
         // $this->dispatch('refreshComponent');
 
         $this->dispatch('openSlideOver', 'edit-field', ['fieldSlug' => $field['slug'], 'slug' => $this->slug, 'field' => $field]);
+
+        $this->dispatch('finishedSavingFields');
     }
 
     public function addNewTab()
@@ -138,6 +140,9 @@ class Posttype extends Component
         // $this->dispatch('refreshComponent');
 
         $this->dispatch('openSlideOver', 'edit-field', ['fieldSlug' => $globalTab['slug'], 'slug' => $this->slug, 'field' => $globalTab]);
+
+        $this->dispatch('finishedSavingFields');
+
     }
 
     public function addTemplateFields($slug)
@@ -174,12 +179,14 @@ class Posttype extends Component
         $this->saveFields($this->fieldsArray);
 
         $this->newFields = $this->model->mapToGroupedFields($this->fieldsArray);
+
+        $this->dispatch('finishedSavingFields');
     }
 
-    public function authorizeCompontent()
+    public function checkAuthorization()
     {
-        if (config('aura.posttype_editor') == false) {
-            abort(403, 'Posttype Editor is turned off.');
+        if (config('aura.features.posttype_editor') == false) {
+            abort(404);
         }
 
         if ($this->model->isVendorResource()) {
@@ -228,6 +235,8 @@ class Posttype extends Component
         $this->saveFields($this->fieldsArray);
 
         $this->newFields = $this->model->mapToGroupedFields($this->fieldsArray);
+
+        $this->dispatch('finishedSavingFields');
     }
 
     public function duplicateField($id, $slug)
@@ -256,6 +265,9 @@ class Posttype extends Component
         $this->newFields = $this->model->mapToGroupedFields($this->fieldsArray);
 
         $this->dispatch('openSlideOver', 'edit-field', ['fieldSlug' => $field['slug'], 'slug' => $this->slug, 'field' => $field]);
+
+        $this->dispatch('finishedSavingFields');
+
     }
 
     public function generateMigration()
@@ -331,6 +343,8 @@ class Posttype extends Component
         $this->saveFields($this->fieldsArray);
 
         $this->newFields = $this->model->mapToGroupedFields($this->fieldsArray);
+
+        $this->dispatch('finishedSavingFields');
     }
 
     public function mount($slug)
@@ -339,7 +353,7 @@ class Posttype extends Component
 
         $this->model = Aura::findResourceBySlug($slug);
 
-        $this->authorizeCompontent();
+        $this->checkAuthorization();
 
         // Check if fields have closures
         if ($this->model->fieldsHaveClosures($this->model->getFields())) {
@@ -348,7 +362,7 @@ class Posttype extends Component
 
         $this->fieldsArray = $this->model->getFields();
 
-        if (count($this->mappedFields) > 0 && $this->mappedFields[0]['type'] == "Eminiarts\Aura\Fields\Tab" && $this->mappedFields[0]['global']) {
+        if (count($this->mappedFields) > 0 && $this->mappedFields[0]['type'] == "Eminiarts\Aura\Fields\Tab" && array_key_exists('global', $this->mappedFields[0]) && $this->mappedFields[0]['global']) {
             $this->hasGlobalTabs = true;
 
             // Global Tabs
@@ -404,8 +418,6 @@ class Posttype extends Component
             return (int) Str::after($id, 'field_') - 1;
         });
 
-        // ray($ids);
-
         $fields = array_values($this->fieldsArray);
 
         $fields = $ids->map(function ($id) use ($fields) {
@@ -419,6 +431,8 @@ class Posttype extends Component
         $this->saveFields($this->fieldsArray);
 
         $this->newFields = $this->model->mapToGroupedFields($this->fieldsArray);
+
+        $this->dispatch('finishedSavingFields');
     }
 
     public function rules()
@@ -460,6 +474,16 @@ class Posttype extends Component
         }
         // $this->model->save();
 
+        $fields = collect($this->fieldsArray);
+
+        $fields = $fields->toArray();
+
+        $this->fieldsArray = $fields;
+
+        $this->saveFields($this->fieldsArray);
+
+        $this->newFields = $this->model->mapToGroupedFields($this->fieldsArray);
+
         $this->saveProps($this->postTypeFields);
     }
 
@@ -484,6 +508,8 @@ class Posttype extends Component
 
         // emit new fields
         $this->dispatch('newFields', $this->fieldsArray);
+        $this->dispatch('finishedSavingFields');
+
     }
 
     public function sendField($slug)
@@ -526,7 +552,7 @@ class Posttype extends Component
     {
         // Make Sure Name is always a Slug
         foreach ($this->fields as $key => $field) {
-            if (! optional($field)['slug']) {
+            if (!optional($field)['slug']) {
                 $this->fields[$key]['slug'] = Str::slug($field['name']);
             } else {
                 $this->fields[$key]['slug'] = Str::slug($field['slug']);

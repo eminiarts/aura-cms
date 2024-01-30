@@ -8,24 +8,21 @@ use Eminiarts\Aura\Models\User as UserModel;
 use Eminiarts\Aura\Models\UserMeta;
 use Eminiarts\Aura\Traits\SaveFieldAttributes;
 use Eminiarts\Aura\Traits\SaveMetaFields;
-use Eminiarts\Aura\Traits\SaveTerms;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rules\Password;
 
 class User extends UserModel
 {
     use SaveFieldAttributes;
     use SaveMetaFields;
-    use SaveTerms;
 
     public static ?string $slug = 'user';
 
     public static ?int $sort = 1;
 
     public static string $type = 'User';
-
-    protected static ?string $group = 'Aura';
 
     protected $appends = ['fields'];
 
@@ -49,6 +46,8 @@ class User extends UserModel
         'name', 'email', 'password', 'fields', 'current_team_id',
     ];
 
+    protected static ?string $group = 'Admin';
+
     /**
      * The attributes that should be hidden for serialization.
      *
@@ -69,11 +68,9 @@ class User extends UserModel
 
     protected $with = ['meta'];
 
-    public function actions()
+    public function clearFieldsAttributeCache()
     {
-        return [
-            'edit',
-        ];
+        // Do we need to extend user instead of resource?
     }
 
     public function getAvatarUrlAttribute()
@@ -151,6 +148,7 @@ class User extends UserModel
                 'type' => 'Eminiarts\\Aura\\Fields\\Text',
                 'validation' => 'required',
                 'on_index' => true,
+                'searchable' => true,
                 'slug' => 'name',
                 'style' => [
                     'width' => '100',
@@ -161,6 +159,7 @@ class User extends UserModel
                 'type' => 'Eminiarts\\Aura\\Fields\\Text',
                 'validation' => 'required|email',
                 'on_index' => true,
+                'searchable' => true,
                 'slug' => 'email',
                 'style' => [
                     'width' => '100',
@@ -189,14 +188,17 @@ class User extends UserModel
                 'on_index' => false,
                 'on_forms' => true,
                 'on_view' => true,
-                'searchable' => true,
+                'searchable' => false,
             ],
             [
                 'name' => 'Password',
                 'type' => 'Eminiarts\\Aura\\Fields\\Password',
-                'validation' => '',
+                'validation' => ['nullable', Password::min(12)->mixedCase()->numbers()->symbols()->uncompromised()],
                 'conditional_logic' => [],
                 'slug' => 'password',
+                'on_forms' => true,
+                'on_edit' => false,
+                'on_create' => true,
                 'on_index' => false,
                 'on_view' => false,
             ],
@@ -247,20 +249,20 @@ class User extends UserModel
                 'slug' => 'tab-posts',
                 'global' => true,
             ],
-            [
-                'name' => 'Posts',
-                'slug' => 'posts',
-                'type' => 'Eminiarts\\Aura\\Fields\\HasMany',
-                'resource' => 'Eminiarts\\Aura\\Resources\\Post',
-                'validation' => '',
-                'wrapper' => '',
-                'on_index' => false,
-                'on_forms' => true,
-                'on_view' => true,
-                'style' => [
-                    'width' => '100',
-                ],
-            ],
+            // [
+            //     'name' => 'Posts',
+            //     'slug' => 'posts',
+            //     'type' => 'Eminiarts\\Aura\\Fields\\HasMany',
+            //     'resource' => 'Eminiarts\\Aura\\Resources\\Post',
+            //     'validation' => '',
+            //     'wrapper' => '',
+            //     'on_index' => false,
+            //     'on_forms' => true,
+            //     'on_view' => true,
+            //     'style' => [
+            //         'width' => '100',
+            //     ],
+            // ],
             [
                 'type' => 'Eminiarts\\Aura\\Fields\\Tab',
                 'name' => 'Teams',
@@ -295,7 +297,7 @@ class User extends UserModel
                 'type' => 'Eminiarts\\Aura\\Fields\\Tab',
                 'name' => '2FA',
                 'label' => 'Tab',
-                'slug' => '2fa',
+                'slug' => '2fa-tab',
                 'global' => true,
                 'on_view' => false,
             ],
@@ -377,9 +379,70 @@ class User extends UserModel
         return $this->roles->pluck('id')->toArray();
     }
 
+    public function getSearchableFields()
+    {
+        // get input fields and remove the ones that are not searchable
+        $fields = $this->inputFields()->filter(function ($field) {
+            // if $field is array or undefined, then we don't want to use it
+            if (! is_array($field) || ! isset($field['searchable'])) {
+                return false;
+            }
+
+            return $field['searchable'];
+        });
+
+        return $fields;
+    }
+
     public static function getWidgets(): array
     {
         return [];
+    }
+
+    public function hasAnyRole(array $roles): bool
+    {
+        $cachedRoles = $this->cachedRoles()->pluck('slug');
+
+        if (! $cachedRoles) {
+            return false;
+        }
+
+        foreach ($cachedRoles as $role) {
+            if (in_array($role, $roles)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    public function hasPermission($permission)
+    {
+        $roles = $this->cachedRoles();
+
+        if (! $roles) {
+            return false;
+        }
+
+        foreach ($roles as $role) {
+            if ($role->super_admin) {
+                return true;
+            }
+
+            $permissions = $role->fields['permissions'];
+
+            if (empty($permissions)) {
+                continue;
+            }
+
+            foreach ($permissions as $p => $value) {
+                if ($p == $permission && $value == true) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
     }
 
     public function hasPermissionTo($ability, $post): bool
@@ -392,8 +455,6 @@ class User extends UserModel
 
         foreach ($roles as $role) {
             $permissions = $role->fields['permissions'];
-
-            // ray('roles', $permissions);
 
             if (empty($permissions)) {
                 continue;
@@ -442,6 +503,8 @@ class User extends UserModel
                 return true;
             }
         }
+
+        // dump($roles->toArray());
 
         return false;
 
@@ -507,7 +570,7 @@ class User extends UserModel
     protected static function booted()
     {
         static::creating(function ($user) {
-            if (config('aura.teams') && !$user->current_team_id) {
+            if (config('aura.teams') && ! $user->current_team_id) {
                 $user->current_team_id = auth()->user()?->current_team_id;
             }
         });

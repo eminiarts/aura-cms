@@ -8,17 +8,7 @@ uses(RefreshDatabase::class);
 
 // Before each test, create a Superadmin and login
 beforeEach(function () {
-    // Create User
-    $this->actingAs($this->user = User::factory()->create());
-
-    // Create Team and assign to user
-    createSuperAdmin();
-
-    // Refresh User
-    $this->user = $this->user->refresh();
-
-    // Login
-    $this->actingAs($this->user);
+    $this->actingAs($this->user = createSuperAdmin());
 
     $this->taxonomyData = [
         'name' => 'Test Category',
@@ -57,7 +47,6 @@ test('Aura without teams - table columns', function () {
     // expect user table not to have current_team_id
     expect(Schema::hasColumn('users', 'current_team_id'))->toBeFalse();
     expect(Schema::hasColumn('posts', 'team_id'))->toBeFalse();
-    expect(Schema::hasColumn('taxonomies', 'team_id'))->toBeFalse();
     expect(Schema::hasColumn('user_meta', 'team_id'))->toBeFalse();
 });
 

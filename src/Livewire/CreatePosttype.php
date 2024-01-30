@@ -13,7 +13,11 @@ class CreatePosttype extends ModalComponent
     use FieldsOnComponent;
     use InputFields;
 
-    public $post;
+    public $post = [
+        'fields' => [
+            'name' => '',
+        ],
+    ];
 
     public static function getFields()
     {

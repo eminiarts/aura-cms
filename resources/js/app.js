@@ -13,7 +13,6 @@ import flatpickr from "flatpickr";
 
 import Tagify from '@yaireo/tagify'
 
-
 window.Tagify = Tagify;
 window.Alpine = Alpine;
 window.Sortable = Sortable;
@@ -22,7 +21,6 @@ window.tippy = tippy;
 // window.german = German;
 window.flatpickr = flatpickr;
 // flatpickr.localize(German); // default locale is now German
-
 
 Alpine.plugin(collapse);
 Alpine.plugin(focus);
@@ -40,9 +38,7 @@ Alpine.data('aura', () => ({
   showFilters: false,
 
   init() {
-    console.log('aura init from data');
   },
-
 
   search() {
     $dispatch('search');
@@ -53,6 +49,15 @@ Alpine.data('aura', () => ({
     setTimeout(function() {
       body.style.paddingRight = sidebar.offsetWidth + 'px';
     }, 10);
+    setTimeout(function() {
+      body.style.paddingRight = sidebar.offsetWidth + 'px';
+    }, 50);
+    setTimeout(function() {
+      body.style.paddingRight = sidebar.offsetWidth + 'px';
+    }, 100);
+    setTimeout(function() {
+      body.style.paddingRight = sidebar.offsetWidth + 'px';
+    }, 250);
 
   },
   toggleRightSidebar() {
@@ -84,10 +89,7 @@ Alpine.store('leftSidebar', {
 })
 
 
-// Alpine.start()
-
 function updateVisitedPages(title, url) {
-  // console.log('updateVisitedPages');
   const key = 'visitedPages';
   const maxVisitedPages = 5;
   let visitedPages = JSON.parse(localStorage.getItem(key)) || [];
@@ -106,7 +108,6 @@ function updateVisitedPages(title, url) {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-  // console.log('DOMContentLoaded');
   const pageTitle = document.title;
   const pageUrl = window.location.href;
   updateVisitedPages(pageTitle, pageUrl);

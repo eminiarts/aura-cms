@@ -2,30 +2,29 @@
 
 namespace Eminiarts\Aura;
 
-use Aura\Flows\Jobs\TriggerFlowOnCreatePostEvent;
-use Aura\Flows\Jobs\TriggerFlowOnDeletedPostEvent;
-use Aura\Flows\Jobs\TriggerFlowOnUpdatePostEvent;
+use Illuminate\Support\Str;
 use Aura\Flows\Resources\Flow;
+use Eminiarts\Aura\Resources\User;
+use Illuminate\Support\Facades\DB;
+use Eminiarts\Aura\Traits\InputFields;
+use Illuminate\Database\Eloquent\Model;
+use Eminiarts\Aura\Traits\SaveMetaFields;
+use Eminiarts\Aura\Traits\AuraModelConfig;
 use Eminiarts\Aura\Models\Scopes\TeamScope;
 use Eminiarts\Aura\Models\Scopes\TypeScope;
-use Eminiarts\Aura\Resources\User;
-use Eminiarts\Aura\Traits\AuraModelConfig;
-use Eminiarts\Aura\Traits\AuraTaxonomies;
 use Eminiarts\Aura\Traits\InitialPostFields;
-use Eminiarts\Aura\Traits\InputFields;
+use Eminiarts\Aura\Models\Scopes\ScopedScope;
 use Eminiarts\Aura\Traits\InteractsWithTable;
 use Eminiarts\Aura\Traits\SaveFieldAttributes;
-use Eminiarts\Aura\Traits\SaveMetaFields;
-use Eminiarts\Aura\Traits\SaveTerms;
-use Illuminate\Database\Eloquent\Concerns\HasTimestamps;
+use Aura\Flows\Jobs\TriggerFlowOnCreatePostEvent;
+use Aura\Flows\Jobs\TriggerFlowOnUpdatePostEvent;
+use Aura\Flows\Jobs\TriggerFlowOnDeletedPostEvent;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Str;
+use Illuminate\Database\Eloquent\Concerns\HasTimestamps;
 
 class Resource extends Model
 {
     use AuraModelConfig;
-    use AuraTaxonomies;
     use HasFactory;
     use HasTimestamps;
 
@@ -35,11 +34,12 @@ class Resource extends Model
     use InteractsWithTable;
     use SaveFieldAttributes;
     use SaveMetaFields;
-    use SaveTerms;
+
+    public $fieldsAttributeCache;
 
     protected $appends = ['fields'];
 
-    protected $fillable = ['title', 'content', 'type', 'status', 'fields', 'slug', 'user_id', 'parent_id', 'order', 'taxonomies', 'terms', 'team_id', 'first_taxonomy', 'created_at', 'updated_at', 'deleted_at'];
+    protected $fillable = ['title', 'content', 'type', 'status', 'fields', 'slug', 'user_id', 'parent_id', 'order', 'team_id', 'first_taxonomy', 'created_at', 'updated_at', 'deleted_at'];
 
     protected $hidden = ['meta'];
 
@@ -51,6 +51,25 @@ class Resource extends Model
     protected $table = 'posts';
 
     protected $with = ['meta'];
+
+    public function __call($method, $parameters)
+    {
+        if ($this->getFieldSlugs()->contains($method)) {
+            
+            $fieldClass = $this->fieldClassBySlug($method);
+
+            if ($fieldClass->isRelation()) {
+                $field = $this->fieldBySlug($method);
+
+                return $fieldClass->relationship($this, $field);
+            }
+        }
+
+        // ray($method);
+
+        // Default behavior for methods not handled dynamically
+        return parent::__call($method, $parameters);
+    }
 
     /**
      * @param  string  $key
@@ -64,8 +83,23 @@ class Resource extends Model
             return $value;
         }
 
-        // Not sure if this is the best way to do this
-        return $this->displayFieldValue($key, $value);
+        // If the key is in the fields array, then we want to return that
+        if (is_null($value) && isset($this->fields[$key])) {
+            return $this->fields[$key];
+        }
+
+        if ($this->getFieldSlugs()->contains($key)) {
+            $fieldClass = $this->fieldClassBySlug($key);
+            // $groupedField = $this->groupedFieldBySlug($key);
+
+            if ($fieldClass->isRelation()) {
+                $field = $this->fieldBySlug($key);
+
+                return $fieldClass->get($this, $field);
+            }
+        }
+
+        return $value;
     }
 
     /**
@@ -82,7 +116,18 @@ class Resource extends Model
      */
     public function children()
     {
-        return $this->hasMany(self::class, 'post_parent');
+        return $this->hasMany(get_class($this), 'parent_id');
+    }
+
+    public function clearFieldsAttributeCache()
+    {
+        $this->fieldsAttributeCache = null;
+
+        if ($this->usesMeta()) {
+            $this->load('meta'); // This will refresh only the 'meta' relationship
+        }
+
+        // $this->refresh();
     }
 
     public function getBulkActions()
@@ -97,7 +142,6 @@ class Resource extends Model
         //     $this->bulkActions['callManualFlow'] = $flow->name;
         // }
 
-        // dd($this->bulkActions);
         return $this->bulkActions;
     }
 
@@ -111,78 +155,79 @@ class Resource extends Model
 
     public function getFieldsAttribute()
     {
-        // ray('fields attribute');
+        if (! isset($this->fieldsAttributeCache) || $this->fieldsAttributeCache === null) {
+            $meta = $this->getMeta();
 
-        $meta = $this->getMeta();
+            $defaultValues = collect($this->inputFieldsSlugs())
+                ->mapWithKeys(fn ($value, $key) => [$value => null])
+                ->map(fn ($value, $key) => $meta[$key] ?? $value)
+                ->map(function ($value, $key) {
+                    // if the value is in $this->hidden, set it to null
+                    if (in_array($key, $this->hidden)) {
+                        // return null;
+                    }
 
-        $defaultValues = $this->getFieldSlugs()
-            ->mapWithKeys(fn ($value, $key) => [$value => null])
-            ->map(fn ($value, $key) => $meta[$key] ?? $value)
-            ->map(function ($value, $key) {
-                // if the value is in $this->hidden, set it to null
-                if (in_array($key, $this->hidden)) {
-                    return;
-                }
+                    $class = $this->fieldClassBySlug($key);
 
-                // if there is a function get{Slug}Field on the model, use it
-                $method = 'get'.Str::studly($key).'Field';
+                    if ($class && isset($this->{$key}) && method_exists($class, 'get')) {
+                        return $class->get($class, $this->{$key});
+                    }
 
-                if (method_exists($this, $method)) {
-                    return $this->{$method}();
-                }
+                    // if $this->{$key} is set, then we want to use that
+                    if (isset($this->{$key})) {
+                        return $this->{$key};
+                    }
 
-                $class = $this->fieldClassBySlug($key);
+                    if ($class && isset($this->attributes[$key]) && method_exists($class, 'get')) {
+                        return $class->get($class, $this->attributes[$key]);
+                    }
 
-                if ($key == 'submissions') {
-                    // TODO: Temporary fix
-                    return 'submissions';
-                }
+                    // if $this->attributes[$key] is set, then we want to use that
+                    if (isset($this->attributes[$key])) {
+                        return $this->attributes[$key];
+                    }
 
-                if ($class && isset(optional($this)->{$key}) && method_exists($class, 'get')) {
-                    return $class->get($class, $this->{$key} ?? null);
-                }
+                    // if there is a function get{Slug}Field on the model, use it
+                    $method = 'get'.Str::studly($key).'Field';
 
-                // if $this->{$key} is set, then we want to use that
-                if (isset($this->{$key})) {
-                    return $this->{$key};
-                }
+                    if (method_exists($this, $method)) {
+                        return $this->{$method}();
+                    }
 
-                // if $this->attributes[$key] is set, then we want to use that
-                if (isset($this->attributes[$key])) {
-                    return $this->attributes[$key];
-                }
+                    $class = $this->fieldClassBySlug($key);
+
+                    if ($class && isset(optional($this)->{$key}) && method_exists($class, 'get')) {
+                        return $class->get($class, $this->{$key} ?? null);
+                    }
+
+                    return $value;
+                });
+
+            $this->fieldsAttributeCache = $defaultValues->filter(function ($value, $key) {
+                return $this->shouldDisplayField($this->fieldBySlug($key));
             });
-
-        // ray($defaultValues);
-
-        return $defaultValues->merge($meta ?? [])->filter(function ($value, $key) {
-
-            // ray('before getAccessibleFieldKeys', $this->getAccessibleFieldKeys());
-
-            if (! in_array($key, $this->getAccessibleFieldKeys())) {
-                return false;
-            }
-
-            return true;
-        });
-    }
-
-    /**
-     * Gets the featured image if any
-     * Looks in meta the _thumbnail_id field.
-     *
-     * @return string
-     */
-    public function getImageAttribute()
-    {
-        if ($this->thumbnail and $this->thumbnail->attachment) {
-            return $this->thumbnail->attachment->guid;
         }
+
+        return $this->fieldsAttributeCache;
     }
+
+    // /**
+    //  * Gets the featured image if any
+    //  * Looks in meta the _thumbnail_id field.
+    //  *
+    //  * @return string
+    //  */
+    // public function getImageAttribute()
+    // {
+    //     if ($this->thumbnail and $this->thumbnail->attachment) {
+    //         return $this->thumbnail->attachment->guid;
+    //     }
+    // }
 
     public function getMeta($key = null)
     {
         if ($this->usesMeta() && optional($this)->meta && ! is_string($this->meta)) {
+
             $meta = $this->meta->pluck('value', 'key');
 
             // Cast Attributes
@@ -229,14 +274,8 @@ class Resource extends Model
         $possibleRelationMethods = [$key, Str::camel($key)];
 
         foreach ($possibleRelationMethods as $method) {
-            if ($method == 'taxonomy') {
-                continue;
-            }
-
-            // ray(in_array($method, $modelMethods) && ($this->{$method}() instanceof \Illuminate\Database\Eloquent\Relations\Relation), $method);
 
             if (in_array($method, $modelMethods) && ($this->{$method}() instanceof \Illuminate\Database\Eloquent\Relations\Relation)) {
-                // ray($key);
                 return true;
             }
         }
@@ -257,7 +296,7 @@ class Resource extends Model
      */
     public function parent()
     {
-        return $this->belongsTo(self::class, 'post_parent');
+        return $this->belongsTo(get_class($this), 'parent_id');
     }
 
     /**
@@ -265,7 +304,7 @@ class Resource extends Model
      */
     public function revision()
     {
-        return $this->hasMany(self::class, 'post_parent')
+        return $this->hasMany(self::class, 'parent_id')
             ->where('post_type', 'revision');
     }
 
@@ -276,7 +315,7 @@ class Resource extends Model
      */
     public function user()
     {
-        return $this->belongsTo(User::class);
+        return $this->belongsTo(config('aura.resources.user'));
     }
 
     public function widgets()
@@ -305,16 +344,46 @@ class Resource extends Model
 
         static::addGlobalScope(new TeamScope());
 
-        static::created(function ($post) {
-            dispatch(new TriggerFlowOnCreatePostEvent($post));
+        static::addGlobalScope(new ScopedScope());
+
+        static::creating(function ($model) {
+            // if (! $model->team_id) {
+            //     $model->team_id = 1;
+            // }
         });
 
-        static::updated(function ($post) {
-            dispatch(new TriggerFlowOnUpdatePostEvent($post));
+        static::saved(function ($model) {
+            $model->clearFieldsAttributeCache();
         });
 
-        static::deleted(function ($post) {
-            dispatch(new TriggerFlowOnDeletedPostEvent($post));
-        });
+        // static::created(function ($post) {
+        //     dispatch(new TriggerFlowOnCreatePostEvent($post));
+        // });
+
+        // static::updated(function ($post) {
+        //     dispatch(new TriggerFlowOnUpdatePostEvent($post));
+        // });
+
+        // static::deleted(function ($post) {
+        //     dispatch(new TriggerFlowOnDeletedPostEvent($post));
+        // });
     }
+
+
+     public function scopeWithFirstTaxonomy($query, $key, $taxonomy)
+{
+    $query->whereExists(function ($subQuery) use ($key, $taxonomy) {
+        $subQuery->select(DB::raw(1))
+                 ->from('post_meta')
+                 ->where('post_meta.post_id', '=', DB::raw('posts.id'))
+                 ->where('post_meta.key', $key)
+                 ->where(function ($subQuery) use ($taxonomy) {
+                     if (is_array($taxonomy) || is_object($taxonomy)) {
+                         foreach ($taxonomy as $value) {
+                             $subQuery->orWhereRaw('JSON_CONTAINS(CAST(post_meta.value as JSON), ?)', [(string)$value]);
+                         }
+                     }
+                 });
+    })->select('posts.*');
+}
 }

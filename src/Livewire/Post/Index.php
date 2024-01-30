@@ -12,7 +12,7 @@ class Index extends Component
 
     public $fields;
 
-    protected $post;
+    public $post;
 
     public $slug;
 
@@ -23,6 +23,10 @@ class Index extends Component
 
         // if this post is null redirect to dashboard
         if (is_null($this->post)) {
+            return redirect()->route('aura.dashboard');
+        }
+
+        if (!$this->post::$indexViewEnabled) {
             return redirect()->route('aura.dashboard');
         }
 
@@ -37,6 +41,6 @@ class Index extends Component
 
     public function render()
     {
-        return view('aura::livewire.post.index', ['post' => $this->post])->layout('aura::components.layout.app');
+        return view($this->post->indexView())->layout('aura::components.layout.app');
     }
 }

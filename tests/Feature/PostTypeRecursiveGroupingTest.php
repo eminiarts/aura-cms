@@ -89,21 +89,6 @@ test('recursive field function', function () {
 
     $fields = $model->getGroupedFields();
 
-    // Map to get a better overview of the data
-    // $fields = $fields->map(function ($field) {
-    //     return [
-    //         'name'=> $field['name'],
-    //         'type'=> $field['type'],
-    //         'fields'=> optional($field)['fields'],
-    //         '_id'=> $field['_id'],
-    //         '_parent_id'=> $field['_parent_id'],
-    //     ];
-    // });
-
-    // // dd($fields);
-
-    // dd($fields);
-
     $this->assertCount(1, $fields);
     $this->assertCount(2, $fields[0]['fields'][0]['fields']);
     $this->assertEquals($fields[0]['name'], 'Tabs');

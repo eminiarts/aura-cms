@@ -27,16 +27,15 @@ class View extends Component
     public $tax;
 
     // Listen for selectedAttachment
-    protected $listeners = ['updateField' => 'updateField'];
+    protected $listeners = [
+        'updateField' => 'updateField',
+        'refreshComponent' => '$refresh',
+        'reload',
+    ];
 
     public function getField($slug)
     {
         return $this->post['fields'][$slug];
-    }
-
-    public function getTaxonomiesProperty()
-    {
-        return $this->model->getTaxonomies();
     }
 
     public function mount($slug, $id)
@@ -56,6 +55,14 @@ class View extends Component
         $this->post['terms']['category'] = $this->post['terms']['category'] ?? null;
     }
 
+    public function reload()
+    {
+        $this->model = $this->model->fresh();
+        $this->post = $this->model->attributesToArray();
+
+        $this->dispatch('refreshComponent');
+    }
+
     public function render()
     {
         // $view = "aura.{$this->slug}.view";
@@ -68,7 +75,7 @@ class View extends Component
         // if (view()->exists("aura::" . $view)) {
         //     return view("aura::" . $view)->layout('aura::components.layout.app');
         // }
+        return view($this->model->viewView())->layout('aura::components.layout.app');
 
-        return view('aura::livewire.post.view')->layout('aura::components.layout.app');
     }
 }

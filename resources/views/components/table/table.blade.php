@@ -7,9 +7,7 @@
 
             <tbody class="bg-white divide-y divide-gray-200 dark:bg-gray-900 dark:divide-gray-700">
 
-                {{-- @dump($this->rows) --}}
-
-                @forelse($this->rows as $row)
+                @forelse($rows as $row)
                     @include($row->rowView())
                 @empty
 
@@ -23,7 +21,7 @@
                                 </path>
                             </svg>
 
-                            <h3 class="mt-2 text-sm font-medium text-gray-900">No entries available</h3>
+                            <h3 class="mt-2 text-sm font-medium text-gray-900">{{ __('No entries available') }}</h3>
                         </div>
                     </td>
                 </tr>

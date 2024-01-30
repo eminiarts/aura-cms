@@ -75,7 +75,7 @@ class PluginsPage extends Component
     {
         $this->loading[$name] = true;
         // refresh livewire component
-        $this->dispatchBrowserEvent('refresh');
+        $this->dispatch('refresh');
         $client = new \GuzzleHttp\Client();
         $generator = new PackagistUrlGenerator();
 

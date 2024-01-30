@@ -8,6 +8,15 @@ class Checkbox extends Field
 
     // public $view = 'components.fields.checkbox';
 
+    public function get($field, $value)
+    {
+        if (is_array($value) || $value === null) {
+            return $value;
+        }
+
+        return json_decode($value, true);
+    }
+
     public function getFields()
     {
         return array_merge(parent::getFields(), [
@@ -28,19 +37,7 @@ class Checkbox extends Field
 
             ],
             [
-                'label' => 'Key',
-                'name' => 'key',
-                'type' => 'Eminiarts\\Aura\\Fields\\Text',
-                'validation' => '',
-                'slug' => 'key',
-                'style' => [
-                    'width' => '50',
-                ],
-
-            ],
-            [
-                'label' => 'Value',
-                'name' => 'value',
+                'name' => 'Value',
                 'type' => 'Eminiarts\\Aura\\Fields\\Text',
                 'validation' => '',
                 'slug' => 'value',
@@ -49,6 +46,33 @@ class Checkbox extends Field
                 ],
 
             ],
+            [
+                'name' => 'Name',
+                'type' => 'Eminiarts\\Aura\\Fields\\Text',
+                'validation' => '',
+                'slug' => 'name',
+                'style' => [
+                    'width' => '50',
+                ],
+
+            ],
+            [
+                'name' => 'Default Value',
+                'type' => 'Eminiarts\\Aura\\Fields\\Text',
+                'validation' => '',
+                'instructions' => 'Default value on create',
+                'exclude_from_nesting' => true,
+                'slug' => 'default',
+            ],
         ]);
+    }
+
+    public function set($value)
+    {
+        if (is_array($value)) {
+            return json_encode($value);
+        }
+
+        return $value;
     }
 }
