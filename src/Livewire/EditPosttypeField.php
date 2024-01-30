@@ -33,7 +33,7 @@ class EditPosttypeField extends Component
         $this->post['fields'] = json_decode($params['field'], true);
         $this->field = json_decode($params['field'], true);
 
-        // dd($this->field, $params['field'], $params);
+        dd($this->field, $params['field'], $params);
 
         // Check if field is an input field
         if (app($this->field['type'])->isInputField()) {
