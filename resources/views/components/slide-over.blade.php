@@ -6,7 +6,6 @@
 
 
         if(data.component == this.key) {
-            console.log('get here?');
             @this.activate(data.parameters);
         }
     });
