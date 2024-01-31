@@ -14,7 +14,6 @@
                 <div @click="stopPropagation($event)">
                     <x-aura::confirms-action
                         wire:then="singleAction('{{ $action }}')"
-                        :confirmingPassword="true"
                         :title="__(optional($options)['confirm-title'])"
                         :content="__(optional($options)['confirm-content'])"
                         :button="__(optional($options)['confirm-button'])"

@@ -11,9 +11,7 @@ trait HasActions
      */
     public function confirmAction($id)
     {
-        $this->dispatch('action-confirmed', [
-            'id' => $id,
-        ]);
+        $this->dispatch('action-confirmed', id: $id);
 
     }
 
