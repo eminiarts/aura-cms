@@ -11,22 +11,31 @@ class MediaManager extends ModalComponent
 
     public $fieldSlug;
 
+    public $model;
+
     public $selected = [];
 
     // Listen for select Attachment
-    protected $listeners = ['selectedRows' => 'selectAttachment', 'tableMounted', 'updateField' => 'updateField'];
+    protected $listeners = [
+        'selectedRows' => 'selectAttachment', 
+        'tableMounted', 
+        'updateField' => 'updateField'
+    ];
 
     public static function modalMaxWidth(): string
     {
         return '7xl';
     }
 
-    public function mount($slug, $selected, $field)
+    public function mount($slug, $selected)
     {
         $this->selected = $selected;
         $this->fieldSlug = $slug;
 
-        $this->field = json_decode($field, true);
+        $this->field = app($this->model)->fieldBySlug($this->fieldSlug);
+
+        ray('mount media manager', app($this->model), $this->fieldSlug, $this->field);
+
 
     }
 
@@ -42,6 +51,8 @@ class MediaManager extends ModalComponent
             'slug' => $this->fieldSlug,
             'value' => $this->selected,
         ]);
+
+        ray('select', $this->fieldSlug, $this->selected);
 
         // If selected is deffered, emit event to table to update selected, then emit back to updateField
 

@@ -7,7 +7,7 @@ x-data="{
     lastSelectedId: null,
     total: @js($rows->total()),
     selectPage: false,
-    currentPage: @entangle('page').live,
+    currentPage: @entangle('paginator.page').defer,
     selectAll: @entangle('selectAll'),
     loading: false,
     oldSelected: null,
@@ -21,6 +21,9 @@ x-data="{
     @endif
 
     init() {
+
+        console.log('init table');
+        
         Livewire.on('selectedRows', (updatedSelected) => {
            // this.selected = updatedSelected;
         });
@@ -30,9 +33,11 @@ x-data="{
         }
 
         @if($field)
+        console.log('field here');
         {{-- Need to refactor this maybe because it's field specific --}}
         this.$watch('selected', value => {
             // Emit an event with the new value
+            console.log('watch selected', value);
 
              this.$dispatch('selection-changed', { selected: value, slug: '{{ $field['slug'] }}' });
              this.$dispatch('foo');
@@ -155,7 +160,8 @@ x-data="{
     {{-- Be aware that this file opens a div which closes at the end --}}
     @include('aura::components.table.context-menu')
 
-    {{-- @dump($settings) --}}
+    {{-- @dump($field) --}}
+
 
     <main class="" x-data="{
     showFilters: false,
