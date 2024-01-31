@@ -26,10 +26,6 @@
     }
 @endphp
 
-{{-- @dump(optional($field['field'])->api) --}}
-{{-- @dump($create)
-@dump($field)  --}}
-
 <x-aura::fields.wrapper :field="$field">
 
   <style >
@@ -50,7 +46,7 @@
     wire:ignore
     class="w-full"
     x-data="{
-        value: $wire.entangle('post.fields.{{ $field['slug'] }}').defer,
+        value: $wire.entangle('post.fields.{{ $field['slug'] }}'),
         items: @js($values),
         selectedItems: @js($selectedValues),
         api: @js($api),
