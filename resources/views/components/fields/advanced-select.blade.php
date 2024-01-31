@@ -26,10 +26,6 @@
     }
 @endphp
 
-{{-- @dump(optional($field['field'])->api) --}}
-{{-- @dump($create)
-@dump($field)  --}}
-
 <x-aura::fields.wrapper :field="$field">
 
   <style >
@@ -50,7 +46,7 @@
     wire:ignore
     class="w-full"
     x-data="{
-        value: $wire.entangle('post.fields.{{ $field['slug'] }}').defer,
+        value: $wire.entangle('post.fields.{{ $field['slug'] }}'),
         items: @js($values),
         selectedItems: @js($selectedValues),
         api: @js($api),
@@ -341,6 +337,7 @@
         <label class="sr-only">Select Item</label>
 
         <button
+        type="button"
             class="relative flex items-center justify-between w-full px-3 pt-0 pb-0 border rounded-lg shadow-xs appearance-none min-h-[2.625rem] border-gray-500/30 focus:border-primary-300 focus:outline-none ring-gray-900/10 focus:ring focus:ring-primary-300 focus:ring-opacity-50 dark:focus:ring-primary-500 dark:focus:ring-opacity-50 dark:bg-gray-900 dark:border-gray-700"
             x-ref="listboxButton"
             @click="toggleListbox"
@@ -470,8 +467,7 @@
     </div>
 
     @if($create)
-<button wire:click.prevent="$emit('openModal', 'aura::post-create-modal', {{ json_encode(['type' => $field['resource'], 'params' => [ 'for' => $field['slug'] ]
-]) }})" class="text-sm cursor-pointer text-bold">
+<button wire:click="$dispatch('openModal', { component: 'aura::post-create-modal', arguments: { type: '{{ $field['resource'] }}', params: { 'for': '{{ $field['slug'] }}' } }})" class="text-sm cursor-pointer text-bold">
     + {{ __('Create') }}
 </button>
 @endif

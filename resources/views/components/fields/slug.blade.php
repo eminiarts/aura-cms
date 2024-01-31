@@ -56,7 +56,7 @@
 
                 if (! this.custom) {
                     this.value = this.slugify(basedOn.value)
-                    $dispatch('input', this.value);
+                    $dispatch('input', { value: this.value });
                 } else {
                 }
                 // watch the element for changes of the value
@@ -64,7 +64,7 @@
                     // if the custom value is not set, update the value
                     if (! this.custom) {
                         this.value = this.slugify(event.target.value)
-                        $dispatch('input', this.value);
+                        $dispatch('input', { value: this.value });
                     }
                 })
 
@@ -76,9 +76,9 @@
         <div
             class="flex-1"
             @if(optional($field)['defer'] === false)
-            wire:model="post.fields.{{ optional($field)['slug'] }}"
+            wire:model.live="post.fields.{{ optional($field)['slug'] }}"
             @else
-            wire:model.defer="post.fields.{{ optional($field)['slug'] }}"
+            wire:model="post.fields.{{ optional($field)['slug'] }}"
             @endif
         >
             <x-aura::input.text type="text" x-bind:disabled="!custom" id="slug" @keyup="value = slugifyTyping($event.target.value)" x-model="value" />

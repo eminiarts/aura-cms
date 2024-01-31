@@ -21,7 +21,7 @@
             'disable': []
         });
     "
-    @change="$dispatch('input', $event.target.value)"
+    @change="$dispatch('input', { value: $event.target.value })"
     wire:ignore
     class="flex rounded-md shadow-sm"
 >
@@ -36,7 +36,7 @@
     </span>
 
     <input
-        wire:model.defer="post.fields.{{ optional($field)['slug'] }}"
+        wire:model="post.fields.{{ optional($field)['slug'] }}"
         x-ref="input"
         @if ($field['field']->isDisabled($this->post, $field))
         disabled

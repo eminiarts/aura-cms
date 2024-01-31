@@ -25,7 +25,7 @@
             });
 
             // Listen for the livewire event savedField
-            window.livewire.on('finishedSavingFields', () => {
+            $wire.on('finishedSavingFields', () => {
                 vm.fileSaved = true;
                 setTimeout(() => {
                     vm.fileSaved = false;
@@ -83,7 +83,7 @@
 
                 <div class="flex items-end w-full px-4 mb-0 md:w-1/3">
                     <div class="flex-1">
-                        <x-aura::input.text label="Icon" placeholder="Icon" wire:model.defer="postTypeFields.icon"></x-aura::input>
+                        <x-aura::input.text label="Icon" placeholder="Icon" wire:model="postTypeFields.icon"></x-aura::input>
                     </div>
 
                     <div class="flex items-center justify-center w-10 h-10 mt-0 ml-2 border rounded-lg shadow-xs border-gray-500/30">
@@ -95,17 +95,17 @@
 
                 <div class="flex items-end w-full px-4 mb-0 md:w-1/3">
                     <div class="flex-1">
-                        <x-aura::input.text label="Group" placeholder="Group" wire:model.defer="postTypeFields.group"></x-aura::input>
+                        <x-aura::input.text label="Group" placeholder="Group" wire:model="postTypeFields.group"></x-aura::input>
                     </div>
                 </div>
                 <div class="flex items-end w-full px-4 mb-0 md:w-1/3">
                     <div class="flex-1">
-                        <x-aura::input.text label="Dropdown" placeholder="Dropdown" wire:model.defer="postTypeFields.dropdown"></x-aura::input>
+                        <x-aura::input.text label="Dropdown" placeholder="Dropdown" wire:model="postTypeFields.dropdown"></x-aura::input>
                     </div>
                 </div>
                 <div class="flex items-end w-full px-4 mb-0 md:w-1/3">
                     <div class="flex-1">
-                        <x-aura::input.number label="Sort" placeholder="Sort" wire:model.defer="postTypeFields.sort" />
+                        <x-aura::input.number label="Sort" placeholder="Sort" wire:model="postTypeFields.sort" />
                     </div>
                 </div>
 
@@ -124,7 +124,7 @@
                 x-data="{
                     activeTab: 0,
 
-                    tabs: @entangle('globalTabs') ,
+                    tabs: @entangle('globalTabs').live,
 
                     init() {
                     }

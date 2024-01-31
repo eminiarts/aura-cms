@@ -25,7 +25,7 @@ trait MediaFields
         ]);
 
         // Emit Event selectedMediaUpdated
-        $this->emit('selectedMediaUpdated', [
+        $this->dispatch('selectedMediaUpdated', [
             'slug' => $slug,
             'value' => $field,
         ]);
@@ -48,12 +48,12 @@ trait MediaFields
     {
         $this->post['fields'][$data['slug']] = $data['value'];
 
-        $this->emit('fieldUpdated', [
+        $this->dispatch('fieldUpdated', [
             'slug' => $data['slug'],
             'value' => $data['value'],
         ]);
 
-        $this->emit('selectedMediaUpdated', [
+        $this->dispatch('selectedMediaUpdated', [
             'slug' => $data['slug'],
             'value' => $data['value'],
         ]);

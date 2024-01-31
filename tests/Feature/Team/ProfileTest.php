@@ -1,7 +1,7 @@
 <?php
 
-use Eminiarts\Aura\Http\Livewire\User\Profile;
-use Eminiarts\Aura\Http\Livewire\User\TwoFactorAuthenticationForm;
+use Eminiarts\Aura\Livewire\User\Profile;
+use Eminiarts\Aura\Livewire\User\TwoFactorAuthenticationForm;
 use Eminiarts\Aura\Models\User;
 use Illuminate\Support\Facades\Hash;
 use Livewire\Livewire;

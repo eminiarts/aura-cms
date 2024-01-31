@@ -3,7 +3,7 @@
 @endphp
 <x-aura::slide-over key="edit-operation" wire:key="editOperation" >
   <div x-data="{
-    post: @entangle('post'),
+    post: @entangle('post').live,
       init () {
         // alpine watch post
         this.$watch('post', (value) => {

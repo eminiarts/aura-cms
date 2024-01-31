@@ -1,9 +1,11 @@
 @props(['key' => 'slideover'])
+<div x-data="{ open: @entangle('open'), key: '{{ $key }}', init() {
+    Livewire.on('openSlideOver', (data) => {
+        console.log('open slide over', data);
 
-<div x-data="{ open: @entangle('open').defer, key: '{{ $key }}', init() {
-    Livewire.on('openSlideOver', (id, params) => {
-        if(id == this.key) {
-            @this.activate(params);
+
+        if(data.component == this.key) {
+            @this.activate(data.parameters);
         }
     });
 
@@ -14,7 +16,6 @@
     <div
         x-show="open"
         style="display: none"
-        
         x-on:keydown.escape.prevent.stop="open = false"
         role="dialog"
         aria-modal="true"

@@ -1,8 +1,8 @@
 <?php
 
 use Eminiarts\Aura\Facades\Aura;
-use Eminiarts\Aura\Http\Livewire\AuraConfig;
-use Eminiarts\Aura\Http\Livewire\User\InviteUser;
+use Eminiarts\Aura\Livewire\AuraConfig;
+use Eminiarts\Aura\Livewire\User\InviteUser;
 use Eminiarts\Aura\Providers\RouteServiceProvider;
 use Eminiarts\Aura\Resources\Role;
 use Eminiarts\Aura\Resources\Team;

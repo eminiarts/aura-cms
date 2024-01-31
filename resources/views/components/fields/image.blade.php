@@ -28,7 +28,28 @@ if($selected) {
     <x-aura::fields.wrapper :field="$field">
         <div>
             @if(isset($files) && count($files) > 0)
-                <div x-data="orderMedia" x-ref="container" data-slug="{{ $field['slug'] }}" class="flex flex-wrap px-0 mt-0 draggable-container" wire:key="edit-image-{{ $field['slug'] }}">
+                <div x-data="{
+                      init() {
+                    var container = this.$refs.container;
+                    var slug = container.getAttribute('data-slug');
+                    const sortable = new window.Sortable(container, {
+                        draggable: '.draggable-item',
+                        handle: '.draggable-handle',
+                        mirror: {
+                            constrainDimensions: true,
+                        },
+                    });
+                    sortable.on('sortable:stop', () => {
+                        setTimeout(() => {
+                            @this.reorderMedia(
+                            slug,
+                            Array.from(container.querySelectorAll('.draggable-item'))
+                            .map(el => el.id)
+                            )
+                        }, 0)
+                    })
+                }
+                }" x-ref="container" data-slug="{{ $field['slug'] }}" class="flex flex-wrap px-0 mt-0 draggable-container" wire:key="edit-image-{{ $field['slug'] }}">
                     @foreach($files as $file)
                     <div class="w-32 mb-1 mr-2 draggable-item"  wire:key="{{ $field['slug'] }}_file_{{ $file->id }}" id="{{ $field['slug'] }}_file_{{ $file->id }}">
 
@@ -66,37 +87,5 @@ if($selected) {
 
     </x-aura::fields.wrapper>
 
-    @once
-    @push('scripts')
-
-    <script >
-        document.addEventListener('alpine:init', () => {
-            Alpine.data('orderMedia', () => ({
-                init() {
-                    var container = this.$refs.container;
-                    var slug = container.getAttribute('data-slug');
-                    const sortable = new window.Sortable(container, {
-                        draggable: '.draggable-item',
-                        handle: '.draggable-handle',
-                        mirror: {
-                            constrainDimensions: true,
-                        },
-                    });
-                    sortable.on('sortable:stop', () => {
-                        setTimeout(() => {
-                            @this.reorderMedia(
-                            slug,
-                            Array.from(container.querySelectorAll('.draggable-item'))
-                            .map(el => el.id)
-                            )
-                        }, 0)
-                    })
-                }
-            }));
-        })
-
-    </script>
-
-    @endpush
-    @endonce
+   
 </div>

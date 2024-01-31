@@ -32,13 +32,13 @@
                 <div>
                     @if ($this->createInModal)
                         <a href="#"
-                            wire:click.prevent="$emit('openModal', 'aura::post-create-modal', {{ json_encode([
-                                'type' => $this->model->getType(),
-                                'params' => [
-                                    'for' => $this->field['relation'] ?? $parent->getType(),
-                                    'id' => $parent->id,
-                                ],
-                            ]) }})">
+                            wire:click.prevent="$dispatch('openModal', { component: 'aura::post-create-modal', arguments: {
+                                type: '{{ $this->model->getType() }}',
+                                params: {
+                                    'for': '{{ $this->field['relation'] ?? $parent->getType() }}',
+                                    'id': '{{ $parent->id }}'
+                                }
+                            }})">
                             <x-aura::button>
                                 <x-slot:icon>
                                     <x-aura::icon icon="plus" />
@@ -48,14 +48,12 @@
                         </a>
                     @else
                         @can('create', $model)
-                            <a href="{{ $this->createLink }}">
-                                <x-aura::button>
+                                <x-aura::button href="{{ $this->createLink }}" >
                                     <x-slot:icon>
                                         <x-aura::icon icon="plus" />
                                     </x-slot>
                                     <span>{{ __('Create') }} {{ $model->getName() }}</span>
                                 </x-aura::button>
-                            </a>
                         @endcan
                     @endif
                 </div>

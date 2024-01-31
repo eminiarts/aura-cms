@@ -14,7 +14,7 @@
 
                         </div>
 
-                        <x-aura::input.toggle wire:model="config.teams" />
+                        <x-aura::input.toggle wire:model.live="config.teams" />
 
                     </div>
                     <div class="flex-1 px-6 py-4">
@@ -45,7 +45,7 @@
                         </div>
 
                         </div>
-                        <x-aura::input.toggle wire:model="config.users" />
+                        <x-aura::input.toggle wire:model.live="config.users" />
                     </div>
                     <div class="flex-1 px-6 py-4">
                     <p class="mb-3 text-sm font-normal text-gray-500 dark:text-gray-400">Streamline software projects, sprints, and bug tracking.</p>
@@ -75,7 +75,7 @@
                         </div>
 
                         </div>
-                        <x-aura::input.toggle wire:model="config.media" />
+                        <x-aura::input.toggle wire:model.live="config.media" />
                     </div>
                     <div class="flex-1 px-6 py-4">
                     <p class="mb-3 text-sm font-normal text-gray-500 dark:text-gray-400">Link pull requests and automate workflows.</p>
@@ -105,7 +105,7 @@
                         </div>
 
                         </div>
-                        <x-aura::input.toggle wire:model="config.posts" />
+                        <x-aura::input.toggle wire:model.live="config.posts" />
                     </div>
                     <div class="flex-1 px-6 py-4">
                     <p class="mb-3 text-sm font-normal text-gray-500 dark:text-gray-400">Embed file previews in projects.</p>
@@ -135,7 +135,7 @@
                         </div>
 
                         </div>
-                        <x-aura::input.toggle wire:model="config.pages" />
+                        <x-aura::input.toggle wire:model.live="config.pages" />
                     </div>
                     <div class="flex-1 px-6 py-4">
                     <p class="mb-3 text-sm font-normal text-gray-500 dark:text-gray-400">Build custom automations and integrations with apps.</p>
@@ -167,7 +167,7 @@
                         </div>
 
                         </div>
-                        <x-aura::input.toggle wire:model="config.pro" />
+                        <x-aura::input.toggle wire:model.live="config.pro" />
                         </div>
                         <div class="flex-1 px-6 py-4">
                         <p class="mb-3 text-sm font-normal text-gray-500 dark:text-gray-400">Send notifications to channels and create projects.</p>
@@ -197,7 +197,7 @@
                             </div>
 
                             </div>
-                            <x-aura::input.toggle wire:model="config.activity" />
+                            <x-aura::input.toggle wire:model.live="config.activity" />
                         </div>
                         <div class="flex-1 px-6 py-4">
                         <p class="mb-3 text-sm font-normal text-gray-500 dark:text-gray-400">Link and automate Zendesk tickets.</p>
@@ -227,7 +227,7 @@
                             </div>
 
                             </div>
-                            <x-aura::input.toggle wire:model="config.forms" />
+                            <x-aura::input.toggle wire:model.live="config.forms" />
                         </div>
                         <div class="flex-1 px-6 py-4">
                         <p class="mb-3 text-sm font-normal text-gray-500 dark:text-gray-400">Plan, track, and release great software.</p>
@@ -256,7 +256,7 @@
                                 </div>
 
                                 </div>
-                                <x-aura::input.toggle wire:model="config.seo" />
+                                <x-aura::input.toggle wire:model.live="config.seo" />
                             </div>
                             <div class="flex-1 px-6 py-4">
                             <p class="mb-3 text-sm font-normal text-gray-500 dark:text-gray-400">Everything you need for work, all in one place.</p>

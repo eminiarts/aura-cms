@@ -166,6 +166,18 @@ class User extends UserModel
                     'width' => '100',
                 ],
             ],
+
+            [
+                'name' => 'Signatur',
+                'type' => 'Eminiarts\\Aura\\Fields\\Wysiwyg',
+                'validation' => 'required',
+                'on_index' => true,
+                'slug' => 'signature',
+                'style' => [
+                    'width' => '100',
+                ],
+            ],
+
             [
                 'name' => 'Roles',
                 'slug' => 'roles',
@@ -238,20 +250,20 @@ class User extends UserModel
                 'slug' => 'tab-posts',
                 'global' => true,
             ],
-            [
-                'name' => 'Posts',
-                'slug' => 'posts',
-                'type' => 'Eminiarts\\Aura\\Fields\\HasMany',
-                'resource' => 'Eminiarts\\Aura\\Resources\\Post',
-                'validation' => '',
-                'wrapper' => '',
-                'on_index' => false,
-                'on_forms' => true,
-                'on_view' => true,
-                'style' => [
-                    'width' => '100',
-                ],
-            ],
+            // [
+            //     'name' => 'Posts',
+            //     'slug' => 'posts',
+            //     'type' => 'Eminiarts\\Aura\\Fields\\HasMany',
+            //     'resource' => 'Eminiarts\\Aura\\Resources\\Post',
+            //     'validation' => '',
+            //     'wrapper' => '',
+            //     'on_index' => false,
+            //     'on_forms' => true,
+            //     'on_view' => true,
+            //     'style' => [
+            //         'width' => '100',
+            //     ],
+            // ],
             [
                 'type' => 'Eminiarts\\Aura\\Fields\\Tab',
                 'name' => 'Teams',

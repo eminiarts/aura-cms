@@ -1,6 +1,6 @@
 <?php
 
-use Eminiarts\Aura\Http\Livewire\Table\Table;
+use Eminiarts\Aura\Livewire\Table\Table;
 use Eminiarts\Aura\Models\User;
 use Eminiarts\Aura\Resources\Post;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -36,9 +36,9 @@ test('table can be paginated', function () {
         ->assertSee('21')
         ->assertSee('results')
         ->assertSet('perPage', 10)
-        ->assertSet('page', 1)
+        ->assertSet('paginators.page', 1)
         ->call('setPage', 2)
-        ->assertSet('page', 2)
+        ->assertSet('paginators.page', 2)
         ->assertSee($eleven->title);
 
 });

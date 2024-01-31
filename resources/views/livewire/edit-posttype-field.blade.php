@@ -1,7 +1,7 @@
 <x-aura::slide-over key="edit-field" wire:key="editPostTypeField">
 
   <div x-data="{
-    post: @entangle('post'),
+    post: @entangle('post').live,
       init () {
         // alpine watch post
         this.$watch('post', (value) => {
