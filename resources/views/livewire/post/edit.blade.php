@@ -33,7 +33,7 @@
 
         <div class="col-span-1 mx-0 sm:col-span-3">
 
-            @dump($this->post)
+            {{-- @dump($this->post) --}}
             {{-- @dump($this->rules()) --}}
             
             

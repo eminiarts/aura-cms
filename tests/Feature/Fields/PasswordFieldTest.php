@@ -88,7 +88,7 @@ test('password field gets not overwritten if saved as null', function () {
         ->call('setModel', $model)
         ->set('post.fields.password', '123456789')
         ->call('save')
-        ->assertHasNoErrors(['post.fields.number']);
+        ->assertHasNoErrors(['post.fields.password']);
 
     // assert in db has post with type DateModel
     $this->assertDatabaseHas('posts', ['type' => 'PasswordModel']);
