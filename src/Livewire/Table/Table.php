@@ -274,6 +274,15 @@ class Table extends Component
             $query = $this->model->indexQuery($query, $this);
         }
 
+        // If query is set, use it
+        if ($this->query && is_string($this->query)) {
+           try {
+               $query = app('dynamicFunctions')::call($this->query);
+           } catch (\Exception $e) {
+               // Handle the exception
+           }
+        }
+
         // when model is instance Resource, eager load meta
         if ($this->model->usesMeta()) {
             $query = $query->with(['meta']);
@@ -306,7 +315,7 @@ class Table extends Component
         $this->loaded = true;
     }
 
-    public function mount($query = null)
+    public function mount()
     {
         // if ($this->parentModel) {
         //     // dd($this->parentModel);
@@ -319,8 +328,6 @@ class Table extends Component
                 $this->filters = $this->userFilters[$this->selectedFilter];
             }
         }
-
-        $this->query = $query;
 
         $this->tableView = $this->model()->defaultTableView();
 

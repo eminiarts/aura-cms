@@ -109,7 +109,7 @@ class Edit extends Component
 
         // foreach fields, call the hydration method on the field
 
-        ray('mount', $this->post, $this->model);
+        // ray('mount', $this->post, $this->model);
 
         // Set on model instead of here
         // if $this->post['terms']['tag'] is not set, set it to null
@@ -145,8 +145,8 @@ class Edit extends Component
     {
         $this->validate();
 
-        ray()->clearScreen();
-        ray('saving', $this->post, $this->model);
+        // ray()->clearScreen();
+        // ray('saving', $this->post, $this->model);
 
         unset($this->post['fields']['group']);
 
