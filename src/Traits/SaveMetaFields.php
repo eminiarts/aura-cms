@@ -32,7 +32,8 @@ trait SaveMetaFields
                     }
 
                     // If the $class is a Password Field and the value is null, continue
-                    if ($class instanceof \Eminiarts\Aura\Fields\Password && is_null($value)) {
+                    if ($class instanceof \Eminiarts\Aura\Fields\Password && ($value === null || $value === '')) {
+
                         // If the password is available in the $post->attributes, unset it
                         if (isset($post->attributes[$key])) {
                             unset($post->attributes[$key]);
