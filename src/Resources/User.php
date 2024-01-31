@@ -75,12 +75,13 @@ class User extends UserModel
 
     public function getAvatarUrlAttribute()
     {
-        if (! $this->avatar) {
+        // ray($this->fields['avatar']);
+        if (! $this->fields['avatar']) {
             return 'https://ui-avatars.com/api/?name='.$this->getInitials().'';
         }
 
         // json decode the meta value
-        $meta = json_decode($this->avatar);
+        $meta = is_string($this->fields['avatar']) ? json_decode($this->fields['avatar']) : $this->fields['avatar'];
 
         // get the attachment from the meta
         $attachments = Attachment::find($meta);

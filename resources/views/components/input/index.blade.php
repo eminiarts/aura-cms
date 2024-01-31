@@ -3,7 +3,7 @@
   'prefix' => false,
   'size' => 'base',
   'class' => '',
-  'label' => false
+  'label' => false,
 ])
 
 
@@ -13,7 +13,7 @@
   @endif
   <div class="flex rounded-lg">
     @if ($prefix)
-      <span class="inline-flex items-center px-3 text-gray-500 border border-r-0 rounded-l-lg whitespace-nowrap border-gray-500/30 bg-gray-50 sm:text-sm dark:border-gray-700 dark:bg-gray-900">
+      <span class="inline-flex items-center px-3 text-gray-500 whitespace-nowrap bg-gray-50 rounded-l-lg border border-r-0 border-gray-500/30 sm:text-sm dark:border-gray-700 dark:bg-gray-900">
           {{ $prefix }}
       </span>
     @endif

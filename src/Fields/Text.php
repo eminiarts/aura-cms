@@ -32,6 +32,12 @@ class Text extends Field
                 'slug' => 'placeholder',
             ],
             [
+                'name' => 'Autocomplete',
+                'type' => 'Eminiarts\\Aura\\Fields\\Text',
+                'validation' => '',
+                'slug' => 'autocomplete',
+            ],
+            [
                 'name' => 'Prefix',
                 'type' => 'Eminiarts\\Aura\\Fields\\Text',
                 'validation' => '',
