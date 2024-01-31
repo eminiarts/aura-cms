@@ -130,3 +130,76 @@ test('password field gets not overwritten if saved as null', function () {
 
     $this->assertTrue(Hash::check('123456789', $post->password));
 });
+
+
+
+test('password field gets not overwritten if saved as empty string', function () {
+    $model = new PasswordFieldModel();
+
+    $component = Livewire::test(Create::class, ['slug' => 'Post'])
+        ->call('setModel', $model)
+        ->set('post.fields.password', '123456789')
+        ->call('save')
+        ->assertHasNoErrors(['post.fields.number']);
+
+    // assert in db has post with type DateModel
+    $this->assertDatabaseHas('posts', ['type' => 'PasswordModel']);
+
+    $post = PasswordFieldModel::first();
+
+    $this->assertTrue(Hash::check('123456789', $post->fields['password']));
+    $this->assertTrue(Hash::check('123456789', $post->password));
+
+    $model = PasswordFieldModel::query();
+    $slug = 'PasswordModel';
+
+    Aura::fake();
+    Aura::setModel($model);
+
+    // Assert that the mock works
+    $this->assertInstanceOf(PasswordFieldModel::class, Aura::findResourceBySlug($slug)->find($post->id));
+
+    // If we call the edit view, the password field should be empty
+    $component = Livewire::test(Edit::class, ['slug' => $slug, 'id' => $post->id])
+        ->assertSee('Edit Password Model')
+        ->assertSee('Password for Test')
+        ->assertSeeHtml('type="password"')
+        // assert that the password field is empty
+        ->assertSet('post.fields.password', "")
+        ->call('save')
+        ->assertHasNoErrors(['post.fields.password']);
+
+    $post = PasswordFieldModel::first();
+
+    // Assert Password is still 123456789
+    $this->assertTrue(Hash::check('123456789', $post->fields['password']));
+    $this->assertTrue(Hash::check('123456789', $post->password));
+});
+
+
+
+test('user password field gets not overwritten if saved as empty string', function () {
+   
+    $user = User::factory()->create([
+        'password' => Hash::make('password'),
+    ]);
+
+    $model = $user;
+
+    Aura::fake();
+    Aura::setModel($model);
+
+    // If we call the edit view, the password field should be empty
+    $component = Livewire::test(Edit::class, ['slug' => 'User', 'id' => $model->id])
+        ->assertSee('Password')
+        ->assertSeeHtml('type="password"')
+        // assert that the password field is empty
+        ->assertSet('post.fields.password', "")
+        ->call('save')
+        ->assertHasNoErrors(['post.fields.password']);
+
+    $user = $user->refresh();
+
+    // Assert Password is still 123456789
+    $this->assertTrue(Hash::check('password', $user->password));
+});

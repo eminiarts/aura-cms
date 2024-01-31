@@ -1,4 +1,4 @@
-<div>
+<div autocomplete="off">
     @section('title', __('Edit ' . $model->singularName()))
 
     {{ app('aura')::injectView('post_edit_breadcrumbs_before') }}
@@ -33,10 +33,11 @@
 
         <div class="col-span-1 mx-0 sm:col-span-3">
 
-            {{-- @dump($this->post) --}}
+            @dump($this->post)
             {{-- @dump($this->rules()) --}}
             
-            <div class="flex flex-wrap items-start -mx-2">
+            
+            <div class="flex flex-wrap items-start -mx-2" autocomplete="off">
                 @foreach($this->editFields as $key => $field)
                 @checkCondition($model, $field, $post)
                     <x-dynamic-component :component="$field['field']->component" :field="$field" wire:key="post-field-{{ $key }}" />
