@@ -24,7 +24,6 @@ trait Settings
             'global_filters' => true,
             'title' => true,
             'attach' => true,
-            'actions' => true,
             'selectable' => true,
             'default_view' => 'list',
             'header_before' => true,
