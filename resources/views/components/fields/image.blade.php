@@ -83,7 +83,9 @@ if($selected) {
             @endif
         </div>
 
-        <livewire:aura::media-uploader :table="false" :field="$field" :selected="$selected" :button="true" :model="app('Eminiarts\Aura\Resources\Attachment')" wire:key="media-uploader-{{ $field['slug'] }}"/>
+        {{-- @dump('field',$field) --}}
+
+        <livewire:aura::media-uploader :table="false" :field="$field" :selected="$selected" :button="true" :model="app('Eminiarts\Aura\Resources\Attachment')" :for="get_class($this->model)" wire:key="media-uploader-{{ $field['slug'] }}"/>
 
     </x-aura::fields.wrapper>
 

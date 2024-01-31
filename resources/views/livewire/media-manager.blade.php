@@ -4,9 +4,14 @@
 
     changeSelected(event) {
         this.selected = event.detail.selected
+        console.log('changeSelected', this.selected);
     },
 
 }" @selection-changed="changeSelected($event)">
+
+    {{-- @dump($selected)
+    @dump('field',$field) --}}
+
     <div class="">
         <livewire:aura::media-uploader :field="$field" :selected="$selected" :table="true" :model="app('Eminiarts\Aura\Resources\Attachment')" />
     </div>

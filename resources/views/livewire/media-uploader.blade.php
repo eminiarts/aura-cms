@@ -1,4 +1,7 @@
+
 <div>
+    {{-- media-uploader --}}
+    {{-- @dump('uploader',$field) --}}
         <div>
             @if($media && count($media))
             <div x-data="{ media: {{ json_encode($media) }}, loading: true }"
@@ -114,8 +117,9 @@
 
                 <div class="mt-2">
                     @if($button)
-                        <x-aura::button.light
-                            wire:click="$dispatch('openModal', { component: 'aura::media-manager', arguments: { field: '{{ json_encode($field) }}', slug: '{{ $field['slug'] }}', selected: '{{ json_encode($selected) }}' }})">
+
+                    <x-aura::button.light
+                            wire:click="$dispatch('openModal', { component: 'aura::media-manager', arguments: { model: {{ json_encode($for) }}, slug: '{{ $field['slug'] }}', selected: {{ json_encode($selected) }} }})">
                             <x-slot:icon>
                                 <x-aura::icon icon="media" class="" />
                             </x-slot>
@@ -130,8 +134,6 @@
                         x-show="isDropping">
                         <span class="text-3xl text-white">{{ __('Release file to upload!') }}</span>
                     </div>
-
-
                 </div>
 
                 <div class="bg-transparent dark:bg-gray-900 h-[4px] w-full mt-0" x-show="isUploading">
@@ -151,7 +153,6 @@
                 <div>
 
                     @if($upload)
-
                       <div>
                             <label for="file-upload">
                                 <p class="mb-4 text-sm text-gray-900 dark:text-gray-400">Datei hierhin ziehen oder <span class="text-primary-400">hier klicken</span> um eine Datei hochzuladen.</p>
@@ -163,7 +164,6 @@
 
                             </label>
                         </div>
-
                     @endif
 
                     @if($table)
@@ -173,7 +173,6 @@
                         <h1 class="text-3xl font-semibold">
                             {{ __('Attachments') }}
                         </h1>
-
 
                         <div>
                             <label for="file-upload">
@@ -189,14 +188,10 @@
                         <livewire:aura::table :model="$model" :field="$field" />
                     </div>
 
-
                     @endif
                 </div>
 
             </div>
 
         </div>
-
-
-
 </div>

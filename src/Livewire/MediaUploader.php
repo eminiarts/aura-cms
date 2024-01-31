@@ -14,6 +14,8 @@ class MediaUploader extends Component
 
     public $field;
 
+    public $for;
+
     public $namespace = Attachment::class;
 
     public $media = [];
@@ -32,6 +34,8 @@ class MediaUploader extends Component
     public function mount()
     {
         $this->model = app($this->namespace);
+
+        // ray('mount media uploader', $this->model, $this->field, $this->selected);
     }
 
     public function render()
