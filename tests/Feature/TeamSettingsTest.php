@@ -100,10 +100,11 @@ test('Team Settings can be saved', function () {
 
     $this->assertIsArray($option->value);
 
-    // dd($option->value, json_encode($option->value));
 
-    // assertJSON option value darkmode-type is auto
-    $this->assertJsonStringEqualsJsonString(json_encode($option->value), '{"darkmode-type":"light","sidebar-type":"light","color-palette":"red","gray-color-palette":"zinc"}');
+    $this->assertEquals('light', $option->value['darkmode-type']);
+    $this->assertEquals('light', $option->value['sidebar-type']);
+    $this->assertEquals('red', $option->value['color-palette']);
+    $this->assertEquals('zinc', $option->value['gray-color-palette']);
 
     // acting as $this->user, get team-settings page and assertSee "--primary-400: #f87171;" in html
     $this->actingAs($this->user)

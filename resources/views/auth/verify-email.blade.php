@@ -10,7 +10,7 @@
     @endif
 
     <div class="flex justify-between items-center mt-4">
-        <form method="POST" action="{{ route('verification.send') }}">
+        <form method="POST" action="{{ route('aura.verification.send') }}">
             @csrf
 
             <div>
