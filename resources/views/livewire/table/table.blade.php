@@ -242,7 +242,7 @@ x-data="{
                     </div>
                     @endif
 
-                    @if($this->settings['actions'])
+                    @if($this->settings['bulk_actions'])
                         @include($this->settings['views']['bulkActions'])
                     @endif
                 </div>

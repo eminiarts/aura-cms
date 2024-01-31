@@ -32,6 +32,7 @@ trait Settings
             'table_after' => true,
             'create' => true,
             'actions' => true,
+            'bulk_actions' => true,
             'header' => true,
             'views' => [
                 'table' => 'aura::components.table.table',
