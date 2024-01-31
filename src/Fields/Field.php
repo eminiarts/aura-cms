@@ -2,12 +2,13 @@
 
 namespace Eminiarts\Aura\Fields;
 
-use Eminiarts\Aura\Http\Livewire\Post\View;
+use Eminiarts\Aura\Livewire\Post\View;
 use Eminiarts\Aura\Traits\InputFields;
 use Illuminate\Support\Traits\Macroable;
 use Illuminate\Support\Traits\Tappable;
+use Livewire\Wireable;
 
-class Field
+class Field implements Wireable
 {
     use InputFields;
     use Macroable;
@@ -48,9 +49,10 @@ class Field
     public function field($field)
     {
         // $this->field = $field;
-        // $this->withAttributes($field);
-
+        //$this->withAttributes($field);
         return $this;
+
+        return get_class($this);
     }
 
     public function get($field, $value)
@@ -295,5 +297,23 @@ class Field
         $this->view = $view;
 
         return $this;
+    }
+
+    public function toLivewire()
+    {
+        return [
+            'type' => $this->type,
+            'view' => $this->view,
+        ];
+    }
+
+    public static function fromLivewire($data)
+    {
+        $field = new static();
+
+        $field->type = $data['type'];
+        $field->view = $data['view'];
+
+        return $field;
     }
 }

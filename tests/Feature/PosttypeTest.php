@@ -1,7 +1,7 @@
 <?php
 
 use Eminiarts\Aura\Facades\Aura;
-use Eminiarts\Aura\Http\Livewire\Posttype;
+use Eminiarts\Aura\Livewire\Posttype;
 use Eminiarts\Aura\Models\Post;
 use Eminiarts\Aura\Resources\User;
 use Livewire\Livewire;
@@ -77,7 +77,7 @@ it('can mount the posttype component', function () {
 it('can add new tab', function () {
     Livewire::test(PosttypeFake::class, ['slug' => 'Model'])
         ->call('addNewTab')
-        ->assertEmitted('openSlideOver');
+        ->assertDispatched('openSlideOver');
 });
 
 it('current posttype fields', function () {

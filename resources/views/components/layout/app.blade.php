@@ -48,11 +48,11 @@
         <style >[x-cloak] { display: none !important; }</style>
         <link rel="stylesheet" href="/vendor/aura/public/inter.css">
 
-        @livewireStyles
-
         @vite(['resources/css/app.css'], 'vendor/aura')
 
         @include('aura::components.layout.colors')
+
+        @livewireStyles
 
         @stack('styles')
     </head>
@@ -121,9 +121,7 @@
 
         <livewire:aura::notifications />
 
-        @livewireScripts
-
-        @livewire('livewire-ui-modal')
+        @livewire('wire-elements-modal')
 
         @stack('scripts')
 
@@ -157,5 +155,7 @@
 
         @vite(['resources/js/app.js'], 'vendor/aura')
         @vite(['resources/js/apexcharts.js'], 'vendor/aura')
+
+        @livewireScriptConfig
     </body>
 </html>

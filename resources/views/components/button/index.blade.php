@@ -41,7 +41,7 @@ if (!isset($sizes[$size])) {
 @if(isset($href))
 <a
   tabindex="0"
-  href="{{ $href }}"
+  href="{{ $href }}" wire:navigate
   {{$attributes->merge([
     'class' => $class . ' relative items-center focus:outline-none focus:ring-2 focus:ring-opacity-50 focus:ring-offset-2 dark:focus:ring-offset-gray-900 select-none' . ' ' .  optional($sizes)[$size],
   ])}}

@@ -2,13 +2,13 @@
 @selectfieldrows.window="selectRows($event.detail)"
 {{-- wire:poll.10000ms --}}
 x-data="{
-    selected: @entangle('selected').defer,
-    rows: @entangle('rowIds').defer,
+    selected: @entangle('selected'),
+    rows: @entangle('rowIds'),
     lastSelectedId: null,
-    total: @js($this->rows->total()),
+    total: @js($rows->total()),
     selectPage: false,
-    currentPage: @entangle('page'),
-    selectAll: @entangle('selectAll').defer,
+    currentPage: @entangle('page').live,
+    selectAll: @entangle('selectAll'),
     loading: false,
     oldSelected: null,
 
@@ -165,7 +165,7 @@ x-data="{
     },
     init() {
 
-        Livewire.emit('tableMounted')
+        Livewire.dispatch('tableMounted')
 
         const sortable = new window.Sortable(document.querySelectorAll('.sortable-wrapper'), {
             draggable: '.sortable',
@@ -242,7 +242,9 @@ x-data="{
                     </div>
                     @endif
 
-                    @include($this->settings['views']['bulkActions'])
+                    @if($this->settings['bulk_actions'])
+                        @include($this->settings['views']['bulkActions'])
+                    @endif
                 </div>
             </div>
 

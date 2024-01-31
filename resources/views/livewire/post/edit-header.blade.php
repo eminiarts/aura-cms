@@ -30,8 +30,8 @@
     </a>
     @endcan
 
-    <x-aura::button size="lg" wire:click="save">
-        <div wire:loading wire:target="save">
+    <x-aura::button size="lg" wire:click="save" wire:loading.attr="disabled">
+            <div wire:loading.delay wire:target="save">
             <x-aura::icon.loading />
         </div>
         {{ __('Save') }}

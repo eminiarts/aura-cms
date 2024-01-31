@@ -1,7 +1,6 @@
 import './bootstrap';
 
-import Alpine from 'alpinejs';
-
+import { Livewire, Alpine } from '../../vendor/livewire/livewire/dist/livewire.esm';
 
 import collapse from '@alpinejs/collapse';
 import focus from '@alpinejs/focus';
@@ -89,7 +88,6 @@ Alpine.store('leftSidebar', {
     }
 })
 
-Alpine.start()
 
 function updateVisitedPages(title, url) {
   const key = 'visitedPages';
@@ -114,3 +112,6 @@ document.addEventListener('DOMContentLoaded', () => {
   const pageUrl = window.location.href;
   updateVisitedPages(pageTitle, pageUrl);
 });
+
+
+Livewire.start();

@@ -167,7 +167,7 @@
             loading: false,
             show: false,
 
-            search: @entangle('search'),
+            search: @entangle('search').live,
 
             items: [],
 

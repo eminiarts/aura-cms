@@ -1,12 +1,13 @@
 <div class="flex flex-col mt-2" wire:key="table-index">
     <div
         class="min-w-full overflow-hidden overflow-x-auto align-middle border border-gray-400/30 sm:rounded-lg dark:border-gray-700">
+
         <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
             @include('aura::components.table.table_header')
 
             <tbody class="bg-white divide-y divide-gray-200 dark:bg-gray-900 dark:divide-gray-700">
 
-                @forelse($this->rows as $row)
+                @forelse($rows as $row)
                     @include($row->rowView())
                 @empty
 

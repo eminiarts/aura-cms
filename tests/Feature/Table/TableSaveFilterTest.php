@@ -1,6 +1,6 @@
 <?php
 
-use Eminiarts\Aura\Http\Livewire\Table\Table;
+use Eminiarts\Aura\Livewire\Table\Table;
 use Eminiarts\Aura\Models\User;
 use Eminiarts\Aura\Resource;
 use Eminiarts\Aura\Resources\Post;
@@ -220,7 +220,9 @@ test('table filter - custom filter can be removed', function () {
     $component->call('removeCustomFilter', 0);
 
     // $component->rows should have 2 items
-    expect($component->rows->items())->toHaveCount(2);
+    $component->assertViewHas('rows', function ($rows) {
+        return count($rows) == 2;
+    });
 
     // $component->filters should have 0 items
     expect($component->filters['custom'])->toHaveCount(0);
@@ -245,8 +247,9 @@ test('table filter - filters can be reset', function () {
     // Remove custom filter
     $component->call('resetFilter');
 
-    // $component->rows should have 2 items
-    expect($component->rows->items())->toHaveCount(2);
+    $component->assertViewHas('rows', function ($rows) {
+        return count($rows) == 2;
+    });
 
     // $component->filters should have 0 items
     expect($component->filters['custom'])->toHaveCount(0);

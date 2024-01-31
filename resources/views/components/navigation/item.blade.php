@@ -60,11 +60,11 @@
         @endif
 
         @if(Route::has($route))
-          href="{{ route($route) }}"
+          href="{{ route($route) }}" wire:navigate
         @elseif($href)
-          href="{{ $href }}"
+          href="{{ $href }}" wire:navigate
         @elseif($route)
-          href="{{ $route }}"
+          href="{{ $route }}" wire:navigate
         @endif
         tabindex="{{ $route ? '0' : '' }}"
         @class([
@@ -89,11 +89,11 @@
       @endif
 
       @if(Route::has($route))
-        href="{{ route($route) }}"
+        href="{{ route($route) }}" wire:navigate
       @elseif ($route)
-        href="{{ $route }}"
+        href="{{ $route }}" wire:navigate
       @elseif($href)
-        href="{{ $href }}"
+        href="{{ $href }}" wire:navigate
       @endif
       tabindex="{{ $route ? '0' : '' }}"
       @class([

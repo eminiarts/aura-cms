@@ -8,7 +8,7 @@
 <!-- Toggle -->
 <div
     x-data="{
-        value: @entangle($attributes->wire('model')),
+        value: @entangle($attributes->wire('model')).live,
         toggle() {
             if (this.value) {
                 this.value = !this.value;

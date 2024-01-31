@@ -12,7 +12,7 @@
     </div>
 
     <div class="flex justify-end mt-4">
-        <x-aura::button class="ml-4" wire:click="$emit('closeModal')">
+        <x-aura::button class="ml-4" wire:click="$dispatch('closeModal')">
             {{ __('Close') }}
         </x-aura::button>
         <x-aura::button.primary class="ml-4" wire:click="select">

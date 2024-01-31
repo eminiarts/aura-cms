@@ -23,7 +23,7 @@ if (key_exists('resource', $field) ) {
 wire:ignore
 x-data="{
     multiple: true,
-    value: @entangle('post.fields.' . $field['slug']).defer,
+    value: @entangle('post.fields.' . $field['slug']),
     options: @js($values),
     init() {
         if (!this.value) {

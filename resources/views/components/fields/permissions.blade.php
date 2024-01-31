@@ -18,7 +18,7 @@
 <x-aura::fields.conditions :field="$field" :model="$model">
 <div class="w-full" x-data="{
     groups: @js($groups),
-    field: @entangle($name).defer,
+    field: @entangle($name),
     init(){
 
         // if this.field is null, set it to an empty array

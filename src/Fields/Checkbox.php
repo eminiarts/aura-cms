@@ -10,7 +10,11 @@ class Checkbox extends Field
 
     public function get($field, $value)
     {
-        if (is_array($value) || $value === null) {
+        if ($value === null || $value === false) {
+            return [];
+        }
+
+        if (is_array($value)) {
             return $value;
         }
 

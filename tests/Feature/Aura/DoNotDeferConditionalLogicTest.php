@@ -2,8 +2,8 @@
 
 use Eminiarts\Aura\ConditionalLogic;
 use Eminiarts\Aura\Facades\Aura;
-use Eminiarts\Aura\Http\Livewire\Post\Create;
-use Eminiarts\Aura\Http\Livewire\Post\Edit;
+use Eminiarts\Aura\Livewire\Post\Create;
+use Eminiarts\Aura\Livewire\Post\Edit;
 use Eminiarts\Aura\Models\User;
 use Eminiarts\Aura\Resource;
 use Illuminate\Foundation\Testing\RefreshDatabase;

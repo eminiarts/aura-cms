@@ -20,7 +20,7 @@
                         <div class="p-4" role="none">
                             <div class="flex flex-col space-y-2">
                                 <label for="selected" class="block text-sm font-medium text-gray-700">Date Range:</label>
-                                <select id="selected" wire:model="selected" class="block w-full py-2 pl-3 pr-10 text-base border-gray-300 rounded-md focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm">
+                                <select id="selected" wire:model.live="selected" class="block w-full py-2 pl-3 pr-10 text-base border-gray-300 rounded-md focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm">
                                     @foreach($model->widgetSettings['options'] as $key => $label)
                                     <option value="{{ $key }}">{{ $label }}</option>
                                     @endforeach
@@ -28,9 +28,9 @@
                                 <div>
                                     @if($selected === 'custom')
                                         <label for="start" class="block text-sm font-medium text-gray-700">From:</label>
-                                        <input type="date" id="start" wire:model="start" class="block w-full py-2 pl-3 pr-10 text-base border-gray-300 rounded-md focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm">
+                                        <input type="date" id="start" wire:model.live="start" class="block w-full py-2 pl-3 pr-10 text-base border-gray-300 rounded-md focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm">
                                         <label for="end" class="block text-sm font-medium text-gray-700">To:</label>
-                                        <input type="date" id="end" wire:model="end" class="block w-full py-2 pl-3 pr-10 text-base border-gray-300 rounded-md focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm">
+                                        <input type="date" id="end" wire:model.live="end" class="block w-full py-2 pl-3 pr-10 text-base border-gray-300 rounded-md focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm">
                                     @endif
                                 </div>
                             </div>
@@ -42,7 +42,7 @@
                         <div class="p-4" role="none">
                             <div class="flex flex-col space-y-2">
                                 <label for="selected" class="block text-sm font-medium text-gray-700">Date Range:</label>
-                                <select id="selected" wire:model="selected" class="mt-2 block w-full rounded-md border-0 py-1.5 pl-3 pr-10 text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-primary-600 sm:text-sm sm:leading-6">
+                                <select id="selected" wire:model.live="selected" class="mt-2 block w-full rounded-md border-0 py-1.5 pl-3 pr-10 text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-primary-600 sm:text-sm sm:leading-6">
                                     @foreach($model->widgetSettings['options'] as $key => $label)
                                     <option value="{{ $key }}">{{ $label }}</option>
                                     @endforeach
@@ -50,9 +50,9 @@
                                 <div>
                                     @if($selected === 'custom')
                                         <label for="start" class="block text-sm font-medium text-gray-700">From:</label>
-                                        <input type="date" id="start" wire:model="start" class="block w-full py-2 pl-3 pr-10 text-base border-gray-300 rounded-md focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm">
+                                        <input type="date" id="start" wire:model.live="start" class="block w-full py-2 pl-3 pr-10 text-base border-gray-300 rounded-md focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm">
                                         <label for="end" class="block text-sm font-medium text-gray-700">To:</label>
-                                        <input type="date" id="end" wire:model="end" class="block w-full py-2 pl-3 pr-10 text-base border-gray-300 rounded-md focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm">
+                                        <input type="date" id="end" wire:model.live="end" class="block w-full py-2 pl-3 pr-10 text-base border-gray-300 rounded-md focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm">
                                     @endif
                                 </div>
                             </div>
@@ -78,7 +78,7 @@
                 }
             </style>
            <div wire:key="widgets_component_{{ $key }}">
-            @livewire(\Livewire\Livewire::getAlias($widget['type']), ['widget' => $widget, 'model' => $model, 'start' => $start, 'end' => $end], key($widget['slug'] . microtime()))
+            @livewire($widget['type'], ['widget' => $widget, 'model' => $model, 'start' => $start, 'end' => $end], key($widget['slug']))
            </div>
         </div>
         @endforeach

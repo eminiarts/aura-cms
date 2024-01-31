@@ -21,7 +21,29 @@ if($selected) {
     <x-aura::fields.wrapper :field="$field">
         <!-- blade if files isset and count  -->
         @if(isset($files) && count($files) > 0)
-        <div x-data="orderMedia" x-ref="container" data-slug="{{ $field['slug'] }}" class="flex flex-col px-0 mt-0 draggable-container">
+        <div x-data="{
+            init() {
+                var container = this.$refs.container;
+                // get data-slug attribute from container
+                var slug = container.getAttribute('data-slug');
+                const sortable = new window.Sortable(container, {
+                    draggable: '.draggable-item',
+                    handle: '.draggable-handle',
+                    mirror: {
+                        constrainDimensions: true,
+                    },
+                });
+                sortable.on('sortable:stop', () => {
+                    setTimeout(() => {
+                        @this.reorderMedia(
+                        slug,
+                        Array.from(container.querySelectorAll('.draggable-item'))
+                        .map(el => el.id)
+                        )
+                    }, 0)
+                })
+            }
+        }" x-ref="container" data-slug="{{ $field['slug'] }}" class="flex flex-col px-0 mt-0 draggable-container">
             @foreach($files as $file)
             {{-- @dump($file) --}}
             <div class="mb-2 w-full draggable-item"  wire:key="{{ $field['slug'] }}_file_{{ $file->id }}" id="{{ $field['slug'] }}_file_{{ $file->id }}">
@@ -60,47 +82,14 @@ if($selected) {
     </div>
     @endif
 
-    <livewire:aura::media-uploader :table="false" :field="$field" :selected="$selected" :button="true" :model="app('Eminiarts\Aura\Resources\Attachment')" wire:key="media-uploader-{{ $field['slug'] }}" />
+
+    @php
+    unset($field['field']);
+    @endphp
+
+    @ray($field,$selected)
+
+    <livewire:aura::media-uploader :table="false" :field="$field" :selected="$selected" :button="true" namespace="Eminiarts\Aura\Resources\Attachment" wire:key="media-uploader-{{ $field['slug'] }}" />
 </x-aura::fields.wrapper>
 </div>
 
-
-@once
-@push('scripts')
-
-<script >
-    // when alpine is ready
-    document.addEventListener('alpine:init', () => {
-        // define an alpinejs component named 'userDropdown'
-        Alpine.data('orderMedia', () => ({
-            init() {
-                var container = this.$refs.container;
-                // get data-slug attribute from container
-                var slug = container.getAttribute('data-slug');
-                const sortable = new window.Sortable(container, {
-                    draggable: '.draggable-item',
-                    handle: '.draggable-handle',
-                    mirror: {
-                        constrainDimensions: true,
-                    },
-                });
-                sortable.on('sortable:stop', () => {
-                    setTimeout(() => {
-                        @this.reorderMedia(
-                        slug,
-                        Array.from(container.querySelectorAll('.draggable-item'))
-                        .map(el => el.id)
-                        )
-
-                        // Livewire.emit('refreshComponent');
-                        // $emit('refreshComponent')
-                    }, 0)
-                })
-            }
-        }));
-    })
-
-</script>
-
-@endpush
-@endonce

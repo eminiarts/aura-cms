@@ -8,7 +8,6 @@ class DynamicFunctions
 
     public function add($callback)
     {
-
         $reflection = new \ReflectionFunction($callback);
         $file = $reflection->getFileName();
         $startLine = $reflection->getStartLine();
