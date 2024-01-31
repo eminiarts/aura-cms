@@ -5,6 +5,7 @@
         prefix="{{ optional($field)['prefix'] }}"
         type="number"
         placeholder="{{ optional($field)['placeholder'] ?? optional($field)['name'] }}"
+        autocomplete="{{ optional($field)['autocomplete'] ?? '' }}"
         wire:model.defer="post.fields.{{ optional($field)['slug'] }}"
         error="post.fields.{{ optional($field)['slug'] }}"
     ></x-aura::input.text>

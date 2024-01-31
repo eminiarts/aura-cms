@@ -1,6 +1,6 @@
 <x-aura::fields.wrapper :field="$field">
     @if (optional(optional($field)['options'])['native'])
-        <div class="relative z-40 md:relative left-4 right-4 bottom-6 md:inset-0"
+        <div class="relative right-4 left-4 bottom-6 z-40 md:relative md:inset-0"
             x-data="{
                 color: $wire.entangle('post.fields.{{ optional($field)['slug'] }}').defer,
                 init () {
@@ -13,9 +13,9 @@
                 },
             }"
         >
-            <x-aura::input.text :disabled="$field['field']->isDisabled($this->post, $field)" x-model="color" error="post.fields.{{ optional($field)['slug'] }}" placeholder="{{ optional($field)['placeholder'] ?? optional($field)['name'] }}" id="post-field-{{ optional($field)['slug'] }}"></x-aura::input.text>
+            <x-aura::input.text :disabled="$field['field']->isDisabled($this->post, $field)" x-model="color" error="post.fields.{{ optional($field)['slug'] }}" placeholder="{{ optional($field)['placeholder'] ?? optional($field)['name'] }}" id="post-field-{{ optional($field)['slug'] }}" autocomplete="{{ optional($field)['autocomplete'] ?? '' }}"></x-aura::input.text>
 
-            <input type="color" x-model="color" class="absolute z-10 w-6 h-6 transform -translate-y-1/2 border-none rounded-full cursor-pointer top-1/2 right-4" />
+            <input type="color" x-model="color" class="absolute right-4 top-1/2 z-10 w-6 h-6 rounded-full border-none transform -translate-y-1/2 cursor-pointer" />
         </div>
     @else
 

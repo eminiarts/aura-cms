@@ -11,6 +11,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Redirect;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rules\Password;
 use Livewire\Component;
@@ -247,8 +248,7 @@ class Profile extends Component
 
     public function logoutOtherBrowserSessions()
     {
-        if (request()->hasSession()) {
-            // dd('here');
+        if (request()->hasSession() && Schema::hasTable('sessions')) {
             DB::connection(config('session.connection'))->table(config('session.table', 'sessions'))
                 ->where('user_id', Auth::user()->getAuthIdentifier())
                 ->where('id', '!=', request()->session()->getId())
