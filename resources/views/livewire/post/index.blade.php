@@ -3,7 +3,7 @@
 
     {{ app('aura')::injectView('index_before') }}
 
-    <div class="flex items-start justify-between">
+    <div class="flex justify-between items-start">
 
         {{ app('aura')::injectView('breadcrumbs_before') }}
 
@@ -35,5 +35,5 @@
 
     {{ app('aura')::injectView('widgets_after') }}
 
-    <livewire:aura::table :model="$post" />
+    <livewire:aura::table :model="$post" :settings="$post->indexTableSettings()"/>
 </div>
