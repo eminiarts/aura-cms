@@ -145,8 +145,8 @@ class Edit extends Component
     {
         $this->validate();
 
-        // ray()->clearScreen();
-        // ray('saving', $this->post, $this->model);
+        ray()->clearScreen();
+        ray('saving', $this->post, $this->model);
 
         unset($this->post['fields']['group']);
 
