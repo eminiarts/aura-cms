@@ -402,11 +402,13 @@ trait AuraModelConfig
         ];
     }
 
-    public function getBadge() {
+    public function getBadge()
+    {
         return null;
     }
 
-    public function getBadgeColor() {
+    public function getBadgeColor()
+    {
         return null;
     }
 
@@ -446,6 +448,11 @@ trait AuraModelConfig
         return $query->whereHas('meta', function ($query) use ($field, $values) {
             $query->where('key', $field)->whereIn('value', $values);
         });
+    }
+
+    public function indexTableSettings()
+    {
+        return [];
     }
 
     public function scopeWhereMeta($query, ...$args)

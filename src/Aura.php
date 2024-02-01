@@ -269,7 +269,8 @@ class Aura
 
     public static function getPath($id)
     {
-        return Attachment::find($id)->url;
+        $attachment = Attachment::find($id);
+        return $attachment ? $attachment->url : null;
     }
 
     public function getResources(): array
@@ -321,7 +322,7 @@ class Aura
 
             $resources = app('hook_manager')->applyHooks('navigation', $resources->values());
 
-            $resources = $resources->sortBy('sort')->filter(function($value, $key) {
+            $resources = $resources->sortBy('sort')->filter(function ($value, $key) {
                 if (isset($value['conditional_logic'])) {
                     return app('dynamicFunctions')::call($value['conditional_logic']);
                 }
