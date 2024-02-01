@@ -397,11 +397,11 @@ class Table extends Component
         auth()->user()->updateOption('columns_sort.'.$this->model()->getType(), $slugs);
     }
 
-    public function selectFieldRows($data)
+    public function selectFieldRows($value, $slug)
     {
-        if ($data['slug'] == $this->field['slug']) {
+        if ($slug == $this->field['slug']) {
 
-            $this->selected = $data['value'];
+            $this->selected = $value;
         }
     }
 

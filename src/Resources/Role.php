@@ -60,7 +60,7 @@ class Role extends Resource
             ],
             [
                 'name' => 'Slug',
-                'slug' => 'name',
+                'slug' => 'slug',
                 'type' => 'Eminiarts\\Aura\\Fields\\Text',
                 'validation' => 'required',
                 'on_index' => true,
