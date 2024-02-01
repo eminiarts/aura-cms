@@ -97,6 +97,9 @@ class TeamPolicy
         if ($team::$editEnabled === false) {
             return false;
         }
+        if ($user->isAdmin()) {
+            return true;
+        }
 
         return $user->ownsTeam($team);
     }
