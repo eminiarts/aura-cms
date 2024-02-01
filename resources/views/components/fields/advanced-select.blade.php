@@ -194,6 +194,9 @@
 
         toggleItem(item) {
             // singular
+
+            console.log(this.multiple, this.value, item.id);
+            
             if (!this.multiple) {
                 this.value = item.id;
                 this.selectedItems = [item];
