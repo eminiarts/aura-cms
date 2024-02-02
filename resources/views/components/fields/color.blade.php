@@ -2,7 +2,7 @@
     @if (optional(optional($field)['options'])['native'])
         <div class="relative right-4 left-4 bottom-6 z-40 md:relative md:inset-0"
             x-data="{
-                color: $wire.entangle('post.fields.{{ optional($field)['slug'] }}').defer,
+                color: $wire.entangle('post.fields.{{ optional($field)['slug'] }}'),
                 init () {
                     // watch color for changes  and update the input
                     this.$watch('color', value => {
@@ -32,7 +32,7 @@
     
     <div wire:ignore class="flex items-center"
         x-data="{
-            selectedColor: $wire.entangle('post.fields.{{ optional($field)['slug'] }}').defer,
+            selectedColor: $wire.entangle('post.fields.{{ optional($field)['slug'] }}'),
             init() {
                 // Simple example, see optional options for more configuration.
                 const pickr = Pickr.create({

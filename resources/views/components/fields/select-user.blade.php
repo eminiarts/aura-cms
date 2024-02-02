@@ -35,7 +35,7 @@ $values = $field['field']->values($field['model']);
 <div
     class="w-64"
     x-data="{
-        value: $wire.entangle('post.fields.{{ $field['slug'] }}').defer,
+        value: $wire.entangle('post.fields.{{ $field['slug'] }}'),
         items: {{ Js::from($values) }},
 
         search: null,

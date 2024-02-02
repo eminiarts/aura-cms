@@ -22,7 +22,7 @@ if(optional($field)['api']) {
     wire:ignore
     class="w-full"
     x-data="{
-        value: $wire.entangle('post.fields.{{ $field['slug'] }}').defer,
+        value: $wire.entangle('post.fields.{{ $field['slug'] }}'),
         items: {{ Js::from($values) }},
         selectedItems: {{ Js::from($selectedValues) }},
         api: {{ optional($field)['api'] ? 'true' : 'false' }},
