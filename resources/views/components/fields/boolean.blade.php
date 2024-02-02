@@ -1,9 +1,9 @@
 <x-aura::fields.wrapper :field="$field">
     <div x-data="{ 
-        @if(optional($field)['defer'] === false)
-        value: $wire.entangle('post.fields.{{ optional($field)['slug'] }}'),
+        @if(optional($field)['live'] === true)
+        value: $wire.entangle('post.fields.{{ optional($field)['slug'] }}').live,
         @else
-        value: $wire.entangle('post.fields.{{ optional($field)['slug'] }}').defer,
+        value: $wire.entangle('post.fields.{{ optional($field)['slug'] }}'),
         @endif
     }"
         class="" x-id="['boolean']">
