@@ -69,7 +69,7 @@ test('a admin can perform assigned actions', function () {
     $this->assertNotTrue($r->fields['super_admin']);
 
     // Assert name is Admin
-    $this->assertEquals('Admin', $r->fields['name']);
+    $this->assertEquals('Admin', $r->title);
 
     // Attach to User
     $user = \Eminiarts\Aura\Resources\User::find(1);
@@ -115,7 +115,7 @@ test('a moderator can only view posts but not edit them', function () {
     $this->assertNotTrue($r->fields['super_admin']);
 
     // Assert name is Admin
-    $this->assertEquals('Moderator', $r->fields['name']);
+    $this->assertEquals('Moderator', $r->title);
 
     // Attach to User
     $user = \Eminiarts\Aura\Resources\User::find(1);
@@ -157,7 +157,7 @@ test('a moderator can access index page', function () {
     $this->assertNotTrue($r->fields['super_admin']);
 
     // Assert name is Admin
-    $this->assertEquals('Moderator', $r->fields['name']);
+    $this->assertEquals('Moderator', $r->title);
 
     // Attach to User
     $user = \Eminiarts\Aura\Resources\User::find(1);
@@ -185,7 +185,7 @@ test('a moderator can access index page', function () {
 });
 
 test('a admin can access all pages', function () {
-    $role = Role::create(['type' => 'Role', 'title' => 'Admin', 'slug' => 'admin', 'name' => 'Admin', 'description' => ' Admin has can perform almost everything.', 'super_admin' => false, 'permissions' => [
+    $role = Role::create(['type' => 'Role', 'title' => 'Admin', 'slug' => 'admin', 'description' => ' Admin has can perform almost everything.', 'super_admin' => false, 'permissions' => [
         'viewAny-post' => true,
         'view-post' => true,
         'create-post' => true,
@@ -210,7 +210,7 @@ test('a admin can access all pages', function () {
     $this->assertNotTrue($r->fields['super_admin']);
 
     // Assert name is Admin
-    $this->assertEquals('Admin', $r->fields['name']);
+    $this->assertEquals('Admin', $r->title);
 
     // Attach to User
     $user = \Eminiarts\Aura\Resources\User::find(1);
