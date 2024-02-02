@@ -7,7 +7,7 @@ x-data="{
     lastSelectedId: null,
     total: @js($rows->total()),
     selectPage: false,
-    currentPage: @entangle('paginator.page').defer,
+    currentPage: @entangle('paginator.page'),
     selectAll: @entangle('selectAll'),
     loading: false,
     oldSelected: null,

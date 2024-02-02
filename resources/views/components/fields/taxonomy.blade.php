@@ -7,7 +7,7 @@ $values = $taxonomy->pluck('name', 'id')->map(fn($name, $key) => ['value' => $ke
 <div
 x-data="{
     multiple: true,
-    value: $wire.entangle('post.terms.{{ $taxonomy->title }}').defer,
+    value: $wire.entangle('post.terms.{{ $taxonomy->title }}'),
     options: {{ Js::from($values) }},
     init() {
 
