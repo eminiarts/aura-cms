@@ -8,6 +8,7 @@
   'size' => 'base',
   'class' => 'text-white bg-primary-600 hover:bg-primary-700 focus:ring-primary-500 shadow-none',
   'type' => 'button',
+  'navigate' => true,
 ])
 
 @php
@@ -38,10 +39,11 @@ if (!isset($sizes[$size])) {
 }
 @endphp
 
+
 @if(isset($href))
 <a
   tabindex="0"
-  href="{{ $href }}" wire:navigate
+  href="{{ $href }}" @if($navigate) wire:navigate @endif
   {{$attributes->merge([
     'class' => $class . ' relative items-center focus:outline-none focus:ring-2 focus:ring-opacity-50 focus:ring-offset-2 dark:focus:ring-offset-gray-900 select-none' . ' ' .  optional($sizes)[$size],
   ])}}

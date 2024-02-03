@@ -16,25 +16,31 @@ class Image extends Field
             return;
         }
 
-        $values = is_array($value) ? $value : [$value];
+        try {
+            $values = is_array($value) ? $value : [$value];
 
-        $firstImageValue = array_shift($values);
-        $attachment = Attachment::find($firstImageValue);
+            $firstImageValue = array_shift($values);
+            $attachment = Attachment::find($firstImageValue);
 
-        if ($attachment) {
-            $url = $attachment->path('media');
-            $imageHtml = "<img src='{$url}' class='object-cover w-32 h-32 rounded-lg shadow-lg'>";
-        } else {
-            return $value;
+            if ($attachment) {
+                $url = $attachment->path('media');
+                $imageHtml = "<img src='{$url}' class='object-cover w-32 h-32 rounded-lg shadow-lg'>";
+            } else {
+                return $value;
+            }
+
+            $additionalImagesCount = count($values);
+            $circleHtml = '';
+            if ($additionalImagesCount > 0) {
+                $circleHtml = "<div class='flex items-center justify-center w-10 h-10 font-bold text-center text-gray-800 bg-gray-200 rounded-full'>+{$additionalImagesCount}</div>";
+            }
+
+            return "<div class='flex items-center space-x-2'>{$imageHtml}{$circleHtml}</div>";
+        } catch (\Exception $e) {
+            // Handle the exception or return a default value
+            // Log the error message if logging is desired
+            // error_log($e->getMessage());
         }
-
-        $additionalImagesCount = count($values);
-        $circleHtml = '';
-        if ($additionalImagesCount > 0) {
-            $circleHtml = "<div class='flex items-center justify-center w-10 h-10 font-bold text-center text-gray-800 bg-gray-200 rounded-full'>+{$additionalImagesCount}</div>";
-        }
-
-        return "<div class='flex items-center space-x-2'>{$imageHtml}{$circleHtml}</div>";
     }
 
     public function get($field, $value)
