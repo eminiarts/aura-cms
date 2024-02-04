@@ -47,7 +47,35 @@
                         </div>
                     </x-aura::confirms-action>
                 </div>
+                @elseif(optional($options)['onclick'])
+                    <div
+                        class="p-2 cursor-pointer hover:bg-primary-100"
+                    @if( $options['onclick'] )
+                        onclick="{!! $options['onclick'] !!}"
+                    @endif
+                    >
+                        @if(is_array($options))
+                        <div class="flex flex-col {{ $options['class'] ?? ''}}">
+                            <div class="flex items-center space-x-2">
+                                <div class="shrink-0">
+                                    {!! $options['icon'] ?? '' !!}
+                                    @if(optional($options)['icon-view'])
+                                    @include($options['icon-view'])
+                                    @endif
+                                </div>
+                                <strong class="font-semibold">{{ $options['label'] ?? '' }}
+                                    @if(optional($options)['description'])
+                                    <span
+                                        class="inline-block text-sm font-normal leading-tight text-gray-500">{{ $options['description'] ?? '' }}</span>
+                                    @endif
+                                </strong>
+                            </div>
 
+                        </div>
+                        @else
+                        {{ $options }}
+                        @endif
+                    </div>
                 @else
                 <div wire:click="singleAction('{{ $action }}')" class="p-2 cursor-pointer hover:bg-primary-100">
                     @if(is_array($options))
