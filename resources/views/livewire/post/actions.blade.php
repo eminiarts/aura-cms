@@ -1,5 +1,5 @@
 @if(count($this->actions))
-<x-aura::dropdown width="w-96">
+<x-aura::dropdown width="w-72">
         <x-slot name="trigger">
             <x-aura::button.transparent>
                 <x-aura::icon.dots class="mr-2 w-5 h-5" />
@@ -7,7 +7,7 @@
             </x-aura::button.transparent>
         </x-slot>
         <x-slot name="content">
-            <div class="px-2">
+            <div class="px-0">
                 @foreach($this->actions as $action => $options)
 
                 @if(optional($options)['confirm'] === true)
@@ -19,7 +19,7 @@
                         :button="__(optional($options)['confirm-button'])"
                         :button_class="optional($options)['confirm-button-class']"
                     >
-                        <div class="p-2 cursor-pointer hover:bg-primary-100">
+                        <div class="px-4 py-2 text-sm cursor-pointer hover:bg-primary-50">
                             @if(is_array($options))
                             <div class="flex flex-col {{ $options['class'] ?? ''}}">
                                 <div class="flex items-center space-x-2">
@@ -29,7 +29,7 @@
                                         @include($options['icon-view'])
                                         @endif
                                     </div>
-                                    <strong class="font-semibold">
+                                    <strong class="font-normal">
                                         {{ __($options['label'] ?? '') }}
                                         @if(optional($options)['description'])
                                         <span
@@ -49,7 +49,7 @@
                 </div>
                 @elseif(optional($options)['onclick'])
                     <div
-                        class="p-2 cursor-pointer hover:bg-primary-100"
+                        class="px-4 py-2 text-sm cursor-pointer hover:bg-primary-50"
                     @if( $options['onclick'] )
                         onclick="{!! $options['onclick'] !!}"
                     @endif
@@ -63,7 +63,7 @@
                                     @include($options['icon-view'])
                                     @endif
                                 </div>
-                                <strong class="font-semibold">{{ $options['label'] ?? '' }}
+                                <strong class="font-normal">{{ $options['label'] ?? '' }}
                                     @if(optional($options)['description'])
                                     <span
                                         class="inline-block text-sm font-normal leading-tight text-gray-500">{{ $options['description'] ?? '' }}</span>
@@ -77,7 +77,7 @@
                         @endif
                     </div>
                 @else
-                <div wire:click="singleAction('{{ $action }}')" class="p-2 cursor-pointer hover:bg-primary-100">
+                <div wire:click="singleAction('{{ $action }}')" class="px-4 py-2 text-sm cursor-pointer hover:bg-primary-50">
                     @if(is_array($options))
                     <div class="flex flex-col {{ $options['class'] ?? ''}}">
                         <div class="flex items-center space-x-2">
@@ -87,7 +87,7 @@
                                 @include($options['icon-view'])
                                 @endif
                             </div>
-                            <strong class="font-semibold">{{ $options['label'] ?? '' }}
+                            <strong class="font-normal">{{ $options['label'] ?? '' }}
                                 @if(optional($options)['description'])
                                 <span
                                     class="inline-block text-sm font-normal leading-tight text-gray-500">{{ $options['description'] ?? '' }}</span>
