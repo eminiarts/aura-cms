@@ -86,7 +86,9 @@ class User extends UserModel
         // get the attachment from the meta
         $attachments = Attachment::find($meta);
 
-        if ($attachments) {
+        // dd(count($attachments));
+
+        if (count($attachments) > 0) {
             $attachment = $attachments->first();
 
             return $attachment->path('thumbnail');
