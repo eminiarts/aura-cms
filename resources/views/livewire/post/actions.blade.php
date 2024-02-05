@@ -19,7 +19,7 @@
                         :button="__(optional($options)['confirm-button'])"
                         :button_class="optional($options)['confirm-button-class']"
                     >
-                        <div class="px-4 py-2 text-sm cursor-pointer hover:bg-primary-50">
+                        <div class="px-4 py-2 text-sm cursor-pointer hover:bg-gray-50">
                             @if(is_array($options))
                             <div class="flex flex-col {{ $options['class'] ?? ''}}">
                                 <div class="flex items-center space-x-2">
@@ -49,7 +49,7 @@
                 </div>
                 @elseif(optional($options)['onclick'])
                     <div
-                        class="px-4 py-2 text-sm cursor-pointer hover:bg-primary-50"
+                        class="px-4 py-2 text-sm cursor-pointer hover:bg-gray-50"
                     @if( $options['onclick'] )
                         onclick="{!! $options['onclick'] !!}"
                     @endif
@@ -77,7 +77,7 @@
                         @endif
                     </div>
                 @else
-                <div wire:click="singleAction('{{ $action }}')" class="px-4 py-2 text-sm cursor-pointer hover:bg-primary-50">
+                <div wire:click="singleAction('{{ $action }}')" class="px-4 py-2 text-sm cursor-pointer hover:bg-gray-50">
                     @if(is_array($options))
                     <div class="flex flex-col {{ $options['class'] ?? ''}}">
                         <div class="flex items-center space-x-2">
