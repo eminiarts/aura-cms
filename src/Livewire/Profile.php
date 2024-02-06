@@ -1,6 +1,6 @@
 <?php
 
-namespace Eminiarts\Aura\Livewire\User;
+namespace Eminiarts\Aura\Livewire;
 
 use Closure;
 use Eminiarts\Aura\Resources\Attachment;
@@ -101,30 +101,6 @@ class Profile extends Component
                 'name' => 'Personal Infos',
                 'type' => 'Eminiarts\\Aura\\Fields\\Panel',
                 'slug' => 'user-details',
-                'style' => [
-                    'width' => '100',
-                ],
-            ],
-            [
-                'name' => 'Signatur',
-                'type' => 'Eminiarts\\Aura\\Fields\\Image',
-                'validation' => ['nullable', 'array', 'max:1',
-                    function (string $attribute, mixed $value, Closure $fail) {
-
-                        if (! $value) {
-                            return;
-                        }
-                        // Check if the attachment is an image
-                        Attachment::findOrFail($value)->each(function ($attachment) use ($fail, $attribute) {
-                            if (! $attachment->isImage()) {
-                                $fail(__('The :attribute is not an image.', ['attribute' => $attribute]));
-                            }
-                        });
-
-                    },
-                ],
-                'conditional_logic' => [],
-                'slug' => 'signatur',
                 'style' => [
                     'width' => '100',
                 ],

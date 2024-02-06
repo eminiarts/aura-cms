@@ -15,7 +15,7 @@ use Eminiarts\Aura\Commands\PublishCommand;
 use Eminiarts\Aura\Commands\TransformTableToResource;
 use Eminiarts\Aura\Facades\Aura;
 use Eminiarts\Aura\Livewire\Attachment\Index as AttachmentIndex;
-use Eminiarts\Aura\Livewire\AuraConfig;
+use Eminiarts\Aura\Livewire\Config;
 use Eminiarts\Aura\Livewire\BookmarkPage;
 use Eminiarts\Aura\Livewire\CreateFlow;
 use Eminiarts\Aura\Livewire\CreatePosttype;
@@ -36,9 +36,9 @@ use Eminiarts\Aura\Livewire\Post\View;
 use Eminiarts\Aura\Livewire\Posttype;
 use Eminiarts\Aura\Livewire\Table\Table;
 use Eminiarts\Aura\Livewire\TeamSettings;
-use Eminiarts\Aura\Livewire\User\InviteUser;
-use Eminiarts\Aura\Livewire\User\Profile;
-use Eminiarts\Aura\Livewire\User\TwoFactorAuthenticationForm;
+use Eminiarts\Aura\Livewire\InviteUser;
+use Eminiarts\Aura\Livewire\Profile;
+use Eminiarts\Aura\Livewire\TwoFactorAuthenticationForm;
 use Eminiarts\Aura\Policies\ResourcePolicy;
 use Eminiarts\Aura\Policies\TeamPolicy;
 use Eminiarts\Aura\Policies\UserPolicy;
@@ -120,9 +120,9 @@ class AuraServiceProvider extends PackageServiceProvider
         Livewire::component('aura::edit-posttype', Posttype::class);
         Livewire::component('aura::team-settings', TeamSettings::class);
         Livewire::component('aura::invite-user', InviteUser::class);
-        Livewire::component('aura::config', AuraConfig::class);
+        Livewire::component('aura::config', app(config('aura.components.config')));
 
-        Livewire::component('aura::profile', app(Profile::class));
+        Livewire::component('aura::profile', app(config('aura.components.profile')));
 
         // Flows
         Livewire::component('aura::create-flow', CreateFlow::class);

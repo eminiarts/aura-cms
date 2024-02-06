@@ -50,7 +50,21 @@ return [
 
     'teams' => true,
 
-    'dashboard_component' => Eminiarts\Aura\Livewire\Dashboard::class,
+    /*
+   |--------------------------------------------------------------------------
+   | Livewire Components
+   |--------------------------------------------------------------------------
+   |
+   | You can customise the Livewire components that AURA uses to render
+   |
+   */
+
+   'components' => [
+        'dashboard' => Eminiarts\Aura\Livewire\Dashboard::class,
+        'profile' => Eminiarts\Aura\Livewire\Profile::class,
+        'team_settings' => Eminiarts\Aura\Livewire\TeamSettings::class,
+        'config' => Eminiarts\Aura\Livewire\Config::class,
+   ],
 
     'resources' => [
         'user' => Eminiarts\Aura\Resources\User::class,
