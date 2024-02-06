@@ -10,7 +10,7 @@ use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Cache;
 use Livewire\Component;
 
-class AuraConfig extends Component
+class Config extends Component
 {
     use InputFields;
     use MediaFields;
@@ -409,7 +409,7 @@ class AuraConfig extends Component
 
     public function render()
     {
-        return view('aura::livewire.aura-config')->layout('aura::components.layout.app');
+        return view('aura::livewire.config')->layout('aura::components.layout.app');
     }
 
     public function rules()

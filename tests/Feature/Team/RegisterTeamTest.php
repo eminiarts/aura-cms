@@ -1,7 +1,7 @@
 <?php
 
 use Eminiarts\Aura\Facades\Aura;
-use Eminiarts\Aura\Livewire\AuraConfig;
+use Eminiarts\Aura\Livewire\Config;
 use Eminiarts\Aura\Models\Scopes\TeamScope;
 use Eminiarts\Aura\Models\User;
 use Eminiarts\Aura\Resources\Option;
@@ -17,8 +17,8 @@ test('team can be registered', function () {
 })->todo();
 
 test('registration config can be disabled', function () {
-    // test AuraConfig Livewire component
-    $component = livewire(AuraConfig::class)
+    // test Config Livewire component
+    $component = livewire(Config::class)
         ->set('post.fields.team_registration', false)
         ->call('save')
         ->assertHasNoErrors();
@@ -40,8 +40,8 @@ test('registration config can be disabled', function () {
 });
 
 test('registration config can be enabled', function () {
-    // test AuraConfig Livewire component
-    $component = livewire(AuraConfig::class)
+    // test Config Livewire component
+    $component = livewire(Config::class)
         ->set('post.fields.team_registration', true)
         ->call('save')
         ->assertHasNoErrors();
@@ -67,7 +67,7 @@ test('aura config site is working', function () {
 });
 
 test('registration config can be enabled and called from the aura facade', function () {
-    livewire(AuraConfig::class)
+    livewire(Config::class)
         ->set('post.fields.team_registration', true)
         ->call('save')
         ->assertHasNoErrors();
