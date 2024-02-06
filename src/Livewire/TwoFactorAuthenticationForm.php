@@ -1,6 +1,6 @@
 <?php
 
-namespace Eminiarts\Aura\Livewire\User;
+namespace Eminiarts\Aura\Livewire;
 
 use Eminiarts\Aura\Resources\User;
 use Eminiarts\Aura\Traits\ConfirmsPasswords;

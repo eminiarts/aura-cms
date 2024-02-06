@@ -3856,7 +3856,7 @@ use Eminiarts\Aura\Commands\PublishCommand;
 use Eminiarts\Aura\Commands\TransformTableToResource;
 use Eminiarts\Aura\Facades\Aura;
 use Eminiarts\Aura\Http\Livewire\Attachment\Index as AttachmentIndex;
-use Eminiarts\Aura\Http\Livewire\AuraConfig;
+use Eminiarts\Aura\Http\Livewire\Config;
 use Eminiarts\Aura\Http\Livewire\BookmarkPage;
 use Eminiarts\Aura\Http\Livewire\CreateFlow;
 use Eminiarts\Aura\Http\Livewire\CreatePosttype;
@@ -3971,7 +3971,7 @@ class AuraServiceProvider extends PackageServiceProvider
         Livewire::component('aura::taxonomy-view', TaxonomyView::class);
         Livewire::component('aura::team-settings', TeamSettings::class);
         Livewire::component('aura::invite-user', InviteUser::class);
-        Livewire::component('aura::config', AuraConfig::class);
+        Livewire::component('aura::config', Config::class);
 
         Livewire::component('aura::profile', Profile::class);
 

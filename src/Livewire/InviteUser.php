@@ -1,6 +1,6 @@
 <?php
 
-namespace Eminiarts\Aura\Livewire\User;
+namespace Eminiarts\Aura\Livewire;
 
 use Eminiarts\Aura\Mail\TeamInvitation;
 use Eminiarts\Aura\Resources\Role;

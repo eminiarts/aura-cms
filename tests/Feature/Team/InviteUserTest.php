@@ -1,7 +1,7 @@
 <?php
 
 use Eminiarts\Aura\Facades\Aura;
-use Eminiarts\Aura\Livewire\AuraConfig;
+use Eminiarts\Aura\Livewire\Config;
 use Eminiarts\Aura\Livewire\User\InviteUser;
 use Eminiarts\Aura\Providers\RouteServiceProvider;
 use Eminiarts\Aura\Resources\Role;
@@ -168,7 +168,7 @@ test('user email is prefilled in the registration', function () {
 });
 
 test('user_invitations can be enabled', function () {
-    livewire(AuraConfig::class)
+    livewire(Config::class)
         ->set('post.fields.user_invitations', true)
         ->call('save')
         ->assertHasNoErrors();
@@ -179,7 +179,7 @@ test('user_invitations can be enabled', function () {
 });
 
 test('user_invitations can be disabled', function () {
-    livewire(AuraConfig::class)
+    livewire(Config::class)
         ->set('post.fields.user_invitations', true)
         ->call('save')
         ->assertHasNoErrors();
