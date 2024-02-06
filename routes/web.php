@@ -5,7 +5,7 @@ use Eminiarts\Aura\Livewire\User\Profile;
 use Eminiarts\Aura\Livewire\Posttype;
 use Eminiarts\Aura\Livewire\Post\Edit;
 use Eminiarts\Aura\Livewire\Post\View;
-use Eminiarts\Aura\Livewire\AuraConfig;
+use Eminiarts\Aura\Livewire\Config;
 use Eminiarts\Aura\Livewire\Post\Index;
 use Eminiarts\Aura\Livewire\Post\Create;
 use Eminiarts\Aura\Livewire\TeamSettings;
@@ -30,7 +30,7 @@ Route::domain(config('aura.domain'))
 
         Route::prefix(config('aura.path'))->group(function () {
 
-            Route::get('/', config('aura.dashboard_component'))->name('dashboard');
+            Route::get('/', config('aura.components.dashboard'))->name('dashboard');
 
             // route for api/fields/values which calls Api\FieldsController@values
             Route::post('/api/fields/values', [FieldsController::class, 'values'])->name('api.fields.values');
@@ -39,10 +39,10 @@ Route::domain(config('aura.domain'))
                 return view('aura::posttypes');
             })->name('posttypes');
 
-            Route::get('/profile', Profile::class)->name('profile');
+            Route::get('/profile', config('aura.components.profile'))->name('profile');
 
-            Route::get('/settings', TeamSettings::class)->name('team.settings');
-            Route::get('/config', AuraConfig::class)->name('config');
+            Route::get('/settings', config('aura.components.team_settings'))->name('team.settings');
+            Route::get('/config', config('aura.components.config'))->name('config');
 
             Route::get('/posttypes/{slug}', Posttype::class)->name('posttype.edit');
 

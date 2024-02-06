@@ -1,6 +1,6 @@
 <x-aura::layout.app>
     @php
-        $dashboardComponent = config('aura.dashboard_component');
+        $dashboardComponent = config('aura.components.dashboard');
     @endphp
 
     @if($dashboardComponent && class_exists($dashboardComponent))
