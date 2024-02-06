@@ -1,5 +1,5 @@
 <x-aura::layout.guest>
-    <form method="POST" action="{{ route('aura.register') }}">
+    <form method="POST" action="{{ route('aura.register') }}" onsubmit="document.getElementById('register-button').disabled = true;">
         @csrf
 
         @if(config('aura.teams'))
@@ -53,7 +53,7 @@
                 {{ __('Already registered?') }}
             </a>
 
-            <x-aura::primary-button class="ml-4">
+            <x-aura::primary-button class="ml-4" id="register-button">
                 {{ __('Register') }}
             </x-aura::primary-button>
         </div>
