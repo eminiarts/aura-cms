@@ -185,7 +185,7 @@ class User extends Authenticatable
     public function getOptionColumns($slug)
     {
         // Cache
-        $option = Cache::remember('user.option.columns.'.$this->id.'.'.$slug, now()->addHour(), function () use ($slug) {
+        $option = Cache::remember('user.'.$this->id.'.columns.'.$slug, now()->addHour(), function () use ($slug) {
             return Option::whereName('user.'.$this->id.'.columns.'.$slug)->first();
         });
 
@@ -327,6 +327,8 @@ class User extends Authenticatable
         $option = 'user.'.$this->id.'.'.$option;
 
         Option::updateOrCreate(['name' => $option], ['value' => $value]);
+
+        ray('updateOption', $option, $value)->red();
 
         // Clear the cache
         Cache::forget($option);
