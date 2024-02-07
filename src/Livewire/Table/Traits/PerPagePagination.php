@@ -34,12 +34,12 @@ trait PerPagePagination
      *
      * @return void
      */
-    public function mountWithPerPagePagination()
+    public function mountPerPagePagination()
     {
-        $this->perPage = session()->get('perPage', $this->perPage);
+        $this->perPage = session()->has('perPage') ? session()->get('perPage') : $this->model()->defaultPerPage();
     }
 
-   
+
     /**
      * Update the per-page pagination data in the session.
      *
@@ -48,6 +48,7 @@ trait PerPagePagination
      */
     public function updatedPerPage($value)
     {
+        ray('updatedPerPage', $value)->red();
         session()->put('perPage', $value);
     }
 }

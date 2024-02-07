@@ -300,7 +300,7 @@ class Table extends Component
 
         $query = $this->applySorting($query);
 
-        $query = $query->paginate(10);
+        $query = $query->paginate($this->perPage);
 
         return $query;
     }
@@ -331,15 +331,12 @@ class Table extends Component
 
         $this->tableView = $this->model()->defaultTableView();
 
-        $this->perPage = $this->model()->defaultPerPage();
+
 
         if (auth()->user()->getOptionColumns($this->model()->getType())) {
             $this->columns = auth()->user()->getOptionColumns($this->model()->getType());
-            ray('columns 1', $this->columns);
         } else {
             $this->columns = $this->model()->getDefaultColumns();
-            ray('columns 2', $this->columns);
-
         }
 
         $this->initiateSettings();

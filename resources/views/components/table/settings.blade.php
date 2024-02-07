@@ -1,5 +1,5 @@
 {{-- @dump($this->modelColumns) --}}
-{{-- @dump($columns) --}}
+@dump($perPage)
 
 <div id="table-columns-button" class="relative close-on-select-false">
     <x-aura::dropdown align="right" width="60" :closeOnSelect="false">
@@ -48,10 +48,11 @@
                     <div class="flex justify-between items-center">
                         <x-aura::label value="{{ __('Per page') }}" />
                         <x-aura::input.group borderless inline paddingless for="perPage" label="">
-                            <x-aura::input.select wire:model="perPage" id="perPage" class="bg-gray-50 rounded-md">
+                            <x-aura::input.select wire:model.live="perPage" id="perPage" class="bg-gray-50 rounded-md">
                                 <option value="10">10</option>
                                 <option value="25">25</option>
                                 <option value="50">50</option>
+                                <option value="100">100</option>
                             </x-aura::input.select>
                         </x-aura::input.group>
                     </div>
