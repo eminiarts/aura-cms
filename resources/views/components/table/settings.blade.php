@@ -1,6 +1,3 @@
-{{-- @dump($this->modelColumns) --}}
-@dump($perPage)
-
 <div id="table-columns-button" class="relative close-on-select-false">
     <x-aura::dropdown align="right" width="60" :closeOnSelect="false">
         <x-slot name="trigger">
