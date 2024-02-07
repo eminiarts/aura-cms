@@ -276,11 +276,11 @@ class Table extends Component
 
         // If query is set, use it
         if ($this->query && is_string($this->query)) {
-           try {
-               $query = app('dynamicFunctions')::call($this->query);
-           } catch (\Exception $e) {
-               // Handle the exception
-           }
+            try {
+                $query = app('dynamicFunctions')::call($this->query);
+            } catch (\Exception $e) {
+                // Handle the exception
+            }
         }
 
         // when model is instance Resource, eager load meta
@@ -335,8 +335,11 @@ class Table extends Component
 
         if (auth()->user()->getOptionColumns($this->model()->getType())) {
             $this->columns = auth()->user()->getOptionColumns($this->model()->getType());
+            ray('columns 1', $this->columns);
         } else {
             $this->columns = $this->model()->getDefaultColumns();
+            ray('columns 2', $this->columns);
+
         }
 
         $this->initiateSettings();
@@ -381,7 +384,8 @@ class Table extends Component
         $this->setPage(10);
     }
 
-    public function refreshRows() {
+    public function refreshRows()
+    {
         unset($this->rowsQuery);
         unset($this->rows);
     }
@@ -429,6 +433,7 @@ class Table extends Component
     {
         // Save the columns for the current user.
         if ($this->columns) {
+            ray('Save the columns for the current user', $this->columns);
             auth()->user()->updateOption('columns.'.$this->model()->getType(), $this->columns);
         }
     }
