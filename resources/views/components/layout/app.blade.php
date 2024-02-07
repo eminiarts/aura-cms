@@ -125,31 +125,8 @@
 
         @stack('scripts')
 
-  <script >
-      // after 100ms trigger a window resize event to force the chart to redraw
-      setTimeout(function() {
-          window.dispatchEvent(new Event('resize'));
-      }, 0);
-      setTimeout(function() {
-          window.dispatchEvent(new Event('resize'));
-      }, 100);
-
-      const darkModeMediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-
-        function setFaviconBasedOnPreferredColorScheme(event) {
-            if (event.matches) {
-                // The user has set their browser to prefer dark mode, so show the darkmode favicon
-                document.querySelector("link[sizes='32x32']").href = '{{ $darkFavicon }}';
-            } else {
-                // The user has set their browser to prefer light mode, so show the lightmode favicon
-                document.querySelector("link[sizes='32x32']").href = '{{ $favicon }}';
-            }
-        }
-
-        darkModeMediaQuery.addListener(setFaviconBasedOnPreferredColorScheme);
-
-        // Set the initial value
-        setFaviconBasedOnPreferredColorScheme(darkModeMediaQuery);
+  <script>
+     
 
   </script>
 
