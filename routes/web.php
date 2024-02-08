@@ -40,7 +40,7 @@ Route::domain(config('aura.domain'))
             Route::get('/settings', config('aura.components.team_settings'))->name('team.settings');
             Route::get('/config', config('aura.components.config'))->name('config');
 
-            Route::get('/resources/{slug}', ResourceEditor::class)->name('resource.editor');
+            Route::get('/resources/{slug}/editor', ResourceEditor::class)->name('resource.editor');
 
             Route::get('/attachment', AttachmentIndex::class)->name('attachment.index');
 

@@ -36,12 +36,12 @@
 
       @foreach($this->model->getGroupedFields() as $key => $field)
         <style >
-        #post-field-{{ optional($field)['slug'] }}-wrapper {
+        #resource-field-{{ optional($field)['slug'] }}-wrapper {
           width: {{ optional(optional($field)['style'])['width'] ?? '100' }}%;
         }
 
         @media screen and (max-width: 768px) {
-          #post-field-{{ optional($field)['slug'] }}-wrapper {
+          #resource-field-{{ optional($field)['slug'] }}-wrapper {
             width: 100%;
           }
         }

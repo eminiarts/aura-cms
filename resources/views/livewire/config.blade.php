@@ -18,7 +18,7 @@
 
     @foreach($this->fieldsForView as $key => $field)
     <style >
-        #post-field- {
+        #resource-field- {
                 {
                 optional($field)['slug']
             }
@@ -35,7 +35,7 @@
         }
 
         @media screen and (max-width: 768px) {
-            #post-field- {
+            #resource-field- {
                     {
                     optional($field)['slug']
                 }

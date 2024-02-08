@@ -17,7 +17,6 @@
             // Listen for the beforeunload event on the window
             var vm = this;
             window.addEventListener('beforeunload', function (event) {
-
                 if (vm.fileSaved) {
                     event.preventDefault();
                     event.returnValue = 'You have unsaved changes. Are you sure you want to leave this page?';
@@ -50,10 +49,7 @@
     </div>
 
     <div class="mt-8">
-        {{-- <h2 class="text-3xl font-semibold">Edit Post Type</h2> --}}
-
         <div class="mt-4">
-
             @if (count($errors->all()))
                 <div class="block">
                     <div class="mt-8 form_errors">
@@ -73,17 +69,17 @@
 
             <div class="flex flex-wrap -mx-4">
                 <div class="w-full px-4 mb-0 md:w-1/3">
-                    <x-aura::input.text label="Name" placeholder="Name" value="{{ $resourceFields['type'] }}" disabled></x-aura::input>
+                    <x-aura::input.text label="Name" placeholder="Name" value="{{ $resource['type'] }}" disabled></x-aura::input>
                 </div>
 
                 <div class="w-full px-4 mb-0 md:w-1/3">
-                    <x-aura::input.text label="Slug" placeholder="Slug" value="{{ $resourceFields['slug'] }}" disabled></x-aura::input>
+                    <x-aura::input.text label="Slug" placeholder="Slug" value="{{ $resource['slug'] }}" disabled></x-aura::input>
                 </div>
 
 
                 <div class="flex items-end w-full px-4 mb-0 md:w-1/3">
                     <div class="flex-1">
-                        <x-aura::input.text label="Icon" placeholder="Icon" wire:model="resourceFields.icon"></x-aura::input>
+                        <x-aura::input.text label="Icon" placeholder="Icon" wire:model="resource.icon"></x-aura::input>
                     </div>
 
                     <div class="flex items-center justify-center w-10 h-10 mt-0 ml-2 border rounded-lg shadow-xs border-gray-500/30">
@@ -95,17 +91,17 @@
 
                 <div class="flex items-end w-full px-4 mb-0 md:w-1/3">
                     <div class="flex-1">
-                        <x-aura::input.text label="Group" placeholder="Group" wire:model="resourceFields.group"></x-aura::input>
+                        <x-aura::input.text label="Group" placeholder="Group" wire:model="resource.group"></x-aura::input>
                     </div>
                 </div>
                 <div class="flex items-end w-full px-4 mb-0 md:w-1/3">
                     <div class="flex-1">
-                        <x-aura::input.text label="Dropdown" placeholder="Dropdown" wire:model="resourceFields.dropdown"></x-aura::input>
+                        <x-aura::input.text label="Dropdown" placeholder="Dropdown" wire:model="resource.dropdown"></x-aura::input>
                     </div>
                 </div>
                 <div class="flex items-end w-full px-4 mb-0 md:w-1/3">
                     <div class="flex-1">
-                        <x-aura::input.number label="Sort" placeholder="Sort" wire:model="resourceFields.sort" />
+                        <x-aura::input.number label="Sort" placeholder="Sort" wire:model="resource.sort" />
                     </div>
                 </div>
 
@@ -162,7 +158,27 @@
 
                 <div class="mb-3 border-t rounded-b-lg border-gray-400/30 dark:border-gray-700"></div>
 
-                <div class="flex flex-wrap py-2 " wire:key="resource-fields" x-data="resource">
+                <div class="flex flex-wrap py-2 " wire:key="resource-fields" x-data="{
+                    init() {
+                        Alpine.nextTick(() => {
+                            const sortable = new window.Sortable(document.querySelectorAll('.draggable-container'), {
+                                draggable: '.draggable-item',
+                                handle: '.draggable-handle',
+                                mirror: {
+                                    constrainDimensions: true,
+                                },
+                            });
+
+                            sortable.on('sortable:stop', () => {
+                                Alpine.nextTick(() => {
+                                    @this.reorder(
+                                        Array.from(document.querySelectorAll('.reorder-item')).map(el => el.id)
+                                    )
+                                })
+                            });
+                        })
+                    }
+                }">
 
                     @if($this->mappedFields)
 
@@ -232,7 +248,29 @@
 
             @if (count($this->mappedFields) > 0)
 
-                <div class="flex flex-wrap py-2 draggable-container" x-data="resource" wire:key="resource2-fields">
+                <div class="flex flex-wrap py-2 draggable-container" x-data="{
+                    init() {
+                        Alpine.nextTick(() => {
+                            const sortable = new window.Sortable(document.querySelectorAll('.draggable-container'), {
+                                draggable: '.draggable-item',
+                                handle: '.draggable-handle',
+                                mirror: {
+                                    constrainDimensions: true,
+                                },
+                            });
+
+                            sortable.on('sortable:stop', () => {
+                                Alpine.nextTick(() => {
+                                    @this.reorder(
+                                        Array.from(document.querySelectorAll('.reorder-item')).map(el => el.id)
+                                    )
+                                })
+                            });
+                        })
+                    }
+                }" wire:key="resource2-fields">
+
+                    {{-- @dd($this->mappedFields) --}}
 
                     @foreach($this->mappedFields as $field)
 
@@ -346,34 +384,6 @@
 
     @once
     @push('scripts')
-
-        <script >
-            // when alpine is ready
-            document.addEventListener('alpine:init', () => {
-                // define an alpinejs component named 'userDropdown'
-                Alpine.data('resource', () => ({
-                    init() {
-                        Alpine.nextTick(() => {
-                            const sortable = new window.Sortable(document.querySelectorAll('.draggable-container'), {
-                                draggable: '.draggable-item',
-                                handle: '.draggable-handle',
-                                mirror: {
-                                    constrainDimensions: true,
-                                },
-                            });
-
-                            sortable.on('sortable:stop', () => {
-                                Alpine.nextTick(() => {
-                                    @this.reorder(
-                                        Array.from(document.querySelectorAll('.reorder-item')).map(el => el.id)
-                                    )
-                                })
-                            });
-                        })
-                    }
-                }));
-            })
-        </script>
 
         <style >
             .draggable--original *{

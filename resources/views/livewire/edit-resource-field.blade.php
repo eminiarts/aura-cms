@@ -1,7 +1,7 @@
 <x-aura::slide-over key="edit-field" wire:key="editPostTypeField">
 
   <div x-data="{
-    post: @entangle('resource').live,
+    resource: @entangle('resource').live,
       init () {
         // alpine watch post
         this.$watch('resource', (value) => {
@@ -32,12 +32,12 @@
 
       @foreach($this->groupedFields as $key => $field)
         <style >
-          #post-field-{{ optional($field)['slug'] }}-wrapper {
+          #resource-field-{{ optional($field)['slug'] }}-wrapper {
             width: {{ optional(optional($field)['style'])['width'] ?? '100' }}%;
           }
 
           @media screen and (max-width: 768px) {
-            #post-field-{{ optional($field)['slug'] }}-wrapper {
+            #resource-field-{{ optional($field)['slug'] }}-wrapper {
               width: 100%;
             }
           }
