@@ -2,7 +2,7 @@
 
 use Eminiarts\Aura\Facades\Aura;
 use Eminiarts\Aura\Livewire\Config;
-use Eminiarts\Aura\Livewire\User\InviteUser;
+use Eminiarts\Aura\Livewire\InviteUser;
 use Eminiarts\Aura\Providers\RouteServiceProvider;
 use Eminiarts\Aura\Resources\Role;
 use Eminiarts\Aura\Resources\Team;
