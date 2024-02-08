@@ -88,7 +88,7 @@ class User extends UserModel
 
         // dd(count($attachments));
 
-        if (count($attachments) > 0) {
+        if ($attachments && count($attachments) > 0) {
             $attachment = $attachments->first();
 
             return $attachment->path('thumbnail');

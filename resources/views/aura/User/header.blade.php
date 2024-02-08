@@ -15,14 +15,12 @@
     <div>
         <div>
             @if(app('aura')::option('user_invitations'))
-            <a href="#" wire:click.prevent="$dispatch('openModal', 'aura::invite-user')">
-                <x-aura::button.light>
+                <x-aura::button.light wire:click.prevent="$dispatch('openModal', { component: 'aura::invite-user'})">
                     <x-slot:icon>
                         <x-aura::icon icon="plus" />
                         </x-slot>
                         <span>Invite</span>
                 </x-aura::button.light>
-            </a>
             @endif
 
             @if($this->createInModal)
