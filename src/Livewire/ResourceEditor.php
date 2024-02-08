@@ -99,7 +99,7 @@ class ResourceEditor extends Component
 
         // $this->dispatch('refreshComponent');
 
-        $this->dispatch('openSlideOver', 'edit-field', ['fieldSlug' => $field['slug'], 'slug' => $this->slug, 'field' => $field]);
+        $this->dispatch('openSlideOver', component: 'edit-field', parameters: ['fieldSlug' => $field['slug'], 'slug' => $this->slug, 'field' => $field]);
 
         $this->dispatch('finishedSavingFields');
     }
@@ -139,7 +139,7 @@ class ResourceEditor extends Component
 
         // $this->dispatch('refreshComponent');
 
-        $this->dispatch('openSlideOver', 'edit-field', ['fieldSlug' => $globalTab['slug'], 'slug' => $this->slug, 'field' => $globalTab]);
+        $this->dispatch('openSlideOver', component: 'edit-field', parameters: ['fieldSlug' => $globalTab['slug'], 'slug' => $this->slug, 'field' => $globalTab]);
 
         $this->dispatch('finishedSavingFields');
 
@@ -264,7 +264,7 @@ class ResourceEditor extends Component
 
         $this->newFields = $this->model->mapToGroupedFields($this->fieldsArray);
 
-        $this->dispatch('openSlideOver', 'edit-field', ['fieldSlug' => $field['slug'], 'slug' => $this->slug, 'field' => $field]);
+        $this->dispatch('openSlideOver', component: 'edit-field', parameters: ['fieldSlug' => $field['slug'], 'slug' => $this->slug, 'field' => $field]);
 
         $this->dispatch('finishedSavingFields');
 
@@ -391,7 +391,7 @@ class ResourceEditor extends Component
         // get field with fieldSlug from this fieldsarray
         $field = collect($this->fieldsArray)->where('slug', $fieldSlug)->first();
 
-        $this->dispatch('openSlideOver', 'edit-field', ['fieldSlug' => $fieldSlug, 'slug' => $slug, 'field' => $field]);
+        $this->dispatch('openSlideOver', component: 'edit-field', parameters: ['fieldSlug' => $fieldSlug, 'slug' => $slug, 'field' => $field]);
     }
 
     public function removeConditionalLogicRule($key, $groupKey, $ruleKey)

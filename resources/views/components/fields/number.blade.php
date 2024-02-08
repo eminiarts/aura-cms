@@ -6,7 +6,7 @@
         type="number"
         placeholder="{{ optional($field)['placeholder'] ?? optional($field)['name'] }}"
         autocomplete="{{ optional($field)['autocomplete'] ?? '' }}"
-        wire:model="post.fields.{{ optional($field)['slug'] }}"
-        error="post.fields.{{ optional($field)['slug'] }}"
+        wire:model="resource.fields.{{ optional($field)['slug'] }}"
+        error="resource.fields.{{ optional($field)['slug'] }}"
     ></x-aura::input.text>
 </x-aura::fields.wrapper>

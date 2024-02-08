@@ -36,7 +36,7 @@
     </span>
 
     <input
-        wire:model="post.fields.{{ optional($field)['slug'] }}"
+        wire:model="resource.fields.{{ optional($field)['slug'] }}"
         x-ref="input"
         @if ($field['field']->isDisabled($this->resource, $field))
         disabled

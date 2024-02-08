@@ -76,9 +76,9 @@
         <div
             class="flex-1"
             @if(optional($field)['defer'] === false)
-            wire:model.live="post.fields.{{ optional($field)['slug'] }}"
+            wire:model.live="resource.fields.{{ optional($field)['slug'] }}"
             @else
-            wire:model="post.fields.{{ optional($field)['slug'] }}"
+            wire:model="resource.fields.{{ optional($field)['slug'] }}"
             @endif
         >
             <x-aura::input.text type="text" x-bind:disabled="!custom" id="slug" @keyup="value = slugifyTyping($event.target.value)" x-model="value" />
