@@ -126,14 +126,14 @@ it('can add template fields', function () {
 });
 
 it('can save the resource component', function () {
-    $resourceFields = [
+    $resource = [
         'type' => 'my-type',
         'slug' => 'my-slug',
         'icon' => 'my-icon',
     ];
 
     Livewire::test(ResourceEditorFake::class, ['slug' => 'Model'])
-        ->set('resourceFields', $resourceFields)
+        ->set('resource', $resource)
         ->call('save')
-        ->assertSet('resourceFields', $resourceFields);
+        ->assertSet('resource', $resource);
 });

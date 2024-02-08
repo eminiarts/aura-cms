@@ -25,12 +25,12 @@
 <div id="post-field-{{ $slug }}-wrapper"
         class="{{ $wrapperClass }}">
         <style >
-  #post-field-{{ $slug }}-wrapper {
+  #resource-field-{{ $slug }}-wrapper {
     width: {{ optional(optional($field)['style'])['width'] ?? '100' }}%;
   }
 
   @media screen and (max-width: 768px) {
-    #post-field-{{ $slug }}-wrapper {
+    #resource-field-{{ $slug }}-wrapper {
       width: 100%;
     }
   }

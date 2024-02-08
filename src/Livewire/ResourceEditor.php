@@ -26,7 +26,7 @@ class ResourceEditor extends Component
 
     public $model;
 
-    public $resourceFields = [];
+    public $resource = [];
 
     public $reservedWords = ['id', 'type'];
 
@@ -376,7 +376,7 @@ class ResourceEditor extends Component
             });
         }
 
-        $this->resourceTypeFields = [
+        $this->resource = [
             'type' => $this->model->getType(),
             'slug' => $this->model->getSlug(),
             'icon' => $this->model->getIcon(),
@@ -405,9 +405,7 @@ class ResourceEditor extends Component
 
     public function render()
     {
-        $title = 'Welcome';
-
-        return view('aura::livewire.resource', compact('title'))->layout('aura::components.layout.app');
+        return view('aura::livewire.resource-editor')->layout('aura::components.layout.app');
     }
 
     public function reorder($ids)
@@ -438,12 +436,12 @@ class ResourceEditor extends Component
     public function rules()
     {
         return [
-            'resourceFields.type' => 'required|regex:/^[a-zA-Z]+$/',
-            'resourceFields.slug' => 'required',
-            'resourceFields.icon' => 'required',
-            'resourceFields.group' => '',
-            'resourceFields.dropdown' => '',
-            'resourceFields.sort' => '',
+            'resource.type' => 'required|regex:/^[a-zA-Z]+$/',
+            'resource.slug' => 'required',
+            'resource.icon' => 'required',
+            'resource.group' => '',
+            'resource.dropdown' => '',
+            'resource.sort' => '',
             'fields.*.name' => '',
             'fields.*.slug' => [
                 'required',
@@ -484,7 +482,7 @@ class ResourceEditor extends Component
 
         $this->newFields = $this->model->mapToGroupedFields($this->fieldsArray);
 
-        $this->saveProps($this->resourceTypeFields);
+        $this->saveProps($this->resource);
     }
 
     public function saveField($data)

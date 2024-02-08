@@ -8,12 +8,12 @@ $model = $this->model;
 @endphp
 
 <style >
-  #post-field-{{ Str::slug(optional($field)['slug']) }}-wrapper {
+  #resource-field-{{ Str::slug(optional($field)['slug']) }}-wrapper {
     width: {{ optional(optional($field)['style'])['width'] ?? '100' }}%;
   }
 
   @media screen and (max-width: 768px) {
-    #post-field-{{ Str::slug(optional($field)['slug']) }}-wrapper {
+    #resource-field-{{ Str::slug(optional($field)['slug']) }}-wrapper {
       width: 100%;
     }
   }

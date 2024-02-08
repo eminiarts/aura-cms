@@ -20,12 +20,12 @@
     <div class="-mx-4 mb-4">
         @foreach($this->fields as $key => $field)
         <style >
-            #post-field-{{ optional($field)['slug'] }}-wrapper {
+            #resource-field-{{ optional($field)['slug'] }}-wrapper {
                 width: {{ optional(optional($field)['style'])['width'] ?? '100' }}%;
             }
 
             @media screen and (max-width: 768px) {
-                #post-field-{{ optional($field)['slug'] }}-wrapper {
+                #resource-field-{{ optional($field)['slug'] }}-wrapper {
                 width: 100%;
                 }
             }
