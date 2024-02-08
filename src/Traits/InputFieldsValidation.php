@@ -20,7 +20,7 @@ trait InputFieldsValidation
         return $map;
     }
 
-    public function postFieldValidationRules()
+    public function resourceFieldValidationRules()
     {
         return collect($this->validationRules())->mapWithKeys(function ($value, $key) {
             return ['resource.fields.'.$key => $value];
