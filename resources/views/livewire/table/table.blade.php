@@ -210,7 +210,6 @@ x-data="{
                             class="block p-2.5 pl-10 w-full text-sm text-gray-900 rounded-lg border bg-white-50 border-gray-500/30 focus:ring-primary-500 focus:border-primary-500 md:w-80 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500"
                             placeholder="{{ __('Search for items') }}" wire:model.live.debounce="search">
 
-                            @dump($search)
                     </div>
                 </div>
                 @endif
