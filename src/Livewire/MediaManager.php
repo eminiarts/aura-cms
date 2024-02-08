@@ -1,8 +1,8 @@
 <?php
 
-namespace Eminiarts\Aura\Livewire;
+namespace Aura\Base\Livewire;
 
-use Eminiarts\Aura\Resources\Attachment;
+use Aura\Base\Resources\Attachment;
 use LivewireUI\Modal\ModalComponent;
 
 class MediaManager extends ModalComponent
@@ -17,8 +17,8 @@ class MediaManager extends ModalComponent
 
     // Listen for select Attachment
     protected $listeners = [
-        'selectedRows' => 'selectAttachment', 
-        'tableMounted', 
+        'selectedRows' => 'selectAttachment',
+        'tableMounted',
         'updateField' => 'updateField'
     ];
 

@@ -1,9 +1,9 @@
 <?php
 
-namespace Eminiarts\Aura\Livewire;
+namespace Aura\Base\Livewire;
 
 use Livewire\Component;
-use Eminiarts\Aura\Facades\Aura;
+use Aura\Base\Facades\Aura;
 
 class Navigation extends Component
 {

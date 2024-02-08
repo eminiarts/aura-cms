@@ -1,6 +1,6 @@
 <?php
 
-use Eminiarts\Aura\Resource;
+use Aura\Base\Resource;
 
 class NavigationModel extends Resource
 {
@@ -14,7 +14,7 @@ class NavigationModel extends Resource
             [
                 'label' => 'Total',
                 'name' => 'Total',
-                'type' => 'Eminiarts\\Aura\\Fields\\Text',
+                'type' => 'Aura\\Base\\Fields\\Text',
                 'validation' => 'numeric',
                 'conditional_logic' => [],
                 'slug' => 'total',

@@ -2,8 +2,8 @@
 
 use Aura\Flows\Resources\Flow;
 use Aura\Flows\Resources\OperationLog;
-use Eminiarts\Aura\Models\User;
-use Eminiarts\Aura\Resources\Post;
+use Aura\Base\Models\User;
+use Aura\Base\Resources\Post;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
@@ -29,7 +29,7 @@ test('flow - a flow can change data and pass it to the next operation', function
     $flow->operations()->create([
         'name' => 'Update Operation',
         'key' => 'update-operation',
-        'type' => 'Eminiarts\\Aura\\Operations\\UpdateResource',
+        'type' => 'Aura\\Base\\Operations\\UpdateResource',
         'options' => [
             'x' => 2,
             'y' => 2,
@@ -45,7 +45,7 @@ test('flow - a flow can change data and pass it to the next operation', function
     $resolveOperation = $flow->operations()->create([
         'name' => 'Log Completed',
         'key' => 'log-operation',
-        'type' => 'Eminiarts\\Aura\\Operations\\Log',
+        'type' => 'Aura\\Base\\Operations\\Log',
         'options' => [
             'x' => 14,
             'y' => 14,

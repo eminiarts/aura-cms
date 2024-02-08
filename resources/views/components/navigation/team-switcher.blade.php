@@ -8,7 +8,7 @@
 ])
 
 @php
-$settings = Eminiarts\Aura\Facades\Aura::getOption('team-settings');
+    $settings = Aura\Base\Facades\Aura::getOption('team-settings');
 @endphp
 
 @php
@@ -20,10 +20,8 @@ $settings = Eminiarts\Aura\Facades\Aura::getOption('team-settings');
 @endphp
 
 
-
-
-
-<div x-data="{ active: {{ (Request::fullUrlIs($route ? route($route, $id) : '') ? ' 1' : '0')  }}, compact: {{ $compact ? '1' : '0' }} }" class="w-full">
+<div x-data="{ active: {{ (Request::fullUrlIs($route ? route($route, $id) : '') ? ' 1' : '0')  }}, compact: {{ $compact ? '1' : '0' }} }"
+     class="w-full">
 
     <div x-data="{
       open: false,
@@ -55,8 +53,8 @@ $settings = Eminiarts\Aura\Facades\Aura::getOption('team-settings');
           });
         });
       }
-    }" >
-      <div x-ref="this" role="button" tabindex="0" class="
+    }">
+        <div x-ref="this" role="button" tabindex="0" class="
         flex items-center justify-between w-full cursor-pointer text-sm font-semibold rounded-lg
         @if ($sidebarType == 'primary')
           text-white
@@ -71,13 +69,13 @@ $settings = Eminiarts\Aura\Facades\Aura::getOption('team-settings');
           bg-gray-800 hover:bg-gray-900
         @endif
       ">
-        <span>{{ $title }}</span>
+            <span>{{ $title }}</span>
 
-        <div class="hide-collapsed">
-          <!-- svg chevron up down -->
-          <x-aura::icon.chevron-up class="w-5 h-5" />
+            <div class="hide-collapsed">
+                <!-- svg chevron up down -->
+                <x-aura::icon.chevron-up class="w-5 h-5"/>
+            </div>
         </div>
-      </div>
 
     </div>
 

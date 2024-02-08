@@ -1,10 +1,10 @@
 <?php
 
-namespace Eminiarts\Aura\Livewire;
+namespace Aura\Base\Livewire;
 
-use Eminiarts\Aura\Facades\Aura;
-use Eminiarts\Aura\Traits\HasActions;
-use Eminiarts\Aura\Traits\SaveFields;
+use Aura\Base\Facades\Aura;
+use Aura\Base\Traits\HasActions;
+use Aura\Base\Traits\SaveFields;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Str;
@@ -53,18 +53,18 @@ class ResourceEditor extends Component
     {
         $children = (int) $children;
         $str = Str::random(4);
-        if ($type == 'Eminiarts\\Aura\\Fields\\Tab') {
+        if ($type == 'Aura\\Base\\Fields\\Tab') {
             $field = [
                 'name' => 'Tab '.$str,
-                'type' => 'Eminiarts\\Aura\\Fields\\Tab',
+                'type' => 'Aura\\Base\\Fields\\Tab',
                 'validation' => '',
                 'conditional_logic' => [],
                 'slug' => 'tab'.'_'.$str,
             ];
-        } elseif ($type == 'Eminiarts\\Aura\\Fields\\Panel') {
+        } elseif ($type == 'Aura\\Base\\Fields\\Panel') {
             $field = [
                 'name' => 'Panel '.$str,
-                'type' => 'Eminiarts\\Aura\\Fields\\Panel',
+                'type' => 'Aura\\Base\\Fields\\Panel',
                 'validation' => '',
                 'conditional_logic' => [],
                 'slug' => 'panel'.'_'.$str,
@@ -72,7 +72,7 @@ class ResourceEditor extends Component
         } else {
             $field = [
                 'name' => 'Text '.$str,
-                'type' => 'Eminiarts\\Aura\\Fields\\Text',
+                'type' => 'Aura\\Base\\Fields\\Text',
                 'validation' => '',
                 'conditional_logic' => [],
                 'slug' => 'text'.'_'.$str,
@@ -108,10 +108,10 @@ class ResourceEditor extends Component
     {
         $fields = collect($this->fieldsArray);
 
-        // check if collection has an item with type = "Eminiarts\Aura\Fields\Tab" and global = true
-        $hasGlobalTabs = $fields->where('type', 'Eminiarts\Aura\Fields\Tab')->where('global', true)->count();
+        // check if collection has an item with type = "Aura\Base\Fields\Tab" and global = true
+        $hasGlobalTabs = $fields->where('type', 'Aura\Base\Fields\Tab')->where('global', true)->count();
         $globalTab = [
-            'type' => 'Eminiarts\Aura\Fields\Tab',
+            'type' => 'Aura\Base\Fields\Tab',
             'name' => 'Tab',
             'label' => 'Tab',
             'slug' => 'tab-'.Str::random(4),
@@ -157,7 +157,7 @@ class ResourceEditor extends Component
         }
 
         // check if newfields has a global tab
-        $hasGlobalTab = collect($newFields)->where('type', 'Eminiarts\Aura\Fields\Tab')->where('global', true)->count();
+        $hasGlobalTab = collect($newFields)->where('type', 'Aura\Base\Fields\Tab')->where('global', true)->count();
 
         if ($hasGlobalTab > 0) {
             $this->hasGlobalTabs = true;
@@ -362,12 +362,12 @@ class ResourceEditor extends Component
 
         $this->fieldsArray = $this->model->getFields();
 
-        if (count($this->mappedFields) > 0 && $this->mappedFields[0]['type'] == "Eminiarts\Aura\Fields\Tab" && array_key_exists('global', $this->mappedFields[0]) && $this->mappedFields[0]['global']) {
+        if (count($this->mappedFields) > 0 && $this->mappedFields[0]['type'] == "Aura\Base\Fields\Tab" && array_key_exists('global', $this->mappedFields[0]) && $this->mappedFields[0]['global']) {
             $this->hasGlobalTabs = true;
 
             // Global Tabs
             collect($this->mappedFields)->each(function ($field) {
-                if ($field['type'] == "Eminiarts\Aura\Fields\Tab" && $field['global']) {
+                if ($field['type'] == "Aura\Base\Fields\Tab" && $field['global']) {
                     $this->globalTabs[] = [
                         'slug' => $field['slug'],
                         'name' => $field['name'],
@@ -536,7 +536,7 @@ class ResourceEditor extends Component
 
             // Global Tabs
             collect($this->newFields)->each(function ($field) {
-                if ($field['type'] == "Eminiarts\Aura\Fields\Tab" && $field['global']) {
+                if ($field['type'] == "Aura\Base\Fields\Tab" && $field['global']) {
                     $this->globalTabs[] = [
                         'slug' => $field['slug'],
                         'name' => $field['name'],

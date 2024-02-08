@@ -1,18 +1,18 @@
 <?php
 
-namespace Eminiarts\Aura\Livewire\Table;
+namespace Aura\Base\Livewire\Table;
 
-use Eminiarts\Aura\Facades\Aura;
-use Eminiarts\Aura\Livewire\Table\Traits\BulkActions;
-use Eminiarts\Aura\Livewire\Table\Traits\Filters;
-use Eminiarts\Aura\Livewire\Table\Traits\PerPagePagination;
-use Eminiarts\Aura\Livewire\Table\Traits\QueryFilters;
-use Eminiarts\Aura\Livewire\Table\Traits\Search;
-use Eminiarts\Aura\Livewire\Table\Traits\Select;
-use Eminiarts\Aura\Livewire\Table\Traits\Settings;
-use Eminiarts\Aura\Livewire\Table\Traits\Sorting;
-use Eminiarts\Aura\Models\User;
-use Eminiarts\Aura\Resource;
+use Aura\Base\Facades\Aura;
+use Aura\Base\Livewire\Table\Traits\BulkActions;
+use Aura\Base\Livewire\Table\Traits\Filters;
+use Aura\Base\Livewire\Table\Traits\PerPagePagination;
+use Aura\Base\Livewire\Table\Traits\QueryFilters;
+use Aura\Base\Livewire\Table\Traits\Search;
+use Aura\Base\Livewire\Table\Traits\Select;
+use Aura\Base\Livewire\Table\Traits\Settings;
+use Aura\Base\Livewire\Table\Traits\Sorting;
+use Aura\Base\Models\User;
+use Aura\Base\Resource;
 use Livewire\Component;
 use Livewire\Attributes\Computed;
 

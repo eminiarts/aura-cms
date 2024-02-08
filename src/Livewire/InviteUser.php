@@ -1,10 +1,10 @@
 <?php
 
-namespace Eminiarts\Aura\Livewire;
+namespace Aura\Base\Livewire;
 
-use Eminiarts\Aura\Mail\TeamInvitation;
-use Eminiarts\Aura\Resources\Role;
-use Eminiarts\Aura\Traits\InputFields;
+use Aura\Base\Mail\TeamInvitation;
+use Aura\Base\Resources\Role;
+use Aura\Base\Traits\InputFields;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Mail;
@@ -27,14 +27,14 @@ class InviteUser extends ModalComponent
         return [
             [
                 'name' => 'Email',
-                'type' => 'Eminiarts\\Aura\\Fields\\Email',
+                'type' => 'Aura\\Base\\Fields\\Email',
                 'placeholder' => 'email@example.com',
                 'validation' => 'required|email',
                 'slug' => 'email',
             ],
             [
                 'name' => 'Role',
-                'type' => 'Eminiarts\\Aura\\Fields\\Select',
+                'type' => 'Aura\\Base\\Fields\\Select',
                 'validation' => 'required',
                 'slug' => 'role',
                 'options' => Role::get()->pluck('title', 'id')->toArray(),

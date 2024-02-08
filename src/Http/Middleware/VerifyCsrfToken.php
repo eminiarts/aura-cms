@@ -1,6 +1,6 @@
 <?php
 
-namespace Eminiarts\Aura\Http\Middleware;
+namespace Aura\Base\Http\Middleware;
 
 use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken as Middleware;
 

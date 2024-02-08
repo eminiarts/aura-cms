@@ -1,21 +1,21 @@
 <?php
 
-namespace Eminiarts\Aura;
+namespace Aura\Base;
 
 use Illuminate\Support\Str;
 use Aura\Flows\Resources\Flow;
-use Eminiarts\Aura\Resources\User;
+use Aura\Base\Resources\User;
 use Illuminate\Support\Facades\DB;
-use Eminiarts\Aura\Traits\InputFields;
+use Aura\Base\Traits\InputFields;
 use Illuminate\Database\Eloquent\Model;
-use Eminiarts\Aura\Traits\SaveMetaFields;
-use Eminiarts\Aura\Traits\AuraModelConfig;
-use Eminiarts\Aura\Models\Scopes\TeamScope;
-use Eminiarts\Aura\Models\Scopes\TypeScope;
-use Eminiarts\Aura\Traits\InitialPostFields;
-use Eminiarts\Aura\Models\Scopes\ScopedScope;
-use Eminiarts\Aura\Traits\InteractsWithTable;
-use Eminiarts\Aura\Traits\SaveFieldAttributes;
+use Aura\Base\Traits\SaveMetaFields;
+use Aura\Base\Traits\AuraModelConfig;
+use Aura\Base\Models\Scopes\TeamScope;
+use Aura\Base\Models\Scopes\TypeScope;
+use Aura\Base\Traits\InitialPostFields;
+use Aura\Base\Models\Scopes\ScopedScope;
+use Aura\Base\Traits\InteractsWithTable;
+use Aura\Base\Traits\SaveFieldAttributes;
 use Aura\Flows\Jobs\TriggerFlowOnCreatePostEvent;
 use Aura\Flows\Jobs\TriggerFlowOnUpdatePostEvent;
 use Aura\Flows\Jobs\TriggerFlowOnDeletedPostEvent;

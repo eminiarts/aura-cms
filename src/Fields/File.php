@@ -1,6 +1,6 @@
 <?php
 
-namespace Eminiarts\Aura\Fields;
+namespace Aura\Base\Fields;
 
 class File extends Field
 {

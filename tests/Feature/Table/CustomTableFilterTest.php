@@ -1,14 +1,14 @@
 <?php
 
 use Livewire\Livewire;
-use Eminiarts\Aura\Resource;
-use Eminiarts\Aura\Models\User;
-use Eminiarts\Aura\Resources\Post;
+use Aura\Base\Resource;
+use Aura\Base\Models\User;
+use Aura\Base\Resources\Post;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
-use Eminiarts\Aura\Livewire\Table\Table;
+use Aura\Base\Livewire\Table\Table;
 use Illuminate\Database\Schema\Blueprint;
-use Eminiarts\Aura\Models\Scopes\TeamScope;
+use Aura\Base\Models\Scopes\TeamScope;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
@@ -93,28 +93,28 @@ class CustomTableFilterModel extends Resource
         return [
             [
                 'name' => 'Name',
-                'type' => 'Eminiarts\\Aura\\Fields\\Text',
+                'type' => 'Aura\\Base\\Fields\\Text',
                 'validation' => 'required',
                 'conditional_logic' => [],
                 'slug' => 'name',
             ],
             [
                 'name' => 'Status',
-                'type' => 'Eminiarts\\Aura\\Fields\\Text',
+                'type' => 'Aura\\Base\\Fields\\Text',
                 'validation' => '',
                 'conditional_logic' => [],
                 'slug' => 'status',
             ],
             [
                 'name' => 'Enabled',
-                'type' => 'Eminiarts\\Aura\\Fields\\Boolean',
+                'type' => 'Aura\\Base\\Fields\\Boolean',
                 'validation' => '',
                 'conditional_logic' => [],
                 'slug' => 'enabled',
             ],
             [
                 'name' => 'Options',
-                'type' => 'Eminiarts\\Aura\\Fields\\Textarea',
+                'type' => 'Aura\\Base\\Fields\\Textarea',
                 'validation' => '',
                 'conditional_logic' => [],
                 'slug' => 'options',
@@ -122,8 +122,8 @@ class CustomTableFilterModel extends Resource
             [
                 'name' => 'Tags',
                 'slug' => 'tags',
-                'type' => 'Eminiarts\\Aura\\Fields\\Tags',
-                'model' => 'Eminiarts\\Aura\\Resources\\Tag',
+                'type' => 'Aura\\Base\\Fields\\Tags',
+                'model' => 'Aura\\Base\\Resources\\Tag',
                 'create' => true,
                 'validation' => '',
                 'conditional_logic' => [],

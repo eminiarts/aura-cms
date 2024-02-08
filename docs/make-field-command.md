@@ -48,7 +48,7 @@ php
 
 namespace App\Aura\Fields;
 
-use Eminiarts\Aura\Field;
+use Aura\Base\Field;
 
 class MyField extends Field
 {

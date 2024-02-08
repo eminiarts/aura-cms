@@ -1,10 +1,10 @@
 <?php
 
-use Eminiarts\Aura\Facades\Aura;
-use Eminiarts\Aura\Models\Post;
-use Eminiarts\Aura\Models\User;
-use Eminiarts\Aura\Resource;
-use Eminiarts\Aura\Resources\Role;
+use Aura\Base\Facades\Aura;
+use Aura\Base\Models\Post;
+use Aura\Base\Models\User;
+use Aura\Base\Resource;
+use Aura\Base\Resources\Role;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
@@ -22,7 +22,7 @@ class UserRoleConditionalIndexFieldsModel extends Resource
         return [
             [
                 'name' => 'Text 1',
-                'type' => 'Eminiarts\\Aura\\Fields\\Text',
+                'type' => 'Aura\\Base\\Fields\\Text',
                 'slug' => 'text1',
                 'validation' => '',
                 'conditional_logic' => [
@@ -35,7 +35,7 @@ class UserRoleConditionalIndexFieldsModel extends Resource
             ],
             [
                 'name' => 'Text 2',
-                'type' => 'Eminiarts\\Aura\\Fields\\Text',
+                'type' => 'Aura\\Base\\Fields\\Text',
                 'validation' => '',
                 'conditional_logic' => [
                     [
@@ -48,7 +48,7 @@ class UserRoleConditionalIndexFieldsModel extends Resource
             ],
             [
                 'name' => 'Text 3',
-                'type' => 'Eminiarts\\Aura\\Fields\\Text',
+                'type' => 'Aura\\Base\\Fields\\Text',
                 'validation' => '',
                 'conditional_logic' => [],
                 'slug' => 'text3',

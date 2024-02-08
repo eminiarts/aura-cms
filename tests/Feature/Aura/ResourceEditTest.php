@@ -1,8 +1,8 @@
 <?php
 
-use Eminiarts\Aura\Facades\Aura;
-use Eminiarts\Aura\Resource;
-use Eminiarts\Aura\Resources\User;
+use Aura\Base\Facades\Aura;
+use Aura\Base\Resource;
+use Aura\Base\Resources\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);

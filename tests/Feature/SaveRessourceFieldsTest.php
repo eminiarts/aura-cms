@@ -1,7 +1,7 @@
 <?php
 
-use Eminiarts\Aura\Models\User;
-use Eminiarts\Aura\Resource;
+use Aura\Base\Models\User;
+use Aura\Base\Resource;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
@@ -20,7 +20,7 @@ class SaveRessourceFieldsTestModel extends Resource
             [
                 'label' => 'Text 1',
                 'name' => 'Text 1',
-                'type' => 'Eminiarts\\Aura\\Fields\\Text',
+                'type' => 'Aura\\Base\\Fields\\Text',
                 'validation' => 'numeric',
                 'conditional_logic' => [],
                 'slug' => 'text1',
@@ -28,7 +28,7 @@ class SaveRessourceFieldsTestModel extends Resource
             [
                 'label' => 'Text 2',
                 'name' => 'Text 2',
-                'type' => 'Eminiarts\\Aura\\Fields\\Text',
+                'type' => 'Aura\\Base\\Fields\\Text',
                 'validation' => 'numeric',
                 'conditional_logic' => [],
                 'slug' => 'text2',

@@ -1,21 +1,21 @@
 <?php
 
-namespace Eminiarts\Aura\Traits;
+namespace Aura\Base\Traits;
 
-use Eminiarts\Aura\ConditionalLogic;
-use Eminiarts\Aura\Pipeline\AddIdsToFields;
-use Eminiarts\Aura\Pipeline\ApplyParentConditionalLogic;
-use Eminiarts\Aura\Pipeline\ApplyParentDisplayAttributes;
-use Eminiarts\Aura\Pipeline\ApplyTabs;
-use Eminiarts\Aura\Pipeline\BuildTreeFromFields;
-use Eminiarts\Aura\Pipeline\DoNotDeferConditionalLogic;
-use Eminiarts\Aura\Pipeline\FilterCreateFields;
-use Eminiarts\Aura\Pipeline\FilterEditFields;
-use Eminiarts\Aura\Pipeline\FilterViewFields;
-use Eminiarts\Aura\Pipeline\MapFields;
-use Eminiarts\Aura\Pipeline\RemoveClosureAttributes;
-use Eminiarts\Aura\Pipeline\RemoveValidationAttribute;
-use Eminiarts\Aura\Pipeline\TransformSlugs;
+use Aura\Base\ConditionalLogic;
+use Aura\Base\Pipeline\AddIdsToFields;
+use Aura\Base\Pipeline\ApplyParentConditionalLogic;
+use Aura\Base\Pipeline\ApplyParentDisplayAttributes;
+use Aura\Base\Pipeline\ApplyTabs;
+use Aura\Base\Pipeline\BuildTreeFromFields;
+use Aura\Base\Pipeline\DoNotDeferConditionalLogic;
+use Aura\Base\Pipeline\FilterCreateFields;
+use Aura\Base\Pipeline\FilterEditFields;
+use Aura\Base\Pipeline\FilterViewFields;
+use Aura\Base\Pipeline\MapFields;
+use Aura\Base\Pipeline\RemoveClosureAttributes;
+use Aura\Base\Pipeline\RemoveValidationAttribute;
+use Aura\Base\Pipeline\TransformSlugs;
 
 trait InputFields
 {

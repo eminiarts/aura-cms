@@ -1,8 +1,8 @@
 <?php
 
 use Aura\Flows\Resources\Flow;
-use Eminiarts\Aura\Models\User;
-use Eminiarts\Aura\Resources\Post;
+use Aura\Base\Models\User;
+use Aura\Base\Resources\Post;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 
@@ -31,7 +31,7 @@ test('flow gets triggered on create post and sends a notification to a user', fu
     $flow->operations()->create([
         'name' => 'Send Notification',
         'key' => 'notification',
-        'type' => 'Eminiarts\\Aura\\Operations\\Notification',
+        'type' => 'Aura\\Base\\Operations\\Notification',
         'options' => [
             'x' => 2,
             'y' => 2,
@@ -98,7 +98,7 @@ test('flow gets triggered on create post and sends a notification to a role', fu
     $flow->operations()->create([
         'name' => 'Send Notification',
         'key' => 'notification',
-        'type' => 'Eminiarts\\Aura\\Operations\\Notification',
+        'type' => 'Aura\\Base\\Operations\\Notification',
         'options' => [
             'x' => 2,
             'y' => 2,

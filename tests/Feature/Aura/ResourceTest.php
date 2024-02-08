@@ -1,8 +1,8 @@
 <?php
 
-use Eminiarts\Aura\Facades\Aura;
-use Eminiarts\Aura\Resources\Attachment;
-use Eminiarts\Aura\Resources\User;
+use Aura\Base\Facades\Aura;
+use Aura\Base\Resources\Attachment;
+use Aura\Base\Resources\User;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\File;
 

@@ -1,6 +1,6 @@
 <?php
 
-namespace Eminiarts\Aura\Http\Requests;
+namespace Aura\Base\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
 

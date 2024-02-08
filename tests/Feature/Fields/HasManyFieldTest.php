@@ -2,10 +2,10 @@
 
 namespace Tests\Feature\Livewire;
 
-use Eminiarts\Aura\Livewire\Resource\Create;
-use Eminiarts\Aura\Models\User;
-use Eminiarts\Aura\Resource;
-use Eminiarts\Aura\Resources\Team;
+use Aura\Base\Livewire\Resource\Create;
+use Aura\Base\Models\User;
+use Aura\Base\Resource;
+use Aura\Base\Resources\Team;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
 
@@ -31,8 +31,8 @@ class HasManyFieldModel extends Resource
         return [
             [
                 'name' => 'Hasmany for Test',
-                'type' => 'Eminiarts\\Aura\\Fields\\HasMany',
-                'resource' => 'Eminiarts\\Aura\\Resources\\Post',
+                'type' => 'Aura\\Base\\Fields\\HasMany',
+                'resource' => 'Aura\\Base\\Resources\\Post',
                 'validation' => 'numeric|nullable',
                 'conditional_logic' => [],
                 'suffix' => '%',

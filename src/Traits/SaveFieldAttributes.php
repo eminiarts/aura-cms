@@ -1,6 +1,6 @@
 <?php
 
-namespace Eminiarts\Aura\Traits;
+namespace Aura\Base\Traits;
 
 trait SaveFieldAttributes
 {
@@ -30,7 +30,7 @@ trait SaveFieldAttributes
                     }
 
                     // Do not set password fields manually, since they would overwrite the hashed password
-                    if ($class instanceof \Eminiarts\Aura\Fields\Password) {
+                    if ($class instanceof \Aura\Base\Fields\Password) {
                         return;
                     }
 

@@ -13,7 +13,7 @@
     @dump('field',$field) --}}
 
     <div class="">
-        <livewire:aura::media-uploader :field="$field" :selected="$selected" :table="true" :model="app('Eminiarts\Aura\Resources\Attachment')" />
+        <livewire:aura::media-uploader :field="$field" :selected="$selected" :table="true" :model="app('Aura\Base\Resources\Attachment')" />
     </div>
 
     <div class="flex justify-end mt-4">

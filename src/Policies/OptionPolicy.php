@@ -1,6 +1,6 @@
 <?php
 
-namespace Eminiarts\Aura\Policies;
+namespace Aura\Base\Policies;
 
 class OptionPolicy extends ResourcePolicy
 {

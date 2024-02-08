@@ -1,6 +1,6 @@
 <?php
 
-namespace Eminiarts\Aura\Operations;
+namespace Aura\Base\Operations;
 
 use Aura\Flows\Resources\Operation;
 
@@ -11,21 +11,21 @@ class Mail extends BaseOperation
         return array_merge(parent::getFields(), [
             [
                 'name' => 'Subject',
-                'type' => 'Eminiarts\\Aura\\Fields\\Text',
+                'type' => 'Aura\\Base\\Fields\\Text',
                 'instructions' => 'Subject of the Mail',
                 'validation' => 'required',
                 'slug' => 'subject',
             ],
             [
                 'name' => 'To',
-                'type' => 'Eminiarts\\Aura\\Fields\\Text',
+                'type' => 'Aura\\Base\\Fields\\Text',
                 'instructions' => 'Recipient of the Mail',
                 'validation' => 'required|email',
                 'slug' => 'to',
             ],
             [
                 'name' => 'Body',
-                'type' => 'Eminiarts\\Aura\\Fields\\Textarea',
+                'type' => 'Aura\\Base\\Fields\\Textarea',
                 'instructions' => 'Body of the Mail',
                 'validation' => 'required',
                 'slug' => 'body',

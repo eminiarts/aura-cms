@@ -1,10 +1,10 @@
 <?php
 
-use Eminiarts\Aura\Resources\Post;
-use Eminiarts\Aura\Resources\Role;
-use Eminiarts\Aura\Resources\Team;
-use Eminiarts\Aura\Resources\User;
-use Eminiarts\Aura\Tests\TestCase;
+use Aura\Base\Resources\Post;
+use Aura\Base\Resources\Role;
+use Aura\Base\Resources\Team;
+use Aura\Base\Resources\User;
+use Aura\Base\Tests\TestCase;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(TestCase::class)->in(__DIR__);

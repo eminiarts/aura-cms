@@ -1,6 +1,6 @@
 <?php
 
-namespace Eminiarts\Aura\Pipeline;
+namespace Aura\Base\Pipeline;
 
 use Closure;
 
@@ -12,8 +12,8 @@ class ApplyLayoutFields implements Pipe
             $layouts[] = [
                 'name' => 'Main Panel',
                 'slug' => 'main-panel',
-                'type' => 'Eminiarts\Aura\Fields\Panel',
-                'field' => app('Eminiarts\Aura\Fields\Panel'),
+                'type' => 'Aura\Base\Fields\Panel',
+                'field' => app('Aura\Base\Fields\Panel'),
                 'field_type' => 'layout',
             ];
         }
@@ -26,8 +26,8 @@ class ApplyLayoutFields implements Pipe
         $layouts[$lastKey]['fields'][] = [
             'name' => 'Tabs',
             'slug' => 'tabs',
-            'type' => 'Eminiarts\Aura\Fields\Tabs',
-            'field' => app('Eminiarts\Aura\Fields\Tabs'),
+            'type' => 'Aura\Base\Fields\Tabs',
+            'field' => app('Aura\Base\Fields\Tabs'),
             'field_type' => 'tabs',
         ];
 

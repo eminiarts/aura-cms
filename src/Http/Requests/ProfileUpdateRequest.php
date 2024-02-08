@@ -1,8 +1,8 @@
 <?php
 
-namespace Eminiarts\Aura\Http\Requests;
+namespace Aura\Base\Http\Requests;
 
-use Eminiarts\Aura\Models\User;
+use Aura\Base\Models\User;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 

@@ -1,9 +1,9 @@
 <?php
 
-namespace Eminiarts\Aura\Policies;
+namespace Aura\Base\Policies;
 
-use Eminiarts\Aura\Models\User;
-use Eminiarts\Aura\Resources\Team;
+use Aura\Base\Models\User;
+use Aura\Base\Resources\Team;
 use Illuminate\Auth\Access\HandlesAuthorization;
 
 class TeamPolicy

@@ -1,6 +1,6 @@
 <?php
 
-namespace Eminiarts\Aura\Fields;
+namespace Aura\Base\Fields;
 
 class Date extends Field
 {
@@ -19,7 +19,7 @@ class Date extends Field
             [
                 'label' => 'Date',
                 'name' => 'Date',
-                'type' => 'Eminiarts\\Aura\\Fields\\Tab',
+                'type' => 'Aura\\Base\\Fields\\Tab',
                 'slug' => 'date',
                 'style' => [],
             ],
@@ -27,7 +27,7 @@ class Date extends Field
                 'label' => 'Format',
                 'name' => 'Format',
 
-                'type' => 'Eminiarts\\Aura\\Fields\\Text',
+                'type' => 'Aura\\Base\\Fields\\Text',
                 'validation' => '',
                 'slug' => 'format',
                 'default' => 'd.m.Y',
@@ -36,7 +36,7 @@ class Date extends Field
             [
                 'name' => 'Display Format',
 
-                'type' => 'Eminiarts\\Aura\\Fields\\Text',
+                'type' => 'Aura\\Base\\Fields\\Text',
                 'validation' => '',
                 'slug' => 'display_format',
                 'default' => 'd.m.Y',
@@ -46,7 +46,7 @@ class Date extends Field
                 'label' => 'Enable Time',
                 'name' => 'Enable Time',
 
-                'type' => 'Eminiarts\\Aura\\Fields\\Boolean',
+                'type' => 'Aura\\Base\\Fields\\Boolean',
                 'validation' => '',
                 'options' => [
                     'true' => 'Enable time',
@@ -59,7 +59,7 @@ class Date extends Field
                 'label' => 'Max Date',
                 'name' => 'Max Date',
 
-                'type' => 'Eminiarts\\Aura\\Fields\\Number',
+                'type' => 'Aura\\Base\\Fields\\Number',
                 'validation' => 'numeric|min:0|max:365',
                 'slug' => 'maxDate',
                 'default' => false,
@@ -67,7 +67,7 @@ class Date extends Field
             ],
             [
                 'name' => 'Week starts on',
-                'type' => 'Eminiarts\\Aura\\Fields\\Select',
+                'type' => 'Aura\\Base\\Fields\\Select',
                 'validation' => '',
                 'options' => [
                     '0' => 'Sunday',

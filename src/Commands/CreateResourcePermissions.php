@@ -1,9 +1,9 @@
 <?php
 
-namespace Eminiarts\Aura\Commands;
+namespace Aura\Base\Commands;
 
-use Eminiarts\Aura\Facades\Aura;
-use Eminiarts\Aura\Resources\Permission;
+use Aura\Base\Facades\Aura;
+use Aura\Base\Resources\Permission;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Auth;
 

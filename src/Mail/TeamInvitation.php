@@ -1,9 +1,9 @@
 <?php
 
-namespace Eminiarts\Aura\Mail;
+namespace Aura\Base\Mail;
 
-use Eminiarts\Aura\Resources\TeamInvitation as TeamInvitationResource;
-use Eminiarts\Aura\Resources\User;
+use Aura\Base\Resources\TeamInvitation as TeamInvitationResource;
+use Aura\Base\Resources\User;
 use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
 use Illuminate\Queue\SerializesModels;

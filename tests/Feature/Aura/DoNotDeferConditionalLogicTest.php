@@ -1,11 +1,11 @@
 <?php
 
-use Eminiarts\Aura\ConditionalLogic;
-use Eminiarts\Aura\Facades\Aura;
-use Eminiarts\Aura\Livewire\Resource\Create;
-use Eminiarts\Aura\Livewire\Resource\Edit;
-use Eminiarts\Aura\Models\User;
-use Eminiarts\Aura\Resource;
+use Aura\Base\ConditionalLogic;
+use Aura\Base\Facades\Aura;
+use Aura\Base\Livewire\Resource\Create;
+use Aura\Base\Livewire\Resource\Edit;
+use Aura\Base\Models\User;
+use Aura\Base\Resource;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
 
@@ -27,7 +27,7 @@ class DoNotDeferConditionalLogicTestModel extends Resource
         return [
             [
                 'name' => 'Title',
-                'type' => 'Eminiarts\\Aura\\Fields\\Text',
+                'type' => 'Aura\\Base\\Fields\\Text',
                 'validation' => 'required',
                 'on_index' => true,
                 'on_view' => true,
@@ -39,7 +39,7 @@ class DoNotDeferConditionalLogicTestModel extends Resource
             ],
             [
                 'name' => 'Slug',
-                'type' => 'Eminiarts\\Aura\\Fields\\Text',
+                'type' => 'Aura\\Base\\Fields\\Text',
                 'validation' => '',
                 'conditional_logic' => [
                 ],
@@ -51,7 +51,7 @@ class DoNotDeferConditionalLogicTestModel extends Resource
             ],
             [
                 'name' => 'Type',
-                'type' => 'Eminiarts\\Aura\\Fields\\Select',
+                'type' => 'Aura\\Base\\Fields\\Select',
                 'validation' => '',
                 'conditional_logic' => [
                 ],
@@ -74,7 +74,7 @@ class DoNotDeferConditionalLogicTestModel extends Resource
             ],
             [
                 'name' => 'Advanced Text',
-                'type' => 'Eminiarts\\Aura\\Fields\\Text',
+                'type' => 'Aura\\Base\\Fields\\Text',
                 'validation' => '',
                 'conditional_logic' => [
                     [

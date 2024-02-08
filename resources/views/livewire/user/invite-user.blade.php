@@ -33,7 +33,7 @@
     </div>
 
     <div class="w-2/3">
-        <livewire:aura::table :model="app('Eminiarts\Aura\Resources\TeamInvitation')"/>
+        <livewire:aura::table :model="app('Aura\Base\Resources\TeamInvitation')"/>
     </div>
 </div>
 

@@ -50,7 +50,7 @@
               style="width: {{ optional(optional($f)['style'])['width'] ?? '100' }}%;"
               id="field_{{ optional($f)['_id'] }}"
               class="px-4 reorder-item draggable-item"
-              
+
             >
               @include('aura::components.resource.show-field', ['field' => $f, 'slug' => $slug])
             </div>
@@ -58,12 +58,12 @@
             @if ($loop->last)
 
             </div>
-              @if ($f['type'] == 'Eminiarts\Aura\Fields\Repeater')
-              @elseif ($f['type'] == 'Eminiarts\Aura\Fields\Tab')
+              @if ($f['type'] == 'Aura\Base\Fields\Repeater')
+              @elseif ($f['type'] == 'Aura\Base\Fields\Tab')
                 <div class="w-full">
                   <x-aura::resource.add-field :id="$f['_id']" :slug="$f['slug']" :type="$f['type']"/>
                 </div>
-              @elseif ($f['type'] == 'Eminiarts\Aura\Fields\Panel')
+              @elseif ($f['type'] == 'Aura\Base\Fields\Panel')
                 <div class="w-full">
                   <x-aura::resource.add-field :id="$f['_id']" :slug="$f['slug']" :type="$f['type']" />
                 </div>

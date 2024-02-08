@@ -1,6 +1,6 @@
 <?php
 
-namespace Eminiarts\Aura\Notifications;
+namespace Aura\Base\Notifications;
 
 use Illuminate\Bus\Queueable;
 use Illuminate\Notifications\Messages\MailMessage;

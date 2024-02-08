@@ -3,8 +3,8 @@
 use Aura\Flows\Jobs\RunOperation;
 use Aura\Flows\Jobs\TriggerFlowOnCreatePostEvent;
 use Aura\Flows\Resources\Flow;
-use Eminiarts\Aura\Models\User;
-use Eminiarts\Aura\Resources\Post;
+use Aura\Base\Models\User;
+use Aura\Base\Resources\Post;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Queue;
 
@@ -34,7 +34,7 @@ test('flow delay operation', function () {
     $delayOperation = $flow->operations()->create([
         'name' => 'Delay 5s',
         'key' => 'delay',
-        'type' => 'Eminiarts\\Aura\\Operations\\Delay',
+        'type' => 'Aura\\Base\\Operations\\Delay',
         'options' => [
             'x' => 2,
             'y' => 2,
@@ -49,7 +49,7 @@ test('flow delay operation', function () {
     $resolveOperation = $flow->operations()->create([
         'name' => 'Log',
         'key' => 'log',
-        'type' => 'Eminiarts\\Aura\\Operations\\Log',
+        'type' => 'Aura\\Base\\Operations\\Log',
         'options' => [
             'message' => 'Log after 1s',
         ],

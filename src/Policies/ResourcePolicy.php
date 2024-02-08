@@ -1,9 +1,9 @@
 <?php
 
-namespace Eminiarts\Aura\Policies;
+namespace Aura\Base\Policies;
 
-use Eminiarts\Aura\Models\User;
-use Eminiarts\Aura\Resource;
+use Aura\Base\Models\User;
+use Aura\Base\Resource;
 use Illuminate\Auth\Access\HandlesAuthorization;
 
 class ResourcePolicy

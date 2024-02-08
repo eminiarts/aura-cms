@@ -2,8 +2,8 @@
 
 use Aura\Flows\Resources\Flow;
 use Aura\Flows\Resources\Operation;
-use Eminiarts\Aura\Models\User;
-use Eminiarts\Aura\Resources\Post;
+use Aura\Base\Models\User;
+use Aura\Base\Resources\Post;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
@@ -44,7 +44,7 @@ test('flow - get resources operation and manipulate them', function () {
     $firstOperation = $flow->operations()->create([
         'name' => 'Get Data',
         'key' => 'test-operation',
-        'type' => 'Eminiarts\\Aura\\Operations\\GetResource',
+        'type' => 'Aura\\Base\\Operations\\GetResource',
         'options' => [
             'x' => 2,
             'y' => 2,
@@ -60,7 +60,7 @@ test('flow - get resources operation and manipulate them', function () {
     $resolveOperation = $flow->operations()->create([
         'name' => 'Update the fetched Data',
         'key' => 'test-operation-2',
-        'type' => 'Eminiarts\\Aura\\Operations\\UpdateResource',
+        'type' => 'Aura\\Base\\Operations\\UpdateResource',
         'options' => [
             'x' => 2,
             'y' => 2,

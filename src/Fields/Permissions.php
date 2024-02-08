@@ -1,6 +1,6 @@
 <?php
 
-namespace Eminiarts\Aura\Fields;
+namespace Aura\Base\Fields;
 
 class Permissions extends Field
 {
@@ -23,14 +23,14 @@ class Permissions extends Field
             [
                 'label' => 'Permissions',
                 'name' => 'Permissions',
-                'type' => 'Eminiarts\\Aura\\Fields\\Tab',
+                'type' => 'Aura\\Base\\Fields\\Tab',
                 'slug' => 'select',
                 'style' => [],
             ],
             [
                 'label' => 'Resource',
                 'name' => 'Resource',
-                'type' => 'Eminiarts\\Aura\\Fields\\Text',
+                'type' => 'Aura\\Base\\Fields\\Text',
                 'validation' => '',
                 'slug' => 'resource',
             ],

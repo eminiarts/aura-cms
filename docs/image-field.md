@@ -9,7 +9,7 @@ return [
     [
         'name' => 'Image',
         'slug' => 'image',
-        'type' => 'Eminiarts\\Aura\\Fields\\Image',
+        'type' => 'Aura\\Base\\Fields\\Image',
         'validation' => 'array|max:1',
         'max' => '1',
         // ...
@@ -30,7 +30,7 @@ Here's an example of the Avatar field.
 ```php
     [
         'name' => 'Avatar',
-        'type' => 'Eminiarts\\Aura\\Fields\\Image',
+        'type' => 'Aura\\Base\\Fields\\Image',
         'max' => '1',
         'validation' => ['array','max:1',
             function (string $attribute, mixed $value, Closure $fail) {

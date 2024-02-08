@@ -1,11 +1,11 @@
 <?php
 
-use Eminiarts\Aura\Resources\Option;
-use Eminiarts\Aura\Resources\Permission;
-use Eminiarts\Aura\Resources\Post;
-use Eminiarts\Aura\Resources\Role;
-use Eminiarts\Aura\Resources\Tag;
-use Eminiarts\Aura\Resources\User;
+use Aura\Base\Resources\Option;
+use Aura\Base\Resources\Permission;
+use Aura\Base\Resources\Post;
+use Aura\Base\Resources\Role;
+use Aura\Base\Resources\Tag;
+use Aura\Base\Resources\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);

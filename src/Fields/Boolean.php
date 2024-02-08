@@ -1,6 +1,6 @@
 <?php
 
-namespace Eminiarts\Aura\Fields;
+namespace Aura\Base\Fields;
 
 class Boolean extends Field
 {
@@ -28,13 +28,13 @@ class Boolean extends Field
             [
                 'label' => 'Boolean',
                 'name' => 'Boolean',
-                'type' => 'Eminiarts\\Aura\\Fields\\Tab',
+                'type' => 'Aura\\Base\\Fields\\Tab',
                 'slug' => 'boolean-tab',
                 'style' => [],
             ],
             [
                 'name' => 'Default Value',
-                'type' => 'Eminiarts\\Aura\\Fields\\Boolean',
+                'type' => 'Aura\\Base\\Fields\\Boolean',
                 'instructions' => 'Default value on create',
                 'slug' => 'default',
             ],

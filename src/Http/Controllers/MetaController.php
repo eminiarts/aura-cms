@@ -1,10 +1,10 @@
 <?php
 
-namespace Eminiarts\Aura\Http\Controllers;
+namespace Aura\Base\Http\Controllers;
 
-use Eminiarts\Aura\Http\Requests\StoreMetaRequest;
-use Eminiarts\Aura\Http\Requests\UpdateMetaRequest;
-use Eminiarts\Aura\Models\Meta;
+use Aura\Base\Http\Requests\StoreMetaRequest;
+use Aura\Base\Http\Requests\UpdateMetaRequest;
+use Aura\Base\Models\Meta;
 
 class MetaController extends Controller
 {

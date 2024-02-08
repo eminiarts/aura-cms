@@ -1,11 +1,11 @@
 <?php
 
-namespace Eminiarts\Aura\Livewire;
+namespace Aura\Base\Livewire;
 
-use Eminiarts\Aura\Facades\Aura;
-use Eminiarts\Aura\Traits\InputFields;
-use Eminiarts\Aura\Traits\MediaFields;
-use Eminiarts\Aura\Traits\RepeaterFields;
+use Aura\Base\Facades\Aura;
+use Aura\Base\Traits\InputFields;
+use Aura\Base\Traits\MediaFields;
+use Aura\Base\Traits\RepeaterFields;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Cache;
 use Livewire\Component;
@@ -30,19 +30,19 @@ class Config extends Component
     {
         return [
             [
-                'type' => 'Eminiarts\\Aura\\Fields\\Tab',
+                'type' => 'Aura\\Base\\Fields\\Tab',
                 'name' => 'General',
                 'slug' => 'tab-general',
                 'global' => true,
             ],
             [
-                'type' => 'Eminiarts\\Aura\\Fields\\Panel',
+                'type' => 'Aura\\Base\\Fields\\Panel',
                 'name' => 'Registration Settings',
                 'slug' => 'panel-registration',
             ],
             [
                 'name' => 'Team registration',
-                'type' => 'Eminiarts\\Aura\\Fields\\Boolean',
+                'type' => 'Aura\\Base\\Fields\\Boolean',
                 'instructions' => 'With this option enabled, users will be able to create a team when they register for an account. This is useful if you want to allow organizations or groups to use your site.',
                 'slug' => 'team_registration',
                 'style' => [
@@ -59,7 +59,7 @@ class Config extends Component
             ],
             [
                 'name' => 'User Invitations ',
-                'type' => 'Eminiarts\\Aura\\Fields\\Boolean',
+                'type' => 'Aura\\Base\\Fields\\Boolean',
                 'instructions' => 'With this option enabled, users will be able to invite other users to their team. This is useful if you want to allow organizations or groups to use your site.',
                 'slug' => 'user_invitations',
                 'style' => [
@@ -68,14 +68,14 @@ class Config extends Component
             ],
 
             [
-                'type' => 'Eminiarts\\Aura\\Fields\\Panel',
+                'type' => 'Aura\\Base\\Fields\\Panel',
                 'name' => 'General Aura Settings',
                 'slug' => 'panel-DZzV',
             ],
 
             [
                 'name' => 'App Name',
-                'type' => 'Eminiarts\\Aura\\Fields\\Text',
+                'type' => 'Aura\\Base\\Fields\\Text',
                 'slug' => 'app_name',
                 'style' => [
                     'width' => '100',
@@ -83,7 +83,7 @@ class Config extends Component
             ],
             [
                 'name' => 'App Description',
-                'type' => 'Eminiarts\\Aura\\Fields\\Text',
+                'type' => 'Aura\\Base\\Fields\\Text',
                 'slug' => 'app_description',
                 'style' => [
                     'width' => '100',
@@ -91,7 +91,7 @@ class Config extends Component
             ],
             [
                 'name' => 'App URL',
-                'type' => 'Eminiarts\\Aura\\Fields\\Text',
+                'type' => 'Aura\\Base\\Fields\\Text',
                 'slug' => 'app_url',
                 'style' => [
                     'width' => '100',
@@ -100,7 +100,7 @@ class Config extends Component
 
             [
                 'name' => 'App Logo',
-                'type' => 'Eminiarts\\Aura\\Fields\\Image',
+                'type' => 'Aura\\Base\\Fields\\Image',
                 'slug' => 'app-logo',
                 'style' => [
                     'width' => '50',
@@ -108,7 +108,7 @@ class Config extends Component
             ],
             [
                 'name' => 'App Logo (Darkmode)',
-                'type' => 'Eminiarts\\Aura\\Fields\\Image',
+                'type' => 'Aura\\Base\\Fields\\Image',
                 'slug' => 'app-logo-darkmode',
                 'style' => [
                     'width' => '50',
@@ -117,7 +117,7 @@ class Config extends Component
 
             [
                 'name' => 'App Favicon',
-                'type' => 'Eminiarts\\Aura\\Fields\\Image',
+                'type' => 'Aura\\Base\\Fields\\Image',
                 'slug' => 'app-favicon',
                 'style' => [
                     'width' => '50',
@@ -125,7 +125,7 @@ class Config extends Component
             ],
             [
                 'name' => 'App Favicon (Darkmode)',
-                'type' => 'Eminiarts\\Aura\\Fields\\Image',
+                'type' => 'Aura\\Base\\Fields\\Image',
                 'slug' => 'app-favicon-darkmode',
                 'style' => [
                     'width' => '50',
@@ -134,7 +134,7 @@ class Config extends Component
 
             [
                 'name' => 'App Locale',
-                'type' => 'Eminiarts\\Aura\\Fields\\Text',
+                'type' => 'Aura\\Base\\Fields\\Text',
                 'slug' => 'app_locale',
                 'style' => [
                     'width' => '100',
@@ -144,7 +144,7 @@ class Config extends Component
             // app_timezone text field
             [
                 'name' => 'App Timezone',
-                'type' => 'Eminiarts\\Aura\\Fields\\Text',
+                'type' => 'Aura\\Base\\Fields\\Text',
                 'slug' => 'app_timezone',
                 'style' => [
                     'width' => '100',
@@ -152,21 +152,21 @@ class Config extends Component
             ],
 
             [
-                'type' => 'Eminiarts\\Aura\\Fields\\Tab',
+                'type' => 'Aura\\Base\\Fields\\Tab',
                 'name' => 'Media Settings',
                 'slug' => 'tab-media',
                 'global' => true,
             ],
 
             [
-                'type' => 'Eminiarts\\Aura\\Fields\\Panel',
+                'type' => 'Aura\\Base\\Fields\\Panel',
                 'name' => 'Media Settings',
                 'slug' => 'panel-DZzV',
             ],
 
             [
                 'name' => 'Media',
-                'type' => 'Eminiarts\\Aura\\Fields\\Group',
+                'type' => 'Aura\\Base\\Fields\\Group',
                 'slug' => 'media',
                 'style' => [
                     'width' => '100',
@@ -176,7 +176,7 @@ class Config extends Component
             // media.disk text field
             [
                 'name' => 'Media Disk',
-                'type' => 'Eminiarts\\Aura\\Fields\\Text',
+                'type' => 'Aura\\Base\\Fields\\Text',
                 'slug' => 'media.disk',
                 'style' => [
                     'width' => '100',
@@ -186,7 +186,7 @@ class Config extends Component
             // media.url text field
             [
                 'name' => 'Media Path',
-                'type' => 'Eminiarts\\Aura\\Fields\\Text',
+                'type' => 'Aura\\Base\\Fields\\Text',
                 'slug' => 'media.path',
                 'style' => [
                     'width' => '100',
@@ -196,7 +196,7 @@ class Config extends Component
             // media.max_file_size text field
             [
                 'name' => 'Max File Size',
-                'type' => 'Eminiarts\\Aura\\Fields\\Text',
+                'type' => 'Aura\\Base\\Fields\\Text',
                 'slug' => 'media.max_file_size',
                 'style' => [
                     'width' => '100',
@@ -206,7 +206,7 @@ class Config extends Component
             // generate_thumbnails boolean field
             [
                 'name' => 'Generate Thumbnails',
-                'type' => 'Eminiarts\\Aura\\Fields\\Boolean',
+                'type' => 'Aura\\Base\\Fields\\Boolean',
                 'slug' => 'media.generate_thumbnails',
                 'style' => [
                     'width' => '100',
@@ -216,7 +216,7 @@ class Config extends Component
             // media.thumbnails repeater field
             [
                 'name' => 'Thumbnails',
-                'type' => 'Eminiarts\\Aura\\Fields\\Repeater',
+                'type' => 'Aura\\Base\\Fields\\Repeater',
                 'nested' => true,
                 'slug' => 'media.thumbnails',
                 'style' => [
@@ -227,7 +227,7 @@ class Config extends Component
 
             [
                 'name' => 'Name',
-                'type' => 'Eminiarts\\Aura\\Fields\\Text',
+                'type' => 'Aura\\Base\\Fields\\Text',
                 'slug' => 'name',
                 'style' => [
                     'width' => '33',
@@ -235,7 +235,7 @@ class Config extends Component
             ],
             [
                 'name' => 'Width',
-                'type' => 'Eminiarts\\Aura\\Fields\\Text',
+                'type' => 'Aura\\Base\\Fields\\Text',
                 'slug' => 'width',
                 'style' => [
                     'width' => '33',
@@ -243,7 +243,7 @@ class Config extends Component
             ],
             [
                 'name' => 'Height',
-                'type' => 'Eminiarts\\Aura\\Fields\\Text',
+                'type' => 'Aura\\Base\\Fields\\Text',
                 'slug' => 'height',
                 'style' => [
                     'width' => '33',
@@ -251,7 +251,7 @@ class Config extends Component
             ],
 
             [
-                'type' => 'Eminiarts\\Aura\\Fields\\Tab',
+                'type' => 'Aura\\Base\\Fields\\Tab',
                 'name' => 'Features',
                 'slug' => 'tab-features',
                 'global' => true,
@@ -259,7 +259,7 @@ class Config extends Component
 
             [
                 'name' => 'Features',
-                'type' => 'Eminiarts\\Aura\\Fields\\View',
+                'type' => 'Aura\\Base\\Fields\\View',
                 'slug' => 'features',
                 'view' => 'aura::aura.features',
                 'style' => [
@@ -268,19 +268,19 @@ class Config extends Component
             ],
 
             [
-                'type' => 'Eminiarts\\Aura\\Fields\\Tab',
+                'type' => 'Aura\\Base\\Fields\\Tab',
                 'name' => 'Login',
                 'slug' => 'tab-login',
                 'global' => true,
             ],
             [
-                'type' => 'Eminiarts\\Aura\\Fields\\Panel',
+                'type' => 'Aura\\Base\\Fields\\Panel',
                 'name' => 'Login Settings',
                 'slug' => 'login-panel',
             ],
             [
                 'name' => 'Darkmode',
-                'type' => 'Eminiarts\\Aura\\Fields\\Radio',
+                'type' => 'Aura\\Base\\Fields\\Radio',
                 'options' => [
                     'auto' => 'Auto',
                     'light' => 'Light',
@@ -293,7 +293,7 @@ class Config extends Component
             ],
             [
                 'name' => 'Login Logo',
-                'type' => 'Eminiarts\\Aura\\Fields\\Image',
+                'type' => 'Aura\\Base\\Fields\\Image',
                 'slug' => 'login-logo',
                 'style' => [
                     'width' => '50',
@@ -301,7 +301,7 @@ class Config extends Component
             ],
             [
                 'name' => 'Login Logo (Darkmode)',
-                'type' => 'Eminiarts\\Aura\\Fields\\Image',
+                'type' => 'Aura\\Base\\Fields\\Image',
                 'slug' => 'login-logo-darkmode',
                 'style' => [
                     'width' => '50',
@@ -310,7 +310,7 @@ class Config extends Component
 
             [
                 'name' => 'Login Background',
-                'type' => 'Eminiarts\\Aura\\Fields\\Image',
+                'type' => 'Aura\\Base\\Fields\\Image',
                 'slug' => 'login-bg',
                 'style' => [
                     'width' => '50',
@@ -318,7 +318,7 @@ class Config extends Component
             ],
             [
                 'name' => 'Login Background (Darkmode)',
-                'type' => 'Eminiarts\\Aura\\Fields\\Image',
+                'type' => 'Aura\\Base\\Fields\\Image',
                 'slug' => 'login-bg-darkmode',
                 'style' => [
                     'width' => '50',
@@ -327,7 +327,7 @@ class Config extends Component
 
             [
                 'name' => 'Login Color Palette',
-                'type' => 'Eminiarts\\Aura\\Fields\\Select',
+                'type' => 'Aura\\Base\\Fields\\Select',
                 'options' => [
                     'aura' => 'Aura',
                     'red' => 'Red',
@@ -359,7 +359,7 @@ class Config extends Component
             ],
             [
                 'name' => 'Login Gray Color Palette',
-                'type' => 'Eminiarts\\Aura\\Fields\\Select',
+                'type' => 'Aura\\Base\\Fields\\Select',
                 'options' => [
                     'slate' => 'Slate',
                     'purple-slate' => 'Purple Slate',

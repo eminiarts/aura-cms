@@ -1,9 +1,9 @@
 <?php
 
-use Eminiarts\Aura\Facades\Aura;
-use Eminiarts\Aura\Livewire\ResourceEditor;
-use Eminiarts\Aura\Models\Post;
-use Eminiarts\Aura\Resources\User;
+use Aura\Base\Facades\Aura;
+use Aura\Base\Livewire\ResourceEditor;
+use Aura\Base\Models\Post;
+use Aura\Base\Resources\User;
 use Livewire\Livewire;
 
 class ResourceEditorFake extends ResourceEditor
@@ -29,21 +29,21 @@ class ResourceEditorTestModel extends Post
             [
                 'name' => 'Tab 1',
                 'global' => true,
-                'type' => 'Eminiarts\\Aura\\Fields\\Tab',
+                'type' => 'Aura\\Base\\Fields\\Tab',
                 'slug' => 'tab-1',
                 'style' => [
                 ],
             ],
             [
                 'name' => 'Panel 1',
-                'type' => 'Eminiarts\\Aura\\Fields\\Panel',
+                'type' => 'Aura\\Base\\Fields\\Panel',
                 'slug' => 'panel-1',
                 'style' => [
                 ],
             ],
             [
                 'name' => 'Total',
-                'type' => 'Eminiarts\\Aura\\Fields\\Text',
+                'type' => 'Aura\\Base\\Fields\\Text',
                 'validation' => 'numeric',
                 'conditional_logic' => [],
                 'slug' => 'total',
@@ -89,17 +89,17 @@ it('current resource fields', function () {
 
 it('can add fields', function () {
     $component = Livewire::test(ResourceEditorFake::class, ['slug' => 'Model'])
-        ->call('addField', ...[2, 'new_field', 'Eminiarts\\Aura\\Fields\\Text', '']);
+        ->call('addField', ...[2, 'new_field', 'Aura\\Base\\Fields\\Text', '']);
 
     expect($component->fieldsArray)->toBeArray();
     expect($component->fieldsArray)->toHaveCount(4);
 
-    $component->call('addField', ...[4, 'new_field_2', 'Eminiarts\\Aura\\Fields\\Text', '']);
+    $component->call('addField', ...[4, 'new_field_2', 'Aura\\Base\\Fields\\Text', '']);
 
     expect($component->fieldsArray)->toBeArray();
     expect($component->fieldsArray)->toHaveCount(5);
 
-    $component->call('addField', ...[5, 'new_field_2', 'Eminiarts\\Aura\\Fields\\Text', '']);
+    $component->call('addField', ...[5, 'new_field_2', 'Aura\\Base\\Fields\\Text', '']);
 
     expect($component->fieldsArray)->toBeArray();
     expect($component->fieldsArray)->toHaveCount(6);

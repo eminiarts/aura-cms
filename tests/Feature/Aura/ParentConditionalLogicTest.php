@@ -1,13 +1,13 @@
 <?php
 
-use Eminiarts\Aura\Facades\Aura;
-use Eminiarts\Aura\Models\User;
-use Eminiarts\Aura\Pipeline\AddIdsToFields;
-use Eminiarts\Aura\Pipeline\ApplyParentConditionalLogic;
-use Eminiarts\Aura\Pipeline\ApplyTabs;
-use Eminiarts\Aura\Pipeline\MapFields;
-use Eminiarts\Aura\Resource;
-use Eminiarts\Aura\Resources\Role;
+use Aura\Base\Facades\Aura;
+use Aura\Base\Models\User;
+use Aura\Base\Pipeline\AddIdsToFields;
+use Aura\Base\Pipeline\ApplyParentConditionalLogic;
+use Aura\Base\Pipeline\ApplyTabs;
+use Aura\Base\Pipeline\MapFields;
+use Aura\Base\Resource;
+use Aura\Base\Resources\Role;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
@@ -26,7 +26,7 @@ class ParentConditionalLogicModel extends Resource
             [
                 'name' => 'Tab 1',
                 'global' => true,
-                'type' => 'Eminiarts\\Aura\\Fields\\Tab',
+                'type' => 'Aura\\Base\\Fields\\Tab',
                 'slug' => 'tab-1',
                 'conditional_logic' => [
                     [
@@ -39,7 +39,7 @@ class ParentConditionalLogicModel extends Resource
             [
                 'label' => 'Text 1',
                 'name' => 'Text 1',
-                'type' => 'Eminiarts\\Aura\\Fields\\Text',
+                'type' => 'Aura\\Base\\Fields\\Text',
                 'slug' => 'text1',
                 'validation' => '',
                 'conditional_logic' => [
@@ -53,7 +53,7 @@ class ParentConditionalLogicModel extends Resource
             [
                 'label' => 'Text 2',
                 'name' => 'Text 2',
-                'type' => 'Eminiarts\\Aura\\Fields\\Text',
+                'type' => 'Aura\\Base\\Fields\\Text',
                 'validation' => '',
                 'conditional_logic' => [
                     [
@@ -139,7 +139,7 @@ class AdvancedParentConditionalLogicModel extends Resource
             [
                 'name' => 'Tab 1',
                 'global' => true,
-                'type' => 'Eminiarts\\Aura\\Fields\\Tab',
+                'type' => 'Aura\\Base\\Fields\\Tab',
                 'slug' => 'tab-1',
                 'conditional_logic' => [
                     [
@@ -151,7 +151,7 @@ class AdvancedParentConditionalLogicModel extends Resource
             ],
             [
                 'name' => 'Text 1',
-                'type' => 'Eminiarts\\Aura\\Fields\\Text',
+                'type' => 'Aura\\Base\\Fields\\Text',
                 'slug' => 'text1',
                 'validation' => '',
                 'conditional_logic' => [
@@ -164,7 +164,7 @@ class AdvancedParentConditionalLogicModel extends Resource
             ],
             [
                 'name' => 'Text 2',
-                'type' => 'Eminiarts\\Aura\\Fields\\Text',
+                'type' => 'Aura\\Base\\Fields\\Text',
                 'validation' => '',
                 'conditional_logic' => [
                     [
@@ -178,7 +178,7 @@ class AdvancedParentConditionalLogicModel extends Resource
             [
                 'name' => 'Tab 2',
                 'global' => true,
-                'type' => 'Eminiarts\\Aura\\Fields\\Tab',
+                'type' => 'Aura\\Base\\Fields\\Tab',
                 'slug' => 'tab-2',
                 'conditional_logic' => [
                     [
@@ -190,7 +190,7 @@ class AdvancedParentConditionalLogicModel extends Resource
             ],
             [
                 'name' => 'Panel 1',
-                'type' => 'Eminiarts\\Aura\\Fields\\Panel',
+                'type' => 'Aura\\Base\\Fields\\Panel',
                 'slug' => 'panel-1',
                 'conditional_logic' => [
                     [
@@ -202,7 +202,7 @@ class AdvancedParentConditionalLogicModel extends Resource
             ],
             [
                 'name' => 'Text 3',
-                'type' => 'Eminiarts\\Aura\\Fields\\Text',
+                'type' => 'Aura\\Base\\Fields\\Text',
                 'validation' => '',
                 'conditional_logic' => [
                     [
@@ -278,7 +278,7 @@ test('fields merge parent conditional logic - more advanced Example', function (
 });
 
 test('role condition as a Super Admin', function () {
-    
+
 
     $model = new AdvancedParentConditionalLogicModel();
 

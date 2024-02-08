@@ -1,6 +1,6 @@
 <?php
 
-namespace Eminiarts\Aura\Operations;
+namespace Aura\Base\Operations;
 
 use Aura\Flows\Resources\Operation;
 
@@ -11,7 +11,7 @@ class Condition extends BaseOperation
         return array_merge(parent::getFields(), [
             [
                 'name' => 'Condition',
-                'type' => 'Eminiarts\\Aura\\Fields\\Code',
+                'type' => 'Aura\\Base\\Fields\\Code',
                 'instructions' => 'Condition to evaluate',
                 'validation' => 'required',
                 'slug' => 'delay',

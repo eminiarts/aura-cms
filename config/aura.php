@@ -60,23 +60,23 @@ return [
    */
 
    'components' => [
-        'dashboard' => Eminiarts\Aura\Livewire\Dashboard::class,
-        'profile' => Eminiarts\Aura\Livewire\Profile::class,
-        'team_settings' => Eminiarts\Aura\Livewire\TeamSettings::class,
-        'config' => Eminiarts\Aura\Livewire\Config::class,
+        'dashboard' => Aura\Base\Livewire\Dashboard::class,
+        'profile' => Aura\Base\Livewire\Profile::class,
+        'team_settings' => Aura\Base\Livewire\TeamSettings::class,
+        'config' => Aura\Base\Livewire\Config::class,
    ],
 
     'resources' => [
-        'user' => Eminiarts\Aura\Resources\User::class,
-        'team' => Eminiarts\Aura\Resources\Team::class,
-        'team-invitation' => Eminiarts\Aura\Resources\TeamInvitation::class,
-        'role' => Eminiarts\Aura\Resources\Role::class,
-        'permission' => Eminiarts\Aura\Resources\Permission::class,
-        'post' => Eminiarts\Aura\Resources\Post::class,
-        'option' => Eminiarts\Aura\Resources\Option::class,
-        'attachment' => Eminiarts\Aura\Resources\Attachment::class,
-        'category' => Eminiarts\Aura\Resources\Category::class,
-        'tag' => Eminiarts\Aura\Resources\Tag::class,
+        'user' => Aura\Base\Resources\User::class,
+        'team' => Aura\Base\Resources\Team::class,
+        'team-invitation' => Aura\Base\Resources\TeamInvitation::class,
+        'role' => Aura\Base\Resources\Role::class,
+        'permission' => Aura\Base\Resources\Permission::class,
+        'post' => Aura\Base\Resources\Post::class,
+        'option' => Aura\Base\Resources\Option::class,
+        'attachment' => Aura\Base\Resources\Attachment::class,
+        'category' => Aura\Base\Resources\Category::class,
+        'tag' => Aura\Base\Resources\Tag::class,
     ],
 
     'views' => [

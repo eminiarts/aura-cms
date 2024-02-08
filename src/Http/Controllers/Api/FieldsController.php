@@ -1,8 +1,8 @@
 <?php
 
-namespace Eminiarts\Aura\Http\Controllers\Api;
+namespace Aura\Base\Http\Controllers\Api;
 
-use Eminiarts\Aura\Http\Controllers\Controller;
+use Aura\Base\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 
 class FieldsController extends Controller

@@ -1,8 +1,8 @@
 <?php
 
-namespace Eminiarts\Aura\Resources;
+namespace Aura\Base\Resources;
 
-use Eminiarts\Aura\Resource;
+use Aura\Base\Resource;
 
 class Tag extends Resource
 {
@@ -27,7 +27,7 @@ class Tag extends Resource
         return [
             'name' => [
                 'name' => 'Name',
-                'type' => 'Eminiarts\\Aura\\Fields\\Text',
+                'type' => 'Aura\\Base\\Fields\\Text',
                 'validation' => 'required',
                 'conditional_logic' => [],
                 'slug' => 'title',
@@ -36,20 +36,20 @@ class Tag extends Resource
             'description' => [
                 'label' => 'Text',
                 'name' => 'Beschreibung',
-                'type' => 'Eminiarts\\Aura\\Fields\\Text',
+                'type' => 'Aura\\Base\\Fields\\Text',
                 'conditional_logic' => [],
                 'slug' => 'description',
             ],
             'slug' => [
                 'name' => 'Slug',
-                'type' => 'Eminiarts\\Aura\\Fields\\Text',
+                'type' => 'Aura\\Base\\Fields\\Text',
                 'validation' => 'required',
                 'conditional_logic' => [],
                 'slug' => 'slug',
             ],
             'count' => [
                 'name' => 'Count',
-                'type' => 'Eminiarts\\Aura\\Fields\\Number',
+                'type' => 'Aura\\Base\\Fields\\Number',
                 'conditional_logic' => [],
                 'slug' => 'count',
                 'on_forms' => false,

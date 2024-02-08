@@ -1,6 +1,6 @@
 <?php
 
-namespace Eminiarts\Aura\Commands;
+namespace Aura\Base\Commands;
 
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\File;

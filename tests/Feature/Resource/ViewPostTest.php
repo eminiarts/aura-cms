@@ -1,7 +1,7 @@
 <?php
 
-use Eminiarts\Aura\Resources\Post;
-use Eminiarts\Aura\Resources\User;
+use Aura\Base\Resources\Post;
+use Aura\Base\Resources\User;
 
 use function Pest\Livewire\livewire;
 

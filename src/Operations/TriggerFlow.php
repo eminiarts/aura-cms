@@ -1,6 +1,6 @@
 <?php
 
-namespace Eminiarts\Aura\Operations;
+namespace Aura\Base\Operations;
 
 use Aura\Flows\Resources\Flow;
 use Aura\Flows\Resources\Operation;
@@ -12,7 +12,7 @@ class TriggerFlow extends BaseOperation
         return array_merge(parent::getFields(), [
             [
                 'name' => 'Flow ID',
-                'type' => 'Eminiarts\\Aura\\Fields\\Text',
+                'type' => 'Aura\\Base\\Fields\\Text',
                 'instructions' => 'Which flow to trigger',
                 'validation' => '',
                 'slug' => 'flow_id',
@@ -20,7 +20,7 @@ class TriggerFlow extends BaseOperation
 
             [
                 'name' => 'Pass Response',
-                'type' => 'Eminiarts\\Aura\\Fields\\Select',
+                'type' => 'Aura\\Base\\Fields\\Select',
                 'instructions' => 'Select the type of notification',
                 'validation' => '',
                 'defer' => false,

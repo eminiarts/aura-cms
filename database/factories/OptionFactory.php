@@ -1,8 +1,8 @@
 <?php
 
-namespace Eminiarts\Aura\Database\Factories;
+namespace Aura\Base\Database\Factories;
 
-use Eminiarts\Aura\Resources\Option;
+use Aura\Base\Resources\Option;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**

@@ -1,8 +1,8 @@
 <?php
 
-use Eminiarts\Aura\Resources\Post;
-use Eminiarts\Aura\Resources\User;
-use Eminiarts\Aura\Widgets\Sparkline;
+use Aura\Base\Resources\Post;
+use Aura\Base\Resources\User;
+use Aura\Base\Widgets\Sparkline;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
 use Livewire\Livewire;

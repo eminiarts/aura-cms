@@ -1,6 +1,6 @@
 <?php
 
-namespace Eminiarts\Aura\Operations;
+namespace Aura\Base\Operations;
 
 use Aura\Flows\Resources\Operation;
 
@@ -11,7 +11,7 @@ class DeleteResource extends BaseOperation
         return array_merge(parent::getFields(), [
             [
                 'name' => 'Select Type',
-                'type' => 'Eminiarts\\Aura\\Fields\\Select',
+                'type' => 'Aura\\Base\\Fields\\Select',
                 'instructions' => 'Select the type of delete',
                 'validation' => '',
                 'defer' => false,
@@ -23,7 +23,7 @@ class DeleteResource extends BaseOperation
             ],
             [
                 'name' => 'User ID',
-                'type' => 'Eminiarts\\Aura\\Fields\\Text',
+                'type' => 'Aura\\Base\\Fields\\Text',
                 'instructions' => 'Which user to send the notification to',
                 'validation' => 'required',
                 'conditional_logic' => [
@@ -37,7 +37,7 @@ class DeleteResource extends BaseOperation
             ],
             [
                 'name' => 'Role',
-                'type' => 'Eminiarts\\Aura\\Fields\\Text',
+                'type' => 'Aura\\Base\\Fields\\Text',
                 'instructions' => 'Which role to send the notification to',
                 'conditional_logic' => [
                     [

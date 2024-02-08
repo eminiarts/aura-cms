@@ -1,16 +1,16 @@
 <?php
 
-use Eminiarts\Aura\Http\Controllers\Auth\ConfirmablePasswordController;
-use Eminiarts\Aura\Http\Controllers\Auth\EmailVerificationNotificationController;
-use Eminiarts\Aura\Http\Controllers\Auth\EmailVerificationPromptController;
-use Eminiarts\Aura\Http\Controllers\Auth\InvitationRegisterUserController;
-use Eminiarts\Aura\Http\Controllers\Auth\NewPasswordController;
-use Eminiarts\Aura\Http\Controllers\Auth\PasswordController;
-use Eminiarts\Aura\Http\Controllers\Auth\PasswordResetLinkController;
-use Eminiarts\Aura\Http\Controllers\Auth\RegisteredUserController;
-use Eminiarts\Aura\Http\Controllers\Auth\TeamInvitationController;
-use Eminiarts\Aura\Http\Controllers\Auth\VerifyEmailController;
-use Eminiarts\Aura\Http\Controllers\SwitchTeamController;
+use Aura\Base\Http\Controllers\Auth\ConfirmablePasswordController;
+use Aura\Base\Http\Controllers\Auth\EmailVerificationNotificationController;
+use Aura\Base\Http\Controllers\Auth\EmailVerificationPromptController;
+use Aura\Base\Http\Controllers\Auth\InvitationRegisterUserController;
+use Aura\Base\Http\Controllers\Auth\NewPasswordController;
+use Aura\Base\Http\Controllers\Auth\PasswordController;
+use Aura\Base\Http\Controllers\Auth\PasswordResetLinkController;
+use Aura\Base\Http\Controllers\Auth\RegisteredUserController;
+use Aura\Base\Http\Controllers\Auth\TeamInvitationController;
+use Aura\Base\Http\Controllers\Auth\VerifyEmailController;
+use Aura\Base\Http\Controllers\SwitchTeamController;
 use Illuminate\Support\Facades\Route;
 use Laravel\Fortify\Http\Controllers\AuthenticatedSessionController;
 

@@ -2,11 +2,11 @@
 
 namespace Tests\Feature\Livewire;
 
-use Eminiarts\Aura\Livewire\TeamSettings;
-use Eminiarts\Aura\Models\User;
-use Eminiarts\Aura\Resources\Option;
-use Eminiarts\Aura\Resources\Role;
-use Eminiarts\Aura\Resources\Team;
+use Aura\Base\Livewire\TeamSettings;
+use Aura\Base\Models\User;
+use Aura\Base\Resources\Option;
+use Aura\Base\Resources\Role;
+use Aura\Base\Resources\Team;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Livewire\Livewire;
@@ -19,7 +19,7 @@ test('Team Settings Component can be rendered', function () {
     $role = Role::create(['type' => 'Role', 'title' => 'Super Admin', 'slug' => 'super_admin', 'description' => 'Super Admin has can perform everything.', 'super_admin' => true, 'permissions' => []]);
 
     // Attach to User
-    $user = \Eminiarts\Aura\Resources\User::find(1);
+    $user = \Aura\Base\Resources\User::find(1);
 
     $user->update(['fields' => ['roles' => [$role->id]]]);
 
@@ -32,7 +32,7 @@ test('Default Team Settings are created', function () {
     $role = Role::create(['type' => 'Role', 'title' => 'Super Admin', 'slug' => 'super_admin', 'description' => 'Super Admin has can perform everything.', 'super_admin' => true, 'permissions' => []]);
 
     // Attach to User
-    $user = \Eminiarts\Aura\Resources\User::find(1);
+    $user = \Aura\Base\Resources\User::find(1);
 
     $user->update(['fields' => ['roles' => [$role->id]]]);
 
@@ -65,7 +65,7 @@ test('Team Settings can be saved', function () {
     $role = Role::create(['type' => 'Role', 'title' => 'Super Admin', 'slug' => 'super_admin', 'description' => 'Super Admin has can perform everything.', 'super_admin' => true, 'permissions' => []]);
 
     // Attach to User
-    $user = \Eminiarts\Aura\Resources\User::find(1);
+    $user = \Aura\Base\Resources\User::find(1);
 
     $user->update(['fields' => ['roles' => [$role->id]]]);
 

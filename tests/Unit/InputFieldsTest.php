@@ -1,11 +1,11 @@
 <?php
 
-use Eminiarts\Aura\Resource;
-use Eminiarts\Aura\Traits\InputFields;
-use Eminiarts\Aura\Traits\InputFieldsHelpers;
-use Eminiarts\Aura\Traits\InputFieldsTable;
-use Eminiarts\Aura\Traits\InputFieldsValidation;
-use Eminiarts\Aura\Traits\InteractsWithTable;
+use Aura\Base\Resource;
+use Aura\Base\Traits\InputFields;
+use Aura\Base\Traits\InputFieldsHelpers;
+use Aura\Base\Traits\InputFieldsTable;
+use Aura\Base\Traits\InputFieldsValidation;
+use Aura\Base\Traits\InteractsWithTable;
 
 class TestInputFieldsClass extends Resource
 {
@@ -21,13 +21,13 @@ class TestInputFieldsClass extends Resource
             [
                 'slug' => 'title',
                 'name' => 'Title',
-                'type' => 'Eminiarts\\Aura\\Fields\\Text',
+                'type' => 'Aura\\Base\\Fields\\Text',
                 'validation' => 'required|string|max:255',
             ],
             [
                 'slug' => 'body',
                 'name' => 'Body',
-                'type' => 'Eminiarts\\Aura\\Fields\\Textarea',
+                'type' => 'Aura\\Base\\Fields\\Textarea',
                 'validation' => 'required|string',
             ],
         ];
@@ -47,13 +47,13 @@ class TestInputFieldsClass2 extends Resource
             [
                 'slug' => 'title',
                 'name' => 'Title',
-                'type' => 'Eminiarts\\Aura\\Fields\\Text',
+                'type' => 'Aura\\Base\\Fields\\Text',
                 'validation' => ['required', 'string', 'max:255'],
             ],
             [
                 'slug' => 'body',
                 'name' => 'Body',
-                'type' => 'Eminiarts\\Aura\\Fields\\Textarea',
+                'type' => 'Aura\\Base\\Fields\\Textarea',
                 'validation' => ['required', 'string'],
             ],
         ];
@@ -67,7 +67,7 @@ test('can get field by slug', function () {
     $this->assertEquals([
         'slug' => 'title',
         'name' => 'Title',
-        'type' => 'Eminiarts\\Aura\\Fields\\Text',
+        'type' => 'Aura\\Base\\Fields\\Text',
         'validation' => 'required|string|max:255',
     ], $field);
 });

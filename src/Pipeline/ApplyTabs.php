@@ -1,6 +1,6 @@
 <?php
 
-namespace Eminiarts\Aura\Pipeline;
+namespace Aura\Base\Pipeline;
 
 use Closure;
 
@@ -14,19 +14,19 @@ class ApplyTabs implements Pipe
         $addedTabsToPanel = false;
 
         foreach ($fields as $key => $field) {
-            if ($field['type'] === 'Eminiarts\Aura\Fields\Panel') {
+            if ($field['type'] === 'Aura\Base\Fields\Panel') {
                 $currentParent = $field;
                 $addedTabsToPanel = false;
             }
 
             // Add it to first Tabs
-            if ($field['type'] === 'Eminiarts\Aura\Fields\Tab' && ! $added) {
+            if ($field['type'] === 'Aura\Base\Fields\Tab' && ! $added) {
                 $fields->splice($key + $tabsAdded, 0, [
                     [
                         'label' => 'Tabs',
                         'name' => 'Tabs',
                         'global' => (bool) optional($field)['global'],
-                        'type' => 'Eminiarts\\Aura\\Fields\\Tabs',
+                        'type' => 'Aura\\Base\\Fields\\Tabs',
                         'slug' => 'tabs',
                         'style' => [],
                     ],
@@ -38,13 +38,13 @@ class ApplyTabs implements Pipe
 
             // Add it to first Tabs in Panels
             if ($currentParent && ! optional($field)['global']) {
-                if ($field['type'] === 'Eminiarts\Aura\Fields\Tab' && ! $addedTabsToPanel) {
+                if ($field['type'] === 'Aura\Base\Fields\Tab' && ! $addedTabsToPanel) {
                     $fields->splice($key + $tabsAdded, 0, [
                         [
                             'label' => 'Tabs',
                             'name' => 'Tabs',
                             'global' => (bool) optional($field)['global'],
-                            'type' => 'Eminiarts\\Aura\\Fields\\Tabs',
+                            'type' => 'Aura\\Base\\Fields\\Tabs',
                             'slug' => 'tabs',
                             'style' => [],
                         ],

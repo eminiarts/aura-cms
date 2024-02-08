@@ -1,8 +1,8 @@
 <?php
 
-namespace Eminiarts\Aura\Database\Factories;
+namespace Aura\Base\Database\Factories;
 
-use Eminiarts\Aura\Resources\Permission;
+use Aura\Base\Resources\Permission;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -27,7 +27,7 @@ class PermissionFactory extends Factory
             'user_id' => 1,
             'parent_id' => null,
             'order' => null,
-            
+
         ];
     }
 }

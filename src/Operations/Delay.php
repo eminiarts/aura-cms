@@ -1,6 +1,6 @@
 <?php
 
-namespace Eminiarts\Aura\Operations;
+namespace Aura\Base\Operations;
 
 use Aura\Flows\Resources\Operation;
 
@@ -11,7 +11,7 @@ class Delay extends BaseOperation
         return array_merge(parent::getFields(), [
             [
                 'name' => 'Delay',
-                'type' => 'Eminiarts\\Aura\\Fields\\Number',
+                'type' => 'Aura\\Base\\Fields\\Number',
                 'instructions' => 'Delay in seconds',
                 'validation' => 'required|numeric',
                 'slug' => 'delay',

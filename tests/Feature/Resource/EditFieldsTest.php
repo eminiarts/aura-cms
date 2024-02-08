@@ -1,12 +1,12 @@
 <?php
 
-use Eminiarts\Aura\Pipeline\AddIdsToFields;
-use Eminiarts\Aura\Pipeline\ApplyParentConditionalLogic;
-use Eminiarts\Aura\Pipeline\ApplyParentDisplayAttributes;
-use Eminiarts\Aura\Pipeline\ApplyTabs;
-use Eminiarts\Aura\Pipeline\FilterEditFields;
-use Eminiarts\Aura\Pipeline\MapFields;
-use Eminiarts\Aura\Resource;
+use Aura\Base\Pipeline\AddIdsToFields;
+use Aura\Base\Pipeline\ApplyParentConditionalLogic;
+use Aura\Base\Pipeline\ApplyParentDisplayAttributes;
+use Aura\Base\Pipeline\ApplyTabs;
+use Aura\Base\Pipeline\FilterEditFields;
+use Aura\Base\Pipeline\MapFields;
+use Aura\Base\Resource;
 
 // current
 // uses()->group('current');
@@ -22,21 +22,21 @@ class EditFieldsTestModel extends Resource
         return [
             [
                 'name' => 'Tab 1',
-                'type' => 'Eminiarts\\Aura\\Fields\\Tab',
+                'type' => 'Aura\\Base\\Fields\\Tab',
                 'slug' => 'tab-1',
                 'global' => true,
                 'on_edit' => false,
             ],
             [
                 'name' => 'Text 1',
-                'type' => 'Eminiarts\\Aura\\Fields\\Text',
+                'type' => 'Aura\\Base\\Fields\\Text',
                 'validation' => 'numeric',
                 'conditional_logic' => [],
                 'slug' => 'text1',
             ],
             [
                 'name' => 'Tab 2',
-                'type' => 'Eminiarts\\Aura\\Fields\\Tab',
+                'type' => 'Aura\\Base\\Fields\\Tab',
                 'slug' => 'tab-2',
                 'global' => true,
                 'on_view' => false,
@@ -44,7 +44,7 @@ class EditFieldsTestModel extends Resource
             [
                 'label' => 'Text 2',
                 'name' => 'Text 2',
-                'type' => 'Eminiarts\\Aura\\Fields\\Text',
+                'type' => 'Aura\\Base\\Fields\\Text',
                 'validation' => 'numeric',
                 'conditional_logic' => [],
                 'slug' => 'text2',

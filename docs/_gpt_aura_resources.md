@@ -17,15 +17,15 @@ User Resource:
 ```php
 <?php
 
-namespace Eminiarts\Aura\Resources;
+namespace Aura\Base\Resources;
 
 use Aura\Flows\Resources\Flow;
-use Eminiarts\Aura\Database\Factories\UserFactory;
-use Eminiarts\Aura\Models\User as UserModel;
-use Eminiarts\Aura\Models\UserMeta;
-use Eminiarts\Aura\Traits\SaveFieldAttributes;
-use Eminiarts\Aura\Traits\SaveMetaFields;
-use Eminiarts\Aura\Traits\SaveTerms;
+use Aura\Base\Database\Factories\UserFactory;
+use Aura\Base\Models\User as UserModel;
+use Aura\Base\Models\UserMeta;
+use Aura\Base\Traits\SaveFieldAttributes;
+use Aura\Base\Traits\SaveMetaFields;
+use Aura\Base\Traits\SaveTerms;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
@@ -139,14 +139,14 @@ class User extends UserModel
     {
         return [
             [
-                'type' => 'Eminiarts\\Aura\\Fields\\Tab',
+                'type' => 'Aura\\Base\\Fields\\Tab',
                 'name' => 'User details',
                 'slug' => 'tab-user',
                 'global' => true,
             ],
             [
                 'name' => 'Personal Infos',
-                'type' => 'Eminiarts\\Aura\\Fields\\Panel',
+                'type' => 'Aura\\Base\\Fields\\Panel',
                 'validation' => 'required',
                 'slug' => 'user-details',
                 'style' => [
@@ -155,7 +155,7 @@ class User extends UserModel
             ],
             [
                 'name' => 'Avatar',
-                'type' => 'Eminiarts\\Aura\\Fields\\Image',
+                'type' => 'Aura\\Base\\Fields\\Image',
                 'validation' => '',
                 'conditional_logic' => [],
                 'slug' => 'avatar',
@@ -165,7 +165,7 @@ class User extends UserModel
             ],
             [
                 'name' => 'Name',
-                'type' => 'Eminiarts\\Aura\\Fields\\Text',
+                'type' => 'Aura\\Base\\Fields\\Text',
                 'validation' => 'required',
                 'on_index' => true,
                 'slug' => 'name',
@@ -175,7 +175,7 @@ class User extends UserModel
             ],
             [
                 'name' => 'Email',
-                'type' => 'Eminiarts\\Aura\\Fields\\Text',
+                'type' => 'Aura\\Base\\Fields\\Text',
                 'validation' => 'required|email',
                 'on_index' => true,
                 'slug' => 'email',
@@ -186,8 +186,8 @@ class User extends UserModel
             [
                 'name' => 'Roles',
                 'slug' => 'roles',
-                'resource' => 'Eminiarts\\Aura\\Resources\\Role',
-                'type' => 'Eminiarts\\Aura\\Fields\\AdvancedSelect',
+                'resource' => 'Aura\\Base\\Resources\\Role',
+                'type' => 'Aura\\Base\\Fields\\AdvancedSelect',
                 'validation' => 'required',
                 'conditional_logic' => [],
                 'wrapper' => '',
@@ -198,7 +198,7 @@ class User extends UserModel
             ],
             [
                 'name' => 'Password',
-                'type' => 'Eminiarts\\Aura\\Fields\\Password',
+                'type' => 'Aura\\Base\\Fields\\Password',
                 'validation' => '',
                 'conditional_logic' => [],
                 'slug' => 'password',
@@ -207,7 +207,7 @@ class User extends UserModel
             ],
             [
                 'name' => 'Send Welcome Email',
-                'type' => 'Eminiarts\\Aura\\Fields\\Boolean',
+                'type' => 'Aura\\Base\\Fields\\Boolean',
                 'validation' => '',
                 'conditional_logic' => [],
                 'on_edit' => false,
@@ -217,7 +217,7 @@ class User extends UserModel
                 'instructions' => 'Do you want to inform the user about his account?',
             ],
             [
-                'type' => 'Eminiarts\\Aura\\Fields\\Tab',
+                'type' => 'Aura\\Base\\Fields\\Tab',
                 'name' => 'Notifications',
                 'slug' => 'tab-notifications',
                 'global' => true,
@@ -225,7 +225,7 @@ class User extends UserModel
             ],
             [
                 'name' => 'Notifications',
-                'type' => 'Eminiarts\\Aura\\Fields\\Panel',
+                'type' => 'Aura\\Base\\Fields\\Panel',
                 'validation' => 'required',
                 'slug' => 'user-notifications-panel',
                 'style' => [
@@ -234,20 +234,20 @@ class User extends UserModel
             ],
             [
                 'name' => 'Notifications via Email',
-                'type' => 'Eminiarts\\Aura\\Fields\\Boolean',
+                'type' => 'Aura\\Base\\Fields\\Boolean',
                 'validation' => '',
                 'conditional_logic' => [],
                 'slug' => 'notifications_via_email',
             ],
             [
                 'name' => 'Notifications via SMS',
-                'type' => 'Eminiarts\\Aura\\Fields\\Boolean',
+                'type' => 'Aura\\Base\\Fields\\Boolean',
                 'validation' => '',
                 'conditional_logic' => [],
                 'slug' => 'notifications_via_sms',
             ],
             [
-                'type' => 'Eminiarts\\Aura\\Fields\\Tab',
+                'type' => 'Aura\\Base\\Fields\\Tab',
                 'name' => 'Posts',
                 'slug' => 'tab-posts',
                 'global' => true,
@@ -255,8 +255,8 @@ class User extends UserModel
             [
                 'name' => 'Posts',
                 'slug' => 'posts',
-                'type' => 'Eminiarts\\Aura\\Fields\\HasMany',
-                'resource' => 'Eminiarts\\Aura\\Resources\\Post',
+                'type' => 'Aura\\Base\\Fields\\HasMany',
+                'resource' => 'Aura\\Base\\Resources\\Post',
                 'validation' => '',
                 'wrapper' => '',
                 'on_index' => false,
@@ -267,7 +267,7 @@ class User extends UserModel
                 ],
             ],
             [
-                'type' => 'Eminiarts\\Aura\\Fields\\Tab',
+                'type' => 'Aura\\Base\\Fields\\Tab',
                 'name' => 'Teams',
                 'slug' => 'tab-Teams',
                 'global' => true,
@@ -280,8 +280,8 @@ class User extends UserModel
             [
                 'name' => 'Teams',
                 'slug' => 'teams',
-                'type' => 'Eminiarts\\Aura\\Fields\\BelongsToMany',
-                'resource' => 'Eminiarts\\Aura\\Resources\\Team',
+                'type' => 'Aura\\Base\\Fields\\BelongsToMany',
+                'resource' => 'Aura\\Base\\Resources\\Team',
                 'validation' => '',
                 'wrapper' => '',
                 'on_index' => false,
@@ -297,7 +297,7 @@ class User extends UserModel
                 ],
             ],
             [
-                'type' => 'Eminiarts\\Aura\\Fields\\Tab',
+                'type' => 'Aura\\Base\\Fields\\Tab',
                 'name' => '2FA',
                 'label' => 'Tab',
                 'slug' => '2fa',
@@ -306,7 +306,7 @@ class User extends UserModel
             ],
             [
                 'name' => '2FA',
-                'type' => 'Eminiarts\\Aura\\Fields\\LivewireComponent',
+                'type' => 'Aura\\Base\\Fields\\LivewireComponent',
                 'component' => 'aura::user-two-factor-authentication-form',
                 'validation' => '',
                 'conditional_logic' => [],
@@ -624,16 +624,16 @@ Post Resource:
 ```php
 <?php
 
-namespace Eminiarts\Aura\Resources;
+namespace Aura\Base\Resources;
 
 use Aura\Export\Traits\Exportable;
 use Aura\Flows\Resources\Flow;
-use Eminiarts\Aura\Database\Factories\PostFactory;
-use Eminiarts\Aura\Resource;
-use Eminiarts\Aura\Widgets\AvgPostsNumber;
-use Eminiarts\Aura\Widgets\PostChart;
-use Eminiarts\Aura\Widgets\SumPostsNumber;
-use Eminiarts\Aura\Widgets\TotalPosts;
+use Aura\Base\Database\Factories\PostFactory;
+use Aura\Base\Resource;
+use Aura\Base\Widgets\AvgPostsNumber;
+use Aura\Base\Widgets\PostChart;
+use Aura\Base\Widgets\SumPostsNumber;
+use Aura\Base\Widgets\TotalPosts;
 
 class Post extends Resource
 {
@@ -759,7 +759,7 @@ class Post extends Resource
         return [
             [
                 'name' => 'Tab',
-                'type' => 'Eminiarts\\Aura\\Fields\\Tab',
+                'type' => 'Aura\\Base\\Fields\\Tab',
                 'validation' => '',
                 'on_index' => true,
                 'global' => true,
@@ -769,7 +769,7 @@ class Post extends Resource
             ],
             [
                 'name' => 'Panel',
-                'type' => 'Eminiarts\\Aura\\Fields\\Panel',
+                'type' => 'Aura\\Base\\Fields\\Panel',
                 'validation' => '',
                 'on_index' => true,
                 'conditional_logic' => [
@@ -782,7 +782,7 @@ class Post extends Resource
             [
                 'name' => 'Title',
                 'slug' => 'title',
-                'type' => 'Eminiarts\\Aura\\Fields\\Text',
+                'type' => 'Aura\\Base\\Fields\\Text',
                 'validation' => '',
                 'conditional_logic' => [],
                 'wrapper' => '',
@@ -793,7 +793,7 @@ class Post extends Resource
             [
                 'name' => 'Text',
                 'slug' => 'text',
-                'type' => 'Eminiarts\\Aura\\Fields\\Text',
+                'type' => 'Aura\\Base\\Fields\\Text',
                 'validation' => '',
                 'conditional_logic' => [],
                 'wrapper' => '',
@@ -803,7 +803,7 @@ class Post extends Resource
             ],
             [
                 'name' => 'Slug for Test',
-                'type' => 'Eminiarts\\Aura\\Fields\\Slug',
+                'type' => 'Aura\\Base\\Fields\\Slug',
                 'validation' => 'required|alpha_dash',
                 'conditional_logic' => [
                 ],
@@ -812,7 +812,7 @@ class Post extends Resource
             ],
             [
                 'name' => 'Bild',
-                'type' => 'Eminiarts\\Aura\\Fields\\Image',
+                'type' => 'Aura\\Base\\Fields\\Image',
                 'max' => 1,
                 'upload' => true,
                 'validation' => '',
@@ -822,7 +822,7 @@ class Post extends Resource
             ],
             [
                 'name' => 'Password for Test',
-                'type' => 'Eminiarts\\Aura\\Fields\\Password',
+                'type' => 'Aura\\Base\\Fields\\Password',
                 'validation' => 'nullable|min:8',
                 'conditional_logic' => [
                 ],
@@ -836,7 +836,7 @@ class Post extends Resource
             ],
             [
                 'name' => 'Number',
-                'type' => 'Eminiarts\\Aura\\Fields\\Number',
+                'type' => 'Aura\\Base\\Fields\\Number',
                 'validation' => '',
                 'conditional_logic' => [
                 ],
@@ -847,7 +847,7 @@ class Post extends Resource
             ],
             [
                 'name' => 'Date',
-                'type' => 'Eminiarts\\Aura\\Fields\\Date',
+                'type' => 'Aura\\Base\\Fields\\Date',
                 'validation' => '',
                 'conditional_logic' => [
                 ],
@@ -856,7 +856,7 @@ class Post extends Resource
             ],
             [
                 'name' => 'Description',
-                'type' => 'Eminiarts\\Aura\\Fields\\Textarea',
+                'type' => 'Aura\\Base\\Fields\\Textarea',
                 'validation' => '',
                 'conditional_logic' => [
                 ],
@@ -870,7 +870,7 @@ class Post extends Resource
             ],
             //  [
             //      'name' => 'Color',
-            //      'type' => 'Eminiarts\\Aura\\Fields\\Color',
+            //      'type' => 'Aura\\Base\\Fields\\Color',
             //      'validation' => '',
             //      'conditional_logic' => [
             //      ],
@@ -882,7 +882,7 @@ class Post extends Resource
             //  ],
             [
                 'name' => 'Sidebar',
-                'type' => 'Eminiarts\\Aura\\Fields\\Panel',
+                'type' => 'Aura\\Base\\Fields\\Panel',
                 'validation' => '',
                 'on_index' => true,
                 'conditional_logic' => [
@@ -895,8 +895,8 @@ class Post extends Resource
             [
                 'name' => 'Tags',
                 'slug' => 'tags',
-                'type' => 'Eminiarts\\Aura\\Fields\\Tags',
-                'model' => 'Eminiarts\\Aura\\Taxonomies\\Tag',
+                'type' => 'Aura\\Base\\Fields\\Tags',
+                'model' => 'Aura\\Base\\Taxonomies\\Tag',
                 'create' => true,
                 'validation' => '',
                 'conditional_logic' => [],
@@ -908,8 +908,8 @@ class Post extends Resource
             [
                 'name' => 'Categories',
                 'slug' => 'categories',
-                'type' => 'Eminiarts\\Aura\\Fields\\Tags',
-                'model' => 'Eminiarts\\Aura\\Taxonomies\\Category',
+                'type' => 'Aura\\Base\\Fields\\Tags',
+                'model' => 'Aura\\Base\\Taxonomies\\Category',
                 'create' => true,
                 'validation' => '',
                 'conditional_logic' => [],
@@ -921,8 +921,8 @@ class Post extends Resource
             //  [
             //      'name' => 'Team',
             //      'slug' => 'team_id',
-            //      'type' => 'Eminiarts\\Aura\\Fields\\BelongsTo',
-            //      'resource' => 'Eminiarts\\Aura\\Resources\\Team',
+            //      'type' => 'Aura\\Base\\Fields\\BelongsTo',
+            //      'resource' => 'Aura\\Base\\Resources\\Team',
             //      'validation' => '',
             //      'conditional_logic' => [
             //          [
@@ -939,8 +939,8 @@ class Post extends Resource
             [
                 'name' => 'User',
                 'slug' => 'user_id',
-                'type' => 'Eminiarts\\Aura\\Fields\\BelongsTo',
-                'resource' => 'Eminiarts\\Aura\\Resources\\User',
+                'type' => 'Aura\\Base\\Fields\\BelongsTo',
+                'resource' => 'Aura\\Base\\Resources\\User',
                 'validation' => '',
                 'conditional_logic' => [],
                 'wrapper' => '',
@@ -950,7 +950,7 @@ class Post extends Resource
             ],
             [
                 'name' => 'Attachments',
-                'type' => 'Eminiarts\\Aura\\Fields\\Tab',
+                'type' => 'Aura\\Base\\Fields\\Tab',
                 'validation' => '',
                 'on_index' => true,
                 'global' => true,
@@ -961,8 +961,8 @@ class Post extends Resource
             [
                 'name' => 'Attachments',
                 'slug' => 'attachments',
-                'type' => 'Eminiarts\\Aura\\Fields\\HasMany',
-                'resource' => 'Eminiarts\\Aura\\Resources\\Attachment',
+                'type' => 'Aura\\Base\\Fields\\HasMany',
+                'resource' => 'Aura\\Base\\Resources\\Attachment',
                 'validation' => '',
                 'conditional_logic' => [],
                 'wrapper' => '',
@@ -976,7 +976,7 @@ class Post extends Resource
             // [
             //     'name' => 'Created at',
             //     'slug' => 'created_at',
-            //     'type' => 'Eminiarts\\Aura\\Fields\\Date',
+            //     'type' => 'Aura\\Base\\Fields\\Date',
             //     'validation' => '',
             //     'enable_time' => true,
             //     'conditional_logic' => [],
@@ -988,7 +988,7 @@ class Post extends Resource
             // [
             //     'name' => 'Updated at',
             //     'slug' => 'updated_at',
-            //     'type' => 'Eminiarts\\Aura\\Fields\\Date',
+            //     'type' => 'Aura\\Base\\Fields\\Date',
             //     'validation' => '',
             //     'conditional_logic' => [],
             //     'wrapper' => '',
@@ -1011,7 +1011,7 @@ class Post extends Resource
             [
                 'name' => 'Total Posts Created',
                 'slug' => 'total_posts_created',
-                'type' => 'Eminiarts\\Aura\\Widgets\\ValueWidget',
+                'type' => 'Aura\\Base\\Widgets\\ValueWidget',
                 'method' => 'count',
                 'cache' => 300,
                 'style' => [
@@ -1022,7 +1022,7 @@ class Post extends Resource
             [
                 'name' => 'Average Number',
                 'slug' => 'average_number',
-                'type' => 'Eminiarts\\Aura\\Widgets\\ValueWidget',
+                'type' => 'Aura\\Base\\Widgets\\ValueWidget',
                 'method' => 'avg',
                 'column' => 'number',
                 'cache' => 300,
@@ -1034,7 +1034,7 @@ class Post extends Resource
             [
                 'name' => 'Sum Number',
                 'slug' => 'sum_number',
-                'type' => 'Eminiarts\\Aura\\Widgets\\ValueWidget',
+                'type' => 'Aura\\Base\\Widgets\\ValueWidget',
                 'method' => 'sum',
                 'column' => 'number',
                 'goal' => 2000,
@@ -1048,7 +1048,7 @@ class Post extends Resource
             [
                 'name' => 'Sparkline Bar Chart',
                 'slug' => 'sparkline_bar_chart',
-                'type' => 'Eminiarts\\Aura\\Widgets\\SparklineBar',
+                'type' => 'Aura\\Base\\Widgets\\SparklineBar',
                 'cache' => 300,
                 'style' => [
                     'width' => '50',
@@ -1059,7 +1059,7 @@ class Post extends Resource
             [
                 'name' => 'Sparkline Area',
                 'slug' => 'sparkline_area',
-                'type' => 'Eminiarts\\Aura\\Widgets\\SparklineArea',
+                'type' => 'Aura\\Base\\Widgets\\SparklineArea',
                 'cache' => 300,
                 'style' => [
                     'width' => '50',
@@ -1070,7 +1070,7 @@ class Post extends Resource
             [
                 'name' => 'Donut Chart',
                 'slug' => 'donut',
-                'type' => 'Eminiarts\\Aura\\Widgets\\Donut',
+                'type' => 'Aura\\Base\\Widgets\\Donut',
                 'cache' => 300,
                 // 'values' => function () {
                 //     return [
@@ -1087,7 +1087,7 @@ class Post extends Resource
             [
                 'name' => 'Pie Chart',
                 'slug' => 'pie',
-                'type' => 'Eminiarts\\Aura\\Widgets\\Pie',
+                'type' => 'Aura\\Base\\Widgets\\Pie',
                 'cache' => 300,
                 'column' => 'number',
                 'style' => [
@@ -1099,7 +1099,7 @@ class Post extends Resource
             [
                 'name' => 'Bar Chart',
                 'slug' => 'bar',
-                'type' => 'Eminiarts\\Aura\\Widgets\\Bar',
+                'type' => 'Aura\\Base\\Widgets\\Bar',
                 'cache' => 300,
                 'column' => 'number',
                 'style' => [
@@ -1146,11 +1146,11 @@ Team Resource:
 ```php
 <?php
 
-namespace Eminiarts\Aura\Resources;
+namespace Aura\Base\Resources;
 
-use Eminiarts\Aura\Database\Factories\TeamFactory;
-use Eminiarts\Aura\Models\TeamMeta;
-use Eminiarts\Aura\Resource;
+use Aura\Base\Database\Factories\TeamFactory;
+use Aura\Base\Models\TeamMeta;
+use Aura\Base\Resource;
 use Illuminate\Support\Facades\Cache;
 
 class Team extends Resource
@@ -1209,7 +1209,7 @@ class Team extends Resource
         return [
 
             [
-                'type' => 'Eminiarts\\Aura\\Fields\\Tab',
+                'type' => 'Aura\\Base\\Fields\\Tab',
                 'name' => 'Team',
                 'slug' => 'tab-team',
                 'global' => true,
@@ -1217,13 +1217,13 @@ class Team extends Resource
             [
                 'name' => 'Team',
                 'slug' => 'team-panel',
-                'type' => 'Eminiarts\\Aura\\Fields\\Panel',
+                'type' => 'Aura\\Base\\Fields\\Panel',
                 'validation' => '',
                 'conditional_logic' => [],
             ],
             [
                 'name' => 'Name',
-                'type' => 'Eminiarts\\Aura\\Fields\\Text',
+                'type' => 'Aura\\Base\\Fields\\Text',
                 'validation' => 'required',
                 'on_index' => true,
                 'slug' => 'name',
@@ -1233,7 +1233,7 @@ class Team extends Resource
             ],
             [
                 'name' => 'Description',
-                'type' => 'Eminiarts\\Aura\\Fields\\Text',
+                'type' => 'Aura\\Base\\Fields\\Text',
                 'validation' => '',
                 'on_index' => true,
                 'slug' => 'description',
@@ -1242,7 +1242,7 @@ class Team extends Resource
                 ],
             ],
             [
-                'type' => 'Eminiarts\\Aura\\Fields\\Tab',
+                'type' => 'Aura\\Base\\Fields\\Tab',
                 'name' => 'Users',
                 'slug' => 'tab-users',
                 'global' => true,
@@ -1251,8 +1251,8 @@ class Team extends Resource
             [
                 'name' => 'Users',
                 'slug' => 'users',
-                'type' => 'Eminiarts\\Aura\\Fields\\HasMany',
-                'resource' => 'Eminiarts\\Aura\\Resources\\User',
+                'type' => 'Aura\\Base\\Fields\\HasMany',
+                'resource' => 'Aura\\Base\\Resources\\User',
                 'validation' => '',
                 'conditional_logic' => [],
                 'on_index' => false,
@@ -1266,7 +1266,7 @@ class Team extends Resource
             [
                 'name' => 'Invitations',
                 'slug' => 'tab-Invitations',
-                'type' => 'Eminiarts\\Aura\\Fields\\Tab',
+                'type' => 'Aura\\Base\\Fields\\Tab',
                 'global' => true,
                 'validation' => '',
                 'conditional_logic' => [],
@@ -1275,8 +1275,8 @@ class Team extends Resource
             [
                 'name' => 'Invitations',
                 'slug' => 'Invitations',
-                'type' => 'Eminiarts\\Aura\\Fields\\HasMany',
-                'resource' => 'Eminiarts\\Aura\\Resources\\TeamInvitation',
+                'type' => 'Aura\\Base\\Fields\\HasMany',
+                'resource' => 'Aura\\Base\\Resources\\TeamInvitation',
                 'validation' => '',
                 'conditional_logic' => [],
                 'on_index' => false,
@@ -1462,10 +1462,10 @@ Attachment Resource:
 ```php
 <?php
 
-namespace Eminiarts\Aura\Resources;
+namespace Aura\Base\Resources;
 
-use Eminiarts\Aura\Jobs\GenerateImageThumbnail;
-use Eminiarts\Aura\Resource;
+use Aura\Base\Jobs\GenerateImageThumbnail;
+use Aura\Base\Resource;
 use Illuminate\Foundation\Bus\DispatchesJobs;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -1515,7 +1515,7 @@ class Attachment extends Resource
         return [
             [
                 'name' => 'Attachment',
-                'type' => 'Eminiarts\\Aura\\Fields\\Panel',
+                'type' => 'Aura\\Base\\Fields\\Panel',
                 'slug' => 'panel1',
                 'style' => [
                     'width' => '50',
@@ -1523,7 +1523,7 @@ class Attachment extends Resource
             ],
             [
                 'name' => 'Preview',
-                'type' => 'Eminiarts\\Aura\\Fields\\Embed',
+                'type' => 'Aura\\Base\\Fields\\Embed',
                 'validation' => '',
                 'on_index' => false,
                 'slug' => 'embed',
@@ -1533,7 +1533,7 @@ class Attachment extends Resource
             ],
             [
                 'name' => 'Details',
-                'type' => 'Eminiarts\\Aura\\Fields\\Panel',
+                'type' => 'Aura\\Base\\Fields\\Panel',
                 'slug' => 'panel2',
                 'style' => [
                     'width' => '50',
@@ -1541,7 +1541,7 @@ class Attachment extends Resource
             ],
             [
                 'name' => 'Name',
-                'type' => 'Eminiarts\\Aura\\Fields\\Text',
+                'type' => 'Aura\\Base\\Fields\\Text',
                 'validation' => 'required',
                 'on_index' => true,
                 'slug' => 'name',
@@ -1551,7 +1551,7 @@ class Attachment extends Resource
             ],
             [
                 'name' => 'Url',
-                'type' => 'Eminiarts\\Aura\\Fields\\ViewValue',
+                'type' => 'Aura\\Base\\Fields\\ViewValue',
                 'validation' => 'required',
                 'on_index' => true,
                 'slug' => 'url',
@@ -1561,7 +1561,7 @@ class Attachment extends Resource
             ],
             [
                 'name' => 'Thumbnail',
-                'type' => 'Eminiarts\\Aura\\Fields\\ViewValue',
+                'type' => 'Aura\\Base\\Fields\\ViewValue',
                 'validation' => '',
                 'on_index' => false,
                 'slug' => 'thumbnail_url',
@@ -1572,7 +1572,7 @@ class Attachment extends Resource
 
             [
                 'name' => 'Mime Type',
-                'type' => 'Eminiarts\\Aura\\Fields\\ViewValue',
+                'type' => 'Aura\\Base\\Fields\\ViewValue',
                 'validation' => 'required',
                 'on_index' => true,
                 'slug' => 'mime_type',
@@ -1582,7 +1582,7 @@ class Attachment extends Resource
             ],
             [
                 'name' => 'Size',
-                'type' => 'Eminiarts\\Aura\\Fields\\ViewValue',
+                'type' => 'Aura\\Base\\Fields\\ViewValue',
                 'validation' => 'required',
                 'on_index' => true,
                 'slug' => 'size',
@@ -1593,7 +1593,7 @@ class Attachment extends Resource
             // [
             //     'name' => 'Created at',
             //     'slug' => 'created_at',
-            //     'type' => 'Eminiarts\\Aura\\Fields\\Date',
+            //     'type' => 'Aura\\Base\\Fields\\Date',
             //     'validation' => '',
             //     'enable_time' => true,
             //     'conditional_logic' => [],
@@ -1608,7 +1608,7 @@ class Attachment extends Resource
             // [
             //     'name' => 'Updated at',
             //     'slug' => 'updated_at',
-            //     'type' => 'Eminiarts\\Aura\\Fields\\Date',
+            //     'type' => 'Aura\\Base\\Fields\\Date',
             //     'validation' => '',
             //     'conditional_logic' => [],
             //     'wrapper' => '',
@@ -1775,23 +1775,23 @@ I will now also give you the code of the Resource, so you can get a better under
 ```php
 <?php
 
-namespace Eminiarts\Aura;
+namespace Aura\Base;
 
 use Aura\Flows\Jobs\TriggerFlowOnCreatePostEvent;
 use Aura\Flows\Jobs\TriggerFlowOnDeletedPostEvent;
 use Aura\Flows\Jobs\TriggerFlowOnUpdatePostEvent;
 use Aura\Flows\Resources\Flow;
-use Eminiarts\Aura\Models\Scopes\TeamScope;
-use Eminiarts\Aura\Models\Scopes\TypeScope;
-use Eminiarts\Aura\Resources\User;
-use Eminiarts\Aura\Traits\AuraModelConfig;
-use Eminiarts\Aura\Traits\AuraTaxonomies;
-use Eminiarts\Aura\Traits\InitialPostFields;
-use Eminiarts\Aura\Traits\InputFields;
-use Eminiarts\Aura\Traits\InteractsWithTable;
-use Eminiarts\Aura\Traits\SaveFieldAttributes;
-use Eminiarts\Aura\Traits\SaveMetaFields;
-use Eminiarts\Aura\Traits\SaveTerms;
+use Aura\Base\Models\Scopes\TeamScope;
+use Aura\Base\Models\Scopes\TypeScope;
+use Aura\Base\Resources\User;
+use Aura\Base\Traits\AuraModelConfig;
+use Aura\Base\Traits\AuraTaxonomies;
+use Aura\Base\Traits\InitialPostFields;
+use Aura\Base\Traits\InputFields;
+use Aura\Base\Traits\InteractsWithTable;
+use Aura\Base\Traits\SaveFieldAttributes;
+use Aura\Base\Traits\SaveMetaFields;
+use Aura\Base\Traits\SaveTerms;
 use Illuminate\Database\Eloquent\Concerns\HasTimestamps;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -2122,14 +2122,15 @@ class Resource extends Model
 ```
 
 Traits: AuraModelConfig.php
+
 ```php
 <?php
 
-namespace Eminiarts\Aura\Traits;
+namespace Aura\Base\Traits;
 
-use Eminiarts\Aura\ConditionalLogic;
-use Eminiarts\Aura\Models\Meta;
-use Eminiarts\Aura\Resources\Team;
+use Aura\Base\ConditionalLogic;
+use Aura\Base\Models\Meta;
+use Aura\Base\Resources\Team;
 use Illuminate\Support\Str;
 
 trait AuraModelConfig
@@ -2456,7 +2457,7 @@ trait AuraModelConfig
 
     public function isNumberField($key)
     {
-        if ($this->fieldBySlug($key)['type'] == 'Eminiarts\\Aura\\Fields\\Number') {
+        if ($this->fieldBySlug($key)['type'] == 'Aura\\Base\\Fields\\Number') {
             return true;
         }
 
@@ -2480,12 +2481,12 @@ trait AuraModelConfig
 
     public function isTaxonomyField($key)
     {
-        // Check if the Field is a taxonomy 'type' => 'Eminiarts\\Aura\\Fields\\Tags',
+        // Check if the Field is a taxonomy 'type' => 'Aura\\Base\\Fields\\Tags',
         if (in_array($key, $this->inputFieldsSlugs())) {
             $field = $this->fieldBySlug($key);
 
             // Atm only tags, refactor later
-            if (isset($field['type']) && $field['type'] == 'Eminiarts\\Aura\\Fields\\Tags') {
+            if (isset($field['type']) && $field['type'] == 'Aura\\Base\\Fields\\Tags') {
                 return true;
             }
         }
@@ -2630,25 +2631,26 @@ trait AuraModelConfig
 ```
 
 Trait: InputFields.php
+
 ```php
 <?php
 
-namespace Eminiarts\Aura\Traits;
+namespace Aura\Base\Traits;
 
-use Eminiarts\Aura\ConditionalLogic;
-use Eminiarts\Aura\Pipeline\AddIdsToFields;
-use Eminiarts\Aura\Pipeline\ApplyParentConditionalLogic;
-use Eminiarts\Aura\Pipeline\ApplyParentDisplayAttributes;
-use Eminiarts\Aura\Pipeline\ApplyTabs;
-use Eminiarts\Aura\Pipeline\BuildTreeFromFields;
-use Eminiarts\Aura\Pipeline\DoNotDeferConditionalLogic;
-use Eminiarts\Aura\Pipeline\FilterCreateFields;
-use Eminiarts\Aura\Pipeline\FilterEditFields;
-use Eminiarts\Aura\Pipeline\FilterViewFields;
-use Eminiarts\Aura\Pipeline\MapFields;
-use Eminiarts\Aura\Pipeline\RemoveClosureAttributes;
-use Eminiarts\Aura\Pipeline\RemoveValidationAttribute;
-use Eminiarts\Aura\Pipeline\TransformSlugs;
+use Aura\Base\ConditionalLogic;
+use Aura\Base\Pipeline\AddIdsToFields;
+use Aura\Base\Pipeline\ApplyParentConditionalLogic;
+use Aura\Base\Pipeline\ApplyParentDisplayAttributes;
+use Aura\Base\Pipeline\ApplyTabs;
+use Aura\Base\Pipeline\BuildTreeFromFields;
+use Aura\Base\Pipeline\DoNotDeferConditionalLogic;
+use Aura\Base\Pipeline\FilterCreateFields;
+use Aura\Base\Pipeline\FilterEditFields;
+use Aura\Base\Pipeline\FilterViewFields;
+use Aura\Base\Pipeline\MapFields;
+use Aura\Base\Pipeline\RemoveClosureAttributes;
+use Aura\Base\Pipeline\RemoveValidationAttribute;
+use Aura\Base\Pipeline\TransformSlugs;
 
 trait InputFields
 {
@@ -2962,10 +2964,11 @@ trait InputFields
 ```
 
 InputfieldsHelpers.php
+
 ```php
 <?php
 
-namespace Eminiarts\Aura\Traits;
+namespace Aura\Base\Traits;
 
 use Illuminate\Pipeline\Pipeline;
 use Illuminate\Support\Facades\Cache;
@@ -3129,10 +3132,11 @@ trait InputFieldsHelpers
 
 
 InteractsWithTable.php
+
 ```php
 <?php
 
-namespace Eminiarts\Aura\Traits;
+namespace Aura\Base\Traits;
 
 trait InteractsWithTable
 {
@@ -3170,10 +3174,11 @@ trait InteractsWithTable
 ```
 
 SaveFieldAttributes.php
+
 ```php
 <?php
 
-namespace Eminiarts\Aura\Traits;
+namespace Aura\Base\Traits;
 
 trait SaveFieldAttributes
 {
@@ -3203,7 +3208,7 @@ trait SaveFieldAttributes
                     }
 
                     // Do not set password fields manually, since they would overwrite the hashed password
-                    if ($class instanceof \Eminiarts\Aura\Fields\Password) {
+                    if ($class instanceof \Aura\Base\Fields\Password) {
                         return;
                     }
 
@@ -3231,12 +3236,13 @@ trait SaveFieldAttributes
 ```
 
 SaveMetaFields.php
+
 ```php
 <?php
 
-namespace Eminiarts\Aura\Traits;
+namespace Aura\Base\Traits;
 
-use Eminiarts\Aura\Models\Meta;
+use Aura\Base\Models\Meta;
 use Illuminate\Support\Str;
 
 trait SaveMetaFields
@@ -3268,7 +3274,7 @@ trait SaveMetaFields
                     }
 
                     // If the $class is a Password Field and the value is null, continue
-                    if ($class instanceof \Eminiarts\Aura\Fields\Password && is_null($value)) {
+                    if ($class instanceof \Aura\Base\Fields\Password && is_null($value)) {
                         // If the password is available in the $post->attributes, unset it
                         if (isset($post->attributes[$key])) {
                             unset($post->attributes[$key]);
@@ -3326,17 +3332,18 @@ trait SaveMetaFields
 More Context about Aura:
 
 Aura.php
+
 ```php
 <?php
 
-namespace Eminiarts\Aura;
+namespace Aura\Base;
 
 use Closure;
-use Eminiarts\Aura\Models\Scopes\TeamScope;
-use Eminiarts\Aura\Resources\Attachment;
-use Eminiarts\Aura\Resources\Option;
-use Eminiarts\Aura\Resources\User;
-use Eminiarts\Aura\Traits\DefaultFields;
+use Aura\Base\Models\Scopes\TeamScope;
+use Aura\Base\Resources\Attachment;
+use Aura\Base\Resources\Option;
+use Aura\Base\Resources\User;
+use Aura\Base\Traits\DefaultFields;
 use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Filesystem\Filesystem;
 use Illuminate\Support\Facades\Cache;
@@ -3444,7 +3451,7 @@ class Aura
 
     public static function findTemplateBySlug($slug)
     {
-        return app('Eminiarts\Aura\Templates\\'.str($slug)->title);
+        return app('Aura\Base\Templates\\'.str($slug)->title);
     }
 
     public function getAppFields()
@@ -3841,61 +3848,61 @@ Aura Service Provider
 ```php
 <?php
 
-namespace Eminiarts\Aura;
+namespace Aura\Base;
 
-use Eminiarts\Aura\Commands\AuraCommand;
-use Eminiarts\Aura\Commands\CreateAuraPlugin;
-use Eminiarts\Aura\Commands\CreateResourceMigration;
-use Eminiarts\Aura\Commands\CreateResourcePermissions;
-use Eminiarts\Aura\Commands\DatabaseToResources;
-use Eminiarts\Aura\Commands\MakeField;
-use Eminiarts\Aura\Commands\MakePosttype;
-use Eminiarts\Aura\Commands\MakeTaxonomy;
-use Eminiarts\Aura\Commands\MakeUser;
-use Eminiarts\Aura\Commands\PublishCommand;
-use Eminiarts\Aura\Commands\TransformTableToResource;
-use Eminiarts\Aura\Facades\Aura;
-use Eminiarts\Aura\Http\Livewire\Attachment\Index as AttachmentIndex;
-use Eminiarts\Aura\Http\Livewire\Config;
-use Eminiarts\Aura\Http\Livewire\BookmarkPage;
-use Eminiarts\Aura\Http\Livewire\CreateFlow;
-use Eminiarts\Aura\Http\Livewire\CreatePosttype;
-use Eminiarts\Aura\Http\Livewire\CreateTaxonomy;
-use Eminiarts\Aura\Http\Livewire\EditOperation;
-use Eminiarts\Aura\Http\Livewire\EditPosttypeField;
-use Eminiarts\Aura\Http\Livewire\GlobalSearch;
-use Eminiarts\Aura\Http\Livewire\MediaManager;
-use Eminiarts\Aura\Http\Livewire\MediaUploader;
-use Eminiarts\Aura\Http\Livewire\Navigation;
-use Eminiarts\Aura\Http\Livewire\Notifications;
-use Eminiarts\Aura\Http\Livewire\Post\Create;
-use Eminiarts\Aura\Http\Livewire\Post\CreateModal;
-use Eminiarts\Aura\Http\Livewire\Post\Edit;
-use Eminiarts\Aura\Http\Livewire\Post\EditModal;
-use Eminiarts\Aura\Http\Livewire\Post\Index;
-use Eminiarts\Aura\Http\Livewire\Post\View;
-use Eminiarts\Aura\Http\Livewire\Posttype;
-use Eminiarts\Aura\Http\Livewire\Table\Table;
-use Eminiarts\Aura\Http\Livewire\Taxonomy\Create as TaxonomyCreate;
-use Eminiarts\Aura\Http\Livewire\Taxonomy\Edit as TaxonomyEdit;
-use Eminiarts\Aura\Http\Livewire\Taxonomy\Index as TaxonomyIndex;
-use Eminiarts\Aura\Http\Livewire\Taxonomy\View as TaxonomyView;
-use Eminiarts\Aura\Http\Livewire\TeamSettings;
-use Eminiarts\Aura\Http\Livewire\User\InviteUser;
-use Eminiarts\Aura\Http\Livewire\User\Profile;
-use Eminiarts\Aura\Http\Livewire\User\TwoFactorAuthenticationForm;
-use Eminiarts\Aura\Policies\ResourcePolicy;
-use Eminiarts\Aura\Policies\TeamPolicy;
-use Eminiarts\Aura\Policies\UserPolicy;
-use Eminiarts\Aura\Resources\Team;
-use Eminiarts\Aura\Resources\User;
-use Eminiarts\Aura\Widgets\Bar;
-use Eminiarts\Aura\Widgets\Donut;
-use Eminiarts\Aura\Widgets\Pie;
-use Eminiarts\Aura\Widgets\SparklineArea;
-use Eminiarts\Aura\Widgets\SparklineBar;
-use Eminiarts\Aura\Widgets\ValueWidget;
-use Eminiarts\Aura\Widgets\Widgets;
+use Aura\Base\Commands\AuraCommand;
+use Aura\Base\Commands\CreateAuraPlugin;
+use Aura\Base\Commands\CreateResourceMigration;
+use Aura\Base\Commands\CreateResourcePermissions;
+use Aura\Base\Commands\DatabaseToResources;
+use Aura\Base\Commands\MakeField;
+use Aura\Base\Commands\MakePosttype;
+use Aura\Base\Commands\MakeTaxonomy;
+use Aura\Base\Commands\MakeUser;
+use Aura\Base\Commands\PublishCommand;
+use Aura\Base\Commands\TransformTableToResource;
+use Aura\Base\Facades\Aura;
+use Aura\Base\Http\Livewire\Attachment\Index as AttachmentIndex;
+use Aura\Base\Http\Livewire\Config;
+use Aura\Base\Http\Livewire\BookmarkPage;
+use Aura\Base\Http\Livewire\CreateFlow;
+use Aura\Base\Http\Livewire\CreatePosttype;
+use Aura\Base\Http\Livewire\CreateTaxonomy;
+use Aura\Base\Http\Livewire\EditOperation;
+use Aura\Base\Http\Livewire\EditPosttypeField;
+use Aura\Base\Http\Livewire\GlobalSearch;
+use Aura\Base\Http\Livewire\MediaManager;
+use Aura\Base\Http\Livewire\MediaUploader;
+use Aura\Base\Http\Livewire\Navigation;
+use Aura\Base\Http\Livewire\Notifications;
+use Aura\Base\Http\Livewire\Post\Create;
+use Aura\Base\Http\Livewire\Post\CreateModal;
+use Aura\Base\Http\Livewire\Post\Edit;
+use Aura\Base\Http\Livewire\Post\EditModal;
+use Aura\Base\Http\Livewire\Post\Index;
+use Aura\Base\Http\Livewire\Post\View;
+use Aura\Base\Http\Livewire\Posttype;
+use Aura\Base\Http\Livewire\Table\Table;
+use Aura\Base\Http\Livewire\Taxonomy\Create as TaxonomyCreate;
+use Aura\Base\Http\Livewire\Taxonomy\Edit as TaxonomyEdit;
+use Aura\Base\Http\Livewire\Taxonomy\Index as TaxonomyIndex;
+use Aura\Base\Http\Livewire\Taxonomy\View as TaxonomyView;
+use Aura\Base\Http\Livewire\TeamSettings;
+use Aura\Base\Http\Livewire\User\InviteUser;
+use Aura\Base\Http\Livewire\User\Profile;
+use Aura\Base\Http\Livewire\User\TwoFactorAuthenticationForm;
+use Aura\Base\Policies\ResourcePolicy;
+use Aura\Base\Policies\TeamPolicy;
+use Aura\Base\Policies\UserPolicy;
+use Aura\Base\Resources\Team;
+use Aura\Base\Resources\User;
+use Aura\Base\Widgets\Bar;
+use Aura\Base\Widgets\Donut;
+use Aura\Base\Widgets\Pie;
+use Aura\Base\Widgets\SparklineArea;
+use Aura\Base\Widgets\SparklineBar;
+use Aura\Base\Widgets\ValueWidget;
+use Aura\Base\Widgets\Widgets;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Blade;
@@ -3941,11 +3948,11 @@ class AuraServiceProvider extends PackageServiceProvider
 
     public function bootLivewireComponents()
     {
-        Livewire::component('app.aura.widgets.post-stats', \Eminiarts\Aura\Widgets\PostStats::class);
-        // Livewire::component('app.aura.widgets.total-posts', \Eminiarts\Aura\Widgets\TotalPosts::class);
-        Livewire::component('app.aura.widgets.post-chart', \Eminiarts\Aura\Widgets\PostChart::class);
-        Livewire::component('app.aura.widgets.sum-posts-number', \Eminiarts\Aura\Widgets\SumPostsNumber::class);
-        Livewire::component('app.aura.widgets.avg-posts-number', \Eminiarts\Aura\Widgets\AvgPostsNumber::class);
+        Livewire::component('app.aura.widgets.post-stats', \Aura\Base\Widgets\PostStats::class);
+        // Livewire::component('app.aura.widgets.total-posts', \Aura\Base\Widgets\TotalPosts::class);
+        Livewire::component('app.aura.widgets.post-chart', \Aura\Base\Widgets\PostChart::class);
+        Livewire::component('app.aura.widgets.sum-posts-number', \Aura\Base\Widgets\SumPostsNumber::class);
+        Livewire::component('app.aura.widgets.avg-posts-number', \Aura\Base\Widgets\AvgPostsNumber::class);
         Livewire::component('aura::post-index', Index::class);
         Livewire::component('aura::post-create', Create::class);
         Livewire::component('aura::post-create-modal', CreateModal::class);
@@ -4060,7 +4067,7 @@ class AuraServiceProvider extends PackageServiceProvider
 
         // CheckCondition Blade Directive
         Blade::if('checkCondition', function ($model, $field, $post = null) {
-            return \Eminiarts\Aura\Aura::checkCondition($model, $field, $post);
+            return \Aura\Base\Aura::checkCondition($model, $field, $post);
         });
 
         Blade::if('superadmin', function () {
@@ -4077,7 +4084,7 @@ class AuraServiceProvider extends PackageServiceProvider
 
         // Register the morph map for the resources
         // $resources = Aura::resources()->mapWithKeys(function ($resource) {
-        //     return [$resource => 'Eminiarts\Aura\Resources\\'.str($resource)->title];
+        //     return [$resource => 'Aura\Base\Resources\\'.str($resource)->title];
         // })->toArray();
 
         $this
@@ -4096,12 +4103,12 @@ class AuraServiceProvider extends PackageServiceProvider
         // dd(config('aura.resources.user'));
 
         Aura::registerResources([
-            \Eminiarts\Aura\Resources\Attachment::class,
-            \Eminiarts\Aura\Resources\Option::class,
-            \Eminiarts\Aura\Resources\Post::class,
-            \Eminiarts\Aura\Resources\Permission::class,
-            \Eminiarts\Aura\Resources\Role::class,
-            // \Eminiarts\Aura\Resources\User::class,
+            \Aura\Base\Resources\Attachment::class,
+            \Aura\Base\Resources\Option::class,
+            \Aura\Base\Resources\Post::class,
+            \Aura\Base\Resources\Permission::class,
+            \Aura\Base\Resources\Role::class,
+            // \Aura\Base\Resources\User::class,
             config('aura.resources.user'),
             // config('aura::resources.user'),
         ]);
@@ -4114,13 +4121,13 @@ class AuraServiceProvider extends PackageServiceProvider
         }
 
         Aura::registerTaxonomies([
-            \Eminiarts\Aura\Taxonomies\Tag::class,
-            \Eminiarts\Aura\Taxonomies\Category::class,
+            \Aura\Base\Taxonomies\Tag::class,
+            \Aura\Base\Taxonomies\Category::class,
         ]);
 
         // Register Fields from src/Fields
         $fields = collect(app('files')->files(__DIR__.'/Fields'))->map(function ($field) {
-            return 'Eminiarts\Aura\Fields\\'.str($field->getFilename())->replace('.php', '')->title;
+            return 'Aura\Base\Fields\\'.str($field->getFilename())->replace('.php', '')->title;
         })->toArray();
 
         Aura::registerFields($fields);

@@ -1,6 +1,6 @@
 <?php
 
-namespace Eminiarts\Aura\Templates;
+namespace Aura\Base\Templates;
 
 class Plain
 {
@@ -11,7 +11,7 @@ class Plain
         return [
             [
                 'name' => 'Panel 1',
-                'type' => 'Eminiarts\\Aura\\Fields\\Panel',
+                'type' => 'Aura\\Base\\Fields\\Panel',
                 'validation' => '',
                 'on_index' => true,
                 'conditional_logic' => [],
@@ -19,7 +19,7 @@ class Plain
             ],
             [
                 'name' => 'Text',
-                'type' => 'Eminiarts\\Aura\\Fields\\Text',
+                'type' => 'Aura\\Base\\Fields\\Text',
                 'on_index' => true,
                 'conditional_logic' => [],
                 'slug' => 'title',

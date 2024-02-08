@@ -27,7 +27,7 @@ To only view fields on a Post - View page you can set the following properties:
 
 namespace App\Aura\Resources;
 
-use Eminiarts\Aura\Models\Post;
+use Aura\Base\Models\Post;
 
 class CustomResource extends Resource
 {
@@ -37,7 +37,7 @@ class CustomResource extends Resource
     {
         return [
             [
-                'type' => 'Eminiarts\\Aura\\Fields\\Tab',
+                'type' => 'Aura\\Base\\Fields\\Tab',
                 'name' => 'User details',
                 'slug' => 'tab-user',
                 'global' => true,
@@ -47,7 +47,7 @@ class CustomResource extends Resource
             ],
             [
                 'name' => 'Custom View',
-                'type' => 'Eminiarts\\Aura\\Fields\\View',
+                'type' => 'Aura\\Base\\Fields\\View',
                 'validation' => 'required',
                 'view' => 'aura.CustomResource.view'
                 'slug' => 'custom-view',
@@ -57,7 +57,7 @@ class CustomResource extends Resource
             ],
             [
                 'name' => '2FA',
-                'type' => 'Eminiarts\\Aura\\Fields\\LivewireComponent',
+                'type' => 'Aura\\Base\\Fields\\LivewireComponent',
                 'component' => 'custom-resource-view',
                 'validation' => '',
                 'conditional_logic' => [],

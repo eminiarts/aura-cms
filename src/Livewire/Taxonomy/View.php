@@ -1,11 +1,11 @@
 <?php
 
-namespace Eminiarts\Aura\Livewire\Taxonomy;
+namespace Aura\Base\Livewire\Taxonomy;
 
-use Eminiarts\Aura\Facades\Aura;
-use Eminiarts\Aura\Traits\HasActions;
-use Eminiarts\Aura\Traits\InteractsWithFields;
-use Eminiarts\Aura\Traits\RepeaterFields;
+use Aura\Base\Facades\Aura;
+use Aura\Base\Traits\HasActions;
+use Aura\Base\Traits\InteractsWithFields;
+use Aura\Base\Traits\RepeaterFields;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Livewire\Component;
 

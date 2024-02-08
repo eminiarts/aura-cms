@@ -1,17 +1,17 @@
 <?php
 
-namespace Eminiarts\Aura\Facades;
+namespace Aura\Base\Facades;
 
-use Eminiarts\Aura\AuraFake;
+use Aura\Base\AuraFake;
 use Illuminate\Support\Facades\Facade;
 
 /**
- * @see \Eminiarts\Aura\Aura
+ * @see \Aura\Base\Aura
  */
 class DynamicFunctions extends Facade
 {
     protected static function getFacadeAccessor()
     {
-        return \Eminiarts\Aura\DynamicFunctions::class;
+        return \Aura\Base\DynamicFunctions::class;
     }
 }

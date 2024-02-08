@@ -1,6 +1,6 @@
 <?php
 
-namespace Eminiarts\Aura\Fields;
+namespace Aura\Base\Fields;
 
 class BelongsToMany extends Field
 {
@@ -17,11 +17,11 @@ class BelongsToMany extends Field
         $field = $component->field;
         $model = $component->model;
 
-        if ($model instanceof \Eminiarts\Aura\Resources\User) {
+        if ($model instanceof \Aura\Base\Resources\User) {
             return $query->where('user_id', $model->id);
         }
 
-        if ($model instanceof \Eminiarts\Aura\Resources\Team) {
+        if ($model instanceof \Aura\Base\Resources\Team) {
             return $query;
         }
 

@@ -2,7 +2,7 @@
 
 namespace App\Aura\Fields;
 
-use Eminiarts\Aura\Fields\Field;
+use Aura\Base\Fields\Field;
 
 class FieldName extends Field
 {

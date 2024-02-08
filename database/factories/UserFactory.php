@@ -1,9 +1,9 @@
 <?php
 
-namespace Eminiarts\Aura\Database\Factories;
+namespace Aura\Base\Database\Factories;
 
-use Eminiarts\Aura\Resources\Team;
-use Eminiarts\Aura\Resources\User;
+use Aura\Base\Resources\Team;
+use Aura\Base\Resources\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Str;
 

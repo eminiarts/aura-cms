@@ -1,6 +1,6 @@
 <?php
 
-namespace Eminiarts\Aura\Templates;
+namespace Aura\Base\Templates;
 
 class TabsWithPanels
 {
@@ -11,7 +11,7 @@ class TabsWithPanels
         return [
             [
                 'name' => 'Tab 1',
-                'type' => 'Eminiarts\\Aura\\Fields\\Tab',
+                'type' => 'Aura\\Base\\Fields\\Tab',
                 'validation' => '',
                 'on_index' => true,
                 'global' => true,
@@ -20,7 +20,7 @@ class TabsWithPanels
             ],
             [
                 'name' => 'Panel 1',
-                'type' => 'Eminiarts\\Aura\\Fields\\Panel',
+                'type' => 'Aura\\Base\\Fields\\Panel',
                 'validation' => '',
                 'on_index' => true,
                 'conditional_logic' => [],
@@ -28,7 +28,7 @@ class TabsWithPanels
             ],
             [
                 'name' => 'Text 1',
-                'type' => 'Eminiarts\\Aura\\Fields\\Text',
+                'type' => 'Aura\\Base\\Fields\\Text',
                 'on_index' => true,
                 'conditional_logic' => [],
                 'slug' => 'text-1',
@@ -38,7 +38,7 @@ class TabsWithPanels
             ],
             [
                 'name' => 'Tab 2',
-                'type' => 'Eminiarts\\Aura\\Fields\\Tab',
+                'type' => 'Aura\\Base\\Fields\\Tab',
                 'validation' => '',
                 'on_index' => true,
                 'global' => true,
@@ -47,7 +47,7 @@ class TabsWithPanels
             ],
             [
                 'name' => 'Panel 2',
-                'type' => 'Eminiarts\\Aura\\Fields\\Panel',
+                'type' => 'Aura\\Base\\Fields\\Panel',
                 'validation' => '',
                 'on_index' => true,
                 'conditional_logic' => [],
@@ -55,7 +55,7 @@ class TabsWithPanels
             ],
             [
                 'name' => 'Text 2',
-                'type' => 'Eminiarts\\Aura\\Fields\\Text',
+                'type' => 'Aura\\Base\\Fields\\Text',
                 'on_index' => true,
                 'conditional_logic' => [],
                 'slug' => 'text-2',

@@ -1,10 +1,10 @@
 <?php
 
-namespace Eminiarts\Aura\Livewire\Taxonomy;
+namespace Aura\Base\Livewire\Taxonomy;
 
-use Eminiarts\Aura\Facades\Aura;
-use Eminiarts\Aura\Traits\HasActions;
-use Eminiarts\Aura\Traits\InteractsWithFields;
+use Aura\Base\Facades\Aura;
+use Aura\Base\Traits\HasActions;
+use Aura\Base\Traits\InteractsWithFields;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Support\Arr;
 use Livewire\Component;

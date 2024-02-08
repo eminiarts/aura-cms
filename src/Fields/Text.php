@@ -1,6 +1,6 @@
 <?php
 
-namespace Eminiarts\Aura\Fields;
+namespace Aura\Base\Fields;
 
 class Text extends Field
 {
@@ -14,32 +14,32 @@ class Text extends Field
             [
                 'label' => 'Text',
                 'name' => 'Text',
-                'type' => 'Eminiarts\\Aura\\Fields\\Tab',
+                'type' => 'Aura\\Base\\Fields\\Tab',
                 'slug' => 'text-tab',
                 'style' => [],
             ],
             [
                 'name' => 'Default Value',
-                'type' => 'Eminiarts\\Aura\\Fields\\Text',
+                'type' => 'Aura\\Base\\Fields\\Text',
                 'validation' => '',
                 'instructions' => 'Default value on create',
                 'slug' => 'default',
             ],
             [
                 'name' => 'Placeholder',
-                'type' => 'Eminiarts\\Aura\\Fields\\Text',
+                'type' => 'Aura\\Base\\Fields\\Text',
                 'validation' => '',
                 'slug' => 'placeholder',
             ],
             [
                 'name' => 'Autocomplete',
-                'type' => 'Eminiarts\\Aura\\Fields\\Text',
+                'type' => 'Aura\\Base\\Fields\\Text',
                 'validation' => '',
                 'slug' => 'autocomplete',
             ],
             [
                 'name' => 'Prefix',
-                'type' => 'Eminiarts\\Aura\\Fields\\Text',
+                'type' => 'Aura\\Base\\Fields\\Text',
                 'validation' => '',
                 'slug' => 'prefix',
                 'style' => [
@@ -49,7 +49,7 @@ class Text extends Field
             ],
             [
                 'name' => 'Suffix',
-                'type' => 'Eminiarts\\Aura\\Fields\\Text',
+                'type' => 'Aura\\Base\\Fields\\Text',
                 'validation' => '',
                 'slug' => 'suffix',
                 'style' => [
@@ -59,7 +59,7 @@ class Text extends Field
             ],
             [
                 'name' => 'Max Length',
-                'type' => 'Eminiarts\\Aura\\Fields\\Number',
+                'type' => 'Aura\\Base\\Fields\\Number',
                 'validation' => '',
                 'slug' => 'max_length',
                 'style' => [

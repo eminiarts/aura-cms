@@ -1,15 +1,15 @@
 <?php
 
-namespace Eminiarts\Aura\Livewire\Resource;
+namespace Aura\Base\Livewire\Resource;
 
 use Livewire\Component;
 use Illuminate\Support\Arr;
-use Eminiarts\Aura\Models\Post;
-use Eminiarts\Aura\Facades\Aura;
+use Aura\Base\Models\Post;
+use Aura\Base\Facades\Aura;
 use Livewire\Attributes\Computed;
-use Eminiarts\Aura\Traits\MediaFields;
-use Eminiarts\Aura\Traits\RepeaterFields;
-use Eminiarts\Aura\Traits\InteractsWithFields;
+use Aura\Base\Traits\MediaFields;
+use Aura\Base\Traits\RepeaterFields;
+use Aura\Base\Traits\InteractsWithFields;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 
 class Create extends Component

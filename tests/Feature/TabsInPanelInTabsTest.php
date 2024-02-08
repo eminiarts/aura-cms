@@ -1,6 +1,6 @@
 <?php
 
-use Eminiarts\Aura\Resource;
+use Aura\Base\Resource;
 
 class TabsInPanelInTabsTestModel extends Resource
 {
@@ -15,25 +15,25 @@ class TabsInPanelInTabsTestModel extends Resource
                 'label' => 'Tab 1',
                 'name' => 'Tab 1',
                 'global' => true,
-                'type' => 'Eminiarts\\Aura\\Fields\\Tab',
+                'type' => 'Aura\\Base\\Fields\\Tab',
                 'slug' => 'tab-1',
             ],
             [
                 'label' => 'Panel 1',
                 'name' => 'Panel 1',
-                'type' => 'Eminiarts\\Aura\\Fields\\Panel',
+                'type' => 'Aura\\Base\\Fields\\Panel',
                 'slug' => 'panel',
             ],
             [
                 'label' => 'Tab 1 in Panel',
                 'name' => 'Tab 1 in Panel',
-                'type' => 'Eminiarts\\Aura\\Fields\\Tab',
+                'type' => 'Aura\\Base\\Fields\\Tab',
                 'slug' => 'tab1-1',
             ],
             [
                 'label' => 'Text 1',
                 'name' => 'Text 1',
-                'type' => 'Eminiarts\\Aura\\Fields\\Text',
+                'type' => 'Aura\\Base\\Fields\\Text',
                 'validation' => 'numeric',
                 'conditional_logic' => [],
                 'slug' => 'text1',
@@ -41,13 +41,13 @@ class TabsInPanelInTabsTestModel extends Resource
             [
                 'label' => 'Tab 2 in Panel',
                 'name' => 'Tab 2 in Panel',
-                'type' => 'Eminiarts\\Aura\\Fields\\Tab',
+                'type' => 'Aura\\Base\\Fields\\Tab',
                 'slug' => 'tab1-2',
             ],
             [
                 'label' => 'Text 2',
                 'name' => 'Text 2',
-                'type' => 'Eminiarts\\Aura\\Fields\\Text',
+                'type' => 'Aura\\Base\\Fields\\Text',
                 'validation' => 'numeric',
                 'conditional_logic' => [],
                 'slug' => 'text2',
@@ -56,12 +56,12 @@ class TabsInPanelInTabsTestModel extends Resource
                 'label' => 'Tab 2',
                 'name' => 'Tab 2',
                 'global' => true,
-                'type' => 'Eminiarts\\Aura\\Fields\\Tab',
+                'type' => 'Aura\\Base\\Fields\\Tab',
                 'slug' => 'tab-2',
             ],
             [
                 'label' => 'Text 2',
-                'type' => 'Eminiarts\\Aura\\Fields\\Text',
+                'type' => 'Aura\\Base\\Fields\\Text',
                 'validation' => 'numeric',
                 'conditional_logic' => [],
                 'slug' => 'text-2-1',

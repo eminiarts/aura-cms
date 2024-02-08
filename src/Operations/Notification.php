@@ -1,11 +1,11 @@
 <?php
 
-namespace Eminiarts\Aura\Operations;
+namespace Aura\Base\Operations;
 
 use Aura\Flows\Resources\Operation;
-use Eminiarts\Aura\Models\User;
-use Eminiarts\Aura\Notifications\FlowNotification;
-use Eminiarts\Aura\Resources\Role;
+use Aura\Base\Models\User;
+use Aura\Base\Notifications\FlowNotification;
+use Aura\Base\Resources\Role;
 use Illuminate\Support\Facades\Blade;
 
 class Notification extends BaseOperation
@@ -15,7 +15,7 @@ class Notification extends BaseOperation
         return array_merge(parent::getFields(), [
             [
                 'name' => 'Select Type',
-                'type' => 'Eminiarts\\Aura\\Fields\\Select',
+                'type' => 'Aura\\Base\\Fields\\Select',
                 'instructions' => 'Select the type of notification',
                 'validation' => '',
                 'defer' => false,
@@ -27,7 +27,7 @@ class Notification extends BaseOperation
             ],
             [
                 'name' => 'User ID',
-                'type' => 'Eminiarts\\Aura\\Fields\\Text',
+                'type' => 'Aura\\Base\\Fields\\Text',
                 'instructions' => 'Which user to send the notification to',
                 'validation' => '',
                 'conditional_logic' => [
@@ -41,7 +41,7 @@ class Notification extends BaseOperation
             ],
             [
                 'name' => 'Role',
-                'type' => 'Eminiarts\\Aura\\Fields\\Text',
+                'type' => 'Aura\\Base\\Fields\\Text',
                 'instructions' => 'Which role to send the notification to',
                 'conditional_logic' => [
                     [
@@ -55,7 +55,7 @@ class Notification extends BaseOperation
             ],
             [
                 'name' => 'Message',
-                'type' => 'Eminiarts\\Aura\\Fields\\Textarea',
+                'type' => 'Aura\\Base\\Fields\\Textarea',
                 'instructions' => 'Message of the notifictation',
                 'validation' => 'required',
                 'slug' => 'message',

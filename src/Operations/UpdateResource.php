@@ -1,9 +1,9 @@
 <?php
 
-namespace Eminiarts\Aura\Operations;
+namespace Aura\Base\Operations;
 
 use Aura\Flows\Resources\Operation;
-use Eminiarts\Aura\Resources\Post;
+use Aura\Base\Resources\Post;
 
 class UpdateResource extends BaseOperation
 {
@@ -12,7 +12,7 @@ class UpdateResource extends BaseOperation
         return array_merge(parent::getFields(), [
             [
                 'name' => 'Select Type',
-                'type' => 'Eminiarts\\Aura\\Fields\\Select',
+                'type' => 'Aura\\Base\\Fields\\Select',
                 'instructions' => 'Select which type of resource to update',
                 'validation' => '',
                 'defer' => false,
@@ -24,7 +24,7 @@ class UpdateResource extends BaseOperation
             ],
             [
                 'name' => 'User ID',
-                'type' => 'Eminiarts\\Aura\\Fields\\Text',
+                'type' => 'Aura\\Base\\Fields\\Text',
                 'instructions' => 'Which user to send the notification to',
                 'validation' => '',
                 'conditional_logic' => [
@@ -38,7 +38,7 @@ class UpdateResource extends BaseOperation
             ],
             [
                 'name' => 'Role',
-                'type' => 'Eminiarts\\Aura\\Fields\\Text',
+                'type' => 'Aura\\Base\\Fields\\Text',
                 'instructions' => 'Which role to send the notification to',
                 'conditional_logic' => [
                     [
@@ -52,7 +52,7 @@ class UpdateResource extends BaseOperation
             ],
             [
                 'name' => 'Message',
-                'type' => 'Eminiarts\\Aura\\Fields\\Textarea',
+                'type' => 'Aura\\Base\\Fields\\Textarea',
                 'instructions' => 'Message of the notifictation',
                 'validation' => 'required',
                 'slug' => 'message',

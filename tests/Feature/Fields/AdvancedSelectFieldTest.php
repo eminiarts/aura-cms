@@ -3,15 +3,15 @@
 namespace Tests\Feature\Livewire;
 
 use Livewire\Livewire;
-use Eminiarts\Aura\Resource;
-use Eminiarts\Aura\Models\User;
-use Eminiarts\Aura\Facades\Aura;
-use Eminiarts\Aura\Resources\Post;
-use Eminiarts\Aura\Resources\Role;
-use Eminiarts\Aura\Resources\Team;
+use Aura\Base\Resource;
+use Aura\Base\Models\User;
+use Aura\Base\Facades\Aura;
+use Aura\Base\Resources\Post;
+use Aura\Base\Resources\Role;
+use Aura\Base\Resources\Team;
 use Illuminate\Support\Facades\Hash;
-use Eminiarts\Aura\Livewire\Resource\Edit;
-use Eminiarts\Aura\Livewire\Resource\Create;
+use Aura\Base\Livewire\Resource\Edit;
+use Aura\Base\Livewire\Resource\Create;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 // Before each test, create a Superadmin and login
@@ -33,11 +33,11 @@ class AdvancedSelectFieldModel extends Resource
         return [
             [
                 'name' => 'AdvancedSelect for Test',
-                'type' => 'Eminiarts\\Aura\\Fields\\AdvancedSelect',
+                'type' => 'Aura\\Base\\Fields\\AdvancedSelect',
                 'validation' => '',
                 'conditional_logic' => [],
                 'slug' => 'advancedselect',
-                'resource' => 'Eminiarts\\Aura\\Resources\\Role',
+                'resource' => 'Aura\\Base\\Resources\\Role',
                 'wrapper' => '',
                 'on_index' => false,
                 'on_forms' => true,

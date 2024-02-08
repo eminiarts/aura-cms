@@ -1,12 +1,12 @@
 <?php
 
-namespace Eminiarts\Aura\Models;
+namespace Aura\Base\Models;
 
-use Eminiarts\Aura\Resources\Option;
-use Eminiarts\Aura\Resources\Team;
-use Eminiarts\Aura\Traits\AuraModelConfig;
-use Eminiarts\Aura\Traits\InputFields;
-use Eminiarts\Aura\Traits\InteractsWithTable;
+use Aura\Base\Resources\Option;
+use Aura\Base\Resources\Team;
+use Aura\Base\Traits\AuraModelConfig;
+use Aura\Base\Traits\InputFields;
+use Aura\Base\Traits\InteractsWithTable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -278,16 +278,16 @@ class User extends Authenticatable
 
     public function resource()
     {
-        // Return \Eminiarts\Aura\Resources\User for this user
+        // Return \Aura\Base\Resources\User for this user
         if (config('aura.resources.user')) {
             return $this->hasOne(config('aura.resources.user'), 'id', 'id');
         } else {
-            return $this->hasOne(\Eminiarts\Aura\Resources\User::class, 'id', 'id');
+            return $this->hasOne(\Aura\Base\Resources\User::class, 'id', 'id');
         }
 
         // Cache the resource so we don't have to query the database every time
         return Cache::remember('user.resource.'.$this->id, now()->addHour(), function () {
-            return \Eminiarts\Aura\Resources\User::find($this->id);
+            return \Aura\Base\Resources\User::find($this->id);
         });
     }
 

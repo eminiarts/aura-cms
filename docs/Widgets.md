@@ -21,11 +21,11 @@ Here are the main properties you can set for each widget:
 Allowed Types
 -------------
 
-1.  **Eminiarts\\Aura\\Widgets\\ValueWidget**: A simple value widget that displays a single value. Supports count, avg, and sum methods.
-2.  **Eminiarts\\Aura\\Widgets\\SparklineBar**: A bar chart using the sparkline visualization style.
-3.  **Eminiarts\\Aura\\Widgets\\SparklineArea**: An area chart using the sparkline visualization style.
-4.  **Eminiarts\\Aura\\Widgets\\Donut**: A donut chart visualization.
-5.  **Eminiarts\\Aura\\Widgets\\Pie**: A pie chart visualization.
+1.  **Aura\\Base\\Widgets\\ValueWidget**: A simple value widget that displays a single value. Supports count, avg, and sum methods.
+2.  **Aura\\Base\\Widgets\\SparklineBar**: A bar chart using the sparkline visualization style.
+3.  **Aura\\Base\\Widgets\\SparklineArea**: An area chart using the sparkline visualization style.
+4.  **Aura\\Base\\Widgets\\Donut**: A donut chart visualization.
+5.  **Aura\\Base\\Widgets\\Pie**: A pie chart visualization.
 
 Examples
 --------
@@ -38,7 +38,7 @@ php
 [
     'name' => 'Total Posts Created',
     'slug' => 'total_posts_created',
-    'type' => 'Eminiarts\\Aura\\Widgets\\ValueWidget',
+    'type' => 'Aura\\Base\\Widgets\\ValueWidget',
     'method' => 'count',
     'cache' => 300,
     'style' => [
@@ -56,7 +56,7 @@ php
 [
     'name' => 'Average Number',
     'slug' => 'average_number',
-    'type' => 'Eminiarts\\Aura\\Widgets\\ValueWidget',
+    'type' => 'Aura\\Base\\Widgets\\ValueWidget',
     'method' => 'avg',
     'column' => 'number',
     'cache' => 300,
@@ -75,7 +75,7 @@ php
 [
     'name' => 'Sparkline Bar Chart',
     'slug' => 'sparkline_bar_chart',
-    'type' => 'Eminiarts\\Aura\\Widgets\\SparklineBar',
+    'type' => 'Aura\\Base\\Widgets\\SparklineBar',
     'cache' => 300,
     'style' => [
         'width' => '50',
@@ -92,7 +92,7 @@ php
 [
     'name' => 'Sparkline Area',
     'slug' => 'sparkline_area',
-    'type' => 'Eminiarts\\Aura\\Widgets\\SparklineArea',
+    'type' => 'Aura\\Base\\Widgets\\SparklineArea',
     'cache' => 300,
     'style' => [
         'width' => '50',
@@ -110,7 +110,7 @@ php
 [
     'name' => 'Donut Chart',
     'slug' => 'donut',
-    'type' => 'Eminiarts\\Aura\\Widgets\\Donut',
+    'type' => 'Aura\\Base\\Widgets\\Donut',
     'cache' => 300,
     'column' => 'number',
     'style' => [
@@ -128,7 +128,7 @@ php
 [
     'name' => 'Pie Chart',
     'slug' => 'pie',
-    'type' => 'Eminiarts\\Aura\\Widgets\\Pie',
+    'type' => 'Aura\\Base\\Widgets\\Pie',
     'cache' => 300,
     'column' => 'number',
     'style' => [

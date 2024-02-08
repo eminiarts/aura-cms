@@ -1,6 +1,6 @@
 <?php
 
-namespace Eminiarts\Aura\Providers;
+namespace Aura\Base\Providers;
 
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Foundation\Support\Providers\RouteServiceProvider as ServiceProvider;

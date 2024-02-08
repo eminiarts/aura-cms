@@ -1,6 +1,6 @@
 <?php
 
-namespace Eminiarts\Aura\Livewire;
+namespace Aura\Base\Livewire;
 
 use Aura\Flows\Resources\Flow;
 use Aura\Flows\Resources\Operation;
@@ -62,7 +62,7 @@ class CreateFlow extends Component
             'name' => 'New Operation',
             'status' => 'active',
             'user_id' => auth()->id(),
-            'type' => 'Eminiarts\\Aura\\Operations\\Log',
+            'type' => 'Aura\\Base\\Operations\\Log',
             'options' => [
                 'x' => $o['options']['x'] + $x,
                 'y' => $o['options']['y'] + $y,
@@ -84,7 +84,7 @@ class CreateFlow extends Component
             'name' => 'New Operation',
             'status' => 'active',
             'user_id' => auth()->id(),
-            'type' => 'Eminiarts\\Aura\\Operations\\Log',
+            'type' => 'Aura\\Base\\Operations\\Log',
             'options' => [
                 'x' => 2 + 12,
                 'y' => 2 + 0,

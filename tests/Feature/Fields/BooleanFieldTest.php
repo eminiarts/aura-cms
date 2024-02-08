@@ -2,11 +2,11 @@
 
 namespace Tests\Feature\Livewire;
 
-use Eminiarts\Aura\Livewire\Resource\Create;
-use Eminiarts\Aura\Models\User;
-use Eminiarts\Aura\Resource;
-use Eminiarts\Aura\Resources\Post;
-use Eminiarts\Aura\Resources\Team;
+use Aura\Base\Livewire\Resource\Create;
+use Aura\Base\Models\User;
+use Aura\Base\Resource;
+use Aura\Base\Resources\Post;
+use Aura\Base\Resources\Team;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
 
@@ -32,7 +32,7 @@ class BooleanFieldModel extends Resource
         return [
             [
                 'name' => 'Boolean for Test',
-                'type' => 'Eminiarts\\Aura\\Fields\\Boolean',
+                'type' => 'Aura\\Base\\Fields\\Boolean',
                 'validation' => 'boolean',
                 'conditional_logic' => [],
                 'slug' => 'boolean',

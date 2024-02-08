@@ -1,6 +1,6 @@
 <?php
 
-namespace Eminiarts\Aura\Http\Middleware;
+namespace Aura\Base\Http\Middleware;
 
 use Illuminate\Auth\Middleware\Authenticate as Middleware;
 

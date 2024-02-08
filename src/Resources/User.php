@@ -1,13 +1,13 @@
 <?php
 
-namespace Eminiarts\Aura\Resources;
+namespace Aura\Base\Resources;
 
 use Aura\Flows\Resources\Flow;
-use Eminiarts\Aura\Database\Factories\UserFactory;
-use Eminiarts\Aura\Models\User as UserModel;
-use Eminiarts\Aura\Models\UserMeta;
-use Eminiarts\Aura\Traits\SaveFieldAttributes;
-use Eminiarts\Aura\Traits\SaveMetaFields;
+use Aura\Base\Database\Factories\UserFactory;
+use Aura\Base\Models\User as UserModel;
+use Aura\Base\Models\UserMeta;
+use Aura\Base\Traits\SaveFieldAttributes;
+use Aura\Base\Traits\SaveMetaFields;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
@@ -122,14 +122,14 @@ class User extends UserModel
     {
         return [
             [
-                'type' => 'Eminiarts\\Aura\\Fields\\Tab',
+                'type' => 'Aura\\Base\\Fields\\Tab',
                 'name' => 'User details',
                 'slug' => 'tab-user',
                 'global' => true,
             ],
             [
                 'name' => 'Personal Infos',
-                'type' => 'Eminiarts\\Aura\\Fields\\Panel',
+                'type' => 'Aura\\Base\\Fields\\Panel',
                 'validation' => 'required',
                 'slug' => 'user-details',
                 'style' => [
@@ -138,7 +138,7 @@ class User extends UserModel
             ],
             [
                 'name' => 'Avatar',
-                'type' => 'Eminiarts\\Aura\\Fields\\Image',
+                'type' => 'Aura\\Base\\Fields\\Image',
                 'validation' => '',
                 'conditional_logic' => [],
                 'slug' => 'avatar',
@@ -148,7 +148,7 @@ class User extends UserModel
             ],
             [
                 'name' => 'Name',
-                'type' => 'Eminiarts\\Aura\\Fields\\Text',
+                'type' => 'Aura\\Base\\Fields\\Text',
                 'validation' => 'required',
                 'on_index' => true,
                 'searchable' => true,
@@ -159,7 +159,7 @@ class User extends UserModel
             ],
             [
                 'name' => 'Email',
-                'type' => 'Eminiarts\\Aura\\Fields\\Text',
+                'type' => 'Aura\\Base\\Fields\\Text',
                 'validation' => 'required|email',
                 'on_index' => true,
                 'searchable' => true,
@@ -171,7 +171,7 @@ class User extends UserModel
 
             [
                 'name' => 'Signatur',
-                'type' => 'Eminiarts\\Aura\\Fields\\Wysiwyg',
+                'type' => 'Aura\\Base\\Fields\\Wysiwyg',
                 'validation' => 'required',
                 'on_index' => true,
                 'slug' => 'signature',
@@ -183,8 +183,8 @@ class User extends UserModel
             [
                 'name' => 'Roles',
                 'slug' => 'roles',
-                'resource' => 'Eminiarts\\Aura\\Resources\\Role',
-                'type' => 'Eminiarts\\Aura\\Fields\\AdvancedSelect',
+                'resource' => 'Aura\\Base\\Resources\\Role',
+                'type' => 'Aura\\Base\\Fields\\AdvancedSelect',
                 'validation' => 'required',
                 'conditional_logic' => [],
                 'wrapper' => '',
@@ -195,7 +195,7 @@ class User extends UserModel
             ],
             [
                 'name' => 'Password',
-                'type' => 'Eminiarts\\Aura\\Fields\\Password',
+                'type' => 'Aura\\Base\\Fields\\Password',
                 'validation' => ['nullable', Password::min(12)->mixedCase()->numbers()->symbols()->uncompromised()],
                 'conditional_logic' => [],
                 'slug' => 'password',
@@ -207,7 +207,7 @@ class User extends UserModel
             ],
             [
                 'name' => 'Send Welcome Email',
-                'type' => 'Eminiarts\\Aura\\Fields\\Boolean',
+                'type' => 'Aura\\Base\\Fields\\Boolean',
                 'validation' => '',
                 'conditional_logic' => [],
                 'on_edit' => false,
@@ -217,7 +217,7 @@ class User extends UserModel
                 'instructions' => 'Do you want to inform the user about his account?',
             ],
             [
-                'type' => 'Eminiarts\\Aura\\Fields\\Tab',
+                'type' => 'Aura\\Base\\Fields\\Tab',
                 'name' => 'Notifications',
                 'slug' => 'tab-notifications',
                 'global' => true,
@@ -225,7 +225,7 @@ class User extends UserModel
             ],
             [
                 'name' => 'Notifications',
-                'type' => 'Eminiarts\\Aura\\Fields\\Panel',
+                'type' => 'Aura\\Base\\Fields\\Panel',
                 'validation' => 'required',
                 'slug' => 'user-notifications-panel',
                 'style' => [
@@ -234,20 +234,20 @@ class User extends UserModel
             ],
             [
                 'name' => 'Notifications via Email',
-                'type' => 'Eminiarts\\Aura\\Fields\\Boolean',
+                'type' => 'Aura\\Base\\Fields\\Boolean',
                 'validation' => '',
                 'conditional_logic' => [],
                 'slug' => 'notifications_via_email',
             ],
             [
                 'name' => 'Notifications via SMS',
-                'type' => 'Eminiarts\\Aura\\Fields\\Boolean',
+                'type' => 'Aura\\Base\\Fields\\Boolean',
                 'validation' => '',
                 'conditional_logic' => [],
                 'slug' => 'notifications_via_sms',
             ],
             [
-                'type' => 'Eminiarts\\Aura\\Fields\\Tab',
+                'type' => 'Aura\\Base\\Fields\\Tab',
                 'name' => 'Posts',
                 'slug' => 'tab-posts',
                 'global' => true,
@@ -255,8 +255,8 @@ class User extends UserModel
             // [
             //     'name' => 'Posts',
             //     'slug' => 'posts',
-            //     'type' => 'Eminiarts\\Aura\\Fields\\HasMany',
-            //     'resource' => 'Eminiarts\\Aura\\Resources\\Post',
+            //     'type' => 'Aura\\Base\\Fields\\HasMany',
+            //     'resource' => 'Aura\\Base\\Resources\\Post',
             //     'validation' => '',
             //     'wrapper' => '',
             //     'on_index' => false,
@@ -267,7 +267,7 @@ class User extends UserModel
             //     ],
             // ],
             [
-                'type' => 'Eminiarts\\Aura\\Fields\\Tab',
+                'type' => 'Aura\\Base\\Fields\\Tab',
                 'name' => 'Teams',
                 'slug' => 'tab-Teams',
                 'global' => true,
@@ -280,8 +280,8 @@ class User extends UserModel
             [
                 'name' => 'Teams',
                 'slug' => 'teams',
-                'type' => 'Eminiarts\\Aura\\Fields\\BelongsToMany',
-                'resource' => 'Eminiarts\\Aura\\Resources\\Team',
+                'type' => 'Aura\\Base\\Fields\\BelongsToMany',
+                'resource' => 'Aura\\Base\\Resources\\Team',
                 'validation' => '',
                 'wrapper' => '',
                 'on_index' => false,
@@ -297,7 +297,7 @@ class User extends UserModel
                 ],
             ],
             [
-                'type' => 'Eminiarts\\Aura\\Fields\\Tab',
+                'type' => 'Aura\\Base\\Fields\\Tab',
                 'name' => '2FA',
                 'label' => 'Tab',
                 'slug' => '2fa-tab',
@@ -306,7 +306,7 @@ class User extends UserModel
             ],
             [
                 'name' => '2FA',
-                'type' => 'Eminiarts\\Aura\\Fields\\LivewireComponent',
+                'type' => 'Aura\\Base\\Fields\\LivewireComponent',
                 'component' => 'aura::user-two-factor-authentication-form',
                 'validation' => '',
                 'conditional_logic' => [],

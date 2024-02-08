@@ -1,9 +1,9 @@
 <?php
 
-namespace Eminiarts\Aura\Fields;
+namespace Aura\Base\Fields;
 
-use Eminiarts\Aura\Livewire\Resource\View;
-use Eminiarts\Aura\Traits\InputFields;
+use Aura\Base\Livewire\Resource\View;
+use Aura\Base\Traits\InputFields;
 use Illuminate\Support\Traits\Macroable;
 use Illuminate\Support\Traits\Tappable;
 use Livewire\Wireable;
@@ -66,21 +66,21 @@ class Field implements Wireable
             [
                 'label' => 'Field',
                 'name' => 'Field',
-                'type' => 'Eminiarts\\Aura\\Fields\\Tab',
+                'type' => 'Aura\\Base\\Fields\\Tab',
                 'slug' => 'field',
                 'style' => [],
             ],
             [
                 'label' => 'Name',
                 'name' => 'Name',
-                'type' => 'Eminiarts\\Aura\\Fields\\Text',
+                'type' => 'Aura\\Base\\Fields\\Text',
                 'validation' => 'required',
                 'slug' => 'name',
             ],
             [
                 'label' => 'Slug',
                 'name' => 'Slug',
-                'type' => 'Eminiarts\\Aura\\Fields\\Slug',
+                'type' => 'Aura\\Base\\Fields\\Slug',
                 'validation' => 'required',
                 'slug' => 'slug',
                 'based_on' => 'name',
@@ -88,72 +88,72 @@ class Field implements Wireable
             [
                 'label' => 'Validation',
                 'name' => 'Validation',
-                'type' => 'Eminiarts\\Aura\\Fields\\Text',
+                'type' => 'Aura\\Base\\Fields\\Text',
                 'validation' => '',
                 'slug' => 'validation',
             ],
             [
                 'label' => 'Type',
                 'name' => 'Type',
-                'type' => 'Eminiarts\\Aura\\Fields\\Select',
+                'type' => 'Aura\\Base\\Fields\\Select',
                 'validation' => 'required',
                 'slug' => 'type',
                 'options' => [
                     'option_group_1' => 'Input Fields',
-                    'Eminiarts\\Aura\\Fields\\Text' => 'Text',
-                    'Eminiarts\\Aura\\Fields\\Textarea' => 'Textarea',
-                    'Eminiarts\\Aura\\Fields\\Number' => 'Number',
-                    'Eminiarts\\Aura\\Fields\\Email' => 'Email',
-                    'Eminiarts\\Aura\\Fields\\Phone' => 'Phone',
+                    'Aura\\Base\\Fields\\Text' => 'Text',
+                    'Aura\\Base\\Fields\\Textarea' => 'Textarea',
+                    'Aura\\Base\\Fields\\Number' => 'Number',
+                    'Aura\\Base\\Fields\\Email' => 'Email',
+                    'Aura\\Base\\Fields\\Phone' => 'Phone',
 
                     'option_group_2' => 'Media Fields',
-                    'Eminiarts\\Aura\\Fields\\Image' => 'Image',
-                    'Eminiarts\\Aura\\Fields\\File' => 'File',
+                    'Aura\\Base\\Fields\\Image' => 'Image',
+                    'Aura\\Base\\Fields\\File' => 'File',
 
                     'option_group_3' => 'Choice Fields',
-                    'Eminiarts\\Aura\\Fields\\Select' => 'Select',
-                    'Eminiarts\\Aura\\Fields\\Radio' => 'Radio',
-                    'Eminiarts\\Aura\\Fields\\Checkbox' => 'Checkbox',
-                    'Eminiarts\\Aura\\Fields\\Boolean' => 'Boolean',
+                    'Aura\\Base\\Fields\\Select' => 'Select',
+                    'Aura\\Base\\Fields\\Radio' => 'Radio',
+                    'Aura\\Base\\Fields\\Checkbox' => 'Checkbox',
+                    'Aura\\Base\\Fields\\Boolean' => 'Boolean',
 
                     'option_group_4' => 'JS Fields',
-                    'Eminiarts\\Aura\\Fields\\Wysiwyg' => 'Wysiwyg',
-                    'Eminiarts\\Aura\\Fields\\Code' => 'Code',
-                    'Eminiarts\\Aura\\Fields\\Color' => 'Color',
+                    'Aura\\Base\\Fields\\Wysiwyg' => 'Wysiwyg',
+                    'Aura\\Base\\Fields\\Code' => 'Code',
+                    'Aura\\Base\\Fields\\Color' => 'Color',
 
-                    'Eminiarts\\Aura\\Fields\\Date' => 'Date',
-                    'Eminiarts\\Aura\\Fields\\Time' => 'Time',
-                    'Eminiarts\\Aura\\Fields\\Datetime' => 'Datetime',
+                    'Aura\\Base\\Fields\\Date' => 'Date',
+                    'Aura\\Base\\Fields\\Time' => 'Time',
+                    'Aura\\Base\\Fields\\Datetime' => 'Datetime',
 
                     'option_group_5' => 'Layout Fields',
-                    'Eminiarts\\Aura\\Fields\\Heading' => 'Heading',
-                    'Eminiarts\\Aura\\Fields\\HorizontalLine' => 'Horizontal line',
+                    'Aura\\Base\\Fields\\Heading' => 'Heading',
+                    'Aura\\Base\\Fields\\HorizontalLine' => 'Horizontal line',
 
                     'option_group_6' => 'Structure Fields',
-                    'Eminiarts\\Aura\\Fields\\Repeater' => 'Repeater',
-                    'Eminiarts\\Aura\\Fields\\Tab' => 'Tab',
-                    'Eminiarts\\Aura\\Fields\\Panel' => 'Panel',
-                    'Eminiarts\\Aura\\Fields\\Group' => 'Group',
+                    'Aura\\Base\\Fields\\Repeater' => 'Repeater',
+                    'Aura\\Base\\Fields\\Tab' => 'Tab',
+                    'Aura\\Base\\Fields\\Panel' => 'Panel',
+                    'Aura\\Base\\Fields\\Group' => 'Group',
 
                     'option_group_7' => 'Relationship Fields',
-                    'Eminiarts\\Aura\\Fields\\BelongsTo' => 'BelongsTo',
-                    'Eminiarts\\Aura\\Fields\\HasMany' => 'HasMany',
-                    'Eminiarts\\Aura\\Fields\\AdvancedSelect' => 'AdvancedSelect',
+                    'Aura\\Base\\Fields\\BelongsTo' => 'BelongsTo',
+                    'Aura\\Base\\Fields\\HasMany' => 'HasMany',
+                    'Aura\\Base\\Fields\\AdvancedSelect' => 'AdvancedSelect',
 
                     'option_group_8' => 'Special Fields',
-                    'Eminiarts\\Aura\\Fields\\Permissions' => 'Permissions',
+                    'Aura\\Base\\Fields\\Permissions' => 'Permissions',
                 ],
             ],
             [
                 'name' => 'instructions',
-                'type' => 'Eminiarts\\Aura\\Fields\\Text',
+                'type' => 'Aura\\Base\\Fields\\Text',
                 'validation' => '',
                 'slug' => 'instructions',
             ],
 
             [
                 'name' => 'Searchable',
-                'type' => 'Eminiarts\\Aura\\Fields\\Boolean',
+                'type' => 'Aura\\Base\\Fields\\Boolean',
                 'instructions' => 'Defines if the field is searchable.',
                 'validation' => '',
                 'slug' => 'searchable',
@@ -161,28 +161,28 @@ class Field implements Wireable
 
             [
                 'name' => 'View',
-                'type' => 'Eminiarts\\Aura\\Fields\\Tab',
+                'type' => 'Aura\\Base\\Fields\\Tab',
                 'slug' => 'tab-2',
                 'style' => [],
             ],
 
             [
                 'name' => 'On Index',
-                'type' => 'Eminiarts\\Aura\\Fields\\Boolean',
+                'type' => 'Aura\\Base\\Fields\\Boolean',
                 'validation' => '',
                 'instructions' => 'Show on the index page / table.',
                 'slug' => 'on_index',
             ],
             [
                 'name' => 'On Forms',
-                'type' => 'Eminiarts\\Aura\\Fields\\Boolean',
+                'type' => 'Aura\\Base\\Fields\\Boolean',
                 'validation' => '',
                 'instructions' => 'Show on the create and edit forms.',
                 'slug' => 'on_forms',
             ],
             [
                 'name' => 'On View',
-                'type' => 'Eminiarts\\Aura\\Fields\\Boolean',
+                'type' => 'Aura\\Base\\Fields\\Boolean',
                 'instructions' => 'Show on the view page.',
                 'validation' => '',
                 'slug' => 'on_view',
@@ -190,7 +190,7 @@ class Field implements Wireable
 
             [
                 'name' => 'Width',
-                'type' => 'Eminiarts\\Aura\\Fields\\Number',
+                'type' => 'Aura\\Base\\Fields\\Number',
                 'validation' => '',
                 'suffix' => '%',
                 'instructions' => 'Width of the field in the form in %.',
@@ -200,7 +200,7 @@ class Field implements Wireable
             [
                 'label' => 'Conditional Logic',
                 'name' => 'Conditional Logic',
-                'type' => 'Eminiarts\\Aura\\Fields\\Tab',
+                'type' => 'Aura\\Base\\Fields\\Tab',
                 'slug' => 'conditional_logic',
                 'style' => [],
             ],
@@ -208,7 +208,7 @@ class Field implements Wireable
             [
                 'label' => 'Add Condition',
                 'name' => 'Add Condition',
-                'type' => 'Eminiarts\\Aura\\Fields\\Repeater',
+                'type' => 'Aura\\Base\\Fields\\Repeater',
                 'validation' => '',
                 'conditional_logic' => [],
                 'style' => [
@@ -219,7 +219,7 @@ class Field implements Wireable
             [
                 'label' => 'Type',
                 'name' => 'Type',
-                'type' => 'Eminiarts\\Aura\\Fields\\Text',
+                'type' => 'Aura\\Base\\Fields\\Text',
                 'validation' => '',
                 'instructions' => 'Slug of the field to check. You can also use "role"',
                 'conditional_logic' => [],
@@ -231,7 +231,7 @@ class Field implements Wireable
             [
                 'label' => 'Operator',
                 'name' => 'Operator',
-                'type' => 'Eminiarts\\Aura\\Fields\\Select',
+                'type' => 'Aura\\Base\\Fields\\Select',
                 'validation' => '',
                 'options' => [
                     '' => 'Please Select',
@@ -251,7 +251,7 @@ class Field implements Wireable
             [
                 'label' => 'Value',
                 'name' => 'Value',
-                'type' => 'Eminiarts\\Aura\\Fields\\Text',
+                'type' => 'Aura\\Base\\Fields\\Text',
                 'validation' => '',
                 'conditional_logic' => [],
                 'slug' => 'value',

@@ -1,6 +1,6 @@
 <?php
 
-namespace Eminiarts\Aura\Operations;
+namespace Aura\Base\Operations;
 
 use Aura\Flows\Resources\Operation;
 use Illuminate\Support\Facades\Blade;
@@ -13,7 +13,7 @@ class Log extends BaseOperation
         return array_merge(parent::getFields(), [
             [
                 'name' => 'Message',
-                'type' => 'Eminiarts\\Aura\\Fields\\Text',
+                'type' => 'Aura\\Base\\Fields\\Text',
                 'instructions' => 'Message that will be logged in the laravel log',
                 'validation' => 'required',
                 'slug' => 'message',

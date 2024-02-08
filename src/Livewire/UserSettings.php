@@ -1,9 +1,9 @@
 <?php
 
-namespace Eminiarts\Aura\Livewire;
+namespace Aura\Base\Livewire;
 
-use Eminiarts\Aura\Models\Option;
-use Eminiarts\Aura\Traits\InputFields;
+use Aura\Base\Models\Option;
+use Aura\Base\Traits\InputFields;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Str;
@@ -26,14 +26,14 @@ class UserSettings extends Component
     {
         return [
             [
-                'type' => 'Eminiarts\\Aura\\Fields\\Tab',
+                'type' => 'Aura\\Base\\Fields\\Tab',
                 'name' => 'General',
                 'label' => 'General',
                 'slug' => 'tab-general',
                 'global' => true,
             ],
             [
-                'type' => 'Eminiarts\\Aura\\Fields\\Panel',
+                'type' => 'Aura\\Base\\Fields\\Panel',
                 'name' => 'Panel',
                 'label' => 'Panel',
                 'slug' => 'panel-DZzV',
@@ -41,7 +41,7 @@ class UserSettings extends Component
             [
                 'label' => 'Title',
                 'name' => 'Title',
-                'type' => 'Eminiarts\\Aura\\Fields\\Text',
+                'type' => 'Aura\\Base\\Fields\\Text',
                 'validation' => 'required',
                 'slug' => 'title',
                 'style' => [

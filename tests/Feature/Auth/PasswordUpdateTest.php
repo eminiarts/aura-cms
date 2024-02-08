@@ -2,7 +2,7 @@
 
 namespace Tests\Feature\Auth;
 
-use Eminiarts\Aura\Models\User;
+use Aura\Base\Models\User;
 use Illuminate\Support\Facades\Hash;
 
 test('password can be updated', function () {

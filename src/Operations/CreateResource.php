@@ -1,6 +1,6 @@
 <?php
 
-namespace Eminiarts\Aura\Operations;
+namespace Aura\Base\Operations;
 
 use Aura\Flows\Resources\Operation;
 
@@ -11,21 +11,21 @@ class CreateResource extends BaseOperation
         return array_merge(parent::getFields(), [
             [
                 'name' => 'Resource',
-                'type' => 'Eminiarts\\Aura\\Fields\\Text',
+                'type' => 'Aura\\Base\\Fields\\Text',
                 'instructions' => 'Class of the Resource',
                 'validation' => 'required',
                 'slug' => 'resource',
             ],
             [
                 'name' => 'Data Title',
-                'type' => 'Eminiarts\\Aura\\Fields\\Text',
+                'type' => 'Aura\\Base\\Fields\\Text',
                 'instructions' => 'Title of the Resource',
                 'validation' => 'required',
                 'slug' => 'data.title',
             ],
             [
                 'name' => 'Data Status',
-                'type' => 'Eminiarts\\Aura\\Fields\\Text',
+                'type' => 'Aura\\Base\\Fields\\Text',
                 'instructions' => 'Status of the Resource',
                 'validation' => 'required',
                 'slug' => 'data.status',

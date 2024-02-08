@@ -1,11 +1,11 @@
 <?php
 
-namespace Eminiarts\Aura\Livewire\Taxonomy;
+namespace Aura\Base\Livewire\Taxonomy;
 
 use Illuminate\Support\Arr;
-use Eminiarts\Aura\Facades\Aura;
+use Aura\Base\Facades\Aura;
 use LivewireUI\Modal\ModalComponent;
-use Eminiarts\Aura\Traits\InteractsWithFields;
+use Aura\Base\Traits\InteractsWithFields;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 
 class Create extends ModalComponent

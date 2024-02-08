@@ -71,7 +71,7 @@
     <div
         x-cloak
         class="relative col-span-8 p-4 bg-white rounded-lg border-2 shadow-md cursor-move select-none border-primary-400 row-span-9 operation" :data-operation="flow.id"
-        
+
         :style="{ '--pos-x': 2, '--pos-y': 2 }"
 
         :class="{'selected': selectedOperation === flow }"
@@ -140,7 +140,7 @@
             <div
                 x-cloak
                 class="relative col-span-8 p-4 bg-white rounded-lg border-2 shadow-md cursor-move select-none border-gray-500/30 row-span-9 operation" :data-operation="operation.id"
-                
+
                 :style="{ '--pos-x': operation.options.x, '--pos-y': operation.options.y }"
 
                 :class="{'selected': selectedOperation === operation }"
@@ -167,7 +167,7 @@
 
 
 
-                <template x-if="operation.type == 'Eminiarts\\Aura\\Operations\\Log'">
+                <template x-if="operation.type == 'Aura\\Base\\Operations\\Log'">
                     <div class="mt-2">
                         <label class="font-semibold text-gray-900">Message</label>
                         <div class="text-gray-500 select-text" x-text="operation.options.message"></div>

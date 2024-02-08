@@ -1,6 +1,6 @@
 <?php
 
-namespace Eminiarts\Aura\Widgets;
+namespace Aura\Base\Widgets;
 
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;

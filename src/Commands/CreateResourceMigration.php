@@ -1,6 +1,6 @@
 <?php
 
-namespace Eminiarts\Aura\Commands;
+namespace Aura\Base\Commands;
 
 use Illuminate\Console\Command;
 use Illuminate\Filesystem\Filesystem;
@@ -52,37 +52,37 @@ class CreateResourceMigration extends Command
         $baseFields = collect([
             [
                 'name' => 'ID',
-                'type' => 'Eminiarts\\Aura\\Fields\\ID',
+                'type' => 'Aura\\Base\\Fields\\ID',
                 'slug' => 'id',
             ],
             [
                 'name' => 'Title',
-                'type' => 'Eminiarts\\Aura\\Fields\\Text',
+                'type' => 'Aura\\Base\\Fields\\Text',
                 'slug' => 'title',
             ],
             [
                 'name' => 'Slug',
-                'type' => 'Eminiarts\\Aura\\Fields\\Text',
+                'type' => 'Aura\\Base\\Fields\\Text',
                 'slug' => 'slug',
             ],
             [
                 'name' => 'Content',
-                'type' => 'Eminiarts\\Aura\\Fields\\Textarea',
+                'type' => 'Aura\\Base\\Fields\\Textarea',
                 'slug' => 'content',
             ],
             [
                 'name' => 'Status',
-                'type' => 'Eminiarts\\Aura\\Fields\\Text',
+                'type' => 'Aura\\Base\\Fields\\Text',
                 'slug' => 'status',
             ],
             [
                 'name' => 'Parent ID',
-                'type' => 'Eminiarts\\Aura\\Fields\\ForeignId',
+                'type' => 'Aura\\Base\\Fields\\ForeignId',
                 'slug' => 'parent_id',
             ],
             [
                 'name' => 'Order',
-                'type' => 'Eminiarts\\Aura\\Fields\\Number',
+                'type' => 'Aura\\Base\\Fields\\Number',
                 'slug' => 'order',
             ],
 
@@ -93,17 +93,17 @@ class CreateResourceMigration extends Command
         $combined = $baseFields->merge($fields)->merge(collect([
             [
                 'name' => 'User Id',
-                'type' => 'Eminiarts\\Aura\\Fields\\ForeignId',
+                'type' => 'Aura\\Base\\Fields\\ForeignId',
                 'slug' => 'user_id',
             ],
             [
                 'name' => 'Team Id',
-                'type' => 'Eminiarts\\Aura\\Fields\\ForeignId',
+                'type' => 'Aura\\Base\\Fields\\ForeignId',
                 'slug' => 'team_id',
             ],
             [
                 'name' => 'timestamps',
-                'type' => 'Eminiarts\\Aura\\Fields\\Timestamps',
+                'type' => 'Aura\\Base\\Fields\\Timestamps',
                 'slug' => 'timestamps',
             ],
         ]));
@@ -153,26 +153,26 @@ class CreateResourceMigration extends Command
         $slug = $field['slug'];
 
         return match ($type) {
-            'Eminiarts\\Aura\\Fields\\ID' => "\$table->id();\n",
-            'Eminiarts\\Aura\\Fields\\ForeignId' => "\$table->foreignId('{$slug}')->nullable();\n",
-            'Eminiarts\\Aura\\Fields\\Timestamps' => "\$table->timestamps();\n",
-            'Eminiarts\\Aura\\Fields\\Text' => "\$table->string('{$slug}')->nullable();\n",
-            'Eminiarts\\Aura\\Fields\\Slug' => "\$table->string('{$slug}')->unique();\n",
-            'Eminiarts\\Aura\\Fields\\Image' => "\$table->text('{$slug}')->nullable();\n",
-            'Eminiarts\\Aura\\Fields\\Password' => "\$table->string('{$slug}')->nullable();\n",
-            'Eminiarts\\Aura\\Fields\\Number' => "\$table->integer('{$slug}')->nullable();\n",
-            'Eminiarts\\Aura\\Fields\\Date' => "\$table->date('{$slug}')->nullable();\n",
-            'Eminiarts\\Aura\\Fields\\Textarea' => "\$table->text('{$slug}')->nullable();\n",
-            'Eminiarts\\Aura\\Fields\\Color' => "\$table->string('{$slug}')->nullable();\n",
-            'Eminiarts\\Aura\\Fields\\BelongsTo' => "\$table->foreignId('{$slug}')->nullable();\n",
-            'Eminiarts\\Aura\\Fields\\Boolean' => "\$table->boolean('{$slug}')->nullable();\n",
-            // 'Eminiarts\Aura\Fields\Tags', 'Eminiarts\Aura\Fields\BelongsTo' => {
+            'Aura\\Base\\Fields\\ID' => "\$table->id();\n",
+            'Aura\\Base\\Fields\\ForeignId' => "\$table->foreignId('{$slug}')->nullable();\n",
+            'Aura\\Base\\Fields\\Timestamps' => "\$table->timestamps();\n",
+            'Aura\\Base\\Fields\\Text' => "\$table->string('{$slug}')->nullable();\n",
+            'Aura\\Base\\Fields\\Slug' => "\$table->string('{$slug}')->unique();\n",
+            'Aura\\Base\\Fields\\Image' => "\$table->text('{$slug}')->nullable();\n",
+            'Aura\\Base\\Fields\\Password' => "\$table->string('{$slug}')->nullable();\n",
+            'Aura\\Base\\Fields\\Number' => "\$table->integer('{$slug}')->nullable();\n",
+            'Aura\\Base\\Fields\\Date' => "\$table->date('{$slug}')->nullable();\n",
+            'Aura\\Base\\Fields\\Textarea' => "\$table->text('{$slug}')->nullable();\n",
+            'Aura\\Base\\Fields\\Color' => "\$table->string('{$slug}')->nullable();\n",
+            'Aura\\Base\\Fields\\BelongsTo' => "\$table->foreignId('{$slug}')->nullable();\n",
+            'Aura\\Base\\Fields\\Boolean' => "\$table->boolean('{$slug}')->nullable();\n",
+            // 'Aura\Base\Fields\Tags', 'Aura\Base\Fields\BelongsTo' => {
             //     $relatedResource = $field['resource'];
             //     $relatedModel = new $relatedResource();
             //     $relatedTableName = $relatedModel->getTable();
             //     return "{\$table}->foreignId('{$slug}')->nullable()->constrained('{$relatedTableName}')->onDelete('cascade');\n";
             // },
-            'Eminiarts\Aura\Fields\HasMany' => '', // No need to add anything to the schema for HasMany relationships
+            'Aura\Base\Fields\HasMany' => '', // No need to add anything to the schema for HasMany relationships
             default => "\$table->text('{$slug}')->nullable(); // Add your custom field type schema generation here for '{$slug}' with type '{$type}'\n",
         };
     }

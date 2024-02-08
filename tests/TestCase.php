@@ -1,9 +1,9 @@
 <?php
 
-namespace Eminiarts\Aura\Tests;
+namespace Aura\Base\Tests;
 
-use Eminiarts\Aura\AuraServiceProvider;
-use Eminiarts\Aura\Providers\AuthServiceProvider;
+use Aura\Base\AuraServiceProvider;
+use Aura\Base\Providers\AuthServiceProvider;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Intervention\Image\ImageServiceProvider;
 use Lab404\Impersonate\ImpersonateServiceProvider;
@@ -23,7 +23,7 @@ class TestCase extends Orchestra
         $this->withoutVite();
 
         Factory::guessFactoryNamesUsing(
-            fn (string $modelName) => 'Eminiarts\\Aura\\Database\\Factories\\'.class_basename($modelName).'Factory'
+            fn (string $modelName) => 'Aura\\Base\\Database\\Factories\\'.class_basename($modelName).'Factory'
         );
     }
 

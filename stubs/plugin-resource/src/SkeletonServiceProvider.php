@@ -2,7 +2,7 @@
 
 namespace VendorName\Skeleton;
 
-use Eminiarts\Aura\Facades\Aura;
+use Aura\Base\Facades\Aura;
 use Spatie\LaravelPackageTools\Package;
 use Spatie\LaravelPackageTools\PackageServiceProvider;
 

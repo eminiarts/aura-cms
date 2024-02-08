@@ -1,6 +1,6 @@
 <?php
 
-namespace Eminiarts\Aura\Commands;
+namespace Aura\Base\Commands;
 
 use Illuminate\Console\Command;
 use Illuminate\Filesystem\Filesystem;
@@ -65,7 +65,7 @@ class TransformTableToResource extends Command
 
 namespace App\Aura\Resources;
 
-use Eminiarts\Aura\Models\Post;
+use Aura\Base\Models\Post;
 
 class {$resourceName} extends Resource
 {
@@ -99,16 +99,16 @@ EOT;
         switch ($columnType) {
             case 'text':
             case 'longtext':
-                return 'Eminiarts\\Aura\\Fields\\Textarea';
+                return 'Aura\\Base\\Fields\\Textarea';
             case 'integer':
             case 'float':
             case 'double':
-                return 'Eminiarts\\Aura\\Fields\\Number';
+                return 'Aura\\Base\\Fields\\Number';
             case 'date':
-                return 'Eminiarts\\Aura\\Fields\\Date';
+                return 'Aura\\Base\\Fields\\Date';
                 // Add more cases as needed
             default:
-                return 'Eminiarts\\Aura\\Fields\\Text';
+                return 'Aura\\Base\\Fields\\Text';
         }
     }
 

@@ -1,6 +1,6 @@
 <?php
 
-namespace Eminiarts\Aura\Fields;
+namespace Aura\Base\Fields;
 
 class LivewireComponent extends Field
 {
@@ -15,13 +15,13 @@ class LivewireComponent extends Field
         return array_merge(parent::getFields(), [
             [
                 'name' => 'Component',
-                'type' => 'Eminiarts\\Aura\\Fields\\Tab',
+                'type' => 'Aura\\Base\\Fields\\Tab',
                 'slug' => 'component-tab',
                 'style' => [],
             ],
             [
                 'name' => 'Component',
-                'type' => 'Eminiarts\\Aura\\Fields\\Text',
+                'type' => 'Aura\\Base\\Fields\\Text',
                 'validation' => '',
                 'slug' => 'component',
             ],

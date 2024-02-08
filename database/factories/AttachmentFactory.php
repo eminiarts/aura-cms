@@ -1,13 +1,13 @@
 <?php
 
-namespace Eminiarts\Aura\Database\Factories;
+namespace Aura\Base\Database\Factories;
 
-use Eminiarts\Aura\Resources\Post;
-use Eminiarts\Aura\Resources\Attachment;
+use Aura\Base\Resources\Post;
+use Aura\Base\Resources\Attachment;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\Eminiarts\Aura\Resources\Post>
+ * @extends \Illuminate\Database\Eloquent\Factories\Factory<\Aura\Base\Resources\Post>
  */
 class AttachmentFactory extends Factory
 {
@@ -29,7 +29,7 @@ class AttachmentFactory extends Factory
             'title' => $name = $this->faker->name(),
             'slug' => str($name)->slug(),
             'content' => $this->faker->paragraph(),
-            'type' => 'Attachment', 
+            'type' => 'Attachment',
             'user_id' => 1,
             'team_id' => 1,
             'parent_id' => null,

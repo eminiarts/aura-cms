@@ -1,6 +1,6 @@
 <?php
 
-namespace Eminiarts\Aura\Operations;
+namespace Aura\Base\Operations;
 
 class BaseOperation
 {
@@ -8,49 +8,49 @@ class BaseOperation
     {
         return [
             [
-                'type' => 'Eminiarts\\Aura\\Fields\\Tab',
+                'type' => 'Aura\\Base\\Fields\\Tab',
                 'name' => 'Options',
                 'slug' => 'options-tab',
                 'global' => true,
             ],
             [
                 'name' => 'Type',
-                'type' => 'Eminiarts\\Aura\\Fields\\Select',
+                'type' => 'Aura\\Base\\Fields\\Select',
                 'validation' => '',
                 'conditional_logic' => [],
                 'slug' => 'type',
                 'options' => [
                     [
                         'value' => 'Send Email',
-                        'key' => 'Eminiarts\\Aura\\Operations\\Mail',
+                        'key' => 'Aura\\Base\\Operations\\Mail',
                     ],
                     [
                         'value' => 'Send Notification',
-                        'key' => 'Eminiarts\\Aura\\Operations\\Notification',
+                        'key' => 'Aura\\Base\\Operations\\Notification',
                     ],
                     [
                         'value' => 'Webhook',
-                        'key' => 'Eminiarts\\Aura\\Operations\\Webhook',
+                        'key' => 'Aura\\Base\\Operations\\Webhook',
                     ],
                     [
                         'value' => 'Read Post',
-                        'key' => 'Eminiarts\\Aura\\Operations\\GetResource',
+                        'key' => 'Aura\\Base\\Operations\\GetResource',
                     ],
                     [
                         'value' => 'Create Post',
-                        'key' => 'Eminiarts\\Aura\\Operations\\CreateResource',
+                        'key' => 'Aura\\Base\\Operations\\CreateResource',
                     ],
                     [
                         'value' => 'Update Post',
-                        'key' => 'Eminiarts\\Aura\\Operations\\UpdateResource',
+                        'key' => 'Aura\\Base\\Operations\\UpdateResource',
                     ],
                     [
                         'value' => 'Delete Post',
-                        'key' => 'Eminiarts\\Aura\\Operations\\DeleteResource',
+                        'key' => 'Aura\\Base\\Operations\\DeleteResource',
                     ],
                     [
                         'value' => 'Trigger Flow',
-                        'key' => 'Eminiarts\\Aura\\Operations\\TriggerFlow',
+                        'key' => 'Aura\\Base\\Operations\\TriggerFlow',
                     ],
                     [
                         'value' => 'Transform Payload',
@@ -58,7 +58,7 @@ class BaseOperation
                     ],
                     [
                         'value' => 'Write to Log',
-                        'key' => 'Eminiarts\\Aura\\Operations\\Log',
+                        'key' => 'Aura\\Base\\Operations\\Log',
                     ],
                     [
                         'value' => 'Console Command',
@@ -70,13 +70,13 @@ class BaseOperation
                     ],
                     [
                         'value' => 'Delay',
-                        'key' => 'Eminiarts\\Aura\\Operations\\Delay',
+                        'key' => 'Aura\\Base\\Operations\\Delay',
                     ],
                 ],
             ],
             [
                 'name' => 'Options',
-                'type' => 'Eminiarts\\Aura\\Fields\\Group',
+                'type' => 'Aura\\Base\\Fields\\Group',
                 'validation' => '',
                 'conditional_logic' => [],
                 'on_index' => false,
@@ -84,7 +84,7 @@ class BaseOperation
             ],
             [
                 'name' => 'X',
-                'type' => 'Eminiarts\\Aura\\Fields\\Number',
+                'type' => 'Aura\\Base\\Fields\\Number',
                 'validation' => '',
                 'conditional_logic' => [],
                 'slug' => 'x',
@@ -95,7 +95,7 @@ class BaseOperation
             ],
             [
                 'name' => 'Y',
-                'type' => 'Eminiarts\\Aura\\Fields\\Number',
+                'type' => 'Aura\\Base\\Fields\\Number',
                 'validation' => '',
                 'conditional_logic' => [],
                 'disabled' => true,

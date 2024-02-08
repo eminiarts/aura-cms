@@ -1,10 +1,10 @@
 <?php
 
-namespace Eminiarts\Aura\Http\Controllers;
+namespace Aura\Base\Http\Controllers;
 
-use Eminiarts\Aura\Http\Requests\StoreOptionRequest;
-use Eminiarts\Aura\Http\Requests\UpdateOptionRequest;
-use Eminiarts\Aura\Models\Option;
+use Aura\Base\Http\Requests\StoreOptionRequest;
+use Aura\Base\Http\Requests\UpdateOptionRequest;
+use Aura\Base\Models\Option;
 
 class OptionController extends Controller
 {

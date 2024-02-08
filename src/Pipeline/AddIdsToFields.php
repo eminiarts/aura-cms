@@ -1,6 +1,6 @@
 <?php
 
-namespace Eminiarts\Aura\Pipeline;
+namespace Aura\Base\Pipeline;
 
 use Closure;
 use InvalidArgumentException;

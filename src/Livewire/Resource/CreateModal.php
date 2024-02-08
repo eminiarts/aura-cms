@@ -1,6 +1,6 @@
 <?php
 
-namespace Eminiarts\Aura\Livewire\Resource;
+namespace Aura\Base\Livewire\Resource;
 
 use LivewireUI\Modal\ModalComponent;
 

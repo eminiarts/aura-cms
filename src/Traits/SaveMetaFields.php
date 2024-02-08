@@ -1,8 +1,8 @@
 <?php
 
-namespace Eminiarts\Aura\Traits;
+namespace Aura\Base\Traits;
 
-use Eminiarts\Aura\Models\Meta;
+use Aura\Base\Models\Meta;
 use Illuminate\Support\Str;
 
 trait SaveMetaFields
@@ -32,7 +32,7 @@ trait SaveMetaFields
                     }
 
                     // If the $class is a Password Field and the value is null, continue
-                    if ($class instanceof \Eminiarts\Aura\Fields\Password && ($value === null || $value === '')) {
+                    if ($class instanceof \Aura\Base\Fields\Password && ($value === null || $value === '')) {
 
                         // If the password is available in the $post->attributes, unset it
                         if (isset($post->attributes[$key])) {

@@ -1,9 +1,9 @@
 <?php
 
-namespace Eminiarts\Aura\Resources;
+namespace Aura\Base\Resources;
 
-use Eminiarts\Aura\Facades\Aura;
-use Eminiarts\Aura\Resource;
+use Aura\Base\Facades\Aura;
+use Aura\Base\Resource;
 
 class Permission extends Resource
 {
@@ -28,7 +28,7 @@ class Permission extends Resource
             [
                 'name' => 'Name',
                 'slug' => 'name',
-                'type' => 'Eminiarts\\Aura\\Fields\\Text',
+                'type' => 'Aura\\Base\\Fields\\Text',
                 'validation' => 'required',
                 'conditional_logic' => [],
                 'wrapper' => '',
@@ -38,7 +38,7 @@ class Permission extends Resource
             ],
             [
                 'name' => 'Slug',
-                'type' => 'Eminiarts\\Aura\\Fields\\Text',
+                'type' => 'Aura\\Base\\Fields\\Text',
                 'validation' => 'required',
                 'on_index' => true,
                 'slug' => 'slug',
@@ -49,7 +49,7 @@ class Permission extends Resource
             [
                 'name' => 'Description',
                 'slug' => 'description',
-                'type' => 'Eminiarts\\Aura\\Fields\\Textarea',
+                'type' => 'Aura\\Base\\Fields\\Textarea',
                 'validation' => '',
                 'conditional_logic' => [],
                 'wrapper' => '',
@@ -60,7 +60,7 @@ class Permission extends Resource
             [
                 'name' => 'Group',
                 'slug' => 'group',
-                'type' => 'Eminiarts\\Aura\\Fields\\Select',
+                'type' => 'Aura\\Base\\Fields\\Select',
                 'validation' => '',
                 'conditional_logic' => [],
                 'options' => [
