@@ -26,7 +26,7 @@ class ResourceEditor extends Component
 
     public $model;
 
-    public $postTypeFields = [];
+    public $resourceFields = [];
 
     public $reservedWords = ['id', 'type'];
 
@@ -376,7 +376,7 @@ class ResourceEditor extends Component
             });
         }
 
-        $this->postTypeFields = [
+        $this->resourceTypeFields = [
             'type' => $this->model->getType(),
             'slug' => $this->model->getSlug(),
             'icon' => $this->model->getIcon(),
@@ -438,12 +438,12 @@ class ResourceEditor extends Component
     public function rules()
     {
         return [
-            'postTypeFields.type' => 'required|regex:/^[a-zA-Z]+$/',
-            'postTypeFields.slug' => 'required',
-            'postTypeFields.icon' => 'required',
-            'postTypeFields.group' => '',
-            'postTypeFields.dropdown' => '',
-            'postTypeFields.sort' => '',
+            'resourceFields.type' => 'required|regex:/^[a-zA-Z]+$/',
+            'resourceFields.slug' => 'required',
+            'resourceFields.icon' => 'required',
+            'resourceFields.group' => '',
+            'resourceFields.dropdown' => '',
+            'resourceFields.sort' => '',
             'fields.*.name' => '',
             'fields.*.slug' => [
                 'required',
@@ -484,7 +484,7 @@ class ResourceEditor extends Component
 
         $this->newFields = $this->model->mapToGroupedFields($this->fieldsArray);
 
-        $this->saveProps($this->postTypeFields);
+        $this->saveProps($this->resourceTypeFields);
     }
 
     public function saveField($data)

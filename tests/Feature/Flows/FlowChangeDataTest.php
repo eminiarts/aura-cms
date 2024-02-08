@@ -18,7 +18,7 @@ test('flow - a flow can change data and pass it to the next operation', function
     // Create Flow
     $flow = Flow::create([
         'name' => 'Flow 1',
-        'trigger' => 'post',
+        'trigger' => 'resource',
         'options' => [
             'resource' => Post::class,
             'event' => 'created',

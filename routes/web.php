@@ -3,11 +3,11 @@
 use Illuminate\Support\Facades\Route;
 use Eminiarts\Aura\Livewire\User\Profile;
 use Eminiarts\Aura\Livewire\ResourceEditor;
-use Eminiarts\Aura\Livewire\Post\Edit;
-use Eminiarts\Aura\Livewire\Post\View;
+use Eminiarts\Aura\Livewire\Resource\Edit;
+use Eminiarts\Aura\Livewire\Resource\View;
 use Eminiarts\Aura\Livewire\Config;
-use Eminiarts\Aura\Livewire\Post\Index;
-use Eminiarts\Aura\Livewire\Post\Create;
+use Eminiarts\Aura\Livewire\Resource\Index;
+use Eminiarts\Aura\Livewire\Resource\Create;
 use Eminiarts\Aura\Livewire\TeamSettings;
 use Eminiarts\Aura\Http\Controllers\Api\FieldsController;
 use Eminiarts\Aura\Livewire\Attachment\Index as AttachmentIndex;
@@ -44,9 +44,9 @@ Route::domain(config('aura.domain'))
 
             Route::get('/attachment', AttachmentIndex::class)->name('attachment.index');
 
-            Route::get('/{slug}', Index::class)->name('post.index');
-            Route::get('/{slug}/create', Create::class)->name('post.create');
-            Route::get('/{slug}/{id}/edit', Edit::class)->name('post.edit');
-            Route::get('/{slug}/{id}', View::class)->name('post.view');
+            Route::get('/{slug}', Index::class)->name('resource.index');
+            Route::get('/{slug}/create', Create::class)->name('resource.create');
+            Route::get('/{slug}/{id}/edit', Edit::class)->name('resource.edit');
+            Route::get('/{slug}/{id}', View::class)->name('resource.view');
         });
     });

@@ -76,11 +76,11 @@ class GlobalSearch extends Component
         $searchResults->push(...$userResults);
 
         $searchResults = $searchResults->flatten()->map(function ($item) {
-            // return route aura.post.view with slug and id
+            // return route aura.resource.view with slug and id
             if (isset($item->type)) {
-                $item['view_url'] = route('aura.post.view', ['slug' => $item->type, 'id' => $item->id]);
+                $item['view_url'] = route('aura.resource.view', ['slug' => $item->type, 'id' => $item->id]);
             } else {
-                $item['view_url'] = route('aura.post.view', ['slug' => 'user', 'id' => $item->id]);
+                $item['view_url'] = route('aura.resource.view', ['slug' => 'user', 'id' => $item->id]);
             }
 
             return $item;

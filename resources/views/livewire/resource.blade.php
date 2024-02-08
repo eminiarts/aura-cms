@@ -39,7 +39,7 @@
         </div>
 
         <div class="flex items-center space-x-2">
-            @include('aura::livewire.post.actions')
+            @include('aura::livewire.resource.actions')
             <x-aura::button size="lg" wire:click="save">
                 <div wire:loading>
                     <x-aura::icon.loading />
@@ -73,17 +73,17 @@
 
             <div class="flex flex-wrap -mx-4">
                 <div class="w-full px-4 mb-0 md:w-1/3">
-                    <x-aura::input.text label="Name" placeholder="Name" value="{{ $postTypeFields['type'] }}" disabled></x-aura::input>
+                    <x-aura::input.text label="Name" placeholder="Name" value="{{ $resourceFields['type'] }}" disabled></x-aura::input>
                 </div>
 
                 <div class="w-full px-4 mb-0 md:w-1/3">
-                    <x-aura::input.text label="Slug" placeholder="Slug" value="{{ $postTypeFields['slug'] }}" disabled></x-aura::input>
+                    <x-aura::input.text label="Slug" placeholder="Slug" value="{{ $resourceFields['slug'] }}" disabled></x-aura::input>
                 </div>
 
 
                 <div class="flex items-end w-full px-4 mb-0 md:w-1/3">
                     <div class="flex-1">
-                        <x-aura::input.text label="Icon" placeholder="Icon" wire:model="postTypeFields.icon"></x-aura::input>
+                        <x-aura::input.text label="Icon" placeholder="Icon" wire:model="resourceFields.icon"></x-aura::input>
                     </div>
 
                     <div class="flex items-center justify-center w-10 h-10 mt-0 ml-2 border rounded-lg shadow-xs border-gray-500/30">
@@ -95,17 +95,17 @@
 
                 <div class="flex items-end w-full px-4 mb-0 md:w-1/3">
                     <div class="flex-1">
-                        <x-aura::input.text label="Group" placeholder="Group" wire:model="postTypeFields.group"></x-aura::input>
+                        <x-aura::input.text label="Group" placeholder="Group" wire:model="resourceFields.group"></x-aura::input>
                     </div>
                 </div>
                 <div class="flex items-end w-full px-4 mb-0 md:w-1/3">
                     <div class="flex-1">
-                        <x-aura::input.text label="Dropdown" placeholder="Dropdown" wire:model="postTypeFields.dropdown"></x-aura::input>
+                        <x-aura::input.text label="Dropdown" placeholder="Dropdown" wire:model="resourceFields.dropdown"></x-aura::input>
                     </div>
                 </div>
                 <div class="flex items-end w-full px-4 mb-0 md:w-1/3">
                     <div class="flex-1">
-                        <x-aura::input.number label="Sort" placeholder="Sort" wire:model="postTypeFields.sort" />
+                        <x-aura::input.number label="Sort" placeholder="Sort" wire:model="resourceFields.sort" />
                     </div>
                 </div>
 

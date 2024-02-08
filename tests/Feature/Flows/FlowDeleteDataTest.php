@@ -38,7 +38,7 @@ test('flow - delete resource operation', function () {
     $flow = Flow::create([
         'name' => 'Flow',
         'description' => 'Flow Description',
-        'trigger' => 'post',
+        'trigger' => 'resource',
         'options' => [
             'resource' => Post::class,
             'event' => 'created',

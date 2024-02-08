@@ -1,12 +1,12 @@
 @php
     $slug = $field['slug'];
-    $values = data_get($this->post['fields'], $slug);
+    $values = data_get($this->resource['fields'], $slug);
 @endphp
 
-{{-- @dump($field, $this->post['fields'][$slug], $values, $field['field']->transform($field, $values)) --}}
-{{-- @dd($this->post['fields'][$slug], $slug);
-@dd($field['field']->transform($field['fields'],$this->post['fields'][$slug]))  --}}
-{{-- @dump($this->post['fields']) --}}
+{{-- @dump($field, $this->resource['fields'][$slug], $values, $field['field']->transform($field, $values)) --}}
+{{-- @dd($this->resource['fields'][$slug], $slug);
+@dd($field['field']->transform($field['fields'],$this->resource['fields'][$slug]))  --}}
+{{-- @dump($this->resource['fields']) --}}
 
 
 {{-- <input class="shadow-xs border border-gray-500/30 appearance-none px-3 py-2 focus:outline-none w-full ring-gray-900/10 focus:ring focus:border-primary-300 focus:ring-primary-300  focus:ring-opacity-50 dark:focus:ring-primary-500 dark:focus:ring-opacity-50 disabled:opacity-75 disabled:bg-gray-100 disabled:dark:bg-gray-800 rounded-none bg-white dark:bg-gray-900 dark:border-gray-700 z-[1] rounded-l-lg  rounded-r-lg" type="text" wire:model="post.fields.variations.0.value" error="post.fields.variations.0.value" placeholder="Value" id="post-field-variations.0.value"> --}}

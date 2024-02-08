@@ -17,7 +17,7 @@ beforeEach(function () {
     $this->actingAs($this->user = createSuperAdmin());
 
     // Create Posts
-    $this->post = TableSaveFilterModel::create([
+    $this->resource = TableSaveFilterModel::create([
         'title' => 'Test Post',
         'content' => 'Test Content A',
         'type' => 'Post',
@@ -28,7 +28,7 @@ beforeEach(function () {
             ],
     ]);
 
-    $this->post2 = TableSaveFilterModel::create([
+    $this->resource2 = TableSaveFilterModel::create([
         'title' => 'Test Post 2',
         'content' => 'Test Content B',
         'type' => 'Post',
@@ -45,7 +45,7 @@ class TableSaveFilterModel extends Resource
 {
     public static $singularName = 'Post';
 
-    public static ?string $slug = 'post';
+    public static ?string $slug = 'resource';
 
     public static string $type = 'Post';
 
@@ -77,8 +77,8 @@ class TableSaveFilterModel extends Resource
 }
 
 test('table filter - taxonomy filter', function () {
-    $post = $this->post;
-    $post2 = $this->post2;
+    $post = $this->resource;
+    $post2 = $this->resource2;
 
     // Visit the Post Index Page
     $component = Livewire::test(Table::class, ['query' => null, 'model' => $post]);
@@ -162,8 +162,8 @@ test('table filter - taxonomy filter', function () {
 })->skip('Taxonomy');
 
 test('table filter - taxonomy filter can be deleted', function () {
-    $post = $this->post;
-    $post2 = $this->post2;
+    $post = $this->resource;
+    $post2 = $this->resource2;
 
     DB::table('options')->insert([
         'name' => 'user.'.$this->user->id.'.Post.filters.Test Filter',
@@ -201,8 +201,8 @@ test('table filter - taxonomy filter can be deleted', function () {
 })->skip('Taxonomy');
 
 test('table filter - custom filter can be removed', function () {
-    $post = $this->post;
-    $post2 = $this->post2;
+    $post = $this->resource;
+    $post2 = $this->resource2;
 
     // Visit the Post Index Page
     $component = Livewire::test(Table::class, ['query' => null, 'model' => $post]);
@@ -229,8 +229,8 @@ test('table filter - custom filter can be removed', function () {
 });
 
 test('table filter - filters can be reset', function () {
-    $post = $this->post;
-    $post2 = $this->post2;
+    $post = $this->resource;
+    $post2 = $this->resource2;
 
     // Visit the Post Index Page
     $component = Livewire::test(Table::class, ['query' => null, 'model' => $post]);

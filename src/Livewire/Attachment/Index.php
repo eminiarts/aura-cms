@@ -2,7 +2,7 @@
 
 namespace Eminiarts\Aura\Livewire\Attachment;
 
-use Eminiarts\Aura\Livewire\Post\Index as PostIndex;
+use Eminiarts\Aura\Livewire\Resource\Index as PostIndex;
 
 class Index extends PostIndex
 {

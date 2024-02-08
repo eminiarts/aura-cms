@@ -15,7 +15,7 @@ class FlowNotification extends Notification
      *
      * @return void
      */
-    public function __construct(public $post, public $message)
+    public function __construct(public $resource, public $message)
     {
     }
 
@@ -28,7 +28,7 @@ class FlowNotification extends Notification
     public function toArray($notifiable)
     {
         return [
-            'post' => $this->post,
+            'resource' => $this->resource,
             'message' => $this->message,
         ];
     }

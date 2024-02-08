@@ -29,11 +29,11 @@ test('user can be invited', function () {
     // Test InviteUser Livewire Component
     $component = Livewire::test(InviteUser::class, ['resource' => 'user'])
         ->call('save')
-        ->assertHasErrors(['post.fields.email' => 'required'])
-        ->set('post.fields.email', 'test@test.ch')
+        ->assertHasErrors(['resource.fields.email' => 'required'])
+        ->set('resource.fields.email', 'test@test.ch')
         ->call('save')
-        ->assertHasErrors(['post.fields.role' => 'required'])
-        ->set('post.fields.role', 1)
+        ->assertHasErrors(['resource.fields.role' => 'required'])
+        ->set('resource.fields.role', 1)
         ->call('save')
         ->assertHasNoErrors();
 
@@ -62,11 +62,11 @@ test('user gets correct role', function () {
     // Test InviteUser Livewire Component
     $component = Livewire::test(InviteUser::class, ['resource' => 'user'])
         ->call('save')
-        ->assertHasErrors(['post.fields.email' => 'required'])
-        ->set('post.fields.email', 'test@test.ch')
+        ->assertHasErrors(['resource.fields.email' => 'required'])
+        ->set('resource.fields.email', 'test@test.ch')
         ->call('save')
-        ->assertHasErrors(['post.fields.role' => 'required'])
-        ->set('post.fields.role', $role->id)
+        ->assertHasErrors(['resource.fields.role' => 'required'])
+        ->set('resource.fields.role', $role->id)
         ->call('save')
         ->assertHasNoErrors();
 
@@ -95,7 +95,7 @@ test('user gets correct role', function () {
     $response->assertOk();
 
     // Register the user and see if the role is correct
-    $response = $this->post($url, [
+    $response = $this->resource($url, [
         'name' => 'Test User',
         'password' => 'password',
         'password_confirmation' => 'password',
@@ -169,7 +169,7 @@ test('user email is prefilled in the registration', function () {
 
 test('user_invitations can be enabled', function () {
     livewire(Config::class)
-        ->set('post.fields.user_invitations', true)
+        ->set('resource.fields.user_invitations', true)
         ->call('save')
         ->assertHasNoErrors();
 
@@ -180,7 +180,7 @@ test('user_invitations can be enabled', function () {
 
 test('user_invitations can be disabled', function () {
     livewire(Config::class)
-        ->set('post.fields.user_invitations', true)
+        ->set('resource.fields.user_invitations', true)
         ->call('save')
         ->assertHasNoErrors();
 
@@ -229,7 +229,7 @@ test('user can register using an invitation', function () {
 
     $this->assertNull($user);
 
-    $response = $this->post($url, [
+    $response = $this->resource($url, [
         'name' => 'Test User',
         'password' => 'password',
         'password_confirmation' => 'password',
@@ -254,24 +254,24 @@ test('email and role are required in the invite user component', function () {
     $team = Team::first();
 
     livewire(InviteUser::class, ['team' => $team])
-        ->set('post.fields.email', '')
-        ->set('post.fields.role', '')
+        ->set('resource.fields.email', '')
+        ->set('resource.fields.role', '')
         ->call('save')
         ->assertHasErrors([
-            'post.fields.email',
-            'post.fields.role',
+            'resource.fields.email',
+            'resource.fields.role',
         ]);
 
     $user = User::factory()->create(['email' => 'invited@test.com']);
 
     livewire(InviteUser::class, ['team' => $team])
-        ->set('post', ['fields' => [
+        ->set('resource', ['fields' => [
             'email' => 'invited@test.com',
             'role' => Role::first()->id,
         ]])
         ->call('save')
         ->assertHasNoErrors([
-            'post.fields.email',
+            'resource.fields.email',
         ]);
 
     // Attach the user to the team
@@ -280,12 +280,12 @@ test('email and role are required in the invite user component', function () {
     $user->teams()->attach($team->id);
 
     livewire(InviteUser::class, ['team' => $team])
-        ->set('post', ['fields' => [
+        ->set('resource', ['fields' => [
             'email' => 'invited@test.com',
             'role' => Role::first()->id,
         ]])
         ->call('save')
         ->assertHasErrors([
-            'post.fields.email',
+            'resource.fields.email',
         ]);
 });

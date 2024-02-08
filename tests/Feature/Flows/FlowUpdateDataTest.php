@@ -26,7 +26,7 @@ test('flow - data update operation', function () {
     $flow = Flow::create([
         'name' => 'Flow',
         'description' => 'Flow Description',
-        'trigger' => 'post',
+        'trigger' => 'resource',
         'options' => [
             'resource' => Post::class,
             'event' => 'created',
@@ -110,7 +110,7 @@ test('flow - data update multiple operation', function () {
     $flow = Flow::create([
         'name' => 'Flow',
         'description' => 'Flow Description',
-        'trigger' => 'post',
+        'trigger' => 'resource',
         'options' => [
             'resource' => Post::class,
             'event' => 'created',

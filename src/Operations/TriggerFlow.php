@@ -26,7 +26,7 @@ class TriggerFlow extends BaseOperation
                 'defer' => false,
                 'slug' => 'response',
                 'options' => [
-                    'post' => 'Post',
+                    'resource' => 'Post',
                     'flow' => 'Flow',
                 ],
             ],

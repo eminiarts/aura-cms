@@ -17,7 +17,7 @@
     }
 
     $help = optional($field)['instructions'];
-    $model = 'post.fields.' . $field['slug'];
+    $model = 'resource.fields.' . $field['slug'];
 
     $slug = Str::slug(optional($field)['slug']);
 @endphp

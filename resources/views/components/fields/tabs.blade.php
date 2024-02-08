@@ -52,13 +52,13 @@
             $tabHasErrors = false;
 
             foreach($tab['fields'] as $tabField) {
-                if($errors->has('post.fields.' . $tabField['slug'])) {
+                if($errors->has('resource.fields.' . $tabField['slug'])) {
                     $tabHasErrors = true;
                 }
             }
         @endphp
 
-        @checkCondition($this->model ?? $model, $tab, $this->post)
+        @checkCondition($this->model ?? $model, $tab, $this->resource)
             <li wire:key="tab-item-{{ $key }}-{{ $fieldHash }}">
                 <button
                     :id="$id('tab', {{ $key }})"

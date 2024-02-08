@@ -1,6 +1,6 @@
 <?php
 
-namespace Eminiarts\Aura\Livewire\Post;
+namespace Eminiarts\Aura\Livewire\Resource;
 
 use Eminiarts\Aura\Facades\Aura;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
@@ -12,35 +12,35 @@ class Index extends Component
 
     public $fields;
 
-    public $post;
+    public $resource;
 
     public $slug;
 
     public function mount($slug)
     {
         $this->slug = $slug;
-        $this->post = Aura::findResourceBySlug($slug);
+        $this->resource = Aura::findResourceBySlug($slug);
 
         // if this post is null redirect to dashboard
-        if (is_null($this->post)) {
+        if (is_null($this->resource)) {
             return redirect()->route('aura.dashboard');
         }
 
-        if (!$this->post::$indexViewEnabled) {
+        if (!$this->resource::$indexViewEnabled) {
             return redirect()->route('aura.dashboard');
         }
 
         // Authorize if the User can see this Post
-        $this->authorize('viewAny', $this->post);
+        $this->authorize('viewAny', $this->resource);
 
         $this->fields = '';
-        // $this->fields = $this->post->inputFields();
+        // $this->fields = $this->resource->inputFields();
 
         // dd($this->fields);
     }
 
     public function render()
     {
-        return view($this->post->indexView())->layout('aura::components.layout.app');
+        return view($this->resource->indexView())->layout('aura::components.layout.app');
     }
 }

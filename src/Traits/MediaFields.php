@@ -8,7 +8,7 @@ trait MediaFields
 {
     public function getField($slug)
     {
-        return $this->post['fields'][$slug];
+        return $this->resource['fields'][$slug];
     }
 
     public function removeMediaFromField($slug, $id)
@@ -46,7 +46,7 @@ trait MediaFields
 
     public function updateField($data)
     {
-        $this->post['fields'][$data['slug']] = $data['value'];
+        $this->resource['fields'][$data['slug']] = $data['value'];
 
         $this->dispatch('fieldUpdated', [
             'slug' => $data['slug'],

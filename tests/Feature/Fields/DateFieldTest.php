@@ -3,8 +3,8 @@
 namespace Tests\Feature\Livewire;
 
 use Eminiarts\Aura\Facades\Aura;
-use Eminiarts\Aura\Livewire\Post\Create;
-use Eminiarts\Aura\Livewire\Post\Edit;
+use Eminiarts\Aura\Livewire\Resource\Create;
+use Eminiarts\Aura\Livewire\Resource\Edit;
 use Eminiarts\Aura\Models\User;
 use Eminiarts\Aura\Resource;
 use Eminiarts\Aura\Resources\Post;
@@ -39,7 +39,7 @@ class DateFieldModel extends Resource
 }
 
 test('Date Field in Livewire Component', function () {
-    
+
     // $this->withoutExceptionHandling();
 
     $model = new DateFieldModel();
@@ -50,14 +50,14 @@ test('Date Field in Livewire Component', function () {
         ->assertSee('Date for Test')
         ->assertSeeHtml('<svg class="w-5 h-5 text-gray-400"')
         ->call('save')
-        ->assertHasNoErrors(['post.fields.date']);
+        ->assertHasNoErrors(['resource.fields.date']);
 
     // assert in db has post with type DateModel
     $this->assertDatabaseHas('posts', ['type' => 'DateModel']);
 
-    $component->set('post.fields.date', '2021-01-01')
+    $component->set('resource.fields.date', '2021-01-01')
         ->call('save')
-        ->assertHasNoErrors(['post.fields.date']);
+        ->assertHasNoErrors(['resource.fields.date']);
 
     // get the datemodel from db
     $dateModel = DateFieldModel::orderBy('id', 'desc')->first();
@@ -90,5 +90,5 @@ test('Date Field in View', function () {
     //     ->assertSee('Date for Test')
     //     ->assertSee('01.01.2021')
     //     ->call('save')
-    //     ->assertHasNoErrors(['post.fields.date']);
+    //     ->assertHasNoErrors(['resource.fields.date']);
 });

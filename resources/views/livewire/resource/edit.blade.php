@@ -7,7 +7,7 @@
     <x-aura::breadcrumbs>
         <x-aura::breadcrumbs.li :href="route('aura.dashboard')" title="" icon="dashboard"
             iconClass="text-gray-500 w-7 h-7 mr-0" />
-        <x-aura::breadcrumbs.li :href="route('aura.post.index', $slug)" :title="__(Str::plural($slug))" />
+        <x-aura::breadcrumbs.li :href="route('aura.resource.index', $slug)" :title="__(Str::plural($slug))" />
         <x-aura::breadcrumbs.li :title="$model->title()" />
     </x-aura::breadcrumbs>
     @endif
@@ -26,20 +26,20 @@
     @endif
 
     <div class="grid gap-6 mt-4 aura-edit-post-container sm:grid-cols-3" x-data="{
-    model: @entangle('post'),
+    model: @entangle('resource'),
     init() {
     }
 }">
 
         <div class="col-span-1 mx-0 sm:col-span-3">
 
-            {{-- @dump($this->post) --}}
+            {{-- @dump($this->resource) --}}
             {{-- @dump($this->rules()) --}}
             
             
             <div class="flex flex-wrap items-start -mx-2" autocomplete="off">
                 @foreach($this->editFields as $key => $field)
-                @checkCondition($model, $field, $post)
+                @checkCondition($model, $field, $resource)
                     <x-dynamic-component :component="$field['field']->component" :field="$field" wire:key="post-field-{{ $key }}" />
                 @endcheckCondition
                 @endforeach

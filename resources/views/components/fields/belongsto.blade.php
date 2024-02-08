@@ -1,24 +1,24 @@
 @php
     if (optional($field)['api']) {
         //  $values = [];
-        $values = $field['field']->valuesForApi($field['resource'], $this->post['fields'][$field['slug']] ?? null);
+        $values = $field['field']->valuesForApi($field['resource'], $this->resource['fields'][$field['slug']] ?? null);
     } else {
         $values = $field['field']->values($field['resource']);
     }
 
-    $disabled = $field['field']->isDisabled($this->post, $field);
+    $disabled = $field['field']->isDisabled($this->resource, $field);
 @endphp
 
-{{-- @dump($this->post['fields'][$field['slug']], $values) --}}
+{{-- @dump($this->resource['fields'][$field['slug']], $values) --}}
 
 <div wire:key="belongsto-{{ $field['slug'] }}" class="w-full">
     <x-aura::fields.wrapper :field="$field">
 
         <div class="w-full" wire:ignore x-data="{
-            @if (optional($field)['live'] === true) value: $wire.entangle('post.fields.{{ optional($field)['slug'] }}').live,
+            @if (optional($field)['live'] === true) value: $wire.entangle('resource.fields.{{ optional($field)['slug'] }}').live,
         @else
-        value: $wire.entangle('post.fields.{{ optional($field)['slug'] }}'), @endif
-            {{-- value: $wire.entangle('post.fields.{{ $field['slug'] }}'), --}}
+        value: $wire.entangle('resource.fields.{{ optional($field)['slug'] }}'), @endif
+            {{-- value: $wire.entangle('resource.fields.{{ $field['slug'] }}'), --}}
         
             items: {{ Js::from($values) }},
         

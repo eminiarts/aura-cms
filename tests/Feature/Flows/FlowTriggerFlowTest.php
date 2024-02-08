@@ -18,7 +18,7 @@ test('flow - a flow can trigger another flow', function () {
     // Create Flow
     $flow = Flow::create([
         'name' => 'Flow 1',
-        'trigger' => 'post',
+        'trigger' => 'resource',
         'options' => [
             'resource' => Post::class,
             'event' => 'created',
@@ -53,7 +53,7 @@ test('flow - a flow can trigger another flow', function () {
             'x' => 14,
             'y' => 14,
             'flow_id' => $flow2->id,
-            'response' => 'post',
+            'response' => 'resource',
         ],
     ]);
 

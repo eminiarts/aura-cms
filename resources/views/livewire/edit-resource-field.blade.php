@@ -1,10 +1,10 @@
 <x-aura::slide-over key="edit-field" wire:key="editPostTypeField">
 
   <div x-data="{
-    post: @entangle('post').live,
+    post: @entangle('resource').live,
       init () {
         // alpine watch post
-        this.$watch('post', (value) => {
+        this.$watch('resource', (value) => {
           const select = document.getElementById('post_fields_type');
           select.addEventListener('change', (event) => {
             @this.updateType();

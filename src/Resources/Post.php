@@ -46,7 +46,7 @@ class Post extends Resource
 
     public static $fields = [];
 
-    public static ?string $slug = 'post';
+    public static ?string $slug = 'resource';
 
     public static ?int $sort = 50;
 
@@ -105,7 +105,7 @@ class Post extends Resource
         parent::delete();
 
         // redirect to index page
-        return redirect()->route('aura.post.index', [$this->getType()]);
+        return redirect()->route('aura.resource.index', [$this->getType()]);
     }
 
     public function deleteSelected()

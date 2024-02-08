@@ -2,7 +2,7 @@
 
 namespace Tests\Feature\Livewire;
 
-use Eminiarts\Aura\Livewire\Post\Create;
+use Eminiarts\Aura\Livewire\Resource\Create;
 use Eminiarts\Aura\Models\User;
 use Eminiarts\Aura\Resource;
 use Eminiarts\Aura\Resources\Post;
@@ -56,11 +56,11 @@ test('Boolean Field Test', function () {
         ->assertSeeHtml('bg-gray-300')
         ->assertSeeHtml('bg-primary-600')
         ->call('save')
-        ->assertHasNoErrors(['post.fields.boolean']);
+        ->assertHasNoErrors(['resource.fields.boolean']);
 
     //->assertSeeHtml('type="email"')
     //->call('save')
-    //->assertHasNoErrors(['post.fields.email']);
+    //->assertHasNoErrors(['resource.fields.email']);
 
     // assert in db has post with type DateModel
     $this->assertDatabaseHas('posts', ['type' => 'BooleanModel']);

@@ -35,7 +35,7 @@ class Log extends BaseOperation
         // if message contains "{{" and "}}" then it is a blade template
         if (strpos($message, '{{') !== false && strpos($message, '}}') !== false) {
             $renderedMessage = Blade::render($message, [
-                'post' => $post,
+                'resource' => $post,
             ]);
         } else {
             $renderedMessage = $message;

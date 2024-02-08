@@ -17,7 +17,7 @@ class TeamSettings extends Component
 
     public $model;
 
-    public $post = [
+    public $resource = [
         'fields' => [],
     ];
 
@@ -394,7 +394,7 @@ class TeamSettings extends Component
     public function getFieldsProperty()
     {
         return $this->inputFields()->mapWithKeys(function ($field) {
-            return [$field['slug'] => $this->post['fields'][$field['slug']] ?? null];
+            return [$field['slug'] => $this->resource['fields'][$field['slug']] ?? null];
         });
     }
 
@@ -421,21 +421,21 @@ class TeamSettings extends Component
 
 
         if (is_string($this->model->value)) {
-            $this->post['fields'] = json_decode($this->model->value, true);
+            $this->resource['fields'] = json_decode($this->model->value, true);
             // set default values of fields if not set to null
-            $this->post['fields'] = $this->inputFields()->mapWithKeys(function ($field) {
-                return [$field['slug'] => $this->post['fields'][$field['slug']] ?? null];
+            $this->resource['fields'] = $this->inputFields()->mapWithKeys(function ($field) {
+                return [$field['slug'] => $this->resource['fields'][$field['slug']] ?? null];
             })->toArray();
         } else {
-            $this->post['fields'] = $this->inputFields()->mapWithKeys(function ($field) {
+            $this->resource['fields'] = $this->inputFields()->mapWithKeys(function ($field) {
                 return [$field['slug'] => $this->model->value[$field['slug']] ?? ''];
             })->toArray();
 
         }
 
-        // dd($this->model, $this->model->value, $this->inputFields(), $this->post['fields']);
+        // dd($this->model, $this->model->value, $this->inputFields(), $this->resource['fields']);
 
-        // dd($this->post['fields'], $this->model->value);
+        // dd($this->resource['fields'], $this->model->value);
     }
 
     public function render()
@@ -446,7 +446,7 @@ class TeamSettings extends Component
     public function rules()
     {
         return Arr::dot([
-            'post.fields' => $this->validationRules(),
+            'resource.fields' => $this->validationRules(),
         ]);
     }
 
@@ -455,10 +455,10 @@ class TeamSettings extends Component
         // Save Fields as team-settings in Option table
         $option = 'team-settings';
 
-        $value = json_encode($this->post['fields']);
+        $value = json_encode($this->resource['fields']);
         // dd($value);
 
-        $o = Option::updateOrCreate(['name' => $option], ['value' => $this->post['fields']]);
+        $o = Option::updateOrCreate(['name' => $option], ['value' => $this->resource['fields']]);
 
         // $this->validate();
 
@@ -472,10 +472,10 @@ class TeamSettings extends Component
 
         // dd('hier')
 
-        // $this->post->save();
+        // $this->resource->save();
 
         // Artisan::call('make:resource', [
-        //     'name' => $this->post['fields']['name'],
+        //     'name' => $this->resource['fields']['name'],
         // ]);
 
         // return $this->notify('Created successfully.');

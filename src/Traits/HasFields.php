@@ -52,7 +52,7 @@ trait HasFields
         $attributes = [];
 
         foreach ($this->model->inputFields() as $field) {
-            $attributes['post.fields.'.$field['slug']] = $field['slug'];
+            $attributes['resource.fields.'.$field['slug']] = $field['slug'];
         }
 
         return $attributes;

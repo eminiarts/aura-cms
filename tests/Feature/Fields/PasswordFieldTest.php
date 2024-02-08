@@ -3,8 +3,8 @@
 namespace Tests\Feature\Livewire;
 
 use Eminiarts\Aura\Facades\Aura;
-use Eminiarts\Aura\Livewire\Post\Create;
-use Eminiarts\Aura\Livewire\Post\Edit;
+use Eminiarts\Aura\Livewire\Resource\Create;
+use Eminiarts\Aura\Livewire\Resource\Edit;
 use Eminiarts\Aura\Models\User;
 use Eminiarts\Aura\Resource;
 use Eminiarts\Aura\Resources\Post;
@@ -55,7 +55,7 @@ test('Password Field Test', function () {
         ->assertSee('Password for Test')
         ->assertSeeHtml('type="password"')
         ->call('save')
-        ->assertHasNoErrors(['post.fields.number']);
+        ->assertHasNoErrors(['resource.fields.number']);
 
     // assert in db has post with type DateModel
     $this->assertDatabaseHas('posts', ['type' => 'PasswordModel']);
@@ -65,12 +65,12 @@ test('Password Field Test', function () {
     // Assert that $model->fields['number'] is null
     $this->assertNull($model->fields['password']);
 
-    $component->set('post.fields.password', '123456')
+    $component->set('resource.fields.password', '123456')
         ->call('save')
-        ->assertHasErrors(['post.fields.password'])
-        ->set('post.fields.password', '123456789')
+        ->assertHasErrors(['resource.fields.password'])
+        ->set('resource.fields.password', '123456789')
         ->call('save')
-        ->assertHasNoErrors(['post.fields.password']);
+        ->assertHasNoErrors(['resource.fields.password']);
 
     // get the datemodel from db
     $model = PasswordFieldModel::orderBy('id', 'desc')->first();
@@ -86,9 +86,9 @@ test('password field gets not overwritten if saved as null', function () {
 
     $component = Livewire::test(Create::class, ['slug' => 'Post'])
         ->call('setModel', $model)
-        ->set('post.fields.password', '123456789')
+        ->set('resource.fields.password', '123456789')
         ->call('save')
-        ->assertHasNoErrors(['post.fields.password']);
+        ->assertHasNoErrors(['resource.fields.password']);
 
     // assert in db has post with type DateModel
     $this->assertDatabaseHas('posts', ['type' => 'PasswordModel']);
@@ -118,7 +118,7 @@ test('password field gets not overwritten if saved as null', function () {
         ->assertSee('Password for Test')
         ->assertSeeHtml('type="password"')
         // assert that the password field is empty
-        ->assertSet('post.fields.password', null)
+        ->assertSet('resource.fields.password', null)
         ->call('save');
 
     $post = PasswordFieldModel::first();
@@ -138,9 +138,9 @@ test('password field gets not overwritten if saved as empty string', function ()
 
     $component = Livewire::test(Create::class, ['slug' => 'Post'])
         ->call('setModel', $model)
-        ->set('post.fields.password', '123456789')
+        ->set('resource.fields.password', '123456789')
         ->call('save')
-        ->assertHasNoErrors(['post.fields.number']);
+        ->assertHasNoErrors(['resource.fields.number']);
 
     // assert in db has post with type DateModel
     $this->assertDatabaseHas('posts', ['type' => 'PasswordModel']);
@@ -165,9 +165,9 @@ test('password field gets not overwritten if saved as empty string', function ()
         ->assertSee('Password for Test')
         ->assertSeeHtml('type="password"')
         // assert that the password field is empty
-        ->assertSet('post.fields.password', "")
+        ->assertSet('resource.fields.password', "")
         ->call('save')
-        ->assertHasNoErrors(['post.fields.password']);
+        ->assertHasNoErrors(['resource.fields.password']);
 
     $post = PasswordFieldModel::first();
 
@@ -179,7 +179,7 @@ test('password field gets not overwritten if saved as empty string', function ()
 
 
 test('user password field gets not overwritten if saved as empty string', function () {
-   
+
     $user = User::factory()->create([
         'password' => Hash::make('password'),
     ]);
@@ -194,9 +194,9 @@ test('user password field gets not overwritten if saved as empty string', functi
         ->assertSee('Password')
         ->assertSeeHtml('type="password"')
         // assert that the password field is empty
-        ->assertSet('post.fields.password', "")
+        ->assertSet('resource.fields.password', "")
         ->call('save')
-        ->assertHasNoErrors(['post.fields.password']);
+        ->assertHasNoErrors(['resource.fields.password']);
 
     $user = $user->refresh();
 

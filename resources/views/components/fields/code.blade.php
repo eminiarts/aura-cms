@@ -30,7 +30,7 @@
         
     
         @php
-            $value = optional($this->post['fields'])[$field['slug']];
+            $value = optional($this->resource['fields'])[$field['slug']];
             if (is_array($value)) {
                 $value = json_encode($value);
             }

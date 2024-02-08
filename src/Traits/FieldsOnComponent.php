@@ -18,7 +18,7 @@ trait FieldsOnComponent
     public function rules()
     {
         return Arr::dot([
-            'post.fields' => $this->validationRules(),
+            'resource.fields' => $this->validationRules(),
         ]);
     }
 }

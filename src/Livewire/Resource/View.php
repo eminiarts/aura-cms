@@ -1,6 +1,6 @@
 <?php
 
-namespace Eminiarts\Aura\Livewire\Post;
+namespace Eminiarts\Aura\Livewire\Resource;
 
 use Eminiarts\Aura\Facades\Aura;
 use Eminiarts\Aura\Traits\HasActions;
@@ -20,7 +20,7 @@ class View extends Component
 
     public $model;
 
-    public $post;
+    public $resource;
 
     public $slug;
 
@@ -35,7 +35,7 @@ class View extends Component
 
     public function getField($slug)
     {
-        return $this->post['fields'][$slug];
+        return $this->resource['fields'][$slug];
     }
 
     public function mount($slug, $id)
@@ -48,17 +48,17 @@ class View extends Component
         $this->authorize('view', $this->model);
 
         // Array instead of Eloquent Model
-        $this->post = $this->model->attributesToArray();
+        $this->resource = $this->model->attributesToArray();
 
-        $this->post['terms'] = $this->model->terms;
-        $this->post['terms']['tag'] = $this->post['terms']['tag'] ?? null;
-        $this->post['terms']['category'] = $this->post['terms']['category'] ?? null;
+        $this->resource['terms'] = $this->model->terms;
+        $this->resource['terms']['tag'] = $this->resource['terms']['tag'] ?? null;
+        $this->resource['terms']['category'] = $this->resource['terms']['category'] ?? null;
     }
 
     public function reload()
     {
         $this->model = $this->model->fresh();
-        $this->post = $this->model->attributesToArray();
+        $this->resource = $this->model->attributesToArray();
 
         $this->dispatch('refreshComponent');
     }

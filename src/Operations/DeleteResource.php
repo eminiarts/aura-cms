@@ -55,10 +55,10 @@ class DeleteResource extends BaseOperation
     public function run(Operation $operation, $post, $operationLog)
     {
 
-        // dd($operation->flow->trigger == 'post' && get_class($post) == $operation->flow->options['resource'], get_class($post));
+        // dd($operation->flow->trigger == 'resource' && get_class($post) == $operation->flow->options['resource'], get_class($post));
         // get the resource type of the post and the resource type of the flow trigger
         // throw an exception if the resource type of the post is the same as the resource type of the flow trigger
-        // if ($operation->flow->trigger == 'post' && get_class($post) == $operation->flow->options['resource']) {
+        // if ($operation->flow->trigger == 'resource' && get_class($post) == $operation->flow->options['resource']) {
         //     throw new \Exception('Cannot delete post of same type');
         // }
 

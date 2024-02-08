@@ -1,12 +1,12 @@
 <?php
 
-namespace Eminiarts\Aura\Livewire\Post;
+namespace Eminiarts\Aura\Livewire\Resource;
 
 use LivewireUI\Modal\ModalComponent;
 
 class EditModal extends ModalComponent
 {
-    public $post;
+    public $resource;
 
     public $type;
 
@@ -21,6 +21,6 @@ class EditModal extends ModalComponent
 
     public function render()
     {
-        return view('aura::livewire.post.edit-modal');
+        return view('aura::livewire.resource.edit-modal');
     }
 }

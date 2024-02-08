@@ -18,7 +18,7 @@ test('flow - create resource operation', function () {
     $flow = Flow::create([
         'name' => 'Flow',
         'description' => 'Flow Description',
-        'trigger' => 'post',
+        'trigger' => 'resource',
         'options' => [
             'resource' => Post::class,
             'event' => 'created',
@@ -91,7 +91,7 @@ test('flow - cannot create post of same type on create', function () {
     $flow = Flow::create([
         'name' => 'Flow',
         'description' => 'Flow Description',
-        'trigger' => 'post',
+        'trigger' => 'resource',
         'options' => [
             'resource' => Post::class,
             'event' => 'created',

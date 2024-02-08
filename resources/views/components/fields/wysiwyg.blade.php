@@ -14,7 +14,7 @@
        wire:ignore
        wire:model="post.fields.{{ optional($field)['slug'] }}"
     >
-        {!! $this->post['fields'][$field['slug']] !!}
+        {!! $this->resource['fields'][$field['slug']] !!}
     </div>
 
 

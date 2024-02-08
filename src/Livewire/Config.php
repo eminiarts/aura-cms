@@ -20,7 +20,7 @@ class Config extends Component
 
     public $model;
 
-    public $post = [
+    public $resource = [
         'fields' => [],
     ];
 
@@ -386,7 +386,7 @@ class Config extends Component
     public function getFieldsProperty()
     {
         return $this->inputFields()->mapWithKeys(function ($field) {
-            return [$field['slug'] => $this->post['fields'][$field['slug']] ?? null];
+            return [$field['slug'] => $this->resource['fields'][$field['slug']] ?? null];
         });
     }
 
@@ -399,10 +399,10 @@ class Config extends Component
         $this->model = Aura::getGlobalOptions();
 
         if (is_string($this->model->value)) {
-            $this->post['fields'] = json_decode($this->model->value, true);
+            $this->resource['fields'] = json_decode($this->model->value, true);
             // set default values of fields if not set to null
-            $this->post['fields'] = $this->inputFields()->mapWithKeys(function ($field) {
-                return [$field['slug'] => $this->post['fields'][$field['slug']] ?? null];
+            $this->resource['fields'] = $this->inputFields()->mapWithKeys(function ($field) {
+                return [$field['slug'] => $this->resource['fields'][$field['slug']] ?? null];
             })->toArray();
         }
     }
@@ -415,7 +415,7 @@ class Config extends Component
     public function rules()
     {
         return Arr::dot([
-            'post.fields' => $this->validationRules(),
+            'resource.fields' => $this->validationRules(),
         ]);
     }
 
@@ -423,7 +423,7 @@ class Config extends Component
     {
         $this->validate();
 
-        $this->model->value = json_encode($this->post['fields']);
+        $this->model->value = json_encode($this->resource['fields']);
 
         $this->model->save();
 

@@ -4,7 +4,7 @@
     @if(!$inModal)
     <x-aura::breadcrumbs>
         <x-aura::breadcrumbs.li :href="route('aura.dashboard')" title="" icon="dashboard" iconClass="text-gray-500 w-7 h-7 mr-0" />
-        <x-aura::breadcrumbs.li :href="route('aura.post.index', $slug)" :title="__(Str::plural($slug))" />
+        <x-aura::breadcrumbs.li :href="route('aura.resource.index', $slug)" :title="__(Str::plural($slug))" />
         <x-aura::breadcrumbs.li title="{{ __('Create ' . $model->singularName()) }}" />
     </x-aura::breadcrumbs>
     @endif
@@ -59,7 +59,7 @@
 
             <div class="flex flex-wrap items-start -mx-2">
            @foreach($this->createFields as $key => $field)
-            @checkCondition($model, $field, $post)
+            @checkCondition($model, $field, $resource)
                     <x-dynamic-component :component="$field['field']->component" :field="$field" wire:key="post-field-{{ $key }}" />
             @endcheckCondition
             @endforeach

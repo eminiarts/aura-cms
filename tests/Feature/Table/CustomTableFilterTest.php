@@ -33,7 +33,7 @@ beforeEach(function () {
     });
 
     // Create a Posts
-    $this->post = CustomTableFilterModel::create([
+    $this->resource = CustomTableFilterModel::create([
         'name' => 'Test Post 1',
         'status' => 'publish',
         'enabled' => 1,
@@ -48,7 +48,7 @@ beforeEach(function () {
         ],
     ]);
 
-    $this->post2 = CustomTableFilterModel::create([
+    $this->resource2 = CustomTableFilterModel::create([
         'name' => 'Test Post 2',
         'status' => 'draft',
         'enabled' => 0,
@@ -163,8 +163,8 @@ class CustomTableFilterModel extends Resource
 }
 
 test('table filter - custom column on table - contains', function () {
-    $post = $this->post;
-    $post2 = $this->post2;
+    $post = $this->resource;
+    $post2 = $this->resource2;
 
     // Visit the Post Index Page
     $component = Livewire::test(Table::class, ['query' => null, 'model' => $post]);
@@ -196,8 +196,8 @@ test('table filter - custom column on table - contains', function () {
 });
 
 test('table filter - custom column on table - does_not_contain', function () {
-    $post = $this->post;
-    $post2 = $this->post2;
+    $post = $this->resource;
+    $post2 = $this->resource2;
 
     // Visit the Post Index Page
     $component = Livewire::test(Table::class, ['query' => null, 'model' => $post]);
@@ -227,8 +227,8 @@ test('table filter - custom column on table - does_not_contain', function () {
 });
 
 test('table filter - custom column on table - starts_with', function () {
-    $post = $this->post;
-    $post2 = $this->post2;
+    $post = $this->resource;
+    $post2 = $this->resource2;
 
 
 

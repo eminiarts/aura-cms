@@ -13,7 +13,7 @@ class Notifications extends Component
 
     public $open = false;
 
-    public $post = [
+    public $resource = [
         'fields' => [],
     ];
 
@@ -62,7 +62,7 @@ class Notifications extends Component
     public function getFieldsProperty()
     {
         return $this->inputFields()->mapWithKeys(function ($field) {
-            return [$field['slug'] => $this->post['fields'][$field['slug']] ?? null];
+            return [$field['slug'] => $this->resource['fields'][$field['slug']] ?? null];
         });
     }
 

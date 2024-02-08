@@ -8,7 +8,7 @@
             </div>
 
             <!-- Team Settings -->
-            <x-aura::dropdown-link href="{{ route('aura.post.edit', ['slug' => 'Team', 'id' => Auth::user()->current_team_id]) }}">
+            <x-aura::dropdown-link href="{{ route('aura.resource.edit', ['slug' => 'Team', 'id' => Auth::user()->current_team_id]) }}">
                 {{ __('Team Settings') }}
             </x-aura::dropdown-link>
 
@@ -17,7 +17,7 @@
 
 
         @can('create', Team::class)
-            <x-aura::dropdown-link href="{{ route('aura.post.create', ['slug' => 'Team']) }}">
+            <x-aura::dropdown-link href="{{ route('aura.resource.create', ['slug' => 'Team']) }}">
                 {{ __('Create New Team') }}
             </x-aura::dropdown-link>
         @endcan

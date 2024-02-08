@@ -125,7 +125,7 @@
                                         </div>
 
                                         <div class="overflow-hidden flex-1 whitespace-nowrap text-ellipsis">
-                                            <a class="block overflow-hidden text-ellipsis" href="{{ route('aura.post.view', ['slug' => $result->getType(), 'id' => $result->id]) }}">
+                                            <a class="block overflow-hidden text-ellipsis" href="{{ route('aura.resource.view', ['slug' => $result->getType(), 'id' => $result->id]) }}">
                                                 #{{ $result->id }} {{ $result->title }}
                                             </a>
                                         </div>

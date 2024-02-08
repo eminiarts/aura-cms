@@ -41,14 +41,14 @@ test('Check Aura Pages (with Teams)', function ($routeName) {
 
 // Test Post Index Pages
 test('Check Index Pages', function ($postType) {
-    $this->get(route('aura.post.index', ['slug' => $postType]))->assertOk();
+    $this->get(route('aura.resource.index', ['slug' => $postType]))->assertOk();
 })->with('postTypes');
 
 // Test Post Create Pages
 test('Check Create Pages', function ($postType) {
     $this->withoutExceptionHandling();
-    
-    $this->get(route('aura.post.create', ['slug' => $postType]))->assertOk();
+
+    $this->get(route('aura.resource.create', ['slug' => $postType]))->assertOk();
 })->with('postTypes');
 
 // Test Post Edit and View Pages
@@ -58,6 +58,6 @@ test('Check Post Edit and View Pages', function ($postType) {
 
     $post = Aura::findResourceBySlug($postType)->factory()->create();
 
-    $this->get(route('aura.post.edit', ['slug' => $postType, 'id' => $post->id]))->assertOk();
-    $this->get(route('aura.post.view', ['slug' => $postType, 'id' => $post->id]))->assertOk();
+    $this->get(route('aura.resource.edit', ['slug' => $postType, 'id' => $post->id]))->assertOk();
+    $this->get(route('aura.resource.view', ['slug' => $postType, 'id' => $post->id]))->assertOk();
 })->with('postTypes');

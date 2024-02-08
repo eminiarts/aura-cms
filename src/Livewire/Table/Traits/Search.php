@@ -47,7 +47,7 @@ trait Search
                         // Todo: Meta fields on Custom Tables may not have a title field.
 
                         $query
-                            ->when($this->model->getTable() == 'post', function ($query) {
+                            ->when($this->model->getTable() == 'posts', function ($query) {
                                 $query->where($this->model->getTable().'.title', 'like', '%'.$this->search.'%');
                             })
                             ->orWhere(function ($query) {

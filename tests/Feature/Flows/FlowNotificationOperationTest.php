@@ -20,7 +20,7 @@ test('flow gets triggered on create post and sends a notification to a user', fu
     $flow = Flow::create([
         'name' => 'Notification Flow',
         'description' => 'Notification Flow Description',
-        'trigger' => 'post',
+        'trigger' => 'resource',
         'options' => [
             'resource' => Post::class,
             'event' => 'created',
@@ -87,7 +87,7 @@ test('flow gets triggered on create post and sends a notification to a role', fu
     $flow = Flow::create([
         'name' => 'Notification Flow',
         'description' => 'Notification Flow Description',
-        'trigger' => 'post',
+        'trigger' => 'resource',
         'options' => [
             'resource' => Post::class,
             'event' => 'created',

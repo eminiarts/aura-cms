@@ -15,7 +15,7 @@ class InviteUser extends ModalComponent
     use AuthorizesRequests;
     use InputFields;
 
-    public $post = [
+    public $resource = [
         'fields' => [
             'email' => '',
             'role' => '',
@@ -62,11 +62,11 @@ class InviteUser extends ModalComponent
     public function rules()
     {
         $rules = Arr::dot([
-            'post.fields' => $this->validationRules(),
+            'resource.fields' => $this->validationRules(),
 
         ]);
 
-        $rules['post.fields.email'] = [
+        $rules['resource.fields.email'] = [
             'required', 'email',
             function ($attribute, $value, $fail) {
                 $team = auth()->user()->currentTeam;
@@ -94,8 +94,8 @@ class InviteUser extends ModalComponent
         $this->authorize('invite-users', $team);
 
         $invitation = $team->teamInvitations()->create([
-            'email' => $email = $this->post['fields']['email'],
-            'role' => $this->post['fields']['role'],
+            'email' => $email = $this->resource['fields']['email'],
+            'role' => $this->resource['fields']['role'],
         ]);
 
         Mail::to($email)->send(new TeamInvitation($invitation));

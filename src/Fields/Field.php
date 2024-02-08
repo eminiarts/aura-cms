@@ -2,7 +2,7 @@
 
 namespace Eminiarts\Aura\Fields;
 
-use Eminiarts\Aura\Livewire\Post\View;
+use Eminiarts\Aura\Livewire\Resource\View;
 use Eminiarts\Aura\Traits\InputFields;
 use Illuminate\Support\Traits\Macroable;
 use Illuminate\Support\Traits\Tappable;

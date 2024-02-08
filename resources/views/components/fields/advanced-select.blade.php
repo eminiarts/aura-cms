@@ -18,7 +18,7 @@
 
     if($api) {
         $values = [];
-        $selectedValues = $field['field']->selectedValues($field['resource'], optional($this->post['fields'])[$field['slug']]);
+        $selectedValues = $field['field']->selectedValues($field['resource'], optional($this->resource['fields'])[$field['slug']]);
     } else {
         // $values = $field['field']->values($field['model']);
         $values = $field['field']->values($field['resource']);
@@ -46,7 +46,7 @@
     wire:ignore
     class="w-full"
     x-data="{
-        value: $wire.entangle('post.fields.{{ $field['slug'] }}'),
+        value: $wire.entangle('resource.fields.{{ $field['slug'] }}'),
         items: @js($values),
         selectedItems: @js($selectedValues),
         api: @js($api),
@@ -75,7 +75,7 @@
             this.$nextTick(() => {
                 this.value = newOrder;
                 this.selectedItems = newOrder.map(id => this.items.find(item => item.id === id));
-                // this.$wire.set('post.fields.{{ $field['slug'] }}', validIds);
+                // this.$wire.set('resource.fields.{{ $field['slug'] }}', validIds);
                 this.showListbox = false;
             });
         },
