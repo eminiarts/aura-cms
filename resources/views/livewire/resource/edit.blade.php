@@ -26,20 +26,18 @@
     @endif
 
     <div class="grid gap-6 mt-4 aura-edit-post-container sm:grid-cols-3" x-data="{
-    model: @entangle('resource'),
+    model: @entangle('form'),
     init() {
     }
 }">
 
         <div class="col-span-1 mx-0 sm:col-span-3">
 
-            {{-- @dump($resource) 
-            @dump($model) --}}
             
             
             <div class="flex flex-wrap items-start -mx-2" autocomplete="off">
                 @foreach($this->editFields as $key => $field)
-                @checkCondition($model, $field, $resource)
+                @checkCondition($model, $field, $form)
                     <x-dynamic-component :component="$field['field']->component" :field="$field" wire:key="resource-field-{{ $key }}" />
                 @endcheckCondition
                 @endforeach

@@ -1,7 +1,7 @@
 @php
 
-if($this->resource) {
-    $selected = optional($this->resource['fields'])[$field['slug']];
+if($this->form) {
+    $selected = optional($this->form['fields'])[$field['slug']];
 } else {
     $selected = null;
 }

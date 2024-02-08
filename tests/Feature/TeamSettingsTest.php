@@ -40,10 +40,10 @@ test('Default Team Settings are created', function () {
     Livewire::test(TeamSettings::class)
         ->assertSee('Theme Options')
         ->assertSee('primary')
-        ->assertSet('resource.fields.darkmode-type', 'auto')
-        ->assertSet('resource.fields.sidebar-type', 'primary')
-        ->assertSet('resource.fields.color-palette', 'aura')
-        ->assertSet('resource.fields.gray-color-palette', 'slate');
+        ->assertSet('form.fields.darkmode-type', 'auto')
+        ->assertSet('form.fields.sidebar-type', 'primary')
+        ->assertSet('form.fields.color-palette', 'aura')
+        ->assertSet('form.fields.gray-color-palette', 'slate');
 
     // assert DB has 1 record in options table
     $this->assertDatabaseCount('options', 1);
@@ -83,10 +83,10 @@ test('Team Settings can be saved', function () {
 
     // Default Team Settings
     Livewire::test(TeamSettings::class)
-        ->set('resource.fields.darkmode-type', 'light')
-        ->set('resource.fields.sidebar-type', 'light')
-        ->set('resource.fields.color-palette', 'red')
-        ->set('resource.fields.gray-color-palette', 'zinc')
+        ->set('form.fields.darkmode-type', 'light')
+        ->set('form.fields.sidebar-type', 'light')
+        ->set('form.fields.color-palette', 'red')
+        ->set('form.fields.gray-color-palette', 'zinc')
         ->call('save');
 
     // assert DB has 1 record in options table
@@ -113,7 +113,7 @@ test('Team Settings can be saved', function () {
 
     // Default Team Settings
     Livewire::test(TeamSettings::class)
-        ->set('resource.fields.color-palette', 'emerald')
+        ->set('form.fields.color-palette', 'emerald')
         ->call('save');
 
     $this->actingAs($this->user)

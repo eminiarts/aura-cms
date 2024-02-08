@@ -57,7 +57,7 @@ test('AdvancedSelect Field Test', function () {
         ->assertSee('AdvancedSelect for Test')
         ->assertSeeHtml('x-text="selectedItem(item)"')
         ->call('save')
-        ->assertHasNoErrors(['resource.fields.advancedselect']);
+        ->assertHasNoErrors(['form.fields.advancedselect']);
 
     // assert in db has post with type DateModel
     $this->assertDatabaseHas('posts', ['type' => 'AdvancedSelectModel']);
@@ -69,9 +69,9 @@ test('AdvancedSelect Field Test', function () {
     // Assert that $model->fields['number'] is null
     $this->assertNull($model->fields['advancedselect']);
 
-    $component->set('resource.fields.advancedselect', [ $roles[0]->id ])
+    $component->set('form.fields.advancedselect', [ $roles[0]->id ])
         ->call('save')
-        ->assertHasNoErrors(['resource.fields.advancedselect']);
+        ->assertHasNoErrors(['form.fields.advancedselect']);
 
     // get the datemodel from db
     $model = AdvancedSelectFieldModel::orderBy('id', 'desc')->first();

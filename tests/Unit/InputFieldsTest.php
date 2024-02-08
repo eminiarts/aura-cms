@@ -112,8 +112,8 @@ test('field resourceFieldValidationRules prepend resource.fields', function () {
     $rules = $inputFields->resourceFieldValidationRules();
 
     expect($rules)->toBe([
-        'resource.fields.title' => 'required|string|max:255',
-        'resource.fields.body' => 'required|string',
+        'form.fields.title' => 'required|string|max:255',
+        'form.fields.body' => 'required|string',
     ]);
 });
 
@@ -125,13 +125,13 @@ test('field validation allows array of rules', function () {
 
     expect($rules)->toBeArray();
     expect($rules)->toHaveCount(2);
-    expect($rules)->toHaveKey('resource.fields.title');
-    expect($rules)->toHaveKey('resource.fields.body');
+    expect($rules)->toHaveKey('form.fields.title');
+    expect($rules)->toHaveKey('form.fields.body');
 
     // first rule should be ['required', 'string', 'max:255']
-    expect($rules['resource.fields.title'])->toBeArray();
-    expect($rules['resource.fields.title'])->toHaveCount(3);
-    expect($rules['resource.fields.title'])->toContain('required');
-    expect($rules['resource.fields.title'])->toContain('string');
-    expect($rules['resource.fields.title'])->toContain('max:255');
+    expect($rules['form.fields.title'])->toBeArray();
+    expect($rules['form.fields.title'])->toHaveCount(3);
+    expect($rules['form.fields.title'])->toContain('required');
+    expect($rules['form.fields.title'])->toContain('string');
+    expect($rules['form.fields.title'])->toContain('max:255');
 });

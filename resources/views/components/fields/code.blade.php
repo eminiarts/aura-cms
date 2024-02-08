@@ -25,12 +25,12 @@
                     $dispatch('input', { value: editor.getValue() });
                 });
             "
-            wire:model="resource.fields.{{ optional($field)['slug'] }}"
+            wire:model="form.fields.{{ optional($field)['slug'] }}"
         >
         
     
         @php
-            $value = optional($this->resource['fields'])[$field['slug']];
+            $value = optional($this->form['fields'])[$field['slug']];
             if (is_array($value)) {
                 $value = json_encode($value);
             }

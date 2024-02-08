@@ -37,7 +37,7 @@ test('only superadmins can access this component', function () {
 test('call save should fail', function () {
     livewire(CreateResource::class)
         ->call('save')
-        ->assertHasErrors(['resource.fields.name' => 'required']);
+        ->assertHasErrors(['form.fields.name' => 'required']);
 });
 
 test('set name and call save should pass and should call artisan', function () {
@@ -56,7 +56,7 @@ test('set name and call save should pass and should call artisan', function () {
         ->once();
 
     livewire(CreateResource::class)
-        ->set('resource.fields.name', 'Test')
+        ->set('form.fields.name', 'Test')
         ->call('save')
         ->assertHasNoErrors();
 
@@ -66,7 +66,7 @@ test('set name and call save should pass and should call artisan', function () {
 
 test('resource file gets created correctly', function () {
     livewire(CreateResource::class)
-        ->set('resource.fields.name', 'Test')
+        ->set('form.fields.name', 'Test')
         ->call('save')
         ->assertHasNoErrors();
 

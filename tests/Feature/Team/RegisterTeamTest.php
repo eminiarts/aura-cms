@@ -19,7 +19,7 @@ test('team can be registered', function () {
 test('registration config can be disabled', function () {
     // test Config Livewire component
     $component = livewire(Config::class)
-        ->set('resource.fields.team_registration', false)
+        ->set('form.fields.team_registration', false)
         ->call('save')
         ->assertHasNoErrors();
 
@@ -42,7 +42,7 @@ test('registration config can be disabled', function () {
 test('registration config can be enabled', function () {
     // test Config Livewire component
     $component = livewire(Config::class)
-        ->set('resource.fields.team_registration', true)
+        ->set('form.fields.team_registration', true)
         ->call('save')
         ->assertHasNoErrors();
 
@@ -68,7 +68,7 @@ test('aura config site is working', function () {
 
 test('registration config can be enabled and called from the aura facade', function () {
     livewire(Config::class)
-        ->set('resource.fields.team_registration', true)
+        ->set('form.fields.team_registration', true)
         ->call('save')
         ->assertHasNoErrors();
 

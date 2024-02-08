@@ -15,7 +15,7 @@ if (key_exists('resource', $field) ) {
 
 @endphp
 
-{{-- @dump($this->resource['fields'])
+{{-- @dump($this->form['fields'])
 @dump($values) --}}
 
 <x-aura::fields.wrapper :field="$field">
@@ -23,7 +23,7 @@ if (key_exists('resource', $field) ) {
 wire:ignore
 x-data="{
     multiple: true,
-    value: @entangle('resource.fields.' . $field['slug']),
+    value: @entangle('form.fields.' . $field['slug']),
     options: @js($values),
     init() {
         if (!this.value) {

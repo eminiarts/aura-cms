@@ -23,7 +23,7 @@ trait InputFieldsValidation
     public function resourceFieldValidationRules()
     {
         return collect($this->validationRules())->mapWithKeys(function ($value, $key) {
-            return ['resource.fields.'.$key => $value];
+            return ['form.fields.'.$key => $value];
         })->toArray();
     }
 

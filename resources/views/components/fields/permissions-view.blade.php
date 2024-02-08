@@ -1,6 +1,6 @@
 @aware(['model'])
 @php
-    $name = 'resource.fields.'  . optional($field)['slug'];
+    $name = 'form.fields.'  . optional($field)['slug'];
 
 
     $groups = app($field['resource'])->get()->map(function($item, $key) {
@@ -25,8 +25,8 @@
             </div>
             <div class="pl-1.5 w-2/3">
                 @foreach($items as $item)
-                    <div class="flex items-center mb-2 @unless(optional($this->resource['fields']['permissions'])[$item['slug']]) opacity-50 line-through @endunless" >
-                        @if(optional($this->resource['fields']['permissions'])[$item['slug']])
+                    <div class="flex items-center mb-2 @unless(optional($this->form['fields']['permissions'])[$item['slug']]) opacity-50 line-through @endunless" >
+                        @if(optional($this->form['fields']['permissions'])[$item['slug']])
                         <x-aura::icon.check class="mr-2 w-5 h-5" />
                         @else
                             <x-aura::icon.close class="mr-2 w-5 h-5" />

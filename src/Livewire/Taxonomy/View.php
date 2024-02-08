@@ -31,7 +31,7 @@ class View extends Component
 
     public function getField($slug)
     {
-        return $this->resource['fields'][$slug];
+        return $this->form['fields'][$slug];
     }
 
     public function mount($slug, $id)

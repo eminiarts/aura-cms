@@ -1,7 +1,7 @@
 @php
 $slug = $field['slug'];
-if (!isset($this->resource['fields'][$slug])) {
-  $this->resource['fields'][$slug] = [];
+if (!isset($this->form['fields'][$slug])) {
+  $this->form['fields'][$slug] = [];
 }
 
 $model = $this->model;
@@ -26,7 +26,7 @@ $model = $this->model;
     <div class="flex flex-wrap items-start -mx-2">
       @if(optional($field)['fields'])
       @foreach($field['fields'] as $key => $field)
-          @checkCondition($this->model, $field, $this->resource)
+          @checkCondition($this->model, $field, $this->form)
             <x-dynamic-component :component="$field['field']->component" :field="$field" />
           @endcheckCondition
         @endforeach

@@ -42,7 +42,7 @@ class Create extends ModalComponent
     {
         return Arr::dot([
             'resource.terms' => '',
-            'resource.fields' => $this->model->validationRules(),
+            'form.fields' => $this->model->validationRules(),
         ]);
     }
 
@@ -51,11 +51,11 @@ class Create extends ModalComponent
         $this->validate();
 
         // Set Fields
-        $this->resource['fields']['taxonomy'] = $this->slug;
+        $this->form['fields']['taxonomy'] = $this->slug;
 
         // dd($this->resource, $this->model);
 
-        $model = $this->model->create($this->resource['fields']);
+        $model = $this->model->create($this->form['fields']);
 
         // dd('hier', $model);
 

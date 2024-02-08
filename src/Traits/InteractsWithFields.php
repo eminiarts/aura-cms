@@ -31,7 +31,7 @@ trait InteractsWithFields
         $attributes = [];
 
         foreach ($this->model->inputFields() as $field) {
-            $attributes['resource.fields.'.$field['slug']] = $field['slug'];
+            $attributes['form.fields.'.$field['slug']] = $field['slug'];
         }
 
         return $attributes;

@@ -23,7 +23,7 @@ class Create extends Component
 
     public $params;
 
-    public $resource;
+    public $form;
 
     public $slug;
 
@@ -45,7 +45,7 @@ class Create extends Component
         $this->authorize('create', $this->model);
 
         // Array instead of Eloquent Model
-        $this->resource = $this->model->toArray();
+        $this->form = $this->model->toArray();
 
         // get "for" and "id" params from url
         $for = request()->get('for');
@@ -54,19 +54,19 @@ class Create extends Component
         // if params are set, set the post's "for" and "id" fields
         if ($this->params) {
             if ($this->params['for'] == 'User') {
-                $this->resource['fields']['user_id'] = (int) $this->params['id'];
+                $this->form['fields']['user_id'] = (int) $this->params['id'];
             }
 
             // if there is a key in post's fields named $this->params['for'], set it to $this->params['id']
-            if (optional($this->params)['for'] && optional($this->params)['id'] && array_key_exists($this->params['for'], $this->resource['fields'])) {
-                $this->resource['fields'][$this->params['for']] = (int) $this->params['id'];
+            if (optional($this->params)['for'] && optional($this->params)['id'] && array_key_exists($this->params['for'], $this->form['fields'])) {
+                $this->form['fields'][$this->params['for']] = (int) $this->params['id'];
             }
         }
 
         // If $for is "User", set the user_id to the $id
         // This needs to be more dynamic, but it works for now
         if ($for == 'User') {
-            $this->resource['fields']['user_id'] = (int) $id;
+            $this->form['fields']['user_id'] = (int) $id;
         }
 
         // Initialize the post fields with defaults
@@ -84,7 +84,7 @@ class Create extends Component
     public function rules()
     {
         return Arr::dot([
-            'resource.fields' => $this->model->validationRules(),
+            'form.fields' => $this->model->validationRules(),
         ]);
     }
 
@@ -94,15 +94,15 @@ class Create extends Component
 
         $this->validate();
 
-        // dd('save', $this->resource);
+        // dd('save', $this->form);
 
         if ($this->model->usesCustomTable()) {
 
-            $model = $this->model->create($this->resource['fields']);
+            $model = $this->model->create($this->form['fields']);
 
         } else {
 
-            $model = $this->model->create($this->resource);
+            $model = $this->model->create($this->form);
 
         }
 
@@ -131,8 +131,8 @@ class Create extends Component
 
         foreach ($fields as $field) {
             $slug = $field['slug'] ?? null;
-            if ($slug && !isset($this->resource['fields'][$slug]) && isset($field['default'])) {
-                $this->resource['fields'][$slug] = $field['default'];
+            if ($slug && !isset($this->form['fields'][$slug]) && isset($field['default'])) {
+                $this->form['fields'][$slug] = $field['default'];
             }
         }
     }
@@ -157,11 +157,11 @@ class Create extends Component
 
             // If the method exists in the field type, call it directly.
             if (method_exists($fieldTypeInstance, $method)) {
-                $post = call_user_func_array([$fieldTypeInstance, $method], array_merge([$this->model, $this->resource], $params));
+                $post = call_user_func_array([$fieldTypeInstance, $method], array_merge([$this->model, $this->form], $params));
 
                 // If the field type method returns a post, update the post.
                 if ($post) {
-                    $this->resource = $post;
+                    $this->form = $post;
                 }
 
                 // Make sure to return here, otherwise the parent callMethod will be called.

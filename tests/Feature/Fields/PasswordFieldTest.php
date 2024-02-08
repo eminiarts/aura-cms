@@ -55,7 +55,7 @@ test('Password Field Test', function () {
         ->assertSee('Password for Test')
         ->assertSeeHtml('type="password"')
         ->call('save')
-        ->assertHasNoErrors(['resource.fields.number']);
+        ->assertHasNoErrors(['form.fields.number']);
 
     // assert in db has post with type DateModel
     $this->assertDatabaseHas('posts', ['type' => 'PasswordModel']);
@@ -65,12 +65,12 @@ test('Password Field Test', function () {
     // Assert that $model->fields['number'] is null
     $this->assertNull($model->fields['password']);
 
-    $component->set('resource.fields.password', '123456')
+    $component->set('form.fields.password', '123456')
         ->call('save')
-        ->assertHasErrors(['resource.fields.password'])
-        ->set('resource.fields.password', '123456789')
+        ->assertHasErrors(['form.fields.password'])
+        ->set('form.fields.password', '123456789')
         ->call('save')
-        ->assertHasNoErrors(['resource.fields.password']);
+        ->assertHasNoErrors(['form.fields.password']);
 
     // get the datemodel from db
     $model = PasswordFieldModel::orderBy('id', 'desc')->first();
@@ -86,9 +86,9 @@ test('password field gets not overwritten if saved as null', function () {
 
     $component = Livewire::test(Create::class, ['slug' => 'Post'])
         ->call('setModel', $model)
-        ->set('resource.fields.password', '123456789')
+        ->set('form.fields.password', '123456789')
         ->call('save')
-        ->assertHasNoErrors(['resource.fields.password']);
+        ->assertHasNoErrors(['form.fields.password']);
 
     // assert in db has post with type DateModel
     $this->assertDatabaseHas('posts', ['type' => 'PasswordModel']);
@@ -118,7 +118,7 @@ test('password field gets not overwritten if saved as null', function () {
         ->assertSee('Password for Test')
         ->assertSeeHtml('type="password"')
         // assert that the password field is empty
-        ->assertSet('resource.fields.password', null)
+        ->assertSet('form.fields.password', null)
         ->call('save');
 
     $post = PasswordFieldModel::first();
@@ -138,9 +138,9 @@ test('password field gets not overwritten if saved as empty string', function ()
 
     $component = Livewire::test(Create::class, ['slug' => 'Post'])
         ->call('setModel', $model)
-        ->set('resource.fields.password', '123456789')
+        ->set('form.fields.password', '123456789')
         ->call('save')
-        ->assertHasNoErrors(['resource.fields.number']);
+        ->assertHasNoErrors(['form.fields.number']);
 
     // assert in db has post with type DateModel
     $this->assertDatabaseHas('posts', ['type' => 'PasswordModel']);
@@ -165,9 +165,9 @@ test('password field gets not overwritten if saved as empty string', function ()
         ->assertSee('Password for Test')
         ->assertSeeHtml('type="password"')
         // assert that the password field is empty
-        ->assertSet('resource.fields.password', "")
+        ->assertSet('form.fields.password', "")
         ->call('save')
-        ->assertHasNoErrors(['resource.fields.password']);
+        ->assertHasNoErrors(['form.fields.password']);
 
     $post = PasswordFieldModel::first();
 
@@ -194,9 +194,9 @@ test('user password field gets not overwritten if saved as empty string', functi
         ->assertSee('Password')
         ->assertSeeHtml('type="password"')
         // assert that the password field is empty
-        ->assertSet('resource.fields.password', "")
+        ->assertSet('form.fields.password', "")
         ->call('save')
-        ->assertHasNoErrors(['resource.fields.password']);
+        ->assertHasNoErrors(['form.fields.password']);
 
     $user = $user->refresh();
 

@@ -57,7 +57,7 @@ test('Number Field can be rendered', function () {
         ->assertSee('CHF')
         ->assertSee('%')
         ->call('save')
-        ->assertHasNoErrors(['resource.fields.number']);
+        ->assertHasNoErrors(['form.fields.number']);
 
     // assert in db has post with type DateModel
     $this->assertDatabaseHas('posts', ['type' => 'NumberModel']);
@@ -67,12 +67,12 @@ test('Number Field can be rendered', function () {
     // Assert that $model->fields['number'] is null
     $this->assertNull($model->fields['number']);
 
-    $component->set('resource.fields.number', '2021-01-01')
+    $component->set('form.fields.number', '2021-01-01')
         ->call('save')
-        ->assertHasErrors(['resource.fields.number'])
-        ->set('resource.fields.number', '5')
+        ->assertHasErrors(['form.fields.number'])
+        ->set('form.fields.number', '5')
         ->call('save')
-        ->assertHasNoErrors(['resource.fields.number']);
+        ->assertHasNoErrors(['form.fields.number']);
 
     // get the datemodel from db
     $model = NumberFieldModel::orderBy('id', 'desc')->first();

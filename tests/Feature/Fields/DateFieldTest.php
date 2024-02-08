@@ -50,14 +50,14 @@ test('Date Field in Livewire Component', function () {
         ->assertSee('Date for Test')
         ->assertSeeHtml('<svg class="w-5 h-5 text-gray-400"')
         ->call('save')
-        ->assertHasNoErrors(['resource.fields.date']);
+        ->assertHasNoErrors(['form.fields.date']);
 
     // assert in db has post with type DateModel
     $this->assertDatabaseHas('posts', ['type' => 'DateModel']);
 
-    $component->set('resource.fields.date', '2021-01-01')
+    $component->set('form.fields.date', '2021-01-01')
         ->call('save')
-        ->assertHasNoErrors(['resource.fields.date']);
+        ->assertHasNoErrors(['form.fields.date']);
 
     // get the datemodel from db
     $dateModel = DateFieldModel::orderBy('id', 'desc')->first();
@@ -90,5 +90,5 @@ test('Date Field in View', function () {
     //     ->assertSee('Date for Test')
     //     ->assertSee('01.01.2021')
     //     ->call('save')
-    //     ->assertHasNoErrors(['resource.fields.date']);
+    //     ->assertHasNoErrors(['form.fields.date']);
 });

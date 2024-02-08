@@ -53,18 +53,18 @@ test('Email Field', function () {
         ->assertSee('Email for Test')
         ->assertSeeHtml('type="email"')
         ->call('save')
-        ->assertHasErrors(['resource.fields.email'])
-        ->set('resource.fields.email', 'hello')
+        ->assertHasErrors(['form.fields.email'])
+        ->set('form.fields.email', 'hello')
         ->call('save')
-        ->assertHasErrors(['resource.fields.email'])
+        ->assertHasErrors(['form.fields.email'])
 
-        ->set('resource.fields.email', 'example@example.com ') // should trim
+        ->set('form.fields.email', 'example@example.com ') // should trim
         ->call('save')
-        ->assertHasErrors(['resource.fields.email'])
+        ->assertHasErrors(['form.fields.email'])
 
-        ->set('resource.fields.email', 'example@example.com')
+        ->set('form.fields.email', 'example@example.com')
         ->call('save')
-        ->assertHasNoErrors(['resource.fields.email']);
+        ->assertHasNoErrors(['form.fields.email']);
 
     // assert in db has post with type DateModel
     $this->assertDatabaseHas('posts', ['type' => 'EmailModel']);

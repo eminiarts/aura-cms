@@ -120,9 +120,9 @@ test('defer should be false on field that is in conditional logic - create view'
     $component = Livewire::test(Create::class, ['slug' => 'TestModel'])
         ->assertSee('Title*')
         ->assertSee('Type')
-        ->assertSeeHtml('wire:model="resource.fields.select_type"')
+        ->assertSeeHtml('wire:model="form.fields.select_type"')
         ->assertDontSee('Advanced Text')
-        ->set('resource.fields.select_type', 'advanced');
+        ->set('form.fields.select_type', 'advanced');
     // Somehow it does not work
     // ->assertSee('Advanced Text')
 
@@ -162,9 +162,9 @@ test('defer should be false on field that is in conditional logic - edit view', 
     $component = Livewire::test(Edit::class, ['slug' => 'TestModel', 'id' => $post->id])
         ->assertSee('Title')
         ->assertSee('Type')
-        ->assertSeeHtml('wire:model="resource.fields.select_type"')
+        ->assertSeeHtml('wire:model="form.fields.select_type"')
         ->assertDontSee('Advanced Text')
-        ->set('resource.fields.select_type', 'advanced');
+        ->set('form.fields.select_type', 'advanced');
     // Somehow it does not work
     // ->assertSee('Advanced Text')
 

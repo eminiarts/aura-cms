@@ -18,7 +18,7 @@
 
     if($api) {
         $values = [];
-        $selectedValues = $field['field']->selectedValues($field['resource'], optional($this->resource['fields'])[$field['slug']]);
+        $selectedValues = $field['field']->selectedValues($field['resource'], optional($this->form['fields'])[$field['slug']]);
     } else {
         // $values = $field['field']->values($field['model']);
         $values = $field['field']->values($field['resource']);
@@ -46,7 +46,7 @@
     wire:ignore
     class="w-full"
     x-data="{
-        value: $wire.entangle('resource.fields.{{ $field['slug'] }}'),
+        value: $wire.entangle('form.fields.{{ $field['slug'] }}'),
         items: @js($values),
         selectedItems: @js($selectedValues),
         api: @js($api),
@@ -75,7 +75,7 @@
             this.$nextTick(() => {
                 this.value = newOrder;
                 this.selectedItems = newOrder.map(id => this.items.find(item => item.id === id));
-                // this.$wire.set('resource.fields.{{ $field['slug'] }}', validIds);
+                // this.$wire.set('form.fields.{{ $field['slug'] }}', validIds);
                 this.showListbox = false;
             });
         },
@@ -97,8 +97,8 @@
             }
 
             Livewire.on('resourceCreated', data => {
-                this.items.push({ id: data.resource.id, title: data.title });
-                this.toggleItem({ id: data.resource.id, title: data.title });
+                this.items.push({ id: data.form.id, title: data.title });
+                this.toggleItem({ id: data.form.id, title: data.title });
             })
 
             // Watch this.search and fetch new values, debounce for 500ms
