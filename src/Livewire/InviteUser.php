@@ -15,7 +15,7 @@ class InviteUser extends ModalComponent
     use AuthorizesRequests;
     use InputFields;
 
-    public $resource = [
+    public $form = [
         'fields' => [
             'email' => '',
             'role' => '',
@@ -89,7 +89,6 @@ class InviteUser extends ModalComponent
         $this->validate();
 
         $team = auth()->user()->currentTeam;
-        // dd($this->rules());
 
         $this->authorize('invite-users', $team);
 

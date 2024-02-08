@@ -55,8 +55,6 @@
             @endif
             </div>
 
-            {{-- @dump($this->createFields) --}}
-
             <div class="flex flex-wrap items-start -mx-2">
            @foreach($this->createFields as $key => $field)
             @checkCondition($model, $field, $form)
