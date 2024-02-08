@@ -20,7 +20,7 @@ class View extends Component
 
     public $model;
 
-    public $resource;
+    public $form;
 
     public $slug;
 
@@ -35,7 +35,7 @@ class View extends Component
 
     public function getField($slug)
     {
-        return $this->resource['fields'][$slug];
+        return $this->form['fields'][$slug];
     }
 
     public function mount($slug, $id)
@@ -48,17 +48,17 @@ class View extends Component
         $this->authorize('view', $this->model);
 
         // Array instead of Eloquent Model
-        $this->resource = $this->model->attributesToArray();
+        $this->form = $this->model->attributesToArray();
 
-        $this->resource['terms'] = $this->model->terms;
-        $this->resource['terms']['tag'] = $this->resource['terms']['tag'] ?? null;
-        $this->resource['terms']['category'] = $this->resource['terms']['category'] ?? null;
+        $this->form['terms'] = $this->model->terms;
+        $this->form['terms']['tag'] = $this->form['terms']['tag'] ?? null;
+        $this->form['terms']['category'] = $this->form['terms']['category'] ?? null;
     }
 
     public function reload()
     {
         $this->model = $this->model->fresh();
-        $this->resource = $this->model->attributesToArray();
+        $this->form = $this->model->attributesToArray();
 
         $this->dispatch('refreshComponent');
     }

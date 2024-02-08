@@ -60,14 +60,14 @@ test('Slug Field Test', function () {
         ->assertSeeHtml('type="text"')
         ->assertSee('Slug')
         ->call('save')
-        ->assertHasErrors(['resource.fields.slug']);
+        ->assertHasErrors(['form.fields.slug']);
 
     // Test custom slug
     $component
-        ->set('resource.fields.text', 'Custom Title')
-        ->set('resource.fields.slug', 'custom-title')
+        ->set('form.fields.text', 'Custom Title')
+        ->set('form.fields.slug', 'custom-title')
         ->call('save')
-        ->assertHasNoErrors(['resource.fields.slug']);
+        ->assertHasNoErrors(['form.fields.slug']);
 
     // Assert that the model was saved to the database with the custom slug
     $this->assertDatabaseHas('posts', ['type' => 'SlugModel', 'slug' => 'custom-title']);
@@ -85,9 +85,9 @@ test('Slug Field Test', function () {
 
     // If we call the edit view, the password field should be empty
     $component = Livewire::test(Edit::class, ['slug' => 'SlugModel', 'id' => $post->id])
-        ->set('resource.fields.slug', 'toggle-slug')
+        ->set('form.fields.slug', 'toggle-slug')
         ->call('save')
-        ->assertHasNoErrors(['resource.fields.slug']);
+        ->assertHasNoErrors(['form.fields.slug']);
 
     // Get the saved model
     $post = $post->refresh();
@@ -96,9 +96,9 @@ test('Slug Field Test', function () {
     $this->assertEquals('toggle-slug', $post->slug);
 
     // Test validation
-    $component->set('resource.fields.slug', 'invalid slug')
+    $component->set('form.fields.slug', 'invalid slug')
         ->call('save')
-        ->assertHasErrors(['resource.fields.slug']);
+        ->assertHasErrors(['form.fields.slug']);
 
     // Assert that the model was not saved to the database
     $this->assertDatabaseMissing('posts', ['type' => 'SlugModel', 'fields' => json_encode(['slug' => 'invalid slug'])]);

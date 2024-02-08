@@ -30,27 +30,27 @@ class EditResourceField extends Component
     public function activate($params)
     {
         $this->fieldSlug = $params['fieldSlug'];
-        $this->resource['fields'] = $params['field'];
+        $this->form['fields'] = $params['field'];
         $this->field = $params['field'];
 
         // Check if field is an input field
         if (app($this->field['type'])->isInputField()) {
-            // if $this->resource['fields']['on_index'] is not set, set it to true (default)
-            if (! isset($this->resource['fields']['on_index'])) {
-                $this->resource['fields']['on_index'] = true;
+            // if $this->form['fields']['on_index'] is not set, set it to true (default)
+            if (! isset($this->form['fields']['on_index'])) {
+                $this->form['fields']['on_index'] = true;
             }
             // on_forms
-            if (! isset($this->resource['fields']['on_forms'])) {
-                $this->resource['fields']['on_forms'] = true;
+            if (! isset($this->form['fields']['on_forms'])) {
+                $this->form['fields']['on_forms'] = true;
             }
             // on_view
-            if (! isset($this->resource['fields']['on_view'])) {
-                $this->resource['fields']['on_view'] = true;
+            if (! isset($this->form['fields']['on_view'])) {
+                $this->form['fields']['on_view'] = true;
             }
 
             // searchable
-            if (! isset($this->resource['fields']['searchable'])) {
-                $this->resource['fields']['searchable'] = false;
+            if (! isset($this->form['fields']['searchable'])) {
+                $this->form['fields']['searchable'] = false;
             }
         }
         $this->updatedField();
@@ -59,7 +59,7 @@ class EditResourceField extends Component
 
     public function deleteField($slug)
     {
-        $this->dispatch('deleteField', ['slug' => $this->fieldSlug, 'value' => $this->resource['fields']]);
+        $this->dispatch('deleteField', ['slug' => $this->fieldSlug, 'value' => $this->form['fields']]);
 
         $this->open = false;
     }
@@ -84,7 +84,7 @@ class EditResourceField extends Component
         }
 
         $this->field = $field;
-        $this->resource['fields'] = $field;
+        $this->form['fields'] = $field;
         $this->updatedField();
 
         // $this->dispatch('refreshComponent');
@@ -98,13 +98,13 @@ class EditResourceField extends Component
     public function rules()
     {
         $rules = Arr::dot([
-            'resource.fields' => app($this->field['type'])->validationRules(),
+            'form.fields' => app($this->field['type'])->validationRules(),
         ]);
 
-        $rules['resource.fields.slug'] = [
+        $rules['form.fields.slug'] = [
             'required',
             function ($attribute, $value, $fail) {
-                if (collect($this->resource['fields'])->pluck('slug')->duplicates()->values()->contains($value)) {
+                if (collect($this->form['fields'])->pluck('slug')->duplicates()->values()->contains($value)) {
                     $fail('The '.$attribute.' can not be used twice.');
                 }
 
@@ -121,15 +121,15 @@ class EditResourceField extends Component
     public function save()
     {
         // Validate
-        // remove all NULL values from $this->resource['fields']
-        $this->resource['fields'] = array_filter($this->resource['fields'], function ($value) {
+        // remove all NULL values from $this->form['fields']
+        $this->form['fields'] = array_filter($this->form['fields'], function ($value) {
             return ! is_null($value);
         });
 
         $this->validate();
 
         // emit event to parent with slug and value
-        $this->dispatch('saveField', ['slug' => $this->fieldSlug, 'value' => $this->resource['fields']]);
+        $this->dispatch('saveField', ['slug' => $this->fieldSlug, 'value' => $this->form['fields']]);
 
         $this->open = false;
     }
@@ -143,10 +143,10 @@ class EditResourceField extends Component
         }
         $fields = app($this->field['type'])->inputFields()->pluck('slug');
 
-        // fields are not set on $this->resource['fields'] set it to false
+        // fields are not set on $this->form['fields'] set it to false
         foreach ($fields as $field) {
-            if (! isset($this->resource['fields'][$field])) {
-                $this->resource['fields'][$field] = null;
+            if (! isset($this->form['fields'][$field])) {
+                $this->form['fields'][$field] = null;
             }
         }
     }
@@ -157,6 +157,6 @@ class EditResourceField extends Component
         // $this->validate();
 
         // emit event to parent with slug and value
-        $this->dispatch('saveField', ['slug' => $this->fieldSlug, 'value' => $this->resource['fields']]);
+        $this->dispatch('saveField', ['slug' => $this->fieldSlug, 'value' => $this->form['fields']]);
     }
 }

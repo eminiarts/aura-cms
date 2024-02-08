@@ -56,11 +56,11 @@ test('Boolean Field Test', function () {
         ->assertSeeHtml('bg-gray-300')
         ->assertSeeHtml('bg-primary-600')
         ->call('save')
-        ->assertHasNoErrors(['resource.fields.boolean']);
+        ->assertHasNoErrors(['form.fields.boolean']);
 
     //->assertSeeHtml('type="email"')
     //->call('save')
-    //->assertHasNoErrors(['resource.fields.email']);
+    //->assertHasNoErrors(['form.fields.email']);
 
     // assert in db has post with type DateModel
     $this->assertDatabaseHas('posts', ['type' => 'BooleanModel']);

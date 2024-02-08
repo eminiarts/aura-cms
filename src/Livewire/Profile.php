@@ -26,13 +26,13 @@ class Profile extends Component
     public $model;
 
     // protected $validationAttributes = [
-    //     'resource.fields.signatur' => 'signatur',
+    //     'form.fields.signatur' => 'signatur',
     // ];
 
     // protected function validationAttributes()
     // {
     //     return [
-    //         'resource.fields.signatur' => __('Signature'),
+    //         'form.fields.signatur' => __('Signature'),
     //     ];
     // }
 
@@ -43,7 +43,7 @@ class Profile extends Component
      */
     public $password = '';
 
-    public $resource = [
+    public $form = [
         'fields' => [],
     ];
 
@@ -142,7 +142,7 @@ class Profile extends Component
             [
                 'name' => 'Current Password',
                 'type' => 'Eminiarts\\Aura\\Fields\\Password',
-                'validation' => ['required_with:resource.fields.password', 'current_password'],
+                'validation' => ['required_with:form.fields.password', 'current_password'],
                 'slug' => 'current_password',
                 'on_index' => false,
             ],
@@ -156,7 +156,7 @@ class Profile extends Component
             [
                 'name' => 'Confirm Password',
                 'type' => 'Eminiarts\\Aura\\Fields\\Password',
-                'validation' => ['required_with:resource.fields.password', 'same:resource.fields.password'],
+                'validation' => ['required_with:form.fields.password', 'same:form.fields.password'],
                 'slug' => 'password_confirmation',
                 'on_index' => false,
             ],
@@ -218,7 +218,7 @@ class Profile extends Component
     public function getFieldsProperty()
     {
         return $this->inputFields()->mapWithKeys(function ($field) {
-            return [$field['slug'] => $this->resource['fields'][$field['slug']] ?? null];
+            return [$field['slug'] => $this->form['fields'][$field['slug']] ?? null];
         });
     }
 
@@ -238,9 +238,9 @@ class Profile extends Component
 
         $this->model = auth()->user()->resource;
 
-        $this->resource = $this->model->attributesToArray();
+        $this->form = $this->model->attributesToArray();
 
-        // dd($this->resource['fields'], $this->model);
+        // dd($this->form['fields'], $this->model);
     }
 
     public function render()
@@ -262,7 +262,7 @@ class Profile extends Component
 
     public function rules()
     {
-        return $this->resourceFieldValidationRules();
+        return $this->formFieldValidationRules();
     }
 
     public function save()
@@ -272,38 +272,38 @@ class Profile extends Component
 
         // dd('hier');
 
-        // if $this->resource['fields']['current_password'] and  is set, save password
-        if (optional($this->resource['fields'])['current_password'] && optional($this->resource['fields'])['password']) {
+        // if $this->form['fields']['current_password'] and  is set, save password
+        if (optional($this->form['fields'])['current_password'] && optional($this->form['fields'])['password']) {
 
             $this->model->update([
-                'password' => bcrypt($this->resource['fields']['password']),
+                'password' => bcrypt($this->form['fields']['password']),
             ]);
 
             // unset password fields
-            unset($this->resource['fields']['current_password']);
-            unset($this->resource['fields']['password']);
-            unset($this->resource['fields']['password_confirmation']);
+            unset($this->form['fields']['current_password']);
+            unset($this->form['fields']['password']);
+            unset($this->form['fields']['password_confirmation']);
 
             // Logout other devices
 
             $this->logoutOtherBrowserSessions();
 
         }
-        // dd('here2', $this->resource['fields']);
-        if (empty(optional($this->resource['fields'])['password'])) {
-            unset($this->resource['fields']['password']);
+        // dd('here2', $this->form['fields']);
+        if (empty(optional($this->form['fields'])['password'])) {
+            unset($this->form['fields']['password']);
         }
 
-        $this->model->update($this->resource);
+        $this->model->update($this->form);
 
-        // dd($this->resource['fields'], $this->rules(), $this->model);
+        // dd($this->form['fields'], $this->rules(), $this->model);
         return $this->notify(__('Successfully updated'));
     }
 
     public function updateField($data)
     {
         // dd($data);
-        $this->resource['fields'][$data['slug']] = $data['value'];
+        $this->form['fields'][$data['slug']] = $data['value'];
         // $this->save();
 
         $this->dispatch('selectedMediaUpdated', [

@@ -13,7 +13,7 @@ class CreateResource extends ModalComponent
     use FieldsOnComponent;
     use InputFields;
 
-    public $resource = [
+    public $form = [
         'fields' => [
             'name' => '',
         ],
@@ -47,7 +47,7 @@ class CreateResource extends ModalComponent
     public function rules()
     {
         return Arr::dot([
-            'resource.fields' => $this->validationRules(),
+            'form.fields' => $this->validationRules(),
         ]);
     }
 
@@ -58,7 +58,7 @@ class CreateResource extends ModalComponent
         $this->validate();
 
         Artisan::call('aura:resource', [
-            'name' => $this->resource['fields']['name'],
+            'name' => $this->form['fields']['name'],
         ]);
 
         Artisan::call('cache:clear');

@@ -23,15 +23,15 @@ class EditOperation extends Component
 
         // dd($this->model->validationRules());
 
-        $this->resource['fields'] = $this->model->fields;
+        $this->form['fields'] = $this->model->fields;
 
         // watch open property and trigger function on change
         // $this->watch('open', 'validateBeforeClosing');
 
-        // dd($this->resource['fields']);
+        // dd($this->form['fields']);
 
         // Merge fields from type with fields from model
-        // $this->resource['fields'] = array_merge($this->resource['fields'], $this->model->type->fields);
+        // $this->form['fields'] = array_merge($this->form['fields'], $this->model->type->fields);
 
         $this->open = true;
     }
@@ -69,7 +69,7 @@ class EditOperation extends Component
     public function rules()
     {
         return Arr::dot([
-            'resource.fields' => $this->model->validationRules(),
+            'form.fields' => $this->model->validationRules(),
         ]);
     }
 
@@ -81,10 +81,10 @@ class EditOperation extends Component
         $this->validate();
 
         // dd($this->resource, $this->model);
-        $this->model->update($this->resource['fields']);
+        $this->model->update($this->form['fields']);
 
         // emit event to parent with slug and value
-        // $this->dispatch('saveField', ['slug' => $this->resource['key'], 'value' => $this->resource['fields']]);
+        // $this->dispatch('saveField', ['slug' => $this->resource['key'], 'value' => $this->form['fields']]);
 
         // emit to parent, that operation has been updated
 
@@ -98,7 +98,7 @@ class EditOperation extends Component
     public function updateType()
     {
         // when type is changed, update the fields
-        $this->model->update(['type' => $this->resource['fields']['type']]);
+        $this->model->update(['type' => $this->form['fields']['type']]);
 
         $this->dispatch('updatedOperation');
     }

@@ -4,7 +4,7 @@ if(optional($field)['api']) {
     $values = [];
 
     // selected values
-    $selectedValues = $field['field']->selectedValues($field['resource'], $this->resource['fields'][$field['slug']]);
+    $selectedValues = $field['field']->selectedValues($field['resource'], $this->form['fields'][$field['slug']]);
 } else {
     // $values = $field['field']->values($field['model']);
     $values = $field['field']->values($field['resource']);
@@ -15,14 +15,14 @@ if(optional($field)['api']) {
 {{-- @dump($values)
 @dump($field)
 @dump($selectedValues) --}}
-@dump($this->resource['fields'][$field['slug']])
+@dump($this->form['fields'][$field['slug']])
 
 <x-aura::fields.wrapper :field="$field">
 <div
     wire:ignore
     class="w-full"
     x-data="{
-        value: $wire.entangle('resource.fields.{{ $field['slug'] }}'),
+        value: $wire.entangle('form.fields.{{ $field['slug'] }}'),
         items: {{ Js::from($values) }},
         selectedItems: {{ Js::from($selectedValues) }},
         api: {{ optional($field)['api'] ? 'true' : 'false' }},

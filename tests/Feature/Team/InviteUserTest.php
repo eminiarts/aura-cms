@@ -29,11 +29,11 @@ test('user can be invited', function () {
     // Test InviteUser Livewire Component
     $component = Livewire::test(InviteUser::class)
         ->call('save')
-        ->assertHasErrors(['resource.fields.email' => 'required'])
-        ->set('resource.fields.email', 'test@test.ch')
+        ->assertHasErrors(['form.fields.email' => 'required'])
+        ->set('form.fields.email', 'test@test.ch')
         ->call('save')
-        ->assertHasErrors(['resource.fields.role' => 'required'])
-        ->set('resource.fields.role', 1)
+        ->assertHasErrors(['form.fields.role' => 'required'])
+        ->set('form.fields.role', 1)
         ->call('save')
         ->assertHasNoErrors();
 
@@ -62,11 +62,11 @@ test('user gets correct role', function () {
     // Test InviteUser Livewire Component
     $component = Livewire::test(InviteUser::class)
         ->call('save')
-        ->assertHasErrors(['resource.fields.email' => 'required'])
-        ->set('resource.fields.email', 'test@test.ch')
+        ->assertHasErrors(['form.fields.email' => 'required'])
+        ->set('form.fields.email', 'test@test.ch')
         ->call('save')
-        ->assertHasErrors(['resource.fields.role' => 'required'])
-        ->set('resource.fields.role', $role->id)
+        ->assertHasErrors(['form.fields.role' => 'required'])
+        ->set('form.fields.role', $role->id)
         ->call('save')
         ->assertHasNoErrors();
 
@@ -169,7 +169,7 @@ test('user email is prefilled in the registration', function () {
 
 test('user_invitations can be enabled', function () {
     livewire(Config::class)
-        ->set('resource.fields.user_invitations', true)
+        ->set('form.fields.user_invitations', true)
         ->call('save')
         ->assertHasNoErrors();
 
@@ -180,7 +180,7 @@ test('user_invitations can be enabled', function () {
 
 test('user_invitations can be disabled', function () {
     livewire(Config::class)
-        ->set('resource.fields.user_invitations', true)
+        ->set('form.fields.user_invitations', true)
         ->call('save')
         ->assertHasNoErrors();
 
@@ -254,12 +254,12 @@ test('email and role are required in the invite user component', function () {
     $team = Team::first();
 
     livewire(InviteUser::class, ['team' => $team])
-        ->set('resource.fields.email', '')
-        ->set('resource.fields.role', '')
+        ->set('form.fields.email', '')
+        ->set('form.fields.role', '')
         ->call('save')
         ->assertHasErrors([
-            'resource.fields.email',
-            'resource.fields.role',
+            'form.fields.email',
+            'form.fields.role',
         ]);
 
     $user = User::factory()->create(['email' => 'invited@test.com']);
@@ -271,7 +271,7 @@ test('email and role are required in the invite user component', function () {
         ]])
         ->call('save')
         ->assertHasNoErrors([
-            'resource.fields.email',
+            'form.fields.email',
         ]);
 
     // Attach the user to the team
@@ -286,6 +286,6 @@ test('email and role are required in the invite user component', function () {
         ]])
         ->call('save')
         ->assertHasErrors([
-            'resource.fields.email',
+            'form.fields.email',
         ]);
 });

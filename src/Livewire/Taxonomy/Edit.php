@@ -37,7 +37,7 @@ class Edit extends Component
         $this->resource = $this->model->toArray();
 
         // dd($this->resource);
-        $this->resource['fields'] = $this->model->toArray();
+        $this->form['fields'] = $this->model->toArray();
     }
 
     public function render()
@@ -49,7 +49,7 @@ class Edit extends Component
     {
         return Arr::dot([
             'resource.terms' => '',
-            'resource.fields' => $this->model->validationRules(),
+            'form.fields' => $this->model->validationRules(),
         ]);
     }
 
@@ -58,9 +58,9 @@ class Edit extends Component
         $this->validate();
 
         // Set Fields
-        $this->resource['fields']['taxonomy'] = $this->slug;
+        $this->form['fields']['taxonomy'] = $this->slug;
 
-        $this->model->update($this->resource['fields']);
+        $this->model->update($this->form['fields']);
 
         $this->notify(__('Successfully updated'));
     }

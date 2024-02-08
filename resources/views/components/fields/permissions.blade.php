@@ -1,6 +1,6 @@
 @aware(['model'])
 @php
-    $name = 'resource.fields.'  . optional($field)['slug'];
+    $name = 'form.fields.'  . optional($field)['slug'];
 
     //  dd($name);
 

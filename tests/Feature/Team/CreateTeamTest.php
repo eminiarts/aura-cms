@@ -22,8 +22,8 @@ test('team can be created', function () {
     expect(DB::table('posts')->where('type', 'Role')->count())->toBe(1);
 
     $component = livewire(Create::class, ['slug' => 'Team'])
-        ->set('resource.fields.name', 'Test Team')
-        ->set('resource.fields.description', 'Test Description')
+        ->set('form.fields.name', 'Test Team')
+        ->set('form.fields.description', 'Test Description')
         ->call('save')
         ->assertHasNoErrors();
 

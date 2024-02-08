@@ -1,9 +1,9 @@
 <x-aura::fields.wrapper :field="$field">
     <div x-data="{ 
         @if(optional($field)['live'] === true)
-        value: $wire.entangle('resource.fields.{{ optional($field)['slug'] }}').live,
+        value: $wire.entangle('form.fields.{{ optional($field)['slug'] }}').live,
         @else
-        value: $wire.entangle('resource.fields.{{ optional($field)['slug'] }}'),
+        value: $wire.entangle('form.fields.{{ optional($field)['slug'] }}'),
         @endif
     }"
         class="" x-id="['boolean']">

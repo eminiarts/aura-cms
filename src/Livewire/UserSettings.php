@@ -15,7 +15,7 @@ class UserSettings extends Component
 
     public $model;
 
-    public $resource = [
+    public $form = [
         'fields' => [],
     ];
 
@@ -67,7 +67,7 @@ class UserSettings extends Component
             'value' => [],
         ]);
 
-        $this->resource['fields'] = json_decode($this->model->value, true);
+        $this->form['fields'] = json_decode($this->model->value, true);
     }
 
     public function render()
@@ -90,7 +90,7 @@ class UserSettings extends Component
     public function rules()
     {
         return Arr::dot([
-            'resource.fields' => $this->validationRules(),
+            'form.fields' => $this->validationRules(),
         ]);
     }
 
@@ -98,7 +98,7 @@ class UserSettings extends Component
     {
         // Save Fields as user-settings in Option table
         $option = 'user-settings';
-        $value = json_encode($this->resource['fields']);
+        $value = json_encode($this->form['fields']);
         $o = Option::updateOrCreate(['name' => $option], ['value' => $value]);
 
         // $this->validate();
@@ -110,7 +110,7 @@ class UserSettings extends Component
         // $this->resource->save();
 
         // Artisan::call('make:resource', [
-        //     'name' => $this->resource['fields']['name'],
+        //     'name' => $this->form['fields']['name'],
         // ]);
 
         // return $this->notify('Created successfully.');
@@ -119,9 +119,9 @@ class UserSettings extends Component
     // Select Attachment
     public function updateField($data)
     {
-        $this->resource['fields'][$data['slug']] = $data['value'];
+        $this->form['fields'][$data['slug']] = $data['value'];
 
-        // dd($this->resource['fields'][$data['slug']], $data['value']);
+        // dd($this->form['fields'][$data['slug']], $data['value']);
         // dd($this->resource);
         $this->save();
     }

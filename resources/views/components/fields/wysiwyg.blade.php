@@ -12,9 +12,9 @@
         }"
        x-ref="quill"
        wire:ignore
-       wire:model="resource.fields.{{ optional($field)['slug'] }}"
+       wire:model="form.fields.{{ optional($field)['slug'] }}"
     >
-        {!! $this->resource['fields'][$field['slug']] !!}
+        {!! $this->form['fields'][$field['slug']] !!}
     </div>
 
 
