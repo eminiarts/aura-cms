@@ -274,7 +274,7 @@ test('scoped posts', function () {
     $user2->refresh();
 
     // User 1
-    $this->withoutExceptionHandling();
+    // $this->withoutExceptionHandling();
 
     // Access Index Page
     $response = $this->actingAs($user)->get(route('aura.resource.index', ['slug' => $post->type]));
