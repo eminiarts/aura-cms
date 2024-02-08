@@ -106,7 +106,7 @@ test('check default per page value', function () {
     $this->assertEquals(10, $defaultPerPage);
 });
 
-test('field postFieldValidationRules prepend post.fields', function () {
+test('field postFieldValidationRules prepend resource.fields', function () {
     $inputFields = new TestInputFieldsClass();
 
     $rules = $inputFields->postFieldValidationRules();

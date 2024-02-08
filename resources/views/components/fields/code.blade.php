@@ -25,7 +25,7 @@
                     $dispatch('input', { value: editor.getValue() });
                 });
             "
-            wire:model="post.fields.{{ optional($field)['slug'] }}"
+            wire:model="resource.fields.{{ optional($field)['slug'] }}"
         >
         
     

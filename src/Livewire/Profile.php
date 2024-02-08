@@ -142,7 +142,7 @@ class Profile extends Component
             [
                 'name' => 'Current Password',
                 'type' => 'Eminiarts\\Aura\\Fields\\Password',
-                'validation' => ['required_with:post.fields.password', 'current_password'],
+                'validation' => ['required_with:resource.fields.password', 'current_password'],
                 'slug' => 'current_password',
                 'on_index' => false,
             ],
@@ -156,7 +156,7 @@ class Profile extends Component
             [
                 'name' => 'Confirm Password',
                 'type' => 'Eminiarts\\Aura\\Fields\\Password',
-                'validation' => ['required_with:post.fields.password', 'same:post.fields.password'],
+                'validation' => ['required_with:resource.fields.password', 'same:resource.fields.password'],
                 'slug' => 'password_confirmation',
                 'on_index' => false,
             ],
