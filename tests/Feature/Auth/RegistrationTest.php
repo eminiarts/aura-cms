@@ -26,7 +26,7 @@ test('new users can register', function () {
     // Create team
     Team::factory()->create();
 
-    $response = $this->resource(route('aura.register'), [
+    $response = $this->post(route('aura.register'), [
         'name' => 'Test User',
         'team' => 'Test Team',
         'email' => 'test@example.com',

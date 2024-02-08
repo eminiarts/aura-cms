@@ -27,7 +27,7 @@ beforeEach(function () {
 
 test('user can be invited', function () {
     // Test InviteUser Livewire Component
-    $component = Livewire::test(InviteUser::class, ['resource' => 'user'])
+    $component = Livewire::test(InviteUser::class)
         ->call('save')
         ->assertHasErrors(['resource.fields.email' => 'required'])
         ->set('resource.fields.email', 'test@test.ch')
@@ -60,7 +60,7 @@ test('user gets correct role', function () {
     ]);
 
     // Test InviteUser Livewire Component
-    $component = Livewire::test(InviteUser::class, ['resource' => 'user'])
+    $component = Livewire::test(InviteUser::class)
         ->call('save')
         ->assertHasErrors(['resource.fields.email' => 'required'])
         ->set('resource.fields.email', 'test@test.ch')
