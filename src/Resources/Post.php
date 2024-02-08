@@ -46,7 +46,7 @@ class Post extends Resource
 
     public static $fields = [];
 
-    public static ?string $slug = 'resource';
+    public static ?string $slug = 'post';
 
     public static ?int $sort = 50;
 
