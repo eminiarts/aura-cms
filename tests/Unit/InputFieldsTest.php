@@ -106,10 +106,10 @@ test('check default per page value', function () {
     $this->assertEquals(10, $defaultPerPage);
 });
 
-test('field postFieldValidationRules prepend resource.fields', function () {
+test('field resourceFieldValidationRules prepend resource.fields', function () {
     $inputFields = new TestInputFieldsClass();
 
-    $rules = $inputFields->postFieldValidationRules();
+    $rules = $inputFields->resourceFieldValidationRules();
 
     expect($rules)->toBe([
         'resource.fields.title' => 'required|string|max:255',
@@ -121,7 +121,7 @@ test('field validation allows array of rules', function () {
     $inputFields = new TestInputFieldsClass2();
 
     // Override the getFields method to return an array of rules
-    $rules = $inputFields->postFieldValidationRules();
+    $rules = $inputFields->resourceFieldValidationRules();
 
     expect($rules)->toBeArray();
     expect($rules)->toHaveCount(2);
