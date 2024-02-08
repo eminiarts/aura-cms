@@ -4,20 +4,20 @@
 ])
 
 @php
-$url = null;
+    $url = null;
 
-try {
-    $attachment = Eminiarts\Aura\Resources\Attachment::find($id);
+    try {
+        $attachment = Aura\Base\Resources\Attachment::find($id);
 
-    if ($attachment) {
-        $url = $attachment->path($size);
+        if ($attachment) {
+            $url = $attachment->path($size);
+        }
+    } catch (\Exception $e) {
+        // Handle the exception or log error
+        // error_log($e->getMessage());
     }
-} catch (\Exception $e) {
-    // Handle the exception or log error
-    // error_log($e->getMessage());
-}
 @endphp
 
 @if ($url)
-  <img src="{{ $url }}" alt="" {{ $attributes->merge(['class' => '']) }}>
+    <img src="{{ $url }}" alt="" {{ $attributes->merge(['class' => '']) }}>
 @endif

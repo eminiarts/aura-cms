@@ -1,6 +1,6 @@
 <?php
 
-use Eminiarts\Aura\Resource;
+use Aura\Base\Resource;
 
 // current
 // uses()->group('current');
@@ -16,13 +16,13 @@ class FieldsAfterRepeaterModel extends Resource
         return [
             [
                 'name' => 'Options',
-                'type' => 'Eminiarts\\Aura\\Fields\\Repeater',
+                'type' => 'Aura\\Base\\Fields\\Repeater',
                 'validation' => '',
                 'slug' => 'options',
             ],
             [
                 'name' => 'Value',
-                'type' => 'Eminiarts\\Aura\\Fields\\Text',
+                'type' => 'Aura\\Base\\Fields\\Text',
                 'validation' => '',
                 'slug' => 'value',
                 'style' => [
@@ -32,7 +32,7 @@ class FieldsAfterRepeaterModel extends Resource
             ],
             [
                 'name' => 'Name',
-                'type' => 'Eminiarts\\Aura\\Fields\\Text',
+                'type' => 'Aura\\Base\\Fields\\Text',
                 'validation' => '',
                 'slug' => 'name',
                 'style' => [
@@ -43,7 +43,7 @@ class FieldsAfterRepeaterModel extends Resource
 
             [
                 'name' => 'Multiple',
-                'type' => 'Eminiarts\\Aura\\Fields\\Boolean',
+                'type' => 'Aura\\Base\\Fields\\Boolean',
                 'validation' => '',
                 'exclude_from_nesting' => true,
                 'slug' => 'multiple',

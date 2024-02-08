@@ -24,9 +24,9 @@ Product.php
 namespace App\Aura\Resources;
 
 use App\Relations\CustomEagerLoadRelation;
-use Eminiarts\Aura\Models\Meta;
-use Eminiarts\Aura\Resource;
-use Eminiarts\Aura\Resources\Attachment;
+use Aura\Base\Models\Meta;
+use Aura\Base\Resource;
+use Aura\Base\Resources\Attachment;
 
 class Product extends Resource
 {
@@ -38,7 +38,7 @@ class Product extends Resource
     {
         return [
             [
-                'type' => 'Eminiarts\\Aura\\Fields\\Tab',
+                'type' => 'Aura\\Base\\Fields\\Tab',
                 'name' => 'Product',
                 'label' => 'Tab',
                 'slug' => 'product',
@@ -46,7 +46,7 @@ class Product extends Resource
             ],
             [
                 'name' => 'Title',
-                'type' => 'Eminiarts\\Aura\\Fields\\Text',
+                'type' => 'Aura\\Base\\Fields\\Text',
                 'validation' => 'required',
                 'on_index' => true,
                 'conditional_logic' => [
@@ -60,7 +60,7 @@ class Product extends Resource
             ],
             [
                 'name' => 'Price',
-                'type' => 'Eminiarts\\Aura\\Fields\\Number',
+                'type' => 'Aura\\Base\\Fields\\Number',
                 'validation' => '',
                 'conditional_logic' => [
                 ],
@@ -71,7 +71,7 @@ class Product extends Resource
             ],
             [
                 'name' => 'Description',
-                'type' => 'Eminiarts\\Aura\\Fields\\Textarea',
+                'type' => 'Aura\\Base\\Fields\\Textarea',
                 'validation' => '',
                 'conditional_logic' => [
                 ],
@@ -83,7 +83,7 @@ class Product extends Resource
             ],
             [
                 'name' => 'Thumbnail',
-                'type' => 'Eminiarts\\Aura\\Fields\\Image',
+                'type' => 'Aura\\Base\\Fields\\Image',
                 'validation' => '',
                 'conditional_logic' => [
                 ],
@@ -93,7 +93,7 @@ class Product extends Resource
                 'on_view' => true,
             ],
             [
-                'type' => 'Eminiarts\\Aura\\Fields\\Tab',
+                'type' => 'Aura\\Base\\Fields\\Tab',
                 'name' => 'Variations',
                 'label' => 'Tab',
                 'slug' => 'variations-tab',
@@ -173,22 +173,22 @@ Resource.php
 ```php
 <?php
 
-namespace Eminiarts\Aura;
+namespace Aura\Base;
 
 use Illuminate\Support\Str;
 use Aura\Flows\Resources\Flow;
-use Eminiarts\Aura\Resources\User;
-use Eminiarts\Aura\Traits\SaveTerms;
-use Eminiarts\Aura\Traits\InputFields;
+use Aura\Base\Resources\User;
+use Aura\Base\Traits\SaveTerms;
+use Aura\Base\Traits\InputFields;
 use Illuminate\Database\Eloquent\Model;
-use Eminiarts\Aura\Traits\AuraTaxonomies;
-use Eminiarts\Aura\Traits\SaveMetaFields;
-use Eminiarts\Aura\Traits\AuraModelConfig;
-use Eminiarts\Aura\Models\Scopes\TeamScope;
-use Eminiarts\Aura\Models\Scopes\TypeScope;
-use Eminiarts\Aura\Traits\InitialPostFields;
-use Eminiarts\Aura\Traits\InteractsWithTable;
-use Eminiarts\Aura\Traits\SaveFieldAttributes;
+use Aura\Base\Traits\AuraTaxonomies;
+use Aura\Base\Traits\SaveMetaFields;
+use Aura\Base\Traits\AuraModelConfig;
+use Aura\Base\Models\Scopes\TeamScope;
+use Aura\Base\Models\Scopes\TypeScope;
+use Aura\Base\Traits\InitialPostFields;
+use Aura\Base\Traits\InteractsWithTable;
+use Aura\Base\Traits\SaveFieldAttributes;
 use Aura\Flows\Jobs\TriggerFlowOnCreatePostEvent;
 use Aura\Flows\Jobs\TriggerFlowOnUpdatePostEvent;
 use Aura\Flows\Jobs\TriggerFlowOnDeletedPostEvent;
@@ -358,14 +358,15 @@ class Resource extends Model
 I will provide you multiple files with the code one prompt by one prompt. When you get a File, answer only with "Next file Please" until I tell you: "I am finish". After you have all the files and a complete understanding of my code base, we will try to solve my issue.
 
 AuraModelConfig.php
+
 ```php
 <?php
 
-namespace Eminiarts\Aura\Traits;
+namespace Aura\Base\Traits;
 
-use Eminiarts\Aura\ConditionalLogic;
-use Eminiarts\Aura\Models\Meta;
-use Eminiarts\Aura\Resources\Team;
+use Aura\Base\ConditionalLogic;
+use Aura\Base\Models\Meta;
+use Aura\Base\Resources\Team;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
@@ -459,7 +460,7 @@ trait AuraModelConfig
 
     public function isNumberField($key)
     {
-        if ($this->fieldBySlug($key)['type'] == 'Eminiarts\\Aura\\Fields\\Number') {
+        if ($this->fieldBySlug($key)['type'] == 'Aura\\Base\\Fields\\Number') {
             return true;
         }
 
@@ -485,7 +486,7 @@ trait AuraModelConfig
         if (in_array($key, $this->getAccessibleFieldKeys())) {
             $field = $this->fieldBySlug($key);
 
-            if (isset($field['type']) && $field['type'] == 'Eminiarts\\Aura\\Fields\\Tags') {
+            if (isset($field['type']) && $field['type'] == 'Aura\\Base\\Fields\\Tags') {
                 return true;
             }
         }
@@ -516,24 +517,25 @@ trait AuraModelConfig
 I will provide you multiple files with the code one prompt by one prompt. When you get a File, answer only with "Next file Please" until I tell you: "I am finish". After you have all the files and a complete understanding of my code base, we will try to solve my issue.
 
 InputFields.php
+
 ```php
 <?php
 
-namespace Eminiarts\Aura\Traits;
+namespace Aura\Base\Traits;
 
-use Eminiarts\Aura\ConditionalLogic;
-use Eminiarts\Aura\Pipeline\ApplyTabs;
-use Eminiarts\Aura\Pipeline\MapFields;
-use Eminiarts\Aura\Pipeline\AddIdsToFields;
-use Eminiarts\Aura\Pipeline\TransformSlugs;
-use Eminiarts\Aura\Pipeline\FilterEditFields;
-use Eminiarts\Aura\Pipeline\FilterViewFields;
-use Eminiarts\Aura\Traits\InputFieldsHelpers;
-use Eminiarts\Aura\Pipeline\FilterCreateFields;
-use Eminiarts\Aura\Pipeline\BuildTreeFromFields;
-use Eminiarts\Aura\Pipeline\RemoveValidationAttribute;
-use Eminiarts\Aura\Pipeline\ApplyParentConditionalLogic;
-use Eminiarts\Aura\Pipeline\ApplyParentDisplayAttributes;
+use Aura\Base\ConditionalLogic;
+use Aura\Base\Pipeline\ApplyTabs;
+use Aura\Base\Pipeline\MapFields;
+use Aura\Base\Pipeline\AddIdsToFields;
+use Aura\Base\Pipeline\TransformSlugs;
+use Aura\Base\Pipeline\FilterEditFields;
+use Aura\Base\Pipeline\FilterViewFields;
+use Aura\Base\Traits\InputFieldsHelpers;
+use Aura\Base\Pipeline\FilterCreateFields;
+use Aura\Base\Pipeline\BuildTreeFromFields;
+use Aura\Base\Pipeline\RemoveValidationAttribute;
+use Aura\Base\Pipeline\ApplyParentConditionalLogic;
+use Aura\Base\Pipeline\ApplyParentDisplayAttributes;
 
 trait InputFields
 {
@@ -713,9 +715,9 @@ InputFieldsHelpers
 ```php
 <?php
 
-namespace Eminiarts\Aura\Traits;
+namespace Aura\Base\Traits;
 
-use Eminiarts\Aura\Pipeline\ApplyGroupedInputs;
+use Aura\Base\Pipeline\ApplyGroupedInputs;
 use Illuminate\Pipeline\Pipeline;
 
 trait InputFieldsHelpers
@@ -814,10 +816,11 @@ ________________________
 I will provide you multiple files with the code one prompt by one prompt. When you get a File, answer only with "Next file Please" until I tell you: "I am finish". After you have all the files and a complete understanding of my code base, we will try to solve my issue.
 
 InputFieldsValidation
+
 ```php
 <?php
 
-namespace Eminiarts\Aura\Traits;
+namespace Aura\Base\Traits;
 
 trait InputFieldsValidation
 {
@@ -917,12 +920,13 @@ ________________________
 
 
 AuraTaxonomies.php
+
 ```php
 <?php
 
-namespace Eminiarts\Aura\Traits;
+namespace Aura\Base\Traits;
 
-use Eminiarts\Aura\Models\Taxonomy;
+use Aura\Base\Models\Taxonomy;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 

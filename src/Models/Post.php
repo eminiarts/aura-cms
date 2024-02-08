@@ -1,19 +1,19 @@
 <?php
 
-namespace Eminiarts\Aura\Models;
+namespace Aura\Base\Models;
 
 use Aura\Flows\Jobs\TriggerFlowOnCreatePostEvent;
 use Aura\Flows\Jobs\TriggerFlowOnDeletedPostEvent;
 use Aura\Flows\Jobs\TriggerFlowOnUpdatePostEvent;
 use Aura\Flows\Resources\Flow;
-use Eminiarts\Aura\Aura;
-use Eminiarts\Aura\BaseResource;
-use Eminiarts\Aura\Models\Scopes\TeamScope;
-use Eminiarts\Aura\Models\Scopes\TypeScope;
-use Eminiarts\Aura\Resource;
-use Eminiarts\Aura\Traits\InitialPostFields;
-use Eminiarts\Aura\Traits\SaveFieldAttributes;
-use Eminiarts\Aura\Traits\SaveMetaFields;
+use Aura\Base\Aura;
+use Aura\Base\BaseResource;
+use Aura\Base\Models\Scopes\TeamScope;
+use Aura\Base\Models\Scopes\TypeScope;
+use Aura\Base\Resource;
+use Aura\Base\Traits\InitialPostFields;
+use Aura\Base\Traits\SaveFieldAttributes;
+use Aura\Base\Traits\SaveMetaFields;
 use Illuminate\Database\Eloquent\Concerns\HasTimestamps;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Support\Str;

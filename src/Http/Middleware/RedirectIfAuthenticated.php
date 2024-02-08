@@ -1,9 +1,9 @@
 <?php
 
-namespace Eminiarts\Aura\Http\Middleware;
+namespace Aura\Base\Http\Middleware;
 
 use Closure;
-use Eminiarts\Aura\Providers\RouteServiceProvider;
+use Aura\Base\Providers\RouteServiceProvider;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 

@@ -1,8 +1,8 @@
 <?php
 
 use Aura\Flows\Resources\Flow;
-use Eminiarts\Aura\Models\User;
-use Eminiarts\Aura\Resources\Post;
+use Aura\Base\Models\User;
+use Aura\Base\Resources\Post;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
@@ -51,12 +51,12 @@ test('flow - get resources operation', function () {
     $flow->operations()->create([
         'name' => 'Get Data',
         'key' => 'test-operation',
-        'type' => 'Eminiarts\\Aura\\Operations\\GetResource',
+        'type' => 'Aura\\Base\\Operations\\GetResource',
         'options' => [
             'x' => 2,
             'y' => 2,
 
-            'resource' => 'Eminiarts\\Aura\\Resources\\Post',
+            'resource' => 'Aura\\Base\\Resources\\Post',
             'resource_ids' => [$firstPost->id, $secondPost->id],
         ],
     ]);

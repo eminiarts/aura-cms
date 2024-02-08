@@ -2,12 +2,12 @@
 
 namespace Tests\Feature\Livewire;
 
-use Eminiarts\Aura\Facades\Aura;
-use Eminiarts\Aura\Livewire\Resource\Create;
-use Eminiarts\Aura\Livewire\Resource\Edit;
-use Eminiarts\Aura\Models\User;
-use Eminiarts\Aura\Resource;
-use Eminiarts\Aura\Resources\Team;
+use Aura\Base\Facades\Aura;
+use Aura\Base\Livewire\Resource\Create;
+use Aura\Base\Livewire\Resource\Edit;
+use Aura\Base\Models\User;
+use Aura\Base\Resource;
+use Aura\Base\Resources\Team;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
 
@@ -33,14 +33,14 @@ class SlugFieldModel extends Resource
         return [
             [
                 'name' => 'Text',
-                'type' => 'Eminiarts\\Aura\\Fields\\Text',
+                'type' => 'Aura\\Base\\Fields\\Text',
                 'validation' => 'required',
                 'conditional_logic' => [],
                 'slug' => 'text',
             ],
             [
                 'name' => 'Slug for Test',
-                'type' => 'Eminiarts\\Aura\\Fields\\Slug',
+                'type' => 'Aura\\Base\\Fields\\Slug',
                 'validation' => 'required|alpha_dash',
                 'conditional_logic' => [],
                 'slug' => 'slug',

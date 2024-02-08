@@ -1,9 +1,9 @@
 <?php
 
-namespace Eminiarts\Aura\Resources;
+namespace Aura\Base\Resources;
 
-use Eminiarts\Aura\Jobs\GenerateImageThumbnail;
-use Eminiarts\Aura\Resource;
+use Aura\Base\Jobs\GenerateImageThumbnail;
+use Aura\Base\Resource;
 use Illuminate\Foundation\Bus\DispatchesJobs;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -53,7 +53,7 @@ class Attachment extends Resource
         return [
             [
                 'name' => 'Attachment',
-                'type' => 'Eminiarts\\Aura\\Fields\\Panel',
+                'type' => 'Aura\\Base\\Fields\\Panel',
                 'slug' => 'panel1',
                 'style' => [
                     'width' => '50',
@@ -61,7 +61,7 @@ class Attachment extends Resource
             ],
             [
                 'name' => 'Preview',
-                'type' => 'Eminiarts\\Aura\\Fields\\Embed',
+                'type' => 'Aura\\Base\\Fields\\Embed',
                 'validation' => '',
                 'on_index' => false,
                 'slug' => 'embed',
@@ -71,7 +71,7 @@ class Attachment extends Resource
             ],
             [
                 'name' => 'Details',
-                'type' => 'Eminiarts\\Aura\\Fields\\Panel',
+                'type' => 'Aura\\Base\\Fields\\Panel',
                 'slug' => 'panel2',
                 'style' => [
                     'width' => '50',
@@ -79,7 +79,7 @@ class Attachment extends Resource
             ],
             [
                 'name' => 'Name',
-                'type' => 'Eminiarts\\Aura\\Fields\\Text',
+                'type' => 'Aura\\Base\\Fields\\Text',
                 'validation' => 'required',
                 'on_index' => true,
                 'searchable' => true,
@@ -90,7 +90,7 @@ class Attachment extends Resource
             ],
             [
                 'name' => 'Url',
-                'type' => 'Eminiarts\\Aura\\Fields\\ViewValue',
+                'type' => 'Aura\\Base\\Fields\\ViewValue',
                 'searchable' => true,
                 'validation' => 'required',
                 'on_index' => true,
@@ -101,7 +101,7 @@ class Attachment extends Resource
             ],
             [
                 'name' => 'Thumbnail',
-                'type' => 'Eminiarts\\Aura\\Fields\\ViewValue',
+                'type' => 'Aura\\Base\\Fields\\ViewValue',
                 'validation' => '',
                 'on_index' => false,
                 'slug' => 'thumbnail_url',
@@ -112,7 +112,7 @@ class Attachment extends Resource
 
             [
                 'name' => 'Mime Type',
-                'type' => 'Eminiarts\\Aura\\Fields\\ViewValue',
+                'type' => 'Aura\\Base\\Fields\\ViewValue',
                 'validation' => 'required',
                 'searchable' => true,
                 'on_index' => true,
@@ -123,7 +123,7 @@ class Attachment extends Resource
             ],
             [
                 'name' => 'Size',
-                'type' => 'Eminiarts\\Aura\\Fields\\ViewValue',
+                'type' => 'Aura\\Base\\Fields\\ViewValue',
                 'validation' => 'required',
                 'on_index' => true,
                 'slug' => 'size',
@@ -134,7 +134,7 @@ class Attachment extends Resource
             // [
             //     'name' => 'Created at',
             //     'slug' => 'created_at',
-            //     'type' => 'Eminiarts\\Aura\\Fields\\Date',
+            //     'type' => 'Aura\\Base\\Fields\\Date',
             //     'validation' => '',
             //     'enable_time' => true,
             //     'conditional_logic' => [],
@@ -149,7 +149,7 @@ class Attachment extends Resource
             // [
             //     'name' => 'Updated at',
             //     'slug' => 'updated_at',
-            //     'type' => 'Eminiarts\\Aura\\Fields\\Date',
+            //     'type' => 'Aura\\Base\\Fields\\Date',
             //     'validation' => '',
             //     'conditional_logic' => [],
             //     'wrapper' => '',

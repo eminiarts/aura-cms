@@ -1,14 +1,14 @@
 <?php
 
-namespace Eminiarts\Aura\Livewire\Resource;
+namespace Aura\Base\Livewire\Resource;
 
-use Eminiarts\Aura\Facades\Aura;
-use Eminiarts\Aura\Livewire\Forms\ResourceForm;
-use Eminiarts\Aura\Models\Post;
-use Eminiarts\Aura\Traits\HasActions;
-use Eminiarts\Aura\Traits\InteractsWithFields;
-use Eminiarts\Aura\Traits\MediaFields;
-use Eminiarts\Aura\Traits\RepeaterFields;
+use Aura\Base\Facades\Aura;
+use Aura\Base\Livewire\Forms\ResourceForm;
+use Aura\Base\Models\Post;
+use Aura\Base\Traits\HasActions;
+use Aura\Base\Traits\InteractsWithFields;
+use Aura\Base\Traits\MediaFields;
+use Aura\Base\Traits\RepeaterFields;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Traits\Macroable;

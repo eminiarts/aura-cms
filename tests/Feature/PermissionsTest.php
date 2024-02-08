@@ -1,8 +1,8 @@
 <?php
 
-use Eminiarts\Aura\Resources\Post;
-use Eminiarts\Aura\Resources\Role;
-use Eminiarts\Aura\Resources\User;
+use Aura\Base\Resources\Post;
+use Aura\Base\Resources\Role;
+use Aura\Base\Resources\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
@@ -24,7 +24,7 @@ test('a super admin can perform any action', function () {
     $this->assertEquals('Super Admin', $r->title);
 
     // Attach to User
-    $user = \Eminiarts\Aura\Resources\User::find(1);
+    $user = \Aura\Base\Resources\User::find(1);
 
     $user->update(['fields' => ['roles' => [$r->id]]]);
 
@@ -72,7 +72,7 @@ test('a admin can perform assigned actions', function () {
     $this->assertEquals('Admin', $r->title);
 
     // Attach to User
-    $user = \Eminiarts\Aura\Resources\User::find(1);
+    $user = \Aura\Base\Resources\User::find(1);
     $user->update(['fields' => ['roles' => [$r->id]]]);
     $user->refresh();
 
@@ -118,7 +118,7 @@ test('a moderator can only view posts but not edit them', function () {
     $this->assertEquals('Moderator', $r->title);
 
     // Attach to User
-    $user = \Eminiarts\Aura\Resources\User::find(1);
+    $user = \Aura\Base\Resources\User::find(1);
     $user->update(['fields' => ['roles' => [$r->id]]]);
     $user->refresh();
 
@@ -160,7 +160,7 @@ test('a moderator can access index page', function () {
     $this->assertEquals('Moderator', $r->title);
 
     // Attach to User
-    $user = \Eminiarts\Aura\Resources\User::find(1);
+    $user = \Aura\Base\Resources\User::find(1);
     $user->update(['fields' => ['roles' => [$r->id]]]);
 
     $user->refresh();
@@ -213,7 +213,7 @@ test('a admin can access all pages', function () {
     $this->assertEquals('Admin', $r->title);
 
     // Attach to User
-    $user = \Eminiarts\Aura\Resources\User::find(1);
+    $user = \Aura\Base\Resources\User::find(1);
     $user->update(['fields' => ['roles' => [$r->id]]]);
 
     $user->refresh();
@@ -267,7 +267,7 @@ test('scoped posts', function () {
     // Attach to User
     $this->user->resource->update(['fields' => ['roles' => [$r->id]]]);
 
-    $user = \Eminiarts\Aura\Resources\User::find(1);
+    $user = \Aura\Base\Resources\User::find(1);
 
     $user2->resource->update(['fields' => ['roles' => [$r->id]]]);
 
@@ -338,7 +338,7 @@ test('a admin can access users', function () {
     $r = Role::first();
 
     // Attach to User
-    $user = \Eminiarts\Aura\Resources\User::find(1);
+    $user = \Aura\Base\Resources\User::find(1);
     $user->update(['fields' => ['roles' => [$r->id]]]);
 
     // Access Index Page

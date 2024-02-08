@@ -7,7 +7,7 @@
         @livewire($dashboardComponent)
     @else
         <p>No custom dashboard component defined.</p>
-        {{-- @livewire(Eminiarts\Aura\Livewire\Dashboard::class); --}}
+        {{-- @livewire(Aura\Base\Livewire\Dashboard::class); --}}
     @endif
 
 </x-aura::layout.app>

@@ -1,8 +1,8 @@
 <?php
 
-namespace Eminiarts\Aura\Http\Controllers;
+namespace Aura\Base\Http\Controllers;
 
-use Eminiarts\Aura\Resources\Team;
+use Aura\Base\Resources\Team;
 use Illuminate\Http\Request;
 
 class SwitchTeamController extends Controller

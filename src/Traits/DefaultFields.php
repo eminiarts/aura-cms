@@ -1,6 +1,6 @@
 <?php
 
-namespace Eminiarts\Aura\Traits;
+namespace Aura\Base\Traits;
 
 trait DefaultFields
 {
@@ -10,7 +10,7 @@ trait DefaultFields
             [
                 'name' => 'Created at',
                 'slug' => 'created_at',
-                'type' => 'Eminiarts\\Aura\\Fields\\Date',
+                'type' => 'Aura\\Base\\Fields\\Date',
                 'validation' => '',
                 'enable_time' => true,
                 'conditional_logic' => [],
@@ -22,7 +22,7 @@ trait DefaultFields
             [
                 'name' => 'Updated at',
                 'slug' => 'updated_at',
-                'type' => 'Eminiarts\\Aura\\Fields\\Date',
+                'type' => 'Aura\\Base\\Fields\\Date',
                 'validation' => '',
                 'conditional_logic' => [],
                 'wrapper' => '',
@@ -34,7 +34,7 @@ trait DefaultFields
             [
                 'name' => 'User',
                 'slug' => 'user_id',
-                'type' => 'Eminiarts\\Aura\\Fields\\BelongsTo',
+                'type' => 'Aura\\Base\\Fields\\BelongsTo',
                 'validation' => '',
                 'conditional_logic' => [],
                 'wrapper' => '',

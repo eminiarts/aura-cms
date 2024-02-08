@@ -8,7 +8,7 @@
 ])
 
 @php
-    use Eminiarts\Aura\Facades\Aura;
+    use Aura\Base\Facades\Aura;
 
     $settings = Aura::getOption('team-settings');
     $sidebarType = $settings['sidebar-type'] ?? 'primary';
@@ -43,7 +43,8 @@
 
 <div>
 
-    <div x-data="{ expanded: {{ $isActive ? 'true' : 'false' }}, compact: {{ $compact ? 'true' : 'false' }} }" class="hide-collapsed">
+    <div x-data="{ expanded: {{ $isActive ? 'true' : 'false' }}, compact: {{ $compact ? 'true' : 'false' }} }"
+         class="hide-collapsed">
         <div x-data="{
             init() {
                 if (this.$refs.container?.querySelector('.is-active')) {
@@ -52,20 +53,20 @@
             }
         }" role="region" :class="{ '{{ $getDropdownClasses(true)['container'] }}': expanded }">
             <button
-                x-on:click="expanded = !expanded"
-                :aria-expanded="expanded.toString()"
-                class="{{ $compactClass }} flex justify-between items-center w-full rounded-lg transition duration-150 ease-in-out"
-                :class="expanded ? '{{ $getDropdownClasses(true)['button'] }}' : '{{ $getDropdownClasses(false)['button'] }}'"
+                    x-on:click="expanded = !expanded"
+                    :aria-expanded="expanded.toString()"
+                    class="{{ $compactClass }} flex justify-between items-center w-full rounded-lg transition duration-150 ease-in-out"
+                    :class="expanded ? '{{ $getDropdownClasses(true)['button'] }}' : '{{ $getDropdownClasses(false)['button'] }}'"
             >
                 <div class="flex items-center ml-0 font-semibold {{ $fontClass }}">
-                {{ $title }}
+                    {{ $title }}
                 </div>
 
                 <span x-cloak x-show="expanded" aria-hidden="true" class="ml-4">
-                <x-aura::icon.chevron-up class="w-6 h-6" />
+                <x-aura::icon.chevron-up class="w-6 h-6"/>
                 </span>
                 <span x-cloak x-show="!expanded" aria-hidden="true" class="ml-4">
-                <x-aura::icon.chevron-down class="w-6 h-6" />
+                <x-aura::icon.chevron-down class="w-6 h-6"/>
                 </span>
             </button>
 
@@ -76,7 +77,7 @@
     </div>
 
     @php
-        $settings = Eminiarts\Aura\Facades\Aura::getOption('team-settings');
+        $settings = Aura::getOption('team-settings');
 
         if ($settings) {
             $sidebarType = $settings['sidebar-type'] ?? 'primary';
@@ -86,9 +87,10 @@
     @endphp
 
 
-    <div x-data="{ active: {{ (Request::fullUrlIs($route ? route($route, $id) : '') ? ' 1' : '0')  }}, compact: {{ $compact ? '1' : '0' }} }" class="show-collapsed">
+    <div x-data="{ active: {{ (Request::fullUrlIs($route ? route($route, $id) : '') ? ' 1' : '0')  }}, compact: {{ $compact ? '1' : '0' }} }"
+         class="show-collapsed">
         {{-- <div x-data="userDropdown{{$id}}"></div> --}}
-        <div  x-init="tippy($refs.this, {
+        <div x-init="tippy($refs.this, {
             arrow: false,
             theme: 'aura',
             offset: [0, 8],
@@ -97,8 +99,8 @@
             allowHTML: true,
             interactive: true,
             })" x-ref="this">
-        <button
-            class="flex items-center justify-between w-full px-2 py-2 transition duration-150 ease-in-out rounded-lg
+            <button
+                    class="flex items-center justify-between w-full px-2 py-2 transition duration-150 ease-in-out rounded-lg
             @if ($sidebarType == 'primary')
             group-[.is-active]:text-white text-primary-300 hover:text-primary-200 hover:bg-sidebar-bg-hover
             dark:text-primary-500 dark:hover:text-primary-500
@@ -109,15 +111,15 @@
             group-[.is-active]:text-primary-500 text-primary-500 hover:text-primary-400
             @endif
             "
-        >
-            <div class="flex items-center ml-0 space-x-3 text-base font-semibold">
+            >
                 <div class="flex items-center ml-0 space-x-3 text-base font-semibold">
-                    <div class="sidebar-item-icon">
-                    {{ $title }}
+                    <div class="flex items-center ml-0 space-x-3 text-base font-semibold">
+                        <div class="sidebar-item-icon">
+                            {{ $title }}
+                        </div>
                     </div>
                 </div>
-            </div>
-        </button>
+            </button>
         </div>
     </div>
 

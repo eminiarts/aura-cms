@@ -1,8 +1,8 @@
 <?php
 
 use Aura\Flows\Resources\Flow;
-use Eminiarts\Aura\Models\User;
-use Eminiarts\Aura\Resources\Post;
+use Aura\Base\Models\User;
+use Aura\Base\Resources\Post;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
@@ -30,7 +30,7 @@ test('flow - log operation', function () {
     $flow->operations()->create([
         'name' => 'Test Operation',
         'key' => 'test-operation',
-        'type' => 'Eminiarts\\Aura\\Operations\\Log',
+        'type' => 'Aura\\Base\\Operations\\Log',
         'options' => [
             'x' => 2,
             'y' => 2,
@@ -95,7 +95,7 @@ test('chained flow gets triggered on create post', function () {
     $flow->operations()->create([
         'name' => 'Test Operation',
         'key' => 'test-operation',
-        'type' => 'Eminiarts\\Aura\\Operations\\Log',
+        'type' => 'Aura\\Base\\Operations\\Log',
         'options' => [
             'x' => 2,
             'y' => 2,
@@ -106,7 +106,7 @@ test('chained flow gets triggered on create post', function () {
     $resolveOperation = $flow->operations()->create([
         'name' => 'Resolve Operation',
         'key' => 'resolve-operation',
-        'type' => 'Eminiarts\\Aura\\Operations\\Log',
+        'type' => 'Aura\\Base\\Operations\\Log',
         'options' => [
             'x' => 14,
             'y' => 2,
@@ -117,7 +117,7 @@ test('chained flow gets triggered on create post', function () {
     $rejectOperation = $flow->operations()->create([
         'name' => 'Reject Operation',
         'key' => 'reject-operation',
-        'type' => 'Eminiarts\\Aura\\Operations\\Log',
+        'type' => 'Aura\\Base\\Operations\\Log',
         'options' => [
             'x' => 14,
             'y' => 14,

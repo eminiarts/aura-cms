@@ -2,12 +2,12 @@
 
 namespace App\Aura\Taxonomies;
 
-use Eminiarts\Aura\Taxonomies\Taxonomy;
+use Aura\Base\Taxonomies\Taxonomy;
 
 class TaxonomyName extends Taxonomy
 {
     public static $hierarchical = false;
-    
+
     public static string $type = 'TaxonomyName';
 
     public static ?string $slug = 'TaxonomySlug';

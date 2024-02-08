@@ -1,9 +1,9 @@
 <?php
 
-namespace Eminiarts\Aura\Traits;
+namespace Aura\Base\Traits;
 
-use Eminiarts\Aura\Pipeline\AddIdsToFields;
-use Eminiarts\Aura\Pipeline\BuildTreeFromFields;
+use Aura\Base\Pipeline\AddIdsToFields;
+use Aura\Base\Pipeline\BuildTreeFromFields;
 use Illuminate\Pipeline\Pipeline;
 
 trait HasFields

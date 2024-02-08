@@ -1,8 +1,8 @@
 <?php
 
 use Aura\Flows\Resources\Flow;
-use Eminiarts\Aura\Models\User;
-use Eminiarts\Aura\Resources\Post;
+use Aura\Base\Models\User;
+use Aura\Base\Resources\Post;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
@@ -32,12 +32,12 @@ test('flow - create resource operation', function () {
     $flow->operations()->create([
         'name' => 'Create Data',
         'key' => 'test-operation',
-        'type' => 'Eminiarts\\Aura\\Operations\\CreateResource',
+        'type' => 'Aura\\Base\\Operations\\CreateResource',
         'options' => [
             'x' => 2,
             'y' => 2,
 
-            'resource' => 'Eminiarts\\Aura\\Resources\\Attachment',
+            'resource' => 'Aura\\Base\\Resources\\Attachment',
             'data' => [
                 'title' => 'Post created by Flow',
                 'status' => 'draft',
@@ -60,8 +60,8 @@ test('flow - create resource operation', function () {
     // Test $flow->operation_id is $flow->operations()->first()->id
     $this->assertEquals($flow->operation_id, $flow->operations()->first()->id);
 
-    // Assert operation options resource is Eminiarts\Aura\Resources\Attachment
-    $this->assertEquals('Eminiarts\\Aura\\Resources\\Attachment', $flow->operations()->first()->options['resource']);
+    // Assert operation options resource is Aura\Base\Resources\Attachment
+    $this->assertEquals('Aura\\Base\\Resources\\Attachment', $flow->operations()->first()->options['resource']);
 
     // Create a Post
     $firstPost = Post::create([
@@ -103,12 +103,12 @@ test('flow - cannot create post of same type on create', function () {
     $flow->operations()->create([
         'name' => 'Create Data',
         'key' => 'test-operation',
-        'type' => 'Eminiarts\\Aura\\Operations\\CreateResource',
+        'type' => 'Aura\\Base\\Operations\\CreateResource',
         'options' => [
             'x' => 2,
             'y' => 2,
 
-            'resource' => 'Eminiarts\\Aura\\Resources\\Post',
+            'resource' => 'Aura\\Base\\Resources\\Post',
             'data' => [
                 'title' => 'Post created by Flow',
                 'status' => 'draft',
@@ -119,7 +119,7 @@ test('flow - cannot create post of same type on create', function () {
     $rejectOperation = $flow->operations()->create([
         'name' => 'Reject Operation',
         'key' => 'reject-operation',
-        'type' => 'Eminiarts\\Aura\\Operations\\Log',
+        'type' => 'Aura\\Base\\Operations\\Log',
         'options' => [
             'x' => 14,
             'y' => 14,

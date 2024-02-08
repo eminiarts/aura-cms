@@ -1,6 +1,6 @@
 <?php
 
-namespace Eminiarts\Aura\Http;
+namespace Aura\Base\Http;
 
 use Illuminate\Foundation\Http\Kernel as HttpKernel;
 

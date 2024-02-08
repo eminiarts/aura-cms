@@ -1,13 +1,13 @@
 <?php
 
-namespace Eminiarts\Aura\Providers;
+namespace Aura\Base\Providers;
 
-use Eminiarts\Aura\Policies\ResourcePolicy;
-use Eminiarts\Aura\Policies\TeamPolicy;
-use Eminiarts\Aura\Policies\UserPolicy;
-use Eminiarts\Aura\Resource;
-use Eminiarts\Aura\Resources\Team;
-use Eminiarts\Aura\Resources\User;
+use Aura\Base\Policies\ResourcePolicy;
+use Aura\Base\Policies\TeamPolicy;
+use Aura\Base\Policies\UserPolicy;
+use Aura\Base\Resource;
+use Aura\Base\Resources\Team;
+use Aura\Base\Resources\User;
 use Illuminate\Foundation\Support\Providers\AuthServiceProvider as ServiceProvider;
 use Illuminate\Support\Facades\Gate;
 

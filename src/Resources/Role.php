@@ -1,10 +1,10 @@
 <?php
 
-namespace Eminiarts\Aura\Resources;
+namespace Aura\Base\Resources;
 
-use Eminiarts\Aura\Jobs\GenerateAllResourcePermissions;
-use Eminiarts\Aura\Models\Meta;
-use Eminiarts\Aura\Resource;
+use Aura\Base\Jobs\GenerateAllResourcePermissions;
+use Aura\Base\Models\Meta;
+use Aura\Base\Resource;
 
 class Role extends Resource
 {
@@ -50,7 +50,7 @@ class Role extends Resource
             [
                 'name' => 'Name',
                 'slug' => 'title',
-                'type' => 'Eminiarts\\Aura\\Fields\\Text',
+                'type' => 'Aura\\Base\\Fields\\Text',
                 'validation' => '',
                 'conditional_logic' => [],
                 'wrapper' => '',
@@ -61,7 +61,7 @@ class Role extends Resource
             [
                 'name' => 'Slug',
                 'slug' => 'slug',
-                'type' => 'Eminiarts\\Aura\\Fields\\Text',
+                'type' => 'Aura\\Base\\Fields\\Text',
                 'validation' => 'required',
                 'on_index' => true,
                 'style' => [
@@ -71,7 +71,7 @@ class Role extends Resource
             [
                 'name' => 'Description',
                 'slug' => 'description',
-                'type' => 'Eminiarts\\Aura\\Fields\\Textarea',
+                'type' => 'Aura\\Base\\Fields\\Textarea',
                 'validation' => '',
                 'conditional_logic' => [],
                 'wrapper' => '',
@@ -82,7 +82,7 @@ class Role extends Resource
             [
                 'name' => 'Super Admin',
                 'slug' => 'super_admin',
-                'type' => 'Eminiarts\Aura\Fields\Boolean',
+                'type' => 'Aura\Base\Fields\Boolean',
                 'instructions' => 'Super Admins have access to all permission and can manage other users.',
                 'validation' => '',
                 'conditional_logic' => [],
@@ -94,7 +94,7 @@ class Role extends Resource
             [
                 'name' => 'Permissions',
                 'on_index' => false,
-                'type' => 'Eminiarts\\Aura\\Fields\\Permissions',
+                'type' => 'Aura\\Base\\Fields\\Permissions',
                 'validation' => '',
                 'conditional_logic' => [
                     // [
@@ -104,7 +104,7 @@ class Role extends Resource
                     // ],
                 ],
                 'slug' => 'permissions',
-                'resource' => 'Eminiarts\\Aura\\Resources\\Permission',
+                'resource' => 'Aura\\Base\\Resources\\Permission',
             ],
         ];
     }

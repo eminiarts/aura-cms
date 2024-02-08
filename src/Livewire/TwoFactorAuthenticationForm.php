@@ -1,9 +1,9 @@
 <?php
 
-namespace Eminiarts\Aura\Livewire;
+namespace Aura\Base\Livewire;
 
-use Eminiarts\Aura\Resources\User;
-use Eminiarts\Aura\Traits\ConfirmsPasswords;
+use Aura\Base\Resources\User;
+use Aura\Base\Traits\ConfirmsPasswords;
 use Laravel\Fortify\Actions\ConfirmTwoFactorAuthentication;
 use Laravel\Fortify\Actions\DisableTwoFactorAuthentication;
 use Laravel\Fortify\Actions\EnableTwoFactorAuthentication;

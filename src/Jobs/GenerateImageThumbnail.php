@@ -1,9 +1,9 @@
 <?php
 
-namespace Eminiarts\Aura\Jobs;
+namespace Aura\Base\Jobs;
 
-use Eminiarts\Aura\Facades\Aura;
-use Eminiarts\Aura\Resources\Attachment;
+use Aura\Base\Facades\Aura;
+use Aura\Base\Resources\Attachment;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;

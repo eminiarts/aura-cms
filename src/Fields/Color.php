@@ -1,6 +1,6 @@
 <?php
 
-namespace Eminiarts\Aura\Fields;
+namespace Aura\Base\Fields;
 
 class Color extends Field
 {
@@ -13,19 +13,19 @@ class Color extends Field
         return array_merge(parent::getFields(), [
             [
                 'name' => 'Color',
-                'type' => 'Eminiarts\\Aura\\Fields\\Tab',
+                'type' => 'Aura\\Base\\Fields\\Tab',
                 'slug' => 'color-tab',
                 'style' => [],
             ],
             [
                 'name' => 'Native Color Picker',
-                'type' => 'Eminiarts\\Aura\\Fields\\Boolean',
+                'type' => 'Aura\\Base\\Fields\\Boolean',
                 'slug' => 'native',
                 'style' => [],
             ],
             [
                 'name' => 'Format',
-                'type' => 'Eminiarts\\Aura\\Fields\\Select',
+                'type' => 'Aura\\Base\\Fields\\Select',
                 'validation' => '',
                 'slug' => 'format',
                 'options' => [

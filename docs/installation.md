@@ -33,10 +33,10 @@ You can customize the views by publishing them to your project.
 
 ## Migration
 
-3. your User model should extend `php artisan aura:migrate` 
+3. your User model should extend `php artisan aura:migrate`
 
 ```php
-use Eminiarts\Aura\Models\User as AuraUser;
+use Aura\Base\Models\User as AuraUser;
 
 class User extends AuraUser
 {

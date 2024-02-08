@@ -1,8 +1,8 @@
 <?php
 
-namespace Eminiarts\Aura\Http\Controllers;
+namespace Aura\Base\Http\Controllers;
 
-use Eminiarts\Aura\Http\Requests\ProfileUpdateRequest;
+use Aura\Base\Http\Requests\ProfileUpdateRequest;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Redirect;

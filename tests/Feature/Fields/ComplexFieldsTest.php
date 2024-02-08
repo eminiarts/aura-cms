@@ -1,6 +1,6 @@
 <?php
 
-use Eminiarts\Aura\Resource;
+use Aura\Base\Resource;
 
 class ComplexFieldsTestModel extends Resource
 {
@@ -15,14 +15,14 @@ class ComplexFieldsTestModel extends Resource
                 'name' => 'Panel',
                 'slug' => 'panel',
                 'global' => true,
-                'type' => 'Eminiarts\\Aura\\Fields\\Panel',
+                'type' => 'Aura\\Base\\Fields\\Panel',
                 'conditional_logic' => [],
                 'wrapper' => '',
             ],
             [
                 'name' => 'Tab 1',
                 'slug' => 'tab1',
-                'type' => 'Eminiarts\\Aura\\Fields\\Tab',
+                'type' => 'Aura\\Base\\Fields\\Tab',
                 'validation' => '',
                 'conditional_logic' => [],
                 'wrapper' => '',
@@ -31,7 +31,7 @@ class ComplexFieldsTestModel extends Resource
             [
                 'name' => 'Enabled',
                 'slug' => 'enabled',
-                'type' => 'Eminiarts\\Aura\\Fields\\Boolean',
+                'type' => 'Aura\\Base\\Fields\\Boolean',
                 'validation' => 'required',
                 'conditional_logic' => [],
                 'wrapper' => '',
@@ -43,7 +43,7 @@ class ComplexFieldsTestModel extends Resource
             [
                 'label' => 'Total',
                 'name' => 'Total',
-                'type' => 'Eminiarts\\Aura\\Fields\\Text',
+                'type' => 'Aura\\Base\\Fields\\Text',
                 'validation' => 'numeric',
                 'conditional_logic' => [],
                 'slug' => 'total',
@@ -51,7 +51,7 @@ class ComplexFieldsTestModel extends Resource
             [
                 'name' => 'Repeater',
                 'slug' => 'repeater',
-                'type' => 'Eminiarts\\Aura\\Fields\\Repeater',
+                'type' => 'Aura\\Base\\Fields\\Repeater',
                 'validation' => '',
                 'conditional_logic' => [],
                 'wrapper' => '',
@@ -59,7 +59,7 @@ class ComplexFieldsTestModel extends Resource
             [
                 'label' => 'Text',
                 'name' => 'Beschreibung',
-                'type' => 'Eminiarts\\Aura\\Fields\\Text',
+                'type' => 'Aura\\Base\\Fields\\Text',
                 'conditional_logic' => [],
                 'slug' => 'description',
                 'style' => [
@@ -69,7 +69,7 @@ class ComplexFieldsTestModel extends Resource
             [
                 'label' => 'Number',
                 'name' => 'Number',
-                'type' => 'Eminiarts\\Aura\\Fields\\Number',
+                'type' => 'Aura\\Base\\Fields\\Number',
                 'validation' => 'required',
                 'conditional_logic' => [],
                 'slug' => 'number',
@@ -80,7 +80,7 @@ class ComplexFieldsTestModel extends Resource
             [
                 'label' => 'Number2',
                 'name' => 'Number2',
-                'type' => 'Eminiarts\\Aura\\Fields\\Number',
+                'type' => 'Aura\\Base\\Fields\\Number',
                 'validation' => 'required',
                 'conditional_logic' => [],
                 'slug' => 'number2',
@@ -91,7 +91,7 @@ class ComplexFieldsTestModel extends Resource
             [
                 'label' => 'Number 3',
                 'name' => 'Number 3',
-                'type' => 'Eminiarts\\Aura\\Fields\\Number',
+                'type' => 'Aura\\Base\\Fields\\Number',
                 'validation' => 'required',
                 'conditional_logic' => [],
                 'slug' => 'number3',
@@ -102,7 +102,7 @@ class ComplexFieldsTestModel extends Resource
             [
                 'name' => 'Tab 2',
                 'slug' => 'tab2',
-                'type' => 'Eminiarts\\Aura\\Fields\\Tab',
+                'type' => 'Aura\\Base\\Fields\\Tab',
                 'validation' => '',
                 'conditional_logic' => [],
                 'wrapper' => '',
@@ -110,7 +110,7 @@ class ComplexFieldsTestModel extends Resource
             [
                 'name' => 'Text 2',
                 'slug' => 'text2',
-                'type' => 'Eminiarts\\Aura\\Fields\\Text',
+                'type' => 'Aura\\Base\\Fields\\Text',
                 'validation' => '',
                 'conditional_logic' => [],
                 'wrapper' => '',
@@ -118,7 +118,7 @@ class ComplexFieldsTestModel extends Resource
             [
                 'name' => 'Enabled',
                 'slug' => 'enabled2',
-                'type' => 'Eminiarts\\Aura\\Fields\\Boolean',
+                'type' => 'Aura\\Base\\Fields\\Boolean',
                 'validation' => 'required',
                 'conditional_logic' => [],
                 'wrapper' => '',
@@ -130,7 +130,7 @@ class ComplexFieldsTestModel extends Resource
             [
                 'name' => 'Panel 2',
                 'slug' => 'panel1',
-                'type' => 'Eminiarts\\Aura\\Fields\\Panel',
+                'type' => 'Aura\\Base\\Fields\\Panel',
                 'validation' => '',
                 'conditional_logic' => [],
                 'wrapper' => '',
@@ -138,14 +138,14 @@ class ComplexFieldsTestModel extends Resource
             [
                 'label' => 'Text',
                 'name' => 'Beschreibung',
-                'type' => 'Eminiarts\\Aura\\Fields\\Text',
+                'type' => 'Aura\\Base\\Fields\\Text',
                 'conditional_logic' => [],
                 'slug' => 'description3',
             ],
             [
                 'label' => 'Image',
                 'name' => 'Bild',
-                'type' => 'Eminiarts\\Aura\\Fields\\Image',
+                'type' => 'Aura\\Base\\Fields\\Image',
                 'conditional_logic' => [],
                 'validation' => 'nullable',
                 'wrapper' => [
@@ -158,7 +158,7 @@ class ComplexFieldsTestModel extends Resource
             [
                 'label' => 'Image',
                 'name' => 'file',
-                'type' => 'Eminiarts\\Aura\\Fields\\File',
+                'type' => 'Aura\\Base\\Fields\\File',
                 'conditional_logic' => [],
                 'validation' => 'nullable',
                 'wrapper' => [
@@ -171,7 +171,7 @@ class ComplexFieldsTestModel extends Resource
             [
                 'name' => 'Text',
                 'slug' => 'text',
-                'type' => 'Eminiarts\\Aura\\Fields\\Text',
+                'type' => 'Aura\\Base\\Fields\\Text',
                 'validation' => '',
                 'conditional_logic' => [],
                 'wrapper' => '',

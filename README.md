@@ -57,7 +57,7 @@ php artisan vendor:publish --tag="aura-views"
 ## Usage
 
 ```php
-$aura = new Eminiarts\Aura();
+$aura = new Aura\Base();
 echo $aura->echoPhrase('Hello, Eminiarts!');
 ```
 

@@ -2,7 +2,7 @@
 
 namespace App\Aura\Resources;
 
-use Eminiarts\Aura\Resource;
+use Aura\Base\Resource;
 
 class PostName extends Resource
 {
@@ -25,7 +25,7 @@ class PostName extends Resource
         return [
             [
                 'name' => 'Title',
-                'type' => 'Eminiarts\\Aura\\Fields\\Text',
+                'type' => 'Aura\\Base\\Fields\\Text',
                 'validation' => 'required',
                 'on_index' => true,
                 'on_view' => true,

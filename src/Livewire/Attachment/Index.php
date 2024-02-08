@@ -1,8 +1,8 @@
 <?php
 
-namespace Eminiarts\Aura\Livewire\Attachment;
+namespace Aura\Base\Livewire\Attachment;
 
-use Eminiarts\Aura\Livewire\Resource\Index as PostIndex;
+use Aura\Base\Livewire\Resource\Index as PostIndex;
 
 class Index extends PostIndex
 {

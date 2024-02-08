@@ -1,8 +1,8 @@
 <?php
 
-namespace Eminiarts\Aura\Livewire\Taxonomy;
+namespace Aura\Base\Livewire\Taxonomy;
 
-use Eminiarts\Aura\Facades\Aura;
+use Aura\Base\Facades\Aura;
 use Livewire\Component;
 
 class Index extends Component

@@ -1,12 +1,12 @@
 <?php
 
-namespace Eminiarts\Aura\Livewire;
+namespace Aura\Base\Livewire;
 
 use Closure;
-use Eminiarts\Aura\Resources\Attachment;
-use Eminiarts\Aura\Resources\User;
-use Eminiarts\Aura\Traits\InputFields;
-use Eminiarts\Aura\Traits\MediaFields;
+use Aura\Base\Resources\Attachment;
+use Aura\Base\Resources\User;
+use Aura\Base\Traits\InputFields;
+use Aura\Base\Traits\MediaFields;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -92,14 +92,14 @@ class Profile extends Component
     {
         return [
             [
-                'type' => 'Eminiarts\\Aura\\Fields\\Tab',
+                'type' => 'Aura\\Base\\Fields\\Tab',
                 'name' => 'User details',
                 'slug' => 'tab-user',
                 'global' => true,
             ],
             [
                 'name' => 'Personal Infos',
-                'type' => 'Eminiarts\\Aura\\Fields\\Panel',
+                'type' => 'Aura\\Base\\Fields\\Panel',
                 'slug' => 'user-details',
                 'style' => [
                     'width' => '100',
@@ -107,7 +107,7 @@ class Profile extends Component
             ],
             [
                 'name' => 'Name',
-                'type' => 'Eminiarts\\Aura\\Fields\\Text',
+                'type' => 'Aura\\Base\\Fields\\Text',
                 'validation' => 'required',
                 'on_index' => true,
                 'slug' => 'name',
@@ -117,7 +117,7 @@ class Profile extends Component
             ],
             [
                 'name' => 'Email',
-                'type' => 'Eminiarts\\Aura\\Fields\\Text',
+                'type' => 'Aura\\Base\\Fields\\Text',
                 'validation' => 'required|email',
                 'on_index' => true,
                 'slug' => 'email',
@@ -126,14 +126,14 @@ class Profile extends Component
                 ],
             ],
             [
-                'type' => 'Eminiarts\\Aura\\Fields\\Tab',
+                'type' => 'Aura\\Base\\Fields\\Tab',
                 'name' => 'Password',
                 'slug' => 'tab-password',
                 'global' => true,
             ],
             [
                 'name' => 'Change Password',
-                'type' => 'Eminiarts\\Aura\\Fields\\Panel',
+                'type' => 'Aura\\Base\\Fields\\Panel',
                 'slug' => 'user-details',
                 'style' => [
                     'width' => '100',
@@ -141,34 +141,34 @@ class Profile extends Component
             ],
             [
                 'name' => 'Current Password',
-                'type' => 'Eminiarts\\Aura\\Fields\\Password',
+                'type' => 'Aura\\Base\\Fields\\Password',
                 'validation' => ['required_with:form.fields.password', 'current_password'],
                 'slug' => 'current_password',
                 'on_index' => false,
             ],
             [
                 'name' => 'New Password',
-                'type' => 'Eminiarts\\Aura\\Fields\\Password',
+                'type' => 'Aura\\Base\\Fields\\Password',
                 'validation' => ['nullable', 'confirmed', Password::min(12)->mixedCase()->numbers()->symbols()->uncompromised()],
                 'slug' => 'password',
                 'on_index' => false,
             ],
             [
                 'name' => 'Confirm Password',
-                'type' => 'Eminiarts\\Aura\\Fields\\Password',
+                'type' => 'Aura\\Base\\Fields\\Password',
                 'validation' => ['required_with:form.fields.password', 'same:form.fields.password'],
                 'slug' => 'password_confirmation',
                 'on_index' => false,
             ],
             [
-                'type' => 'Eminiarts\\Aura\\Fields\\Tab',
+                'type' => 'Aura\\Base\\Fields\\Tab',
                 'name' => '2FA',
                 'slug' => '2fa',
                 'global' => true,
             ],
             [
                 'name' => 'Two Factor Authentication',
-                'type' => 'Eminiarts\\Aura\\Fields\\Panel',
+                'type' => 'Aura\\Base\\Fields\\Panel',
                 'slug' => 'user-2fa',
                 'style' => [
                     'width' => '100',
@@ -176,21 +176,21 @@ class Profile extends Component
             ],
             [
                 'name' => '2FA',
-                'type' => 'Eminiarts\\Aura\\Fields\\LivewireComponent',
+                'type' => 'Aura\\Base\\Fields\\LivewireComponent',
                 'component' => 'aura::user-two-factor-authentication-form',
                 'validation' => '',
                 'conditional_logic' => [],
                 'slug' => '2fa',
             ],
             [
-                'type' => 'Eminiarts\\Aura\\Fields\\Tab',
+                'type' => 'Aura\\Base\\Fields\\Tab',
                 'name' => 'Delete',
                 'slug' => 'delete-tab',
                 'global' => true,
             ],
             [
                 'name' => 'Delete Account',
-                'type' => 'Eminiarts\\Aura\\Fields\\Panel',
+                'type' => 'Aura\\Base\\Fields\\Panel',
                 'slug' => 'user-delete-panel',
                 'style' => [
                     'width' => '100',
@@ -198,7 +198,7 @@ class Profile extends Component
             ],
             [
                 'name' => '2FA',
-                'type' => 'Eminiarts\\Aura\\Fields\\View',
+                'type' => 'Aura\\Base\\Fields\\View',
                 'view' => 'aura::profile.delete-user-form',
                 'validation' => '',
                 'conditional_logic' => [],

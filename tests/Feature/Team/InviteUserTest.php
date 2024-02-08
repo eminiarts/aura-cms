@@ -1,13 +1,13 @@
 <?php
 
-use Eminiarts\Aura\Facades\Aura;
-use Eminiarts\Aura\Livewire\Config;
-use Eminiarts\Aura\Livewire\InviteUser;
-use Eminiarts\Aura\Providers\RouteServiceProvider;
-use Eminiarts\Aura\Resources\Role;
-use Eminiarts\Aura\Resources\Team;
-use Eminiarts\Aura\Resources\TeamInvitation;
-use Eminiarts\Aura\Resources\User;
+use Aura\Base\Facades\Aura;
+use Aura\Base\Livewire\Config;
+use Aura\Base\Livewire\InviteUser;
+use Aura\Base\Providers\RouteServiceProvider;
+use Aura\Base\Resources\Role;
+use Aura\Base\Resources\Team;
+use Aura\Base\Resources\TeamInvitation;
+use Aura\Base\Resources\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\URL;

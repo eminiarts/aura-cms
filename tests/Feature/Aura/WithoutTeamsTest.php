@@ -1,6 +1,6 @@
 <?php
 
-use Eminiarts\Aura\Resources\User;
+use Aura\Base\Resources\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Schema;
 

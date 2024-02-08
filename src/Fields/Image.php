@@ -1,8 +1,8 @@
 <?php
 
-namespace Eminiarts\Aura\Fields;
+namespace Aura\Base\Fields;
 
-use Eminiarts\Aura\Resources\Attachment;
+use Aura\Base\Resources\Attachment;
 
 class Image extends Field
 {
@@ -58,28 +58,28 @@ class Image extends Field
             [
                 'label' => 'Image',
                 'name' => 'Image',
-                'type' => 'Eminiarts\\Aura\\Fields\\Tab',
+                'type' => 'Aura\\Base\\Fields\\Tab',
                 'slug' => 'image-tab',
                 'style' => [],
             ],
 
             [
                 'name' => 'Use Media Manager',
-                'type' => 'Eminiarts\\Aura\\Fields\\Boolean',
+                'type' => 'Aura\\Base\\Fields\\Boolean',
                 'slug' => 'use_media_manager',
             ],
 
             // min and max numbers for allowed number of files
             [
                 'name' => 'Min Files',
-                'type' => 'Eminiarts\\Aura\\Fields\\Number',
+                'type' => 'Aura\\Base\\Fields\\Number',
                 'validation' => '',
                 'slug' => 'min_files',
                 'instructions' => 'Minimum number of files allowed',
             ],
             [
                 'name' => 'Max Files',
-                'type' => 'Eminiarts\\Aura\\Fields\\Number',
+                'type' => 'Aura\\Base\\Fields\\Number',
                 'validation' => '',
                 'slug' => 'max_files',
                 'instructions' => 'Maximum number of files allowed',
@@ -88,7 +88,7 @@ class Image extends Field
             // allowed file types
             [
                 'name' => 'Allowed File Types',
-                'type' => 'Eminiarts\\Aura\\Fields\\Text',
+                'type' => 'Aura\\Base\\Fields\\Text',
                 'validation' => '',
                 'slug' => 'allowed_file_types',
                 'instructions' => 'Comma separated list of allowed file types. Example: jpg, png, gif',

@@ -1,8 +1,8 @@
 <?php
 
 use Aura\Flows\Resources\Flow;
-use Eminiarts\Aura\Models\User;
-use Eminiarts\Aura\Resources\Post;
+use Aura\Base\Models\User;
+use Aura\Base\Resources\Post;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
@@ -50,12 +50,12 @@ test('flow - delete resource operation', function () {
     $flow->operations()->create([
         'name' => 'Delete Data',
         'key' => 'test-operation',
-        'type' => 'Eminiarts\\Aura\\Operations\\DeleteResource',
+        'type' => 'Aura\\Base\\Operations\\DeleteResource',
         'options' => [
             'x' => 2,
             'y' => 2,
             'type' => 'custom',
-            'resource' => 'Eminiarts\\Aura\\Resources\\Post',
+            'resource' => 'Aura\\Base\\Resources\\Post',
             'resource_ids' => [$firstPost->id, $secondPost->id],
         ],
     ]);

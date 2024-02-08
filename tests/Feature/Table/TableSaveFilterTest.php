@@ -1,10 +1,10 @@
 <?php
 
-use Eminiarts\Aura\Livewire\Table\Table;
-use Eminiarts\Aura\Models\User;
-use Eminiarts\Aura\Resource;
-use Eminiarts\Aura\Resources\Post;
-use Eminiarts\Aura\Resources\Tag;
+use Aura\Base\Livewire\Table\Table;
+use Aura\Base\Models\User;
+use Aura\Base\Resource;
+use Aura\Base\Resources\Post;
+use Aura\Base\Resources\Tag;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Livewire\Livewire;
@@ -54,7 +54,7 @@ class TableSaveFilterModel extends Resource
         return [
             [
                 'name' => 'Meta',
-                'type' => 'Eminiarts\\Aura\\Fields\\Text',
+                'type' => 'Aura\\Base\\Fields\\Text',
                 'validation' => 'required',
                 'conditional_logic' => [],
                 'slug' => 'metafield',
@@ -62,8 +62,8 @@ class TableSaveFilterModel extends Resource
             [
                 'name' => 'Tags',
                 'slug' => 'tags',
-                'type' => 'Eminiarts\\Aura\\Fields\\Tags',
-                'resource' => 'Eminiarts\\Aura\\Resources\\Tag',
+                'type' => 'Aura\\Base\\Fields\\Tags',
+                'resource' => 'Aura\\Base\\Resources\\Tag',
                 'create' => true,
                 'validation' => '',
                 'conditional_logic' => [],

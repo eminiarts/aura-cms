@@ -1,6 +1,6 @@
 <?php
 
-namespace Eminiarts\Aura\Fields;
+namespace Aura\Base\Fields;
 
 class Email extends Field
 {
@@ -14,26 +14,26 @@ class Email extends Field
             [
                 'label' => 'Email',
                 'name' => 'Email',
-                'type' => 'Eminiarts\\Aura\\Fields\\Tab',
+                'type' => 'Aura\\Base\\Fields\\Tab',
                 'slug' => 'email-tab',
                 'style' => [],
             ],
             [
                 'name' => 'Default Value',
-                'type' => 'Eminiarts\\Aura\\Fields\\Text',
+                'type' => 'Aura\\Base\\Fields\\Text',
                 'validation' => '',
                 'instructions' => 'Default value on create',
                 'slug' => 'default',
             ],
             [
                 'name' => 'Placeholder',
-                'type' => 'Eminiarts\\Aura\\Fields\\Text',
+                'type' => 'Aura\\Base\\Fields\\Text',
                 'validation' => '',
                 'slug' => 'placeholder',
             ],
             [
                 'name' => 'Prefix',
-                'type' => 'Eminiarts\\Aura\\Fields\\Text',
+                'type' => 'Aura\\Base\\Fields\\Text',
                 'validation' => '',
                 'slug' => 'prefix',
                 'style' => [
@@ -43,7 +43,7 @@ class Email extends Field
             ],
             [
                 'name' => 'Suffix',
-                'type' => 'Eminiarts\\Aura\\Fields\\Text',
+                'type' => 'Aura\\Base\\Fields\\Text',
                 'validation' => '',
                 'slug' => 'suffix',
                 'style' => [

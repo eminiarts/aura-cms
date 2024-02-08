@@ -1,10 +1,10 @@
 <?php
 
-namespace Eminiarts\Aura\Resources;
+namespace Aura\Base\Resources;
 
-use Eminiarts\Aura\Database\Factories\TeamFactory;
-use Eminiarts\Aura\Models\TeamMeta;
-use Eminiarts\Aura\Resource;
+use Aura\Base\Database\Factories\TeamFactory;
+use Aura\Base\Models\TeamMeta;
+use Aura\Base\Resource;
 use Illuminate\Support\Facades\Cache;
 
 class Team extends Resource
@@ -63,7 +63,7 @@ class Team extends Resource
         return [
 
             [
-                'type' => 'Eminiarts\\Aura\\Fields\\Tab',
+                'type' => 'Aura\\Base\\Fields\\Tab',
                 'name' => 'Team',
                 'slug' => 'tab-team',
                 'global' => true,
@@ -71,13 +71,13 @@ class Team extends Resource
             [
                 'name' => 'Team',
                 'slug' => 'team-panel',
-                'type' => 'Eminiarts\\Aura\\Fields\\Panel',
+                'type' => 'Aura\\Base\\Fields\\Panel',
                 'validation' => '',
                 'conditional_logic' => [],
             ],
             [
                 'name' => 'Name',
-                'type' => 'Eminiarts\\Aura\\Fields\\Text',
+                'type' => 'Aura\\Base\\Fields\\Text',
                 'validation' => 'required',
                 'on_index' => true,
                 'slug' => 'name',
@@ -87,7 +87,7 @@ class Team extends Resource
             ],
             [
                 'name' => 'Description',
-                'type' => 'Eminiarts\\Aura\\Fields\\Text',
+                'type' => 'Aura\\Base\\Fields\\Text',
                 'validation' => '',
                 'on_index' => true,
                 'slug' => 'description',
@@ -96,7 +96,7 @@ class Team extends Resource
                 ],
             ],
             // [
-            //     'type' => 'Eminiarts\\Aura\\Fields\\Tab',
+            //     'type' => 'Aura\\Base\\Fields\\Tab',
             //     'name' => 'Users',
             //     'slug' => 'tab-users',
             //     'global' => true,
@@ -105,8 +105,8 @@ class Team extends Resource
             // [
             //     'name' => 'Users',
             //     'slug' => 'users',
-            //     'type' => 'Eminiarts\\Aura\\Fields\\HasMany',
-            //     'resource' => 'Eminiarts\\Aura\\Resources\\User',
+            //     'type' => 'Aura\\Base\\Fields\\HasMany',
+            //     'resource' => 'Aura\\Base\\Resources\\User',
             //     'validation' => '',
             //     'conditional_logic' => [],
             //     'on_index' => false,
@@ -120,7 +120,7 @@ class Team extends Resource
             // [
             //     'name' => 'Invitations',
             //     'slug' => 'tab-Invitations',
-            //     'type' => 'Eminiarts\\Aura\\Fields\\Tab',
+            //     'type' => 'Aura\\Base\\Fields\\Tab',
             //     'global' => true,
             //     'validation' => '',
             //     'conditional_logic' => [],
@@ -129,8 +129,8 @@ class Team extends Resource
             // [
             //     'name' => 'Invitations',
             //     'slug' => 'Invitations',
-            //     'type' => 'Eminiarts\\Aura\\Fields\\HasMany',
-            //     'resource' => 'Eminiarts\\Aura\\Resources\\TeamInvitation',
+            //     'type' => 'Aura\\Base\\Fields\\HasMany',
+            //     'resource' => 'Aura\\Base\\Resources\\TeamInvitation',
             //     'validation' => '',
             //     'conditional_logic' => [],
             //     'on_index' => false,

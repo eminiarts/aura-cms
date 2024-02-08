@@ -1,10 +1,10 @@
 <?php
 
-namespace Eminiarts\Aura\Commands;
+namespace Aura\Base\Commands;
 
-use Eminiarts\Aura\Resources\Role;
-use Eminiarts\Aura\Resources\Team;
-use Eminiarts\Aura\Resources\User;
+use Aura\Base\Resources\Role;
+use Aura\Base\Resources\Team;
+use Aura\Base\Resources\User;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 

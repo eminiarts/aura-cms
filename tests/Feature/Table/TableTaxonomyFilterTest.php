@@ -1,16 +1,16 @@
 <?php
 
 use Livewire\Livewire;
-use Eminiarts\Aura\Resource;
-use Eminiarts\Aura\Models\User;
-use Eminiarts\Aura\Resources\Tag;
-use Eminiarts\Aura\Resources\Post;
+use Aura\Base\Resource;
+use Aura\Base\Models\User;
+use Aura\Base\Resources\Tag;
+use Aura\Base\Resources\Post;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use Eminiarts\Aura\Livewire\Table\Table;
+use Aura\Base\Livewire\Table\Table;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Contracts\Database\Eloquent\Builder;
-use Eminiarts\Aura\Livewire\Table\Traits\QueryFilters;
+use Aura\Base\Livewire\Table\Traits\QueryFilters;
 
 uses(RefreshDatabase::class);
 
@@ -34,7 +34,7 @@ class TableTaxonomyFilterModel extends Resource
         return [
             [
                 'name' => 'Meta',
-                'type' => 'Eminiarts\\Aura\\Fields\\Text',
+                'type' => 'Aura\\Base\\Fields\\Text',
                 'validation' => 'required',
                 'conditional_logic' => [],
                 'slug' => 'meta',
@@ -42,8 +42,8 @@ class TableTaxonomyFilterModel extends Resource
             [
                 'name' => 'Tags',
                 'slug' => 'tags',
-                'type' => 'Eminiarts\\Aura\\Fields\\Tags',
-                'resource' => 'Eminiarts\\Aura\\Resources\\Tag',
+                'type' => 'Aura\\Base\\Fields\\Tags',
+                'resource' => 'Aura\\Base\\Resources\\Tag',
                 'create' => true,
                 'validation' => '',
                 'conditional_logic' => [],

@@ -1,6 +1,6 @@
 <?php
 
-use Eminiarts\Aura\Resource;
+use Aura\Base\Resource;
 
 class ViewFieldsTestModel extends Resource
 {
@@ -13,20 +13,20 @@ class ViewFieldsTestModel extends Resource
         return [
             [
                 'name' => 'Tab 1',
-                'type' => 'Eminiarts\\Aura\\Fields\\Tab',
+                'type' => 'Aura\\Base\\Fields\\Tab',
                 'slug' => 'tab-1',
                 'global' => true,
             ],
             [
                 'name' => 'Text 1',
-                'type' => 'Eminiarts\\Aura\\Fields\\Text',
+                'type' => 'Aura\\Base\\Fields\\Text',
                 'validation' => 'numeric',
                 'conditional_logic' => [],
                 'slug' => 'text1',
             ],
             [
                 'name' => 'Tab 2',
-                'type' => 'Eminiarts\\Aura\\Fields\\Tab',
+                'type' => 'Aura\\Base\\Fields\\Tab',
                 'slug' => 'tab-2',
                 'global' => true,
                 'on_view' => false,
@@ -34,7 +34,7 @@ class ViewFieldsTestModel extends Resource
             [
                 'label' => 'Text 2',
                 'name' => 'Text 2',
-                'type' => 'Eminiarts\\Aura\\Fields\\Text',
+                'type' => 'Aura\\Base\\Fields\\Text',
                 'validation' => 'numeric',
                 'conditional_logic' => [],
                 'slug' => 'text2',
@@ -70,13 +70,13 @@ class ViewFieldsTestModel2 extends Resource
         return [
             [
                 'name' => 'Tab 1',
-                'type' => 'Eminiarts\\Aura\\Fields\\Tab',
+                'type' => 'Aura\\Base\\Fields\\Tab',
                 'slug' => 'tab-1',
                 'global' => true,
             ],
             [
                 'name' => 'Text 1',
-                'type' => 'Eminiarts\\Aura\\Fields\\Text',
+                'type' => 'Aura\\Base\\Fields\\Text',
                 'validation' => 'numeric',
                 'conditional_logic' => [],
                 'slug' => 'text1',
@@ -84,14 +84,14 @@ class ViewFieldsTestModel2 extends Resource
             ],
             [
                 'name' => 'Tab 2',
-                'type' => 'Eminiarts\\Aura\\Fields\\Tab',
+                'type' => 'Aura\\Base\\Fields\\Tab',
                 'slug' => 'tab-2',
                 'global' => true,
             ],
             [
                 'label' => 'Text 2',
                 'name' => 'Text 2',
-                'type' => 'Eminiarts\\Aura\\Fields\\Text',
+                'type' => 'Aura\\Base\\Fields\\Text',
                 'validation' => 'numeric',
                 'conditional_logic' => [],
                 'slug' => 'text2',

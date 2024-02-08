@@ -1,6 +1,6 @@
 <?php
 
-namespace Eminiarts\Aura\Models;
+namespace Aura\Base\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;

@@ -1,8 +1,8 @@
 <?php
 
-namespace Eminiarts\Aura\Models;
+namespace Aura\Base\Models;
 
-use Eminiarts\Aura\Models\Scopes\TeamScope;
+use Aura\Base\Models\Scopes\TeamScope;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 

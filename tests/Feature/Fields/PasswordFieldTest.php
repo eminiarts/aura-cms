@@ -2,13 +2,13 @@
 
 namespace Tests\Feature\Livewire;
 
-use Eminiarts\Aura\Facades\Aura;
-use Eminiarts\Aura\Livewire\Resource\Create;
-use Eminiarts\Aura\Livewire\Resource\Edit;
-use Eminiarts\Aura\Models\User;
-use Eminiarts\Aura\Resource;
-use Eminiarts\Aura\Resources\Post;
-use Eminiarts\Aura\Resources\Team;
+use Aura\Base\Facades\Aura;
+use Aura\Base\Livewire\Resource\Create;
+use Aura\Base\Livewire\Resource\Edit;
+use Aura\Base\Models\User;
+use Aura\Base\Resource;
+use Aura\Base\Resources\Post;
+use Aura\Base\Resources\Team;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
 use Livewire\Livewire;
@@ -37,7 +37,7 @@ class PasswordFieldModel extends Resource
         return [
             [
                 'name' => 'Password for Test',
-                'type' => 'Eminiarts\\Aura\\Fields\\Password',
+                'type' => 'Aura\\Base\\Fields\\Password',
                 'validation' => 'nullable|min:8',
                 'conditional_logic' => [],
                 'slug' => 'password',

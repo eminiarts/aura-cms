@@ -1,6 +1,6 @@
 <?php
 
-namespace Eminiarts\Aura\Livewire;
+namespace Aura\Base\Livewire;
 
 use Livewire\Component;
 

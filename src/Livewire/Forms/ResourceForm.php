@@ -1,6 +1,6 @@
 <?php
 
-namespace Eminiarts\Aura\Livewire\Forms;
+namespace Aura\Base\Livewire\Forms;
 
 use Livewire\Attributes\Validate;
 use Livewire\Form;

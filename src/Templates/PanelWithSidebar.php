@@ -1,6 +1,6 @@
 <?php
 
-namespace Eminiarts\Aura\Templates;
+namespace Aura\Base\Templates;
 
 class PanelWithSidebar
 {
@@ -11,7 +11,7 @@ class PanelWithSidebar
         return [
             [
                 'name' => 'Panel 1',
-                'type' => 'Eminiarts\\Aura\\Fields\\Panel',
+                'type' => 'Aura\\Base\\Fields\\Panel',
                 'validation' => '',
                 'on_index' => true,
                 'conditional_logic' => [],
@@ -22,7 +22,7 @@ class PanelWithSidebar
             ],
             [
                 'name' => 'Text 1',
-                'type' => 'Eminiarts\\Aura\\Fields\\Text',
+                'type' => 'Aura\\Base\\Fields\\Text',
                 'on_index' => true,
                 'conditional_logic' => [],
                 'slug' => 'text-1',
@@ -33,7 +33,7 @@ class PanelWithSidebar
 
             [
                 'name' => 'Panel 2',
-                'type' => 'Eminiarts\\Aura\\Fields\\Panel',
+                'type' => 'Aura\\Base\\Fields\\Panel',
                 'validation' => '',
                 'on_index' => true,
                 'conditional_logic' => [],
@@ -44,7 +44,7 @@ class PanelWithSidebar
             ],
             [
                 'name' => 'Text 2',
-                'type' => 'Eminiarts\\Aura\\Fields\\Text',
+                'type' => 'Aura\\Base\\Fields\\Text',
                 'on_index' => true,
                 'conditional_logic' => [],
                 'slug' => 'text-2',

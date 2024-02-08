@@ -1,8 +1,8 @@
 <?php
 
-namespace Eminiarts\Aura\Livewire\Resource;
+namespace Aura\Base\Livewire\Resource;
 
-use Eminiarts\Aura\Facades\Aura;
+use Aura\Base\Facades\Aura;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Livewire\Component;
 

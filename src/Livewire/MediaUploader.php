@@ -1,8 +1,8 @@
 <?php
 
-namespace Eminiarts\Aura\Livewire;
+namespace Aura\Base\Livewire;
 
-use Eminiarts\Aura\Resources\Attachment;
+use Aura\Base\Resources\Attachment;
 use Livewire\Component;
 use Livewire\WithFileUploads;
 

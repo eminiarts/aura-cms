@@ -1,9 +1,9 @@
 <?php
 
-namespace Eminiarts\Aura\Fields;
+namespace Aura\Base\Fields;
 
 use Illuminate\Support\Str;
-use Eminiarts\Aura\Models\Meta;
+use Aura\Base\Models\Meta;
 
 class BelongsTo extends Field
 {
@@ -140,14 +140,14 @@ class BelongsTo extends Field
             [
                 'label' => 'Belongs To',
                 'name' => 'Belongs To',
-                'type' => 'Eminiarts\\Aura\\Fields\\Tab',
+                'type' => 'Aura\\Base\\Fields\\Tab',
                 'slug' => 'tab-belongsTo',
                 'style' => [],
             ],
             [
                 'label' => 'Resource',
                 'name' => 'resource',
-                'type' => 'Eminiarts\\Aura\\Fields\\Text',
+                'type' => 'Aura\\Base\\Fields\\Text',
                 'validation' => '',
                 'slug' => 'resource',
             ],

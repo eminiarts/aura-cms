@@ -1,56 +1,56 @@
 <?php
 
-namespace Eminiarts\Aura;
+namespace Aura\Base;
 
-use Eminiarts\Aura\Navigation\Navigation as AuraNavigation;
-use Eminiarts\Aura\Commands\AuraCommand;
-use Eminiarts\Aura\Commands\CreateAuraPlugin;
-use Eminiarts\Aura\Commands\CreateResourceMigration;
-use Eminiarts\Aura\Commands\CreateResourcePermissions;
-use Eminiarts\Aura\Commands\DatabaseToResources;
-use Eminiarts\Aura\Commands\MakeField;
-use Eminiarts\Aura\Commands\MakeResource;
-use Eminiarts\Aura\Commands\MakeUser;
-use Eminiarts\Aura\Commands\PublishCommand;
-use Eminiarts\Aura\Commands\TransformTableToResource;
-use Eminiarts\Aura\Facades\Aura;
-use Eminiarts\Aura\Livewire\Attachment\Index as AttachmentIndex;
-use Eminiarts\Aura\Livewire\Config;
-use Eminiarts\Aura\Livewire\BookmarkPage;
-use Eminiarts\Aura\Livewire\CreateFlow;
-use Eminiarts\Aura\Livewire\CreateResource;
-use Eminiarts\Aura\Livewire\Dashboard;
-use Eminiarts\Aura\Livewire\EditOperation;
-use Eminiarts\Aura\Livewire\EditResourceField;
-use Eminiarts\Aura\Livewire\GlobalSearch;
-use Eminiarts\Aura\Livewire\MediaManager;
-use Eminiarts\Aura\Livewire\MediaUploader;
-use Eminiarts\Aura\Livewire\Navigation;
-use Eminiarts\Aura\Livewire\Notifications;
-use Eminiarts\Aura\Livewire\Resource\Create;
-use Eminiarts\Aura\Livewire\Resource\CreateModal;
-use Eminiarts\Aura\Livewire\Resource\Edit;
-use Eminiarts\Aura\Livewire\Resource\EditModal;
-use Eminiarts\Aura\Livewire\Resource\Index;
-use Eminiarts\Aura\Livewire\Resource\View;
-use Eminiarts\Aura\Livewire\ResourceEditor;
-use Eminiarts\Aura\Livewire\Table\Table;
-use Eminiarts\Aura\Livewire\TeamSettings;
-use Eminiarts\Aura\Livewire\InviteUser;
-use Eminiarts\Aura\Livewire\Profile;
-use Eminiarts\Aura\Livewire\TwoFactorAuthenticationForm;
-use Eminiarts\Aura\Policies\ResourcePolicy;
-use Eminiarts\Aura\Policies\TeamPolicy;
-use Eminiarts\Aura\Policies\UserPolicy;
-use Eminiarts\Aura\Resources\Team;
-use Eminiarts\Aura\Resources\User;
-use Eminiarts\Aura\Widgets\Bar;
-use Eminiarts\Aura\Widgets\Donut;
-use Eminiarts\Aura\Widgets\Pie;
-use Eminiarts\Aura\Widgets\SparklineArea;
-use Eminiarts\Aura\Widgets\SparklineBar;
-use Eminiarts\Aura\Widgets\ValueWidget;
-use Eminiarts\Aura\Widgets\Widgets;
+use Aura\Base\Navigation\Navigation as AuraNavigation;
+use Aura\Base\Commands\AuraCommand;
+use Aura\Base\Commands\CreateAuraPlugin;
+use Aura\Base\Commands\CreateResourceMigration;
+use Aura\Base\Commands\CreateResourcePermissions;
+use Aura\Base\Commands\DatabaseToResources;
+use Aura\Base\Commands\MakeField;
+use Aura\Base\Commands\MakeResource;
+use Aura\Base\Commands\MakeUser;
+use Aura\Base\Commands\PublishCommand;
+use Aura\Base\Commands\TransformTableToResource;
+use Aura\Base\Facades\Aura;
+use Aura\Base\Livewire\Attachment\Index as AttachmentIndex;
+use Aura\Base\Livewire\Config;
+use Aura\Base\Livewire\BookmarkPage;
+use Aura\Base\Livewire\CreateFlow;
+use Aura\Base\Livewire\CreateResource;
+use Aura\Base\Livewire\Dashboard;
+use Aura\Base\Livewire\EditOperation;
+use Aura\Base\Livewire\EditResourceField;
+use Aura\Base\Livewire\GlobalSearch;
+use Aura\Base\Livewire\MediaManager;
+use Aura\Base\Livewire\MediaUploader;
+use Aura\Base\Livewire\Navigation;
+use Aura\Base\Livewire\Notifications;
+use Aura\Base\Livewire\Resource\Create;
+use Aura\Base\Livewire\Resource\CreateModal;
+use Aura\Base\Livewire\Resource\Edit;
+use Aura\Base\Livewire\Resource\EditModal;
+use Aura\Base\Livewire\Resource\Index;
+use Aura\Base\Livewire\Resource\View;
+use Aura\Base\Livewire\ResourceEditor;
+use Aura\Base\Livewire\Table\Table;
+use Aura\Base\Livewire\TeamSettings;
+use Aura\Base\Livewire\InviteUser;
+use Aura\Base\Livewire\Profile;
+use Aura\Base\Livewire\TwoFactorAuthenticationForm;
+use Aura\Base\Policies\ResourcePolicy;
+use Aura\Base\Policies\TeamPolicy;
+use Aura\Base\Policies\UserPolicy;
+use Aura\Base\Resources\Team;
+use Aura\Base\Resources\User;
+use Aura\Base\Widgets\Bar;
+use Aura\Base\Widgets\Donut;
+use Aura\Base\Widgets\Pie;
+use Aura\Base\Widgets\SparklineArea;
+use Aura\Base\Widgets\SparklineBar;
+use Aura\Base\Widgets\ValueWidget;
+use Aura\Base\Widgets\Widgets;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Blade;
@@ -94,11 +94,11 @@ class AuraServiceProvider extends PackageServiceProvider
 
     public function bootLivewireComponents()
     {
-        Livewire::component('app.aura.widgets.post-stats', \Eminiarts\Aura\Widgets\PostStats::class);
-        // Livewire::component('app.aura.widgets.total-posts', \Eminiarts\Aura\Widgets\TotalPosts::class);
-        Livewire::component('app.aura.widgets.post-chart', \Eminiarts\Aura\Widgets\PostChart::class);
-        Livewire::component('app.aura.widgets.sum-posts-number', \Eminiarts\Aura\Widgets\SumPostsNumber::class);
-        Livewire::component('app.aura.widgets.avg-posts-number', \Eminiarts\Aura\Widgets\AvgPostsNumber::class);
+        Livewire::component('app.aura.widgets.post-stats', \Aura\Base\Widgets\PostStats::class);
+        // Livewire::component('app.aura.widgets.total-posts', \Aura\Base\Widgets\TotalPosts::class);
+        Livewire::component('app.aura.widgets.post-chart', \Aura\Base\Widgets\PostChart::class);
+        Livewire::component('app.aura.widgets.sum-posts-number', \Aura\Base\Widgets\SumPostsNumber::class);
+        Livewire::component('app.aura.widgets.avg-posts-number', \Aura\Base\Widgets\AvgPostsNumber::class);
         Livewire::component('aura::post-index', Index::class);
         Livewire::component('aura::post-create', Create::class);
         Livewire::component('aura::post-create-modal', CreateModal::class);
@@ -206,7 +206,7 @@ class AuraServiceProvider extends PackageServiceProvider
 
         // CheckCondition Blade Directive
         Blade::if('checkCondition', function ($model, $field, $post = null) {
-            return \Eminiarts\Aura\Aura::checkCondition($model, $field, $post);
+            return \Aura\Base\Aura::checkCondition($model, $field, $post);
         });
 
         Blade::if('superadmin', function () {
@@ -223,7 +223,7 @@ class AuraServiceProvider extends PackageServiceProvider
 
         // Register the morph map for the resources
         // $resources = Aura::resources()->mapWithKeys(function ($resource) {
-        //     return [$resource => 'Eminiarts\Aura\Resources\\'.str($resource)->title];
+        //     return [$resource => 'Aura\Base\Resources\\'.str($resource)->title];
         // })->toArray();
 
         $this
@@ -240,7 +240,7 @@ class AuraServiceProvider extends PackageServiceProvider
         });
 
         $this->app->singleton('dynamicFunctions', function ($app) {
-            return new \Eminiarts\Aura\Facades\DynamicFunctions();
+            return new \Aura\Base\Facades\DynamicFunctions();
         });
 
         $this->app->singleton('dynamic_functions', function ($app) {
@@ -278,7 +278,7 @@ class AuraServiceProvider extends PackageServiceProvider
 
         // Register Fields from src/Fields
         $fields = collect(app('files')->files(__DIR__.'/Fields'))->map(function ($field) {
-            return 'Eminiarts\Aura\Fields\\'.str($field->getFilename())->replace('.php', '')->title;
+            return 'Aura\Base\Fields\\'.str($field->getFilename())->replace('.php', '')->title;
         })->toArray();
 
         Aura::registerFields($fields);

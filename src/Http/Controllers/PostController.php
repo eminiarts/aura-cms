@@ -1,10 +1,10 @@
 <?php
 
-namespace Eminiarts\Aura\Http\Controllers;
+namespace Aura\Base\Http\Controllers;
 
-use Eminiarts\Aura\Http\Requests\StorePostRequest;
-use Eminiarts\Aura\Http\Requests\UpdatePostRequest;
-use Eminiarts\Aura\Models\Post;
+use Aura\Base\Http\Requests\StorePostRequest;
+use Aura\Base\Http\Requests\UpdatePostRequest;
+use Aura\Base\Models\Post;
 
 class PostController extends Controller
 {

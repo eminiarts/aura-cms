@@ -15,7 +15,7 @@ class Skeleton extends Resource
         return [
             [
                 'name' => 'Title',
-                'type' => 'Eminiarts\\Aura\\Fields\\Text',
+                'type' => 'Aura\\Base\\Fields\\Text',
                 'validation' => 'required',
                 'on_index' => true,
                 'slug' => 'title',

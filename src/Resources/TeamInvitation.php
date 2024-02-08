@@ -1,8 +1,8 @@
 <?php
 
-namespace Eminiarts\Aura\Resources;
+namespace Aura\Base\Resources;
 
-use Eminiarts\Aura\Resource;
+use Aura\Base\Resource;
 
 class TeamInvitation extends Resource
 {
@@ -22,7 +22,7 @@ class TeamInvitation extends Resource
             [
                 'name' => 'Email',
                 'slug' => 'email',
-                'type' => 'Eminiarts\\Aura\\Fields\\Email',
+                'type' => 'Aura\\Base\\Fields\\Email',
                 'validation' => 'required',
                 'conditional_logic' => [],
                 'wrapper' => '',
@@ -33,7 +33,7 @@ class TeamInvitation extends Resource
             [
                 'name' => 'Role',
                 'slug' => 'role',
-                'type' => 'Eminiarts\\Aura\\Fields\\Text',
+                'type' => 'Aura\\Base\\Fields\\Text',
                 'validation' => 'required',
                 'on_index' => false,
                 'style' => [

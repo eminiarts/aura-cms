@@ -1,6 +1,6 @@
 <?php
 
-use Eminiarts\Aura\Resource;
+use Aura\Base\Resource;
 
 class Model1 extends Resource
 {
@@ -14,14 +14,14 @@ class Model1 extends Resource
             [
                 'label' => 'Tab 1',
                 'name' => 'Tab 1',
-                'type' => 'Eminiarts\\Aura\\Fields\\Tab',
+                'type' => 'Aura\\Base\\Fields\\Tab',
                 'slug' => 'tab-1',
                 'style' => [],
             ],
             [
                 'label' => 'Total',
                 'name' => 'Total',
-                'type' => 'Eminiarts\\Aura\\Fields\\Text',
+                'type' => 'Aura\\Base\\Fields\\Text',
                 'validation' => 'numeric',
                 'conditional_logic' => [],
                 'slug' => 'total',
@@ -29,7 +29,7 @@ class Model1 extends Resource
             [
                 'label' => 'other',
                 'name' => 'other',
-                'type' => 'Eminiarts\\Aura\\Fields\\Text',
+                'type' => 'Aura\\Base\\Fields\\Text',
                 'validation' => 'numeric',
                 'conditional_logic' => [],
                 'slug' => 'other',
@@ -37,14 +37,14 @@ class Model1 extends Resource
             [
                 'label' => 'Tab 2',
                 'name' => 'Tab 2',
-                'type' => 'Eminiarts\\Aura\\Fields\\Tab',
+                'type' => 'Aura\\Base\\Fields\\Tab',
                 'slug' => 'tab-2',
                 'style' => [],
             ],
             [
                 'label' => 'Total 2',
                 'name' => 'Total 2',
-                'type' => 'Eminiarts\\Aura\\Fields\\Text',
+                'type' => 'Aura\\Base\\Fields\\Text',
                 'validation' => 'numeric',
                 'conditional_logic' => [],
                 'slug' => 'total-2',
@@ -84,14 +84,14 @@ class Model2 extends Resource
             [
                 'label' => 'Tab 1',
                 'name' => 'Tab 1',
-                'type' => 'Eminiarts\\Aura\\Fields\\Tab',
+                'type' => 'Aura\\Base\\Fields\\Tab',
                 'slug' => 'tab-1',
                 'style' => [],
             ],
             [
                 'label' => 'Total',
                 'name' => 'Total',
-                'type' => 'Eminiarts\\Aura\\Fields\\Text',
+                'type' => 'Aura\\Base\\Fields\\Text',
                 'validation' => 'numeric',
                 'conditional_logic' => [],
                 'slug' => 'total',
@@ -99,7 +99,7 @@ class Model2 extends Resource
             [
                 'label' => 'other',
                 'name' => 'other',
-                'type' => 'Eminiarts\\Aura\\Fields\\Text',
+                'type' => 'Aura\\Base\\Fields\\Text',
                 'validation' => 'numeric',
                 'conditional_logic' => [],
                 'slug' => 'other',
@@ -107,14 +107,14 @@ class Model2 extends Resource
             [
                 'label' => 'Tab 2',
                 'name' => 'Tab 2',
-                'type' => 'Eminiarts\\Aura\\Fields\\Tab',
+                'type' => 'Aura\\Base\\Fields\\Tab',
                 'slug' => 'tab-2',
                 'style' => [],
             ],
             [
                 'label' => 'Total 2',
                 'name' => 'Total 2',
-                'type' => 'Eminiarts\\Aura\\Fields\\Text',
+                'type' => 'Aura\\Base\\Fields\\Text',
                 'validation' => 'numeric',
                 'conditional_logic' => [],
                 'slug' => 'total-2',
@@ -122,14 +122,14 @@ class Model2 extends Resource
             [
                 'label' => 'Tab 3',
                 'name' => 'Tab 3',
-                'type' => 'Eminiarts\\Aura\\Fields\\Tab',
+                'type' => 'Aura\\Base\\Fields\\Tab',
                 'slug' => 'tab-3',
                 'style' => [],
             ],
             [
                 'label' => 'Total 3',
                 'name' => 'Total 3',
-                'type' => 'Eminiarts\\Aura\\Fields\\Number',
+                'type' => 'Aura\\Base\\Fields\\Number',
                 'validation' => 'numeric',
                 'conditional_logic' => [],
                 'slug' => 'total-3',

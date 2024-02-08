@@ -1,13 +1,13 @@
 <?php
 
-namespace Eminiarts\Aura\Http\Controllers\Auth;
+namespace Aura\Base\Http\Controllers\Auth;
 
-use Eminiarts\Aura\Facades\Aura;
-use Eminiarts\Aura\Http\Controllers\Controller;
-use Eminiarts\Aura\Providers\RouteServiceProvider;
-use Eminiarts\Aura\Resources\Role;
-use Eminiarts\Aura\Resources\Team;
-use Eminiarts\Aura\Resources\User;
+use Aura\Base\Facades\Aura;
+use Aura\Base\Http\Controllers\Controller;
+use Aura\Base\Providers\RouteServiceProvider;
+use Aura\Base\Resources\Role;
+use Aura\Base\Resources\Team;
+use Aura\Base\Resources\User;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;

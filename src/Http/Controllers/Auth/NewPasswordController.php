@@ -1,8 +1,8 @@
 <?php
 
-namespace Eminiarts\Aura\Http\Controllers\Auth;
+namespace Aura\Base\Http\Controllers\Auth;
 
-use Eminiarts\Aura\Http\Controllers\Controller;
+use Aura\Base\Http\Controllers\Controller;
 use Illuminate\Auth\Events\PasswordReset;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;

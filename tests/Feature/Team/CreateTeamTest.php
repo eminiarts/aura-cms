@@ -1,10 +1,10 @@
 <?php
 
-use Eminiarts\Aura\Models\User;
-use Eminiarts\Aura\Resources\Team;
+use Aura\Base\Models\User;
+use Aura\Base\Resources\Team;
 use Illuminate\Support\Facades\DB;
 
-use Eminiarts\Aura\Livewire\Resource\Create;
+use Aura\Base\Livewire\Resource\Create;
 
 use function Pest\Livewire\livewire;
 

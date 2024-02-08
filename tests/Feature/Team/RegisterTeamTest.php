@@ -1,10 +1,10 @@
 <?php
 
-use Eminiarts\Aura\Facades\Aura;
-use Eminiarts\Aura\Livewire\Config;
-use Eminiarts\Aura\Models\Scopes\TeamScope;
-use Eminiarts\Aura\Models\User;
-use Eminiarts\Aura\Resources\Option;
+use Aura\Base\Facades\Aura;
+use Aura\Base\Livewire\Config;
+use Aura\Base\Models\Scopes\TeamScope;
+use Aura\Base\Models\User;
+use Aura\Base\Resources\Option;
 
 use function Pest\Livewire\livewire;
 

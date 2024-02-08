@@ -1,7 +1,7 @@
 <?php
 
-use Eminiarts\Aura\Livewire\CreateResource;
-use Eminiarts\Aura\Resources\User;
+use Aura\Base\Livewire\CreateResource;
+use Aura\Base\Resources\User;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\File;
 

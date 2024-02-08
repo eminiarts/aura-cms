@@ -1,8 +1,8 @@
 <?php
 
-namespace Eminiarts\Aura\Http\Controllers\Auth;
+namespace Aura\Base\Http\Controllers\Auth;
 
-use Eminiarts\Aura\Resources\TeamInvitation;
+use Aura\Base\Resources\TeamInvitation;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;

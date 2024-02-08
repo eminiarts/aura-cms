@@ -2,9 +2,9 @@
 
 namespace Tests\Feature;
 
-use Eminiarts\Aura\Models\User;
-use Eminiarts\Aura\Providers\RouteServiceProvider;
-use Eminiarts\Aura\Tests\TestCase;
+use Aura\Base\Models\User;
+use Aura\Base\Providers\RouteServiceProvider;
+use Aura\Base\Tests\TestCase;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 class AuthenticationTest extends TestCase

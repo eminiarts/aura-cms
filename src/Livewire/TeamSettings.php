@@ -1,10 +1,10 @@
 <?php
 
-namespace Eminiarts\Aura\Livewire;
+namespace Aura\Base\Livewire;
 
-use Eminiarts\Aura\Resources\Option;
-use Eminiarts\Aura\Traits\InputFields;
-use Eminiarts\Aura\Traits\MediaFields;
+use Aura\Base\Resources\Option;
+use Aura\Base\Traits\InputFields;
+use Aura\Base\Traits\MediaFields;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Cache;
@@ -28,19 +28,19 @@ class TeamSettings extends Component
     {
         return [
             [
-                'type' => 'Eminiarts\\Aura\\Fields\\Tab',
+                'type' => 'Aura\\Base\\Fields\\Tab',
                 'name' => 'General',
                 'slug' => 'tab-general',
                 'global' => true,
             ],
             [
-                'type' => 'Eminiarts\\Aura\\Fields\\Panel',
+                'type' => 'Aura\\Base\\Fields\\Panel',
                 'name' => 'Panel',
                 'slug' => 'panel-DZzV',
             ],
             [
                 'name' => 'App Logo',
-                'type' => 'Eminiarts\\Aura\\Fields\\Image',
+                'type' => 'Aura\\Base\\Fields\\Image',
                 'slug' => 'app-logo',
                 'style' => [
                     'width' => '50',
@@ -48,7 +48,7 @@ class TeamSettings extends Component
             ],
             [
                 'name' => 'App Logo (Darkmode)',
-                'type' => 'Eminiarts\\Aura\\Fields\\Image',
+                'type' => 'Aura\\Base\\Fields\\Image',
                 'slug' => 'app-logo-darkmode',
                 'style' => [
                     'width' => '50',
@@ -56,23 +56,23 @@ class TeamSettings extends Component
             ],
             [
                 'name' => 'Timezone',
-                'type' => 'Eminiarts\\Aura\\Fields\\Text',
+                'type' => 'Aura\\Base\\Fields\\Text',
                 'slug' => 'timezone1',
             ],
             [
                 'name' => 'Timezone',
-                'type' => 'Eminiarts\\Aura\\Fields\\Text',
+                'type' => 'Aura\\Base\\Fields\\Text',
                 'slug' => 'timezone',
             ],
 
             [
-                'type' => 'Eminiarts\\Aura\\Fields\\Tab',
+                'type' => 'Aura\\Base\\Fields\\Tab',
                 'name' => 'Theme',
                 'slug' => 'tab-theme',
                 'global' => true,
             ],
             [
-                'type' => 'Eminiarts\\Aura\\Fields\\Panel',
+                'type' => 'Aura\\Base\\Fields\\Panel',
                 'name' => 'Sidebar settings',
                 'slug' => 'panel-theme-sidebar',
                 'style' => [
@@ -81,7 +81,7 @@ class TeamSettings extends Component
             ],
             [
                 'name' => 'Sidebar',
-                'type' => 'Eminiarts\\Aura\\Fields\\Radio',
+                'type' => 'Aura\\Base\\Fields\\Radio',
                 'options' => [
                     'primary' => 'Primary',
                     'light' => 'Light',
@@ -94,7 +94,7 @@ class TeamSettings extends Component
             ],
             [
                 'name' => 'Darkmode',
-                'type' => 'Eminiarts\\Aura\\Fields\\Radio',
+                'type' => 'Aura\\Base\\Fields\\Radio',
                 'options' => [
                     'auto' => 'Auto',
                     'light' => 'Light',
@@ -106,7 +106,7 @@ class TeamSettings extends Component
                 ],
             ],
             [
-                'type' => 'Eminiarts\\Aura\\Fields\\Panel',
+                'type' => 'Aura\\Base\\Fields\\Panel',
                 'name' => 'Primary Colors',
                 'slug' => 'panel-theme-primary',
                 'style' => [
@@ -114,13 +114,13 @@ class TeamSettings extends Component
                 ],
             ],
             [
-                'type' => 'Eminiarts\\Aura\\Fields\\Tab',
+                'type' => 'Aura\\Base\\Fields\\Tab',
                 'name' => 'Color Theme',
                 'slug' => 'tab-primary-colors-theme',
             ],
             [
                 'name' => 'Primary Color Palette',
-                'type' => 'Eminiarts\\Aura\\Fields\\Select',
+                'type' => 'Aura\\Base\\Fields\\Select',
                 'options' => [
                     'aura' => 'Aura',
                     'red' => 'Red',
@@ -152,7 +152,7 @@ class TeamSettings extends Component
                 'slug' => 'color-palette',
             ],
             [
-                'type' => 'Eminiarts\\Aura\\Fields\\Tab',
+                'type' => 'Aura\\Base\\Fields\\Tab',
                 'name' => 'Custom Colors',
                 'slug' => 'tab-primary-colors-lightmode',
                 'conditional_logic' => function ($model, $post) {
@@ -163,7 +163,7 @@ class TeamSettings extends Component
             ],
             [
                 'name' => 'Primary 25',
-                'type' => 'Eminiarts\\Aura\\Fields\\Color',
+                'type' => 'Aura\\Base\\Fields\\Color',
                 'options' => [
                     'native' => false,
                 ],
@@ -171,7 +171,7 @@ class TeamSettings extends Component
             ],
             [
                 'name' => 'Primary 50',
-                'type' => 'Eminiarts\\Aura\\Fields\\Color',
+                'type' => 'Aura\\Base\\Fields\\Color',
                 'options' => [
                     'native' => false,
                 ],
@@ -179,7 +179,7 @@ class TeamSettings extends Component
             ],
             [
                 'name' => 'Primary 100',
-                'type' => 'Eminiarts\\Aura\\Fields\\Color',
+                'type' => 'Aura\\Base\\Fields\\Color',
                 'options' => [
                     'native' => false,
                 ],
@@ -187,7 +187,7 @@ class TeamSettings extends Component
             ],
             [
                 'name' => 'Primary 200',
-                'type' => 'Eminiarts\\Aura\\Fields\\Color',
+                'type' => 'Aura\\Base\\Fields\\Color',
                 'options' => [
                     'native' => false,
                 ],
@@ -195,7 +195,7 @@ class TeamSettings extends Component
             ],
             [
                 'name' => 'Primary 300',
-                'type' => 'Eminiarts\\Aura\\Fields\\Color',
+                'type' => 'Aura\\Base\\Fields\\Color',
                 'options' => [
                     'native' => false,
                 ],
@@ -203,7 +203,7 @@ class TeamSettings extends Component
             ],
             [
                 'name' => 'Primary 400',
-                'type' => 'Eminiarts\\Aura\\Fields\\Color',
+                'type' => 'Aura\\Base\\Fields\\Color',
                 'options' => [
                     'native' => false,
                 ],
@@ -211,7 +211,7 @@ class TeamSettings extends Component
             ],
             [
                 'name' => 'Primary 500',
-                'type' => 'Eminiarts\\Aura\\Fields\\Color',
+                'type' => 'Aura\\Base\\Fields\\Color',
                 'options' => [
                     'native' => false,
                 ],
@@ -219,7 +219,7 @@ class TeamSettings extends Component
             ],
             [
                 'name' => 'Primary 600',
-                'type' => 'Eminiarts\\Aura\\Fields\\Color',
+                'type' => 'Aura\\Base\\Fields\\Color',
                 'options' => [
                     'native' => false,
                 ],
@@ -227,7 +227,7 @@ class TeamSettings extends Component
             ],
             [
                 'name' => 'Primary 700',
-                'type' => 'Eminiarts\\Aura\\Fields\\Color',
+                'type' => 'Aura\\Base\\Fields\\Color',
                 'options' => [
                     'native' => false,
                 ],
@@ -235,7 +235,7 @@ class TeamSettings extends Component
             ],
             [
                 'name' => 'Primary 800',
-                'type' => 'Eminiarts\\Aura\\Fields\\Color',
+                'type' => 'Aura\\Base\\Fields\\Color',
                 'options' => [
                     'native' => false,
                 ],
@@ -243,7 +243,7 @@ class TeamSettings extends Component
             ],
             [
                 'name' => 'Primary 900',
-                'type' => 'Eminiarts\\Aura\\Fields\\Color',
+                'type' => 'Aura\\Base\\Fields\\Color',
                 'options' => [
                     'native' => false,
                 ],
@@ -251,7 +251,7 @@ class TeamSettings extends Component
             ],
 
             [
-                'type' => 'Eminiarts\\Aura\\Fields\\Panel',
+                'type' => 'Aura\\Base\\Fields\\Panel',
                 'name' => 'Gray Colors',
                 'slug' => 'panel-theme-gray',
                 'style' => [
@@ -260,13 +260,13 @@ class TeamSettings extends Component
             ],
 
             [
-                'type' => 'Eminiarts\\Aura\\Fields\\Tab',
+                'type' => 'Aura\\Base\\Fields\\Tab',
                 'name' => 'Gray Colors',
                 'slug' => 'tab-primary-gray-colors-theme',
             ],
             [
                 'name' => 'Gray Color Palette',
-                'type' => 'Eminiarts\\Aura\\Fields\\Select',
+                'type' => 'Aura\\Base\\Fields\\Select',
                 'options' => [
                     'slate' => 'Slate',
                     'purple-slate' => 'Purple Slate',
@@ -282,7 +282,7 @@ class TeamSettings extends Component
             ],
 
             [
-                'type' => 'Eminiarts\\Aura\\Fields\\Tab',
+                'type' => 'Aura\\Base\\Fields\\Tab',
                 'name' => 'Custom Colors',
                 'slug' => 'tab-gray-colors-custom-tab',
                 'conditional_logic' => function ($model, $post) {
@@ -294,7 +294,7 @@ class TeamSettings extends Component
 
             [
                 'name' => 'Gray 25',
-                'type' => 'Eminiarts\\Aura\\Fields\\Color',
+                'type' => 'Aura\\Base\\Fields\\Color',
                 'options' => [
                     'native' => false,
                 ],
@@ -302,7 +302,7 @@ class TeamSettings extends Component
             ],
             [
                 'name' => 'Gray 50',
-                'type' => 'Eminiarts\\Aura\\Fields\\Color',
+                'type' => 'Aura\\Base\\Fields\\Color',
                 'options' => [
                     'native' => false,
                 ],
@@ -310,7 +310,7 @@ class TeamSettings extends Component
             ],
             [
                 'name' => 'Gray 100',
-                'type' => 'Eminiarts\\Aura\\Fields\\Color',
+                'type' => 'Aura\\Base\\Fields\\Color',
                 'options' => [
                     'native' => false,
                 ],
@@ -318,7 +318,7 @@ class TeamSettings extends Component
             ],
             [
                 'name' => 'Gray 200',
-                'type' => 'Eminiarts\\Aura\\Fields\\Color',
+                'type' => 'Aura\\Base\\Fields\\Color',
                 'options' => [
                     'native' => false,
                 ],
@@ -326,7 +326,7 @@ class TeamSettings extends Component
             ],
             [
                 'name' => 'Gray 300',
-                'type' => 'Eminiarts\\Aura\\Fields\\Color',
+                'type' => 'Aura\\Base\\Fields\\Color',
                 'options' => [
                     'native' => false,
                 ],
@@ -334,7 +334,7 @@ class TeamSettings extends Component
             ],
             [
                 'name' => 'Gray 400',
-                'type' => 'Eminiarts\\Aura\\Fields\\Color',
+                'type' => 'Aura\\Base\\Fields\\Color',
                 'options' => [
                     'native' => false,
                 ],
@@ -342,7 +342,7 @@ class TeamSettings extends Component
             ],
             [
                 'name' => 'Gray 500',
-                'type' => 'Eminiarts\\Aura\\Fields\\Color',
+                'type' => 'Aura\\Base\\Fields\\Color',
                 'options' => [
                     'native' => false,
                 ],
@@ -350,7 +350,7 @@ class TeamSettings extends Component
             ],
             [
                 'name' => 'Gray 600',
-                'type' => 'Eminiarts\\Aura\\Fields\\Color',
+                'type' => 'Aura\\Base\\Fields\\Color',
                 'options' => [
                     'native' => false,
                 ],
@@ -358,7 +358,7 @@ class TeamSettings extends Component
             ],
             [
                 'name' => 'Gray 700',
-                'type' => 'Eminiarts\\Aura\\Fields\\Color',
+                'type' => 'Aura\\Base\\Fields\\Color',
                 'options' => [
                     'native' => false,
                 ],
@@ -366,7 +366,7 @@ class TeamSettings extends Component
             ],
             [
                 'name' => 'Gray 800',
-                'type' => 'Eminiarts\\Aura\\Fields\\Color',
+                'type' => 'Aura\\Base\\Fields\\Color',
                 'options' => [
                     'native' => false,
                 ],
@@ -374,7 +374,7 @@ class TeamSettings extends Component
             ],
             [
                 'name' => 'Gray 900',
-                'type' => 'Eminiarts\\Aura\\Fields\\Color',
+                'type' => 'Aura\\Base\\Fields\\Color',
                 'options' => [
                     'native' => false,
                 ],

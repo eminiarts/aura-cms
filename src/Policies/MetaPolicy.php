@@ -1,9 +1,9 @@
 <?php
 
-namespace Eminiarts\Aura\Policies;
+namespace Aura\Base\Policies;
 
-use Eminiarts\Aura\Models\Meta;
-use Eminiarts\Aura\Models\User;
+use Aura\Base\Models\Meta;
+use Aura\Base\Models\User;
 use Illuminate\Auth\Access\HandlesAuthorization;
 
 class MetaPolicy

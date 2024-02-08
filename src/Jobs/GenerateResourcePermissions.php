@@ -1,9 +1,9 @@
 <?php
 
-namespace Eminiarts\Aura\Jobs;
+namespace Aura\Base\Jobs;
 
-use Eminiarts\Aura\Resources\Permission;
-use Eminiarts\Aura\Resources\resource;
+use Aura\Base\Resources\Permission;
+use Aura\Base\Resources\resource;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;

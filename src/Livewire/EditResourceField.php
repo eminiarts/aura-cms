@@ -1,9 +1,9 @@
 <?php
 
-namespace Eminiarts\Aura\Livewire;
+namespace Aura\Base\Livewire;
 
-use Eminiarts\Aura\Traits\RepeaterFields;
-use Eminiarts\Aura\Traits\SaveFields;
+use Aura\Base\Traits\RepeaterFields;
+use Aura\Base\Traits\SaveFields;
 use Illuminate\Support\Arr;
 use Livewire\Component;
 

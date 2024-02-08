@@ -1,6 +1,6 @@
 <?php
 
-namespace Eminiarts\Aura\Livewire\Table\Traits;
+namespace Aura\Base\Livewire\Table\Traits;
 
 use Illuminate\Support\Str;
 use Livewire\Attributes\Computed;
@@ -18,7 +18,7 @@ trait Filters
      *
      * @var array
      */
-    // #[Reactive] 
+    // #[Reactive]
     public $filters = [
         'taxonomy' => [],
         'custom' => [],

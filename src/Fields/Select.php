@@ -1,6 +1,6 @@
 <?php
 
-namespace Eminiarts\Aura\Fields;
+namespace Aura\Base\Fields;
 
 class Select extends Field
 {
@@ -14,20 +14,20 @@ class Select extends Field
             [
                 'label' => 'Select',
                 'name' => 'Select',
-                'type' => 'Eminiarts\\Aura\\Fields\\Tab',
+                'type' => 'Aura\\Base\\Fields\\Tab',
                 'slug' => 'select',
                 'style' => [],
             ],
 
             [
                 'name' => 'Options',
-                'type' => 'Eminiarts\\Aura\\Fields\\Repeater',
+                'type' => 'Aura\\Base\\Fields\\Repeater',
                 'validation' => '',
                 'slug' => 'options',
             ],
             [
                 'name' => 'Value',
-                'type' => 'Eminiarts\\Aura\\Fields\\Text',
+                'type' => 'Aura\\Base\\Fields\\Text',
                 'validation' => '',
                 'slug' => 'value',
                 'style' => [
@@ -37,7 +37,7 @@ class Select extends Field
             ],
             [
                 'name' => 'Name',
-                'type' => 'Eminiarts\\Aura\\Fields\\Text',
+                'type' => 'Aura\\Base\\Fields\\Text',
                 'validation' => '',
                 'slug' => 'name',
                 'style' => [
@@ -48,7 +48,7 @@ class Select extends Field
 
             [
                 'name' => 'Default Value',
-                'type' => 'Eminiarts\\Aura\\Fields\\Text',
+                'type' => 'Aura\\Base\\Fields\\Text',
                 'validation' => '',
                 'instructions' => 'Default value on create',
                 'exclude_from_nesting' => true,
@@ -57,7 +57,7 @@ class Select extends Field
 
             [
                 'name' => 'Allow Multiple',
-                'type' => 'Eminiarts\\Aura\\Fields\\Boolean',
+                'type' => 'Aura\\Base\\Fields\\Boolean',
                 'validation' => '',
                 'exclude_from_nesting' => true,
                 'slug' => 'allow_multiple',

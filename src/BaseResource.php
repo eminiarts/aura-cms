@@ -1,10 +1,10 @@
 <?php
 
-namespace Eminiarts\Aura;
+namespace Aura\Base;
 
-use Eminiarts\Aura\Traits\AuraModelConfig;
-use Eminiarts\Aura\Traits\InputFields;
-use Eminiarts\Aura\Traits\InteractsWithTable;
+use Aura\Base\Traits\AuraModelConfig;
+use Aura\Base\Traits\InputFields;
+use Aura\Base\Traits\InteractsWithTable;
 use Illuminate\Database\Eloquent\Model;
 
 class BaseResource extends Model

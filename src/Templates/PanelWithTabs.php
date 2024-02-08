@@ -1,6 +1,6 @@
 <?php
 
-namespace Eminiarts\Aura\Templates;
+namespace Aura\Base\Templates;
 
 class PanelWithTabs
 {
@@ -11,7 +11,7 @@ class PanelWithTabs
         return [
             [
                 'name' => 'Panel 1',
-                'type' => 'Eminiarts\\Aura\\Fields\\Panel',
+                'type' => 'Aura\\Base\\Fields\\Panel',
                 'validation' => '',
                 'on_index' => true,
                 'conditional_logic' => [],
@@ -19,7 +19,7 @@ class PanelWithTabs
             ],
             [
                 'name' => 'Tab 1',
-                'type' => 'Eminiarts\\Aura\\Fields\\Tab',
+                'type' => 'Aura\\Base\\Fields\\Tab',
                 'validation' => '',
                 'on_index' => true,
                 'conditional_logic' => [],
@@ -27,7 +27,7 @@ class PanelWithTabs
             ],
             [
                 'name' => 'Text 1',
-                'type' => 'Eminiarts\\Aura\\Fields\\Text',
+                'type' => 'Aura\\Base\\Fields\\Text',
                 'on_index' => true,
                 'conditional_logic' => [],
                 'slug' => 'text-1',
@@ -37,7 +37,7 @@ class PanelWithTabs
             ],
             [
                 'name' => 'Tab 2',
-                'type' => 'Eminiarts\\Aura\\Fields\\Tab',
+                'type' => 'Aura\\Base\\Fields\\Tab',
                 'validation' => '',
                 'on_index' => true,
                 'conditional_logic' => [],
@@ -45,7 +45,7 @@ class PanelWithTabs
             ],
             [
                 'name' => 'Text 2',
-                'type' => 'Eminiarts\\Aura\\Fields\\Text',
+                'type' => 'Aura\\Base\\Fields\\Text',
                 'on_index' => true,
                 'conditional_logic' => [],
                 'slug' => 'text-2',

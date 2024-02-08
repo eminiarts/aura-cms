@@ -1,6 +1,6 @@
 <?php
 
-namespace Eminiarts\Aura\Fields;
+namespace Aura\Base\Fields;
 
 class View extends Field
 {
@@ -15,13 +15,13 @@ class View extends Field
         return array_merge(parent::getFields(), [
             [
                 'name' => 'View',
-                'type' => 'Eminiarts\\Aura\\Fields\\Tab',
+                'type' => 'Aura\\Base\\Fields\\Tab',
                 'slug' => 'view-tab',
                 'style' => [],
             ],
             [
                 'name' => 'View',
-                'type' => 'Eminiarts\\Aura\\Fields\\Text',
+                'type' => 'Aura\\Base\\Fields\\Text',
                 'validation' => '',
                 'slug' => 'view',
             ],

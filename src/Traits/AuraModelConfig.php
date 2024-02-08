@@ -1,10 +1,10 @@
 <?php
 
-namespace Eminiarts\Aura\Traits;
+namespace Aura\Base\Traits;
 
-use Eminiarts\Aura\ConditionalLogic;
-use Eminiarts\Aura\Models\Meta;
-use Eminiarts\Aura\Resources\Team;
+use Aura\Base\ConditionalLogic;
+use Aura\Base\Models\Meta;
+use Aura\Base\Resources\Team;
 use Illuminate\Support\Str;
 
 trait AuraModelConfig
@@ -327,7 +327,7 @@ trait AuraModelConfig
 
     public function isNumberField($key)
     {
-        if ($this->fieldBySlug($key)['type'] == 'Eminiarts\\Aura\\Fields\\Number') {
+        if ($this->fieldBySlug($key)['type'] == 'Aura\\Base\\Fields\\Number') {
             return true;
         }
 
@@ -351,12 +351,12 @@ trait AuraModelConfig
 
     public function isTaxonomyField($key)
     {
-        // Check if the Field is a taxonomy 'type' => 'Eminiarts\\Aura\\Fields\\Tags',
+        // Check if the Field is a taxonomy 'type' => 'Aura\\Base\\Fields\\Tags',
         if (in_array($key, $this->inputFieldsSlugs())) {
             $field = $this->fieldBySlug($key);
 
             // Atm only tags, refactor later
-            if (isset($field['type']) && $field['type'] == 'Eminiarts\\Aura\\Fields\\Tags') {
+            if (isset($field['type']) && $field['type'] == 'Aura\\Base\\Fields\\Tags') {
                 return true;
             }
         }

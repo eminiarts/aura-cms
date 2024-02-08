@@ -19,14 +19,14 @@ public static function getFields()
     {
         return [
             [
-                'type' => 'Eminiarts\\Aura\\Fields\\Tab',
+                'type' => 'Aura\\Base\\Fields\\Tab',
                 'name' => 'User details',
                 'slug' => 'tab-user',
                 'global' => true,
             ],
             [
                 'name' => 'Personal Infos',
-                'type' => 'Eminiarts\\Aura\\Fields\\Panel',
+                'type' => 'Aura\\Base\\Fields\\Panel',
                 'validation' => 'required',
                 'slug' => 'user-details',
                 'style' => [
@@ -35,7 +35,7 @@ public static function getFields()
             ],
             [
                 'name' => 'Avatar',
-                'type' => 'Eminiarts\\Aura\\Fields\\Image',
+                'type' => 'Aura\\Base\\Fields\\Image',
                 'validation' => '',
                 'conditional_logic' => [],
                 'slug' => 'avatar',
@@ -45,7 +45,7 @@ public static function getFields()
             ],
             [
                 'name' => 'Name',
-                'type' => 'Eminiarts\\Aura\\Fields\\Text',
+                'type' => 'Aura\\Base\\Fields\\Text',
                 'validation' => 'required',
                 'on_index' => true,
                 'slug' => 'name',
@@ -55,7 +55,7 @@ public static function getFields()
             ],
             [
                 'name' => 'Email',
-                'type' => 'Eminiarts\\Aura\\Fields\\Text',
+                'type' => 'Aura\\Base\\Fields\\Text',
                 'validation' => 'required|email',
                 'on_index' => true,
                 'slug' => 'email',
@@ -66,8 +66,8 @@ public static function getFields()
             [
                 'name' => 'Roles',
                 'slug' => 'roles',
-                'resource' => 'Eminiarts\\Aura\\Resources\\Role',
-                'type' => 'Eminiarts\\Aura\\Fields\\AdvancedSelect',
+                'resource' => 'Aura\\Base\\Resources\\Role',
+                'type' => 'Aura\\Base\\Fields\\AdvancedSelect',
                 'validation' => 'required',
                 'conditional_logic' => [],
                 'wrapper' => '',
@@ -78,7 +78,7 @@ public static function getFields()
             ],
             [
                 'name' => 'Password',
-                'type' => 'Eminiarts\\Aura\\Fields\\Password',
+                'type' => 'Aura\\Base\\Fields\\Password',
                 'validation' => '',
                 'conditional_logic' => [],
                 'slug' => 'password',
@@ -87,7 +87,7 @@ public static function getFields()
             ],
             [
                 'name' => 'Send Welcome Email',
-                'type' => 'Eminiarts\\Aura\\Fields\\Boolean',
+                'type' => 'Aura\\Base\\Fields\\Boolean',
                 'validation' => '',
                 'conditional_logic' => [],
                 'on_edit' => false,
@@ -97,7 +97,7 @@ public static function getFields()
                 'instructions' => 'Do you want to inform the user about his account?',
             ],
             [
-                'type' => 'Eminiarts\\Aura\\Fields\\Tab',
+                'type' => 'Aura\\Base\\Fields\\Tab',
                 'name' => 'Notifications',
                 'slug' => 'tab-notifications',
                 'global' => true,
@@ -105,7 +105,7 @@ public static function getFields()
             ],
             [
                 'name' => 'Notifications',
-                'type' => 'Eminiarts\\Aura\\Fields\\Panel',
+                'type' => 'Aura\\Base\\Fields\\Panel',
                 'validation' => 'required',
                 'slug' => 'user-notifications-panel',
                 'style' => [
@@ -114,20 +114,20 @@ public static function getFields()
             ],
             [
                 'name' => 'Notifications via Email',
-                'type' => 'Eminiarts\\Aura\\Fields\\Boolean',
+                'type' => 'Aura\\Base\\Fields\\Boolean',
                 'validation' => '',
                 'conditional_logic' => [],
                 'slug' => 'notifications_via_email',
             ],
             [
                 'name' => 'Notifications via SMS',
-                'type' => 'Eminiarts\\Aura\\Fields\\Boolean',
+                'type' => 'Aura\\Base\\Fields\\Boolean',
                 'validation' => '',
                 'conditional_logic' => [],
                 'slug' => 'notifications_via_sms',
             ],
             [
-                'type' => 'Eminiarts\\Aura\\Fields\\Tab',
+                'type' => 'Aura\\Base\\Fields\\Tab',
                 'name' => 'Posts',
                 'slug' => 'tab-posts',
                 'global' => true,
@@ -135,8 +135,8 @@ public static function getFields()
             [
                 'name' => 'Posts',
                 'slug' => 'posts',
-                'type' => 'Eminiarts\\Aura\\Fields\\HasMany',
-                'resource' => 'Eminiarts\\Aura\\Resources\\Post',
+                'type' => 'Aura\\Base\\Fields\\HasMany',
+                'resource' => 'Aura\\Base\\Resources\\Post',
                 'validation' => '',
                 'wrapper' => '',
                 'on_index' => false,
@@ -147,7 +147,7 @@ public static function getFields()
                 ],
             ],
             [
-                'type' => 'Eminiarts\\Aura\\Fields\\Tab',
+                'type' => 'Aura\\Base\\Fields\\Tab',
                 'name' => 'Teams',
                 'slug' => 'tab-Teams',
                 'global' => true,
@@ -160,8 +160,8 @@ public static function getFields()
             [
                 'name' => 'Teams',
                 'slug' => 'teams',
-                'type' => 'Eminiarts\\Aura\\Fields\\BelongsToMany',
-                'resource' => 'Eminiarts\\Aura\\Resources\\Team',
+                'type' => 'Aura\\Base\\Fields\\BelongsToMany',
+                'resource' => 'Aura\\Base\\Resources\\Team',
                 'validation' => '',
                 'wrapper' => '',
                 'on_index' => false,
@@ -177,7 +177,7 @@ public static function getFields()
                 ],
             ],
             [
-                'type' => 'Eminiarts\\Aura\\Fields\\Tab',
+                'type' => 'Aura\\Base\\Fields\\Tab',
                 'name' => '2FA',
                 'label' => 'Tab',
                 'slug' => '2fa',
@@ -186,7 +186,7 @@ public static function getFields()
             ],
             [
                 'name' => '2FA',
-                'type' => 'Eminiarts\\Aura\\Fields\\LivewireComponent',
+                'type' => 'Aura\\Base\\Fields\\LivewireComponent',
                 'component' => 'aura::user-two-factor-authentication-form',
                 'validation' => '',
                 'conditional_logic' => [],
@@ -202,7 +202,7 @@ public static function getFields()
          return [
              [
                  'name' => 'Tab',
-                 'type' => 'Eminiarts\\Aura\\Fields\\Tab',
+                 'type' => 'Aura\\Base\\Fields\\Tab',
                  'validation' => '',
                  'on_index' => true,
                  'global' => true,
@@ -212,7 +212,7 @@ public static function getFields()
              ],
              [
                  'name' => 'Panel',
-                 'type' => 'Eminiarts\\Aura\\Fields\\Panel',
+                 'type' => 'Aura\\Base\\Fields\\Panel',
                  'validation' => '',
                  'on_index' => true,
                  'conditional_logic' => [
@@ -225,7 +225,7 @@ public static function getFields()
              [
                  'name' => 'Text',
                  'slug' => 'text',
-                 'type' => 'Eminiarts\\Aura\\Fields\\Text',
+                 'type' => 'Aura\\Base\\Fields\\Text',
                  'validation' => '',
                  'conditional_logic' => [],
                  'wrapper' => '',
@@ -235,7 +235,7 @@ public static function getFields()
              ],
              [
                  'name' => 'Slug for Test',
-                 'type' => 'Eminiarts\\Aura\\Fields\\Slug',
+                 'type' => 'Aura\\Base\\Fields\\Slug',
                  'validation' => 'required|alpha_dash',
                  'conditional_logic' => [
                  ],
@@ -244,7 +244,7 @@ public static function getFields()
              ],
              [
                  'name' => 'Bild',
-                 'type' => 'Eminiarts\\Aura\\Fields\\Image',
+                 'type' => 'Aura\\Base\\Fields\\Image',
                  'validation' => '',
                  'conditional_logic' => [
                  ],
@@ -252,7 +252,7 @@ public static function getFields()
              ],
              [
                  'name' => 'Password for Test',
-                 'type' => 'Eminiarts\\Aura\\Fields\\Password',
+                 'type' => 'Aura\\Base\\Fields\\Password',
                  'validation' => 'nullable|min:8',
                  'conditional_logic' => [
                  ],
@@ -263,7 +263,7 @@ public static function getFields()
              ],
              [
                  'name' => 'Number',
-                 'type' => 'Eminiarts\\Aura\\Fields\\Number',
+                 'type' => 'Aura\\Base\\Fields\\Number',
                  'validation' => '',
                  'conditional_logic' => [
                  ],
@@ -274,7 +274,7 @@ public static function getFields()
              ],
              [
                  'name' => 'Date',
-                 'type' => 'Eminiarts\\Aura\\Fields\\Date',
+                 'type' => 'Aura\\Base\\Fields\\Date',
                  'validation' => '',
                  'conditional_logic' => [
                  ],
@@ -283,7 +283,7 @@ public static function getFields()
              ],
              [
                  'name' => 'Description',
-                 'type' => 'Eminiarts\\Aura\\Fields\\Textarea',
+                 'type' => 'Aura\\Base\\Fields\\Textarea',
                  'validation' => '',
                  'conditional_logic' => [
                  ],
@@ -297,7 +297,7 @@ public static function getFields()
              ],
                [
                    'name' => 'Color',
-                   'type' => 'Eminiarts\\Aura\\Fields\\Color',
+                   'type' => 'Aura\\Base\\Fields\\Color',
                    'validation' => '',
                    'conditional_logic' => [
                    ],
@@ -309,7 +309,7 @@ public static function getFields()
                ],
              [
                  'name' => 'Sidebar',
-                 'type' => 'Eminiarts\\Aura\\Fields\\Panel',
+                 'type' => 'Aura\\Base\\Fields\\Panel',
                  'validation' => '',
                  'on_index' => true,
                  'conditional_logic' => [
@@ -322,8 +322,8 @@ public static function getFields()
              [
                  'name' => 'Tags',
                  'slug' => 'tags',
-                 'type' => 'Eminiarts\\Aura\\Fields\\Tags',
-                 'model' => 'Eminiarts\\Aura\\Taxonomies\\Tag',
+                 'type' => 'Aura\\Base\\Fields\\Tags',
+                 'model' => 'Aura\\Base\\Taxonomies\\Tag',
                  'create' => true,
                  'validation' => '',
                  'conditional_logic' => [],
@@ -335,8 +335,8 @@ public static function getFields()
              [
                  'name' => 'Categories',
                  'slug' => 'categories',
-                 'type' => 'Eminiarts\\Aura\\Fields\\Tags',
-                 'model' => 'Eminiarts\\Aura\\Taxonomies\\Category',
+                 'type' => 'Aura\\Base\\Fields\\Tags',
+                 'model' => 'Aura\\Base\\Taxonomies\\Category',
                  'create' => true,
                  'validation' => '',
                  'conditional_logic' => [],
@@ -348,8 +348,8 @@ public static function getFields()
                [
                    'name' => 'Team',
                    'slug' => 'team_id',
-                   'type' => 'Eminiarts\\Aura\\Fields\\BelongsTo',
-                   'resource' => 'Eminiarts\\Aura\\Resources\\Team',
+                   'type' => 'Aura\\Base\\Fields\\BelongsTo',
+                   'resource' => 'Aura\\Base\\Resources\\Team',
                    'validation' => '',
                    'conditional_logic' => [
                        [
@@ -366,8 +366,8 @@ public static function getFields()
              [
                  'name' => 'User',
                  'slug' => 'user_id',
-                 'type' => 'Eminiarts\\Aura\\Fields\\BelongsTo',
-                 'resource' => 'Eminiarts\\Aura\\Resources\\User',
+                 'type' => 'Aura\\Base\\Fields\\BelongsTo',
+                 'resource' => 'Aura\\Base\\Resources\\User',
                  'validation' => '',
                  'conditional_logic' => [],
                  'wrapper' => '',
@@ -377,7 +377,7 @@ public static function getFields()
              ],
              [
                  'name' => 'Attachments',
-                 'type' => 'Eminiarts\\Aura\\Fields\\Tab',
+                 'type' => 'Aura\\Base\\Fields\\Tab',
                  'validation' => '',
                  'on_index' => true,
                  'global' => true,
@@ -388,8 +388,8 @@ public static function getFields()
              [
                  'name' => 'Attachments',
                  'slug' => 'attachments',
-                 'type' => 'Eminiarts\\Aura\\Fields\\HasMany',
-                 'resource' => 'Eminiarts\\Aura\\Resources\\Attachment',
+                 'type' => 'Aura\\Base\\Fields\\HasMany',
+                 'resource' => 'Aura\\Base\\Resources\\Attachment',
                  'validation' => '',
                  'conditional_logic' => [],
                  'wrapper' => '',
@@ -403,7 +403,7 @@ public static function getFields()
              [
                  'name' => 'Created at',
                  'slug' => 'created_at',
-                 'type' => 'Eminiarts\\Aura\\Fields\\Date',
+                 'type' => 'Aura\\Base\\Fields\\Date',
                  'validation' => '',
                  'enable_time' => true,
                  'conditional_logic' => [],
@@ -415,7 +415,7 @@ public static function getFields()
              [
                  'name' => 'Updated at',
                  'slug' => 'updated_at',
-                 'type' => 'Eminiarts\\Aura\\Fields\\Date',
+                 'type' => 'Aura\\Base\\Fields\\Date',
                  'validation' => '',
                  'conditional_logic' => [],
                  'wrapper' => '',
@@ -433,7 +433,7 @@ public static function getFields()
         return [
 
             [
-                'type' => 'Eminiarts\\Aura\\Fields\\Tab',
+                'type' => 'Aura\\Base\\Fields\\Tab',
                 'name' => 'Team',
                 'slug' => 'tab-team',
                 'global' => true,
@@ -441,13 +441,13 @@ public static function getFields()
             [
                 'name' => 'Team',
                 'slug' => 'team-panel',
-                'type' => 'Eminiarts\\Aura\\Fields\\Panel',
+                'type' => 'Aura\\Base\\Fields\\Panel',
                 'validation' => '',
                 'conditional_logic' => [],
             ],
             [
                 'name' => 'Name',
-                'type' => 'Eminiarts\\Aura\\Fields\\Text',
+                'type' => 'Aura\\Base\\Fields\\Text',
                 'validation' => 'required',
                 'on_index' => true,
                 'slug' => 'name',
@@ -457,7 +457,7 @@ public static function getFields()
             ],
             [
                 'name' => 'Description',
-                'type' => 'Eminiarts\\Aura\\Fields\\Text',
+                'type' => 'Aura\\Base\\Fields\\Text',
                 'validation' => '',
                 'on_index' => true,
                 'slug' => 'description',
@@ -466,7 +466,7 @@ public static function getFields()
                 ],
             ],
             [
-                'type' => 'Eminiarts\\Aura\\Fields\\Tab',
+                'type' => 'Aura\\Base\\Fields\\Tab',
                 'name' => 'Users',
                 'slug' => 'tab-users',
                 'global' => true,
@@ -475,8 +475,8 @@ public static function getFields()
             [
                 'name' => 'Users',
                 'slug' => 'users',
-                'type' => 'Eminiarts\\Aura\\Fields\\HasMany',
-                'resource' => 'Eminiarts\\Aura\\Resources\\User',
+                'type' => 'Aura\\Base\\Fields\\HasMany',
+                'resource' => 'Aura\\Base\\Resources\\User',
                 'validation' => '',
                 'conditional_logic' => [],
                 'on_index' => false,
@@ -490,7 +490,7 @@ public static function getFields()
             [
                 'name' => 'Invitations',
                 'slug' => 'tab-Invitations',
-                'type' => 'Eminiarts\\Aura\\Fields\\Tab',
+                'type' => 'Aura\\Base\\Fields\\Tab',
                 'global' => true,
                 'validation' => '',
                 'conditional_logic' => [],
@@ -499,8 +499,8 @@ public static function getFields()
             [
                 'name' => 'Invitations',
                 'slug' => 'Invitations',
-                'type' => 'Eminiarts\\Aura\\Fields\\HasMany',
-                'resource' => 'Eminiarts\\Aura\\Resources\\TeamInvitation',
+                'type' => 'Aura\\Base\\Fields\\HasMany',
+                'resource' => 'Aura\\Base\\Resources\\TeamInvitation',
                 'validation' => '',
                 'conditional_logic' => [],
                 'on_index' => false,
@@ -520,7 +520,7 @@ public static function getFields()
         return [
             [
                 'name' => 'Attachment',
-                'type' => 'Eminiarts\\Aura\\Fields\\Panel',
+                'type' => 'Aura\\Base\\Fields\\Panel',
                 'slug' => 'panel1',
                 'style' => [
                     'width' => '50',
@@ -528,7 +528,7 @@ public static function getFields()
             ],
             [
                 'name' => 'Preview',
-                'type' => 'Eminiarts\\Aura\\Fields\\Embed',
+                'type' => 'Aura\\Base\\Fields\\Embed',
                 'validation' => '',
                 'on_index' => false,
                 'slug' => 'embed',
@@ -538,7 +538,7 @@ public static function getFields()
             ],
             [
                 'name' => 'Details',
-                'type' => 'Eminiarts\\Aura\\Fields\\Panel',
+                'type' => 'Aura\\Base\\Fields\\Panel',
                 'slug' => 'panel2',
                 'style' => [
                     'width' => '50',
@@ -546,7 +546,7 @@ public static function getFields()
             ],
             [
                 'name' => 'Name',
-                'type' => 'Eminiarts\\Aura\\Fields\\Text',
+                'type' => 'Aura\\Base\\Fields\\Text',
                 'validation' => 'required',
                 'on_index' => true,
                 'slug' => 'name',
@@ -556,7 +556,7 @@ public static function getFields()
             ],
             [
                 'name' => 'Url',
-                'type' => 'Eminiarts\\Aura\\Fields\\ViewValue',
+                'type' => 'Aura\\Base\\Fields\\ViewValue',
                 'validation' => 'required',
                 'on_index' => true,
                 'slug' => 'url',
@@ -566,7 +566,7 @@ public static function getFields()
             ],
             [
                 'name' => 'Thumbnail',
-                'type' => 'Eminiarts\\Aura\\Fields\\ViewValue',
+                'type' => 'Aura\\Base\\Fields\\ViewValue',
                 'validation' => '',
                 'on_index' => false,
                 'slug' => 'thumbnail_url',
@@ -577,7 +577,7 @@ public static function getFields()
 
             [
                 'name' => 'Mime Type',
-                'type' => 'Eminiarts\\Aura\\Fields\\ViewValue',
+                'type' => 'Aura\\Base\\Fields\\ViewValue',
                 'validation' => 'required',
                 'on_index' => true,
                 'slug' => 'mime_type',
@@ -587,7 +587,7 @@ public static function getFields()
             ],
             [
                 'name' => 'Size',
-                'type' => 'Eminiarts\\Aura\\Fields\\ViewValue',
+                'type' => 'Aura\\Base\\Fields\\ViewValue',
                 'validation' => 'required',
                 'on_index' => true,
                 'slug' => 'size',
@@ -598,7 +598,7 @@ public static function getFields()
             [
                 'name' => 'Created at',
                 'slug' => 'created_at',
-                'type' => 'Eminiarts\\Aura\\Fields\\Date',
+                'type' => 'Aura\\Base\\Fields\\Date',
                 'validation' => '',
                 'enable_time' => true,
                 'conditional_logic' => [],
@@ -613,7 +613,7 @@ public static function getFields()
             [
                 'name' => 'Updated at',
                 'slug' => 'updated_at',
-                'type' => 'Eminiarts\\Aura\\Fields\\Date',
+                'type' => 'Aura\\Base\\Fields\\Date',
                 'validation' => '',
                 'conditional_logic' => [],
                 'wrapper' => '',
@@ -633,22 +633,22 @@ I will now also give you the code of the Resource, so you can get a better under
 ```php
 <?php
 
-namespace Eminiarts\Aura;
+namespace Aura\Base;
 
 use Illuminate\Support\Str;
 use Aura\Flows\Resources\Flow;
-use Eminiarts\Aura\Resources\User;
-use Eminiarts\Aura\Traits\SaveTerms;
-use Eminiarts\Aura\Traits\InputFields;
+use Aura\Base\Resources\User;
+use Aura\Base\Traits\SaveTerms;
+use Aura\Base\Traits\InputFields;
 use Illuminate\Database\Eloquent\Model;
-use Eminiarts\Aura\Traits\AuraTaxonomies;
-use Eminiarts\Aura\Traits\SaveMetaFields;
-use Eminiarts\Aura\Traits\AuraModelConfig;
-use Eminiarts\Aura\Models\Scopes\TeamScope;
-use Eminiarts\Aura\Models\Scopes\TypeScope;
-use Eminiarts\Aura\Traits\InitialPostFields;
-use Eminiarts\Aura\Traits\InteractsWithTable;
-use Eminiarts\Aura\Traits\SaveFieldAttributes;
+use Aura\Base\Traits\AuraTaxonomies;
+use Aura\Base\Traits\SaveMetaFields;
+use Aura\Base\Traits\AuraModelConfig;
+use Aura\Base\Models\Scopes\TeamScope;
+use Aura\Base\Models\Scopes\TypeScope;
+use Aura\Base\Traits\InitialPostFields;
+use Aura\Base\Traits\InteractsWithTable;
+use Aura\Base\Traits\SaveFieldAttributes;
 use Aura\Flows\Jobs\TriggerFlowOnCreatePostEvent;
 use Aura\Flows\Jobs\TriggerFlowOnUpdatePostEvent;
 use Aura\Flows\Jobs\TriggerFlowOnDeletedPostEvent;
@@ -922,14 +922,15 @@ class Resource extends Model
 ```
 
 Traits: AuraModelConfig.php
+
 ```php
 <?php
 
-namespace Eminiarts\Aura\Traits;
+namespace Aura\Base\Traits;
 
-use Eminiarts\Aura\ConditionalLogic;
-use Eminiarts\Aura\Models\Meta;
-use Eminiarts\Aura\Resources\Team;
+use Aura\Base\ConditionalLogic;
+use Aura\Base\Models\Meta;
+use Aura\Base\Resources\Team;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
@@ -1197,7 +1198,7 @@ trait AuraModelConfig
 
     public function isNumberField($key)
     {
-        if ($this->fieldBySlug($key)['type'] == 'Eminiarts\\Aura\\Fields\\Number') {
+        if ($this->fieldBySlug($key)['type'] == 'Aura\\Base\\Fields\\Number') {
             return true;
         }
 
@@ -1221,12 +1222,12 @@ trait AuraModelConfig
 
     public function isTaxonomyField($key)
     {
-        // Check if the Field is a taxonomy 'type' => 'Eminiarts\\Aura\\Fields\\Tags',
+        // Check if the Field is a taxonomy 'type' => 'Aura\\Base\\Fields\\Tags',
         if (in_array($key, $this->getAccessibleFieldKeys())) {
             $field = $this->fieldBySlug($key);
 
             // Atm only tags, refactor later
-            if (isset($field['type']) && $field['type'] == 'Eminiarts\\Aura\\Fields\\Tags') {
+            if (isset($field['type']) && $field['type'] == 'Aura\\Base\\Fields\\Tags') {
                 return true;
             }
         }
@@ -1341,23 +1342,24 @@ trait AuraModelConfig
 ```
 
 Trait: InputFields.php
+
 ```php
 <?php
 
-namespace Eminiarts\Aura\Traits;
+namespace Aura\Base\Traits;
 
-use Eminiarts\Aura\ConditionalLogic;
-use Eminiarts\Aura\Pipeline\ApplyTabs;
-use Eminiarts\Aura\Pipeline\MapFields;
-use Eminiarts\Aura\Pipeline\AddIdsToFields;
-use Eminiarts\Aura\Pipeline\TransformSlugs;
-use Eminiarts\Aura\Pipeline\FilterEditFields;
-use Eminiarts\Aura\Pipeline\FilterViewFields;
-use Eminiarts\Aura\Pipeline\FilterCreateFields;
-use Eminiarts\Aura\Pipeline\BuildTreeFromFields;
-use Eminiarts\Aura\Pipeline\RemoveValidationAttribute;
-use Eminiarts\Aura\Pipeline\ApplyParentConditionalLogic;
-use Eminiarts\Aura\Pipeline\ApplyParentDisplayAttributes;
+use Aura\Base\ConditionalLogic;
+use Aura\Base\Pipeline\ApplyTabs;
+use Aura\Base\Pipeline\MapFields;
+use Aura\Base\Pipeline\AddIdsToFields;
+use Aura\Base\Pipeline\TransformSlugs;
+use Aura\Base\Pipeline\FilterEditFields;
+use Aura\Base\Pipeline\FilterViewFields;
+use Aura\Base\Pipeline\FilterCreateFields;
+use Aura\Base\Pipeline\BuildTreeFromFields;
+use Aura\Base\Pipeline\RemoveValidationAttribute;
+use Aura\Base\Pipeline\ApplyParentConditionalLogic;
+use Aura\Base\Pipeline\ApplyParentDisplayAttributes;
 
 trait InputFields
 {
@@ -1636,12 +1638,13 @@ trait InputFields
 ```
 
 InputfieldHelpers.php
+
 ```php
 <?php
 
-namespace Eminiarts\Aura\Traits;
+namespace Aura\Base\Traits;
 
-use Eminiarts\Aura\Pipeline\ApplyGroupedInputs;
+use Aura\Base\Pipeline\ApplyGroupedInputs;
 use Illuminate\Pipeline\Pipeline;
 
 trait InputFieldsHelpers

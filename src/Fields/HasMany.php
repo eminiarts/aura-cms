@@ -1,9 +1,9 @@
 <?php
 
-namespace Eminiarts\Aura\Fields;
+namespace Aura\Base\Fields;
 
 use Aura\Flows\Resources\Operation;
-use Eminiarts\Aura\Models\Meta;
+use Aura\Base\Models\Meta;
 
 class HasMany extends Field
 {
@@ -73,11 +73,11 @@ class HasMany extends Field
             }
         }
 
-        if ($model instanceof \Eminiarts\Aura\Resources\User) {
+        if ($model instanceof \Aura\Base\Resources\User) {
             return $query;
         }
 
-        if ($model instanceof \Eminiarts\Aura\Resources\Team) {
+        if ($model instanceof \Aura\Base\Resources\Team) {
             return $query;
         }
 

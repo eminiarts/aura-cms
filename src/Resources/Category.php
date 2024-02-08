@@ -1,8 +1,8 @@
 <?php
 
-namespace Eminiarts\Aura\Resources;
+namespace Aura\Base\Resources;
 
-use Eminiarts\Aura\Resource;
+use Aura\Base\Resource;
 
 class Category extends Resource
 {

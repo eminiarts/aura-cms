@@ -1,8 +1,8 @@
 <?php
 
-use Eminiarts\Aura\Jobs\GenerateImageThumbnail;
-use Eminiarts\Aura\Models\User;
-use Eminiarts\Aura\Resources\Attachment;
+use Aura\Base\Jobs\GenerateImageThumbnail;
+use Aura\Base\Models\User;
+use Aura\Base\Resources\Attachment;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Storage;

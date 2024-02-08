@@ -1,7 +1,7 @@
 <?php
 // app/Navigation/Navigation.php
 
-namespace Eminiarts\Aura\Navigation;
+namespace Aura\Base\Navigation;
 
 class Navigation
 {

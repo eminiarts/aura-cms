@@ -1,8 +1,8 @@
 <?php
 
-namespace Eminiarts\Aura\Livewire;
+namespace Aura\Base\Livewire;
 
-use Eminiarts\Aura\Traits\InputFields;
+use Aura\Base\Traits\InputFields;
 use Livewire\Component;
 
 class Notifications extends Component
@@ -26,25 +26,25 @@ class Notifications extends Component
     {
         return [
             [
-                'type' => 'Eminiarts\\Aura\\Fields\\Tab',
+                'type' => 'Aura\\Base\\Fields\\Tab',
                 'name' => 'Unread',
                 'slug' => 'tab-unread',
                 'global' => true,
             ],
             [
-                'type' => 'Eminiarts\\Aura\\Fields\\View',
+                'type' => 'Aura\\Base\\Fields\\View',
                 'name' => 'Unread',
                 'slug' => 'view-unread',
                 'view' => 'aura::livewire.notifications-unread',
             ],
             [
-                'type' => 'Eminiarts\\Aura\\Fields\\Tab',
+                'type' => 'Aura\\Base\\Fields\\Tab',
                 'name' => 'Read',
                 'slug' => 'tab-read',
                 'global' => true,
             ],
             [
-                'type' => 'Eminiarts\\Aura\\Fields\\View',
+                'type' => 'Aura\\Base\\Fields\\View',
                 'name' => 'read',
                 'slug' => 'view-unread',
                 'view' => 'aura::livewire.notifications-read',

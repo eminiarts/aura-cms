@@ -1,6 +1,6 @@
 <?php
 
-namespace Eminiarts\Aura\Fields;
+namespace Aura\Base\Fields;
 
 class Checkbox extends Field
 {
@@ -27,7 +27,7 @@ class Checkbox extends Field
             [
                 'label' => 'Checkbox',
                 'name' => 'Checkbox',
-                'type' => 'Eminiarts\\Aura\\Fields\\Tab',
+                'type' => 'Aura\\Base\\Fields\\Tab',
                 'slug' => 'checkbox',
                 'style' => [],
             ],
@@ -35,14 +35,14 @@ class Checkbox extends Field
             [
                 'label' => 'options',
                 'name' => 'options',
-                'type' => 'Eminiarts\\Aura\\Fields\\Repeater',
+                'type' => 'Aura\\Base\\Fields\\Repeater',
                 'validation' => '',
                 'slug' => 'options',
 
             ],
             [
                 'name' => 'Value',
-                'type' => 'Eminiarts\\Aura\\Fields\\Text',
+                'type' => 'Aura\\Base\\Fields\\Text',
                 'validation' => '',
                 'slug' => 'value',
                 'style' => [
@@ -52,7 +52,7 @@ class Checkbox extends Field
             ],
             [
                 'name' => 'Name',
-                'type' => 'Eminiarts\\Aura\\Fields\\Text',
+                'type' => 'Aura\\Base\\Fields\\Text',
                 'validation' => '',
                 'slug' => 'name',
                 'style' => [
@@ -62,7 +62,7 @@ class Checkbox extends Field
             ],
             [
                 'name' => 'Default Value',
-                'type' => 'Eminiarts\\Aura\\Fields\\Text',
+                'type' => 'Aura\\Base\\Fields\\Text',
                 'validation' => '',
                 'instructions' => 'Default value on create',
                 'exclude_from_nesting' => true,

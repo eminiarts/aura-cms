@@ -2,9 +2,9 @@
 
 namespace Tests\Feature\Auth;
 
-use Eminiarts\Aura\Facades\Aura;
-use Eminiarts\Aura\Providers\RouteServiceProvider;
-use Eminiarts\Aura\Resources\Team;
+use Aura\Base\Facades\Aura;
+use Aura\Base\Providers\RouteServiceProvider;
+use Aura\Base\Resources\Team;
 
 beforeEach(function () {
     // Enable Team Registration

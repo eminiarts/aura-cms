@@ -2,7 +2,7 @@
 
 // uses()->group('current');
 
-use Eminiarts\Aura\Resources\User;
+use Aura\Base\Resources\User;
 use Illuminate\Filesystem\FilesystemServiceProvider;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Artisan;

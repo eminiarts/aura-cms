@@ -2,12 +2,12 @@
 
 namespace Tests\Feature\Livewire;
 
-use Eminiarts\Aura\Facades\Aura;
-use Eminiarts\Aura\Livewire\Resource\Create;
-use Eminiarts\Aura\Livewire\Resource\Edit;
-use Eminiarts\Aura\Models\User;
-use Eminiarts\Aura\Resource;
-use Eminiarts\Aura\Resources\Post;
+use Aura\Base\Facades\Aura;
+use Aura\Base\Livewire\Resource\Create;
+use Aura\Base\Livewire\Resource\Edit;
+use Aura\Base\Models\User;
+use Aura\Base\Resource;
+use Aura\Base\Resources\Post;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
 
@@ -28,7 +28,7 @@ class DateFieldModel extends Resource
         return [
             [
                 'name' => 'Date for Test',
-                'type' => 'Eminiarts\\Aura\\Fields\\Date',
+                'type' => 'Aura\\Base\\Fields\\Date',
                 'validation' => '',
                 'format' => 'd.m.Y',
                 'conditional_logic' => [],

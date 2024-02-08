@@ -2,8 +2,8 @@
 
 namespace Tests\Feature\Auth;
 
-use Eminiarts\Aura\Models\User;
-use Eminiarts\Aura\Providers\RouteServiceProvider;
+use Aura\Base\Models\User;
+use Aura\Base\Providers\RouteServiceProvider;
 use Illuminate\Auth\Events\Verified;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\URL;
@@ -11,7 +11,7 @@ use Illuminate\Support\Facades\URL;
 test('email verification screen can be rendered', function () {
 
     $this->withoutExceptionHandling();
-    
+
     $user = User::factory()->create([
         'email_verified_at' => null,
     ]);

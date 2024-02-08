@@ -1,9 +1,9 @@
 <?php
 
-namespace Eminiarts\Aura\Http\Controllers\Auth;
+namespace Aura\Base\Http\Controllers\Auth;
 
-use Eminiarts\Aura\Http\Controllers\Controller;
-use Eminiarts\Aura\Providers\RouteServiceProvider;
+use Aura\Base\Http\Controllers\Controller;
+use Aura\Base\Providers\RouteServiceProvider;
 use Illuminate\Http\Request;
 
 class EmailVerificationNotificationController extends Controller

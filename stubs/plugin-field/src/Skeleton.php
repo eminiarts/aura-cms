@@ -2,7 +2,7 @@
 
 namespace VendorName\Skeleton;
 
-use Eminiarts\Aura\Fields\Field;
+use Aura\Base\Fields\Field;
 
 class Skeleton extends Field
 {

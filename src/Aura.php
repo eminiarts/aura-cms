@@ -1,13 +1,13 @@
 <?php
 
-namespace Eminiarts\Aura;
+namespace Aura\Base;
 
 use Closure;
-use Eminiarts\Aura\Models\Scopes\TeamScope;
-use Eminiarts\Aura\Resources\Attachment;
-use Eminiarts\Aura\Resources\Option;
-use Eminiarts\Aura\Resources\User;
-use Eminiarts\Aura\Traits\DefaultFields;
+use Aura\Base\Models\Scopes\TeamScope;
+use Aura\Base\Resources\Attachment;
+use Aura\Base\Resources\Option;
+use Aura\Base\Resources\User;
+use Aura\Base\Traits\DefaultFields;
 use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Filesystem\Filesystem;
 use Illuminate\Support\Facades\Cache;
@@ -95,7 +95,7 @@ class Aura
 
     public static function findTemplateBySlug($slug)
     {
-        return app('Eminiarts\Aura\Templates\\'.str($slug)->title);
+        return app('Aura\Base\Templates\\'.str($slug)->title);
     }
 
     public function getAppFields()

@@ -1,6 +1,6 @@
 <?php
 
-namespace Eminiarts\Aura\Widgets;
+namespace Aura\Base\Widgets;
 
 class SparklineArea extends Sparkline
 {

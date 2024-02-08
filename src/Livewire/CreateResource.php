@@ -1,9 +1,9 @@
 <?php
 
-namespace Eminiarts\Aura\Livewire;
+namespace Aura\Base\Livewire;
 
-use Eminiarts\Aura\Traits\FieldsOnComponent;
-use Eminiarts\Aura\Traits\InputFields;
+use Aura\Base\Traits\FieldsOnComponent;
+use Aura\Base\Traits\InputFields;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Artisan;
 use LivewireUI\Modal\ModalComponent;
@@ -25,7 +25,7 @@ class CreateResource extends ModalComponent
             [
                 'name' => 'Name (Singular, e.g. Post)',
                 'instructions' => 'The name of the post type, shown in the admin panel.',
-                'type' => 'Eminiarts\\Aura\\Fields\\Text',
+                'type' => 'Aura\\Base\\Fields\\Text',
                 'validation' => 'required|alpha:ascii',
                 'slug' => 'name',
             ],

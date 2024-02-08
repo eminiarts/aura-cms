@@ -1,6 +1,6 @@
 <?php
 
-namespace Eminiarts\Aura\Fields;
+namespace Aura\Base\Fields;
 
 class Number extends Field
 {
@@ -14,13 +14,13 @@ class Number extends Field
             [
                 'label' => 'Number',
                 'name' => 'Number',
-                'type' => 'Eminiarts\\Aura\\Fields\\Tab',
+                'type' => 'Aura\\Base\\Fields\\Tab',
                 'slug' => 'number-tab',
                 'style' => [],
             ],
             [
                 'name' => 'Default Value',
-                'type' => 'Eminiarts\\Aura\\Fields\\Text',
+                'type' => 'Aura\\Base\\Fields\\Text',
                 'validation' => '',
                 'instructions' => 'Default value on create',
                 'exclude_from_nesting' => true,
@@ -28,13 +28,13 @@ class Number extends Field
             ],
             [
                 'name' => 'Placeholder',
-                'type' => 'Eminiarts\\Aura\\Fields\\Text',
+                'type' => 'Aura\\Base\\Fields\\Text',
                 'validation' => '',
                 'slug' => 'placeholder',
             ],
             [
                 'name' => 'Prefix',
-                'type' => 'Eminiarts\\Aura\\Fields\\Text',
+                'type' => 'Aura\\Base\\Fields\\Text',
                 'validation' => '',
                 'slug' => 'prefix',
                 'style' => [
@@ -43,7 +43,7 @@ class Number extends Field
             ],
             [
                 'name' => 'Suffix',
-                'type' => 'Eminiarts\\Aura\\Fields\\Text',
+                'type' => 'Aura\\Base\\Fields\\Text',
                 'validation' => '',
                 'slug' => 'suffix',
                 'style' => [
@@ -54,7 +54,7 @@ class Number extends Field
             // minimum value and maximum value as number fields
             // [
             //     'name' => 'Minimum Value',
-            //     'type' => 'Eminiarts\\Aura\\Fields\\Number',
+            //     'type' => 'Aura\\Base\\Fields\\Number',
             //     'validation' => '',
             //     'slug' => 'min',
             //     'style' => [
@@ -63,7 +63,7 @@ class Number extends Field
             // ],
             // [
             //     'name' => 'Maximum Value',
-            //     'type' => 'Eminiarts\\Aura\\Fields\\Number',
+            //     'type' => 'Aura\\Base\\Fields\\Number',
             //     'validation' => '',
             //     'slug' => 'max',
             //     'style' => [

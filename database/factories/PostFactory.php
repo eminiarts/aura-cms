@@ -1,12 +1,12 @@
 <?php
 
-namespace Eminiarts\Aura\Database\Factories;
+namespace Aura\Base\Database\Factories;
 
-use Eminiarts\Aura\Resources\Post;
+use Aura\Base\Resources\Post;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\Eminiarts\Aura\Resources\Post>
+ * @extends \Illuminate\Database\Eloquent\Factories\Factory<\Aura\Base\Resources\Post>
  */
 class PostFactory extends Factory
 {

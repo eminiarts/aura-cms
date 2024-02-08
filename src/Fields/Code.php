@@ -1,6 +1,6 @@
 <?php
 
-namespace Eminiarts\Aura\Fields;
+namespace Aura\Base\Fields;
 
 class Code extends Field
 {
@@ -19,14 +19,14 @@ class Code extends Field
             [
                 'label' => 'Code',
                 'name' => 'Code',
-                'type' => 'Eminiarts\\Aura\\Fields\\Tab',
+                'type' => 'Aura\\Base\\Fields\\Tab',
                 'slug' => 'code',
                 'style' => [],
             ],
             [
                 'label' => 'Language',
                 'name' => 'Language',
-                'type' => 'Eminiarts\\Aura\\Fields\\Select',
+                'type' => 'Aura\\Base\\Fields\\Select',
                 'validation' => 'required',
                 'slug' => 'language',
                 'options' => [

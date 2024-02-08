@@ -1,9 +1,9 @@
 <?php
 
-use Eminiarts\Aura\Fields\HasMany;
-use Eminiarts\Aura\Fields\HasOne;
-use Eminiarts\Aura\Fields\HasOneOfMany;
-use Eminiarts\Aura\Resource;
+use Aura\Base\Fields\HasMany;
+use Aura\Base\Fields\HasOne;
+use Aura\Base\Fields\HasOneOfMany;
+use Aura\Base\Resource;
 
 class GroupRelationsTestModel extends Resource
 {
@@ -17,8 +17,8 @@ class GroupRelationsTestModel extends Resource
             [
                 'name' => 'Attachments',
                 'slug' => 'attachments',
-                'type' => 'Eminiarts\\Aura\\Fields\\HasMany',
-                'resource' => 'Eminiarts\\Aura\\Resources\\Attachment',
+                'type' => 'Aura\\Base\\Fields\\HasMany',
+                'resource' => 'Aura\\Base\\Resources\\Attachment',
                 'validation' => '',
                 'conditional_logic' => [],
                 'wrapper' => '',
@@ -32,8 +32,8 @@ class GroupRelationsTestModel extends Resource
             [
                 'name' => 'Pages',
                 'slug' => 'pages',
-                'type' => 'Eminiarts\\Aura\\Fields\\HasOne',
-                'resource' => 'Eminiarts\\Aura\\Resources\\Page',
+                'type' => 'Aura\\Base\\Fields\\HasOne',
+                'resource' => 'Aura\\Base\\Resources\\Page',
                 'validation' => '',
                 'conditional_logic' => [],
                 'wrapper' => '',
@@ -47,8 +47,8 @@ class GroupRelationsTestModel extends Resource
             [
                 'name' => 'Latest Post',
                 'slug' => 'latest_post',
-                'type' => 'Eminiarts\\Aura\\Fields\\HasOneOfMany',
-                'resource' => 'Eminiarts\\Aura\\Resources\\Post',
+                'type' => 'Aura\\Base\\Fields\\HasOneOfMany',
+                'resource' => 'Aura\\Base\\Resources\\Post',
                 'option' => 'latest',
                 'validation' => '',
                 'conditional_logic' => [],

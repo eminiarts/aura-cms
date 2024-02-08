@@ -1,11 +1,11 @@
 <?php
 
-namespace Eminiarts\Aura\Providers;
+namespace Aura\Base\Providers;
 
-use Eminiarts\Aura\Actions\Fortify\CreateNewUser;
-use Eminiarts\Aura\Actions\Fortify\ResetUserPassword;
-use Eminiarts\Aura\Actions\Fortify\UpdateUserPassword;
-use Eminiarts\Aura\Actions\Fortify\UpdateUserProfileInformation;
+use Aura\Base\Actions\Fortify\CreateNewUser;
+use Aura\Base\Actions\Fortify\ResetUserPassword;
+use Aura\Base\Actions\Fortify\UpdateUserPassword;
+use Aura\Base\Actions\Fortify\UpdateUserProfileInformation;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;

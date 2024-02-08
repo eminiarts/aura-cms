@@ -2,8 +2,8 @@
 
 namespace Tests\Feature;
 
-use Eminiarts\Aura\Models\User;
-use Eminiarts\Aura\Tests\TestCase;
+use Aura\Base\Models\User;
+use Aura\Base\Tests\TestCase;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Str;
 use Laravel\Jetstream\Features;

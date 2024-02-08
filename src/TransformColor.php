@@ -1,6 +1,6 @@
 <?php
 
-namespace Eminiarts\Aura;
+namespace Aura\Base;
 
 class TransformColor
 {

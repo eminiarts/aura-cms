@@ -1,8 +1,8 @@
 <?php
 
-namespace Eminiarts\Aura\Traits;
+namespace Aura\Base\Traits;
 
-use Eminiarts\Aura\Facades\Aura;
+use Aura\Base\Facades\Aura;
 use Illuminate\Support\Str;
 
 trait SaveFields

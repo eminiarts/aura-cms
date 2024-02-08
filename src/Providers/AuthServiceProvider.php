@@ -1,6 +1,6 @@
 <?php
 
-namespace Eminiarts\Aura\Providers;
+namespace Aura\Base\Providers;
 
 use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Cache\RateLimiting\Limit;

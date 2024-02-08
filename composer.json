@@ -47,8 +47,8 @@
     },
     "autoload": {
         "psr-4": {
-            "Eminiarts\\Aura\\": "src",
-            "Eminiarts\\Aura\\Database\\Factories\\": "database/factories",
+            "Aura\\Base\\": "src",
+            "Aura\\Base\\Database\\Factories\\": "database/factories",
             "Aura\\Flows\\": "plugins/aura/flows/src",
             "Aura\\Forms\\": "plugins/aura/forms/src",
             "Aura\\Pro\\": "plugins/aura/pro/src",
@@ -57,7 +57,7 @@
     },
     "autoload-dev": {
         "psr-4": {
-            "Eminiarts\\Aura\\Tests\\": "tests"
+            "Aura\\Base\\Tests\\": "tests"
         }
     },
     "scripts": {
@@ -77,16 +77,16 @@
         "laravel": {
             "providers": [
                 "Lab404\\Impersonate\\ImpersonateServiceProvider",
-                "Eminiarts\\Aura\\Providers\\AuthServiceProvider",
-                "Eminiarts\\Aura\\Providers\\AppServiceProvider",
-                "Eminiarts\\Aura\\AuraServiceProvider",
+                "Aura\\Base\\Providers\\AuthServiceProvider",
+                "Aura\\Base\\Providers\\AppServiceProvider",
+                "Aura\\Base\\AuraServiceProvider",
                 "Aura\\Pro\\ProServiceProvider",
                 "Aura\\Flows\\FlowsServiceProvider",
                 "Aura\\Forms\\FormsServiceProvider",
                 "Aura\\Export\\ExportServiceProvider"
             ],
             "aliases": {
-                "Aura": "Eminiarts\\Aura\\Facades\\Aura"
+                "Aura": "Aura\\Base\\Facades\\Aura"
             }
         }
     },

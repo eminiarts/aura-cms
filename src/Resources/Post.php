@@ -1,15 +1,15 @@
 <?php
 
-namespace Eminiarts\Aura\Resources;
+namespace Aura\Base\Resources;
 
 use Aura\Export\Traits\Exportable;
 use Aura\Flows\Resources\Flow;
-use Eminiarts\Aura\Database\Factories\PostFactory;
-use Eminiarts\Aura\Resource;
-use Eminiarts\Aura\Widgets\AvgPostsNumber;
-use Eminiarts\Aura\Widgets\PostChart;
-use Eminiarts\Aura\Widgets\SumPostsNumber;
-use Eminiarts\Aura\Widgets\TotalPosts;
+use Aura\Base\Database\Factories\PostFactory;
+use Aura\Base\Resource;
+use Aura\Base\Widgets\AvgPostsNumber;
+use Aura\Base\Widgets\PostChart;
+use Aura\Base\Widgets\SumPostsNumber;
+use Aura\Base\Widgets\TotalPosts;
 
 class Post extends Resource
 {
@@ -133,7 +133,7 @@ class Post extends Resource
         return [
             [
                 'name' => 'Tab',
-                'type' => 'Eminiarts\\Aura\\Fields\\Tab',
+                'type' => 'Aura\\Base\\Fields\\Tab',
                 'validation' => '',
                 'on_index' => true,
                 'global' => true,
@@ -143,7 +143,7 @@ class Post extends Resource
             ],
             [
                 'name' => 'Panel',
-                'type' => 'Eminiarts\\Aura\\Fields\\Panel',
+                'type' => 'Aura\\Base\\Fields\\Panel',
                 'validation' => '',
                 'on_index' => true,
                 'conditional_logic' => [
@@ -156,7 +156,7 @@ class Post extends Resource
             [
                 'name' => 'Title',
                 'slug' => 'title',
-                'type' => 'Eminiarts\\Aura\\Fields\\Text',
+                'type' => 'Aura\\Base\\Fields\\Text',
                 'validation' => '',
                 'conditional_logic' => [],
                 'wrapper' => '',
@@ -167,7 +167,7 @@ class Post extends Resource
             [
                 'name' => 'Text',
                 'slug' => 'text',
-                'type' => 'Eminiarts\\Aura\\Fields\\Text',
+                'type' => 'Aura\\Base\\Fields\\Text',
                 'validation' => '',
                 'conditional_logic' => [],
                 'wrapper' => '',
@@ -177,7 +177,7 @@ class Post extends Resource
             ],
             [
                 'name' => 'Slug for Test',
-                'type' => 'Eminiarts\\Aura\\Fields\\Slug',
+                'type' => 'Aura\\Base\\Fields\\Slug',
                 'validation' => 'required|alpha_dash',
                 'conditional_logic' => [
                 ],
@@ -186,7 +186,7 @@ class Post extends Resource
             ],
             [
                 'name' => 'Bild',
-                'type' => 'Eminiarts\\Aura\\Fields\\Image',
+                'type' => 'Aura\\Base\\Fields\\Image',
                 'max' => 1,
                 'upload' => true,
                 'validation' => '',
@@ -196,7 +196,7 @@ class Post extends Resource
             ],
             [
                 'name' => 'Password for Test',
-                'type' => 'Eminiarts\\Aura\\Fields\\Password',
+                'type' => 'Aura\\Base\\Fields\\Password',
                 'validation' => 'nullable|min:8',
                 'conditional_logic' => [
                 ],
@@ -209,7 +209,7 @@ class Post extends Resource
             ],
             [
                 'name' => 'Number',
-                'type' => 'Eminiarts\\Aura\\Fields\\Number',
+                'type' => 'Aura\\Base\\Fields\\Number',
                 'validation' => '',
                 'conditional_logic' => [
                 ],
@@ -220,7 +220,7 @@ class Post extends Resource
             ],
             [
                 'name' => 'Date',
-                'type' => 'Eminiarts\\Aura\\Fields\\Date',
+                'type' => 'Aura\\Base\\Fields\\Date',
                 'validation' => '',
                 'conditional_logic' => [
                 ],
@@ -229,7 +229,7 @@ class Post extends Resource
             ],
             [
                 'name' => 'Description',
-                'type' => 'Eminiarts\\Aura\\Fields\\Textarea',
+                'type' => 'Aura\\Base\\Fields\\Textarea',
                 'validation' => '',
                 'conditional_logic' => [
                 ],
@@ -243,7 +243,7 @@ class Post extends Resource
             ],
             //  [
             //      'name' => 'Color',
-            //      'type' => 'Eminiarts\\Aura\\Fields\\Color',
+            //      'type' => 'Aura\\Base\\Fields\\Color',
             //      'validation' => '',
             //      'conditional_logic' => [
             //      ],
@@ -255,7 +255,7 @@ class Post extends Resource
             //  ],
             [
                 'name' => 'Sidebar',
-                'type' => 'Eminiarts\\Aura\\Fields\\Panel',
+                'type' => 'Aura\\Base\\Fields\\Panel',
                 'validation' => '',
                 'on_index' => true,
                 'conditional_logic' => [
@@ -268,8 +268,8 @@ class Post extends Resource
             [
                 'name' => 'Tags',
                 'slug' => 'tags',
-                'type' => 'Eminiarts\\Aura\\Fields\\Tags',
-                'model' => 'Eminiarts\\Aura\\Resources\\Tag',
+                'type' => 'Aura\\Base\\Fields\\Tags',
+                'model' => 'Aura\\Base\\Resources\\Tag',
                 'create' => true,
                 'validation' => '',
                 'conditional_logic' => [],
@@ -281,8 +281,8 @@ class Post extends Resource
             [
                 'name' => 'Categories',
                 'slug' => 'categories',
-                'type' => 'Eminiarts\\Aura\\Fields\\Tags',
-                'model' => 'Eminiarts\\Aura\\Resources\\Category',
+                'type' => 'Aura\\Base\\Fields\\Tags',
+                'model' => 'Aura\\Base\\Resources\\Category',
                 'create' => true,
                 'validation' => '',
                 'conditional_logic' => [],
@@ -294,8 +294,8 @@ class Post extends Resource
             //  [
             //      'name' => 'Team',
             //      'slug' => 'team_id',
-            //      'type' => 'Eminiarts\\Aura\\Fields\\BelongsTo',
-            //      'resource' => 'Eminiarts\\Aura\\Resources\\Team',
+            //      'type' => 'Aura\\Base\\Fields\\BelongsTo',
+            //      'resource' => 'Aura\\Base\\Resources\\Team',
             //      'validation' => '',
             //      'conditional_logic' => [
             //          [
@@ -312,8 +312,8 @@ class Post extends Resource
             [
                 'name' => 'User',
                 'slug' => 'user_id',
-                'type' => 'Eminiarts\\Aura\\Fields\\BelongsTo',
-                'resource' => 'Eminiarts\\Aura\\Resources\\User',
+                'type' => 'Aura\\Base\\Fields\\BelongsTo',
+                'resource' => 'Aura\\Base\\Resources\\User',
                 'validation' => '',
                 'conditional_logic' => [],
                 'wrapper' => '',
@@ -323,7 +323,7 @@ class Post extends Resource
             ],
             [
                 'name' => 'Attachments',
-                'type' => 'Eminiarts\\Aura\\Fields\\Tab',
+                'type' => 'Aura\\Base\\Fields\\Tab',
                 'validation' => '',
                 'on_index' => true,
                 'global' => true,
@@ -334,8 +334,8 @@ class Post extends Resource
             [
                 'name' => 'Attachments',
                 'slug' => 'attachments',
-                'type' => 'Eminiarts\\Aura\\Fields\\HasMany',
-                'resource' => 'Eminiarts\\Aura\\Resources\\Attachment',
+                'type' => 'Aura\\Base\\Fields\\HasMany',
+                'resource' => 'Aura\\Base\\Resources\\Attachment',
                 'validation' => '',
                 'conditional_logic' => [],
                 'wrapper' => '',
@@ -349,7 +349,7 @@ class Post extends Resource
             // [
             //     'name' => 'Created at',
             //     'slug' => 'created_at',
-            //     'type' => 'Eminiarts\\Aura\\Fields\\Date',
+            //     'type' => 'Aura\\Base\\Fields\\Date',
             //     'validation' => '',
             //     'enable_time' => true,
             //     'conditional_logic' => [],
@@ -361,7 +361,7 @@ class Post extends Resource
             // [
             //     'name' => 'Updated at',
             //     'slug' => 'updated_at',
-            //     'type' => 'Eminiarts\\Aura\\Fields\\Date',
+            //     'type' => 'Aura\\Base\\Fields\\Date',
             //     'validation' => '',
             //     'conditional_logic' => [],
             //     'wrapper' => '',
@@ -384,7 +384,7 @@ class Post extends Resource
             [
                 'name' => 'Total Posts Created',
                 'slug' => 'total_posts_created',
-                'type' => 'Eminiarts\\Aura\\Widgets\\ValueWidget',
+                'type' => 'Aura\\Base\\Widgets\\ValueWidget',
                 'method' => 'count',
                 'cache' => 300,
                 'style' => [
@@ -395,7 +395,7 @@ class Post extends Resource
             [
                 'name' => 'Average Number',
                 'slug' => 'average_number',
-                'type' => 'Eminiarts\\Aura\\Widgets\\ValueWidget',
+                'type' => 'Aura\\Base\\Widgets\\ValueWidget',
                 'method' => 'avg',
                 'column' => 'number',
                 'cache' => 300,
@@ -407,7 +407,7 @@ class Post extends Resource
             [
                 'name' => 'Sum Number',
                 'slug' => 'sum_number',
-                'type' => 'Eminiarts\\Aura\\Widgets\\ValueWidget',
+                'type' => 'Aura\\Base\\Widgets\\ValueWidget',
                 'method' => 'sum',
                 'column' => 'number',
                 'goal' => 2000,
@@ -421,7 +421,7 @@ class Post extends Resource
             [
                 'name' => 'Sparkline Bar Chart',
                 'slug' => 'sparkline_bar_chart',
-                'type' => 'Eminiarts\\Aura\\Widgets\\SparklineBar',
+                'type' => 'Aura\\Base\\Widgets\\SparklineBar',
                 'cache' => 300,
                 'style' => [
                     'width' => '50',
@@ -432,7 +432,7 @@ class Post extends Resource
             [
                 'name' => 'Sparkline Area',
                 'slug' => 'sparkline_area',
-                'type' => 'Eminiarts\\Aura\\Widgets\\SparklineArea',
+                'type' => 'Aura\\Base\\Widgets\\SparklineArea',
                 'cache' => 300,
                 'style' => [
                     'width' => '50',
@@ -443,7 +443,7 @@ class Post extends Resource
             [
                 'name' => 'Donut Chart',
                 'slug' => 'donut',
-                'type' => 'Eminiarts\\Aura\\Widgets\\Donut',
+                'type' => 'Aura\\Base\\Widgets\\Donut',
                 'cache' => 300,
                 // 'values' => function () {
                 //     return [
@@ -460,7 +460,7 @@ class Post extends Resource
             [
                 'name' => 'Pie Chart',
                 'slug' => 'pie',
-                'type' => 'Eminiarts\\Aura\\Widgets\\Pie',
+                'type' => 'Aura\\Base\\Widgets\\Pie',
                 'cache' => 300,
                 'column' => 'number',
                 'style' => [
@@ -472,7 +472,7 @@ class Post extends Resource
             [
                 'name' => 'Bar Chart',
                 'slug' => 'bar',
-                'type' => 'Eminiarts\\Aura\\Widgets\\Bar',
+                'type' => 'Aura\\Base\\Widgets\\Bar',
                 'cache' => 300,
                 'column' => 'number',
                 'style' => [

@@ -1,9 +1,9 @@
 <?php
 
-namespace Eminiarts\Aura\Jobs;
+namespace Aura\Base\Jobs;
 
-use Eminiarts\Aura\Facades\Aura;
-use Eminiarts\Aura\Resources\Permission;
+use Aura\Base\Facades\Aura;
+use Aura\Base\Resources\Permission;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -27,7 +27,7 @@ class GenerateAllResourcePermissions implements ShouldQueue
         foreach (Aura::getResources() as $resource) {
 
             // Skip if the resource is not a Aura Resource
-            if (! is_subclass_of($resource, \Eminiarts\Aura\Resource::class)) {
+            if (! is_subclass_of($resource, \Aura\Base\Resource::class)) {
                 continue;
             }
 

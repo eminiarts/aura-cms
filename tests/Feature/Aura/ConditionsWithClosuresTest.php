@@ -1,10 +1,10 @@
 <?php
 
-use Eminiarts\Aura\ConditionalLogic;
-use Eminiarts\Aura\Facades\Aura;
-use Eminiarts\Aura\Livewire\ResourceEditor;
-use Eminiarts\Aura\Models\User;
-use Eminiarts\Aura\Resource;
+use Aura\Base\ConditionalLogic;
+use Aura\Base\Facades\Aura;
+use Aura\Base\Livewire\ResourceEditor;
+use Aura\Base\Models\User;
+use Aura\Base\Resource;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
 
@@ -27,7 +27,7 @@ class ConditionalLogicWithClosuresModel extends Resource
             [
                 'label' => 'Text 1',
                 'name' => 'Text 1',
-                'type' => 'Eminiarts\\Aura\\Fields\\Text',
+                'type' => 'Aura\\Base\\Fields\\Text',
                 'slug' => 'text1',
                 'validation' => '',
                 'conditional_logic' => [],
@@ -35,7 +35,7 @@ class ConditionalLogicWithClosuresModel extends Resource
             [
                 'label' => 'Text 2',
                 'name' => 'Text 2',
-                'type' => 'Eminiarts\\Aura\\Fields\\Text',
+                'type' => 'Aura\\Base\\Fields\\Text',
                 'validation' => '',
                 'conditional_logic' => [
                     function () {
@@ -64,7 +64,7 @@ class ConditionalLogicWithoutClosuresModel extends Resource
             [
                 'label' => 'Text 1',
                 'name' => 'Text 1',
-                'type' => 'Eminiarts\\Aura\\Fields\\Text',
+                'type' => 'Aura\\Base\\Fields\\Text',
                 'slug' => 'text1',
                 'validation' => '',
                 'conditional_logic' => [],
@@ -72,7 +72,7 @@ class ConditionalLogicWithoutClosuresModel extends Resource
             [
                 'label' => 'Text 2',
                 'name' => 'Text 2',
-                'type' => 'Eminiarts\\Aura\\Fields\\Text',
+                'type' => 'Aura\\Base\\Fields\\Text',
                 'validation' => '',
                 'conditional_logic' => [
                     [
@@ -203,7 +203,7 @@ test('fieldsHaveClosures() without closures', function () {
         [
             'label' => 'Text 1',
             'name' => 'Text 1',
-            'type' => 'Eminiarts\\Aura\\Fields\\Text',
+            'type' => 'Aura\\Base\\Fields\\Text',
             'slug' => 'text1',
             'validation' => '',
             'conditional_logic' => [],
@@ -211,7 +211,7 @@ test('fieldsHaveClosures() without closures', function () {
         [
             'label' => 'Text 2',
             'name' => 'Text 2',
-            'type' => 'Eminiarts\\Aura\\Fields\\Text',
+            'type' => 'Aura\\Base\\Fields\\Text',
             'validation' => '',
             'conditional_logic' => [],
             'slug' => 'text2',
@@ -228,7 +228,7 @@ test('fieldsHaveClosures() with closures', function () {
         [
             'label' => 'Text 1',
             'name' => 'Text 1',
-            'type' => 'Eminiarts\\Aura\\Fields\\Text',
+            'type' => 'Aura\\Base\\Fields\\Text',
             'slug' => 'text1',
             'validation' => function ($value) {
                 return $value === 'test';
@@ -238,7 +238,7 @@ test('fieldsHaveClosures() with closures', function () {
         [
             'label' => 'Text 2',
             'name' => 'Text 2',
-            'type' => 'Eminiarts\\Aura\\Fields\\Text',
+            'type' => 'Aura\\Base\\Fields\\Text',
             'validation' => '',
             'conditional_logic' => [],
             'slug' => 'text2',

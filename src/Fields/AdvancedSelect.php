@@ -1,6 +1,6 @@
 <?php
 
-namespace Eminiarts\Aura\Fields;
+namespace Aura\Base\Fields;
 
 class AdvancedSelect extends Field
 {
@@ -62,20 +62,20 @@ class AdvancedSelect extends Field
         return array_merge(parent::getFields(), [
             [
                 'name' => 'Select Many',
-                'type' => 'Eminiarts\\Aura\\Fields\\Tab',
+                'type' => 'Aura\\Base\\Fields\\Tab',
                 'slug' => 'select-many',
                 'style' => [],
             ],
             [
                 'name' => 'Resource',
-                'type' => 'Eminiarts\\Aura\\Fields\\Text',
+                'type' => 'Aura\\Base\\Fields\\Text',
                 'validation' => '',
                 'slug' => 'resource',
             ],
 
             [
                 'name' => 'Allow Create New',
-                'type' => 'Eminiarts\\Aura\\Fields\\Boolean',
+                'type' => 'Aura\\Base\\Fields\\Boolean',
                 'validation' => '',
                 'slug' => 'allow_create_new',
             ],

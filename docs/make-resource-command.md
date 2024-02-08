@@ -1,4 +1,4 @@
-The `aura:posttype` command is a Laravel command provided by the `Eminiarts\Aura\Commands\MakePosttype` class. This command allows you to generate a new Aura Posttype.
+The `aura:posttype` command is a Laravel command provided by the `Aura\Base\Commands\MakePosttype` class. This command allows you to generate a new Aura Posttype.
 
 Usage
 -----

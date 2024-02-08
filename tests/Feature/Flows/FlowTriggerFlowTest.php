@@ -1,8 +1,8 @@
 <?php
 
 use Aura\Flows\Resources\Flow;
-use Eminiarts\Aura\Models\User;
-use Eminiarts\Aura\Resources\Post;
+use Aura\Base\Models\User;
+use Aura\Base\Resources\Post;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
@@ -36,7 +36,7 @@ test('flow - a flow can trigger another flow', function () {
     $flow->operations()->create([
         'name' => 'Log Operation',
         'key' => 'Log-operation',
-        'type' => 'Eminiarts\\Aura\\Operations\\Log',
+        'type' => 'Aura\\Base\\Operations\\Log',
         'options' => [
             'x' => 2,
             'y' => 2,
@@ -48,7 +48,7 @@ test('flow - a flow can trigger another flow', function () {
     $resolveOperation = $flow->operations()->create([
         'name' => 'Trigger the other Flow',
         'key' => 'trigger-flow',
-        'type' => 'Eminiarts\\Aura\\Operations\\TriggerFlow',
+        'type' => 'Aura\\Base\\Operations\\TriggerFlow',
         'options' => [
             'x' => 14,
             'y' => 14,
@@ -68,7 +68,7 @@ test('flow - a flow can trigger another flow', function () {
     $flow2->operations()->create([
         'name' => 'Log Operation 2',
         'key' => 'Log-operation-2',
-        'type' => 'Eminiarts\\Aura\\Operations\\Log',
+        'type' => 'Aura\\Base\\Operations\\Log',
         'options' => [
             'x' => 2,
             'y' => 2,

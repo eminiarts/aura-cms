@@ -1,9 +1,9 @@
 <?php
 
-use Eminiarts\Aura\Livewire\Table\Table;
-use Eminiarts\Aura\Models\User;
-use Eminiarts\Aura\Resource;
-use Eminiarts\Aura\Resources\Post;
+use Aura\Base\Livewire\Table\Table;
+use Aura\Base\Models\User;
+use Aura\Base\Resource;
+use Aura\Base\Resources\Post;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
 
@@ -43,7 +43,7 @@ class TableSelectRowsModel extends Resource
         return [
             [
                 'name' => 'Meta',
-                'type' => 'Eminiarts\\Aura\\Fields\\Text',
+                'type' => 'Aura\\Base\\Fields\\Text',
                 'validation' => 'required',
                 'conditional_logic' => [],
                 'slug' => 'meta',
@@ -51,8 +51,8 @@ class TableSelectRowsModel extends Resource
             [
                 'name' => 'Tags',
                 'slug' => 'tags',
-                'type' => 'Eminiarts\\Aura\\Fields\\Tags',
-                'model' => 'Eminiarts\\Aura\\Resources\\Tag',
+                'type' => 'Aura\\Base\\Fields\\Tags',
+                'model' => 'Aura\\Base\\Resources\\Tag',
                 'create' => true,
                 'validation' => '',
                 'conditional_logic' => [],

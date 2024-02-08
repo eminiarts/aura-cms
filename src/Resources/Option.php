@@ -1,10 +1,10 @@
 <?php
 
-namespace Eminiarts\Aura\Resources;
+namespace Aura\Base\Resources;
 
-use Eminiarts\Aura\Models\Post;
-use Eminiarts\Aura\Models\Scopes\TeamScope;
-use Eminiarts\Aura\Resource;
+use Aura\Base\Models\Post;
+use Aura\Base\Models\Scopes\TeamScope;
+use Aura\Base\Resource;
 
 class Option extends Resource
 {
@@ -36,7 +36,7 @@ class Option extends Resource
         return [
             [
                 'name' => 'Name',
-                'type' => 'Eminiarts\\Aura\\Fields\\Text',
+                'type' => 'Aura\\Base\\Fields\\Text',
                 'validation' => 'required',
                 'on_index' => true,
                 'slug' => 'name',
@@ -46,7 +46,7 @@ class Option extends Resource
             ],
             [
                 'name' => 'Value',
-                'type' => 'Eminiarts\\Aura\\Fields\\Textarea',
+                'type' => 'Aura\\Base\\Fields\\Textarea',
                 'validation' => 'required',
                 'on_index' => false,
                 'slug' => 'value',

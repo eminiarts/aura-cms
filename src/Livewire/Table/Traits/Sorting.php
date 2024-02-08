@@ -1,6 +1,6 @@
 <?php
 
-namespace Eminiarts\Aura\Livewire\Table\Traits;
+namespace Aura\Base\Livewire\Table\Traits;
 
 use Illuminate\Support\Str;
 

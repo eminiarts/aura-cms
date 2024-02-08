@@ -1,6 +1,6 @@
 <?php
 
-namespace Eminiarts\Aura\Models\Scopes;
+namespace Aura\Base\Models\Scopes;
 
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
@@ -15,7 +15,7 @@ class ScopedScope implements Scope
      */
     public function apply(Builder $builder, Model $model)
     {
-        if ($model instanceof \Eminiarts\Aura\Resources\Role) {
+        if ($model instanceof \Aura\Base\Resources\Role) {
             return $builder;
         }
 

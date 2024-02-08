@@ -1,6 +1,6 @@
 <?php
 
-namespace Eminiarts\Aura\Http\Requests\Auth;
+namespace Aura\Base\Http\Requests\Auth;
 
 use Illuminate\Auth\Events\Lockout;
 use Illuminate\Foundation\Http\FormRequest;

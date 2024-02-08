@@ -1,9 +1,9 @@
 <?php
 
-namespace Eminiarts\Aura\Providers;
+namespace Aura\Base\Providers;
 
-use Eminiarts\Aura\Facades\DynamicFunctions;
-use Eminiarts\Aura\Navigation\Navigation;
+use Aura\Base\Facades\DynamicFunctions;
+use Aura\Base\Navigation\Navigation;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider

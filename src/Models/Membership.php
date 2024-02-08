@@ -1,6 +1,6 @@
 <?php
 
-namespace Eminiarts\Aura\Models;
+namespace Aura\Base\Models;
 
 class Membership
 {

@@ -1,6 +1,6 @@
 <?php
 
-namespace Eminiarts\Aura\Fields;
+namespace Aura\Base\Fields;
 
 class Repeater extends Field
 {
@@ -35,7 +35,7 @@ class Repeater extends Field
 
             [
                 'name' => 'Min Entries',
-                'type' => 'Eminiarts\\Aura\\Fields\\Number',
+                'type' => 'Aura\\Base\\Fields\\Number',
                 'validation' => '',
                 'slug' => 'min',
                 'default' => 0,
@@ -45,7 +45,7 @@ class Repeater extends Field
             ],
             [
                 'name' => 'Max Entries',
-                'type' => 'Eminiarts\\Aura\\Fields\\Number',
+                'type' => 'Aura\\Base\\Fields\\Number',
                 'validation' => '',
                 'slug' => 'max',
                 'default' => 0,

@@ -1,12 +1,12 @@
 <?php
 
-namespace Eminiarts\Aura\Facades;
+namespace Aura\Base\Facades;
 
-use Eminiarts\Aura\AuraFake;
+use Aura\Base\AuraFake;
 use Illuminate\Support\Facades\Facade;
 
 /**
- * @see \Eminiarts\Aura\Aura
+ * @see \Aura\Base\Aura
  */
 class Aura extends Facade
 {
@@ -24,6 +24,6 @@ class Aura extends Facade
 
     protected static function getFacadeAccessor()
     {
-        return \Eminiarts\Aura\Aura::class;
+        return \Aura\Base\Aura::class;
     }
 }

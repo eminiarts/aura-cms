@@ -1,8 +1,8 @@
 <?php
 
 use Aura\Flows\Resources\Flow;
-use Eminiarts\Aura\Models\User;
-use Eminiarts\Aura\Resources\Post;
+use Aura\Base\Models\User;
+use Aura\Base\Resources\Post;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
@@ -32,7 +32,7 @@ test('flow condition operation', function () {
     $delayOperation = $flow->operations()->create([
         'name' => 'Condition',
         'key' => 'condition',
-        'type' => 'Eminiarts\\Aura\\Operations\\Condition',
+        'type' => 'Aura\\Base\\Operations\\Condition',
         'options' => [
             'x' => 2,
             'y' => 2,
@@ -51,7 +51,7 @@ test('flow condition operation', function () {
     $resolveOperation = $flow->operations()->create([
         'name' => 'Log',
         'key' => 'log',
-        'type' => 'Eminiarts\\Aura\\Operations\\Log',
+        'type' => 'Aura\\Base\\Operations\\Log',
         'options' => [
             'message' => 'Condition is true',
         ],
@@ -63,7 +63,7 @@ test('flow condition operation', function () {
     $rejectOperation = $flow->operations()->create([
         'name' => 'Log',
         'key' => 'log',
-        'type' => 'Eminiarts\\Aura\\Operations\\Log',
+        'type' => 'Aura\\Base\\Operations\\Log',
         'options' => [
             'message' => 'Condition is false',
         ],
