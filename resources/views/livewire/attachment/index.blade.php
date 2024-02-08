@@ -9,7 +9,7 @@
 
     <div>
          @if (config('aura.features.resource_editor'))
-                    @if ($post->isAppResource())
+                    @if ($resource->isAppResource())
                         <x-aura::button.transparent :href="route('aura.resource.editor', $slug)" size="">
                             <x-aura::icon icon="cog" class="mr-2" />
                             {{ __('Edit Resource') }}
@@ -21,13 +21,13 @@
     </div>
 
     <div wire:key="widgets">
-        @if($widgets = $post->getWidgets())
+        @if($widgets = $resource->getWidgets())
         <x-aura::widgets :widgets="$widgets" />
         @endif
     </div>
 
     <div wire:key="attachment-media-uploader">
-        <livewire:aura::media-uploader :table="true" :model="$post" />
+        <livewire:aura::media-uploader :table="true" :model="$resource" />
     </div>
 
 </div>
