@@ -111,12 +111,7 @@ class Table extends Component
         'filters.custom.*.value' => 'required',
     ];
 
-    /**
-     * The search value.
-     *
-     * @var string
-     */
-    public $search;
+
 
     /**
      * The settings of the table.
@@ -294,9 +289,7 @@ class Table extends Component
         }
 
         // Search
-        if ($this->search) {
-            $query = $this->applySearch($query);
-        }
+        $query = $this->applySearch($query);
 
         $query = $this->applySorting($query);
 
