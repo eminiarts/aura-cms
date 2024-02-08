@@ -10,8 +10,6 @@ class Index extends Component
 {
     use AuthorizesRequests;
 
-    public $fields;
-
     public $resource;
 
     public $slug;
@@ -32,11 +30,6 @@ class Index extends Component
 
         // Authorize if the User can see this Post
         $this->authorize('viewAny', $this->resource);
-
-        $this->fields = '';
-        // $this->fields = $this->resource->inputFields();
-
-        // dd($this->fields);
     }
 
     public function render()
