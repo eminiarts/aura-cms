@@ -41,14 +41,14 @@
                 this.custom = ! this.custom;
 
                 if (!this.custom) {
-                    const basedOn = document.getElementById('post-field-{{ optional($field)['based_on'] }}')
+                    const basedOn = document.getElementById('resource-field-{{ optional($field)['based_on'] }}')
                     this.value = this.slugify(basedOn.value);
                 }
             },
 
             init () {
-                // get the element of id post-field-based_on
-                const basedOn = document.getElementById('post-field-{{ optional($field)['based_on'] }}')
+                // get the element of id resource-field-based_on
+                const basedOn = document.getElementById('resource-field-{{ optional($field)['based_on'] }}')
 
                 if (this.value != this.slugify(basedOn.value) && basedOn.value != '') {
                     this.custom = true

@@ -30,8 +30,8 @@
                 }
             }
         </style>
-        <div wire:key="post-field-{{ $key }}"
-        id="post-field-{{ optional($field)['slug'] }}-wrapper">
+        <div wire:key="resource-field-{{ $key }}"
+        id="resource-field-{{ optional($field)['slug'] }}-wrapper">
             <x-dynamic-component :component="$field['field']->component" :field="$field" />
         </div>
         @endforeach

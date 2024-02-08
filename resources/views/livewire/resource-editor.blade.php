@@ -189,14 +189,14 @@
                             @if ( optional($tab)['fields'] )
                             @foreach($tab['fields'] as $field)
 
-                                <div class="post-field-{{ optional($field)['slug'] }}-wrapper px-2 reorder-item draggable-item" id="field_{{ $field['_id'] }}" wire:key="pt-field-{{ $tab['_id'] }}">
+                                <div class="resource-field-{{ optional($field)['slug'] }}-wrapper px-2 reorder-item draggable-item" id="field_{{ $field['_id'] }}" wire:key="pt-field-{{ $tab['_id'] }}">
                                     <style >
-                                    .post-field-{{ optional($field)['slug'] }}-wrapper {
+                                    .resource-field-{{ optional($field)['slug'] }}-wrapper {
                                         width: {{ optional(optional($field)['style'])['width'] ?? '100' }}%;
                                     }
 
                                     @media screen and (max-width: 768px) {
-                                        .post-field-{{ optional($field)['slug'] }}-wrapper {
+                                        .resource-field-{{ optional($field)['slug'] }}-wrapper {
                                         width: 100%;
                                         }
                                     }
@@ -274,14 +274,14 @@
 
                     @foreach($this->mappedFields as $field)
 
-                        <div class="px-2 reorder-item draggable-item post-field-{{ optional($field)['slug'] }}-wrapper" id="field_{{ $field['_id'] }}" wire:key="pt-field-{{ $field['_id'] }}">
+                        <div class="px-2 reorder-item draggable-item resource-field-{{ optional($field)['slug'] }}-wrapper" id="field_{{ $field['_id'] }}" wire:key="pt-field-{{ $field['_id'] }}">
                             <style >
-                                .post-field-{{ optional($field)['slug'] }}-wrapper {
+                                .resource-field-{{ optional($field)['slug'] }}-wrapper {
                                     width: {{ optional(optional($field)['style'])['width'] ?? '100' }}%;
                                 }
 
                                 @media screen and (max-width: 768px) {
-                                    .post-field-{{ optional($field)['slug'] }}-wrapper {
+                                    .resource-field-{{ optional($field)['slug'] }}-wrapper {
                                     width: 100%;
                                     }
                                 }
