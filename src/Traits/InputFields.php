@@ -208,7 +208,7 @@ trait InputFields
 
     }
 
-    // Used in Posttype
+    // Used in Resource
     public function getFieldsForEdit($fields = null)
     {
         if (! $fields) {
@@ -269,7 +269,7 @@ trait InputFields
     }
 
     /**
-     * Map to Grouped Fields for the Posttype Builder / Edit Posttype.
+     * Map to Grouped Fields for the Resource Builder / Edit Resource.
      *
      * @param  array  $fields
      * @return array

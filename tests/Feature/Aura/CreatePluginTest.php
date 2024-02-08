@@ -104,11 +104,11 @@ it('creates a field plugin', function () {
     File::put(base_path('composer.json'), json_encode($baseComposerJson, JSON_PRETTY_PRINT));
 });
 
-it('creates a posttype plugin', function () {
-    $pluginName = 'myvendor/posttype';
-    $pluginDirectory = base_path('plugins/myvendor/posttype');
+it('creates a resource plugin', function () {
+    $pluginName = 'myvendor/resource';
+    $pluginDirectory = base_path('plugins/myvendor/resource');
 
-    $name = 'posttype';
+    $name = 'resource';
 
     // Delete the plugin directory if it already exists
     if (File::exists($pluginDirectory)) {
@@ -117,9 +117,9 @@ it('creates a posttype plugin', function () {
 
     $baseComposerJson = json_decode(File::get(base_path('composer.json')), true);
 
-    $this->artisan('aura:plugin myvendor/posttype')
-        ->expectsQuestion('Select the type of plugin you want to create', 'Posttype plugin')
-        ->expectsOutput('Posttype plugin created at '.$pluginDirectory)
+    $this->artisan('aura:plugin myvendor/resource')
+        ->expectsQuestion('Select the type of plugin you want to create', 'Resource plugin')
+        ->expectsOutput('Resource plugin created at '.$pluginDirectory)
         ->expectsOutputToContain('Replacing placeholders')
         ->expectsConfirmation('Do you want to append '.str($name)->title().'ServiceProvider to config/app.php?', 'no') // no, because it would adjust the config and make tests fail next time
         ->expectsOutputToContain('Updating composer.json')
@@ -134,19 +134,19 @@ it('creates a posttype plugin', function () {
     expect(File::exists("{$pluginDirectory}/composer.json"))->toBeTrue();
     expect(File::exists("{$pluginDirectory}/configure.php"))->toBeFalse();
 
-    expect(File::exists("{$pluginDirectory}/src/Posttype.php"))->toBeTrue();
-    expect(File::exists("{$pluginDirectory}/src/PosttypeServiceProvider.php"))->toBeTrue();
+    expect(File::exists("{$pluginDirectory}/src/Resource.php"))->toBeTrue();
+    expect(File::exists("{$pluginDirectory}/src/ResourceServiceProvider.php"))->toBeTrue();
 
     // Assert that the composer.json file was updated correctly
     $composerJson = json_decode(File::get(base_path('composer.json')), true);
 
     // $composerJson['autoload']['psr-4'] should have key "$pluginName\\"
-    expect($composerJson['autoload']['psr-4'])->toHaveKey("Myvendor\Posttype\\");
+    expect($composerJson['autoload']['psr-4'])->toHaveKey("Myvendor\Resource\\");
 
     // Assert that the service provider was not appended to the app config file correctly
     $configFile = File::get(base_path('config/app.php'));
 
-    expect($configFile)->not->toContain("$pluginName\\PosttypeServiceProvider::class");
+    expect($configFile)->not->toContain("$pluginName\\ResourceServiceProvider::class");
 
     // Delete the plugin directory
     if (File::exists($pluginDirectory)) {

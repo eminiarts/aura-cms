@@ -98,7 +98,7 @@ return [
         'flows' => false,
         'forms' => true,
 
-        'posttype_editor' => config('app.env') == 'production' ? false : true,
+        'resource_editor' => config('app.env') == 'production' ? false : true,
         'theme_options' => true,
         'global_config' => true,
 

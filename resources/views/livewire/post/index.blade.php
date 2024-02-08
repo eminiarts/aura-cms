@@ -16,11 +16,11 @@
         {{ app('aura')::injectView('breadcrumbs_after') }}
 
         <div>
-            @if (config('aura.features.posttype_editor'))
+            @if (config('aura.features.resource_editor'))
                     @if ($post->isAppResource())
-                        <x-aura::button.transparent :href="route('aura.posttype.edit', $slug)" size="">
+                        <x-aura::button.transparent :href="route('aura.resource.editor', $slug)" size="">
                             <x-aura::icon icon="cog" class="mr-2" />
-                            {{ __('Edit Posttype') }}
+                            {{ __('Edit Resource') }}
                         </x-aura::button.transparent>
                     @endif
             @endif

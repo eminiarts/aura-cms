@@ -20,7 +20,7 @@ class AppServiceProvider extends ServiceProvider
               "slug" => "create_resource",
               "group" => "settings",
               "sort" => 300,
-              "onclick" => "Livewire.dispatch('openModal', { component : 'aura::create-posttype' })",
+              "onclick" => "Livewire.dispatch('openModal', { component : 'aura::create-resource' })",
               "route" => false,
               "conditional_logic" => DynamicFunctions::add(function () {
                   return auth()->user()->resource->isSuperAdmin();

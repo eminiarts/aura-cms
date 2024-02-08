@@ -9,13 +9,13 @@ uses(RefreshDatabase::class);
 
 beforeEach(fn () => $this->actingAs($this->user = User::factory()->create()));
 
-class PosttypeEditModel extends Resource
+class ResourceEditModel extends Resource
 {
-    public static $singularName = 'Custom Posttype';
+    public static $singularName = 'Custom Resource';
 
-    public static ?string $slug = 'posttype';
+    public static ?string $slug = 'resource';
 
-    public static string $type = 'posttype';
+    public static string $type = 'resource';
 
     public function isAppResource(): bool
     {
@@ -25,7 +25,7 @@ class PosttypeEditModel extends Resource
 
 test('resource in app can be edited', function () {
     // create a app resource
-    $appResource = new PosttypeEditModel();
+    $appResource = new ResourceEditModel();
 
     $this->assertTrue($appResource->isAppResource());
     $this->assertFalse($appResource->isVendorResource());
@@ -35,8 +35,8 @@ test('resource in app can be edited', function () {
     Aura::fake();
     Aura::setModel($appResource);
 
-    // visit edit posttype page
-    $response = $this->get(route('aura.posttype.edit', 'posttype'));
+    // visit edit resource page
+    $response = $this->get(route('aura.resource.editor', 'resource'));
 
     $response->assertOk();
 });
@@ -52,43 +52,43 @@ test('vendor resource can not be edited', function () {
     Aura::fake();
     Aura::setModel($userResource);
 
-    // visit edit posttype page
-    $response = $this->get(route('aura.posttype.edit', 'user'));
+    // visit edit resource page
+    $response = $this->get(route('aura.resource.editor', 'user'));
 
     $response->assertForbidden();
 
     expect($response->exception->getMessage())->toBe('Only App resources can be edited.');
 });
 
-test('edit posttype should be allowed', function () {
-    $config = config('aura.features.posttype_editor');
+test('edit resource should be allowed', function () {
+    $config = config('aura.features.resource_editor');
 
     $this->assertTrue($config);
 });
 
-test('edit posttype can be turned off in config', function () {
+test('edit resource can be turned off in config', function () {
     createSuperAdmin();
 
-    config(['aura.features.posttype_editor' => false]);
+    config(['aura.features.resource_editor' => false]);
 
-    $config = config('aura.features.posttype_editor');
+    $config = config('aura.features.resource_editor');
 
     $this->assertFalse($config);
 
-    // visit edit posttype page
-    $response = $this->get(route('aura.posttype.edit', 'user'));
+    // visit edit resource page
+    $response = $this->get(route('aura.resource.editor', 'user'));
 
     $response->assertStatus(404);
 });
 
-test('edit posttype should not be available in production', function () {
+test('edit resource should not be available in production', function () {
     // Set env to production
     config(['app.env' => 'production']);
 
-    // Set aura.posttype_editor to true
-    config(['aura.features.posttype_editor' => false]);
+    // Set aura.resource_editor to true
+    config(['aura.features.resource_editor' => false]);
 
-    $config = config('aura.features.posttype_editor');
+    $config = config('aura.features.resource_editor');
 
     $this->assertFalse($config);
 });

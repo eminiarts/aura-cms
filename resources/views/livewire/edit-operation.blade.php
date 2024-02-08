@@ -46,7 +46,7 @@
           }
         }
       </style>
-      <div wire:key="posttype-field-{{ $key }}"
+      <div wire:key="resource-field-{{ $key }}"
       id="post-field-{{ optional($field)['slug'] }}-wrapper">
         <x-dynamic-component :component="$field['field']->component" :field="$field" />
       </div>

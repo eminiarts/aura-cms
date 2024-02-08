@@ -4,10 +4,10 @@ if(optional($field)['api']) {
     $values = [];
 
     // selected values
-    $selectedValues = $field['field']->selectedValues($field['posttype'], $this->post['fields'][$field['slug']]);
+    $selectedValues = $field['field']->selectedValues($field['resource'], $this->post['fields'][$field['slug']]);
 } else {
     // $values = $field['field']->values($field['model']);
-    $values = $field['field']->values($field['posttype']);
+    $values = $field['field']->values($field['resource']);
 }
 
 @endphp
@@ -26,7 +26,7 @@ if(optional($field)['api']) {
         items: {{ Js::from($values) }},
         selectedItems: {{ Js::from($selectedValues) }},
         api: {{ optional($field)['api'] ? 'true' : 'false' }},
-        model: {{ Js::from($field['posttype']) }},
+        model: {{ Js::from($field['resource']) }},
         field: {{ Js::from($field['type']) }},
         slug: '{{ $field['slug'] }}',
         csrf: document.querySelector('meta[name=\'csrf-token\']').getAttribute('content'),

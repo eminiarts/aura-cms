@@ -1,12 +1,12 @@
 <?php
 
 use Eminiarts\Aura\Facades\Aura;
-use Eminiarts\Aura\Livewire\Posttype;
+use Eminiarts\Aura\Livewire\ResourceEditor;
 use Eminiarts\Aura\Models\Post;
 use Eminiarts\Aura\Resources\User;
 use Livewire\Livewire;
 
-class PosttypeFake extends Posttype
+class ResourceEditorFake extends ResourceEditor
 {
     public $toSave = [];
 
@@ -17,7 +17,7 @@ class PosttypeFake extends Posttype
     }
 }
 
-class PosttypeTestModel extends Post
+class ResourceEditorTestModel extends Post
 {
     public static ?string $slug = 'model';
 
@@ -61,7 +61,7 @@ class PosttypeTestModel extends Post
 beforeEach(function () {
     $this->actingAs($this->user = createSuperAdmin());
 
-    $appResource = new PosttypeTestModel();
+    $appResource = new ResourceEditorTestModel();
 
     $this->assertTrue($appResource->isAppResource());
     $this->assertFalse($appResource->isVendorResource());
@@ -70,25 +70,25 @@ beforeEach(function () {
     Aura::setModel($appResource);
 });
 
-it('can mount the posttype component', function () {
-    Livewire::test(PosttypeFake::class, ['slug' => 'Model'])->assertStatus(200);
+it('can mount the resource component', function () {
+    Livewire::test(ResourceEditorFake::class, ['slug' => 'Model'])->assertStatus(200);
 });
 
 it('can add new tab', function () {
-    Livewire::test(PosttypeFake::class, ['slug' => 'Model'])
+    Livewire::test(ResourceEditorFake::class, ['slug' => 'Model'])
         ->call('addNewTab')
         ->assertDispatched('openSlideOver');
 });
 
-it('current posttype fields', function () {
-    $component = Livewire::test(PosttypeFake::class, ['slug' => 'Model']);
+it('current resource fields', function () {
+    $component = Livewire::test(ResourceEditorFake::class, ['slug' => 'Model']);
 
     expect($component->fieldsArray)->toBeArray();
     expect($component->fieldsArray)->toHaveCount(3);
 });
 
 it('can add fields', function () {
-    $component = Livewire::test(PosttypeFake::class, ['slug' => 'Model'])
+    $component = Livewire::test(ResourceEditorFake::class, ['slug' => 'Model'])
         ->call('addField', ...[2, 'new_field', 'Eminiarts\\Aura\\Fields\\Text', '']);
 
     expect($component->fieldsArray)->toBeArray();
@@ -106,7 +106,7 @@ it('can add fields', function () {
 });
 
 it('can delete fields', function () {
-    $component = Livewire::test(PosttypeFake::class, ['slug' => 'Model']);
+    $component = Livewire::test(ResourceEditorFake::class, ['slug' => 'Model']);
 
     $component->call('deleteField', ['slug' => 'panel-1']);
 
@@ -119,20 +119,20 @@ it('can delete fields', function () {
 });
 
 it('can add template fields', function () {
-    // Livewire::test(Posttype::class, ['slug' => 'Model'])
+    // Livewire::test(ResourceEditor::class, ['slug' => 'Model'])
     //     ->call('addTemplateFields', ['slug' => 'my-template'])
     //     ->assertSet('fieldsArray', [['name' => 'Name 1', 'type' => 'Type 1'], ['name' => 'Name 2', 'type' => 'Type 2']])
     //     ->assertSet('newFields', [['name' => 'Name 1', 'type' => 'Type 1'], ['name' => 'Name 2', 'type' => 'Type 2']]);
 });
 
-it('can save the posttype component', function () {
+it('can save the resource component', function () {
     $postTypeFields = [
         'type' => 'my-type',
         'slug' => 'my-slug',
         'icon' => 'my-icon',
     ];
 
-    Livewire::test(PosttypeFake::class, ['slug' => 'Model'])
+    Livewire::test(ResourceEditorFake::class, ['slug' => 'Model'])
         ->set('postTypeFields', $postTypeFields)
         ->call('save')
         ->assertSet('postTypeFields', $postTypeFields);

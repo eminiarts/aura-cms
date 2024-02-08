@@ -9,7 +9,7 @@ use Eminiarts\Aura\Commands\CreateResourceMigration;
 use Eminiarts\Aura\Commands\CreateResourcePermissions;
 use Eminiarts\Aura\Commands\DatabaseToResources;
 use Eminiarts\Aura\Commands\MakeField;
-use Eminiarts\Aura\Commands\MakePosttype;
+use Eminiarts\Aura\Commands\MakeResource;
 use Eminiarts\Aura\Commands\MakeUser;
 use Eminiarts\Aura\Commands\PublishCommand;
 use Eminiarts\Aura\Commands\TransformTableToResource;
@@ -18,10 +18,10 @@ use Eminiarts\Aura\Livewire\Attachment\Index as AttachmentIndex;
 use Eminiarts\Aura\Livewire\Config;
 use Eminiarts\Aura\Livewire\BookmarkPage;
 use Eminiarts\Aura\Livewire\CreateFlow;
-use Eminiarts\Aura\Livewire\CreatePosttype;
+use Eminiarts\Aura\Livewire\CreateResource;
 use Eminiarts\Aura\Livewire\Dashboard;
 use Eminiarts\Aura\Livewire\EditOperation;
-use Eminiarts\Aura\Livewire\EditPosttypeField;
+use Eminiarts\Aura\Livewire\EditResourceField;
 use Eminiarts\Aura\Livewire\GlobalSearch;
 use Eminiarts\Aura\Livewire\MediaManager;
 use Eminiarts\Aura\Livewire\MediaUploader;
@@ -33,7 +33,7 @@ use Eminiarts\Aura\Livewire\Post\Edit;
 use Eminiarts\Aura\Livewire\Post\EditModal;
 use Eminiarts\Aura\Livewire\Post\Index;
 use Eminiarts\Aura\Livewire\Post\View;
-use Eminiarts\Aura\Livewire\Posttype;
+use Eminiarts\Aura\Livewire\ResourceEditor;
 use Eminiarts\Aura\Livewire\Table\Table;
 use Eminiarts\Aura\Livewire\TeamSettings;
 use Eminiarts\Aura\Livewire\InviteUser;
@@ -111,13 +111,13 @@ class AuraServiceProvider extends PackageServiceProvider
         Livewire::component('aura::bookmark-page', BookmarkPage::class);
         Livewire::component('aura::dashboard', Dashboard::class);
         Livewire::component('aura::notifications', Notifications::class);
-        Livewire::component('aura::edit-posttype-field', EditPosttypeField::class);
+        Livewire::component('aura::edit-resource-field', EditResourceField::class);
         Livewire::component('aura::media-manager', MediaManager::class);
         Livewire::component('aura::media-uploader', app(MediaUploader::class));
         Livewire::component('aura::attachment-index', AttachmentIndex::class);
         Livewire::component('aura::user-two-factor-authentication-form', TwoFactorAuthenticationForm::class);
-        Livewire::component('aura::create-posttype', CreatePosttype::class);
-        Livewire::component('aura::edit-posttype', Posttype::class);
+        Livewire::component('aura::create-resource', CreateResource::class);
+        Livewire::component('aura::edit-resource', ResourceEditor::class);
         Livewire::component('aura::team-settings', TeamSettings::class);
         Livewire::component('aura::invite-user', InviteUser::class);
         Livewire::component('aura::config', app(config('aura.components.config')));
@@ -157,7 +157,7 @@ class AuraServiceProvider extends PackageServiceProvider
             ->runsMigrations()
             ->hasCommands([
                 AuraCommand::class,
-                MakePosttype::class,
+                MakeResource::class,
                 MakeUser::class,
                 CreateAuraPlugin::class,
                 MakeField::class,

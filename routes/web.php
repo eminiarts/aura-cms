@@ -2,7 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 use Eminiarts\Aura\Livewire\User\Profile;
-use Eminiarts\Aura\Livewire\Posttype;
+use Eminiarts\Aura\Livewire\ResourceEditor;
 use Eminiarts\Aura\Livewire\Post\Edit;
 use Eminiarts\Aura\Livewire\Post\View;
 use Eminiarts\Aura\Livewire\Config;
@@ -35,16 +35,12 @@ Route::domain(config('aura.domain'))
             // route for api/fields/values which calls Api\FieldsController@values
             Route::post('/api/fields/values', [FieldsController::class, 'values'])->name('api.fields.values');
 
-            Route::get('/posttypes', function () {
-                return view('aura::posttypes');
-            })->name('posttypes');
-
             Route::get('/profile', config('aura.components.profile'))->name('profile');
 
             Route::get('/settings', config('aura.components.team_settings'))->name('team.settings');
             Route::get('/config', config('aura.components.config'))->name('config');
 
-            Route::get('/posttypes/{slug}', Posttype::class)->name('posttype.edit');
+            Route::get('/resources/{slug}', ResourceEditor::class)->name('resource.editor');
 
             Route::get('/attachment', AttachmentIndex::class)->name('attachment.index');
 

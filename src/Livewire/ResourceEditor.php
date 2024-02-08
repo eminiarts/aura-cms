@@ -10,7 +10,7 @@ use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Str;
 use Livewire\Component;
 
-class Posttype extends Component
+class ResourceEditor extends Component
 {
     use AuthorizesRequests;
     use HasActions;
@@ -185,7 +185,7 @@ class Posttype extends Component
 
     public function checkAuthorization()
     {
-        if (config('aura.features.posttype_editor') == false) {
+        if (config('aura.features.resource_editor') == false) {
             abort(404);
         }
 
@@ -287,8 +287,8 @@ class Posttype extends Component
                 'icon-view' => 'aura::components.actions.trash',
                 'class' => 'hover:text-red-700 text-red-500 font-bold',
                 'confirm' => true,
-                'confirm-title' => 'Delete Posttype?',
-                'confirm-content' => 'Are you sure you want to delete this Posttype?',
+                'confirm-title' => 'Delete Resource?',
+                'confirm-content' => 'Are you sure you want to delete this Resource?',
                 'confirm-button' => 'Delete',
                 'confirm-button-class' => 'ml-3 bg-red-600 hover:bg-red-700',
             ],
@@ -357,7 +357,7 @@ class Posttype extends Component
 
         // Check if fields have closures
         if ($this->model->fieldsHaveClosures($this->model->getFields())) {
-            abort(403, 'Your fields have closures. You can not use the Posttype Builder with Closures.');
+            abort(403, 'Your fields have closures. You can not use the Resource Builder with Closures.');
         }
 
         $this->fieldsArray = $this->model->getFields();
@@ -407,7 +407,7 @@ class Posttype extends Component
     {
         $title = 'Welcome';
 
-        return view('aura::livewire.posttype', compact('title'))->layout('aura::components.layout.app');
+        return view('aura::livewire.resource', compact('title'))->layout('aura::components.layout.app');
     }
 
     public function reorder($ids)

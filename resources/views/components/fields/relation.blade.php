@@ -4,10 +4,10 @@
 
   {{-- <x-aura::fields.label :label="$field['name']" /> --}}
 
-  {{-- @dump(app($field['posttype'])) --}}
+  {{-- @dump(app($field['resource'])) --}}
 
   <livewire:aura::table 
-  :model="app($field['posttype'])" 
+  :model="app($field['resource'])" 
   :query="function($query){ return $query->where('email', 'bajram@eminiarts.ch'); }"
   :settings="[
     'create' => 'modal'
