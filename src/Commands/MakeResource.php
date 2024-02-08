@@ -4,28 +4,28 @@ namespace Eminiarts\Aura\Commands;
 
 use Illuminate\Console\GeneratorCommand;
 
-class MakePosttype extends GeneratorCommand
+class MakeResource extends GeneratorCommand
 {
     /**
      * The console command description.
      *
      * @var string
      */
-    protected $description = 'Create a new Aura Posttype';
+    protected $description = 'Create a new Aura Resource';
 
     /**
      * The name and signature of the console command.
      *
      * @var string
      */
-    protected $signature = 'aura:posttype {name}';
+    protected $signature = 'aura:resource {name}';
 
     /**
      * The type of class being generated.
      *
      * @var string
      */
-    protected $type = 'Posttype';
+    protected $type = 'Resource';
 
     /**
      * Get the default namespace for the class.
@@ -45,8 +45,8 @@ class MakePosttype extends GeneratorCommand
      */
     protected function getStub()
     {
-        // current dir /Stubs/make-posttype.stub
-        return __DIR__.'/Stubs/make-posttype.stub';
+        // current dir /Stubs/make-resource.stub
+        return __DIR__.'/Stubs/make-resource.stub';
     }
 
     /**

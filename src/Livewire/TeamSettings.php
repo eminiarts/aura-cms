@@ -155,7 +155,7 @@ class TeamSettings extends Component
                 'type' => 'Eminiarts\\Aura\\Fields\\Tab',
                 'name' => 'Custom Colors',
                 'slug' => 'tab-primary-colors-lightmode',
-                'conditional_logic' => function($model, $post) {
+                'conditional_logic' => function ($model, $post) {
                     if($post && $post['fields'] && $post['fields']['color-palette']) {
                         return $post['fields']['color-palette'] == 'custom';
                     }
@@ -285,7 +285,7 @@ class TeamSettings extends Component
                 'type' => 'Eminiarts\\Aura\\Fields\\Tab',
                 'name' => 'Custom Colors',
                 'slug' => 'tab-gray-colors-custom-tab',
-                'conditional_logic' => function($model, $post) {
+                'conditional_logic' => function ($model, $post) {
                     if($post && $post['fields'] && $post['fields']['gray-color-palette']) {
                         return $post['fields']['gray-color-palette'] == 'custom';
                     }
@@ -474,7 +474,7 @@ class TeamSettings extends Component
 
         // $this->post->save();
 
-        // Artisan::call('make:posttype', [
+        // Artisan::call('make:resource', [
         //     'name' => $this->post['fields']['name'],
         // ]);
 

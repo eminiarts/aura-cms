@@ -7,7 +7,7 @@ use Eminiarts\Aura\Traits\SaveFields;
 use Illuminate\Support\Arr;
 use Livewire\Component;
 
-class EditPosttypeField extends Component
+class EditResourceField extends Component
 {
     use RepeaterFields;
     use SaveFields;
@@ -92,7 +92,7 @@ class EditPosttypeField extends Component
 
     public function render()
     {
-        return view('aura::livewire.edit-posttype-field')->layout('aura::components.layout.app');
+        return view('aura::livewire.edit-resource-field')->layout('aura::components.layout.app');
     }
 
     public function rules()

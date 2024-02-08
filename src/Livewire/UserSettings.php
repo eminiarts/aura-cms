@@ -109,7 +109,7 @@ class UserSettings extends Component
 
         // $this->post->save();
 
-        // Artisan::call('make:posttype', [
+        // Artisan::call('make:resource', [
         //     'name' => $this->post['fields']['name'],
         // ]);
 

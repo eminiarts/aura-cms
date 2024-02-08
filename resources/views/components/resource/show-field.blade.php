@@ -50,7 +50,7 @@
               class="px-4 reorder-item draggable-item"
               
             >
-              @include('aura::components.posttype.show-field', ['field' => $f, 'slug' => $slug])
+              @include('aura::components.resource.show-field', ['field' => $f, 'slug' => $slug])
             </div>
 
             @if ($loop->last)
@@ -59,15 +59,15 @@
               @if ($f['type'] == 'Eminiarts\Aura\Fields\Repeater')
               @elseif ($f['type'] == 'Eminiarts\Aura\Fields\Tab')
                 <div class="w-full">
-                  <x-aura::posttype.add-field :id="$f['_id']" :slug="$f['slug']" :type="$f['type']"/>
+                  <x-aura::resource.add-field :id="$f['_id']" :slug="$f['slug']" :type="$f['type']"/>
                 </div>
               @elseif ($f['type'] == 'Eminiarts\Aura\Fields\Panel')
                 <div class="w-full">
-                  <x-aura::posttype.add-field :id="$f['_id']" :slug="$f['slug']" :type="$f['type']" />
+                  <x-aura::resource.add-field :id="$f['_id']" :slug="$f['slug']" :type="$f['type']" />
                 </div>
               @else
                 <div class="w-full">
-                  <x-aura::posttype.add-field :id="$f['_id']" :slug="$f['slug']" :type="$f['type']" />
+                  <x-aura::resource.add-field :id="$f['_id']" :slug="$f['slug']" :type="$f['type']" />
                 </div>
               @endif
             @endif
@@ -78,7 +78,7 @@
         <div class="flex relative flex-wrap justify-center items-center mb-4 h-12 bg-gray-50 rounded-md border border-gray-100 draggable-container">
           <span class="absolute text-xs text-gray-400">Drag field here</span>
         </div>
-        <x-aura::posttype.add-field :id="$field['_id']" :slug="$field['slug']" :type="$field['type']" />
+        <x-aura::resource.add-field :id="$field['_id']" :slug="$field['slug']" :type="$field['type']" />
       @endif
 
     </div>

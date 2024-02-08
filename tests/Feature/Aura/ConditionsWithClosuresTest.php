@@ -2,7 +2,7 @@
 
 use Eminiarts\Aura\ConditionalLogic;
 use Eminiarts\Aura\Facades\Aura;
-use Eminiarts\Aura\Livewire\Posttype;
+use Eminiarts\Aura\Livewire\ResourceEditor;
 use Eminiarts\Aura\Models\User;
 use Eminiarts\Aura\Resource;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -172,7 +172,7 @@ test('Conditional Logic with Closures - returns false for superadmin', function 
     expect($check)->toBeFalse();
 });
 
-test('Posttype Builder not accessible if fields contain closure', function () {
+test('Resource Builder not accessible if fields contain closure', function () {
     $model = new ConditionalLogicWithClosuresModel();
 
     Aura::fake();
@@ -180,10 +180,10 @@ test('Posttype Builder not accessible if fields contain closure', function () {
 
     expect($model->fieldsHaveClosures($model->getFields()))->toBeTrue();
 
-    Livewire::test(Posttype::class, ['slug' => 'Model'])->assertStatus(403);
+    Livewire::test(ResourceEditor::class, ['slug' => 'Model'])->assertStatus(403);
 });
 
-test('Posttype Builder  accessible if fields dont contain closure', function () {
+test('Resource Builder  accessible if fields dont contain closure', function () {
     $model = new ConditionalLogicWithoutClosuresModel();
 
     Aura::fake();
@@ -191,7 +191,7 @@ test('Posttype Builder  accessible if fields dont contain closure', function () 
 
     expect($model->fieldsHaveClosures($model->getFields()))->toBeFalse();
 
-    Livewire::test(Posttype::class, ['slug' => 'Model'])->assertOk();
+    Livewire::test(ResourceEditor::class, ['slug' => 'Model'])->assertOk();
 });
 
 test('fieldsHaveClosures() without closures', function () {

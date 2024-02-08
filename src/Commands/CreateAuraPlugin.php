@@ -24,7 +24,7 @@ class CreateAuraPlugin extends Command
 
         $options = [
             'Complete plugin',
-            'Posttype plugin',
+            'Resource plugin',
             'Field plugin',
             'Widget plugin',
         ];
@@ -33,7 +33,7 @@ class CreateAuraPlugin extends Command
 
         $folder = [
             'Complete plugin' => 'plugin',
-            'Posttype plugin' => 'plugin-posttype',
+            'Resource plugin' => 'plugin-resource',
             'Field plugin' => 'plugin-field',
             'Widget plugin' => 'plugin-widget',
         ];

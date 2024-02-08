@@ -7,23 +7,23 @@ use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\File;
 
 test('resource folder in app gets loaded correctly', function () {
-    // Delete app/Aura/Resources/TestPosttype.php if it exists
-    File::delete(app_path('Aura/Resources/TestPosttype.php'));
+    // Delete app/Aura/Resources/TestResource.php if it exists
+    File::delete(app_path('Aura/Resources/TestResource.php'));
 
-    // expect Aura::getResources() not to include TestPosttype
-    expect(Aura::getResources())->not->toContain('App\\Aura\\Resources\\TestPosttype');
+    // expect Aura::getResources() not to include TestResource
+    expect(Aura::getResources())->not->toContain('App\\Aura\\Resources\\TestResource');
 
-    Artisan::call('aura:posttype', [
-        'name' => 'TestPosttype',
+    Artisan::call('aura:resource', [
+        'name' => 'TestResource',
     ]);
 
-    // assert app/Aura/Resources/TestPosttype.php exists
-    $this->assertTrue(File::exists(app_path('Aura/Resources/TestPosttype.php')));
+    // assert app/Aura/Resources/TestResource.php exists
+    $this->assertTrue(File::exists(app_path('Aura/Resources/TestResource.php')));
 
-    expect(Aura::getAppResources())->toContain('App\\Aura\\Resources\\TestPosttype');
+    expect(Aura::getAppResources())->toContain('App\\Aura\\Resources\\TestResource');
 
-    // delete app/Aura/Resources/TestPosttype.php
-    File::delete(app_path('Aura/Resources/TestPosttype.php'));
+    // delete app/Aura/Resources/TestResource.php
+    File::delete(app_path('Aura/Resources/TestResource.php'));
 });
 
 test('Aura findResourceBySlug() returns correct resource', function () {

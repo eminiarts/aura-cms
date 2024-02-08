@@ -8,7 +8,7 @@ use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Artisan;
 use LivewireUI\Modal\ModalComponent;
 
-class CreatePosttype extends ModalComponent
+class CreateResource extends ModalComponent
 {
     use FieldsOnComponent;
     use InputFields;
@@ -41,7 +41,7 @@ class CreatePosttype extends ModalComponent
 
     public function render()
     {
-        return view('aura::livewire.create-posttype');
+        return view('aura::livewire.create-resource');
     }
 
     public function rules()
@@ -57,7 +57,7 @@ class CreatePosttype extends ModalComponent
 
         $this->validate();
 
-        Artisan::call('aura:posttype', [
+        Artisan::call('aura:resource', [
             'name' => $this->post['fields']['name'],
         ]);
 

@@ -1,6 +1,6 @@
 <?php
 
-use Eminiarts\Aura\Livewire\CreatePosttype;
+use Eminiarts\Aura\Livewire\CreateResource;
 use Eminiarts\Aura\Resources\User;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\File;
@@ -23,19 +23,19 @@ test('user can not access component', function () {
     $this->actingAs($user);
 
     // Test InviteUser Livewire Component
-    livewire(CreatePosttype::class)
+    livewire(CreateResource::class)
         ->assertForbidden();
 });
 
 // make sure only superadmins can access this component
 test('only superadmins can access this component', function () {
-    livewire(CreatePosttype::class)
+    livewire(CreateResource::class)
         ->assertOk();
 });
 
 // call save should fail
 test('call save should fail', function () {
-    livewire(CreatePosttype::class)
+    livewire(CreateResource::class)
         ->call('save')
         ->assertHasErrors(['post.fields.name' => 'required']);
 });
@@ -45,9 +45,9 @@ test('set name and call save should pass and should call artisan', function () {
     $artisanMock = Mockery::mock();
     Artisan::swap($artisanMock);
 
-    // Set up the expectation for the Artisan::call method with 'aura:posttype'
+    // Set up the expectation for the Artisan::call method with 'aura:resource'
     $artisanMock->shouldReceive('call')
-        ->with('aura:posttype', ['name' => 'Test'])
+        ->with('aura:resource', ['name' => 'Test'])
         ->once();
 
     // Set up the expectation for the Artisan::call method with 'cache:clear'
@@ -55,7 +55,7 @@ test('set name and call save should pass and should call artisan', function () {
         ->with('cache:clear')
         ->once();
 
-    livewire(CreatePosttype::class)
+    livewire(CreateResource::class)
         ->set('post.fields.name', 'Test')
         ->call('save')
         ->assertHasNoErrors();
@@ -64,8 +64,8 @@ test('set name and call save should pass and should call artisan', function () {
     $artisanMock->shouldHaveReceived('call');
 });
 
-test('posttype file gets created correctly', function () {
-    livewire(CreatePosttype::class)
+test('resource file gets created correctly', function () {
+    livewire(CreateResource::class)
         ->set('post.fields.name', 'Test')
         ->call('save')
         ->assertHasNoErrors();

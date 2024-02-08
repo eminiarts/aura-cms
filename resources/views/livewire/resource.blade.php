@@ -3,7 +3,7 @@
 
     <x-aura::breadcrumbs>
         <x-aura::breadcrumbs.li :href="route('aura.dashboard')" title="" icon="dashboard" iconClass="text-gray-500 w-7 h-7 mr-0" />
-        <x-aura::breadcrumbs.li :href="route('aura.posttype.edit', $model::getSlug())" title="Posttypes" />
+        <x-aura::breadcrumbs.li :href="route('aura.resource.editor', $model::getSlug())" title="Resources" />
         <x-aura::breadcrumbs.li :title="$model::getType()" />
     </x-aura::breadcrumbs>
 
@@ -162,13 +162,13 @@
 
                 <div class="mb-3 border-t rounded-b-lg border-gray-400/30 dark:border-gray-700"></div>
 
-                <div class="flex flex-wrap py-2 " wire:key="posttype-fields" x-data="posttype">
+                <div class="flex flex-wrap py-2 " wire:key="resource-fields" x-data="resource">
 
                     @if($this->mappedFields)
 
                         @foreach($this->mappedFields as $tab)
 
-                        <div class="flex flex-wrap min-w-full -mx-2 draggable-container reorder-item focus:outline-none" id="field_{{ $tab['_id'] }}" x-show="activeTab === {{ $loop->index }}" wire:key="posttype-tab-{{ $tab['_id'] }}">
+                        <div class="flex flex-wrap min-w-full -mx-2 draggable-container reorder-item focus:outline-none" id="field_{{ $tab['_id'] }}" x-show="activeTab === {{ $loop->index }}" wire:key="resource-tab-{{ $tab['_id'] }}">
 
                             @if ( optional($tab)['fields'] )
                             @foreach($tab['fields'] as $field)
@@ -186,12 +186,12 @@
                                     }
                                     </style>
 
-                                    @include('aura::components.posttype.show-field')
+                                    @include('aura::components.resource.show-field')
                                 </div>
 
                                 @if ($loop->last)
                                     <div class="w-full px-2">
-                                        <x-aura::posttype.add-field :id="$field['_id']" :slug="$field['slug']" :type="$field['type']" :children="$this->countChildren($field)"/>
+                                        <x-aura::resource.add-field :id="$field['_id']" :slug="$field['slug']" :type="$field['type']" :children="$this->countChildren($field)"/>
                                     </div>
                                 @endif
                             @endforeach
@@ -203,7 +203,7 @@
                                     <x-aura::button.transparent wire:click="insertTemplateFields({{ $tab['_id'] }}, '{{ $tab['slug'] }}', 'PanelWithSidebar')">Panel with Sidebar (70/30)</x-aura::button.transparent>
                                     <x-aura::button.transparent wire:click="insertTemplateFields({{ $tab['_id'] }}, '{{ $tab['slug'] }}', 'Plain')">Simple Panel with Text</x-aura::button.transparent>
 
-                                    <x-aura::posttype.add-field :id="$tab['_id']" :slug="$tab['slug']" type="field"/>
+                                    <x-aura::resource.add-field :id="$tab['_id']" :slug="$tab['slug']" type="field"/>
                                 </div>
                             @endif
 
@@ -211,7 +211,7 @@
                         @endforeach
                     @else
                         <div class="w-full px-2">
-                            <x-aura::posttype.add-field :id="$field['_id']" :slug="$field['slug']" :type="$field['type']"/>
+                            <x-aura::resource.add-field :id="$field['_id']" :slug="$field['slug']" :type="$field['type']"/>
                         </div>
                     @endif
                 </div>
@@ -232,7 +232,7 @@
 
             @if (count($this->mappedFields) > 0)
 
-                <div class="flex flex-wrap py-2 draggable-container" x-data="posttype" wire:key="posttype2-fields">
+                <div class="flex flex-wrap py-2 draggable-container" x-data="resource" wire:key="resource2-fields">
 
                     @foreach($this->mappedFields as $field)
 
@@ -249,12 +249,12 @@
                                 }
                             </style>
 
-                            @include('aura::components.posttype.show-field')
+                            @include('aura::components.resource.show-field')
                         </div>
 
                         @if ($loop->last)
                             <div class="w-full px-2">
-                                <x-aura::posttype.add-field :id="$field['_id']" :slug="$field['slug']" :type="$field['type']" :children="$this->countChildren($field)"/>
+                                <x-aura::resource.add-field :id="$field['_id']" :slug="$field['slug']" :type="$field['type']" :children="$this->countChildren($field)"/>
                             </div>
                         @endif
                     @endforeach
@@ -278,7 +278,7 @@
 
                     </div>
                     <h3 class="mt-4 text-base font-semibold text-gray-900">No fields</h3>
-                    <p class="mt-1 text-sm text-gray-500">Get started by choosing a template for your posttype.</p>
+                    <p class="mt-1 text-sm text-gray-500">Get started by choosing a template for your resource.</p>
 
                     <div class="mt-0">
                         <div class="w-full p-6 ">
@@ -342,7 +342,7 @@
 
     </div>
 
-    <livewire:aura::edit-posttype-field />
+    <livewire:aura::edit-resource-field />
 
     @once
     @push('scripts')
@@ -351,7 +351,7 @@
             // when alpine is ready
             document.addEventListener('alpine:init', () => {
                 // define an alpinejs component named 'userDropdown'
-                Alpine.data('posttype', () => ({
+                Alpine.data('resource', () => ({
                     init() {
                         Alpine.nextTick(() => {
                             const sortable = new window.Sortable(document.querySelectorAll('.draggable-container'), {
