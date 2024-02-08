@@ -10,7 +10,7 @@
   }
 </style>
 
-<div class="px-2" id="post-field-{{ optional($field)['slug'] }}-wrapper">
+<div class="px-2" id="resource-field-{{ optional($field)['slug'] }}-wrapper">
     <div class="aura-card {{ $field['style']['class'] ?? '' }}">
         <div class="mt-1 mb-2">
           @if($field['name'] != 'Main Panel')

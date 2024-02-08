@@ -1,13 +1,9 @@
-@props([
-'field',
-'wrapperClass' => 'px-4',
-'showLabel' => true,
-])
+@props(['field', 'wrapperClass' => 'px-4', 'showLabel' => true])
 
 @php
     $label = optional($field)['name'];
 
-    if($label && is_string(__($label))) {
+    if ($label && is_string(__($label))) {
         $label = __($label);
     }
 
@@ -22,45 +18,45 @@
     $slug = Str::slug(optional($field)['slug']);
 @endphp
 
-<div id="post-field-{{ $slug }}-wrapper"
-        class="{{ $wrapperClass }}">
-        <style >
-  #resource-field-{{ $slug }}-wrapper {
-    width: {{ optional(optional($field)['style'])['width'] ?? '100' }}%;
-  }
+<div id="resource-field-{{ $slug }}-wrapper" class="{{ $wrapperClass }}">
+    <style>
+        #resource-field-{{ $slug }}-wrapper {
+            width: {{ optional(optional($field)['style'])['width'] ?? '100' }}%;
+        }
 
-  @media screen and (max-width: 768px) {
-    #resource-field-{{ $slug }}-wrapper {
-      width: 100%;
-    }
-  }
-</style>
-  <div class="flex justify-between items-center">
-    @if ($label && $showLabel)
-      <x-aura::fields.label :label="$label" />
-    @endif
+        @media screen and (max-width: 768px) {
+            #resource-field-{{ $slug }}-wrapper {
+                width: 100%;
+            }
+        }
+    </style>
+    <div class="flex justify-between items-center">
+        @if ($label && $showLabel)
+            <x-aura::fields.label :label="$label" />
+        @endif
 
-    @if($help)
-
-    <div class="text-gray-300">
-      <x-aura::tippy text="{{ $help }}" position="left" class="text-sm text-gray-400 bg-white">
-        <x-aura::icon icon="info" size='sm' />
-      </x-aura::tippy>
+        @if ($help)
+            <div class="text-gray-300">
+                <x-aura::tippy text="{{ $help }}" position="left" class="text-sm text-gray-400 bg-white">
+                    <x-aura::icon icon="info" size='sm' />
+                </x-aura::tippy>
+            </div>
+        @endif
     </div>
-    @endif
-  </div>
 
-  <div class="">
-      @if(isset($slot))
-       {{ $slot }}
-      @else
-        @dump('NO SLOT DEFINED')
-        <x-aura::input.text :attributes="$attributes"></x-aura::input.text>
-      @endif
+    <div class="">
+        @if (isset($slot))
+            {{ $slot }}
+        @else
+            @dump('NO SLOT DEFINED')
+            <x-aura::input.text :attributes="$attributes"></x-aura::input.text>
+        @endif
 
-    @if($model)
-      @error($model) <span class="text-sm font-semibold text-red-500 error">{{ $message }}</span> @enderror
-    @endif
+        @if ($model)
+            @error($model)
+                <span class="text-sm font-semibold text-red-500 error">{{ $message }}</span>
+            @enderror
+        @endif
 
-  </div>
+    </div>
 </div>

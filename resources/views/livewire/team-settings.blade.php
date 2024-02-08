@@ -21,8 +21,8 @@
         }
     </style>
     <x-aura::fields.conditions :field="$field" :model="$this">
-        <div wire:key="post-field-{{ $key }}"
-        id="post-field-{{ optional($field)['slug'] }}-wrapper">
+        <div wire:key="resource-field-{{ $key }}"
+        id="resource-field-{{ optional($field)['slug'] }}-wrapper">
         <x-dynamic-component :component="$field['field']->component" :field="$field" />
         </div>
     </x-aura::fields.conditions>

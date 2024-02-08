@@ -67,7 +67,7 @@
 
             <div class="flex flex-wrap items-start -mx-2">
                 @foreach($this->viewFields as $key => $field)
-                <x-aura::fields.conditions :field="$field" :model="$model" wire:key="post-field-{{ $key }}">
+                <x-aura::fields.conditions :field="$field" :model="$model" wire:key="resource-field-{{ $key }}">
                     <x-dynamic-component :component="$field['field']->component()" :field="$field" />
                 </x-aura::fields.conditions>
                 @endforeach
