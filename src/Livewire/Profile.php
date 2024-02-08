@@ -262,7 +262,7 @@ class Profile extends Component
 
     public function rules()
     {
-        return $this->formFieldValidationRules();
+        return $this->resourceFieldValidationRules();
     }
 
     public function save()

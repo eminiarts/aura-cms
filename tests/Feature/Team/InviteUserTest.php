@@ -265,7 +265,7 @@ test('email and role are required in the invite user component', function () {
     $user = User::factory()->create(['email' => 'invited@test.com']);
 
     livewire(InviteUser::class, ['team' => $team])
-        ->set('resource', ['fields' => [
+        ->set('form', ['fields' => [
             'email' => 'invited@test.com',
             'role' => Role::first()->id,
         ]])
