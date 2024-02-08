@@ -95,7 +95,7 @@ test('user gets correct role', function () {
     $response->assertOk();
 
     // Register the user and see if the role is correct
-    $response = $this->resource($url, [
+    $response = $this->post($url, [
         'name' => 'Test User',
         'password' => 'password',
         'password_confirmation' => 'password',
@@ -229,7 +229,7 @@ test('user can register using an invitation', function () {
 
     $this->assertNull($user);
 
-    $response = $this->resource($url, [
+    $response = $this->post($url, [
         'name' => 'Test User',
         'password' => 'password',
         'password_confirmation' => 'password',
