@@ -23,7 +23,7 @@ test('post can be viewed', function () {
     $this->assertDatabaseHas('posts', ['title' => 'Test Post']);
 
     // Visit the Post Index Page
-    $this->get(route('aura.post.view', [$post->type, $post->id]))
+    $this->get(route('aura.resource.view', [$post->type, $post->id]))
         ->assertSeeLivewire('aura::post-view')
         ->assertSee('Test Post');
 });

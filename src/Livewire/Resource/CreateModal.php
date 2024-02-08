@@ -1,6 +1,6 @@
 <?php
 
-namespace Eminiarts\Aura\Livewire\Post;
+namespace Eminiarts\Aura\Livewire\Resource;
 
 use LivewireUI\Modal\ModalComponent;
 
@@ -8,7 +8,7 @@ class CreateModal extends ModalComponent
 {
     public $params;
 
-    public $post;
+    public $resource;
 
     public $type;
 
@@ -19,6 +19,6 @@ class CreateModal extends ModalComponent
 
     public function render()
     {
-        return view('aura::livewire.post.create-modal');
+        return view('aura::livewire.resource.create-modal');
     }
 }

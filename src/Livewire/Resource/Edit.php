@@ -1,6 +1,6 @@
 <?php
 
-namespace Eminiarts\Aura\Livewire\Post;
+namespace Eminiarts\Aura\Livewire\Resource;
 
 use Eminiarts\Aura\Facades\Aura;
 use Eminiarts\Aura\Models\Post;
@@ -29,7 +29,7 @@ class Edit extends Component
 
     public $model;
 
-    public $post;
+    public $resource;
 
     public $slug;
 
@@ -66,11 +66,11 @@ class Edit extends Component
 
             // If the method exists in the field type, call it directly.
             if (method_exists($fieldTypeInstance, $method)) {
-                $post = call_user_func_array([$fieldTypeInstance, $method], array_merge([$this->model, $this->post], $params));
+                $post = call_user_func_array([$fieldTypeInstance, $method], array_merge([$this->model, $this->resource], $params));
 
                 // If the field type method returns a post, update the post.
                 if ($post) {
-                    $this->post = $post;
+                    $this->resource = $post;
                 }
 
                 // Make sure to return here, otherwise the parent callMethod will be called.
@@ -87,7 +87,7 @@ class Edit extends Component
         foreach ($this->model->inputFields() as $field) {
             // If the method exists in the field type, call it directly.
             if (method_exists($field['field'], 'hydrate')) {
-                $this->post['fields'][$field['slug']] = $field['field']->hydrate();
+                $this->resource['fields'][$field['slug']] = $field['field']->hydrate();
             }
         }
     }
@@ -102,23 +102,23 @@ class Edit extends Component
         $this->authorize('update', $this->model);
 
         // Array instead of Eloquent Model
-        $this->post = $this->model->attributesToArray();
+        $this->resource = $this->model->attributesToArray();
 
         // foreach fields, call the hydration method on the field
         $this->initializeModelFields();
 
         // foreach fields, call the hydration method on the field
 
-        // ray('mount', $this->post, $this->model);
+        // ray('mount', $this->resource, $this->model);
 
         // Set on model instead of here
-        // if $this->post['terms']['tag'] is not set, set it to null
+        // if $this->resource['terms']['tag'] is not set, set it to null
     }
 
     public function reload()
     {
         $this->model = $this->model->fresh();
-        $this->post = $this->model->attributesToArray();
+        $this->resource = $this->model->attributesToArray();
         // The GET method is not supported for this route. Only POST is supported.
         // Therefore, we cannot use redirect()->to(url()->current()).
         // Instead, we will refresh the component.
@@ -133,11 +133,11 @@ class Edit extends Component
     public function rules()
     {
         return Arr::dot([
-            'post.terms' => '',
-            'post.fields' => $this->model->validationRules(),
-            'post.fields.variations.*.name' => '',
-            'post.fields.variations.*.price' => '',
-            'post.fields.variations.*.value' => '',
+            'resource.terms' => '',
+            'resource.fields' => $this->model->validationRules(),
+            'resource.fields.variations.*.name' => '',
+            'resource.fields.variations.*.price' => '',
+            'resource.fields.variations.*.value' => '',
         ]);
     }
 
@@ -146,16 +146,16 @@ class Edit extends Component
         $this->validate();
 
         ray()->clearScreen();
-        ray('saving', $this->post, $this->model);
+        ray('saving', $this->resource, $this->model);
 
-        unset($this->post['fields']['group']);
+        unset($this->resource['fields']['group']);
 
 
         // unset this post fields group
         if ($this->model->usesCustomTable()) {
-            $this->model->update($this->post['fields']);
+            $this->model->update($this->resource['fields']);
         } else {
-            $this->model->update($this->post);
+            $this->model->update($this->resource);
         }
 
         $this->notify(__('Successfully updated'));
@@ -167,7 +167,7 @@ class Edit extends Component
 
 
         $this->model = $this->model->refresh();
-        $this->post = $this->model->attributesToArray();
+        $this->resource = $this->model->attributesToArray();
 
         $this->dispatch('refreshComponent');
     }
@@ -183,6 +183,6 @@ class Edit extends Component
 
     public function updatedPost($value, $array)
     {
-        // dd('updatedPostFields', $value, $array, $this->post);
+        // dd('updatedPostFields', $value, $array, $this->resource);
     }
 }

@@ -10,8 +10,8 @@ use Eminiarts\Aura\Resources\Post;
 use Eminiarts\Aura\Resources\Role;
 use Eminiarts\Aura\Resources\Team;
 use Illuminate\Support\Facades\Hash;
-use Eminiarts\Aura\Livewire\Post\Edit;
-use Eminiarts\Aura\Livewire\Post\Create;
+use Eminiarts\Aura\Livewire\Resource\Edit;
+use Eminiarts\Aura\Livewire\Resource\Create;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 // Before each test, create a Superadmin and login
@@ -57,7 +57,7 @@ test('AdvancedSelect Field Test', function () {
         ->assertSee('AdvancedSelect for Test')
         ->assertSeeHtml('x-text="selectedItem(item)"')
         ->call('save')
-        ->assertHasNoErrors(['post.fields.advancedselect']);
+        ->assertHasNoErrors(['resource.fields.advancedselect']);
 
     // assert in db has post with type DateModel
     $this->assertDatabaseHas('posts', ['type' => 'AdvancedSelectModel']);
@@ -69,9 +69,9 @@ test('AdvancedSelect Field Test', function () {
     // Assert that $model->fields['number'] is null
     $this->assertNull($model->fields['advancedselect']);
 
-    $component->set('post.fields.advancedselect', [ $roles[0]->id ])
+    $component->set('resource.fields.advancedselect', [ $roles[0]->id ])
         ->call('save')
-        ->assertHasNoErrors(['post.fields.advancedselect']);
+        ->assertHasNoErrors(['resource.fields.advancedselect']);
 
     // get the datemodel from db
     $model = AdvancedSelectFieldModel::orderBy('id', 'desc')->first();
@@ -79,17 +79,17 @@ test('AdvancedSelect Field Test', function () {
     expect($model->fields['advancedselect'])->toBeArray();
     expect($model->fields['advancedselect'])->toHaveCount(1);
     expect($model->fields['advancedselect'])->toContain($roles[0]->id);
-    
+
     expect($model->advancedselect)->toBeArray();
     expect($model->advancedselect)->toHaveCount(1);
     expect($model->advancedselect)->toContain($roles[0]->id);
-    
+
 });
 
 test('advancedselect field gets displayed correctly on edit view', function () {
     $model = AdvancedSelectFieldModel::create([
         'fields' => [
-            'advancedselect' => [ $id =Role::first()->id ]
+            'advancedselect' => [ $id = Role::first()->id ]
         ]
     ]);
 
@@ -128,4 +128,3 @@ test('advancedselect field gets displayed correctly on edit view', function () {
 
 test('api test with advanced select', function () {
 })->todo();
-

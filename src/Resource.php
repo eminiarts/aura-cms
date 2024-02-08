@@ -150,7 +150,7 @@ class Resource extends Model
      */
     public function getExcerptAttribute()
     {
-        return $this->stripShortcodes($this->post_excerpt);
+        return $this->stripShortcodes($this->resource_excerpt);
     }
 
     public function getFieldsAttribute()

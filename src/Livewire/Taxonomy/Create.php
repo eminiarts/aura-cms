@@ -17,7 +17,7 @@ class Create extends ModalComponent
 
     public $model;
 
-    public $post;
+    public $resource;
 
     public $slug;
 
@@ -30,7 +30,7 @@ class Create extends ModalComponent
         $this->authorize('create', $this->model);
 
         // Array instead of Eloquent Model
-        $this->post = $this->model->toArray();
+        $this->resource = $this->model->toArray();
     }
 
     public function render()
@@ -41,8 +41,8 @@ class Create extends ModalComponent
     public function rules()
     {
         return Arr::dot([
-            'post.terms' => '',
-            'post.fields' => $this->model->validationRules(),
+            'resource.terms' => '',
+            'resource.fields' => $this->model->validationRules(),
         ]);
     }
 
@@ -51,11 +51,11 @@ class Create extends ModalComponent
         $this->validate();
 
         // Set Fields
-        $this->post['fields']['taxonomy'] = $this->slug;
+        $this->resource['fields']['taxonomy'] = $this->slug;
 
-        // dd($this->post, $this->model);
+        // dd($this->resource, $this->model);
 
-        $model = $this->model->create($this->post['fields']);
+        $model = $this->model->create($this->resource['fields']);
 
         // dd('hier', $model);
 

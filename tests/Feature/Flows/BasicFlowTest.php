@@ -18,7 +18,7 @@ test('flow - log operation', function () {
     $flow = Flow::create([
         'name' => 'Test Flow',
         'description' => 'Test Flow Description',
-        'trigger' => 'post',
+        'trigger' => 'resource',
         'options' => [
             'resource' => Post::class,
             'event' => 'created',
@@ -83,7 +83,7 @@ test('chained flow gets triggered on create post', function () {
     $flow = Flow::create([
         'name' => 'Test Flow',
         'description' => 'Test Flow Description',
-        'trigger' => 'post',
+        'trigger' => 'resource',
         'options' => [
             'resource' => Post::class,
             'event' => 'created',

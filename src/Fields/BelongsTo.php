@@ -121,7 +121,7 @@ class BelongsTo extends Field
 
             // return $value;
 
-            return "<a class='font-semibold' href='".route('aura.post.edit', [$model, $value])."'>".optional(app($field['resource'])::find($value))->title().'</a>';
+            return "<a class='font-semibold' href='".route('aura.resource.edit', [$model, $value])."'>".optional(app($field['resource'])::find($value))->title().'</a>';
         }
 
         return $value;

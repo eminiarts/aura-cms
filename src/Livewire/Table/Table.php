@@ -91,7 +91,7 @@ class Table extends Component
      */
     public $parent;
 
-    public $post;
+    public $resource;
 
     public $query;
 
@@ -148,11 +148,11 @@ class Table extends Component
     {
         // return redirect to post view
         if ($data['action'] == 'view') {
-            return redirect()->route('aura.post.view', ['slug' => $this->model()->getType(), 'id' => $data['id']]);
+            return redirect()->route('aura.resource.view', ['slug' => $this->model()->getType(), 'id' => $data['id']]);
         }
         // edit
         if ($data['action'] == 'edit') {
-            return redirect()->route('aura.post.edit', ['slug' => $this->model()->getType(), 'id' => $data['id']]);
+            return redirect()->route('aura.resource.edit', ['slug' => $this->model()->getType(), 'id' => $data['id']]);
         }
 
         // if custom
@@ -181,14 +181,14 @@ class Table extends Component
         }
 
         if ($this->parent) {
-            return route('aura.post.create', [
+            return route('aura.resource.create', [
                 'slug' => $this->model()->getType(),
                 'for' => $this->parent->getType(),
                 'id' => $this->parent->id,
             ]);
         }
 
-        return route('aura.post.create', ['slug' => $this->model()->getType()]);
+        return route('aura.resource.create', ['slug' => $this->model()->getType()]);
     }
 
     /**

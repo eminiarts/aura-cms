@@ -34,7 +34,7 @@ class TableSelectRowsModel extends Resource
 {
     public static $singularName = 'Post';
 
-    public static ?string $slug = 'post';
+    public static ?string $slug = 'resource';
 
     public static string $type = 'Post';
 

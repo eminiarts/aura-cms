@@ -25,7 +25,7 @@ class TableTaxonomyFilterModel extends Resource
 {
     public static $singularName = 'Post';
 
-    public static ?string $slug = 'post';
+    public static ?string $slug = 'resource';
 
     public static string $type = 'Post';
 
@@ -80,7 +80,7 @@ test('table filter - taxonomy filter', function () {
         ],
     ]);
 
-     // Mock the Builder instance
+    // Mock the Builder instance
     $builderMock = $this->createMock(Builder::class);
 
     // Visit the Post Index Page

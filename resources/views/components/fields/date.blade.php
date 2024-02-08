@@ -26,7 +26,7 @@
     class="flex rounded-md shadow-sm"
 >
     <span class="inline-flex items-center px-3 text-gray-500 border border-r-0 border-gray-500/30 dark:border-gray-700 rounded-l-md bg-gray-50 dark:bg-gray-700 sm:text-sm
-        @if ($field['field']->isDisabled($this->post, $field))
+        @if ($field['field']->isDisabled($this->resource, $field))
         opacity-50 cursor-not-allowed
         @endif
     ">
@@ -38,7 +38,7 @@
     <input
         wire:model="post.fields.{{ optional($field)['slug'] }}"
         x-ref="input"
-        @if ($field['field']->isDisabled($this->post, $field))
+        @if ($field['field']->isDisabled($this->resource, $field))
         disabled
         @endif
         class="px-3 py-2 w-full bg-white rounded-none rounded-r-md border appearance-none shadow-xs disabled:opacity-50 disabled:cursor-not-allowed border-gray-500/30 dark:border-gray-700 focus:border-primary-300 focus:outline-none ring-gray-900/10 focus:ring focus:ring-primary-300 focus:ring-opacity-50 dark:focus:ring-primary-500 dark:focus:ring-opacity-50 dark:bg-gray-900"

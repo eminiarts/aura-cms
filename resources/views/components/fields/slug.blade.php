@@ -9,9 +9,9 @@
     <div
         x-data="{
             @if(optional($field)['defer'] === false)
-            value: $wire.entangle('post.fields.{{ optional($field)['slug'] }}'),
+            value: $wire.entangle('resource.fields.{{ optional($field)['slug'] }}'),
             @else
-            value: $wire.entangle('post.fields.{{ optional($field)['slug'] }}'),
+            value: $wire.entangle('resource.fields.{{ optional($field)['slug'] }}'),
             @endif
             custom: false,
 

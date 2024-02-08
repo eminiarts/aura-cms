@@ -40,7 +40,7 @@ test('flow - get resources operation', function () {
     $flow = Flow::create([
         'name' => 'Flow',
         'description' => 'Get Children of updated Post',
-        'trigger' => 'post',
+        'trigger' => 'resource',
         'options' => [
             'resource' => Post::class,
             'event' => 'updated',

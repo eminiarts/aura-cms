@@ -2,7 +2,7 @@
 
 namespace Tests\Feature\Livewire;
 
-use Eminiarts\Aura\Livewire\Post\Create;
+use Eminiarts\Aura\Livewire\Resource\Create;
 use Eminiarts\Aura\Models\User;
 use Eminiarts\Aura\Resource;
 use Eminiarts\Aura\Resources\Post;
@@ -57,7 +57,7 @@ test('Number Field can be rendered', function () {
         ->assertSee('CHF')
         ->assertSee('%')
         ->call('save')
-        ->assertHasNoErrors(['post.fields.number']);
+        ->assertHasNoErrors(['resource.fields.number']);
 
     // assert in db has post with type DateModel
     $this->assertDatabaseHas('posts', ['type' => 'NumberModel']);
@@ -67,12 +67,12 @@ test('Number Field can be rendered', function () {
     // Assert that $model->fields['number'] is null
     $this->assertNull($model->fields['number']);
 
-    $component->set('post.fields.number', '2021-01-01')
+    $component->set('resource.fields.number', '2021-01-01')
         ->call('save')
-        ->assertHasErrors(['post.fields.number'])
-        ->set('post.fields.number', '5')
+        ->assertHasErrors(['resource.fields.number'])
+        ->set('resource.fields.number', '5')
         ->call('save')
-        ->assertHasNoErrors(['post.fields.number']);
+        ->assertHasNoErrors(['resource.fields.number']);
 
     // get the datemodel from db
     $model = NumberFieldModel::orderBy('id', 'desc')->first();

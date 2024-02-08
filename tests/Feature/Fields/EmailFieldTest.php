@@ -2,7 +2,7 @@
 
 namespace Tests\Feature\Livewire;
 
-use Eminiarts\Aura\Livewire\Post\Create;
+use Eminiarts\Aura\Livewire\Resource\Create;
 use Eminiarts\Aura\Models\User;
 use Eminiarts\Aura\Resource;
 use Eminiarts\Aura\Resources\Post;
@@ -53,18 +53,18 @@ test('Email Field', function () {
         ->assertSee('Email for Test')
         ->assertSeeHtml('type="email"')
         ->call('save')
-        ->assertHasErrors(['post.fields.email'])
-        ->set('post.fields.email', 'hello')
+        ->assertHasErrors(['resource.fields.email'])
+        ->set('resource.fields.email', 'hello')
         ->call('save')
-        ->assertHasErrors(['post.fields.email'])
+        ->assertHasErrors(['resource.fields.email'])
 
-        ->set('post.fields.email', 'example@example.com ') // should trim
+        ->set('resource.fields.email', 'example@example.com ') // should trim
         ->call('save')
-        ->assertHasErrors(['post.fields.email'])
+        ->assertHasErrors(['resource.fields.email'])
 
-        ->set('post.fields.email', 'example@example.com')
+        ->set('resource.fields.email', 'example@example.com')
         ->call('save')
-        ->assertHasNoErrors(['post.fields.email']);
+        ->assertHasNoErrors(['resource.fields.email']);
 
     // assert in db has post with type DateModel
     $this->assertDatabaseHas('posts', ['type' => 'EmailModel']);

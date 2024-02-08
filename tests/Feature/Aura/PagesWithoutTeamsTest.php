@@ -50,20 +50,20 @@ test('Aura without teams - pages', function () {
     $this->get(route('aura.config'))->assertOk();
 
     // Index Pages
-    $this->get(route('aura.post.index', ['slug' => 'Option']))->assertOk();
-    $this->get(route('aura.post.index', ['slug' => 'User']))->assertOk();
-    $this->get(route('aura.post.index', ['slug' => 'Post']))->assertOk();
-    $this->get(route('aura.post.index', ['slug' => 'Role']))->assertOk();
-    $this->get(route('aura.post.index', ['slug' => 'Permission']))->assertOk();
-    $this->get(route('aura.post.index', ['slug' => 'Attachment']))->assertOk();
-    $this->get(route('aura.post.index', ['slug' => 'Option']))->assertOk();
+    $this->get(route('aura.resource.index', ['slug' => 'Option']))->assertOk();
+    $this->get(route('aura.resource.index', ['slug' => 'User']))->assertOk();
+    $this->get(route('aura.resource.index', ['slug' => 'Post']))->assertOk();
+    $this->get(route('aura.resource.index', ['slug' => 'Role']))->assertOk();
+    $this->get(route('aura.resource.index', ['slug' => 'Permission']))->assertOk();
+    $this->get(route('aura.resource.index', ['slug' => 'Attachment']))->assertOk();
+    $this->get(route('aura.resource.index', ['slug' => 'Option']))->assertOk();
 
     // Create Pages
-    $this->get(route('aura.post.create', ['slug' => 'User']))->assertOk();
-    $this->get(route('aura.post.create', ['slug' => 'Post']))->assertOk();
-    $this->get(route('aura.post.create', ['slug' => 'Permission']))->assertOk();
-    $this->get(route('aura.post.create', ['slug' => 'Role']))->assertOk();
-    $this->get(route('aura.post.create', ['slug' => 'Option']))->assertOk();
+    $this->get(route('aura.resource.create', ['slug' => 'User']))->assertOk();
+    $this->get(route('aura.resource.create', ['slug' => 'Post']))->assertOk();
+    $this->get(route('aura.resource.create', ['slug' => 'Permission']))->assertOk();
+    $this->get(route('aura.resource.create', ['slug' => 'Role']))->assertOk();
+    $this->get(route('aura.resource.create', ['slug' => 'Option']))->assertOk();
 
     $post = Post::create([
         'title' => 'Test Post',
@@ -83,17 +83,17 @@ test('Aura without teams - pages', function () {
     ]);
 
     // Edit Pages
-    $this->get(route('aura.post.edit', ['slug' => 'Post', 'id' => $post->id]))->assertOk();
-    $this->get(route('aura.post.edit', ['slug' => 'User', 'id' => $user->id]))->assertOk();
-    $this->get(route('aura.post.edit', ['slug' => 'Role', 'id' => $role->id]))->assertOk();
-    $this->get(route('aura.post.edit', ['slug' => 'Permission', 'id' => $permission->id]))->assertOk();
-    $this->get(route('aura.post.edit', ['slug' => 'Option', 'id' => $option->id]))->assertOk();
+    $this->get(route('aura.resource.edit', ['slug' => 'Post', 'id' => $post->id]))->assertOk();
+    $this->get(route('aura.resource.edit', ['slug' => 'User', 'id' => $user->id]))->assertOk();
+    $this->get(route('aura.resource.edit', ['slug' => 'Role', 'id' => $role->id]))->assertOk();
+    $this->get(route('aura.resource.edit', ['slug' => 'Permission', 'id' => $permission->id]))->assertOk();
+    $this->get(route('aura.resource.edit', ['slug' => 'Option', 'id' => $option->id]))->assertOk();
 
     // View Pages
-    $this->get(route('aura.post.view', ['slug' => 'Post', 'id' => $post->id]))->assertOk();
-    $this->get(route('aura.post.view', ['slug' => 'User', 'id' => $user->id]))->assertOk();
-    $this->get(route('aura.post.view', ['slug' => 'Role', 'id' => $role->id]))->assertOk();
-    $this->get(route('aura.post.view', ['slug' => 'Permission', 'id' => $permission->id]))->assertOk();
-    $this->get(route('aura.post.view', ['slug' => 'Option', 'id' => $option->id]))->assertOk();
+    $this->get(route('aura.resource.view', ['slug' => 'Post', 'id' => $post->id]))->assertOk();
+    $this->get(route('aura.resource.view', ['slug' => 'User', 'id' => $user->id]))->assertOk();
+    $this->get(route('aura.resource.view', ['slug' => 'Role', 'id' => $role->id]))->assertOk();
+    $this->get(route('aura.resource.view', ['slug' => 'Permission', 'id' => $permission->id]))->assertOk();
+    $this->get(route('aura.resource.view', ['slug' => 'Option', 'id' => $option->id]))->assertOk();
 
 });

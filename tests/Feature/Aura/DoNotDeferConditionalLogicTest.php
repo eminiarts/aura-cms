@@ -2,8 +2,8 @@
 
 use Eminiarts\Aura\ConditionalLogic;
 use Eminiarts\Aura\Facades\Aura;
-use Eminiarts\Aura\Livewire\Post\Create;
-use Eminiarts\Aura\Livewire\Post\Edit;
+use Eminiarts\Aura\Livewire\Resource\Create;
+use Eminiarts\Aura\Livewire\Resource\Edit;
 use Eminiarts\Aura\Models\User;
 use Eminiarts\Aura\Resource;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -122,7 +122,7 @@ test('defer should be false on field that is in conditional logic - create view'
         ->assertSee('Type')
         ->assertSeeHtml('wire:model="post.fields.select_type"')
         ->assertDontSee('Advanced Text')
-        ->set('post.fields.select_type', 'advanced');
+        ->set('resource.fields.select_type', 'advanced');
     // Somehow it does not work
     // ->assertSee('Advanced Text')
 
@@ -164,7 +164,7 @@ test('defer should be false on field that is in conditional logic - edit view', 
         ->assertSee('Type')
         ->assertSeeHtml('wire:model="post.fields.select_type"')
         ->assertDontSee('Advanced Text')
-        ->set('post.fields.select_type', 'advanced');
+        ->set('resource.fields.select_type', 'advanced');
     // Somehow it does not work
     // ->assertSee('Advanced Text')
 

@@ -90,5 +90,5 @@ test('actions with label and icon are displayed correctly', function () {
     expect($component->actions)->toHaveCount(2);
 
     // visit edit page
-    $this->get(route('aura.post.edit', [$model->type, $model->id]))->assertOk();
+    $this->get(route('aura.resource.edit', [$model->type, $model->id]))->assertOk();
 });

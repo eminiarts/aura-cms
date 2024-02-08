@@ -121,12 +121,12 @@ trait AuraModelConfig
 
     public function createUrl()
     {
-        return route('aura.post.create', [$this->getType()]);
+        return route('aura.resource.create', [$this->getType()]);
     }
 
     public function createView()
     {
-        return 'aura::livewire.post.create';
+        return 'aura::livewire.resource.create';
     }
 
     public function display($key)
@@ -156,19 +156,19 @@ trait AuraModelConfig
 
     public function editHeaderView()
     {
-        return 'aura::livewire.post.edit-header';
+        return 'aura::livewire.resource.edit-header';
     }
 
     public function editUrl()
     {
         if ($this->getType() && $this->id) {
-            return route('aura.post.edit', ['slug' => $this->getType(), 'id' => $this->id]);
+            return route('aura.resource.edit', ['slug' => $this->getType(), 'id' => $this->id]);
         }
     }
 
     public function editView()
     {
-        return 'aura::livewire.post.edit';
+        return 'aura::livewire.resource.edit';
     }
 
     public function getActions()
@@ -248,7 +248,7 @@ trait AuraModelConfig
 
     public function getIndexRoute()
     {
-        return route('aura.post.index', $this->getSlug());
+        return route('aura.resource.index', $this->getSlug());
     }
 
     public static function getName(): ?string
@@ -299,7 +299,7 @@ trait AuraModelConfig
 
     public function indexView()
     {
-        return 'aura::livewire.post.index';
+        return 'aura::livewire.resource.index';
     }
 
     public function isAppResource()
@@ -513,18 +513,18 @@ trait AuraModelConfig
 
     public function viewHeaderView()
     {
-        return 'aura::livewire.post.view-header';
+        return 'aura::livewire.resource.view-header';
     }
 
     public function viewUrl()
     {
         if ($this->getType() && $this->id) {
-            return route('aura.post.view', ['slug' => $this->getType(), 'id' => $this->id]);
+            return route('aura.resource.view', ['slug' => $this->getType(), 'id' => $this->id]);
         }
     }
 
     public function viewView()
     {
-        return 'aura::livewire.post.view';
+        return 'aura::livewire.resource.view';
     }
 }

@@ -34,10 +34,10 @@ class Edit extends Component
         // Authorize
 
         // Array instead of Eloquent Model
-        $this->post = $this->model->toArray();
+        $this->resource = $this->model->toArray();
 
-        // dd($this->post);
-        $this->post['fields'] = $this->model->toArray();
+        // dd($this->resource);
+        $this->resource['fields'] = $this->model->toArray();
     }
 
     public function render()
@@ -48,8 +48,8 @@ class Edit extends Component
     public function rules()
     {
         return Arr::dot([
-            'post.terms' => '',
-            'post.fields' => $this->model->validationRules(),
+            'resource.terms' => '',
+            'resource.fields' => $this->model->validationRules(),
         ]);
     }
 
@@ -58,9 +58,9 @@ class Edit extends Component
         $this->validate();
 
         // Set Fields
-        $this->post['fields']['taxonomy'] = $this->slug;
+        $this->resource['fields']['taxonomy'] = $this->slug;
 
-        $this->model->update($this->post['fields']);
+        $this->model->update($this->resource['fields']);
 
         $this->notify(__('Successfully updated'));
     }

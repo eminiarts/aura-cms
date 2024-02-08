@@ -15,7 +15,7 @@ class EditOperation extends Component
 
     public $open = false;
 
-    public $post;
+    public $resource;
 
     public function activate($params)
     {
@@ -23,15 +23,15 @@ class EditOperation extends Component
 
         // dd($this->model->validationRules());
 
-        $this->post['fields'] = $this->model->fields;
+        $this->resource['fields'] = $this->model->fields;
 
         // watch open property and trigger function on change
         // $this->watch('open', 'validateBeforeClosing');
 
-        // dd($this->post['fields']);
+        // dd($this->resource['fields']);
 
         // Merge fields from type with fields from model
-        // $this->post['fields'] = array_merge($this->post['fields'], $this->model->type->fields);
+        // $this->resource['fields'] = array_merge($this->resource['fields'], $this->model->type->fields);
 
         $this->open = true;
     }
@@ -69,22 +69,22 @@ class EditOperation extends Component
     public function rules()
     {
         return Arr::dot([
-            'post.fields' => $this->model->validationRules(),
+            'resource.fields' => $this->model->validationRules(),
         ]);
     }
 
     public function save()
     {
-        // dd($this->rules(), $this->post);
+        // dd($this->rules(), $this->resource);
         // Validate
 
         $this->validate();
 
-        // dd($this->post, $this->model);
-        $this->model->update($this->post['fields']);
+        // dd($this->resource, $this->model);
+        $this->model->update($this->resource['fields']);
 
         // emit event to parent with slug and value
-        // $this->dispatch('saveField', ['slug' => $this->post['key'], 'value' => $this->post['fields']]);
+        // $this->dispatch('saveField', ['slug' => $this->resource['key'], 'value' => $this->resource['fields']]);
 
         // emit to parent, that operation has been updated
 
@@ -98,7 +98,7 @@ class EditOperation extends Component
     public function updateType()
     {
         // when type is changed, update the fields
-        $this->model->update(['type' => $this->post['fields']['type']]);
+        $this->model->update(['type' => $this->resource['fields']['type']]);
 
         $this->dispatch('updatedOperation');
     }

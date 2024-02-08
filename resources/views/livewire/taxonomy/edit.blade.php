@@ -87,7 +87,7 @@
     @endif
 
     <div class="grid gap-6 mt-4 aura-edit-post-container sm:grid-cols-3" x-data="{
-    model: @entangle('post'),
+    model: @entangle('resource'),
     init() {
     }
 }">
@@ -95,7 +95,7 @@
         <div class="col-span-1 mx-0 sm:col-span-3">
 
             {{-- @dump($this->fields)
-            @dump($this->post) --}}
+            @dump($this->resource) --}}
             <div class="flex flex-wrap items-start -mx-2">
                 @foreach($this->editFields as $key => $field)
                 <x-aura::fields.conditions :field="$field" :model="$model" wire:key="post-field-{{ $key }}">

@@ -2,7 +2,7 @@
 
 namespace Tests\Feature\Livewire;
 
-use Eminiarts\Aura\Livewire\Post\Create;
+use Eminiarts\Aura\Livewire\Resource\Create;
 use Eminiarts\Aura\Models\User;
 use Eminiarts\Aura\Resource;
 use Eminiarts\Aura\Resources\Team;
@@ -49,7 +49,7 @@ test('HasMany Field not shown in Create', function () {
     $component = Livewire::test(Create::class, ['slug' => 'Post'])
         ->call('setModel', $model)
         //->assertSee('Hasmany for Test')
-        ;
+    ;
 })->todo();
 
 test('HasMany Field shown on Edit', function () {

@@ -14,7 +14,7 @@ test('login screen can be rendered', function () {
 test('users can authenticate using the login screen', function () {
     $user = User::factory()->create();
 
-    $response = $this->post('/login', [
+    $response = $this->resource('/login', [
         'email' => $user->email,
         'password' => 'password',
     ]);
@@ -26,7 +26,7 @@ test('users can authenticate using the login screen', function () {
 test('users can not authenticate with invalid password', function () {
     $user = User::factory()->create();
 
-    $this->post('/login', [
+    $this->resource('/login', [
         'email' => $user->email,
         'password' => 'wrong-password',
     ]);

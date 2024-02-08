@@ -3,8 +3,8 @@
 namespace Tests\Feature\Livewire;
 
 use Eminiarts\Aura\Facades\Aura;
-use Eminiarts\Aura\Livewire\Post\Create;
-use Eminiarts\Aura\Livewire\Post\Edit;
+use Eminiarts\Aura\Livewire\Resource\Create;
+use Eminiarts\Aura\Livewire\Resource\Edit;
 use Eminiarts\Aura\Models\User;
 use Eminiarts\Aura\Resource;
 use Eminiarts\Aura\Resources\Team;
@@ -60,14 +60,14 @@ test('Slug Field Test', function () {
         ->assertSeeHtml('type="text"')
         ->assertSee('Slug')
         ->call('save')
-        ->assertHasErrors(['post.fields.slug']);
+        ->assertHasErrors(['resource.fields.slug']);
 
     // Test custom slug
     $component
-        ->set('post.fields.text', 'Custom Title')
-        ->set('post.fields.slug', 'custom-title')
+        ->set('resource.fields.text', 'Custom Title')
+        ->set('resource.fields.slug', 'custom-title')
         ->call('save')
-        ->assertHasNoErrors(['post.fields.slug']);
+        ->assertHasNoErrors(['resource.fields.slug']);
 
     // Assert that the model was saved to the database with the custom slug
     $this->assertDatabaseHas('posts', ['type' => 'SlugModel', 'slug' => 'custom-title']);
@@ -85,9 +85,9 @@ test('Slug Field Test', function () {
 
     // If we call the edit view, the password field should be empty
     $component = Livewire::test(Edit::class, ['slug' => 'SlugModel', 'id' => $post->id])
-        ->set('post.fields.slug', 'toggle-slug')
+        ->set('resource.fields.slug', 'toggle-slug')
         ->call('save')
-        ->assertHasNoErrors(['post.fields.slug']);
+        ->assertHasNoErrors(['resource.fields.slug']);
 
     // Get the saved model
     $post = $post->refresh();
@@ -96,9 +96,9 @@ test('Slug Field Test', function () {
     $this->assertEquals('toggle-slug', $post->slug);
 
     // Test validation
-    $component->set('post.fields.slug', 'invalid slug')
+    $component->set('resource.fields.slug', 'invalid slug')
         ->call('save')
-        ->assertHasErrors(['post.fields.slug']);
+        ->assertHasErrors(['resource.fields.slug']);
 
     // Assert that the model was not saved to the database
     $this->assertDatabaseMissing('posts', ['type' => 'SlugModel', 'fields' => json_encode(['slug' => 'invalid slug'])]);

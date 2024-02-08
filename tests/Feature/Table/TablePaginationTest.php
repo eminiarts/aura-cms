@@ -21,7 +21,7 @@ test('table can be paginated', function () {
     expect(Post::count())->toBe(21);
 
     // Visit the Post Index Page
-    $this->get(route('aura.post.index', 'Post'))
+    $this->get(route('aura.resource.index', 'Post'))
         ->assertSeeLivewire('aura::post-index')
         ->assertSeeLivewire('aura::table');
 

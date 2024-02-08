@@ -730,7 +730,7 @@ class Post extends Resource
         parent::delete();
 
         // redirect to index page
-        return redirect()->route('aura.post.index', [$this->getType()]);
+        return redirect()->route('aura.resource.index', [$this->getType()]);
     }
 
     public function deleteSelected()
@@ -2377,7 +2377,7 @@ trait AuraModelConfig
 
     public function getIndexRoute()
     {
-        return route('aura.post.index', $this->getSlug());
+        return route('aura.resource.index', $this->getSlug());
     }
 
     public static function getName(): ?string

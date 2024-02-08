@@ -15,7 +15,7 @@ if (key_exists('resource', $field) ) {
 
 @endphp
 
-{{-- @dump($this->post['fields'])
+{{-- @dump($this->resource['fields'])
 @dump($values) --}}
 
 <x-aura::fields.wrapper :field="$field">
@@ -23,7 +23,7 @@ if (key_exists('resource', $field) ) {
 wire:ignore
 x-data="{
     multiple: true,
-    value: @entangle('post.fields.' . $field['slug']),
+    value: @entangle('resource.fields.' . $field['slug']),
     options: @js($values),
     init() {
         if (!this.value) {

@@ -26,7 +26,7 @@ test('table can be rendered', function () {
     $this->assertDatabaseHas('posts', ['title' => 'Test Post']);
 
     // Visit the Post Index Page
-    $this->get(route('aura.post.index', $post->type))
+    $this->get(route('aura.resource.index', $post->type))
         ->assertSeeLivewire('aura::post-index')
         ->assertSeeLivewire('aura::table');
 });
@@ -44,7 +44,7 @@ test('table shows all input fields', function () {
     $this->assertDatabaseHas('posts', ['title' => 'Test Post']);
 
     // Visit the Post Index Page
-    $response = $this->get(route('aura.post.index', $post->type));
+    $response = $this->get(route('aura.resource.index', $post->type));
 
     // dd($response->content());
 
@@ -108,7 +108,7 @@ test('table custom user columns', function () {
     $this->assertNotContains('user', $component->columns);
 
     // Visit the Post Index Page
-    $response = $this->get(route('aura.post.index', $post->type))
+    $response = $this->get(route('aura.resource.index', $post->type))
         ->assertOk();
 });
 
@@ -130,7 +130,7 @@ test('table custom user columns can be sorted', function () {
         ->assertSet('perPage', $post->defaultPerPage())
         ->assertSet('columns', auth()->user()->getOptionColumns($post->getType()));
 
-    $response = $this->get(route('aura.post.index', $post->type))
+    $response = $this->get(route('aura.resource.index', $post->type))
         ->assertOk();
 
     // Assert see in order: id, text, number
@@ -139,7 +139,7 @@ test('table custom user columns can be sorted', function () {
     // Update Colums, reorder to number, id, text
     auth()->user()->updateOption('columns_sort.'.$post->getType(), ['number', 'id', 'text']);
 
-    $response = $this->get(route('aura.post.index', $post->type))
+    $response = $this->get(route('aura.resource.index', $post->type))
         ->assertOk();
 
     // Assert see in order: id, text, number

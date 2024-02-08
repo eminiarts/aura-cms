@@ -3,7 +3,7 @@
 
     <select
 
-      @if($disabled = $field['field']->isDisabled($this->post, $field))
+      @if($disabled = $field['field']->isDisabled($this->resource, $field))
       disabled
       @endif
       @if(optional($field)['live'] === true)

@@ -19,7 +19,7 @@ test('flow - an operation can be connected to another operation', function () {
     $flow = Flow::create([
         'name' => 'Flow',
         'description' => 'Flow',
-        'trigger' => 'post',
+        'trigger' => 'resource',
         'options' => [
             'resource' => 'Post',
             'event' => 'created',
@@ -71,7 +71,7 @@ test('flow - operations cannot be looped', function () {
     $flow = Flow::create([
         'name' => 'Flow',
         'description' => 'Flow',
-        'trigger' => 'post',
+        'trigger' => 'resource',
         'options' => [
             'resource' => 'Post',
             'event' => 'created',
@@ -128,7 +128,7 @@ test('flow - connections can be removed', function () {
     $flow = Flow::create([
         'name' => 'Flow',
         'description' => 'Flow',
-        'trigger' => 'post',
+        'trigger' => 'resource',
         'options' => [
             'resource' => 'Post',
             'event' => 'created',

@@ -1,6 +1,6 @@
 <?php
 
-namespace Eminiarts\Aura\Livewire\Post;
+namespace Eminiarts\Aura\Livewire\Resource;
 
 use Livewire\Component;
 use Illuminate\Support\Arr;
@@ -23,7 +23,7 @@ class Create extends Component
 
     public $params;
 
-    public $post;
+    public $resource;
 
     public $slug;
 
@@ -45,7 +45,7 @@ class Create extends Component
         $this->authorize('create', $this->model);
 
         // Array instead of Eloquent Model
-        $this->post = $this->model->toArray();
+        $this->resource = $this->model->toArray();
 
         // get "for" and "id" params from url
         $for = request()->get('for');
@@ -54,19 +54,19 @@ class Create extends Component
         // if params are set, set the post's "for" and "id" fields
         if ($this->params) {
             if ($this->params['for'] == 'User') {
-                $this->post['fields']['user_id'] = (int) $this->params['id'];
+                $this->resource['fields']['user_id'] = (int) $this->params['id'];
             }
 
             // if there is a key in post's fields named $this->params['for'], set it to $this->params['id']
-            if (optional($this->params)['for'] && optional($this->params)['id'] && array_key_exists($this->params['for'], $this->post['fields'])) {
-                $this->post['fields'][$this->params['for']] = (int) $this->params['id'];
+            if (optional($this->params)['for'] && optional($this->params)['id'] && array_key_exists($this->params['for'], $this->resource['fields'])) {
+                $this->resource['fields'][$this->params['for']] = (int) $this->params['id'];
             }
         }
 
         // If $for is "User", set the user_id to the $id
         // This needs to be more dynamic, but it works for now
         if ($for == 'User') {
-            $this->post['fields']['user_id'] = (int) $id;
+            $this->resource['fields']['user_id'] = (int) $id;
         }
 
         // Initialize the post fields with defaults
@@ -74,17 +74,17 @@ class Create extends Component
 
     }
 
-    
+
 
     public function render()
     {
-        return view('aura::livewire.post.create')->layout('aura::components.layout.app');
+        return view('aura::livewire.resource.create')->layout('aura::components.layout.app');
     }
 
     public function rules()
     {
         return Arr::dot([
-            'post.fields' => $this->model->validationRules(),
+            'resource.fields' => $this->model->validationRules(),
         ]);
     }
 
@@ -94,15 +94,15 @@ class Create extends Component
 
         $this->validate();
 
-        // dd('save', $this->post);
+        // dd('save', $this->resource);
 
         if ($this->model->usesCustomTable()) {
 
-            $model = $this->model->create($this->post['fields']);
+            $model = $this->model->create($this->resource['fields']);
 
         } else {
 
-            $model = $this->model->create($this->post);
+            $model = $this->model->create($this->resource);
 
         }
 
@@ -116,7 +116,7 @@ class Create extends Component
                 $this->dispatch('resourceCreated', ['for' => $this->params['for'], 'resource' => $model, 'title' => $model->title()]);
             }
         } else {
-            return redirect()->route('aura.post.edit', [$this->slug, $model->id]);
+            return redirect()->route('aura.resource.edit', [$this->slug, $model->id]);
         }
     }
 
@@ -131,8 +131,8 @@ class Create extends Component
 
         foreach ($fields as $field) {
             $slug = $field['slug'] ?? null;
-            if ($slug && !isset($this->post['fields'][$slug]) && isset($field['default'])) {
-                $this->post['fields'][$slug] = $field['default'];
+            if ($slug && !isset($this->resource['fields'][$slug]) && isset($field['default'])) {
+                $this->resource['fields'][$slug] = $field['default'];
             }
         }
     }
@@ -157,11 +157,11 @@ class Create extends Component
 
             // If the method exists in the field type, call it directly.
             if (method_exists($fieldTypeInstance, $method)) {
-                $post = call_user_func_array([$fieldTypeInstance, $method], array_merge([$this->model, $this->post], $params));
+                $post = call_user_func_array([$fieldTypeInstance, $method], array_merge([$this->model, $this->resource], $params));
 
                 // If the field type method returns a post, update the post.
                 if ($post) {
-                    $this->post = $post;
+                    $this->resource = $post;
                 }
 
                 // Make sure to return here, otherwise the parent callMethod will be called.

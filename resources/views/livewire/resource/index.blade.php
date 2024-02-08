@@ -17,7 +17,7 @@
 
         <div>
             @if (config('aura.features.resource_editor'))
-                    @if ($post->isAppResource())
+                    @if ($resource->isAppResource())
                         <x-aura::button.transparent :href="route('aura.resource.editor', $slug)" size="">
                             <x-aura::icon icon="cog" class="mr-2" />
                             {{ __('Edit Resource') }}
@@ -29,11 +29,11 @@
 
     {{ app('aura')::injectView('widgets_before') }}
 
-    @if ($widgets = $post->widgets())
-        @livewire('aura::widgets', ['widgets' => $widgets, 'model' => $post])
+    @if ($widgets = $resource->widgets())
+        @livewire('aura::widgets', ['widgets' => $widgets, 'model' => $resource])
     @endif
 
     {{ app('aura')::injectView('widgets_after') }}
 
-    <livewire:aura::table :model="$post" :settings="$post->indexTableSettings()"/>
+    <livewire:aura::table :model="$resource" :settings="$resource->indexTableSettings()"/>
 </div>

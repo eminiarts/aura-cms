@@ -24,8 +24,8 @@ it('renders the profile component', function () {
 
 it('updates the user profile', function () {
     livewire(Profile::class)
-        ->set('post.fields.name', 'Updated Name')
-        ->set('post.fields.email', 'updated@example.com')
+        ->set('resource.fields.name', 'Updated Name')
+        ->set('resource.fields.email', 'updated@example.com')
         ->call('save')
         ->assertHasNoErrors();
 
@@ -37,9 +37,9 @@ it('updates the user profile', function () {
 
 it('updates the user password', function () {
     livewire(Profile::class)
-        ->set('post.fields.current_password', 'password')
-        ->set('post.fields.password', 'new-Password123*&*&!!!')
-        ->set('post.fields.password_confirmation', 'new-Password123*&*&!!!')
+        ->set('resource.fields.current_password', 'password')
+        ->set('resource.fields.password', 'new-Password123*&*&!!!')
+        ->set('resource.fields.password_confirmation', 'new-Password123*&*&!!!')
         ->call('save')
         ->assertHasNoErrors();
 
