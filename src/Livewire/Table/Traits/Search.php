@@ -8,6 +8,13 @@ namespace Eminiarts\Aura\Livewire\Table\Traits;
 trait Search
 {
     /**
+    * The search value.
+    *
+    * @var string
+    */
+    public $search;
+
+    /**
      * Apply search to the query.
      *
      * @param  \Illuminate\Database\Eloquent\Builder  $query
@@ -15,9 +22,15 @@ trait Search
      */
     public function applySearch($query)
     {
-
         if ($this->search) {
+
+
+            ray('search 2', $this->search);
+
+
             $searchableFields = $this->model->getSearchableFields()->pluck('slug');
+
+            ray('searchableFields', $searchableFields, $this->model);
 
             $metaFields = $searchableFields->filter(function ($field) {
                 return $this->model->isMetaField($field);
@@ -66,16 +79,5 @@ trait Search
         }
 
         return $query;
-    }
-
-   
-    /**
-     * Search for data in the table.
-     *
-     * @return void
-     */
-    public function startSearching()
-    {
-        $this->refreshRows();
     }
 }

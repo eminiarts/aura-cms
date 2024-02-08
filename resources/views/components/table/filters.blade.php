@@ -164,4 +164,4 @@
 
     </div>
 
-    <x-aura::button.primary wire:click="startSearching" class="mt-4">{{ __('Search') }}</x-aura::button.primary>
+    <x-aura::button.primary wire:click="$refresh" class="mt-4">{{ __('Search') }}</x-aura::button.primary>

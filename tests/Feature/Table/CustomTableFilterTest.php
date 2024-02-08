@@ -176,26 +176,23 @@ test('table filter - custom column on table - contains', function () {
     $component->set('filters.custom.0.operator', 'contains');
     $component->set('filters.custom.0.value', 'Post 1');
 
-    $component->call('startSearching');
-$component->assertViewHas('rows', function ($rows) use ($post) {
-    return count($rows->items()) === 1 && $rows->items()[0]->id === $post->id;
-});
+    $component->assertViewHas('rows', function ($rows) use ($post) {
+        return count($rows->items()) === 1 && $rows->items()[0]->id === $post->id;
+    });
 
-$component->set('filters.custom.0.value', 'Post 2');
+    $component->set('filters.custom.0.value', 'Post 2');
 
-$component->call('startSearching');
 
-$component->assertViewHas('rows', function ($rows) use ($post2) {
-    return count($rows->items()) === 1 && $rows->items()[0]->id === $post2->id;
-});
+    $component->assertViewHas('rows', function ($rows) use ($post2) {
+        return count($rows->items()) === 1 && $rows->items()[0]->id === $post2->id;
+    });
 
-$component->set('filters.custom.0.value', 'Post 3');
+    $component->set('filters.custom.0.value', 'Post 3');
 
-$component->call('startSearching');
 
-$component->assertViewHas('rows', function ($rows) {
-    return count($rows->items()) === 0;
-});
+    $component->assertViewHas('rows', function ($rows) {
+        return count($rows->items()) === 0;
+    });
 });
 
 test('table filter - custom column on table - does_not_contain', function () {
@@ -212,23 +209,17 @@ test('table filter - custom column on table - does_not_contain', function () {
     $component->set('filters.custom.0.operator', 'does_not_contain');
     $component->set('filters.custom.0.value', 'Post 1');
 
-    $component->call('startSearching');
-
     $component->assertViewHas('rows', function ($rows) use ($post2) {
         return count($rows->items()) === 1 && $rows->items()[0]->id === $post2->id;
     });
 
     $component->set('filters.custom.0.value', 'Post 2');
 
-    $component->call('startSearching');
-
     $component->assertViewHas('rows', function ($rows) use ($post) {
         return count($rows->items()) === 1 && $rows->items()[0]->id === $post->id;
     });
 
     $component->set('filters.custom.0.value', 'Post 3');
-
-    $component->call('startSearching');
 
     $component->assertViewHas('rows', function ($rows) {
         return count($rows->items()) === 2;
@@ -239,7 +230,7 @@ test('table filter - custom column on table - starts_with', function () {
     $post = $this->post;
     $post2 = $this->post2;
 
-    
+
 
     // Visit the Post Index Page
     $component = Livewire::test(Table::class, ['query' => null, 'model' => $post]);
@@ -258,23 +249,17 @@ test('table filter - custom column on table - starts_with', function () {
     $component->set('filters.custom.0.name', 'status');
     $component->set('filters.custom.0.value', 'pub');
 
-    $component->call('startSearching');
-
     $component->assertViewHas('rows', function ($rows) use ($post) {
         return count($rows->items()) == 1 && $rows->items()[0]->id === $post->id;
     });
 
     $component->set('filters.custom.0.value', 'dra');
-    $component->call('startSearching');
 
     $component->assertViewHas('rows', function ($rows) use ($post2) {
         return count($rows->items()) == 1 && $rows->items()[0]->id === $post2->id;
     });
 
     $component->set('filters.custom.0.value', 'zzz');
-    $component->call('startSearching');
-
-    
 
     $component->assertViewHas('rows', function ($rows) {
         return count($rows->items()) == 0;
