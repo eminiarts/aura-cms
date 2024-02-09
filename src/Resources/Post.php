@@ -163,6 +163,7 @@ class Post extends Resource
                 'on_index' => true,
                 'on_forms' => true,
                 'on_view' => true,
+                'searchable' => true,
             ],
             [
                 'name' => 'Text',
