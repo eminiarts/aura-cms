@@ -414,8 +414,6 @@ trait AuraModelConfig
 
     public function pluralName()
     {
-        return Str::plural($this->singularName());
-
         return __(static::$pluralName ?? Str::plural($this->singularName()));
     }
 
