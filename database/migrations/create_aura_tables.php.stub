@@ -163,34 +163,6 @@ return new class () extends Migration {
             $table->longText('value')->nullable();
         });
 
-        Schema::create('taxonomy_meta', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('taxonomy_id');
-            $table->string('key');
-            $table->longText('value');
-        });
-
-        Schema::create('taxonomies', function (Blueprint $table) {
-            $table->id();
-            $table->string('name');
-            $table->string('slug');
-            $table->string('taxonomy');
-            $table->longtext('description');
-            $table->foreignId('parent');
-            $table->bigInteger('count');
-            if(config('aura.teams')){
-                $table->foreignId('team_id')->index();
-            }
-            $table->timestamps();
-            $table->softDeletes();
-        });
-
-        Schema::create('taxonomy_relations', function (Blueprint $table) {
-            $table->morphs('relatable');
-            $table->foreignId('taxonomy_id');
-            $table->integer('order');
-        });
-
         Schema::create('options', function (Blueprint $table) {
             $table->id();
             $table->string('name');

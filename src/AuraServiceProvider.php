@@ -176,7 +176,7 @@ class AuraServiceProvider extends PackageServiceProvider
                     ->publishMigrations()
                     ->askToRunMigrations()
                     ->copyAndRegisterServiceProviderInApp()
-                    ->askToStarRepoOnGitHub('eminiarts/aura-cms');
+                    ->askToStarRepoOnGitHub('aura-cms/base');
             });
 
     }
