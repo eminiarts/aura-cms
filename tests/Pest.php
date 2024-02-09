@@ -47,7 +47,8 @@ function something()
     // ..
 }
 
-function createPost($type) {
+function createPost($type)
+{
     return Post::factory()->create(['type' => $type]);
 }
 
@@ -60,6 +61,92 @@ function createSuperAdmin()
     // Create Team
     $team = Team::factory()->create();
 
+    $user->refresh();
+
+    return $user;
+}
+
+
+function createAdmin()
+{
+    $user = User::factory()->create();
+
+    // Create Team
+    if (!$team = Team::first()) {
+        $team = Team::factory()->create();
+    }
+
+    // Set current_team_id of the user
+    $user->update(['current_team_id' => $team->id]);
+
+    $role = Role::create(['team_id' => $team->id, 'type' => 'Role', 'title' => 'Admin', 'slug' => 'admin', 'name' => 'Admin', 'description' => ' Admin has can perform almost everything.', 'super_admin' => false, 'permissions' => [
+        'view-attachment' => true,
+        'viewAny-attachment' => true,
+        'create-attachment' => true,
+        'update-attachment' => true,
+        'restore-attachment' => true,
+        'delete-attachment' => true,
+        'forceDelete-attachment' => true,
+        'scope-attachment' => false,
+        'view-option' => false,
+        'viewAny-option' => false,
+        'create-option' => false,
+        'update-option' => false,
+        'restore-option' => false,
+        'delete-option' => false,
+        'forceDelete-option' => false,
+        'scope-option' => false,
+        'view-post' => false,
+        'viewAny-post' => false,
+        'create-post' => false,
+        'update-post' => false,
+        'restore-post' => false,
+        'delete-post' => false,
+        'forceDelete-post' => false,
+        'scope-post' => false,
+        'view-permission' => false,
+        'viewAny-permission' => false,
+        'create-permission' => false,
+        'update-permission' => false,
+        'restore-permission' => false,
+        'delete-permission' => false,
+        'forceDelete-permission' => false,
+        'scope-permission' => false,
+        'view-role' => false,
+        'viewAny-role' => false,
+        'create-role' => false,
+        'update-role' => false,
+        'restore-role' => false,
+        'delete-role' => false,
+        'forceDelete-role' => false,
+        'scope-role' => false,
+        'view-user' => true,
+        'viewAny-user' => true,
+        'create-user' => true,
+        'update-user' => true,
+        'restore-user' => true,
+        'delete-user' => true,
+        'forceDelete-user' => true,
+        'scope-user' => true,
+        'view-team' => false,
+        'viewAny-team' => false,
+        'create-team' => false,
+        'update-team' => false,
+        'restore-team' => false,
+        'delete-team' => false,
+        'forceDelete-team' => false,
+        'scope-team' => false,
+        'view-TeamInvitation' => false,
+        'viewAny-TeamInvitation' => false,
+        'create-TeamInvitation' => false,
+        'update-TeamInvitation' => false,
+        'restore-TeamInvitation' => false,
+        'delete-TeamInvitation' => false,
+        'forceDelete-TeamInvitation' => false,
+        'scope-TeamInvitation' => false,
+    ]]);
+
+    $user->update(['fields' => ['roles' => [$role->id]]]);
     $user->refresh();
 
     return $user;
