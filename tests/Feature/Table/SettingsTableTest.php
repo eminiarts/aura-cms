@@ -9,6 +9,9 @@ use Livewire\Livewire;
 // Before each test, create a Superadmin and login
 beforeEach(function () {
     $this->actingAs($this->user = createSuperAdmin());
+
+    // Create a post
+    $this->post = Post::factory()->create();
 });
 
 test('check default table settings', function () {
