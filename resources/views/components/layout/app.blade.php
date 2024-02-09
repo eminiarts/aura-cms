@@ -79,7 +79,7 @@
 
     <div class="flex flex-col flex-grow w-screen h-screen aura-content">
 
-        @if (! app('aura')::assetsAreCurrent())
+        @if (! app('aura')::assetsAreCurrent() && env('APP_ENV') === 'local')
             <div class="p-4 text-xs text-red-800 bg-red-100">
                 The published assets are not up-to-date with the installed version. To update, run:<br/><code
                         class="font-bold">php artisan aura:publish</code>
