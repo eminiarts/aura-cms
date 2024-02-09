@@ -20,14 +20,10 @@ return new class () extends Migration {
         Schema::dropIfExists('teams');
         Schema::dropIfExists('team_user');
         Schema::dropIfExists('team_invitations');
-        Schema::dropIfExists('taxonomies');
-        Schema::dropIfExists('terms');
-        Schema::dropIfExists('taxonomy_relations');
         Schema::dropIfExists('options');
         Schema::dropIfExists('user_meta');
         Schema::dropIfExists('team_meta');
         Schema::dropIfExists('notifications');
-        Schema::dropIfExists('post_job');
         Schema::dropIfExists('jobs');
         Schema::dropIfExists('posts');
         Schema::dropIfExists('post_meta');
@@ -197,15 +193,6 @@ return new class () extends Migration {
             $table->timestamp('read_at')->nullable();
             $table->timestamps();
         });
-
-        Schema::create('post_job', function (Blueprint $table) {
-            $table->id();
-            $table->unsignedBigInteger('post_id');
-            $table->string('job_id');
-            $table->string('job_status');
-            $table->timestamps();
-        });
-
 
         Schema::create('jobs', function (Blueprint $table) {
             $table->bigIncrements('id');
