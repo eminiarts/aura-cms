@@ -146,7 +146,8 @@ return new class () extends Migration {
             $table->softDeletes();
 
             if(config('aura.teams')) {
-                $table->index(['team_id', 'slug', 'type', 'status', 'created_at', 'id']);
+                $table->index(['team_id', 'type']); // Add the new, optimized index
+                $table->index(['type', 'team_id', 'created_at']);
             } else {
                 $table->index(['slug', 'type', 'status', 'created_at', 'id']);
             }
@@ -157,6 +158,8 @@ return new class () extends Migration {
             $table->foreignId('post_id')->index();
             $table->string('key')->nullable()->index();
             $table->longText('value')->nullable();
+
+            $table->index(['post_id', 'key']);
         });
 
         Schema::create('options', function (Blueprint $table) {
