@@ -24,13 +24,9 @@ trait Search
     {
         if ($this->search) {
 
-
-            ray('search 2', $this->search);
-
-
             $searchableFields = $this->model->getSearchableFields()->pluck('slug');
 
-            ray('searchableFields', $searchableFields, $this->model);
+            // ray('searchableFields', $searchableFields, $this->model);
 
             $metaFields = $searchableFields->filter(function ($field) {
                 return $this->model->isMetaField($field);
@@ -48,7 +44,7 @@ trait Search
 
                         $query
                             ->when($this->model->getTable() == 'posts', function ($query) {
-                                $query->where($this->model->getTable().'.title', 'like', '%'.$this->search.'%');
+                                $query->where($this->model->getTable().'.title', 'like', $this->search.'%');
                             })
                             ->orWhere(function ($query) {
                                 $query->where('post_meta.value', 'LIKE', '%'.$this->search.'%');
@@ -66,7 +62,7 @@ trait Search
                             continue;
                         }
 
-                        $query->orWhere($this->model->getTable().'.'.$field, 'like', '%'.$this->search.'%');
+                        $query->orWhere($this->model->getTable().'.'.$field, 'like', $this->search.'%');
                     }
                 });
             }
