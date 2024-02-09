@@ -94,11 +94,7 @@ class AuraServiceProvider extends PackageServiceProvider
 
     public function bootLivewireComponents()
     {
-        Livewire::component('app.aura.widgets.post-stats', \Aura\Base\Widgets\PostStats::class);
-        // Livewire::component('app.aura.widgets.total-posts', \Aura\Base\Widgets\TotalPosts::class);
-        Livewire::component('app.aura.widgets.post-chart', \Aura\Base\Widgets\PostChart::class);
-        Livewire::component('app.aura.widgets.sum-posts-number', \Aura\Base\Widgets\SumPostsNumber::class);
-        Livewire::component('app.aura.widgets.avg-posts-number', \Aura\Base\Widgets\AvgPostsNumber::class);
+
         Livewire::component('aura::post-index', Index::class);
         Livewire::component('aura::post-create', Create::class);
         Livewire::component('aura::post-create-modal', CreateModal::class);
