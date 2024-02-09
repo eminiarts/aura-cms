@@ -244,6 +244,10 @@ class Aura
                     $settings = $option->value ?? null;
                 }
 
+                if(! $settings) {
+                    return [];
+                }
+
                 return $settings;
             });
         }
