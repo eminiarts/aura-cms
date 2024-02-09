@@ -8,89 +8,32 @@ beforeEach(fn () => $this->actingAs($this->user = createSuperAdmin()));
 class NavigationModel extends Resource
 {
     public static ?string $slug = 'navmodel';
-
     public static string $type = 'NavigationModel';
-
     public static $pluralName = 'NavigationModels';
-
-    public static function getFields()
-    {
-        return [
-            [
-                'label' => 'Total',
-                'name' => 'Total',
-                'type' => 'Aura\\Base\\Fields\\Text',
-                'validation' => 'numeric',
-                'conditional_logic' => [],
-                'slug' => 'total',
-            ],
-        ];
-    }
-
-    public static function getWidgets(): array
-    {
-        return [];
-    }
 }
 class NavigationHiddenModel extends Resource
 {
     protected static bool $showInNavigation = false;
-
     public static ?string $slug = 'navmodel';
-
     public static string $type = 'NavigationModel';
-
     public static $pluralName = 'NavigationModels';
-
-    public static function getFields()
-    {
-        return [
-            [
-                'label' => 'Total',
-                'name' => 'Total',
-                'type' => 'Aura\\Base\\Fields\\Text',
-                'validation' => 'numeric',
-                'conditional_logic' => [],
-                'slug' => 'total',
-            ],
-        ];
-    }
-
-    public static function getWidgets(): array
-    {
-        return [];
-    }
 }
 
 
 class GroupedNavigationModel extends Resource
 {
     public static ?string $slug = 'navmodel';
-
     protected static ?string $group = 'Custom Group';
-
     public static string $type = 'NavigationModel';
-
     public static $pluralName = 'NavigationModels';
-
-    public static function getFields()
-    {
-        return [
-            [
-                'label' => 'Total',
-                'name' => 'Total',
-                'type' => 'Aura\\Base\\Fields\\Text',
-                'validation' => 'numeric',
-                'conditional_logic' => [],
-                'slug' => 'total',
-            ],
-        ];
-    }
-
-    public static function getWidgets(): array
-    {
-        return [];
-    }
+}
+class DropdownNavigationModel extends Resource
+{
+    public static ?string $slug = 'navmodel';
+    protected static ?string $group = 'Custom Group';
+    protected static $dropdown = 'Custom Dropdown';
+    public static string $type = 'NavigationModel';
+    public static $pluralName = 'NavigationModels';
 }
 
 
@@ -180,9 +123,26 @@ test('navigation items can be grouped', function () {
 
     // Visit Dashboard and assert that the item is visible.
     $this->get(route('aura.dashboard'))
-        ->assertSee('NavigationModels');
+        ->assertSee('Custom Group')
+        ->assertSee('NavigationModels')
+    ;
 });
 
 test('navigation items can be dropdown', function () {
-    //
+    Aura::registerResources([
+           DropdownNavigationModel::class,
+       ]);
+
+    $nav = Aura::navigation();
+
+    expect((new DropdownNavigationModel())->pluralName())->toBe('NavigationModels');
+    expect($nav['Custom Group'])->not->toBeNull();
+    expect($nav['Custom Group'][0]['group'])->toBe('Custom Group');
+    expect($nav['Custom Group'][0]['dropdown'])->toBe('Custom Dropdown');
+    expect($nav['Custom Group'][0]['group'])->toBe('Custom Group');
+
+    $this->get(route('aura.dashboard'))
+        ->assertSee('Custom Group')
+        ->assertSee('Custom Dropdown')
+        ->assertSee('NavigationModels');
 });
