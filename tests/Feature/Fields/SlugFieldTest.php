@@ -103,3 +103,19 @@ test('Slug Field Test', function () {
     // Assert that the model was not saved to the database
     $this->assertDatabaseMissing('posts', ['type' => 'SlugModel', 'fields' => json_encode(['slug' => 'invalid slug'])]);
 });
+
+
+test('Slug Field - Without Custom Checkbox', function () {
+});
+
+test('Slug Field - only disabled input - true', function () {
+});
+
+test('Slug Field - disabled input - false', function () {
+});
+
+test('Slug Field - custom - false ', function () {
+});
+
+test('Slug Field - custom - true', function () {
+});

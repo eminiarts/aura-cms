@@ -61,7 +61,10 @@ class Role extends Resource
             [
                 'name' => 'Slug',
                 'slug' => 'slug',
-                'type' => 'Aura\\Base\\Fields\\Text',
+                'type' => 'Aura\\Base\\Fields\\Slug',
+                'based_on' => 'title',
+                'custom' => false,
+                'disabled' => true,
                 'validation' => 'required',
                 'on_index' => true,
                 'style' => [
