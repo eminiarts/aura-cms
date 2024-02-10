@@ -8,12 +8,12 @@
 <x-aura::fields.wrapper :field="$field">
     <div
         x-data="{
-            @if(optional($field)['defer'] === false)
-            value: $wire.entangle('form.fields.{{ optional($field)['slug'] }}'),
+            @if(optional($field)['live'] === true)
+            value: $wire.entangle('form.fields.{{ optional($field)['slug'] }}').live,
             @else
             value: $wire.entangle('form.fields.{{ optional($field)['slug'] }}'),
             @endif
-            custom: false,
+            custom: @js(! optional($field)['disabled'] ?? false),
 
             slugify (value) {
                 return value
@@ -50,9 +50,11 @@
                 // get the element of id resource-field-based_on
                 const basedOn = document.getElementById('resource-field-{{ optional($field)['based_on'] }}')
 
-                if (this.value != this.slugify(basedOn.value) && basedOn.value != '') {
+                {{-- if (this.value != this.slugify(basedOn.value) && basedOn.value != '') {
                     this.custom = true
-                }
+                } --}}
+
+                console.log(this.custom);
 
                 if (! this.custom) {
                     this.value = this.slugify(basedOn.value)
@@ -75,7 +77,7 @@
     >
         <div
             class="flex-1"
-            @if(optional($field)['defer'] === false)
+            @if(optional($field)['live'] === true)
             wire:model.live="form.fields.{{ optional($field)['slug'] }}"
             @else
             wire:model="form.fields.{{ optional($field)['slug'] }}"
@@ -84,6 +86,7 @@
             <x-aura::input.text type="text" x-bind:disabled="!custom" id="slug" @keyup="value = slugifyTyping($event.target.value)" x-model="value" />
         </div>
 
+        @if(optional($field)['custom'])
         <div class="flex flex-col">
             <button x-ref="toggle" @click="toggleCustom()" type="button" role="switch" :aria-checked="custom"
                 :aria-labelledby="$id('boolean')"
@@ -93,17 +96,7 @@
                     class="w-6 h-6 transition rounded-full" aria-hidden="true"></span>
             </button>
         </div>
+        @endif
     </div>
 
 </x-aura::fields.wrapper>
-
-
-
-@push('scripts')
-    @once
-        {{-- <script
-            defer
-            src="https://unpkg.com/alpinejs-slug@latest/dist/slug.min.js"
-        ></script> --}}
-    @endonce
-@endpush
