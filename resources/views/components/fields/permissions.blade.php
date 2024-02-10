@@ -2,8 +2,6 @@
 @php
     $name = 'form.fields.'  . optional($field)['slug'];
 
-    //  dd($name);
-
     $groups = app($field['resource'])->get()->map(function($item, $key) {
         return [
             'name' => $item->fields['name'],
@@ -21,6 +19,10 @@
     field: @entangle($name),
     init(){
 
+        if (this.field === null) {
+            this.field = {};
+        }
+
         // if this.field is null, set it to an empty array
         if (Array.isArray(this.field) && this.field.length === 0) {
             this.field = {};
@@ -34,6 +36,7 @@
                 }
             }
         }
+
         // Remove any keys from this.field that are not in the groups items (item.slug)
         {{-- for (const [key, value] of Object.entries(this.field)) {
             if (!this.groups.flat().map(item => item.slug).includes(key)) {

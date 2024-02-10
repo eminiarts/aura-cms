@@ -10,11 +10,10 @@ use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 
-class GenerateAllResourcePermissions implements ShouldQueue
+class GenerateAllResourcePermissions
 {
     use Dispatchable;
     use InteractsWithQueue;
-    use Queueable;
     use SerializesModels;
 
     /**
