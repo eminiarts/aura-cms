@@ -37,6 +37,7 @@ use Aura\Base\Livewire\ResourceEditor;
 use Aura\Base\Livewire\Table\Table;
 use Aura\Base\Livewire\TeamSettings;
 use Aura\Base\Livewire\InviteUser;
+use Aura\Base\Livewire\PluginsPage;
 use Aura\Base\Livewire\Profile;
 use Aura\Base\Livewire\TwoFactorAuthenticationForm;
 use Aura\Base\Policies\ResourcePolicy;
@@ -123,6 +124,8 @@ class AuraServiceProvider extends PackageServiceProvider
         // Flows
         Livewire::component('aura::create-flow', CreateFlow::class);
         Livewire::component('aura::edit-operation', EditOperation::class);
+
+        Livewire::component('aura::plugins-page', PluginsPage::class);
 
         // Widgets
         Livewire::component('aura::widgets', Widgets::class);

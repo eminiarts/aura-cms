@@ -115,7 +115,7 @@ class PluginsPage extends Component
 
     public function render()
     {
-        return view('aura::livewire.plugins-page');
+        return view('aura::livewire.plugins-page')->layout('aura::components.layout.app');
     }
 
     public function runComposerUpdate()

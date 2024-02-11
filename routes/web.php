@@ -11,6 +11,7 @@ use Aura\Base\Livewire\Resource\Create;
 use Aura\Base\Livewire\TeamSettings;
 use Aura\Base\Http\Controllers\Api\FieldsController;
 use Aura\Base\Livewire\Attachment\Index as AttachmentIndex;
+use Aura\Base\Livewire\PluginsPage;
 
 Route::middleware(config('aura.middleware.aura-guest'))->group(function () {
     require __DIR__.'/auth.php';
@@ -39,6 +40,9 @@ Route::domain(config('aura.domain'))
 
             Route::get('/settings', config('aura.components.team_settings'))->name('team.settings');
             Route::get('/config', config('aura.components.config'))->name('config');
+
+
+            Route::get('/plugins', PluginsPage::class)->name('plugins');
 
             Route::get('/resources/{slug}/editor', ResourceEditor::class)->name('resource.editor');
 

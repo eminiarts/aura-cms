@@ -260,12 +260,21 @@ class Config extends Component
             [
                 'name' => 'Features',
                 'type' => 'Aura\\Base\\Fields\\View',
-                'slug' => 'features',
+                'slug' => 'features-view',
                 'view' => 'aura::aura.features',
                 'style' => [
                     'width' => '100',
                 ],
             ],
+
+            // [
+            //     'name' => 'Features',
+            //     'type' => 'Aura\\Base\\Fields\\Text',
+            //     'slug' => 'features',
+            //     'style' => [
+            //         'width' => '100',
+            //     ],
+            // ],
 
             [
                 'type' => 'Aura\\Base\\Fields\\Tab',
@@ -416,11 +425,13 @@ class Config extends Component
     {
         return Arr::dot([
             'form.fields' => $this->validationRules(),
+            'form.fields.features' => ''
         ]);
     }
 
     public function save()
     {
+        dd($this->form['fields']);
         $this->validate();
 
         $this->model->value = json_encode($this->form['fields']);
