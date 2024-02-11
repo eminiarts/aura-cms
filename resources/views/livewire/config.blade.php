@@ -54,9 +54,4 @@
     </x-aura::fields.conditions>
     @endforeach
 
-
-
-
-
-
 </div>
