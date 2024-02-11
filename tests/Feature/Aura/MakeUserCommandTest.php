@@ -1,14 +1,11 @@
 <?php
 
+use Aura\Base\Resources\Role;
 use Aura\Base\Resources\User;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 
-uses(RefreshDatabase::class);
-
-// uses()->group('current');
-
-beforeEach(fn () => $this->actingAs($this->user = User::factory()->create()));
+// beforeEach(fn () => $this->actingAs($this->user = User::factory()->create()));
 
 it('can create a user with all required fields', function () {
     $this->artisan('aura:user')
@@ -32,4 +29,10 @@ it('can create a user with all required fields', function () {
     expect($user->current_team_id)->toEqual($team->id);
 
     expect($user->fields['roles'])->toContain(1);
+
+    $role = Role::get();
+
+    expect($role->count())->toBe(1);
+
+    expect($role->first()->super_admin)->toBe(true);
 });
