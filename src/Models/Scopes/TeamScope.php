@@ -15,7 +15,6 @@ class TeamScope implements Scope
      */
     public function apply(Builder $builder, Model $model)
     {
-
         if (config('aura.teams') === false) {
             return $builder;
         }
