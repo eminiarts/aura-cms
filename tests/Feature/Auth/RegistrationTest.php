@@ -8,7 +8,7 @@ use Aura\Base\Resources\Team;
 
 beforeEach(function () {
     // Enable Team Registration
-    Aura::setOption('team_registration', true);
+    config(['aura.features.register' => true]);
 });
 
 test('registration screen can be rendered', function () {
@@ -56,4 +56,15 @@ test('new users can register', function () {
 
     // User->current_team_id should be set to Team->id
     expect($user->current_team_id)->toBe($team->id);
+});
+
+
+
+test('registration can be disabeld', function () {
+
+    config(['aura.features.register' => false]);
+
+    $response = $this->get(route('aura.register'));
+
+    $response->assertStatus(404);
 });

@@ -2,14 +2,15 @@
 
 namespace Tests\Feature\Livewire;
 
-use Aura\Base\Facades\Aura;
-use Aura\Base\Livewire\Resource\Create;
-use Aura\Base\Livewire\Resource\Edit;
-use Aura\Base\Models\User;
-use Aura\Base\Resource;
-use Aura\Base\Resources\Team;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
+use Aura\Base\Resource;
+use Aura\Base\Fields\Slug;
+use Aura\Base\Models\User;
+use Aura\Base\Facades\Aura;
+use Aura\Base\Resources\Team;
+use Aura\Base\Livewire\Resource\Edit;
+use Aura\Base\Livewire\Resource\Create;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 
 // Refresh Database on every test
 uses(RefreshDatabase::class);
@@ -102,6 +103,18 @@ test('Slug Field Test', function () {
 
     // Assert that the model was not saved to the database
     $this->assertDatabaseMissing('posts', ['type' => 'SlugModel', 'fields' => json_encode(['slug' => 'invalid slug'])]);
+});
+
+
+test('check Slug Fields', function () {
+    $slug = new Slug();
+
+    $fields = collect($slug->getFields());
+
+    expect($fields->firstWhere('slug', 'custom'))->not->toBeNull();
+    expect($fields->firstWhere('slug', 'disabled'))->not->toBeNull();
+    expect($fields->firstWhere('slug', 'based_on'))->not->toBeNull();
+    expect($fields->firstWhere('slug', 'based_on')['validation'])->toBe('required');
 });
 
 
