@@ -93,19 +93,20 @@ class Role extends Resource
                 'on_index' => false,
                 'on_forms' => true,
                 'on_view' => true,
+                'live' => true,
             ],
             [
                 'name' => 'Permissions',
                 'on_index' => false,
                 'type' => 'Aura\\Base\\Fields\\Permissions',
                 'validation' => '',
-                'conditional_logic' => [
-                    // [
-                    //     'field' => 'super_admin',
-                    //     'operator' => '!=',
-                    //     'value' => '1',
-                    // ],
-                ],
+                'conditional_logic' => function ($model, $form) {
+                    if(optional(optional($form)['fields'])['super_admin']) {
+                        return false;
+                    }
+
+                    return true;
+                },
                 'slug' => 'permissions',
                 'resource' => 'Aura\\Base\\Resources\\Permission',
             ],
