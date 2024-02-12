@@ -97,7 +97,7 @@ class TeamPolicy
         if ($team::$editEnabled === false) {
             return false;
         }
-        if ($user->isAdmin()) {
+        if ($user->resource->isSuperAdmin()) {
             return true;
         }
 
