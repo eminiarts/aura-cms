@@ -301,7 +301,7 @@ class Aura
     {
         // Necessary to add TeamIds?
 
-        return Cache::remember('user-'.auth()->id().'-navigation', 3600, function () {
+        return Cache::remember('user-'.auth()->id(). '-'. auth()->user()->current_team_id .'-navigation', 3600, function () {
 
             $resources = collect($this->getResources());
 
