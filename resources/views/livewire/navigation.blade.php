@@ -4,13 +4,9 @@
         use Aura\Base\Facades\Aura;
 
         $settings = app('aura')::getOption('team-settings');
-        $appSettings = Aura::options();
+        $appSettings = app('aura')::options();
 
         $sidebarToggled = auth()->check() ? auth()->user()->getOptionSidebarToggled() : true;
-
-        // ray($sidebarToggled);
-
-        // dump($sidebarToggled);
 
         $compact = false;
 

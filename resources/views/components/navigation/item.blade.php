@@ -12,8 +12,6 @@
 ])
 
 @php
-    use Aura\Base\Facades\Aura;
-
     $settings = app('aura')::getOption('team-settings');
     $sidebarType = $settings['sidebar-type'] ?? 'primary';
     // Check if the route exists before using it to prevent RouteNotFoundException

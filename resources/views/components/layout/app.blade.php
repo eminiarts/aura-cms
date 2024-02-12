@@ -15,7 +15,7 @@
     @php
         $settings = app('aura')::getOption('team-settings');
 
-        $appSettings = Aura\Base\Facades\Aura::options();
+        $appSettings = app('aura')::options();
     @endphp
 
     @php
