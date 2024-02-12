@@ -14,7 +14,7 @@
             <h1 class="text-3xl font-semibold">{{ __('Create ' . $model->singularName()) }}</h1>
         </div>
 
-        <div>
+        <div class="save-resource">
             @if($showSaveButton)
             <x-aura::button size="lg" wire:click="save">
                 <div wire:loading wire:target="save">

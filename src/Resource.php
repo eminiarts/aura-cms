@@ -342,7 +342,7 @@ class Resource extends Model
             static::addGlobalScope(new TypeScope());
         }
 
-        dd(app(TeamScope::class));
+        // dd(app(TeamScope::class));
 
         static::addGlobalScope(app(TeamScope::class));
 
