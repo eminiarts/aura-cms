@@ -75,7 +75,6 @@ class User extends UserModel
 
     public function getAvatarUrlAttribute()
     {
-        // ray($this->fields['avatar']);
         if (! $this->fields['avatar']) {
             return 'https://ui-avatars.com/api/?name='.$this->getInitials().'';
         }
@@ -530,7 +529,7 @@ class User extends UserModel
     public function roles()
     {
         $roles = $this->belongsToMany(Role::class, 'user_meta', 'user_id', 'value')
-            ->wherePivot('key', 'roles');
+            ->wherePivot('key', 'roles')->withPivot('team_id');
 
         return config('aura.teams') ? $roles->wherePivot('team_id', $this->current_team_id) : $roles;
     }
