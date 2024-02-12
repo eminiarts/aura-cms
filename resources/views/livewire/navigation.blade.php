@@ -213,7 +213,7 @@
                     @endImpersonating
 
                     @if(config('aura.teams') && Auth::user()->currentTeam)
-                        <div class="flex justify-between items-center w-full">
+                        <div class="flex justify-between items-center w-full pb-20 md:pb-0">
                             <x-aura::navigation.team-switcher>
                                 <x-slot:title>
                                     <div class="block flex-shrink w-full group">
