@@ -13,7 +13,7 @@
 
     $id = rand(0, 1000);
 
-    $settings = Aura\Base\Facades\Aura::getOption('team-settings');
+    $settings = app('aura')::getOption('team-settings');
 @endphp
 
 @php

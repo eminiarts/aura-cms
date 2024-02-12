@@ -3,7 +3,7 @@
         use Aura\Base\Resources\Team;
         use Aura\Base\Facades\Aura;
 
-        $settings = Aura::getOption('team-settings');
+        $settings = app('aura')::getOption('team-settings');
         $appSettings = Aura::options();
 
         $sidebarToggled = auth()->check() ? auth()->user()->getOptionSidebarToggled() : true;

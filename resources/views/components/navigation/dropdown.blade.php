@@ -9,7 +9,7 @@
 
 @php
 
-    $settings = Aura::getOption('team-settings');
+    $settings = app('aura')::getOption('team-settings');
     $sidebarType = $settings['sidebar-type'] ?? 'primary';
     $isActive = Request::fullUrlIs($route ? route($route, $id) : '');
     $compactClass = $compact ? 'sidebar-item-compact px-2 h-8' : 'sidebar-item px-3 h-10';
@@ -76,7 +76,7 @@
     </div>
 
     @php
-        $settings = Aura::getOption('team-settings');
+        $settings = app('aura')::getOption('team-settings');
 
         if ($settings) {
             $sidebarType = $settings['sidebar-type'] ?? 'primary';
