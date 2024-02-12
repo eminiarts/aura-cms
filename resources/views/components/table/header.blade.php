@@ -28,7 +28,7 @@
 
 
         @if ($this->settings['create'])
-            <div>
+            <div class="create-resource">
                 <div>
                     @if ($this->createInModal)
                         <a href="#"
