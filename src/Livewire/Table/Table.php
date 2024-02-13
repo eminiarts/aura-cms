@@ -136,7 +136,7 @@ class Table extends Component
      */
     protected $listeners = [
         'refreshTable' => '$refresh',
-        'selectedRows' => 'selectRows',
+        'selectedRows' => '$refresh',
         'selectRowsRange' => 'selectRowsRange',
         'refreshTableSelected' => 'refreshTableSelected',
         'selectFieldRows',

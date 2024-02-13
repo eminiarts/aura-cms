@@ -69,7 +69,6 @@ class MediaUploader extends Component
 
             // Unset the processed file
             unset($this->media[$key]);
-
         }
 
         if ($this->field) {

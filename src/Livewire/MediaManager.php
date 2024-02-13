@@ -34,9 +34,7 @@ class MediaManager extends ModalComponent
 
         $this->field = app($this->model)->fieldBySlug($this->fieldSlug);
 
-        ray('mount media manager', app($this->model), $this->fieldSlug, $this->field);
-
-
+        // ray('mount media manager', app($this->model), $this->fieldSlug, $this->field);
     }
 
     public function render()
@@ -52,7 +50,7 @@ class MediaManager extends ModalComponent
             'value' => $this->selected,
         ]);
 
-        ray('select', $this->fieldSlug, $this->selected);
+        // ray('select', $this->fieldSlug, $this->selected);
 
         // If selected is deffered, emit event to table to update selected, then emit back to updateField
 
@@ -69,6 +67,7 @@ class MediaManager extends ModalComponent
     public function tableMounted()
     {
         if ($this->selected) {
+            ray('mediamanager tableMounted selectedRows', $this->selected);
             $this->dispatch('selectedRows', $this->selected);
         }
     }

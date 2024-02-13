@@ -3,14 +3,14 @@
     selected: @entangle('selected'),
 
     changeSelected(event) {
-        this.selected = event.detail.selected
-        console.log('changeSelected', this.selected);
+        {{-- if (this.selected == event.detail.selected) {
+            return;
+        } --}}
+        console.log('changeSelected', this.selected, event.detail.selected);
+        // this.selected = event.detail.selected
     },
 
 }" @selection-changed="changeSelected($event)">
-
-    {{-- @dump($selected)
-    @dump('field',$field) --}}
 
     <div class="">
         <livewire:aura::media-uploader :field="$field" :selected="$selected" :table="true" :model="app('Aura\Base\Resources\Attachment')" />
@@ -21,7 +21,7 @@
             {{ __('Close') }}
         </x-aura::button>
         <x-aura::button.primary class="ml-4" wire:click="select">
-            {{ __('Select') }}
+            {{ __('Select') }} ()
         </x-aura::button.primary>
     </div>
 </div>

@@ -64,10 +64,13 @@
             init() {
             },
             handleFileSelect(event) {
+                console.log('handleFileSelect');
                 if (event.target.files.length) {
                     Array.from(event.target.files).forEach(file => {
-                        @this.upload('media', file, (uploadedFilename) => {
-                        }, () => {
+                        @this.uploadMultiple('media', file, function (success) { //upload was a success and was finished
+                    $this.isUploading = false
+                    $this.progress = 0
+                }, () => {
                             console.error('Upload error');
                         }, (event) => {
                             this.progress = event.detail.progress;
@@ -85,7 +88,7 @@
                 const $this = this
 
                 console.log('upload multiple')
-                
+
                 this.isUploading = true
                 @this.uploadMultiple('media', files,
                 function (success) { //upload was a success and was finished
@@ -115,40 +118,76 @@
                 x-on:dragover.prevent="isDropping = true; dragover($event);"
                 x-on:dragleave.prevent="isDropping = false; ">
 
-                <div class="mt-2">
+                <div x-on:dragover.prevent="isDropping = true; dragover($event);"
+                 class="z-[1] absolute top-0 right-0 bottom-0 left-0"></div>
+
+                <div class="p-4 mt-2 bg-gray-50 rounded-md border border-gray-200" x-show="isUploading">
+                    <div class="flex justify-between items-center mb-2">
+                        <span class="text-sm font-medium text-gray-700 loading-ellipsis">Uploading</span>
+                    </div>
+                    <div class="bg-transparent dark:bg-gray-900 h-[4px] w-full" x-show="isUploading">
+                        <style>
+                            .loading-ellipsis:after {
+                                overflow: hidden;
+                                display: inline-block;
+                                vertical-align: bottom;
+                                -webkit-animation: ellipsis steps(4,end) 900ms infinite;
+                                animation: ellipsis steps(4,end) 900ms infinite;
+                                content: "\2026"; /* ascii code for the ellipsis character */
+                                width: 0px;
+                            }
+
+                            @keyframes ellipsis {
+                                to {
+                                    width: 1.25em;
+                                }
+                            }
+
+                            @-webkit-keyframes ellipsis {
+                                to {
+                                    width: 1.25em;
+                                }
+                            }
+                            .progress-bar::before {
+                                content: '';
+                                display: block;
+                                height: 100%;
+                                transition: width 0.5s;
+                                width: 0%;
+                            }
+                        </style>
+                        <div class="bg-primary-500 h-[4px] progress-bar" :style="`width: ${progress}%;`">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="z-[2] relative">
                     @if($button)
+                        <div class="mt-2">
+                            <x-aura::button.light
+                                wire:click="$dispatch('openModal', { component: 'aura::media-manager', arguments: { model: {{ json_encode($for) }}, slug: '{{ $field['slug'] }}', selected: {{ json_encode($selected) }} }})">
+                                <x-slot:icon>
+                                    <x-aura::icon icon="media" class="" />
+                                </x-slot>
 
-                    <x-aura::button.light
-                            wire:click="$dispatch('openModal', { component: 'aura::media-manager', arguments: { model: {{ json_encode($for) }}, slug: '{{ $field['slug'] }}', selected: {{ json_encode($selected) }} }})">
-                            <x-slot:icon>
-                                <x-aura::icon icon="media" class="" />
-                            </x-slot>
-
-                            <span>Media Manager</span>
-                        </x-aura::button.light>
+                                <span>Media Manager</span>
+                            </x-aura::button.light>
+                        </div>
                     @endif
                 </div>
 
-                <div class="flex justify-center items-center mb-4 w-full" x-cloak>
-                    <div class="flex absolute top-0 right-0 bottom-0 left-0 z-30 justify-center items-center opacity-90 bg-primary-400"
-                        x-show="isDropping">
-                        <span class="text-3xl text-white">{{ __('Release file to upload!') }}</span>
+                <div class="flex justify-center items-center w-full" x-cloak x-show="isDropping">
+                    <div class="flex absolute top-0 right-0 bottom-0 left-0 z-30 justify-center items-center bg-gray-800 opacity-50"
+                        >
+                        <div
+                            x-show="isDropping"
+                        >
+                                <span class="text-3xl text-white">{{ __('Release file to upload!') }}</span>
+                        </div>
                     </div>
                 </div>
 
-                <div class="bg-transparent dark:bg-gray-900 h-[4px] w-full mt-0" x-show="isUploading">
-                    <style >
-                        .progress-bar::before {
-                            content: '';
-                            display: block;
-                            height: 100%;
-                            transition: width 0.5s;
-                            width: 0%;
-                        }
-                    </style>
-                    <div class="bg-primary-500 h-[4px] progress-bar" :style="`width: ${progress}%;`" x-show="isUploading">
-                    </div>
-                </div>
+
 
                 <div>
 
@@ -168,23 +207,22 @@
 
                     @if($table)
 
-                    <div class="flex flex-col">
-                        <div class="flex justify-between items-center mt-6">
-                        <h1 class="text-3xl font-semibold">
-                            {{ __('Attachments') }}
-                        </h1>
+                    <div class="z-[2] relative flex flex-col">
+                        <div class="flex justify-between items-center mt-0">
+                            <h1 class="text-3xl font-semibold">
+                                {{ __('Attachments') }}
+                            </h1>
 
-                        <div>
-                            <label for="file-upload">
-                                <p class="mb-2 text-sm text-gray-500 dark:text-gray-400"><span
-                                        class="font-semibold">{{ __('Click to upload or drag and drop') }}</span></p>
+                            <div>
+                                <label for="file-upload">
+                                    <p class="mb-2 text-sm text-gray-500 dark:text-gray-400"><span
+                                            class="font-semibold">{{ __('Click to upload or drag and drop') }}</span></p>
 
-                                <input type="file" id="file-upload" multiple @change="handleFileSelect" class="hidden"
-                                    wire:model="media" />
-                            </label>
+                                    <input type="file" id="file-upload" multiple @change="handleFileSelect" class="hidden"
+                                        wire:model="media" />
+                                </label>
+                            </div>
                         </div>
-                    </div>
-
                         <livewire:aura::table :model="$model" :field="$field" />
                     </div>
 

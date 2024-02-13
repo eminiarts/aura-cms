@@ -7,8 +7,10 @@
     $url = null;
 
     try {
-        $attachment = Aura\Base\Resources\Attachment::find($id);
+        // Temporarily disable permission scope
+        Aura\Base\Resources\Attachment::withoutGlobalScopes()->find($id);
 
+        $attachment = Aura\Base\Resources\Attachment::withoutGlobalScopes()->find($id);
         if ($attachment) {
             $url = $attachment->path($size);
         }

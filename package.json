@@ -22,7 +22,7 @@
         "flatpickr": "^4.6.13",
         "laravel-vite-plugin": "^0.7.2",
         "lodash": "^4.17.19",
-        "nodemon": "^2.0.21",
+        "nodemon": "^3.0.3",
         "postcss": "^8.1.14",
         "postcss-import": "^14.0.1",
         "tailwind-scrollbar": "^2.0.1",
