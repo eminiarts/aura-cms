@@ -5,7 +5,6 @@
                 let quill = new Quill(this.$refs.quill, { theme: 'snow' })
 
                 quill.on('text-change', function () {
-                    console.log(quill.root.innerHTML);
                     $dispatch('input', quill.root.innerHTML);
                 });
             },
@@ -18,13 +17,14 @@
     </div>
 
 
-    @once
-        <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
-    @endonce
+    
 
-    @once
-        <script src="https://cdn.quilljs.com/1.3.6/quill.js"></script>
-    @endonce
+        @assets
+        @push('scripts')
+            <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
+            <script src="https://cdn.quilljs.com/1.3.6/quill.js"></script>
+        @endpush
+        @endassets
 
 </x-aura::fields.wrapper>
 
