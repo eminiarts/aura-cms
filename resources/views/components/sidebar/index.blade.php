@@ -1,7 +1,7 @@
 @props(['heading' => null, 'footer' => null, 'show' => 'rightSidebar'])
 
 <div x-cloak x-show="{{ $show }}" class="flex-shrink-0 w-0 xl:w-96 dark:bg-gray-800">
-    <div x-ref="sidebar" class="fixed top-0 right-0 z-10 flex flex-col flex-shrink-0 h-screen border-l border-gray-400/30 shadow-xl w-96 dark:bg-gray-800 dark:border-gray-700 shadow-gray-400 xl:shadow-none">
+    <div x-ref="sidebar" class="flex fixed top-0 right-0 z-10 flex-col flex-shrink-0 w-96 h-screen border-l shadow-xl border-gray-400/30 dark:bg-gray-800 dark:border-gray-700 shadow-gray-400 xl:shadow-none">
         <div class="absolute bg-primary-25 dark:bg-gray-800 opacity-50 inset-0 z-[-1]"></div>
         <div class="flex-shrink-0 px-5 h-[4.5rem] flex items-center justify-between border-b border-gray-400/30 dark:border-gray-700">
 
@@ -20,7 +20,7 @@
             </div>
         </div>
 
-        <div class="flex-1 p-5 overflow-y-auto">
+        <div class="overflow-y-auto flex-1 p-5">
             {{ $slot }}
         </div>
 

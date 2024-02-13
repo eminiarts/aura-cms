@@ -26,7 +26,7 @@
 <div class="relative w-full">
 
     <x-aura::fields.wrapper :field="$field">
-        <div>
+        <div class="z-[2] relative">
             @if(isset($files) && count($files) > 0)
                 <div x-data="{
                       init() {
@@ -52,19 +52,19 @@
                 }" x-ref="container" data-slug="{{ $field['slug'] }}"
                      class="flex flex-wrap px-0 mt-0 draggable-container" wire:key="edit-image-{{ $field['slug'] }}">
                     @foreach($files as $file)
-                        <div class="w-32 mb-1 mr-2 draggable-item" wire:key="{{ $field['slug'] }}_file_{{ $file->id }}"
+                        <div class="mr-2 mb-1 w-32 draggable-item" wire:key="{{ $field['slug'] }}_file_{{ $file->id }}"
                              id="{{ $field['slug'] }}_file_{{ $file->id }}">
 
                             <div class="relative">
 
                                 <div
-                                        class="w-full overflow-hidden rounded-lg cursor-move draggable-handle group aspect-w-10 aspect-h-7 bg-gray-50 focus-within:ring-2 focus-within:ring-primary-500 focus-within:ring-offset-2 focus-within:ring-offset-gray-100">
+                                        class="overflow-hidden w-full bg-gray-50 rounded-lg cursor-move draggable-handle group aspect-w-10 aspect-h-7 focus-within:ring-2 focus-within:ring-primary-500 focus-within:ring-offset-2 focus-within:ring-offset-gray-100">
                                     @if(in_array($file->mime_type, ['image/jpeg', 'image/png', 'image/jpg']))
                                         <img src="/storage/{{ $file->url }}" alt=""
                                              class="object-cover pointer-events-none group-hover:opacity-75">
                                     @else
 
-                                        <div class="flex items-center justify-center text-gray-300">
+                                        <div class="flex justify-center items-center text-gray-300">
                                             @include('aura::attachment.icon', ['class' => 'h-8 w-8', 'attachment' => $file])
                                         </div>
 

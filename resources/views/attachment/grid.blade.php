@@ -1,6 +1,6 @@
 <div>
     <div
-        class="grid flex-1 grid-cols-5 gap-4 p-4"
+        class="grid flex-1 grid-cols-5 gap-4 my-4"
         x-data="{
             selected: @entangle('selected').live,
             rows: @entangle('rowIds'),
@@ -8,7 +8,7 @@
 
             init() {
                 Livewire.on('selectedRows', (updatedSelected) => {
-                    this.selected = updatedSelected;
+                    this.selected = updatedSelected[0];
                 });
             },
             toggleRow(event, id) {
@@ -92,7 +92,6 @@
 
     {{ $rows->links() }}
 
-
     <div>
         @php
         @endphp
@@ -102,35 +101,3 @@
     </div>
 
 </div>
-
-@push('scripts')
-
-{{--<!-- in your Livewire component's JavaScript script -->--}}
-{{--<script >--}}
-{{--    function selectRange(id) {--}}
-{{--        // get the index of the selected item--}}
-{{--        const index = this.items.indexOf(id);--}}
-
-{{--        // determine the start and end indices based on the previous and current indices--}}
-{{--        const start = Math.min(this.previousIndex, index);--}}
-{{--        const end = Math.max(this.previousIndex, index);--}}
-
-{{--        // loop through the items and toggle the selected class for the items between the two clicked items (inclusive)--}}
-{{--        for (let i = start; i <= end; i++) {--}}
-{{--            this.items[i].classList.toggle('selected');--}}
-{{--        }--}}
-
-{{--        this.previousIndex = index;--}}
-{{--        this.updateSelected();--}}
-{{--    }--}}
-
-{{--    function updateSelected() {--}}
-{{--        // update the selected array with the current selected items--}}
-{{--        this.selected = this.items.filter(item => item.classList.contains('selected')).map(item => item.dataset.id);--}}
-
-{{--        // emit the updated selected array to Livewire--}}
-{{--        this.$dispatch('updateSelected', this.selected);--}}
-{{--    }--}}
-{{--</script>--}}
-
-@endpush
