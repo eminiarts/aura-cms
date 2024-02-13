@@ -3,14 +3,10 @@
         use Aura\Base\Resources\Team;
         use Aura\Base\Facades\Aura;
 
-        $settings = Aura::getOption('team-settings');
-        $appSettings = Aura::options();
+        $settings = app('aura')::getOption('team-settings');
+        $appSettings = app('aura')::options();
 
         $sidebarToggled = auth()->check() ? auth()->user()->getOptionSidebarToggled() : true;
-
-        // ray($sidebarToggled);
-
-        // dump($sidebarToggled);
 
         $compact = false;
 
@@ -193,7 +189,7 @@
                     </div>
                 </div>
 
-                <div class=" flex-shrink-0 {{ $compact ? 'px-3' : 'px-5' }} min-h-[4.5rem] py-2 flex items-center border-t
+                <div class=" flex-shrink-0 {{ $compact ? 'px-3' : 'px-5' }} min-h-[4.5rem] py-2 flex flex-wrap items-center border-t
                 @if ($sidebarType == 'primary')
                     border-white border-opacity-20 dark:border-gray-700
                 @elseif ($sidebarType == 'light')
@@ -204,16 +200,18 @@
             ">
 
                     @impersonating($guard = null)
-                    <x-aura::button.primary :href="route('impersonate.leave')" class="my-2 w-full" size="xs">
+                    <div class="w-full">
+                        <x-aura::button.primary :href="route('impersonate.leave')" class="my-2 w-full" size="xs">
                         <x-slot:icon>
                             <x-aura::icon icon="user-impersonate" size="xs"/>
                         </x-slot:icon>
                         <span>{{ __('Leave Impersonation') }}</span>
                     </x-aura::button.primary>
+                    </div>
                     @endImpersonating
 
                     @if(config('aura.teams') && Auth::user()->currentTeam)
-                        <div class="flex justify-between items-center w-full">
+                        <div class="flex justify-between items-center w-full pb-20 md:pb-0">
                             <x-aura::navigation.team-switcher>
                                 <x-slot:title>
                                     <div class="block flex-shrink w-full group">

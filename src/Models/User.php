@@ -78,7 +78,6 @@ class User extends Authenticatable
             return false;
         }
 
-        ray($this->teams, $team);
         return $this->teams->contains(function ($t) use ($team) {
             return $t->id === $team->id;
         });
@@ -328,8 +327,6 @@ class User extends Authenticatable
         $option = 'user.'.$this->id.'.'.$option;
 
         Option::updateOrCreate(['name' => $option], ['value' => $value]);
-
-        ray('updateOption', $option, $value)->red();
 
         // Clear the cache
         Cache::forget($option);

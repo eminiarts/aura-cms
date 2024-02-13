@@ -431,7 +431,6 @@ class Config extends Component
 
     public function save()
     {
-        dd($this->form['fields']);
         $this->validate();
 
         $this->model->value = json_encode($this->form['fields']);
