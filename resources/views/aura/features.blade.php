@@ -2,7 +2,6 @@
 
     <input type="text" wire:model="form.fields.features">
 
-    @dump($this->model)
                 <div class="px-3 w-full md:w-1/3">
                     <div class="flex flex-col justify-between my-3 bg-white rounded-lg border shadow-md border-gray-400/30 dark:bg-gray-800 dark:border-gray-700 md:ml-3">
                     <div class="flex justify-between items-center p-6">

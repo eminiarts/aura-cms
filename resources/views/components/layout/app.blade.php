@@ -13,9 +13,9 @@
     <title>@yield('title') • Aura CMS</title>
 
     @php
-        $settings = Aura\Base\Facades\Aura::getOption('team-settings');
+        $settings = app('aura')::getOption('team-settings');
 
-        $appSettings = Aura\Base\Facades\Aura::options();
+        $appSettings = app('aura')::options();
     @endphp
 
     @php
