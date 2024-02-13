@@ -189,7 +189,7 @@
                     </div>
                 </div>
 
-                <div class=" flex-shrink-0 {{ $compact ? 'px-3' : 'px-5' }} min-h-[4.5rem] py-2 flex items-center border-t
+                <div class=" flex-shrink-0 {{ $compact ? 'px-3' : 'px-5' }} min-h-[4.5rem] py-2 flex flex-wrap items-center border-t
                 @if ($sidebarType == 'primary')
                     border-white border-opacity-20 dark:border-gray-700
                 @elseif ($sidebarType == 'light')
@@ -200,12 +200,14 @@
             ">
 
                     @impersonating($guard = null)
-                    <x-aura::button.primary :href="route('impersonate.leave')" class="my-2 w-full" size="xs">
+                    <div class="w-full">
+                        <x-aura::button.primary :href="route('impersonate.leave')" class="my-2 w-full" size="xs">
                         <x-slot:icon>
                             <x-aura::icon icon="user-impersonate" size="xs"/>
                         </x-slot:icon>
                         <span>{{ __('Leave Impersonation') }}</span>
                     </x-aura::button.primary>
+                    </div>
                     @endImpersonating
 
                     @if(config('aura.teams') && Auth::user()->currentTeam)
