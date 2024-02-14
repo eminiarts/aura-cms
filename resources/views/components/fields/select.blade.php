@@ -27,32 +27,19 @@
         }
       @endphp
 
-      @foreach($options as $key => $option)
-        {{-- if key starts with "option_group" --}}
-        @if (Str::startsWith($key, 'option_group'))
-          @if ($optionGroup)
-            </optgroup>
-          @endif
-          @php
-            $optionGroup = true;
-          @endphp
-          <optgroup label="{{ $option }}">
-        @else
-
-            {{-- if key and values are set on the option, show it --}}
-            @if (is_array($option))
-              <option value="{{ $option['value'] }}">{{ $option['name'] }}</option>
-            @else
-
-            <option value="{{ $key }}">{{ $option }}</option>
-            @endif
-        @endif
-
-        {{-- If last option in loop --}}
-        @if ($loop->last && $optionGroup)
-          </optgroup>
-        @endif
-      @endforeach
+     @foreach($options as $key => $value)
+    @if(is_array($value))
+        {{-- This is a grouped option --}}
+        <optgroup label="{{ $key }}">
+            @foreach($value as $optionValue => $optionLabel)
+                <option value="{{ $optionValue }}">{{ $optionLabel }}</option>
+            @endforeach
+        </optgroup>
+    @else
+        {{-- This is a flat option --}}
+        <option value="{{ $key }}">{{ $value }}</option>
+    @endif
+@endforeach
     </select>
 
     <div class="flex absolute inset-y-0 right-0 items-center px-2 pointer-events-none">

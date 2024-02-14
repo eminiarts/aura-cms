@@ -8,6 +8,8 @@ class Password extends Field
 {
     public $component = 'aura::fields.password';
 
+    public $optionGroup = 'Input Fields';
+
     public $view = 'aura::fields.view-value';
 
     // public function get($field, $value)
