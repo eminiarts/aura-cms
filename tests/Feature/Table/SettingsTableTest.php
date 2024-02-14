@@ -1,10 +1,12 @@
 <?php
 
-use Aura\Base\Livewire\Table\Table;
-use Aura\Base\Models\User;
-use Aura\Base\Resources\Post;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
+use Aura\Base\Models\User;
+use Aura\Base\Facades\Aura;
+use Aura\Base\Resources\Post;
+use Aura\Base\Livewire\Table\Table;
+use Illuminate\Support\Facades\Blade;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 
 // Before each test, create a Superadmin and login
 beforeEach(function () {
@@ -152,7 +154,6 @@ test('filters settings', function () {
 
     $component->assertSeeHtml('<div class="toggleFilters">');
 
-
     // Disable filters
 
     $settings = ['filters' => false];
@@ -167,12 +168,158 @@ test('filters settings', function () {
 });
 
 test('selectable settings', function () {
+
+    $settings = ['selectable' => true];
+
+    $component = Livewire::test(Table::class, ['model' => $this->post, 'settings' => $settings]);
+
+    expect($component->settings)->toHaveKey('selectable', true);
+
+    $component->assertSeeHtml('x-on:click="selectCurrentPage"');
+
+    // Disable selectable
+
+    $settings = ['selectable' => false];
+
+    $component = Livewire::test(Table::class, ['model' => $this->post, 'settings' => $settings]);
+
+    expect($component->settings)->toHaveKey('selectable', false);
+
+    $component->assertDontSeeHtml('x-on:click="selectCurrentPage"');
+
 });
 
 test('table_before settings', function () {
+    Aura::registerInjectView('table_before', fn (): string => Blade::render('<h1>Table Before XYZ</h1>'));
+
+    $settings = ['table_before' => true];
+
+    $component = Livewire::test(Table::class, ['model' => $this->post, 'settings' => $settings]);
+
+    expect($component->settings)->toHaveKey('table_before', true);
+
+    $component->assertSeeHtml('<h1>Table Before XYZ</h1>');
+
+    // Disable table_before
+
+    $settings = ['table_before' => false];
+
+    $component = Livewire::test(Table::class, ['model' => $this->post, 'settings' => $settings]);
+
+    expect($component->settings)->toHaveKey('table_before', false);
+
+    $component->assertDontSeeHtml('<h1>Table Before XYZ</h1>');
+});
+
+
+test('custom inject table_before for post', function () {
+    Aura::registerInjectView('table_before_Post', fn (): string => Blade::render('<h1>Table Before Post</h1>'));
+
+    $settings = ['table_before' => true];
+
+    $component = Livewire::test(Table::class, ['model' => $this->post, 'settings' => $settings]);
+
+    expect($component->settings)->toHaveKey('table_before', true);
+
+    $component->assertSeeHtml('<h1>Table Before Post</h1>');
+
+    // Disable table_before
+
+    $settings = ['table_before' => false];
+
+    $component = Livewire::test(Table::class, ['model' => $this->post, 'settings' => $settings]);
+
+    expect($component->settings)->toHaveKey('table_before', false);
+
+    $component->assertDontSeeHtml('<h1>Table Before Post</h1>');
+});
+
+test('custom inject table_after for post', function () {
+    Aura::registerInjectView('table_after_Post', fn (): string => Blade::render('<h1>Table Before Post</h1>'));
+
+    $settings = ['table_after' => true];
+
+    $component = Livewire::test(Table::class, ['model' => $this->post, 'settings' => $settings]);
+
+    expect($component->settings)->toHaveKey('table_after', true);
+
+    $component->assertSeeHtml('<h1>Table Before Post</h1>');
+
+    // Disable table_after
+
+    $settings = ['table_after' => false];
+
+    $component = Livewire::test(Table::class, ['model' => $this->post, 'settings' => $settings]);
+
+    expect($component->settings)->toHaveKey('table_after', false);
+
+    $component->assertDontSeeHtml('<h1>Table Before Post</h1>');
+});
+
+test('table_after settings', function () {
+    Aura::registerInjectView('table_after', fn (): string => Blade::render('<h1>Table After XYZ</h1>'));
+
+    $settings = ['table_after' => true];
+
+    $component = Livewire::test(Table::class, ['model' => $this->post, 'settings' => $settings]);
+
+    expect($component->settings)->toHaveKey('table_after', true);
+
+    $component->assertSeeHtml('<h1>Table After XYZ</h1>');
+
+    // Disable table_after
+
+    $settings = ['table_after' => false];
+
+    $component = Livewire::test(Table::class, ['model' => $this->post, 'settings' => $settings]);
+
+    expect($component->settings)->toHaveKey('table_after', false);
+
+    $component->assertDontSeeHtml('<h1>Table After XYZ</h1>');
 });
 
 test('header_before settings', function () {
+    Aura::registerInjectView('header_before', fn (): string => Blade::render('<h1>Header before XYZ</h1>'));
+
+    $settings = ['header_before' => true];
+
+    $component = Livewire::test(Table::class, ['model' => $this->post, 'settings' => $settings]);
+
+    expect($component->settings)->toHaveKey('header_before', true);
+
+    $component->assertSeeHtml('<h1>Header before XYZ</h1>');
+
+    // Disable header_before
+
+    $settings = ['header_before' => false];
+
+    $component = Livewire::test(Table::class, ['model' => $this->post, 'settings' => $settings]);
+
+    expect($component->settings)->toHaveKey('header_before', false);
+
+    $component->assertDontSeeHtml('<h1>Header before XYZ</h1>');
+});
+
+test('header_after settings', function () {
+    Aura::registerInjectView('header_after', fn (): string => Blade::render('<h1>Header after XYZ</h1>'));
+
+    $settings = ['header_after' => true];
+
+    $component = Livewire::test(Table::class, ['model' => $this->post, 'settings' => $settings]);
+
+    expect($component->settings)->toHaveKey('header_after', true);
+
+    $component->assertSeeHtml('<h1>Header after XYZ</h1>');
+
+    // Disable header_after
+
+    $settings = ['header_after' => false];
+
+    $component = Livewire::test(Table::class, ['model' => $this->post, 'settings' => $settings]);
+
+    expect($component->settings)->toHaveKey('header_after', false);
+
+    $component->assertDontSeeHtml('<h1>Header after XYZ</h1>');
 });
 
 test('search settings', function () {
@@ -193,7 +340,6 @@ test('search settings', function () {
     expect($component->settings)->toHaveKey('search', false);
 
     $component->assertDontSeeHtml('wire:model.live.debounce="search"');
-
 });
 
 test('table columns settings', function () {
