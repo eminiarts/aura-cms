@@ -16,7 +16,7 @@ class EditResourceField extends Component
 
     public $fieldSlug;
 
-    public $model;
+    public $form;
 
     public $open = false;
 
