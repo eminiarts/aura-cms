@@ -6,14 +6,16 @@
     </div>
     @endif
 
-    @if($this->settings['header_before'])
-    {{ app('aura')::injectView('table_before') }}
+    @if($this->settings['table_before'])
+        {{ app('aura')::injectView('table_before') }}
+        {{ app('aura')::injectView('table_before_' . $this->model->getType()) }}
     @endif
 
     @include($this->model->tableView())
 
-    @if($this->settings['header_after'])
-    {{ app('aura')::injectView('table_after') }}
+    @if($this->settings['table_after'])
+        {{ app('aura')::injectView('table_after') }}
+        {{ app('aura')::injectView('table_after_' . $this->model->getType()) }}
     @endif
 
 </div>
