@@ -11,6 +11,8 @@ class BelongsTo extends Field
 
     public bool $group = false;
 
+    public $optionGroup = 'Relationship Fields';
+
     public string $type = 'input';
 
     public $view = 'aura::fields.view-value';

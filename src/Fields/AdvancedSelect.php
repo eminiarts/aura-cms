@@ -6,6 +6,8 @@ class AdvancedSelect extends Field
 {
     public $component = 'aura::fields.advanced-select';
 
+    public $optionGroup = 'JS Fields';
+
     public $view = 'aura::fields.view-value';
 
     public function api($request)

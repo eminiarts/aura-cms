@@ -8,6 +8,8 @@ class Textarea extends Field
 
     public $view = 'aura::fields.view-value';
 
+    public $optionGroup = 'Input Fields';
+
     public function getFields()
     {
         return array_merge(parent::getFields(), [

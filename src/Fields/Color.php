@@ -8,6 +8,8 @@ class Color extends Field
 
     public $view = 'aura::fields.view-value';
 
+    public $optionGroup = 'JS Fields';
+
     public function getFields()
     {
         return array_merge(parent::getFields(), [

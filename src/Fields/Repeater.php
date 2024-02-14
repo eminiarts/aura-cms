@@ -8,6 +8,8 @@ class Repeater extends Field
 
     public bool $group = true;
 
+    public $optionGroup = 'Structure Fields';
+
     public string $type = 'input';
 
     // public bool $showChildrenOnIndex = false;

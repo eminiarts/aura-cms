@@ -8,6 +8,8 @@ class Group extends Field
 
     public bool $group = true;
 
+    public $optionGroup = 'Structure Fields';
+
     public string $type = 'group';
 
     // public $view = 'components.fields.group';

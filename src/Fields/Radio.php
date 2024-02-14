@@ -6,6 +6,8 @@ class Radio extends Field
 {
     public $component = 'aura::fields.radio';
 
+    public $optionGroup = 'Choice Fields';
+
     // public $view = 'components.fields.radio';
 
     public function getFields()
@@ -43,9 +45,7 @@ class Radio extends Field
                 'style' => [
                     'width' => '50',
                 ],
-
             ],
-
             [
                 'name' => 'Default Value',
                 'type' => 'Aura\\Base\\Fields\\Text',
@@ -54,7 +54,6 @@ class Radio extends Field
                 'exclude_from_nesting' => true,
                 'slug' => 'default',
             ],
-
         ]);
     }
 }
