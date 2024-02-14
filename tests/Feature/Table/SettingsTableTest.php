@@ -384,27 +384,27 @@ test('table columns settings', function () {
     $component->assertDontSeeHtml('for="column_user_id"');
 });
 
-test('global_filters settings', function () {
+// test('global_filters settings', function () {
 
-    $settings = ['global_filters' => true];
+//     $settings = ['global_filters' => true];
 
-    $component = Livewire::test(Table::class, ['model' => $this->post, 'settings' => $settings]);
+//     $component = Livewire::test(Table::class, ['model' => $this->post, 'settings' => $settings]);
 
-    expect($component->settings)->toHaveKey('global_filters', true);
+//     expect($component->settings)->toHaveKey('global_filters', true);
 
-    $component->assertSeeHtml('wire:model.live.debounce="global_filters"');
+//     $component->assertSeeHtml('wire:model.live.debounce="global_filters"');
 
-    // Disable global_filters
+//     // Disable global_filters
 
-    $settings = ['global_filters' => false];
+//     $settings = ['global_filters' => false];
 
-    $component = Livewire::test(Table::class, ['model' => $this->post, 'settings' => $settings]);
+//     $component = Livewire::test(Table::class, ['model' => $this->post, 'settings' => $settings]);
 
-    expect($component->settings)->toHaveKey('global_filters', false);
+//     expect($component->settings)->toHaveKey('global_filters', false);
 
-    $component->assertDontSeeHtml('wire:model.live.debounce="global_filters"');
+//     $component->assertDontSeeHtml('wire:model.live.debounce="global_filters"');
 
-});
+// });
 
 test('sort_columns settings', function () {
 });

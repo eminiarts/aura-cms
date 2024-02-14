@@ -254,6 +254,7 @@
             </div>
 
 
+            @if($this->settings['filters'])
             <x-aura::sidebar title="Filters" show="showFilters">
                 <x-slot:heading class="font-semibold">
                     <h3 class="text-xl font-semibold">
@@ -262,6 +263,7 @@
                     </x-slot>
                     @include('aura::components.table.filters')
             </x-aura::sidebar>
+            @endif
         </main>
     </div> {{-- This closes the context menu --}}
 </div>
