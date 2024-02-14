@@ -15,6 +15,13 @@ class Post extends Resource
 {
     use Exportable;
 
+    // public function indexTableSettings()
+    // {
+    //     return [
+    //         'filters' => true,
+    //     ];
+    // }
+
     public array $actions = [
         'delete' => [
             'label' => 'Delete',

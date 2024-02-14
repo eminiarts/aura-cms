@@ -15,7 +15,6 @@ beforeEach(function () {
 });
 
 test('check default table settings', function () {
-
     $settings = $this->post->indexTableSettings();
 
     expect($settings)->toBe([]);
@@ -70,11 +69,9 @@ test('check default table settings', function () {
 
 
     $component->assertSeeHtml('wire:model.live.debounce="search"');
-
 });
 
 test('table settings can be modified', function () {
-
     $settings = [
         'per_page' => 20,
         'columns' => ['title', 'slug', 'user_id'],
@@ -84,8 +81,6 @@ test('table settings can be modified', function () {
     ];
 
     $component = Livewire::test(Table::class, ['model' => $this->post, 'settings' => $settings]);
-
-    // dd($component->settings);
 
     expect($component->settings)->toHaveKey('per_page', 20);
 
@@ -100,19 +95,75 @@ test('table settings can be modified', function () {
     expect($component->settings)->toHaveKey('global_filters', false);
 
     $component->assertDontSeeHtml('wire:model.live.debounce="search"');
-
 });
 
 test('header settings', function () {
+    $settings = ['header' => true];
+
+    $component = Livewire::test(Table::class, ['model' => $this->post, 'settings' => $settings]);
+
+    expect($component->settings)->toHaveKey('header', true);
+
+    $component->assertSeeHtml('<h1 class="text-3xl font-semibold">Posts</h1>');
+    $component->assertSeeHtml('href="' . url('/admin/Post/create') . '"');
+
+    // Disable header
+
+    $settings = ['header' => false];
+
+    $component = Livewire::test(Table::class, ['model' => $this->post, 'settings' => $settings]);
+
+    expect($component->settings)->toHaveKey('header', false);
+
+    $component->assertDontSeeHtml('<h1 class="text-3xl font-semibold">Posts</h1>');
+    $component->assertDontSeeHtml('href="' . url('/admin/Post/create') . '"');
 });
 
 test('actions settings', function () {
 });
 
 test('create settings', function () {
+    $settings = ['create' => true];
+
+    $component = Livewire::test(Table::class, ['model' => $this->post, 'settings' => $settings]);
+
+    expect($component->settings)->toHaveKey('create', true);
+
+    $component->assertSeeHtml('href="' . url('/admin/Post/create') . '"');
+
+    // Disable create
+
+    $settings = ['create' => false];
+
+    $component = Livewire::test(Table::class, ['model' => $this->post, 'settings' => $settings]);
+
+    expect($component->settings)->toHaveKey('create', false);
+
+    $component->assertDontSeeHtml('href="' . url('/admin/Post/create') . '"');
+
 });
 
 test('filters settings', function () {
+    $settings = ['filters' => true];
+
+    $component = Livewire::test(Table::class, ['model' => $this->post, 'settings' => $settings]);
+
+    expect($component->settings)->toHaveKey('filters', true);
+
+    $component->assertSeeHtml('<div class="toggleFilters">');
+
+
+    // Disable filters
+
+    $settings = ['filters' => false];
+
+    $component = Livewire::test(Table::class, ['model' => $this->post, 'settings' => $settings]);
+
+    expect($component->settings)->toHaveKey('filters', false);
+
+
+    $component->assertDontSeeHtml('<div class="toggleFilters">');
+
 });
 
 test('selectable settings', function () {
