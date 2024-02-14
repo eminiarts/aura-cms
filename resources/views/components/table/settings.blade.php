@@ -21,9 +21,9 @@
                     @if($this->headers)
                     @foreach($this->headers as $key => $label)
                     <label class="flex items-center py-2 cursor-pointer space-1-2 hover:bg-gray-100 dark:hover:bg-gray-900 sortable"
-                        for="colum_{{$key}}" id="{{ $key }}">
+                        for="column_{{$key}}" id="{{ $key }}">
 
-                        <x-aura::input.checkbox wire:model.live="columns.{{ $key }}" value="true" id="colum_{{$key}}" />
+                        <x-aura::input.checkbox wire:model.live="columns.{{ $key }}" value="true" id="column_{{$key}}" />
 
                         <span class="flex flex-1 items-center px-4 text-sm text-gray-700 dark:text-gray-200 group" role="menuitem"
                             tabindex="-1" id="menu-item-6">
