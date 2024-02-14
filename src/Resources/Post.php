@@ -15,12 +15,12 @@ class Post extends Resource
 {
     use Exportable;
 
-    public function indexTableSettings()
-    {
-        return [
-            'global_filters' => false,
-        ];
-    }
+    // public function indexTableSettings()
+    // {
+    //     return [
+    //         'global_filters' => false,
+    //     ];
+    // }
 
     public array $actions = [
         'delete' => [
