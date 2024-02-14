@@ -64,7 +64,7 @@
             x-transition:leave="transition ease-in duration-100"
             x-transition:leave-start="opacity-100"
             x-transition:leave-end="opacity-0"
-            class="w-full max-w-sm bg-white rounded-lg shadow-lg pointer-events-auto"
+            class="w-full max-w-sm bg-white rounded-lg shadow-lg pointer-events-auto dark:bg-gray-800"
             @mouseenter="clearTimer(message)"
             @mouseleave="addTimer(message)"
         >
@@ -88,10 +88,10 @@
                         </div>
 
                         <div class="flex-1 pt-0.5 ml-3 w-0">
-                            <p x-text="message.message" class="text-sm font-medium leading-5 text-gray-900"></p>
+                            <p x-text="message.message" class="text-sm text-gray-900 dark:text-gray-200 font-regular"></p>
                         </div>
                         <div class="flex flex-shrink-0 ml-4">
-                            <button @click="remove(message)" class="inline-flex text-gray-400 transition duration-150 ease-in-out focus:outline-none focus:text-gray-500">
+                            <button @click="remove(message)" class="inline-flex text-gray-400 transition duration-150 ease-in-out dark:text-gray-600 focus:outline-none focus:text-gray-500">
                                 <svg class="w-5 h-5" viewBox="0 0 20 20" fill="currentColor">
                                     <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"></path>
                                 </svg>
@@ -99,8 +99,8 @@
                         </div>
                     </div>
                 </div>
-                <div class="relative h-0.5 bg-white">
-                    <div  :style="'width:' + progress[messages.indexOf(message)] + '%'" class="absolute left-0 h-0.5 bg-gray-300"></div>
+                <div class="relative h-0.5 bg-white dark:bg-gray-800">
+                    <div  :style="'width:' + progress[messages.indexOf(message)] + '%'" class="absolute left-0 h-0.5 bg-gray-300 dark:bg-gray-600"></div>
                 </div>
             </div>
         </div>

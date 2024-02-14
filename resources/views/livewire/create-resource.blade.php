@@ -17,31 +17,35 @@
         </div>
     @endif
 
-    <div class="-mx-4 mb-4">
-        @foreach($this->fields as $key => $field)
-        <style >
-            #resource-field-{{ optional($field)['slug'] }}-wrapper {
-                width: {{ optional(optional($field)['style'])['width'] ?? '100' }}%;
-            }
-
-            @media screen and (max-width: 768px) {
+    <form wire:submit="save">
+        <div class="-mx-4 mb-4">
+            @foreach($this->fields as $key => $field)
+            <style >
                 #resource-field-{{ optional($field)['slug'] }}-wrapper {
-                width: 100%;
+                    width: {{ optional(optional($field)['style'])['width'] ?? '100' }}%;
                 }
-            }
-        </style>
-        <div wire:key="resource-field-{{ $key }}"
-        id="resource-field-{{ optional($field)['slug'] }}-wrapper">
-            <x-dynamic-component :component="$field['field']->component" :field="$field" />
-        </div>
-        @endforeach
-    </div>
 
-    <x-aura::button size="xl" wire:click="save">
-        <div wire:loading>
-            <x-aura::icon.loading  />
+                @media screen and (max-width: 768px) {
+                    #resource-field-{{ optional($field)['slug'] }}-wrapper {
+                    width: 100%;
+                    }
+                }
+            </style>
+            <div wire:key="resource-field-{{ $key }}"
+            id="resource-field-{{ optional($field)['slug'] }}-wrapper">
+                <x-dynamic-component :component="$field['field']->component" :field="$field" />
+            </div>
+            @endforeach
         </div>
-        {{ __('Save') }}
-    </x-aura::button>
+
+        <x-aura::button size="xl" type="submit">
+            <div wire:loading>
+                <x-aura::icon.loading  />
+            </div>
+            {{ __('Save') }}
+        </x-aura::button>
+    </form>
+
+
 
 </div>

@@ -8,7 +8,8 @@
 
             init() {
                 Livewire.on('selectedRows', (updatedSelected) => {
-                    this.selected = updatedSelected[0];
+                    console.log('grid uS 2', updatedSelected);
+                    {{-- this.selected = updatedSelected[0]; --}}
                 });
             },
             toggleRow(event, id) {
@@ -35,7 +36,6 @@
 
         }"
     >
-
         @forelse($rows as $row)
 
         <div class="relative select-none" wire:key="grid_{{ $row->id }}">

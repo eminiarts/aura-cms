@@ -84,6 +84,8 @@ class Field implements Wireable
                 'validation' => 'required',
                 'slug' => 'slug',
                 'based_on' => 'name',
+                'custom' => true,
+                'disabled' => true,
             ],
             [
                 'label' => 'Validation',
@@ -96,6 +98,7 @@ class Field implements Wireable
                 'label' => 'Type',
                 'name' => 'Type',
                 'type' => 'Aura\\Base\\Fields\\Select',
+                'live' => true,
                 'validation' => 'required',
                 'slug' => 'type',
                 'options' => [
@@ -105,6 +108,7 @@ class Field implements Wireable
                     'Aura\\Base\\Fields\\Number' => 'Number',
                     'Aura\\Base\\Fields\\Email' => 'Email',
                     'Aura\\Base\\Fields\\Phone' => 'Phone',
+                    'Aura\\Base\\Fields\\Hidden' => 'Hidden',
 
                     'option_group_2' => 'Media Fields',
                     'Aura\\Base\\Fields\\Image' => 'Image',

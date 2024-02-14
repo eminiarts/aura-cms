@@ -14,9 +14,9 @@
 @php
 
 if ($block) {
-  $class = 'inline-flex justify-center w-full ' . $class;
+  $class = 'inline-flex justify-center w-full' . ' ' . $class;
 } else {
-  $class = 'inline-flex ' . $class;
+  $class = 'inline-flex' . ' ' . $class;
 }
 
 $sizes = [
@@ -45,7 +45,7 @@ if (!isset($sizes[$size])) {
   tabindex="0"
   href="{{ $href }}" @if($navigate) wire:navigate @endif
   {{$attributes->merge([
-    'class' => $class . ' relative items-center focus:outline-none focus:ring-2 focus:ring-opacity-50 focus:ring-offset-2 dark:focus:ring-offset-gray-900 select-none' . ' ' .  optional($sizes)[$size],
+    'class' => $class . ' relative items-center focus:outline-none focus:ring-2 focus:ring-opacity-50 focus:ring-offset-2 dark:focus:ring-offset-gray-900 select-none active:scale-95 transition-transform duration-150 ease-in-out' . ' ' .  optional($sizes)[$size],
   ])}}
 >
   @if ($icon ?? false)
@@ -61,14 +61,14 @@ if (!isset($sizes[$size])) {
   tabindex="0"
   type="{{ $type }}"
   {{$attributes->merge([
-    'class' => $class . ' relative items-center focus:outline-none focus:ring-2 focus:ring-opacity-50 focus:ring-offset-2 dark:focus:ring-offset-gray-900 select-none ' . ' ' .  optional($sizes)[$size],
+    'class' => $class . ' relative items-center focus:outline-none focus:ring-2 focus:ring-opacity-50 focus:ring-offset-2 dark:focus:ring-offset-gray-900 select-none active:scale-95 transition-transform duration-150 ease-in-out ' . ' ' .  optional($sizes)[$size],
   ])}}
 >
   @if ($icon ?? false)
     <div class="absolute -ml-1">
       {{ $icon }}
     </div>
-    <span class="block w-6 mr-2 -ml-1"></span>
+    <span class="block mr-2 -ml-1 w-6"></span>
   @endif
   {{ $slot }}
 </button>

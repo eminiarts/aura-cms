@@ -24,10 +24,10 @@ class CreateResource extends ModalComponent
         return [
             [
                 'name' => 'Name (Singular, e.g. Post)',
+                'slug' => 'name',
                 'instructions' => 'The name of the post type, shown in the admin panel.',
                 'type' => 'Aura\\Base\\Fields\\Text',
                 'validation' => 'required|alpha:ascii',
-                'slug' => 'name',
             ],
         ];
     }
@@ -55,6 +55,9 @@ class CreateResource extends ModalComponent
     {
         abort_unless(auth()->user()->resource->isSuperAdmin(), 403);
 
+        $name = $this->form['fields']['name'];
+        $slug = str($name)->slug();
+
         $this->validate();
 
         Artisan::call('aura:resource', [
@@ -66,5 +69,12 @@ class CreateResource extends ModalComponent
         $this->notify('Erfolgreich Erstellt.');
 
         $this->dispatch('closeModal');
+
+
+
+        // redirect to route
+        return redirect()->route('aura.resource.editor', ['slug' => $slug]);
+
+        // Route::get('/resources/{slug}/editor', ResourceEditor::class)->name('resource.editor');
     }
 }

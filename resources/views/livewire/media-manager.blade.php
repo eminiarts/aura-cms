@@ -1,27 +1,29 @@
 <div class="p-8 w-full" x-data="{
 
-    selected: @entangle('selected'),
+    selected: @entangle('selected').live,
 
     changeSelected(event) {
         {{-- if (this.selected == event.detail.selected) {
             return;
         } --}}
-        console.log('changeSelected', this.selected, event.detail.selected);
-        // this.selected = event.detail.selected
+        // console.log('changeSelected', this.selected, event.detail.selected);
+        console.log('selectionChanged -> changeSelcted');
+        this.selected = event.detail.selected
     },
 
 }" @selection-changed="changeSelected($event)">
 
     <div class="">
+        {{-- @dump('mediamanager', $this->selected, $field) --}}
         <livewire:aura::media-uploader :field="$field" :selected="$selected" :table="true" :model="app('Aura\Base\Resources\Attachment')" />
     </div>
 
-    <div class="flex justify-end mt-4">
+    <div class="z-[2] relative flex justify-end mt-4">
         <x-aura::button class="ml-4" wire:click="$dispatch('closeModal')">
             {{ __('Close') }}
         </x-aura::button>
         <x-aura::button.primary class="ml-4" wire:click="select">
-            {{ __('Select') }} ()
+            {{ __('Select') }}
         </x-aura::button.primary>
     </div>
 </div>

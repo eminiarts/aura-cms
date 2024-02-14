@@ -45,7 +45,7 @@
             <div class="flex relative justify-end items-start">
                  <!-- Title -->
                 <div class="flex absolute items-center ml-3 h-7">
-                  <button type="button" class="text-gray-400 bg-white rounded-md hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2" x-on:click="open = false">
+                  <button type="button" class="text-gray-400 rounded-md dark:text-gray-400 dark:hover:text-gray-300 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 dark:focus:ring-offset-gray-900" x-on:click="open = false">
                     <span class="sr-only">Close panel</span>
                     <x-aura::icon icon="close" />
                   </button>

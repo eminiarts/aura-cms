@@ -117,7 +117,7 @@
                 </x-aura::button.border>
               </x-aura::tippy>
 
-              <x-aura::tippy text="Edit field 3">
+              <x-aura::tippy text="Edit {{ $field['name'] }}" position="top-end">
                 <div wire:click="$dispatch('openSlideOver', { component: 'edit-field', parameters: { fieldSlug: '{{ $field['slug'] }}', slug: '{{ $slug }}', field: @js($this->sendField($field['slug'])) }})">
                 <x-aura::button.border size="xs">
                     <x-aura::icon.edit class="w-4 h-4" />

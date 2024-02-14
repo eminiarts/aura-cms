@@ -87,11 +87,17 @@
             @endif
         </div>
 
-        {{-- @dump('field',$field) --}}
+        {{-- @dump('field', $field, $selected, app('Aura\Base\Resources\Attachment'), get_class($this->model), $field['slug']) --}}
 
-        <livewire:aura::media-uploader :table="false" :field="$field" :selected="$selected" :button="true"
-                                       :model="app('Aura\Base\Resources\Attachment')"
-                                       :for="get_class($this->model)" wire:key="media-uploader-{{ $field['slug'] }}"/>
+        <livewire:aura::media-uploader
+            :table="false"
+            :field="$field"
+            :selected="$selected"
+            :button="true"
+            :model="app('Aura\Base\Resources\Attachment')"
+            :for="get_class($this->model)"
+            wire:key="media-uploader-{{ $field['slug'] }}"
+        />
 
     </x-aura::fields.wrapper>
 

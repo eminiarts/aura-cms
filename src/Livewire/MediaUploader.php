@@ -45,7 +45,9 @@ class MediaUploader extends Component
 
     public function selectedMediaUpdated($data)
     {
-        $this->selected = $data['value'];
+        if ($this->field && ($this->field['slug'] == $data['slug'])) {
+            $this->selected = $data['value'];
+        }
     }
 
     public function updatedMedia()
