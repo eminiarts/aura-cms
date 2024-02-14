@@ -81,14 +81,7 @@
 
 
     <div class="hide-collapsed">
-        enes
         <a
-            tabindex="{{ $route ? '0' : '' }}"
-
-                @if($onclick)
-                    onclick="{!! $onclick !!}"
-                @endif
-
                 @if(Route::has($route))
                     href="{{ route($route) }}" wire:navigate
                 @elseif ($route)
@@ -96,13 +89,19 @@
                 @elseif($href)
                     href="{{ $href }}" wire:navigate
                 @endif
-                tabindex="{{ $route ? '0' : '' }}"
+
+                tabindex="{{ $route ? '5' : '' }}"
+
                 @class([
                     $getBaseClasses(),
                     $getSidebarTypeClasses(),
                     $getCompactClasses(),
                     $attributes->get('class')
                 ])
+
+                @if($onclick)
+                    onclick="{!! $onclick !!}"
+                @endif
         >
             <div class="flex justify-between w-full">
                 <div class="flex justify-between items-center ml-0 font-semibold truncate {{ $compact ? 'space-x-2 text-sm' : 'space-x-3 text-base' }}">{{ $slot }}</div>
