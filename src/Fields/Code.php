@@ -6,6 +6,8 @@ class Code extends Field
 {
     public $component = 'aura::fields.code';
 
+    public $optionGroup = 'JS Fields';
+
     // public $view = 'components.fields.code';
 
     public function get($field, $value)

@@ -8,6 +8,8 @@ class Email extends Field
 
     // public $view = 'components.fields.email';
 
+    public $optionGroup = 'Input Fields';
+
     public function getFields()
     {
         return array_merge(parent::getFields(), [

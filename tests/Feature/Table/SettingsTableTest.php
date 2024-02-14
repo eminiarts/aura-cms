@@ -1,10 +1,12 @@
 <?php
 
-use Aura\Base\Livewire\Table\Table;
-use Aura\Base\Models\User;
-use Aura\Base\Resources\Post;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
+use Aura\Base\Models\User;
+use Aura\Base\Facades\Aura;
+use Aura\Base\Resources\Post;
+use Aura\Base\Livewire\Table\Table;
+use Illuminate\Support\Facades\Blade;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 
 // Before each test, create a Superadmin and login
 beforeEach(function () {
@@ -15,55 +17,351 @@ beforeEach(function () {
 });
 
 test('check default table settings', function () {
-})->todo();
+    $settings = $this->post->indexTableSettings();
+
+    expect($settings)->toBe([]);
+
+    $component = Livewire::test(Table::class, ['model' => $this->post, 'settings' => $settings]);
+
+    expect($component->settings)->toHaveKey('per_page', 10);
+    expect($component->settings)->toHaveKey('columns');
+    expect($component->settings['columns'])->toBeInstanceOf(Illuminate\Support\Collection::class);
+
+    expect($component->settings['columns'])->toHaveCount(10);
+    $columnsArray = $component->settings['columns']->toArray();
+
+    expect(array_keys($columnsArray))->toMatchArray([
+        "title", "text", "slug", "image", "number", "date", "description", "tags", "categories", "user_id",
+    ]);
+
+    expect($component->settings)->toHaveKey('filters', true);
+    expect($component->settings)->toHaveKey('search', true);
+    expect($component->settings)->toHaveKey('sort');
+    expect($component->settings['sort'])->toMatchArray([
+        "column" => "id",
+        "direction" => "desc",
+    ]);
+    expect($component->settings)->toHaveKey('settings', true);
+    expect($component->settings)->toHaveKey('sort_columns', true);
+    expect($component->settings)->toHaveKey('sort_columns_key', false);
+    expect($component->settings)->toHaveKey('sort_columns_user_key', 'columns_sort.Post');
+    expect($component->settings)->toHaveKey('global_filters', true);
+    expect($component->settings)->toHaveKey('title', true);
+    expect($component->settings)->toHaveKey('attach', true);
+    expect($component->settings)->toHaveKey('selectable', true);
+    expect($component->settings)->toHaveKey('default_view', 'list');
+    expect($component->settings)->toHaveKey('header_before', true);
+    expect($component->settings)->toHaveKey('header_after', true);
+    expect($component->settings)->toHaveKey('table_before', true);
+    expect($component->settings)->toHaveKey('table_after', true);
+    expect($component->settings)->toHaveKey('create', true);
+    expect($component->settings)->toHaveKey('actions', true);
+    expect($component->settings)->toHaveKey('bulk_actions', true);
+    expect($component->settings)->toHaveKey('header', true);
+    expect($component->settings)->toHaveKey('views');
+    expect($component->settings['views'])->toMatchArray([
+        "table" => "aura::components.table.table",
+        "list" => "aura::components.table.list",
+        "grid" => "aura::components.table.grid",
+        "filter" => "aura::components.table.filter",
+        "header" => "aura::components.table.header",
+        "row" => "aura::components.table.row",
+        "bulkActions" => "aura::components.table.bulkActions",
+    ]);
+
+
+    $component->assertSeeHtml('wire:model.live.debounce="search"');
+});
 
 test('table settings can be modified', function () {
-})->todo();
+    $settings = [
+        'per_page' => 20,
+        'columns' => ['title', 'slug', 'user_id'],
+        'filters' => false,
+        'search' => false,
+        'global_filters' => false,
+    ];
+
+    $component = Livewire::test(Table::class, ['model' => $this->post, 'settings' => $settings]);
+
+    expect($component->settings)->toHaveKey('per_page', 20);
+
+    expect($component->settings)->toHaveKey('columns');
+
+    expect($component->settings['columns'])->toHaveCount(3);
+
+    expect($component->settings)->toHaveKey('filters', false);
+
+    expect($component->settings)->toHaveKey('search', false);
+
+    expect($component->settings)->toHaveKey('global_filters', false);
+
+    $component->assertDontSeeHtml('wire:model.live.debounce="search"');
+});
 
 test('header settings', function () {
-})->todo();
+    $settings = ['header' => true];
+
+    $component = Livewire::test(Table::class, ['model' => $this->post, 'settings' => $settings]);
+
+    expect($component->settings)->toHaveKey('header', true);
+
+    $component->assertSeeHtml('<h1 class="text-3xl font-semibold">Posts</h1>');
+    $component->assertSeeHtml('href="' . url('/admin/Post/create') . '"');
+
+    // Disable header
+
+    $settings = ['header' => false];
+
+    $component = Livewire::test(Table::class, ['model' => $this->post, 'settings' => $settings]);
+
+    expect($component->settings)->toHaveKey('header', false);
+
+    $component->assertDontSeeHtml('<h1 class="text-3xl font-semibold">Posts</h1>');
+    $component->assertDontSeeHtml('href="' . url('/admin/Post/create') . '"');
+});
 
 test('actions settings', function () {
-})->todo();
+});
 
 test('create settings', function () {
-})->todo();
+    $settings = ['create' => true];
+
+    $component = Livewire::test(Table::class, ['model' => $this->post, 'settings' => $settings]);
+
+    expect($component->settings)->toHaveKey('create', true);
+
+    $component->assertSeeHtml('href="' . url('/admin/Post/create') . '"');
+
+    // Disable create
+
+    $settings = ['create' => false];
+
+    $component = Livewire::test(Table::class, ['model' => $this->post, 'settings' => $settings]);
+
+    expect($component->settings)->toHaveKey('create', false);
+
+    $component->assertDontSeeHtml('href="' . url('/admin/Post/create') . '"');
+
+});
 
 test('filters settings', function () {
-})->todo();
+    $settings = ['filters' => true];
+
+    $component = Livewire::test(Table::class, ['model' => $this->post, 'settings' => $settings]);
+
+    expect($component->settings)->toHaveKey('filters', true);
+
+    $component->assertSeeHtml('<div class="toggleFilters">');
+
+    // Disable filters
+
+    $settings = ['filters' => false];
+
+    $component = Livewire::test(Table::class, ['model' => $this->post, 'settings' => $settings]);
+
+    expect($component->settings)->toHaveKey('filters', false);
+
+
+    $component->assertDontSeeHtml('<div class="toggleFilters">');
+
+});
 
 test('selectable settings', function () {
-})->todo();
+
+    $settings = ['selectable' => true];
+
+    $component = Livewire::test(Table::class, ['model' => $this->post, 'settings' => $settings]);
+
+    expect($component->settings)->toHaveKey('selectable', true);
+
+    $component->assertSeeHtml('x-on:click="selectCurrentPage"');
+
+    // Disable selectable
+
+    $settings = ['selectable' => false];
+
+    $component = Livewire::test(Table::class, ['model' => $this->post, 'settings' => $settings]);
+
+    expect($component->settings)->toHaveKey('selectable', false);
+
+    $component->assertDontSeeHtml('x-on:click="selectCurrentPage"');
+
+});
 
 test('table_before settings', function () {
-})->todo();
+    Aura::registerInjectView('table_before', fn (): string => Blade::render('<h1>Table Before XYZ</h1>'));
+
+    $settings = ['table_before' => true];
+
+    $component = Livewire::test(Table::class, ['model' => $this->post, 'settings' => $settings]);
+
+    expect($component->settings)->toHaveKey('table_before', true);
+
+    $component->assertSeeHtml('<h1>Table Before XYZ</h1>');
+
+    // Disable table_before
+
+    $settings = ['table_before' => false];
+
+    $component = Livewire::test(Table::class, ['model' => $this->post, 'settings' => $settings]);
+
+    expect($component->settings)->toHaveKey('table_before', false);
+
+    $component->assertDontSeeHtml('<h1>Table Before XYZ</h1>');
+});
+
+
+test('custom inject table_before for post', function () {
+    Aura::registerInjectView('table_before_Post', fn (): string => Blade::render('<h1>Table Before Post</h1>'));
+
+    $settings = ['table_before' => true];
+
+    $component = Livewire::test(Table::class, ['model' => $this->post, 'settings' => $settings]);
+
+    expect($component->settings)->toHaveKey('table_before', true);
+
+    $component->assertSeeHtml('<h1>Table Before Post</h1>');
+
+    // Disable table_before
+
+    $settings = ['table_before' => false];
+
+    $component = Livewire::test(Table::class, ['model' => $this->post, 'settings' => $settings]);
+
+    expect($component->settings)->toHaveKey('table_before', false);
+
+    $component->assertDontSeeHtml('<h1>Table Before Post</h1>');
+});
+
+test('custom inject table_after for post', function () {
+    Aura::registerInjectView('table_after_Post', fn (): string => Blade::render('<h1>Table Before Post</h1>'));
+
+    $settings = ['table_after' => true];
+
+    $component = Livewire::test(Table::class, ['model' => $this->post, 'settings' => $settings]);
+
+    expect($component->settings)->toHaveKey('table_after', true);
+
+    $component->assertSeeHtml('<h1>Table Before Post</h1>');
+
+    // Disable table_after
+
+    $settings = ['table_after' => false];
+
+    $component = Livewire::test(Table::class, ['model' => $this->post, 'settings' => $settings]);
+
+    expect($component->settings)->toHaveKey('table_after', false);
+
+    $component->assertDontSeeHtml('<h1>Table Before Post</h1>');
+});
+
+test('table_after settings', function () {
+    Aura::registerInjectView('table_after', fn (): string => Blade::render('<h1>Table After XYZ</h1>'));
+
+    $settings = ['table_after' => true];
+
+    $component = Livewire::test(Table::class, ['model' => $this->post, 'settings' => $settings]);
+
+    expect($component->settings)->toHaveKey('table_after', true);
+
+    $component->assertSeeHtml('<h1>Table After XYZ</h1>');
+
+    // Disable table_after
+
+    $settings = ['table_after' => false];
+
+    $component = Livewire::test(Table::class, ['model' => $this->post, 'settings' => $settings]);
+
+    expect($component->settings)->toHaveKey('table_after', false);
+
+    $component->assertDontSeeHtml('<h1>Table After XYZ</h1>');
+});
 
 test('header_before settings', function () {
-})->todo();
+    Aura::registerInjectView('header_before', fn (): string => Blade::render('<h1>Header before XYZ</h1>'));
+
+    $settings = ['header_before' => true];
+
+    $component = Livewire::test(Table::class, ['model' => $this->post, 'settings' => $settings]);
+
+    expect($component->settings)->toHaveKey('header_before', true);
+
+    $component->assertSeeHtml('<h1>Header before XYZ</h1>');
+
+    // Disable header_before
+
+    $settings = ['header_before' => false];
+
+    $component = Livewire::test(Table::class, ['model' => $this->post, 'settings' => $settings]);
+
+    expect($component->settings)->toHaveKey('header_before', false);
+
+    $component->assertDontSeeHtml('<h1>Header before XYZ</h1>');
+});
+
+test('header_after settings', function () {
+    Aura::registerInjectView('header_after', fn (): string => Blade::render('<h1>Header after XYZ</h1>'));
+
+    $settings = ['header_after' => true];
+
+    $component = Livewire::test(Table::class, ['model' => $this->post, 'settings' => $settings]);
+
+    expect($component->settings)->toHaveKey('header_after', true);
+
+    $component->assertSeeHtml('<h1>Header after XYZ</h1>');
+
+    // Disable header_after
+
+    $settings = ['header_after' => false];
+
+    $component = Livewire::test(Table::class, ['model' => $this->post, 'settings' => $settings]);
+
+    expect($component->settings)->toHaveKey('header_after', false);
+
+    $component->assertDontSeeHtml('<h1>Header after XYZ</h1>');
+});
 
 test('search settings', function () {
-})->todo();
+    $settings = ['search' => true];
+
+    $component = Livewire::test(Table::class, ['model' => $this->post, 'settings' => $settings]);
+
+    expect($component->settings)->toHaveKey('search', true);
+
+    $component->assertSeeHtml('wire:model.live.debounce="search"');
+
+    // Disable search
+
+    $settings = ['search' => false];
+
+    $component = Livewire::test(Table::class, ['model' => $this->post, 'settings' => $settings]);
+
+    expect($component->settings)->toHaveKey('search', false);
+
+    $component->assertDontSeeHtml('wire:model.live.debounce="search"');
+});
 
 test('table columns settings', function () {
-})->todo();
+});
 
 test('global_filters settings', function () {
-})->todo();
+});
 
 test('sort_columns settings', function () {
-})->todo();
+});
 
 test('views settings', function () {
-})->todo();
+});
 
 test('default_view settings', function () {
-})->todo();
+});
 
 test('sort_columns_key settings', function () {
-})->todo();
+});
 
 test('title settings', function () {
-})->todo();
+});
 
 test('attach settings', function () {
-})->todo();
+});

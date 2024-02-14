@@ -20,6 +20,8 @@ class Field implements Wireable
 
     public bool $group = false;
 
+    public $optionGroup = 'Fields';
+
     public bool $taxonomy = false;
 
     public string $type = 'input';
@@ -101,52 +103,7 @@ class Field implements Wireable
                 'live' => true,
                 'validation' => 'required',
                 'slug' => 'type',
-                'options' => [
-                    'option_group_1' => 'Input Fields',
-                    'Aura\\Base\\Fields\\Text' => 'Text',
-                    'Aura\\Base\\Fields\\Textarea' => 'Textarea',
-                    'Aura\\Base\\Fields\\Number' => 'Number',
-                    'Aura\\Base\\Fields\\Email' => 'Email',
-                    'Aura\\Base\\Fields\\Phone' => 'Phone',
-                    'Aura\\Base\\Fields\\Hidden' => 'Hidden',
-
-                    'option_group_2' => 'Media Fields',
-                    'Aura\\Base\\Fields\\Image' => 'Image',
-                    'Aura\\Base\\Fields\\File' => 'File',
-
-                    'option_group_3' => 'Choice Fields',
-                    'Aura\\Base\\Fields\\Select' => 'Select',
-                    'Aura\\Base\\Fields\\Radio' => 'Radio',
-                    'Aura\\Base\\Fields\\Checkbox' => 'Checkbox',
-                    'Aura\\Base\\Fields\\Boolean' => 'Boolean',
-
-                    'option_group_4' => 'JS Fields',
-                    'Aura\\Base\\Fields\\Wysiwyg' => 'Wysiwyg',
-                    'Aura\\Base\\Fields\\Code' => 'Code',
-                    'Aura\\Base\\Fields\\Color' => 'Color',
-
-                    'Aura\\Base\\Fields\\Date' => 'Date',
-                    'Aura\\Base\\Fields\\Time' => 'Time',
-                    'Aura\\Base\\Fields\\Datetime' => 'Datetime',
-
-                    'option_group_5' => 'Layout Fields',
-                    'Aura\\Base\\Fields\\Heading' => 'Heading',
-                    'Aura\\Base\\Fields\\HorizontalLine' => 'Horizontal line',
-
-                    'option_group_6' => 'Structure Fields',
-                    'Aura\\Base\\Fields\\Repeater' => 'Repeater',
-                    'Aura\\Base\\Fields\\Tab' => 'Tab',
-                    'Aura\\Base\\Fields\\Panel' => 'Panel',
-                    'Aura\\Base\\Fields\\Group' => 'Group',
-
-                    'option_group_7' => 'Relationship Fields',
-                    'Aura\\Base\\Fields\\BelongsTo' => 'BelongsTo',
-                    'Aura\\Base\\Fields\\HasMany' => 'HasMany',
-                    'Aura\\Base\\Fields\\AdvancedSelect' => 'AdvancedSelect',
-
-                    'option_group_8' => 'Special Fields',
-                    'Aura\\Base\\Fields\\Permissions' => 'Permissions',
-                ],
+                'options' => app("aura")::getFieldsWithGroups(),
             ],
             [
                 'name' => 'instructions',

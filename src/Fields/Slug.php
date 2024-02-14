@@ -6,6 +6,8 @@ class Slug extends Field
 {
     public $component = 'aura::fields.slug';
 
+    public $optionGroup = 'Input Fields';
+
     public $view = 'aura::fields.view-value';
 
     public function getFields()

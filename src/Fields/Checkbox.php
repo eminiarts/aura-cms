@@ -6,6 +6,8 @@ class Checkbox extends Field
 {
     public $component = 'aura::fields.checkbox';
 
+    public $optionGroup = 'Choice Fields';
+
     // public $view = 'components.fields.checkbox';
 
     public function get($field, $value)

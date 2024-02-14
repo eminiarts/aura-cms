@@ -11,6 +11,8 @@ class HasMany extends Field
 
     public $view = 'aura::fields.has-many-view';
 
+    public $optionGroup = 'Relationship Fields';
+
     public bool $group = false;
 
     public string $type = 'relation';

@@ -1,4 +1,4 @@
-<div>
+<div class="toggleFilters">
     <x-aura::button.border @click="toggleFilters()">
     <x-slot:icon>
     <x-aura::icon icon="filter" />
