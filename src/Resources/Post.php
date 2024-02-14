@@ -15,6 +15,13 @@ class Post extends Resource
 {
     use Exportable;
 
+    public function indexTableSettings()
+    {
+        return [
+            'table_before' => true,
+        ];
+    }
+
     public array $actions = [
         'delete' => [
             'label' => 'Delete',

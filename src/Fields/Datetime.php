@@ -8,6 +8,8 @@ class Datetime extends Field
 
     // public $view = 'components.fields.datetime';
 
+    public $optionGroup = 'Input Fields';
+
     public function getFields()
     {
         return array_merge(parent::getFields(), []);

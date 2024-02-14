@@ -6,6 +6,8 @@ class File extends Field
 {
     public $component = 'aura::fields.file';
 
+    public $optionGroup = 'Media Fields';
+
     public $view = 'aura::fields.view-value';
 
     public function get($field, $value)

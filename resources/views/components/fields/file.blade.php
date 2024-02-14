@@ -88,9 +88,9 @@
 
         @php
             unset($field['field']);
+            
+            ray($field, $selected);
         @endphp
-
-        @ray($field,$selected)
 
         <livewire:aura::media-uploader :table="false" :field="$field" :selected="$selected" :button="true"
                                        namespace="Aura\Base\Resources\Attachment"

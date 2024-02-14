@@ -4,6 +4,8 @@ namespace Aura\Base\Fields;
 
 class Boolean extends Field
 {
+    public $optionGroup = 'Choice Fields';
+
     public $component = 'aura::fields.boolean';
 
     public $view = 'aura::fields.view-value';

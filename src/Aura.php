@@ -155,6 +155,22 @@ class Aura
         return array_unique($this->fields);
     }
 
+    public function getFieldsWithGroups(): array
+    {
+        return collect($this->fields)
+            ->groupBy(function ($field) {
+                $fieldClass = app($field);
+                return property_exists($fieldClass, 'optionGroup') && !empty($fieldClass->optionGroup) ? $fieldClass->optionGroup : 'Fields';
+            })
+            ->mapWithKeys(function ($fields, $groupName) {
+                return [$groupName => collect($fields)->mapWithKeys(function ($field) {
+                    return [$field => class_basename($field)];
+                })->sortKeys()->toArray()];
+            })
+            ->sortKeys()
+            ->toArray();
+    }
+
     public function getGlobalOptions()
     {
         $valueString =

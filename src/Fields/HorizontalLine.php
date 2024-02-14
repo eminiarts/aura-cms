@@ -6,6 +6,8 @@ class HorizontalLine extends Field
 {
     public $component = 'aura::fields.hr';
 
+    public $optionGroup = 'Layout Fields';
+
     // public $view = 'components.fields.hr';
 
     public function getFields()

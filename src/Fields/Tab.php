@@ -8,6 +8,8 @@ class Tab extends Field
 
     public bool $group = true;
 
+    public $optionGroup = 'Structure Fields';
+
     public bool $sameLevelGrouping = true;
 
     public string $type = 'tab';

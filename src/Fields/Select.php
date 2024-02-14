@@ -8,6 +8,8 @@ class Select extends Field
 
     public $view = 'aura::fields.view-value';
 
+    public $optionGroup = 'Choice Fields';
+
     public function getFields()
     {
         return array_merge(parent::getFields(), [
