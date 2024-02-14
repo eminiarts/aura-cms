@@ -251,12 +251,13 @@ class AuraServiceProvider extends PackageServiceProvider
         });
 
         $this->app->scoped('aura', function (): Aura {
-            return new Aura();
+            return app(Aura::class);
         });
 
         // dd(config('aura.resources.user'));
 
-        Aura::registerResources([
+        // dd(app('aura'));
+        app('aura')::registerResources([
             config('aura.resources.attachment'),
             config('aura.resources.option'),
             config('aura.resources.post'),
@@ -269,7 +270,7 @@ class AuraServiceProvider extends PackageServiceProvider
         // dd(config('aura.resources.post'));
 
         if (config('aura.teams')) {
-            Aura::registerResources([
+            app('aura')::registerResources([
                 config('aura.resources.team'),
                 config('aura.resources.team-invitation'),
             ]);
@@ -280,12 +281,12 @@ class AuraServiceProvider extends PackageServiceProvider
             return 'Aura\Base\Fields\\'.str($field->getFilename())->replace('.php', '')->title;
         })->toArray();
 
-        Aura::registerFields($fields);
+        app('aura')::registerFields($fields);
 
         // Register App Resources
-        Aura::registerResources(Aura::getAppResources());
-        Aura::registerWidgets(Aura::getAppWidgets());
-        Aura::registerFields(Aura::getAppFields());
+        app('aura')::registerResources(app('aura')::getAppResources());
+        app('aura')::registerWidgets(app('aura')::getAppWidgets());
+        app('aura')::registerFields(app('aura')::getAppFields());
     }
 
     public function registeringPackage()
