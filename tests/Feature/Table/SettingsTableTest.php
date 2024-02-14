@@ -343,6 +343,32 @@ test('search settings', function () {
 });
 
 test('table columns settings', function () {
+
+    $settings = ['columns' => ['title' => 'Title', 'slug' => 'Slug', 'user_id' => 'User']];
+
+    $component = Livewire::test(Table::class, ['model' => $this->post, 'settings' => $settings]);
+
+    expect($component->settings)->toHaveKey('columns');
+
+    expect($component->settings['columns'])->toHaveCount(3);
+
+    expect($component->settings['columns'])->toMatchArray([
+        "title" => "Title",
+        "slug" => "Slug",
+        "user_id" => "User",
+    ]);
+
+    $component->assertSeeHtml('wire:click="sortBy(\'title\')"');
+    $component->assertSeeHtml('wire:click="sortBy(\'slug\')"');
+    $component->assertSeeHtml('wire:click="sortBy(\'user_id\')"');
+
+
+    $settings = ['columns' => []];
+
+    $component = Livewire::test(Table::class, ['model' => $this->post, 'settings' => $settings]);
+
+    $component->assertDontSeeHtml('wire:click="sortBy(\'title\')"');
+
 });
 
 test('global_filters settings', function () {

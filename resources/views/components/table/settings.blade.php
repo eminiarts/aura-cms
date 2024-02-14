@@ -18,8 +18,8 @@
             <div class="w-60">
                 <div class="p-4 sortable-wrapper" drag-root="reorder" role="none">
 
-                    @if($this->modelColumns)
-                    @foreach($this->modelColumns as $key => $label)
+                    @if($this->headers)
+                    @foreach($this->headers as $key => $label)
                     <label class="flex items-center py-2 cursor-pointer space-1-2 hover:bg-gray-100 dark:hover:bg-gray-900 sortable"
                         for="colum_{{$key}}" id="{{ $key }}">
 
