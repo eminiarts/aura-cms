@@ -1,8 +1,6 @@
 <x-aura::fields.wrapper :field="$field">
   <div class="relative">
-
     <select
-
       @if($disabled = $field['field']->isDisabled($this->form, $field))
       disabled
       @endif
@@ -20,8 +18,6 @@
     <option  value="">Select {{ optional($field)['name'] }}...</option>
     @endif
 
-
-
       @php
         $optionGroup = false;
         $options = optional($field)['options'];
@@ -31,9 +27,8 @@
         }
       @endphp
 
-      {{-- @dd($field['options']) --}}
       @foreach($options as $key => $option)
-        {{-- <!-- if key starts with "option_group" --> --}}
+        {{-- if key starts with "option_group" --}}
         @if (Str::startsWith($key, 'option_group'))
           @if ($optionGroup)
             </optgroup>
@@ -53,7 +48,7 @@
             @endif
         @endif
 
-        {{-- <!-- If last option in loop --> --}}
+        {{-- If last option in loop --}}
         @if ($loop->last && $optionGroup)
           </optgroup>
         @endif

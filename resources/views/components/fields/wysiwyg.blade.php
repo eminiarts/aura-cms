@@ -1,30 +1,23 @@
 <x-aura::fields.wrapper :field="$field">
-    <div
-        x-data="{
-            init() {
-                let quill = new Quill(this.$refs.quill, { theme: 'snow' })
-
-                quill.on('text-change', function () {
-                    $dispatch('input', quill.root.innerHTML);
-                });
-            },
-        }"
-       x-ref="quill"
-       wire:ignore
-       wire:model="form.fields.{{ optional($field)['slug'] }}"
-    >
-        {!! $this->form['fields'][$field['slug']] !!}
+    <div x-data="{
+        init() {
+            let quill = new Quill(this.$refs.quill, { theme: 'snow' })
+    
+            quill.on('text-change', function() {
+                $dispatch('input', quill.root.innerHTML);
+            });
+        },
+    }" x-ref="quill" wire:ignore wire:model="form.fields.{{ optional($field)['slug'] }}">
+        {!! $this->form['fields'][$field['slug']] ?? '' !!}
     </div>
 
 
-    
-
-        @assets
+    @assets
         @push('scripts')
             <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
             <script src="https://cdn.quilljs.com/1.3.6/quill.js"></script>
         @endpush
-        @endassets
+    @endassets
 
 </x-aura::fields.wrapper>
 
