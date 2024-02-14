@@ -113,8 +113,6 @@ test('header settings', function () {
     $component->assertDontSeeHtml('href="' . url('/admin/Post/create') . '"');
 });
 
-test('actions settings', function () {
-});
 
 test('create settings', function () {
     $settings = ['create' => true];
@@ -398,8 +396,6 @@ test('table columns settings', function () {
 
 // });
 
-test('sort_columns settings', function () {
-});
 
 test('views settings', function () {
     $settings = [
@@ -529,10 +525,77 @@ test('default_view settings', function () {
 });
 
 test('sort_columns_key settings', function () {
+
+    $settings = ['sort_columns_key' => true];
+
+    $component = Livewire::test(Table::class, ['model' => $this->post, 'settings' => $settings]);
+
+    expect($component->settings)->toHaveKey('sort_columns_key', true);
+
+    $component->assertSeeHtml('wire:model.live.debounce="sort_columns_key"');
+
+    // Disable sort_columns_key
+
+    $settings = ['sort_columns_key' => false];
+
+    $component = Livewire::test(Table::class, ['model' => $this->post, 'settings' => $settings]);
+
+    expect($component->settings)->toHaveKey('sort_columns_key', false);
+
+    $component->assertDontSeeHtml('wire:model.live.debounce="sort_columns_key"');
+
 });
 
 test('title settings', function () {
+
+
+    $settings = ['title' => true];
+
+    $component = Livewire::test(Table::class, ['model' => $this->post, 'settings' => $settings]);
+
+    expect($component->settings)->toHaveKey('title', true);
+
+    $component->assertSeeHtml('wire:model.live.debounce="title"');
+
+    // Disable title
+
+    $settings = ['title' => false];
+
+    $component = Livewire::test(Table::class, ['model' => $this->post, 'settings' => $settings]);
+
+    expect($component->settings)->toHaveKey('title', false);
+
+    $component->assertDontSeeHtml('wire:model.live.debounce="title"');
+
+
 });
 
 test('attach settings', function () {
+
+    $settings = ['attach' => true];
+
+    $component = Livewire::test(Table::class, ['model' => $this->post, 'settings' => $settings]);
+
+    expect($component->settings)->toHaveKey('attach', true);
+
+    $component->assertSeeHtml('wire:model.live.debounce="attach"');
+
+    // Disable attach
+
+    $settings = ['attach' => false];
+
+    $component = Livewire::test(Table::class, ['model' => $this->post, 'settings' => $settings]);
+
+    expect($component->settings)->toHaveKey('attach', false);
+
+    $component->assertDontSeeHtml('wire:model.live.debounce="attach"');
+
+});
+
+
+test('actions settings', function () {
+});
+
+
+test('sort_columns settings', function () {
 });
