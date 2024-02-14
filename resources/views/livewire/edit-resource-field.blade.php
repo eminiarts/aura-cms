@@ -1,10 +1,10 @@
 <x-aura::slide-over key="edit-field" wire:key="editPostTypeField">
 
   <div x-data="{
-    resource: @entangle('resource').live,
+    form: @entangle('form').live,
       init () {
         // alpine watch post
-        this.$watch('resource', (value) => {
+        this.$watch('form', (value) => {
           const select = document.getElementById('post_fields_type');
           select.addEventListener('change', (event) => {
             @this.updateType();
@@ -16,11 +16,11 @@
 
     @if($field)
       <div class="flex">
-        <div class="flex-1">
+        <div class="flex-1 truncate">
           <h2 class="text-3xl font-bold">{{ __('Edit Field') }}</h2>
-          <h1 class="mb-4 text-3xl font-semibold">{{ $field['label'] ?? ''}} ({{ $field['slug'] }})</h1>
+          <h1 class="mb-4 text-3xl font-semibold truncate">{{ $field['label'] ?? ''}} ({{ $field['slug'] }})</h1>
         </div>
-        <div class="mt-10 space-x-2">
+        <div class="flex-shrink-0 mt-10 space-x-2">
           <x-aura::button.danger wire:click="deleteField('{{ $field['slug'] }}')">
               <x-slot:icon>
                   <x-aura::icon.edit class="w-5 h-5" />

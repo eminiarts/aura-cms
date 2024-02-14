@@ -50,9 +50,9 @@
                 // get the element of id resource-field-based_on
                 const basedOn = document.getElementById('resource-field-{{ optional($field)['based_on'] }}')
 
-                {{-- if (this.value != this.slugify(basedOn.value) && basedOn.value != '') {
+                if (this.value != this.slugify(basedOn.value) && basedOn.value != '') {
                     this.custom = true
-                } --}}
+                }
 
                 console.log(this.custom);
 
@@ -91,9 +91,9 @@
             <button x-ref="toggle" @click="toggleCustom()" type="button" role="switch" :aria-checked="custom"
                 :aria-labelledby="$id('boolean')"
                 :class="custom ? 'bg-primary-600 border border-primary-900/50 dark:border-gray-900' : 'bg-gray-300 shadow-inner border border-gray-500/30'"
-                class="relative inline-flex px-0 py-1 rounded-full w-14">
+                class="inline-flex relative px-0 py-1 w-14 rounded-full">
                 <span :class="custom ? 'bg-white translate-x-6' : 'bg-white translate-x-1'"
-                    class="w-6 h-6 transition rounded-full" aria-hidden="true"></span>
+                    class="w-6 h-6 rounded-full transition" aria-hidden="true"></span>
             </button>
         </div>
         @endif

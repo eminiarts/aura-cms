@@ -1,4 +1,4 @@
-@props(['align' => 'right', 'width' => 'w-48', 'contentClasses' => 'py-1 bg-white dark:bg-gray-800 dark:text-gray-200', 'closeOnSelect' => true])
+@props(['align' => 'right', 'width' => 'w-48', 'contentClasses' => 'py-1 bg-white dark:bg-gray-900 dark:text-gray-200', 'closeOnSelect' => true])
 
 @php
 switch ($align) {
@@ -44,7 +44,7 @@ switch ($width) {
             @click="open = false"
             @endif
             >
-        <div class="rounded-md ring-1 ring-black ring-opacity-5 {{ $contentClasses }}">
+        <div class="rounded-lg ring-1 ring-black dark:ring-white ring-opacity-5 dark:ring-opacity-10 {{ $contentClasses }}">
             {{ $content }}
         </div>
     </div>

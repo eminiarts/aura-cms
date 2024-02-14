@@ -20,7 +20,7 @@ class EditResourceField extends Component
 
     public $open = false;
 
-    public $resource;
+    public $form;
 
     public $reservedWords = ['id', 'type'];
 
@@ -138,7 +138,6 @@ class EditResourceField extends Component
     {
         // if $this->field is undefined, return
         if (! isset($this->field['type'])) {
-
             return;
         }
         $fields = app($this->field['type'])->inputFields()->pluck('slug');
@@ -155,6 +154,8 @@ class EditResourceField extends Component
     {
         // Validate
         // $this->validate();
+
+        ray('updateType', $this->fieldSlug, $this->form['fields']);
 
         // emit event to parent with slug and value
         $this->dispatch('saveField', ['slug' => $this->fieldSlug, 'value' => $this->form['fields']]);
