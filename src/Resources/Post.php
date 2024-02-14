@@ -18,7 +18,7 @@ class Post extends Resource
     public function indexTableSettings()
     {
         return [
-            'table_before' => true,
+            'columns' => ['title' => 'Title', 'slug' => 'Slug', 'user_id' => 'User']
         ];
     }
 
