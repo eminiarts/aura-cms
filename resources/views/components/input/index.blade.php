@@ -17,7 +17,7 @@
           {{ $prefix }}
       </span>
     @endif
-    <input {{ $attributes->merge(['class' => $class . ' shadow-xs border border-gray-500/30 appearance-none px-3 py-2 focus:outline-none w-full ring-gray-900/10 focus:ring focus:border-primary-300 focus:ring-primary-300  focus:ring-opacity-50 dark:focus:ring-primary-500 dark:focus:ring-opacity-50 disabled:opacity-75 disabled:bg-gray-100 disabled:dark:bg-gray-800 rounded-none bg-white dark:bg-gray-900 dark:border-gray-700 z-[1] ' . ($prefix ? '' : 'rounded-l-lg ') . ' ' . ($suffix ? '' : 'rounded-r-lg')]) }}/>
+    <input {{ $attributes->merge(['class' => $class . ' shadow-xs border border-gray-500/30 appearance-none px-3 py-2 focus:outline-none w-full ring-gray-900/10 focus:ring focus:border-primary-300 focus:ring-primary-300  focus:ring-opacity-50 dark:focus:ring-primary-500 dark:focus:ring-opacity-50 disabled:opacity-75 disabled:bg-gray-100 disabled:dark:bg-gray-800 rounded-none bg-white dark:bg-gray-800/50 dark:border-gray-700 z-[1] ' . ($prefix ? '' : 'rounded-l-lg ') . ' ' . ($suffix ? '' : 'rounded-r-lg')]) }}/>
 
     @if ($suffix)
       <span class="whitespace-nowrap z-[0] inline-flex items-center px-3 text-gray-500 border border-l-0 border-gray-500/30 rounded-r-lg bg-gray-50 sm:text-sm dark:border-gray-700 dark:bg-gray-900">

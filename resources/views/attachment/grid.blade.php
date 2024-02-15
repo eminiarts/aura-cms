@@ -40,7 +40,7 @@
 
         <div class="relative select-none" wire:key="grid_{{ $row->id }}">
             <label for="checkbox_{{ $row->id }}" class="cursor-pointer" x-on:click="toggleRow($event, {{ $row->id }})">
-            <div class="block overflow-hidden w-full bg-gray-50 rounded-lg group aspect-w-10 aspect-h-7 focus-within:ring-2 focus-within:ring-primary-500 focus-within:ring-offset-2 focus-within:ring-offset-gray-100">
+            <div class="block overflow-hidden w-full bg-gray-50 rounded-lg dark:bg-gray-800 group aspect-w-10 aspect-h-7 focus-within:ring-2 focus-within:ring-primary-500 focus-within:ring-offset-2 focus-within:ring-offset-gray-100">
                 @include('aura::attachment.thumbnail')
             </div>
             </label>

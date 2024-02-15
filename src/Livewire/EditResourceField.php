@@ -20,8 +20,6 @@ class EditResourceField extends Component
 
     public $open = false;
 
-    public $form;
-
     public $reservedWords = ['id', 'type'];
 
     // listener for newFields
