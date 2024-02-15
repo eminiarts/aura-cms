@@ -4,6 +4,7 @@ use Livewire\Livewire;
 use Aura\Base\Models\User;
 use Aura\Base\Facades\Aura;
 use Aura\Base\Resources\Post;
+use Illuminate\View\ViewException;
 use Aura\Base\Livewire\Table\Table;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -59,15 +60,6 @@ test('check default table settings', function () {
     expect($component->settings)->toHaveKey('bulk_actions', true);
     expect($component->settings)->toHaveKey('header', true);
     expect($component->settings)->toHaveKey('views');
-    expect($component->settings['views'])->toMatchArray([
-        "table" => "aura::components.table.table",
-        "list" => "aura::components.table.list",
-        "grid" => "aura::components.table.grid",
-        "filter" => "aura::components.table.filter",
-        "header" => "aura::components.table.header",
-        "row" => "aura::components.table.row",
-        "bulkActions" => "aura::components.table.bulkActions",
-    ]);
 
 
     $component->assertSeeHtml('wire:model.live.debounce="search"');
@@ -121,8 +113,6 @@ test('header settings', function () {
     $component->assertDontSeeHtml('href="' . url('/admin/Post/create') . '"');
 });
 
-test('actions settings', function () {
-});
 
 test('create settings', function () {
     $settings = ['create' => true];
@@ -343,25 +333,269 @@ test('search settings', function () {
 });
 
 test('table columns settings', function () {
+
+    $settings = ['columns' => ['title' => 'Title', 'slug' => 'Slug', 'user_id' => 'User']];
+
+    $component = Livewire::test(Table::class, ['model' => $this->post, 'settings' => $settings]);
+
+    expect($component->settings)->toHaveKey('columns');
+
+    expect($component->settings['columns'])->toHaveCount(3);
+
+    expect($component->settings['columns'])->toMatchArray([
+        "title" => "Title",
+        "slug" => "Slug",
+        "user_id" => "User",
+    ]);
+
+
+    expect($component->headers)->toHaveCount(3);
+
+    $component->assertSeeHtml('wire:click="sortBy(\'title\')"');
+    $component->assertSeeHtml('wire:click="sortBy(\'slug\')"');
+    $component->assertSeeHtml('wire:click="sortBy(\'user_id\')"');
+
+    $component->assertSeeHtml('for="column_title"');
+    $component->assertSeeHtml('for="column_slug"');
+    $component->assertSeeHtml('for="column_user_id"');
+
+    $settings = ['columns' => []];
+
+    $component = Livewire::test(Table::class, ['model' => $this->post, 'settings' => $settings]);
+
+    expect($component->headers)->toHaveCount(0);
+
+    $component->assertDontSeeHtml('wire:click="sortBy(\'title\')"');
+    $component->assertDontSeeHtml('wire:click="sortBy(\'slug\')"');
+    $component->assertDontSeeHtml('wire:click="sortBy(\'user_id\')"');
+
+    $component->assertDontSeeHtml('for="column_title"');
+    $component->assertDontSeeHtml('for="column_slug"');
+    $component->assertDontSeeHtml('for="column_user_id"');
 });
 
-test('global_filters settings', function () {
-});
+// test('global_filters settings', function () {
 
-test('sort_columns settings', function () {
-});
+//     $settings = ['global_filters' => true];
+
+//     $component = Livewire::test(Table::class, ['model' => $this->post, 'settings' => $settings]);
+
+//     expect($component->settings)->toHaveKey('global_filters', true);
+
+//     $component->assertSeeHtml('wire:model.live.debounce="global_filters"');
+
+//     // Disable global_filters
+
+//     $settings = ['global_filters' => false];
+
+//     $component = Livewire::test(Table::class, ['model' => $this->post, 'settings' => $settings]);
+
+//     expect($component->settings)->toHaveKey('global_filters', false);
+
+//     $component->assertDontSeeHtml('wire:model.live.debounce="global_filters"');
+
+// });
+
 
 test('views settings', function () {
-});
+    $settings = [
+        'views' => [
+                'table' => 'custom.table.table',
+                'list' => 'custom.table.list',
+                'grid' => 'custom.table.grid',
+                'filter' => 'custom.table.filter',
+                'header' => 'custom.table.header',
+                'row' => 'custom.table.row',
+                'bulkActions' => 'custom.table.bulkActions',
+            ]
+        ];
+
+    $component = Livewire::test(Table::class, ['model' => $this->post, 'settings' => $settings]);
+
+    expect($component->settings)->toHaveKey('views');
+
+    expect($component->settings['views'])->toMatchArray([
+        'table' => 'custom.table.table',
+        'list' => 'custom.table.list',
+        'grid' => 'custom.table.grid',
+        'filter' => 'custom.table.filter',
+        'header' => 'custom.table.header',
+        'row' => 'custom.table.row',
+        'bulkActions' => 'custom.table.bulkActions',
+    ]);
+})->throws(ViewException::class);
+
+
+test('views settings - table', function () {
+    $settings = [
+        'views' => [
+                'table' => 'custom.table.table',
+            ]
+        ];
+
+    $component = Livewire::test(Table::class, ['model' => $this->post, 'settings' => $settings]);
+
+})->throws(ViewException::class);
+
+
+test('views settings - list', function () {
+    $settings = [
+        'views' => [
+                'list' => 'custom.table.list',
+            ]
+        ];
+
+    $component = Livewire::test(Table::class, ['model' => $this->post, 'settings' => $settings]);
+
+})->throws(ViewException::class);
+
+test('views settings - grid', function () {
+    $settings = [
+        'views' => [
+                'grid' => 'custom.table.grid',
+            ]
+        ];
+
+    $component = Livewire::test(Table::class, ['model' => $this->post, 'settings' => $settings]);
+
+})->throws(ViewException::class);
+
+
+test('views settings - filter', function () {
+    $settings = [
+        'views' => [
+                'filter' => 'custom.table.filter',
+            ]
+        ];
+
+    $component = Livewire::test(Table::class, ['model' => $this->post, 'settings' => $settings]);
+
+})->throws(ViewException::class);
+
+
+test('views settings - header', function () {
+    $settings = [
+        'views' => [
+                'header' => 'custom.table.header',
+            ]
+        ];
+
+    $component = Livewire::test(Table::class, ['model' => $this->post, 'settings' => $settings]);
+
+})->throws(ViewException::class);
+
+
+test('views settings - row', function () {
+    $settings = [
+        'views' => [
+                'row' => 'custom.table.row',
+            ]
+        ];
+
+    $component = Livewire::test(Table::class, ['model' => $this->post, 'settings' => $settings]);
+
+})->throws(ViewException::class);
+
+
+test('views settings - bulkAction', function () {
+    $settings = [
+        'views' => [
+                'bulkAction' => 'custom.table.bulkAction',
+            ]
+        ];
+
+    $component = Livewire::test(Table::class, ['model' => $this->post, 'settings' => $settings]);
+
+})->throws(ViewException::class);
+
+
 
 test('default_view settings', function () {
+    $component = Livewire::test(Table::class, ['model' => $this->post, 'settings' => []]);
+
+    expect($component->settings['views'])->toMatchArray([
+           "table" => "aura::components.table.table",
+           "list" => "aura::components.table.list",
+           "grid" => "aura::components.table.grid",
+           "filter" => "aura::components.table.filter",
+           "header" => "aura::components.table.header",
+           "row" => "aura::components.table.row",
+           "bulkActions" => "aura::components.table.bulkActions",
+       ]);
 });
 
 test('sort_columns_key settings', function () {
+
+    $settings = ['sort_columns_key' => true];
+
+    $component = Livewire::test(Table::class, ['model' => $this->post, 'settings' => $settings]);
+
+    expect($component->settings)->toHaveKey('sort_columns_key', true);
+
+    $component->assertSeeHtml('wire:model.live.debounce="sort_columns_key"');
+
+    // Disable sort_columns_key
+
+    $settings = ['sort_columns_key' => false];
+
+    $component = Livewire::test(Table::class, ['model' => $this->post, 'settings' => $settings]);
+
+    expect($component->settings)->toHaveKey('sort_columns_key', false);
+
+    $component->assertDontSeeHtml('wire:model.live.debounce="sort_columns_key"');
+
 });
 
 test('title settings', function () {
+
+
+    $settings = ['title' => true];
+
+    $component = Livewire::test(Table::class, ['model' => $this->post, 'settings' => $settings]);
+
+    expect($component->settings)->toHaveKey('title', true);
+
+    $component->assertSeeHtml('wire:model.live.debounce="title"');
+
+    // Disable title
+
+    $settings = ['title' => false];
+
+    $component = Livewire::test(Table::class, ['model' => $this->post, 'settings' => $settings]);
+
+    expect($component->settings)->toHaveKey('title', false);
+
+    $component->assertDontSeeHtml('wire:model.live.debounce="title"');
+
+
 });
 
 test('attach settings', function () {
+
+    $settings = ['attach' => true];
+
+    $component = Livewire::test(Table::class, ['model' => $this->post, 'settings' => $settings]);
+
+    expect($component->settings)->toHaveKey('attach', true);
+
+    $component->assertSeeHtml('wire:model.live.debounce="attach"');
+
+    // Disable attach
+
+    $settings = ['attach' => false];
+
+    $component = Livewire::test(Table::class, ['model' => $this->post, 'settings' => $settings]);
+
+    expect($component->settings)->toHaveKey('attach', false);
+
+    $component->assertDontSeeHtml('wire:model.live.debounce="attach"');
+
+});
+
+
+test('actions settings', function () {
+});
+
+
+test('sort_columns settings', function () {
 });
