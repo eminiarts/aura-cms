@@ -31,7 +31,7 @@
     }
 
     // Define simple functions to return class strings
-    $getBaseClasses = fn() => 'group focus:bg-red-500 cursor-pointer flex items-center rounded-lg transition ease-in-out duration-150';
+    $getBaseClasses = fn() => 'group cursor-pointer flex items-center rounded-lg transition ease-in-out duration-150';
     $getCompactClasses = fn() => $compact ? 'sidebar-item-compact px-2 h-8' : 'sidebar-item px-3 h-10';
 
     $getActiveClasses = fn() => $isActive ? 'is-active bg-sidebar-bg-hover hover:bg-sidebar-bg-hover text-white' : 'bg-transparent dark:hover:bg-gray-900 hover:bg-sidebar-bg-hover';
