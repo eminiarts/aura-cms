@@ -529,7 +529,11 @@ class User extends UserModel
     public function roles()
     {
         $roles = $this->belongsToMany(Role::class, 'user_meta', 'user_id', 'value')
-            ->wherePivot('key', 'roles')->withPivot('team_id');
+            ->wherePivot('key', 'roles');
+
+        if (config('aura.teams')) {
+            $roles = $roles->withPivot('team_id');
+        }
 
         return config('aura.teams') ? $roles->wherePivot('team_id', $this->current_team_id) : $roles;
     }
