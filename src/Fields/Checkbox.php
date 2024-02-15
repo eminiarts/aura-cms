@@ -81,4 +81,15 @@ class Checkbox extends Field
 
         return $value;
     }
+
+    public function options($model, $field)
+    {
+        // if get"$field->slug"Options is defined on the model, use that
+        if (method_exists($model, 'get'.ucfirst($field['slug']).'Options')) {
+            return $model->{'get'.ucfirst($field['slug']).'Options'}();
+        }
+
+        // return the options defined in the field
+        return $field['options'] ?? [];
+    }
 }
