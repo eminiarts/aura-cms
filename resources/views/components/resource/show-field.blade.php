@@ -11,9 +11,11 @@
   @if (optional($field)['field']->group)
     <div class="aura-card">
       <div class="flex justify-between mb-4 flex-start">
+
         <div class="mt-1 mr-2 draggable-handle">
           <svg class="w-5 h-5 text-gray-500" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M5 9L2 12M2 12L5 15M2 12H22M9 5L12 2M12 2L15 5M12 2V22M15 19L12 22M12 22L9 19M19 9L22 12M22 12L19 15" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
         </div>
+
         <div class="flex-1">
           <span class="text-lg font-semibold">{{ $field['name'] }}</span>
           @php
@@ -22,8 +24,8 @@
             // get last item of array as string
             $field['type'] = end($field['type']);
           @endphp
-          <span class="inline-flex items-center px-2.5 py-0.5 text-xs font-medium rounded-full bg-primary-100 text-primary-800">
-            <svg class="mr-1.5 -ml-0.5 w-2 h-2 text-primary-400" fill="currentColor" viewBox="0 0 8 8">
+          <span class="inline-flex items-center px-2.5 py-0.5 ml-1 text-xs font-medium rounded-full bg-primary-100 dark:bg-primary-400/10 text-primary-800 dark:text-primary-300 dark:ring-1 dark:ring-primary-400/20">
+            <svg class="mr-1.5 -ml-0.5 w-2 h-2 text-primary-500 dark:text-primary-400" fill="currentColor" viewBox="0 0 8 8">
             <circle cx="4" cy="4" r="3" />
             </svg>
             {{ $field['type'] }}
@@ -77,7 +79,7 @@
 
 
       @else
-        <div class="flex relative flex-wrap justify-center items-center mb-4 h-12 bg-gray-50 rounded-md border border-gray-100 draggable-container">
+        <div class="flex relative flex-wrap justify-center items-center mb-4 h-12 bg-gray-50 rounded-md border border-gray-100 dark:border-gray-800 draggable-container dark:bg-black/10">
           <span class="absolute text-xs text-gray-400">Drag field here</span>
         </div>
         <x-aura::resource.add-field :id="$field['_id']" :slug="$field['slug']" :type="$field['type']" />
@@ -100,8 +102,8 @@
                   $field['type'] = end($field['type']);
               @endphp
 
-              <span class="inline-flex items-center px-2.5 py-0.5 text-xs font-medium rounded-full bg-primary-100 text-primary-800">
-                  <svg class="mr-1.5 -ml-0.5 w-2 h-2 text-primary-400" fill="currentColor" viewBox="0 0 8 8">
+              <span class="inline-flex items-center px-2.5 py-0.5 ml-1 text-xs font-medium rounded-full bg-primary-100 dark:bg-primary-400/10 text-primary-800 dark:text-primary-300 dark:ring-1 dark:ring-primary-400/20">
+                  <svg class="mr-1.5 -ml-0.5 w-2 h-2 text-primary-500 dark:text-primary-400" fill="currentColor" viewBox="0 0 8 8">
                   <circle cx="4" cy="4" r="3" />
                   </svg>
                   {{ $field['type'] }}

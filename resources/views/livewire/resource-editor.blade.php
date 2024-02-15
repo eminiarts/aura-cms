@@ -131,7 +131,7 @@
                         <template x-for="(tab, index) in tabs" :key="index">
                             <div
                                 :class="{
-                                    'border-primary-600 text-primary-700 dark:border-primary-500 dark:text-primary-500 whitespace-nowrap px-4 border-b-2 font-semibold text-sm': activeTab === index,
+                                    'border-primary-600 text-primary-700 dark:border-primary-500 dark:text-primary-400 whitespace-nowrap px-4 border-b-2 font-semibold text-sm': activeTab === index,
                                     'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-500/30 dark:hover:text-gray-500 dark:hover:border-gray-600 whitespace-nowrap px-4 border-b-2 font-semibold text-sm' : activeTab !== index
                                 }"
                                 class="flex px-2 py-1 focus:outline-none"
@@ -141,7 +141,7 @@
                                 >
                                     <span x-text="tab.name"></span>
                                 </button>
-                                <button class="ml-2 text-gray-400 hover:text-gray-600" @click="$wire.openSidebar(tab.slug, '{{ $model::getSlug() }}')">
+                                <button class="ml-2 text-gray-400 hover:text-gray-500 dark:text-gray-600 dark:hover:text-gray-500" @click="$wire.openSidebar(tab.slug, '{{ $model::getSlug() }}')">
                                     <x-aura::icon.edit class="w-4 h-4" />
                                 </button>
                             </div>
@@ -152,7 +152,7 @@
                         class="px-2 py-1 focus:outline-none"
                         wire:click="addNewTab()"
                         >
-                        <span class="inline-block px-2 ml-2 text-sm text-gray-500 whitespace-nowrap hover:text-gray-700">+ Add Tab</span>
+                        <span class="inline-block px-2 ml-2 text-sm text-gray-500 whitespace-nowrap hover:text-gray-700 dark:text-gray-600 dark:hover:text-gray-500">+ Add Tab</span>
                     </button>
                 </div>
 
