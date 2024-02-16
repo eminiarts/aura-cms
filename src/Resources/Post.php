@@ -18,9 +18,10 @@ class Post extends Resource
     public function indexTableSettings()
     {
         return [
-            // 'views' => [
-            //     'table' => 'custom.table.tableugjhghg',
-            // ]
+        //     'default_view' => 'grid',
+        // 'views' => [
+        //         'grid' => 'custom.table.grid',
+        //     ]
         ];
     }
 

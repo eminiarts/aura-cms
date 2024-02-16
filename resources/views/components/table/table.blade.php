@@ -8,7 +8,7 @@
             <tbody class="bg-white divide-y divide-gray-200 dark:bg-gray-900 dark:divide-gray-700">
 
                 @forelse($rows as $row)
-                    @include($row->rowView())
+                    @include($this->settings['views']['row'])
                 @empty
 
                 <tr>
