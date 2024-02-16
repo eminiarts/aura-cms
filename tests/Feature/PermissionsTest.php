@@ -135,7 +135,10 @@ test('a moderator can only view posts but not edit them', function () {
 });
 
 test('a moderator can access index page', function () {
-    $role = Role::create(['type' => 'Role', 'title' => 'Moderator', 'slug' => 'admin', 'name' => 'Moderator', 'description' => ' Moderator has can perform almost everything.', 'super_admin' => false, 'permissions' => [
+
+    // $this->withoutExceptionHandling();
+
+    $role = Role::create(['type' => 'Role', 'title' => 'Moderator', 'slug' => 'admin', 'description' => ' Moderator has can perform almost everything.', 'super_admin' => false, 'permissions' => [
         'viewAny-post' => true,
         'view-post' => true,
         'create-post' => false,
@@ -168,16 +171,14 @@ test('a moderator can access index page', function () {
     // Access Index Page
     $response = $this->actingAs($user)->get(route('aura.resource.index', ['slug' => $post->type]));
 
-    $this->withoutExceptionHandling();
-
     // Assert Response
     $response->assertStatus(200);
 
-    // Can Not Access Create Page
+    // Attempt to Access Create Page
     $response = $this->actingAs($user)->get(route('aura.resource.create', ['slug' => $post->type]));
 
-    // Assert Response
-    $response->assertStatus(403);
+    // Assert that the action is unauthorized
+    $response->assertForbidden();
 
     // Can Not Access Edit Page
     $response = $this->actingAs($user)->get(route('aura.resource.edit', ['slug' => $post->type,  'id' => $post->id]));
@@ -251,7 +252,7 @@ test('scoped posts', function () {
         'scope-post' => true,
     ]]);
 
-    $this->withoutExceptionHandling();
+    // $this->withoutExceptionHandling();
 
     // Second User
     $user2 = User::factory()->create();
