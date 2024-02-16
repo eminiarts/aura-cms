@@ -417,7 +417,7 @@ test('views settings', function () {
     expect($component->settings)->toHaveKey('views');
 
     expect($component->settings['views'])->toMatchArray([
-        'table' => 'custom.table.table',
+        'table' => 'custom.table.index',
         'list' => 'custom.table.list',
         'grid' => 'custom.table.grid',
         'filter' => 'custom.table.filter',
@@ -458,7 +458,7 @@ test('views settings - grid', function () {
             ]
         ];
 
-    $component = Livewire::test(Table::class, ['model' => $this->post, 'settings' => $settings]);
+    $component = Livewire::test(Table::class, ['model' => $this->post, 'settings' => $settings, 'tableView' => 'grid']);
 
 })->throws(ViewException::class);
 
@@ -516,7 +516,7 @@ test('default_view settings', function () {
     $component = Livewire::test(Table::class, ['model' => $this->post, 'settings' => []]);
 
     expect($component->settings['views'])->toMatchArray([
-           "table" => "aura::components.table.table",
+           "table" => "aura::components.table.index",
            "list" => "aura::components.table.list",
            "grid" => "aura::components.table.grid",
            "filter" => "aura::components.table.filter",

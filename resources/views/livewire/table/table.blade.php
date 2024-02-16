@@ -247,9 +247,10 @@
                 </div>
 
                 @if($tableView == 'grid')
-                    @include($model->tableGridView())
+                    @include($this->settings['views']['grid'])
+                    {{-- @include($model->tableGridView()) --}}
                 @elseif($tableView == 'list')
-                    @include($this->tableIndexView)
+                    @include($this->settings['views']['table'])
                 @endif
             </div>
 
