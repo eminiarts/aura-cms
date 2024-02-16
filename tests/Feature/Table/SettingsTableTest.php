@@ -591,18 +591,18 @@ test('actions settings', function () {
 
     expect($component->settings)->toHaveKey('actions', true);
 
-    $component->assertSeeHtml('<div class="cursor-move drag-handle move-table-row">');
+    $component->assertSeeHtml('<th class="table-row-actions');
+    $component->assertSeeHtml('<div class="table-context-menu"');
 
     // Disable actions
-
     $settings = ['actions' => false];
 
     $component = Livewire::test(Table::class, ['model' => $this->post, 'settings' => $settings]);
 
     expect($component->settings)->toHaveKey('actions', false);
 
-    $component->assertDontSeeHtml('<div class="cursor-move drag-handle move-table-row">');
-
+    $component->assertDontSeeHtml('<th class="table-row-actions');
+    $component->assertDontSeeHtml('<div class="table-context-menu"');
 });
 
 test('bulk_actions settings', function () {
@@ -624,7 +624,6 @@ test('bulk_actions settings', function () {
     expect($component->settings)->toHaveKey('bulk_actions', false);
 
     $component->assertDontSeeHtml('<div class="bulk-actions">');
-
 });
 
 
