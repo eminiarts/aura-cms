@@ -73,7 +73,7 @@ test('table default values', function () {
 
     // Visit the Post Index Page
     $component = Livewire::test(Table::class, ['query' => null, 'model' => $post])
-        ->assertSet('tableView', $post->defaultTableView())
+        ->assertSet('settings.default_view', $post->defaultTableView())
         ->assertSet('perPage', $post->defaultPerPage())
         ->assertSet('columns', $post->getDefaultColumns());
 });
@@ -92,7 +92,7 @@ test('table custom user columns', function () {
 
     // Visit the Post Index Page
     $component = Livewire::test(Table::class, ['query' => null, 'model' => $post])
-        ->assertSet('tableView', $post->defaultTableView())
+        ->assertSet('settings.default_view', $post->defaultTableView())
         ->assertSet('perPage', $post->defaultPerPage())
         ->assertSet('columns', auth()->user()->getOptionColumns($post->getType()));
 
@@ -126,7 +126,7 @@ test('table custom user columns can be sorted', function () {
 
     // Visit the Post Index Page
     $component = Livewire::test(Table::class, ['query' => null, 'model' => $post])
-        ->assertSet('tableView', $post->defaultTableView())
+        ->assertSet('settings.default_view', $post->defaultTableView())
         ->assertSet('perPage', $post->defaultPerPage())
         ->assertSet('columns', auth()->user()->getOptionColumns($post->getType()));
 
