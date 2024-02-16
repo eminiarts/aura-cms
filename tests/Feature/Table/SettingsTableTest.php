@@ -48,7 +48,7 @@ test('check default table settings', function () {
     expect($component->settings)->toHaveKey('settings', true);
     expect($component->settings)->toHaveKey('sort_columns', true);
     expect($component->settings)->toHaveKey('columns_global_key', false);
-    expect($component->settings)->toHaveKey('columns_user_key', 'columns_sort.Post');
+    expect($component->settings)->toHaveKey('columns_user_key', 'columns.Post');
     expect($component->settings)->toHaveKey('global_filters', true);
     expect($component->settings)->toHaveKey('title', true);
     expect($component->settings)->toHaveKey('selectable', true);
@@ -584,12 +584,51 @@ test('title settings', function () {
 
 
 test('actions settings', function () {
+
+    $settings = ['actions' => true];
+
+    $component = Livewire::test(Table::class, ['model' => $this->post, 'settings' => $settings]);
+
+    expect($component->settings)->toHaveKey('actions', true);
+
+    $component->assertSeeHtml('<div class="cursor-move drag-handle move-table-row">');
+
+    // Disable actions
+
+    $settings = ['actions' => false];
+
+    $component = Livewire::test(Table::class, ['model' => $this->post, 'settings' => $settings]);
+
+    expect($component->settings)->toHaveKey('actions', false);
+
+    $component->assertDontSeeHtml('<div class="cursor-move drag-handle move-table-row">');
+
+});
+
+test('bulk_actions settings', function () {
+
+    $settings = ['bulk_actions' => true];
+
+    $component = Livewire::test(Table::class, ['model' => $this->post, 'settings' => $settings]);
+
+    expect($component->settings)->toHaveKey('bulk_actions', true);
+
+    $component->assertSeeHtml('<div class="bulk-actions">');
+
+    // Disable bulk_actions
+
+    $settings = ['bulk_actions' => false];
+
+    $component = Livewire::test(Table::class, ['model' => $this->post, 'settings' => $settings]);
+
+    expect($component->settings)->toHaveKey('bulk_actions', false);
+
+    $component->assertDontSeeHtml('<div class="bulk-actions">');
+
 });
 
 
 test('sort_columns settings', function () {
-
-
     $settings = ['sort_columns' => true];
 
     $component = Livewire::test(Table::class, ['model' => $this->post, 'settings' => $settings]);
@@ -607,5 +646,4 @@ test('sort_columns settings', function () {
     expect($component->settings)->toHaveKey('sort_columns', false);
 
     $component->assertDontSeeHtml('<div class="cursor-move drag-handle move-table-row">');
-
 });
