@@ -250,22 +250,9 @@ class Aura
 
     public function getOption($name)
     {
+
         if (config('aura.teams')) {
-            return Cache::remember(optional(auth()->user())->current_team_id.'.aura.'.$name, now()->addHour(), function () use ($name) {
-                $option = Option::where('name', $name)->first();
-
-                if ($option && is_string($option->value)) {
-                    $settings = json_decode($option->value, true);
-                } else {
-                    $settings = $option->value ?? null;
-                }
-
-                if(! $settings) {
-                    return [];
-                }
-
-                return $settings;
-            });
+            return auth()->user()->resource->currentTeam->getOption($name);
         }
 
         return Cache::remember('aura.'.$name, now()->addHour(), function () use ($name) {
@@ -409,6 +396,16 @@ class Aura
     public function registerWidgets(array $widgets): void
     {
         $this->widgets = array_merge($this->widgets, $widgets);
+    }
+
+    public function updateOption($key, $value)
+    {
+        if (config('aura.teams')) {
+            auth()->user()->resource->currentTeam->updateOption($key, $value);
+        } else {
+            Option::withoutGlobalScopes([TeamScope::class])->updateOrCreate(['name' => $key, 'team_id' => 0], ['value' => $value]);
+        }
+
     }
 
     public function setOption($key, $value)
