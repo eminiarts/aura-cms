@@ -519,7 +519,7 @@ test('default_view settings', function () {
     expect($component->settings['views'])->toMatchArray([
            "table" => "aura::components.table.index",
            "list" => "aura::components.table.table",
-           "grid" => "aura::components.table.grid",
+           "grid" => false,
            "filter" => "aura::components.table.filter",
            "header" => "aura::components.table.header",
            "row" => "aura::components.table.row",
