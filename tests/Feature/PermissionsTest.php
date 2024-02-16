@@ -168,6 +168,8 @@ test('a moderator can access index page', function () {
     // Access Index Page
     $response = $this->actingAs($user)->get(route('aura.resource.index', ['slug' => $post->type]));
 
+    $this->withoutExceptionHandling();
+
     // Assert Response
     $response->assertStatus(200);
 
@@ -248,6 +250,8 @@ test('scoped posts', function () {
         'forceDelete-post' => false,
         'scope-post' => true,
     ]]);
+
+    $this->withoutExceptionHandling();
 
     // Second User
     $user2 = User::factory()->create();
