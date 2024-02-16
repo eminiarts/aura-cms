@@ -36,7 +36,7 @@ trait Settings
             'views' => [
                 'table' => 'aura::components.table.index',
                 'list' => $this->model->tableView(),
-                'grid' => 'aura::components.table.grid',
+                'grid' => $this->model->tableGridView(),
                 'filter' => 'aura::components.table.filter',
                 'header' => 'aura::components.table.header',
                 'row' => $this->model()->rowView(),
