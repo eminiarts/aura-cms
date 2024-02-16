@@ -34,7 +34,7 @@ trait Settings
             'bulk_actions' => true,
             'header' => true,
             'views' => [
-                'table' => 'aura::components.table.table',
+                'table' => 'aura::components.table.index',
                 'list' => 'aura::components.table.list',
                 'grid' => 'aura::components.table.grid',
                 'filter' => 'aura::components.table.filter',

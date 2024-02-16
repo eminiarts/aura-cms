@@ -18,9 +18,9 @@ class Post extends Resource
     public function indexTableSettings()
     {
         return [
-            'views' => [
-                'table' => 'custom.table.tableugjhghg',
-            ]
+            // 'views' => [
+            //     'table' => 'custom.table.tableugjhghg',
+            // ]
         ];
     }
 

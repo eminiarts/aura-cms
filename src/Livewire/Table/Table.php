@@ -120,8 +120,6 @@ class Table extends Component
      */
     public $settings;
 
-    public $tableIndexView = 'aura::components.table.index';
-
     /**
      * The view of the table.
      *
