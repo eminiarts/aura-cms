@@ -503,7 +503,7 @@ test('views settings - row', function () {
 test('views settings - bulkAction', function () {
     $settings = [
         'views' => [
-                'bulkAction' => 'custom.table.bulkAction',
+                'bulkActions' => 'custom.table.bulkActions',
             ]
         ];
 
