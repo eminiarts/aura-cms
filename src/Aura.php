@@ -251,7 +251,7 @@ class Aura
     public function getOption($name)
     {
 
-        if (config('aura.teams')) {
+        if (config('aura.teams') && auth()->user()) {
             return auth()->user()->resource->currentTeam->getOption($name);
         }
 
