@@ -30,13 +30,15 @@
                             {{ __($label) }}
                         </span>
 
-                        <div class="cursor-move drag-handle">
+                        @if($this->settings['sort_columns'])
+                        <div class="cursor-move drag-handle move-table-row">
                             <svg class="mr-2 w-4 h-4 text-gray-400" viewBox="0 0 24 24" fill="none"
                                 xmlns="http://www.w3.org/2000/svg">
                                 <path d="M3 8.5H21M3 15.5H21" stroke="currentColor" stroke-width="2"
                                     stroke-linecap="round" stroke-linejoin="round" />
                             </svg>
                         </div>
+                        @endif
 
                     </label>
                     @endforeach
