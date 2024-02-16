@@ -588,4 +588,24 @@ test('actions settings', function () {
 
 
 test('sort_columns settings', function () {
+
+
+    $settings = ['sort_columns' => true];
+
+    $component = Livewire::test(Table::class, ['model' => $this->post, 'settings' => $settings]);
+
+    expect($component->settings)->toHaveKey('sort_columns', true);
+
+    $component->assertSeeHtml('<div class="cursor-move drag-handle move-table-row">');
+
+    // Disable sort_columns
+
+    $settings = ['sort_columns' => false];
+
+    $component = Livewire::test(Table::class, ['model' => $this->post, 'settings' => $settings]);
+
+    expect($component->settings)->toHaveKey('sort_columns', false);
+
+    $component->assertDontSeeHtml('<div class="cursor-move drag-handle move-table-row">');
+
 });
