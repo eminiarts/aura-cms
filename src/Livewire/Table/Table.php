@@ -212,16 +212,17 @@ class Table extends Component
     {
         $headers = $this->settings['columns'];
 
-        if ($this->settings['sort_columns'] && $this->settings['sort_columns_key'] && $sort = Aura::getOption($this->settings['sort_columns_key'])) {
-            $headers = collect($headers)->sortBy(function ($value, $key) use ($sort) {
-                return array_search($key, $sort);
-            });
+        // ray('headers', Aura::getOption($this->settings['columns_global_key']), $this->settings['columns_global_key'], $headers);
+
+        if ($this->settings['sort_columns'] && $this->settings['columns_global_key']) {
+            return Aura::getOption($this->settings['columns_global_key']) ?? $headers->toArray();
         }
 
-        if ($this->settings['sort_columns'] && $this->settings['sort_columns_user_key'] && $sort = auth()->user()->getOption($this->settings['sort_columns_user_key'])) {
+        if ($this->settings['sort_columns'] && $this->settings['columns_user_key'] && $sort = auth()->user()->getOption($this->settings['columns_user_key'])) {
+
             $headers = collect($headers)->sortBy(function ($value, $key) use ($sort) {
-                return array_search($key, $sort);
-            });
+                return array_search($key, array_keys($sort));
+            })->toArray();
         }
 
         return $headers;
@@ -388,7 +389,16 @@ class Table extends Component
      */
     public function reorder($slugs)
     {
-        auth()->user()->updateOption('columns_sort.'.$this->model()->getType(), $slugs);
+        if($this->settings['columns_global_key']) {
+            $orderedSort = array_merge(array_flip($slugs), $this->headers());
+
+            return Aura::updateOption($this->settings['columns_global_key'], $orderedSort);
+        }
+
+        // Save the columns for the current user.
+        $orderedSort = array_merge(array_flip($slugs), $this->headers());
+
+        auth()->user()->updateOption($this->settings['columns_user_key'], $orderedSort);
     }
 
     public function selectFieldRows($value, $slug)
@@ -423,7 +433,7 @@ class Table extends Component
     {
         // Save the columns for the current user.
         if ($this->columns) {
-            ray('Save the columns for the current user', $this->columns);
+            //ray('Save the columns for the current user', $this->columns);
             auth()->user()->updateOption('columns.'.$this->model()->getType(), $this->columns);
         }
     }
