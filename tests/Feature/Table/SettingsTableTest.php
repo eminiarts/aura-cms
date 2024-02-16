@@ -453,12 +453,13 @@ test('views settings - list', function () {
 
 test('views settings - grid', function () {
     $settings = [
+        'default_view' => 'grid',
         'views' => [
                 'grid' => 'custom.table.grid',
             ]
         ];
 
-    $component = Livewire::test(Table::class, ['model' => $this->post, 'settings' => $settings, 'tableView' => 'grid']);
+    $component = Livewire::test(Table::class, ['model' => $this->post, 'settings' => $settings]);
 
 })->throws(ViewException::class);
 
@@ -517,7 +518,7 @@ test('default_view settings', function () {
 
     expect($component->settings['views'])->toMatchArray([
            "table" => "aura::components.table.index",
-           "list" => "aura::components.table.list",
+           "list" => "aura::components.table.table",
            "grid" => "aura::components.table.grid",
            "filter" => "aura::components.table.filter",
            "header" => "aura::components.table.header",

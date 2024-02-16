@@ -24,7 +24,7 @@ trait Settings
             'global_filters' => true,
             'title' => true,
             'selectable' => true,
-            'default_view' => 'list',
+            'default_view' => $this->model()->defaultTableView(),
             'header_before' => true,
             'header_after' => true,
             'table_before' => true,
@@ -35,11 +35,11 @@ trait Settings
             'header' => true,
             'views' => [
                 'table' => 'aura::components.table.index',
-                'list' => 'aura::components.table.list',
+                'list' => $this->model->tableView(),
                 'grid' => 'aura::components.table.grid',
                 'filter' => 'aura::components.table.filter',
                 'header' => 'aura::components.table.header',
-                'row' => 'aura::components.table.row',
+                'row' => $this->model()->rowView(),
                 'bulkActions' => 'aura::components.table.bulkActions',
             ],
         ];

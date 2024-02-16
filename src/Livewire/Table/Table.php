@@ -121,13 +121,6 @@ class Table extends Component
     public $settings;
 
     /**
-     * The view of the table.
-     *
-     * @var string
-     */
-    public $tableView;
-
-    /**
      * List of events listened to by the component.
      *
      * @var array
@@ -320,10 +313,6 @@ class Table extends Component
                 $this->filters = $this->userFilters[$this->selectedFilter];
             }
         }
-
-        $this->tableView = $this->model()->defaultTableView();
-
-
 
         if (auth()->user()->getOptionColumns($this->model()->getType())) {
             $this->columns = auth()->user()->getOptionColumns($this->model()->getType());
