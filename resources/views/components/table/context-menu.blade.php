@@ -1,5 +1,6 @@
+@if($this->settings['actions'])
 @if($model->getContextMenu())
-<div @contextmenu="openContextMenu($event)" @click.away="closeContextMenu" @keydown.escape="closeContextMenu" x-data="{
+<div class="table-context-menu" @contextmenu="openContextMenu($event)" @click.away="closeContextMenu" @keydown.escape="closeContextMenu" x-data="{
             visible: false,
             currentRow: null,
             init() {
@@ -119,4 +120,5 @@
 </div>
  @else
 <div>
+@endif
 @endif
