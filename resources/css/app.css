@@ -1,6 +1,12 @@
 @import 'tippy.js/dist/tippy.css';
+
 @import './components/tooltip.css';
 @import './plugins/flatpickr.css';
+
+@import './plugins/quill.snow.css';
+
+@import './plugins/pickr.nano.min.css';
+
 @import 'tailwindcss/base';
 @import 'tailwindcss/components';
 @import 'tailwindcss/utilities';
