@@ -140,6 +140,7 @@ test('Slug Field - Without Custom Checkbox', function () {
 
     expect((string)$view)->not->toContain('<div class="custom-slug');
     expect((string)$view)->toContain('custom: true,');
+    expect((string)$view)->toContain('value: $wire.entangle(\'form.fields.slug\')');
 
     // Set Custom
 
@@ -233,7 +234,6 @@ test('Slug Field - custom - false ', function () {
 });
 
 test('Slug Field - custom - true', function () {
-
     $field =   [
                    'name' => 'Slug for Test',
                    'type' => 'Aura\\Base\\Fields\\Slug',
@@ -252,5 +252,4 @@ test('Slug Field - custom - true', function () {
     );
 
     expect((string)$view)->toContain('<div class="custom-slug');
-
 });
