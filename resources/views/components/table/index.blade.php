@@ -11,7 +11,7 @@
         {{ app('aura')::injectView('table_before_' . $this->model->getType()) }}
     @endif
 
-    @include($this->model->tableView())
+    @include($this->settings['views']['list'])
 
     @if($this->settings['table_after'])
         {{ app('aura')::injectView('table_after') }}

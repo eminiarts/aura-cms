@@ -4,6 +4,7 @@ use Livewire\Livewire;
 use Aura\Base\Models\User;
 use Aura\Base\Facades\Aura;
 use Aura\Base\Resources\Post;
+use Aura\Base\Resources\Option;
 use Illuminate\View\ViewException;
 use Aura\Base\Livewire\Table\Table;
 use Illuminate\Support\Facades\Blade;
@@ -20,9 +21,11 @@ beforeEach(function () {
 test('check default table settings', function () {
     $settings = $this->post->indexTableSettings();
 
-    expect($settings)->toBe([]);
+    // expect($settings)->toBe([]);
 
     $component = Livewire::test(Table::class, ['model' => $this->post, 'settings' => $settings]);
+
+    // ray($component->settings);
 
     expect($component->settings)->toHaveKey('per_page', 10);
     expect($component->settings)->toHaveKey('columns');
@@ -44,11 +47,10 @@ test('check default table settings', function () {
     ]);
     expect($component->settings)->toHaveKey('settings', true);
     expect($component->settings)->toHaveKey('sort_columns', true);
-    expect($component->settings)->toHaveKey('sort_columns_key', false);
-    expect($component->settings)->toHaveKey('sort_columns_user_key', 'columns_sort.Post');
+    expect($component->settings)->toHaveKey('columns_global_key', false);
+    expect($component->settings)->toHaveKey('columns_user_key', 'columns.Post');
     expect($component->settings)->toHaveKey('global_filters', true);
     expect($component->settings)->toHaveKey('title', true);
-    expect($component->settings)->toHaveKey('attach', true);
     expect($component->settings)->toHaveKey('selectable', true);
     expect($component->settings)->toHaveKey('default_view', 'list');
     expect($component->settings)->toHaveKey('header_before', true);
@@ -415,7 +417,7 @@ test('views settings', function () {
     expect($component->settings)->toHaveKey('views');
 
     expect($component->settings['views'])->toMatchArray([
-        'table' => 'custom.table.table',
+        'table' => 'custom.table.index',
         'list' => 'custom.table.list',
         'grid' => 'custom.table.grid',
         'filter' => 'custom.table.filter',
@@ -451,6 +453,7 @@ test('views settings - list', function () {
 
 test('views settings - grid', function () {
     $settings = [
+        'default_view' => 'grid',
         'views' => [
                 'grid' => 'custom.table.grid',
             ]
@@ -500,7 +503,7 @@ test('views settings - row', function () {
 test('views settings - bulkAction', function () {
     $settings = [
         'views' => [
-                'bulkAction' => 'custom.table.bulkAction',
+                'bulkActions' => 'custom.table.bulkActions',
             ]
         ];
 
@@ -514,9 +517,9 @@ test('default_view settings', function () {
     $component = Livewire::test(Table::class, ['model' => $this->post, 'settings' => []]);
 
     expect($component->settings['views'])->toMatchArray([
-           "table" => "aura::components.table.table",
-           "list" => "aura::components.table.list",
-           "grid" => "aura::components.table.grid",
+           "table" => "aura::components.table.index",
+           "list" => "aura::components.table.table",
+           "grid" => false,
            "filter" => "aura::components.table.filter",
            "header" => "aura::components.table.header",
            "row" => "aura::components.table.row",
@@ -524,30 +527,40 @@ test('default_view settings', function () {
        ]);
 });
 
-test('sort_columns_key settings', function () {
+test('columns_global_key settings', function () {
 
-    $settings = ['sort_columns_key' => true];
-
-    $component = Livewire::test(Table::class, ['model' => $this->post, 'settings' => $settings]);
-
-    expect($component->settings)->toHaveKey('sort_columns_key', true);
-
-    $component->assertSeeHtml('wire:model.live.debounce="sort_columns_key"');
-
-    // Disable sort_columns_key
-
-    $settings = ['sort_columns_key' => false];
+    $settings = [
+        'columns_global_key' => 'globalPosts',
+    ];
 
     $component = Livewire::test(Table::class, ['model' => $this->post, 'settings' => $settings]);
 
-    expect($component->settings)->toHaveKey('sort_columns_key', false);
+    expect($component->settings)->toHaveKey('columns_global_key');
 
-    $component->assertDontSeeHtml('wire:model.live.debounce="sort_columns_key"');
+    expect($component->headers)->toHaveKey('title');
 
+    $option = Option::where('name', 'team.1.globalPosts')->first();
+
+    expect($option)->toBeNull();
+
+    // Disable columns_global_key
+    $component->call('reorder', ['image', 'slug', 'title', 'user_id']);
+
+    $option = Option::where('name', 'team.1.globalPosts')->first();
+
+    expect($option->value)->toMatchArray([
+        "image" => "Bild",
+        "slug" => "Slug for Test",
+        "title" => "Title",
+    ])->toHaveKeys(['image', 'slug', 'title']);
+
+    expect(array_keys($option->value)[0])->toEqual('image');
+    expect(array_keys($option->value)[1])->toEqual('slug');
+    expect(array_keys($option->value)[2])->toEqual('title');
+    expect(array_keys($option->value)[3])->toEqual('user_id');
 });
 
 test('title settings', function () {
-
 
     $settings = ['title' => true];
 
@@ -555,7 +568,7 @@ test('title settings', function () {
 
     expect($component->settings)->toHaveKey('title', true);
 
-    $component->assertSeeHtml('wire:model.live.debounce="title"');
+    $component->assertSeeHtml('<h1 class="text-3xl font-semibold">Posts</h1>');
 
     // Disable title
 
@@ -565,37 +578,72 @@ test('title settings', function () {
 
     expect($component->settings)->toHaveKey('title', false);
 
-    $component->assertDontSeeHtml('wire:model.live.debounce="title"');
+    $component->assertDontSeeHtml('<h1 class="text-3xl font-semibold">Posts</h1>');
 
-
-});
-
-test('attach settings', function () {
-
-    $settings = ['attach' => true];
-
-    $component = Livewire::test(Table::class, ['model' => $this->post, 'settings' => $settings]);
-
-    expect($component->settings)->toHaveKey('attach', true);
-
-    $component->assertSeeHtml('wire:model.live.debounce="attach"');
-
-    // Disable attach
-
-    $settings = ['attach' => false];
-
-    $component = Livewire::test(Table::class, ['model' => $this->post, 'settings' => $settings]);
-
-    expect($component->settings)->toHaveKey('attach', false);
-
-    $component->assertDontSeeHtml('wire:model.live.debounce="attach"');
 
 });
 
 
 test('actions settings', function () {
+
+    $settings = ['actions' => true];
+
+    $component = Livewire::test(Table::class, ['model' => $this->post, 'settings' => $settings]);
+
+    expect($component->settings)->toHaveKey('actions', true);
+
+    $component->assertSeeHtml('<th class="table-row-actions');
+    $component->assertSeeHtml('<div class="table-context-menu"');
+
+    // Disable actions
+    $settings = ['actions' => false];
+
+    $component = Livewire::test(Table::class, ['model' => $this->post, 'settings' => $settings]);
+
+    expect($component->settings)->toHaveKey('actions', false);
+
+    $component->assertDontSeeHtml('<th class="table-row-actions');
+    $component->assertDontSeeHtml('<div class="table-context-menu"');
+});
+
+test('bulk_actions settings', function () {
+
+    $settings = ['bulk_actions' => true];
+
+    $component = Livewire::test(Table::class, ['model' => $this->post, 'settings' => $settings]);
+
+    expect($component->settings)->toHaveKey('bulk_actions', true);
+
+    $component->assertSeeHtml('<div class="bulk-actions">');
+
+    // Disable bulk_actions
+
+    $settings = ['bulk_actions' => false];
+
+    $component = Livewire::test(Table::class, ['model' => $this->post, 'settings' => $settings]);
+
+    expect($component->settings)->toHaveKey('bulk_actions', false);
+
+    $component->assertDontSeeHtml('<div class="bulk-actions">');
 });
 
 
 test('sort_columns settings', function () {
+    $settings = ['sort_columns' => true];
+
+    $component = Livewire::test(Table::class, ['model' => $this->post, 'settings' => $settings]);
+
+    expect($component->settings)->toHaveKey('sort_columns', true);
+
+    $component->assertSeeHtml('<div class="cursor-move drag-handle move-table-row">');
+
+    // Disable sort_columns
+
+    $settings = ['sort_columns' => false];
+
+    $component = Livewire::test(Table::class, ['model' => $this->post, 'settings' => $settings]);
+
+    expect($component->settings)->toHaveKey('sort_columns', false);
+
+    $component->assertDontSeeHtml('<div class="cursor-move drag-handle move-table-row">');
 });

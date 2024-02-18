@@ -7,6 +7,7 @@
         </x-aura::table.cell>
     @endif
 
+    @if($this->headers)
     @foreach ($this->headers as $key => $column)
         @if (optional($this->columns)[$key])
             <td class="px-6 py-4">
@@ -14,6 +15,7 @@
             </td>
         @endif
     @endforeach
+    @endif
 
     @if ($this->settings['actions'])
         <td>

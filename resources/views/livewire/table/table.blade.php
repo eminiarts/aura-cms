@@ -229,7 +229,7 @@
                             @endif
 
                             @if($this->settings['settings'])
-                                @if($tableView == 'list' && $model->showTableSettings())
+                                @if($this->settings['default_view'] == 'list' && $model->showTableSettings())
                                 @include('aura::components.table.settings')
                                 @endif
                             @endif
@@ -246,10 +246,11 @@
                     </div>
                 </div>
 
-                @if($tableView == 'grid')
-                    @include($model->tableGridView())
-                @elseif($tableView == 'list')
-                    @include($this->tableIndexView)
+                @if($this->settings['default_view'] == 'grid')
+                    @include($this->settings['views']['grid'])
+                    {{-- @include($model->tableGridView()) --}}
+                @elseif($this->settings['default_view'] == 'list')
+                    @include($this->settings['views']['table'])
                 @endif
             </div>
 
