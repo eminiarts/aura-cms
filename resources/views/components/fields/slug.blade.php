@@ -87,7 +87,7 @@
         </div>
 
         @if(optional($field)['custom'])
-        <div class="flex flex-col">
+        <div class="custom-slug flex flex-col">
             <button x-ref="toggle" @click="toggleCustom()" type="button" role="switch" :aria-checked="custom"
                 :aria-labelledby="$id('boolean')"
                 :class="custom ? 'bg-primary-600 border border-primary-900/50 dark:border-gray-900' : 'bg-gray-300 shadow-inner border border-gray-500/30'"
