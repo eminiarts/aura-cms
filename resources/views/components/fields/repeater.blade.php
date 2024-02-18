@@ -14,10 +14,10 @@
 <x-aura::fields.wrapper :field="$field">
 
     <div class="flex flex-col">
-        <ul role="list" class="overflow-hidden bg-white divide-y divide-gray-100 ring-1 shadow-sm ring-gray-900/5 sm:rounded-xl">
+        <ul role="list" class="overflow-hidden border divide-y divide-gray-100 dark:divide-gray-700 sm:rounded-xl border-gray-500/30 dark:border-gray-700">
         @if(optional($values) && $values)
             @foreach($field['field']->transform($field, $values) as $key => $group)
-                <li class="flex relative gap-x-6 justify-between pr-4 pb-4 hover:bg-gray-50">
+                <li class="flex relative gap-x-6 justify-between pr-4 pb-4 hover:bg-gray-50 dark:hover:bg-gray-800">
                     <div class="flex flex-wrap items-center -mx-0" wire:key="repeater-{{ $key }}">
 
                         <div class="flex flex-wrap flex-1 items-center space-x-0">

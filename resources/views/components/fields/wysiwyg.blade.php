@@ -2,7 +2,7 @@
     <div x-data="{
         init() {
             let quill = new Quill(this.$refs.quill, { theme: 'snow' })
-    
+
             quill.on('text-change', function() {
                 $dispatch('input', quill.root.innerHTML);
             });
@@ -14,7 +14,7 @@
 
     @assets
         @push('scripts')
-            <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
+            {{-- <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet"> --}}
             <script src="https://cdn.quilljs.com/1.3.6/quill.js"></script>
         @endpush
     @endassets

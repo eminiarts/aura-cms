@@ -22,14 +22,14 @@
 
         @once
         @push('styles')
-                <link rel="stylesheet" href="/js/pickr/nano.min.css"/> <!-- 'nano' theme -->
+                {{-- <link rel="stylesheet" href="/js/pickr/nano.min.css"/> <!-- 'nano' theme --> --}}
         @endpush
 
         @push('scripts')
                 <script src="/js/pickr/pickr.min.js"></script>
         @endpush
     @endonce
-    
+
     <div wire:ignore class="flex items-center"
         x-data="{
             selectedColor: $wire.entangle('form.fields.{{ optional($field)['slug'] }}'),
@@ -178,5 +178,3 @@
             width: 16rem;
         }
     </style>
-
-
