@@ -15,12 +15,15 @@ class Post extends Resource
 {
     use Exportable;
 
-    // public function indexTableSettings()
-    // {
-    //     return [
-    //         'global_filters' => false,
-    //     ];
-    // }
+    public function indexTableSettings()
+    {
+        return [
+        //     'default_view' => 'grid',
+        // 'views' => [
+        //         'grid' => 'custom.table.grid',
+        //     ]
+        ];
+    }
 
     public array $actions = [
         'delete' => [

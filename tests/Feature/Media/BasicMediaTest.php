@@ -80,7 +80,7 @@ test('media grid view', function () {
     ]);
 
     $component = Livewire::test(Table::class, ['query' => null, 'model' => $attachment])
-        ->assertSet('tableView', $attachment->defaultTableView())
+        ->assertSet('settings.default_view', $attachment->defaultTableView())
         ->assertSet('perPage', $attachment->defaultPerPage())
         ->assertSet('columns', $attachment->getDefaultColumns());
 

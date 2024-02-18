@@ -1,6 +1,6 @@
 {{-- Actions --}}
 @if($this->bulkActions)
-<div>
+<div class="bulk-actions">
     <div class="relative ml-1">
         <x-aura::dropdown align="right" width="60">
         <x-slot name="trigger">
