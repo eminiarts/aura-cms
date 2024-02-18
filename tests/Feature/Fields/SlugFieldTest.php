@@ -9,6 +9,7 @@ use Aura\Base\Models\User;
 use Aura\Base\Facades\Aura;
 use Aura\Base\Resources\Team;
 use Aura\Base\Livewire\Resource\Edit;
+use Illuminate\Support\Facades\Blade;
 use Aura\Base\Livewire\Resource\Create;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
@@ -105,7 +106,6 @@ test('Slug Field Test', function () {
     $this->assertDatabaseMissing('posts', ['type' => 'SlugModel', 'fields' => json_encode(['slug' => 'invalid slug'])]);
 });
 
-
 test('check Slug Fields', function () {
     $slug = new Slug();
 
@@ -117,8 +117,55 @@ test('check Slug Fields', function () {
     expect($fields->firstWhere('slug', 'based_on')['validation'])->toBe('required');
 });
 
-
 test('Slug Field - Without Custom Checkbox', function () {
+
+    $model = new SlugFieldModel();
+
+    $field =   [
+        'name' => 'Slug for Test',
+        'type' => 'Aura\\Base\\Fields\\Slug',
+        'validation' => 'required|alpha_dash',
+        'conditional_logic' => [],
+        'slug' => 'slug',
+        'based_on' => 'text',
+        'custom' => false,
+    ];
+
+    $fieldClass = app($field['type']);
+
+    dump($fieldClass->component);
+
+    // $blade = Blade::render('<x-dynamic-component :component="$field->component" :field="$data" />');
+
+
+    $blade = Blade::render('<x-dynamic-component :component="$component" :field="$field" />', [
+        'component' => $fieldClass->component,
+        'field' => $field,
+        'errors' => new \Illuminate\Support\MessageBag()
+    ]);
+
+
+    dd($blade);
+
+    $view = view($fieldClass->component, ['field' => $field])->render();
+
+    dd($view);
+    $this->assertStringNotContainsString('.custom', $view);
+
+
+
+    dd($field);
+
+    $component = Livewire::test(Create::class, ['slug' => 'Post'])
+        ->call('setModel', $model)
+        ->assertSee('Create Slug Model')
+        ->assertSee('Slug for Test')
+        ->assertSeeHtml('type="text"')
+        ->assertSee('Slug')
+        ->call('save')
+        ->assertHasErrors(['form.fields.slug']);
+
+
 });
 
 test('Slug Field - only disabled input - true', function () {
