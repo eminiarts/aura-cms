@@ -151,7 +151,9 @@ class Team extends Resource
 
     public function getOption($option)
     {
-        $option = 'team.'.$this->id.'.'.$option;
+        // $option = 'team.'.$this->id.'.'.$option;
+
+        // dd($option);
 
         // If there is a * at the end of the option name, it means that it is a wildcard
         // and we need to get all options that match the wildcard

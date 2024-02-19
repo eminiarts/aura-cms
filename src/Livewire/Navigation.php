@@ -71,6 +71,8 @@ class Navigation extends Component
     {
         $settings = app('aura')::getOption('team-settings');
 
+        // dd($settings);
+
         if ($settings && isset($settings['sidebar-type'])) {
             return $settings['sidebar-type'];
         }

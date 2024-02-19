@@ -43,20 +43,20 @@ class Checkbox extends Field
 
             ],
             [
-                'name' => 'Value',
+                'name' => 'Key',
                 'type' => 'Aura\\Base\\Fields\\Text',
                 'validation' => '',
-                'slug' => 'value',
+                'slug' => 'key',
                 'style' => [
                     'width' => '50',
                 ],
 
             ],
             [
-                'name' => 'Name',
+                'name' => 'Value',
                 'type' => 'Aura\\Base\\Fields\\Text',
                 'validation' => '',
-                'slug' => 'name',
+                'slug' => 'value',
                 'style' => [
                     'width' => '50',
                 ],

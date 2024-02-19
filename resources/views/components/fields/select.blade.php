@@ -28,13 +28,18 @@
       @endphp
 
      @foreach($options as $key => $value)
-    @if(is_array($value))
+    @if(is_array($value) && is_string($key))
         {{-- This is a grouped option --}}
         <optgroup label="{{ $key }}">
             @foreach($value as $optionValue => $optionLabel)
                 <option value="{{ $optionValue }}">{{ $optionLabel }}</option>
             @endforeach
         </optgroup>
+    @elseif (is_array($value))
+        @if (isset($value['key']) && isset($value['value']))
+          {{-- This is a flat option --}}
+          <option value="{{ $value['key'] }}">{{ $value['value'] }}</option>
+        @endif
     @else
         {{-- This is a flat option --}}
         <option value="{{ $key }}">{{ $value }}</option>
