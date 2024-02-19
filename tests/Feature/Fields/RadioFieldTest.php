@@ -3,7 +3,7 @@
 namespace Tests\Feature\Livewire;
 
 use Aura\Base\Facades\Aura;
-use Aura\Base\Fields\Checkbox;
+use Aura\Base\Fields\Radio;
 use Aura\Base\Livewire\Resource\Create;
 use Aura\Base\Resource;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -12,20 +12,19 @@ use Livewire\Livewire;
 // Refresh Database on every test
 uses(RefreshDatabase::class);
 
-class CheckboxFieldModel extends Resource
+class RadioFieldModel extends Resource
 {
-    public static string $type = 'CheckboxModel';
+    public static string $type = 'RadioModel';
 
     public static function getFields()
     {
         return [
             [
-                'type' => 'Aura\\Base\\Fields\\Checkbox',
-                'name' => 'Checkbox for Test',
-                'default' => 'Default for Test',
+                'type' => 'Aura\\Base\\Fields\\Radio',
+                'name' => 'Radio for Test',
                 'validation' => '',
                 'conditional_logic' => [],
-                'slug' => 'checkbox',
+                'slug' => 'radio',
                 'options' => [
                     [
                         'key' => 'Option 1',
@@ -47,26 +46,26 @@ beforeEach(function () {
     $this->actingAs($this->user = createSuperAdmin());
 });
 
-test('check Checkbox Fields', function () {
-    $slug = new Checkbox();
+test('check Radio Fields', function () {
+    $slug = new Radio();
 
     $fields = collect($slug->getFields());
 
-    expect($fields->firstWhere('slug', 'checkbox'))->not->toBeNull();
+    expect($fields->firstWhere('slug', 'radio'))->not->toBeNull();
     expect($fields->firstWhere('slug', 'options'))->not->toBeNull();
     expect($fields->firstWhere('slug', 'key'))->not->toBeNull();
     expect($fields->firstWhere('slug', 'value'))->not->toBeNull();
     expect($fields->firstWhere('slug', 'default'))->not->toBeNull();
 });
 
-test('Checkbox Field - Name rendered', function () {
+test('Radio Field - Name rendered', function () {
     $field = [
-        'type' => 'Aura\\Base\\Fields\\Checkbox',
-        'name' => 'Checkbox for Test',
+        'type' => 'Aura\\Base\\Fields\\Radio',
+        'name' => 'Radio for Test',
         'default' => 'Default for Test',
         'validation' => '',
         'conditional_logic' => [],
-        'slug' => 'checkbox',
+        'slug' => 'radio',
         'options' => [
             [
                 'key' => 'Option 1',
@@ -88,18 +87,18 @@ test('Checkbox Field - Name rendered', function () {
         ['component' => $fieldClass->component, 'field' => $field, 'form' => []]
     );
 
-    expect((string) $view)->toContain('>Checkbox for Test</label>');
+    expect((string) $view)->toContain('>Radio for Test</label>');
 });
 
 
-test('Checkbox Field - Options rendered', function () {
+test('Radio Field - Options rendered', function () {
     $field = [
-        'type' => 'Aura\\Base\\Fields\\Checkbox',
-        'name' => 'Checkbox for Test',
+        'type' => 'Aura\\Base\\Fields\\Radio',
+        'name' => 'Radio for Test',
         'default' => 'Default for Test',
         'validation' => '',
         'conditional_logic' => [],
-        'slug' => 'checkbox',
+        'slug' => 'radio',
         'options' => [
             [
                 'key' => 'option_1',
@@ -121,12 +120,12 @@ test('Checkbox Field - Options rendered', function () {
         ['component' => $fieldClass->component, 'field' => $field, 'form' => []]
     );
 
-    expect((string) $view)->toContain('>Checkbox for Test</label>');
+    expect((string) $view)->toContain('>Radio for Test</label>');
     expect((string) $view)->toContain('Option 1');
     expect((string) $view)->toContain('Option 2');
 
     expect((string) $view)->toContain('value="option_1"');
     expect((string) $view)->toContain('value="option_2"');
 
-    expect((string) $view)->toContain('type="checkbox"');
+    expect((string) $view)->toContain('type="radio"');
 });
