@@ -147,7 +147,6 @@ class BelongsTo extends Field
 
     public function relationship($model, $field)
     {
-        dd($model, $field);
         // If it's a meta field
         if ($model->usesMeta()) {
             return $model->hasManyThrough(

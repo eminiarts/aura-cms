@@ -47,7 +47,6 @@ trait PerPagePagination
      */
     public function updatedPerPage($value)
     {
-        ray('updatedPerPage', $value)->red();
         session()->put('perPage', $value);
     }
 }

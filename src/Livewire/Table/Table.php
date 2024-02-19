@@ -399,7 +399,7 @@ class Table extends Component
      */
     public function updatedSelected()
     {
-        ray('table updatedSelected', $this->selected);
+        // ray('table updatedSelected', $this->selected);
         // return;
 
         $this->selectAll = false;

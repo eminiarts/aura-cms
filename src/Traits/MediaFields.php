@@ -46,7 +46,6 @@ trait MediaFields
 
     public function updateField($data)
     {
-        ray('updateField', $data['value']);
         $this->form['fields'][$data['slug']] = $data['value'];
 
         $this->dispatch('fieldUpdated', [
