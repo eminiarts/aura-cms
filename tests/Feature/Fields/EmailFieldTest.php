@@ -6,17 +6,14 @@ use Aura\Base\Livewire\Resource\Create;
 use Aura\Base\Resource;
 use Aura\Base\Resources\Post;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Aura\Base\Fields\Email;
 use Livewire\Livewire;
-
-// Refresh Database on every test
-uses(RefreshDatabase::class);
 
 // Before each test, create a Superadmin and login
 beforeEach(function () {
     $this->actingAs($this->user = createSuperAdmin());
 });
 
-// Create Resource for this test
 class EmailFieldModel extends Resource
 {
     public static $singularName = 'Email Model';
@@ -39,10 +36,18 @@ class EmailFieldModel extends Resource
     }
 }
 
-test('Email Field', function () {
-    // show all exceptions
-    //$this->withoutExceptionHandling();
+test('check Email Fields', function () {
+    $slug = new Email();
 
+    $fields = collect($slug->getFields());
+
+    expect($fields->firstWhere('slug', 'placeholder'))->not->toBeNull();
+    expect($fields->firstWhere('slug', 'prefix'))->toBeNull();
+    expect($fields->firstWhere('slug', 'suffix'))->toBeNull();
+});
+
+
+test('Email Field', function () {
     $model = new EmailFieldModel();
 
     $component = Livewire::test(Create::class, ['slug' => 'Post'])
@@ -74,4 +79,44 @@ test('Email Field', function () {
 });
 
 test('Email Field - Placeholder', function () {
-})->todo();
+    $field = [
+           'name' => 'Text for Test',
+           'type' => 'Aura\\Base\\Fields\\Email',
+           'validation' => '',
+           'conditional_logic' => [],
+           'placeholder' => 'Deine Email',
+           'slug' => 'text',
+       ];
+
+    $fieldClass = app($field['type']);
+    $field['field'] = $fieldClass;
+
+    $view = $this->withViewErrors([])->blade(
+        '<x-dynamic-component :component="$component" :field="$field" :form="$form" />',
+        ['component' => $fieldClass->component, 'field' => $field, 'form' => []]
+    );
+
+    expect((string) $view)->toContain('placeholder="Deine Email"');
+
+});
+
+test('Email Field - Name rendered', function () {
+    $field = [
+        'name' => 'Text for Test',
+        'type' => 'Aura\\Base\\Fields\\Email',
+        'validation' => '',
+        'conditional_logic' => [],
+        'slug' => 'text',
+    ];
+
+    $fieldClass = app($field['type']);
+    $field['field'] = $fieldClass;
+
+    $view = $this->withViewErrors([])->blade(
+        '<x-dynamic-component :component="$component" :field="$field" :form="$form" />',
+        ['component' => $fieldClass->component, 'field' => $field, 'form' => []]
+    );
+
+    expect((string) $view)->toContain('>Text for Test</label>');
+    expect((string) $view)->toContain('type="email"');
+});
