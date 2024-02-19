@@ -141,10 +141,6 @@ test('Advanced Select - Check values function exists', function () {
 });
 
 
-test('api test with advanced select', function () {
-});
-
-
 // Test for Missing `model` or `slug` Parameters
 it('returns an error if model or slug is missing', function () {
     $response = postJson(route('aura.api.fields.values'), [
@@ -174,4 +170,54 @@ it('returns field values for a valid request', function () {
              ->assertJson([
                  ['id' => $role->id, 'title' => $role->title()],
              ]);
+});
+
+
+test('Advanced Select Field - create button true', function () {
+    $field = [
+        'name' => 'Select',
+        'type' => 'Aura\\Base\\Fields\\AdvancedSelect',
+        'create' => true,
+        'validation' => '',
+        'resource' => 'Aura\\Base\\Resources\\Role',
+        'slug' => 'select',
+    ];
+
+    $fieldClass = app($field['type']);
+    $field['field'] = $fieldClass;
+
+    $view = $this->withViewErrors([])->blade(
+        '<x-dynamic-component :component="$component" :field="$field" :form="$form" />',
+        ['component' => $fieldClass->component, 'field' => $field, 'form' => []]
+    );
+
+    expect((string) $view)->toContain('Select');
+    expect((string) $view)->toContain('wire:click="$dispatch(\'openModal\', { component:');
+});
+
+test('Advanced Select Field - create button false', function () {
+    $field = [
+        'name' => 'Select',
+        'type' => 'Aura\\Base\\Fields\\AdvancedSelect',
+        'create' => false,
+        'validation' => '',
+        'resource' => 'Aura\\Base\\Resources\\Role',
+        'slug' => 'select',
+    ];
+
+    $fieldClass = app($field['type']);
+    $field['field'] = $fieldClass;
+
+    $view = $this->withViewErrors([])->blade(
+        '<x-dynamic-component :component="$component" :field="$field" :form="$form" />',
+        ['component' => $fieldClass->component, 'field' => $field, 'form' => []]
+    );
+
+    expect((string) $view)->toContain('Select');
+    expect((string) $view)->not->toContain('wire:click="$dispatch(\'openModal\', { component:');
+});
+
+
+
+test('api test with advanced select', function () {
 });
