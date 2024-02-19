@@ -59,12 +59,12 @@ return [
    |
    */
 
-   'components' => [
+    'components' => [
         'dashboard' => Aura\Base\Livewire\Dashboard::class,
         'profile' => Aura\Base\Livewire\Profile::class,
         'team_settings' => Aura\Base\Livewire\TeamSettings::class,
         'config' => Aura\Base\Livewire\Config::class,
-   ],
+    ],
 
     'resources' => [
         'user' => Aura\Base\Resources\User::class,

@@ -2,16 +2,13 @@
 
 namespace Tests\Feature\Livewire;
 
-use Livewire\Livewire;
-use Aura\Base\Resource;
-use Aura\Base\Fields\Slug;
-use Aura\Base\Models\User;
 use Aura\Base\Facades\Aura;
-use Aura\Base\Resources\Team;
-use Aura\Base\Livewire\Resource\Edit;
-use Illuminate\Support\Facades\Blade;
+use Aura\Base\Fields\Slug;
 use Aura\Base\Livewire\Resource\Create;
+use Aura\Base\Livewire\Resource\Edit;
+use Aura\Base\Resource;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Livewire\Livewire;
 
 // Refresh Database on every test
 uses(RefreshDatabase::class);
@@ -119,7 +116,7 @@ test('check Slug Fields', function () {
 
 test('Slug Field - Without Custom Checkbox', function () {
 
-    $field =   [
+    $field = [
         'name' => 'Slug for Test',
         'type' => 'Aura\\Base\\Fields\\Slug',
         'validation' => 'required|alpha_dash',
@@ -138,9 +135,9 @@ test('Slug Field - Without Custom Checkbox', function () {
 
     $view->assertSee('Slug for Test');
 
-    expect((string)$view)->not->toContain('<div class="custom-slug');
-    expect((string)$view)->toContain('custom: true,');
-    expect((string)$view)->toContain('value: $wire.entangle(\'form.fields.slug\')');
+    expect((string) $view)->not->toContain('<div class="custom-slug');
+    expect((string) $view)->toContain('custom: true,');
+    expect((string) $view)->toContain('value: $wire.entangle(\'form.fields.slug\')');
 
     // Set Custom
 
@@ -153,22 +150,22 @@ test('Slug Field - Without Custom Checkbox', function () {
 
     $view->assertSee('Slug for Test');
 
-    expect((string)$view)->toContain('<div class="custom-slug');
+    expect((string) $view)->toContain('<div class="custom-slug');
 
-    expect((string)$view)->toContain('custom: true,');
+    expect((string) $view)->toContain('custom: true,');
 });
 
 test('Slug Field - only disabled input - true', function () {
-    $field =   [
-            'name' => 'Slug for Test',
-            'type' => 'Aura\\Base\\Fields\\Slug',
-            'validation' => 'required|alpha_dash',
-            'conditional_logic' => [],
-            'slug' => 'slug',
-            'based_on' => 'text',
-            'custom' => false,
-            'disabled' => true,
-        ];
+    $field = [
+        'name' => 'Slug for Test',
+        'type' => 'Aura\\Base\\Fields\\Slug',
+        'validation' => 'required|alpha_dash',
+        'conditional_logic' => [],
+        'slug' => 'slug',
+        'based_on' => 'text',
+        'custom' => false,
+        'disabled' => true,
+    ];
 
     $fieldClass = app($field['type']);
 
@@ -179,22 +176,22 @@ test('Slug Field - only disabled input - true', function () {
 
     $view->assertSee('Slug for Test');
 
-    expect((string)$view)->not->toContain('<div class="custom-slug');
-    expect((string)$view)->toContain('custom: false,');
-    expect((string)$view)->toContain('x-bind:disabled="!custom"');
+    expect((string) $view)->not->toContain('<div class="custom-slug');
+    expect((string) $view)->toContain('custom: false,');
+    expect((string) $view)->toContain('x-bind:disabled="!custom"');
 
 });
 
 test('Slug Field - disabled input - false', function () {
-    $field =   [
-                'name' => 'Slug for Test',
-                'type' => 'Aura\\Base\\Fields\\Slug',
-                'validation' => 'required|alpha_dash',
-                'conditional_logic' => [],
-                'slug' => 'slug',
-                'based_on' => 'text',
-                'disabled' => false,
-            ];
+    $field = [
+        'name' => 'Slug for Test',
+        'type' => 'Aura\\Base\\Fields\\Slug',
+        'validation' => 'required|alpha_dash',
+        'conditional_logic' => [],
+        'slug' => 'slug',
+        'based_on' => 'text',
+        'disabled' => false,
+    ];
 
     $fieldClass = app($field['type']);
 
@@ -205,23 +202,23 @@ test('Slug Field - disabled input - false', function () {
 
     $view->assertSee('Slug for Test');
 
-    expect((string)$view)->not->toContain('<div class="custom-slug');
-    expect((string)$view)->toContain('custom: true,');
-    expect((string)$view)->toContain('x-bind:disabled="!custom"');
+    expect((string) $view)->not->toContain('<div class="custom-slug');
+    expect((string) $view)->toContain('custom: true,');
+    expect((string) $view)->toContain('x-bind:disabled="!custom"');
 
 });
 
 test('Slug Field - custom - false ', function () {
 
-    $field =   [
-                'name' => 'Slug for Test',
-                'type' => 'Aura\\Base\\Fields\\Slug',
-                'validation' => 'required|alpha_dash',
-                'conditional_logic' => [],
-                'slug' => 'slug',
-                'based_on' => 'text',
-                'custom' => false,
-            ];
+    $field = [
+        'name' => 'Slug for Test',
+        'type' => 'Aura\\Base\\Fields\\Slug',
+        'validation' => 'required|alpha_dash',
+        'conditional_logic' => [],
+        'slug' => 'slug',
+        'based_on' => 'text',
+        'custom' => false,
+    ];
 
     $fieldClass = app($field['type']);
 
@@ -230,19 +227,19 @@ test('Slug Field - custom - false ', function () {
         ['component' => $fieldClass->component, 'field' => $field]
     );
 
-    expect((string)$view)->not->toContain('<div class="custom-slug');
+    expect((string) $view)->not->toContain('<div class="custom-slug');
 });
 
 test('Slug Field - custom - true', function () {
-    $field =   [
-                   'name' => 'Slug for Test',
-                   'type' => 'Aura\\Base\\Fields\\Slug',
-                   'validation' => 'required|alpha_dash',
-                   'conditional_logic' => [],
-                   'slug' => 'slug',
-                   'based_on' => 'text',
-                   'custom' => true,
-               ];
+    $field = [
+        'name' => 'Slug for Test',
+        'type' => 'Aura\\Base\\Fields\\Slug',
+        'validation' => 'required|alpha_dash',
+        'conditional_logic' => [],
+        'slug' => 'slug',
+        'based_on' => 'text',
+        'custom' => true,
+    ];
 
     $fieldClass = app($field['type']);
 
@@ -251,5 +248,5 @@ test('Slug Field - custom - true', function () {
         ['component' => $fieldClass->component, 'field' => $field]
     );
 
-    expect((string)$view)->toContain('<div class="custom-slug');
+    expect((string) $view)->toContain('<div class="custom-slug');
 });

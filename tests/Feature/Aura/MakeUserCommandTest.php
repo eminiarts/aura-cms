@@ -3,7 +3,6 @@
 use Aura\Base\Resources\Role;
 use Aura\Base\Resources\User;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 
 // beforeEach(fn () => $this->actingAs($this->user = User::factory()->create()));
 

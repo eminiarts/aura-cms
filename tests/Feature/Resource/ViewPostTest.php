@@ -1,7 +1,6 @@
 <?php
 
 use Aura\Base\Resources\Post;
-use Aura\Base\Resources\User;
 
 use function Pest\Livewire\livewire;
 

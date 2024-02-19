@@ -18,11 +18,11 @@ class Config extends Component
 
     public $config;
 
-    public $model;
-
     public $form = [
         'fields' => [],
     ];
+
+    public $model;
 
     protected $listeners = ['updateField' => 'updateField'];
 
@@ -425,7 +425,7 @@ class Config extends Component
     {
         return Arr::dot([
             'form.fields' => $this->validationRules(),
-            'form.fields.features' => ''
+            'form.fields.features' => '',
         ]);
     }
 

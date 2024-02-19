@@ -3,7 +3,6 @@
 use Aura\Base\Facades\Aura;
 use Aura\Base\Livewire\ResourceEditor;
 use Aura\Base\Models\Post;
-use Aura\Base\Resources\User;
 use Livewire\Livewire;
 
 class ResourceEditorFake extends ResourceEditor

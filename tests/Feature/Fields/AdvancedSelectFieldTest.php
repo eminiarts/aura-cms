@@ -2,17 +2,13 @@
 
 namespace Tests\Feature\Livewire;
 
-use Livewire\Livewire;
-use Aura\Base\Resource;
-use Aura\Base\Models\User;
 use Aura\Base\Facades\Aura;
+use Aura\Base\Livewire\Resource\Create;
+use Aura\Base\Livewire\Resource\Edit;
+use Aura\Base\Resource;
 use Aura\Base\Resources\Post;
 use Aura\Base\Resources\Role;
-use Aura\Base\Resources\Team;
-use Illuminate\Support\Facades\Hash;
-use Aura\Base\Livewire\Resource\Edit;
-use Aura\Base\Livewire\Resource\Create;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Livewire\Livewire;
 
 // Before each test, create a Superadmin and login
 beforeEach(function () {
@@ -69,7 +65,7 @@ test('AdvancedSelect Field Test', function () {
     // Assert that $model->fields['number'] is null
     $this->assertNull($model->fields['advancedselect']);
 
-    $component->set('form.fields.advancedselect', [ $roles[0]->id ])
+    $component->set('form.fields.advancedselect', [$roles[0]->id])
         ->call('save')
         ->assertHasNoErrors(['form.fields.advancedselect']);
 
@@ -89,8 +85,8 @@ test('AdvancedSelect Field Test', function () {
 test('advancedselect field gets displayed correctly on edit view', function () {
     $model = AdvancedSelectFieldModel::create([
         'fields' => [
-            'advancedselect' => [ $id = Role::first()->id ]
-        ]
+            'advancedselect' => [$id = Role::first()->id],
+        ],
     ]);
 
     $this->assertDatabaseHas('posts', ['type' => 'AdvancedSelectModel']);
@@ -123,8 +119,6 @@ test('advancedselect field gets displayed correctly on edit view', function () {
     expect($post->advancedselect)->toHaveCount(1);
     expect($post->advancedselect)->toContain($id);
 });
-
-
 
 test('api test with advanced select', function () {
 })->todo();

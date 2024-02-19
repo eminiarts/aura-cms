@@ -8,9 +8,9 @@ class Image extends Field
 {
     public $component = 'aura::fields.image';
 
-    public $view = 'aura::fields.view-value';
-
     public $optionGroup = 'Media Fields';
+
+    public $view = 'aura::fields.view-value';
 
     public function display($field, $value, $model)
     {

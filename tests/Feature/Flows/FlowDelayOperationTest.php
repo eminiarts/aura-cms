@@ -1,10 +1,10 @@
 <?php
 
+use Aura\Base\Models\User;
+use Aura\Base\Resources\Post;
 use Aura\Flows\Jobs\RunOperation;
 use Aura\Flows\Jobs\TriggerFlowOnCreatePostEvent;
 use Aura\Flows\Resources\Flow;
-use Aura\Base\Models\User;
-use Aura\Base\Resources\Post;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Queue;
 

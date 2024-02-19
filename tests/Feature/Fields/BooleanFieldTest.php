@@ -3,10 +3,8 @@
 namespace Tests\Feature\Livewire;
 
 use Aura\Base\Livewire\Resource\Create;
-use Aura\Base\Models\User;
 use Aura\Base\Resource;
 use Aura\Base\Resources\Post;
-use Aura\Base\Resources\Team;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
 

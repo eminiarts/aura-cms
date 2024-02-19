@@ -1,8 +1,8 @@
 <?php
 
-use Aura\Flows\Resources\Flow;
 use Aura\Base\Livewire\CreateFlow;
 use Aura\Base\Models\User;
+use Aura\Flows\Resources\Flow;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
 

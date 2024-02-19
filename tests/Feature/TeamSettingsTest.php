@@ -100,7 +100,6 @@ test('Team Settings can be saved', function () {
 
     $this->assertIsArray($option->value);
 
-
     $this->assertEquals('light', $option->value['darkmode-type']);
     $this->assertEquals('light', $option->value['sidebar-type']);
     $this->assertEquals('red', $option->value['color-palette']);

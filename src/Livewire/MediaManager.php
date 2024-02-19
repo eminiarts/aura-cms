@@ -19,7 +19,7 @@ class MediaManager extends ModalComponent
     protected $listeners = [
         'selectedRows' => 'selectAttachment',
         'tableMounted',
-        'updateField' => 'updateField'
+        'updateField' => 'updateField',
     ];
 
     public static function modalMaxWidth(): string

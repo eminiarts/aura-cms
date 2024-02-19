@@ -16,9 +16,9 @@ class EditResourceField extends Component
 
     public $fieldSlug;
 
-    public $open = false;
-
     public $form;
+
+    public $open = false;
 
     public $reservedWords = ['id', 'type'];
 

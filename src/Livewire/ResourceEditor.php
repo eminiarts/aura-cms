@@ -26,9 +26,9 @@ class ResourceEditor extends Component
 
     public $model;
 
-    public $resource = [];
-
     public $reservedWords = ['id', 'type'];
+
+    public $resource = [];
 
     public $slug;
 
@@ -554,7 +554,7 @@ class ResourceEditor extends Component
     {
         // Make Sure Name is always a Slug
         foreach ($this->fields as $key => $field) {
-            if (!optional($field)['slug']) {
+            if (! optional($field)['slug']) {
                 $this->fields[$key]['slug'] = Str::slug($field['name']);
             } else {
                 $this->fields[$key]['slug'] = Str::slug($field['slug']);

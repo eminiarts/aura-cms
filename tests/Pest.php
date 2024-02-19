@@ -66,13 +66,12 @@ function createSuperAdmin()
     return $user;
 }
 
-
 function createAdmin()
 {
     $user = User::factory()->create();
 
     // Create Team
-    if (!$team = Team::first()) {
+    if (! $team = Team::first()) {
         $team = Team::factory()->create();
     }
 

@@ -13,11 +13,11 @@ class UserSettings extends Component
 {
     use InputFields;
 
-    public $model;
-
     public $form = [
         'fields' => [],
     ];
+
+    public $model;
 
     // Listen for selectedAttachment
     protected $listeners = ['updateField' => 'updateField'];

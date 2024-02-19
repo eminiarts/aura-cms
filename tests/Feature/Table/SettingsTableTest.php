@@ -1,14 +1,12 @@
 <?php
 
-use Livewire\Livewire;
-use Aura\Base\Models\User;
 use Aura\Base\Facades\Aura;
-use Aura\Base\Resources\Post;
-use Aura\Base\Resources\Option;
-use Illuminate\View\ViewException;
 use Aura\Base\Livewire\Table\Table;
+use Aura\Base\Resources\Option;
+use Aura\Base\Resources\Post;
 use Illuminate\Support\Facades\Blade;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\View\ViewException;
+use Livewire\Livewire;
 
 // Before each test, create a Superadmin and login
 beforeEach(function () {
@@ -35,15 +33,15 @@ test('check default table settings', function () {
     $columnsArray = $component->settings['columns']->toArray();
 
     expect(array_keys($columnsArray))->toMatchArray([
-        "title", "text", "slug", "image", "number", "date", "description", "tags", "categories", "user_id",
+        'title', 'text', 'slug', 'image', 'number', 'date', 'description', 'tags', 'categories', 'user_id',
     ]);
 
     expect($component->settings)->toHaveKey('filters', true);
     expect($component->settings)->toHaveKey('search', true);
     expect($component->settings)->toHaveKey('sort');
     expect($component->settings['sort'])->toMatchArray([
-        "column" => "id",
-        "direction" => "desc",
+        'column' => 'id',
+        'direction' => 'desc',
     ]);
     expect($component->settings)->toHaveKey('settings', true);
     expect($component->settings)->toHaveKey('sort_columns', true);
@@ -62,7 +60,6 @@ test('check default table settings', function () {
     expect($component->settings)->toHaveKey('bulk_actions', true);
     expect($component->settings)->toHaveKey('header', true);
     expect($component->settings)->toHaveKey('views');
-
 
     $component->assertSeeHtml('wire:model.live.debounce="search"');
 });
@@ -101,7 +98,7 @@ test('header settings', function () {
     expect($component->settings)->toHaveKey('header', true);
 
     $component->assertSeeHtml('<h1 class="text-3xl font-semibold">Posts</h1>');
-    $component->assertSeeHtml('href="' . url('/admin/Post/create') . '"');
+    $component->assertSeeHtml('href="'.url('/admin/Post/create').'"');
 
     // Disable header
 
@@ -112,9 +109,8 @@ test('header settings', function () {
     expect($component->settings)->toHaveKey('header', false);
 
     $component->assertDontSeeHtml('<h1 class="text-3xl font-semibold">Posts</h1>');
-    $component->assertDontSeeHtml('href="' . url('/admin/Post/create') . '"');
+    $component->assertDontSeeHtml('href="'.url('/admin/Post/create').'"');
 });
-
 
 test('create settings', function () {
     $settings = ['create' => true];
@@ -123,7 +119,7 @@ test('create settings', function () {
 
     expect($component->settings)->toHaveKey('create', true);
 
-    $component->assertSeeHtml('href="' . url('/admin/Post/create') . '"');
+    $component->assertSeeHtml('href="'.url('/admin/Post/create').'"');
 
     // Disable create
 
@@ -133,7 +129,7 @@ test('create settings', function () {
 
     expect($component->settings)->toHaveKey('create', false);
 
-    $component->assertDontSeeHtml('href="' . url('/admin/Post/create') . '"');
+    $component->assertDontSeeHtml('href="'.url('/admin/Post/create').'"');
 
 });
 
@@ -153,7 +149,6 @@ test('filters settings', function () {
     $component = Livewire::test(Table::class, ['model' => $this->post, 'settings' => $settings]);
 
     expect($component->settings)->toHaveKey('filters', false);
-
 
     $component->assertDontSeeHtml('<div class="toggleFilters">');
 
@@ -202,7 +197,6 @@ test('table_before settings', function () {
 
     $component->assertDontSeeHtml('<h1>Table Before XYZ</h1>');
 });
-
 
 test('custom inject table_before for post', function () {
     Aura::registerInjectView('table_before_Post', fn (): string => Blade::render('<h1>Table Before Post</h1>'));
@@ -345,11 +339,10 @@ test('table columns settings', function () {
     expect($component->settings['columns'])->toHaveCount(3);
 
     expect($component->settings['columns'])->toMatchArray([
-        "title" => "Title",
-        "slug" => "Slug",
-        "user_id" => "User",
+        'title' => 'Title',
+        'slug' => 'Slug',
+        'user_id' => 'User',
     ]);
-
 
     expect($component->headers)->toHaveCount(3);
 
@@ -398,19 +391,18 @@ test('table columns settings', function () {
 
 // });
 
-
 test('views settings', function () {
     $settings = [
         'views' => [
-                'table' => 'custom.table.table',
-                'list' => 'custom.table.list',
-                'grid' => 'custom.table.grid',
-                'filter' => 'custom.table.filter',
-                'header' => 'custom.table.header',
-                'row' => 'custom.table.row',
-                'bulkActions' => 'custom.table.bulkActions',
-            ]
-        ];
+            'table' => 'custom.table.table',
+            'list' => 'custom.table.list',
+            'grid' => 'custom.table.grid',
+            'filter' => 'custom.table.filter',
+            'header' => 'custom.table.header',
+            'row' => 'custom.table.row',
+            'bulkActions' => 'custom.table.bulkActions',
+        ],
+    ];
 
     $component = Livewire::test(Table::class, ['model' => $this->post, 'settings' => $settings]);
 
@@ -427,25 +419,23 @@ test('views settings', function () {
     ]);
 })->throws(ViewException::class);
 
-
 test('views settings - table', function () {
     $settings = [
         'views' => [
-                'table' => 'custom.table.table',
-            ]
-        ];
+            'table' => 'custom.table.table',
+        ],
+    ];
 
     $component = Livewire::test(Table::class, ['model' => $this->post, 'settings' => $settings]);
 
 })->throws(ViewException::class);
 
-
 test('views settings - list', function () {
     $settings = [
         'views' => [
-                'list' => 'custom.table.list',
-            ]
-        ];
+            'list' => 'custom.table.list',
+        ],
+    ];
 
     $component = Livewire::test(Table::class, ['model' => $this->post, 'settings' => $settings]);
 
@@ -455,76 +445,70 @@ test('views settings - grid', function () {
     $settings = [
         'default_view' => 'grid',
         'views' => [
-                'grid' => 'custom.table.grid',
-            ]
-        ];
+            'grid' => 'custom.table.grid',
+        ],
+    ];
 
     $component = Livewire::test(Table::class, ['model' => $this->post, 'settings' => $settings]);
 
 })->throws(ViewException::class);
-
 
 test('views settings - filter', function () {
     $settings = [
         'views' => [
-                'filter' => 'custom.table.filter',
-            ]
-        ];
+            'filter' => 'custom.table.filter',
+        ],
+    ];
 
     $component = Livewire::test(Table::class, ['model' => $this->post, 'settings' => $settings]);
 
 })->throws(ViewException::class);
-
 
 test('views settings - header', function () {
     $settings = [
         'views' => [
-                'header' => 'custom.table.header',
-            ]
-        ];
+            'header' => 'custom.table.header',
+        ],
+    ];
 
     $component = Livewire::test(Table::class, ['model' => $this->post, 'settings' => $settings]);
 
 })->throws(ViewException::class);
-
 
 test('views settings - row', function () {
     $settings = [
         'views' => [
-                'row' => 'custom.table.row',
-            ]
-        ];
+            'row' => 'custom.table.row',
+        ],
+    ];
 
     $component = Livewire::test(Table::class, ['model' => $this->post, 'settings' => $settings]);
 
 })->throws(ViewException::class);
-
 
 test('views settings - bulkAction', function () {
     $settings = [
         'views' => [
-                'bulkActions' => 'custom.table.bulkActions',
-            ]
-        ];
+            'bulkActions' => 'custom.table.bulkActions',
+        ],
+    ];
 
     $component = Livewire::test(Table::class, ['model' => $this->post, 'settings' => $settings]);
 
 })->throws(ViewException::class);
-
-
 
 test('default_view settings', function () {
     $component = Livewire::test(Table::class, ['model' => $this->post, 'settings' => []]);
 
     expect($component->settings['views'])->toMatchArray([
-           "table" => "aura::components.table.index",
-           "list" => "aura::components.table.table",
-           "grid" => false,
-           "filter" => "aura::components.table.filter",
-           "header" => "aura::components.table.header",
-           "row" => "aura::components.table.row",
-           "bulkActions" => "aura::components.table.bulkActions",
-       ]);
+        'table' => 'aura::components.table.index',
+        'list' => 'aura::components.table.table',
+        'grid' => false,
+        'filter' => 'aura::components.table.filter',
+        'header' => 'aura::components.table.header',
+        'row' => 'aura::components.table.row',
+        'bulkActions' => 'aura::components.table.bulkActions',
+    ]);
 });
 
 test('columns_global_key settings', function () {
@@ -549,9 +533,9 @@ test('columns_global_key settings', function () {
     $option = Option::where('name', 'team.1.globalPosts')->first();
 
     expect($option->value)->toMatchArray([
-        "image" => "Bild",
-        "slug" => "Slug for Test",
-        "title" => "Title",
+        'image' => 'Bild',
+        'slug' => 'Slug for Test',
+        'title' => 'Title',
     ])->toHaveKeys(['image', 'slug', 'title']);
 
     expect(array_keys($option->value)[0])->toEqual('image');
@@ -580,9 +564,7 @@ test('title settings', function () {
 
     $component->assertDontSeeHtml('<h1 class="text-3xl font-semibold">Posts</h1>');
 
-
 });
-
 
 test('actions settings', function () {
 
@@ -626,7 +608,6 @@ test('bulk_actions settings', function () {
 
     $component->assertDontSeeHtml('<div class="bulk-actions">');
 });
-
 
 test('sort_columns settings', function () {
     $settings = ['sort_columns' => true];

@@ -3,7 +3,6 @@
 namespace Aura\Base\Livewire;
 
 use Aura\Base\Models\User;
-use Aura\Base\Resources\Post;
 use Livewire\Component;
 
 class GlobalSearch extends Component

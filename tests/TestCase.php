@@ -2,18 +2,18 @@
 
 namespace Aura\Base\Tests;
 
-use ReflectionObject;
 use Aura\Base\AuraServiceProvider;
-use Livewire\LivewireServiceProvider;
-use Spatie\LaravelRay\RayServiceProvider;
-use Laravel\Fortify\FortifyServiceProvider;
 use Aura\Base\Providers\AuthServiceProvider;
-use Intervention\Image\ImageServiceProvider;
-use Orchestra\Testbench\TestCase as Orchestra;
-use Lab404\Impersonate\ImpersonateServiceProvider;
-use LivewireUI\Modal\LivewireModalServiceProvider;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Foundation\Testing\Concerns\InteractsWithViews;
+use Intervention\Image\ImageServiceProvider;
+use Lab404\Impersonate\ImpersonateServiceProvider;
+use Laravel\Fortify\FortifyServiceProvider;
+use Livewire\LivewireServiceProvider;
+use LivewireUI\Modal\LivewireModalServiceProvider;
+use Orchestra\Testbench\TestCase as Orchestra;
+use ReflectionObject;
+use Spatie\LaravelRay\RayServiceProvider;
 
 class TestCase extends Orchestra
 {

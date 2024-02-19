@@ -2,15 +2,14 @@
 
 namespace Aura\Base\Livewire\Table\Traits;
 
-use Illuminate\Support\Facades\DB;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\DB;
 
 trait QueryFilters
 {
     /**
      * Apply custom filter to the query.
      *
-     * @param  \Illuminate\Database\Eloquent\Builder  $query
      * @return \Illuminate\Database\Eloquent\Builder
      */
     protected function applyCustomFilter(Builder $query)
@@ -149,7 +148,6 @@ trait QueryFilters
     /**
      * Apply taxonomy filter to the query
      *
-     * @param  \Illuminate\Database\Eloquent\Builder  $query
      * @return \Illuminate\Database\Eloquent\Builder
      */
     protected function applyTaxonomyFilter(Builder $query)
@@ -166,16 +164,16 @@ trait QueryFilters
                 }
 
                 $query->whereExists(function ($subQuery) use ($key, $taxonomy) {
-    $subQuery->select(DB::raw(1))
-             ->from('post_meta')
-             ->where('post_meta.post_id', '=', DB::raw('posts.id'))
-             ->where('post_meta.key', $key)
-             ->where(function ($subQuery) use ($taxonomy) {
-                 foreach ($taxonomy as $value) {
-                     $subQuery->orWhereRaw('JSON_CONTAINS(CAST(post_meta.value as JSON), ?)', [(string)$value]);
-                 }
-             });
-});
+                    $subQuery->select(DB::raw(1))
+                        ->from('post_meta')
+                        ->where('post_meta.post_id', '=', DB::raw('posts.id'))
+                        ->where('post_meta.key', $key)
+                        ->where(function ($subQuery) use ($taxonomy) {
+                            foreach ($taxonomy as $value) {
+                                $subQuery->orWhereRaw('JSON_CONTAINS(CAST(post_meta.value as JSON), ?)', [(string) $value]);
+                            }
+                        });
+                });
 
             }
         }
