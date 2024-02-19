@@ -6,8 +6,9 @@
         <h3>Configure Logo and Theme. These Settings are applied for this team</h3>
     </div>
 
-    {{-- @dump($this->fieldsForView) --}}
-
+    @php
+    ray($this->fieldsForView)
+    @endphp
     @foreach($this->fieldsForView as $key => $field)
     <style >
         #resource-field-{{ optional($field)['slug'] }}-wrapper {
@@ -20,12 +21,12 @@
             }
         }
     </style>
-    <x-aura::fields.conditions :field="$field" :model="$this">
+    @checkCondition($model, $field, $form)
         <div wire:key="resource-field-{{ $key }}"
         id="resource-field-{{ optional($field)['slug'] }}-wrapper">
-        <x-dynamic-component :component="$field['field']->component" :field="$field" />
+        <x-dynamic-component :component="$field['field']->component" :field="$field" :form="$form" />
         </div>
-    </x-aura::fields.conditions>
+        @endcheckCondition
     @endforeach
 
     <x-aura::button size="xl" wire:click="save">
