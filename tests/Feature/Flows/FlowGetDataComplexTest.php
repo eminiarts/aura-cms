@@ -1,9 +1,9 @@
 <?php
 
-use Aura\Flows\Resources\Flow;
-use Aura\Flows\Resources\Operation;
 use Aura\Base\Models\User;
 use Aura\Base\Resources\Post;
+use Aura\Flows\Resources\Flow;
+use Aura\Flows\Resources\Operation;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);

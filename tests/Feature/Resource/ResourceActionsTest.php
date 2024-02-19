@@ -2,7 +2,6 @@
 
 use Aura\Base\Facades\Aura;
 use Aura\Base\Resource;
-use Aura\Base\Resources\User;
 
 use function Pest\Livewire\livewire;
 

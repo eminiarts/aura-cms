@@ -9,13 +9,13 @@ class Notifications extends Component
 {
     use InputFields;
 
-    public $model;
-
-    public $open = false;
-
     public $form = [
         'fields' => [],
     ];
+
+    public $model;
+
+    public $open = false;
 
     public function activate($params)
     {

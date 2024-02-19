@@ -1,7 +1,6 @@
 <?php
 
 use Aura\Base\Livewire\Table\Table;
-use Aura\Base\Models\User;
 use Aura\Base\Resources\Post;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;

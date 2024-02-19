@@ -1,17 +1,15 @@
 <?php
 
-use Illuminate\Support\Facades\Route;
-use Aura\Base\Livewire\User\Profile;
-use Aura\Base\Livewire\ResourceEditor;
-use Aura\Base\Livewire\Resource\Edit;
-use Aura\Base\Livewire\Resource\View;
-use Aura\Base\Livewire\Config;
-use Aura\Base\Livewire\Resource\Index;
-use Aura\Base\Livewire\Resource\Create;
-use Aura\Base\Livewire\TeamSettings;
 use Aura\Base\Http\Controllers\Api\FieldsController;
 use Aura\Base\Livewire\Attachment\Index as AttachmentIndex;
+use Aura\Base\Livewire\Config;
 use Aura\Base\Livewire\PluginsPage;
+use Aura\Base\Livewire\Resource\Create;
+use Aura\Base\Livewire\Resource\Edit;
+use Aura\Base\Livewire\Resource\Index;
+use Aura\Base\Livewire\Resource\View;
+use Aura\Base\Livewire\ResourceEditor;
+use Illuminate\Support\Facades\Route;
 
 Route::middleware(config('aura.middleware.aura-guest'))->group(function () {
     require __DIR__.'/auth.php';
@@ -40,7 +38,6 @@ Route::domain(config('aura.domain'))
 
             Route::get('/settings', config('aura.components.team_settings'))->name('team.settings');
             Route::get('/config', config('aura.components.config'))->name('config');
-
 
             Route::get('/plugins', PluginsPage::class)->name('plugins');
 

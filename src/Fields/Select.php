@@ -6,9 +6,9 @@ class Select extends Field
 {
     public $component = 'aura::fields.select';
 
-    public $view = 'aura::fields.view-value';
-
     public $optionGroup = 'Choice Fields';
+
+    public $view = 'aura::fields.view-value';
 
     public function getFields()
     {

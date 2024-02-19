@@ -13,8 +13,8 @@ use Aura\Base\Livewire\Table\Traits\Settings;
 use Aura\Base\Livewire\Table\Traits\Sorting;
 use Aura\Base\Models\User;
 use Aura\Base\Resource;
-use Livewire\Component;
 use Livewire\Attributes\Computed;
+use Livewire\Component;
 
 /**
  * Class Table
@@ -29,8 +29,6 @@ class Table extends Component
     use Select;
     use Settings;
     use Sorting;
-
-    public $model;
 
     public $bulkActionsView = 'aura::components.table.bulkActions';
 
@@ -84,6 +82,8 @@ class Table extends Component
 
     public $loaded = false;
 
+    public $model;
+
     /**
      * The parent of the table.
      *
@@ -91,9 +91,9 @@ class Table extends Component
      */
     public $parent;
 
-    public $resource;
-
     public $query;
+
+    public $resource;
 
     public $rowIds;
 
@@ -110,8 +110,6 @@ class Table extends Component
         'filters.custom.*.operator' => 'required',
         'filters.custom.*.value' => 'required',
     ];
-
-
 
     /**
      * The settings of the table.
@@ -154,9 +152,14 @@ class Table extends Component
         }
     }
 
-    public function getAllTableRows()
+    public function allTableRows()
     {
-        return $this->rowsQuery->pluck('id')->all();
+        return $this->rowsQuery()->pluck('id')->all();
+    }
+
+    public function boot()
+    {
+        $this->rowIds = $this->rows()->pluck('id')->toArray();
     }
 
     /**
@@ -193,6 +196,21 @@ class Table extends Component
         return $this->model()->inputFields();
     }
 
+    public function getAllTableRows()
+    {
+        return $this->rowsQuery->pluck('id')->all();
+    }
+
+    public function getParentModel()
+    {
+        return $this->parent;
+    }
+
+    public function getRows()
+    {
+        return $this->rows();
+    }
+
     /**
      * Get the table headers.
      *
@@ -219,6 +237,19 @@ class Table extends Component
         return $headers;
     }
 
+    public function loadTable()
+    {
+        $this->loaded = true;
+    }
+
+    #[Computed]
+    public function model()
+    {
+        // ray('hier', $this->model);
+
+        return $this->model;
+    }
+
     /**
      * Get the model columns.
      *
@@ -238,9 +269,151 @@ class Table extends Component
         return $columns;
     }
 
-    public function getParentModel()
+    public function mount()
     {
-        return $this->parent;
+        // if ($this->parentModel) {
+        //     // dd($this->parentModel);
+        // }
+
+        $this->dispatch('tableMounted');
+
+        if ($this->selectedFilter) {
+            if (array_key_exists($this->selectedFilter, $this->userFilters)) {
+                $this->filters = $this->userFilters[$this->selectedFilter];
+            }
+        }
+
+        if (auth()->user()->getOptionColumns($this->model()->getType())) {
+            $this->columns = auth()->user()->getOptionColumns($this->model()->getType());
+        } else {
+            $this->columns = $this->model()->getDefaultColumns();
+        }
+
+        $this->initiateSettings();
+
+        $this->setTaxonomyFilters();
+    }
+
+    public function openBulkActionModal($action, $data)
+    {
+        $this->dispatch('openModal', $data['modal'], [
+            'action' => $action,
+            'selected' => $this->selectedRowsQuery->pluck('id'),
+            'model' => get_class($this->model),
+        ]);
+    }
+
+    public function refreshRows()
+    {
+        unset($this->rowsQuery);
+        unset($this->rows);
+    }
+
+    public function refreshTableSelected()
+    {
+        $this->selected = [];
+    }
+
+    /**
+     * Render the component view.
+     *
+     * @return \Illuminate\View\View
+     */
+    public function render()
+    {
+        return view('aura::livewire.table.table', [
+            'parent' => $this->parent,
+            'rows' => $this->rows(),
+        ]);
+    }
+
+    /**
+     * Reorder the table columns.
+     *
+     * @param  $slugs  array The new column order.
+     * @return void
+     */
+    public function reorder($slugs)
+    {
+        if ($this->settings['columns_global_key']) {
+            $orderedSort = array_merge(array_flip($slugs), $this->headers());
+
+            return Aura::updateOption($this->settings['columns_global_key'], $orderedSort);
+        }
+
+        // Save the columns for the current user.
+        $orderedSort = array_merge(array_flip($slugs), $this->headers());
+
+        auth()->user()->updateOption($this->settings['columns_user_key'], $orderedSort);
+    }
+
+    public function selectFieldRows($value, $slug)
+    {
+        if ($slug == $this->field['slug']) {
+
+            $this->selected = $value;
+        }
+    }
+
+    /**
+     * Select a single row in the table.
+     *
+     * @param  $id  int The id of the row to select.
+     * @return void
+     */
+    public function selectRow($id)
+    {
+        $this->selected = $id;
+        $this->lastClickedRow = $id;
+    }
+
+    public function setPageTen()
+    {
+        $this->setPage(10);
+    }
+
+    /**
+     * Update the columns in the table.
+     *
+     * @param  $columns  array The new columns.
+     * @return void
+     */
+    public function updatedColumns($columns)
+    {
+        // Save the columns for the current user.
+        if ($this->columns) {
+            //ray('Save the columns for the current user', $this->columns);
+            auth()->user()->updateOption('columns.'.$this->model()->getType(), $this->columns);
+        }
+    }
+
+    public function updatedPage($page)
+    {
+        $this->rowIds = $this->rows()->pluck('id')->toArray();
+    }
+
+    /**
+     * Update the selected rows in the table.
+     *
+     * @return void
+     */
+    public function updatedSelected()
+    {
+        ray('table updatedSelected', $this->selected);
+        // return;
+
+        $this->selectAll = false;
+        $this->selectPage = false;
+
+        // Only allow the max number of selected rows.
+        if (optional($this->field)['max'] && count($this->selected) > $this->field['max']) {
+            $this->selected = array_slice($this->selected, 0, $this->field['max']);
+
+            $this->dispatch('selectedRows', $this->selected);
+            $this->notify('You can only select '.$this->field['max'].' items.', 'error');
+        } else {
+            $this->dispatch('selectedRows', $this->selected);
+        }
     }
 
     /**
@@ -289,184 +462,4 @@ class Table extends Component
 
         return $query;
     }
-
-    public function boot()
-    {
-        $this->rowIds = $this->rows()->pluck('id')->toArray();
-    }
-
-    public function loadTable()
-    {
-        $this->loaded = true;
-    }
-
-    public function mount()
-    {
-        // if ($this->parentModel) {
-        //     // dd($this->parentModel);
-        // }
-
-        $this->dispatch('tableMounted');
-
-        if ($this->selectedFilter) {
-            if (array_key_exists($this->selectedFilter, $this->userFilters)) {
-                $this->filters = $this->userFilters[$this->selectedFilter];
-            }
-        }
-
-        if (auth()->user()->getOptionColumns($this->model()->getType())) {
-            $this->columns = auth()->user()->getOptionColumns($this->model()->getType());
-        } else {
-            $this->columns = $this->model()->getDefaultColumns();
-        }
-
-        $this->initiateSettings();
-
-        $this->setTaxonomyFilters();
-    }
-
-    public function openBulkActionModal($action, $data)
-    {
-        $this->dispatch('openModal', $data['modal'], [
-            'action' => $action,
-            'selected' => $this->selectedRowsQuery->pluck('id'),
-            'model' => get_class($this->model),
-        ]);
-    }
-
-    public function refreshTableSelected()
-    {
-        $this->selected = [];
-    }
-
-    public function getRows()
-    {
-        return $this->rows();
-    }
-
-    /**
-     * Render the component view.
-     *
-     * @return \Illuminate\View\View
-     */
-    public function render()
-    {
-        return view('aura::livewire.table.table', [
-            'parent' => $this->parent,
-            'rows' => $this->rows(),
-        ]);
-    }
-
-    public function setPageTen()
-    {
-        $this->setPage(10);
-    }
-
-    public function refreshRows()
-    {
-        unset($this->rowsQuery);
-        unset($this->rows);
-    }
-
-    /**
-     * Reorder the table columns.
-     *
-     * @param $slugs array The new column order.
-     * @return void
-     */
-    public function reorder($slugs)
-    {
-        if($this->settings['columns_global_key']) {
-            $orderedSort = array_merge(array_flip($slugs), $this->headers());
-
-            return Aura::updateOption($this->settings['columns_global_key'], $orderedSort);
-        }
-
-        // Save the columns for the current user.
-        $orderedSort = array_merge(array_flip($slugs), $this->headers());
-
-        auth()->user()->updateOption($this->settings['columns_user_key'], $orderedSort);
-    }
-
-    public function selectFieldRows($value, $slug)
-    {
-        if ($slug == $this->field['slug']) {
-
-            $this->selected = $value;
-        }
-    }
-
-    /**
-     * Select a single row in the table.
-     *
-     * @param $id int The id of the row to select.
-     * @return void
-     */
-    public function selectRow($id)
-    {
-        $this->selected = $id;
-        $this->lastClickedRow = $id;
-    }
-
-
-
-    /**
-     * Update the columns in the table.
-     *
-     * @param $columns array The new columns.
-     * @return void
-     */
-    public function updatedColumns($columns)
-    {
-        // Save the columns for the current user.
-        if ($this->columns) {
-            //ray('Save the columns for the current user', $this->columns);
-            auth()->user()->updateOption('columns.'.$this->model()->getType(), $this->columns);
-        }
-    }
-
-
-    public function allTableRows()
-    {
-        return $this->rowsQuery()->pluck('id')->all();
-    }
-
-    public function updatedPage($page)
-    {
-        $this->rowIds = $this->rows()->pluck('id')->toArray();
-    }
-
-    /**
-     * Update the selected rows in the table.
-     *
-     * @return void
-     */
-    public function updatedSelected()
-    {
-        ray('table updatedSelected', $this->selected);
-        // return;
-
-        $this->selectAll = false;
-        $this->selectPage = false;
-
-        // Only allow the max number of selected rows.
-        if (optional($this->field)['max'] && count($this->selected) > $this->field['max']) {
-            $this->selected = array_slice($this->selected, 0, $this->field['max']);
-
-            $this->dispatch('selectedRows', $this->selected);
-            $this->notify('You can only select '.$this->field['max'].' items.', 'error');
-        } else {
-            $this->dispatch('selectedRows', $this->selected);
-        }
-    }
-
-
-    #[Computed]
-    public function model()
-    {
-        // ray('hier', $this->model);
-
-        return $this->model;
-    }
-
 }

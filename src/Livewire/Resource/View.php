@@ -16,11 +16,11 @@ class View extends Component
     use InteractsWithFields;
     use RepeaterFields;
 
+    public $form;
+
     public $inModal = false;
 
     public $model;
-
-    public $form;
 
     public $slug;
 

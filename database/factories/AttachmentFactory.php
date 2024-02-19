@@ -2,7 +2,6 @@
 
 namespace Aura\Base\Database\Factories;
 
-use Aura\Base\Resources\Post;
 use Aura\Base\Resources\Attachment;
 use Illuminate\Database\Eloquent\Factories\Factory;
 

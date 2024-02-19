@@ -3,7 +3,6 @@
 namespace Aura\Base\Livewire\Resource;
 
 use Aura\Base\Facades\Aura;
-use Aura\Base\Livewire\Forms\ResourceForm;
 use Aura\Base\Models\Post;
 use Aura\Base\Traits\HasActions;
 use Aura\Base\Traits\InteractsWithFields;
@@ -26,11 +25,11 @@ class Edit extends Component
     // use Macroable;
     use WithFileUploads;
 
+    public $form;
+
     public $inModal = false;
 
     public $model;
-
-    public $form;
 
     public $slug;
 
@@ -147,7 +146,6 @@ class Edit extends Component
 
         unset($this->form['fields']['group']);
 
-
         // unset this post fields group
         if ($this->model->usesCustomTable()) {
             $this->model->update($this->form['fields']);
@@ -161,7 +159,6 @@ class Edit extends Component
             $this->dispatch('closeModal');
             $this->dispatch('refreshTable');
         }
-
 
         $this->model = $this->model->refresh();
         $this->form = $this->model->attributesToArray();

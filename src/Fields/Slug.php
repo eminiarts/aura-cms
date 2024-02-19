@@ -13,7 +13,7 @@ class Slug extends Field
     public function getFields()
     {
         return array_merge(parent::getFields(), [
-             [
+            [
                 'name' => 'Slug',
                 'type' => 'Aura\\Base\\Fields\\Tab',
                 'slug' => 'slug-tab',

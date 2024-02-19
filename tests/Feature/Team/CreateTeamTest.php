@@ -1,10 +1,9 @@
 <?php
 
+use Aura\Base\Livewire\Resource\Create;
 use Aura\Base\Models\User;
 use Aura\Base\Resources\Team;
 use Illuminate\Support\Facades\DB;
-
-use Aura\Base\Livewire\Resource\Create;
 
 use function Pest\Livewire\livewire;
 

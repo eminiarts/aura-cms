@@ -8,7 +8,6 @@ use Aura\Base\Livewire\Resource\Edit;
 use Aura\Base\Models\User;
 use Aura\Base\Resource;
 use Aura\Base\Resources\Post;
-use Aura\Base\Resources\Team;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
 use Livewire\Livewire;
@@ -131,8 +130,6 @@ test('password field gets not overwritten if saved as null', function () {
     $this->assertTrue(Hash::check('123456789', $post->password));
 });
 
-
-
 test('password field gets not overwritten if saved as empty string', function () {
     $model = new PasswordFieldModel();
 
@@ -165,7 +162,7 @@ test('password field gets not overwritten if saved as empty string', function ()
         ->assertSee('Password for Test')
         ->assertSeeHtml('type="password"')
         // assert that the password field is empty
-        ->assertSet('form.fields.password', "")
+        ->assertSet('form.fields.password', '')
         ->call('save')
         ->assertHasNoErrors(['form.fields.password']);
 
@@ -175,8 +172,6 @@ test('password field gets not overwritten if saved as empty string', function ()
     $this->assertTrue(Hash::check('123456789', $post->fields['password']));
     $this->assertTrue(Hash::check('123456789', $post->password));
 });
-
-
 
 test('user password field gets not overwritten if saved as empty string', function () {
 
@@ -194,7 +189,7 @@ test('user password field gets not overwritten if saved as empty string', functi
         ->assertSee('Password')
         ->assertSeeHtml('type="password"')
         // assert that the password field is empty
-        ->assertSet('form.fields.password', "")
+        ->assertSet('form.fields.password', '')
         ->call('save')
         ->assertHasNoErrors(['form.fields.password']);
 

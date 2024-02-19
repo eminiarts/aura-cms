@@ -21,7 +21,7 @@ class DynamicFunctions
 
     public function call($hash)
     {
-        if (!isset($this->closures[$hash])) {
+        if (! isset($this->closures[$hash])) {
             throw new \Exception("No registered closures for hash: {$hash}");
         }
 
@@ -29,5 +29,4 @@ class DynamicFunctions
             return $callback();
         }
     }
-
 }

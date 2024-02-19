@@ -1,7 +1,6 @@
 <?php
 
 use Aura\Base\Resources\Post;
-use Aura\Base\Resources\User;
 use Aura\Base\Widgets\Sparkline;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;

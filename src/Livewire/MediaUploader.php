@@ -16,11 +16,11 @@ class MediaUploader extends Component
 
     public $for;
 
-    public $namespace = Attachment::class;
-
     public $media = [];
 
     public $model;
+
+    public $namespace = Attachment::class;
 
     public $selected;
 

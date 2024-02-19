@@ -1,7 +1,6 @@
 <?php
 
 use Aura\Base\Jobs\GenerateImageThumbnail;
-use Aura\Base\Models\User;
 use Aura\Base\Resources\Attachment;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Queue;
