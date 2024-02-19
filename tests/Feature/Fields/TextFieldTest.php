@@ -43,6 +43,10 @@ test('Text Field - Name rendered', function () {
 
     $fieldClass = app($field['type']);
 
+
+
+    $field['field'] = $fieldClass;
+
     $view = $this->withViewErrors([])->blade(
         '<x-dynamic-component :component="$component" :field="$field" />',
         ['component' => $fieldClass->component, 'field' => $field]
@@ -64,9 +68,11 @@ test('Text Field - Placeholder rendered', function () {
 
     $fieldClass = app($field['type']);
 
+    $field['field'] = $fieldClass;
+
     $view = $this->withViewErrors([])->blade(
-        '<x-dynamic-component :component="$component" :field="$field" />',
-        ['component' => $fieldClass->component, 'field' => $field]
+        '<x-dynamic-component :component="$component" :field="$field" :form="$form" />',
+        ['component' => $fieldClass->component, 'field' => $field, 'form' => []]
     );
 
     expect((string) $view)->toContain('placeholder="Placeholder for Test"');
@@ -85,10 +91,16 @@ test('Text Field - Default Value set', function () {
 
     $fieldClass = app($field['type']);
 
+
+    $field['field'] = $fieldClass;
+
+
+
     $view = $this->withViewErrors([])->blade(
-        '<x-dynamic-component :component="$component" :field="$field" />',
-        ['component' => $fieldClass->component, 'field' => $field]
+        '<x-dynamic-component :component="$component" :field="$field" :form="$form" />',
+        ['component' => $fieldClass->component, 'field' => $field, 'form' => []]
     );
+
 
     expect((string) $view)->toContain('value="Default for Test"');
 });
@@ -106,10 +118,15 @@ test('Text Field - Prefix rendered', function () {
 
     $fieldClass = app($field['type']);
 
+    $field['field'] = $fieldClass;
+
+
+
     $view = $this->withViewErrors([])->blade(
-        '<x-dynamic-component :component="$component" :field="$field" />',
-        ['component' => $fieldClass->component, 'field' => $field]
+        '<x-dynamic-component :component="$component" :field="$field" :form="$form" />',
+        ['component' => $fieldClass->component, 'field' => $field, 'form' => []]
     );
+
 
     expect((string) $view)->toContain('Prefix for Test');
 });
@@ -126,10 +143,15 @@ test('Text Field - suffix rendered', function () {
 
     $fieldClass = app($field['type']);
 
+
+    $field['field'] = $fieldClass;
+
+
     $view = $this->withViewErrors([])->blade(
-        '<x-dynamic-component :component="$component" :field="$field" />',
-        ['component' => $fieldClass->component, 'field' => $field]
+        '<x-dynamic-component :component="$component" :field="$field" :form="$form" />',
+        ['component' => $fieldClass->component, 'field' => $field, 'form' => []]
     );
+
 
     expect((string) $view)->toContain('Suffix for Test');
 });
