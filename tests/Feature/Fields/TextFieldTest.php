@@ -43,14 +43,14 @@ test('Text Field - Name rendered', function () {
 
     $fieldClass = app($field['type']);
 
-
-
     $field['field'] = $fieldClass;
 
+
     $view = $this->withViewErrors([])->blade(
-        '<x-dynamic-component :component="$component" :field="$field" />',
-        ['component' => $fieldClass->component, 'field' => $field]
+        '<x-dynamic-component :component="$component" :field="$field" :form="$form" />',
+        ['component' => $fieldClass->component, 'field' => $field, 'form' => []]
     );
+
 
     expect((string) $view)->toContain('>Text for Test</label>');
 });
@@ -91,14 +91,11 @@ test('Text Field - Default Value set', function () {
 
     $fieldClass = app($field['type']);
 
-
     $field['field'] = $fieldClass;
-
-
 
     $view = $this->withViewErrors([])->blade(
         '<x-dynamic-component :component="$component" :field="$field" :form="$form" />',
-        ['component' => $fieldClass->component, 'field' => $field, 'form' => []]
+        ['component' => $fieldClass->component, 'field' => $field, 'form' => ['text' => 'Default for Test']]
     );
 
 

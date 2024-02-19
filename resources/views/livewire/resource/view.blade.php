@@ -54,7 +54,6 @@
             const container = document.querySelector('.aura-view-post-container');
             const inputs = container.querySelectorAll('input, select, textarea, .aura-input');
 
-
             inputs.forEach((input) => {
                 if (!input.hasAttribute('readonly')) {
                     input.setAttribute('readonly', true);
