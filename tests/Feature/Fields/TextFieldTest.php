@@ -14,7 +14,6 @@ use Livewire\Livewire;
 // Refresh Database on every test
 uses(RefreshDatabase::class);
 
-
 class TextFieldModel extends Resource
 {
     public static string $type = 'TextModel';
@@ -63,15 +62,12 @@ test('Text Field - Name rendered', function () {
     ];
 
     $fieldClass = app($field['type']);
-
     $field['field'] = $fieldClass;
-
 
     $view = $this->withViewErrors([])->blade(
         '<x-dynamic-component :component="$component" :field="$field" :form="$form" />',
         ['component' => $fieldClass->component, 'field' => $field, 'form' => []]
     );
-
 
     expect((string) $view)->toContain('>Text for Test</label>');
 });
@@ -87,7 +83,6 @@ test('Text Field - Placeholder rendered', function () {
     ];
 
     $fieldClass = app($field['type']);
-
     $field['field'] = $fieldClass;
 
     $view = $this->withViewErrors([])->blade(
@@ -111,7 +106,6 @@ test('Text Field - Default Value set', function () {
 
 });
 
-
 test('Text Field - Prefix rendered', function () {
     $field = [
         'name' => 'Text for Test',
@@ -123,14 +117,12 @@ test('Text Field - Prefix rendered', function () {
     ];
 
     $fieldClass = app($field['type']);
-
     $field['field'] = $fieldClass;
 
     $view = $this->withViewErrors([])->blade(
         '<x-dynamic-component :component="$component" :field="$field" :form="$form" />',
         ['component' => $fieldClass->component, 'field' => $field, 'form' => []]
     );
-
 
     expect((string) $view)->toContain('Prefix for Test');
 });
@@ -146,16 +138,12 @@ test('Text Field - suffix rendered', function () {
     ];
 
     $fieldClass = app($field['type']);
-
-
     $field['field'] = $fieldClass;
-
 
     $view = $this->withViewErrors([])->blade(
         '<x-dynamic-component :component="$component" :field="$field" :form="$form" />',
         ['component' => $fieldClass->component, 'field' => $field, 'form' => []]
     );
-
 
     expect((string) $view)->toContain('Suffix for Test');
 });
