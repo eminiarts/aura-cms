@@ -167,18 +167,6 @@ class User extends UserModel
                     'width' => '100',
                 ],
             ],
-
-            [
-                'name' => 'Signatur',
-                'type' => 'Aura\\Base\\Fields\\Wysiwyg',
-                'validation' => 'required',
-                'on_index' => true,
-                'slug' => 'signature',
-                'style' => [
-                    'width' => '100',
-                ],
-            ],
-
             [
                 'name' => 'Roles',
                 'slug' => 'roles',
@@ -204,53 +192,15 @@ class User extends UserModel
                 'on_index' => false,
                 'on_view' => false,
             ],
-            [
-                'name' => 'Send Welcome Email',
-                'type' => 'Aura\\Base\\Fields\\Boolean',
-                'validation' => '',
-                'conditional_logic' => [],
-                'on_edit' => false,
-                'on_view' => false,
-                'on_index' => false,
-                'slug' => 'send-welcome-email',
-                'instructions' => 'Do you want to inform the user about his account?',
-            ],
-            [
-                'type' => 'Aura\\Base\\Fields\\Tab',
-                'name' => 'Notifications',
-                'slug' => 'tab-notifications',
-                'global' => true,
-                'on_view' => false,
-            ],
-            [
-                'name' => 'Notifications',
-                'type' => 'Aura\\Base\\Fields\\Panel',
-                'validation' => 'required',
-                'slug' => 'user-notifications-panel',
-                'style' => [
-                    'width' => '100',
-                ],
-            ],
-            [
-                'name' => 'Notifications via Email',
-                'type' => 'Aura\\Base\\Fields\\Boolean',
-                'validation' => '',
-                'conditional_logic' => [],
-                'slug' => 'notifications_via_email',
-            ],
-            [
-                'name' => 'Notifications via SMS',
-                'type' => 'Aura\\Base\\Fields\\Boolean',
-                'validation' => '',
-                'conditional_logic' => [],
-                'slug' => 'notifications_via_sms',
-            ],
-            [
-                'type' => 'Aura\\Base\\Fields\\Tab',
-                'name' => 'Posts',
-                'slug' => 'tab-posts',
-                'global' => true,
-            ],
+
+
+
+            // [
+            //     'type' => 'Aura\\Base\\Fields\\Tab',
+            //     'name' => 'Posts',
+            //     'slug' => 'tab-posts',
+            //     'global' => true,
+            // ],
             // [
             //     'name' => 'Posts',
             //     'slug' => 'posts',

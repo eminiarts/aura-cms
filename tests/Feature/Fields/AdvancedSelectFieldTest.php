@@ -246,28 +246,51 @@ test('Advanced Select Field - create button false', function () {
 
 it('searchable fields API Mock', function () {
 
-    // $this->withoutExceptionHandling();
-    // Mock the model that will be used in the tests
     $role = Mockery::mock(Role::class);
 
-    // Setup mock to return predefined searchable fields
-    $role->shouldReceive('getSearchableFields')->andReturn(['title']);
-
-    // Mock the searchIn method to return a collection of items
-    $role->shouldReceive('searchIn')->andReturnSelf();
-
-    $role->shouldReceive('take')->with(20)->andReturnSelf();
-
-    $role->shouldReceive('get')->andReturn(collect([
-        (object)['id' => 1, 'title' => 'Role 1'],
-        (object)['id' => 2, 'title' => 'Role 2'],
-    ]));
-
-    $response = test()->postJson(route('aura.api.fields.values'), [
+    $response = postJson(route('aura.api.fields.values'), [
             'model' => Role::class, // Replace with actual model class string
             'slug' => 'text',
             'field' => AdvancedSelect::class, // This must match your actual field class name or identifier
         ]);
 
     $response->assertStatus(200);
+
+    $field = new AdvancedSelect();
+
+    $request = new \Illuminate\Http\Request([
+        'model' => Role::class,
+        'slug' => 'select',
+        'search' => '',
+        'field' => AdvancedSelect::class,
+    ]);
+
+    $result = $field->api($request);
+
+    expect($result)->toHavecount(1);
+
+    $request = new \Illuminate\Http\Request([
+            'model' => Role::class,
+            'slug' => 'select',
+            'search' => 'notexists',
+            'field' => AdvancedSelect::class,
+        ]);
+
+    $result = $field->api($request);
+
+    expect($result)->toHavecount(0);
+
+    // Does not work somehow, always passes
+    // $role->shouldReceive('getSearchableFields')->andReturn(['title2']);
+
+    // // Mock the searchIn method to return a collection of items
+    // $role->shouldReceive('searchIn')->andReturnSelf();
+
+    // $role->shouldReceive('take')->with(20)->andReturnSelf();
+
+    // $role->shouldReceive('get')->andReturn(collect([
+    //     (object)['id' => 1, 'title' => 'Role 1'],
+    //     (object)['id' => 2, 'title' => 'Role 2'],
+    // ]));
+
 });
