@@ -14,6 +14,27 @@ use Livewire\Livewire;
 // Refresh Database on every test
 uses(RefreshDatabase::class);
 
+
+class TextFieldModel extends Resource
+{
+    public static string $type = 'TextModel';
+
+    public static function getFields()
+    {
+        return [
+            [
+                'type' => 'Aura\\Base\\Fields\\Text',
+                'name' => 'Text for Test',
+                'default' => 'Default for Test',
+                'validation' => '',
+                'conditional_logic' => [],
+                'slug' => 'text',
+            ],
+
+        ];
+    }
+}
+
 // Before each test, create a Superadmin and login
 beforeEach(function () {
     $this->actingAs($this->user = createSuperAdmin());
@@ -56,7 +77,6 @@ test('Text Field - Name rendered', function () {
 });
 
 test('Text Field - Placeholder rendered', function () {
-
     $field = [
         'name' => 'Text for Test',
         'type' => 'Aura\\Base\\Fields\\Text',
@@ -79,27 +99,16 @@ test('Text Field - Placeholder rendered', function () {
 });
 
 test('Text Field - Default Value set', function () {
+    Aura::fake();
+    Aura::setModel(new TextFieldModel());
 
-    $field = [
-        'name' => 'Text for Test',
-        'type' => 'Aura\\Base\\Fields\\Text',
-        'default' => 'Default for Test',
-        'validation' => '',
-        'conditional_logic' => [],
-        'slug' => 'text',
-    ];
+    $component = Livewire::test(Create::class, ['slug' => 'TextModel', ])
+        ->assertSee('Text for Test')
+        ->assertSeeHtml('wire:model="form.fields.text"')
+        ->assertDontSee('Advanced Text')
+        ->assertSet('form.fields.text', 'Default for Test')
+    ;
 
-    $fieldClass = app($field['type']);
-
-    $field['field'] = $fieldClass;
-
-    $view = $this->withViewErrors([])->blade(
-        '<x-dynamic-component :component="$component" :field="$field" :form="$form" />',
-        ['component' => $fieldClass->component, 'field' => $field, 'form' => ['text' => 'Default for Test']]
-    );
-
-
-    expect((string) $view)->toContain('value="Default for Test"');
 });
 
 
@@ -116,8 +125,6 @@ test('Text Field - Prefix rendered', function () {
     $fieldClass = app($field['type']);
 
     $field['field'] = $fieldClass;
-
-
 
     $view = $this->withViewErrors([])->blade(
         '<x-dynamic-component :component="$component" :field="$field" :form="$form" />',
