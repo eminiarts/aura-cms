@@ -406,6 +406,11 @@ class User extends UserModel
         }
 
         foreach ($roles as $role) {
+
+            if ($role->super_admin) {
+                return true;
+            }
+
             $permissions = $role->fields['permissions'];
 
             if (empty($permissions)) {
@@ -456,19 +461,7 @@ class User extends UserModel
             }
         }
 
-        // dump($roles->toArray());
-
         return false;
-
-        // Alternative way to do it, but it does a query
-
-        // get Role where meta.key = 'super_admin' and meta.value = '1'
-        $roles = $this->roles()->whereHas('meta', function ($query) {
-            $query->where('key', 'super_admin')->where('value', '1');
-        })->count();
-
-        // return true if $roles count > 0
-        return $roles > 0;
     }
 
     public function meta()
