@@ -44,10 +44,6 @@ test('Aura findResourceBySlug() Attachment', function () {
     expect($attachment)->toBeInstanceOf(Attachment::class);
 });
 
-test('app resource overwrites vendor resource', function () {
-    // Todo: add test
-})->todo();
-
 test('Aura getAppResources()', function () {
     expect(Aura::getAppResources())->toBeArray();
 });

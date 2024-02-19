@@ -155,8 +155,6 @@ class EditResourceField extends Component
         // Validate
         // $this->validate();
 
-        ray('updateType', $this->fieldSlug, $this->form['fields']);
-
         // emit event to parent with slug and value
         $this->dispatch('saveField', ['slug' => $this->fieldSlug, 'value' => $this->form['fields']]);
     }

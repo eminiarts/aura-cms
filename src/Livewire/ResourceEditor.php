@@ -410,7 +410,7 @@ class ResourceEditor extends Component
 
     public function reorder($ids)
     {
-        ray('reorder', $ids);
+        // ray('reorder', $ids);
 
         $this->validate();
 
@@ -428,7 +428,7 @@ class ResourceEditor extends Component
 
         // dd($fields);
 
-        ray($fields);
+        // ray($fields);
 
         $this->saveFields($this->fieldsArray);
 
