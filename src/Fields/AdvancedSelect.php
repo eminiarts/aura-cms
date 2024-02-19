@@ -79,7 +79,7 @@ class AdvancedSelect extends Field
                 'name' => 'Allow Create New',
                 'type' => 'Aura\\Base\\Fields\\Boolean',
                 'validation' => '',
-                'slug' => 'allow_create_new',
+                'slug' => 'create',
             ],
         ]);
     }
@@ -118,7 +118,5 @@ class AdvancedSelect extends Field
                 'title' => $item->title(),
             ];
         })->toArray();
-
-        // app($model)->pluck('title', 'id')->map(fn($name, $key) => ['value' => $key, 'label' => $name])->values()->toArray()
     }
 }
