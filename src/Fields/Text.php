@@ -47,7 +47,6 @@ class Text extends Field
                 'style' => [
                     'width' => '50',
                 ],
-
             ],
             [
                 'name' => 'Suffix',
@@ -57,7 +56,6 @@ class Text extends Field
                 'style' => [
                     'width' => '50',
                 ],
-
             ],
             [
                 'name' => 'Max Length',
