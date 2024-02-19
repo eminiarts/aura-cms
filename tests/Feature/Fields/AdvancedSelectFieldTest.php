@@ -8,10 +8,16 @@ use Aura\Base\Resource;
 use Aura\Base\Facades\Aura;
 use Aura\Base\Resources\Post;
 use Aura\Base\Resources\Role;
+use Illuminate\Support\Facades\App;
 use Aura\Base\Fields\AdvancedSelect;
+
 use Aura\Base\Livewire\Resource\Edit;
 
 use Aura\Base\Livewire\Resource\Create;
+
+use Illuminate\Support\Facades\Request;
+
+use Aura\Base\Http\Controllers\Api\FieldsController;
 
 use function Pest\Laravel\postJson;
 
@@ -133,6 +139,7 @@ test('Advanced Select - Fields', function () {
 
     expect($fields->firstWhere('slug', 'resource'))->not->toBeNull();
     expect($fields->firstWhere('slug', 'create'))->not->toBeNull();
+    expect($fields->firstWhere('slug', 'multiple'))->not->toBeNull();
 });
 
 test('Advanced Select - Check values function exists', function () {
@@ -172,6 +179,27 @@ it('returns field values for a valid request', function () {
              ]);
 });
 
+
+test('Advanced Select Field - entangle', function () {
+    $field = [
+        'name' => 'Select',
+        'type' => 'Aura\\Base\\Fields\\AdvancedSelect',
+        'create' => true,
+        'validation' => '',
+        'resource' => 'Aura\\Base\\Resources\\Role',
+        'slug' => 'select',
+    ];
+
+    $fieldClass = app($field['type']);
+    $field['field'] = $fieldClass;
+
+    $view = $this->withViewErrors([])->blade(
+        '<x-dynamic-component :component="$component" :field="$field" :form="$form" />',
+        ['component' => $fieldClass->component, 'field' => $field, 'form' => []]
+    );
+
+    expect((string) $view)->toContain('value: $wire.entangle(\'form.fields.select\'),');
+});
 
 test('Advanced Select Field - create button true', function () {
     $field = [
@@ -220,4 +248,49 @@ test('Advanced Select Field - create button false', function () {
 
 
 test('api test with advanced select', function () {
+});
+
+
+
+it('returns formatted search results', function () {
+
+
+    // Mock the model that will be used in the tests
+    $this->testModel = Mockery::mock('alias:App\Models\TestModel');
+
+    // Bind the mock to the service container
+    App::instance('App\Models\TestModel', $this->testModel);
+
+
+    // Setup mock to return predefined searchable fields
+    $this->testModel->shouldReceive('getSearchable')->once()->andReturn(['title']);
+
+    // Mock the searchIn method to return a collection of items
+    $this->testModel->shouldReceive('searchIn')->once()->andReturnSelf();
+    $this->testModel->shouldReceive('take')->with(5)->andReturnSelf();
+    $this->testModel->shouldReceive('get')->once()->andReturn(collect([
+        (object)['id' => 1, 'title' => 'Title 1'],
+        (object)['id' => 2, 'title' => 'Title 2'],
+    ]));
+
+    // Simulate a request with the necessary parameters
+    $request = new Request([
+        'model' => 'App\Models\TestModel',
+        'search' => 'query',
+    ]);
+
+    // Call the api function
+    $field = new AdvancedSelect();
+    $response = $field->api($request);
+
+    // Assert the response is as expected
+    expect($response)->toBeArray()->and($response)->toHaveCount(2);
+    expect($response[0])->toMatchArray([
+        'id' => 1,
+        'title' => 'Title 1',
+    ]);
+    expect($response[1])->toMatchArray([
+        'id' => 2,
+        'title' => 'Title 2',
+    ]);
 });

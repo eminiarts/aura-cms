@@ -12,7 +12,6 @@ class AdvancedSelect extends Field
 
     public function api($request)
     {
-        // Get $searchable from $request->model
         $searchableFields = app($request->model)->getSearchable();
 
         return app($request->model)->searchIn($searchableFields, $request->search)->take(5)->get()->map(function ($item) {
@@ -74,12 +73,17 @@ class AdvancedSelect extends Field
                 'validation' => '',
                 'slug' => 'resource',
             ],
-
             [
                 'name' => 'Allow Create New',
                 'type' => 'Aura\\Base\\Fields\\Boolean',
                 'validation' => '',
                 'slug' => 'create',
+            ],
+            [
+                'name' => 'Multiple',
+                'type' => 'Aura\\Base\\Fields\\Boolean',
+                'validation' => '',
+                'slug' => 'multiple',
             ],
         ]);
     }
@@ -101,8 +105,6 @@ class AdvancedSelect extends Field
                 'title' => $item->title(),
             ];
         })->toArray();
-
-        // app($model)->pluck('title', 'id')->map(fn($name, $key) => ['value' => $key, 'label' => $name])->values()->toArray()
     }
 
     public function set($value)
