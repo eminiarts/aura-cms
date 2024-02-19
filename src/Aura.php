@@ -2,12 +2,12 @@
 
 namespace Aura\Base;
 
-use Closure;
 use Aura\Base\Models\Scopes\TeamScope;
 use Aura\Base\Resources\Attachment;
 use Aura\Base\Resources\Option;
 use Aura\Base\Resources\User;
 use Aura\Base\Traits\DefaultFields;
+use Closure;
 use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Filesystem\Filesystem;
 use Illuminate\Support\Facades\Cache;
@@ -160,7 +160,8 @@ class Aura
         return collect($this->fields)
             ->groupBy(function ($field) {
                 $fieldClass = app($field);
-                return property_exists($fieldClass, 'optionGroup') && !empty($fieldClass->optionGroup) ? $fieldClass->optionGroup : 'Fields';
+
+                return property_exists($fieldClass, 'optionGroup') && ! empty($fieldClass->optionGroup) ? $fieldClass->optionGroup : 'Fields';
             })
             ->mapWithKeys(function ($fields, $groupName) {
                 return [$groupName => collect($fields)->mapWithKeys(function ($field) {
@@ -277,6 +278,7 @@ class Aura
     public static function getPath($id)
     {
         $attachment = Attachment::find($id);
+
         return $attachment ? $attachment->url : null;
     }
 
@@ -304,7 +306,7 @@ class Aura
     {
         // Necessary to add TeamIds?
 
-        return Cache::remember('user-'.auth()->id(). '-'. auth()->user()->current_team_id .'-navigation', 3600, function () {
+        return Cache::remember('user-'.auth()->id().'-'.auth()->user()->current_team_id.'-navigation', 3600, function () {
 
             $resources = collect($this->getResources());
 
@@ -333,6 +335,7 @@ class Aura
                 if (isset($value['conditional_logic'])) {
                     return app('dynamicFunctions')::call($value['conditional_logic']);
                 }
+
                 return true;
             });
 
@@ -398,16 +401,6 @@ class Aura
         $this->widgets = array_merge($this->widgets, $widgets);
     }
 
-    public function updateOption($key, $value)
-    {
-        if (config('aura.teams')) {
-            auth()->user()->resource->currentTeam->updateOption($key, $value);
-        } else {
-            Option::withoutGlobalScopes([TeamScope::class])->updateOrCreate(['name' => $key, 'team_id' => 0], ['value' => $value]);
-        }
-
-    }
-
     public function setOption($key, $value)
     {
         $option = $this->getGlobalOptions();
@@ -439,6 +432,16 @@ class Aura
 
             return $files;
         });
+    }
+
+    public function updateOption($key, $value)
+    {
+        if (config('aura.teams')) {
+            auth()->user()->resource->currentTeam->updateOption($key, $value);
+        } else {
+            Option::withoutGlobalScopes([TeamScope::class])->updateOrCreate(['name' => $key, 'team_id' => 0], ['value' => $value]);
+        }
+
     }
 
     /**

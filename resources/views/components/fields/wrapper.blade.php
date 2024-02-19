@@ -52,10 +52,8 @@
             <x-aura::input.text :attributes="$attributes"></x-aura::input.text>
         @endif
 
-        @if ($model)
-            @error($model)
-                <span class="text-sm font-semibold text-red-500 error">{{ $message }}</span>
-            @enderror
+        @if ($model && $errors->has($model))
+            <span class="text-sm font-semibold text-red-500 error">{{ $errors->first($model) }}</span>
         @endif
 
     </div>

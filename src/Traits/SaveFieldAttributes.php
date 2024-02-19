@@ -9,7 +9,7 @@ trait SaveFieldAttributes
      *
      * Take Fields Attributes and Put all fields from getFieldSlugs() in the Fields Column
      *
-     * @param    $post
+     * @param  $post
      * @return void
      */
     protected static function bootSaveFieldAttributes()

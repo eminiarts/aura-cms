@@ -2,10 +2,6 @@
 
 namespace Aura\Base\Models;
 
-use Aura\Flows\Jobs\TriggerFlowOnCreatePostEvent;
-use Aura\Flows\Jobs\TriggerFlowOnDeletedPostEvent;
-use Aura\Flows\Jobs\TriggerFlowOnUpdatePostEvent;
-use Aura\Flows\Resources\Flow;
 use Aura\Base\Aura;
 use Aura\Base\BaseResource;
 use Aura\Base\Models\Scopes\TeamScope;
@@ -14,6 +10,10 @@ use Aura\Base\Resource;
 use Aura\Base\Traits\InitialPostFields;
 use Aura\Base\Traits\SaveFieldAttributes;
 use Aura\Base\Traits\SaveMetaFields;
+use Aura\Flows\Jobs\TriggerFlowOnCreatePostEvent;
+use Aura\Flows\Jobs\TriggerFlowOnDeletedPostEvent;
+use Aura\Flows\Jobs\TriggerFlowOnUpdatePostEvent;
+use Aura\Flows\Resources\Flow;
 use Illuminate\Database\Eloquent\Concerns\HasTimestamps;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Support\Str;

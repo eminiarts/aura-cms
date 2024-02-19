@@ -73,15 +73,6 @@ class Checkbox extends Field
         ]);
     }
 
-    public function set($value)
-    {
-        if (is_array($value)) {
-            return json_encode($value);
-        }
-
-        return $value;
-    }
-
     public function options($model, $field)
     {
         // if get"$field->slug"Options is defined on the model, use that
@@ -91,5 +82,14 @@ class Checkbox extends Field
 
         // return the options defined in the field
         return $field['options'] ?? [];
+    }
+
+    public function set($value)
+    {
+        if (is_array($value)) {
+            return json_encode($value);
+        }
+
+        return $value;
     }
 }

@@ -15,11 +15,11 @@ class TeamSettings extends Component
     use InputFields;
     use MediaFields;
 
-    public $model;
-
     public $form = [
         'fields' => [],
     ];
+
+    public $model;
 
     // Listen for selectedAttachment
     protected $listeners = ['updateField' => 'updateField'];
@@ -174,7 +174,7 @@ class TeamSettings extends Component
                 'name' => 'Custom Colors',
                 'slug' => 'tab-primary-colors-lightmode',
                 'conditional_logic' => function ($model, $post) {
-                    if($post && $post['fields'] && $post['fields']['color-palette']) {
+                    if ($post && $post['fields'] && $post['fields']['color-palette']) {
                         return $post['fields']['color-palette'] == 'custom';
                     }
                 },
@@ -304,7 +304,7 @@ class TeamSettings extends Component
                 'name' => 'Custom Colors',
                 'slug' => 'tab-gray-colors-custom-tab',
                 'conditional_logic' => function ($model, $post) {
-                    if($post && $post['fields'] && $post['fields']['gray-color-palette']) {
+                    if ($post && $post['fields'] && $post['fields']['gray-color-palette']) {
                         return $post['fields']['gray-color-palette'] == 'custom';
                     }
                 },
@@ -436,7 +436,6 @@ class TeamSettings extends Component
         ], [
             'value' => $valueString,
         ]);
-
 
         if (is_string($this->model->value)) {
             $this->form['fields'] = json_decode($this->model->value, true);

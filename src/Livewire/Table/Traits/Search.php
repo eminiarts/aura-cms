@@ -8,10 +8,10 @@ namespace Aura\Base\Livewire\Table\Traits;
 trait Search
 {
     /**
-    * The search value.
-    *
-    * @var string
-    */
+     * The search value.
+     *
+     * @var string
+     */
     public $search;
 
     /**

@@ -3,9 +3,7 @@
 namespace Tests\Feature\Livewire;
 
 use Aura\Base\Livewire\Resource\Create;
-use Aura\Base\Models\User;
 use Aura\Base\Resource;
-use Aura\Base\Resources\Team;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
 
@@ -47,9 +45,8 @@ test('HasMany Field not shown in Create', function () {
     $model = new HasManyFieldModel();
 
     $component = Livewire::test(Create::class, ['slug' => 'Post'])
-        ->call('setModel', $model)
-        //->assertSee('Hasmany for Test')
-    ;
+        ->call('setModel', $model);
+    //->assertSee('Hasmany for Test')
 })->todo();
 
 test('HasMany Field shown on Edit', function () {

@@ -2,7 +2,6 @@
 
 namespace Aura\Base\Fields;
 
-use Aura\Base\Livewire\Resource\View;
 use Aura\Base\Traits\InputFields;
 use Illuminate\Support\Traits\Macroable;
 use Illuminate\Support\Traits\Tappable;
@@ -57,6 +56,16 @@ class Field implements Wireable
         return get_class($this);
     }
 
+    public static function fromLivewire($data)
+    {
+        $field = new static();
+
+        $field->type = $data['type'];
+        $field->view = $data['view'];
+
+        return $field;
+    }
+
     public function get($field, $value)
     {
         return $value;
@@ -103,7 +112,7 @@ class Field implements Wireable
                 'live' => true,
                 'validation' => 'required',
                 'slug' => 'type',
-                'options' => app("aura")::getFieldsWithGroups(),
+                'options' => app('aura')::getFieldsWithGroups(),
             ],
             [
                 'name' => 'instructions',
@@ -248,6 +257,14 @@ class Field implements Wireable
         return $this->taxonomy;
     }
 
+    public function toLivewire()
+    {
+        return [
+            'type' => $this->type,
+            'view' => $this->view,
+        ];
+    }
+
     public function value($value)
     {
         return $value;
@@ -258,23 +275,5 @@ class Field implements Wireable
         $this->view = $view;
 
         return $this;
-    }
-
-    public function toLivewire()
-    {
-        return [
-            'type' => $this->type,
-            'view' => $this->view,
-        ];
-    }
-
-    public static function fromLivewire($data)
-    {
-        $field = new static();
-
-        $field->type = $data['type'];
-        $field->view = $data['view'];
-
-        return $field;
     }
 }

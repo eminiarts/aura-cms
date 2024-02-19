@@ -6,9 +6,9 @@ class Textarea extends Field
 {
     public $component = 'aura::fields.textarea';
 
-    public $view = 'aura::fields.view-value';
-
     public $optionGroup = 'Input Fields';
+
+    public $view = 'aura::fields.view-value';
 
     public function getFields()
     {

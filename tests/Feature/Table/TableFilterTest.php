@@ -1,12 +1,10 @@
 <?php
 
-use Livewire\Livewire;
-use Aura\Base\Resource;
-use Aura\Base\Models\User;
-use Aura\Base\Resources\Post;
-use Illuminate\Support\Facades\DB;
 use Aura\Base\Livewire\Table\Table;
+use Aura\Base\Resource;
+use Aura\Base\Resources\Post;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Livewire\Livewire;
 
 uses(RefreshDatabase::class);
 
@@ -371,7 +369,6 @@ test('table filter - custom filter - ends_with', function () {
     $component->set('filters.custom.0.operator', 'ends_with');
 
     $component->set('filters.custom.0.value', 'meta');
-
 
     expect($component->filters['custom'][0]['value'])->toBe('meta');
 

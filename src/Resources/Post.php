@@ -2,28 +2,18 @@
 
 namespace Aura\Base\Resources;
 
-use Aura\Export\Traits\Exportable;
-use Aura\Flows\Resources\Flow;
 use Aura\Base\Database\Factories\PostFactory;
 use Aura\Base\Resource;
 use Aura\Base\Widgets\AvgPostsNumber;
 use Aura\Base\Widgets\PostChart;
 use Aura\Base\Widgets\SumPostsNumber;
 use Aura\Base\Widgets\TotalPosts;
+use Aura\Export\Traits\Exportable;
+use Aura\Flows\Resources\Flow;
 
 class Post extends Resource
 {
     use Exportable;
-
-    public function indexTableSettings()
-    {
-        return [
-        //     'default_view' => 'grid',
-        // 'views' => [
-        //         'grid' => 'custom.table.grid',
-        //     ]
-        ];
-    }
 
     public array $actions = [
         'delete' => [
@@ -491,6 +481,16 @@ class Post extends Resource
                 ],
                 'conditional_logic' => [],
             ],
+        ];
+    }
+
+    public function indexTableSettings()
+    {
+        return [
+            //     'default_view' => 'grid',
+            // 'views' => [
+            //         'grid' => 'custom.table.grid',
+            //     ]
         ];
     }
 

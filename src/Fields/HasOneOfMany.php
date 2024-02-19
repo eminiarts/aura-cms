@@ -6,9 +6,9 @@ class HasOneOfMany extends Field
 {
     public $component = 'aura::fields.has-one-of-many';
 
-    public $optionGroup = 'Relationship Fields';
-
     public bool $group = false;
+
+    public $optionGroup = 'Relationship Fields';
 
     public string $type = 'relation';
 

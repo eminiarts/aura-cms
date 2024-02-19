@@ -188,6 +188,16 @@ trait AuraModelConfig
         }
     }
 
+    public function getBadge()
+    {
+
+    }
+
+    public function getBadgeColor()
+    {
+
+    }
+
     public function getBaseFillable()
     {
         return $this->baseFillable;
@@ -303,6 +313,11 @@ trait AuraModelConfig
         return $this->getIcon();
     }
 
+    public function indexTableSettings()
+    {
+        return [];
+    }
+
     public function indexView()
     {
         return 'aura::livewire.resource.index';
@@ -408,16 +423,6 @@ trait AuraModelConfig
         ];
     }
 
-    public function getBadge()
-    {
-        return null;
-    }
-
-    public function getBadgeColor()
-    {
-        return null;
-    }
-
     public function pluralName()
     {
         return __(static::$pluralName ?? Str::plural($this->singularName()));
@@ -452,11 +457,6 @@ trait AuraModelConfig
         return $query->whereHas('meta', function ($query) use ($field, $values) {
             $query->where('key', $field)->whereIn('value', $values);
         });
-    }
-
-    public function indexTableSettings()
-    {
-        return [];
     }
 
     public function scopeWhereMeta($query, ...$args)

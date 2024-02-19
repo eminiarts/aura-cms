@@ -6,9 +6,9 @@ class Date extends Field
 {
     public $component = 'aura::fields.date';
 
-    public $view = 'aura::fields.view-value';
-
     public $optionGroup = 'Input Fields';
+
+    public $view = 'aura::fields.view-value';
 
     public function get($field, $value)
     {

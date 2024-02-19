@@ -2,39 +2,20 @@
 
 namespace Aura\Base\Fields;
 
-use Aura\Flows\Resources\Operation;
 use Aura\Base\Models\Meta;
+use Aura\Flows\Resources\Operation;
 
 class HasMany extends Field
 {
     public $component = 'aura::fields.has-many';
 
-    public $view = 'aura::fields.has-many-view';
+    public bool $group = false;
 
     public $optionGroup = 'Relationship Fields';
 
-    public bool $group = false;
-
     public string $type = 'relation';
 
-    // public $view = 'components.fields.hasmany';
-
-    public function relationship($model, $field)
-    {
-        // If it's a meta field
-        if ($model->usesMeta()) {
-            return $model->hasManyThrough(
-                $field['resource'],
-                Meta::class,
-                'value',     // Foreign key on the post_meta table
-                'id',        // Foreign key on the reviews table
-                'id',        // Local key on the products table
-                'post_id'    // Local key on the post_meta table
-            )->where('post_meta.key', $field['relation']);
-        }
-
-        return $model->hasMany($field['resource'], $field['relation']);
-    }
+    public $view = 'aura::fields.has-many-view';
 
     public function get($model, $field)
     {
@@ -100,5 +81,24 @@ class HasMany extends Field
         }
 
         return $query->where('user_id', $model->id);
+    }
+
+    // public $view = 'components.fields.hasmany';
+
+    public function relationship($model, $field)
+    {
+        // If it's a meta field
+        if ($model->usesMeta()) {
+            return $model->hasManyThrough(
+                $field['resource'],
+                Meta::class,
+                'value',     // Foreign key on the post_meta table
+                'id',        // Foreign key on the reviews table
+                'id',        // Local key on the products table
+                'post_id'    // Local key on the post_meta table
+            )->where('post_meta.key', $field['relation']);
+        }
+
+        return $model->hasMany($field['resource'], $field['relation']);
     }
 }

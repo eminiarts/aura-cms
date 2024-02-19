@@ -3,14 +3,41 @@
 namespace Aura\Base\Livewire;
 
 use Livewire\Component;
-use Aura\Base\Facades\Aura;
 
 class Navigation extends Component
 {
-    public $toggledGroups = [];
-    public $sidebarType;
     public $iconClass;
+
     public $sidebarToggled;
+
+    public $sidebarType;
+
+    public $toggledGroups = [];
+
+    public function getIconClass($sidebarType)
+    {
+        switch ($sidebarType) {
+            case 'primary':
+                return 'group-[.is-active]:text-white text-sidebar-icon dark:text-primary-500 group-hover:text-sidebar-icon-hover dark:group-hover:text-primary-500';
+            case 'light':
+                return 'group-[.is-active]:text-primary-500 text-primary-500 dark:text-primary-500 group-hover:text-primary-500';
+            case 'dark':
+                return 'group-[.is-active]:text-primary-500 text-primary-500';
+            default:
+                return 'group-[.is-active]:text-white text-sidebar-icon dark:text-primary-500 group-hover:text-sidebar-icon-hover dark:group-hover:text-primary-500';
+        }
+    }
+
+    public function getSidebarType()
+    {
+        $settings = app('aura')::getOption('team-settings');
+
+        if ($settings && isset($settings['sidebar-type'])) {
+            return $settings['sidebar-type'];
+        }
+
+        return 'primary';
+    }
 
     public function isToggled($group)
     {
@@ -45,17 +72,6 @@ class Navigation extends Component
         return view('aura::livewire.navigation');
     }
 
-    public function toggleSidebar()
-    {
-        ray('toggleSidebar1', $this->sidebarToggled);
-
-        $this->sidebarToggled = !$this->sidebarToggled;
-
-        ray('toggleSidebar2', $this->sidebarToggled);
-
-        auth()->user()->updateOption('sidebarToggled', $this->sidebarToggled);
-    }
-
     public function toggleGroup($group)
     {
         if (in_array($group, $this->toggledGroups)) {
@@ -67,30 +83,14 @@ class Navigation extends Component
         auth()->user()->updateOption('sidebar', $this->toggledGroups);
     }
 
-    public function getSidebarType()
+    public function toggleSidebar()
     {
-        $settings = app('aura')::getOption('team-settings');
+        ray('toggleSidebar1', $this->sidebarToggled);
 
-        // dd($settings);
+        $this->sidebarToggled = ! $this->sidebarToggled;
 
-        if ($settings && isset($settings['sidebar-type'])) {
-            return $settings['sidebar-type'];
-        }
+        ray('toggleSidebar2', $this->sidebarToggled);
 
-        return 'primary';
-    }
-
-    public function getIconClass($sidebarType)
-    {
-        switch ($sidebarType) {
-            case 'primary':
-                return 'group-[.is-active]:text-white text-sidebar-icon dark:text-primary-500 group-hover:text-sidebar-icon-hover dark:group-hover:text-primary-500';
-            case 'light':
-                return 'group-[.is-active]:text-primary-500 text-primary-500 dark:text-primary-500 group-hover:text-primary-500';
-            case 'dark':
-                return 'group-[.is-active]:text-primary-500 text-primary-500';
-            default:
-                return 'group-[.is-active]:text-white text-sidebar-icon dark:text-primary-500 group-hover:text-sidebar-icon-hover dark:group-hover:text-primary-500';
-        }
+        auth()->user()->updateOption('sidebarToggled', $this->sidebarToggled);
     }
 }

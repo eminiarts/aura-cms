@@ -2,8 +2,6 @@
 
 namespace Aura\Base\Livewire;
 
-use Closure;
-use Aura\Base\Resources\Attachment;
 use Aura\Base\Resources\User;
 use Aura\Base\Traits\InputFields;
 use Aura\Base\Traits\MediaFields;
@@ -22,6 +20,10 @@ class Profile extends Component
     use MediaFields;
 
     public $confirmingUserDeletion = false;
+
+    public $form = [
+        'fields' => [],
+    ];
 
     public $model;
 
@@ -42,10 +44,6 @@ class Profile extends Component
      * @var string
      */
     public $password = '';
-
-    public $form = [
-        'fields' => [],
-    ];
 
     // Listen for selectedAttachment
     protected $listeners = ['updateField' => 'updateField'];

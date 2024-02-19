@@ -2,7 +2,6 @@
 
 namespace Aura\Base\Facades;
 
-use Aura\Base\AuraFake;
 use Illuminate\Support\Facades\Facade;
 
 /**
