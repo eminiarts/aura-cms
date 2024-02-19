@@ -70,8 +70,6 @@ class CreateResource extends ModalComponent
 
         $this->dispatch('closeModal');
 
-
-
         // redirect to route
         return redirect()->route('aura.resource.editor', ['slug' => $slug]);
 

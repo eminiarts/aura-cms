@@ -23,9 +23,9 @@ beforeEach(function () {
         'type' => 'Post',
         'status' => 'publish',
         'metafield' => 'B',
-            'tags' => [
-                'Tag 1', 'Tag 2', 'Tag 3',
-            ],
+        'tags' => [
+            'Tag 1', 'Tag 2', 'Tag 3',
+        ],
     ]);
 
     $this->resource2 = TableSaveFilterModel::create([

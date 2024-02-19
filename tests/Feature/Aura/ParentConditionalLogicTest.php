@@ -279,7 +279,6 @@ test('fields merge parent conditional logic - more advanced Example', function (
 
 test('role condition as a Super Admin', function () {
 
-
     $model = new AdvancedParentConditionalLogicModel();
 
     $fields = $model->sendThroughPipeline($model->fieldsCollection(), [

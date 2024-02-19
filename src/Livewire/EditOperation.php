@@ -2,8 +2,8 @@
 
 namespace Aura\Base\Livewire;
 
-use Aura\Flows\Resources\Operation;
 use Aura\Base\Traits\RepeaterFields;
+use Aura\Flows\Resources\Operation;
 use Illuminate\Support\Arr;
 use Livewire\Component;
 

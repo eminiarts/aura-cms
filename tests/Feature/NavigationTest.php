@@ -1,41 +1,51 @@
 <?php
 
-use Aura\Base\Resource;
 use Aura\Base\Facades\Aura;
+use Aura\Base\Resource;
 
 beforeEach(fn () => $this->actingAs($this->user = createSuperAdmin()));
 
 class NavigationModel extends Resource
 {
-    public static ?string $slug = 'navmodel';
-    public static string $type = 'NavigationModel';
     public static $pluralName = 'NavigationModels';
+
+    public static ?string $slug = 'navmodel';
+
+    public static string $type = 'NavigationModel';
 }
 class NavigationHiddenModel extends Resource
 {
-    protected static bool $showInNavigation = false;
-    public static ?string $slug = 'navmodel';
-    public static string $type = 'NavigationModel';
     public static $pluralName = 'NavigationModels';
-}
 
+    public static ?string $slug = 'navmodel';
+
+    public static string $type = 'NavigationModel';
+
+    protected static bool $showInNavigation = false;
+}
 
 class GroupedNavigationModel extends Resource
 {
-    public static ?string $slug = 'navmodel';
-    protected static ?string $group = 'Custom Group';
-    public static string $type = 'NavigationModel';
     public static $pluralName = 'NavigationModels';
+
+    public static ?string $slug = 'navmodel';
+
+    public static string $type = 'NavigationModel';
+
+    protected static ?string $group = 'Custom Group';
 }
 class DropdownNavigationModel extends Resource
 {
-    public static ?string $slug = 'navmodel';
-    protected static ?string $group = 'Custom Group';
-    protected static $dropdown = 'Custom Dropdown';
-    public static string $type = 'NavigationModel';
     public static $pluralName = 'NavigationModels';
-}
 
+    public static ?string $slug = 'navmodel';
+
+    public static string $type = 'NavigationModel';
+
+    protected static $dropdown = 'Custom Dropdown';
+
+    protected static ?string $group = 'Custom Group';
+}
 
 test('navigation item is visible', function () {
     Aura::registerResources([
@@ -47,7 +57,7 @@ test('navigation item is visible', function () {
     expect((new NavigationModel())->pluralName())->toBe('NavigationModels');
 
     // Use firstWhere to find the item. If the item is found, it will not be null.
-    $item = collect($nav['Resources'])->firstWhere('resource', "NavigationModel");
+    $item = collect($nav['Resources'])->firstWhere('resource', 'NavigationModel');
 
     // Assert that an item was found.
     expect($item)->not->toBeNull();
@@ -59,13 +69,13 @@ test('navigation item is visible', function () {
 
 test('navigation item can be hidden', function () {
     Aura::registerResources([
-           NavigationHiddenModel::class,
-       ]);
+        NavigationHiddenModel::class,
+    ]);
 
     $nav = Aura::navigation();
 
     // Use firstWhere to find the item. If the item is found, it will not be null.
-    $item = collect($nav['Resources'])->firstWhere('resource', "NavigationModel");
+    $item = collect($nav['Resources'])->firstWhere('resource', 'NavigationModel');
 
     // Assert that an item was found.
     expect($item)->toBeNull();
@@ -78,15 +88,15 @@ test('navigation item can be hidden', function () {
 
 test('navigation item is hidden when the Role has no access to it', function () {
     Aura::registerResources([
-           NavigationModel::class,
-       ]);
+        NavigationModel::class,
+    ]);
 
     $nav = Aura::navigation();
 
     expect((new NavigationModel())->pluralName())->toBe('NavigationModels');
 
     // Use firstWhere to find the item. If the item is found, it will not be null.
-    $item = collect($nav['Resources'])->firstWhere('resource', "NavigationModel");
+    $item = collect($nav['Resources'])->firstWhere('resource', 'NavigationModel');
 
     // Assert that an item was found.
     expect($item)->not->toBeNull();
@@ -116,7 +126,7 @@ test('navigation items can be grouped', function () {
     expect($nav['Custom Group'])->not->toBeNull();
 
     // Use firstWhere to find the item. If the item is found, it will not be null.
-    $item = collect($nav['Custom Group'])->firstWhere('resource', "GroupedNavigationModel");
+    $item = collect($nav['Custom Group'])->firstWhere('resource', 'GroupedNavigationModel');
 
     // Assert that an item was found.
     expect($item)->not->toBeNull();
@@ -124,14 +134,13 @@ test('navigation items can be grouped', function () {
     // Visit Dashboard and assert that the item is visible.
     $this->get(route('aura.dashboard'))
         ->assertSee('Custom Group')
-        ->assertSee('NavigationModels')
-    ;
+        ->assertSee('NavigationModels');
 });
 
 test('navigation items can be dropdown', function () {
     Aura::registerResources([
-           DropdownNavigationModel::class,
-       ]);
+        DropdownNavigationModel::class,
+    ]);
 
     $nav = Aura::navigation();
 

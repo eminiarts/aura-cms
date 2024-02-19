@@ -3,7 +3,6 @@
 use Aura\Base\Facades\Aura;
 use Aura\Base\Livewire\Config;
 use Aura\Base\Models\Scopes\TeamScope;
-use Aura\Base\Models\User;
 use Aura\Base\Resources\Option;
 
 use function Pest\Livewire\livewire;

@@ -2,7 +2,6 @@
 
 namespace Tests\Feature\Auth;
 
-use Aura\Base\Facades\Aura;
 use Aura\Base\Providers\RouteServiceProvider;
 use Aura\Base\Resources\Team;
 
@@ -57,8 +56,6 @@ test('new users can register', function () {
     // User->current_team_id should be set to Team->id
     expect($user->current_team_id)->toBe($team->id);
 });
-
-
 
 test('registration can be disabeld', function () {
 

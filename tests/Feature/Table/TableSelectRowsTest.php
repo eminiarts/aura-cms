@@ -1,7 +1,6 @@
 <?php
 
 use Aura\Base\Livewire\Table\Table;
-use Aura\Base\Models\User;
 use Aura\Base\Resource;
 use Aura\Base\Resources\Post;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -92,7 +91,6 @@ test('table filter - select rows', function () {
 
     // Select first 5 rows
     $component->set('selected', TableSelectRowsModel::take(5)->pluck('id')->toArray());
-
 
     // expect $selected to be an array with 5 items
     $component->assertViewHas('selected', function ($selected) {

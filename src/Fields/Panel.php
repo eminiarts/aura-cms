@@ -6,9 +6,9 @@ class Panel extends Field
 {
     public $component = 'aura::fields.panel';
 
-    public $optionGroup = 'Structure Fields';
-
     public bool $group = true;
+
+    public $optionGroup = 'Structure Fields';
 
     // Type Panel is used for grouping fields. A Panel can't be nested inside another Panel or other grouped Fields.
     public string $type = 'panel';

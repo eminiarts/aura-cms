@@ -1,15 +1,14 @@
 <?php
 
-use Livewire\Livewire;
+use Aura\Base\Livewire\Table\Table;
+use Aura\Base\Models\Scopes\TeamScope;
 use Aura\Base\Resource;
-use Aura\Base\Models\User;
 use Aura\Base\Resources\Post;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
-use Aura\Base\Livewire\Table\Table;
-use Illuminate\Database\Schema\Blueprint;
-use Aura\Base\Models\Scopes\TeamScope;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Livewire\Livewire;
 
 uses(RefreshDatabase::class);
 
@@ -182,13 +181,11 @@ test('table filter - custom column on table - contains', function () {
 
     $component->set('filters.custom.0.value', 'Post 2');
 
-
     $component->assertViewHas('rows', function ($rows) use ($post2) {
         return count($rows->items()) === 1 && $rows->items()[0]->id === $post2->id;
     });
 
     $component->set('filters.custom.0.value', 'Post 3');
-
 
     $component->assertViewHas('rows', function ($rows) {
         return count($rows->items()) === 0;
@@ -229,8 +226,6 @@ test('table filter - custom column on table - does_not_contain', function () {
 test('table filter - custom column on table - starts_with', function () {
     $post = $this->resource;
     $post2 = $this->resource2;
-
-
 
     // Visit the Post Index Page
     $component = Livewire::test(Table::class, ['query' => null, 'model' => $post]);

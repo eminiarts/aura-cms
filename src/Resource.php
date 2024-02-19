@@ -2,25 +2,24 @@
 
 namespace Aura\Base;
 
-use Illuminate\Support\Str;
-use Aura\Flows\Resources\Flow;
-use Aura\Base\Resources\User;
-use Illuminate\Support\Facades\DB;
-use Aura\Base\Traits\InputFields;
-use Illuminate\Database\Eloquent\Model;
-use Aura\Base\Traits\SaveMetaFields;
-use Aura\Base\Traits\AuraModelConfig;
+use Aura\Base\Models\Scopes\ScopedScope;
 use Aura\Base\Models\Scopes\TeamScope;
 use Aura\Base\Models\Scopes\TypeScope;
+use Aura\Base\Resources\User;
+use Aura\Base\Traits\AuraModelConfig;
 use Aura\Base\Traits\InitialPostFields;
-use Aura\Base\Models\Scopes\ScopedScope;
+use Aura\Base\Traits\InputFields;
 use Aura\Base\Traits\InteractsWithTable;
 use Aura\Base\Traits\SaveFieldAttributes;
+use Aura\Base\Traits\SaveMetaFields;
 use Aura\Flows\Jobs\TriggerFlowOnCreatePostEvent;
-use Aura\Flows\Jobs\TriggerFlowOnUpdatePostEvent;
 use Aura\Flows\Jobs\TriggerFlowOnDeletedPostEvent;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Aura\Flows\Jobs\TriggerFlowOnUpdatePostEvent;
+use Aura\Flows\Resources\Flow;
 use Illuminate\Database\Eloquent\Concerns\HasTimestamps;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Str;
 
 class Resource extends Model
 {
@@ -368,7 +367,4 @@ class Resource extends Model
         //     dispatch(new TriggerFlowOnDeletedPostEvent($post));
         // });
     }
-
-
-
 }

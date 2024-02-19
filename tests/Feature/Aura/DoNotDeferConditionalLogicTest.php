@@ -4,7 +4,6 @@ use Aura\Base\ConditionalLogic;
 use Aura\Base\Facades\Aura;
 use Aura\Base\Livewire\Resource\Create;
 use Aura\Base\Livewire\Resource\Edit;
-use Aura\Base\Models\User;
 use Aura\Base\Resource;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;

@@ -2,8 +2,8 @@
 
 namespace Aura\Base\Operations;
 
-use Aura\Flows\Resources\Operation;
 use Aura\Base\Resources\Post;
+use Aura\Flows\Resources\Operation;
 
 class UpdateResource extends BaseOperation
 {

@@ -1,16 +1,15 @@
 <?php
 
-use Livewire\Livewire;
-use Aura\Base\Resource;
+use Aura\Base\Livewire\Table\Table;
 use Aura\Base\Models\User;
-use Aura\Base\Resources\Tag;
+use Aura\Base\Resource;
 use Aura\Base\Resources\Post;
+use Aura\Base\Resources\Tag;
+use Illuminate\Contracts\Database\Eloquent\Builder;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use Aura\Base\Livewire\Table\Table;
-use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Contracts\Database\Eloquent\Builder;
-use Aura\Base\Livewire\Table\Traits\QueryFilters;
+use Livewire\Livewire;
 
 uses(RefreshDatabase::class);
 
@@ -93,7 +92,6 @@ test('table filter - taxonomy filter', function () {
         // Log the query to the console or store it for inspection
         Log::info($query->sql, $query->bindings, $query->time);
     });
-
 
     // Apply Tag 1 filter, set $filters['taxonomy']['tag'] to [$tag1->id]
     $component->set('filters.taxonomy.tags', [$tag1->id]);

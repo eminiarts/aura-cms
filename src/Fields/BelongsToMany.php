@@ -8,9 +8,9 @@ class BelongsToMany extends Field
 
     public bool $group = true;
 
-    public string $type = 'relation';
-
     public $optionGroup = 'Relationship Fields';
+
+    public string $type = 'relation';
 
     // public $view = 'components.fields.hasmany';
 

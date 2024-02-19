@@ -39,7 +39,6 @@ trait PerPagePagination
         $this->perPage = session()->has('perPage') ? session()->get('perPage') : $this->model()->defaultPerPage();
     }
 
-
     /**
      * Update the per-page pagination data in the session.
      *

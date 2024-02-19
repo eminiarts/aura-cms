@@ -2,12 +2,12 @@
 
 namespace Aura\Base\Resources;
 
-use Aura\Flows\Resources\Flow;
 use Aura\Base\Database\Factories\UserFactory;
 use Aura\Base\Models\User as UserModel;
 use Aura\Base\Models\UserMeta;
 use Aura\Base\Traits\SaveFieldAttributes;
 use Aura\Base\Traits\SaveMetaFields;
+use Aura\Flows\Resources\Flow;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;

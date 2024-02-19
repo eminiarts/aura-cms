@@ -17,6 +17,33 @@ trait Sorting
     public $sorts = [];
 
     /**
+     * Sort by the specified field.
+     *
+     * @param  string  $field
+     * @return void
+     */
+    public function sortBy($field)
+    {
+        $this->sorts = collect($this->sorts)->filter(function ($value, $key) use ($field) {
+            return $key === $field;
+        })->toArray();
+
+        if (! isset($this->sorts[$field])) {
+            $this->sorts[$field] = 'asc';
+
+            return;
+        }
+
+        if ($this->sorts[$field] === 'asc') {
+            $this->sorts[$field] = 'desc';
+
+            return;
+        }
+
+        unset($this->sorts[$field]);
+    }
+
+    /**
      * Apply sorting to the query.
      *
      * @param  \Illuminate\Database\Eloquent\Builder  $query
@@ -70,32 +97,5 @@ trait Sorting
         $query->orderBy($this->model->getTable().'.'.$this->model->defaultTableSort(), $this->model->defaultTableSortDirection());
 
         return $query;
-    }
-
-    /**
-     * Sort by the specified field.
-     *
-     * @param  string  $field
-     * @return void
-     */
-    public function sortBy($field)
-    {
-        $this->sorts = collect($this->sorts)->filter(function ($value, $key) use ($field) {
-            return $key === $field;
-        })->toArray();
-
-        if (! isset($this->sorts[$field])) {
-            $this->sorts[$field] = 'asc';
-
-            return;
-        }
-
-        if ($this->sorts[$field] === 'asc') {
-            $this->sorts[$field] = 'desc';
-
-            return;
-        }
-
-        unset($this->sorts[$field]);
     }
 }

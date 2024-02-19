@@ -2,8 +2,8 @@
 
 namespace Aura\Base\Http\Middleware;
 
-use Closure;
 use Aura\Base\Providers\RouteServiceProvider;
+use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 

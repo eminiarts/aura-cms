@@ -2,10 +2,10 @@
 
 namespace Aura\Base\Operations;
 
-use Aura\Flows\Resources\Operation;
 use Aura\Base\Models\User;
 use Aura\Base\Notifications\FlowNotification;
 use Aura\Base\Resources\Role;
+use Aura\Flows\Resources\Operation;
 use Illuminate\Support\Facades\Blade;
 
 class Notification extends BaseOperation

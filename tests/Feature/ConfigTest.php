@@ -1,12 +1,5 @@
 <?php
 
-use Aura\Base\Livewire\CreateResource;
-use Aura\Base\Resources\User;
-use Illuminate\Support\Facades\Artisan;
-use Illuminate\Support\Facades\File;
-
-use function Pest\Livewire\livewire;
-
 //uses()->group('current');
 
 // Before each test, create a Superadmin and login

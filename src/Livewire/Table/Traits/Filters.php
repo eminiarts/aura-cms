@@ -4,9 +4,7 @@ namespace Aura\Base\Livewire\Table\Traits;
 
 use Illuminate\Support\Str;
 use Livewire\Attributes\Computed;
-
 use Livewire\Attributes\Reactive;
-use Illuminate\Support\Facades\Cache;
 
 /**
  * Trait for handling filters in Livewire Table component.
@@ -118,42 +116,6 @@ trait Filters
     }
 
     /**
-     * Get the user filters .
-     *
-     * @return mixed
-     */
-    #[Computed]
-    public function userFilters()
-    {
-        $userFilters = auth()->user()->getOption($this->model()->getType().'.filters.*') ?? collect();
-
-        $teamFilters = collect();
-
-        if (config('aura.teams')) {
-
-            $teamFilters = optional(auth()->user()->currentTeam)->getOption($this->model()->getType().'.filters.*') ?? collect();
-
-        }
-
-        // Add 'type' => 'user' to each user filter
-        $userFilters = $userFilters->map(function ($filter) {
-            $filter['type'] = 'user';
-
-            return $filter;
-        });
-
-        // Add 'type' => 'team' to each team filter
-        $teamFilters = $teamFilters->map(function ($filter) {
-            $filter['type'] = 'team';
-
-            return $filter;
-        });
-
-        // Use concat to merge collections and convert to array
-        return collect($userFilters)->merge($teamFilters)->toArray();
-    }
-
-    /**
      * Remove a custom filter.
      *
      * @param  int  $index
@@ -174,17 +136,6 @@ trait Filters
     {
         $this->reset('filters');
         $this->setTaxonomyFilters();
-    }
-
-    /**
-    * Set taxonomy filters.
-    */
-    public function setTaxonomyFilters()
-    {
-        $this->filters['taxonomy'] = $this->model?->taxonomyFields()
-            ->values()
-            ->mapWithKeys(fn ($field) => [$field['slug'] => []])
-            ->toArray();
     }
 
     /**
@@ -229,6 +180,17 @@ trait Filters
     }
 
     /**
+     * Set taxonomy filters.
+     */
+    public function setTaxonomyFilters()
+    {
+        $this->filters['taxonomy'] = $this->model?->taxonomyFields()
+            ->values()
+            ->mapWithKeys(fn ($field) => [$field['slug'] => []])
+            ->toArray();
+    }
+
+    /**
      * Update the selected filter.
      *
      * Get the filter from options in userFilters.
@@ -243,5 +205,41 @@ trait Filters
             $this->reset('filters');
         }
 
+    }
+
+    /**
+     * Get the user filters .
+     *
+     * @return mixed
+     */
+    #[Computed]
+    public function userFilters()
+    {
+        $userFilters = auth()->user()->getOption($this->model()->getType().'.filters.*') ?? collect();
+
+        $teamFilters = collect();
+
+        if (config('aura.teams')) {
+
+            $teamFilters = optional(auth()->user()->currentTeam)->getOption($this->model()->getType().'.filters.*') ?? collect();
+
+        }
+
+        // Add 'type' => 'user' to each user filter
+        $userFilters = $userFilters->map(function ($filter) {
+            $filter['type'] = 'user';
+
+            return $filter;
+        });
+
+        // Add 'type' => 'team' to each team filter
+        $teamFilters = $teamFilters->map(function ($filter) {
+            $filter['type'] = 'team';
+
+            return $filter;
+        });
+
+        // Use concat to merge collections and convert to array
+        return collect($userFilters)->merge($teamFilters)->toArray();
     }
 }

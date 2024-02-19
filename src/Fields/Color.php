@@ -6,9 +6,9 @@ class Color extends Field
 {
     public $component = 'aura::fields.color';
 
-    public $view = 'aura::fields.view-value';
-
     public $optionGroup = 'JS Fields';
+
+    public $view = 'aura::fields.view-value';
 
     public function getFields()
     {

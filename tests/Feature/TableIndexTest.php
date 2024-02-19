@@ -1,7 +1,5 @@
 <?php
 
-use Aura\Base\Resource;
-use Aura\Base\Facades\Aura;
 use Illuminate\Support\Facades\Schema;
 
 beforeEach(fn () => $this->actingAs($this->user = createSuperAdmin()));
@@ -22,7 +20,6 @@ test('post_meta table index test', function () {
     expect($indexes['post_meta_post_id_index'])->not->toBeNull();
     expect($indexes['post_meta_key_index'])->not->toBeNull();
 });
-
 
 test('posts table index test', function () {
     $columns = Schema::getColumnListing('posts');

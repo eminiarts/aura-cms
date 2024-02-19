@@ -24,7 +24,7 @@ class Tags extends Field
         //     return "<span class='px-2 py-1 text-xs text-white rounded-full bg-primary-500 whitespace-nowrap'>$value</span>";
         // })->implode(' '));
 
-        if (!is_array($value) || count($value) === 0) {
+        if (! is_array($value) || count($value) === 0) {
             return '';
         }
 
@@ -53,7 +53,7 @@ class Tags extends Field
         $value = collect($value)->map(function ($tagName) use ($field) {
             $tag = app($field['resource'])->where('title', $tagName)->first();
 
-            if($tag) {
+            if ($tag) {
                 return $tag->id;
             } else {
                 $tag = app($field['resource'])->create([

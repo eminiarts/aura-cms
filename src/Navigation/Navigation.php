@@ -1,13 +1,14 @@
 <?php
+
 // app/Navigation/Navigation.php
 
 namespace Aura\Base\Navigation;
 
 class Navigation
 {
-    public static function add(array $items, callable $authCallback = null): void
+    public static function add(array $items, ?callable $authCallback = null): void
     {
-        if ($authCallback && !$authCallback()) {
+        if ($authCallback && ! $authCallback()) {
             // dd($authCallback());
             return;
         }
@@ -16,6 +17,7 @@ class Navigation
             foreach ($items as $item) {
                 $navigation->push($item);
             }
+
             return $navigation;
         });
     }

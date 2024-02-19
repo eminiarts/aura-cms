@@ -2,7 +2,6 @@
 
 use Aura\Base\Livewire\MediaUploader;
 use Aura\Base\Livewire\Table\Table;
-use Aura\Base\Models\User;
 use Aura\Base\Resources\Attachment;
 use Aura\Base\Resources\Post;
 use Illuminate\Foundation\Testing\RefreshDatabase;

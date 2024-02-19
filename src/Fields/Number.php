@@ -6,9 +6,9 @@ class Number extends Field
 {
     public $component = 'aura::fields.number';
 
-    public $view = 'aura::fields.view-value';
-
     public $optionGroup = 'Input Fields';
+
+    public $view = 'aura::fields.view-value';
 
     public function getFields()
     {
