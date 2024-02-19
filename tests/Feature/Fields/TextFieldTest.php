@@ -46,11 +46,9 @@ test('check Text Fields', function () {
     expect($fields->firstWhere('slug', 'autocomplete'))->not->toBeNull();
     expect($fields->firstWhere('slug', 'prefix'))->not->toBeNull();
     expect($fields->firstWhere('slug', 'suffix'))->not->toBeNull();
-
 });
 
 test('Text Field - Name rendered', function () {
-
     $field = [
         'name' => 'Text for Test',
         'type' => 'Aura\\Base\\Fields\\Text',

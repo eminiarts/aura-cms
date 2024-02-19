@@ -33,26 +33,6 @@ class Email extends Field
                 'validation' => '',
                 'slug' => 'placeholder',
             ],
-            [
-                'name' => 'Prefix',
-                'type' => 'Aura\\Base\\Fields\\Text',
-                'validation' => '',
-                'slug' => 'prefix',
-                'style' => [
-                    'width' => '50',
-                ],
-
-            ],
-            [
-                'name' => 'Suffix',
-                'type' => 'Aura\\Base\\Fields\\Text',
-                'validation' => '',
-                'slug' => 'suffix',
-                'style' => [
-                    'width' => '50',
-                ],
-
-            ],
         ]);
     }
 }
