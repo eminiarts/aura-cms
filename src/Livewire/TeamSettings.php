@@ -83,9 +83,18 @@ class TeamSettings extends Component
                 'name' => 'Sidebar',
                 'type' => 'Aura\\Base\\Fields\\Radio',
                 'options' => [
-                    'primary' => 'Primary',
-                    'light' => 'Light',
-                    'dark' => 'Dark',
+                    [
+                        'key' => 'primary',
+                        'value' => 'Primary',
+                    ],
+                    [
+                        'key' => 'light',
+                        'value' => 'Light',
+                    ],
+                    [
+                        'key' => 'dark',
+                        'value' => 'Dark',
+                    ],
                 ],
                 'slug' => 'sidebar-type',
                 'style' => [
@@ -96,9 +105,18 @@ class TeamSettings extends Component
                 'name' => 'Darkmode',
                 'type' => 'Aura\\Base\\Fields\\Radio',
                 'options' => [
-                    'auto' => 'Auto',
-                    'light' => 'Light',
-                    'dark' => 'Dark',
+                    [
+                        'key' => 'auto',
+                        'value' => 'Auto',
+                    ],
+                    [
+                        'key' => 'light',
+                        'value' => 'Light',
+                    ],
+                    [
+                        'key' => 'dark',
+                        'value' => 'Dark',
+                    ],
                 ],
                 'slug' => 'darkmode-type',
                 'style' => [
@@ -458,26 +476,20 @@ class TeamSettings extends Component
         $value = json_encode($this->form['fields']);
         // dd($value);
 
+        // dd('save', $option, $value);
+
         $o = Option::updateOrCreate(['name' => $option], ['value' => $this->form['fields']]);
 
         // $this->validate();
 
         if (config('aura.teams')) {
-            Cache::forget(auth()->user()->current_team_id.'.aura.team-settings');
+            // Cache::forget(auth()->user()->current_team_id.'.aura.team-settings');
+            Cache::forget('team-settings');
         } else {
-            Cache::forget('aura.team-settings');
+            Cache::forget('team-settings');
         }
 
         return $this->notify(__('Successfully updated'));
 
-        // dd('hier')
-
-        // $this->form->save();
-
-        // Artisan::call('make:resource', [
-        //     'name' => $this->form['fields']['name'],
-        // ]);
-
-        // return $this->notify('Created successfully.');
     }
 }

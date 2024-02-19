@@ -42,8 +42,15 @@ trait SaveMetaFields
                         continue;
                     }
 
+                    $field = $post->fieldBySlug($key);
+
+                    if (isset($field['set']) && $field['set'] instanceof \Closure) {
+                        // dd('here');
+                        $value = call_user_func($field['set'], $post, $field, $value);
+                    }
+
                     if (method_exists($class, 'set')) {
-                        $value = $class->set($value, $post->fieldBySlug($key));
+                        $value = $class->set($value, $field);
                     }
 
                     // If the field exists in the $post->getBaseFillable(), it should be safed in the table instead of the meta table

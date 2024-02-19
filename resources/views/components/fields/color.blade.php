@@ -26,7 +26,7 @@
         @endpush
 
         @push('scripts')
-                <script src="/js/pickr/pickr.min.js"></script>
+                {{-- <script src="/js/pickr/pickr.min.js"></script> --}}
         @endpush
     @endonce
 
@@ -35,7 +35,7 @@
             selectedColor: $wire.entangle('form.fields.{{ optional($field)['slug'] }}'),
             init() {
                 // Simple example, see optional options for more configuration.
-                const pickr = Pickr.create({
+                const pickr = window.Pickr.create({
                     el: this.$refs.colorPicker,
                     theme: 'nano', // or 'classic', or 'monolith'
 

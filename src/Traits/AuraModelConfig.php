@@ -136,7 +136,13 @@ trait AuraModelConfig
 
             // if $value is an array, implode it
             if (is_array($value)) {
-                return implode(', ', $value);
+                $formattedValues = array_map(function ($subArray) {
+                    if (is_array($subArray)) {
+                        return '[' . implode(', ', $subArray) . ']';
+                    }
+                    return $subArray;
+                }, $value);
+                return implode(', ', $formattedValues);
             }
 
             return $value;

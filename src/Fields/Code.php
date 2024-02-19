@@ -12,7 +12,11 @@ class Code extends Field
 
     public function get($field, $value)
     {
-        return json_encode($value, true);
+        if (is_array($value) || $value === null) {
+            return $value;
+        }
+
+        return json_decode($value, true);
     }
 
     public function getFields()
@@ -46,6 +50,6 @@ class Code extends Field
 
     public function set($value)
     {
-        return $value;
+        return json_encode($value);
     }
 }

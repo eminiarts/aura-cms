@@ -196,7 +196,7 @@
             // singular
 
             console.log(this.multiple, this.value, item.id);
-            
+
             if (!this.multiple) {
                 this.value = item.id;
                 this.selectedItems = [item];
@@ -416,7 +416,7 @@
                 x-ref="listbox"
                 x-transition.origin.top
                 x-cloak
-                class="overflow-y-auto absolute left-0 z-10 mt-2 w-full max-h-64 bg-white rounded-md border divide-y divide-gray-100 shadow-md origin-top outline-none border-gray-500/30 dark:border-gray-700 dark:bg-gray-900 dark:divide-gray-800"
+                class="overflow-y-auto absolute left-0 z-10 mt-2 w-full max-h-64 bg-white rounded-md border divide-y shadow-md origin-top outline-none divide-gray-500/30 border-gray-500/30 dark:border-gray-700 dark:bg-gray-900 dark:divide-gray-700"
             >
                 <template x-if="searchable">
                     <li>
@@ -445,8 +445,8 @@
                         <li
                             :value="item.id"
                             :class="{
-                                'bg-primary-50 hover:bg-primary-100': isActive(item),
-                                'bg-white hover:bg-primary-100': ! isSelected(item),
+                                'dark:bg-primary-500/20 dark:hover:bg-primary-500/30 dark:focus:bg-primary-500/30 bg-primary-50 hover:bg-primary-100 focus:bg-primary-100 focus:outline-none': isActive(item),
+                                'dark:bg-gray-900 dark:hover:bg-gray-800 dark:focus:bg-gray-800 bg-white hover:bg-primary-100 focus:bg-primary-100 focus:outline-none': ! isSelected(item),
                                 'opacity-50 cursor-not-allowed': isDisabled(item),
                             }"
                             class="flex gap-2 justify-between items-center px-4 py-2 w-full text-sm transition-colors cursor-pointer"

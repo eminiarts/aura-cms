@@ -35,33 +35,4 @@
         {{ __('Save') }}
     </x-aura::button>
 
-    {{-- <div class="flex mt-4 space-x-4">
-        <div class="w-12 h-12 rounded bg-sidebar-bg"></div>
-    </div>
-
-    <div class="flex mt-4 space-x-4">
-        <div class="w-12 h-12 rounded bg-primary-50"></div>
-        <div class="w-12 h-12 rounded bg-primary-100"></div>
-        <div class="w-12 h-12 rounded bg-primary-200"></div>
-        <div class="w-12 h-12 rounded bg-primary-300"></div>
-        <div class="w-12 h-12 rounded bg-primary-400"></div>
-        <div class="w-12 h-12 rounded bg-primary-500"></div>
-        <div class="w-12 h-12 rounded bg-primary-600"></div>
-        <div class="w-12 h-12 rounded bg-primary-700"></div>
-        <div class="w-12 h-12 rounded bg-primary-800"></div>
-        <div class="w-12 h-12 rounded bg-primary-900"></div>
-    </div>
-
-    <div class="flex mt-4 space-x-4">
-        <div class="w-12 h-12 bg-gray-50 rounded"></div>
-        <div class="w-12 h-12 bg-gray-100 rounded"></div>
-        <div class="w-12 h-12 bg-gray-200 rounded"></div>
-        <div class="w-12 h-12 bg-gray-300 rounded"></div>
-        <div class="w-12 h-12 bg-gray-400 rounded"></div>
-        <div class="w-12 h-12 bg-gray-500 rounded"></div>
-        <div class="w-12 h-12 bg-gray-600 rounded"></div>
-        <div class="w-12 h-12 bg-gray-700 rounded"></div>
-        <div class="w-12 h-12 bg-gray-800 rounded"></div>
-        <div class="w-12 h-12 bg-gray-900 rounded"></div>
-    </div> --}}
 </div>

@@ -77,6 +77,7 @@ class Option extends Resource
         static::addGlobalScope(new TeamScope());
 
         static::saving(function ($post) {
+
             if (config('aura.teams') && ! isset($post->team_id) && auth()->user()) {
                 $post->team_id = auth()->user()->current_team_id;
             }

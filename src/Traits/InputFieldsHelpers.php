@@ -95,6 +95,7 @@ trait InputFieldsHelpers
 
     public function getFieldValue($key)
     {
+        // dd('test', $key, $this->fieldBySlug($key), $this->meta->$key);
         return $this->fieldClassBySlug($key)->get($this->fieldBySlug($key), $this->meta->$key);
     }
 

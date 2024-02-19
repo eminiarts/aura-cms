@@ -19,6 +19,8 @@ class Repeater extends Field
 
     public function get($field, $value)
     {
+        $fields = $this->getFields();
+        // dd($field, $value, $fields);
         if (is_array($value)) {
             return $value;
         }
@@ -59,8 +61,9 @@ class Repeater extends Field
         ]);
     }
 
-    public function set($value)
+    public function set($value, $field)
     {
+        ray($value, $field)->red();
         return json_encode($value);
     }
 

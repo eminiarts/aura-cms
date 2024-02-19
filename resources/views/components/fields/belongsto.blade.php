@@ -19,46 +19,46 @@
         @else
         value: $wire.entangle('form.fields.{{ optional($field)['slug'] }}'), @endif
             {{-- value: $wire.entangle('form.fields.{{ $field['slug'] }}'), --}}
-        
+
             items: {{ Js::from($values) }},
-        
+
                 api: {{ optional($field)['api'] ? 'true' : 'false' }},
                 model: {{ Js::from($field['resource']) }},
                 field: {{ Js::from($field['type']) }},
                 slug: '{{ $field['slug'] }}',
                 disabled: @js($disabled),
                 csrf: document.querySelector('meta[name=\'csrf-token\']').getAttribute('content'),
-        
+
                 search: null,
-        
+
                 get filteredItems() {
-        
+
                     if (this.search) {
                         return this.items.filter(item => item.title.toLowerCase().includes(this.search.toLowerCase()));
                     }
-        
+
                     return this.items;
                 },
-        
+
                 init() {
-        
+
                     console.log('init', this.value);
-        
+
                     // Get Values via API Fetch Call to /api/fields/{field}/values and pass this.model and this.slug as params
                     if (this.api) {
                         this.fetchApi();
                     }
-        
+
                     // Watch this.search and fetch new values, debounce for 500ms
                     this.$watch('search', () => {
                         if (this.api) {
                             this.fetchApi();
                         }
                     }, { debounce: 500 });
-        
-        
+
+
                 },
-        
+
                 findItem(id) {
 
                     {{-- console.log('findItem', id, this.items);
@@ -67,17 +67,17 @@
                         let foundItem = this.items.find(item => item.id == id);
 
                         console.log('foundItem', foundItem);
-                        
+
                         return foundItem ? foundItem.title : null;
                     }
                     return null;
                 },
-        
+
                 fetchApi() {
-        
+
                     let currentId = this.value;
                     let vm = this;
-        
+
                     fetch('/admin/api/fields/values', {
                             method: 'POST',
                             credentials: 'include',
@@ -99,12 +99,13 @@
                             vm.value = currentId;
                         });
                 }
-        
+
         }">
             <div x-listbox x-model="value" class="relative">
                 <label x-listbox:label class="sr-only">Select</label>
 
                 <button x-listbox:button :disabled="disabled"
+                    x-ref="button"
                     class="
                         shadow-xs border border-gray-500/30 appearance-none px-3 py-2 focus:outline-none w-full ring-gray-900/10 focus:ring focus:border-primary-300 focus:ring-primary-300  focus:ring-opacity-50 dark:focus:ring-primary-500 dark:focus:ring-opacity-50 disabled:opacity-75 disabled:bg-gray-100 disabled:dark:bg-gray-800 bg-white dark:bg-gray-900 dark:border-gray-700 z-[1]
 
@@ -123,22 +124,25 @@
                 </button>
 
                 <ul x-listbox:options x-transition.origin.top.right x-cloak
-                    class="absolute left-0 z-10 w-full mt-2 overflow-y-auto origin-top-right bg-white border divide-y divide-gray-100 rounded-lg shadow-md outline-none border-gray-400/30 max-h-96">
+                    class="overflow-y-auto absolute left-0 z-10 mt-2 w-full max-h-96 bg-white rounded-lg border divide-y shadow-md origin-top-right outline-none dark:bg-gray-900 divide-gray-500/30 dark:divide-gray-700 border-gray-500/30 dark:border-gray-700">
                     <li>
                         <div>
                             {{-- search input --}}
                             <input x-model.debounce.500ms="search" autofocus
-                                class="w-full px-4 py-2.5 text-gray-900 placeholder-gray-500 border-none focus:outline-none"
+                                class="px-4 py-2.5 w-full placeholder-gray-500 text-gray-900 border-none focus:outline-none dark:bg-gray-900 dark:text-gray-100 dark:placeholder-gray-400"
                                 placeholder="Search..." </div>
                     </li>
+                    <template x-if="filteredItems.length === 0">
+                        <div class="px-4 py-2 text-sm text-gray-500">No items found</div>
+                    </template>
                     <template x-for="item in filteredItems" :key="item.id">
                         <li x-listbox:option :value="item.id"
                             :class="{
-                                'bg-primary-500/10 text-gray-900': $listboxOption.isActive,
-                                'text-gray-700': !$listboxOption.isActive,
+                                'dark:bg-primary-500/20 dark:hover:bg-primary-500/30 bg-primary-50 hover:bg-primary-100 focus:outline-none': $listboxOption.isSelected,
+                                'dark:bg-gray-900 dark:hover:bg-gray-800 bg-white hover:bg-primary-100 focus:outline-none': !$listboxOption.isSelected,
                                 'opacity-50 cursor-not-allowed': $listboxOption.isDisabled,
                             }"
-                            class="flex items-center justify-between w-full gap-2 px-4 py-2 text-sm transition-colors cursor-default">
+                            class="flex gap-2 justify-between items-center px-4 py-2 w-full text-sm transition-colors cursor-default">
                             <div class="flex items-center space-x-2">
                                 <div>
                                     <span x-text="item.title" class="font-semibold"></span>
