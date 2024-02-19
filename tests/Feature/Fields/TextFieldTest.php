@@ -3,10 +3,8 @@
 namespace Tests\Feature\Livewire;
 
 use Aura\Base\Facades\Aura;
-use Aura\Base\Fields\Slug;
 use Aura\Base\Fields\Text;
 use Aura\Base\Livewire\Resource\Create;
-use Aura\Base\Livewire\Resource\Edit;
 use Aura\Base\Resource;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
@@ -97,12 +95,11 @@ test('Text Field - Default Value set', function () {
     Aura::fake();
     Aura::setModel(new TextFieldModel());
 
-    $component = Livewire::test(Create::class, ['slug' => 'TextModel', ])
+    $component = Livewire::test(Create::class, ['slug' => 'TextModel'])
         ->assertSee('Text for Test')
         ->assertSeeHtml('wire:model="form.fields.text"')
         ->assertDontSee('Advanced Text')
-        ->assertSet('form.fields.text', 'Default for Test')
-    ;
+        ->assertSet('form.fields.text', 'Default for Test');
 
 });
 

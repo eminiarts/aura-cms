@@ -138,10 +138,12 @@ trait AuraModelConfig
             if (is_array($value)) {
                 $formattedValues = array_map(function ($subArray) {
                     if (is_array($subArray)) {
-                        return '[' . implode(', ', $subArray) . ']';
+                        return '['.implode(', ', $subArray).']';
                     }
+
                     return $subArray;
                 }, $value);
+
                 return implode(', ', $formattedValues);
             }
 

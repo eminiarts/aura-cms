@@ -64,6 +64,7 @@ class Repeater extends Field
     public function set($value, $field)
     {
         ray($value, $field)->red();
+
         return json_encode($value);
     }
 
