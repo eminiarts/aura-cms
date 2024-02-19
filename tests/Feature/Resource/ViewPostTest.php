@@ -56,4 +56,4 @@ test('post view - can be customized', function () {
     $component = livewire('aura::post-view', [$post->type, $post->id]);
 
     // fake view exists in resources: aura/post/view.blade.php
-})->todo();
+});
