@@ -27,3 +27,35 @@ test('check User Fields', function () {
     expect($fields->firstWhere('slug', 'teams'))->not->toBeNull();
     expect($fields->firstWhere('slug', '2fa'))->not->toBeNull();
 });
+
+test('User isSuperAdmin()', function () {
+    expect($this->user->isSuperAdmin())->toBeTrue();
+});
+
+test('User isSuperAdmin() false', function () {
+    $user = User::factory()->create();
+    expect($user->isSuperAdmin())->toBeFalse();
+});
+
+test('User roles()', function () {
+
+    $role = Role::first();
+
+    expect($this->user->roles->pluck('id')->toArray())->toBe([$role->id]);
+});
+
+test('User hasAnyRole()', function () {
+    expect($this->user->hasAnyRole(['test', 'super_admin']))->toBeTrue();
+    expect($this->user->hasAnyRole(['test']))->toBeFalse();
+    expect($this->user->hasRole('test'))->toBeFalse();
+    expect($this->user->hasRole('super_admin'))->toBeTrue();
+});
+
+test('User hasPermission()', function () {
+    expect($this->user->hasPermission('test'))->toBeTrue();
+});
+
+
+test('User hasPermissionTo()', function () {
+    expect($this->user->hasPermissionTo('test', Role::first()))->toBeTrue();
+});
