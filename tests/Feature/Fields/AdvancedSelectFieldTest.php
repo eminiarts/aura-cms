@@ -2,13 +2,18 @@
 
 namespace Tests\Feature\Livewire;
 
-use Aura\Base\Facades\Aura;
-use Aura\Base\Livewire\Resource\Create;
-use Aura\Base\Livewire\Resource\Edit;
+use Mockery;
+use Livewire\Livewire;
 use Aura\Base\Resource;
+use Aura\Base\Facades\Aura;
 use Aura\Base\Resources\Post;
 use Aura\Base\Resources\Role;
-use Livewire\Livewire;
+use Aura\Base\Fields\AdvancedSelect;
+use Aura\Base\Livewire\Resource\Edit;
+
+use Aura\Base\Livewire\Resource\Create;
+
+use function Pest\Laravel\postJson;
 
 // Before each test, create a Superadmin and login
 beforeEach(function () {
@@ -119,6 +124,100 @@ test('advancedselect field gets displayed correctly on edit view', function () {
     expect($post->advancedselect)->toHaveCount(1);
     expect($post->advancedselect)->toContain($id);
 });
+
+
+test('Advanced Select - Fields', function () {
+    $slug = new AdvancedSelect();
+
+    $fields = collect($slug->getFields());
+
+    expect($fields->firstWhere('slug', 'resource'))->not->toBeNull();
+    expect($fields->firstWhere('slug', 'create'))->not->toBeNull();
+});
+
+test('Advanced Select - Check values function exists', function () {
+    $advancedSelect = new AdvancedSelect();
+    expect(method_exists($advancedSelect, 'values'))->toBeTrue();
+});
+
+
+// Test for Missing `model` or `slug` Parameters
+it('returns an error if model or slug is missing', function () {
+    $response = postJson(route('aura.api.fields.values'), [
+        // Intentionally leaving out 'model' and 'slug'
+    ]);
+
+    $response->assertStatus(400)
+             ->assertJson([
+                 'error' => 'Missing model or slug',
+             ]);
+});
+
+
+it('returns field values for a valid request', function () {
+
+    $this->withoutExceptionHandling();
+
+    $response = test()->postJson(route('aura.api.fields.values'), [
+        'model' => Role::class, // Replace with actual model class string
+        'slug' => 'text',
+        'field' => AdvancedSelect::class, // This must match your actual field class name or identifier
+    ]);
+
+    $role = Role::first();
+
+    $response->assertStatus(200)
+             ->assertJson([
+                 ['id' => $role->id, 'title' => $role->title()],
+             ]);
+});
+
+
+test('Advanced Select Field - create button true', function () {
+    $field = [
+        'name' => 'Select',
+        'type' => 'Aura\\Base\\Fields\\AdvancedSelect',
+        'create' => true,
+        'validation' => '',
+        'resource' => 'Aura\\Base\\Resources\\Role',
+        'slug' => 'select',
+    ];
+
+    $fieldClass = app($field['type']);
+    $field['field'] = $fieldClass;
+
+    $view = $this->withViewErrors([])->blade(
+        '<x-dynamic-component :component="$component" :field="$field" :form="$form" />',
+        ['component' => $fieldClass->component, 'field' => $field, 'form' => []]
+    );
+
+    expect((string) $view)->toContain('Select');
+    expect((string) $view)->toContain('wire:click="$dispatch(\'openModal\', { component:');
+});
+
+test('Advanced Select Field - create button false', function () {
+    $field = [
+        'name' => 'Select',
+        'type' => 'Aura\\Base\\Fields\\AdvancedSelect',
+        'create' => false,
+        'validation' => '',
+        'resource' => 'Aura\\Base\\Resources\\Role',
+        'slug' => 'select',
+    ];
+
+    $fieldClass = app($field['type']);
+    $field['field'] = $fieldClass;
+
+    $view = $this->withViewErrors([])->blade(
+        '<x-dynamic-component :component="$component" :field="$field" :form="$form" />',
+        ['component' => $fieldClass->component, 'field' => $field, 'form' => []]
+    );
+
+    expect((string) $view)->toContain('Select');
+    expect((string) $view)->not->toContain('wire:click="$dispatch(\'openModal\', { component:');
+});
+
+
 
 test('api test with advanced select', function () {
 });
