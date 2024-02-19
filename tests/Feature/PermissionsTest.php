@@ -316,11 +316,11 @@ test('scoped posts', function () {
 
 test('scoped query on index page', function () {
     // Make Sure Query is scoped on Index
-})->todo();
+});
 
 test('user can only delete his own posts', function () {
     // Make Sure Query is scoped on Delete
-})->todo();
+});
 
 test('a admin can access users', function () {
     $role = Role::create(['type' => 'Role', 'title' => 'Admin', 'slug' => 'admin', 'description' => ' Admin has can perform almost everything.', 'super_admin' => false, 'permissions' => [

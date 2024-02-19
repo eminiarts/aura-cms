@@ -87,4 +87,4 @@ test('media grid view', function () {
 });
 
 test('media can be selected', function () {
-})->todo();
+});
