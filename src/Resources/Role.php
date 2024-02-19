@@ -55,6 +55,7 @@ class Role extends Resource
                 'conditional_logic' => [],
                 'wrapper' => '',
                 'on_index' => true,
+                'searchable' => true,
                 'on_forms' => true,
                 'on_view' => true,
             ],

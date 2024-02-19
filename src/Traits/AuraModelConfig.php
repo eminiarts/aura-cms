@@ -280,10 +280,6 @@ trait AuraModelConfig
         return static::$pluralName ?? str(static::$type)->plural();
     }
 
-    public static function getSearchable(): array
-    {
-        return static::$searchable;
-    }
 
     public static function getShowInNavigation(): bool
     {

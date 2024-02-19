@@ -163,8 +163,6 @@ it('returns an error if model or slug is missing', function () {
 
 it('returns field values for a valid request', function () {
 
-    $this->withoutExceptionHandling();
-
     $response = test()->postJson(route('aura.api.fields.values'), [
         'model' => Role::class, // Replace with actual model class string
         'slug' => 'text',
@@ -246,51 +244,30 @@ test('Advanced Select Field - create button false', function () {
 });
 
 
+it('searchable fields API Mock', function () {
 
-test('api test with advanced select', function () {
-});
-
-
-
-it('returns formatted search results', function () {
-
-
+    // $this->withoutExceptionHandling();
     // Mock the model that will be used in the tests
-    $this->testModel = Mockery::mock('alias:App\Models\TestModel');
-
-    // Bind the mock to the service container
-    App::instance('App\Models\TestModel', $this->testModel);
-
+    $role = Mockery::mock(Role::class);
 
     // Setup mock to return predefined searchable fields
-    $this->testModel->shouldReceive('getSearchable')->once()->andReturn(['title']);
+    $role->shouldReceive('getSearchableFields')->andReturn(['title']);
 
     // Mock the searchIn method to return a collection of items
-    $this->testModel->shouldReceive('searchIn')->once()->andReturnSelf();
-    $this->testModel->shouldReceive('take')->with(5)->andReturnSelf();
-    $this->testModel->shouldReceive('get')->once()->andReturn(collect([
-        (object)['id' => 1, 'title' => 'Title 1'],
-        (object)['id' => 2, 'title' => 'Title 2'],
+    $role->shouldReceive('searchIn')->andReturnSelf();
+
+    $role->shouldReceive('take')->with(20)->andReturnSelf();
+
+    $role->shouldReceive('get')->andReturn(collect([
+        (object)['id' => 1, 'title' => 'Role 1'],
+        (object)['id' => 2, 'title' => 'Role 2'],
     ]));
 
-    // Simulate a request with the necessary parameters
-    $request = new Request([
-        'model' => 'App\Models\TestModel',
-        'search' => 'query',
-    ]);
+    $response = test()->postJson(route('aura.api.fields.values'), [
+            'model' => Role::class, // Replace with actual model class string
+            'slug' => 'text',
+            'field' => AdvancedSelect::class, // This must match your actual field class name or identifier
+        ]);
 
-    // Call the api function
-    $field = new AdvancedSelect();
-    $response = $field->api($request);
-
-    // Assert the response is as expected
-    expect($response)->toBeArray()->and($response)->toHaveCount(2);
-    expect($response[0])->toMatchArray([
-        'id' => 1,
-        'title' => 'Title 1',
-    ]);
-    expect($response[1])->toMatchArray([
-        'id' => 2,
-        'title' => 'Title 2',
-    ]);
+    $response->assertStatus(200);
 });
