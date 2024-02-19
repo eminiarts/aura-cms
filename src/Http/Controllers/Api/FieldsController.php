@@ -16,9 +16,6 @@ class FieldsController extends Controller
             ], 400);
         }
 
-        // Get the model
-        //$model = app($request->model);
-
         // Get the field
         $field = app($request->field)->api($request);
 
