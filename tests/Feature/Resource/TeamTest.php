@@ -40,3 +40,18 @@ test('Team uses SoftDeletes', function () {
     // Assert the team is still in the database and accessible through a withTrashed query
     expect(Team::withTrashed()->find($teamId))->not->toBeNull();
 });
+
+
+test('Team create also creates a super_admin Role', function () {
+    $team = new Team();
+    $team->name = 'Test Team';
+    $team->save();
+
+    $role = Role::where('slug', 'super_admin')->where('team_id', $team->id)->first();
+
+    expect($role)->not->toBeNull();
+    expect($role->title)->toEqual('Super Admin');
+    expect($role->super_admin)->toBeTrue();
+
+
+});
