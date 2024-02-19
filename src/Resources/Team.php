@@ -5,10 +5,13 @@ namespace Aura\Base\Resources;
 use Aura\Base\Database\Factories\TeamFactory;
 use Aura\Base\Models\TeamMeta;
 use Aura\Base\Resource;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\Cache;
 
 class Team extends Resource
 {
+    use SoftDeletes;
+
     public array $actions = [
         'delete' => [
             'label' => 'Delete',
@@ -80,6 +83,7 @@ class Team extends Resource
                 'type' => 'Aura\\Base\\Fields\\Text',
                 'validation' => 'required',
                 'on_index' => true,
+                'searchable' => true,
                 'slug' => 'name',
                 'style' => [
                     'width' => '100',
