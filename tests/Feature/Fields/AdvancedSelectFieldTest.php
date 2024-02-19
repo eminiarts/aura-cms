@@ -3,6 +3,7 @@
 namespace Tests\Feature\Livewire;
 
 use Aura\Base\Facades\Aura;
+use Aura\Base\Fields\AdvancedSelect;
 use Aura\Base\Livewire\Resource\Create;
 use Aura\Base\Livewire\Resource\Edit;
 use Aura\Base\Resource;
@@ -119,6 +120,22 @@ test('advancedselect field gets displayed correctly on edit view', function () {
     expect($post->advancedselect)->toHaveCount(1);
     expect($post->advancedselect)->toContain($id);
 });
+
+
+test('Advanced Select - Fields', function () {
+    $slug = new AdvancedSelect();
+
+    $fields = collect($slug->getFields());
+
+    expect($fields->firstWhere('slug', 'resource'))->not->toBeNull();
+    expect($fields->firstWhere('slug', 'create'))->not->toBeNull();
+});
+
+test('Advanced Select - Check values function exists', function () {
+    $advancedSelect = new AdvancedSelect();
+    expect(method_exists($advancedSelect, 'values'))->toBeTrue();
+});
+
 
 test('api test with advanced select', function () {
 });
