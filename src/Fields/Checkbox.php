@@ -12,6 +12,7 @@ class Checkbox extends Field
 
     public function get($field, $value)
     {
+        // dd($value);
         if ($value === null || $value === false) {
             return [];
         }

@@ -165,6 +165,11 @@ class Create extends Component
         foreach ($fields as $field) {
             $slug = $field['slug'] ?? null;
             if ($slug && ! isset($this->form['fields'][$slug]) && isset($field['default'])) {
+
+                if ($field['type'] == "Aura\Base\Fields\Checkbox" && isset($field['options']) && is_array($field['options']) && ! is_array($field['default'])) {
+                    $field['default'] = [$field['default']];
+                }
+
                 $this->form['fields'][$slug] = $field['default'];
             }
         }

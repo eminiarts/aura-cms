@@ -3,7 +3,7 @@
     "file": "assets/_commonjsHelpers-725317a4.js"
   },
   "resources/css/app.css": {
-    "file": "assets/app-18bc6944.css",
+    "file": "assets/app-e989a75f.css",
     "isEntry": true,
     "src": "resources/css/app.css"
   },
@@ -22,5 +22,17 @@
     ],
     "isEntry": true,
     "src": "resources/js/app.js"
+  },
+  "resources/js/monaco.css": {
+    "file": "assets/monaco-52024a14.css",
+    "src": "resources/js/monaco.css"
+  },
+  "resources/js/monaco.js": {
+    "css": [
+      "assets/monaco-52024a14.css"
+    ],
+    "file": "assets/monaco-ddf74899.js",
+    "isEntry": true,
+    "src": "resources/js/monaco.js"
   }
 }

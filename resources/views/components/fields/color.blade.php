@@ -21,14 +21,14 @@
 
 
         @once
-        @push('styles')
-                {{-- <link rel="stylesheet" href="/js/pickr/nano.min.css"/> <!-- 'nano' theme --> --}}
-        @endpush
+            @push('styles')
+                    {{-- <link rel="stylesheet" href="/js/pickr/nano.min.css"/> <!-- 'nano' theme --> --}}
+            @endpush
 
-        @push('scripts')
-                {{-- <script src="/js/pickr/pickr.min.js"></script> --}}
-        @endpush
-    @endonce
+            @push('scripts')
+                    {{-- <script src="/js/pickr/pickr.min.js"></script> --}}
+            @endpush
+        @endonce
 
     <div wire:ignore class="flex items-center"
         x-data="{
@@ -140,11 +140,9 @@
 
     @endif
 
-</x-aura::fields.wrapper>
+    {{-- border-gray-500/30 focus:border-primary-300 focus:ring focus:ring-primary-300  focus:ring-opacity-50 dark:focus:ring-primary-500 dark:focus:ring-opacity-50 rounded-md shadow-sm --}}
 
-
-{{-- border-gray-500/30 focus:border-primary-300 focus:ring focus:ring-primary-300  focus:ring-opacity-50 dark:focus:ring-primary-500 dark:focus:ring-opacity-50 rounded-md shadow-sm --}}
-<style >
+    <style >
         .pcr-app .pcr-interaction .pcr-result {
             border: 1px solid rgb(var(--gray-300));
             border-radius: 0.5rem;
@@ -178,3 +176,4 @@
             width: 16rem;
         }
     </style>
+</x-aura::fields.wrapper>

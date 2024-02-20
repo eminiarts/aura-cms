@@ -5,52 +5,29 @@
         <div id="editorContainer" style="height: 500px;"></div>
     </div>
 
-    <div class="relative h-96">
-        {{-- <div x-data
-            x-ref="aceEditor"
-            id="editor"
-            wire:ignore
-            x-init="
-            ace.config.set('basePath', '{{ asset('js/ace/') }}');
-                editor = ace.edit($refs.aceEditor);
-                editor.setTheme('ace/theme/github');
-                editor.setOptions({
-                    fontSize: '14px',
-                    showPrintMargin: false,
-                    showLineNumbers: true,
-                    wrap: true,
-                    behavioursEnabled: false,
-                    enableEmmet: true,
-                    enableBasicAutocompletion: true,
-                    enableLiveAutocompletion: true,
-                    enableSnippets: true,
+    <div x-data="{ content: '' }">
+    <div
+        x-init="
+            document.addEventListener('DOMContentLoaded', () => {
+                let editor = monaco.editor.create($el, {
+                    value: content,
+                    language: 'handlebars',
+                    automaticLayout: true,
                 });
-                editor.session.setMode('ace/mode/{{ $field['language'] ?? 'html' }}');
-                editor.on('change', function () {
-                    $dispatch('input', { value: editor.getValue() });
-                });
-            "
-            wire:model="form.fields.{{ optional($field)['slug'] }}"
-        >
+            });
+        "
+        wire:ignore
+        class="w-full h-full"
+    ></div>
+</div>
 
-
-        @php
-            $value = optional($this->form['fields'])[$field['slug']];
-            if (is_array($value)) {
-                $value = json_encode($value);
-            }
-            echo $value;
-        @endphp
-
-
-        </div> --}}
-    </div>
     </div>
 </x-aura::fields.wrapper>
 
 
 @push('styles')
     @once
+        @vite(['resources/js/monaco.js'], 'vendor/aura')
         <style type="text/css" media="screen">
     #editor {
         position: absolute;
@@ -62,14 +39,3 @@
 </style>
     @endonce
 @endpush
-
-    @once
-
-@push('scripts')
-        {{-- <!-- import the ace ext-emmet.js -->
-        <script src="/js/ace/ace.min.js" integrity="sha512-s57ywpCtz+4PU992Bg1rDtr6+1z38gO2mS92agz2nqQcuMQ6IvgLWoQ2SFpImvg1rbgqBKeSEq0d9bo9NtBY0w==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-        <script src="/js/ace/ext-emmet.min.js" integrity="sha512-xbrBbnLPHPCwK4PZpXL4GN9UHCHAvJGroy3WyfltNhPKqyqw/EFgBrLhMkTIsGuqfBsIQY/VdnxfNe/SFQzJyQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-        <script src="/js/ace/ext-language_tools.min.js" integrity="sha512-o/VD0e6Ld6RjhcgZJWVv/1MfV03mjhk3zWBA41/6iYShAb/3ruD8wlSU+HyqBYlLr+IAwdBKx4Kl4w08ROJuTw==" crossorigin="anonymous" referrerpolicy="no-referrer"></script> --}}
-
-@endpush
-    @endonce
