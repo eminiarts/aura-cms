@@ -33,6 +33,7 @@
     },
     "dependencies": {
         "@simonwep/pickr": "^1.9.0",
-        "monaco-editor": "^0.46.0"
+        "monaco-editor": "^0.46.0",
+        "monaco-editor-webpack-plugin": "^7.1.0"
     }
 }

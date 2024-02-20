@@ -36,7 +36,11 @@
     </span>
 
     <input
+        @if(optional($field)['live'] === true)
+        wire:model.live="form.fields.{{ optional($field)['slug'] }}"
+        @else
         wire:model="form.fields.{{ optional($field)['slug'] }}"
+        @endif
         x-ref="input"
         @if ($field['field']->isDisabled($this->form, $field))
         disabled
