@@ -1,6 +1,6 @@
 import { defineConfig } from 'vite';
 import laravel from 'laravel-vite-plugin';
-import MonacoWebpackPlugin from 'monaco-editor-webpack-plugin';
+import monacoEditorPlugin from 'vite-plugin-monaco-editor';
 
 export default defineConfig({
     build: {
@@ -19,6 +19,6 @@ export default defineConfig({
             refresh: true,
             publicDirectory: 'resources',
             buildDirectory: 'dist',
-        })
+        }),
     ],
 });

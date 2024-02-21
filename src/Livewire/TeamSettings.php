@@ -102,6 +102,7 @@ class TeamSettings extends Component
             ],
             [
                 'name' => 'Darkmode',
+                'live' => true,
                 'type' => 'Aura\\Base\\Fields\\Radio',
                 'options' => [
                     [
@@ -121,6 +122,34 @@ class TeamSettings extends Component
                 'style' => [
                     'width' => '33',
                 ],
+            ],
+
+            [
+                'name' => 'Sidebar Darkmode',
+                'type' => 'Aura\\Base\\Fields\\Radio',
+                'options' => [
+                    [
+                        'key' => 'primary',
+                        'value' => 'Primary',
+                    ],
+                    [
+                        'key' => 'light',
+                        'value' => 'Light',
+                    ],
+                    [
+                        'key' => 'dark',
+                        'value' => 'Dark',
+                    ],
+                ],
+                'slug' => 'sidebar-darkmode-type',
+                'style' => [
+                    'width' => '33',
+                ],
+                'conditional_logic' => function ($model, $form) {
+                    if ($form && $form['fields'] && $form['fields']['darkmode-type']) {
+                        return $form['fields']['darkmode-type'] == 'auto';
+                    }
+                },
             ],
             [
                 'type' => 'Aura\\Base\\Fields\\Panel',
@@ -172,9 +201,9 @@ class TeamSettings extends Component
                 'type' => 'Aura\\Base\\Fields\\Tab',
                 'name' => 'Custom Colors',
                 'slug' => 'tab-primary-colors-lightmode',
-                'conditional_logic' => function ($model, $post) {
-                    if ($post && $post['fields'] && $post['fields']['color-palette']) {
-                        return $post['fields']['color-palette'] == 'custom';
+                'conditional_logic' => function ($model, $form) {
+                    if ($form && $form['fields'] && $form['fields']['color-palette']) {
+                        return $form['fields']['color-palette'] == 'custom';
                     }
                 },
             ],
@@ -302,9 +331,9 @@ class TeamSettings extends Component
                 'type' => 'Aura\\Base\\Fields\\Tab',
                 'name' => 'Custom Colors',
                 'slug' => 'tab-gray-colors-custom-tab',
-                'conditional_logic' => function ($model, $post) {
-                    if ($post && $post['fields'] && $post['fields']['gray-color-palette']) {
-                        return $post['fields']['gray-color-palette'] == 'custom';
+                'conditional_logic' => function ($model, $form) {
+                    if ($form && $form['fields'] && $form['fields']['gray-color-palette']) {
+                        return $form['fields']['gray-color-palette'] == 'custom';
                     }
                 },
             ],

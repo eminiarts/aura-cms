@@ -3,7 +3,7 @@
     'sidebar' => null,
 ])
 
-        <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
 <head>
     <meta charset="utf-8">
@@ -14,36 +14,10 @@
 
     @php
         $settings = app('aura')::getOption('team-settings');
-
         $appSettings = app('aura')::options();
     @endphp
 
-    @php
-        use Aura\Base\Resources\Attachment;
-
-        $favicon = $darkFavicon = '/vendor/aura/public/favicon-32x32.png';
-
-        if(isset($appSettings['app-favicon'])) {
-            $appFavicon = $appSettings['app-favicon'];
-            $favicon = optional(Attachment::find($appFavicon)->first())->path();
-        }
-
-        if(isset($appSettings['app-favicon-darkmode'])) {
-            $appFaviconDark = $appSettings['app-favicon-darkmode'];
-            $darkFavicon = optional(Attachment::find($appFaviconDark)->first())->path();
-        }
-
-        if (!$favicon) {
-            $favicon = $darkFavicon;
-        }
-
-        if (!$darkFavicon) {
-            $darkFavicon = $favicon;
-        }
-
-    @endphp
-
-    <link rel="icon" type="image/png" sizes="32x32" href="{{ $favicon }}">
+    @include('aura::components.layout.favicon')
 
     <style>[x-cloak] {
             display: none !important;
@@ -61,12 +35,12 @@
 <body class="overflow-hidden antialiased text-gray-800 bg-white dark:bg-gray-900 dark:text-gray-200">
 
 <div
-        x-data="aura"
-        @keydown.window.slash="$dispatch('search')"
-        @keydown.window.prevent.cmd.k="$dispatch('search')"
-        @keydown.window.escape="closeSearch()"
-        @inset-sidebar.window="insetSidebar(event)"
-        class="flex overflow-hidden flex-col items-stretch h-screen md:flex-row"
+    x-data="aura"
+    @keydown.window.slash="$dispatch('search')"
+    @keydown.window.prevent.cmd.k="$dispatch('search')"
+    @keydown.window.escape="closeSearch()"
+    @inset-sidebar.window="insetSidebar(event)"
+    class="flex overflow-hidden flex-col items-stretch h-screen md:flex-row"
 >
 
 
@@ -133,14 +107,10 @@
 
 @stack('scripts')
 
-<script>
-
-
-</script>
-
 @vite(['resources/js/app.js'], 'vendor/aura')
 @vite(['resources/js/apexcharts.js'], 'vendor/aura')
 
 @livewireScriptConfig
+
 </body>
 </html>
