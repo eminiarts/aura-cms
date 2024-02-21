@@ -113,3 +113,32 @@
         display: none;
     }
 }
+
+
+
+/* Navigation Theme Colors */
+/* Define your Tailwind CSS classes for each sidebar type */
+.sidebar-type-primary {
+    @apply text-white border-white border-opacity-20 bg-sidebar-bg shadow-gray-400 md:shadow-none;
+}
+
+.sidebar-type-light {
+    @apply text-gray-900 bg-gray-50 border-opacity-20 border-gray-500/30 shadow-gray-400 md:shadow-none;
+}
+
+.sidebar-type-dark {
+    @apply text-white bg-gray-800 border-white border-opacity-20 shadow-gray-400 md:shadow-none;
+}
+
+/* Define your Tailwind CSS classes for each sidebar darkmode type */
+.darkmode-type-auto.sidebar-darkmode-type-primary {
+    @apply dark:text-white dark:border-white dark:border-opacity-20 dark:bg-sidebar-bg dark:shadow-gray-400 md:dark:shadow-none;
+}
+
+.darkmode-type-auto.sidebar-darkmode-type-light {
+    @apply dark:text-gray-900 dark:border-gray-500/30 dark:border-opacity-20 dark:bg-gray-50 dark:shadow-gray-400 md:dark:shadow-none;
+}
+
+.darkmode-type-auto.sidebar-darkmode-type-dark {
+    @apply dark:text-white dark:border-white dark:border-opacity-20 dark:bg-gray-800 dark:shadow-gray-400 md:dark:shadow-none;
+}

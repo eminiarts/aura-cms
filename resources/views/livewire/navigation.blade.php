@@ -90,28 +90,6 @@
         >
             <div
                     class="sidebar sidebar-type-{{ $sidebarType }} darkmode-type-{{ $darkmodeType }} sidebar-darkmode-type-{{ $sidebarDarkmodeType }} fixed top-0 left-0 z-10 flex flex-col flex-shrink-0 h-screen border-r shadow-xl {{ $sidebarToggled ? ($compact ? 'w-56' : 'w-72') : 'w-20' }}
-
-
-                @if ($sidebarType == 'primary')
-                    text-white border-white border-opacity-20 bg-sidebar-bg shadow-gray-400 md:shadow-none
-                @elseif ($sidebarType == 'light')
-                    text-gray-900 border-gray-500/30 border-opacity-20 bg-gray-50 shadow-gray-400 md:shadow-none
-                @elseif ($sidebarType == 'dark')
-                    text-white border-white border-opacity-20 bg-gray-800 shadow-gray-400 md:shadow-none
-                @endif
-
-
-                @if ($darkmodeType == 'auto')
-
-                    @if ($sidebarDarkmodeType == 'primary')
-                        dark:text-white dark:border-white dark:border-opacity-20 dark:bg-sidebar-bg dark:shadow-gray-400 md:dark:shadow-none
-                    @elseif ($sidebarDarkmodeType == 'light')
-                        dark:text-gray-900 dark:border-gray-500/30 dark:border-opacity-20 dark:bg-gray-50 dark:shadow-gray-400 md:dark:shadow-none
-                    @elseif ($sidebarDarkmodeType == 'dark')
-                        dark:text-white dark:border-white dark:border-opacity-20 dark:bg-gray-800 dark:shadow-gray-400 md:dark:shadow-none
-                    @endif
-
-                @endif
             "
                     x-bind:class="{
                 '{{ $compact ? 'w-56' : 'w-72' }}': sidebarToggled,
