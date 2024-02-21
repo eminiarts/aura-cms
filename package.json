@@ -22,6 +22,7 @@
         "flatpickr": "^4.6.13",
         "laravel-vite-plugin": "^0.7.2",
         "lodash": "^4.17.19",
+        "monaco-themes": "^0.4.4",
         "nodemon": "^3.0.3",
         "postcss": "^8.1.14",
         "postcss-import": "^14.0.1",
@@ -29,6 +30,7 @@
         "tailwindcss": "^3.2.4",
         "tippy.js": "^6.3.7",
         "vite": "^4.0.0",
+        "vite-plugin-monaco-editor": "^1.1.0",
         "vite-plugin-static-copy": "^0.14.0"
     },
     "dependencies": {
