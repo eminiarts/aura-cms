@@ -65,7 +65,7 @@
     "src": "node_modules/monaco-editor/esm/vs/basic-languages/typescript/typescript.js"
   },
   "resources/css/app.css": {
-    "file": "assets/app-1b47959f.css",
+    "file": "assets/app-b85931fd.css",
     "isEntry": true,
     "src": "resources/css/app.css"
   },
