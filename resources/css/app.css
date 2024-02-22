@@ -465,3 +465,84 @@
 .aura-sidebar-darkmode-type-dark .aura-sidebar-heading-border {
     @apply dark:border-gray-500;
 }
+
+
+/* .aura-sidebar-item */
+.aura-sidebar-item {
+    @apply flex items-center bg-transparent rounded-lg transition duration-150 ease-in-out cursor-pointer dark:hover:bg-gray-900 hover:bg-sidebar-bg-hover;
+}
+.aura-sidebar-item.is-active {
+    @apply text-white bg-sidebar-bg-hover hover:bg-sidebar-bg-hover;
+}
+
+.aura-sidebar-type-primary .aura-sidebar-item {
+    @apply bg-transparent dark:hover:bg-gray-900 hover:bg-sidebar-bg-hover;
+}
+.aura-sidebar-type-primary .aura-sidebar-item.is-active {
+    @apply text-white bg-sidebar-bg-hover hover:bg-sidebar-bg-hover;
+}
+
+.aura-sidebar-type-light .aura-sidebar-item {
+    @apply text-gray-900 bg-transparent dark:text-white dark:hover:bg-gray-900 hover:bg-gray-200;
+}
+.aura-sidebar-type-light .aura-sidebar-item.is-active {
+    @apply text-gray-900 bg-gray-200 dark:bg-gray-900 dark:text-white hover:bg-gray-200;
+}
+
+.aura-sidebar-type-dark .aura-sidebar-item {
+    @apply bg-transparent hover:bg-gray-900;
+}
+.aura-sidebar-type-dark .aura-sidebar-item.is-active {
+    @apply text-white bg-gray-900 hover:bg-gray-900;
+}
+
+/* Dark */
+.aura-sidebar-darkmode-type-primary .aura-sidebar-item {
+    @apply dark:bg-transparent;
+}
+
+.aura-sidebar-darkmode-type-primary .aura-sidebar-item {
+    @apply dark:bg-transparent dark:hover:bg-sidebar-bg-hover;
+}
+.aura-sidebar-darkmode-type-primary .aura-sidebar-item.is-active {
+    @apply dark:text-white dark:bg-sidebar-bg-hover dark:hover:bg-sidebar-bg-hover;
+}
+
+.aura-sidebar-darkmode-type-light .aura-sidebar-item {
+    @apply dark:text-gray-900 dark:bg-transparent dark:hover:bg-gray-200;
+}
+.aura-sidebar-darkmode-type-light .aura-sidebar-item.is-active {
+    @apply dark:text-gray-900 dark:bg-gray-200 dark:hover:bg-gray-200;
+}
+
+.aura-sidebar-darkmode-type-dark .aura-sidebar-item {
+    @apply dark:bg-transparent dark:hover:bg-gray-900;
+}
+.aura-sidebar-darkmode-type-dark .aura-sidebar-item.is-active {
+    @apply dark:text-white dark:bg-gray-900 dark:hover:bg-gray-900;
+}
+
+
+
+/* .aura-sidebar-team-switcher */
+.aura-sidebar-team-switcher {}
+.aura-sidebar-type-primary .aura-sidebar-team-switcher {
+    @apply text-white bg-sidebar-bg;
+}
+.aura-sidebar-type-light .aura-sidebar-team-switcher {
+    @apply text-gray-700 bg-gray-50;
+}
+.aura-sidebar-type-dark .aura-sidebar-team-switcher {
+    @apply text-white bg-gray-800 hover:bg-gray-900;
+}
+
+/* Dark */
+.aura-sidebar-darkmode-type-primary .aura-sidebar-team-switcher {
+    @apply dark:text-white dark:bg-sidebar-bg;
+}
+.aura-sidebar-darkmode-type-light .aura-sidebar-team-switcher {
+    @apply dark:text-gray-700 dark:bg-gray-50;
+}
+.aura-sidebar-darkmode-type-dark .aura-sidebar-team-switcher {
+    @apply dark:text-white dark:bg-gray-800 dark:hover:bg-gray-900;
+}
