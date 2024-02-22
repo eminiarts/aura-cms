@@ -73,7 +73,7 @@
             interactive: true,
             })" x-ref="this">
             <button
-                    class="flex justify-between items-center px-2 py-2 w-full rounded-lg transition duration-150 ease-in-out aura-sidebar-dropdown-collapsed"
+                    class="flex justify-center items-center py-2 w-full rounded-lg transition duration-150 ease-in-out aura-sidebar-dropdown-collapsed"
             >
                 <div class="flex items-center ml-0 space-x-3 text-base font-semibold">
                     <div class="flex items-center ml-0 space-x-3 text-base font-semibold">
