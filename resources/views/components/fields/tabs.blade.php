@@ -1,4 +1,4 @@
-@aware(['model'])
+@aware(['model', 'form'])
 
 @php
     // Create md5 hash of the field array
