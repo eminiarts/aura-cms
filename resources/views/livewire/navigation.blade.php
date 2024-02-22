@@ -1,23 +1,25 @@
-<div>
-    @php
-        use Aura\Base\Resources\Team;
-        use Aura\Base\Facades\Aura;
+@php
+use Aura\Base\Resources\Team;
+use Aura\Base\Facades\Aura;
 
-        $settings = app('aura')::getOption('team-settings');
+$settings = app('aura')::getOption('team-settings');
 
-        $appSettings = app('aura')::options();
+$appSettings = app('aura')::options();
 
-        $sidebarToggled = auth()->check() ? auth()->user()->getOptionSidebarToggled() : true;
+$sidebarToggled = auth()->check() ? auth()->user()->getOptionSidebarToggled() : true;
 
-        $darkmodeType = $settings['darkmode-type'] ?? 'auto';
+$darkmodeType = $settings['darkmode-type'] ?? 'auto';
 
-        $sidebarDarkmodeType = $settings['sidebar-darkmode-type'] ?? 'dark';
+$sidebarDarkmodeType = $settings['sidebar-darkmode-type'] ?? 'dark';
 
-        $compact = false;
+$compact = false;
+@endphp
 
-        ray($settings, $darkmodeType, $sidebarDarkmodeType)
+<div class="aura-sidebar aura-sidebar-type-{{ $sidebarType }} aura-darkmode-type-{{ $darkmodeType }}
 
-    @endphp
+        @if($darkmodeType == 'auto')
+            aura-sidebar-darkmode-type-{{ $sidebarDarkmodeType }}
+        @endif">
 
     <style>
         @media screen and (max-width: 768px) {
@@ -56,15 +58,7 @@
         }
     }">
 
-        <div class="flex md:hidden justify-between py-3 px-5
-        @if ($sidebarType == 'primary')
-            text-white border-white border-opacity-20 bg-sidebar-bg dark:bg-gray-800 dark:border-gray-700 shadow-gray-400 md:shadow-none
-        @elseif ($sidebarType == 'light')
-            text-gray-900 border-gray-500/30 border-opacity-20 bg-gray-50 dark:bg-gray-800 dark:text-white dark:border-gray-700 shadow-gray-400 md:shadow-none
-        @elseif ($sidebarType == 'dark')
-            text-white border-white border-opacity-20 bg-gray-800 dark:bg-gray-800 dark:text-white dark:border-gray-700 shadow-gray-400 md:shadow-none
-        @endif
-    ">
+        <div class="flex justify-between px-5 py-3 md:hidden">
             <div>
                 @include('aura::navigation.logo')
             </div>
@@ -81,15 +75,15 @@
         </div>
 
         <div
-                class="mobile-load-hidden overflow-x-visible flex-shrink-0 aura-navigation {{ $sidebarToggled ? ($compact ? 'open-sidebar md:w-56' : 'open-sidebar md:w-72') : 'closed-sidebar w-20' }}"
+            class="mobile-load-hidden overflow-x-visible flex-shrink-0 aura-navigation {{ $sidebarToggled ? ($compact ? 'open-sidebar md:w-56' : 'open-sidebar md:w-72') : 'closed-sidebar w-20' }}"
 
-                x-bind:class="{
-            'open-sidebar {{ $compact ? 'md:w-56' : 'md:w-72' }}': sidebarToggled,
-            'closed-sidebar w-20': !sidebarToggled,
-        }"
+            x-bind:class="{
+                'open-sidebar {{ $compact ? 'md:w-56' : 'md:w-72' }}': sidebarToggled,
+                'closed-sidebar w-20': !sidebarToggled,
+            }"
         >
             <div
-                    class="sidebar sidebar-type-{{ $sidebarType }} darkmode-type-{{ $darkmodeType }} sidebar-darkmode-type-{{ $sidebarDarkmodeType }} fixed top-0 left-0 z-10 flex flex-col flex-shrink-0 h-screen border-r shadow-xl {{ $sidebarToggled ? ($compact ? 'w-56' : 'w-72') : 'w-20' }}
+                class="aura-sidebar-bg fixed top-0 left-0 z-10 flex flex-col flex-shrink-0 h-screen border-r shadow-xl {{ $sidebarToggled ? ($compact ? 'w-56' : 'w-72') : 'w-20' }}
             "
                     x-bind:class="{
                 '{{ $compact ? 'w-56' : 'w-72' }}': sidebarToggled,
@@ -97,15 +91,7 @@
             }"
             >
 
-                <div class="flex flex-col flex-1 px-0 pt-0 pb-5 space-y-1 overflow-y-auto overflow-x-visible scrollbar-thin
-                @if ($sidebarType == 'primary')
-                    scrollbar-thumb-primary-500 scrollbar-track-primary-700 dark:scrollbar-thumb-gray-900 dark:scrollbar-track-gray-800
-                @elseif ($sidebarType == 'light')
-                    scrollbar-thumb-gray-300 scrollbar-track-gray-50 dark:scrollbar-thumb-gray-900 dark:scrollbar-track-gray-800
-                @elseif ($sidebarType == 'dark')
-                    scrollbar-thumb-gray-700 scrollbar-track-gray-800 dark:scrollbar-thumb-gray-900
-                @endif
-            ">
+                <div class="flex overflow-y-auto overflow-x-visible flex-col flex-1 px-0 pt-0 pb-5 space-y-1 aura-sidebar-scrollbar">
 
                     <div class="flex flex-col {{ $compact ? 'px-3' : 'px-5' }} space-y-1">
                         <div class="flex-shrink-0 h-[4.5rem] flex items-center justify-between">
@@ -116,18 +102,10 @@
 
                             <div>
                                 <button
-                                        @click="toggleSidebar()"
-                                        type="button"
-                                        class="relative inline-flex items-center justify-center w-10 h-10 text-sm font-semibold border rounded-lg shadow-none select-none focus:outline-none focus:ring-2
-
-                                @if ($sidebarType == 'primary')
-                                focus:ring-primary-500 border-primary-600 dark:border-gray-700 text-primary-200 dark:text-gray-600 hover:text-white dark:hover:text-gray-200
-                                @elseif ($sidebarType == 'light')
-                                focus:ring-primary-500 border-gray-400/30 dark:border-gray-700 text-gray-600 dark:text-gray-500 hover:text-gray-300 dark:hover:text-gray-200
-                                @elseif ($sidebarType == 'dark')
-                                focus:ring-primary-500 border-gray-700 text-gray-600 hover:text-gray-200
-                                @endif
-                            ">
+                                    @click="toggleSidebar()"
+                                    type="button"
+                                    class="inline-flex relative justify-center items-center w-10 h-10 text-sm font-semibold rounded-lg border shadow-none select-none focus:outline-none focus:ring-2 aura-sidebar-toggle"
+                                >
                                     <div class="hide-collapsed">
                                         <x-aura::icon icon="minus"/>
                                     </div>
@@ -143,28 +121,7 @@
 
                         @if(config('aura.features.search'))
                             <button type="button" @click="$dispatch('search')"
-                                    class="
-                                @if ($sidebarType == 'primary')
-                                    text-primary-200/40 hover:text-primary-200/70
-                                    ring-primary-200/40 hover:ring-primary-200/70
-                                @elseif ($sidebarType == 'light')
-                                    text-gray-400/60 hover:text-gray-400/90
-                                    ring-gray-400/40 hover:ring-gray-400/70
-                                @elseif ($sidebarType == 'dark')
-                                    bg-gray-800 highlight-white/5
-                                    text-white/40 hover:text-white/70
-                                    ring-white/30 hover:ring-white/70
-                                @endif
-
-                                dark:bg-gray-800 dark:highlight-white/5
-                                dark:text-white/40 dark:hover:text-white/70
-                                dark:ring-white/30 dark:hover:ring-white/70
-
-                                ring-1
-                                hidden w-full lg:flex items-center text-sm leading-6
-                                shadow-sm py-1.5 pl-2 pr-3
-                                rounded-md
-                        ">
+                                    class="hidden items-center py-1.5 pr-3 pl-2 w-full text-sm leading-6 rounded-md ring-1 shadow-sm aura-sidebar-search lg:flex">
                                 <svg width="24" height="24" fill="none" aria-hidden="true" class="flex-none mr-3">
                                     <path d="m19 19-3.5-3.5" stroke="currentColor" stroke-width="2"
                                           stroke-linecap="round" stroke-linejoin="round"></path>
@@ -189,16 +146,7 @@
                     </div>
                 </div>
 
-                <div class=" flex-shrink-0 {{ $compact ? 'px-3' : 'px-5' }} min-h-[4.5rem] py-2 flex flex-wrap items-center border-t
-                @if ($sidebarType == 'primary')
-                    border-white border-opacity-20 dark:border-gray-700
-                @elseif ($sidebarType == 'light')
-                    border-gray-500/30 dark:border-gray-700
-                @elseif ($sidebarType == 'dark')
-                    border-gray-700 border-opacity-20 dark:border-gray-700
-                @endif
-            ">
-
+                <div class=" flex-shrink-0 {{ $compact ? 'px-3' : 'px-5' }} min-h-[4.5rem] py-2 flex flex-wrap items-center border-t aura-sidebar-footer">
                     @impersonating($guard = null)
                     <div class="w-full">
                         <x-aura::button.primary :href="route('impersonate.leave')" class="my-2 w-full" size="xs">
@@ -221,24 +169,8 @@
                                                      src="{{ auth()->user()->resource->avatarUrl }}" alt="">
                                             </div>
                                             <div class="ml-3 hide-collapsed">
-                                                <p class="text-sm font-medium
-                                                @if ($sidebarType == 'primary')
-                                                    text-white
-                                                @elseif ($sidebarType == 'light')
-                                                    text-gray-900
-                                                @elseif ($sidebarType == 'dark')
-                                                    text-white
-                                                @endif
-                                            ">{{ Auth::user()->name }}</p>
-                                                <p class="text-xs font-medium
-                                                @if ($sidebarType == 'primary')
-                                                    text-primary-200 dark:text-gray-500
-                                                @elseif ($sidebarType == 'light')
-                                                    text-gray-400 dark:text-gray-500
-                                                @elseif ($sidebarType == 'dark')
-                                                    text-gray-500
-                                                @endif
-                                            ">{{ Auth::user()->currentTeam->name }}</p>
+                                                <p class="text-sm font-medium aura-sidebar-user-name">{{ Auth::user()->name }}</p>
+                                                <p class="text-xs font-medium aura-sidebar-team-name">{{ Auth::user()->currentTeam->name }}</p>
                                             </div>
                                         </div>
                                     </div>
@@ -268,19 +200,10 @@
                                         <div class="flex items-center">
                                             <div>
                                                 <img class="inline-block w-9 h-9 rounded-full"
-                                                     src="{{ auth()->user()->resource->avatarUrl }}" alt="">
+                                                    src="{{ auth()->user()->resource->avatarUrl }}" alt="">
                                             </div>
                                             <div class="ml-3 hide-collapsed">
-                                                <p class="text-sm font-medium
-                                                @if ($sidebarType == 'primary')
-                                                    text-white
-                                                @elseif ($sidebarType == 'light')
-                                                    text-gray-900
-                                                @elseif ($sidebarType == 'dark')
-                                                    text-white
-                                                @endif
-                                            ">{{ Auth::user()->name }}</p>
-
+                                                <p class="text-sm font-medium aura-sidebar-user-name">{{ Auth::user()->name }}</p>
                                             </div>
                                         </div>
                                     </div>
