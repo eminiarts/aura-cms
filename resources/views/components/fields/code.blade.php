@@ -60,7 +60,7 @@
 
     @push('scripts')
         @once
-            @vite(['resources/js/monaco.js'], 'vendor/aura')
+            {{-- @vite(['resources/js/monaco.js'], 'vendor/aura') --}}
         @endonce
     @endpush
 
