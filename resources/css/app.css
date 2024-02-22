@@ -117,28 +117,351 @@
 
 
 /* Navigation Theme Colors */
-/* Define your Tailwind CSS classes for each sidebar type */
-.sidebar-type-primary {
+
+/* .aura-sidebar */
+.aura-sidebar-type-primary  {}
+.aura-sidebar-type-light  {}
+.aura-sidebar-type-dark  {}
+/* Dark */
+.aura-sidebar-darkmode-type-primary  {}
+.aura-sidebar-darkmode-type-light  {}
+.aura-sidebar-darkmode-type-dark  {}
+
+/* .aura-sidebar-bg */
+.aura-sidebar-type-primary .aura-sidebar-bg {
     @apply text-white border-white border-opacity-20 bg-sidebar-bg shadow-gray-400 md:shadow-none;
 }
-
-.sidebar-type-light {
+.aura-sidebar-type-light .aura-sidebar-bg {
     @apply text-gray-900 bg-gray-50 border-opacity-20 border-gray-500/30 shadow-gray-400 md:shadow-none;
 }
-
-.sidebar-type-dark {
+.aura-sidebar-type-dark .aura-sidebar-bg {
     @apply text-white bg-gray-800 border-white border-opacity-20 shadow-gray-400 md:shadow-none;
 }
-
-/* Define your Tailwind CSS classes for each sidebar darkmode type */
-.darkmode-type-auto.sidebar-darkmode-type-primary {
+/* Dark */
+.aura-sidebar-darkmode-type-primary .aura-sidebar-bg {
     @apply dark:text-white dark:border-white dark:border-opacity-20 dark:bg-sidebar-bg dark:shadow-gray-400 md:dark:shadow-none;
 }
-
-.darkmode-type-auto.sidebar-darkmode-type-light {
+.aura-sidebar-darkmode-type-light .aura-sidebar-bg {
     @apply dark:text-gray-900 dark:border-gray-500/30 dark:border-opacity-20 dark:bg-gray-50 dark:shadow-gray-400 md:dark:shadow-none;
 }
-
-.darkmode-type-auto.sidebar-darkmode-type-dark {
+.aura-sidebar-darkmode-type-dark .aura-sidebar-bg {
     @apply dark:text-white dark:border-white dark:border-opacity-20 dark:bg-gray-800 dark:shadow-gray-400 md:dark:shadow-none;
+}
+
+
+
+/* aura-sidebar-scrollbar */
+.aura-sidebar-scrollbar {
+    @apply scrollbar-thin;
+}
+.aura-sidebar-type-primary .aura-sidebar-scrollbar{
+    @apply scrollbar-thumb-primary-500 scrollbar-track-primary-700;
+}
+.aura-sidebar-type-light .aura-sidebar-scrollbar{
+    @apply scrollbar-thumb-gray-300 scrollbar-track-gray-50
+}
+.aura-sidebar-type-dark .aura-sidebar-scrollbar{
+    @apply scrollbar-thumb-gray-700 scrollbar-track-gray-800;
+}
+/* Dark */
+.aura-sidebar-darkmode-type-primary .aura-sidebar-scrollbar{
+    @apply dark:scrollbar-thumb-primary-500 dark:scrollbar-track-primary-700;
+}
+.aura-sidebar-darkmode-type-light .aura-sidebar-scrollbar{
+    @apply dark:scrollbar-thumb-gray-300 dark:scrollbar-track-gray-50
+}
+.aura-sidebar-darkmode-type-dark .aura-sidebar-scrollbar{
+    @apply dark:scrollbar-thumb-gray-700 dark:scrollbar-track-gray-800;
+}
+
+
+/* .aura-sidebar-toggle */
+
+.aura-sidebar-toggle {}
+.aura-sidebar-type-primary .aura-sidebar-toggle{
+    @apply focus:ring-primary-500 border-primary-600 text-primary-200 hover:text-white;
+}
+.aura-sidebar-type-light .aura-sidebar-toggle{
+    @apply text-gray-600 focus:ring-primary-500 border-gray-400/30 hover:text-gray-300;
+}
+.aura-sidebar-type-dark .aura-sidebar-toggle{
+    @apply text-gray-600 border-gray-700 focus:ring-primary-500 hover:text-gray-200;
+}
+/* Dark */
+.aura-sidebar-darkmode-type-primary .aura-sidebar-toggle{
+    @apply dark:focus:ring-primary-500 dark:border-primary-600 dark:text-primary-200 dark:hover:text-white;
+}
+.aura-sidebar-darkmode-type-light .aura-sidebar-toggle{
+    @apply dark:text-gray-600 dark:focus:dark:ring-primary-500 dark:border-gray-400/30 dark:hover:text-gray-300;
+}
+.aura-sidebar-darkmode-type-dark .aura-sidebar-toggle {
+    @apply dark:text-gray-600 dark:border-gray-700 dark:focus:dark:ring-primary-500 dark:hover:text-gray-200;
+}
+
+/* .aura-sidebar-search */
+.aura-sidebar-search {}
+.aura-sidebar-type-primary .aura-sidebar-search{
+    @apply text-primary-200/40 hover:text-primary-200/70 ring-primary-200/40 hover:ring-primary-200/70;
+}
+.aura-sidebar-type-light .aura-sidebar-search{
+    @apply text-gray-400/60 hover:text-gray-400/90 ring-gray-400/40 hover:ring-gray-400/70;
+}
+.aura-sidebar-type-dark .aura-sidebar-search {
+    @apply bg-gray-800 text-white/40 hover:text-white/70 ring-white/30 hover:ring-white/70;
+}
+/* Dark */
+.aura-sidebar-darkmode-type-primary .aura-sidebar-search{
+    @apply dark:text-primary-200/40 dark:hover:dark:text-primary-200/70 dark:ring-primary-200/40 dark:hover:ring-primary-200/70;
+}
+.aura-sidebar-darkmode-type-light .aura-sidebar-search{
+    @apply dark:text-gray-400/60 dark:hover:dark:text-gray-400/90 dark:ring-gray-400/40 dark:hover:ring-gray-400/70;
+}
+.aura-sidebar-darkmode-type-dark .aura-sidebar-search {
+    @apply dark:bg-gray-800 dark:text-white/40 dark:hover:dark:text-white/70 dark:ring-white/30 dark:hover:ring-white/70;
+}
+
+
+/* .aura-sidebar-footer */
+.aura-sidebar-footer {}
+.aura-sidebar-type-primary .aura-sidebar-footer{
+    @apply border-white/20;
+}
+.aura-sidebar-type-light .aura-sidebar-footer{
+    @apply border-gray-500/30;
+}
+.aura-sidebar-type-dark .aura-sidebar-footer {
+    @apply border-gray-700/20;
+}
+/* Dark */
+.aura-sidebar-darkmode-type-primary .aura-sidebar-footer{
+    @apply dark:border-white/20;
+}
+.aura-sidebar-darkmode-type-light .aura-sidebar-footer{
+    @apply dark:border-gray-500/30;
+}
+.aura-sidebar-darkmode-type-dark .aura-sidebar-footer {
+    @apply dark:border-gray-700/20;
+}
+
+
+/* .aura-sidebar-user-name */
+.aura-sidebar-user-name {}
+.aura-sidebar-type-primary .aura-sidebar-user-name{
+    @apply text-white;
+}
+.aura-sidebar-type-light .aura-sidebar-user-name{
+    @apply text-gray-900;
+}
+.aura-sidebar-type-dark .aura-sidebar-user-name {
+    @apply text-white;
+}
+/* Dark */
+.aura-sidebar-darkmode-type-primary .aura-sidebar-user-name{
+    @apply dark:text-white;
+}
+.aura-sidebar-darkmode-type-light .aura-sidebar-user-name{
+    @apply dark:text-gray-900;
+}
+.aura-sidebar-darkmode-type-dark .aura-sidebar-user-name {
+    @apply dark:text-white;
+}
+
+
+/* .aura-sidebar-team-name */
+.aura-sidebar-user-name {}
+.aura-sidebar-type-primary .aura-sidebar-user-name{
+    @apply text-primary-200;
+}
+.aura-sidebar-type-light .aura-sidebar-user-name{
+    @apply text-gray-400;
+}
+.aura-sidebar-type-dark .aura-sidebar-user-name {
+    @apply text-gray-500;
+}
+/* Dark */
+.aura-sidebar-darkmode-type-primary .aura-sidebar-user-name{
+    @apply dark:text-primary-200;
+}
+.aura-sidebar-darkmode-type-light .aura-sidebar-user-name{
+    @apply dark:text-gray-400;
+}
+.aura-sidebar-darkmode-type-dark .aura-sidebar-user-name {
+    @apply dark:text-gray-500;
+}
+
+
+/* .aura-sidebar-dropdown */
+.aura-sidebar-type-primary .aura-sidebar-dropdown{
+    @apply group-[.is-active]:text-white text-primary-300 hover:text-primary-200 hover:bg-sidebar-bg-hover;
+}
+.aura-sidebar-type-light .aura-sidebar-dropdown{
+    @apply group-[.is-active]:text-primary-500 text-primary-500 hover:text-primary-400 group-hover:text-primary-500;
+}
+.aura-sidebar-type-dark .aura-sidebar-dropdown {
+    @apply group-[.is-active]:text-white text-primary-500 hover:text-primary-400;
+}
+/* Dark */
+.aura-sidebar-darkmode-type-primary .aura-sidebar-dropdown{
+    @apply dark:group-[.is-active]:text-white dark:text-primary-300 dark:hover:text-primary-200 dark:hover:bg-sidebar-bg-hover;
+}
+.aura-sidebar-darkmode-type-light .aura-sidebar-dropdown{
+    @apply dark:group-[.is-active]:text-primary-500 dark:text-primary-500 dark:hover:text-primary-400 dark:group-hover:text-primary-500;
+}
+.aura-sidebar-darkmode-type-dark .aura-sidebar-dropdown {
+    @apply dark:group-[.is-active]:text-white dark:text-primary-500 dark:hover:text-primary-400;
+}
+
+
+/* .aura-sidebar-dropdown-button and .aura-sidebar-dropdown-container */
+
+/* Base Styles */
+.aura-sidebar-dropdown-button {
+    @apply bg-transparent;
+}
+.aura-sidebar-dropdown-container-expanded {
+    @apply bg-transparent rounded-lg;
+}
+
+/* Primary Sidebar Type */
+.aura-sidebar-type-primary .aura-sidebar-dropdown-button {
+    @apply bg-sidebar-bg hover:bg-sidebar-bg-hover;
+}
+.aura-sidebar-type-primary .aura-sidebar-dropdown-button-expanded {
+    @apply bg-transparent hover:bg-sidebar-bg-hover;
+}
+.aura-sidebar-type-primary .aura-sidebar-dropdown-container-expanded {
+    @apply rounded-lg bg-sidebar-bg-dropdown/70;
+}
+
+/* Light Sidebar Type */
+.aura-sidebar-type-light .aura-sidebar-dropdown-button {
+    @apply text-gray-900 bg-gray-50 hover:bg-gray-200;
+}
+.aura-sidebar-type-light .aura-sidebar-dropdown-button-expanded {
+    @apply text-gray-900 bg-transparent hover:bg-gray-200;
+}
+.aura-sidebar-type-light .aura-sidebar-dropdown-container-expanded {
+    @apply rounded-lg bg-gray-200/50;
+}
+
+/* Dark Sidebar Type */
+.aura-sidebar-type-dark .aura-sidebar-dropdown-button {
+    @apply bg-gray-800 hover:bg-gray-900;
+}
+.aura-sidebar-type-dark .aura-sidebar-dropdown-button-expanded {
+    @apply bg-transparent hover:bg-gray-900;
+}
+.aura-sidebar-type-dark .aura-sidebar-dropdown-container-expanded {
+    @apply rounded-lg bg-gray-700/50;
+}
+
+/* Darkmode Primary Sidebar Type */
+.aura-sidebar-darkmode-type-primary .aura-sidebar-dropdown-button {
+    @apply dark:bg-sidebar-bg dark:hover:bg-sidebar-bg-hover;
+}
+
+.aura-sidebar-darkmode-type-primary .aura-sidebar-dropdown-button-expanded {
+    @apply dark:bg-transparent dark:hover:bg-sidebar-bg-hover;
+}
+
+.aura-sidebar-darkmode-type-primary .aura-sidebar-dropdown-container-expanded {
+    @apply dark:rounded-lg dark:bg-sidebar-bg-dropdown/70;
+}
+
+/* Darkmode Light Sidebar Type */
+.aura-sidebar-darkmode-type-light .aura-sidebar-dropdown-button {
+    @apply dark:text-gray-900 dark:bg-gray-50 dark:hover:bg-gray-200;
+}
+
+.aura-sidebar-darkmode-type-light .aura-sidebar-dropdown-button-expanded {
+    @apply dark:text-gray-900 dark:bg-transparent dark:hover:bg-gray-200;
+}
+
+.aura-sidebar-darkmode-type-light .aura-sidebar-dropdown-container-expanded {
+    @apply dark:rounded-lg dark:bg-gray-200/50;
+}
+
+/* Darkmode Dark Sidebar Type */
+.aura-sidebar-darkmode-type-dark .aura-sidebar-dropdown-button {
+    @apply dark:bg-gray-800 dark:hover:bg-gray-900;
+}
+
+.aura-sidebar-darkmode-type-dark .aura-sidebar-dropdown-button-expanded {
+    @apply dark:bg-transparent dark:hover:bg-gray-900;
+}
+
+.aura-sidebar-darkmode-type-dark .aura-sidebar-dropdown-container-expanded {
+    @apply dark:rounded-lg dark:bg-gray-700/50;
+}
+
+
+/* .aura-sidebar-icon */
+/* Primary Sidebar Type */
+.aura-sidebar-type-primary .aura-sidebar-icon {
+    @apply group-[.is-active]:text-white text-sidebar-icon group-hover:text-sidebar-icon-hover;
+}
+/* Light Sidebar Type */
+.aura-sidebar-type-light .aura-sidebar-icon {
+    @apply group-[.is-active]:text-primary-500 text-primary-500
+    group-hover:text-primary-500;
+}
+/* Dark Sidebar Type */
+.aura-sidebar-type-dark .aura-sidebar-icon {
+    @apply group-[.is-active]:text-primary-500 text-primary-500;
+}
+/* Dark */
+.aura-sidebar-darkmode-type-primary .aura-sidebar-icon {
+    @apply dark:group-[.is-active]:text-white dark:text-sidebar-icon dark:group-hover:text-sidebar-icon-hover;
+}
+
+.aura-sidebar-darkmode-type-light .aura-sidebar-icon {
+    @apply dark:group-[.is-active]:text-primary-500 dark:text-primary-500 dark:group-hover:text-primary-500;
+}
+
+.aura-sidebar-darkmode-type-dark .aura-sidebar-icon {
+    @apply dark:group-[.is-active]:text-primary-500 dark:text-primary-500;
+}
+
+/* .aura-sidebar-heading */
+.aura-sidebar-heading {}
+.aura-sidebar-type-primary .aura-sidebar-heading{
+    @apply text-sidebar-text;
+}
+.aura-sidebar-type-light .aura-sidebar-heading{
+    @apply text-gray-400;
+}
+.aura-sidebar-type-dark .aura-sidebar-heading {
+    @apply text-gray-500;
+}
+/* Dark */
+.aura-sidebar-darkmode-type-primary .aura-sidebar-heading{
+    @apply dark:text-sidebar-text;
+}
+.aura-sidebar-darkmode-type-light .aura-sidebar-heading{
+    @apply dark:text-gray-400;
+}
+.aura-sidebar-darkmode-type-dark .aura-sidebar-heading {
+    @apply dark:text-gray-500;
+}
+
+/* .aura-sidebar-heading */
+.aura-sidebar-heading-border {}
+.aura-sidebar-type-primary .aura-sidebar-heading-border {
+    @apply border-sidebar-text;
+}
+.aura-sidebar-type-light .aura-sidebar-heading-border {
+    @apply border-gray-400;
+}
+.aura-sidebar-type-dark .aura-sidebar-heading-border {
+    @apply border-gray-500;
+}
+/* Dark */
+.aura-sidebar-darkmode-type-primary .aura-sidebar-heading-border {
+    @apply dark:border-sidebar-text;
+}
+.aura-sidebar-darkmode-type-light .aura-sidebar-heading-border {
+    @apply dark:border-gray-400;
+}
+.aura-sidebar-darkmode-type-dark .aura-sidebar-heading-border {
+    @apply dark:border-gray-500;
 }

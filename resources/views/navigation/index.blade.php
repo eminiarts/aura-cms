@@ -15,7 +15,7 @@
                     @if (isset($resource['dropdown']) && $resource['dropdown'] !== false)
                         <x-aura::navigation.dropdown :compact="$compact">
                             <x-slot:title>
-                                <div class="{{ $iconClass }}">
+                                <div class="aura-sidebar-icon">
 
                                     @php
                                         $iconView = 'aura::aura.navigation.icons.' . Str::slug($resource['dropdown']);
@@ -34,7 +34,7 @@
 
                                 @foreach($resource['items'] as $r)
                                     <x-aura::navigation.item-dropdown route="aura.resource.index" :id="$r['type']" :strict="false" :compact="$compact">
-                                        <div class="{{ $iconClass }}">
+                                        <div class="aura-sidebar-icon">
                                             {!! $r['icon'] !!}
                                         </div>
                                         <div>{{ __($r['name']) }}</div>
@@ -45,7 +45,7 @@
 
                             @foreach ($resource['items'] as $r)
                                 <x-aura::navigation.item :route="$r['route']" :strict="false" :compact="$compact">
-                                    <div class="{{ $iconClass }}">
+                                    <div class="aura-sidebar-icon">
                                         {!! $r['icon'] !!}
                                     </div>
                                     <div class="hide-collapsed">{{ __($r['name']) }}</div>
@@ -57,7 +57,7 @@
                         @if(isset($resource['resource']))
                             @can('viewAny', app($resource['resource']))
                                 <x-aura::navigation.item :route="$resource['route']" :strict="false" :tooltip="__($resource['name'])" :compact="$compact" :badge="$resource['badge'] ?? null" :badgeColor="$resource['badgeColor'] ?? null">
-                                    <div class="{{ $iconClass }}">
+                                    <div class="aura-sidebar-icon">
                                         {!! $resource['icon'] !!}
                                     </div>
                                     <div class="hide-collapsed">{{ __($resource['name']) }}</div>
@@ -69,13 +69,13 @@
 
                             >
                                 @if($resource['icon'] !== '')
-                                    <div class="{{ $iconClass }}">
+                                    <div class="aura-sidebar-icon">
                                         {!! Blade::render($resource['icon']) !!}
                                     </div>
                                     <div class="hide-collapsed">{{ __($resource['name']) }}</div>
                                 @else
                                     <div>
-                                        <div class="hidden show-collapsed text-xl text-center w-6 {{ $iconClass }}">
+                                        <div class="hidden w-6 text-xl text-center show-collapsed aura-sidebar-icon">
                                             {{ strtoupper(substr($resource['name'], 0, 1)) }}
                                         </div>
                                         <div class="hide-collapsed">{{ __($resource['name']) }}</div>

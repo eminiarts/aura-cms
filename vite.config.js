@@ -14,7 +14,7 @@ export default defineConfig({
                 'resources/css/app.css',
                 'resources/js/app.js',
                 'resources/js/apexcharts.js',
-                'resources/js/monaco.js'
+                // 'resources/js/monaco.js'
             ],
             refresh: true,
             publicDirectory: 'resources',

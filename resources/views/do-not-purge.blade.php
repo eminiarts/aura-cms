@@ -1,4 +1,11 @@
     {{--
+        aura-sidebar-type-primary
+        aura-sidebar-type-light
+        aura-sidebar-type-dark
+        aura-sidebar-darkmode-type-primary
+        aura-sidebar-darkmode-type-light
+        aura-sidebar-darkmode-type-dark
+
         $maxWidths = [
         'sm'  => 'sm:max-w-sm',
         'md'  => 'sm:max-w-md',
