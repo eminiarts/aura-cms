@@ -52,6 +52,4 @@ test('Team create also creates a super_admin Role', function () {
     expect($role)->not->toBeNull();
     expect($role->title)->toEqual('Super Admin');
     expect($role->super_admin)->toBeTrue();
-
-
 });

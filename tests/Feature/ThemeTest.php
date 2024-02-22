@@ -153,7 +153,7 @@ test('Sidebar: Primary, Darkmode: Light', function () {
 
 });
 
-test('Sidebar: Primary, Darkmode: Light', function ($settings) {
+test('different options apply correct classes', function ($settings) {
     $darkmodeType = $settings['darkmode-type'];
     $sidebarType = $settings['sidebar-type'];
     $colorPalette = $settings['color-palette'];
