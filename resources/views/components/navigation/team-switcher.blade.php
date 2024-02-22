@@ -54,21 +54,7 @@
         });
       }
     }">
-        <div x-ref="this" role="button" tabindex="0" class="
-        flex items-center justify-between w-full cursor-pointer text-sm font-semibold rounded-lg
-        @if ($sidebarType == 'primary')
-          text-white
-          bg-sidebar-bg dark:bg-gray-800
-          dark:bg-gray-800
-        @elseif ($sidebarType == 'light')
-          text-gray-700
-          bg-gray-50
-          dark:bg-gray-800
-        @elseif ($sidebarType == 'dark')
-          text-white
-          bg-gray-800 hover:bg-gray-900
-        @endif
-      ">
+        <div x-ref="this" role="button" tabindex="0" class="flex justify-between items-center w-full text-sm font-semibold rounded-lg cursor-pointer  aura-sidebar-team-switcher">
             <span>{{ $title }}</span>
 
             <div class="hide-collapsed">
@@ -80,4 +66,3 @@
     </div>
 
 </div>
-

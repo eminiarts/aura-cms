@@ -31,20 +31,16 @@
     }
 
     // Define simple functions to return class strings
-    $getBaseClasses = fn() => 'group cursor-pointer flex items-center rounded-lg transition ease-in-out duration-150';
+    $getBaseClasses = fn() => 'aura-sidebar-item group';
+
     $getCompactClasses = fn() => $compact ? 'sidebar-item-compact px-2 h-8' : 'sidebar-item px-3 h-10';
 
-    $getActiveClasses = fn() => $isActive ? 'is-active bg-sidebar-bg-hover hover:bg-sidebar-bg-hover text-white' : 'bg-transparent dark:hover:bg-gray-900 hover:bg-sidebar-bg-hover';
+    $getCompactClassesIcon = fn() => $compact ? 'sidebar-item-compact flex justify-center h-8' : 'sidebar-item flex justify-center h-10';
+
+    $getActiveClasses = fn() => $isActive ? 'is-active' : '';
 
     $getSidebarTypeClasses = function() use ($sidebarType, $isActive) {
-        return match($sidebarType) {
-            'primary' => $isActive ? 'is-active bg-sidebar-bg-hover hover:bg-sidebar-bg-hover text-white' : 'bg-transparent dark:hover:bg-gray-900 hover:bg-sidebar-bg-hover',
-
-            'light' => $isActive ? 'is-active bg-gray-200 dark:bg-gray-900 dark:text-white hover:bg-gray-200 text-gray-900' : 'bg-transparent text-gray-900 dark:text-white dark:hover:bg-gray-900 hover:bg-gray-200',
-
-            'dark' => $isActive ? 'is-active bg-gray-900 hover:bg-gray-900 text-white' : 'bg-transparent hover:bg-gray-900',
-            default => 'bg-transparent'
-        };
+        return '';
     };
 @endphp
 
@@ -65,10 +61,11 @@
                     href="{{ $route }}" wire:navigate
                 @endif
                 tabindex="{{ $route ? '0' : '' }}"
+
                 @class([
                     $getBaseClasses(),
                     $getSidebarTypeClasses(),
-                    $getCompactClasses(),
+                    $getCompactClassesIcon(),
                     $attributes->get('class')
                 ])
             >
