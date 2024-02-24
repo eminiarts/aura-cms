@@ -1,22 +1,32 @@
 @props([
-    'header' => null,
-    'sidebar' => null,
+  'header' => null,
+  'sidebar' => null,
 ])
 
 <!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
 <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="csrf-token" content="{{ csrf_token() }}">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="csrf-token" content="{{ csrf_token() }}">
 
-    <title>@yield('title') • Aura CMS</title>
+  <title>@yield('title') • {{ config('app.name', 'Aura CMS') }}</title>
 
-    @include('aura::components.layout.favicon')
+  @php
+      $settings = app('aura')::getOption('team-settings');
+      $appSettings = app('aura')::options();
+  @endphp
+  @include('aura::components.layout.favicon')
 
-    @livewireStyles
+  <style>[x-cloak] { display: none !important; }</style>
 
-    @auraStyles
+  <link rel="stylesheet" href="/vendor/aura/public/inter.css">
+  @vite(['resources/css/app.css'], 'vendor/aura')
+  @vite('resources/css/app.css')
+
+  @include('aura::components.layout.colors')
+  @livewireStyles
+  @stack('styles')
 </head>
 <body class="overflow-hidden antialiased text-gray-800 bg-white dark:bg-gray-900 dark:text-gray-200">
 
@@ -51,6 +61,7 @@
             <div class="p-5 md:p-8">
                 {{ $slot }}
             </div>
+
             <div class="flex justify-end px-8 pb-8">
                 @include('aura::components.layout.aura-version')
             </div>
@@ -76,8 +87,11 @@
 
 @livewire('wire-elements-modal')
 
+@stack('scripts')
 
-@auraScripts
+@vite(['resources/js/app.js'], 'vendor/aura')
+{{-- @vite(['resources/js/apexcharts.js'], 'vendor/aura') --}}
+
 @livewireScriptConfig
 
 </body>
