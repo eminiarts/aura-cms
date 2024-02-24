@@ -219,6 +219,14 @@ class AuraServiceProvider extends PackageServiceProvider
             return app()->environment('production');
         });
 
+        Blade::directive('auraStyles', function (string $expression): string {
+            return "<?php echo app('aura')::styles(); ?>";
+        });
+
+        Blade::directive('auraScripts', function (string $expression): string {
+            return "<?php echo app('aura')::scripts(); ?>";
+        });
+
         // Register the morph map for the resources
         // $resources = Aura::resources()->mapWithKeys(function ($resource) {
         //     return [$resource => 'Aura\Base\Resources\\'.str($resource)->title];

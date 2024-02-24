@@ -478,4 +478,12 @@ class Aura
             echo $export;
         }
     }
+
+    public function styles() {
+        return view('aura::components.layout.styles');
+    }
+
+    public function scripts() {
+        return view('aura::components.layout.scripts');
+    }
 }
