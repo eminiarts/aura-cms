@@ -31,7 +31,7 @@
 
                     @if($this->values['change'] >= 0)
                     <div
-                        class="inline-flex items-baseline px-2.5 py-0.5 text-sm font-medium text-green-800 bg-green-100 rounded-full md:mt-2 lg:mt-0">
+                        class="inline-flex items-baseline px-2.5 py-0.5 text-sm font-medium text-green-800 bg-green-100 rounded-full dark:text-green-500 dark:bg-green-500/20 md:mt-2 lg:mt-0">
                         <svg class="flex-shrink-0 self-center mr-0.5 -ml-1 w-4 h-4 text-green-500" viewBox="0 0 24 24"
                             fill="none" xmlns="http://www.w3.org/2000/svg">
                             <path d="M6 18L18 6M18 6H10M18 6V14" stroke="currentColor" stroke-width="2"
@@ -88,21 +88,21 @@
     @else
     <div class="p-2 animate-pulse">
         <div class="flex justify-between items-baseline mb-4">
-            <div class="mt-2 w-1/4 h-4 bg-gray-200 rounded"></div>
+            <div class="mt-2 w-1/4 h-4 bg-gray-200 rounded dark:bg-gray-700"></div>
         </div>
 
         <div class="flex justify-between items-baseline mt-1 mb-2 md:block lg:flex">
             <div class="flex items-baseline text-4xl font-medium">
-                <div class="mb-4 w-16 h-6 bg-gray-200 rounded"></div>
+                <div class="mb-4 w-16 h-6 bg-gray-200 rounded dark:bg-gray-700"></div>
             </div>
             <div>
-                <div class="w-12 h-4 bg-gray-200 rounded"></div>
+                <div class="w-12 h-4 bg-gray-200 rounded dark:bg-gray-700"></div>
             </div>
         </div>
 
         <div>
-            <span class="text-sm font-medium text-gray-500">
-                <div class="w-16 h-4 bg-gray-200 rounded"></div>
+            <span class="text-sm font-medium text-gray-500 dark:text-gray-400">
+                <div class="w-16 h-4 bg-gray-200 rounded dark:bg-gray-700"></div>
             </span>
         </div>
     </div>

@@ -1,7 +1,7 @@
 <div class="aura-card" wire:key="chart" @if (!$isCached) wire:init="loadWidget" @endif>
   @if($loaded)
   <div class="p-2">
-    <div class="flex items-start justify-between mb-4">
+    <div class="flex justify-between items-start mb-4">
       <span class="text-sm font-semibold">{{ $widget['name'] }}</span>
 
       <div class="">
@@ -25,6 +25,10 @@
           window.dispatchEvent(new Event('resize'));
         },
         get options() {
+          const isDarkMode = document.documentElement.classList.contains('dark');
+          const lightModeColors = [getCssVariableValue('--primary-400'), getCssVariableValue('--primary-200'), getCssVariableValue('--primary-600'), getCssVariableValue('--primary-800')];
+          const darkModeColors = [getCssVariableValue('--primary-400'), getCssVariableValue('--primary-200'), getCssVariableValue('--primary-600'), getCssVariableValue('--primary-800')];
+
           return {
             labels: this.labels,
             series: this.values,
@@ -48,7 +52,12 @@
               }
             },
 
-            colors: [getCssVariableValue('--primary-400'), getCssVariableValue('--primary-200'), getCssVariableValue('--primary-600'), getCssVariableValue('--primary-800')],
+            colors: isDarkMode ? darkModeColors : lightModeColors,
+
+            stroke: {
+              width: isDarkMode ? 2 : 2,
+              colors: isDarkMode ? [getCssVariableValue('--gray-900')] : [getCssVariableValue('--gray-100')]
+            },
 
             dataLabels: {
               enabled: true,
@@ -69,27 +78,30 @@
 
             legend: {
               show: true,
-              position: 'bottom'
-            },
+              position: 'bottom',
+              labels: {
+                colors: isDarkMode ? getCssVariableValue('--gray-200') : getCssVariableValue('--gray-900'), // Replace with actual color values
+              }
+            }
           }
         }
       }" class="w-full">
-          <div x-ref="chart" class="bg-white rounded-lg dark:bg-gray-800"></div>
+          <div x-ref="chart" class="bg-white rounded-lg dark:bg-gray-900"></div>
       </div>
     </div>
   </div>
   @else
-  <div class="p-2 animate-pulse">
-    <div class="flex items-baseline justify-between mt-2 mb-6">
-      <div class="w-32 h-4 bg-gray-200 rounded"></div>
-      <div class="w-8 h-4 bg-gray-200 rounded"></div>
-    </div>
+    <div class="p-2 animate-pulse">
+      <div class="flex justify-between items-baseline mt-2 mb-6">
+          <div class="w-32 h-4 bg-gray-200 rounded dark:bg-gray-700"></div>
+          <div class="w-8 h-4 bg-gray-200 rounded dark:bg-gray-700"></div>
+      </div>
 
-    <svg viewBox="0 0 36 36" class="w-64 h-64 mx-auto text-gray-200 bg-gray-200 rounded-full">
-      <circle class="donut-hole" cx="18" cy="18" r="15.91549430918954" fill="#fff"></circle>
-      <circle class="donut-ring" cx="18" cy="18" r="15.91549430918954" fill="transparent" stroke="currentColor"
-        stroke-width="3"></circle>
-    </svg>
-  </div>
+      <svg viewBox="0 0 36 36" class="mx-auto w-64 h-64 text-gray-200 rounded-full dark:text-gray-700">
+          <circle class="text-gray-500 donut-hole dark:text-gray-900" cx="18" cy="18" r="15.91549430918954" fill="currentColor"></circle>
+          <circle class="donut-ring" cx="18" cy="18" r="15.91549430918954" fill="transparent" stroke="currentColor"
+              stroke-width="3"></circle>
+      </svg>
+    </div>
   @endif
 </div>

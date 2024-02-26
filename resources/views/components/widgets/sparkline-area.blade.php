@@ -125,7 +125,7 @@
                   }
                 }
               }" class="w-full">
-                    <div x-ref="chart" class="bg-white rounded-lg dark:bg-gray-800"></div>
+                    <div x-ref="chart" class="bg-white rounded-lg dark:bg-gray-900"></div>
                 </div>
 
             </div>
@@ -141,7 +141,7 @@
     </div>
 
     <div class="-mx-6 -mb-6">
-        <svg viewBox="0 0 300 80" preserveAspectRatio="none" class="w-full h-16 text-gray-200 dark:text-gray-600">
+        <svg viewBox="0 0 300 80" preserveAspectRatio="none" class="w-full h-16 text-gray-200 dark:text-gray-700">
             <defs>
                 <linearGradient id="grad" x1="0%" y1="0%" x2="0%" y2="100%">
                     <stop offset="0%"  style="stop-color:currentColor;stop-opacity:1" />
