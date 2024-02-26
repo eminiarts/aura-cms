@@ -322,6 +322,8 @@ class TeamSettings extends Component
                     'stone' => 'Stone',
                     'blue' => 'Blue',
                     'smaragd' => 'Smaragd',
+                    'dark-slate' => 'Dark Slate',
+                    'blackout' => 'Blackout',
                     'custom' => 'Custom',
                 ],
                 'slug' => 'gray-color-palette',

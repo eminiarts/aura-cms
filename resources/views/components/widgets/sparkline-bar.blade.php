@@ -16,7 +16,7 @@
 
           <div
           style="height: 80px;"
-          
+
           x-data="{
               values: {{ json_encode(array_values($this->values['current'])) }},
               labels: {{ json_encode(array_keys($this->values['current'])) }},
@@ -95,33 +95,33 @@
   @else
   <div class="p-2 animate-pulse">
     <div class="flex justify-between items-baseline mt-2 mb-6">
-        <div class="w-32 h-4 bg-gray-200 rounded"></div>
-        <div class="w-8 h-4 bg-gray-200 rounded"></div>
+        <div class="w-32 h-4 bg-gray-200 rounded dark:bg-gray-700"></div>
+        <div class="w-8 h-4 bg-gray-200 rounded dark:bg-gray-700"></div>
     </div>
 
     <div class="-mx-6 -mb-6">
-    <svg viewBox="0 0 300 80" preserveAspectRatio="none" class="w-full h-16">
+    <svg viewBox="0 0 300 80" preserveAspectRatio="none" class="w-full h-16 text-gray-300 dark:text-gray-700">
     <g fill="none" fill-rule="evenodd">
-        <rect x="0" y="0" width="10" height="80" fill="#e2e8f0"/>
-        <rect x="15" y="20" width="10" height="60" fill="#e2e8f0"/>
-        <rect x="30" y="30" width="10" height="50" fill="#e2e8f0"/>
-        <rect x="45" y="40" width="10" height="40" fill="#e2e8f0"/>
-        <rect x="60" y="10" width="10" height="70" fill="#e2e8f0"/>
-        <rect x="75" y="50" width="10" height="30" fill="#e2e8f0"/>
-        <rect x="90" y="60" width="10" height="20" fill="#e2e8f0"/>
-        <rect x="105" y="30" width="10" height="50" fill="#e2e8f0"/>
-        <rect x="120" y="10" width="10" height="70" fill="#e2e8f0"/>
-        <rect x="135" y="20" width="10" height="60" fill="#e2e8f0"/>
-        <rect x="150" y="40" width="10" height="40" fill="#e2e8f0"/>
-        <rect x="165" y="50" width="10" height="30" fill="#e2e8f0"/>
-        <rect x="180" y="60" width="10" height="20" fill="#e2e8f0"/>
-        <rect x="195" y="40" width="10" height="40" fill="#e2e8f0"/>
-        <rect x="210" y="30" width="10" height="50" fill="#e2e8f0"/>
-        <rect x="225" y="20" width="10" height="60" fill="#e2e8f0"/>
-        <rect x="240" y="40" width="10" height="40" fill="#e2e8f0"/>
-        <rect x="255" y="60" width="10" height="20" fill="#e2e8f0"/>
-        <rect x="270" y="30" width="10" height="50" fill="#e2e8f0"/>
-        <rect x="285" y="10" width="10" height="70" fill="#e2e8f0"/>
+        <rect x="0" y="0" width="10" height="80" fill="currentColor"/>
+        <rect x="15" y="20" width="10" height="60" fill="currentColor"/>
+        <rect x="30" y="30" width="10" height="50" fill="currentColor"/>
+        <rect x="45" y="40" width="10" height="40" fill="currentColor"/>
+        <rect x="60" y="10" width="10" height="70" fill="currentColor"/>
+        <rect x="75" y="50" width="10" height="30" fill="currentColor"/>
+        <rect x="90" y="60" width="10" height="20" fill="currentColor"/>
+        <rect x="105" y="30" width="10" height="50" fill="currentColor"/>
+        <rect x="120" y="10" width="10" height="70" fill="currentColor"/>
+        <rect x="135" y="20" width="10" height="60" fill="currentColor"/>
+        <rect x="150" y="40" width="10" height="40" fill="currentColor"/>
+        <rect x="165" y="50" width="10" height="30" fill="currentColor"/>
+        <rect x="180" y="60" width="10" height="20" fill="currentColor"/>
+        <rect x="195" y="40" width="10" height="40" fill="currentColor"/>
+        <rect x="210" y="30" width="10" height="50" fill="currentColor"/>
+        <rect x="225" y="20" width="10" height="60" fill="currentColor"/>
+        <rect x="240" y="40" width="10" height="40" fill="currentColor"/>
+        <rect x="255" y="60" width="10" height="20" fill="currentColor"/>
+        <rect x="270" y="30" width="10" height="50" fill="currentColor"/>
+        <rect x="285" y="10" width="10" height="70" fill="currentColor"/>
     </g>
 </svg>
 
