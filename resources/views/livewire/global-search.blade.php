@@ -72,9 +72,9 @@
 
         }" x-ref="searchContainer" style="display: none;" @search.window="openSearch()" @keydown.escape.window="closeSearch()" @keydown.cmd.1.prevent="openBookmark(1)" @keydown.cmd.2.prevent="openBookmark(2)" @keydown.cmd.3.prevent="openBookmark(3)" @keydown.cmd.4.prevent="openBookmark(4)" @keydown.cmd.5.prevent="openBookmark(5)" @keydown.cmd.6.prevent="openBookmark(6)" @keydown.cmd.7.prevent="openBookmark(7)" @keydown.cmd.8.prevent="openBookmark(8)" @keydown.cmd.9.prevent="openBookmark(9)">
             <div class="fixed inset-0 z-30">
-                <div class="absolute inset-0 backdrop-blur-sm bg-black/10"></div>
+                <div class="absolute inset-0 backdrop-blur-sm bg-black/10 dark:bg-black/20"></div>
                 <div class="flex absolute inset-0 justify-center items-center">
-                    <div class="p-0 mx-5 w-full max-w-2xl bg-white rounded-md shadow-xl dark:bg-gray-900" @click.away="closeSearch()">
+                    <div class="p-0 mx-5 w-full max-w-2xl bg-white rounded-md shadow-xl dark:bg-gray-900 dark:border dark:border-gray-700" @click.away="closeSearch()">
                         <div class="flex items-center">
                             <div class="px-3">
                                 <svg width="24" height="24" fill="none" viewBox="0 0 24 24">
@@ -90,7 +90,7 @@
 
                             <div class="relative mx-3 w-6 h-6">
 
-                                <span wire:loading.remove @click="closeSearch()" class="cursor-pointer text-[10px] text-gray-400 lowercase bg-white shadow-lg rounded border border-gray-100 w-6 h-6 flex items-center justify-center">esc</span>
+                                <span wire:loading.remove @click="closeSearch()" class="cursor-pointer text-[10px] text-gray-400 dark:text-gray-600 lowercase bg-white dark:bg-gray-900 shadow-lg rounded border border-gray-100 dark:border-gray-800 w-6 h-6 flex items-center justify-center">esc</span>
 
                                 <div wire:loading class="absolute top-0 right-0 w-6">
                                     <div role="status" class="mx-auto w-full">
@@ -104,14 +104,14 @@
                             </div>
                         </div>
 
-                        <div class="p-0 border-t">
+                        <div class="p-0 border-t dark:border-gray-700">
                             <div>
 
                                 {{-- Alpine template if $refs.searchField input length is 0 --}}
 
                                 <template x-if="!search || search == ''">
                                     <div>
-                                        <div class="px-4 py-1 text-xs font-bold text-gray-700 bg-gray-100 heading-item">
+                                        <div class="px-4 py-1 text-xs font-bold text-gray-700 bg-gray-100 dark:text-gray-200 dark:bg-gray-800 heading-item">
                                             {{ __('Last visited pages') }}
                                         </div>
 
@@ -133,7 +133,7 @@
                                                 </li>
                                             </template>
 
-                                            <div class="px-4 py-1 text-xs font-bold text-gray-700 bg-gray-100 heading-item">
+                                            <div class="px-4 py-1 text-xs font-bold text-gray-700 bg-gray-100 dark:text-gray-200 dark:bg-gray-800 heading-item">
                                                 {{ __('Bookmarks') }}
                                             </div>
 
