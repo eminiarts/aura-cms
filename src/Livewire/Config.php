@@ -378,6 +378,7 @@ class Config extends Component
                     'stone' => 'Stone',
                     'blue' => 'Blue',
                     'smaragd' => 'Smaragd',
+                    'blackout' => 'Blackout',
                 ],
                 'slug' => 'gray-color-palette',
             ],

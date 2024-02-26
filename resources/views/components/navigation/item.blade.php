@@ -66,6 +66,7 @@
                     $getBaseClasses(),
                     $getSidebarTypeClasses(),
                     $getCompactClassesIcon(),
+                    $getActiveClasses(),
                     $attributes->get('class')
                 ])
             >
@@ -93,6 +94,7 @@
                     $getBaseClasses(),
                     $getSidebarTypeClasses(),
                     $getCompactClasses(),
+                    $getActiveClasses(),
                     $attributes->get('class')
                 ])
 

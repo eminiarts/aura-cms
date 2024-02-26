@@ -2,6 +2,11 @@
     use Aura\Base\TransformColor;
 @endphp
 
+@php
+    $settings = app('aura')::getOption('team-settings');
+    $appSettings = app('aura')::options();
+@endphp
+
 @if($settings)
     <style>
         :root {
@@ -87,10 +92,10 @@
             --primary-900: 101 43 18;
 
             --sidebar-bg: var(--primary-500);
-            --sidebar-bg-hover: var(--primary-400);
+            --sidebar-bg-hover: var(--primary-600);
             --sidebar-bg-dropdown: var(--primary-600);
 
-            --sidebar-text: var(--primary-300);
+            --sidebar-text: var(--primary-200);
             --sidebar-icon: var(--primary-200);
             --sidebar-icon-hover: var(--primary-100);
         }
@@ -111,10 +116,10 @@
             --primary-900: 99 49 18;
 
             --sidebar-bg: var(--primary-500);
-            --sidebar-bg-hover: var(--primary-400);
+            --sidebar-bg-hover: var(--primary-600);
             --sidebar-bg-dropdown: var(--primary-600);
 
-            --sidebar-text: var(--primary-300);
+            --sidebar-text: var(--primary-200);
             --sidebar-icon: var(--primary-200);
             --sidebar-icon-hover: var(--primary-100);
         }
@@ -135,10 +140,10 @@
             --primary-900: 101 54 16;
 
             --sidebar-bg: var(--primary-500);
-            --sidebar-bg-hover: var(--primary-400);
+            --sidebar-bg-hover: var(--primary-600);
             --sidebar-bg-dropdown: var(--primary-600);
 
-            --sidebar-text: var(--primary-300);
+            --sidebar-text: var(--primary-200);
             --sidebar-icon: var(--primary-200);
             --sidebar-icon-hover: var(--primary-100);
         }
@@ -159,7 +164,7 @@
             --primary-900: 47 75 18;
 
             --sidebar-bg: var(--primary-600);
-            --sidebar-bg-hover: var(--primary-500);
+            --sidebar-bg-hover: var(--primary-700);
             --sidebar-bg-dropdown: var(--primary-700);
 
             --sidebar-text: var(--primary-400);
@@ -181,6 +186,10 @@
             --primary-700: 22 101 52;
             --primary-800: 20 83 45;
             --primary-900: 20 78 38;
+
+            --sidebar-bg: var(--primary-600);
+            --sidebar-bg-hover: var(--primary-700);
+            --sidebar-text: var(--primary-400);
         }
 
         @elseif (optional($settings)['color-palette'] == 'emerald' )
@@ -199,7 +208,7 @@
             --primary-900: 6 78 59;
 
             --sidebar-bg: var(--primary-600);
-            --sidebar-bg-hover: var(--primary-500);
+            --sidebar-bg-hover: var(--primary-700);
             --sidebar-bg-dropdown: var(--primary-700);
 
             --sidebar-text: var(--primary-400);
@@ -223,7 +232,7 @@
             --primary-900: 20 78 72;
 
             --sidebar-bg: var(--primary-600);
-            --sidebar-bg-hover: var(--primary-500);
+            --sidebar-bg-hover: var(--primary-700);
             --sidebar-bg-dropdown: var(--primary-700);
 
             --sidebar-text: var(--primary-400);
@@ -624,6 +633,22 @@
             --gray-900: 15 23 42;
         }
 
+        @elseif (optional($settings)['gray-color-palette'] == 'dark-slate' )
+
+:root {
+            --gray-25: 250 250 255;
+            --gray-50: 249 250 251;
+            --gray-100: 241 245 249;
+            --gray-200: 226 232 240;
+            --gray-300: 203 213 225;
+            --gray-400: 138 153 174;
+            --gray-500: 90 106 129;
+            --gray-600: 59 73 93;
+            --gray-700: 20 34 40;
+            --gray-800: 4 12 20;
+            --gray-900: 0 4 8;
+        }
+
         @elseif (optional($settings)['gray-color-palette'] == 'purple-slate' )
 
 :root {
@@ -639,6 +664,23 @@
             --gray-800: 40 30 59;
             --gray-900: 27 15 42;
         }
+
+        @elseif (optional($settings)['gray-color-palette'] == 'blackout' )
+
+        :root {
+            --gray-25: 250 250 250;
+            --gray-50: 249 250 251;
+            --gray-100: 243 244 246;
+            --gray-200: 229 231 235;
+            --gray-300: 209 213 219;
+            --gray-400: 156 163 175;
+            --gray-500: 75 85 99;
+            --gray-600: 55 65 81;
+            --gray-700: 17 24 39;
+            --gray-800: 0 0 0;
+            --gray-900: 0 0 0;
+        }
+
 
         @elseif (optional($settings)['gray-color-palette'] == 'gray' )
 

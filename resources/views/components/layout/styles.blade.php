@@ -3,8 +3,6 @@
     $appSettings = app('aura')::options();
 @endphp
 
-@include('aura::components.layout.colors')
-
 <style>[x-cloak] {
     display: none !important;
 }</style>
@@ -14,3 +12,5 @@
 @vite(['resources/css/app.css'], 'vendor/aura')
 
 @stack('styles')
+
+@include('aura::components.layout.colors')
