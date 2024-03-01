@@ -198,7 +198,7 @@
                                 </svg>
                             </div>
                             <input type="text" id="table-search"
-                                class="block p-2.5 pl-10 w-full text-sm text-gray-900 rounded-lg border bg-white-50 border-gray-500/30 focus:ring-primary-500 focus:border-primary-500 md:w-80 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500"
+                                class="block p-2.5 pl-10 w-full rounded-lg shadow-xs transition transition-300 border border-gray-500/30 appearance-none px-3 py-2 focus:outline-none w-full ring-gray-900/10 focus:ring focus:border-primary-300 focus:ring-primary-300  focus:ring-opacity-50 dark:focus:ring-primary-500 dark:focus:ring-opacity-50 disabled:opacity-75 disabled:bg-gray-100 disabled:opacity-60 disabled:dark:bg-gray-800 bg-white dark:bg-transparent border border-gray-500/30 dark:border-gray-700 dark:focus:border-gray-500 z-[1]"
                                 placeholder="{{ __('Search for items') }}" wire:model.live.debounce="search">
 
                         </div>

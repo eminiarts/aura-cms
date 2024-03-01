@@ -9,7 +9,7 @@
 @elseif(View::exists('aura::' . $view))
     @include('aura::' . $view)
 @else
-    <div class="flex items-center justify-between mt-6">
+    <div class="flex justify-between items-center mt-6">
 
         @if ($this->settings['title'])
             <div>

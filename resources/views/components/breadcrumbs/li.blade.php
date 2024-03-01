@@ -22,7 +22,7 @@ if(!$iconClass){
     @else
     <div class="flex items-center">
         <x-aura::icon :icon="$icon" size="xs" :iconClass="$iconClass" />
-        <span class="ml-1 text-sm font-medium text-gray-400 md:ml-2 dark:text-gray-500">{!! $title !!}</span>
+        <span class="ml-1 text-sm font-medium text-gray-400 md:ml-2 dark:text-gray-400">{!! $title !!}</span>
     </div>
     @endif
 </li>
