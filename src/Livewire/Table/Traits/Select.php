@@ -35,7 +35,7 @@ trait Select
      */
     public function getSelectedRowsQueryProperty()
     {
-        return (clone $this->rows())
+        return (clone $this->query())
             ->unless($this->selectAll, fn ($query) => $query->whereKey($this->selected));
     }
 
