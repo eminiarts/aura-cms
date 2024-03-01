@@ -154,7 +154,7 @@ class Table extends Component
 
     public function allTableRows()
     {
-        return $this->rowsQuery()->pluck('id')->all();
+        return $this->query()->pluck('id')->all();
     }
 
     public function boot()
@@ -198,7 +198,7 @@ class Table extends Component
 
     public function getAllTableRows()
     {
-        return $this->rowsQuery->pluck('id')->all();
+        return $this->query()->pluck('id')->all();
     }
 
     public function getParentModel()
@@ -416,13 +416,7 @@ class Table extends Component
         }
     }
 
-    /**
-     * Get the rows for the table.
-     *
-     * @return mixed
-     */
-    protected function rows()
-    {
+    protected function query() {
         $query = $this->model()->query()
             ->orderBy($this->model()->getTable().'.id', 'desc');
 
@@ -447,6 +441,18 @@ class Table extends Component
         if ($this->model->usesMeta()) {
             $query = $query->with(['meta']);
         }
+
+        return $query;
+    }
+
+    /**
+     * Get the rows for the table.
+     *
+     * @return mixed
+     */
+    protected function rows()
+    {
+        $query = $this->query();
 
         if ($this->filters) {
             $query = $this->applyTaxonomyFilter($query);

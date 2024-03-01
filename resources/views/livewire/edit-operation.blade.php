@@ -31,7 +31,7 @@
       </div>
     </div>
 
-    {{-- @dump($post) --}}
+    {{-- @dump($form) --}}
     {{-- @dump($this->groupedFields) --}}
 
       @foreach($this->model->getGroupedFields() as $key => $field)
