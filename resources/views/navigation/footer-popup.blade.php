@@ -3,7 +3,7 @@
     @if(config('aura.teams'))
         @can('update', Team::class)
             <!-- Team Management -->
-            <div class="block px-4 py-2 text-xs text-gray-400 dark:text-gray-500">
+            <div class="block px-4 py-2 text-xs text-gray-400 dark:text-gray-400">
                 {{ __('Manage Team') }}
             </div>
 
@@ -24,7 +24,7 @@
 
 
         <!-- Team Switcher -->
-        <div class="block px-4 py-2 text-xs text-gray-400 dark:text-gray-500">
+        <div class="block px-4 py-2 text-xs text-gray-400 dark:text-gray-400">
             {{ __('Switch Teams') }}
         </div>
 
@@ -35,7 +35,7 @@
     @endif
 
   @if(config('aura.features.user_profile'))
-  <div class="block px-4 py-2 text-xs text-gray-400 dark:text-gray-500">
+  <div class="block px-4 py-2 text-xs text-gray-400 dark:text-gray-400">
       {{ __('Manage Profile') }}
   </div>
 

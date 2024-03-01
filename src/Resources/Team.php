@@ -249,7 +249,6 @@ class Team extends Resource
                 'type' => 'Role',
                 'title' => 'Super Admin',
                 'slug' => 'super_admin',
-                'name' => 'Super Admin',
                 'description' => 'Super Admin has can perform everything.',
                 'super_admin' => true,
                 'permissions' => [],

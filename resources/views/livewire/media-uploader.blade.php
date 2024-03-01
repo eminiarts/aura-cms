@@ -125,9 +125,9 @@
             <div x-on:dragover.prevent="isDropping = true; dragover($event);"
                 class="z-[1] absolute top-0 right-0 bottom-0 left-0"></div>
 
-            <div class="p-4 mt-2 bg-gray-50 rounded-md border border-gray-200" x-show="isUploading">
+            <div class="p-4 mt-2 bg-gray-50 rounded-md border border-gray-200 dark:bg-gray-800 dark:border-gray-700" x-show="isUploading" x-cloak>
                 <div class="flex justify-between items-center mb-2">
-                    <span class="text-sm font-medium text-gray-700 loading-ellipsis">Uploading</span>
+                    <span class="text-sm font-medium text-gray-700 dark:text-gray-300 loading-ellipsis">Uploading</span>
                 </div>
                 <div class="bg-transparent dark:bg-gray-900 h-[4px] w-full" x-show="isUploading">
                     <style>

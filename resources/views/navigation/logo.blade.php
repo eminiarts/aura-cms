@@ -12,10 +12,10 @@
 
 @if($logo || $darkLogo)
     @if($sidebarType == 'light' && $logo && $darkLogo)
-        <img class="block object-contain object-left w-48 h-10 dark:hidden" src="{{ asset('storage/' . app('aura')::getPath($logo)) }}" alt="{{ $settings['title'] ?? '' }}">
-        <img class="hidden object-contain object-left w-48 h-10 dark:block" src="{{ asset('storage/' . app('aura')::getPath($darkLogo)) }}" alt="{{ $settings['title'] ?? '' }}">
+        <x-aura::image class="block object-contain object-left w-48 h-10 dark:hidden" :id="$logo"></x-aura::image>
+        <x-aura::image class="hidden object-contain object-left w-48 h-10 dark:block" :id="$darkLogo"></x-aura::image>
     @else
-        <img class="object-contain object-left w-48 h-10" src="{{ asset('storage/' . app('aura')::getPath($darkLogo ? $darkLogo : $logo)) }}" alt="{{ $settings['title'] ?? '' }}">
+        <x-aura::image class="object-contain object-left w-48 h-10" :id="$logo" alt="{{ $settings['title'] ?? '' }}"></x-aura::image>
     @endif
 @else
     @if($sidebarType == 'light')

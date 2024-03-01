@@ -15,7 +15,7 @@
         @endif
 
         @if($this->settings['actions'])
-        <th class="table-row-actions px-6 py-3 text-xs font-semibold text-left text-gray-600 bg-gray-50 dark:bg-gray-800 dark:text-gray-400">
+        <th class="table-row-actions px-6 py-3 text-xs font-semibold text-left text-gray-600 bg-gray-50 dark:bg-gray-800 dark:text-gray-300">
             {{ __('Actions') }}
         </th>
         @endif
