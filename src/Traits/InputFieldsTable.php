@@ -11,7 +11,7 @@ trait InputFieldsTable
 
     public function getDefaultColumns()
     {
-        return $this->getTableHeaders()->map(fn () => '1')->toArray();
+        return $this->getTableHeaders()->map(fn () => true)->toArray();
     }
 
     public function getTableHeaders()
