@@ -628,3 +628,23 @@ test('sort_columns settings', function () {
 
     $component->assertDontSeeHtml('<div class="cursor-move drag-handle move-table-row">');
 });
+
+
+
+test('grid view table', function () {
+
+    $settings = ['default_view' => 'list'];
+
+    $component = Livewire::test(Table::class, ['model' => $this->post, 'settings' => $settings]);
+
+    $component->assertSeeHtml('<div class="aura-table-list-view">');
+    $component->assertDontSeeHtml('<div class="aura-table-grid-view">');
+
+    // Set to Grid View
+    $settings = ['default_view' => 'grid', 'views' => ['grid' => $component->settings['views']['table']]];
+
+    $component = Livewire::test(Table::class, ['model' => $this->post, 'settings' => $settings]);
+
+    $component->assertSeeHtml('<div class="aura-table-grid-view">');
+    $component->assertDontSeeHtml('<div class="aura-table-list-view">');
+});
