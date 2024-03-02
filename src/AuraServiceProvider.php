@@ -285,7 +285,7 @@ class AuraServiceProvider extends PackageServiceProvider
 
         // Register Fields from src/Fields
         $fields = collect(app('files')->files(__DIR__.'/Fields'))->map(function ($field) {
-            return 'Aura\Base\Fields\\'.str($field->getFilename())->replace('.php', '')->title;
+            return 'Aura\Base\Fields\\'.str($field->getFilename())->replace('.php', '');
         })->toArray();
 
         app('aura')::registerFields($fields);

@@ -19,7 +19,7 @@ class Repeater extends Field
 
     public function get($field, $value)
     {
-        $fields = $this->getFields();
+        // $fields = $this->getFields();
         // dd($field, $value, $fields);
         if (is_array($value)) {
             return $value;
