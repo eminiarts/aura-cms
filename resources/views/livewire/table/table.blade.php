@@ -245,12 +245,17 @@
                     </div>
                 </div>
 
-                @if($this->settings['default_view'] == 'grid')
-                    @include($this->settings['views']['grid'])
-                    {{-- @include($model->tableGridView()) --}}
+                <div class="aura-table">
+                    @if($this->settings['default_view'] == 'grid')
+                    <div class="aura-table-grid-view">
+                        @include($this->settings['views']['grid'])
+                    </div>  
                 @elseif($this->settings['default_view'] == 'list')
-                    @include($this->settings['views']['table'])
+                    <div class="aura-table-list-view">
+                        @include($this->settings['views']['table'])
+                    </div>  
                 @endif
+                </div>
             </div>
 
 
