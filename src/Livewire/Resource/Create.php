@@ -116,14 +116,14 @@ class Create extends Component
 
     public function rules()
     {
-        return Arr::dot([
-            'form.fields' => $this->model->validationRules(),
-        ]);
+        return collect($this->model->validationRules())->mapWithKeys(function ($rule, $key) {
+            return ["form.fields.$key" => $rule];
+        })->toArray();
     }
 
     public function save()
     {
-        // dd($this->model->toArray(), $this->rules());
+        // dd($this->model->toArray(), $this->rules(), $this->model->validationRules());
 
         $this->validate();
 
