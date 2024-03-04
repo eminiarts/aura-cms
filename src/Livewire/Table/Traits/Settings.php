@@ -25,6 +25,7 @@ trait Settings
             'title' => true,
             'selectable' => true,
             'default_view' => $this->model()->defaultTableView(),
+            // 'current_view' => $this->model()->defaultTableView(),
             'header_before' => true,
             'header_after' => true,
             'table_before' => true,
