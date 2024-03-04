@@ -152,7 +152,6 @@
 >
     {{-- Be aware that this file opens a div which closes at the end --}}
     @include('aura::components.table.context-menu')
-        {{-- @dump($field) --}}
 
         <main class="" x-data="{
             showFilters: false,
@@ -213,13 +212,13 @@
                             @if($model->tableGridView())
                             <div>
                                 <span class="inline-flex isolate rounded-md shadow-sm">
-                                    <button wire:click="$set('tableView', 'grid')" type="button"
+                                    <button wire:click="$set('settings.default_view', 'grid')" type="button"
                                         class="inline-flex relative items-center px-2 py-2 text-sm font-medium bg-white rounded-l-md border border-gray-500/30 hover:bg-gray-50 focus:z-10 focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500 dark:bg-gray-900 dark:border-gray-700 dark:hover:bg-gray-800">
                                         <span class="sr-only">Grid Layout</span>
 
                                         <x-aura::icon icon="grid" size="sm" />
                                     </button>
-                                    <button wire:click="$set('tableView', 'list')" type="button"
+                                    <button wire:click="$set('settings.default_view', 'list')" type="button"
                                         class="inline-flex relative items-center px-2 py-2 -ml-px text-sm font-medium bg-white rounded-r-md border border-gray-500/30 hover:bg-gray-50 focus:z-10 focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500 dark:bg-gray-900 dark:border-gray-700 dark:hover:bg-gray-800">
                                         <span class="sr-only">List Layout</span>
                                         <x-aura::icon icon="list" size="sm" />
@@ -246,12 +245,17 @@
                     </div>
                 </div>
 
-                @if($this->settings['default_view'] == 'grid')
-                    @include($this->settings['views']['grid'])
-                    {{-- @include($model->tableGridView()) --}}
+                <div class="aura-table">
+                    @if($this->settings['default_view'] == 'grid')
+                    <div class="aura-table-grid-view">
+                        @include($this->settings['views']['grid'])
+                    </div>  
                 @elseif($this->settings['default_view'] == 'list')
-                    @include($this->settings['views']['table'])
+                    <div class="aura-table-list-view">
+                        @include($this->settings['views']['table'])
+                    </div>  
                 @endif
+                </div>
             </div>
 
 

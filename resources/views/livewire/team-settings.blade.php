@@ -7,7 +7,7 @@
     </div>
 
     @php
-    ray($this->fieldsForView)
+    // ray($this->fieldsForView)
     @endphp
     @foreach($this->fieldsForView as $key => $field)
     <style >
