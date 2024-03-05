@@ -149,6 +149,51 @@
 }
 
 
+/* .aura-sidebar-logo */
+.aura-sidebar-logo {}
+.aura-sidebar-logo-dark {}
+
+/* .aura-sidebar-bg */
+.aura-sidebar-type-primary .aura-sidebar-logo {
+    @apply hidden;
+}
+.aura-sidebar-type-light .aura-sidebar-logo {
+    @apply block;
+}
+.aura-sidebar-type-dark .aura-sidebar-logo {
+    @apply hidden;
+}
+/* Dark */
+.aura-sidebar-darkmode-type-primary .aura-sidebar-logo {
+    @apply dark:hidden;
+}
+.aura-sidebar-darkmode-type-light .aura-sidebar-logo {
+    @apply dark:block;
+}
+.aura-sidebar-darkmode-type-dark .aura-sidebar-logo {
+    @apply dark:hidden;
+}
+
+/* .aura-sidebar-bg */
+.aura-sidebar-type-primary .aura-sidebar-logo-dark {
+    @apply block;
+}
+.aura-sidebar-type-light .aura-sidebar-logo-dark {
+    @apply hidden;
+}
+.aura-sidebar-type-dark .aura-sidebar-logo-dark {
+    @apply block;
+}
+/* Dark */
+.aura-sidebar-darkmode-type-primary .aura-sidebar-logo-dark {
+    @apply dark:block;
+}
+.aura-sidebar-darkmode-type-light .aura-sidebar-logo-dark {
+    @apply dark:hidden;
+}
+.aura-sidebar-darkmode-type-dark .aura-sidebar-logo-dark {
+    @apply dark:block;
+}
 
 /* aura-sidebar-scrollbar */
 .aura-sidebar-scrollbar {
@@ -308,7 +353,7 @@
     @apply dark:group-[.is-active]:text-primary-500 dark:text-primary-500 dark:hover:text-primary-400 dark:group-hover:text-primary-500;
 }
 .aura-sidebar-darkmode-type-dark .aura-sidebar-dropdown {
-    @apply dark:group-[.is-active]:text-white dark:text-primary-500 dark:hover:text-primary-400;
+    @apply dark:text-white dark:group-[.is-active]:text-white dark:text-primary-500 dark:hover:text-primary-400;
 }
 
 
@@ -346,7 +391,7 @@
 
 /* Dark Sidebar Type */
 .aura-sidebar-type-dark .aura-sidebar-dropdown-button {
-    @apply bg-gray-800 hover:bg-gray-900;
+    @apply text-white bg-gray-800 hover:bg-gray-900;
 }
 .aura-sidebar-type-dark .aura-sidebar-dropdown-button-expanded {
     @apply bg-transparent hover:bg-gray-900;
@@ -383,11 +428,11 @@
 
 /* Darkmode Dark Sidebar Type */
 .aura-sidebar-darkmode-type-dark .aura-sidebar-dropdown-button {
-    @apply dark:bg-gray-800 dark:hover:bg-gray-900;
+    @apply dark:text-white dark:bg-gray-800 dark:hover:bg-gray-900;
 }
 
 .aura-sidebar-darkmode-type-dark .aura-sidebar-dropdown-button-expanded {
-    @apply dark:bg-transparent dark:hover:bg-gray-900;
+    @apply dark:text-white dark:bg-transparent dark:hover:bg-gray-900;
 }
 
 .aura-sidebar-darkmode-type-dark .aura-sidebar-dropdown-container-expanded {
@@ -469,28 +514,28 @@
 
 /* .aura-sidebar-item */
 .aura-sidebar-item {
-    @apply flex items-center bg-transparent rounded-lg transition duration-150 ease-in-out cursor-pointer dark:hover:bg-gray-900 hover:bg-sidebar-bg-hover;
+    @apply flex items-center bg-transparent rounded-lg transition duration-150 ease-in-out cursor-pointer hover:bg-sidebar-bg-hover;
 }
 .aura-sidebar-item.is-active {
     @apply text-white bg-sidebar-bg-hover hover:bg-sidebar-bg-hover;
 }
 
 .aura-sidebar-type-primary .aura-sidebar-item {
-    @apply bg-transparent dark:hover:bg-gray-900 hover:bg-sidebar-bg-hover;
+    @apply bg-transparent hover:bg-sidebar-bg-hover;
 }
 .aura-sidebar-type-primary .aura-sidebar-item.is-active {
     @apply text-white bg-sidebar-bg-hover hover:bg-sidebar-bg-hover;
 }
 
 .aura-sidebar-type-light .aura-sidebar-item {
-    @apply text-gray-900 bg-transparent dark:text-white dark:hover:bg-gray-900 hover:bg-gray-200;
+    @apply text-gray-900 bg-transparent;
 }
 .aura-sidebar-type-light .aura-sidebar-item.is-active {
-    @apply text-gray-900 bg-gray-200 dark:bg-gray-900 dark:text-white hover:bg-gray-200;
+    @apply text-gray-900 bg-gray-200 hover:bg-gray-200;
 }
 
 .aura-sidebar-type-dark .aura-sidebar-item {
-    @apply bg-transparent hover:bg-gray-900;
+    @apply text-white bg-transparent hover:bg-gray-900;
 }
 .aura-sidebar-type-dark .aura-sidebar-item.is-active {
     @apply text-white bg-gray-900 hover:bg-gray-900;
@@ -516,7 +561,7 @@
 }
 
 .aura-sidebar-darkmode-type-dark .aura-sidebar-item {
-    @apply dark:bg-transparent dark:hover:bg-gray-900;
+    @apply dark:text-white dark:bg-transparent dark:hover:bg-gray-900;
 }
 .aura-sidebar-darkmode-type-dark .aura-sidebar-item.is-active {
     @apply dark:text-white dark:bg-gray-900 dark:hover:bg-gray-900;

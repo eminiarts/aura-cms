@@ -8,12 +8,19 @@
         $logo = isset($appSettings['app-logo'][0]) ? $appSettings['app-logo'][0] : null;
         $darkLogo = isset($appSettings['app-logo-darkmode'][0]) ? $appSettings['app-logo-darkmode'][0] : null;
     }
+
+    // Debugging: Dump the logo variables
+    // dump(['logo' => $logo, 'darkLogo' => $darkLogo, 'sidebarType' => $sidebarType]);
+
 @endphp
 
 @if($logo || $darkLogo)
-    @if($sidebarType == 'light' && $logo && $darkLogo)
-        <x-aura::image class="block object-contain object-left w-48 h-10 dark:hidden" :id="$logo"></x-aura::image>
-        <x-aura::image class="hidden object-contain object-left w-48 h-10 dark:block" :id="$darkLogo"></x-aura::image>
+    @if($logo && $darkLogo)
+        <x-aura::image class="object-contain object-left w-48 h-10 aura-sidebar-logo" :id="$logo"></x-aura::image>
+        <x-aura::image class="object-contain object-left w-48 h-10 aura-sidebar-logo-dark" :id="$darkLogo"></x-aura::image>
+        {{-- @dump('1') --}}
+    @elseif($darklogo)
+        <x-aura::image class="object-contain object-left w-48 h-10" :id="$darklogo" alt="{{ $settings['title'] ?? '' }}"></x-aura::image>
     @else
         <x-aura::image class="object-contain object-left w-48 h-10" :id="$logo" alt="{{ $settings['title'] ?? '' }}"></x-aura::image>
     @endif

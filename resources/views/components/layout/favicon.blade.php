@@ -1,6 +1,7 @@
 @php
     use Aura\Base\Resources\Attachment;
 
+    $appSettings = app('aura')::options();
     $favicon = $darkFavicon = false;
 
     if(isset($appSettings['app-favicon'])) {
@@ -31,20 +32,22 @@
 <link rel="icon" type="image/png" sizes="32x32" href="{{ $favicon }}">
 
 <script>
-const darkModeMediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+    const darkModeMediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
 
-function setFaviconBasedOnPreferredColorScheme(event) {
-  if (event.matches) {
-      // The user has set their browser to prefer dark mode, so show the darkmode favicon
-      document.querySelector("link[sizes='32x32']").href = '{{ $darkFavicon }}';
-  } else {
-      // The user has set their browser to prefer light mode, so show the lightmode favicon
-      document.querySelector("link[sizes='32x32']").href = '{{ $favicon }}';
-  }
-}
+    function setFaviconBasedOnPreferredColorScheme(event) {
+    if (event.matches) {
+        // The user has set their browser to prefer dark mode, so show the darkmode favicon
+        document.querySelector("link[sizes='32x32']").href = '{{ $darkFavicon }}';
+    } else {
+        // The user has set their browser to prefer light mode, so show the lightmode favicon
+        document.querySelector("link[sizes='32x32']").href = '{{ $favicon }}';
+    }
+    }
 
-darkModeMediaQuery.addListener(setFaviconBasedOnPreferredColorScheme);
+    darkModeMediaQuery.addListener(setFaviconBasedOnPreferredColorScheme);
 
-// Set the initial value
-setFaviconBasedOnPreferredColorScheme(darkModeMediaQuery);
+    // Set the initial value
+    document.addEventListener('livewire:navigated', () => {
+        setFaviconBasedOnPreferredColorScheme(darkModeMediaQuery);
+    });
 </script>
