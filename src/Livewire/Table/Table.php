@@ -95,6 +95,8 @@ class Table extends Component
 
     public $resource;
 
+    public $form;
+
     public $rowIds;
 
     /**
