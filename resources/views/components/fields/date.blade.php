@@ -1,9 +1,11 @@
 <x-aura::fields.wrapper :field="$field">
+
 <div
     x-data
     x-init="
         window.flatpickr($refs.input, {
             inline: false,
+            defaultDate: '{{ $this->form['fields'][$field['slug']] ?? '' }}',
             dateFormat: '{{ optional($field)['format'] ?? 'd.m.Y' }}',
             altInput: true,
             altFormat: '{{ optional($field)['display_format'] ?? 'd.m.Y' }}',
