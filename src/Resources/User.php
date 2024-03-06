@@ -96,21 +96,21 @@ class User extends UserModel
         return 'https://ui-avatars.com/api/?name='.$this->getInitials().'';
     }
 
-    public function getBulkActions()
-    {
-        // get all flows with type "manual"
+    // public function getBulkActions()
+    // {
+    //     // get all flows with type "manual"
 
-        $flows = Flow::where('trigger', 'manual')
-            ->where('options->resource', $this->getType())
-            ->get();
+    //     $flows = Flow::where('trigger', 'manual')
+    //         ->where('options->resource', $this->getType())
+    //         ->get();
 
-        foreach ($flows as $flow) {
-            $this->bulkActions['callFlow.'.$flow->id] = $flow->name;
-        }
+    //     foreach ($flows as $flow) {
+    //         $this->bulkActions['callFlow.'.$flow->id] = $flow->name;
+    //     }
 
-        // dd($this->bulkActions);
-        return $this->bulkActions;
-    }
+    //     // dd($this->bulkActions);
+    //     return $this->bulkActions;
+    // }
 
     public function getEmailField($value)
     {
