@@ -13,7 +13,7 @@ use Livewire\Livewire;
 
 uses(RefreshDatabase::class);
 
-beforeEach(fn () => $this->actingAs($this->user = User::factory()->create()));
+beforeEach(fn () => $this->actingAs($this->user = createSuperAdmin() ));
 
 test('Team Settings Component can be rendered', function () {
     $role = Role::create(['type' => 'Role', 'title' => 'Super Admin', 'slug' => 'super_admin', 'description' => 'Super Admin has can perform everything.', 'super_admin' => true, 'permissions' => []]);
@@ -145,17 +145,10 @@ test('Team Settings can be saved', function () {
 });
 
 
-
-
-//
-
-test('Sidebar: Primary, Darkmode: Light', function () {
-
-});
-
 test('different options apply correct classes', function ($settings) {
     $darkmodeType = $settings['darkmode-type'];
     $sidebarType = $settings['sidebar-type'];
+    $sidebarDarkmodeType = $settings['sidebar-darkmode-type'] ?? null;
     $colorPalette = $settings['color-palette'];
     $resultSidebar = $settings['result-sidebar'];
     $resultContent = $settings['result-content'];
@@ -163,42 +156,58 @@ test('different options apply correct classes', function ($settings) {
     $component = Livewire::test(TeamSettings::class)
         ->set('form.fields.darkmode-type', $darkmodeType)
         ->set('form.fields.sidebar-type', $sidebarType)
+        ->set('form.fields.sidebar-darkmode-type', $sidebarDarkmodeType)
         ->set('form.fields.color-palette', $colorPalette)
         ->call('save');
 
-    $component->assertSee($resultSidebar);
-    $component->assertSee($resultContent);
+    /* .aura-sidebar */
+    // .aura-sidebar-type-primary  {}
+    // .aura-sidebar-type-light  {}
+    // .aura-sidebar-type-dark  {}
+    // /* Dark */
+    // .aura-sidebar-darkmode-type-primary  {}
+    // .aura-sidebar-darkmode-type-light  {}
+    // .aura-sidebar-darkmode-type-dark  {}
+
+    // $component->assertSee($resultSidebar);
+    // $component->assertSee($resultContent);
+
+    $this->actingAs($this->user)
+        ->get(route('aura.team.settings'))
+        ->assertOk()
+        ->assertSee($resultSidebar)
+        ->assertSee($resultContent);
 
 })->with([
-    [
+    [[
         'darkmode-type' => 'light',
-        'sidebar-type' => 'primary',
+        'sidebar-type' => 'light',
         'color-palette' => 'red',
-        'result-sidebar' => '',
+        'result-sidebar' => 'aura-sidebar-type-light',
         'result-content' => '',
-    ],
-    [
+    ]],
+    [[
         'darkmode-type' => 'dark',
         'sidebar-type' => 'primary',
         'color-palette' => 'red',
-        'result-sidebar' => '',
+        'result-sidebar' => 'aura-sidebar-type-primary',
         'result-content' => '',
-    ],
-    [
+    ]],
+    [[
         'darkmode-type' => 'auto',
         'sidebar-type' => 'primary',
         'sidebar-darkmode-type' => 'primary',
         'color-palette' => 'red',
-        'result-sidebar' => '',
-        'result-content' => '',
-    ],
-    [
+        'result-sidebar' => 'aura-sidebar-type-primary',
+        'result-content' => 'aura-sidebar-darkmode-type-primary',
+    ]],
+    [[
         'darkmode-type' => 'auto',
         'sidebar-type' => 'primary',
         'sidebar-darkmode-type' => 'dark',
         'color-palette' => 'red',
-        'result-sidebar' => '',
-        'result-content' => '',
-    ],
+        'result-sidebar' => 'aura-sidebar-type-primary',
+        'result-content' => 'aura-sidebar-darkmode-type-dark',
+    ]],
 
 ]);
