@@ -244,7 +244,7 @@ test('Advanced Select Field - create button false', function () {
 });
 
 
-it('searchable fields API Mock', function () {
+test('searchable fields API Mock', function () {
 
     $role = Mockery::mock(Role::class);
 
