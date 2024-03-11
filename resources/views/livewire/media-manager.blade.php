@@ -1,4 +1,4 @@
-<div class="p-8 w-full" x-data="{
+<div class="p-8 w-full z-50" x-data="{
 
     selected: @entangle('selected').live,
 

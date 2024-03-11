@@ -1,6 +1,6 @@
 <x-aura::fields.wrapper :field="$field">
     @if (optional(optional($field)['options'])['native'])
-        <div class="relative right-4 left-4 bottom-6 z-40 md:relative md:inset-0"
+        <div class="relative right-4 left-4 bottom-6 z-20 md:relative md:inset-0"
             x-data="{
                 color: $wire.entangle('form.fields.{{ optional($field)['slug'] }}'),
                 init () {
