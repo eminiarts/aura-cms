@@ -35,7 +35,7 @@ if (optional($this)->model && isset($field['get']) && $field['get'] instanceof \
 
                         <div class="mt-10 ml-4 w-4">
                             <x-aura::icon icon="chevron-up" size="xs" class="text-gray-300 cursor-pointer hover:text-gray-500" wire:click="moveRepeaterUp('{{ $slug }}', '{{ $key }}')"></x-aura::icon>
-                            <x-aura::icon icon="minus" size="xs" class="text-gray-300 cursor-pointer hover:text-red-500" wire:click="removeRepeater('{{ $slug }}', '{{ $key }}')"></x-aura::icon>
+                            <x-aura::icon icon="minus" size="xs" class="remove-repeater text-gray-300 cursor-pointer hover:text-red-500" wire:click="removeRepeater('{{ $slug }}', '{{ $key }}')"></x-aura::icon>
                             <x-aura::icon icon="chevron-down" size="xs" class="text-gray-300 cursor-pointer hover:text-gray-500" wire:click="moveRepeaterDown('{{ $slug }}', '{{ $key }}')"></x-aura::icon>
                         </div>
                     </div>
