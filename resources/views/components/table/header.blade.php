@@ -4,7 +4,7 @@
 
 @if ($this->settings['header'])
 {{-- if a view exists: aura.$model->pluralName().header, load it  --}}
-@if (View::exists($view = 'aura.' . $model->getType() . '.header'))
+@if (View::exists($view = 'aura.' . Str::lower($model->getType()) . '.header'))
     @include($view)
 @elseif(View::exists('aura::' . $view))
     @include('aura::' . $view)
