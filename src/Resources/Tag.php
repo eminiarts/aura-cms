@@ -12,6 +12,8 @@ class Tag extends Resource
 
     public static string $type = 'Tag';
 
+    protected static ?string $group = 'Aura';
+
     public function component()
     {
         return 'fields.tags';
