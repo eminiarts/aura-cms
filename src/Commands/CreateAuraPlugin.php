@@ -5,12 +5,14 @@ namespace Aura\Base\Commands;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Process;
+use function Laravel\Prompts\text;
+use function Laravel\Prompts\select;
 
 class CreateAuraPlugin extends Command
 {
     protected $description = 'Create a new Aura plugin';
 
-    protected $signature = 'aura:plugin {name}';
+    protected $signature = 'aura:plugin {name?}';
 
     public function getStubsDirectory($path)
     {
@@ -19,29 +21,38 @@ class CreateAuraPlugin extends Command
 
     public function handle()
     {
-        $vendorAndName = $this->argument('name');
+        
+        if($this->argument('name')) {
+
+            $vendorAndName = $this->argument('name');
+
+        } else {
+
+            $vendorAndName = text(
+                label: 'What is the name of your plugin?',
+                placeholder: 'E.g. aura/plugin (vendor/name)',
+            );
+
+        }
+
         [$vendor, $name] = explode('/', $vendorAndName);
 
-        $options = [
-            'Complete plugin',
-            'Resource plugin',
-            'Field plugin',
-            'Widget plugin',
-        ];
+        $pluginType = select(
+            label: 'What type of plugin do you want to create?',
+            options: [
+                'plugin' => 'Complete plugin',
+                'plugin-resource' => 'Resource plugin',
+                'plugin-field' => 'Field plugin',
+                'plugin-widget' => 'Widget plugin'
+            ],
+            default: 'plugin',
+        );
 
-        $pluginType = $this->choice('Select the type of plugin you want to create', $options);
-
-        $folder = [
-            'Complete plugin' => 'plugin',
-            'Resource plugin' => 'plugin-resource',
-            'Field plugin' => 'plugin-field',
-            'Widget plugin' => 'plugin-widget',
-        ];
-
+    
         $pluginDirectory = base_path("plugins/{$vendor}/{$name}");
         File::makeDirectory($pluginDirectory, 0755, true);
 
-        $stubDirectory = $this->getStubsDirectory($folder[$pluginType]);
+        $stubDirectory = $this->getStubsDirectory($pluginType);
 
         File::copyDirectory($stubDirectory, $pluginDirectory);
 
