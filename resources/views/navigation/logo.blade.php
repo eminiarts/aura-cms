@@ -19,7 +19,7 @@
         <x-aura::image class="object-contain object-left w-48 h-10 aura-sidebar-logo" :id="$logo"></x-aura::image>
         <x-aura::image class="object-contain object-left w-48 h-10 aura-sidebar-logo-dark" :id="$darkLogo"></x-aura::image>
         {{-- @dump('1') --}}
-    @elseif($darklogo)
+    @elseif(isset($darklogo) && $darklogo)
         <x-aura::image class="object-contain object-left w-48 h-10" :id="$darklogo" alt="{{ $settings['title'] ?? '' }}"></x-aura::image>
     @else
         <x-aura::image class="object-contain object-left w-48 h-10" :id="$logo" alt="{{ $settings['title'] ?? '' }}"></x-aura::image>

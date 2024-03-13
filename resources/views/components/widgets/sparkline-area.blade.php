@@ -1,7 +1,6 @@
 <div class="aura-card" wire:key="chart" @if (!$isCached) wire:init="loadWidget" @endif>
     @if($loaded)
     <div class="p-2">
-
       {{-- @dump($this->start, $this->end)
       @dump($this->values) --}}
         <div class="flex justify-between items-start mb-4">
@@ -40,23 +39,6 @@
                       sparkline: {
                         enabled: true,
                       },
-
-                      chart: {
-                          animations: {
-                              enabled: true,
-                              easing: 'easeinout',
-                              speed: 1200,
-                              animateGradually: {
-                                  enabled: true,
-                                  delay: 150
-                              },
-                              dynamicAnimation: {
-                                  enabled: true,
-                                  speed: 350
-                              }
-                          }
-                      }
-
                     },
 
                     colors: [getCssVariableValue('--primary-400'), getCssVariableValue('--primary-200')],
@@ -65,6 +47,7 @@
                       curve: 'smooth',
                       width: 2,
                     },
+
                     fill: {
                         type: 'gradient',
                         gradient: {
