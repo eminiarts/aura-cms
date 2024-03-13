@@ -1,5 +1,5 @@
 <div>
-    @section('title', 'Gobal Config • ')
+    @section('title', 'Global Config ')
 
     <div class="flex justify-between items-center">
         <div>
