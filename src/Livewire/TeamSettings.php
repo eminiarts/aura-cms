@@ -515,7 +515,7 @@ class TeamSettings extends Component
             // Cache::forget(auth()->user()->current_team_id.'.aura.team-settings');
             Cache::forget('team-settings');
         } else {
-            Cache::forget('team-settings');
+            Cache::forget('aura.team-settings');
         }
 
         return $this->notify(__('Successfully updated'));

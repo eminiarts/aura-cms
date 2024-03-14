@@ -9,7 +9,7 @@
       @else
       wire:model="form.fields.{{ optional($field)['slug'] }}"
       @endif
-
+      id="aura_field_{{ optional($field)['slug'] }}"
     error="form.fields.{{ optional($field)['slug'] }}" name="post_fields_{{ optional($field)['slug'] }}" id="post_fields_{{ optional($field)['slug'] }}" class="block px-3 py-2 pr-10 pl-3 mt-1 w-full text-base bg-white rounded-lg appearance-none shadow-xs border-gray-500/30 focus:border-primary-300 focus:outline-none ring-gray-900/10 focus:ring focus:ring-primary-300 focus:ring-opacity-50 dark:focus:ring-primary-500 dark:focus:ring-opacity-50 dark:bg-gray-900 dark:border-gray-700 sm:text-sm disabled:cursor-not-allowed disabled:opacity-75 disabled:bg-gray-100 disabled:dark:bg-gray-800">
 
     @if(optional($field)['placeholder'])

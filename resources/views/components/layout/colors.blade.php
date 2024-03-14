@@ -7,6 +7,8 @@
     $appSettings = app('aura')::options();
 @endphp
 
+{{-- @dd('hier2', $settings, $appSettings) --}}
+
 @if($settings)
     <style>
         :root {

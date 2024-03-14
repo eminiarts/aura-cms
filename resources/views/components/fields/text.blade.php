@@ -4,6 +4,7 @@
         <x-aura::input.text
             suffix="{{ optional($field)['suffix'] }}"
             prefix="{{ optional($field)['prefix'] }}"
+            id="aura_field_{{ optional($field)['slug'] }}"
             :disabled="$field['field']->isDisabled($form, $field)"
             wire:model.live="form.fields.{{ optional($field)['slug'] }}"
             error="form.fields.{{ optional($field)['slug'] }}"
@@ -15,6 +16,7 @@
         <x-aura::input.text
             suffix="{{ optional($field)['suffix'] }}"
             prefix="{{ optional($field)['prefix'] }}"
+            id="aura_field_{{ optional($field)['slug'] }}"
             :disabled="$field['field']->isDisabled($form, $field)"
             wire:model="form.fields.{{ optional($field)['slug'] }}"
             error="form.fields.{{ optional($field)['slug'] }}"

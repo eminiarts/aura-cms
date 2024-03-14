@@ -42,6 +42,7 @@ if (!isset($sizes[$size])) {
 
 @if(isset($href))
 <a
+  @if(isset($id)) id="{{ $id }}" @endif
   tabindex="0"
   href="{{ $href }}" @if($navigate) wire:navigate @endif
   {{$attributes->merge([
