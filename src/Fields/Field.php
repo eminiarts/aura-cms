@@ -19,6 +19,8 @@ class Field implements Wireable
 
     public bool $group = false;
 
+    public bool $on_forms = true;
+
     public $optionGroup = 'Fields';
 
     public bool $taxonomy = false;

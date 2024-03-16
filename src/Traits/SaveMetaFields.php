@@ -42,6 +42,8 @@ trait SaveMetaFields
                         continue;
                     }
 
+                    
+
                     $field = $post->fieldBySlug($key);
 
                     if (isset($field['set']) && $field['set'] instanceof \Closure) {
@@ -51,6 +53,12 @@ trait SaveMetaFields
 
                     if (method_exists($class, 'set')) {
                         $value = $class->set($value, $field);
+                    }
+
+                    if ($class instanceof \Aura\Base\Fields\ID ) {
+                        $post->attributes[$key] = $value;
+
+                        continue;
                     }
 
                     // If the field exists in the $post->getBaseFillable(), it should be safed in the table instead of the meta table
@@ -72,6 +80,8 @@ trait SaveMetaFields
 
         static::saved(function ($post) {
             if (isset($post->metaFields)) {
+
+                // dd($post->metaFields, $post);
                 foreach ($post->metaFields as $key => $value) {
                     // if there is a function set{Slug}Field on the model, use it
                     $method = 'set'.Str::studly($key).'Field';
