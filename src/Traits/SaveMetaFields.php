@@ -12,6 +12,8 @@ trait SaveMetaFields
         static::saving(function ($post) {
             if (isset($post->attributes['fields'])) {
 
+                // ray('saving', $post->attributes['fields']);
+
                 foreach ($post->attributes['fields'] as $key => $value) {
                     $class = $post->fieldClassBySlug($key);
 
@@ -56,7 +58,9 @@ trait SaveMetaFields
                     }
 
                     if ($class instanceof \Aura\Base\Fields\ID ) {
-                        $post->attributes[$key] = $value;
+                        // $post->attributes[$key] = $value;
+
+                        // unset($post->attributes['fields'][$key]);
 
                         continue;
                     }
@@ -64,6 +68,7 @@ trait SaveMetaFields
                     // If the field exists in the $post->getBaseFillable(), it should be safed in the table instead of the meta table
                     if (in_array($key, $post->getBaseFillable())) {
                         $post->attributes[$key] = $value;
+
 
                         continue;
                     }
