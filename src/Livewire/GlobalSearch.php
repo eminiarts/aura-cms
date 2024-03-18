@@ -23,9 +23,15 @@ class GlobalSearch extends Component
 
         // Initialize search results array
 
+        ray($resources);
+
         // filter out flows and flow_logs from resources
         $resources = array_filter($resources, function ($resource) {
-            // dump($resource::getSlug());
+            if ($resource === null) {
+                return false;
+            }
+            ray($resource);
+            // ray($resource::getSlug());
             return $resource::getSlug() !== 'resource' && $resource::getSlug() !== 'flow' && $resource::getSlug() !== 'flowlog' && $resource::getSlug() !== 'operation' && $resource::getSlug() !== 'flowoperation' && $resource::getSlug() !== 'operationlog' && $resource::getSlug() !== 'option' && $resource::getSlug() !== 'team' && $resource::getSlug() !== 'user' && $resource::getSlug() !== 'product';
         });
 
