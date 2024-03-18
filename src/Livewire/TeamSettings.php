@@ -53,16 +53,11 @@ class TeamSettings extends Component
                     'width' => '50',
                 ],
             ],
-            [
-                'name' => 'Timezone',
-                'type' => 'Aura\\Base\\Fields\\Text',
-                'slug' => 'timezone1',
-            ],
-            [
-                'name' => 'Timezone',
-                'type' => 'Aura\\Base\\Fields\\Text',
-                'slug' => 'timezone',
-            ],
+            // [
+            //     'name' => 'Timezone',
+            //     'type' => 'Aura\\Base\\Fields\\Text',
+            //     'slug' => 'timezone',
+            // ],
 
             [
                 'type' => 'Aura\\Base\\Fields\\Tab',

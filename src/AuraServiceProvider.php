@@ -219,11 +219,11 @@ class AuraServiceProvider extends PackageServiceProvider
             return app()->environment('production');
         });
 
-        Blade::directive('auraStyles', function (string $expression): string {
+        Blade::directive('auraStyles', function (string $expression) {
             return "<?php echo app('aura')::styles(); ?>";
         });
 
-        Blade::directive('auraScripts', function (string $expression): string {
+        Blade::directive('auraScripts', function (string $expression) {
             return "<?php echo app('aura')::scripts(); ?>";
         });
 

@@ -10,7 +10,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
-    <title>@yield('title') • Aura CMS</title>
+    @php
+        $settings = app('aura')::getOption('team-settings');
+        $appSettings = app('aura')::options();
+    @endphp
+
+    <title>@yield('title') • {{ $appSettings['app_name'] ?? 'Aura CMS' }}</title>
 
     @include('aura::components.layout.favicon')
 
