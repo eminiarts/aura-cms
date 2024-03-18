@@ -89,6 +89,14 @@ class Edit extends Component
             if (method_exists($field['field'], 'hydrate')) {
                 $this->form['fields'][$field['slug']] = $field['field']->hydrate();
             }
+
+            if($field['field']->on_forms === false) {
+                unset($this->form['fields'][$field['slug']]);
+            }
+
+            if(optional($field)['on_forms'] === false) {
+                unset($this->form['fields'][$field['slug']]);
+            }
         }
     }
 
@@ -103,6 +111,9 @@ class Edit extends Component
 
         // Array instead of Eloquent Model
         $this->form = $this->model->attributesToArray();
+        
+
+        // dd($this->model->attributesToArray());
 
         // foreach fields, call the hydration method on the field
         $this->initializeModelFields();
@@ -142,7 +153,7 @@ class Edit extends Component
         $this->validate();
 
         // ray()->clearScreen();
-        // ray('saving', $this->form, $this->model);
+        //   dd('saving', $this->form, $this->model);
 
         unset($this->form['fields']['group']);
 

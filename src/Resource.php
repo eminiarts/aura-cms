@@ -282,13 +282,6 @@ class Resource extends Model
         return false;
     }
 
-    /**
-     * Get the jobs for the post.
-     */
-    public function jobs()
-    {
-        return $this->hasMany(PostJob::class, 'post_id');
-    }
 
     /**
      * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
