@@ -35,37 +35,37 @@ class Config extends Component
                 'slug' => 'tab-general',
                 'global' => true,
             ],
-            [
-                'type' => 'Aura\\Base\\Fields\\Panel',
-                'name' => 'Registration Settings',
-                'slug' => 'panel-registration',
-            ],
-            [
-                'name' => 'Team registration',
-                'type' => 'Aura\\Base\\Fields\\Boolean',
-                'instructions' => 'With this option enabled, users will be able to create a team when they register for an account. This is useful if you want to allow organizations or groups to use your site.',
-                'slug' => 'team_registration',
-                'style' => [
-                    'width' => '100',
-                ],
-                'conditional_logic' => [
-                    function () {
-                        return config('aura.teams');
-                    },
-                    // function () {
-                    //     return auth()->user()->email == 'ivan@eminiarts.ch';
-                    // },
-                ],
-            ],
-            [
-                'name' => 'User Invitations ',
-                'type' => 'Aura\\Base\\Fields\\Boolean',
-                'instructions' => 'With this option enabled, users will be able to invite other users to their team. This is useful if you want to allow organizations or groups to use your site.',
-                'slug' => 'user_invitations',
-                'style' => [
-                    'width' => '100',
-                ],
-            ],
+            // [
+            //     'type' => 'Aura\\Base\\Fields\\Panel',
+            //     'name' => 'Registration Settings',
+            //     'slug' => 'panel-registration',
+            // ],
+            // [
+            //     'name' => 'Team registration',
+            //     'type' => 'Aura\\Base\\Fields\\Boolean',
+            //     'instructions' => 'With this option enabled, users will be able to create a team when they register for an account. This is useful if you want to allow organizations or groups to use your site.',
+            //     'slug' => 'team_registration',
+            //     'style' => [
+            //         'width' => '100',
+            //     ],
+            //     'conditional_logic' => [
+            //         function () {
+            //             return config('aura.teams');
+            //         },
+            //         // function () {
+            //         //     return auth()->user()->email == 'ivan@eminiarts.ch';
+            //         // },
+            //     ],
+            // ],
+            // [
+            //     'name' => 'User Invitations ',
+            //     'type' => 'Aura\\Base\\Fields\\Boolean',
+            //     'instructions' => 'With this option enabled, users will be able to invite other users to their team. This is useful if you want to allow organizations or groups to use your site.',
+            //     'slug' => 'user_invitations',
+            //     'style' => [
+            //         'width' => '100',
+            //     ],
+            // ],
 
             [
                 'type' => 'Aura\\Base\\Fields\\Panel',
@@ -89,14 +89,14 @@ class Config extends Component
                     'width' => '100',
                 ],
             ],
-            [
-                'name' => 'App URL',
-                'type' => 'Aura\\Base\\Fields\\Text',
-                'slug' => 'app_url',
-                'style' => [
-                    'width' => '100',
-                ],
-            ],
+            // [
+            //     'name' => 'App URL',
+            //     'type' => 'Aura\\Base\\Fields\\Text',
+            //     'slug' => 'app_url',
+            //     'style' => [
+            //         'width' => '100',
+            //     ],
+            // ],
 
             [
                 'name' => 'App Logo',
@@ -132,24 +132,24 @@ class Config extends Component
                 ],
             ],
 
-            [
-                'name' => 'App Locale',
-                'type' => 'Aura\\Base\\Fields\\Text',
-                'slug' => 'app_locale',
-                'style' => [
-                    'width' => '100',
-                ],
-            ],
+            // [
+            //     'name' => 'App Locale',
+            //     'type' => 'Aura\\Base\\Fields\\Text',
+            //     'slug' => 'app_locale',
+            //     'style' => [
+            //         'width' => '100',
+            //     ],
+            // ],
 
-            // app_timezone text field
-            [
-                'name' => 'App Timezone',
-                'type' => 'Aura\\Base\\Fields\\Text',
-                'slug' => 'app_timezone',
-                'style' => [
-                    'width' => '100',
-                ],
-            ],
+            // // app_timezone text field
+            // [
+            //     'name' => 'App Timezone',
+            //     'type' => 'Aura\\Base\\Fields\\Text',
+            //     'slug' => 'app_timezone',
+            //     'style' => [
+            //         'width' => '100',
+            //     ],
+            // ],
 
             [
                 'type' => 'Aura\\Base\\Fields\\Tab',

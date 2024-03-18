@@ -8,10 +8,12 @@
         </div>
 
         <div class="">
-            <x-aura::button.primary wire:click="save" wire:loading.attr="disabled">
-                {{-- <x-aura::loading wire:loading wire:target="save" /> --}}
-                Save
-            </x-aura::button.primary>
+            <x-aura::button size="xl" wire:click="save">
+                <div wire:loading>
+                    <x-aura::icon.loading  />
+                </div>
+                {{ __('Save') }}
+            </x-aura::button>
         </div>
 
     </div>

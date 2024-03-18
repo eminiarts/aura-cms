@@ -182,9 +182,6 @@ class Aura
             'app_locale' => 'en',
             'app_timezone' => 'UTC',
 
-            'team_registration' => true,
-            'user_invitations' => true,
-
             'media' => [
                 'disk' => 'public',
                 'path' => 'media',

@@ -1,9 +1,20 @@
 <div>
-    @section('title', 'Edit Settings • ')
+    @section('title', 'Edit Settings')
 
-    <div>
-        <h1 class="text-3xl font-semibold">Theme Options</h1>
-        <h3>Configure Logo and Theme. These Settings are applied for this team</h3>
+    <div class="flex justify-between items-center">
+        <div>
+            <h1 class="text-3xl font-semibold">Theme Options</h1>
+            <h3>Configure Logo and Theme. These Settings are applied for this team</h3>
+        </div>
+
+        <div>
+            <x-aura::button size="xl" wire:click="save">
+                <div wire:loading>
+                    <x-aura::icon.loading  />
+                </div>
+                {{ __('Save') }}
+            </x-aura::button>
+        </div>
     </div>
 
     @php
@@ -28,12 +39,5 @@
         </div>
         @endcheckCondition
     @endforeach
-
-    <x-aura::button size="xl" wire:click="save">
-        <div wire:loading>
-            <x-aura::icon.loading  />
-        </div>
-        {{ __('Save') }}
-    </x-aura::button>
 
 </div>

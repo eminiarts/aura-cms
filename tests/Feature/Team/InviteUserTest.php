@@ -22,7 +22,7 @@ beforeEach(function () {
     $this->actingAs($this->user = createSuperAdmin());
 
     // Enable Team Registration
-    Aura::setOption('team_registration', true);
+    // Aura::setOption('team_registration', true);
 });
 
 test('user can be invited', function () {

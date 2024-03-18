@@ -110,6 +110,9 @@ return [
         'resource_edit' => true,
 
         'register' => true,
+
+        'team_registration' => true,
+        'user_invitations' => true,
     ],
 
     /*
