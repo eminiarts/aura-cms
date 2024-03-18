@@ -33,6 +33,10 @@ trait SaveFieldAttributes
                     if ($class instanceof \Aura\Base\Fields\Password) {
                         return;
                     }
+                    
+                    if ($class instanceof \Aura\Base\Fields\ID) {
+                        return;
+                    }
 
                     if (! array_key_exists($slug, $post->attributes['fields'])) {
                         $post->attributes['fields'][$slug] = $post->attributes[$slug];
