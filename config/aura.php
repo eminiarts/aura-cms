@@ -91,8 +91,10 @@ return [
 
     'features' => [
         'global_search' => true,
-        'notifications' => true,
         'bookmarks' => true,
+        'last_visited_pages' => true,
+
+        'notifications' => true,
 
         'plugins' => true,
         'flows' => false,

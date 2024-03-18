@@ -280,7 +280,9 @@ class Aura
 
     public function getResources(): array
     {
-        return array_unique($this->resources);
+        return array_unique(array_filter($this->resources, function($resource) {
+            return !is_null($resource);
+        }));
     }
 
     public function getWidgets(): array

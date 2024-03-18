@@ -21,6 +21,11 @@
             init() {
                 this.$refs.searchContainer.style.display = 'block';
                 this.loadVisitedPages();
+
+                this.$watch(() => this.search, () => {
+                    console.log('select first');
+                    this.selectFirst();
+                });
             },
 
             loadVisitedPages() {
@@ -36,6 +41,20 @@
             },
             closeSearch() {
                 this.show = false;
+            },
+
+            escapeSearch() {
+                if (this.search !== '') {
+                    this.search = '';
+                    this.selectedIndex = -1;
+                } else {
+                    this.selectedIndex = -1;
+                    this.show = false;
+                }
+            },
+
+            selectFirst() {
+                this.selectedIndex = 0;
             },
 
             selectPrevious() {
@@ -70,11 +89,11 @@
                 link.click();
             },
 
-        }" x-ref="searchContainer" style="display: none;" @search.window="openSearch()" @keydown.escape.window="closeSearch()" @keydown.cmd.1.prevent="openBookmark(1)" @keydown.cmd.2.prevent="openBookmark(2)" @keydown.cmd.3.prevent="openBookmark(3)" @keydown.cmd.4.prevent="openBookmark(4)" @keydown.cmd.5.prevent="openBookmark(5)" @keydown.cmd.6.prevent="openBookmark(6)" @keydown.cmd.7.prevent="openBookmark(7)" @keydown.cmd.8.prevent="openBookmark(8)" @keydown.cmd.9.prevent="openBookmark(9)">
+        }" x-ref="searchContainer" style="display: none;" @search.window="openSearch()" @keydown.escape.window="escapeSearch()" @keydown.cmd.1.prevent="openBookmark(1)" @keydown.cmd.2.prevent="openBookmark(2)" @keydown.cmd.3.prevent="openBookmark(3)" @keydown.cmd.4.prevent="openBookmark(4)" @keydown.cmd.5.prevent="openBookmark(5)" @keydown.cmd.6.prevent="openBookmark(6)" @keydown.cmd.7.prevent="openBookmark(7)" @keydown.cmd.8.prevent="openBookmark(8)" @keydown.cmd.9.prevent="openBookmark(9)">
             <div class="fixed inset-0 z-30">
                 <div class="absolute inset-0 backdrop-blur-sm bg-black/10 dark:bg-black/20"></div>
                 <div class="flex absolute inset-0 justify-center items-center">
-                    <div class="p-0 mx-5 w-full max-w-2xl bg-white rounded-md shadow-xl dark:bg-gray-900 dark:border dark:border-gray-700" @click.away="closeSearch()">
+                    <div class="overflow-hidden p-0 mx-5 w-full max-w-2xl bg-white rounded-md shadow-xl dark:bg-gray-900 dark:border dark:border-gray-700" @click.away="closeSearch()">
                         <div class="flex items-center">
                             <div class="px-3">
                                 <svg width="24" height="24" fill="none" viewBox="0 0 24 24">
@@ -104,22 +123,22 @@
                             </div>
                         </div>
 
-                        <div class="p-0 border-t dark:border-gray-700">
+                        <div class="p-2 border-t dark:border-gray-700">
                             <div>
 
                                 {{-- Alpine template if $refs.searchField input length is 0 --}}
 
                                 <template x-if="!search || search == ''">
                                     <div>
-                                        <div class="px-4 py-1 text-xs font-bold text-gray-700 bg-gray-100 dark:text-gray-200 dark:bg-gray-800 heading-item">
+                                        <div class="px-2 py-1 text-xs font-semibold text-gray-700 dark:text-gray-200 heading-item">
                                             {{ __('Last visited pages') }}
                                         </div>
 
                                         <ul x-ref="commandList">
 
                                             <template x-for="(page, index) in visitedPages" :key="'search-item-' + index">
-                                                <li class="flex px-4 py-2 cursor-pointer select-item hover:bg-primary-500 hover:text-white"
-                                                    :class="{ 'bg-primary-500 text-white': index === selectedIndex }">
+                                                <li class="flex px-2 py-2 rounded-md cursor-pointer select-item"
+                                                    :class="{'bg-primary-500 dark:bg-primary-400/30 text-white': index === selectedIndex, 'hover:bg-gray-100 dark:hover:bg-gray-800': index != selectedIndex }">
                                                     <div class="flex justify-center items-center mr-3 rounded-full search-list-icon text-primary-400 shrink-0">
                                                         {{-- SVG Icon Circle --}}
                                                         <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -133,15 +152,15 @@
                                                 </li>
                                             </template>
 
-                                            <div class="px-4 py-1 text-xs font-bold text-gray-700 bg-gray-100 dark:text-gray-200 dark:bg-gray-800 heading-item">
+                                            <div class="px-2 py-1 text-xs font-semibold text-gray-700 dark:text-gray-200 heading-item">
                                                 {{ __('Bookmarks') }}
                                             </div>
 
                                             {{-- Get user option bookmarks --}}
 
                                             @foreach ($this->bookmarks as $key => $bookmark)
-                                                <li class="flex px-4 py-2 cursor-pointer bookmark-item select-item hover:bg-primary-500 hover:text-white"
-                                                    :class="{ 'bg-primary-500 text-white': 5 + {{ $key }} === selectedIndex }">
+                                                <li class="flex px-2 py-2 rounded-md cursor-pointer bookmark-item select-item hover:bg-gray-100 focus:bg-gray-200 dark:hover:bg-gray-800 dark:focus:bg-gray-700"
+                                                    :class="{'bg-primary-500 dark:bg-primary-400/30 text-white': 5 + {{ $key }} === selectedIndex, 'hover:bg-gray-100 dark:hover:bg-gray-800': 5 + {{ $key }} != selectedIndex }">
                                                     <div class="flex justify-center items-center mr-3 rounded-full search-list-icon text-primary-400 shrink-0">
                                                         {{-- SVG Icon Circle --}}
                                                         <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -175,13 +194,13 @@
                                         $i = 0;
                                     @endphp
                                     @forelse($this->searchResults as $key => $group)
-                                        <div class="px-4 py-1 text-xs font-bold text-gray-700 bg-gray-100 heading-item">{{ $key ?? 'Other' }}</div>
+                                        <div class="px-2 py-1 text-xs font-semibold text-gray-700 dark:text-gray-200 heading-item">{{ $key ?? 'Other' }}</div>
 
                                         @foreach ($group as $key => $result)
                                             <li
-                                                class="flex px-4 py-2 cursor-default select-none hover:bg-primary-500 hover:text-white select-item" id="option-1" role="option" tabindex="-1"
+                                                class="flex px-2 py-2 rounded-md cursor-default select-none hover:bg-gray-100 focus:bg-gray-200 dark:hover:bg-gray-800 dark:focus:bg-gray-700 select-item" id="option-1" role="option" tabindex="-1"
                                                 wire:key="search-result-{{ $i }}"
-                                                :class="{ 'bg-primary-500 text-white': {{ $i }} === selectedIndex }">
+                                                :class="{'bg-primary-500 dark:bg-primary-400/30 text-white': {{ $i }} === selectedIndex, 'hover:bg-gray-100 dark:hover:bg-gray-800': {{ $i }} != selectedIndex }">
 
                                                 <div class="flex justify-center items-center mr-3 rounded-full search-list-icon text-primary-400 shrink-0">
                                                     {{-- SVG Icon Circle --}}
@@ -190,14 +209,12 @@
 
                                                 <div class="overflow-hidden flex-1 whitespace-nowrap text-ellipsis">
                                                     <a class="block overflow-hidden text-ellipsis" href="{{ route('aura.resource.view', ['slug' => $result->getType(), 'id' => $result->id]) }}">
-                                                        #{{ $result->id }} {{ $result->title }}
+                                                        #{{ $result->id }} {{ $result->title() }}
                                                     </a>
                                                 </div>
 
                                                 <div>
-                                                    <svg class="ml-auto w-4 h-4 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
-                                                        <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"></path>
-                                                    </svg>
+                                                    <span class="text-sm text-gray-500 dark:text-gray-400">{{ $result->getType()  }}</span>
                                                 </div>
 
                                             </li>
@@ -208,7 +225,7 @@
 
                                     @empty
                                         @if ($search)
-                                            <li class="flex px-4 py-2 text-center text-gray-600 cursor-default select-none">
+                                            <li class="flex px-2 py-2 text-center text-gray-600 cursor-default select-none">
                                                 No results
                                             </li>
                                         @endif
