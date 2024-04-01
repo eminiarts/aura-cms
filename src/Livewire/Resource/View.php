@@ -45,6 +45,8 @@ class View extends Component
         $this->model = Aura::findResourceBySlug($slug)->find($id);
 
         // Authorize
+        // ray($this->model, $slug, auth()->user());
+
         $this->authorize('view', $this->model);
 
         // Array instead of Eloquent Model
