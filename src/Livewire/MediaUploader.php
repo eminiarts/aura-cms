@@ -33,9 +33,8 @@ class MediaUploader extends Component
 
     public function mount()
     {
-        $this->model = app($this->namespace);
-
         // ray('mount media uploader', $this->model, $this->field, $this->selected);
+        $this->model = app($this->namespace);
     }
 
     public function render()
@@ -61,7 +60,7 @@ class MediaUploader extends Component
         foreach ($this->media as $key => $media) {
             $url = $media->store('media', 'public');
 
-            $attachments[] = Attachment::create([
+            $attachments[] = app(config('aura.resources.attachment'))::create([
                 'url' => $url,
                 'name' => $media->getClientOriginalName(),
                 'title' => $media->getClientOriginalName(),
