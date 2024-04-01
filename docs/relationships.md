@@ -82,6 +82,21 @@ public function reviews()
 }
 ```
 
+```php
+// Booking.php
+public function invoices()
+    {
+        return $this->hasManyThrough(
+            Invoice::class,
+            Meta::class,
+            'value', // Foreign key on the post_meta table...
+            'id', // ... for the Posts table
+            'id', // Local key on the Posts table
+            'post_id' // Local key on the post_meta table
+        )->where('post_meta.key', 'booking_id');
+    }
+```
+
 ## Explanation
 
 The relationship is established as follows:
