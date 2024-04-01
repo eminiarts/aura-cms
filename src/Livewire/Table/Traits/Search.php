@@ -26,13 +26,11 @@ trait Search
 
             $searchableFields = $this->model->getSearchableFields()->pluck('slug');
 
-            //  ray('searchableFields', $searchableFields, $this->model);
+            // ray('searchableFields', $searchableFields, $this->model);
 
             $metaFields = $searchableFields->filter(function ($field) {
                 return $this->model->isMetaField($field);
             });
-
-            // ray('metaFields', $metaFields);
 
             if ($metaFields->count() > 0) {
                 $query
@@ -56,7 +54,7 @@ trait Search
             }
 
             if ($searchableFields->count() > 0) {
-                $query->orWhere(function ($query) use ($searchableFields, $metaFields) {
+                $query->where(function ($query) use ($searchableFields, $metaFields) {
                     foreach ($searchableFields as $field) {
 
                         // if $field is in $metaFields, continue
@@ -64,14 +62,7 @@ trait Search
                             continue;
                         }
 
-                        if ($field === 'id') {
-                            $query->orWhere($this->model->getTable().'.'.$field, $this->search);
-                        } else {
-                            $query->orWhere($this->model->getTable().'.'.$field, 'like', $this->search.'%');
-                        }
-
-                        // ray($field, $this->search)->red();
-                        // $query->orWhere($this->model->getTable().'.'.$field, 'like', $this->search.'%');
+                        $query->orWhere($this->model->getTable().'.'.$field, 'like', $this->search.'%');
                     }
                 });
             }
