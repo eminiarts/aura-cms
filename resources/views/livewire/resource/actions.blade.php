@@ -1,3 +1,4 @@
+@can('edit', $this->model)
 @if(count($this->actions))
 <x-aura::dropdown width="w-72">
         <x-slot name="trigger">
@@ -106,3 +107,4 @@
         </x-slot>
     </x-aura::dropdown>
 @endif
+@endcan
