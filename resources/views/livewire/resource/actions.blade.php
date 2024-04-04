@@ -1,4 +1,4 @@
-@can('edit', $this->model)
+@can('update', $this->model)
 @if(count($this->actions))
     @if($this->model::$showActionsAsButtons)
         {{-- Render actions as buttons --}}
