@@ -23,15 +23,15 @@
         @endcan
 
 
-        <!-- Team Switcher -->
-        <div class="block px-4 py-2 text-xs text-gray-400 dark:text-gray-400">
-            {{ __('Switch Teams') }}
-        </div>
-
-
-        @foreach (Auth::user()->getTeams() as $team)
-            <x-aura::switchable-team :team="$team" />
-        @endforeach
+        @if(Auth::user()->getTeams()->count() > 1)
+            <!-- Team Switcher -->
+            <div class="block px-4 py-2 text-xs text-gray-400 dark:text-gray-400">
+                {{ __('Switch Teams') }}
+            </div>
+            @foreach (Auth::user()->getTeams() as $team)
+                <x-aura::switchable-team :team="$team" />
+            @endforeach
+        @endif
     @endif
 
   @if(config('aura.features.user_profile'))
