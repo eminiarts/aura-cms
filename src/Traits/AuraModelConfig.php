@@ -13,6 +13,8 @@ trait AuraModelConfig
 
     public array $bulkActions = [];
 
+    public static $showActionsAsButtons = false;
+
     public static $contextMenu = true;
 
     public static $createEnabled = true;
