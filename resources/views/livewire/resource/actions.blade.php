@@ -1,3 +1,4 @@
+@can('edit', $this->model)
 @if(count($this->actions))
     @if($this->model::$showActionsAsButtons)
         {{-- Render actions as buttons --}}
@@ -136,3 +137,4 @@
         </x-aura::dropdown>
     @endif
 @endif
+@endcan

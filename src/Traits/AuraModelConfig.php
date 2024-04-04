@@ -330,11 +330,10 @@ trait AuraModelConfig
 
     public function isMetaField($key)
     {
-        // If field is a taxonomy, it is not a meta field
-        if ($this->isTaxonomyField($key)) {
+        if ($key === 'id') {
             return false;
         }
-
+        
         // If the key is in Base fillable, it is not a meta field
         if (in_array($key, $this->getBaseFillable())) {
             return false;
