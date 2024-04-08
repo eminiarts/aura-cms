@@ -249,7 +249,19 @@ class Aura
     public function getOption($name)
     {
         if (config('aura.teams') && optional(optional(auth()->user())->resource)->currentTeam) {
-            return auth()->user()->resource->currentTeam->getOption($name);
+            $option = auth()->user()->resource->currentTeam->getOption($name);
+
+            if ($option) {
+                if (is_string($option)) {
+                    $settings = json_decode($option, true);
+                } else {
+                    $settings = $option;
+                }
+            } else {
+                $settings = [];
+            }
+
+            return $settings;
         }
 
         return Cache::remember('aura.'.$name, now()->addHour(), function () use ($name) {
