@@ -50,6 +50,8 @@ class MediaManager extends ModalComponent
             'value' => $this->selected,
         ]);
 
+        $this->dispatch('media-manager-selected');
+
         // If selected is deffered, emit event to table to update selected, then emit back to updateField
 
         // Close Modal
