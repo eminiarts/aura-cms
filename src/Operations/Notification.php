@@ -18,7 +18,7 @@ class Notification extends BaseOperation
                 'type' => 'Aura\\Base\\Fields\\Select',
                 'instructions' => 'Select the type of notification',
                 'validation' => '',
-                'defer' => false,
+                'live' => true,
                 'slug' => 'type',
                 'options' => [
                     'user' => 'User',

@@ -140,3 +140,67 @@ You can customize the top bar by adding a `tableTopBarView()` method to your res
         return 'admin.resource.top-bar';
     }
 ```
+
+
+## Customize Table Settings on Resource
+
+```php
+// In your Resource
+ public function indexTableSettings()
+    {
+        return [
+            'default_view' => 'grid',
+            'views' => [
+                'grid' => 'custom.table.grid',
+            ]
+        ];
+    }
+```
+
+All available Settings:
+
+```php
+public function indexTableSettings()
+    {
+        return [
+            'per_page' => 10,
+            'columns' => $this->getTableHeaders(),
+            'filters' => [],
+            'search' => '',
+            'sort' => [
+                'column' => 'id',
+                'direction' => 'desc',
+            ],
+            'settings' => true,
+            'sort_columns' => true,
+            'columns_global_key' => false,
+            'columns_user_key' => 'columns.'.$this->getType(),
+            'search' => true,
+            'filters' => true,
+            'global_filters' => true,
+            'title' => true,
+            'selectable' => true,
+            'default_view' => $this->defaultTableView(),
+            // 'current_view' => $this->defaultTableView(),
+            'header_before' => true,
+            'header_after' => true,
+            'table_before' => true,
+            'table_after' => true,
+            'create' => true,
+            'actions' => true,
+            'bulk_actions' => true,
+            'header' => true,
+            'views' => [
+                'table' => 'aura::components.table.index',
+                'list' => $this->tableView(),
+                'grid' => $this->tableGridView(),
+                'filter' => 'aura::components.table.filter',
+                'header' => 'aura::components.table.header',
+                'row' => $this->rowView(),
+                'bulkActions' => 'aura::components.table.bulkActions',
+                'table_header' => 'aura::components.table.table_header',
+                'table_footer' => 'aura::components.table.footer',
+            ],
+        ];
+    }
+```

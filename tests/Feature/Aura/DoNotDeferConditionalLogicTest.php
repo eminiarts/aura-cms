@@ -58,7 +58,7 @@ class DoNotDeferConditionalLogicTestModel extends Resource
                 'on_index' => true,
                 'on_forms' => true,
                 'on_view' => true,
-                // 'defer' => false,
+                // 'live' => true,
                 'searchable' => false,
                 'options' => [
                     [
