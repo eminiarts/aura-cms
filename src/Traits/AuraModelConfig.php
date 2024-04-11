@@ -13,8 +13,6 @@ trait AuraModelConfig
 
     public array $bulkActions = [];
 
-    public static $showActionsAsButtons = false;
-
     public static $contextMenu = true;
 
     public static $createEnabled = true;
@@ -30,6 +28,8 @@ trait AuraModelConfig
     public array $metaFields = [];
 
     public static $pluralName = null;
+
+    public static $showActionsAsButtons = false;
 
     public static $singularName = null;
 
@@ -282,7 +282,6 @@ trait AuraModelConfig
         return static::$pluralName ?? str(static::$type)->plural();
     }
 
-
     public static function getShowInNavigation(): bool
     {
         return static::$showInNavigation;
@@ -333,7 +332,7 @@ trait AuraModelConfig
         if ($key === 'id') {
             return false;
         }
-        
+
         // If the key is in Base fillable, it is not a meta field
         if (in_array($key, $this->getBaseFillable())) {
             return false;

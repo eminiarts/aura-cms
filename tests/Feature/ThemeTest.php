@@ -13,7 +13,7 @@ use Livewire\Livewire;
 
 uses(RefreshDatabase::class);
 
-beforeEach(fn () => $this->actingAs($this->user = createSuperAdmin() ));
+beforeEach(fn () => $this->actingAs($this->user = createSuperAdmin()));
 
 test('Team Settings Component can be rendered', function () {
     $role = Role::create(['type' => 'Role', 'title' => 'Super Admin', 'slug' => 'super_admin', 'description' => 'Super Admin has can perform everything.', 'super_admin' => true, 'permissions' => []]);
@@ -143,7 +143,6 @@ test('Team Settings can be saved', function () {
         ->assertDontSee('--primary-400: 248 113 113;')
         ->assertDontSee('--primary-400: 82 139 255;');
 });
-
 
 test('different options apply correct classes', function ($settings) {
     $darkmodeType = $settings['darkmode-type'];
