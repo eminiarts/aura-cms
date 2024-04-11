@@ -9,7 +9,6 @@ use Aura\Base\Traits\InteractsWithFields;
 use Aura\Base\Traits\MediaFields;
 use Aura\Base\Traits\RepeaterFields;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
-use Illuminate\Support\Arr;
 use Illuminate\Support\Traits\Macroable;
 use Livewire\Component;
 use Livewire\WithFileUploads;
@@ -46,42 +45,6 @@ class Edit extends Component
         'saveBeforeAction',
     ];
 
-    public function callMethod($method, $params = [], $captureReturnValueCallback = null)
-    {
-        // If the method exists in this component, call it directly.
-        if (method_exists($this, $method) || ! optional($params)[0]) {
-            return parent::callMethod($method, $params, $captureReturnValueCallback);
-        }
-
-        // Assuming the first parameter is always the slug to identify the field.
-        $slug = $params[0];
-
-        // Get the corresponding field instance based on the slug.
-        $field = $this->model->fieldBySlug($slug);
-
-        // Forward the call to the field's method.
-        if ($field) {
-
-            $fieldTypeInstance = app($field['type']);
-
-            // If the method exists in the field type, call it directly.
-            if (method_exists($fieldTypeInstance, $method)) {
-                $post = call_user_func_array([$fieldTypeInstance, $method], array_merge([$this->model, $this->form], $params));
-
-                // If the field type method returns a post, update the post.
-                if ($post) {
-                    $this->form = $post;
-                }
-
-                // Make sure to return here, otherwise the parent callMethod will be called.
-                return;
-            }
-        }
-
-        // Run parent callMethod
-        return parent::callMethod($method, $params, $captureReturnValueCallback);
-    }
-
     public function initializeModelFields()
     {
         foreach ($this->model->inputFields() as $field) {
@@ -90,11 +53,11 @@ class Edit extends Component
                 $this->form['fields'][$field['slug']] = $field['field']->hydrate();
             }
 
-            if($field['field']->on_forms === false) {
+            if ($field['field']->on_forms === false) {
                 unset($this->form['fields'][$field['slug']]);
             }
 
-            if(optional($field)['on_forms'] === false) {
+            if (optional($field)['on_forms'] === false) {
                 unset($this->form['fields'][$field['slug']]);
             }
         }
@@ -111,7 +74,6 @@ class Edit extends Component
 
         // Array instead of Eloquent Model
         $this->form = $this->model->attributesToArray();
-        
 
         // dd($this->model->attributesToArray());
 
@@ -190,5 +152,26 @@ class Edit extends Component
     public function updatedPost($value, $array)
     {
         // dd('updatedPostFields', $value, $array, $this->form);
+    }
+
+    protected function callComponentMethod($method, $params)
+    {
+        $callbacks = array_filter(
+            $params,
+            fn ($param) => $param instanceof Closure
+        );
+
+        $params = array_filter(
+            $params,
+            fn ($param) => ! $param instanceof Closure
+        );
+
+        $result = parent::callMethod($method, $params);
+
+        foreach ($callbacks as $callback) {
+            $callback($this);
+        }
+
+        return $result;
     }
 }

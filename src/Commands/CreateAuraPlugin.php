@@ -5,8 +5,9 @@ namespace Aura\Base\Commands;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Process;
-use function Laravel\Prompts\text;
+
 use function Laravel\Prompts\select;
+use function Laravel\Prompts\text;
 
 class CreateAuraPlugin extends Command
 {
@@ -21,8 +22,8 @@ class CreateAuraPlugin extends Command
 
     public function handle()
     {
-        
-        if($this->argument('name')) {
+
+        if ($this->argument('name')) {
 
             $vendorAndName = $this->argument('name');
 
@@ -43,12 +44,11 @@ class CreateAuraPlugin extends Command
                 'plugin' => 'Complete plugin',
                 'plugin-resource' => 'Resource plugin',
                 'plugin-field' => 'Field plugin',
-                'plugin-widget' => 'Widget plugin'
+                'plugin-widget' => 'Widget plugin',
             ],
             default: 'plugin',
         );
 
-    
         $pluginDirectory = base_path("plugins/{$vendor}/{$name}");
         File::makeDirectory($pluginDirectory, 0755, true);
 

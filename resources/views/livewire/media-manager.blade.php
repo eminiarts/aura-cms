@@ -2,16 +2,23 @@
 
     selected: @entangle('selected').live,
 
+    saveModel() {
+        // Save Model when Media Manager is closed
+        $wire.$dispatch('saveModel') 
+    },
+
     changeSelected(event) {
         {{-- if (this.selected == event.detail.selected) {
             return;
         } --}}
-        // console.log('changeSelected', this.selected, event.detail.selected);
-        console.log('selectionChanged -> changeSelcted');
+
         this.selected = event.detail.selected
+
+        {{-- console.log($wire); --}}
+         {{-- $wire.$dispatch('saveModel') --}}
     },
 
-}" @selection-changed="changeSelected($event)">
+}" @selection-changed="changeSelected($event)" @media-manager-selected="saveModel()">
 
     <div class="">
         {{-- @dump('mediamanager', $this->selected, $field) --}}

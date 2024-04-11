@@ -13,8 +13,6 @@ trait AuraModelConfig
 
     public array $bulkActions = [];
 
-    public static $showActionsAsButtons = false;
-
     public static $contextMenu = true;
 
     public static $createEnabled = true;
@@ -30,6 +28,8 @@ trait AuraModelConfig
     public array $metaFields = [];
 
     public static $pluralName = null;
+
+    public static $showActionsAsButtons = false;
 
     public static $singularName = null;
 
@@ -286,7 +286,6 @@ trait AuraModelConfig
 
         return static::$pluralName ?? str(static::$type)->plural();
     }
-
 
     public static function getShowInNavigation(): bool
     {

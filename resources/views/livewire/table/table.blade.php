@@ -22,7 +22,6 @@
 
         init() {
             Livewire.on('selectedRows', (updatedSelected) => {
-                console.log('table uS 1', updatedSelected);
                 this.selected = updatedSelected[0];
             });
 
@@ -32,10 +31,9 @@
 
             @if($field)
             {{-- Need to refactor this maybe because it's field specific --}}
-            console.log('here');
             this.$watch('selected', value => {
                 // Emit an event with the new value
-                console.log('dispatch selection-changed', this.selected, value);
+                {{-- console.log('dispatch selection-changed', this.selected, value); --}}
                 this.$dispatch('selection-changed', { selected: value, slug: '{{ $field['slug'] }}' });
             });
             @endif

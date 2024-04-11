@@ -12,33 +12,73 @@ trait QueryFilters
      *
      * @return \Illuminate\Database\Eloquent\Builder
      */
-    protected function applyCustomFilter(Builder $query)
+    /**
+     * Apply custom filter to the query.
+     *
+     * @param Builder $query
+     * @return Builder
+     */
+    
+
+    /**
+     * Apply custom filter to the query.
+     *
+     * @param Builder $query
+     * @return Builder
+     */
+    protected function applyCustomFilter(Builder $query): Builder
     {
-        if (! $this->filters['custom']) {
+        if (empty($this->filters['custom'])) {
             return $query;
         }
 
-        foreach ($this->filters['custom'] as $filter) {
-            if (! $filter['name'] || ! $filter['value'] && $filter['operator'] != 'is_empty') {
-                continue;
-            }
+        $mainOperator = $this->filters['operator'] ?? 'and';
 
-            if ($this->model->usesCustomTable()) {
-                $query = $this->applyTableFieldFilter($query, $filter);
-            } elseif ($this->model->isTableField($filter['name'])) {
-                $query = $this->applyTableFieldFilter($query, $filter);
-            } else {
-                $query = $this->applyMetaFieldFilter($query, $filter);
-            }
-        }
+        // Apply a single wrapper for 'AND' or 'OR' depending on the mainOperator setting
+        $query->where(function ($query) use ($mainOperator) {
+            foreach ($this->filters['custom'] as $filter) {
+                if (empty($filter['name']) || (empty($filter['value']) && $filter['operator'] !== 'is_empty')) {
+                    continue;
+                }
 
-        // More advanced Search
-        if ($this->search) {
-            //   $query->where($this->model->getTable() . '.title', 'LIKE', $this->search.'%');
-        }
+                // Check if the field and operator necessitate a separate closure
+                if ($mainOperator === 'or') {
+                    $query->orWhere(function ($subQuery) use ($filter) {
+                        $this->applyFilterBasedOnType($subQuery, $filter);
+                    });
+                } else {
+                    $this->applyFilterBasedOnType($query, $filter);
+                }
+            }
+        });
+
+        // ray($this->filters);
+        // ray($query->toSql());
+        // ray($query->getBindings());
+        // ray($query);
 
         return $query;
     }
+
+    /**
+     * Apply filter based on whether the field belongs to custom table fields or meta fields.
+     *
+     * @param Builder $query
+     * @param array $filter
+     * @return void
+     */
+    protected function applyFilterBasedOnType(Builder $query, array $filter): void
+    {
+        if ($this->model->usesCustomTable() || $this->model->isTableField($filter['name'])) {
+            $this->applyTableFieldFilter($query, $filter);
+        } else {
+            $this->applyMetaFieldFilter($query, $filter);
+        }
+    }
+
+    
+
+
 
     protected function applyIsEmptyMetaFilter(Builder $query, array $filter): void
     {

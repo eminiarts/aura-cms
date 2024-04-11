@@ -2,7 +2,6 @@
 
 use Aura\Base\Resources\Role;
 use Aura\Base\Resources\Team;
-use Aura\Base\Resources\User;
 
 beforeEach(function () {
     $this->actingAs($this->user = createSuperAdmin());
@@ -40,7 +39,6 @@ test('Team uses SoftDeletes', function () {
     // Assert the team is still in the database and accessible through a withTrashed query
     expect(Team::withTrashed()->find($teamId))->not->toBeNull();
 });
-
 
 test('Team create also creates a super_admin Role', function () {
     $team = new Team();

@@ -193,8 +193,6 @@ class User extends UserModel
                 'on_view' => false,
             ],
 
-
-
             // [
             //     'type' => 'Aura\\Base\\Fields\\Tab',
             //     'name' => 'Posts',

@@ -2,22 +2,15 @@
 
 namespace Tests\Feature\Livewire;
 
-use Mockery;
-use Livewire\Livewire;
-use Aura\Base\Resource;
 use Aura\Base\Facades\Aura;
+use Aura\Base\Fields\AdvancedSelect;
+use Aura\Base\Livewire\Resource\Create;
+use Aura\Base\Livewire\Resource\Edit;
+use Aura\Base\Resource;
 use Aura\Base\Resources\Post;
 use Aura\Base\Resources\Role;
-use Illuminate\Support\Facades\App;
-use Aura\Base\Fields\AdvancedSelect;
-
-use Aura\Base\Livewire\Resource\Edit;
-
-use Aura\Base\Livewire\Resource\Create;
-
-use Illuminate\Support\Facades\Request;
-
-use Aura\Base\Http\Controllers\Api\FieldsController;
+use Livewire\Livewire;
+use Mockery;
 
 use function Pest\Laravel\postJson;
 
@@ -131,7 +124,6 @@ test('advancedselect field gets displayed correctly on edit view', function () {
     expect($post->advancedselect)->toContain($id);
 });
 
-
 test('Advanced Select - Fields', function () {
     $slug = new AdvancedSelect();
 
@@ -147,7 +139,6 @@ test('Advanced Select - Check values function exists', function () {
     expect(method_exists($advancedSelect, 'values'))->toBeTrue();
 });
 
-
 // Test for Missing `model` or `slug` Parameters
 it('returns an error if model or slug is missing', function () {
     $response = postJson(route('aura.api.fields.values'), [
@@ -155,11 +146,10 @@ it('returns an error if model or slug is missing', function () {
     ]);
 
     $response->assertStatus(400)
-             ->assertJson([
-                 'error' => 'Missing model or slug',
-             ]);
+        ->assertJson([
+            'error' => 'Missing model or slug',
+        ]);
 });
-
 
 it('returns field values for a valid request', function () {
 
@@ -172,11 +162,10 @@ it('returns field values for a valid request', function () {
     $role = Role::first();
 
     $response->assertStatus(200)
-             ->assertJson([
-                 ['id' => $role->id, 'title' => $role->title()],
-             ]);
+        ->assertJson([
+            ['id' => $role->id, 'title' => $role->title()],
+        ]);
 });
-
 
 test('Advanced Select Field - entangle', function () {
     $field = [
@@ -243,16 +232,15 @@ test('Advanced Select Field - create button false', function () {
     expect((string) $view)->not->toContain('wire:click="$dispatch(\'openModal\', { component:');
 });
 
-
 test('searchable fields API Mock', function () {
 
     $role = Mockery::mock(Role::class);
 
     $response = postJson(route('aura.api.fields.values'), [
-            'model' => Role::class, // Replace with actual model class string
-            'slug' => 'text',
-            'field' => AdvancedSelect::class, // This must match your actual field class name or identifier
-        ]);
+        'model' => Role::class, // Replace with actual model class string
+        'slug' => 'text',
+        'field' => AdvancedSelect::class, // This must match your actual field class name or identifier
+    ]);
 
     $response->assertStatus(200);
 
@@ -270,11 +258,11 @@ test('searchable fields API Mock', function () {
     expect($result)->toHavecount(1);
 
     $request = new \Illuminate\Http\Request([
-            'model' => Role::class,
-            'slug' => 'select',
-            'search' => 'notexists',
-            'field' => AdvancedSelect::class,
-        ]);
+        'model' => Role::class,
+        'slug' => 'select',
+        'search' => 'notexists',
+        'field' => AdvancedSelect::class,
+    ]);
 
     $result = $field->api($request);
 
