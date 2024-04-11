@@ -12,39 +12,40 @@ trait QueryFilters
      *
      * @return \Illuminate\Database\Eloquent\Builder
      */
-    protected function applyCustomFilter(Builder $query)
+    protected function applyCustomFilter(Builder $query): Builder
     {
-        if (! $this->filters['custom']) {
+        if (empty($this->filters['custom'])) {
             return $query;
         }
 
+        ray($this->filters);
+
         $operator = $this->filters['operator'] ?? 'and';
+        $groupingMethod = $operator === 'or' ? 'orWhere' : 'where';
 
-        $query->where(function ($query) use ($operator) {
-            foreach ($this->filters['custom'] as $filter) {
-                if (! $filter['name'] || ! $filter['value'] && $filter['operator'] != 'is_empty') {
-                    continue;
-                }
+        $query->where(function ($query) use ($groupingMethod) {
+            $query->$groupingMethod(function ($query) {
+                foreach ($this->filters['custom'] as $filter) {
+                    if (empty($filter['name']) || empty($filter['value']) && $filter['operator'] !== 'is_empty') {
+                        continue;
+                    }
 
-                if ($this->model->usesCustomTable()) {
-                    $this->applyTableFieldFilter($query, $filter, $operator);
-                } elseif ($this->model->isTableField($filter['name'])) {
-                    $this->applyTableFieldFilter($query, $filter, $operator);
-                } else {
-                    $this->applyMetaFieldFilter($query, $filter, $operator);
+                    if ($this->model->usesCustomTable() || $this->model->isTableField($filter['name'])) {
+                        $this->applyTableFieldFilter($query, $filter);
+                    } else {
+                        $this->applyMetaFieldFilter($query, $filter);
+                    }
                 }
-            }
+            });
         });
 
-        // More advanced Search
-        if ($this->search) {
-            //   $query->where($this->model->getTable() . '.title', 'LIKE', $this->search.'%');
-        }
-
+        ray($query);
+        ray($query->toSql());
         return $query;
     }
 
-    protected function applyIsEmptyMetaFilter(Builder $query, array $filter, string $operator): void
+
+    protected function applyIsEmptyMetaFilter(Builder $query, array $filter): void
     {
         $query->where(function ($query) use ($filter) {
             $query->whereDoesntHave('meta', function (Builder $query) use ($filter) {
@@ -57,17 +58,21 @@ trait QueryFilters
                     // what about null values?
                     // null, ""
                 });
-        }, null, null, $operator);
+        });
     }
 
     /**
      * Apply filters to the meta fields query
      */
-    protected function applyMetaFieldFilter(Builder $query, array $filter, string $operator): void
+    protected function applyMetaFieldFilter(Builder $query, array $filter): Builder
     {
         if ($filter['operator'] == 'is_empty') {
-            $this->applyIsEmptyMetaFilter($query, $filter, $operator);
-            return;
+            $this->applyIsEmptyMetaFilter($query, $filter);
+
+            // where
+            // where not exists
+            // or where key = name AND value = null
+            return $query;
         }
 
         $query->whereHas('meta', function (Builder $query) use ($filter) {
@@ -99,46 +104,50 @@ trait QueryFilters
                     $query->where('value', '<', $filter['value']);
                     break;
             }
-        }, null, null, $operator);
+        });
+
+        return $query;
     }
 
     /**
      * Apply filter for table fields
+     *
+     * @return Builder
      */
-    protected function applyTableFieldFilter(Builder $query, array $filter, string $operator): void
+    protected function applyTableFieldFilter(Builder $query, array $filter)
     {
         switch ($filter['operator']) {
             case 'contains':
-                $query->where($filter['name'], 'like', '%'.$filter['value'].'%', $operator);
+                $query->where($filter['name'], 'like', '%'.$filter['value'].'%');
                 break;
             case 'does_not_contain':
-                $query->where($filter['name'], 'not like', '%'.$filter['value'].'%', $operator);
+                $query->where($filter['name'], 'not like', '%'.$filter['value'].'%');
                 break;
             case 'starts_with':
-                $query->where($filter['name'], 'like', $filter['value'].'%', $operator);
+                $query->where($filter['name'], 'like', $filter['value'].'%');
                 break;
             case 'ends_with':
-                $query->where($filter['name'], 'like', '%'.$filter['value'], $operator);
+                $query->where($filter['name'], 'like', '%'.$filter['value']);
                 break;
             case 'is':
-                $query->where($filter['name'], '=', $filter['value'], $operator);
+                $query->where($filter['name'], '=', $filter['value']);
                 break;
             case 'is_not':
-                $query->where($filter['name'], '!=', $filter['value'], $operator);
+                $query->where($filter['name'], '!=', $filter['value']);
                 break;
             case 'greater_than':
-                $query->where($filter['name'], '>', $filter['value'], $operator);
+                $query->where($filter['name'], '>', $filter['value']);
                 break;
             case 'less_than':
-                $query->where($filter['name'], '<', $filter['value'], $operator);
+                $query->where($filter['name'], '<', $filter['value']);
                 break;
             case 'is_empty':
-                $query->whereNull($filter['name'], $operator);
-                break;
+                return $query->whereNull($filter['name']);
             case 'is_not_empty':
-                $query->whereNotNull($filter['name'], $operator);
-                break;
+                return $query->whereNotNull($filter['name']);
         }
+
+        return $query;
     }
 
     /**
