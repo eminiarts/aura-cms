@@ -455,10 +455,11 @@ class TeamSettings extends Component
         ];
 
         $this->model = Option::firstOrCreate([
-            'name' => 'team' . auth()->user()->current_team_id .'team-settings',
+            'name' => 'team.' . auth()->user()->current_team_id .'.team-settings',
         ], [
             'value' => $valueString,
         ]);
+
 
         if (is_string($this->model->value)) {
             $this->form['fields'] = json_decode($this->model->value, true);
@@ -488,17 +489,10 @@ class TeamSettings extends Component
 
     public function save()
     {
-
         app('aura')::updateOption('team-settings', $this->form['fields']);
 
-        if (config('aura.teams')) {
-            Cache::forget(auth()->user()->current_team_id.'.aura.team-settings');
-            Cache::forget('team-settings');
-        } else {
-            Cache::forget('aura.team-settings');
-        }
+        Cache::clear();
 
         return $this->notify(__('Successfully updated'));
-
     }
 }
