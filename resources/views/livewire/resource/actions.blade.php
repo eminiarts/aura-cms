@@ -1,4 +1,6 @@
-@can('edit', $this->model)
+
+{{-- @dd($this->actions) --}}
+@if($this->model->allowedToPerformActions() || auth()->user()->can('update', $this->model))
 @if(count($this->actions))
     @if($this->model::$showActionsAsButtons)
         {{-- Render actions as buttons --}}
@@ -137,4 +139,4 @@
         </x-aura::dropdown>
     @endif
 @endif
-@endcan
+@endif

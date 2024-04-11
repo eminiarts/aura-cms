@@ -176,6 +176,11 @@ trait AuraModelConfig
         }
     }
 
+    public function allowedToPerformActions()
+    {
+        return false;
+    }
+
     public function editView()
     {
         return 'aura::livewire.resource.edit';
@@ -333,7 +338,7 @@ trait AuraModelConfig
         if ($key === 'id') {
             return false;
         }
-        
+
         // If the key is in Base fillable, it is not a meta field
         if (in_array($key, $this->getBaseFillable())) {
             return false;
