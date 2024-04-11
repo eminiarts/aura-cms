@@ -73,6 +73,8 @@ class Table extends Component
         'global' => false,
     ];
 
+    public $form;
+
     /**
      * The last clicked row.
      *
@@ -94,8 +96,6 @@ class Table extends Component
     public $query;
 
     public $resource;
-
-    public $form;
 
     public $rowIds;
 
@@ -418,7 +418,8 @@ class Table extends Component
         }
     }
 
-    protected function query() {
+    protected function query()
+    {
         $query = $this->model()->query()
             ->orderBy($this->model()->getTable().'.id', 'desc');
 

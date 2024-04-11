@@ -249,7 +249,22 @@ class Aura
     public function getOption($name)
     {
         if (config('aura.teams') && optional(optional(auth()->user())->resource)->currentTeam) {
-            return auth()->user()->resource->currentTeam->getOption($name);
+            return Cache::remember(auth()->user()->current_team_id.'aura.'.$name, now()->addHour(), function () use ($name) {
+                $option = auth()->user()->resource->currentTeam->getOption($name);
+
+                if ($option) {
+                    if (is_string($option)) {
+                        $settings = json_decode($option, true);
+                    } else {
+                        $settings = $option;
+                    }
+                } else {
+                    $settings = [];
+                }
+
+                return $settings;
+
+            });
         }
 
         return Cache::remember('aura.'.$name, now()->addHour(), function () use ($name) {
@@ -280,8 +295,8 @@ class Aura
 
     public function getResources(): array
     {
-        return array_unique(array_filter($this->resources, function($resource) {
-            return !is_null($resource);
+        return array_unique(array_filter($this->resources, function ($resource) {
+            return ! is_null($resource);
         }));
     }
 
@@ -399,6 +414,11 @@ class Aura
         $this->widgets = array_merge($this->widgets, $widgets);
     }
 
+    public function scripts()
+    {
+        return view('aura::components.layout.scripts');
+    }
+
     public function setOption($key, $value)
     {
         $option = $this->getGlobalOptions();
@@ -415,6 +435,11 @@ class Aura
         $option->save();
 
         Cache::forget('aura-settings');
+    }
+
+    public function styles()
+    {
+        return view('aura::components.layout.styles');
     }
 
     public static function templates()
@@ -439,7 +464,6 @@ class Aura
         } else {
             Option::withoutGlobalScopes([TeamScope::class])->updateOrCreate(['name' => $key, 'team_id' => 0], ['value' => $value]);
         }
-
     }
 
     /**
@@ -475,13 +499,5 @@ class Aura
         } else {
             echo $export;
         }
-    }
-
-    public function styles() {
-        return view('aura::components.layout.styles');
-    }
-
-    public function scripts() {
-        return view('aura::components.layout.scripts');
     }
 }

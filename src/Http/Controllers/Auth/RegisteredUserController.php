@@ -38,7 +38,6 @@ class RegisteredUserController extends Controller
      */
     public function store(Request $request)
     {
-        ray('test?');
         abort_if(! config('aura.features.register'), 404);
 
         if (config('aura.teams')) {
@@ -71,7 +70,7 @@ class RegisteredUserController extends Controller
 
             $user->update(['fields' => ['roles' => [$role->id]]]);
         } else {
-            ray('no teams');
+            // ray('no teams');
             // no aura.teams
             $request->validate([
                 'name' => ['required', 'string', 'max:255'],
@@ -85,7 +84,7 @@ class RegisteredUserController extends Controller
                 'password' => Hash::make($request->password),
             ]);
 
-            ray('user created', $user);
+            // ray('user created', $user);
 
             $role = Role::where('slug', 'user')->firstOrFail();
 
@@ -95,7 +94,7 @@ class RegisteredUserController extends Controller
         event(new Registered($user));
 
         Auth::login($user);
-        ray('user logged in');
+        // ray('user logged in');
 
         return redirect(RouteServiceProvider::HOME);
     }

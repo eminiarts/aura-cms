@@ -155,19 +155,16 @@ class Team extends Resource
 
     public function getOption($option)
     {
-        // $option = 'team.'.$this->id.'.'.$option;
-
-        // dd($option);
+        $option = 'team.'.$this->id.'.'.$option;
 
         // If there is a * at the end of the option name, it means that it is a wildcard
         // and we need to get all options that match the wildcard
         if (substr($option, -1) == '*') {
+
             $o = substr($option, 0, -1);
 
             // Cache
-            $options = Cache::remember($option, now()->addHour(), function () use ($o) {
-                return Option::where('name', 'like', $o.'%')->orderBy('id')->get();
-            });
+            $options = Option::where('name', 'like', $o.'%')->orderBy('id')->get();
 
             // Map the options, set the key to the option name (everything after last dot ".") and the value to the option value
             return $options->mapWithKeys(function ($item, $key) {
@@ -175,10 +172,7 @@ class Team extends Resource
             });
         }
 
-        // Cache
-        $model = Cache::remember($option, now()->addHour(), function () use ($option) {
-            return Option::whereName($option)->first();
-        });
+        $model = Option::whereName($option)->first();
 
         if ($model) {
             return $model->value;

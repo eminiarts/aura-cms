@@ -55,7 +55,6 @@ test('User hasPermission()', function () {
     expect($this->user->hasPermission('test'))->toBeTrue();
 });
 
-
 test('User hasPermissionTo()', function () {
     expect($this->user->hasPermissionTo('test', Role::first()))->toBeTrue();
 });

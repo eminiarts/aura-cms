@@ -1,11 +1,10 @@
 <?php
 
-use Livewire\Livewire;
-use Aura\Base\Resource;
+use Aura\Base\Livewire\Table\Table;
 use Aura\Base\Resources\Post;
 use Aura\Base\Resources\User;
-use Aura\Base\Livewire\Table\Table;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Livewire\Livewire;
 
 uses(RefreshDatabase::class);
 
@@ -30,18 +29,17 @@ test('search user by email', function () {
     $component = Livewire::test(Table::class, ['model' => $this->post])
         ->assertSet('search', null);
 
-        ray($component);
-        // dd($component);
+    ray($component);
+    // dd($component);
 
-        $component
+    $component
         ->assertSeeHtml('Test User')
         ->assertSee('Test User 2')
         ->assertSee('test@example.com')
         ->assertSee('user2@example.com')
         ->set('search', 'user2')
         ->assertSee('user2@example.com')
-        ->assertDontSee('test@example.com')
-        ;
+        ->assertDontSee('test@example.com');
 
     // $component->sorts should be []
     $this->assertEmpty($component->sorts);

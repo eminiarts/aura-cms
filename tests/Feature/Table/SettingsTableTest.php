@@ -629,8 +629,6 @@ test('sort_columns settings', function () {
     $component->assertDontSeeHtml('<div class="cursor-move drag-handle move-table-row">');
 });
 
-
-
 test('grid view table', function () {
 
     $settings = ['default_view' => 'list'];

@@ -2,12 +2,10 @@
 
 namespace Tests\Feature\Livewire;
 
-use Aura\Base\Facades\Aura;
 use Aura\Base\Fields\Radio;
 use Aura\Base\Livewire\Resource\Create;
 use Aura\Base\Resource;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Livewire\Livewire;
 
 // Refresh Database on every test
 uses(RefreshDatabase::class);
@@ -78,7 +76,6 @@ test('Radio Field - Name rendered', function () {
         ],
     ];
 
-
     $fieldClass = app($field['type']);
     $field['field'] = $fieldClass;
 
@@ -89,7 +86,6 @@ test('Radio Field - Name rendered', function () {
 
     expect((string) $view)->toContain('>Radio for Test</label>');
 });
-
 
 test('Radio Field - Options rendered', function () {
     $field = [
@@ -110,7 +106,6 @@ test('Radio Field - Options rendered', function () {
             ],
         ],
     ];
-
 
     $fieldClass = app($field['type']);
     $field['field'] = $fieldClass;

@@ -14,7 +14,7 @@ class DeleteResource extends BaseOperation
                 'type' => 'Aura\\Base\\Fields\\Select',
                 'instructions' => 'Select the type of delete',
                 'validation' => '',
-                'defer' => false,
+                'live' => true,
                 'slug' => 'type',
                 'options' => [
                     'input' => 'Input',

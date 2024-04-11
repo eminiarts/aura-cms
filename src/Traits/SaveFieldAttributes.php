@@ -33,7 +33,7 @@ trait SaveFieldAttributes
                     if ($class instanceof \Aura\Base\Fields\Password) {
                         return;
                     }
-                    
+
                     if ($class instanceof \Aura\Base\Fields\ID) {
                         return;
                     }

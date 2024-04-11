@@ -34,7 +34,7 @@ $compact = false;
             x-data="{
         sidebarToggled: {{ $sidebarToggled ? 'true' : 'false' }},
         init() {
-            console.log('init', this.sidebarToggled);
+            {{-- console.log('init', this.sidebarToggled); --}}
 
             this.$nextTick(() => {
                 document.querySelectorAll('.mobile-load-hidden').forEach((el) => {

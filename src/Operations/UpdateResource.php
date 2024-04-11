@@ -15,7 +15,7 @@ class UpdateResource extends BaseOperation
                 'type' => 'Aura\\Base\\Fields\\Select',
                 'instructions' => 'Select which type of resource to update',
                 'validation' => '',
-                'defer' => false,
+                'live' => true,
                 'slug' => 'type',
                 'options' => [
                     'input' => 'Input Data',

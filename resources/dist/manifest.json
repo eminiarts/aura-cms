@@ -3,7 +3,7 @@
     "file": "assets/_commonjsHelpers-725317a4.js"
   },
   "resources/css/app.css": {
-    "file": "assets/app-a61deeef.css",
+    "file": "assets/app-4684b0a7.css",
     "isEntry": true,
     "src": "resources/css/app.css"
   },
@@ -16,7 +16,7 @@
     "src": "resources/js/apexcharts.js"
   },
   "resources/js/app.js": {
-    "file": "assets/app-169b1091.js",
+    "file": "assets/app-9dcdaa43.js",
     "imports": [
       "__commonjsHelpers-725317a4.js"
     ],

@@ -447,8 +447,6 @@ class TeamSettings extends Component
 
         abort_unless(auth()->user()->resource->isSuperAdmin(), 403);
 
-        // dd('no abort');
-
         $valueString = [
             'darkmode-type' => 'auto',
             'sidebar-type' => 'primary',
@@ -457,7 +455,7 @@ class TeamSettings extends Component
         ];
 
         $this->model = Option::firstOrCreate([
-            'name' => 'team-settings',
+            'name' => 'team.'.auth()->user()->current_team_id.'.team-settings',
         ], [
             'value' => $valueString,
         ]);
@@ -474,10 +472,6 @@ class TeamSettings extends Component
             })->toArray();
 
         }
-
-        // dd($this->model, $this->model->value, $this->inputFields(), $this->form['fields']);
-
-        // dd($this->form['fields'], $this->model->value);
     }
 
     public function render()
@@ -494,26 +488,10 @@ class TeamSettings extends Component
 
     public function save()
     {
-        // Save Fields as team-settings in Option table
-        $option = 'team-settings';
+        app('aura')::updateOption('team-settings', $this->form['fields']);
 
-        $value = json_encode($this->form['fields']);
-        // dd($value);
-
-        // dd('save', $option, $value);
-
-        $o = Option::updateOrCreate(['name' => $option], ['value' => $this->form['fields']]);
-
-        // $this->validate();
-
-        if (config('aura.teams')) {
-            // Cache::forget(auth()->user()->current_team_id.'.aura.team-settings');
-            Cache::forget('team-settings');
-        } else {
-            Cache::forget('aura.team-settings');
-        }
+        Cache::clear();
 
         return $this->notify(__('Successfully updated'));
-
     }
 }

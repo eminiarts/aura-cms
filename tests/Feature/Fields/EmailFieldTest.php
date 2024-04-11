@@ -2,11 +2,10 @@
 
 namespace Tests\Feature\Livewire;
 
+use Aura\Base\Fields\Email;
 use Aura\Base\Livewire\Resource\Create;
 use Aura\Base\Resource;
 use Aura\Base\Resources\Post;
-use Illuminate\Foundation\Testing\RefreshDatabase;
-use Aura\Base\Fields\Email;
 use Livewire\Livewire;
 
 // Before each test, create a Superadmin and login
@@ -46,7 +45,6 @@ test('check Email Fields', function () {
     expect($fields->firstWhere('slug', 'suffix'))->toBeNull();
 });
 
-
 test('Email Field', function () {
     $model = new EmailFieldModel();
 
@@ -80,13 +78,13 @@ test('Email Field', function () {
 
 test('Email Field - Placeholder', function () {
     $field = [
-           'name' => 'Text for Test',
-           'type' => 'Aura\\Base\\Fields\\Email',
-           'validation' => '',
-           'conditional_logic' => [],
-           'placeholder' => 'Deine Email',
-           'slug' => 'text',
-       ];
+        'name' => 'Text for Test',
+        'type' => 'Aura\\Base\\Fields\\Email',
+        'validation' => '',
+        'conditional_logic' => [],
+        'placeholder' => 'Deine Email',
+        'slug' => 'text',
+    ];
 
     $fieldClass = app($field['type']);
     $field['field'] = $fieldClass;

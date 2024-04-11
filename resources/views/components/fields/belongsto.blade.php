@@ -42,8 +42,6 @@
 
                 init() {
 
-                    console.log('init', this.value);
-
                     // Get Values via API Fetch Call to /api/fields/{field}/values and pass this.model and this.slug as params
                     if (this.api) {
                         this.fetchApi();
@@ -65,8 +63,6 @@
                     console.log('Type of id:', typeof id); --}}
                     if (this.items) {
                         let foundItem = this.items.find(item => item.id == id);
-
-                        console.log('foundItem', foundItem);
 
                         return foundItem ? foundItem.title : null;
                     }
