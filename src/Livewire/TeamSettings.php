@@ -455,11 +455,10 @@ class TeamSettings extends Component
         ];
 
         $this->model = Option::firstOrCreate([
-            'name' => 'team.' . auth()->user()->current_team_id .'.team-settings',
+            'name' => 'team.'.auth()->user()->current_team_id.'.team-settings',
         ], [
             'value' => $valueString,
         ]);
-
 
         if (is_string($this->model->value)) {
             $this->form['fields'] = json_decode($this->model->value, true);

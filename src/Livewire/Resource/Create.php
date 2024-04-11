@@ -8,7 +8,6 @@ use Aura\Base\Traits\InteractsWithFields;
 use Aura\Base\Traits\MediaFields;
 use Aura\Base\Traits\RepeaterFields;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
-use Illuminate\Support\Arr;
 use Livewire\Component;
 
 class Create extends Component

@@ -282,7 +282,6 @@ class Resource extends Model
         return false;
     }
 
-
     /**
      * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
      */

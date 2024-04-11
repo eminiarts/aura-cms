@@ -2,12 +2,10 @@
 
 namespace Tests\Feature\Livewire;
 
-use Aura\Base\Facades\Aura;
 use Aura\Base\Fields\Checkbox;
 use Aura\Base\Livewire\Resource\Create;
 use Aura\Base\Resource;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Livewire\Livewire;
 
 // Refresh Database on every test
 uses(RefreshDatabase::class);
@@ -79,7 +77,6 @@ test('Checkbox Field - Name rendered', function () {
         ],
     ];
 
-
     $fieldClass = app($field['type']);
     $field['field'] = $fieldClass;
 
@@ -90,7 +87,6 @@ test('Checkbox Field - Name rendered', function () {
 
     expect((string) $view)->toContain('>Checkbox for Test</label>');
 });
-
 
 test('Checkbox Field - Options rendered', function () {
     $field = [
@@ -111,7 +107,6 @@ test('Checkbox Field - Options rendered', function () {
             ],
         ],
     ];
-
 
     $fieldClass = app($field['type']);
     $field['field'] = $fieldClass;
