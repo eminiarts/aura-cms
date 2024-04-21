@@ -202,7 +202,7 @@
                     </div>
                     @endif
 
-                    <div class="flex justify-end items-center space-x-4">
+                    <div class="w-full flex justify-end items-center space-x-4">
 
                         {{-- Columns --}}
                         @if($this->settings['settings'] || $this->settings['filters'])

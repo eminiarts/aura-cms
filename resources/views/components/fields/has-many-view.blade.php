@@ -1,11 +1,16 @@
 @checkCondition($this->model, $field, $this->form)
     <div class="w-full px-2 {{ $field['style']['class'] ?? '' }}">
+
+        @php
+            unset($field['relation']);
+            unset($field['conditional_logic']);
+        @endphp
+
         <livewire:aura::table 
-        wire:key="has-many-{{ microtime() }}-{{$this->model->getType()}}" 
             :model="app($field['resource'])" 
             :field="$field" 
-            :editInModal="true"
-            :settings="[
+            :editInModal="false"
+            :settings="$field['table_settings'] ?? [
                 'filters' => false,
                 'actions' => false,
                 'global_filters' => false,
