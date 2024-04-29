@@ -54,8 +54,6 @@
                     this.custom = true
                 }
 
-                console.log(this.custom);
-
                 if (! this.custom) {
                     this.value = this.slugify(basedOn.value)
                     $dispatch('input', { value: this.value });
