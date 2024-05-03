@@ -99,6 +99,10 @@ class BelongsTo extends Field
 
     public function display($field, $value, $model)
     {
+        if (optional($field)['display_view']) {
+            return view($field['display_view'], ['row' => $model, 'field' => $field])->render();
+        }
+
         if ($field['resource'] && $value) {
             // Get Str after last backslash from $field['resource']
             $model = Str::afterLast($field['resource'], '\\');
