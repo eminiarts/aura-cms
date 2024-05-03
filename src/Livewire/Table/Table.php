@@ -423,12 +423,12 @@ class Table extends Component
         $query = $this->model()->query()
             ->orderBy($this->model()->getTable().'.id', 'desc');
 
-        if ($this->field && method_exists(app($this->field['type']), 'queryFor')) {
-            $query = app($this->field['type'])->queryFor($query, $this);
-        }
-
         if (method_exists($this->model, 'indexQuery')) {
             $query = $this->model->indexQuery($query, $this);
+        }
+
+        if ($this->field && method_exists(app($this->field['type']), 'queryFor')) {
+            $query = app($this->field['type'])->queryFor($query, $this);
         }
 
         // If query is set, use it

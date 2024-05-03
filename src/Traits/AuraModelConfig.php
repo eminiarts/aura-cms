@@ -490,6 +490,22 @@ trait AuraModelConfig
         return $query;
     }
 
+    /**
+     * Scope a query to only include models where meta contains a specific value.
+     *
+     * @param \Illuminate\Database\Eloquent\Builder $query
+     * @param string $key
+     * @param mixed $value
+     * @return \Illuminate\Database\Eloquent\Builder
+     */
+    public function scopeWhereMetaContains($query, $key, $value)
+    {
+        return $query->whereHas('meta', function ($query) use ($key, $value) {
+            $query->where('key', $key)
+                ->where('value', 'REGEXP', "(^|[^0-9]){$value}([^0-9]|$)");
+        });
+    }
+
     public function singularName()
     {
         return static::$singularName ?? Str::title(static::$slug);
