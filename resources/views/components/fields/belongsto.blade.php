@@ -54,7 +54,14 @@
                         }
                     }, { debounce: 500 });
 
+                    var button = this.$refs.button;
+                    var input = this.$refs.input;
 
+                    button.addEventListener('click', function() {
+                        setTimeout(() => {
+                            input.focus();
+                        }, 100);
+                    });
                 },
 
                 findItem(id) {
@@ -124,9 +131,10 @@
                     <li>
                         <div>
                             {{-- search input --}}
-                            <input x-model.debounce.500ms="search" autofocus
-                                class="px-4 py-2.5 w-full placeholder-gray-500 text-gray-900 border-none focus:outline-none dark:bg-gray-900 dark:text-gray-100 dark:placeholder-gray-400"
-                                placeholder="Search..." </div>
+                            <input x-ref="input" x-model.debounce.300ms="search" autofocus
+                                class="px-4 py-2.5 w-full placeholder-gray-500 text-gray-900 border-none focus:outline-none dark:bg-gray-900 dark:text-gray-100 dark:placeholder-gray-400 focus:ring-primary-500"
+                                placeholder="Search..." />
+                        </div>
                     </li>
                     <template x-if="filteredItems.length === 0">
                         <div class="px-4 py-2 text-sm text-gray-500">No items found</div>
