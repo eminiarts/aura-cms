@@ -88,13 +88,18 @@
 
         @php
             unset($field['field']);
-            
+
             // ray($field, $selected);
         @endphp
 
-        <livewire:aura::media-uploader :table="false" :field="$field" :selected="$selected" :button="true"
-                                       namespace="Aura\Base\Resources\Attachment"
-                                       wire:key="media-uploader-{{ $field['slug'] }}"/>
+        <livewire:aura::media-uploader
+            :table="false"
+            :field="$field"
+            :selected="$selected"
+            :button="true"
+            :model="app('Aura\Base\Resources\Attachment')"
+            :for="get_class($this->model)"
+            wire:key="media-uploader-{{ $field['slug'] }}"
+        />
     </x-aura::fields.wrapper>
 </div>
-
