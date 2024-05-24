@@ -170,6 +170,7 @@ class AuraServiceProvider extends PackageServiceProvider
                         $command->info('Hello, thank you for installing Aura!');
                     })
                     ->publishConfigFile()
+                    ->publishAssets()
                     ->publishMigrations()
                     ->askToRunMigrations()
                     ->copyAndRegisterServiceProviderInApp()
