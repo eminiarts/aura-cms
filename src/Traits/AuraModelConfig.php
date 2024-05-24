@@ -95,6 +95,11 @@ trait AuraModelConfig
         $this->mergeFillable($this->inputFieldsSlugs());
     }
 
+    public function allowedToPerformActions()
+    {
+        return false;
+    }
+
     /**
      * @param  string  $key
      * @return mixed
@@ -174,11 +179,6 @@ trait AuraModelConfig
         if ($this->getType() && $this->id) {
             return route('aura.resource.edit', ['slug' => $this->getType(), 'id' => $this->id]);
         }
-    }
-
-    public function allowedToPerformActions()
-    {
-        return false;
     }
 
     public function editView()
@@ -493,9 +493,9 @@ trait AuraModelConfig
     /**
      * Scope a query to only include models where meta contains a specific value.
      *
-     * @param \Illuminate\Database\Eloquent\Builder $query
-     * @param string $key
-     * @param mixed $value
+     * @param  \Illuminate\Database\Eloquent\Builder  $query
+     * @param  string  $key
+     * @param  mixed  $value
      * @return \Illuminate\Database\Eloquent\Builder
      */
     public function scopeWhereMetaContains($query, $key, $value)

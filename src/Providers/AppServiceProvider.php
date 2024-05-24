@@ -2,10 +2,8 @@
 
 namespace Aura\Base\Providers;
 
-use Livewire\Livewire;
-use Aura\Base\Widgets\ValueWidget;
-use Aura\Base\Navigation\Navigation;
 use Aura\Base\Facades\DynamicFunctions;
+use Aura\Base\Navigation\Navigation;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -51,8 +49,6 @@ class AppServiceProvider extends ServiceProvider
                 }),
             ] : null,
         ]));
-
-    
 
     }
 
