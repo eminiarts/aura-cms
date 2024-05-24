@@ -4,10 +4,12 @@ namespace Aura\Base\Commands;
 
 use Illuminate\Console\Command;
 use Illuminate\Filesystem\Filesystem;
+
 class ExtendUserModel extends Command
 {
-    protected $signature = 'aura:extend-user-model';
     protected $description = 'Extend the User model with AuraUser';
+
+    protected $signature = 'aura:extend-user-model';
 
     public function __construct()
     {
@@ -18,7 +20,7 @@ class ExtendUserModel extends Command
     {
         $filesystem = new Filesystem();
         $userModelPath = app_path('Models/User.php');
-        
+
         if ($filesystem->exists($userModelPath)) {
             $content = $filesystem->get($userModelPath);
 
