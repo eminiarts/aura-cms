@@ -1,0 +1,44 @@
+<?php
+
+namespace Aura\Base\Commands;
+
+use Illuminate\Console\Command;
+use Illuminate\Filesystem\Filesystem;
+
+class ExtendUserModel extends Command
+{
+    protected $signature = 'aura:extend-user-model';
+    protected $description = 'Extend the User model with AuraUser';
+
+    public function __construct()
+    {
+        parent::__construct();
+    }
+
+    public function handle()
+    {
+        $filesystem = new Filesystem();
+        $userModelPath = app_path('Models/User.php');
+        
+        if ($filesystem->exists($userModelPath)) {
+            $content = $filesystem->get($userModelPath);
+
+            if (strpos($content, 'extends AuraUser') === false) {
+                if ($this->confirm('Do you want to extend the User model with AuraUser?', true)) {
+                    $content = str_replace('extends Authenticatable', 'extends AuraUser', $content);
+                    $content = preg_replace('/^use (.*)Authenticatable;/m', 'use $1Aura\Base\Models\User as AuraUser;', $content);
+
+                    $filesystem->put($userModelPath, $content);
+
+                    $this->info('User model successfully extended with AuraUser.');
+                } else {
+                    $this->info('User model extension cancelled.');
+                }
+            } else {
+                $this->info('User model already extends AuraUser.');
+            }
+        } else {
+            $this->error('User model not found.');
+        }
+    }
+}
