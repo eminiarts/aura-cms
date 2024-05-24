@@ -250,8 +250,10 @@ class Aura
     public function getOption($name)
     {
         if (config('aura.teams') && optional(optional(auth()->user())->resource)->currentTeam) {
-            return Cache::remember(auth()->user()->current_team_id.'aura.'.$name, now()->addHour(), function () use ($name) {
+            return Cache::remember(auth()->user()->current_team_id.'.aura.'.$name, now()->addHour(), function () use ($name) {
                 $option = auth()->user()->resource->currentTeam->getOption($name);
+
+                ray($option);
 
                 if ($option) {
                     if (is_string($option)) {
@@ -262,6 +264,8 @@ class Aura
                 } else {
                     $settings = [];
                 }
+
+                ray($settings);
 
                 return $settings;
 
