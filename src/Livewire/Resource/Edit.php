@@ -140,20 +140,6 @@ class Edit extends Component
         $this->dispatch('refreshComponent');
     }
 
-    public function saveBeforeAction($method)
-    {
-        // Call the save method
-        $this->save();
-
-        // Check for duplicates here
-        if ($this->model->possibleDuplicates()->count() > 0 && $method == 'checkReport') {
-            return;
-        }
-
-        // Emit the 'savedForAction' event with the $method parameter
-        $this->dispatch('savedForAction', $method);
-    }
-
     public function updatedPost($value, $array)
     {
         // dd('updatedPostFields', $value, $array, $this->form);
