@@ -4,7 +4,6 @@ namespace Aura\Base\Commands;
 
 use Illuminate\Console\Command;
 use Illuminate\Filesystem\Filesystem;
-
 class ExtendUserModel extends Command
 {
     protected $signature = 'aura:extend-user-model';
@@ -25,8 +24,10 @@ class ExtendUserModel extends Command
 
             if (strpos($content, 'extends AuraUser') === false) {
                 if ($this->confirm('Do you want to extend the User model with AuraUser?', true)) {
+                    // Remove any incorrect `use` statements and add the correct one
+                    $content = preg_replace('/use .+Aura\\\\Base\\\\Models\\\\User as AuraUser;/m', '', $content);
                     $content = str_replace('extends Authenticatable', 'extends AuraUser', $content);
-                    $content = preg_replace('/^use (.*)Authenticatable;/m', 'use $1Aura\Base\Models\User as AuraUser;', $content);
+                    $content = preg_replace('/^namespace [^;]+;/m', "$0\nuse Aura\\Base\\Models\\User as AuraUser;", $content);
 
                     $filesystem->put($userModelPath, $content);
 
