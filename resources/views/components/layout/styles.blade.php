@@ -11,6 +11,10 @@
 
 {{-- @vite(['resources/css/app.css'], 'vendor/aura') --}}
 
+@if (view()->exists('components.layouts.aura-head'))
+    @include('components.layouts.aura-head')
+@endif
+
 {{ app('aura')::viteStyles() }}
 
 @stack('styles')

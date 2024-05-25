@@ -3,11 +3,13 @@
 namespace Aura\Base;
 
 use Aura\Base\Commands\AuraCommand;
+use Aura\Base\Commands\AuraInstallCommand;
 use Aura\Base\Commands\CreateAuraPlugin;
 use Aura\Base\Commands\CreateResourceMigration;
 use Aura\Base\Commands\CreateResourcePermissions;
 use Aura\Base\Commands\DatabaseToResources;
 use Aura\Base\Commands\ExtendUserModel;
+use Aura\Base\Commands\InstallConfigCommand;
 use Aura\Base\Commands\MakeField;
 use Aura\Base\Commands\MakeResource;
 use Aura\Base\Commands\MakeUser;
@@ -154,7 +156,7 @@ class AuraServiceProvider extends PackageServiceProvider
             ->hasMigrations(['create_aura_tables', 'create_flows_table'])
             ->runsMigrations()
             ->hasCommands([
-                AuraCommand::class,
+                InstallConfigCommand::class,
                 MakeResource::class,
                 MakeUser::class,
                 CreateAuraPlugin::class,
