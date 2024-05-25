@@ -5,7 +5,7 @@ namespace Aura\Base\Commands;
 use Illuminate\Console\Command;
 use function Laravel\Prompts\confirm;
 
-class AuraInstallCommand extends Command
+class InstallConfigCommand extends Command
 {
     public $description = 'Install Aura Config Options';
 
