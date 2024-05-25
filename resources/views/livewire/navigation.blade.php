@@ -13,7 +13,7 @@ $darkmodeType = $settings['darkmode-type'] ?? 'auto';
 
 $sidebarDarkmodeType = $settings['sidebar-darkmode-type'] ?? 'dark';
 
-$compact = false;
+$compact = true;
 @endphp
 
 <div class="aura-sidebar aura-sidebar-type-{{ $sidebarType }} aura-darkmode-type-{{ $darkmodeType }}
