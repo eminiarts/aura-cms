@@ -17,8 +17,9 @@
     }
 @endphp
 
-<div class="relative w-full" wire:key="edit-files-{{ $field['slug'] }}">
+<div class="relative w-full z-[2]" wire:key="edit-files-{{ $field['slug'] }}">
     <x-aura::fields.wrapper :field="$field">
+        <div class="z-[2] relative">
         <!-- blade if files isset and count  -->
         @if(isset($files) && count($files) > 0)
             <div x-data="{
@@ -52,7 +53,7 @@
                         <div class="flex relative justify-between items-start">
 
                             <div
-                                    class="flex overflow-hidden justify-between items-start p-3 w-full bg-gray-100 rounded-lg cursor-move draggable-handle group">
+                                    class="flex overflow-hidden justify-between items-start p-3 w-full bg-gray-100 rounded-lg cursor-move dark:bg-gray-800 draggable-handle group">
 
                                 <div class="flex items-start space-x-3 w-full">
                                     <div class="flex justify-center items-center mt-1 w-8 h-8 rounded-full shrink-0 bg-primary-100 text-primary-400">
@@ -84,7 +85,7 @@
                 @endforeach
             </div>
         @endif
-
+        </div>
 
         @php
             unset($field['field']);
