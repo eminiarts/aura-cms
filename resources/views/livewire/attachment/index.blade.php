@@ -1,11 +1,13 @@
 <div>
 
-    <div class="flex items-start justify-between">
+    <div class="flex justify-between items-start">
 
+    <div class="mb-6">
         <x-aura::breadcrumbs>
             <x-aura::breadcrumbs.li :href="route('aura.dashboard')" title="" icon="dashboard" iconClass="text-gray-500 w-7 h-7 mr-0" />
             <x-aura::breadcrumbs.li :title="Str::plural($slug)"  />
         </x-aura::breadcrumbs.li>
+    </div>
 
     <div>
          @if (config('aura.features.resource_editor'))
