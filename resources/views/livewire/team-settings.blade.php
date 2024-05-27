@@ -1,9 +1,16 @@
 <div>
     @section('title', 'Edit Settings')
 
-    <div class="flex justify-between items-center">
+    <div class="mb-6">
+        <x-aura::breadcrumbs>
+            <x-aura::breadcrumbs.li :href="route('aura.dashboard')" title="" icon="dashboard" iconClass="text-gray-500 w-7 h-7 mr-0" />
+            <x-aura::breadcrumbs.li title="Theme Options" />
+        </x-aura::breadcrumbs>
+    </div>
+
+    <div class="flex justify-between items-center mb-6">
         <div>
-            <h1 class="text-3xl font-semibold">Theme Options</h1>
+            <h1 class="mb-2 text-3xl font-semibold">Theme Options</h1>
             <h3>Configure Logo and Theme. These Settings are applied for this team</h3>
         </div>
 
