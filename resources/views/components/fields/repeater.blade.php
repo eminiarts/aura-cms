@@ -46,7 +46,7 @@ if (optional($this)->model && isset($field['get']) && $field['get'] instanceof \
     </div>
 
     <div class="mt-4">
-        <x-aura::button.border wire:click="addRepeater('{{ $slug }}')" >Add row</x-aura::button.border>
+        <x-aura::button.border class="add_repeater" wire:click="addRepeater('{{ $slug }}')" >Add row</x-aura::button.border>
     </div>
 
 </x-aura::fields.wrapper>
