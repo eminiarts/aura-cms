@@ -28,11 +28,11 @@
     </div>
 @else
     @if($sidebarType == 'light')
-        <div class="pr-3 {{ ($compact ? 'w-40' : 'w-48') }}">
+        <div class="px-2 {{ ($compact ? 'w-28' : 'w-48') }}">
             <x-aura::application-logo class="w-full h-8 text-gray-700 fill-current dark:text-white" />
         </div>
     @else
-        <div class="pr-3 {{ ($compact ? 'w-40' : 'w-48') }}">
+        <div class="px-2 {{ ($compact ? 'w-28' : 'w-48') }}">
             <x-aura::application-logo class="w-full h-8 text-white fill-current dark:text-white" />
         </div>
     @endif

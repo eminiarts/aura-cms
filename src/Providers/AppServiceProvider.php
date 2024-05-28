@@ -38,7 +38,7 @@ class AppServiceProvider extends ServiceProvider
                 }),
             ] : null,
             config('aura.features.global_config') ? [
-                'icon' => "<x-aura::icon icon='adjustments' />",
+                'icon' => "<x-aura::icon icon='config' />",
                 'name' => 'Global Config',
                 'slug' => 'global_config',
                 'group' => 'settings',

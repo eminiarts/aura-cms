@@ -74,6 +74,24 @@ class TeamSettings extends Component
                 ],
             ],
             [
+                'name' => 'Size',
+                'type' => 'Aura\\Base\\Fields\\Radio',
+                'options' => [
+                    [
+                        'key' => 'standard',
+                        'value' => 'Standard',
+                    ],
+                    [
+                        'key' => 'compact',
+                        'value' => 'Compact',
+                    ],
+                ],
+                'slug' => 'sidebar-size',
+                'style' => [
+                    'width' => '100',
+                ],
+            ],
+            [
                 'name' => 'Sidebar',
                 'type' => 'Aura\\Base\\Fields\\Radio',
                 'options' => [

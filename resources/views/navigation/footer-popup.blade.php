@@ -1,4 +1,4 @@
-<div class="w-60 dark:bg-gray-700">
+<div class="w-64">
 
     @if(config('aura.teams'))
         @can('update', Team::class)
@@ -35,7 +35,7 @@
     @endif
 
   @if(config('aura.features.user_profile'))
-  <div class="block px-4 py-2 text-xs text-gray-400 dark:text-gray-400">
+  <div class="block px-4 py-2 text-xs font-semibold text-gray-400 dark:text-gray-400">
       {{ __('Manage Profile') }}
   </div>
 

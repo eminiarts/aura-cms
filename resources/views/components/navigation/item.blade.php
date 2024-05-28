@@ -103,7 +103,7 @@
                 @endif
         >
             <div class="flex justify-between w-full">
-                <div class="flex justify-between items-center ml-0 font-semibold truncate {{ $compact ? 'space-x-2 text-sm' : 'space-x-3 text-base' }}">{{ $slot }}</div>
+                <div class="flex justify-between items-center ml-0 font-medium truncate {{ $compact ? 'space-x-2 text-sm' : 'space-x-3 text-base' }}">{{ $slot }}</div>
 
                 @php
                     $badgeColorClasses = [

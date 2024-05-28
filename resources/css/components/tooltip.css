@@ -1,7 +1,7 @@
 .tippy-box[data-theme~='aura'] {
-  background-color:white;
+  background-color: rgba(255,255,255, 0.75);
   color: black;
-  @apply p-0 text-sm font-semibold text-gray-700 bg-white border border-gray-100 rounded-lg shadow-lg;
+  @apply p-0 text-sm font-semibold text-gray-700 rounded-lg border border-gray-100 shadow-lg;
 }
 
 .tippy-box[data-theme~='aura'] .tippy-content {
@@ -25,7 +25,7 @@
 }
 
 .dark .tippy-box[data-theme~='aura-small'] {
-  @apply px-0 py-2 text-sm font-semibold text-white bg-gray-700 border border-gray-600 rounded-lg shadow-lg;
+  @apply px-0 py-2 text-sm font-medium text-white rounded-lg ring-1 shadow-lg backdrop-blur-xl bg-gray-700/85 ring-white/10;
 }
 
 .dark .tippy-box[data-theme~='aura-small'] .tippy-content {
@@ -33,13 +33,13 @@
 }
 
 .tippy-box[data-theme~='aura-small'] {
-  background-color: white;
+  background-color: rgba(255, 255, 255, 0.90);
   color: black;
-  @apply px-0 py-2 text-sm font-semibold text-gray-700 bg-white border border-gray-100 rounded-lg shadow-lg;
+  @apply px-0 py-2 text-sm font-medium text-gray-700 rounded-lg ring-1 shadow-lg backdrop-blur-xl ring-gray-900/10;
 }
 
 .tippy-box[data-theme~='aura-small'] .tippy-content {
-  @apply px-0 py-0 overflow-hidden text-gray-700;
+  @apply overflow-hidden px-0 py-0 text-gray-700;
 }
 
 .tippy-box[data-theme~='aura-small'][data-placement^='top']>.tippy-arrow::before {

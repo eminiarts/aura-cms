@@ -23,7 +23,7 @@
 
     @auraStyles
 </head>
-<body class="overflow-hidden antialiased text-gray-800 bg-white dark:bg-gray-900 dark:text-gray-200">
+<body class="overflow-hidden antialiased text-gray-900 bg-white dark:bg-gray-900 dark:text-gray-100">
 
 <div
     x-data="aura"

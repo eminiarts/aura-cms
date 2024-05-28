@@ -13,7 +13,8 @@ $darkmodeType = $settings['darkmode-type'] ?? 'auto';
 
 $sidebarDarkmodeType = $settings['sidebar-darkmode-type'] ?? 'dark';
 
-$compact = true;
+
+$compact = ($settings['sidebar-size'] ?? null) === 'compact';
 @endphp
 
 <div class="aura-sidebar aura-sidebar-type-{{ $sidebarType }} aura-darkmode-type-{{ $darkmodeType }}
@@ -47,14 +48,15 @@ $compact = true;
             });
         },
         toggleSidebar: async function() {
+            console.log('click toggleSidebar');
             if (window.innerWidth < 768) {
                 console.log('toggleSidebar async mobile');
                 this.sidebarToggled = !this.sidebarToggled;
             } else {
-                this.sidebarToggled = !this.sidebarToggled;
                 console.log('toggleSidebar async desktop1', this.sidebarToggled);
                 await $wire.toggleSidebar();
-                console.log('toggleSidebar async deskto2', this.sidebarToggled);
+                this.sidebarToggled = !this.sidebarToggled;
+                console.log('toggleSidebar async desktop2', this.sidebarToggled);
             }
         }
     }">
@@ -76,13 +78,29 @@ $compact = true;
         </div>
 
         <div
-            class="mobile-load-hidden overflow-x-visible flex-shrink-0 aura-navigation {{ $sidebarToggled ? ($compact ? 'open-sidebar md:w-56' : 'open-sidebar md:w-72') : 'closed-sidebar w-20' }}"
+            class="relative mobile-load-hidden overflow-x-visible flex-shrink-0 aura-navigation {{ $sidebarToggled ? ($compact ? 'open-sidebar md:w-56' : 'open-sidebar md:w-72') : 'closed-sidebar w-20' }}"
 
             x-bind:class="{
                 'open-sidebar {{ $compact ? 'md:w-56' : 'md:w-72' }}': sidebarToggled,
                 'closed-sidebar w-20': !sidebarToggled,
             }"
         >
+        {{-- <div class="z-[2000] absolute top-0 transform translate-y-[0%] translate-x-[0%] right-0 flex">
+            <button
+                @click="toggleSidebar()"
+                type="button"
+                class="inline-flex relative justify-center items-center w-6 h-6 text-sm font-semibold text-white bg-transparent rounded-full border-none shadow-none opacity-30 select-none hover:opacity-100 focus:outline-none focus:ring-2"
+            >
+                <div class="hide-collapsed">
+                    <x-aura::icon icon="minus" size="xs"/>
+                </div>
+
+                <div class="show-collapsed">
+                    <x-aura::icon icon="plus" size="xs"/>
+                </div>
+
+            </button>
+        </div> --}}
             <div
                 class="aura-sidebar-bg fixed top-0 left-0 z-10 flex flex-col flex-shrink-0 h-screen border-r shadow-xl {{ $sidebarToggled ? ($compact ? 'w-56' : 'w-72') : 'w-20' }}
             "
@@ -94,25 +112,26 @@ $compact = true;
 
                 <div class="flex overflow-y-auto overflow-x-visible flex-col flex-1 px-0 pt-0 pb-5 space-y-1 aura-sidebar-scrollbar">
 
-                    <div class="flex flex-col {{ $compact ? 'px-3' : 'px-5' }} space-y-1">
+                    <div class="flex flex-col {{ $compact ? 'px-2' : 'px-4' }} space-y-1">
                         <div class="flex-shrink-0 h-[4.5rem] flex items-center justify-between">
 
                             <div class="hide-collapsed">
                                 @include('aura::navigation.logo')
                             </div>
 
+
                             <div>
                                 <button
                                     @click="toggleSidebar()"
                                     type="button"
-                                    class="inline-flex relative justify-center items-center w-10 h-10 text-sm font-semibold rounded-lg border shadow-none select-none focus:outline-none focus:ring-2 aura-sidebar-toggle"
+                                    class="inline-flex relative justify-center items-center w-6 h-6 text-sm font-semibold rounded-lg shadow-none select-none focus:outline-none focus:ring-2 aura-sidebar-toggle"
                                 >
                                     <div class="hide-collapsed">
-                                        <x-aura::icon icon="minus"/>
+                                        <x-aura::icon icon="minus" size="sm"/>
                                     </div>
 
                                     <div class="show-collapsed">
-                                        <x-aura::icon icon="plus"/>
+                                        <x-aura::icon icon="plus" size="sm"/>
                                     </div>
 
                                 </button>
@@ -147,7 +166,7 @@ $compact = true;
                     </div>
                 </div>
 
-                <div class=" flex-shrink-0 {{ $compact ? 'px-3' : 'px-5' }} min-h-[4.5rem] py-2 flex flex-wrap items-center border-t aura-sidebar-footer">
+                <div class=" flex-shrink-0 {{ $compact ? 'px-2' : 'px-4' }} min-h-[4.5rem] py-2 flex flex-wrap items-center border-t aura-sidebar-footer">
                     @impersonating($guard = null)
                     <div class="w-full">
                         <x-aura::button.primary :href="route('impersonate.leave')" class="my-2 w-full" size="xs">
@@ -181,7 +200,7 @@ $compact = true;
 
                             </x-aura::navigation.team-switcher>
 
-                            @if(config('aura.features.notifications'))
+                            {{-- @if(config('aura.features.notifications'))
                                 <div class="ml-2">
                                     <x-aura::tippy text="{{ __('Notifications') }}">
                                         <x-aura::button.primary @click="Livewire.emit('openSlideOver', 'notifications')"
@@ -190,7 +209,7 @@ $compact = true;
                                         </x-aura::button.primary>
                                     </x-aura::tippy>
                                 </div>
-                            @endif
+                            @endif --}}
                         </div>
                     @else
                         <div class="flex justify-between items-center w-full">
