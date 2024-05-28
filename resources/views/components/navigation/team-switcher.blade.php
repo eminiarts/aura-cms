@@ -29,7 +29,7 @@
         // when the component is initialized, add a click event listener to the document
         this.$nextTick(() => {
           tippy(this.$refs.this, {
-            arrow: true,
+            arrow: false,
             theme: 'aura-small',
             trigger: 'click',
             offset: [0, 8],
@@ -54,7 +54,7 @@
         });
       }
     }">
-        <div x-ref="this" role="button" tabindex="0" class="flex justify-between items-center w-full text-sm font-semibold rounded-lg cursor-pointer  aura-sidebar-team-switcher">
+        <div x-ref="this" role="button" tabindex="0" class="flex justify-between items-center w-full text-sm font-semibold rounded-lg cursor-pointer aura-sidebar-team-switcher">
             <span>{{ $title }}</span>
 
             <div class="hide-collapsed">
