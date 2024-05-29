@@ -225,6 +225,20 @@ trait InputFields
         return $this->sendThroughPipeline($fields, $pipes);
     }
 
+    // Used in Resource
+    public function getFieldsWithIds($fields = null)
+    {
+        if (! $fields) {
+            $fields = $this->mappedFields();
+        }
+
+        $pipes = [
+            AddIdsToFields::class,
+        ];
+
+        return $this->sendThroughPipeline($fields, $pipes);
+    }
+
     /**
      * This code is used to render the form fields in the correct order.
      * It applies tabs to the fields, maps the fields, adds ids to the fields,
