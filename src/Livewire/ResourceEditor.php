@@ -365,7 +365,7 @@ class ResourceEditor extends Component
             abort(403, 'Your fields have closures. You can not use the Resource Builder with Closures.');
         }
 
-        $this->fieldsArray = $this->model->getFieldsWithIds();
+        $this->fieldsArray = $this->model->getFieldsWithIds()->toArray();
 
         ray($this->fieldsArray);
 

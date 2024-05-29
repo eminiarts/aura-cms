@@ -47,6 +47,16 @@ trait SaveFields
 
     public function saveFields($fields)
     {
+        $fieldsWithIds = $fields;
+
+        // Unset Mapping of Fields
+        foreach ($fields as &$field) {
+            unset($field['field']);
+            unset($field['field_type']);
+            unset($field['_id']);
+            unset($field['_parent_id']);
+        }
+
         $a = new \ReflectionClass($this->model::class);
 
         $file = file_get_contents($a->getFileName());
@@ -73,7 +83,7 @@ trait SaveFields
 
         // Trigger the event
         ray($this->mappedFields);
-        event(new SaveFieldsEvent($fields, $this->model));
+        event(new SaveFieldsEvent($fieldsWithIds, $this->mappedFields, $this->model));
 
         $this->notify('Saved successfully.');
     }
