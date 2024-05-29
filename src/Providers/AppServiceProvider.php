@@ -2,8 +2,11 @@
 
 namespace Aura\Base\Providers;
 
-use Aura\Base\Facades\DynamicFunctions;
+use Aura\Base\Events\SaveFields;
 use Aura\Base\Navigation\Navigation;
+use Aura\Base\Listeners\SyncDatabase;
+use Illuminate\Support\Facades\Event;
+use Aura\Base\Facades\DynamicFunctions;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -49,6 +52,9 @@ class AppServiceProvider extends ServiceProvider
                 }),
             ] : null,
         ]));
+
+        // Register event and listener
+        Event::listen(SaveFields::class, SyncDatabase::class);
 
     }
 

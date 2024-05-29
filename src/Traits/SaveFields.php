@@ -4,6 +4,7 @@ namespace Aura\Base\Traits;
 
 use Aura\Base\Facades\Aura;
 use Illuminate\Support\Str;
+use Aura\Base\Events\SaveFields as SaveFieldsEvent;
 
 trait SaveFields
 {
@@ -70,7 +71,8 @@ trait SaveFields
 
         file_put_contents($a->getFileName(), $replaced);
 
-        // sleep(3);
+        // Trigger the event
+        event(new SaveFieldsEvent($fields, $this->model));
 
         $this->notify('Saved successfully.');
     }
@@ -157,8 +159,6 @@ trait SaveFields
 
         // Run "pint" on the migration file
         exec('./vendor/bin/pint '.$a->getFileName());
-
-        sleep(1);
 
         // $this->notify('Saved Props successfully.');
     }
