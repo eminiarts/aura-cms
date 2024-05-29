@@ -108,11 +108,17 @@ class CreateResourceMigration extends Command
             ],
         ]));
 
+        $combined = $combined->unique('slug');
+
         $schema = $this->generateSchema($combined);
+
+
+
+        // dd($schema);
 
         Artisan::call('make:migration', [
             'name' => $migrationName,
-            '--table' => $tableName,
+            '--create' => $tableName,
         ]);
 
         $migrationFile = $this->getMigrationPath($migrationName);
@@ -123,11 +129,11 @@ class CreateResourceMigration extends Command
             return 1;
         }
 
-        $content = $this->files->get($migrationFile);
+       $content = $this->files->get($migrationFile);
 
         // Up method
-        $pattern = '/(public function up\(\): void[\s\S]*?Schema::create\(.*?function \(Blueprint \$table\) \{[\s\S]*?)\/\/([\s\S]*?\}\);[\s\S]*?\})/';
-        $replacement = '${1}'.$schema.'${2}';
+        $pattern = '/(public function up\(\): void[\s\S]*?Schema::create\(.*?\{)([\s\S]*?)(\}\);[\s\S]*?\})/';
+        $replacement = '${1}'.$schema.'${3}';
         $replacedContent = preg_replace($pattern, $replacement, $content);
 
         // Down method

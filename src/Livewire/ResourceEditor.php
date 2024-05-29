@@ -32,7 +32,12 @@ class ResourceEditor extends Component
 
     public $slug;
 
-    protected $listeners = ['refreshComponent' => '$refresh', 'savedField' => 'updateFields', 'saveField' => 'saveField', 'deleteField' => 'deleteField'];
+    protected $listeners = [
+        'refreshComponent' => '$refresh', 
+        'savedField' => 'updateFields', 
+        'saveField' => 'saveField', 
+        'deleteField' => 'deleteField'
+    ];
 
     protected $newFields = [];
 
