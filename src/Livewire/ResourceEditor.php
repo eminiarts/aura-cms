@@ -365,7 +365,9 @@ class ResourceEditor extends Component
             abort(403, 'Your fields have closures. You can not use the Resource Builder with Closures.');
         }
 
-        $this->fieldsArray = $this->model->getFields();
+        $this->fieldsArray = $this->model->getFieldsWithIds();
+
+        ray($this->fieldsArray);
 
         if (count($this->mappedFields) > 0 && $this->mappedFields[0]['type'] == "Aura\Base\Fields\Tab" && array_key_exists('global', $this->mappedFields[0]) && $this->mappedFields[0]['global']) {
             $this->hasGlobalTabs = true;
