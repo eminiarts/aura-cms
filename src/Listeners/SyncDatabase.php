@@ -19,25 +19,25 @@ class SyncDatabase
     /**
      * Handle the event.
      */
-    public function handle(SaveFields $event): void
+    public function handle(SaveFields $event)
     {
         $newFields = collect($event->fields);
-        $existingFields = collect($event->model->getFields());
+        $existingFields = collect($event->oldFields);
+        $model = $event->model;
 
-        // Detect additions and changes
-        $fieldsToAdd = $newFields->diffKeys($existingFields);
-
-        $fieldsToUpdate = $newFields->intersectByKeys($existingFields)->map(function ($item, $key) use ($existingFields) {
-            return $item !== $existingFields[$key] ? $item : null;
-        })->filter();
         
-        // Detect deletions
+        // Detect changes, additions, deletions, and reordering
+        $fieldsToAdd = $newFields->diffKeys($existingFields);
+        $fieldsToUpdate = $newFields->filter(function($field) use ($existingFields) {
+            return isset($field['_id']) && $existingFields->contains('_id', $field['_id']) && $existingFields->firstWhere('_id', $field['_id']) != $field;
+        });
         $fieldsToDelete = $existingFields->diffKeys($newFields);
+        $fieldsReordered = $this->detectReorderedFields($newFields, $existingFields);
 
-        dd($fieldsToAdd, $fieldsToUpdate, $fieldsToDelete);
+        dd($fieldsToAdd, $fieldsToUpdate, $fieldsToDelete, $fieldsReordered);
 
         // Apply schema changes
-        Schema::table('your_table_name', function (Blueprint $table) use ($fieldsToAdd, $fieldsToUpdate, $fieldsToDelete) {
+        Schema::table('your_table_name', function (Blueprint $table) use ($fieldsToAdd, $fieldsToUpdate, $fieldsToDelete, $fieldsReordered) {
             // Add new fields
             foreach ($fieldsToAdd as $field) {
                 $this->addField($table, $field);
@@ -53,6 +53,12 @@ class SyncDatabase
                 $table->dropColumn($field['slug']);
             }
         });
+
+        // Handle reordering separately if necessary
+        $this->handleReordering($fieldsReordered);
+
+        // Return the new array (new schema) if necessary
+        return $newFields->toArray();
     }
 
     /**
@@ -84,6 +90,40 @@ class SyncDatabase
             // Add cases for other field types as needed
             default:
                 throw new \Exception("Unknown field type: " . $field['type']);
+        }
+    }
+
+    /**
+     * Detect reordered fields.
+     */
+    private function detectReorderedFields($newFields, $existingFields)
+    {
+        $reorderedFields = [];
+
+        $newFields->each(function ($field, $index) use ($existingFields, &$reorderedFields) {
+            if (isset($field['_id'])) {
+                $existingField = $existingFields->firstWhere('_id', $field['_id']);
+                if ($existingField && $existingFields->search($existingField) !== $index) {
+                    $reorderedFields[] = $field;
+                }
+            }
+        });
+
+        return $reorderedFields;
+    }
+
+    /**
+     * Handle reordering of fields.
+     */
+    private function handleReordering($fieldsReordered)
+    {
+        // Implement logic for handling reordering if necessary
+        // This could involve updating metadata or simply noting the changes
+        // For this example, we'll just output the reordered fields
+        if (!empty($fieldsReordered)) {
+            // You can handle reordering in the way your application requires
+            // This could be updating an order column, metadata, or another mechanism
+            dd('Reordered Fields:', $fieldsReordered);
         }
     }
 }

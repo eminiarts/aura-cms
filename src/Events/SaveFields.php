@@ -16,6 +16,7 @@ class SaveFields
 
     public $fields;
     public $model;
+    public $oldFields;
 
     /**
      * Create a new event instance.
@@ -23,9 +24,10 @@ class SaveFields
      * @param array $fields
      * @return void
      */
-    public function __construct(array $fields, $model)
+    public function __construct(array $fields, $oldFields, $model)
     {
         $this->fields = $fields;
+        $this->oldFields = $oldFields;
         $this->model = $model;
     }
 
