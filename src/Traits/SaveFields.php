@@ -81,8 +81,9 @@ trait SaveFields
 
         file_put_contents($a->getFileName(), $replaced);
 
-        // Trigger the event
         ray($this->mappedFields);
+
+        // Trigger the event to change the database schema
         event(new SaveFieldsEvent($fieldsWithIds, $this->mappedFields, $this->model));
 
         $this->notify('Saved successfully.');

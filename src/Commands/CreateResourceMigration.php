@@ -43,11 +43,7 @@ class CreateResourceMigration extends Command
         $tableName = $resource->getTable();
         $migrationName = "create_{$tableName}_table";
 
-        if ($this->migrationExists($migrationName)) {
-            $this->error("Migration '{$migrationName}' already exists.");
-
-            return 1;
-        }
+        
 
         $baseFields = collect([
             [
@@ -116,12 +112,19 @@ class CreateResourceMigration extends Command
 
         // dd($schema);
 
-        Artisan::call('make:migration', [
-            'name' => $migrationName,
-            '--create' => $tableName,
-        ]);
+        if ($this->migrationExists($migrationName)) {
+            //$this->error("Migration '{$migrationName}' already exists.");
+            //return 1;
+            ray('migration exists');
+            $migrationFile = $this->getMigrationPath($migrationName);
+        } else {
+            Artisan::call('make:migration', [
+                'name' => $migrationName,
+                '--create' => $tableName,
+            ]);
 
-        $migrationFile = $this->getMigrationPath($migrationName);
+            $migrationFile = $this->getMigrationPath($migrationName);
+        }
 
         if ($migrationFile === null) {
             $this->error("Unable to find migration file '{$migrationName}'.");
