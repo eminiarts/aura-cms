@@ -354,6 +354,7 @@ class ResourceEditor extends Component
 
     public function mount($slug)
     {
+        ray()->clearScreen();
         $this->slug = $slug;
 
         $this->model = Aura::findResourceBySlug($slug);
