@@ -42,6 +42,8 @@ class CreateDatabaseMigration
         })->values();
         
         $fieldsToDelete = $existingFields->diffKeys($newFields);
+
+        ray('sync',$fieldsToAdd, $fieldsToUpdate, $fieldsToDelete, $model, $model->getTable());
         
         
         return;
