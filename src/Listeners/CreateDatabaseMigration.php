@@ -46,7 +46,9 @@ class CreateDatabaseMigration
         })->values();
         $fieldsToDelete = $existingFields->diffKeys($newFields);
 
-        // ray('sync', $fieldsToAdd, $fieldsToUpdate, $fieldsToDelete, $model, $model->getTable());
+        ray('change', $fieldsToAdd, $fieldsToUpdate, $fieldsToDelete, $model, $model->getTable());
+
+        return;
 
         // Generate migration name
         $timestamp = date('Y_m_d_His');
@@ -170,6 +172,11 @@ class CreateDatabaseMigration
                     $schema .= "\$table->renameColumn('{$oldSlug}', '{$newSlug}');\n";
                     break;
                 case 'delete':
+                    // Dont Drop ID, Created At, Updated At
+                    if (in_array($field['slug'], ['id', 'created_at', 'updated_at', 'deleted_at'])) {
+                        continue;
+                    }
+
                     $schema .= "\$table->dropColumn('{$field['slug']}');\n";
                     break;
             }
