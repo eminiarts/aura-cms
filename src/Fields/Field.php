@@ -17,6 +17,8 @@ class Field implements Wireable
 
     public $field;
 
+    public $tableColumnType = 'string';
+
     public bool $group = false;
 
     public bool $on_forms = true;

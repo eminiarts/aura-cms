@@ -21,12 +21,14 @@ class CreateDatabaseMigration
 
     public function handle(SaveFields $event)
     {
-        ray('handle create database');
-
         $newFields = collect($event->fields);
         $existingFields = collect($event->oldFields);
         $model = $event->model;
         $tableName = $model->getTable();
+
+        if(!$model::$customTable) {
+            return;
+        }
 
         // Detect changes, additions, deletions
         $fieldsToAdd = $newFields->diffKeys($existingFields);
@@ -44,7 +46,7 @@ class CreateDatabaseMigration
         })->values();
         $fieldsToDelete = $existingFields->diffKeys($newFields);
 
-        ray('sync', $fieldsToAdd, $fieldsToUpdate, $fieldsToDelete, $model, $model->getTable());
+        // ray('sync', $fieldsToAdd, $fieldsToUpdate, $fieldsToDelete, $model, $model->getTable());
 
         // Generate migration name
         $timestamp = date('Y_m_d_His');
@@ -76,7 +78,7 @@ class CreateDatabaseMigration
         $content = $this->files->get($migrationFile);
         $updatedContent = $this->updateMigrationContent($content, $schemaAdditions, $schemaUpdates, $schemaDeletions, $schemaAdditionsDown, $schemaUpdatesDown, $schemaDeletionsDown);
 
-        ray($schemaAdditions, $schemaUpdates, $schemaDeletions);
+        // ray($schemaAdditions, $schemaUpdates, $schemaDeletions);
 
         // Update the migration file content
         $content = $this->files->get($migrationFile);
@@ -115,28 +117,12 @@ class CreateDatabaseMigration
 
     protected function generateColumn($field)
     {
-        $type = $field['type'];
-        $slug = $field['slug'];
-
         ray($field)->green();
 
-        return match ($type) {
-            'Aura\\Base\\Fields\\ID' => "\$table->id();\n",
-            'Aura\\Base\\Fields\\ForeignId' => "\$table->foreignId('{$slug}')->nullable();\n",
-            'Aura\\Base\\Fields\\Timestamps' => "\$table->timestamps();\n",
-            'Aura\\Base\\Fields\\Text' => "\$table->string('{$slug}')->nullable();\n",
-            'Aura\\Base\\Fields\\Slug' => "\$table->string('{$slug}')->unique();\n",
-            'Aura\\Base\\Fields\\Image' => "\$table->text('{$slug}')->nullable();\n",
-            'Aura\\Base\\Fields\\Password' => "\$table->string('{$slug}')->nullable();\n",
-            'Aura\\Base\\Fields\\Number' => "\$table->integer('{$slug}')->nullable();\n",
-            'Aura\\Base\\Fields\\Date' => "\$table->date('{$slug}')->nullable();\n",
-            'Aura\\Base\\Fields\\Textarea' => "\$table->text('{$slug}')->nullable();\n",
-            'Aura\\Base\\Fields\\Color' => "\$table->string('{$slug}')->nullable();\n",
-            'Aura\\Base\\Fields\\BelongsTo' => "\$table->foreignId('{$slug}')->nullable();\n",
-            'Aura\\Base\\Fields\\Boolean' => "\$table->boolean('{$slug}')->nullable();\n",
-            'Aura\Base\Fields\HasMany' => '', // No need to add anything to the schema for HasMany relationships
-            default => "\$table->text('{$slug}')->nullable(); // Custom field type for '{$slug}' with type '{$type}'\n",
-        };
+        $fieldInstance = app($field['type']);
+        $columnType = $fieldInstance->tableColumnType;
+
+        return "\$table->{$columnType}('{$field['slug']}')->nullable();\n";
     }
 
     protected function generateDownSchema($fields, $action)

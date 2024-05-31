@@ -10,6 +10,8 @@ class Date extends Field
 
     public $view = 'aura::fields.view-value';
 
+    public $tableColumnType = 'date';
+
     public function get($field, $value)
     {
         return $value;
