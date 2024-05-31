@@ -8,9 +8,9 @@ class Date extends Field
 
     public $optionGroup = 'Input Fields';
 
-    public $view = 'aura::fields.view-value';
-
     public $tableColumnType = 'date';
+
+    public $view = 'aura::fields.view-value';
 
     public function get($field, $value)
     {

@@ -11,9 +11,9 @@ class BelongsTo extends Field
 
     public bool $group = false;
 
-    public $tableColumnType = 'bigIncrements';
-
     public $optionGroup = 'Relationship Fields';
+
+    public $tableColumnType = 'bigIncrements';
 
     public string $type = 'input';
 

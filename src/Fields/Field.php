@@ -17,13 +17,13 @@ class Field implements Wireable
 
     public $field;
 
-    public $tableColumnType = 'string';
-
     public bool $group = false;
 
     public bool $on_forms = true;
 
     public $optionGroup = 'Fields';
+
+    public $tableColumnType = 'string';
 
     public bool $taxonomy = false;
 

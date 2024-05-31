@@ -29,7 +29,7 @@ class EditResourceField extends Component
 
     public function activate($params)
     {
-        if(!$params) {
+        if (! $params) {
             $this->field = [
                 'type' => 'Aura\Base\Fields\Text',
                 'slug' => '',
@@ -149,10 +149,12 @@ class EditResourceField extends Component
 
         $this->validate();
 
-        // dd($this->form, ['slug' => $this->fieldSlug, 'value' => $this->form['fields']]);
-
-        // emit event to parent with slug and value
-        $this->dispatch('saveField', ['slug' => $this->fieldSlug, 'value' => $this->form['fields']]);
+        if ($this->mode == 'create') {
+            $this->dispatch('saveNewField', $this->form['fields']);
+        } else {
+            // emit event to parent with slug and value
+            $this->dispatch('saveField', ['slug' => $this->fieldSlug, 'value' => $this->form['fields']]);
+        }
 
         $this->open = false;
     }

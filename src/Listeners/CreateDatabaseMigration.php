@@ -2,13 +2,13 @@
 
 namespace Aura\Base\Listeners;
 
-use Illuminate\Support\Str;
 use Aura\Base\Events\SaveFields;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Filesystem\Filesystem;
-use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Process;
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Str;
 use Symfony\Component\Process\ExecutableFinder;
 
 class CreateDatabaseMigration
@@ -27,14 +27,16 @@ class CreateDatabaseMigration
         $model = $event->model;
         $tableName = $model->getTable();
 
-        if(!$model::$customTable) {
+        if (! $model::$customTable) {
             return;
         }
 
-        dd('should not run when adding');
+        // Detect fields to add
+        $fieldsToAdd = $newFields->filter(function ($field) {
+            return ! isset($field['_id']);
+        });
 
-        // Detect changes, additions, deletions
-        $fieldsToAdd = $newFields->diffKeys($existingFields);
+        // Detect fields to update
         $fieldsToUpdate = $newFields->filter(function ($field) use ($existingFields) {
             if (! isset($field['_id'])) {
                 return false;
@@ -47,11 +49,14 @@ class CreateDatabaseMigration
 
             return ['old' => $oldField, 'new' => $field];
         })->values();
-        $fieldsToDelete = $existingFields->diffKeys($newFields);
+
+        // Detect fields to delete
+        $fieldsToDelete = $existingFields->filter(function ($field) use ($newFields) {
+            return ! $newFields->contains('_id', $field['_id']);
+        });
 
         // ray('change', $fieldsToAdd, $fieldsToUpdate, $fieldsToDelete, $model, $model->getTable());
-
-       // return;
+        // return;
 
         // Generate migration name
         $timestamp = date('Y_m_d_His');
@@ -87,7 +92,7 @@ class CreateDatabaseMigration
 
         // Update the migration file content
         $content = $this->files->get($migrationFile);
-        
+
         $updatedContent = $this->updateMigrationContent($content, $schemaAdditions, $schemaUpdates, $schemaDeletions, $schemaAdditionsDown, $schemaUpdatesDown, $schemaDeletionsDown);
 
         // ray('updatedContent', $updatedContent)->blue();
@@ -102,28 +107,10 @@ class CreateDatabaseMigration
             // Run the migration
             Artisan::call('migrate');
         } catch (\Exception $e) {
-           // We don't want to throw an exception here, just log it
+            // We don't want to throw an exception here, just log it
             Log::error($e->getMessage());
         }
 
-        
-    }
-
-     protected function runPint($migrationFile)
-    {
-        $command = [
-            (new ExecutableFinder())->find('php', 'php', [
-                '/usr/local/bin',
-                '/opt/homebrew/bin',
-            ]),
-          
-            "vendor/bin/pint", $migrationFile
-        ];
-
-        $result = Process::path(base_path())->run($command);
-
-
-        // ray($result->output(), $result->errorOutput(), $result)->red();
     }
 
     protected function generateColumn($field)
@@ -151,18 +138,18 @@ class CreateDatabaseMigration
                     break;
                 case 'update':
                     $oldSlug = $field['old']['slug'];
-                $newSlug = $field['new']['slug'];
-                $oldType = app($field['old']['type'])->tableColumnType;
-                $newType = app($field['new']['type'])->tableColumnType;
+                    $newSlug = $field['new']['slug'];
+                    $oldType = app($field['old']['type'])->tableColumnType;
+                    $newType = app($field['new']['type'])->tableColumnType;
 
-                if ($oldType !== $newType) {
-                    $downSchema .= "\$table->{$oldType}('{$newSlug}')->nullable()->change();\n";
-                }
-                
-                if ($oldSlug !== $newSlug) {
-                    $downSchema .= "\$table->renameColumn('{$newSlug}', '{$oldSlug}');\n";
-                }
-                break;
+                    if ($oldType !== $newType) {
+                        $downSchema .= "\$table->{$oldType}('{$newSlug}')->nullable()->change();\n";
+                    }
+
+                    if ($oldSlug !== $newSlug) {
+                        $downSchema .= "\$table->renameColumn('{$newSlug}', '{$oldSlug}');\n";
+                    }
+                    break;
                 case 'delete':
                     // For deletions in the up method, we need to re-add the columns in the down method
                     $downSchema .= $this->generateColumn($field);
@@ -184,19 +171,19 @@ class CreateDatabaseMigration
                     $schema .= $this->generateColumn($field);
                     break;
                 case 'update':
-                   $oldSlug = $field['old']['slug'];
-                $newSlug = $field['new']['slug'];
-                $oldType = app($field['old']['type'])->tableColumnType;
-                $newType = app($field['new']['type'])->tableColumnType;
+                    $oldSlug = $field['old']['slug'];
+                    $newSlug = $field['new']['slug'];
+                    $oldType = app($field['old']['type'])->tableColumnType;
+                    $newType = app($field['new']['type'])->tableColumnType;
 
-                if ($oldSlug !== $newSlug) {
-                    $schema .= "\$table->renameColumn('{$oldSlug}', '{$newSlug}');\n";
-                }
-                
-                if ($oldType !== $newType) {
-                    $schema .= "\$table->{$newType}('{$newSlug}')->nullable()->change();\n";
-                }
-                break;
+                    if ($oldSlug !== $newSlug) {
+                        $schema .= "\$table->renameColumn('{$oldSlug}', '{$newSlug}');\n";
+                    }
+
+                    if ($oldType !== $newType) {
+                        $schema .= "\$table->{$newType}('{$newSlug}')->nullable()->change();\n";
+                    }
+                    break;
                 case 'delete':
                     // Dont Drop ID, Created At, Updated At
                     if (in_array($field['slug'], ['id', 'created_at', 'updated_at', 'deleted_at'])) {
@@ -222,6 +209,22 @@ class CreateDatabaseMigration
             }
         }
 
+    }
+
+    protected function runPint($migrationFile)
+    {
+        $command = [
+            (new ExecutableFinder())->find('php', 'php', [
+                '/usr/local/bin',
+                '/opt/homebrew/bin',
+            ]),
+
+            'vendor/bin/pint', $migrationFile,
+        ];
+
+        $result = Process::path(base_path())->run($command);
+
+        // ray($result->output(), $result->errorOutput(), $result)->red();
     }
 
     protected function updateMigrationContent($content, $additions, $updates, $deletions, $additionsDown, $updatesDown, $deletionsDown)

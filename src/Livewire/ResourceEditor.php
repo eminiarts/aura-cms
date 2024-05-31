@@ -35,8 +35,9 @@ class ResourceEditor extends Component
     protected $listeners = [
         'refreshComponent' => '$refresh',
         'savedField' => 'updateFields',
-        'saveField' => 'saveField',
-        'deleteField' => 'deleteField',
+        'saveField',
+        'deleteField',
+        'saveNewField',
     ];
 
     protected $newFields = [];
@@ -471,7 +472,20 @@ class ResourceEditor extends Component
         // emit new fields
         $this->dispatch('newFields', $this->fieldsArray);
         $this->dispatch('finishedSavingFields');
+    }
 
+    public function saveNewField($field)
+    {
+        // push new field to fieldsArray
+        $this->fieldsArray[] = $field;
+
+        $this->saveFields($this->fieldsArray);
+
+        $this->newFields = $this->model->mapToGroupedFields($this->fieldsArray);
+
+        // emit new fields
+        $this->dispatch('newFields', $this->fieldsArray);
+        $this->dispatch('finishedSavingFields');
     }
 
     public function sendField($slug)
