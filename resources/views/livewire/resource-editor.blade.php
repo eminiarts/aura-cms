@@ -274,7 +274,7 @@
                     }
                 }" wire:key="resource2-fields">
 
-                    @dump($this->mappedFields)
+                    {{-- @dump($this->mappedFields) --}}
 
                     @foreach($this->mappedFields as $field)
 

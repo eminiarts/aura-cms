@@ -368,7 +368,7 @@ class ResourceEditor extends Component
 
         $this->fieldsArray = $this->model->getFieldsWithIds()->toArray();
 
-        ray($this->fieldsArray);
+        // ray($this->fieldsArray);
 
         if (count($this->mappedFields) > 0 && $this->mappedFields[0]['type'] == "Aura\Base\Fields\Tab" && array_key_exists('global', $this->mappedFields[0]) && $this->mappedFields[0]['global']) {
             $this->hasGlobalTabs = true;
