@@ -53,6 +53,31 @@ class SyncDatabase
         // migration: rename_title_to_title2
         // migration: rename_title2_to_title3
         // migration: rename_title3_to_title
+
+        // What if:
+
+        // migration: delete_title
+        // migration: add_title
+
+        // The data of Employee 2: title = "Manager" -> deleted
+
+        // Idea: In the deletion migration: Check if the column is still there, if so, skip the deletion
+        // Add_Title: Check if the column is already there, if so, skip the addition
+
+        // What if 2:
+
+        // migration: rename_title_to_title2
+        // migration: rename_title2_to_title3
+        // migration: create_title
+
+
+
+
+
+        
+        // Option 1: Keep only 1 Migration file and try to sync db -> cons: renaming would not be possible
+
+        // Option 2: Keep all migration files and try to sync db -> cons: multiple migration files, more complex
         
         ray('sync',$fieldsToAdd, $fieldsToUpdate, $fieldsToDelete, $model, $model->getTable());
         
