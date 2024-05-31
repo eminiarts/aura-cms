@@ -58,6 +58,10 @@ class CreateDatabaseMigration
         // ray('change', $fieldsToAdd, $fieldsToUpdate, $fieldsToDelete, $model, $model->getTable());
         // return;
 
+        if ($fieldsToAdd->isEmpty() && $fieldsToUpdate->isEmpty() && $fieldsToDelete->isEmpty()) {
+            return;
+        }
+
         // Generate migration name
         $timestamp = date('Y_m_d_His');
         $migrationName = "update_{$tableName}_table_{$timestamp}";
