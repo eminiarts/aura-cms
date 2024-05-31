@@ -43,8 +43,6 @@ class CreateResourceMigration extends Command
         $tableName = $resource->getTable();
         $migrationName = "create_{$tableName}_table";
 
-        
-
         $baseFields = collect([
             [
                 'name' => 'ID',
@@ -108,8 +106,6 @@ class CreateResourceMigration extends Command
 
         $schema = $this->generateSchema($combined);
 
-
-
         // dd($schema);
 
         if ($this->migrationExists($migrationName)) {
@@ -132,7 +128,7 @@ class CreateResourceMigration extends Command
             return 1;
         }
 
-       $content = $this->files->get($migrationFile);
+        $content = $this->files->get($migrationFile);
 
         // Up method
         $pattern = '/(public function up\(\): void[\s\S]*?Schema::create\(.*?\{)([\s\S]*?)(\}\);[\s\S]*?\})/';

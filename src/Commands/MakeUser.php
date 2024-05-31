@@ -7,8 +7,9 @@ use Aura\Base\Resources\Team;
 use Aura\Base\Resources\User;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
-use function Laravel\Prompts\text;
+
 use function Laravel\Prompts\password;
+use function Laravel\Prompts\text;
 
 class MakeUser extends Command
 {
