@@ -17,8 +17,16 @@
     @if($field)
       <div class="flex">
         <div class="flex-1 truncate">
-          <h2 class="text-3xl font-bold">{{ __('Edit Field') }}</h2>
-          <h1 class="mb-4 text-3xl font-semibold truncate">{{ $field['label'] ?? ''}} ({{ $field['slug'] }})</h1>
+          <h2 class="text-3xl font-bold">
+            @if($mode == 'create')
+              {{ __('Add Field') }}
+            @else
+            {{ __('Edit Field') }}
+            @endif
+          </h2>
+          @if($field['slug'])
+          <h3 class="mb-4 text-xl font-semibold truncate">{{ $field['label'] ?? ''}} ({{ $field['slug'] }})</h3>
+          @endif
         </div>
         <div class="flex-shrink-0 mt-10 space-x-2">
           <x-aura::button.danger wire:click="deleteField('{{ $field['slug'] }}')">
@@ -50,8 +58,6 @@
     @endif
 
   </div>
-
-
 
   <div class="flex mt-8 space-x-2">
         <x-aura::button wire:click="save">

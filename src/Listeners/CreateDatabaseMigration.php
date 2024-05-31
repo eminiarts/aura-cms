@@ -31,6 +31,8 @@ class CreateDatabaseMigration
             return;
         }
 
+        dd('should not run when adding');
+
         // Detect changes, additions, deletions
         $fieldsToAdd = $newFields->diffKeys($existingFields);
         $fieldsToUpdate = $newFields->filter(function ($field) use ($existingFields) {

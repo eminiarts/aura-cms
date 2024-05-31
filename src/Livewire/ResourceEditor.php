@@ -54,59 +54,11 @@ class ResourceEditor extends Component
         ];
     }
 
-    public function addField($id, $slug, $type, $children)
+    public function addField($type)
     {
-        $children = (int) $children;
-        $str = Str::random(4);
-        if ($type == 'Aura\\Base\\Fields\\Tab') {
-            $field = [
-                'name' => 'Tab '.$str,
-                'type' => 'Aura\\Base\\Fields\\Tab',
-                'validation' => '',
-                'conditional_logic' => [],
-                'slug' => 'tab'.'_'.$str,
-            ];
-        } elseif ($type == 'Aura\\Base\\Fields\\Panel') {
-            $field = [
-                'name' => 'Panel '.$str,
-                'type' => 'Aura\\Base\\Fields\\Panel',
-                'validation' => '',
-                'conditional_logic' => [],
-                'slug' => 'panel'.'_'.$str,
-            ];
-        } else {
-            $field = [
-                'name' => 'Text '.$str,
-                'type' => 'Aura\\Base\\Fields\\Text',
-                'validation' => '',
-                'conditional_logic' => [],
-                'slug' => 'text'.'_'.$str,
-            ];
-        }
+        ray('add field', $type);
 
-        $fields = collect($this->fieldsArray);
-
-        // get index of the field
-        $index = $fields->search(function ($item) use ($slug) {
-            return $item['slug'] == $slug;
-        });
-
-        // duplicate field in at index of the field + 1
-        $fields->splice($index + $children + 1, 0, [$field]);
-
-        $fields = $fields->toArray();
-
-        $this->fieldsArray = $fields;
-
-        $this->saveFields($this->fieldsArray);
-
-        $this->newFields = $this->model->mapToGroupedFields($this->fieldsArray);
-
-        // $this->dispatch('refreshComponent');
-
-        $this->dispatch('openSlideOver', component: 'edit-field', parameters: ['fieldSlug' => $field['slug'], 'slug' => $this->slug, 'field' => $field]);
-
-        $this->dispatch('finishedSavingFields');
+        $this->dispatch('openSlideOver', component: 'edit-field');
     }
 
     public function addNewTab()
