@@ -7,6 +7,7 @@ use Aura\Base\Navigation\Navigation;
 use Aura\Base\Listeners\SyncDatabase;
 use Illuminate\Support\Facades\Event;
 use Aura\Base\Facades\DynamicFunctions;
+use Aura\Base\Listeners\CreateDatabaseMigration;
 use Illuminate\Support\ServiceProvider;
 use Aura\Base\Listeners\ModifyDatabaseMigration;
 
@@ -55,8 +56,10 @@ class AppServiceProvider extends ServiceProvider
         ]));
 
         // Register event and listener
-        Event::listen(SaveFields::class, SyncDatabase::class);
-        Event::listen(SaveFields::class, ModifyDatabaseMigration::class);
+        // Event::listen(SaveFields::class, SyncDatabase::class);
+        // Event::listen(SaveFields::class, ModifyDatabaseMigration::class);
+        
+        Event::listen(SaveFields::class, CreateDatabaseMigration::class);
 
     }
 
