@@ -18,6 +18,8 @@ class EditResourceField extends Component
 
     public $form;
 
+    public $mode = 'edit';
+
     public $open = false;
 
     public $reservedWords = ['id', 'type'];
@@ -27,26 +29,47 @@ class EditResourceField extends Component
 
     public function activate($params)
     {
+        if(!$params) {
+            $this->field = [
+                'type' => 'Aura\Base\Fields\Text',
+                'slug' => '',
+                'name' => '',
+                'on_index' => true,
+                'on_forms' => true,
+                'on_view' => true,
+                'searchable' => false,
+                'validation' => '',
+                'conditional_logic' => '',
+            ];
+
+            $this->form['fields'] = $this->field;
+
+            $this->open = true;
+
+            $this->mode = 'create';
+
+            return;
+        }
+
+        $this->mode = 'edit';
+
         $this->fieldSlug = $params['fieldSlug'];
         $this->form['fields'] = $params['field'];
+
+        // dd( $params['field'] );
         $this->field = $params['field'];
 
         // Check if field is an input field
         if (app($this->field['type'])->isInputField()) {
-            // if $this->form['fields']['on_index'] is not set, set it to true (default)
             if (! isset($this->form['fields']['on_index'])) {
                 $this->form['fields']['on_index'] = true;
             }
-            // on_forms
             if (! isset($this->form['fields']['on_forms'])) {
                 $this->form['fields']['on_forms'] = true;
             }
-            // on_view
             if (! isset($this->form['fields']['on_view'])) {
                 $this->form['fields']['on_view'] = true;
             }
-
-            // searchable
             if (! isset($this->form['fields']['searchable'])) {
                 $this->form['fields']['searchable'] = false;
             }
