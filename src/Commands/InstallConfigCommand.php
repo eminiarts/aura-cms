@@ -3,6 +3,7 @@
 namespace Aura\Base\Commands;
 
 use Illuminate\Console\Command;
+
 use function Laravel\Prompts\confirm;
 
 class InstallConfigCommand extends Command

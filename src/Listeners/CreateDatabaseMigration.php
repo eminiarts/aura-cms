@@ -2,12 +2,13 @@
 
 namespace Aura\Base\Listeners;
 
+use Illuminate\Support\Str;
 use Aura\Base\Events\SaveFields;
+use Illuminate\Filesystem\Filesystem;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Artisan;
-use Illuminate\Filesystem\Filesystem;
-use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Process;
+use Symfony\Component\Process\ExecutableFinder;
 
 class CreateDatabaseMigration
 {
@@ -26,23 +27,24 @@ class CreateDatabaseMigration
         $existingFields = collect($event->oldFields);
         $model = $event->model;
         $tableName = $model->getTable();
-        
+
         // Detect changes, additions, deletions
         $fieldsToAdd = $newFields->diffKeys($existingFields);
-        $fieldsToUpdate = $newFields->filter(function($field) use ($existingFields) {
-            if (!isset($field['_id'])) {
+        $fieldsToUpdate = $newFields->filter(function ($field) use ($existingFields) {
+            if (! isset($field['_id'])) {
                 return false;
             }
             $existingField = $existingFields->firstWhere('_id', $field['_id']);
+
             return $existingField && $existingField != $field;
-        })->map(function($field) use ($existingFields) {
+        })->map(function ($field) use ($existingFields) {
             $oldField = $existingFields->firstWhere('_id', $field['_id']);
+
             return ['old' => $oldField, 'new' => $field];
         })->values();
         $fieldsToDelete = $existingFields->diffKeys($newFields);
 
-                ray('sync',$fieldsToAdd, $fieldsToUpdate, $fieldsToDelete, $model, $model->getTable());
-
+        ray('sync', $fieldsToAdd, $fieldsToUpdate, $fieldsToDelete, $model, $model->getTable());
 
         // Generate migration name
         $timestamp = date('Y_m_d_His');
@@ -66,39 +68,104 @@ class CreateDatabaseMigration
         $schemaDeletions = $this->generateSchema($fieldsToDelete, 'delete');
 
         // Generate down schema for additions, updates, and deletions
-        $schemaAdditionsDown = $this->generateDownSchema($schemaAdditions, 'add');
-        $schemaUpdatesDown = $this->generateDownSchema($schemaUpdates, 'update');
-        $schemaDeletionsDown = $this->generateDownSchema($schemaDeletions, 'delete');
+        $schemaAdditionsDown = $this->generateDownSchema($fieldsToAdd, 'add');
+        $schemaUpdatesDown = $this->generateDownSchema($fieldsToUpdate, 'update');
+        $schemaDeletionsDown = $this->generateDownSchema($fieldsToDelete, 'delete');
 
         // Update the migration file content
         $content = $this->files->get($migrationFile);
         $updatedContent = $this->updateMigrationContent($content, $schemaAdditions, $schemaUpdates, $schemaDeletions, $schemaAdditionsDown, $schemaUpdatesDown, $schemaDeletionsDown);
 
-
         ray($schemaAdditions, $schemaUpdates, $schemaDeletions);
 
         // Update the migration file content
         $content = $this->files->get($migrationFile);
-        $updatedContent = $this->updateMigrationContent($content, $schemaAdditions, $schemaUpdates, $schemaDeletions);
+        
+        $updatedContent = $this->updateMigrationContent($content, $schemaAdditions, $schemaUpdates, $schemaDeletions, $schemaAdditionsDown, $schemaUpdatesDown, $schemaDeletionsDown);
+
 
         ray('updatedContent', $updatedContent)->blue();
 
         // Write the updated content back to the migration file
         $this->files->put($migrationFile, $updatedContent);
+
+        // Run Pint to format the migration file
+        $this->runPint($migrationFile);
+
+        // Run the migration
+        Artisan::call('migrate');
     }
 
-    protected function getMigrationPath($name)
+     protected function runPint($migrationFile)
     {
-        $migrationFiles = $this->files->glob(database_path('migrations/*.php'));
-        $name = Str::snake($name);
+        $command = [
+            (new ExecutableFinder())->find('php', 'php', [
+                '/usr/local/bin',
+                '/opt/homebrew/bin',
+            ]),
+          
+            "vendor/bin/pint", $migrationFile
+        ];
 
-        foreach ($migrationFiles as $file) {
-            if (strpos($file, $name) !== false) {
-                return $file;
+        $result = Process::path(base_path())->run($command);
+
+
+        ray($result->output(), $result->errorOutput(), $result)->red();
+    }
+
+    protected function generateColumn($field)
+    {
+        $type = $field['type'];
+        $slug = $field['slug'];
+
+        ray($field)->green();
+
+        return match ($type) {
+            'Aura\\Base\\Fields\\ID' => "\$table->id();\n",
+            'Aura\\Base\\Fields\\ForeignId' => "\$table->foreignId('{$slug}')->nullable();\n",
+            'Aura\\Base\\Fields\\Timestamps' => "\$table->timestamps();\n",
+            'Aura\\Base\\Fields\\Text' => "\$table->string('{$slug}')->nullable();\n",
+            'Aura\\Base\\Fields\\Slug' => "\$table->string('{$slug}')->unique();\n",
+            'Aura\\Base\\Fields\\Image' => "\$table->text('{$slug}')->nullable();\n",
+            'Aura\\Base\\Fields\\Password' => "\$table->string('{$slug}')->nullable();\n",
+            'Aura\\Base\\Fields\\Number' => "\$table->integer('{$slug}')->nullable();\n",
+            'Aura\\Base\\Fields\\Date' => "\$table->date('{$slug}')->nullable();\n",
+            'Aura\\Base\\Fields\\Textarea' => "\$table->text('{$slug}')->nullable();\n",
+            'Aura\\Base\\Fields\\Color' => "\$table->string('{$slug}')->nullable();\n",
+            'Aura\\Base\\Fields\\BelongsTo' => "\$table->foreignId('{$slug}')->nullable();\n",
+            'Aura\\Base\\Fields\\Boolean' => "\$table->boolean('{$slug}')->nullable();\n",
+            'Aura\Base\Fields\HasMany' => '', // No need to add anything to the schema for HasMany relationships
+            default => "\$table->text('{$slug}')->nullable(); // Custom field type for '{$slug}' with type '{$type}'\n",
+        };
+    }
+
+    protected function generateDownSchema($fields, $action)
+    {
+        $downSchema = '';
+
+        ray($fields, $action)->red();
+
+        foreach ($fields as $field) {
+
+            switch ($action) {
+                case 'add':
+                    // For additions in the up method, we need to drop the columns in the down method
+                    $downSchema .= "\$table->dropColumn('{$field['slug']}');\n";
+                    break;
+                case 'update':
+                    $oldSlug = $field['old']['slug'];
+                    $newSlug = $field['new']['slug'];
+                    // For updates in the up method, we need to rename the columns back to their original names in the down method
+                    $downSchema .= "\$table->renameColumn('{$newSlug}', '{$oldSlug}');\n";
+                    break;
+                case 'delete':
+                    // For deletions in the up method, we need to re-add the columns in the down method
+                    $downSchema .= $this->generateColumn($field['old']);
+                    break;
             }
         }
 
-        return null;
+        return $downSchema;
     }
 
     protected function generateSchema($fields, $action)
@@ -125,71 +192,31 @@ class CreateDatabaseMigration
         return $schema;
     }
 
-    protected function generateDownSchema($fields, $action)
-{
-    $downSchema = '';
-
-    foreach ($fields as $field) {
-
-        switch ($action) {
-            case 'add':
-                // For additions in the up method, we need to drop the columns in the down method
-                $downSchema .= "\$table->dropColumn('{$field['slug']}');\n";
-                break;
-            case 'update':
-                $oldSlug = $field['old']['slug'];
-                $newSlug = $field['new']['slug'];
-                // For updates in the up method, we need to rename the columns back to their original names in the down method
-                $downSchema .= "\$table->renameColumn('{$newSlug}', '{$oldSlug}');\n";
-                break;
-            case 'delete':
-                // For deletions in the up method, we need to re-add the columns in the down method
-                $downSchema .= $this->generateColumn($field['old']);
-                break;
-        }
-    }
-
-    return $downSchema;
-}
-
-    
-
-    protected function generateColumn($field)
+    protected function getMigrationPath($name)
     {
-        $type = $field['type'];
-        $slug = $field['slug'];
+        $migrationFiles = $this->files->glob(database_path('migrations/*.php'));
+        $name = Str::snake($name);
 
-        return match ($type) {
-            'Aura\\Base\\Fields\\ID' => "\$table->id();\n",
-            'Aura\\Base\\Fields\\ForeignId' => "\$table->foreignId('{$slug}')->nullable();\n",
-            'Aura\\Base\\Fields\\Timestamps' => "\$table->timestamps();\n",
-            'Aura\\Base\\Fields\\Text' => "\$table->string('{$slug}')->nullable();\n",
-            'Aura\\Base\\Fields\\Slug' => "\$table->string('{$slug}')->unique();\n",
-            'Aura\\Base\\Fields\\Image' => "\$table->text('{$slug}')->nullable();\n",
-            'Aura\\Base\\Fields\\Password' => "\$table->string('{$slug}')->nullable();\n",
-            'Aura\\Base\\Fields\\Number' => "\$table->integer('{$slug}')->nullable();\n",
-            'Aura\\Base\\Fields\\Date' => "\$table->date('{$slug}')->nullable();\n",
-            'Aura\\Base\\Fields\\Textarea' => "\$table->text('{$slug}')->nullable();\n",
-            'Aura\\Base\\Fields\\Color' => "\$table->string('{$slug}')->nullable();\n",
-            'Aura\\Base\\Fields\\BelongsTo' => "\$table->foreignId('{$slug}')->nullable();\n",
-            'Aura\\Base\\Fields\\Boolean' => "\$table->boolean('{$slug}')->nullable();\n",
-            'Aura\Base\Fields\HasMany' => '', // No need to add anything to the schema for HasMany relationships
-            default => "\$table->text('{$slug}')->nullable(); // Custom field type for '{$slug}' with type '{$type}'\n",
-        };
+        foreach ($migrationFiles as $file) {
+            if (strpos($file, $name) !== false) {
+                return $file;
+            }
+        }
+
     }
 
     protected function updateMigrationContent($content, $additions, $updates, $deletions, $additionsDown, $updatesDown, $deletionsDown)
-{
-    // Up method
-    $pattern = '/(public function up\(\): void[\s\S]*?Schema::table\(.*?\{)([\s\S]*?)(\}\);[\s\S]*?\})/';
-    $replacement = '${1}' . PHP_EOL . $additions . PHP_EOL . $updates . PHP_EOL . $deletions . PHP_EOL . '${3}';
-    $updatedContent = preg_replace($pattern, $replacement, $content);
+    {
+        // Up method
+        $pattern = '/(public function up\(\): void[\s\S]*?Schema::table\(.*?\{)([\s\S]*?)(\}\);[\s\S]*?\})/';
+        $replacement = '${1}'.PHP_EOL.$additions.PHP_EOL.$updates.PHP_EOL.$deletions.PHP_EOL.'${3}';
+        $updatedContent = preg_replace($pattern, $replacement, $content);
 
-    // Down method
-    $downPattern = '/(public function down\(\): void[\s\S]*?{)([\s\S]*?)(\})/';
-    $downReplacement = '${1}' . PHP_EOL . $additionsDown . PHP_EOL . $updatesDown . PHP_EOL . $deletionsDown . PHP_EOL . '${3}';
-    $updatedContent = preg_replace($downPattern, $downReplacement, $updatedContent);
+        // Down method
+        $downPattern = '/(public function down\(\): void[\s\S]*?Schema::table\(.*?\{)([\s\S]*?)(\}\);[\s\S]*?\})/';
+        $downReplacement = '${1}'.PHP_EOL.$additionsDown.PHP_EOL.$updatesDown.PHP_EOL.$deletionsDown.PHP_EOL.'${3}';
+        $updatedContent = preg_replace($downPattern, $downReplacement, $updatedContent);
 
-    return $updatedContent;
-}
+        return $updatedContent;
+    }
 }

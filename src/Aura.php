@@ -374,11 +374,6 @@ class Aura
         });
     }
 
-    public function pro()
-    {
-        return true;
-    }
-
     public function option($key)
     {
         return $this->options()[$key] ?? null;
@@ -400,6 +395,11 @@ class Aura
                 return [];
             }
         });
+    }
+
+    public function pro()
+    {
+        return true;
     }
 
     public function registerFields(array $fields): void
