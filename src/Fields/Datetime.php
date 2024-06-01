@@ -8,6 +8,8 @@ class Datetime extends Field
 
     // public $view = 'components.fields.datetime';
 
+    public $tableColumnType = 'timestamp';
+
     public $optionGroup = 'Input Fields';
 
     public function getFields()

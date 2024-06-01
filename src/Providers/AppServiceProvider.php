@@ -57,9 +57,10 @@ class AppServiceProvider extends ServiceProvider
 
         // Register event and listener
         // Event::listen(SaveFields::class, SyncDatabase::class);
-        // Event::listen(SaveFields::class, ModifyDatabaseMigration::class);
+        Event::listen(SaveFields::class, ModifyDatabaseMigration::class);
 
-        Event::listen(SaveFields::class, CreateDatabaseMigration::class);
+        // Create New Migrations every time a new field is saved
+        // Event::listen(SaveFields::class, CreateDatabaseMigration::class);
 
     }
 
