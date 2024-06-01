@@ -19,6 +19,7 @@ it('shows an error if migration file does not exist', function () {
 
 it('shows an error if migration class cannot be loaded', function () {
     $migrationPath = database_path('migrations/2021_01_01_000000_non_existent_migration.php');
+    unlink($migrationPath);
     file_put_contents($migrationPath, "<?php\n\nclass FakeMigration {}\n");
     
     $this->artisan('aura:schema-update', ['migration' => $migrationPath])
@@ -30,6 +31,7 @@ it('shows an error if migration class cannot be loaded', function () {
 
 it('shows an error if migration class does not have an up method', function () {
     $migrationPath = database_path('migrations/2021_01_01_000001_invalid_migration.php');
+    unlink($migrationPath);
     file_put_contents($migrationPath, "<?php\n\nuse Illuminate\Database\Migrations\Migration;\n\nclass InvalidMigration extends Migration {}\n");
 
     $this->artisan('aura:schema-update', ['migration' => $migrationPath])
@@ -41,6 +43,7 @@ it('shows an error if migration class does not have an up method', function () {
 
 it('shows an error if table name cannot be determined from migration', function () {
     $migrationPath = database_path('migrations/2021_01_01_000002_no_table_migration.php');
+    unlink($migrationPath);
     file_put_contents($migrationPath, "<?php\n\nuse Illuminate\Database\Migrations\Migration;\nuse Illuminate\Database\Schema\Blueprint;\nuse Illuminate\Support\Facades\Schema;\n\nclass NoTableMigration extends Migration {\n    public function up() {\n        // No Schema::create call\n    }\n}\n");
 
     $this->artisan('aura:schema-update', ['migration' => $migrationPath])
@@ -52,6 +55,7 @@ it('shows an error if table name cannot be determined from migration', function 
 
 it('updates the schema based on a valid migration', function () {
     $migrationPath = database_path('migrations/2021_01_01_000003_create_users_table.php');
+    unlink($migrationPath);
     file_put_contents($migrationPath, "<?php\n\nuse Illuminate\Database\Migrations\Migration;\nuse Illuminate\Database\Schema\Blueprint;\nuse Illuminate\Support\Facades\Schema;\n\nclass CreateUsersTable extends Migration {\n    public function up() {\n        Schema::create('users', function (Blueprint \$table) {\n            \$table->id();\n            \$table->string('name');\n            \$table->timestamps();\n        });\n    }\n}\n");
 
     $this->artisan('migrate');
