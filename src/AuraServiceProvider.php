@@ -2,66 +2,67 @@
 
 namespace Aura\Base;
 
-use Aura\Base\Commands\CreateAuraPlugin;
-use Aura\Base\Commands\CreateResourceMigration;
-use Aura\Base\Commands\CreateResourcePermissions;
-use Aura\Base\Commands\DatabaseToResources;
-use Aura\Base\Commands\ExtendUserModel;
-use Aura\Base\Commands\InstallConfigCommand;
-use Aura\Base\Commands\MakeField;
-use Aura\Base\Commands\MakeResource;
-use Aura\Base\Commands\MakeUser;
-use Aura\Base\Commands\PublishCommand;
-use Aura\Base\Commands\TransformTableToResource;
+use Livewire\Livewire;
+use Livewire\Component;
+use Aura\Base\Widgets\Bar;
+use Aura\Base\Widgets\Pie;
 use Aura\Base\Facades\Aura;
-use Aura\Base\Livewire\Attachment\Index as AttachmentIndex;
-use Aura\Base\Livewire\BookmarkPage;
-use Aura\Base\Livewire\Config;
-use Aura\Base\Livewire\CreateFlow;
-use Aura\Base\Livewire\CreateResource;
-use Aura\Base\Livewire\Dashboard;
-use Aura\Base\Livewire\EditOperation;
-use Aura\Base\Livewire\EditResourceField;
-use Aura\Base\Livewire\GlobalSearch;
-use Aura\Base\Livewire\InviteUser;
-use Aura\Base\Livewire\MediaManager;
-use Aura\Base\Livewire\MediaUploader;
-use Aura\Base\Livewire\Navigation;
-use Aura\Base\Livewire\Notifications;
-use Aura\Base\Livewire\PluginsPage;
-use Aura\Base\Livewire\Resource\Create;
-use Aura\Base\Livewire\Resource\CreateModal;
-use Aura\Base\Livewire\Resource\Edit;
-use Aura\Base\Livewire\Resource\EditModal;
-use Aura\Base\Livewire\Resource\Index;
-use Aura\Base\Livewire\Resource\View;
-use Aura\Base\Livewire\ResourceEditor;
-use Aura\Base\Livewire\Table\Table;
-use Aura\Base\Livewire\TeamSettings;
-use Aura\Base\Livewire\TwoFactorAuthenticationForm;
-use Aura\Base\Navigation\Navigation as AuraNavigation;
-use Aura\Base\Policies\ResourcePolicy;
-use Aura\Base\Policies\TeamPolicy;
-use Aura\Base\Policies\UserPolicy;
+use Illuminate\Support\Arr;
+use Illuminate\Support\Str;
+use Aura\Base\Widgets\Donut;
 use Aura\Base\Resources\Team;
 use Aura\Base\Resources\User;
-use Aura\Base\Widgets\Bar;
-use Aura\Base\Widgets\Donut;
-use Aura\Base\Widgets\Pie;
-use Aura\Base\Widgets\SparklineArea;
-use Aura\Base\Widgets\SparklineBar;
-use Aura\Base\Widgets\ValueWidget;
+use Aura\Base\Livewire\Config;
 use Aura\Base\Widgets\Widgets;
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Support\Arr;
-use Illuminate\Support\Facades\Blade;
+use Aura\Base\Commands\MakeUser;
+use Aura\Base\Commands\MakeField;
+use Aura\Base\Livewire\Dashboard;
+use Aura\Base\Livewire\CreateFlow;
+use Aura\Base\Livewire\InviteUser;
+use Aura\Base\Livewire\Navigation;
+use Aura\Base\Policies\TeamPolicy;
+use Aura\Base\Policies\UserPolicy;
+use Aura\Base\Widgets\ValueWidget;
+use Aura\Base\Livewire\PluginsPage;
+use Aura\Base\Livewire\Table\Table;
+use Aura\Base\Widgets\SparklineBar;
+use Aura\Base\Commands\MakeResource;
+use Aura\Base\Livewire\BookmarkPage;
+use Aura\Base\Livewire\GlobalSearch;
+use Aura\Base\Livewire\MediaManager;
+use Aura\Base\Livewire\TeamSettings;
+use Aura\Base\Widgets\SparklineArea;
 use Illuminate\Support\Facades\Gate;
-use Illuminate\Support\Str;
-use Livewire\Component;
-use Livewire\Livewire;
-use Spatie\LaravelPackageTools\Commands\InstallCommand;
+use Aura\Base\Livewire\EditOperation;
+use Aura\Base\Livewire\MediaUploader;
+use Aura\Base\Livewire\Notifications;
+use Aura\Base\Livewire\Resource\Edit;
+use Aura\Base\Livewire\Resource\View;
+use Illuminate\Support\Facades\Blade;
+use Aura\Base\Commands\PublishCommand;
+use Aura\Base\Livewire\CreateResource;
+use Aura\Base\Livewire\Resource\Index;
+use Aura\Base\Livewire\ResourceEditor;
+use Aura\Base\Policies\ResourcePolicy;
+use Aura\Base\Commands\ExtendUserModel;
+use Aura\Base\Livewire\Resource\Create;
 use Spatie\LaravelPackageTools\Package;
+use Aura\Base\Commands\CreateAuraPlugin;
+use Aura\Base\Livewire\EditResourceField;
+use Illuminate\Database\Eloquent\Builder;
+use Aura\Base\Livewire\Resource\EditModal;
+use Aura\Base\Commands\DatabaseToResources;
+use Aura\Base\Commands\InstallConfigCommand;
+use Aura\Base\Livewire\Resource\CreateModal;
+use Aura\Base\Commands\CreateResourceMigration;
+use Aura\Base\Commands\TransformTableToResource;
+use Aura\Base\Commands\CreateResourcePermissions;
+use Aura\Base\Commands\UpdateSchemaFromMigration;
+use Aura\Base\Livewire\TwoFactorAuthenticationForm;
+use Aura\Base\Navigation\Navigation as AuraNavigation;
 use Spatie\LaravelPackageTools\PackageServiceProvider;
+use Spatie\LaravelPackageTools\Commands\InstallCommand;
+use Aura\Base\Livewire\Attachment\Index as AttachmentIndex;
 
 class AuraServiceProvider extends PackageServiceProvider
 {
@@ -165,6 +166,7 @@ class AuraServiceProvider extends PackageServiceProvider
                 TransformTableToResource::class,
                 CreateResourcePermissions::class,
                 ExtendUserModel::class,
+                UpdateSchemaFromMigration::class,
             ])
             ->hasInstallCommand(function (InstallCommand $command) {
                 $command
