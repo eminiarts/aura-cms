@@ -1,7 +1,7 @@
 <?php
 
-use Aura\Base\Listeners\CreateDatabaseMigration;
 use Aura\Base\Events\SaveFields;
+use Aura\Base\Listeners\CreateDatabaseMigration;
 use Illuminate\Filesystem\Filesystem;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Log;
@@ -27,11 +27,11 @@ beforeEach(function () {
 test('it detects fields to add', function () {
     $newFields = [
         ['slug' => 'field1', 'type' => 'Aura\Base\Fields\Text'],
-        ['slug' => 'field2', 'type' => 'Aura\Base\Fields\Text']
+        ['slug' => 'field2', 'type' => 'Aura\Base\Fields\Text'],
     ];
 
     $existingFields = [
-        ['_id' => 1, 'slug' => 'field1', 'type' => 'Aura\Base\Fields\Text']
+        ['_id' => 1, 'slug' => 'field1', 'type' => 'Aura\Base\Fields\Text'],
     ];
 
     $event = new SaveFields($newFields, $existingFields, $this->modelMock);
@@ -48,12 +48,12 @@ test('it detects fields to add', function () {
 test('it detects fields to update', function () {
     $newFields = [
         ['_id' => 1, 'slug' => 'field1', 'type' => 'Aura\Base\Fields\Textarea'],
-        ['_id' => 2, 'slug' => 'field2', 'type' => 'Aura\Base\Fields\Text', 'name' => 'Field Two']
+        ['_id' => 2, 'slug' => 'field2', 'type' => 'Aura\Base\Fields\Text', 'name' => 'Field Two'],
     ];
 
     $existingFields = [
         ['_id' => 1, 'slug' => 'field1', 'type' => 'Aura\Base\Fields\Text'],
-        ['_id' => 2, 'slug' => 'field2', 'type' => 'Aura\Base\Fields\Text']
+        ['_id' => 2, 'slug' => 'field2', 'type' => 'Aura\Base\Fields\Text'],
     ];
 
     $event = new SaveFields($newFields, $existingFields, $this->modelMock);
@@ -69,12 +69,12 @@ test('it detects fields to update', function () {
 
 test('it detects fields to delete', function () {
     $newFields = [
-        ['_id' => 1, 'slug' => 'field1', 'type' => 'Aura\Base\Fields\Text']
+        ['_id' => 1, 'slug' => 'field1', 'type' => 'Aura\Base\Fields\Text'],
     ];
 
     $existingFields = [
         ['_id' => 1, 'slug' => 'field1', 'type' => 'Aura\Base\Fields\Text'],
-        ['_id' => 2, 'slug' => 'field2', 'type' => 'Aura\Base\Fields\Text']
+        ['_id' => 2, 'slug' => 'field2', 'type' => 'Aura\Base\Fields\Text'],
     ];
 
     $event = new SaveFields($newFields, $existingFields, $this->modelMock);
