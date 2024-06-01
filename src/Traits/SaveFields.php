@@ -83,8 +83,6 @@ trait SaveFields
 
         // ray($this->mappedFields);
 
-        sleep(1);
-
         // Trigger the event to change the database schema
         event(new SaveFieldsEvent($fieldsWithIds, $this->mappedFields, $this->model));
 

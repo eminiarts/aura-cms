@@ -6,11 +6,11 @@ class Datetime extends Field
 {
     public $component = 'aura::fields.datetime';
 
+    public $optionGroup = 'Input Fields';
+
     // public $view = 'components.fields.datetime';
 
     public $tableColumnType = 'timestamp';
-
-    public $optionGroup = 'Input Fields';
 
     public function getFields()
     {
