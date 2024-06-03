@@ -195,14 +195,14 @@
                                 </svg>
                             </div>
                             <input type="text" id="table-search"
-                                class="block p-2.5 pl-10 w-full rounded-lg shadow-xs transition transition-300 border border-gray-500/30 appearance-none px-3 py-2 focus:outline-none w-full ring-gray-900/10 focus:ring focus:border-primary-300 focus:ring-primary-300  focus:ring-opacity-50 dark:focus:ring-primary-500 dark:focus:ring-opacity-50 disabled:opacity-75 disabled:bg-gray-100 disabled:opacity-60 disabled:dark:bg-gray-800 bg-white dark:bg-transparent border border-gray-500/30 dark:border-gray-700 dark:focus:border-gray-500 z-[1]"
+                                class="block p-2.5 pl-10 w-64 max-w-full rounded-lg shadow-xs transition transition-300 border border-gray-500/30 appearance-none px-3 py-2 focus:outline-none ring-gray-900/10 focus:ring focus:border-primary-300 focus:ring-primary-300  focus:ring-opacity-50 dark:focus:ring-primary-500 dark:focus:ring-opacity-50 disabled:opacity-75 disabled:bg-gray-100 disabled:opacity-60 disabled:dark:bg-gray-800 bg-white dark:bg-transparent border border-gray-500/30 dark:border-gray-700 dark:focus:border-gray-500 z-[1]"
                                 placeholder="{{ __('Search for items') }}" wire:model.live.debounce="search">
 
                         </div>
                     </div>
                     @endif
 
-                    <div class="w-full flex justify-end items-center space-x-4">
+                    <div class="flex justify-end items-center space-x-4 w-full">
 
                         {{-- Columns --}}
                         @if($this->settings['settings'] || $this->settings['filters'])
@@ -247,11 +247,11 @@
                     @if($this->settings['default_view'] == 'grid')
                     <div class="aura-table-grid-view">
                         @include($this->settings['views']['grid'])
-                    </div>  
+                    </div>
                 @elseif($this->settings['default_view'] == 'list')
                     <div class="aura-table-list-view">
                         @include($this->settings['views']['table'])
-                    </div>  
+                    </div>
                 @endif
                 </div>
             </div>

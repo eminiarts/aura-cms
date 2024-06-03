@@ -88,7 +88,7 @@
                     href="{{ $href }}" wire:navigate
                 @endif
 
-                tabindex="{{ $route ? '5' : '' }}"
+                tabindex="{{ $route ? '0' : '' }}"
 
                 @class([
                     $getBaseClasses(),
