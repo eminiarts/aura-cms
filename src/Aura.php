@@ -253,8 +253,6 @@ class Aura
             return Cache::remember(auth()->user()->current_team_id.'.aura.'.$name, now()->addHour(), function () use ($name) {
                 $option = auth()->user()->resource->currentTeam->getOption($name);
 
-                ray($option);
-
                 if ($option) {
                     if (is_string($option)) {
                         $settings = json_decode($option, true);
@@ -265,7 +263,7 @@ class Aura
                     $settings = [];
                 }
 
-                ray($settings);
+                // ray($settings);
 
                 return $settings;
 
@@ -397,6 +395,11 @@ class Aura
                 return [];
             }
         });
+    }
+
+    public function pro()
+    {
+        return true;
     }
 
     public function registerFields(array $fields): void
