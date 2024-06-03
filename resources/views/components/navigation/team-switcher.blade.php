@@ -59,7 +59,7 @@
 
             <div class="hide-collapsed">
                 <!-- svg chevron up down -->
-                <x-aura::icon.chevron-up class="w-5 h-5"/>
+                <x-aura::icon.chevron-up class="w-4 h-4"/>
             </div>
         </div>
 
