@@ -1,121 +1,39 @@
 <?php
 
-namespace Aura\Base\Commands;
+namespace Aura\Base\Listeners;
 
-use Illuminate\Console\Command;
+use Aura\Base\Events\SaveFields;
 use Illuminate\Filesystem\Filesystem;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Process;
-use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 use Symfony\Component\Process\ExecutableFinder;
 
-class CreateResourceMigration extends Command
+class ModifyDatabaseMigration
 {
-    protected $description = 'Create a migration based on the fields of a resource';
-
     protected $files;
-
-    protected $signature = 'aura:create-resource-migration {resource}';
 
     public function __construct(Filesystem $files)
     {
-        parent::__construct();
         $this->files = $files;
     }
 
-    public function handle()
+    /**
+     * Handle the event.
+     */
+    public function handle(SaveFields $event)
     {
-        $resourceClass = $this->argument('resource');
+        $model = $event->model;
+        $newFields = collect($event->fields);
+        $existingFields = collect($event->oldFields);
 
-        if (! class_exists($resourceClass)) {
-            $this->error("Resource class '{$resourceClass}' not found.");
+        $tableName = $model->getTable();
 
-            return 1;
-        }
-
-        $resource = new $resourceClass();
-
-        if (! method_exists($resource, 'getFields')) {
-            $this->error("Method 'getFields' not found in the '{$resourceClass}' class.");
-
-            return 1;
-        }
-
-        $tableName = $resource->getTable();
         $migrationName = "create_{$tableName}_table";
 
-        $baseFields = collect([
-            [
-                'name' => 'ID',
-                'type' => 'Aura\\Base\\Fields\\ID',
-                'slug' => 'id',
-            ],
-            // [
-            //     'name' => 'Title',
-            //     'type' => 'Aura\\Base\\Fields\\Text',
-            //     'slug' => 'title',
-            // ],
-            // [
-            //     'name' => 'Slug',
-            //     'type' => 'Aura\\Base\\Fields\\Text',
-            //     'slug' => 'slug',
-            // ],
-            // [
-            //     'name' => 'Content',
-            //     'type' => 'Aura\\Base\\Fields\\Textarea',
-            //     'slug' => 'content',
-            // ],
-            // [
-            //     'name' => 'Status',
-            //     'type' => 'Aura\\Base\\Fields\\Text',
-            //     'slug' => 'status',
-            // ],
-            // [
-            //     'name' => 'Parent ID',
-            //     'type' => 'Aura\\Base\\Fields\\ID',
-            //     'slug' => 'parent_id',
-            // ],
-            // [
-            //     'name' => 'Order',
-            //     'type' => 'Aura\\Base\\Fields\\Number',
-            //     'slug' => 'order',
-            // ],
+        $schema = $this->generateSchema($newFields);
 
-        ]);
-
-        $fields = $resource->inputFields();
-
-        $combined = $baseFields->merge($fields)->merge(collect([
-            [
-                'name' => 'User Id',
-                'type' => 'Aura\\Base\\Fields\\ID',
-                'slug' => 'user_id',
-            ],
-            [
-                'name' => 'Team Id',
-                'type' => 'Aura\\Base\\Fields\\ID',
-                'slug' => 'team_id',
-            ],
-            [
-                'name' => 'created_at',
-                'type' => 'Aura\\Base\\Fields\\DateTime',
-                'slug' => 'created_at',
-            ],
-            [
-                'name' => 'updated_at',
-                'type' => 'Aura\\Base\\Fields\\DateTime',
-                'slug' => 'updated_at',
-            ],
-        ]));
-
-        $combined = $combined->unique('slug');
-
-        ray($combined)->red();
-
-        $schema = $this->generateSchema($combined);
-
-        // dd($schema);
+        ray($schema)->blue();
 
         if ($this->migrationExists($migrationName)) {
             //$this->error("Migration '{$migrationName}' already exists.");
@@ -132,9 +50,7 @@ class CreateResourceMigration extends Command
         }
 
         if ($migrationFile === null) {
-            $this->error("Unable to find migration file '{$migrationName}'.");
-
-            return 1;
+            throw new \Exception("Unable to find migration file '{$migrationName}'.");
         }
 
         $content = $this->files->get($migrationFile);
@@ -152,10 +68,13 @@ class CreateResourceMigration extends Command
 
         $this->files->put($migrationFile, $replacedContent2);
 
-        $this->info("Migration '{$migrationName}' created successfully.");
+        ray("Migration '{$migrationName}' updated successfully.");
 
         // Run "pint" on the migration file
         $this->runPint($migrationFile);
+
+        // Run the migration
+        Artisan::call('aura:schema-update', ['migration' => $migrationFile]);
     }
 
     protected function generateColumn($field)
@@ -172,12 +91,16 @@ class CreateResourceMigration extends Command
     {
         $schema = '';
 
-        // Maybe custom Schema instead of Fields?
-        // $schema .= "$table->id();\n";
+        $schema .= '$table->id();'."\n";
 
         foreach ($fields as $field) {
             $schema .= $this->generateColumn($field);
         }
+
+        $schema .= '$table->foreignId("user_id");'."\n";
+        $schema .= '$table->foreignId("team_id");'."\n";
+        $schema .= '$table->timestamps();'."\n";
+        $schema .= '$table->softDeletes();'."\n";
 
         return $schema;
     }

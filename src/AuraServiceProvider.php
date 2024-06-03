@@ -2,8 +2,6 @@
 
 namespace Aura\Base;
 
-use Aura\Base\Commands\AuraCommand;
-use Aura\Base\Commands\AuraInstallCommand;
 use Aura\Base\Commands\CreateAuraPlugin;
 use Aura\Base\Commands\CreateResourceMigration;
 use Aura\Base\Commands\CreateResourcePermissions;
@@ -15,6 +13,7 @@ use Aura\Base\Commands\MakeResource;
 use Aura\Base\Commands\MakeUser;
 use Aura\Base\Commands\PublishCommand;
 use Aura\Base\Commands\TransformTableToResource;
+use Aura\Base\Commands\UpdateSchemaFromMigration;
 use Aura\Base\Facades\Aura;
 use Aura\Base\Livewire\Attachment\Index as AttachmentIndex;
 use Aura\Base\Livewire\BookmarkPage;
@@ -167,6 +166,7 @@ class AuraServiceProvider extends PackageServiceProvider
                 TransformTableToResource::class,
                 CreateResourcePermissions::class,
                 ExtendUserModel::class,
+                UpdateSchemaFromMigration::class,
             ])
             ->hasInstallCommand(function (InstallCommand $command) {
                 $command
@@ -181,7 +181,7 @@ class AuraServiceProvider extends PackageServiceProvider
                     ->askToStarRepoOnGitHub('aura-cms/base')
                     ->endWith(function (InstallCommand $command) {
                         $command->call('aura:extend-user-model');
-                        
+
                         if ($command->confirm('Do you want to create a user?', true) || User::count() === 0) {
                             $command->call('aura:user');
                         }

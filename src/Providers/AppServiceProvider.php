@@ -2,8 +2,13 @@
 
 namespace Aura\Base\Providers;
 
+use Aura\Base\Events\SaveFields;
 use Aura\Base\Facades\DynamicFunctions;
+use Aura\Base\Listeners\CreateDatabaseMigration;
+use Aura\Base\Listeners\ModifyDatabaseMigration;
+use Aura\Base\Listeners\SyncDatabase;
 use Aura\Base\Navigation\Navigation;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -49,6 +54,13 @@ class AppServiceProvider extends ServiceProvider
                 }),
             ] : null,
         ]));
+
+        // Register event and listener
+        // Event::listen(SaveFields::class, SyncDatabase::class);
+        Event::listen(SaveFields::class, ModifyDatabaseMigration::class);
+
+        // Create New Migrations every time a new field is saved
+        // Event::listen(SaveFields::class, CreateDatabaseMigration::class);
 
     }
 

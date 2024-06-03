@@ -8,6 +8,8 @@ class Textarea extends Field
 
     public $optionGroup = 'Input Fields';
 
+    public $tableColumnType = 'text';
+
     public $view = 'aura::fields.view-value';
 
     public function getFields()

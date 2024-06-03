@@ -8,6 +8,8 @@ class ID extends Field
 
     public bool $on_forms = false;
 
+    public $tableColumnType = 'bigIncrements';
+
     public string $type = 'input';
 
     public $view = 'aura::fields.view-value';

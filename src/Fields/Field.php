@@ -23,6 +23,10 @@ class Field implements Wireable
 
     public $optionGroup = 'Fields';
 
+    public $tableColumnType = 'string';
+    
+    public $tableNullable = true;
+
     public bool $taxonomy = false;
 
     public string $type = 'input';

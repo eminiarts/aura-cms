@@ -32,7 +32,13 @@ class ResourceEditor extends Component
 
     public $slug;
 
-    protected $listeners = ['refreshComponent' => '$refresh', 'savedField' => 'updateFields', 'saveField' => 'saveField', 'deleteField' => 'deleteField'];
+    protected $listeners = [
+        'refreshComponent' => '$refresh',
+        'savedField' => 'updateFields',
+        'saveField',
+        'deleteField',
+        'saveNewField',
+    ];
 
     protected $newFields = [];
 
@@ -49,59 +55,11 @@ class ResourceEditor extends Component
         ];
     }
 
-    public function addField($id, $slug, $type, $children)
+    public function addField($type)
     {
-        $children = (int) $children;
-        $str = Str::random(4);
-        if ($type == 'Aura\\Base\\Fields\\Tab') {
-            $field = [
-                'name' => 'Tab '.$str,
-                'type' => 'Aura\\Base\\Fields\\Tab',
-                'validation' => '',
-                'conditional_logic' => [],
-                'slug' => 'tab'.'_'.$str,
-            ];
-        } elseif ($type == 'Aura\\Base\\Fields\\Panel') {
-            $field = [
-                'name' => 'Panel '.$str,
-                'type' => 'Aura\\Base\\Fields\\Panel',
-                'validation' => '',
-                'conditional_logic' => [],
-                'slug' => 'panel'.'_'.$str,
-            ];
-        } else {
-            $field = [
-                'name' => 'Text '.$str,
-                'type' => 'Aura\\Base\\Fields\\Text',
-                'validation' => '',
-                'conditional_logic' => [],
-                'slug' => 'text'.'_'.$str,
-            ];
-        }
+        ray('add field', $type);
 
-        $fields = collect($this->fieldsArray);
-
-        // get index of the field
-        $index = $fields->search(function ($item) use ($slug) {
-            return $item['slug'] == $slug;
-        });
-
-        // duplicate field in at index of the field + 1
-        $fields->splice($index + $children + 1, 0, [$field]);
-
-        $fields = $fields->toArray();
-
-        $this->fieldsArray = $fields;
-
-        $this->saveFields($this->fieldsArray);
-
-        $this->newFields = $this->model->mapToGroupedFields($this->fieldsArray);
-
-        // $this->dispatch('refreshComponent');
-
-        $this->dispatch('openSlideOver', component: 'edit-field', parameters: ['fieldSlug' => $field['slug'], 'slug' => $this->slug, 'field' => $field]);
-
-        $this->dispatch('finishedSavingFields');
+        $this->dispatch('openSlideOver', component: 'edit-field');
     }
 
     public function addNewTab()
@@ -349,6 +307,7 @@ class ResourceEditor extends Component
 
     public function mount($slug)
     {
+        ray()->clearScreen();
         $this->slug = $slug;
 
         $this->model = Aura::findResourceBySlug($slug);
@@ -360,7 +319,9 @@ class ResourceEditor extends Component
             abort(403, 'Your fields have closures. You can not use the Resource Builder with Closures.');
         }
 
-        $this->fieldsArray = $this->model->getFields();
+        $this->fieldsArray = $this->model->getFieldsWithIds()->toArray();
+
+        // ray($this->fieldsArray);
 
         if (count($this->mappedFields) > 0 && $this->mappedFields[0]['type'] == "Aura\Base\Fields\Tab" && array_key_exists('global', $this->mappedFields[0]) && $this->mappedFields[0]['global']) {
             $this->hasGlobalTabs = true;
@@ -511,7 +472,20 @@ class ResourceEditor extends Component
         // emit new fields
         $this->dispatch('newFields', $this->fieldsArray);
         $this->dispatch('finishedSavingFields');
+    }
 
+    public function saveNewField($field)
+    {
+        // push new field to fieldsArray
+        $this->fieldsArray[] = $field;
+
+        $this->saveFields($this->fieldsArray);
+
+        $this->newFields = $this->model->mapToGroupedFields($this->fieldsArray);
+
+        // emit new fields
+        $this->dispatch('newFields', $this->fieldsArray);
+        $this->dispatch('finishedSavingFields');
     }
 
     public function sendField($slug)

@@ -8,6 +8,8 @@ class Number extends Field
 
     public $optionGroup = 'Input Fields';
 
+    public $tableColumnType = 'integer';
+
     public $view = 'aura::fields.view-value';
 
     public function getFields()
