@@ -11,14 +11,17 @@
         <!-- Email Address -->
         <div>
             <x-aura::input-label for="email" :value="__('Email')" />
-            <x-aura::text-input id="email" class="block mt-1 w-full" type="email" name="email" :value="old('email')" required autofocus />
+            <x-aura::input.text id="email" class="block mt-1 w-full" type="email" name="email" :value="old('email')" required autofocus />
             <x-aura::input-error :messages="$errors->get('email')" class="mt-2" />
         </div>
 
-        <div class="flex items-center justify-end mt-4">
-            <x-aura::primary-button>
-                {{ __('Email Password Reset Link') }}
-            </x-aura::primary-button>
+
+        <div class="flex justify-end items-center mt-6">
+            <x-aura::button type="submit" block>{{ __('Email Password Reset Link') }}</x-aura::button>
+        </div>
+
+        <div class="flex justify-center mt-6 text-sm">
+            <span><a class="text-sm text-gray-600 underline rounded-md hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500" href="/login">{{ __('Back to login') }}</a></span>
         </div>
     </form>
 </x-aura::layout.login>

@@ -20,7 +20,7 @@
         <div class="mt-0">
             <x-aura::input-label class="sr-only" for="password" :value="__('Password')" />
 
-            <x-aura::input.text id="password" class="block mt-1 w-full"
+            <x-aura::input.text id="password" class="block mt-2 w-full"
                             type="password"
                             name="password"
                             placeholder="{{ __('Enter your password') }}"
@@ -29,9 +29,9 @@
             <x-aura::input-error :messages="optional($errors)->get('password')" class="mt-2" />
         </div>
 
-        <div class="flex justify-between">
+        <div class="flex justify-between items-start mt-4">
             <!-- Remember Me -->
-            <div class="block mt-4">
+            <div class="flex items-center h-6">
                 <label for="remember_me" class="inline-flex items-center">
                     <input id="remember_me" type="checkbox" class="rounded shadow-sm text-primary-600 border-gray-500/30 focus:ring-primary-500" name="remember">
                     <span class="ml-2 text-sm text-gray-600 dark:text-gray-400">{{ __('Remember me') }}</span>
@@ -39,7 +39,7 @@
             </div>
 
             <!-- Forgot Password? -->
-            <div class="block mt-4">
+            <div class="flex items-center h-6">
                 @if (Route::has('aura.password.request'))
                     <a class="text-sm text-gray-600 underline rounded-md hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500" href="{{ route('aura.password.request') }}">
                         {{ __('Forgot your password?') }}
@@ -52,9 +52,9 @@
             <x-aura::button type="submit" block>{{ __('Log in') }}</x-aura::button>
         </div>
 
-        <div class="mt-2 text-sm">
-    You don't have an account yet? <a class="text-primary-600" href="/register">Register.</a>
-</div>
+        <div class="flex justify-center mt-6 text-sm">
+            <span>You don't have an account yet? <a class="text-sm text-gray-600 underline rounded-md hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500" href="/register">Register.</a></span>
+        </div>
         {{-- <div class="flex justify-end items-center mt-4">
             <x-aura::button.border type="submit" block>{{ __('Log in with Google') }}</x-aura::button.border>
         </div> --}}

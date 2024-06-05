@@ -16,7 +16,7 @@
     {{-- @vite(['resources/css/app.css', 'resources/js/app.js', 'vendor/aura']) --}}
 
     @auraStyles
-    
+
 
 
     @php
@@ -101,20 +101,21 @@
 >
     @if (!$image || !$image->isNotEmpty() || !$imageDark || !$imageDark->isNotEmpty())
         <div class="pointer-events-none">
-            <div class="absolute inset-0 transition duration-300 [mask-image:linear-gradient(180deg,rgba(255,255,255,0.8),rgba(255,255,255,0.3))] transform opacity-90 group-hover:opacity-100">
+            <div class="absolute inset-0 transition duration-300" style="mask-image: radial-gradient(circle, rgba(255,255,255,0.8) 10%, rgba(255,255,255,0) 85%); transform: opacity-90 group-hover:opacity-100;">
+            {{-- <div class="absolute inset-0 transition duration-300"> --}}
                 <svg aria-hidden="true"
-                     class="absolute inset-x-0 inset-y-0 w-full h-full text-gray-200/70 dark:text-gray-700/70"
+                     class="absolute inset-x-0 inset-y-0 w-full h-full text-gray-200 dark:text-gray-700/70"
                      fill="none" stroke-width="1">
                     <defs>
-                        <pattern id="trianglePatternEven" width="30" height="52" patternUnits="userSpaceOnUse"
-                                 patternTransform="translate(0, -1)">
+                        <pattern id="trianglePatternEven" viewBox="0 0 30 52" width="60" height="104" patternUnits="userSpaceOnUse"
+                                 patternTransform="translate(0, -2)">
                             <g>
                                 <path d="M 15 1 L 30 26 L 0 26 Z" stroke="currentColor"></path>
                                 <use href="#tri" x="15" y="13"></use>
                             </g>
                         </pattern>
-                        <pattern id="trianglePatternOdd" width="30" height="52" patternUnits="userSpaceOnUse"
-                                 patternTransform="translate(15, 0)">
+                        <pattern id="trianglePatternOdd" viewBox="0 0 30 52" width="60" height="104" patternUnits="userSpaceOnUse"
+                                 patternTransform="translate(30, 0)">
                             <g>
                                 <path d="M 15 26 L 30 51 L 0 51 Z" stroke="currentColor"></path>
                                 <use href="#tri" x="15" y="39"></use>
@@ -122,7 +123,7 @@
                         </pattern>
                     </defs>
                     <rect width="100%" height="100%" fill="url(#trianglePatternEven)"></rect>
-                    <rect y="26" width="100%" height="100%" fill="url(#trianglePatternOdd)"></rect>
+                    <rect y="50" width="100%" height="100%" fill="url(#trianglePatternOdd)"></rect>
                 </svg>
             </div>
         </div>
@@ -134,12 +135,12 @@
         <div class="flex justify-center px-6 w-full sm:max-w-md">
             <div class="w-2/3">
                 <a href="/">
-                    <x-aura::application-logo class="w-full text-gray-600 fill-current dark:text-gray-100"/>
+                    <x-aura::application-logo class="w-full text-gray-800 fill-current dark:text-gray-100"/>
                 </a>
             </div>
         </div>
 
-        <div class="overflow-hidden px-6 py-4 pb-6 mt-6 w-full border border-gray-300 shadow-md backdrop-blur-sm dark:border-gray-700 bg-white/80 dark:bg-gray-800/80 sm:max-w-md sm:rounded-2xl">
+        <div class="overflow-hidden px-6 py-4 pb-6 mt-6 w-full border border-gray-300 shadow-md backdrop-blur-sm dark:border-gray-700 bg-white/50 dark:bg-gray-800/80 sm:max-w-md sm:rounded-2xl">
             {{ $slot }}
         </div>
 
