@@ -30,10 +30,8 @@
             <x-aura::input-error :messages="$errors->get('password_confirmation')" class="mt-2" />
         </div>
 
-        <div class="flex items-center justify-end mt-4">
-            <x-aura::primary-button>
-                {{ __('Reset Password') }}
-            </x-aura::primary-button>
+        <div class="flex justify-end items-center mt-6">
+            <x-aura::button type="submit" block>{{ __('Reset Password') }}</x-aura::button>
         </div>
     </form>
 </x-aura::layout.login>
