@@ -27,6 +27,10 @@ class ModifyDatabaseMigration
         $newFields = collect($event->fields);
         $existingFields = collect($event->oldFields);
 
+        if (! $model::$customTable) {
+            return;
+        }
+
         $tableName = $model->getTable();
 
         $migrationName = "create_{$tableName}_table";
