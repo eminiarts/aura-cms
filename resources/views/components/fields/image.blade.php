@@ -23,9 +23,7 @@
 @endphp
 
 
-<div class="relative w-full">
-
-    <x-aura::fields.wrapper :field="$field">
+    <x-aura::fields.wrapper :field="$field" class="relative">
         <div class="z-[2] relative">
             @if(isset($files) && count($files) > 0)
                 <div x-data="{
@@ -101,5 +99,3 @@
 
     </x-aura::fields.wrapper>
 
-
-</div>
