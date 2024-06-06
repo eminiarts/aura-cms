@@ -200,6 +200,7 @@ class Settings extends Component
                     'custom' => 'Custom',
                 ],
                 'slug' => 'color-palette',
+                'live' => true,
             ],
             [
                 'type' => 'Aura\\Base\\Fields\\Group',
@@ -327,6 +328,7 @@ class Settings extends Component
                     'custom' => 'Custom',
                 ],
                 'slug' => 'gray-color-palette',
+                'live' => true,
             ],
 
             [
