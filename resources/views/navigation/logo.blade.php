@@ -1,12 +1,12 @@
 @php
     $logo = $darkLogo = null;
 
-    if($settings && (isset($settings['app-logo'][0]) || isset($settings['app-logo-darkmode'][0]))) {
-        $logo = isset($settings['app-logo'][0]) ? $settings['app-logo'][0] : null;
-        $darkLogo = isset($settings['app-logo-darkmode'][0]) ? $settings['app-logo-darkmode'][0] : null;
-    } elseif($appSettings && (isset($appSettings['app-logo'][0]) || isset($appSettings['app-logo-darkmode'][0]))) {
-        $logo = isset($appSettings['app-logo'][0]) ? $appSettings['app-logo'][0] : null;
-        $darkLogo = isset($appSettings['app-logo-darkmode'][0]) ? $appSettings['app-logo-darkmode'][0] : null;
+    if($settings && (isset($settings['logo'][0]) || isset($settings['logo-darkmode'][0]))) {
+        $logo = isset($settings['logo'][0]) ? $settings['logo'][0] : null;
+        $darkLogo = isset($settings['logo-darkmode'][0]) ? $settings['logo-darkmode'][0] : null;
+    } elseif($appSettings && (isset($appSettings['logo'][0]) || isset($appSettings['logo-darkmode'][0]))) {
+        $logo = isset($appSettings['logo'][0]) ? $appSettings['logo'][0] : null;
+        $darkLogo = isset($appSettings['logo-darkmode'][0]) ? $appSettings['logo-darkmode'][0] : null;
     }
 
     // Debugging: Dump the logo variables

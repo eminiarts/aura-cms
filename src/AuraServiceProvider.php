@@ -38,7 +38,7 @@ use Aura\Base\Livewire\Resource\Index;
 use Aura\Base\Livewire\Resource\View;
 use Aura\Base\Livewire\ResourceEditor;
 use Aura\Base\Livewire\Table\Table;
-use Aura\Base\Livewire\TeamSettings;
+use Aura\Base\Livewire\Settings;
 use Aura\Base\Livewire\TwoFactorAuthenticationForm;
 use Aura\Base\Navigation\Navigation as AuraNavigation;
 use Aura\Base\Policies\ResourcePolicy;
@@ -115,7 +115,7 @@ class AuraServiceProvider extends PackageServiceProvider
         Livewire::component('aura::user-two-factor-authentication-form', TwoFactorAuthenticationForm::class);
         Livewire::component('aura::create-resource', CreateResource::class);
         Livewire::component('aura::edit-resource', ResourceEditor::class);
-        Livewire::component('aura::team-settings', TeamSettings::class);
+        Livewire::component('aura::settings', app(config('aura.components.settings')));
         Livewire::component('aura::invite-user', InviteUser::class);
         Livewire::component('aura::config', app(config('aura.components.config')));
 

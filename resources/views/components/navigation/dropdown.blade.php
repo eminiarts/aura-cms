@@ -8,7 +8,7 @@
 ])
 
 @php
-    $settings = app('aura')::getOption('team-settings');
+    $settings = app('aura')::getOption('settings');
 
     if ($settings) {
         $sidebarType = $settings['sidebar-type'] ?? 'primary';

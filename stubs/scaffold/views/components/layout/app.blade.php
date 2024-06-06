@@ -13,7 +13,7 @@
   <title>@yield('title') • {{ config('app.name', 'Aura CMS') }}</title>
 
   @php
-      $settings = app('aura')::getOption('team-settings');
+      $settings = app('aura')::getOption('settings');
       $appSettings = app('aura')::options();
   @endphp
   @include('aura::components.layout.favicon')

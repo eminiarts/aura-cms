@@ -470,7 +470,7 @@ class Aura
         if (config('aura.teams')) {
             auth()->user()->resource->currentTeam->updateOption($key, $value);
         } else {
-            Option::withoutGlobalScopes([TeamScope::class])->updateOrCreate(['name' => $key, 'team_id' => 0], ['value' => $value]);
+            Option::withoutGlobalScopes([TeamScope::class])->updateOrCreate(['name' => $key], ['value' => $value]);
         }
     }
 

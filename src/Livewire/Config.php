@@ -101,7 +101,7 @@ class Config extends Component
             [
                 'name' => 'App Logo',
                 'type' => 'Aura\\Base\\Fields\\Image',
-                'slug' => 'app-logo',
+                'slug' => 'logo',
                 'style' => [
                     'width' => '50',
                 ],
@@ -109,7 +109,7 @@ class Config extends Component
             [
                 'name' => 'App Logo (Darkmode)',
                 'type' => 'Aura\\Base\\Fields\\Image',
-                'slug' => 'app-logo-darkmode',
+                'slug' => 'logo-darkmode',
                 'style' => [
                     'width' => '50',
                 ],
