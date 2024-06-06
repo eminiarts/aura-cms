@@ -66,6 +66,15 @@ function createSuperAdmin()
     return $user;
 }
 
+function createSuperAdminWithoutTeam()
+{
+    $user = User::factory()->create();
+
+    auth()->login($user);
+
+    return $user;
+}
+
 function createAdmin()
 {
     $user = User::factory()->create();
