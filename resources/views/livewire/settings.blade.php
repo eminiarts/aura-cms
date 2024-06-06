@@ -15,7 +15,7 @@
 
         <div>
             <x-aura::button size="xl" wire:click="save">
-                <div wire:loading>
+                <div wire:loading wire:target="save">
                     <x-aura::icon.loading  />
                 </div>
                 {{ __('Save') }}
