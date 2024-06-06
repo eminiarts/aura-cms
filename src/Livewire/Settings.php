@@ -34,7 +34,7 @@ class Settings extends Component
             ],
             [
                 'type' => 'Aura\\Base\\Fields\\Panel',
-                'name' => 'Logo',
+                'name' => 'Appearance',
                 'slug' => 'panel-DZzV',
             ],
             [
@@ -161,7 +161,7 @@ class Settings extends Component
             ],
             [
                 'type' => 'Aura\\Base\\Fields\\Panel',
-                'name' => 'Primary Colors',
+                'name' => 'Theme',
                 'slug' => 'panel-theme-primary',
                 'style' => [
                     'width' => '50',
@@ -302,7 +302,7 @@ class Settings extends Component
 
             [
                 'type' => 'Aura\\Base\\Fields\\Panel',
-                'name' => 'Gray Colors',
+                'name' => 'Theme',
                 'slug' => 'panel-theme-gray',
                 'style' => [
                     'width' => '50',
