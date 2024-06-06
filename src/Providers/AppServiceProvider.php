@@ -32,23 +32,12 @@ class AppServiceProvider extends ServiceProvider
                 }),
             ] : null,
             config('aura.features.theme_options') ? [
-                'icon' => "<x-aura::icon icon='brush' />",
-                'name' => 'Theme Options',
-                'slug' => 'theme_options',
-                'group' => 'settings',
-                'sort' => 300,
-                'route' => 'aura.team.settings',
-                'conditional_logic' => DynamicFunctions::add(function () {
-                    return auth()->user()->resource->isSuperAdmin();
-                }),
-            ] : null,
-            config('aura.features.global_config') ? [
                 'icon' => "<x-aura::icon icon='config' />",
-                'name' => 'Global Config',
-                'slug' => 'global_config',
+                'name' => 'Settings',
+                'slug' => 'settings',
                 'group' => 'settings',
                 'sort' => 300,
-                'route' => 'aura.config',
+                'route' => 'aura.settings',
                 'conditional_logic' => DynamicFunctions::add(function () {
                     return auth()->user()->resource->isSuperAdmin();
                 }),

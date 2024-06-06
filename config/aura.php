@@ -62,7 +62,7 @@ return [
     'components' => [
         'dashboard' => Aura\Base\Livewire\Dashboard::class,
         'profile' => Aura\Base\Livewire\Profile::class,
-        'team_settings' => Aura\Base\Livewire\TeamSettings::class,
+        'settings' => Aura\Base\Livewire\Settings::class,
         'config' => Aura\Base\Livewire\Config::class,
     ],
 

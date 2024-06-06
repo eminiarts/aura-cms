@@ -9,7 +9,7 @@ use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Cache;
 use Livewire\Component;
 
-class TeamSettings extends Component
+class Settings extends Component
 {
     use InputFields;
     use MediaFields;
@@ -34,21 +34,21 @@ class TeamSettings extends Component
             ],
             [
                 'type' => 'Aura\\Base\\Fields\\Panel',
-                'name' => 'Panel',
+                'name' => 'Logo',
                 'slug' => 'panel-DZzV',
             ],
             [
-                'name' => 'App Logo',
+                'name' => 'Logo',
                 'type' => 'Aura\\Base\\Fields\\Image',
-                'slug' => 'app-logo',
+                'slug' => 'logo',
                 'style' => [
                     'width' => '50',
                 ],
             ],
             [
-                'name' => 'App Logo (Darkmode)',
+                'name' => 'Logo Darkmode',
                 'type' => 'Aura\\Base\\Fields\\Image',
-                'slug' => 'app-logo-darkmode',
+                'slug' => 'logo-darkmode',
                 'style' => [
                     'width' => '50',
                 ],
@@ -59,15 +59,10 @@ class TeamSettings extends Component
             //     'slug' => 'timezone',
             // ],
 
-            [
-                'type' => 'Aura\\Base\\Fields\\Tab',
-                'name' => 'Theme',
-                'slug' => 'tab-theme',
-                'global' => true,
-            ],
+          
             [
                 'type' => 'Aura\\Base\\Fields\\Panel',
-                'name' => 'Sidebar settings',
+                'name' => 'Sidebar',
                 'slug' => 'panel-theme-sidebar',
                 'style' => [
                     'width' => '100',
@@ -88,7 +83,7 @@ class TeamSettings extends Component
                 ],
                 'slug' => 'sidebar-size',
                 'style' => [
-                    'width' => '100',
+                    'width' => '25',
                 ],
             ],
             [
@@ -110,7 +105,7 @@ class TeamSettings extends Component
                 ],
                 'slug' => 'sidebar-type',
                 'style' => [
-                    'width' => '33',
+                    'width' => '25',
                 ],
             ],
             [
@@ -133,7 +128,7 @@ class TeamSettings extends Component
                 ],
                 'slug' => 'darkmode-type',
                 'style' => [
-                    'width' => '33',
+                    'width' => '25',
                 ],
             ],
 
@@ -156,7 +151,7 @@ class TeamSettings extends Component
                 ],
                 'slug' => 'sidebar-darkmode-type',
                 'style' => [
-                    'width' => '33',
+                    'width' => '25',
                 ],
                 'conditional_logic' => function ($model, $form) {
                     if ($form && $form['fields'] && $form['fields']['darkmode-type']) {
@@ -169,14 +164,10 @@ class TeamSettings extends Component
                 'name' => 'Primary Colors',
                 'slug' => 'panel-theme-primary',
                 'style' => [
-                    'width' => '33',
+                    'width' => '50',
                 ],
             ],
-            [
-                'type' => 'Aura\\Base\\Fields\\Tab',
-                'name' => 'Color Theme',
-                'slug' => 'tab-primary-colors-theme',
-            ],
+           
             [
                 'name' => 'Primary Color Palette',
                 'type' => 'Aura\\Base\\Fields\\Select',
@@ -211,7 +202,7 @@ class TeamSettings extends Component
                 'slug' => 'color-palette',
             ],
             [
-                'type' => 'Aura\\Base\\Fields\\Tab',
+                'type' => 'Aura\\Base\\Fields\\Group',
                 'name' => 'Custom Colors',
                 'slug' => 'tab-primary-colors-lightmode',
                 'conditional_logic' => function ($model, $form) {
@@ -314,15 +305,11 @@ class TeamSettings extends Component
                 'name' => 'Gray Colors',
                 'slug' => 'panel-theme-gray',
                 'style' => [
-                    'width' => '33',
+                    'width' => '50',
                 ],
             ],
 
-            [
-                'type' => 'Aura\\Base\\Fields\\Tab',
-                'name' => 'Gray Colors',
-                'slug' => 'tab-primary-gray-colors-theme',
-            ],
+           
             [
                 'name' => 'Gray Color Palette',
                 'type' => 'Aura\\Base\\Fields\\Select',
@@ -343,7 +330,7 @@ class TeamSettings extends Component
             ],
 
             [
-                'type' => 'Aura\\Base\\Fields\\Tab',
+                'type' => 'Aura\\Base\\Fields\\Group',
                 'name' => 'Custom Colors',
                 'slug' => 'tab-gray-colors-custom-tab',
                 'conditional_logic' => function ($model, $form) {
@@ -470,13 +457,23 @@ class TeamSettings extends Component
             'sidebar-type' => 'primary',
             'color-palette' => 'aura',
             'gray-color-palette' => 'slate',
+            'sidebar-size' => 'standard',
+            'sidebar-darkmode-type' => 'dark',
         ];
 
-        $this->model = Option::firstOrCreate([
-            'name' => 'team.'.auth()->user()->current_team_id.'.team-settings',
-        ], [
-            'value' => $valueString,
-        ]);
+        if (config('aura.teams')) {
+            $this->model = Option::firstOrCreate([
+                'name' => 'team.'.auth()->user()->current_team_id.'.settings',
+            ], [
+                'value' => $valueString,
+            ]);
+        } else {
+            $this->model = Option::firstOrCreate([
+                'name' => 'settings',
+            ], [
+                'value' => $valueString,
+            ]);
+        }
 
         if (is_string($this->model->value)) {
             $this->form['fields'] = json_decode($this->model->value, true);
@@ -494,7 +491,7 @@ class TeamSettings extends Component
 
     public function render()
     {
-        return view('aura::livewire.team-settings')->layout('aura::components.layout.app');
+        return view('aura::livewire.settings')->layout('aura::components.layout.app');
     }
 
     public function rules()
@@ -506,7 +503,7 @@ class TeamSettings extends Component
 
     public function save()
     {
-        app('aura')::updateOption('team-settings', $this->form['fields']);
+        app('aura')::updateOption('settings', $this->form['fields']);
 
         Cache::clear();
 

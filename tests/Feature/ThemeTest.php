@@ -2,7 +2,7 @@
 
 namespace Tests\Feature\Livewire;
 
-use Aura\Base\Livewire\TeamSettings;
+use Aura\Base\Livewire\Settings;
 use Aura\Base\Models\User;
 use Aura\Base\Resources\Option;
 use Aura\Base\Resources\Role;
@@ -23,7 +23,7 @@ test('Team Settings Component can be rendered', function () {
 
     $user->update(['fields' => ['roles' => [$role->id]]]);
 
-    $component = Livewire::test(TeamSettings::class);
+    $component = Livewire::test(Settings::class);
 
     $component->assertStatus(200);
 });
@@ -37,8 +37,8 @@ test('Default Team Settings are created', function () {
     $user->update(['fields' => ['roles' => [$role->id]]]);
 
     // Default Team Settings
-    Livewire::test(TeamSettings::class)
-        ->assertSee('Theme Options')
+    Livewire::test(Settings::class)
+        ->assertSee('Settings')
         ->assertSee('primary')
         ->assertSet('form.fields.darkmode-type', 'auto')
         ->assertSet('form.fields.sidebar-type', 'primary')
@@ -52,7 +52,7 @@ test('Default Team Settings are created', function () {
     $option = Option::first();
 
     // assert option is team settings
-    $this->assertEquals($option->name, 'team-settings');
+    $this->assertEquals($option->name, 'settings');
 
     // assert $option->value is an array
     $this->assertIsArray($option->value);
@@ -82,7 +82,7 @@ test('Team Settings can be saved', function () {
     ]);
 
     // Default Team Settings
-    Livewire::test(TeamSettings::class)
+    Livewire::test(Settings::class)
         ->set('form.fields.darkmode-type', 'light')
         ->set('form.fields.sidebar-type', 'light')
         ->set('form.fields.color-palette', 'red')
@@ -96,7 +96,7 @@ test('Team Settings can be saved', function () {
     $option = Option::first();
 
     // assert option is team settings
-    $this->assertEquals($option->name, 'team-settings');
+    $this->assertEquals($option->name, 'settings');
 
     $this->assertIsArray($option->value);
 
@@ -105,13 +105,13 @@ test('Team Settings can be saved', function () {
     $this->assertEquals('red', $option->value['color-palette']);
     $this->assertEquals('zinc', $option->value['gray-color-palette']);
 
-    // acting as $this->user, get team-settings page and assertSee "--primary-400: #f87171;" in html
+    // acting as $this->user, get settings page and assertSee "--primary-400: #f87171;" in html
     $this->actingAs($this->user)
         ->get(route('aura.team.settings'))
         ->assertSee('--primary-400: 248 113 113;');
 
     // Default Team Settings
-    Livewire::test(TeamSettings::class)
+    Livewire::test(Settings::class)
         ->set('form.fields.color-palette', 'emerald')
         ->call('save');
 
@@ -152,7 +152,7 @@ test('different options apply correct classes', function ($settings) {
     $resultSidebar = $settings['result-sidebar'];
     $resultContent = $settings['result-content'];
 
-    $component = Livewire::test(TeamSettings::class)
+    $component = Livewire::test(Settings::class)
         ->set('form.fields.darkmode-type', $darkmodeType)
         ->set('form.fields.sidebar-type', $sidebarType)
         ->set('form.fields.sidebar-darkmode-type', $sidebarDarkmodeType)

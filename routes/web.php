@@ -36,8 +36,7 @@ Route::domain(config('aura.domain'))
 
             Route::get('/profile', config('aura.components.profile'))->name('profile');
 
-            Route::get('/settings', config('aura.components.team_settings'))->name('team.settings');
-            Route::get('/config', config('aura.components.config'))->name('config');
+            Route::get('/settings', config('aura.components.settings'))->name('settings');
 
             Route::get('/plugins', PluginsPage::class)->name('plugins');
 
