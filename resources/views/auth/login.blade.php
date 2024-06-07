@@ -52,12 +52,12 @@
             <x-aura::button type="submit" block>{{ __('Log in') }}</x-aura::button>
         </div>
 
+        @if(config('aura.features.registration'))
         <div class="flex justify-center mt-6 text-sm">
             <span>You don't have an account yet? <a class="text-sm text-gray-600 underline rounded-md hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500" href="/register">Register.</a></span>
         </div>
-        {{-- <div class="flex justify-end items-center mt-4">
-            <x-aura::button.border type="submit" block>{{ __('Log in with Google') }}</x-aura::button.border>
-        </div> --}}
+        @endif
+       
         <div>
 
             </div>

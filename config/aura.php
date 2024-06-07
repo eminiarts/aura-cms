@@ -111,10 +111,14 @@ return [
         'resource_view' => true,
         'resource_edit' => true,
 
-        'register' => true,
+        'registration' => true,
+        '2fa' => true,
 
-        'team_registration' => true,
         'user_invitations' => true,
+    ],
+
+    'auth' => [
+        'redirect' => '/admin',
     ],
 
     /*
