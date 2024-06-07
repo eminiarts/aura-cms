@@ -31,6 +31,9 @@ class InviteUser extends ModalComponent
                 'placeholder' => 'email@example.com',
                 'validation' => 'required|email',
                 'slug' => 'email',
+                //  'style' => [
+                //     'width' => '50',
+                // ],
             ],
             [
                 'name' => 'Role',
@@ -38,6 +41,9 @@ class InviteUser extends ModalComponent
                 'validation' => 'required',
                 'slug' => 'role',
                 'options' => Role::get()->pluck('title', 'id')->toArray(),
+                // 'style' => [
+                //     'width' => '50',
+                // ],
             ],
         ];
     }

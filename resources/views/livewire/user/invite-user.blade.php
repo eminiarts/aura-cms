@@ -3,7 +3,7 @@
 
     <div class="flex flex-wrap">
 
-        <div class="w-1/3 pr-4">
+        <div class="w-full pr-4">
             <div class="mb-4 -mx-4">
                 @foreach($this->fields as $key => $field)
                 <style >
@@ -32,9 +32,9 @@
         </x-aura::button>
     </div>
 
-    <div class="w-2/3">
-        <livewire:aura::table :model="app('Aura\Base\Resources\TeamInvitation')"/>
-    </div>
+    {{-- <div class="w-2/3">
+         <livewire:aura::table :model="app('Aura\Base\Resources\TeamInvitation')"/> 
+    </div> --}}
 </div>
 
 </div>
