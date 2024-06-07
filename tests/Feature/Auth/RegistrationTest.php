@@ -7,7 +7,7 @@ use Aura\Base\Resources\Team;
 
 beforeEach(function () {
     // Enable Team Registration
-    config(['aura.features.registration' => true]);
+    config(['aura.auth.registration' => true]);
 });
 
 test('registration screen can be rendered', function () {
@@ -34,7 +34,7 @@ test('new users can register', function () {
     ]);
 
     $this->assertAuthenticated();
-    $response->assertRedirect(RouteServiceProvider::HOME);
+    $response->assertRedirect(config('aura.auth.redirect'));
 
     // Assert team is created
     $this->assertDatabaseHas('teams', [
@@ -59,7 +59,7 @@ test('new users can register', function () {
 
 test('registration can be disabeld', function () {
 
-    config(['aura.features.registration' => false]);
+    config(['aura.auth.registration' => false]);
 
     $response = $this->get(route('aura.register'));
 
@@ -68,7 +68,7 @@ test('registration can be disabeld', function () {
 
 test('register link is not visible on login page when registration is disabled', function () {
     // Disable registration feature
-    config(['aura.features.registration' => false]);
+    config(['aura.auth.registration' => false]);
 
     // Visit the login page
     $response = $this->get(route('aura.login'));
@@ -79,7 +79,7 @@ test('register link is not visible on login page when registration is disabled',
 
 test('register link is visible on login page when registration is enabled', function () {
     // Disable registration feature
-    config(['aura.features.registration' => true]);
+    config(['aura.auth.registration' => true]);
 
     // Visit the login page
     $response = $this->get(route('aura.login'));
@@ -90,7 +90,7 @@ test('register link is visible on login page when registration is enabled', func
 
 test('register with team shows team input', function () {
     // Disable registration feature
-    config(['aura.features.registration' => true]);
+    config(['aura.auth.registration' => true]);
     config(['aura.teams' => true]);
 
     // Visit the login page
@@ -102,7 +102,7 @@ test('register with team shows team input', function () {
 
 test('register without team does not show team input', function () {
     // Disable registration feature
-    config(['aura.features.registration' => true]);
+    config(['aura.auth.registration' => true]);
     config(['aura.teams' => false]);
 
     // Visit the login page
@@ -114,7 +114,7 @@ test('register without team does not show team input', function () {
 
 test('register with team creates team and user', function () {
     // Enable registration and teams feature
-    config(['aura.features.registration' => true]);
+    config(['aura.auth.registration' => true]);
     config(['aura.teams' => true]);
 
     // Prepare input data
@@ -150,7 +150,7 @@ test('register with team creates team and user', function () {
 
 test('register with team validates input', function () {
     // Enable registration and teams feature
-    config(['aura.features.registration' => true]);
+    config(['aura.auth.registration' => true]);
     config(['aura.teams' => true]);
 
     // Test with empty input data
@@ -194,7 +194,7 @@ test('register with team validates input', function () {
 
 test('register without team validates input', function () {
     // Enable registration and teams feature
-    config(['aura.features.registration' => true]);
+    config(['aura.auth.registration' => true]);
     config(['aura.teams' => false]);
 
     // Test with empty input data
@@ -234,7 +234,7 @@ test('register without team validates input', function () {
 
 test('register without team creates user', function () {
     // Enable registration and teams feature
-    config(['aura.features.registration' => true]);
+    config(['aura.auth.registration' => true]);
     config(['aura.teams' => false]);
 
     // Prepare input data

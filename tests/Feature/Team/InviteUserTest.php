@@ -108,7 +108,7 @@ test('user gets correct role', function () {
     $this->assertAuthenticated();
 
     // Assert is on dashboard
-    $response->assertRedirect(RouteServiceProvider::HOME);
+    $response->assertRedirect(config('aura.auth.redirect'));
 
     // Check if the Team Invitation is deleted
     $this->assertDatabaseMissing('team_invitations', [
@@ -232,7 +232,7 @@ test('user can register using an invitation', function () {
         'password_confirmation' => 'password',
     ]);
 
-    $response->assertRedirect(RouteServiceProvider::HOME);
+    $response->assertRedirect(config('aura.auth.redirect'));
 
     $user = User::where('email', $invitation->email)->first();
 

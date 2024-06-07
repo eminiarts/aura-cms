@@ -65,6 +65,6 @@ class InvitationRegisterUserController extends Controller
 
         Auth::login($user);
 
-        return redirect(RouteServiceProvider::HOME);
+        return redirect(config('aura.auth.redirect'));
     }
 }
