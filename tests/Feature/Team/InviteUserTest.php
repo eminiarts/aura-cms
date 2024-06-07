@@ -20,9 +20,6 @@ uses(RefreshDatabase::class);
 // Before each test, create a Superadmin and login
 beforeEach(function () {
     $this->actingAs($this->user = createSuperAdmin());
-
-    // Enable Team Registration
-    // Aura::setOption('team_registration', true);
 });
 
 test('user can be invited', function () {

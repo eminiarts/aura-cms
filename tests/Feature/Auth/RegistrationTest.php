@@ -7,7 +7,7 @@ use Aura\Base\Resources\Team;
 
 beforeEach(function () {
     // Enable Team Registration
-    config(['aura.features.register' => true]);
+    config(['aura.features.registration' => true]);
 });
 
 test('registration screen can be rendered', function () {
@@ -59,9 +59,31 @@ test('new users can register', function () {
 
 test('registration can be disabeld', function () {
 
-    config(['aura.features.register' => false]);
+    config(['aura.features.registration' => false]);
 
     $response = $this->get(route('aura.register'));
 
     $response->assertStatus(404);
+});
+
+test('register link is not visible on login page when registration is disabled', function () {
+    // Disable registration feature
+    config(['aura.features.registration' => false]);
+
+    // Visit the login page
+    $response = $this->get(route('aura.login'));
+
+    // Assert that the registration link is not visible
+    $response->assertDontSee('Register.');
+});
+
+test('register link is visible on login page when registration is enabled', function () {
+    // Disable registration feature
+    config(['aura.features.registration' => true]);
+
+    // Visit the login page
+    $response = $this->get(route('aura.login'));
+
+    // Assert that the registration link is not visible
+    $response->assertSee('Register.');
 });
