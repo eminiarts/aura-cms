@@ -20,6 +20,9 @@ uses(RefreshDatabase::class);
 // Before each test, create a Superadmin and login
 beforeEach(function () {
     $this->actingAs($this->user = createSuperAdmin());
+
+    // config('aura.teams')
+    config(['aura.teams' => true]);
 });
 
 test('user can be invited', function () {
@@ -80,6 +83,8 @@ test('user gets correct role', function () {
     // Go to the Registration Page and make sure it works
     $url = URL::signedRoute('aura.invitation.register', [$invitation->team, $invitation]);
 
+    dump($url);
+
     // Log out
     $this->app['auth']->logout();
 
@@ -88,6 +93,9 @@ test('user gets correct role', function () {
 
     // Visit $url and assert Ok
     $response = $this->get($url);
+
+    ray(config('aura.teams'))->red();
+
 
     $response->assertOk();
 
@@ -170,7 +178,7 @@ test('user_invitations can be enabled', function () {
         ->call('save')
         ->assertHasNoErrors();
 
-    expect(Aura::option('user_invitations'))->toBeTrue();
+    expect(config('aura.auth.user_invitations'))->toBeTrue();
 
     expect(app('aura')::option('user_invitations'))->toBeTrue();
 });
@@ -181,7 +189,7 @@ test('user_invitations can be disabled', function () {
         ->call('save')
         ->assertHasNoErrors();
 
-    expect(Aura::option('user_invitations'))->toBeTrue();
+    expect(config('aura.auth.user_invitations'))->toBeTrue();
 
     expect(app('aura')::option('user_invitations'))->toBeTrue();
 });
@@ -277,7 +285,7 @@ test('email and role are required in the invite user component', function () {
     $user->teams()->attach($team->id);
 
     livewire(InviteUser::class, ['team' => $team])
-        ->set('resource', ['fields' => [
+        ->set('form', ['fields' => [
             'email' => 'invited@test.com',
             'role' => Role::first()->id,
         ]])

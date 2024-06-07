@@ -24,7 +24,7 @@ class InvitationRegisterUserController extends Controller
     public function create(Request $request, Team $team, TeamInvitation $teamInvitation)
     {
         // If team registration is disabled, we show a 404 page.
-        abort_if(! Aura::option('user_invitations'), 404);
+        abort_if(! config('aura.auth.user_invitations'), 404);
 
         return view('aura::auth.user_invitation', [
             'team' => $team,
@@ -41,7 +41,7 @@ class InvitationRegisterUserController extends Controller
      */
     public function store(Request $request, Team $team, TeamInvitation $teamInvitation)
     {
-        abort_if(! Aura::option('user_invitations'), 404);
+        abort_if(! config('aura.auth.user_invitations'), 404);
 
         $request->validate([
             'name' => ['required', 'string', 'max:255'],
