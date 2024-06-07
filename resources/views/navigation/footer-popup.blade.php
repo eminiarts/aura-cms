@@ -44,7 +44,7 @@
   </x-aura::dropdown-link>
   @endif
 
-  <x-aura::dropdown-link href="{{ route('logout') }}">
+  <x-aura::dropdown-link href="{{ route('aura.logout') }}">
       {{ __('Logout') }}
   </x-aura::dropdown-link>
 

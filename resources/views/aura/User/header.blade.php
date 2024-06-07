@@ -14,7 +14,7 @@
 
     <div>
         <div>
-            @if(app('aura')::option('user_invitations'))
+            @if(config('aura.auth.user_invitations'))
                 <x-aura::button.light wire:click.prevent="$dispatch('openModal', { component: 'aura::invite-user'})">
                     <x-slot:icon>
                         <x-aura::icon icon="plus" />

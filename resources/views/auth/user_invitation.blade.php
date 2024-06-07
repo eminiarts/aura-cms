@@ -6,21 +6,21 @@
         <!-- Team -->
         <div>
             <x-aura::input-label for="team" :value="__('Team')" />
-            <x-aura::text-input id="team" class="block mt-1 w-full text-black bg-gray-200 opacity-50" type="text" name="team" :value="$team->name" disabled />
+            <x-aura::input.text id="team" class="block mt-1 w-full text-black bg-gray-200 opacity-50" type="text" name="team" :value="$team->name" disabled />
             <x-aura::input-error :messages="$errors->get('team')" class="mt-2" />
         </div>
 
         <!-- Email Address -->
         <div class="mt-4">
             <x-aura::input-label for="email" :value="__('Email')" />
-            <x-aura::text-input id="email" class="block mt-1 w-full text-black bg-gray-200 opacity-50" type="email" name="email" :value="$teamInvitation->email" disabled />
+            <x-aura::input.text id="email" class="block mt-1 w-full text-black bg-gray-200 opacity-50" type="email" name="email" :value="$teamInvitation->email" disabled />
             <x-aura::input-error :messages="$errors->get('email')" class="mt-2" />
         </div>
 
         <!-- Name -->
         <div class="mt-4">
             <x-aura::input-label for="name" :value="__('Name')" />
-            <x-aura::text-input id="name" class="block mt-1 w-full bg-gray-200" type="text" name="name" :value="old('name')" required />
+            <x-aura::input.text id="name" class="block mt-1 w-full bg-gray-200" type="text" name="name" :value="old('name')" required />
             <x-aura::input-error :messages="$errors->get('name')" class="mt-2" />
         </div>
 
@@ -28,7 +28,7 @@
         <div class="mt-4">
             <x-aura::input-label for="password" :value="__('Password')" />
 
-            <x-aura::text-input id="password" class="block mt-1 w-full bg-gray-200"
+            <x-aura::input.text id="password" class="block mt-1 w-full bg-gray-200"
                             type="password"
                             name="password"
                             required autocomplete="new-password" />
@@ -40,7 +40,7 @@
         <div class="mt-4">
             <x-aura::input-label for="password_confirmation" :value="__('Confirm Password')" />
 
-            <x-aura::text-input id="password_confirmation" class="block mt-1 w-full bg-gray-200"
+            <x-aura::input.text id="password_confirmation" class="block mt-1 w-full bg-gray-200"
                             type="password"
                             name="password_confirmation" required />
 
