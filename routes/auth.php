@@ -30,7 +30,7 @@ Route::middleware('guest')->name('aura.')->group(function () {
 
     Route::post('login', [AuthenticatedSessionController::class, 'store']);
 
-    if (config('aura.features.registration')) {
+    if (config('aura.auth.registration')) {
         Route::get('register', [RegisteredUserController::class, 'create'])->name('register');
         Route::post('register', [RegisteredUserController::class, 'store'])->name('register.post');
 
@@ -72,9 +72,9 @@ Route::middleware('auth')->name('aura.')->group(function () {
 
     Route::get('/team-invitations/{invitation}', [TeamInvitationController::class, 'accept'])->middleware(['signed'])->name('team-invitations.accept');
 
-    ray('hier config', config('aura.features.2fa'))->blue();
+    ray('hier config', config('aura.auth.2fa'))->blue();
 
-    if (config('aura.features.2fa')) {
+    if (config('aura.auth.2fa')) {
         $twoFactorMiddleware = ['auth:web', 'password.confirm'];
 
         Route::get(RoutePath::for('two-factor.login', '/two-factor-challenge'), [TwoFactorAuthenticatedSessionController::class, 'create'])

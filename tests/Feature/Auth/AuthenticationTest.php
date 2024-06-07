@@ -20,7 +20,7 @@ test('users can authenticate using the login screen', function () {
     ]);
 
     $this->assertAuthenticated();
-    $response->assertRedirect(RouteServiceProvider::HOME);
+    $response->assertRedirect(config('aura.auth.redirect'));
 });
 
 test('users can not authenticate with invalid password', function () {

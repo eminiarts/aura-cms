@@ -7,13 +7,13 @@ use Illuminate\Support\Facades\Route;
 
 beforeEach(function () {
     // Enable Team Registration
-    config(['aura.features.registration' => true]);
-    config(['aura.features.2fa' => false]);
+    config(['aura.auth.registration' => true]);
+    config(['aura.auth.2fa' => false]);
 });
 
 test('registration can be disabeld', function () {
 
-    config(['aura.features.registration' => false]);
+    config(['aura.auth.registration' => false]);
 
     $response = $this->get(route('aura.register'));
 
@@ -22,7 +22,7 @@ test('registration can be disabeld', function () {
 
 test('register link is not visible on login page when registration is disabled', function () {
     // Disable registration feature
-    config(['aura.features.registration' => false]);
+    config(['aura.auth.registration' => false]);
 
     // Visit the login page
     $response = $this->get(route('aura.login'));
@@ -33,7 +33,7 @@ test('register link is not visible on login page when registration is disabled',
 
 test('register link is visible on login page when registration is enabled', function () {
     // Disable registration feature
-    config(['aura.features.registration' => true]);
+    config(['aura.auth.registration' => true]);
 
     // Visit the login page
     $response = $this->get(route('aura.login'));
@@ -74,7 +74,7 @@ test('post login works', function () {
 
 test('2FA routes exist when 2FA feature is enabled', function () {
     // Enable 2FA feature
-    config(['aura.features.2fa' => true]);
+    config(['aura.auth.2fa' => true]);
 
     // Check if the routes exist
     $this->assertTrue(Route::has('aura.two-factor.login'));
@@ -88,7 +88,7 @@ test('2FA routes exist when 2FA feature is enabled', function () {
 
 // test('2FA routes dont exist when 2FA feature is disabled', function () {
 //     // Disable 2FA feature
-//     config(['aura.features.2fa' => false]);
+//     config(['aura.auth.2fa' => false]);
 
 //     $response = $this->get(route('aura.two-factor.login'));
 
