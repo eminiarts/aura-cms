@@ -38,7 +38,6 @@ use Aura\Base\Livewire\Resource\Index;
 use Aura\Base\Livewire\Resource\View;
 use Aura\Base\Livewire\ResourceEditor;
 use Aura\Base\Livewire\Table\Table;
-use Aura\Base\Livewire\Settings;
 use Aura\Base\Livewire\TwoFactorAuthenticationForm;
 use Aura\Base\Navigation\Navigation as AuraNavigation;
 use Aura\Base\Policies\ResourcePolicy;
