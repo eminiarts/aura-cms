@@ -3,9 +3,7 @@
 namespace Tests\Feature\Livewire;
 
 use Aura\Base\Livewire\Settings;
-use Aura\Base\Models\User;
 use Aura\Base\Resources\Option;
-use Aura\Base\Resources\Role;
 use Aura\Base\Resources\Team;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
@@ -33,7 +31,6 @@ test('Settings Component can be rendered', function () {
     dd($response->content());
 
     ray('hi', $response->content());
-
 
     $response->assertStatus(200);
 });

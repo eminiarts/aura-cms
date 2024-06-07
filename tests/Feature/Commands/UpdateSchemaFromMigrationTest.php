@@ -1,21 +1,22 @@
 <?php
 
-use function Pest\Laravel\artisan;
+use Illuminate\Database\SQLiteConnection;
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
-use Illuminate\Support\Facades\Artisan;
-use Illuminate\Database\SQLiteConnection;
+
+use function Pest\Laravel\artisan;
 
 beforeEach(function () {
     // Set up the necessary environment, such as database migrations
     // and any needed configuration
 
-     // Set up the necessary environment
+    // Set up the necessary environment
     if (DB::connection() instanceof SQLiteConnection) {
         // Use in-memory database
         DB::statement(DB::raw('PRAGMA foreign_keys = OFF;'));
     }
-    
+
     Schema::dropAllTables();
 });
 
@@ -29,7 +30,7 @@ it('shows an error if migration file does not exist', function () {
 //     $migrationPath = database_path('migrations/2021_01_01_000000_non_existent_migration.php');
 //     unlink($migrationPath);
 //     file_put_contents($migrationPath, "<?php\n\nclass FakeMigration {}\n");
-    
+
 //     $this->artisan('aura:schema-update', ['migration' => $migrationPath])
 //         ->expectsOutput('Unable to load migration class.')
 //         ->assertExitCode(0);
@@ -67,7 +68,7 @@ it('shows an error if migration file does not exist', function () {
 //     file_put_contents($migrationPath, "<?php\n\nuse Illuminate\Database\Migrations\Migration;\nuse Illuminate\Database\Schema\Blueprint;\nuse Illuminate\Support\Facades\Schema;\n\nclass CreateUsersTable extends Migration {\n    public function up() {\n        Schema::create('users', function (Blueprint \$table) {\n            \$table->id();\n            \$table->string('name');\n            \$table->timestamps();\n        });\n    }\n}\n");
 
 //     $this->artisan('migrate');
-    
+
 //     $this->artisan('aura:schema-update', ['migration' => $migrationPath])
 //         ->expectsOutput('Schema updated successfully based on the migration file.')
 //         ->assertExitCode(0);

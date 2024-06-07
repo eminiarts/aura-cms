@@ -53,7 +53,7 @@ test('Default Team Settings are created', function () {
 
     // assert option is team settings
     // $this->assertEquals($option->name, 'settings');
-    $this->assertEquals($option->name, 'team.' . auth()->user()->currentTeam->id . '.settings');
+    $this->assertEquals($option->name, 'team.'.auth()->user()->currentTeam->id.'.settings');
 
     // assert $option->value is an array
     $this->assertIsArray($option->value);
@@ -97,7 +97,7 @@ test('Team Settings can be saved', function () {
     $option = Option::first();
 
     // assert option is team settings
-    $this->assertEquals($option->name, 'team.' . auth()->user()->currentTeam->id . '.settings');
+    $this->assertEquals($option->name, 'team.'.auth()->user()->currentTeam->id.'.settings');
     $this->assertIsArray($option->value);
 
     $this->assertEquals('light', $option->value['darkmode-type']);

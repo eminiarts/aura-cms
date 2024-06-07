@@ -4,9 +4,6 @@ namespace Tests\Feature\Auth;
 
 use Aura\Base\Resources\Team;
 use Illuminate\Support\Facades\Route;
-use Illuminate\Support\Facades\Artisan;
-use Aura\Base\Providers\RouteServiceProvider;
-use Symfony\Component\Routing\Exception\RouteNotFoundException;
 
 beforeEach(function () {
     // Enable Team Registration
@@ -93,7 +90,6 @@ test('2FA routes exist when 2FA feature is enabled', function () {
 //     // Disable 2FA feature
 //     config(['aura.features.2fa' => false]);
 
-
 //     $response = $this->get(route('aura.two-factor.login'));
 
 //     dd($response);
@@ -103,7 +99,6 @@ test('2FA routes exist when 2FA feature is enabled', function () {
 test('2FA login works', function () {
 
     $this->get(route('aura.two-factor.login'))
-    ->assertStatus(302)
-    ;
+        ->assertStatus(302);
 
 });

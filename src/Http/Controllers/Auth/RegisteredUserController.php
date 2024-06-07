@@ -70,7 +70,6 @@ class RegisteredUserController extends Controller
 
             $user->update(['fields' => ['roles' => [$role->id]]]);
         } else {
-            // ray('no teams');
             // no aura.teams
             $request->validate([
                 'name' => ['required', 'string', 'max:255'],

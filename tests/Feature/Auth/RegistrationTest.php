@@ -148,7 +148,6 @@ test('register with team creates team and user', function () {
     $this->assertEquals('Test Team', $user->currentTeam->name);
 });
 
-
 test('register with team validates input', function () {
     // Enable registration and teams feature
     config(['aura.features.registration' => true]);
@@ -167,7 +166,7 @@ test('register with team validates input', function () {
         'password_confirmation' => 'password',
     ];
     $response = $this->post(route('aura.register'), $data);
-    
+
     $response->assertSessionHasErrors(['team']);
 
     // Test with invalid email
@@ -191,4 +190,76 @@ test('register with team validates input', function () {
     ];
     $response = $this->post(route('aura.register'), $data);
     $response->assertSessionHasErrors(['password']);
+});
+
+test('register without team validates input', function () {
+    // Enable registration and teams feature
+    config(['aura.features.registration' => true]);
+    config(['aura.teams' => false]);
+
+    // Test with empty input data
+    $data = [];
+    $response = $this->post(route('aura.register'), $data);
+    $response->assertSessionHasErrors(['name', 'email', 'password']);
+
+    // Test with missing email
+    $data = [
+        'name' => 'Test User',
+        'password' => 'password',
+        'password_confirmation' => 'password',
+    ];
+    $response = $this->post(route('aura.register'), $data);
+    $response->assertSessionHasErrors(['email']);
+
+    // Test with invalid email
+    $data = [
+        'name' => 'Test User',
+        'email' => 'invalid-email',
+        'password' => 'password',
+        'password_confirmation' => 'password',
+    ];
+    $response = $this->post(route('aura.register'), $data);
+    $response->assertSessionHasErrors(['email']);
+
+    // Test with password mismatch
+    $data = [
+        'name' => 'Test User',
+        'email' => 'testuser@example.com',
+        'password' => 'password',
+        'password_confirmation' => 'different-password',
+    ];
+    $response = $this->post(route('aura.register'), $data);
+    $response->assertSessionHasErrors(['password']);
+});
+
+test('register without team creates user', function () {
+    // Enable registration and teams feature
+    config(['aura.features.registration' => true]);
+    config(['aura.teams' => false]);
+
+    // Prepare input data
+    $data = [
+        'name' => 'Test User',
+        'email' => 'testuser@example.com',
+        'password' => 'password',
+        'password_confirmation' => 'password',
+    ];
+
+    // Send POST request to register endpoint
+    $response = $this->post(route('aura.register'), $data);
+
+    // Validate input
+    $response->assertSessionHasNoErrors();
+
+    // Assert user creation
+    $this->assertDatabaseHas('users', [
+        'email' => 'testuser@example.com',
+        'name' => 'Test User',
+    ]);
+
+    // Assert team creation
+    $this->assertDatabaseMissing('teams', [
+        'name' => 'Test Team',
+    ]);
+
 });

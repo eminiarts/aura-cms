@@ -59,7 +59,6 @@ class Settings extends Component
             //     'slug' => 'timezone',
             // ],
 
-          
             [
                 'type' => 'Aura\\Base\\Fields\\Panel',
                 'name' => 'Sidebar',
@@ -167,7 +166,7 @@ class Settings extends Component
                     'width' => '50',
                 ],
             ],
-           
+
             [
                 'name' => 'Primary Color Palette',
                 'type' => 'Aura\\Base\\Fields\\Select',
@@ -310,7 +309,6 @@ class Settings extends Component
                 ],
             ],
 
-           
             [
                 'name' => 'Gray Color Palette',
                 'type' => 'Aura\\Base\\Fields\\Select',
