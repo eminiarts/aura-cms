@@ -8,13 +8,18 @@ class TeamInvitation extends Resource
 {
     public static ?string $slug = 'teaminvitation';
 
-    public static string $type = 'Team Invitation';
+    public static string $type = 'teaminvitation';
 
     protected static $dropdown = 'Users';
 
     protected static ?string $group = 'Aura';
 
     protected static bool $showInNavigation = true;
+
+    public function singularName()
+    {
+        return "Team Invitation";
+    }
 
     public function getIcon()
     {
