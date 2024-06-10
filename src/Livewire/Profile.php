@@ -62,8 +62,6 @@ class Profile extends Component
      */
     public function confirmUserDeletion()
     {
-        $this->dispatch('confirming-delete-user');
-
         $this->confirmingUserDeletion = true;
     }
 

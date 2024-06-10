@@ -26,7 +26,7 @@
             @endif
 
     @foreach($this->fieldsForView as $key => $field)
-    <style >
+    <style>
         #resource-field-{{ optional($field)['slug'] }}-wrapper {
             width: {{ optional(optional($field)['style'])['width'] ?? '100' }}%;
         }
