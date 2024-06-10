@@ -37,23 +37,7 @@
     <div class="grid gap-6 aura-edit-post-container sm:grid-cols-3">
         <div class="col-span-1 sm:col-span-3">
 
-            <div>
-                @if (count($errors->all()))
-
-            <div class="block">
-                <div class="mt-8 form_errors">
-                    <strong class="block text-red-600">{{ __('Unfortunately, there were still the following validation errors:') }}</strong>
-                    <div class="text-red-600 prose">
-                        <ul>
-                            @foreach ($errors->all() as $message)
-                            <li>{{ $message }}</li>
-                            @endforeach
-                        </ul>
-                    </div>
-                </div>
-            </div>
-            @endif
-            </div>
+            <x-aura::validation-errors />
 
             <div class="flex flex-wrap items-start -mx-2">
            @foreach($this->createFields as $key => $field)
@@ -63,22 +47,7 @@
             @endforeach
             </div>
 
-            <div wire:key="errors-{{ md5(json_encode($model)) }}">
-                @if (count($errors->all()))
-            <div class="block">
-                <div class="mt-8 form_errors">
-                    <strong class="block text-red-600">{{ __('Unfortunately, there were still the following validation errors:') }}</strong>
-                    <div class="text-red-600 prose">
-                        <ul>
-                            @foreach ($errors->all() as $message)
-                            <li>{{ $message }}</li>
-                            @endforeach
-                        </ul>
-                    </div>
-                </div>
-            </div>
-            @endif
-            </div>
+            <x-aura::validation-errors />
         </div>
 
         {{-- <div class="col-span-1">
