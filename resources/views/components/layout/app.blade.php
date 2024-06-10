@@ -75,13 +75,17 @@
 
 @stack('modals')
 
+
+
 <x-aura::notification/>
 
 @if(config('aura.features.notifications'))
 <livewire:aura::notifications/>
 @endif
 
-@livewire('wire-elements-modal')
+{{-- @livewire('wire-elements-modal') --}}
+
+@livewire('aura::modals')
 
 
 @auraScripts
