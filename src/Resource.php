@@ -157,8 +157,6 @@ class Resource extends Model
         if (! isset($this->fieldsAttributeCache) || $this->fieldsAttributeCache === null) {
             $meta = $this->getMeta();
 
-            ray($meta);
-
             $defaultValues = collect($this->inputFieldsSlugs())
                 ->mapWithKeys(fn ($value, $key) => [$value => null])
                 ->map(fn ($value, $key) => $meta[$key] ?? $value)
@@ -346,9 +344,7 @@ class Resource extends Model
         static::addGlobalScope(new ScopedScope());
 
         static::creating(function ($model) {
-            // if (! $model->team_id) {
-            //     $model->team_id = 1;
-            // }
+
         });
 
         static::saved(function ($model) {
