@@ -4,7 +4,7 @@
         @forelse($modals as $id => $modal)
             @if ($activeModal == $id)
                 <x-aura::dialog wire:model="activeModal">
-                    @if ($modal['modalAttributes']['slide_over'])
+                    @if ($modal['modalAttributes']['slideOver'])
                         <x-aura::dialog.slideover>
                             @livewire($modal['name'], $modal['arguments'], key($id))
                         </x-aura::dialog.slideover>

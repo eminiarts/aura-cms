@@ -41,13 +41,7 @@ class Modals extends Component
                 'persistent' => false,
                 'maxWidth' => 'md',
                 'maxWidthClass' => 'max-w-3xl',
-                // 'closeOnClickAway' => true,
-                // 'closeOnEscape' => true,
-                // 'closeOnEscapeIsForceful' => true,
-                // 'dispatchCloseEvent' => true,
-                // 'destroyOnClose' => true,
-                // 'maxWidth' => 'md',
-                // 'maxWidthClass' => 'max-w-3xl',
+                'slideOver' => false,
             ], $modalAttributes),
         ];
 
