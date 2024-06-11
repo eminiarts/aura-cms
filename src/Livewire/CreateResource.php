@@ -2,13 +2,14 @@
 
 namespace Aura\Base\Livewire;
 
-use Aura\Base\Traits\FieldsOnComponent;
-use Aura\Base\Traits\InputFields;
+use Livewire\Component;
 use Illuminate\Support\Arr;
-use Illuminate\Support\Facades\Artisan;
+use Aura\Base\Traits\InputFields;
 use LivewireUI\Modal\ModalComponent;
+use Aura\Base\Traits\FieldsOnComponent;
+use Illuminate\Support\Facades\Artisan;
 
-class CreateResource extends ModalComponent
+class CreateResource extends Component
 {
     use FieldsOnComponent;
     use InputFields;
@@ -49,6 +50,11 @@ class CreateResource extends ModalComponent
         return Arr::dot([
             'form.fields' => $this->validationRules(),
         ]);
+    }
+
+    public function closemodal()
+    {
+        $this->dispatch('closeModal');
     }
 
     public function save()

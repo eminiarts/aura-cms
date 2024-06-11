@@ -10,9 +10,14 @@ trait SaveMetaFields
     protected static function bootSaveMetaFields()
     {
         static::saving(function ($post) {
+
             if (isset($post->attributes['fields'])) {
 
-                // ray('saving', $post->attributes['fields']);
+                // Dont save Meta Fields if it is uses customTable
+                if ($post->usesCustomTable()) {
+                    unset($post->attributes['fields']);
+                    return;
+                }
 
                 foreach ($post->attributes['fields'] as $key => $value) {
                     $class = $post->fieldClassBySlug($key);

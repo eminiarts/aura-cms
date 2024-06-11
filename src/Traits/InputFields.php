@@ -61,7 +61,8 @@ trait InputFields
             return $this->fieldBySlug($key)['display']($value, $this);
         }
 
-        if ($value === null && optional(optional($this)->meta)->$key) {
+        // Only if uses Meta
+        if (!$this->usesCustomTable() && $value === null && optional(optional($this)->meta)->$key) {
             return optional($this->fieldClassBySlug($key))->display($this->fieldBySlug($key), optional($this->meta)->$key, $this);
         }
 

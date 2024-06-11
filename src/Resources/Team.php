@@ -32,7 +32,7 @@ class Team extends Resource
         'name', 'user_id', 'fields',
     ];
 
-    protected static ?string $group = 'Aura';
+    protected static ?string $group = 'Global';
 
     protected $table = 'teams';
 

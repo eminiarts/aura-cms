@@ -68,9 +68,6 @@ class AuthServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-
-        ray('AuthServiceProvider:register');
-
         $this->app->singleton(TwoFactorAuthenticationProviderContract::class, function ($app) {
             return new TwoFactorAuthenticationProvider(
                 $app->make(Google2FA::class),

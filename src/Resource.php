@@ -207,6 +207,8 @@ class Resource extends Model
             });
         }
 
+        // ray($this->fieldsAttributeCache);
+
         return $this->fieldsAttributeCache;
     }
 
@@ -225,6 +227,10 @@ class Resource extends Model
 
     public function getMeta($key = null)
     {
+        if ($this->usesCustomTable()) {
+            return collect();
+        }
+
         if ($this->usesMeta() && optional($this)->meta && ! is_string($this->meta)) {
 
             $meta = $this->meta->pluck('value', 'key');
@@ -338,9 +344,7 @@ class Resource extends Model
         static::addGlobalScope(new ScopedScope());
 
         static::creating(function ($model) {
-            // if (! $model->team_id) {
-            //     $model->team_id = 1;
-            // }
+
         });
 
         static::saved(function ($model) {

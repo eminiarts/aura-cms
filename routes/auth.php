@@ -69,8 +69,6 @@ Route::middleware('auth')->name('aura.')->group(function () {
 
     Route::get('/team-invitations/{invitation}', [TeamInvitationController::class, 'accept'])->middleware(['signed'])->name('team-invitations.accept');
 
-    ray('hier config', config('aura.auth.2fa'))->blue();
-
     if (config('aura.auth.2fa')) {
         $twoFactorMiddleware = ['auth:web', 'password.confirm'];
 

@@ -13,7 +13,7 @@
         <div>
             <x-aura::input-label class="sr-only" for="email" :value="__('Email')" />
             <x-aura::input.text id="email" placeholder="{{ __('Enter your email') }}" class="block mt-1 w-full" type="email" name="email" :value="old('email')" required autofocus />
-            <x-aura::input-error :messages="optional($errors)->get('email')" class="mt-2" />
+            <x-aura::input-error :for="optional($errors)->get('email')" class="mt-2" />
         </div>
 
         <!-- Password -->
@@ -26,7 +26,7 @@
                             placeholder="{{ __('Enter your password') }}"
                             required autocomplete="current-password" />
 
-            <x-aura::input-error :messages="optional($errors)->get('password')" class="mt-2" />
+            <x-aura::input-error :for="optional($errors)->get('password')" class="mt-2" />
         </div>
 
         <div class="flex justify-between items-start mt-4">

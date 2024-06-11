@@ -27,6 +27,7 @@ use Aura\Base\Livewire\GlobalSearch;
 use Aura\Base\Livewire\InviteUser;
 use Aura\Base\Livewire\MediaManager;
 use Aura\Base\Livewire\MediaUploader;
+use Aura\Base\Livewire\Modals;
 use Aura\Base\Livewire\Navigation;
 use Aura\Base\Livewire\Notifications;
 use Aura\Base\Livewire\PluginsPage;
@@ -119,6 +120,7 @@ class AuraServiceProvider extends PackageServiceProvider
         Livewire::component('aura::config', app(config('aura.components.config')));
 
         Livewire::component('aura::profile', app(config('aura.components.profile')));
+        Livewire::component('aura::modals', Modals::class);
 
         // Flows
         Livewire::component('aura::create-flow', CreateFlow::class);
