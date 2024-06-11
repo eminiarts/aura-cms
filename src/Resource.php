@@ -157,6 +157,8 @@ class Resource extends Model
         if (! isset($this->fieldsAttributeCache) || $this->fieldsAttributeCache === null) {
             $meta = $this->getMeta();
 
+            ray($meta);
+
             $defaultValues = collect($this->inputFieldsSlugs())
                 ->mapWithKeys(fn ($value, $key) => [$value => null])
                 ->map(fn ($value, $key) => $meta[$key] ?? $value)
@@ -206,6 +208,8 @@ class Resource extends Model
                 return $this->shouldDisplayField($this->fieldBySlug($key));
             });
         }
+
+        // ray($this->fieldsAttributeCache);
 
         return $this->fieldsAttributeCache;
     }

@@ -139,4 +139,6 @@ test('custom Table - Meta is not used for fields', function () {
     expect($resource->name)->not->toBe('Test Post 1');
     expect($resource->name)->toBeNull();
 
+    expect($resource->display('name'))->toBeNull();
+
 });
