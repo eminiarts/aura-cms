@@ -1,22 +1,19 @@
 <div>
-    @if ($activeModal)
+    @forelse($modals as $id => $modal)
+        <x-aura::dialog wire:model="activeModals.{{ $id }}">
 
-        @forelse($modals as $id => $modal)
-            @if ($activeModal == $id)
-                <x-aura::dialog wire:model="activeModal">
-                    @if ($modal['modalAttributes']['slideOver'])
-                        <x-aura::dialog.slideover>
-                            @livewire($modal['name'], $modal['arguments'], key($id))
-                        </x-aura::dialog.slideover>
-                    @else
-                        <x-aura::dialog.panel>
-                            @livewire($modal['name'], $modal['arguments'], key($id))
-                        </x-aura::dialog.panel>
-                    @endif
-                </x-aura::dialog>
+            @if ($modal['modalAttributes']['slideOver'])
+                <x-aura::dialog.slideover>
+                    @dump($activeModals)
+                    @livewire($modal['name'], $modal['arguments'], key($id))
+                </x-aura::dialog.slideover>
+            @else
+                <x-aura::dialog.panel>
+                    @dump($activeModals)
+                    @livewire($modal['name'], $modal['arguments'], key($id))
+                </x-aura::dialog.panel>
             @endif
-        @empty
-        @endforelse
-
-    @endif
+        </x-aura::dialog>
+    @empty
+    @endforelse
 </div>
