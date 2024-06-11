@@ -3,6 +3,7 @@
     "scripts": {
         "dev": "vite",
         "build": "vite build",
+        "build:lib": "vite build --mode lib",
         "watch": "nodemon --watch resources/views --exec \"npm run build\" --ext php,js,css,html"
     },
     "devDependencies": {
