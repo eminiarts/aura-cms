@@ -95,6 +95,7 @@ class TwoFactorAuthenticationForm extends Component
         // if (Features::optionEnabled(Features::twoFactorAuthentication(), 'confirmPassword')) {
         //     $this->ensurePasswordIsConfirmed();
         // }
+
         $this->ensurePasswordIsConfirmed();
 
         $enable($this->user);

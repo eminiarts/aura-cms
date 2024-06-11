@@ -77,7 +77,7 @@
                                 wire:model="password"
                                 wire:keydown.enter="logoutOtherBrowserSessions" />
 
-                    <x-aura::jet-input-error for="password" class="mt-2" />
+                    <x-aura::input-error for="password" class="mt-2" />
                 </div>
             </x-slot>
 

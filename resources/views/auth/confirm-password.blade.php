@@ -15,7 +15,7 @@
                             name="password"
                             required autocomplete="current-password" />
 
-            <x-aura::input-error :messages="$errors->get('password')" class="mt-2" />
+            <x-aura::input-error :for="$errors->get('password')" class="mt-2" />
         </div>
 
         <div class="flex justify-end items-center mt-6">

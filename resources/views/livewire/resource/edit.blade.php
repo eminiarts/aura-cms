@@ -3,65 +3,59 @@
 
     {{ app('aura')::injectView('post_edit_breadcrumbs_before') }}
 
-    @if(!$inModal)
-    <x-aura::breadcrumbs>
-        <x-aura::breadcrumbs.li :href="route('aura.dashboard')" title="" icon="dashboard"
-            iconClass="text-gray-500 w-7 h-7 mr-0" />
-        <x-aura::breadcrumbs.li :href="route('aura.resource.index', $slug)" :title="__(Str::plural($slug))" />
-        <x-aura::breadcrumbs.li :title="$model->title()" />
-    </x-aura::breadcrumbs>
+    @if (!$inModal)
+        <x-aura::breadcrumbs>
+            <x-aura::breadcrumbs.li :href="route('aura.dashboard')" title="" icon="dashboard"
+                iconClass="text-gray-500 w-7 h-7 mr-0" />
+            <x-aura::breadcrumbs.li :href="route('aura.resource.index', $slug)" :title="__(Str::plural($slug))" />
+            <x-aura::breadcrumbs.li :title="$model->title()" />
+        </x-aura::breadcrumbs>
     @endif
 
     {{ app('aura')::injectView('post_edit_breadcrumbs_after') }}
 
     @include($model->editHeaderView())
 
-    @if($model::usesTitle())
-    <div class="mb-4">
-        <x-aura::fields.wrapper :field="['slug' => 'title']" wrapperClass="" class="-mx-4">
-            <x-aura::input.text label="Title" wire:model="post.title" error="post.title" placeholder="Title">
-            </x-aura::input.text>
-        </x-aura::fields.wrapper>
-    </div>
+    @if ($model::usesTitle())
+        <div class="mb-4">
+            <x-aura::fields.wrapper :field="['slug' => 'title']" wrapperClass="" class="-mx-4">
+                <x-aura::input.text label="Title" wire:model="post.title" error="post.title" placeholder="Title">
+                </x-aura::input.text>
+            </x-aura::fields.wrapper>
+        </div>
     @endif
 
     <div class="grid gap-6 mt-4 aura-edit-post-container sm:grid-cols-3" x-data="{
-    model: @entangle('form'),
-    init() {
-    }
-}">
-
+        model: @entangle('form'),
+        init() {}
+    }">
         <div class="col-span-1 mx-0 sm:col-span-3">
-
-            
-            
             <div class="flex flex-wrap items-start -mx-2" autocomplete="off">
-                @foreach($this->editFields as $key => $field)
-                @checkCondition($model, $field, $form)
-                    <x-dynamic-component :component="$field['field']->component" :field="$field" :form="$form" wire:key="resource-field-{{ $key }}" />
-                @endcheckCondition
+                @foreach ($this->editFields as $key => $field)
+                    @checkCondition($model, $field, $form)
+                        <x-dynamic-component :component="$field['field']->component" :field="$field" :form="$form"
+                            wire:key="resource-field-{{ $key }}" />
+                    @endcheckCondition
                 @endforeach
             </div>
 
-            @if (count($errors->all()))
-            <div class="block">
-                <div class="mt-8 form_errors">
-                    <strong class="block text-red-600">
-                        {{ __('Unfortunately, there were still the following validation errors:') }}
-                    </strong>
-                    <div class="prose text-red-600">
-                        <ul>
-                            @foreach ($errors->all() as $message)
-                            <li>{{ $message }}</li>
-                            @endforeach
-                        </ul>
-                    </div>
-                </div>
-            </div>
-            @endif
-
+            <x-aura::validation-errors />
         </div>
-
     </div>
 
+    @if ($inModal)
+        <x-aura::dialog.footer>
+             <x-aura::dialog.close>
+                    <x-aura::button.transparent>
+                        {{ __('Cancel') }}
+                    </x-aura::button.transparent>
+                </x-aura::dialog.close>
+            <x-aura::button wire:click="save" wire:loading.attr="disabled">
+                <div wire:loading.delay wire:target="save">
+                    <x-aura::icon.loading />
+                </div>
+                {{ __('Save') }}
+            </x-aura::button>
+        </x-aura::dialog.footer>
+    @endif
 </div>

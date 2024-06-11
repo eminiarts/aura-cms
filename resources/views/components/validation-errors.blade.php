@@ -1,11 +1,15 @@
-@if ($errors->any())
-    <div {{ $attributes }}>
-        <div class="font-medium text-red-600">{{ __('Whoops! Something went wrong.') }}</div>
-
-        <ul class="mt-3 list-disc list-inside text-sm text-red-600">
-            @foreach ($errors->all() as $error)
-                <li>{{ $error }}</li>
-            @endforeach
-        </ul>
+@if (count($errors->all()))
+    <div class="block">
+        <div class="mt-8 form_errors">
+            <strong
+                class="block text-red-600">{{ __('Unfortunately, there were still the following validation errors:') }}</strong>
+            <div class="text-red-600 prose">
+                <ul>
+                    @foreach ($errors->all() as $message)
+                        <li>{{ $message }}</li>
+                    @endforeach
+                </ul>
+            </div>
+        </div>
     </div>
 @endif

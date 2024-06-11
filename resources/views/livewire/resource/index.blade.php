@@ -35,5 +35,5 @@
 
     {{ app('aura')::injectView('widgets_after') }}
 
-    <livewire:aura::table :model="$resource" :settings="$resource->indexTableSettings()"/>
+    <livewire:aura::table :model="$resource" :settings="$resource->indexTableSettings()" :editInModal="true"/>
 </div>

@@ -9,14 +9,14 @@
         <div>
             <x-aura::input-label for="email" :value="__('Email')" />
             <x-aura::text-input id="email" class="block mt-1 w-full" type="email" name="email" :value="old('email', $request->email)" required autofocus />
-            <x-aura::input-error :messages="$errors->get('email')" class="mt-2" />
+            <x-aura::input-error :for="$errors->get('email')" class="mt-2" />
         </div>
 
         <!-- Password -->
         <div class="mt-4">
             <x-aura::input-label for="password" :value="__('Password')" />
             <x-aura::text-input id="password" class="block mt-1 w-full" type="password" name="password" required />
-            <x-aura::input-error :messages="$errors->get('password')" class="mt-2" />
+            <x-aura::input-error :for="$errors->get('password')" class="mt-2" />
         </div>
 
         <!-- Confirm Password -->
@@ -27,7 +27,7 @@
                                 type="password"
                                 name="password_confirmation" required />
 
-            <x-aura::input-error :messages="$errors->get('password_confirmation')" class="mt-2" />
+            <x-aura::input-error :for="$errors->get('password_confirmation')" class="mt-2" />
         </div>
 
         <div class="flex justify-end items-center mt-6">

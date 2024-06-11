@@ -47,8 +47,13 @@ trait SaveFieldAttributes
                     return;
                 }
 
-                // Dont Unset Field if it is in baseFillable
+                // Dont unset Field if it is in baseFillable
                 if (in_array($slug, $post->baseFillable)) {
+                    return;
+                }
+
+                // Dont unset Field if it is uses customTable
+                if ($post->usesCustomTable()) {
                     return;
                 }
 
