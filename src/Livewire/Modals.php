@@ -12,10 +12,6 @@ class Modals extends Component
 
     public $activeModal = false;
 
-    public function activate($id, $params)
-    {
-        $this->mount($id, $params);
-    }
     
     public function mount()
     {
@@ -35,6 +31,8 @@ class Modals extends Component
     public function openModal($component, $arguments = [], $modalAttributes = []): void
     {
         $id = md5($component.serialize($arguments));
+
+        ray('openModal', $id, $component, $arguments, $modalAttributes);
 
         $this->modals[$id] = [
             'name' => $component,
