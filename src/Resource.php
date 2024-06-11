@@ -225,6 +225,10 @@ class Resource extends Model
 
     public function getMeta($key = null)
     {
+        if ($this->usesCustomTable()) {
+            return collect();
+        }
+
         if ($this->usesMeta() && optional($this)->meta && ! is_string($this->meta)) {
 
             $meta = $this->meta->pluck('value', 'key');
