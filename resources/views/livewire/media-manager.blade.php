@@ -1,4 +1,4 @@
-<div class="p-8 w-full z-50" x-data="{
+<div class="" x-data="{
 
     selected: @entangle('selected').live,
 
@@ -26,7 +26,7 @@
     </div>
 
     <div class="z-[2] relative flex justify-end mt-4">
-        <x-aura::button class="ml-4" wire:click="$dispatch('closeModal')">
+        <x-aura::button class="ml-4">
             {{ __('Close') }}
         </x-aura::button>
         <x-aura::button.primary class="ml-4" wire:click="select">

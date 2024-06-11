@@ -34,6 +34,8 @@ trait Settings
             'actions' => true,
             'bulk_actions' => true,
             'header' => true,
+            'edit_in_modal' => false,
+            'create_in_modal' => false,
             'views' => [
                 'table' => 'aura::components.table.index',
                 'list' => $this->model->tableView(),
