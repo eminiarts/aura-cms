@@ -196,6 +196,7 @@ class AuraServiceProvider extends PackageServiceProvider
         if ($this->app->runningInConsole()) {
             $this->publishes([
                 $this->package->basePath('/../resources/dist') => public_path("vendor/{$this->package->shortName()}"),
+                $this->package->basePath('/../resources/libs') => public_path("vendor/{$this->package->shortName()}/libs"),
                 $this->package->basePath('/../resources/public') => public_path("vendor/{$this->package->shortName()}/public"),
             ], "{$this->package->shortName()}-assets");
         }
