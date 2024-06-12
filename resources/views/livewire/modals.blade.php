@@ -4,12 +4,12 @@
 
             @if ($modal['modalAttributes']['slideOver'])
                 <x-aura::dialog.slideover>
-                    @dump($activeModals)
+                    {{-- @dump($activeModals) --}}
                     @livewire($modal['name'], $modal['arguments'], key($id))
                 </x-aura::dialog.slideover>
             @else
                 <x-aura::dialog.panel>
-                    @dump($activeModals)
+                    {{-- @dump($activeModals) --}}
                     @livewire($modal['name'], $modal['arguments'], key($id))
                 </x-aura::dialog.panel>
             @endif
