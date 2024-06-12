@@ -10,12 +10,11 @@ class Modals extends Component
 
     public $modals = [];
 
-    public $activeModal = false;
+    public $activeModals = [];
 
-    
     public function mount()
     {
-        // ray('mount');
+        // Initialization logic if needed
     }
 
     public function render()
@@ -23,16 +22,22 @@ class Modals extends Component
         return view('aura::livewire.modals');
     }
 
-    public function closeModal(): void
+    public function closeModal($id = null): void
     {
-        $this->activeModal = false;
+        if ($id) {
+            unset($this->modals[$id]);
+            $this->activeModals = array_values(array_filter($this->activeModals, function($modalId) use ($id) {
+                return $modalId !== $id;
+            }));
+        } else {
+            $this->modals = [];
+            $this->activeModals = [];
+        }
     }
 
     public function openModal($component, $arguments = [], $modalAttributes = []): void
     {
         $id = md5($component.serialize($arguments));
-
-        ray('openModal', $id, $component, $arguments, $modalAttributes);
 
         $this->modals[$id] = [
             'name' => $component,
@@ -41,20 +46,12 @@ class Modals extends Component
                 'persistent' => false,
                 'maxWidth' => 'md',
                 'maxWidthClass' => 'max-w-3xl',
-                // 'closeOnClickAway' => true,
-                // 'closeOnEscape' => true,
-                // 'closeOnEscapeIsForceful' => true,
-                // 'dispatchCloseEvent' => true,
-                // 'destroyOnClose' => true,
-                // 'maxWidth' => 'md',
-                // 'maxWidthClass' => 'max-w-3xl',
+                'slideOver' => false,
             ], $modalAttributes),
         ];
+        $this->activeModals[$id] = true;
 
-        ray($id);
+        ray($this->modals, $this->activeModals);
 
-        $this->activeModal = $id;
-
-        // $this->dispatch('activeModalComponentChanged', id: $id);
     }
 }
