@@ -44,8 +44,8 @@
     </div>
 
     @if ($inModal)
-        <x-aura::dialog.footer>
-             <x-aura::dialog.close>
+    <x-slot:footer>
+         <x-aura::dialog.close>
                     <x-aura::button.transparent>
                         {{ __('Cancel') }}
                     </x-aura::button.transparent>
@@ -56,6 +56,7 @@
                 </div>
                 {{ __('Save') }}
             </x-aura::button>
-        </x-aura::dialog.footer>
+    </x-slot>
+     
     @endif
 </div>

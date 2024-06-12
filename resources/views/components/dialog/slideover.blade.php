@@ -26,9 +26,16 @@
                     </div>
 
                     <!-- Panel -->
-                    <div class="p-8">
+                    <div class="p-8 flex flex-col h-full">
                         {{ $slot }}
                     </div>
+
+                    <!-- Footer -->
+                    @if($footer ?? false)
+                    <div class="p-4 flex justify-end space-x-2 bg-gray-100">
+                        {{ $footer }}
+                    </div>
+                    @endif
                 </div>
             </div>
         </div>
