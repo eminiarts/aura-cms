@@ -47,17 +47,17 @@ class Date extends Field
                 'instructions' => 'How the Date gets displayed. Default is d.m.Y. See <a href="https://www.php.net/manual/en/function.date.php" target="_blank">PHP Date</a> for more information.',
             ],
             [
-                'label' => 'Enable Time',
-                'name' => 'Enable Time',
+                'label' => 'Enable Input',
+                'name' => 'Enable Input',
 
                 'type' => 'Aura\\Base\\Fields\\Boolean',
                 'validation' => '',
                 'options' => [
-                    'true' => 'Enable time',
+                    'true' => 'Enable Input',
                 ],
-                'slug' => 'enable_time',
-                'default' => false,
-                'instructions' => 'Enable time selection. Default is false.',
+                'slug' => 'enable_input',
+                'default' => true,
+                'instructions' => 'Enable user input. Default is true.',
             ],
             [
                 'label' => 'Max Date',

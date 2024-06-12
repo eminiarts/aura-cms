@@ -633,11 +633,11 @@ span.flatpickr-weekday {
 .flatpickr-day.selected.nextMonthDay,
 .flatpickr-day.startRange.nextMonthDay,
 .flatpickr-day.endRange.nextMonthDay {
-    background: #569ff7;
+    background: rgb(var(--primary-500));
     -webkit-box-shadow: none;
     box-shadow: none;
     color: #fff;
-    border-color: #569ff7
+    border-color: rgb(var(--primary-500))
 }
 
 .flatpickr-day.selected.startRange,
@@ -655,8 +655,8 @@ span.flatpickr-weekday {
 .flatpickr-day.selected.startRange+.endRange:not(:nth-child(7n+1)),
 .flatpickr-day.startRange.startRange+.endRange:not(:nth-child(7n+1)),
 .flatpickr-day.endRange.startRange+.endRange:not(:nth-child(7n+1)) {
-    -webkit-box-shadow: -10px 0 0 #569ff7;
-    box-shadow: -10px 0 0 #569ff7
+    -webkit-box-shadow: -10px 0 0 rgb(var(--primary-500));
+    box-shadow: -10px 0 0 rgb(var(--primary-500))
 }
 
 .flatpickr-day.selected.startRange.endRange,
@@ -692,8 +692,8 @@ span.flatpickr-weekday {
 
 .flatpickr-day.week.selected {
     border-radius: 0;
-    -webkit-box-shadow: -5px 0 0 #569ff7, 5px 0 0 #569ff7;
-    box-shadow: -5px 0 0 #569ff7, 5px 0 0 #569ff7
+    -webkit-box-shadow: -5px 0 0 rgb(var(--primary-500)), 5px 0 0 rgb(var(--primary-500));
+    box-shadow: -5px 0 0 rgb(var(--primary-500)), 5px 0 0 rgb(var(--primary-500))
 }
 
 .flatpickr-day.hidden {
