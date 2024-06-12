@@ -12,8 +12,12 @@ export default defineConfig(({ command, mode }) => {
             plugins: [
                 laravel({
                     input: [
+                        'resources/js/flatpickr.js',
+                        'resources/js/pickr.js',
                         'resources/js/monaco.js',
-                        'resources/js/apexcharts.js'
+                        'resources/js/apexcharts.js',
+                        'resources/js/quill.js',
+                        'resources/js/tagify.js',
                     ],
                     publicDirectory: 'resources',
                     buildDirectory: 'libs',

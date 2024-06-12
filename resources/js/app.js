@@ -9,25 +9,9 @@ import ui from '@alpinejs/ui';
 import { Sortable } from '@shopify/draggable';
 import tippy from 'tippy.js';
 
-import flatpickr from "flatpickr";
-
-import Pickr from '@simonwep/pickr';
-// import { German } from "flatpickr/dist/l10n/de.js"
-
-// import ace
-
-import Tagify from '@yaireo/tagify'
-
-window.Tagify = Tagify;
 window.Alpine = Alpine;
 window.Sortable = Sortable;
 window.tippy = tippy;
-
-window.Pickr = Pickr;
-
-// window.german = German;
-window.flatpickr = flatpickr;
-// flatpickr.localize(German); // default locale is now German
 
 Alpine.plugin(collapse);
 Alpine.plugin(focus);

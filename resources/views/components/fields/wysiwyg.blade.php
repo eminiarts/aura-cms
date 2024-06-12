@@ -1,7 +1,7 @@
 <x-aura::fields.wrapper :field="$field">
     <div x-data="{
         init() {
-            let quill = new Quill(this.$refs.quill, { theme: 'snow' })
+            let quill = new window.Quill(this.$refs.quill, { theme: 'snow' })
 
             quill.on('text-change', function() {
                 $dispatch('input', quill.root.innerHTML);
@@ -15,9 +15,19 @@
     @assets
         @push('scripts')
             {{-- <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet"> --}}
-            <script src="https://cdn.quilljs.com/1.3.6/quill.js"></script>
+            {{-- <script src="https://cdn.quilljs.com/1.3.6/quill.js"></script> --}}
         @endpush
     @endassets
+
+    @once
+        @push('styles')
+                {{-- <link rel="stylesheet" href="/js/pickr/nano.min.css"/> <!-- 'nano' theme --> --}}
+        @endpush
+
+        @push('scripts')
+            @vite(['resources/js/quill.js'], 'vendor/aura/libs')
+        @endpush
+    @endonce
 
 </x-aura::fields.wrapper>
 
