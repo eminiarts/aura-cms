@@ -1,19 +1,16 @@
-<x-aura::fields.wrapper :field="$field">
-    @if(optional($field)['live'] === true)
-    <x-aura::input
-        type="datetime"
-        wire:model.live="form.fields.{{ optional($field)['slug'] }}"
-        error="form.fields.{{ optional($field)['slug'] }}"
-        placeholder="{{ optional($field)['placeholder'] ?? optional($field)['name'] }}"
-        autocomplete="{{ optional($field)['autocomplete'] ?? '' }}"
-    ></x-aura::input>
-    @else
-        <x-aura::input
-        type="datetime"
-        wire:model="form.fields.{{ optional($field)['slug'] }}"
-        error="form.fields.{{ optional($field)['slug'] }}"
-        placeholder="{{ optional($field)['placeholder'] ?? optional($field)['name'] }}"
-        autocomplete="{{ optional($field)['autocomplete'] ?? '' }}"
-    ></x-aura::input>
-    @endif
-</x-aura::fields.wrapper>
+<x-aura::datetime-picker
+    :field="$field"
+    type="datetime"
+    :enableTime="true"
+    :format="optional($field)['format'] ?? 'd.m.Y H:i'"
+    :displayFormat="optional($field)['display_format'] ?? 'd.m.Y H:i'"
+    :time24hr="true"
+    :maxDate="optional($field)['maxDate']"
+    :minDate="optional($field)['minDate']"
+    :minTime="optional($field)['minTime']"
+    :maxTime="optional($field)['maxTime']"
+    :weekStartsOn="optional($field)['weekStartsOn'] ?? 1"
+    :enableInput="optional($field)['enable_input'] ?? true"
+    :native="optional($field)['options']['native'] ?? false"
+    :live="optional($field)['live'] ?? false"
+/>

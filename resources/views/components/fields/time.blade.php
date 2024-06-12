@@ -1,3 +1,15 @@
-<x-aura::fields.wrapper :field="$field">
-    <x-aura::input.time wire:model="form.fields.{{ optional($field)['slug'] }}" error="form.fields.{{ optional($field)['slug'] }}" placeholder="{{ optional($field)['placeholder'] ?? optional($field)['name'] }}" autocomplete="{{ optional($field)['autocomplete'] ?? '' }}"></x-aura::input.time>
-</x-aura::fields.wrapper>
+<!-- resources/views/livewire/time.blade.php -->
+<x-aura::datetime-picker
+    :field="$field"
+    type="time"
+    :enableTime="true"
+    :noCalendar="true"
+    :format="optional($field)['format'] ?? 'H:i'"
+    :displayFormat="optional($field)['display_format'] ?? 'H:i'"
+    :minTime="optional($field)['minTime']"
+    :maxTime="optional($field)['maxTime']"
+    :weekStartsOn="optional($field)['weekStartsOn'] ?? 1"
+    :enableInput="optional($field)['enable_input'] ?? true"
+    :native="optional($field)['options']['native'] ?? false"
+    :live="optional($field)['live'] ?? false"
+/>
