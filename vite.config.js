@@ -16,7 +16,7 @@ export default defineConfig(({ command, mode }) => {
                         'resources/js/apexcharts.js'
                     ],
                     publicDirectory: 'resources',
-                    buildDirectory: 'dist/libs',
+                    buildDirectory: 'libs',
                 })
             ],
         }
