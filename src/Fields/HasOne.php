@@ -9,7 +9,8 @@ class HasOne extends AdvancedSelect
     public bool $group = false;
 
     public bool $multiple = false;
-    //public $component = 'aura::fields.has-one';
+
+    public $component = 'aura::fields.has-one';
 
     public $optionGroup = 'Relationship Fields';
 

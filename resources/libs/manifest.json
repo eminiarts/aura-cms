@@ -1,4 +1,7 @@
 {
+  "__commonjsHelpers-725317a4.js": {
+    "file": "assets/_commonjsHelpers-725317a4.js"
+  },
   "node_modules/monaco-editor/esm/vs/basic-languages/css/css.js": {
     "file": "assets/css-33677c87.js",
     "isDynamicEntry": true,
@@ -66,9 +69,17 @@
     "src": "node_modules/monaco-editor/esm/vs/language/json/jsonMode.js"
   },
   "resources/js/apexcharts.js": {
-    "file": "assets/apexcharts-edad8d5e.js",
+    "file": "assets/apexcharts-6a4ab726.js",
+    "imports": [
+      "__commonjsHelpers-725317a4.js"
+    ],
     "isEntry": true,
     "src": "resources/js/apexcharts.js"
+  },
+  "resources/js/flatpickr.js": {
+    "file": "assets/flatpickr-2d2e08d2.js",
+    "isEntry": true,
+    "src": "resources/js/flatpickr.js"
   },
   "resources/js/monaco.css": {
     "file": "assets/monaco-52024a14.css",
@@ -93,5 +104,29 @@
     "file": "assets/monaco-6e60c9fd.js",
     "isEntry": true,
     "src": "resources/js/monaco.js"
+  },
+  "resources/js/pickr.js": {
+    "file": "assets/pickr-2cffbb80.js",
+    "imports": [
+      "__commonjsHelpers-725317a4.js"
+    ],
+    "isEntry": true,
+    "src": "resources/js/pickr.js"
+  },
+  "resources/js/quill.js": {
+    "file": "assets/quill-1e8f153e.js",
+    "imports": [
+      "__commonjsHelpers-725317a4.js"
+    ],
+    "isEntry": true,
+    "src": "resources/js/quill.js"
+  },
+  "resources/js/tagify.js": {
+    "file": "assets/tagify-c2d7ae9b.js",
+    "imports": [
+      "__commonjsHelpers-725317a4.js"
+    ],
+    "isEntry": true,
+    "src": "resources/js/tagify.js"
   }
 }

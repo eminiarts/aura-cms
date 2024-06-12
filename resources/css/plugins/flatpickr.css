@@ -402,7 +402,7 @@
     display: inline-block;
     font-size: inherit;
     font-family: inherit;
-    font-weight: 300;
+    font-weight: 600;
     line-height: inherit;
     height: auto;
     border: 0;
@@ -435,7 +435,7 @@
     cursor: pointer;
     font-size: inherit;
     font-family: inherit;
-    font-weight: 300;
+    font-weight: 600;
     height: auto;
     line-height: inherit;
     margin: -1px 0 0 0;
@@ -504,7 +504,7 @@ span.flatpickr-weekday {
     -webkit-flex: 1;
     -ms-flex: 1;
     flex: 1;
-    font-weight: bolder
+    font-weight: 600;
 }
 
 .dayContainer,

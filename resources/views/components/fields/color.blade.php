@@ -27,6 +27,7 @@
 
             @push('scripts')
                     {{-- <script src="/js/pickr/pickr.min.js"></script> --}}
+                @vite(['resources/js/pickr.js'], 'vendor/aura/libs')
             @endpush
         @endonce
 
