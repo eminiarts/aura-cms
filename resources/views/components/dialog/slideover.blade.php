@@ -5,8 +5,8 @@
         <div x-dialog:overlay x-transition:enter.opacity class="fixed inset-0 bg-black/25"></div>
 
         <!-- Panel -->
-        <div  class="fixed inset-y-0 right-0 max-w-lg w-full p-0">
-            <div x-dialog:panel x-transition:enter="transition ease-out duration-300"
+        <div x-on:click="$dialog.close()" class="fixed inset-y-0 right-0 max-w-lg w-full p-0">
+            <div x-on:click.stop="" x-dialog:panel x-transition:enter="transition ease-out duration-300"
                 x-transition:enter-start="translate-x-full" x-transition:enter-end="translate-x-0"
                 x-transition:leave="transition ease-in duration-300" x-transition:leave-start="translate-x-0"
                 x-transition:leave-end="translate-x-full" class="h-full w-full" x-on:click.outside="$dialog.close()">
