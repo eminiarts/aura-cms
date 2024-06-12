@@ -1,18 +1,19 @@
 <template x-teleport="body">
-    <div x-dialog x-model="dialogOpen" style="display: none" class="fixed inset-0 overflow-y-auto z-10 text-left sm:pt-0">
+    <div x-on:click.stop="console.log('stop here')">
+    <div x-dialog x-model="dialogOpen" style="display: none" class="fixed inset-0 overflow-y-auto z-10 text-left sm:pt-0" >
         <!-- Overlay -->
         <div x-dialog:overlay x-transition:enter.opacity class="fixed inset-0 bg-black/25"></div>
 
         <!-- Panel -->
-        <div class="fixed inset-y-0 right-0 max-w-lg w-full p-0">
+        <div  class="fixed inset-y-0 right-0 max-w-lg w-full p-0">
             <div x-dialog:panel x-transition:enter="transition ease-out duration-300"
                 x-transition:enter-start="translate-x-full" x-transition:enter-end="translate-x-0"
                 x-transition:leave="transition ease-in duration-300" x-transition:leave-start="translate-x-0"
-                x-transition:leave-end="translate-x-full" class="h-full w-full">
+                x-transition:leave-end="translate-x-full" class="h-full w-full" x-on:click.outside="$dialog.close()">
                 <div class="h-full flex flex-col justify-between bg-white shadow-lg overflow-y-auto">
 
                     <!-- Close Button -->
-                    <div class="absolute top-0 right-0 pt-4 pr-4">
+                    <div class="absolute top-0 right-0 pt-4 pr-4 z-[2]">
                         <div x-on:click="$dialog.close()"
                             class="cursor-pointer bg-gray-50 rounded-lg p-2 text-gray-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2">
                             <span class="sr-only">Close modal</span>
@@ -39,5 +40,6 @@
                 </div>
             </div>
         </div>
+    </div>
     </div>
 </template>
