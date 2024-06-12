@@ -1,12 +1,13 @@
 <template x-teleport="body">
-    <div x-dialog x-model="dialogOpen" style="display: none"
-        class="fixed inset-0 overflow-y-auto z-10 text-left pt-[30%] sm:pt-0">
+    <div x-on:click.stop="console.log('stop here')">
+        <div x-dialog x-model="dialogOpen" style="display: none"
+        class="fixed inset-0 overflow-y-auto z-10 text-left pt-[30%] sm:pt-0" >
         <!-- Overlay -->
-        <div x-dialog:overlay x-transition:enter.opacity class="fixed inset-0 bg-black/25"></div>
+        <div x-dialog:overlay x-transition:enter.opacity class="fixed inset-0 bg-black/25" ></div>
 
         <!-- Panel -->
-        <div class="relative min-h-full flex justify-center items-end sm:items-center p-0 sm:p-4">
-            <div x-dialog:panel x-transition.in
+        <div x-on:click="console.log('zuzu')" class="relative min-h-full flex justify-center items-end sm:items-center p-0 sm:p-4">
+            <div x-on:click.outside="console.log('helo');$dialog.close()" x-dialog:panel x-transition.in
                 class="relative max-w-xl w-full bg-white rounded-t-xl sm:rounded-b-xl shadow-lg overflow-hidden">
                 <!-- Mobile: Top "grab" handle... -->
                 <div class="sm:hidden absolute top-[-10px] left-0 right-0 h-[50px]" x-data="{ startY: 0, currentY: 0, moving: false, get distance() { return this.moving ? Math.max(0, this.currentY - this.startY) : 0 } }"
@@ -20,7 +21,7 @@
                 </div>
 
                 <!-- Close Button -->
-                <div class="absolute top-0 right-0 pt-4 pr-4">
+                <div class="absolute top-0 right-0 pt-4 pr-4 z-[2]">
                     <div x-on:click="$dialog.close()"
                         class="cursor-pointer bg-gray-50 rounded-lg p-2 text-gray-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2">
                         <span class="sr-only">Close modal</span>
@@ -48,4 +49,6 @@
             </div>
         </div>
     </div>
-</template>
+
+    </div>
+    </template>
