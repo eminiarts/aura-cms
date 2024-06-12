@@ -6,6 +6,8 @@ import collapse from '@alpinejs/collapse';
 import focus from '@alpinejs/focus';
 import ui from '@alpinejs/ui';
 
+import modal from './modal.js';
+
 import { Sortable } from '@shopify/draggable';
 import tippy from 'tippy.js';
 
@@ -16,6 +18,7 @@ window.tippy = tippy;
 Alpine.plugin(collapse);
 Alpine.plugin(focus);
 Alpine.plugin(ui);
+Alpine.plugin(modal);
 
 Alpine.data('aura', () => ({
   loading: false,
