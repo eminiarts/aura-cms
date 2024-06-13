@@ -18,6 +18,9 @@ class ScopedScope implements Scope
         if ($model instanceof \Aura\Base\Resources\Role) {
             return $builder;
         }
+        if ($model instanceof \Aura\Base\Resources\User) {
+            return $builder;
+        }
 
         // Superadmin
         if (auth()->user() && auth()->user()->isSuperAdmin()) {
