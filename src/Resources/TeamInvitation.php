@@ -10,6 +10,8 @@ class TeamInvitation extends Resource
 
     public static string $type = 'teaminvitation';
 
+    public static $createEnabled = false;
+
     protected static $dropdown = 'Users';
 
     protected static ?string $group = 'Aura';
