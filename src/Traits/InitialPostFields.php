@@ -13,6 +13,10 @@ trait InitialPostFields
                 $post->title = '';
             }
 
+            if ($post instanceof \Aura\Base\Resources\User) {
+                return;
+            }
+
             if (! $post->content && ! $post::usesCustomTable()) {
                 $post->content = '';
             }

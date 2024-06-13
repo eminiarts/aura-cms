@@ -1,7 +1,7 @@
 <div>
     <div class="aura-card">
         Aura CMS Dashboard here
-
+        
         
            <x-aura::dialog wire:model="showModal">
                 <x-aura::dialog.open>

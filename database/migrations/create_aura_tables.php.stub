@@ -47,7 +47,6 @@ return new class () extends Migration {
             if(config('aura.teams')) {
                 $table->foreignId('current_team_id')->nullable();
             }
-            $table->string('profile_photo_path', 2048)->nullable();
             $table->timestamps();
             $table->softDeletes();
         });
@@ -88,6 +87,7 @@ return new class () extends Migration {
                 $table->id();
                 $table->foreignId('user_id')->index();
                 $table->string('name');
+                //$table->string('description')->nullable();
                 $table->timestamps();
                 $table->softDeletes();
             });

@@ -37,7 +37,7 @@ class CreateResource extends Component
     {
         abort_if(app()->environment('production'), 403);
 
-        abort_unless(auth()->user()->resource->isSuperAdmin(), 403);
+        abort_unless(auth()->user()->isSuperAdmin(), 403);
     }
 
     public function render()
@@ -59,7 +59,7 @@ class CreateResource extends Component
 
     public function save()
     {
-        abort_unless(auth()->user()->resource->isSuperAdmin(), 403);
+        abort_unless(auth()->user()->isSuperAdmin(), 403);
 
         $name = $this->form['fields']['name'];
         $slug = str($name)->slug();

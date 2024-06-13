@@ -22,13 +22,12 @@ beforeEach(function () {
 
 test('Settings Component can be rendered', function () {
 
-    dd('hier', config('aura.teams'));
     $this->withoutExceptionHandling();
 
     ray('he');
     $response = $this->get(route('aura.settings'));
 
-    dd($response->content());
+    // dd($response->content());
 
     ray('hi', $response->content());
 
