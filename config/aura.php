@@ -120,6 +120,7 @@ return [
         'redirect' => '/admin',
         '2fa' => true,
         'user_invitations' => true,
+        'create_teams' => true,
     ],
 
     /*
