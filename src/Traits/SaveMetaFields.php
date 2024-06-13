@@ -100,7 +100,8 @@ trait SaveMetaFields
                     }
 
                     if ($post->usesMeta()) {
-                        $post->meta()->updateOrCreate(['key' => $key], ['value' => $value]);
+                        ray($value);
+                        $post->meta()->updateOrCreate(['key' => $key], ['value' => is_array($value) ? json_encode($value) : $value]);
                     }
 
                 }

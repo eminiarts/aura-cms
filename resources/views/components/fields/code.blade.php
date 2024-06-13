@@ -13,7 +13,7 @@
         id="editor"
         x-ref="editor"
         x-init="
-            document.addEventListener('DOMContentLoaded', () => {
+            console.log('hier');
                 this.editor = monaco.editor.create($refs.editor, {
                     value: @js($form['fields'][$field['slug']]),
                     language: '{{ $field['language'] ?? 'html' }}',
@@ -67,7 +67,6 @@
                     console.log('content: ', content);
                     @this.set('form.fields.{{ $field['slug'] }}', content);
                 });
-            });
         "
         wire:ignore
         class="w-full h-full"
@@ -77,10 +76,11 @@
 
     </div>
 
-    @push('scripts')
+    @assets
         @once
+            <script>console.log('Assets here once?');</script>
             @vite(['resources/js/monaco.js'], 'vendor/aura/libs')
         @endonce
-    @endpush
+    @endassets
 
 </x-aura::fields.wrapper>

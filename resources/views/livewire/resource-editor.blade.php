@@ -387,7 +387,7 @@
     <livewire:aura::edit-resource-field />
 
     @once
-    @push('scripts')
+    @assets
 
         <style >
             .draggable--original *{
@@ -412,7 +412,7 @@
             }
         </style>
 
-    @endpush
+    @endassets
     @endonce
 
 </div>
