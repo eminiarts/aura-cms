@@ -9,7 +9,7 @@
     "devDependencies": {
         "@alpinejs/collapse": "^3.12",
         "@alpinejs/focus": "^3.12",
-        "@alpinejs/ui": "^3.12.0-beta.0",
+        "@alpinejs/ui": "^3.14.0-beta.0",
         "@shopify/draggable": "^1.0.0-beta.8",
         "@tailwindcss/aspect-ratio": "^0.4.2",
         "@tailwindcss/forms": "^0.5.2",
