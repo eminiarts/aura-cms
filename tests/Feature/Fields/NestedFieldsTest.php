@@ -65,6 +65,50 @@ class NestedFieldsModel extends Resource
     }
 }
 
+class NestedFields2Model extends Resource
+{
+    public static string $type = 'NestedFields2';
+
+    public static function getFields()
+    {
+        return [
+            [
+                'type' => 'Aura\\Base\\Fields\\Text',
+                'slug' => 'settings.option_1',
+                'name' => 'Settings Option 1',
+                'on_index' => true,
+                'on_forms' => true,
+                'on_view' => true,
+                'searchable' => false,
+                'validation' => '',
+                'conditional_logic' => '',
+            ],
+            [
+                'type' => 'Aura\\Base\\Fields\\Text',
+                'slug' => 'settings.option_2',
+                'name' => 'Settings Option 2',
+                'on_index' => true,
+                'on_forms' => true,
+                'on_view' => true,
+                'searchable' => false,
+                'validation' => '',
+                'conditional_logic' => '',
+            ],
+            [
+                'type' => 'Aura\\Base\\Fields\\Text',
+                'slug' => 'settings.option_3',
+                'name' => 'Settings Option 3',
+                'on_index' => true,
+                'on_forms' => true,
+                'on_view' => true,
+                'searchable' => false,
+                'validation' => '',
+                'conditional_logic' => '',
+            ],
+        ];
+    }
+}
+
 // Before each test, create a Superadmin and login
 beforeEach(function () {
     $this->actingAs($this->user = createSuperAdmin());
@@ -91,6 +135,24 @@ test('create model with nested fields', function () {
         'option_2' => '2',
         'option_3' => '3',
     ]);
+
+    $this->assertDatabaseMissing('post_meta', [
+        'key' => 'settings.option_1'
+    ]);
+});
+
+
+test('create model with nested fields without JSON Parent', function () {
+
+    $model = NestedFields2Model::create([
+        'settings.option_1' => '1',
+        'settings.option_2' => '2',
+        'settings.option_3' => '3',
+    ]);
+
+    // dd($model->toArray());
+
+    expect($model->settings)->toBeNull();
 
     $this->assertDatabaseMissing('post_meta', [
         'key' => 'settings.option_1'
