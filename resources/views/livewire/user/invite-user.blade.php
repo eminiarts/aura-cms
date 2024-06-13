@@ -5,24 +5,11 @@
 
         <div class="flex flex-wrap">
 
-            <div class="w-full pr-4">
-                <div class="mb-4 -mx-4">
+            <div class="w-full">
+                <div class="mb-4 flex flex-wrap items-start -mx-4">
                     @foreach ($this->fields as $key => $field)
-                        <style>
-                            #resource-field-{{ optional($field)['slug'] }}-wrapper {
-                                width: {{ optional(optional($field)['style'])['width'] ?? '100' }}%;
-                            }
-
-                            @media screen and (max-width: 768px) {
-                                #resource-field-{{ optional($field)['slug'] }}-wrapper {
-                                    width: 100%;
-                                }
-                            }
-                        </style>
-                        <div wire:key="resource-field-{{ $key }}"
-                            id="resource-field-{{ optional($field)['slug'] }}-wrapper">
+                        
                             <x-dynamic-component :component="$field['field']->component" :field="$field" :form="$form" />
-                        </div>
                     @endforeach
                 </div>
             </div>
