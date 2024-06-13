@@ -21,14 +21,12 @@
 
 
         @once
-            @push('styles')
+            @assets
                     {{-- <link rel="stylesheet" href="/js/pickr/nano.min.css"/> <!-- 'nano' theme --> --}}
-            @endpush
 
-            @push('scripts')
                     {{-- <script src="/js/pickr/pickr.min.js"></script> --}}
                 @vite(['resources/js/pickr.js'], 'vendor/aura/libs')
-            @endpush
+            @endassets
         @endonce
 
     <div wire:ignore class="flex items-center"

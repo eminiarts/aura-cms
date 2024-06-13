@@ -39,13 +39,11 @@
         @endif
     @else
         @once
-            @push('styles')
+            @assets
                 {{-- <link rel="stylesheet" href="/js/pickr/nano.min.css"/> <!-- 'nano' theme --> --}}
-            @endpush
 
-            @push('scripts')
                 @vite(['resources/js/flatpickr.js'], 'vendor/aura/libs')
-            @endpush
+            @endassets
         @endonce
 
         <div

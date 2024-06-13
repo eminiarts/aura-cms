@@ -6,35 +6,17 @@
     <div
         id="editor"
         x-init="
-            document.addEventListener('DOMContentLoaded', () => {
-
-                {{-- monaco.editor.defineTheme('gray', {
-                    base: 'vs',
-                    inherit: true,
-                    rules: [
-                        {
-                            background: '#f0f0f0',
-                        },
-                    ],
-                    colors: {
-                        'editor.background': '#0f0f0f',
-                    },
-                }); --}}
-
-
-                let editor = monaco.editor.create($el, {
-                    value: content,
-                    language: 'javascript',
-                    automaticLayout: true,
-                    {{-- lineNumbers: 'off', --}}
-                    {{-- minimap: {
-                        enabled: false
-                    }, --}}
-                    padding: {
-                        top: 16
-                    }
-                });
-
+            let editor = monaco.editor.create($el, {
+                value: content,
+                language: 'javascript',
+                automaticLayout: true,
+                {{-- lineNumbers: 'off', --}}
+                {{-- minimap: {
+                    enabled: false
+                }, --}}
+                padding: {
+                    top: 16
+                }
             });
         "
         wire:ignore
@@ -58,10 +40,10 @@
         @endonce
     @endpush
 
-    @push('scripts')
-        @once
-            {{-- @vite(['resources/js/monaco.js'], 'vendor/aura') --}}
-        @endonce
-    @endpush
+    @once
+        @assets
+            @vite(['resources/js/monaco.js'], 'vendor/aura')
+        @endassets
+    @endonce
 
 </x-aura::fields.wrapper>
