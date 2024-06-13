@@ -35,11 +35,11 @@
                     </div>
 
                     <!-- Panel -->
-                    <div class="p-8">
+                    <div class="p-6">
                         {{ $slot }}
 
                         @if ($footer ?? false)
-                            <div class="p-4 py-4 px-4 -mx-8 -mb-8 mt-8 bg-gray-100">
+                            <div class="p-4 py-4 px-4 -mx-6 -mb-6 mt-6 bg-gray-100">
                                 <div class="flex justify-end gap-4">
                                     {{ $footer }}
                                 </div>

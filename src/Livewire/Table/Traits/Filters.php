@@ -71,8 +71,6 @@ trait Filters
             throw new \InvalidArgumentException('Invalid filter name: '.$filterName);
         }
 
-        // dd('delete', $filterName, $filter, $this->userFilters);
-
         switch ($filter['type']) {
             case 'user':
                 auth()->user()->deleteOption($this->model->getType().'.filters.'.$filterName);
@@ -93,12 +91,7 @@ trait Filters
 
         $filters = $this->userFilters;
 
-        //$this->reset('userFilters');
-
         $this->reset('selectedFilter');
-
-        // Refresh userFilters
-        $this->userFilters = $this->getUserFilters();
 
         // Refresh Component
         $this->dispatch('refreshTable');
