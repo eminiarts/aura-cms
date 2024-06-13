@@ -232,7 +232,7 @@ class Profile extends Component
     {
         $this->checkAuthorization();
 
-        $this->model = auth()->user()->resource;
+        $this->model = auth()->user();
 
         $this->form = $this->model->attributesToArray();
 

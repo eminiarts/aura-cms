@@ -17,7 +17,7 @@ trait AuraModelConfig
 
     public static $createEnabled = true;
 
-    public static $customTable = false;
+    
 
     public static $editEnabled = true;
 
@@ -523,10 +523,7 @@ trait AuraModelConfig
         }
     }
 
-    public static function usesCustomTable(): bool
-    {
-        return static::$customTable;
-    }
+   
 
     public static function usesMeta(): string
     {

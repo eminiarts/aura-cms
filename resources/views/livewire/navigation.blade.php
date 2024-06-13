@@ -186,7 +186,7 @@ $compact = ($settings['sidebar-size'] ?? null) === 'compact';
                                         <div class="flex items-center">
                                             <div>
                                                 <img class="inline-block w-9 h-9 rounded-full"
-                                                     src="{{ auth()->user()->resource->avatarUrl }}" alt="">
+                                                     src="{{ auth()->user()->avatarUrl }}" alt="">
                                             </div>
                                             <div class="ml-3 hide-collapsed">
                                                 <p class="text-sm font-medium aura-sidebar-user-name">{{ Auth::user()->name }}</p>
@@ -220,7 +220,7 @@ $compact = ($settings['sidebar-size'] ?? null) === 'compact';
                                         <div class="flex items-center">
                                             <div>
                                                 <img class="inline-block w-9 h-9 rounded-full"
-                                                    src="{{ auth()->user()->resource->avatarUrl }}" alt="">
+                                                    src="{{ auth()->user()->avatarUrl }}" alt="">
                                             </div>
                                             <div class="ml-3 hide-collapsed">
                                                 <p class="text-sm font-medium aura-sidebar-user-name">{{ Auth::user()->name }}</p>

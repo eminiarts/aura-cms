@@ -34,6 +34,25 @@ class Resource extends Model
     use SaveFieldAttributes;
     use SaveMetaFields;
 
+    protected static $customTable = false;
+
+    public static function getCustomTable()
+    {
+        return static::$customTable;
+    }
+
+     public static function usesCustomTable(): bool
+    {
+        return static::$customTable;
+    }
+
+    public static function setCustomTable($value)
+    {
+        static::$customTable = $value;
+    }
+
+    public static bool $usesMeta = true;
+
     public $fieldsAttributeCache;
 
     protected $appends = ['fields'];
