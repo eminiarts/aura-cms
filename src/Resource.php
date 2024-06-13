@@ -160,6 +160,7 @@ class Resource extends Model
             $defaultValues = collect($this->inputFieldsSlugs())
                 ->mapWithKeys(fn ($value, $key) => [$value => null])
                 ->map(fn ($value, $key) => $meta[$key] ?? $value)
+                ->filter(fn ($value, $key) => strpos($key, '.') === false)
                 ->map(function ($value, $key) {
                     // if the value is in $this->hidden, set it to null
                     if (in_array($key, $this->hidden)) {
