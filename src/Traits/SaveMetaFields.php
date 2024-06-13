@@ -19,6 +19,8 @@ trait SaveMetaFields
                     return;
                 }
 
+                ray($post->attributes['fields'])->green();
+
                 foreach ($post->attributes['fields'] as $key => $value) {
                     $class = $post->fieldClassBySlug($key);
 
