@@ -77,8 +77,10 @@ trait SaveMetaFields
                         continue;
                     }
 
-                    // Save the meta field to the model, so it can be saved in the Meta table
-                    $post->saveMetaField([$key => $value]);
+                    if (in_array($key, $post->getFillable())) {
+                        // Save the meta field to the model, so it can be saved in the Meta table
+                        $post->saveMetaField([$key => $value]);
+                    }
                 }
 
                 unset($post->attributes['fields']);
