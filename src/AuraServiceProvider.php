@@ -221,7 +221,7 @@ class AuraServiceProvider extends PackageServiceProvider
         });
 
         Blade::if('superadmin', function () {
-            return auth()->user()->resource->isSuperAdmin();
+            return auth()->user()->isSuperAdmin();
         });
 
         Blade::if('local', function () {

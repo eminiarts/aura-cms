@@ -28,7 +28,7 @@ class AppServiceProvider extends ServiceProvider
                 'onclick' => "Livewire.dispatch('openModal', { component : 'aura::create-resource' })",
                 'route' => false,
                 'conditional_logic' => DynamicFunctions::add(function () {
-                    return auth()->user()->resource->isSuperAdmin();
+                    return auth()->user()->isSuperAdmin();
                 }),
             ] : null,
             config('aura.features.theme_options') ? [
@@ -39,7 +39,7 @@ class AppServiceProvider extends ServiceProvider
                 'sort' => 300,
                 'route' => 'aura.settings',
                 'conditional_logic' => DynamicFunctions::add(function () {
-                    return auth()->user()->resource->isSuperAdmin();
+                    return auth()->user()->isSuperAdmin();
                 }),
             ] : null,
         ]));

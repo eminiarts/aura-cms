@@ -19,6 +19,9 @@ uses(RefreshDatabase::class);
 
 // Before each test, create a Superadmin and login
 beforeEach(function () {
+
+    $this->withoutExceptionHandling();
+    
     $this->actingAs($this->user = createSuperAdmin());
 
     // config('aura.teams')
@@ -26,6 +29,8 @@ beforeEach(function () {
 });
 
 test('user can be invited', function () {
+
+    $this->withoutExceptionHandling();
     // Test InviteUser Livewire Component
     $component = Livewire::test(InviteUser::class)
         ->call('save')
@@ -147,6 +152,9 @@ test('Team Invitation can be created', function () {
 
 // create a test to see if /register route is available
 test('register route is available', function () {
+
+    $this->withoutExceptionHandling();
+    
     // log the user out
     $this->app['auth']->logout();
 
