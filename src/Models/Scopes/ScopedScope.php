@@ -20,11 +20,11 @@ class ScopedScope implements Scope
         }
 
         // Superadmin
-        if (auth()->user() && auth()->user()->resource->isSuperAdmin()) {
+        if (auth()->user() && auth()->user()->isSuperAdmin()) {
             return $builder;
         }
 
-        if (auth()->user() && auth()->user()->resource->hasPermissionTo('scope', $model)) {
+        if (auth()->user() && auth()->user()->hasPermissionTo('scope', $model)) {
             $builder->where($model->getTable().'.user_id', auth()->user()->id);
         }
 

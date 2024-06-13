@@ -450,7 +450,7 @@ class Settings extends Component
     {
         abort_unless(config('aura.features.theme_options'), 404);
 
-        abort_unless(auth()->user()->resource->isSuperAdmin(), 403);
+        abort_unless(auth()->user()->isSuperAdmin(), 403);
 
         $valueString = [
             'darkmode-type' => 'auto',

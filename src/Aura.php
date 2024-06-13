@@ -251,7 +251,7 @@ class Aura
     {
         if (config('aura.teams') && optional(optional(auth()->user())->resource)->currentTeam) {
             return Cache::remember(auth()->user()->current_team_id.'.aura.'.$name, now()->addHour(), function () use ($name) {
-                $option = auth()->user()->resource->currentTeam->getOption($name);
+                $option = auth()->user()->currentTeam->getOption($name);
 
                 if ($option) {
                     if (is_string($option)) {
@@ -468,7 +468,7 @@ class Aura
     public function updateOption($key, $value)
     {
         if (config('aura.teams')) {
-            auth()->user()->resource->currentTeam->updateOption($key, $value);
+            auth()->user()->currentTeam->updateOption($key, $value);
         } else {
             Option::withoutGlobalScopes([TeamScope::class])->updateOrCreate(['name' => $key], ['value' => $value]);
         }
