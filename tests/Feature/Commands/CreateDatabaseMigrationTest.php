@@ -40,6 +40,12 @@ it('creates a custom resource', function () {
     $this->assertTrue(file_exists(app_path('Aura/Resources/Project.php')));
 });
 
+it('creates a custom resource with custom table', function () {
+
+    $this->assertStringContainsString('public static $customTable = true;', file_get_contents(app_path('Aura/Resources/Project.php')));
+    $this->assertStringContainsString('protected $table = \'projects\';', file_get_contents(app_path('Aura/Resources/Project.php')));
+});
+
 it('resource editor is accessible', function () {
 
     expect(config('aura.resource_editor.enabled'))->toBeTrue();
