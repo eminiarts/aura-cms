@@ -24,6 +24,5 @@ test('config features test', function () {
         'create_resource' => true,
         'resource_view' => true,
         'resource_edit' => true,
-        'register' => true,
     ]);
 });

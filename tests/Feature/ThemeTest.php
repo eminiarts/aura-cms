@@ -51,14 +51,17 @@ test('Default Team Settings are created', function () {
     // get first option from DB
     $option = Option::first();
 
-    // assert option is team settings
-    $this->assertEquals($option->name, 'settings');
+    if(config('aura.teams')) {
+        $this->assertEquals($option->name, 'team.' . auth()->user()->current_team_id . '.settings');
+    } else {
+        $this->assertEquals($option->name, 'settings');
+    }
 
     // assert $option->value is an array
     $this->assertIsArray($option->value);
 
     // assertJSON option value darkmode-type is auto
-    $this->assertJsonStringEqualsJsonString(json_encode($option->value), '{"darkmode-type":"auto","sidebar-type":"primary","color-palette":"aura","gray-color-palette":"slate"}');
+    $this->assertJsonStringEqualsJsonString(json_encode($option->value), '{"darkmode-type":"auto","sidebar-type":"primary","color-palette":"aura","gray-color-palette":"slate","sidebar-size":"standard","sidebar-darkmode-type":"dark"}');
 });
 
 test('Team Settings can be saved', function () {
@@ -96,7 +99,11 @@ test('Team Settings can be saved', function () {
     $option = Option::first();
 
     // assert option is team settings
-    $this->assertEquals($option->name, 'settings');
+      if(config('aura.teams')) {
+        $this->assertEquals($option->name, 'team.' . auth()->user()->current_team_id . '.settings');
+    } else {
+        $this->assertEquals($option->name, 'settings');
+    }
 
     $this->assertIsArray($option->value);
 
@@ -107,7 +114,7 @@ test('Team Settings can be saved', function () {
 
     // acting as $this->user, get settings page and assertSee "--primary-400: #f87171;" in html
     $this->actingAs($this->user)
-        ->get(route('aura.team.settings'))
+        ->get(route('aura.settings'))
         ->assertSee('--primary-400: 248 113 113;');
 
     // Default Team Settings
@@ -116,7 +123,7 @@ test('Team Settings can be saved', function () {
         ->call('save');
 
     $this->actingAs($this->user)
-        ->get(route('aura.team.settings'))
+        ->get(route('aura.settings'))
         ->assertDontSee('--primary-400: 248 113 113;')
         ->assertSee('--primary-400: 60 126 244;');
 
@@ -127,7 +134,7 @@ test('Team Settings can be saved', function () {
     $options = Option::get();
 
     $this->actingAs($this->user)
-        ->get(route('aura.team.settings'))
+        ->get(route('aura.settings'))
         ->assertSee('--primary-400: 60 126 244;');
 
     // assert DB has 1 record in options table
@@ -137,7 +144,7 @@ test('Team Settings can be saved', function () {
     $this->user->switchTeam($firstTeam);
 
     $this->actingAs($this->user)
-        ->get(route('aura.team.settings'))
+        ->get(route('aura.settings'))
         ->assertOk()
         ->assertSee('--primary-400: 60 126 244;')
         ->assertDontSee('--primary-400: 248 113 113;')
@@ -172,7 +179,7 @@ test('different options apply correct classes', function ($settings) {
     // $component->assertSee($resultContent);
 
     $this->actingAs($this->user)
-        ->get(route('aura.team.settings'))
+        ->get(route('aura.settings'))
         ->assertOk()
         ->assertSee($resultSidebar)
         ->assertSee($resultContent);
