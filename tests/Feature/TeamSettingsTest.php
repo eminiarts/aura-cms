@@ -3,7 +3,7 @@
 namespace Tests\Feature\Livewire;
 
 use Aura\Base\Livewire\Settings;
-use Aura\Base\Models\User;
+use Aura\Base\Resources\User;
 use Aura\Base\Resources\Option;
 use Aura\Base\Resources\Role;
 use Aura\Base\Resources\Team;

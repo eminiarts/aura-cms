@@ -1,7 +1,7 @@
 <?php
 
 use Aura\Base\Facades\Aura;
-use Aura\Base\Models\User;
+use Aura\Base\Resources\User;
 use Aura\Base\Pipeline\AddIdsToFields;
 use Aura\Base\Pipeline\ApplyParentConditionalLogic;
 use Aura\Base\Pipeline\ApplyTabs;
