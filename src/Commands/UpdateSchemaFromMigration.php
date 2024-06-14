@@ -4,6 +4,7 @@ namespace Aura\Base\Commands;
 
 use Illuminate\Console\Command;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
@@ -51,6 +52,16 @@ class UpdateSchemaFromMigration extends Command
 
         ray($newColumns, $existingColumns, $desiredColumns, $dropColumns)->red();
 
+        if (! Schema::hasTable($table)) {
+            $this->info("Table '{$table}' does not exist. Running the migration...");
+
+            // Run the migration
+            Artisan::call('migrate');
+
+            $this->info("Migration completed. Table '{$table}' has been created.");
+
+            return;
+        }
 
         // Add new columns
         Schema::table($table, function (Blueprint $table) use ($existingColumns, $desiredColumns) {
@@ -59,7 +70,7 @@ class UpdateSchemaFromMigration extends Command
             ray($newColumns, $existingColumns, $desiredColumns)->red();
 
             foreach ($newColumns as $column) {
-                
+
                 $table->{$desiredColumns[$column]['type']}($column)->nullable();
             }
 
@@ -91,6 +102,7 @@ class UpdateSchemaFromMigration extends Command
         foreach ($body as $line) {
             if (preg_match('/public function up\(\)/', $line)) {
                 $upMethodStarted = true;
+
                 continue;
             }
 
