@@ -26,8 +26,8 @@ test('Aura without teams', function () {
 
     expect(config('aura.teams'))->toBeFalse();
 
-    // Rerun migrations
-    $this->artisan('migrate:fresh');
+    // Refresh the database using the RefreshDatabase trait
+    $this->refreshTestDatabase();
 
     // expect teams table not to exist
     expect(Schema::hasTable('teams'))->toBeFalse();
@@ -41,8 +41,8 @@ test('Aura without teams - table columns', function () {
 
     expect(config('aura.teams'))->toBeFalse();
 
-    // Rerun migrations
-    $this->artisan('migrate:fresh');
+    // Refresh the database using the RefreshDatabase trait
+    $this->refreshTestDatabase();
 
     // expect user table not to have current_team_id
     expect(Schema::hasColumn('users', 'current_team_id'))->toBeFalse();
@@ -56,9 +56,8 @@ test('Aura without teams - options table', function () {
 
     expect(config('aura.teams'))->toBeFalse();
 
-    // Rerun migrations
+    // Refresh the database using the RefreshDatabase trait
     $this->refreshTestDatabase();
-    $this->getEnvironmentSetUp($this->app);
 
     // expect options table to exist
     expect(Schema::hasTable('options'))->toBeTrue();
