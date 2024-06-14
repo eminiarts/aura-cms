@@ -2,7 +2,7 @@
 
 namespace Tests\Feature\Auth;
 
-use Aura\Base\Models\User;
+use Aura\Base\Resources\User;
 
 test('confirm password screen can be rendered', function () {
     $user = User::factory()->create();

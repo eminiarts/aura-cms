@@ -235,8 +235,6 @@ class Team extends Resource
             if ($user = auth()->user()) {
                 // Change the current team id of the user
                 $user->switchTeam($team);
-
-                ray($user);
             }
 
             // Create a Super Admin role for the team

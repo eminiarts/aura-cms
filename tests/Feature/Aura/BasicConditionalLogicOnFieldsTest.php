@@ -1,6 +1,6 @@
 <?php
 
-use Aura\Base\Models\User;
+use Aura\Base\Resources\User;
 use Aura\Base\Resource;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 

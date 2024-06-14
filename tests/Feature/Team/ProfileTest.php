@@ -2,7 +2,7 @@
 
 use Aura\Base\Livewire\Profile;
 use Aura\Base\Livewire\TwoFactorAuthenticationForm;
-use Aura\Base\Models\User;
+use Aura\Base\Resources\User;
 use Illuminate\Support\Facades\Hash;
 use Livewire\Livewire;
 

@@ -2,7 +2,7 @@
 
 namespace Tests\Feature\Auth;
 
-use Aura\Base\Models\User;
+use Aura\Base\Resources\User;
 use Aura\Base\Providers\RouteServiceProvider;
 use Illuminate\Auth\Events\Verified;
 use Illuminate\Support\Facades\Event;
