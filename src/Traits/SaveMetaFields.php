@@ -11,6 +11,8 @@ trait SaveMetaFields
     {
         static::saving(function ($post) {
 
+
+
             if (isset($post->attributes['fields'])) {
 
                 // Dont save Meta Fields if it is uses customTable
@@ -23,6 +25,7 @@ trait SaveMetaFields
                 ray($post->attributes['fields'])->green();
 
                 foreach ($post->attributes['fields'] as $key => $value) {
+
                     $class = $post->fieldClassBySlug($key);
 
                     // Do not continue if the Field is not found
