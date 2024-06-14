@@ -4,7 +4,6 @@ use Aura\Base\Events\SaveFields;
 use Aura\Base\Listeners\CreateDatabaseMigration;
 use Aura\Base\Listeners\ModifyDatabaseMigration;
 use Aura\Base\Livewire\ResourceEditor;
-use Aura\Base\Resource;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\File;
@@ -29,6 +28,12 @@ beforeEach(function () {
 
 afterEach(function () {
     File::delete(app_path('Aura/Resources/Project.php'));
+
+    $migrationFiles = File::files(database_path('migrations'));
+
+    foreach ($migrationFiles as $file) {
+        File::delete($file);
+    }
 });
 
 it('creates a custom resource', function () {
@@ -80,12 +85,17 @@ it('saveFields listens for ModifyDatabaseMigration', function () {
 
 });
 
-
 it('saveFields listens for CreateDatabaseMigration', function () {
     config(['aura.resource_editor.custom_table_migrations' => 'multiple']);
 
     Event::fake();
 
+    Event::forget(SaveFields::class);
+
+    // Manually re-register the event listeners based on the updated configuration
+    $appServiceProvider = new \Aura\Base\Providers\AppServiceProvider(app());
+    $appServiceProvider->boot();
+
     Livewire::test(ResourceEditor::class, ['slug' => 'Project'])
         ->call('saveNewField', [
             'type' => "Aura\Base\Fields\Text",
@@ -101,31 +111,19 @@ it('saveFields listens for CreateDatabaseMigration', function () {
         ->assertDispatched('newFields')
         ->assertDispatched('finishedSavingFields');
 
-
-    // Event::forget(SaveFields::class);
-
-    dd(Event::getListeners(SaveFields::class), Event::hasListeners(SaveFields::class, CreateDatabaseMigration::class));
-
-    
-
-    // Manually re-register the event listeners based on the updated configuration
-    $appServiceProvider = new \Aura\Base\Providers\AppServiceProvider(app());
-    $appServiceProvider->boot();
-
     Event::assertDispatched(SaveFields::class);
-
-    // $this->assertTrue(file_exists(database_path('migrations/2021_09_01_000000_create_custom_projects_table.php')));
+    Event::assertDispatchedTimes(SaveFields::class, 1);
 
     Event::assertListening(SaveFields::class, CreateDatabaseMigration::class);
-    
-    dd(Event::hasListeners(SaveFields::class, ModifyDatabaseMigration::class));
-    expect(Event::hasListeners(SaveFields::class, ModifyDatabaseMigration::class))->toBeFalse();
 });
 
 it('creates a migration when fields are added', function () {
+
     config(['aura.resource_editor.custom_table_migrations' => 'single']);
 
-    Event::fake();
+    // Manually re-register the event listeners based on the updated configuration
+    $appServiceProvider = new \Aura\Base\Providers\AppServiceProvider(app());
+    $appServiceProvider->boot();
 
     Livewire::test(ResourceEditor::class, ['slug' => 'Project'])
         ->call('saveNewField', [
@@ -141,12 +139,6 @@ it('creates a migration when fields are added', function () {
         ])
         ->assertDispatched('newFields')
         ->assertDispatched('finishedSavingFields');
-
-    // Manually re-register the event listeners based on the updated configuration
-    $appServiceProvider = new \Aura\Base\Providers\AppServiceProvider(app());
-    $appServiceProvider->boot();
-
-    Event::assertDispatched(SaveFields::class);
 
     // $this->assertTrue(file_exists(database_path('migrations/2021_09_01_000000_create_custom_projects_table.php')));
 
