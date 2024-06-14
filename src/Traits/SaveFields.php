@@ -10,9 +10,11 @@ trait SaveFields
 {
     public function formatIndentation($str, $str2)
     {
-        // if (preg_split('#\r?\n#', $str, 0) !== null) {
-        //     return $str2;
-        // }
+        if (preg_split('#\r?\n#', $str, 0) !== null) {
+            return $str2;
+        }
+
+        ray($str, $str2);
 
         // Get first Line
         $line = preg_split('#\r?\n#', $str, 0)[1];
