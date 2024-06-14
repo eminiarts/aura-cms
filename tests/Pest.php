@@ -81,6 +81,22 @@ function createSuperAdminWithoutTeam()
 
     auth()->login($user);
 
+    $role = Role::create([
+            'type' => 'Role',
+            'title' => 'Super Admin',
+            'slug' => 'super_admin',
+            'name' => 'Super Admin',
+            'description' => 'Super Admin can perform everything.',
+            'super_admin' => true,
+            'permissions' => [],
+            'user_id' => $user->id,
+        ]);
+
+
+    $user->update(['roles' => [$role->id]]);
+
+    $user->refresh();
+
     return $user;
 }
 
