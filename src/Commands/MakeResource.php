@@ -65,6 +65,7 @@ class MakeResource extends GeneratorCommand
 
         $stub = str_replace('PostName', ucfirst($this->argument('name')), $stub);
         $stub = str_replace('PostSlug', str($this->argument('name'))->slug(), $stub);
+        $stub = str_replace('post_slug', str($this->argument('name'))->snake()->plural(), $stub);
 
         return $stub;
     }

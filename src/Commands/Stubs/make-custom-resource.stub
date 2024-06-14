@@ -12,6 +12,8 @@ class PostName extends Resource
 
     public static $customTable = true;
 
+    protected $table = 'post_slug';
+
     public static function getWidgets(): array
     {
         return [];
@@ -26,4 +28,6 @@ class PostName extends Resource
     {
         return [];
     }
+
+
 }
