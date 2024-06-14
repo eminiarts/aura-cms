@@ -234,9 +234,12 @@ class Team extends Resource
         });
 
         static::created(function ($team) {
+
             if ($user = auth()->user()) {
                 // Change the current team id of the user
-                $user->switchTeam($team);
+                // $user->switchTeam($team);
+                $user->current_team_id = $team->id;
+                $user->save();
             }
 
             // Create a Super Admin role for the team
