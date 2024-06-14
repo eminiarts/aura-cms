@@ -5,9 +5,6 @@ use Aura\Base\Resources\Permission;
 use Aura\Base\Resources\Post;
 use Aura\Base\Resources\Role;
 use Aura\Base\Resources\User;
-use Illuminate\Foundation\Testing\RefreshDatabase;
-
-uses(RefreshDatabase::class);
 
 test('Aura without teams - pages', function () {
     // Set config to not use teams
