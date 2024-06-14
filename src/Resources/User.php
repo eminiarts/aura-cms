@@ -34,10 +34,10 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
     use Notifiable;
     use TwoFactorAuthenticatable;
 
-    public static $customMeta = true;
 
     public static $customTable = true;
-    // use CustomTable;
+    
+    public static $customMeta = true;
 
     public static ?string $slug = 'user';
 
@@ -64,7 +64,7 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
      * @var string[]
      */
     protected $fillable = [
-        'name', 'email', 'password', 'fields', 'current_team_id', 'email_verified_at', 'two_factor_secret', 'two_factor_recovery_codes', 'two_factor_confirmed_at', 'remember_token',
+        'name', 'email', 'password', 'current_team_id', 'email_verified_at', 'two_factor_secret', 'two_factor_recovery_codes', 'two_factor_confirmed_at', 'remember_token',
     ];
 
     protected static ?string $group = 'Admin';
