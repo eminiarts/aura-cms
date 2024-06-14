@@ -47,8 +47,6 @@ class AppServiceProvider extends ServiceProvider
         // Register event and listener
         // Event::listen(SaveFields::class, SyncDatabase::class);
 
-
-
         $customTableMigrations = config('aura.resource_editor.custom_table_migrations');
 
         if ($customTableMigrations === 'multiple') {
