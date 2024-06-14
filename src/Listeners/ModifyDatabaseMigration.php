@@ -77,6 +77,8 @@ class ModifyDatabaseMigration
         // Run "pint" on the migration file
         $this->runPint($migrationFile);
 
+        ray($migrationFile)->green();
+
         // Run the migration
         Artisan::call('aura:schema-update', ['migration' => $migrationFile]);
     }
