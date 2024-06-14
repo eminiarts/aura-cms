@@ -75,7 +75,7 @@ test('navigation item can be hidden', function () {
     $nav = Aura::navigation();
 
     // Use firstWhere to find the item. If the item is found, it will not be null.
-    $item = collect($nav['Resources'])->firstWhere('resource', 'NavigationModel');
+    $item = collect($nav['Aura'])->firstWhere('resource', 'NavigationModel');
 
     // Assert that an item was found.
     expect($item)->toBeNull();
