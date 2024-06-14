@@ -29,11 +29,11 @@ beforeEach(function () {
 afterEach(function () {
     File::delete(app_path('Aura/Resources/Project.php'));
 
-    // $migrationFiles = File::files(database_path('migrations'));
+    $migrationFiles = File::files(database_path('migrations'));
 
-    // foreach ($migrationFiles as $file) {
-    //     File::delete($file);
-    // }
+    foreach ($migrationFiles as $file) {
+        File::delete($file);
+    }
 });
 
 it('creates a custom resource', function () {
@@ -150,6 +150,6 @@ it('creates a migration when fields are added', function () {
 
     Event::assertListening(SaveFields::class, ModifyDatabaseMigration::class);
 
-    
+
 
 });

@@ -54,6 +54,8 @@ class UpdateSchemaFromMigration extends Command
 
         $table = $this->getTableNameFromMigration($migration);
 
+        dd($table, $migration, $migrationClass, $migrationFile);
+
         if (! $table) {
             $this->error('Unable to determine table name from the migration.');
 
