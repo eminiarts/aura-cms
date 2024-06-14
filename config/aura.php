@@ -111,7 +111,6 @@ return [
         'resource_view' => true,
         'resource_edit' => true,
 
-       
     ],
 
     'auth' => [

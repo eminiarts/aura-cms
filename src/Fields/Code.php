@@ -19,6 +19,7 @@ class Code extends Field
         if (json_last_error() === JSON_ERROR_NONE) {
             return json_encode($decodedValue, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
         }
+
         return $value;
         if (is_array($value) || $value === null) {
             return $value;
@@ -72,6 +73,7 @@ class Code extends Field
     public function set($value)
     {
         return $value;
+
         return json_encode($value);
     }
 }

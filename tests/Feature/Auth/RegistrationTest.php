@@ -2,7 +2,6 @@
 
 namespace Tests\Feature\Auth;
 
-use Aura\Base\Providers\RouteServiceProvider;
 use Aura\Base\Resources\Team;
 
 beforeEach(function () {

@@ -2,8 +2,8 @@
 
 namespace Aura\Base\Livewire;
 
-use Livewire\Component;
 use Aura\Base\Resources\Attachment;
+use Livewire\Component;
 
 class MediaManager extends Component
 {

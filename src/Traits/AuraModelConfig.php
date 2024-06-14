@@ -17,7 +17,9 @@ trait AuraModelConfig
 
     public static $createEnabled = true;
 
-    
+    public static $customMeta = false;
+
+    public static $customTable = false;
 
     public static $editEnabled = true;
 
@@ -99,32 +101,6 @@ trait AuraModelConfig
     {
         return false;
     }
-
-    /**
-     * @param  string  $key
-     * @return mixed
-     */
-    // public function __get($key)
-    // {
-    //     // // Title is a special case, for now
-    //     if ($key == 'title') {
-    //         return $this->getAttributeValue($key);
-    //     }
-
-    //     // Does not work atm
-    //     // if ($key == 'roles') {
-    //     //     return;
-    //     //     return $this->getRolesField();
-    //     // }
-
-    //     $value = parent::__get($key);
-
-    //     if ($value) {
-    //         return $value;
-    //     }
-
-    //     return $this->displayFieldValue($key, $value);
-    // }
 
     public function createUrl()
     {
@@ -523,7 +499,41 @@ trait AuraModelConfig
         }
     }
 
-   
+    public static function usesCustomMeta(): bool
+    {
+        return static::$customMeta;
+    }
+
+    /**
+     * @param  string  $key
+     * @return mixed
+     */
+    // public function __get($key)
+    // {
+    //     // // Title is a special case, for now
+    //     if ($key == 'title') {
+    //         return $this->getAttributeValue($key);
+    //     }
+
+    //     // Does not work atm
+    //     // if ($key == 'roles') {
+    //     //     return;
+    //     //     return $this->getRolesField();
+    //     // }
+
+    //     $value = parent::__get($key);
+
+    //     if ($value) {
+    //         return $value;
+    //     }
+
+    //     return $this->displayFieldValue($key, $value);
+    // }
+
+    public static function usesCustomTable(): bool
+    {
+        return static::$customTable;
+    }
 
     public static function usesMeta(): string
     {

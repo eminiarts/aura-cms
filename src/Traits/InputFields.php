@@ -62,7 +62,7 @@ trait InputFields
         }
 
         // Only if uses Meta
-        if (!$this->usesCustomTable() && $value === null && optional(optional($this)->meta)->$key) {
+        if (! $this->usesCustomTable() && $value === null && optional(optional($this)->meta)->$key) {
             return optional($this->fieldClassBySlug($key))->display($this->fieldBySlug($key), optional($this->meta)->$key, $this);
         }
 

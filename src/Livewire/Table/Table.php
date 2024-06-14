@@ -11,8 +11,8 @@ use Aura\Base\Livewire\Table\Traits\Search;
 use Aura\Base\Livewire\Table\Traits\Select;
 use Aura\Base\Livewire\Table\Traits\Settings;
 use Aura\Base\Livewire\Table\Traits\Sorting;
-use Aura\Base\Resources\User;
 use Aura\Base\Resource;
+use Aura\Base\Resources\User;
 use Livewire\Attributes\Computed;
 use Livewire\Component;
 
