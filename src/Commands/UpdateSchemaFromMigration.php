@@ -33,28 +33,7 @@ class UpdateSchemaFromMigration extends Command
             return;
         }
 
-        $migrationClass = $this->getMigrationClass($migrationFile);
-
-        if (! $migrationClass) {
-            $this->error('Unable to load migration class.');
-
-            return;
-        }
-
-        $migration = new $migrationClass;
-
-        if (! method_exists($migration, 'up')) {
-            $this->error('The migration class does not have an up method.');
-
-            return;
-        }
-
-        // Get the table name from the migration (assuming only one table is created)
-        $schemaBuilder = Schema::getFacadeRoot();
-
-        $table = $this->getTableNameFromMigration($migration);
-
-        dd($table, $migration, $migrationClass, $migrationFile);
+        $table = $this->getTableNameFromMigration($migrationFile);
 
         if (! $table) {
             $this->error('Unable to determine table name from the migration.');
@@ -63,16 +42,15 @@ class UpdateSchemaFromMigration extends Command
         }
 
         $existingColumns = DB::getSchemaBuilder()->getColumnListing($table);
-        $desiredColumns = $this->getDesiredColumnsFromMigration($migration);
+        $desiredColumns = $this->getDesiredColumnsFromMigration($migrationFile);
 
         $newColumns = array_diff(array_keys($desiredColumns), $existingColumns);
 
         $dropColumns = array_diff($existingColumns, array_keys($desiredColumns));
         $dropColumns = array_diff($dropColumns, ['id', 'created_at', 'updated_at', 'deleted_at']);
 
-        // dd($table, $migration, $migrationClass, $existingColumns, $desiredColumns, $newColumns, $dropColumns);
+        ray($newColumns, $existingColumns, $desiredColumns, $dropColumns)->red();
 
-        ray($table, $desiredColumns, $existingColumns, $newColumns, $dropColumns);
 
         // Add new columns
         Schema::table($table, function (Blueprint $table) use ($existingColumns, $desiredColumns) {
@@ -104,53 +82,40 @@ class UpdateSchemaFromMigration extends Command
         $this->info('Schema updated successfully based on the migration file.');
     }
 
-    protected function getDesiredColumnsFromMigration($migration)
+    protected function getDesiredColumnsFromMigration($migrationFile)
     {
-        $reflection = new \ReflectionClass($migration);
-        $method = $reflection->getMethod('up');
-        $body = file($method->getFileName());
-        $lines = array_slice($body, $method->getStartLine(), $method->getEndLine() - $method->getStartLine());
-
+        $body = file($migrationFile);
+        $upMethodStarted = false;
         $columns = [];
-        foreach ($lines as $line) {
-            if (preg_match('/\$table->([a-zA-Z]+)\(\'([a-zA-Z0-9_]+)\'\)/', $line, $matches)) {
-                $columns[$matches[2]] = ['type' => $matches[1]];
+
+        foreach ($body as $line) {
+            if (preg_match('/public function up\(\)/', $line)) {
+                $upMethodStarted = true;
+                continue;
+            }
+
+            if ($upMethodStarted) {
+                if (preg_match('/\}/', $line)) {
+                    break;
+                }
+
+                if (preg_match('/\$table->([a-zA-Z]+)\(\'([a-zA-Z0-9_]+)\'\)/', $line, $matches)) {
+                    $columns[$matches[2]] = ['type' => $matches[1]];
+                }
             }
         }
 
         return $columns;
     }
 
-    protected function getMigrationClass($file)
-    {
-        require_once $file;
-
-        $classes = get_declared_classes();
-        $migrationClass = null;
-
-        foreach ($classes as $class) {
-            $reflectionClass = new \ReflectionClass($class);
-            if ($reflectionClass->isSubclassOf('Illuminate\Database\Migrations\Migration') && ! $reflectionClass->isAbstract()) {
-                $migrationClass = $class;
-                break;
-            }
-        }
-
-        return $migrationClass;
-    }
-
     protected function getTableNameFromMigration($migration)
     {
-        $reflection = new \ReflectionClass($migration);
-        $method = $reflection->getMethod('up');
-        $body = file($method->getFileName());
-        $lines = array_slice($body, $method->getStartLine(), $method->getEndLine() - $method->getStartLine());
+        $body = file($migration);
 
-        foreach ($lines as $line) {
+        foreach ($body as $line) {
             if (preg_match('/Schema::create\(\'([a-zA-Z0-9_]+)\'/', $line, $matches)) {
                 return $matches[1];
             }
         }
-
     }
 }
