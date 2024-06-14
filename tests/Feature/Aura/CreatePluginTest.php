@@ -16,8 +16,8 @@ it('creates a complete plugin', function () {
     $baseComposerJson = json_decode(File::get(base_path('composer.json')), true);
 
     $this->artisan('aura:plugin myvendor/mypackage')
-        ->expectsQuestion('Select the type of plugin you want to create', 'Complete plugin')
-        ->expectsOutput('Complete plugin created at '.$pluginDirectory)
+        ->expectsQuestion('What type of plugin do you want to create?', 'plugin')
+        ->expectsOutput('plugin created at '.$pluginDirectory)
         ->expectsOutputToContain('Replacing placeholders')
         ->expectsConfirmation('Do you want to append '.str($name)->title().'ServiceProvider to config/app.php?', 'no') // no, because it would adjust the config and make tests fail next time
         ->expectsOutputToContain('Updating composer.json')
@@ -65,8 +65,8 @@ it('creates a field plugin', function () {
     $baseComposerJson = json_decode(File::get(base_path('composer.json')), true);
 
     $this->artisan('aura:plugin myvendor/customfield')
-        ->expectsQuestion('Select the type of plugin you want to create', 'Field plugin')
-        ->expectsOutput('Field plugin created at '.$pluginDirectory)
+        ->expectsQuestion('What type of plugin do you want to create?', 'plugin-field')
+        ->expectsOutput('plugin-field created at '.$pluginDirectory)
         ->expectsOutputToContain('Replacing placeholders')
         ->expectsConfirmation('Do you want to append '.str($name)->title().'ServiceProvider to config/app.php?', 'no') // no, because it would adjust the config and make tests fail next time
         ->expectsOutputToContain('Updating composer.json')
@@ -75,6 +75,7 @@ it('creates a field plugin', function () {
         ->expectsOutput('Plugin created successfully!')
         ->assertExitCode(0);
 
+    ray($pluginDirectory);
     // Assert that the plugin directory and files were created correctly
     expect(File::exists("{$pluginDirectory}/src"))->toBeTrue();
     expect(File::exists("{$pluginDirectory}/configure.php"))->toBeFalse();
@@ -118,8 +119,8 @@ it('creates a resource plugin', function () {
     $baseComposerJson = json_decode(File::get(base_path('composer.json')), true);
 
     $this->artisan('aura:plugin myvendor/resource')
-        ->expectsQuestion('Select the type of plugin you want to create', 'Resource plugin')
-        ->expectsOutput('Resource plugin created at '.$pluginDirectory)
+        ->expectsQuestion('What type of plugin do you want to create?', 'plugin-resource')
+        ->expectsOutput('plugin-resource created at '.$pluginDirectory)
         ->expectsOutputToContain('Replacing placeholders')
         ->expectsConfirmation('Do you want to append '.str($name)->title().'ServiceProvider to config/app.php?', 'no') // no, because it would adjust the config and make tests fail next time
         ->expectsOutputToContain('Updating composer.json')
