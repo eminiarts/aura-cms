@@ -34,10 +34,9 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
     use Notifiable;
     use TwoFactorAuthenticatable;
 
+    public static $customMeta = true;
 
     public static $customTable = true;
-    
-    public static $customMeta = true;
 
     public static ?string $slug = 'user';
 

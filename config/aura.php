@@ -100,7 +100,6 @@ return [
         'flows' => false,
         'forms' => true,
 
-
         'theme_options' => true,
         'global_config' => true,
 

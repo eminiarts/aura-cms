@@ -2,11 +2,11 @@
 
 namespace Aura\Base\Traits;
 
-use Aura\Base\Models\Meta;
-use Illuminate\Support\Str;
-use Aura\Base\Resources\Team;
 use Aura\Base\ConditionalLogic;
 use Aura\Base\Exceptions\InvalidMetaTableException;
+use Aura\Base\Models\Meta;
+use Aura\Base\Resources\Team;
+use Illuminate\Support\Str;
 
 trait AuraModelConfig
 {
@@ -385,20 +385,15 @@ trait AuraModelConfig
             $metaRelation = (new \ReflectionClass($this))->getMethod('meta')->getDeclaringClass()->getName();
 
             ray($metaRelation, self::class, $this->getMetaTable());
-            
+
             if ($metaRelation === self::class && $this->getMetaTable() === 'post_meta') {
-                
+
                 throw new InvalidMetaTableException();
             }
         }
 
         return $this->hasMany(Meta::class, 'post_id');
         //->whereIn('key', $this->inputFieldsSlugs())
-    }
-
-    protected function getMetaTable()
-    {
-        return (new Meta)->getTable();
     }
 
     public function navigation()
@@ -577,5 +572,10 @@ trait AuraModelConfig
     public function viewView()
     {
         return 'aura::livewire.resource.view';
+    }
+
+    protected function getMetaTable()
+    {
+        return (new Meta)->getTable();
     }
 }
