@@ -6,6 +6,7 @@ use Aura\Base\Resources\Team;
 use Aura\Base\Resources\User;
 use Aura\Base\Tests\TestCase;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Foundation\Testing\DatabaseMigrations;
 
 uses(TestCase::class)->in(__DIR__);
 
@@ -15,6 +16,14 @@ uses()->group('table')->in('Feature/Table');
 uses()->group('resource')->in('Feature/Resource');
 
 uses(RefreshDatabase::class)->in('Feature');
+
+// uses(\Illuminate\Foundation\Testing\RefreshDatabase::class);
+uses(DatabaseMigrations::class)->in('DatabaseMigrations');
+
+
+// uses(\Illuminate\Foundation\Testing\LazilyRefreshDatabase::class)->in('Feature');
+
+
 
 /*
 |--------------------------------------------------------------------------
