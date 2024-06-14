@@ -26,7 +26,7 @@ test('a super admin can perform any action', function () {
     // Attach to User
     $user = \Aura\Base\Resources\User::find(1);
 
-    $user->update(['fields' => ['roles' => [$r->id]]]);
+    $user->update(['roles' => [$r->id]]);
 
     // dd(auth()->user()->can('viewAny', $user));
 
@@ -73,7 +73,7 @@ test('a admin can perform assigned actions', function () {
 
     // Attach to User
     $user = \Aura\Base\Resources\User::find(1);
-    $user->update(['fields' => ['roles' => [$r->id]]]);
+    $user->update(['roles' => [$r->id]]);
     $user->refresh();
 
     // Assert User can do everything with posts
@@ -119,7 +119,7 @@ test('a moderator can only view posts but not edit them', function () {
 
     // Attach to User
     $user = \Aura\Base\Resources\User::find(1);
-    $user->update(['fields' => ['roles' => [$r->id]]]);
+    $user->update(['roles' => [$r->id]]);
     $user->refresh();
 
     // Assert Permissions
@@ -164,7 +164,7 @@ test('a moderator can access index page', function () {
 
     // Attach to User
     $user = \Aura\Base\Resources\User::find(1);
-    $user->update(['fields' => ['roles' => [$r->id]]]);
+    $user->update(['roles' => [$r->id]]);
 
     $user->refresh();
 
@@ -217,7 +217,7 @@ test('a admin can access all pages', function () {
 
     // Attach to User
     $user = \Aura\Base\Resources\User::find(1);
-    $user->update(['fields' => ['roles' => [$r->id]]]);
+    $user->update(['roles' => [$r->id]]);
 
     $user->refresh();
 
@@ -270,11 +270,13 @@ test('scoped posts', function () {
     $r = Role::first();
 
     // Attach to User
-    $this->user->resource->update(['fields' => ['roles' => [$r->id]]]);
+    $this->user->resource->update(['roles' => [$r->id]]);
 
     $user = \Aura\Base\Resources\User::find(1);
 
-    $user2->resource->update(['fields' => ['roles' => [$r->id]]]);
+
+
+    $user2->update(['roles' => [$r->id]]);
 
     $user2->refresh();
 
@@ -344,7 +346,7 @@ test('a admin can access users', function () {
 
     // Attach to User
     $user = \Aura\Base\Resources\User::find(1);
-    $user->update(['fields' => ['roles' => [$r->id]]]);
+    $user->update(['roles' => [$r->id]]);
 
     // Access Index Page
     $response = $this->actingAs($this->user)->get(route('aura.resource.index', ['slug' => 'User']));
