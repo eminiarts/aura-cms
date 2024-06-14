@@ -9,27 +9,25 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Livewire\Livewire;
 
-uses(RefreshDatabase::class);
+beforeAll(function () {
+    // Ensure the environment variable is set before migrations run
+    putenv('AURA_TEAMS=false');
+});
 
+afterAll(function () {
+    // Ensure the environment variable is set before migrations run
+    putenv('AURA_TEAMS=true');
+});
+
+// Before each test, create a Superadmin and login
 beforeEach(function () {
-    // Set config to not use teams
-    config(['aura.teams' => false]);
-
-    // $this->artisan('migrate:fresh');
-
     $this->actingAs($this->user = createSuperAdminWithoutTeam());
 });
 
 test('Settings Component can be rendered', function () {
-
     $this->withoutExceptionHandling();
 
-    ray('he');
     $response = $this->get(route('aura.settings'));
-
-    // dd($response->content());
-
-    ray('hi', $response->content());
 
     $response->assertStatus(200);
 });
@@ -52,8 +50,7 @@ test('Default Team Settings are created', function () {
     $option = Option::first();
 
     // assert option is team settings
-    // $this->assertEquals($option->name, 'settings');
-    $this->assertEquals('settings');
+    $this->assertEquals($option->name, 'settings');
 
     // assert $option->value is an array
     $this->assertIsArray($option->value);
@@ -78,12 +75,12 @@ test('Settings can be saved', function () {
     $option = Option::first();
 
     // assert option is team settings
-    $this->assertEquals('settings');
-    $this->assertIsArray($option->value);
+    expect($option->name)->toBe('settings');
+    expect($option->value)->toBeArray();
 
-    $this->assertEquals('light', $option->value['darkmode-type']);
-    $this->assertEquals('light', $option->value['sidebar-type']);
-    $this->assertEquals('red', $option->value['color-palette']);
-    $this->assertEquals('zinc', $option->value['gray-color-palette']);
+    expect($option->value['darkmode-type'])->toBe('light');
+    expect($option->value['sidebar-type'])->toBe('light');
+    expect($option->value['color-palette'])->toBe('red');
+    expect($option->value['gray-color-palette'])->toBe('zinc');
 
 });
