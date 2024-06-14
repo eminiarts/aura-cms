@@ -57,8 +57,6 @@ class ResourceEditor extends Component
 
     public function addField($type)
     {
-        ray('add field', $type);
-
         $this->dispatch('openSlideOver', component: 'edit-field');
     }
 
@@ -143,7 +141,7 @@ class ResourceEditor extends Component
 
     public function checkAuthorization()
     {
-        if (config('aura.features.resource_editor') == false) {
+        if (config('aura.resource_editor.enabled') == false) {
             abort(404);
         }
 
@@ -452,6 +450,8 @@ class ResourceEditor extends Component
 
     public function saveField($data)
     {
+        ray($data, 'save field')->red();
+        dd('hier');
         $fields = collect($this->fieldsArray);
 
         // get index of the field with the slug $data['slug']
