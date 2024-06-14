@@ -1,13 +1,13 @@
 <?php
 
 use Aura\Base\Facades\Aura;
-use Aura\Base\Resources\User;
 use Aura\Base\Pipeline\AddIdsToFields;
 use Aura\Base\Pipeline\ApplyParentConditionalLogic;
 use Aura\Base\Pipeline\ApplyTabs;
 use Aura\Base\Pipeline\MapFields;
 use Aura\Base\Resource;
 use Aura\Base\Resources\Role;
+use Aura\Base\Resources\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);

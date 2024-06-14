@@ -6,33 +6,28 @@ use Livewire\Component;
 
 class Modals extends Component
 {
-    protected $listeners = ['openModal', 'closeModal'];
+    public $activeModals = [];
 
     public $modals = [];
 
-    public $activeModals = [];
-
-    public function mount()
-    {
-        // Initialization logic if needed
-    }
-
-    public function render()
-    {
-        return view('aura::livewire.modals');
-    }
+    protected $listeners = ['openModal', 'closeModal'];
 
     public function closeModal($id = null): void
     {
         if ($id) {
             unset($this->modals[$id]);
-            $this->activeModals = array_values(array_filter($this->activeModals, function($modalId) use ($id) {
+            $this->activeModals = array_values(array_filter($this->activeModals, function ($modalId) use ($id) {
                 return $modalId !== $id;
             }));
         } else {
             $this->modals = [];
             $this->activeModals = [];
         }
+    }
+
+    public function mount()
+    {
+        // Initialization logic if needed
     }
 
     public function openModal($component, $arguments = [], $modalAttributes = []): void
@@ -53,5 +48,10 @@ class Modals extends Component
 
         ray($this->modals, $this->activeModals);
 
+    }
+
+    public function render()
+    {
+        return view('aura::livewire.modals');
     }
 }

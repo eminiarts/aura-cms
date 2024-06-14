@@ -20,6 +20,8 @@ class Team extends Resource
         ],
     ];
 
+    public static $customMeta = true;
+
     public static $customTable = true;
 
     public static $globalSearch = false;

@@ -45,7 +45,7 @@ trait ConfirmsPasswords
 
         session(['auth.password_confirmed_at' => time()]);
 
-        $this->dispatch('password-confirmed', 
+        $this->dispatch('password-confirmed',
             id: $this->confirmableId,
         );
 
@@ -62,7 +62,7 @@ trait ConfirmsPasswords
         $this->resetErrorBag();
 
         if ($this->passwordIsConfirmed()) {
-            return $this->dispatch('password-confirmed', 
+            return $this->dispatch('password-confirmed',
                 id: $confirmableId
             );
         }

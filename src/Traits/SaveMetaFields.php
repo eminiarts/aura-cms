@@ -14,8 +14,9 @@ trait SaveMetaFields
             if (isset($post->attributes['fields'])) {
 
                 // Dont save Meta Fields if it is uses customTable
-                if ($post->usesCustomTable()) {
+                if ($post->usesCustomTable() && ! $post->usesCustomMeta()) {
                     unset($post->attributes['fields']);
+
                     return;
                 }
 

@@ -3,7 +3,6 @@
 namespace Tests\Feature;
 
 use Aura\Base\Resources\User;
-use Aura\Base\Providers\RouteServiceProvider;
 use Aura\Base\Tests\TestCase;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
