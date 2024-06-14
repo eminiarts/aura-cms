@@ -66,7 +66,9 @@ class MakeUser extends Command
 
         $role = Role::create($roleData);
 
-        $user->update(['fields' => ['roles' => [$role->id]]]);
+        
+
+        $user->update(['roles' => [$role->id]]);
 
         $this->info('User created successfully.');
 
