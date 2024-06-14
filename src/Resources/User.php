@@ -2,45 +2,41 @@
 
 namespace Aura\Base\Resources;
 
-use Aura\Base\Resource;
-use Illuminate\Support\Str;
-use Aura\Base\Resources\Role;
-use Aura\Base\Models\UserMeta;
-use Aura\Base\Resources\Attachment;
-use Illuminate\Validation\Rules\Password;
 use Aura\Base\Database\Factories\UserFactory;
-use Aura\Base\Resources\Option;
-use Aura\Base\Resources\Team;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Notifications\Notifiable;
-use Illuminate\Support\Facades\Cache;
-use Lab404\Impersonate\Models\Impersonate;
-use Laravel\Fortify\TwoFactorAuthenticatable;
-use Laravel\Sanctum\HasApiTokens;
+use Aura\Base\Models\UserMeta;
+use Aura\Base\Resource;
 use Illuminate\Auth\Authenticatable;
 use Illuminate\Auth\MustVerifyEmail;
 use Illuminate\Auth\Passwords\CanResetPassword;
 use Illuminate\Contracts\Auth\Access\Authorizable as AuthorizableContract;
 use Illuminate\Contracts\Auth\Authenticatable as AuthenticatableContract;
 use Illuminate\Contracts\Auth\CanResetPassword as CanResetPasswordContract;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Foundation\Auth\Access\Authorizable;
+use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Str;
+use Illuminate\Validation\Rules\Password;
+use Lab404\Impersonate\Models\Impersonate;
+use Laravel\Fortify\TwoFactorAuthenticatable;
+use Laravel\Sanctum\HasApiTokens;
 
-class User extends Resource implements
-    AuthenticatableContract,
-    AuthorizableContract,
-    CanResetPasswordContract
+class User extends Resource implements AuthenticatableContract, AuthorizableContract, CanResetPasswordContract
 {
-    use HasApiTokens;
-    use HasFactory;
-    use Impersonate;
-    use Notifiable;
-    use TwoFactorAuthenticatable;
-
     use Authenticatable;
     use Authorizable;
     use CanResetPassword;
+    use HasApiTokens;
+    use HasFactory;
+    use Impersonate;
     use MustVerifyEmail;
+    use Notifiable;
+    use TwoFactorAuthenticatable;
+
+    public static $customMeta = true;
+
+    public static $customTable = true;
     // use CustomTable;
 
     public static ?string $slug = 'user';
@@ -50,9 +46,6 @@ class User extends Resource implements
     public static string $type = 'User';
 
     protected $appends = ['fields'];
-
-    public static $customTable = true;
-
 
     /**
      * The attributes that should be cast.
@@ -74,7 +67,6 @@ class User extends Resource implements
         'name', 'email', 'password', 'fields', 'current_team_id', 'email_verified_at', 'two_factor_secret', 'two_factor_recovery_codes', 'two_factor_confirmed_at', 'remember_token',
     ];
 
-
     protected static ?string $group = 'Admin';
 
     /**
@@ -92,6 +84,78 @@ class User extends Resource implements
     protected static array $searchable = ['name', 'email'];
 
     protected $table = 'users';
+
+    /**
+     * Determine if the user belongs to the given team.
+     *
+     * @param  mixed  $team
+     * @return bool
+     */
+    public function belongsToTeam($team)
+    {
+        if (is_null($team)) {
+            return false;
+        }
+
+        return $this->teams->contains(function ($t) use ($team) {
+            return $t->id === $team->id;
+        });
+    }
+
+    public function canBeImpersonated()
+    {
+        return ! $this->resource->isSuperAdmin();
+    }
+
+    public function canImpersonate()
+    {
+        return $this->resource->isSuperAdmin();
+    }
+
+    public function clearCachedOption($option)
+    {
+        $option = 'user.'.$this->id.'.'.$option;
+
+        Cache::forget($option);
+    }
+
+    // Reset to default create Method from Laravel
+    public static function create($fields)
+    {
+        $model = new static();
+
+        return tap($model->newModelInstance($fields), function ($instance) {
+            $instance->save();
+        });
+    }
+
+    /**
+     * Get the current team of the user's context.
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
+     */
+    public function currentTeam()
+    {
+        if (! config('aura.teams')) {
+            return;
+        }
+
+        if (is_null($this->current_team_id) && $this->id) {
+            $this->switchTeam($this->personalTeam());
+        }
+
+        return $this->belongsTo(config('aura.resources.team'), 'current_team_id');
+    }
+
+    public function deleteOption($option)
+    {
+        $option = 'user.'.$this->id.'.'.$option;
+
+        Option::whereName($option)->delete();
+
+        Cache::forget($option);
+
+    }
 
     public function getAvatarUrlAttribute()
     {
@@ -339,6 +403,92 @@ class User extends Resource implements
         return $initials;
     }
 
+    public function getOption($option)
+    {
+        $option = 'user.'.$this->id.'.'.$option;
+
+        // If there is a * at the end of the option name, it means that it is a wildcard
+        // and we need to get all options that match the wildcard
+        if (substr($option, -1) == '*') {
+            $o = substr($option, 0, -1);
+
+            // Cache
+            $options = Cache::remember($option, now()->addHour(), function () use ($o) {
+                return Option::where('name', 'like', $o.'%')->get();
+            });
+
+            // Map the options, set the key to the option name (everything after last dot ".") and the value to the option value
+            return $options->mapWithKeys(function ($item, $key) {
+                return [str($item->name)->afterLast('.')->toString() => $item->value];
+            });
+        }
+
+        // Cache
+        $model = Cache::remember($option, now()->addHour(), function () use ($option) {
+            return Option::whereName($option)->first();
+        });
+
+        if ($model) {
+            return $model->value;
+        }
+    }
+
+    public function getOptionBookmarks()
+    {
+        // Cache
+        $option = Cache::remember('user.'.$this->id.'.bookmarks', now()->addHour(), function () {
+            return Option::whereName('user.'.$this->id.'.bookmarks')->first();
+        });
+
+        if ($option) {
+            return $option->value;
+        }
+
+        return [];
+    }
+
+    public function getOptionColumns($slug)
+    {
+        // Cache
+        $option = Cache::remember('user.'.$this->id.'.columns.'.$slug, now()->addHour(), function () use ($slug) {
+            return Option::whereName('user.'.$this->id.'.columns.'.$slug)->first();
+        });
+
+        if ($option) {
+            return $option->value;
+        }
+
+        return [];
+    }
+
+    public function getOptionSidebar()
+    {
+        // Cache
+        $option = Cache::remember('user.'.$this->id.'.sidebar', now()->addHour(), function () {
+            return Option::whereName('user.'.$this->id.'.sidebar')->first();
+        });
+
+        if ($option) {
+            return $option->value;
+        }
+
+        return [];
+    }
+
+    public function getOptionSidebarToggled()
+    {
+        // Cache
+        $option = Cache::remember('user.'.$this->id.'.sidebarToggled', now()->addHour(), function () {
+            return Option::whereName('user.'.$this->id.'.sidebarToggled')->first();
+        });
+
+        if ($option) {
+            return $option->value;
+        }
+
+        return true;
+    }
+
     public function getRolesField()
     {
         return $this->roles->pluck('id')->toArray();
@@ -357,6 +507,18 @@ class User extends Resource implements
         });
 
         return $fields;
+    }
+
+    public function getTeams()
+    {
+        if (! config('aura.teams')) {
+            return;
+        }
+
+        // Return cached teams with meta
+        return Cache::remember('user.'.$this->id.'.teams', now()->addHour(), function () {
+            return $this->teams()->with('meta')->get();
+        });
     }
 
     public static function getWidgets(): array
@@ -457,267 +619,6 @@ class User extends Resource implements
         return false;
     }
 
-    /**
-     * Returns true if the user has at least one role that is a super admin.
-     */
-    public function isSuperAdmin(): bool
-    {
-        $roles = $this->cachedRoles();
-
-        if (! $roles) {
-            return false;
-        }
-
-        foreach ($roles as $role) {
-            if ($role->super_admin) {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    public function meta()
-    {
-        return $this->hasMany(UserMeta::class, 'user_id');
-    }
-
-    public function roles()
-    {
-        $roles = $this->belongsToMany(Role::class, 'user_meta', 'user_id', 'value')
-            ->wherePivot('key', 'roles');
-
-        if (config('aura.teams')) {
-            $roles = $roles->withPivot('team_id');
-        }
-
-        return config('aura.teams') ? $roles->wherePivot('team_id', $this->current_team_id) : $roles;
-    }
-
-    public function setRolesField($value)
-    {
-        // Save the roles
-        if (config('aura.teams')) {
-            $this->roles()->syncWithPivotValues($value, ['key' => 'roles', 'team_id' => $this->current_team_id]);
-        } else {
-            $this->roles()->syncWithPivotValues($value, ['key' => 'roles']);
-        }
-
-        // Unset the roles field
-        unset($this->attributes['fields']['roles']);
-
-        // Clear Cache 'user.' . $this->id . '.roles'
-        Cache::forget('user.'.$this->id.'.roles');
-
-        return $this;
-    }
-
-    public function title()
-    {
-        return $this->name;
-    }
-
-    public function widgets()
-    {
-        return collect($this->getWidgets())->map(function ($item) {
-            return $item;
-        });
-    }
-
-
-
-    protected function cachedRoles(): mixed
-    {
-        return $this->roles;
-
-        return Cache::remember($this->getCacheKeyForRoles(), now()->addMinutes(60), function () {
-            return $this->roles;
-        });
-    }
-
-    protected function getCacheKeyForRoles(): string
-    {
-        return $this->current_team_id.'.user.'.$this->id.'.roles';
-    }
-
-    /**
-     * Create a new factory instance for the model.
-     */
-    protected static function newFactory()
-    {
-        return UserFactory::new();
-    }
-
-    /**
-     * Determine if the user belongs to the given team.
-     *
-     * @param  mixed  $team
-     * @return bool
-     */
-    public function belongsToTeam($team)
-    {
-        if (is_null($team)) {
-            return false;
-        }
-
-        return $this->teams->contains(function ($t) use ($team) {
-            return $t->id === $team->id;
-        });
-    }
-
-    public function canBeImpersonated()
-    {
-        return ! $this->resource->isSuperAdmin();
-    }
-
-    public function canImpersonate()
-    {
-        return $this->resource->isSuperAdmin();
-    }
-
-    public function clearCachedOption($option)
-    {
-        $option = 'user.'.$this->id.'.'.$option;
-
-        Cache::forget($option);
-    }
-
-    // Reset to default create Method from Laravel
-    public static function create($fields)
-    {
-        $model = new static();
-
-        return tap($model->newModelInstance($fields), function ($instance) {
-            $instance->save();
-        });
-    }
-
-    /**
-     * Get the current team of the user's context.
-     *
-     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
-     */
-    public function currentTeam()
-    {
-        if (! config('aura.teams')) {
-            return;
-        }
-
-        if (is_null($this->current_team_id) && $this->id) {
-            $this->switchTeam($this->personalTeam());
-        }
-
-        return $this->belongsTo(config('aura.resources.team'), 'current_team_id');
-    }
-
-    public function deleteOption($option)
-    {
-        $option = 'user.'.$this->id.'.'.$option;
-
-        Option::whereName($option)->delete();
-
-        Cache::forget($option);
-
-    }
-
-    public function getOption($option)
-    {
-        $option = 'user.'.$this->id.'.'.$option;
-
-        // If there is a * at the end of the option name, it means that it is a wildcard
-        // and we need to get all options that match the wildcard
-        if (substr($option, -1) == '*') {
-            $o = substr($option, 0, -1);
-
-            // Cache
-            $options = Cache::remember($option, now()->addHour(), function () use ($o) {
-                return Option::where('name', 'like', $o.'%')->get();
-            });
-
-            // Map the options, set the key to the option name (everything after last dot ".") and the value to the option value
-            return $options->mapWithKeys(function ($item, $key) {
-                return [str($item->name)->afterLast('.')->toString() => $item->value];
-            });
-        }
-
-        // Cache
-        $model = Cache::remember($option, now()->addHour(), function () use ($option) {
-            return Option::whereName($option)->first();
-        });
-
-        if ($model) {
-            return $model->value;
-        }
-    }
-
-    public function getOptionBookmarks()
-    {
-        // Cache
-        $option = Cache::remember('user.'.$this->id.'.bookmarks', now()->addHour(), function () {
-            return Option::whereName('user.'.$this->id.'.bookmarks')->first();
-        });
-
-        if ($option) {
-            return $option->value;
-        }
-
-        return [];
-    }
-
-    public function getOptionColumns($slug)
-    {
-        // Cache
-        $option = Cache::remember('user.'.$this->id.'.columns.'.$slug, now()->addHour(), function () use ($slug) {
-            return Option::whereName('user.'.$this->id.'.columns.'.$slug)->first();
-        });
-
-        if ($option) {
-            return $option->value;
-        }
-
-        return [];
-    }
-
-    public function getOptionSidebar()
-    {
-        // Cache
-        $option = Cache::remember('user.'.$this->id.'.sidebar', now()->addHour(), function () {
-            return Option::whereName('user.'.$this->id.'.sidebar')->first();
-        });
-
-        if ($option) {
-            return $option->value;
-        }
-
-        return [];
-    }
-
-    public function getOptionSidebarToggled()
-    {
-        // Cache
-        $option = Cache::remember('user.'.$this->id.'.sidebarToggled', now()->addHour(), function () {
-            return Option::whereName('user.'.$this->id.'.sidebarToggled')->first();
-        });
-
-        if ($option) {
-            return $option->value;
-        }
-
-        return true;
-    }
-
-    public function getTeams()
-    {
-        if (! config('aura.teams')) {
-            return;
-        }
-
-        // Return cached teams with meta
-        return Cache::remember('user.'.$this->id.'.teams', now()->addHour(), function () {
-            return $this->teams()->with('meta')->get();
-        });
-    }
-
     public function indexQuery($query)
     {
         // Query where user_meta key = roles and team_id = auth()->user()->current_team_id
@@ -741,6 +642,31 @@ class User extends Resource implements
     public function isCurrentTeam($team)
     {
         return $team->id === $this->currentTeam->id;
+    }
+
+    /**
+     * Returns true if the user has at least one role that is a super admin.
+     */
+    public function isSuperAdmin(): bool
+    {
+        $roles = $this->cachedRoles();
+
+        if (! $roles) {
+            return false;
+        }
+
+        foreach ($roles as $role) {
+            if ($role->super_admin) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    public function meta()
+    {
+        return $this->hasMany(UserMeta::class, 'user_id');
     }
 
     /**
@@ -771,6 +697,36 @@ class User extends Resource implements
         return Cache::remember('user.resource.'.$this->id, now()->addHour(), function () {
             return \Aura\Base\Resources\User::find($this->id);
         });
+    }
+
+    public function roles()
+    {
+        $roles = $this->belongsToMany(Role::class, 'user_meta', 'user_id', 'value')
+            ->wherePivot('key', 'roles');
+
+        if (config('aura.teams')) {
+            $roles = $roles->withPivot('team_id');
+        }
+
+        return config('aura.teams') ? $roles->wherePivot('team_id', $this->current_team_id) : $roles;
+    }
+
+    public function setRolesField($value)
+    {
+        // Save the roles
+        if (config('aura.teams')) {
+            $this->roles()->syncWithPivotValues($value, ['key' => 'roles', 'team_id' => $this->current_team_id]);
+        } else {
+            $this->roles()->syncWithPivotValues($value, ['key' => 'roles']);
+        }
+
+        // Unset the roles field
+        unset($this->attributes['fields']['roles']);
+
+        // Clear Cache 'user.' . $this->id . '.roles'
+        Cache::forget('user.'.$this->id.'.roles');
+
+        return $this;
     }
 
     /**
@@ -804,6 +760,11 @@ class User extends Resource implements
         return $this->belongsToMany(Team::class, 'user_meta', 'user_id', 'team_id')->wherePivot('key', 'roles');
     }
 
+    public function title()
+    {
+        return $this->name;
+    }
+
     public function updateOption($option, $value)
     {
         $option = 'user.'.$this->id.'.'.$option;
@@ -814,5 +775,32 @@ class User extends Resource implements
         Cache::forget($option);
     }
 
+    public function widgets()
+    {
+        return collect($this->getWidgets())->map(function ($item) {
+            return $item;
+        });
+    }
 
+    protected function cachedRoles(): mixed
+    {
+        return $this->roles;
+
+        return Cache::remember($this->getCacheKeyForRoles(), now()->addMinutes(60), function () {
+            return $this->roles;
+        });
+    }
+
+    protected function getCacheKeyForRoles(): string
+    {
+        return $this->current_team_id.'.user.'.$this->id.'.roles';
+    }
+
+    /**
+     * Create a new factory instance for the model.
+     */
+    protected static function newFactory()
+    {
+        return UserFactory::new();
+    }
 }

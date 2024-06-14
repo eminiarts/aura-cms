@@ -53,7 +53,7 @@ trait SaveFieldAttributes
                 }
 
                 // Dont unset Field if it is uses customTable
-                if ($post->usesCustomTable()) {
+                if ($post->usesCustomTable() && ! $post->usesCustomMeta()) {
                     return;
                 }
 

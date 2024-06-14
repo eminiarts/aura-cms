@@ -3,7 +3,6 @@
 use Aura\Base\Facades\Aura;
 use Aura\Base\Livewire\Config;
 use Aura\Base\Livewire\InviteUser;
-use Aura\Base\Providers\RouteServiceProvider;
 use Aura\Base\Resources\Role;
 use Aura\Base\Resources\Team;
 use Aura\Base\Resources\TeamInvitation;
@@ -21,7 +20,7 @@ uses(RefreshDatabase::class);
 beforeEach(function () {
 
     $this->withoutExceptionHandling();
-    
+
     $this->actingAs($this->user = createSuperAdmin());
 
     // config('aura.teams')
@@ -103,7 +102,6 @@ test('user gets correct role', function () {
     // Visit $url and assert Ok
     $response = $this->get($url);
 
-
     $response->assertOk();
 
     // Register the user and see if the role is correct
@@ -160,7 +158,7 @@ test('Team Invitation can be created', function () {
 test('register route is available', function () {
 
     $this->withoutExceptionHandling();
-    
+
     // log the user out
     $this->app['auth']->logout();
 

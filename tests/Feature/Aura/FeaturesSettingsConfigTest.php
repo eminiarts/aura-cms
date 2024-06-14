@@ -2,8 +2,6 @@
 
 // beforeEach(fn () => $this->actingAs($this->user = createSuperAdmin()));
 
-
-
 test('check aura features', function () {
     expect(config('aura.features.global_search'))->toBeTrue();
     expect(config('aura.features.bookmarks'))->toBeTrue();

@@ -1,7 +1,7 @@
 <?php
 
-use Aura\Base\Resources\User;
 use Aura\Base\Resource;
+use Aura\Base\Resources\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);

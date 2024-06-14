@@ -2,12 +2,11 @@
 
 namespace Aura\Base\Livewire;
 
-use Livewire\Component;
-use Illuminate\Support\Arr;
-use Aura\Base\Traits\InputFields;
-use LivewireUI\Modal\ModalComponent;
 use Aura\Base\Traits\FieldsOnComponent;
+use Aura\Base\Traits\InputFields;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Artisan;
+use Livewire\Component;
 
 class CreateResource extends Component
 {
@@ -19,6 +18,11 @@ class CreateResource extends Component
             'name' => '',
         ],
     ];
+
+    public function closemodal()
+    {
+        $this->dispatch('closeModal');
+    }
 
     public static function getFields()
     {
@@ -50,11 +54,6 @@ class CreateResource extends Component
         return Arr::dot([
             'form.fields' => $this->validationRules(),
         ]);
-    }
-
-    public function closemodal()
-    {
-        $this->dispatch('closeModal');
     }
 
     public function save()

@@ -2,13 +2,13 @@
 
 namespace Aura\Base\Livewire;
 
-use Livewire\Component;
-use Illuminate\Support\Arr;
+use Aura\Base\Mail\TeamInvitation;
 use Aura\Base\Resources\Role;
 use Aura\Base\Traits\InputFields;
-use Aura\Base\Mail\TeamInvitation;
-use Illuminate\Support\Facades\Mail;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
+use Illuminate\Support\Arr;
+use Illuminate\Support\Facades\Mail;
+use Livewire\Component;
 
 class InviteUser extends Component
 {
@@ -31,7 +31,7 @@ class InviteUser extends Component
                 'placeholder' => 'email@example.com',
                 'validation' => 'required|email',
                 'slug' => 'email',
-                 'style' => [
+                'style' => [
                     'width' => '50',
                 ],
             ],

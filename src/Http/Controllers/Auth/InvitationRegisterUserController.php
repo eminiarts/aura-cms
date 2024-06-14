@@ -2,9 +2,7 @@
 
 namespace Aura\Base\Http\Controllers\Auth;
 
-use Aura\Base\Facades\Aura;
 use Aura\Base\Http\Controllers\Controller;
-use Aura\Base\Providers\RouteServiceProvider;
 use Aura\Base\Resources\Team;
 use Aura\Base\Resources\TeamInvitation;
 use Aura\Base\Resources\User;

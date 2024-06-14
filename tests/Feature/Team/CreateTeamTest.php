@@ -1,8 +1,8 @@
 <?php
 
 use Aura\Base\Livewire\Resource\Create;
-use Aura\Base\Resources\User;
 use Aura\Base\Resources\Team;
+use Aura\Base\Resources\User;
 use Illuminate\Support\Facades\DB;
 
 use function Pest\Livewire\livewire;

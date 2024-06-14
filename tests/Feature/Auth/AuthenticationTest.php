@@ -3,7 +3,6 @@
 namespace Tests\Feature\Auth;
 
 use Aura\Base\Resources\User;
-use Aura\Base\Providers\RouteServiceProvider;
 
 test('login screen can be rendered', function () {
     $response = $this->get('/login');

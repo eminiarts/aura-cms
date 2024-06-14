@@ -11,6 +11,7 @@ uses(RefreshDatabase::class);
 
 afterEach(function () {
     Schema::dropIfExists('custom_projects');
+    Schema::dropIfExists('custom_projects_meta');
 });
 
 beforeEach(function () {
@@ -27,10 +28,17 @@ beforeEach(function () {
         $table->foreignId('team_id');
         $table->timestamps();
     });
+
+    Schema::create('custom_projects_meta', function (Blueprint $table) {
+        $table->id();
+        $table->foreignId('team_id')->index()->nullable();
+        $table->string('key')->nullable();
+        $table->longText('value')->nullable();
+    });
 });
 
 // Create Resource for this test
-class ResourceWithCustomTableModel extends Resource
+class ResourceWithCustomTableAndCustomMetaModel extends Resource
 {
     public static $customTable = true;
 
@@ -89,7 +97,7 @@ class ResourceWithCustomTableModel extends Resource
 }
 
 test('custom Table - Fields get saved correctly when fillable are set', function () {
-    $resource = ResourceWithCustomTableModel::create([
+    $resource = ResourceWithCustomTableAndCustomMetaModel::create([
         'name' => 'Test Post 1',
         'status' => 'publish',
         'enabled' => 1,
