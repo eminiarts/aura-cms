@@ -5,7 +5,6 @@ namespace Tests\Feature\Livewire;
 use Aura\Base\Livewire\Settings;
 use Aura\Base\Resources\Option;
 use Aura\Base\Resources\Team;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Livewire\Livewire;
 

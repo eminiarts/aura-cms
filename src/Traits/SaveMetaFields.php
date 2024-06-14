@@ -11,8 +11,6 @@ trait SaveMetaFields
     {
         static::saving(function ($post) {
 
-
-
             if (isset($post->attributes['fields'])) {
 
                 // Dont save Meta Fields if it is uses customTable

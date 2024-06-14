@@ -274,8 +274,6 @@ test('scoped posts', function () {
 
     $user = \Aura\Base\Resources\User::find(1);
 
-
-
     $user2->update(['roles' => [$r->id]]);
 
     $user2->refresh();
