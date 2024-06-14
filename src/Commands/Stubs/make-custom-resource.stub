@@ -10,6 +10,8 @@ class PostName extends Resource
 
     public static ?string $slug = 'PostSlug';
 
+    public static $customTable = true;
+
     public static function getWidgets(): array
     {
         return [];

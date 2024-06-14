@@ -1,14 +1,12 @@
 <?php
 
-use Livewire\Livewire;
-use Aura\Base\Resources\Role;
-use Aura\Base\Resources\User;
-use Aura\Base\Resources\Option;
 use Aura\Base\Livewire\Settings;
+use Aura\Base\Resources\Option;
+use Aura\Base\Resources\User;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
-use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Foundation\Testing\DatabaseMigrations;
+use Livewire\Livewire;
 
 beforeAll(function () {
     // Ensure the environment variable is set before migrations run
@@ -19,7 +17,6 @@ afterAll(function () {
     // Ensure the environment variable is set before migrations run
     putenv('AURA_TEAMS=true');
 });
-
 
 // Before each test, create a Superadmin and login
 beforeEach(function () {
@@ -103,8 +100,8 @@ test('Default Team Settings are created', function () {
 });
 
 test('Settings can be saved', function () {
-    
-     // Default Team Settings
+
+    // Default Team Settings
     Livewire::test(Settings::class)
         ->set('form.fields.darkmode-type', 'light')
         ->set('form.fields.sidebar-type', 'light')

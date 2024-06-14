@@ -1,13 +1,12 @@
 <?php
 
-use Aura\Base\Resource;
-use Aura\Base\Models\Meta;
-use Illuminate\Support\Facades\DB;
-use Aura\Base\Livewire\Table\Table;
-use Illuminate\Support\Facades\Schema;
-use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Aura\Base\Exceptions\InvalidMetaTableException;
+use Aura\Base\Livewire\Table\Table;
+use Aura\Base\Models\Meta;
+use Aura\Base\Resource;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 afterEach(function () {
     Schema::dropIfExists('custom_projects');
@@ -29,8 +28,6 @@ beforeEach(function () {
         $table->timestamps();
     });
 });
-
-
 
 class ForceCustomMetaOnCustomTablesModel extends Resource
 {

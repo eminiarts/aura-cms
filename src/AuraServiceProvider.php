@@ -114,7 +114,7 @@ class AuraServiceProvider extends PackageServiceProvider
         Livewire::component('aura::attachment-index', AttachmentIndex::class);
         Livewire::component('aura::user-two-factor-authentication-form', TwoFactorAuthenticationForm::class);
         Livewire::component('aura::create-resource', CreateResource::class);
-        Livewire::component('aura::edit-resource', ResourceEditor::class);
+        Livewire::component('aura::resource-editor', ResourceEditor::class);
         Livewire::component('aura::settings', app(config('aura.components.settings')));
         Livewire::component('aura::invite-user', InviteUser::class);
         Livewire::component('aura::config', app(config('aura.components.config')));

@@ -21,7 +21,6 @@ beforeEach(function () {
     $this->actingAs($this->user = createSuperAdminWithoutTeam());
 });
 
-
 test('Aura without teams - pages', function () {
     expect(config('aura.teams'))->toBeFalse();
 
