@@ -11,6 +11,11 @@ beforeAll(function () {
     putenv('AURA_TEAMS=false');
 });
 
+afterAll(function () {
+    // Ensure the environment variable is set before migrations run
+    putenv('AURA_TEAMS=true');
+});
+
 // Before each test, create a Superadmin and login
 beforeEach(function () {
     $this->actingAs($this->user = createSuperAdminWithoutTeam());
