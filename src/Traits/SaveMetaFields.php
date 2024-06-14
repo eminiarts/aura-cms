@@ -20,7 +20,7 @@ trait SaveMetaFields
                     return;
                 }
 
-                ray($post->attributes['fields'])->green();
+                //ray($post->attributes['fields'])->green();
 
                 foreach ($post->attributes['fields'] as $key => $value) {
 
@@ -106,7 +106,7 @@ trait SaveMetaFields
                     }
 
                     if ($post->usesMeta()) {
-                        ray($value);
+                        // ray($value);
                         $post->meta()->updateOrCreate(['key' => $key], ['value' => is_array($value) ? json_encode($value) : $value]);
                     }
 
