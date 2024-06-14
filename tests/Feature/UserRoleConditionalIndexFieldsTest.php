@@ -2,7 +2,7 @@
 
 use Aura\Base\Facades\Aura;
 use Aura\Base\Models\Post;
-use Aura\Base\Models\User;
+use Aura\Base\Resources\User;
 use Aura\Base\Resource;
 use Aura\Base\Resources\Role;
 use Illuminate\Foundation\Testing\RefreshDatabase;

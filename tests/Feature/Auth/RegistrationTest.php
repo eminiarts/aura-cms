@@ -144,7 +144,7 @@ test('register with team creates team and user', function () {
     ]);
 
     // Assert user is assigned to the team
-    $user = \Aura\Base\Models\User::where('email', 'testuser@example.com')->first();
+    $user = \Aura\Base\Resources\User::where('email', 'testuser@example.com')->first();
     $this->assertEquals('Test Team', $user->currentTeam->name);
 });
 

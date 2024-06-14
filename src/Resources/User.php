@@ -11,8 +11,6 @@ use Illuminate\Validation\Rules\Password;
 use Aura\Base\Database\Factories\UserFactory;
 use Aura\Base\Resources\Option;
 use Aura\Base\Resources\Team;
-use Aura\Base\Traits\InputFields;
-use Aura\Base\Traits\InteractsWithTable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Facades\Cache;
@@ -33,16 +31,16 @@ class User extends Resource implements
     AuthorizableContract,
     CanResetPasswordContract
 {
-
     use HasApiTokens;
     use HasFactory;
     use Impersonate;
-    use InputFields;
-    use InteractsWithTable;
     use Notifiable;
     use TwoFactorAuthenticatable;
 
-    use Authenticatable, Authorizable, CanResetPassword, MustVerifyEmail;
+    use Authenticatable;
+    use Authorizable;
+    use CanResetPassword;
+    use MustVerifyEmail;
     // use CustomTable;
 
     public static ?string $slug = 'user';
@@ -466,8 +464,6 @@ class User extends Resource implements
     {
         $roles = $this->cachedRoles();
 
-        ray($roles->toArray());
-
         if (! $roles) {
             return false;
         }
@@ -528,7 +524,7 @@ class User extends Resource implements
         });
     }
 
-    
+
 
     protected function cachedRoles(): mixed
     {
