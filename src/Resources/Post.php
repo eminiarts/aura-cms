@@ -154,6 +154,18 @@ class Post extends Resource
                 ],
             ],
             [
+                'name' => 'ID',
+                'slug' => 'id',
+                'type' => 'Aura\\Base\\Fields\\ID',
+                'validation' => '',
+                'conditional_logic' => [],
+                'wrapper' => '',
+                'on_index' => true,
+                'on_forms' => false,
+                'on_view' => true,
+                'searchable' => true,
+            ],
+            [
                 'name' => 'Title',
                 'slug' => 'title',
                 'type' => 'Aura\\Base\\Fields\\Text',
