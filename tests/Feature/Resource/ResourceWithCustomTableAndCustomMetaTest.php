@@ -1,11 +1,12 @@
 <?php
 
-use Aura\Base\Livewire\Table\Table;
 use Aura\Base\Resource;
+use Aura\Base\Models\Meta;
+use Illuminate\Support\Facades\DB;
+use Aura\Base\Livewire\Table\Table;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Schema;
 
 uses(RefreshDatabase::class);
 
@@ -38,9 +39,21 @@ beforeEach(function () {
 });
 
 // Create Resource for this test
+
+class ResourceWithCustomTableAndCustomMetaModelMeta extends Meta
+{
+    /**
+     * The table associated with the model.
+     *
+     * @var string
+     */
+    protected $table = 'custom_projects_meta';
+}
+
 class ResourceWithCustomTableAndCustomMetaModel extends Resource
 {
     public static $customTable = true;
+    public static $customMeta = true;
 
     public static $singularName = 'Project';
 
@@ -60,6 +73,11 @@ class ResourceWithCustomTableAndCustomMetaModel extends Resource
     ];
 
     protected $table = 'custom_projects';
+
+    public function meta()
+    {
+        return $this->hasMany(ResourceWithCustomTableAndCustomMetaModelMeta::class, 'team_id');
+    }
 
     public static function getFields()
     {
@@ -92,15 +110,31 @@ class ResourceWithCustomTableAndCustomMetaModel extends Resource
                 'conditional_logic' => [],
                 'slug' => 'options',
             ],
+             [
+                'name' => 'Meta 1',
+                'type' => 'Aura\\Base\\Fields\\Text',
+                'validation' => '',
+                'conditional_logic' => [],
+                'slug' => 'meta_1',
+            ],
+             [
+                'name' => 'Meta 2',
+                'type' => 'Aura\\Base\\Fields\\Text',
+                'validation' => '',
+                'conditional_logic' => [],
+                'slug' => 'meta_2',
+            ],
         ];
     }
 }
 
-test('custom Table - Fields get saved correctly when fillable are set', function () {
+test('custom Table - Fields get saved correctly when fillable are set and meta are used', function () {
     $resource = ResourceWithCustomTableAndCustomMetaModel::create([
         'name' => 'Test Post 1',
         'status' => 'publish',
         'enabled' => 1,
+        'meta_1' => 'first',
+        'meta_2' => 'second',
         'options' => [
             'option1' => 'Option 1',
             'option2' => 'Option 2',
@@ -109,11 +143,17 @@ test('custom Table - Fields get saved correctly when fillable are set', function
 
     expect($resource->usesCustomTable())->toBe(true);
 
+    expect($resource->usesCustomMeta())->toBe(true);
+
     expect($resource->name)->toBe('Test Post 1');
 
     expect($resource->status)->toBe('publish');
 
     expect($resource->enabled)->toBe(true);
+
+    expect($resource->meta_1)->toBe('first');
+
+    expect($resource->meta_2)->toBe('second');
 
     expect($resource->options)->toBe([
         'option1' => 'Option 1',
@@ -129,4 +169,15 @@ test('custom Table - Fields get saved correctly when fillable are set', function
         'option1' => 'Option 1',
         'option2' => 'Option 2',
     ]);
+
+    $meta = DB::table('custom_projects_meta');
+
+    // dd($meta->get());
+
+    expect($meta->count())->toBe(2);
+
+    expect($meta->where('key', 'meta_1')->first()->value)->toBe('first');
+
+    expect($meta->where('key', 'meta_2')->first()->value)->toBe('second');
+
 });
