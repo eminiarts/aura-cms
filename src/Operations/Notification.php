@@ -2,7 +2,7 @@
 
 namespace Aura\Base\Operations;
 
-use Aura\Base\Models\User;
+use Aura\Base\Resources\User;
 use Aura\Base\Notifications\FlowNotification;
 use Aura\Base\Resources\Role;
 use Aura\Flows\Resources\Operation;

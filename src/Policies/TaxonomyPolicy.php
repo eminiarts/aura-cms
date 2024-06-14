@@ -3,7 +3,7 @@
 namespace Aura\Base\Policies;
 
 use Aura\Base\Models\Taxonomy;
-use Aura\Base\Models\User;
+use Aura\Base\Resources\User;
 use Illuminate\Auth\Access\HandlesAuthorization;
 
 class TaxonomyPolicy

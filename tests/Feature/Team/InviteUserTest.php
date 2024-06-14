@@ -55,6 +55,10 @@ test('user can be invited', function () {
 
 test('user gets correct role', function () {
 
+    expect(config('aura.teams'))->toBeTrue();
+
+    ray()->clearScreen();
+
     // Create a new Role
     $role = Role::create([
         'title' => 'Test Role',
@@ -88,7 +92,7 @@ test('user gets correct role', function () {
     // Go to the Registration Page and make sure it works
     $url = URL::signedRoute('aura.invitation.register', [$invitation->team, $invitation]);
 
-    dump($url);
+    ray($url);
 
     // Log out
     $this->app['auth']->logout();
@@ -98,8 +102,6 @@ test('user gets correct role', function () {
 
     // Visit $url and assert Ok
     $response = $this->get($url);
-
-    ray(config('aura.teams'))->red();
 
 
     $response->assertOk();
@@ -130,6 +132,10 @@ test('user gets correct role', function () {
 
     // Check if the user has the correct role
     $user = User::where('email', 'test@test.ch')->first();
+
+    ray($user);
+    ray($user->hasRole('test_role'));
+    ray($user->roles);
 
     expect($user->hasRole('test_role'))->toBeTrue();
     expect($user->hasRole('super_admin'))->toBeFalse();
