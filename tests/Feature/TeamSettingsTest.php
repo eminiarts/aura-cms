@@ -21,7 +21,7 @@ test('Team Settings Component can be rendered', function () {
     // Attach to User
     $user = \Aura\Base\Resources\User::find(1);
 
-    $user->update(['fields' => ['roles' => [$role->id]]]);
+    $user->update(['roles' => [$role->id]]);
 
     $component = Livewire::test(Settings::class);
 
@@ -34,7 +34,7 @@ test('Default Team Settings are created', function () {
     // Attach to User
     $user = \Aura\Base\Resources\User::find(1);
 
-    $user->update(['fields' => ['roles' => [$role->id]]]);
+    $user->update(['roles' => [$role->id]]);
 
     // Default Team Settings
     Livewire::test(Settings::class)
@@ -68,7 +68,7 @@ test('Team Settings can be saved', function () {
     // Attach to User
     $user = \Aura\Base\Resources\User::find(1);
 
-    $user->update(['fields' => ['roles' => [$role->id]]]);
+    $user->update(['roles' => [$role->id]]);
 
     // team factory create team
     $teams = Team::factory(2)->create();

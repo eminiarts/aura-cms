@@ -179,7 +179,7 @@ function createAdmin()
         'scope-TeamInvitation' => false,
     ]]);
 
-    $user->update(['fields' => ['roles' => [$role->id]]]);
+    $user->update(['roles' => [$role->id]]);
     $user->refresh();
 
     return $user;

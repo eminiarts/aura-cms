@@ -15,9 +15,9 @@ beforeEach(function () {
 
 // Define datasets
 dataset('auraPages', [
-    'aura.team.settings',
+    'aura.settings',
     'aura.profile',
-    'aura.config',
+    // 'aura.config', // Not available atm
 ]);
 
 dataset('postTypes', [
