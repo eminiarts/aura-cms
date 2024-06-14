@@ -40,7 +40,7 @@ test('Aura without teams - pages', function () {
     $this->get(config('aura.path'))->assertOk();
 
     // Team Settings Page
-    $this->get(route('aura.team.settings'))->assertOk();
+    $this->get(route('aura.settings'))->assertOk();
 
     // Profile
     $this->get(route('aura.profile'))->assertOk();
