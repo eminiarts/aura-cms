@@ -29,11 +29,11 @@ beforeEach(function () {
 afterEach(function () {
     File::delete(app_path('Aura/Resources/Project.php'));
 
-    $migrationFiles = File::files(database_path('migrations'));
+    // $migrationFiles = File::files(database_path('migrations'));
 
-    foreach ($migrationFiles as $file) {
-        File::delete($file);
-    }
+    // foreach ($migrationFiles as $file) {
+    //     File::delete($file);
+    // }
 });
 
 it('creates a custom resource', function () {
@@ -149,5 +149,7 @@ it('creates a migration when fields are added', function () {
     // $this->assertTrue(file_exists(database_path('migrations/2021_09_01_000000_create_custom_projects_table.php')));
 
     Event::assertListening(SaveFields::class, ModifyDatabaseMigration::class);
+
+    
 
 });
