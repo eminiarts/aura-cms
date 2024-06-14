@@ -67,7 +67,7 @@ class RegisteredUserController extends Controller
             // Create Role
             $role = Role::create(['type' => 'Role', 'title' => 'Super Admin', 'slug' => 'super_admin', 'name' => 'Super Admin', 'description' => 'Super Admin has can perform everything.', 'super_admin' => true, 'permissions' => [], 'team_id' => $team->id, 'user_id' => $user->id]);
 
-            $user->update(['fields' => ['roles' => [$role->id]]]);
+            $user->update(['roles' => [$role->id]]);
         } else {
             // no aura.teams
             $request->validate([
@@ -86,7 +86,7 @@ class RegisteredUserController extends Controller
 
             $role = Role::where('slug', 'user')->firstOrFail();
 
-            $user->update(['fields' => ['roles' => [$role->id]]]);
+            $user->update(['roles' => [$role->id]]);
         }
 
         event(new Registered($user));
