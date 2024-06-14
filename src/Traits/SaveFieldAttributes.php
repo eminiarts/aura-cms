@@ -64,8 +64,8 @@ trait SaveFieldAttributes
                     return;
                 }
 
-                // Don't unset Field if it uses customTable
-                if ($post->usesCustomTable()) {
+                // Dont unset Field if it is uses customTable
+                if ($post->usesCustomTable() && ! $post->usesCustomMeta()) {
                     return;
                 }
                 unset($post->attributes[$slug]);

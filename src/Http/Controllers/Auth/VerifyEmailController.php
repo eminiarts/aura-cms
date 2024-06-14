@@ -3,7 +3,6 @@
 namespace Aura\Base\Http\Controllers\Auth;
 
 use Aura\Base\Http\Controllers\Controller;
-use Aura\Base\Providers\RouteServiceProvider;
 use Illuminate\Auth\Events\Verified;
 use Illuminate\Foundation\Auth\EmailVerificationRequest;
 

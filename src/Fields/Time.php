@@ -80,7 +80,7 @@ class Time extends Field
                 'slug' => 'maxTime',
                 'default' => false,
                 'instructions' => null,
-            ]
+            ],
         ]);
     }
 
