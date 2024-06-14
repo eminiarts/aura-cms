@@ -51,8 +51,8 @@ test('Default Team Settings are created', function () {
     // get first option from DB
     $option = Option::first();
 
-    if(config('aura.teams')) {
-        $this->assertEquals($option->name, 'team.' . auth()->user()->current_team_id . '.settings');
+    if (config('aura.teams')) {
+        $this->assertEquals($option->name, 'team.'.auth()->user()->current_team_id.'.settings');
     } else {
         $this->assertEquals($option->name, 'settings');
     }
@@ -99,8 +99,8 @@ test('Team Settings can be saved', function () {
     $option = Option::first();
 
     // assert option is team settings
-      if(config('aura.teams')) {
-        $this->assertEquals($option->name, 'team.' . auth()->user()->current_team_id . '.settings');
+    if (config('aura.teams')) {
+        $this->assertEquals($option->name, 'team.'.auth()->user()->current_team_id.'.settings');
     } else {
         $this->assertEquals($option->name, 'settings');
     }
