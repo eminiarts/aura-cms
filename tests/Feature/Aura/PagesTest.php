@@ -3,12 +3,15 @@
 use Aura\Base\Facades\Aura;
 use Aura\Base\Resources\Post;
 use Aura\Base\Resources\User;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
 
 // Before each test, create a Superadmin and login
 beforeEach(function () {
+
+    ray()->clearScreen();
     // Create User
     $this->actingAs($this->user = createSuperAdmin());
 });
@@ -28,6 +31,11 @@ dataset('postTypes', [
     'Permission',
     'Attachment',
 ]);
+
+// Test Post Index Pages
+test('Check user authorization', function () {
+    expect(auth()->user()->isSuperAdmin())->toBeTrue();
+});
 
 // Test Aura Pages
 test('Check Aura Pages (with Teams)', function ($routeName) {

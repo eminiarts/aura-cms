@@ -72,12 +72,8 @@ class ModifyDatabaseMigration
 
         $this->files->put($migrationFile, $replacedContent2);
 
-        ray("Migration '{$migrationName}' updated successfully.");
-
         // Run "pint" on the migration file
         $this->runPint($migrationFile);
-
-        ray($migrationFile)->green();
 
         // Run the migration
         Artisan::call('aura:schema-update', ['migration' => $migrationFile]);
