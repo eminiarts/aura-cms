@@ -74,7 +74,7 @@ class SyncDatabase
 
         // Option 2: Keep all migration files and try to sync db -> cons: multiple migration files, more complex
 
-        ray('sync', $fieldsToAdd, $fieldsToUpdate, $fieldsToDelete, $model, $model->getTable());
+        // ray('sync', $fieldsToAdd, $fieldsToUpdate, $fieldsToDelete, $model, $model->getTable());
 
         return;
 

@@ -37,12 +37,9 @@ class ModifyDatabaseMigration
 
         $schema = $this->generateSchema($newFields);
 
-        ray($schema)->blue();
-
         if ($this->migrationExists($migrationName)) {
             //$this->error("Migration '{$migrationName}' already exists.");
             //return 1;
-            ray('migration exists');
             $migrationFile = $this->getMigrationPath($migrationName);
         } else {
             Artisan::call('make:migration', [
@@ -81,8 +78,6 @@ class ModifyDatabaseMigration
 
     protected function generateColumn($field)
     {
-        // ray($field)->green();
-
         $fieldInstance = app($field['type']);
         $columnType = $fieldInstance->tableColumnType;
 
