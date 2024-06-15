@@ -45,9 +45,6 @@ class Modals extends Component
             ], $modalAttributes),
         ];
         $this->activeModals[$id] = true;
-
-        ray($this->modals, $this->activeModals);
-
     }
 
     public function render()

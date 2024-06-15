@@ -65,8 +65,6 @@ class UpdateSchemaFromMigration extends Command
         Schema::table($table, function (Blueprint $table) use ($existingColumns, $desiredColumns) {
             $newColumns = array_diff(array_keys($desiredColumns), $existingColumns);
 
-            ray($newColumns, $existingColumns, $desiredColumns)->red();
-
             foreach ($newColumns as $column) {
 
                 $table->{$desiredColumns[$column]['type']}($column)->nullable();

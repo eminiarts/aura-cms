@@ -111,8 +111,6 @@ class CreateResourceMigration extends Command
 
         $combined = $combined->unique('slug');
 
-        ray($combined)->red();
-
         $schema = $this->generateSchema($combined);
 
         // dd($schema);
@@ -120,7 +118,6 @@ class CreateResourceMigration extends Command
         if ($this->migrationExists($migrationName)) {
             //$this->error("Migration '{$migrationName}' already exists.");
             //return 1;
-            ray('migration exists');
             $migrationFile = $this->getMigrationPath($migrationName);
         } else {
             Artisan::call('make:migration', [
@@ -160,8 +157,6 @@ class CreateResourceMigration extends Command
 
     protected function generateColumn($field)
     {
-        // ray($field)->green();
-
         $fieldInstance = app($field['type']);
         $columnType = $fieldInstance->tableColumnType;
 
