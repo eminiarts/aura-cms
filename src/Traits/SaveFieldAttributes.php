@@ -16,19 +16,16 @@ trait SaveFieldAttributes
     {
         static::saving(function ($post) {
 
-            if (!optional($post->attributes)['fields']) {
+            if (! optional($post->attributes)['fields']) {
                 $post->attributes['fields'] = [];
             }
 
-            $fieldSlugs = collect($post->inputFieldsSlugs());
-
-
-            $fieldSlugs->each(function ($slug) use ($post) {
+            collect($post->inputFieldsSlugs())->each(function ($slug) use ($post) {
                 if (optional($post->attributes)[$slug]) {
                     $class = $post->fieldClassBySlug($slug);
 
                     // Do not continue if the Field is not found
-                    if (!$class) {
+                    if (! $class) {
                         return;
                     }
 
@@ -51,13 +48,17 @@ trait SaveFieldAttributes
                         // If no dot, set the attribute directly in fields
                         // $post->attributes['fields'][$slug] = $post->attributes[$slug];
                     }
+
+                    if (! array_key_exists($slug, $post->attributes['fields'])) {
+                        $post->attributes['fields'][$slug] = $post->attributes[$slug];
+                    }
                 }
 
                 if ($slug == 'title') {
                     return;
                 }
 
-                // Don't unset Field if it is in baseFillable
+                // Dont unset Field if it is in baseFillable
                 if (in_array($slug, $post->baseFillable)) {
                     return;
                 }
@@ -66,13 +67,15 @@ trait SaveFieldAttributes
                 if ($post->usesCustomTable() && ! $post->usesCustomMeta()) {
                     return;
                 }
+
+                // Unset fields from the attributes
                 unset($post->attributes[$slug]);
             });
-
         });
     }
 
-    /**
+
+     /**
      * Set a nested field value based on the slug with dots.
      *
      * @param array  $fields

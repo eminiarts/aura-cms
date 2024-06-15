@@ -9,7 +9,6 @@ use Aura\Base\Facades\Aura;
 use Illuminate\Support\Facades\DB;
 use Aura\Base\Livewire\Resource\Create;
 
-
 class NestedGroupFieldsModel extends Resource
 {
     public static string $type = 'NestedGroupFields';
@@ -80,8 +79,6 @@ test('create model with nested fields', function () {
     ]);
 
     // dd($model->toArray());
-
-    ray($model->inputFieldsSlugs());
 
     $meta = DB::table('post_meta')->get();
 
