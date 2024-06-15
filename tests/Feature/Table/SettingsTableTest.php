@@ -29,11 +29,12 @@ test('check default table settings', function () {
     expect($component->settings)->toHaveKey('columns');
     expect($component->settings['columns'])->toBeInstanceOf(Illuminate\Support\Collection::class);
 
-    expect($component->settings['columns'])->toHaveCount(10);
+
+    expect($component->settings['columns'])->toHaveCount($this->post->inputFields()->count() -1); // -1 for password
     $columnsArray = $component->settings['columns']->toArray();
 
     expect(array_keys($columnsArray))->toMatchArray([
-        'title', 'text', 'slug', 'image', 'number', 'date', 'description', 'tags', 'categories', 'user_id',
+        'id', 'title', 'text', 'slug', 'image', 'number', 'date', 'description', 'tags', 'categories', 'user_id',
     ]);
 
     expect($component->settings)->toHaveKey('filters', true);
