@@ -488,10 +488,10 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
         return true;
     }
 
-    public function getRolesField()
-    {
-        return $this->roles->pluck('id')->toArray();
-    }
+    // public function getRolesField()
+    // {
+    //     return $this->roles->pluck('id')->toArray();
+    // }
 
     public function getSearchableFields()
     {
