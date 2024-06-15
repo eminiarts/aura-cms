@@ -27,7 +27,7 @@ it('can create a user with all required fields', function () {
 
     expect($user->current_team_id)->toEqual($team->id);
 
-    expect($user->fields['roles'])->toContain(1);
+    expect($user->roles->count())->toBe(1);
 
     $role = Role::get();
 
