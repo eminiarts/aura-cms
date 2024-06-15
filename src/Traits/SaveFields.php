@@ -2,10 +2,10 @@
 
 namespace Aura\Base\Traits;
 
-use Aura\Base\Facades\Aura;
-use Illuminate\Support\Str;
-use Illuminate\Support\Facades\Storage;
 use Aura\Base\Events\SaveFields as SaveFieldsEvent;
+use Aura\Base\Facades\Aura;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 trait SaveFields
 {
@@ -65,19 +65,17 @@ trait SaveFields
 
             $replacement = Aura::varexport($this->setKeysToFields($fields), true);
 
+            preg_match('/function\s+getFields\s*\((?:[^()]+)*?\s*\)\s*(?<functionBody>{(?:[^{}]+|(?-1))*+})/ms', $file, $matches);
 
-        preg_match('/function\s+getFields\s*\((?:[^()]+)*?\s*\)\s*(?<functionBody>{(?:[^{}]+|(?-1))*+})/ms', $file, $matches);
+            $body = $matches['functionBody'];
 
-        $body = $matches['functionBody'];
+            preg_match('/return (\[.*\]);/ms', $body, $matches2);
 
-        preg_match('/return (\[.*\]);/ms', $body, $matches2);
-
-        $replaced = Str::replace(
-            $matches2[1],
-            $this->formatIndentation($matches2[1], $replacement),
-            $file
-        );
-
+            $replaced = Str::replace(
+                $matches2[1],
+                $this->formatIndentation($matches2[1], $replacement),
+                $file
+            );
 
             Storage::put($a->getFileName(), $replaced);
         }

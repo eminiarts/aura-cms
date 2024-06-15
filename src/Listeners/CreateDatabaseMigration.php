@@ -55,7 +55,6 @@ class CreateDatabaseMigration
             return ! $newFields->contains('_id', $field['_id']);
         });
 
-
         if ($fieldsToAdd->isEmpty() && $fieldsToUpdate->isEmpty() && $fieldsToDelete->isEmpty()) {
             return;
         }

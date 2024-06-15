@@ -3,8 +3,8 @@
 use Aura\Base\Facades\Aura;
 use Aura\Base\Resources\Post;
 use Aura\Base\Resources\User;
-use Illuminate\Support\Facades\Artisan;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Artisan;
 
 uses(RefreshDatabase::class);
 
