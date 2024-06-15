@@ -1,12 +1,11 @@
 <?php
 
-use Aura\Base\Resource;
-use Aura\Base\Models\Post;
+use Aura\Base\ConditionalLogic;
 use Aura\Base\Facades\Aura;
+use Aura\Base\Models\Post;
+use Aura\Base\Resource;
 use Aura\Base\Resources\Role;
 use Aura\Base\Resources\User;
-use Aura\Base\ConditionalLogic;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 
 beforeEach(fn () => $this->actingAs($this->user = User::factory()->create()));
 

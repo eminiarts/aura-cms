@@ -116,8 +116,6 @@ test('Checkbox Field - Options rendered', function () {
         ['component' => $fieldClass->component, 'field' => $field, 'form' => []]
     );
 
-  
-
     expect((string) $view)->toContain('>Checkbox for Test</label>');
     expect((string) $view)->toContain('Option 1');
     expect((string) $view)->toContain('Option 2');

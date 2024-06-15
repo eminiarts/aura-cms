@@ -36,7 +36,6 @@ afterEach(function () {
 
     $migrationFiles = File::files(database_path('migrations'));
 
-
     foreach ($migrationFiles as $file) {
         File::delete($file);
     }
