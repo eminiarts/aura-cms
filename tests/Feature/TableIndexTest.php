@@ -1,6 +1,7 @@
 <?php
-use Illuminate\Support\Facades\Schema;
+
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 beforeEach(fn () => $this->actingAs($this->user = createSuperAdmin()));
 
@@ -15,7 +16,7 @@ test('post_meta table index test', function () {
     $indexes = DB::select("PRAGMA index_list('post_meta')");
     $indexNames = array_column($indexes, 'name');
 
-    expect($indexNames)->toHaveCount(3); 
+    expect($indexNames)->toHaveCount(3);
     expect($indexNames)->toContain('post_meta_post_id_index');
     expect($indexNames)->toContain('post_meta_key_index');
 

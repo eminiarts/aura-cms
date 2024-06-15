@@ -50,7 +50,6 @@ class UpdateSchemaFromMigration extends Command
         $dropColumns = array_diff($existingColumns, array_keys($desiredColumns));
         $dropColumns = array_diff($dropColumns, ['id', 'created_at', 'updated_at', 'deleted_at']);
 
-
         if (! Schema::hasTable($table)) {
             $this->info("Table '{$table}' does not exist. Running the migration...");
 
