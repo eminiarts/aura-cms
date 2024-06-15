@@ -262,7 +262,8 @@ test('user can register using an invitation', function () {
 
     $this->assertEquals($team->id, $user->current_team_id);
 
-    $this->assertEquals([$invitation->role], $user->fields['roles']);
+
+    $this->assertEquals($user->fields['roles'], $invitation->role);
 
     $this->assertDatabaseMissing('team_invitations', ['id' => $invitation->id]);
 });
