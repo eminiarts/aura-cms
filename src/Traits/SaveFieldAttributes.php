@@ -38,6 +38,10 @@ trait SaveFieldAttributes
                         return;
                     }
 
+                    if (! array_key_exists($slug, $post->attributes['fields'])) {
+                        $post->attributes['fields'][$slug] = $post->attributes[$slug];
+                    }
+
                     // Set the field value into nested fields array if it contains a dot
                     if (strpos($slug, '.') !== false) {
                         self::setNestedFieldValue($post->attributes['fields'], $slug, $post->attributes[$slug]);
@@ -47,10 +51,6 @@ trait SaveFieldAttributes
                     } else {
                         // If no dot, set the attribute directly in fields
                         // $post->attributes['fields'][$slug] = $post->attributes[$slug];
-                    }
-
-                    if (! array_key_exists($slug, $post->attributes['fields'])) {
-                        $post->attributes['fields'][$slug] = $post->attributes[$slug];
                     }
                 }
 
