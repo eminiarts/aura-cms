@@ -225,6 +225,7 @@ class Table extends Component
 
         if ($this->settings['sort_columns'] && $this->settings['columns_global_key']) {
             $option = Aura::getOption($this->settings['columns_global_key']);
+
             return empty($option) ? $headers->toArray() : $option;
         }
 

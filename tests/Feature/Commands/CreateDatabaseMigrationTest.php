@@ -1,14 +1,14 @@
 <?php
 
-use Livewire\Livewire;
 use Aura\Base\Events\SaveFields;
-use Illuminate\Support\Facades\File;
-use Illuminate\Support\Facades\Event;
-use Aura\Base\Livewire\ResourceEditor;
-use Illuminate\Support\Facades\Schema;
-use Illuminate\Support\Facades\Artisan;
 use Aura\Base\Listeners\CreateDatabaseMigration;
 use Aura\Base\Listeners\ModifyDatabaseMigration;
+use Aura\Base\Livewire\ResourceEditor;
+use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Schema;
+use Livewire\Livewire;
 
 beforeEach(function () {
     $this->user = createSuperAdmin();
@@ -147,8 +147,7 @@ it('creates a migration when fields are added', function () {
         ->assertDispatched('newFields')
         ->assertDispatched('finishedSavingFields');
 
-
-$this->assertTrue(Schema::hasTable('projects'), 'The projects table does not exist.');
-$this->assertTrue(Schema::hasColumn('projects', 'description'), 'The description column does not exist in the projects table.');
+    $this->assertTrue(Schema::hasTable('projects'), 'The projects table does not exist.');
+    $this->assertTrue(Schema::hasColumn('projects', 'description'), 'The description column does not exist in the projects table.');
 
 });

@@ -74,13 +74,11 @@ trait SaveFieldAttributes
         });
     }
 
-
-     /**
+    /**
      * Set a nested field value based on the slug with dots.
      *
-     * @param array  $fields
-     * @param string $slug
-     * @param mixed  $value
+     * @param  string  $slug
+     * @param  mixed  $value
      * @return void
      */
     protected static function setNestedFieldValue(array &$fields, $slug, $value)
@@ -89,7 +87,7 @@ trait SaveFieldAttributes
         $temp = &$fields;
 
         foreach ($keys as $key) {
-            if (!isset($temp[$key])) {
+            if (! isset($temp[$key])) {
                 $temp[$key] = [];
             }
             $temp = &$temp[$key];

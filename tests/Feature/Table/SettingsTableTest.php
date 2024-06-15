@@ -29,8 +29,7 @@ test('check default table settings', function () {
     expect($component->settings)->toHaveKey('columns');
     expect($component->settings['columns'])->toBeInstanceOf(Illuminate\Support\Collection::class);
 
-
-    expect($component->settings['columns'])->toHaveCount($this->post->inputFields()->count() -1); // -1 for password
+    expect($component->settings['columns'])->toHaveCount($this->post->inputFields()->count() - 1); // -1 for password
     $columnsArray = $component->settings['columns']->toArray();
 
     expect(array_keys($columnsArray))->toMatchArray([
@@ -521,7 +520,6 @@ test('columns_global_key settings', function () {
     $component = Livewire::test(Table::class, ['model' => $this->post, 'settings' => $settings]);
 
     expect($component->settings)->toHaveKey('columns_global_key');
-
 
     expect($component->headers)->toHaveKey('title');
 

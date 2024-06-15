@@ -86,7 +86,6 @@ trait SaveFields
         // Trigger the event to change the database schema
         event(new SaveFieldsEvent($fieldsWithIds, $this->mappedFields, $this->model));
 
-
         $this->dispatch('refreshComponent');
 
         $this->notify('Saved successfully.');

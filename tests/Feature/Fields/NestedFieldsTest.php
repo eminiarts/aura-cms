@@ -2,12 +2,8 @@
 
 namespace Tests\Feature\Livewire;
 
-use Aura\Base\Facades\Aura;
-use Aura\Base\Fields\Text;
 use Aura\Base\Livewire\Resource\Create;
 use Aura\Base\Resource;
-use Livewire\Livewire;
-
 
 class NestedFieldsModel extends Resource
 {
@@ -137,10 +133,9 @@ test('create model with nested fields', function () {
     ]);
 
     $this->assertDatabaseMissing('post_meta', [
-        'key' => 'settings.option_1'
+        'key' => 'settings.option_1',
     ]);
 });
-
 
 test('create model with nested fields without JSON Parent', function () {
 
@@ -155,10 +150,9 @@ test('create model with nested fields without JSON Parent', function () {
     expect($model->settings)->toBeNull();
 
     $this->assertDatabaseMissing('post_meta', [
-        'key' => 'settings.option_1'
+        'key' => 'settings.option_1',
     ]);
 });
-
 
 test('get model with nested fields doesnt show unnested attribute', function () {
 
@@ -182,11 +176,9 @@ test('get model with nested fields doesnt show unnested attribute', function () 
         'option_3' => '3',
     ]);
 
-
     $fields = $retrievedModel->fields->toArray();
 
     unset($fields['settings']);
-
 
     expect($fields)->not->toHaveKey('settings.option_1');
     expect($fields)->not->toHaveKey('settings.option_2');

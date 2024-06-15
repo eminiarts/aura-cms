@@ -87,31 +87,30 @@ it('current resource fields', function () {
 
 it('can add fields', function () {
     $component = Livewire::test(ResourceEditorFake::class, ['slug' => 'Model'])
-        ->call('saveNewField', [  'type' => "Aura\Base\Fields\Text",
+        ->call('saveNewField', ['type' => "Aura\Base\Fields\Text",
             'slug' => 'description',
-            'name' => 'Description',]);
-
+            'name' => 'Description', ]);
 
     expect($component->fieldsArray)->toBeArray();
     expect($component->fieldsArray)->toHaveCount(4);
 
-    $component->call('saveNewField', [  'type' => "Aura\Base\Fields\Text",
-            'slug' => 'description2',
-            'name' => 'Description2',]);
+    $component->call('saveNewField', ['type' => "Aura\Base\Fields\Text",
+        'slug' => 'description2',
+        'name' => 'Description2', ]);
 
     expect($component->fieldsArray)->toBeArray();
     expect($component->fieldsArray)->toHaveCount(5);
 
-    $component->call('saveNewField', [  'type' => "Aura\Base\Fields\Text",
-            'slug' => 'description3',
-            'name' => 'Description3',]);
+    $component->call('saveNewField', ['type' => "Aura\Base\Fields\Text",
+        'slug' => 'description3',
+        'name' => 'Description3', ]);
 
     expect($component->fieldsArray)->toBeArray();
     expect($component->fieldsArray)->toHaveCount(6);
 });
 
 it('can delete fields', function () {
-    $component = Livewire::test(ResourceEditorFake::class, ['slug' => 'Model', ]);
+    $component = Livewire::test(ResourceEditorFake::class, ['slug' => 'Model']);
 
     $component->call('deleteField', ['slug' => 'panel-1', 'type' => "Aura\Base\Fields\Text", 'name' => 'Description3']);
 
