@@ -522,6 +522,7 @@ test('columns_global_key settings', function () {
 
     expect($component->settings)->toHaveKey('columns_global_key');
 
+
     expect($component->headers)->toHaveKey('title');
 
     $option = Option::where('name', 'team.1.globalPosts')->first();
