@@ -14,8 +14,6 @@ trait SaveFields
             return $str2;
         }
 
-        ray($str, $str2);
-
         // Get first Line
         $line = preg_split('#\r?\n#', $str, 0)[1];
 
@@ -88,7 +86,6 @@ trait SaveFields
         // Trigger the event to change the database schema
         event(new SaveFieldsEvent($fieldsWithIds, $this->mappedFields, $this->model));
 
-        ray($fieldsWithIds, $this->mappedFields, $this->model);
 
         $this->dispatch('refreshComponent');
 

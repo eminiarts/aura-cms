@@ -22,7 +22,6 @@ trait SaveFieldAttributes
 
             $fieldSlugs = collect($post->inputFieldsSlugs());
 
-            ray($post);
 
             $fieldSlugs->each(function ($slug) use ($post) {
                 if (optional($post->attributes)[$slug]) {
@@ -47,7 +46,6 @@ trait SaveFieldAttributes
                         self::setNestedFieldValue($post->attributes['fields'], $slug, $post->attributes[$slug]);
                         // Unset the attribute from the main attributes array
                         // unset($post->attributes[$slug]);
-                        ray($slug);
                         unset($post->attributes['fields'][$slug]);
                     } else {
                         // If no dot, set the attribute directly in fields
@@ -71,7 +69,6 @@ trait SaveFieldAttributes
                 unset($post->attributes[$slug]);
             });
 
-            ray($post->attributes)->red();
         });
     }
 
