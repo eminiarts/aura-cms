@@ -28,9 +28,14 @@ beforeEach(function () {
 });
 
 afterEach(function () {
-    File::delete(app_path('Aura/Resources/Project.php'));
+    Artisan::call('cache:clear');
+
+    if (File::exists(app_path('Aura/Resources/Project.php'))) {
+        File::delete(app_path('Aura/Resources/Project.php'));
+    }
 
     $migrationFiles = File::files(database_path('migrations'));
+
 
     foreach ($migrationFiles as $file) {
         File::delete($file);

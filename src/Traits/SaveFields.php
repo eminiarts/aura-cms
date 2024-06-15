@@ -2,9 +2,10 @@
 
 namespace Aura\Base\Traits;
 
-use Aura\Base\Events\SaveFields as SaveFieldsEvent;
 use Aura\Base\Facades\Aura;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Storage;
+use Aura\Base\Events\SaveFields as SaveFieldsEvent;
 
 trait SaveFields
 {
@@ -59,11 +60,11 @@ trait SaveFields
 
         $a = new \ReflectionClass($this->model::class);
 
-        $file = file_get_contents($a->getFileName());
+        if (Storage::exists($a->getFileName())) {
+            $file = Storage::get($a->getFileName());
 
-        $replacement = Aura::varexport($this->setKeysToFields($fields), true);
+            $replacement = Aura::varexport($this->setKeysToFields($fields), true);
 
-        // dd($replacement);
 
         preg_match('/function\s+getFields\s*\((?:[^()]+)*?\s*\)\s*(?<functionBody>{(?:[^{}]+|(?-1))*+})/ms', $file, $matches);
 
@@ -77,11 +78,9 @@ trait SaveFields
             $file
         );
 
-        // dd($matches[1], $replacement, $this->formatIndentation($matches[1], $replacement));
 
-        file_put_contents($a->getFileName(), $replaced);
-
-        // ray($this->mappedFields);
+            Storage::put($a->getFileName(), $replaced);
+        }
 
         // Trigger the event to change the database schema
         event(new SaveFieldsEvent($fieldsWithIds, $this->mappedFields, $this->model));

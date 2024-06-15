@@ -3,14 +3,16 @@
 use Aura\Base\Facades\Aura;
 use Aura\Base\Resources\Post;
 use Aura\Base\Resources\User;
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
 
 // Before each test, create a Superadmin and login
 beforeEach(function () {
+    Artisan::call('cache:clear');
 
-    ray()->clearScreen();
+    $this->withoutExceptionHandling();
     // Create User
     $this->actingAs($this->user = createSuperAdmin());
 });
