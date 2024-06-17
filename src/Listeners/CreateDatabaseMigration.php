@@ -55,9 +55,6 @@ class CreateDatabaseMigration
             return ! $newFields->contains('_id', $field['_id']);
         });
 
-        // ray('change', $fieldsToAdd, $fieldsToUpdate, $fieldsToDelete, $model, $model->getTable());
-        // return;
-
         if ($fieldsToAdd->isEmpty() && $fieldsToUpdate->isEmpty() && $fieldsToDelete->isEmpty()) {
             return;
         }
@@ -92,14 +89,10 @@ class CreateDatabaseMigration
         $content = $this->files->get($migrationFile);
         $updatedContent = $this->updateMigrationContent($content, $schemaAdditions, $schemaUpdates, $schemaDeletions, $schemaAdditionsDown, $schemaUpdatesDown, $schemaDeletionsDown);
 
-        // ray($schemaAdditions, $schemaUpdates, $schemaDeletions);
-
         // Update the migration file content
         $content = $this->files->get($migrationFile);
 
         $updatedContent = $this->updateMigrationContent($content, $schemaAdditions, $schemaUpdates, $schemaDeletions, $schemaAdditionsDown, $schemaUpdatesDown, $schemaDeletionsDown);
-
-        // ray('updatedContent', $updatedContent)->blue();
 
         // Write the updated content back to the migration file
         $this->files->put($migrationFile, $updatedContent);
@@ -119,8 +112,6 @@ class CreateDatabaseMigration
 
     protected function generateColumn($field)
     {
-        ray($field)->green();
-
         $fieldInstance = app($field['type']);
         $columnType = $fieldInstance->tableColumnType;
 
@@ -130,8 +121,6 @@ class CreateDatabaseMigration
     protected function generateDownSchema($fields, $action)
     {
         $downSchema = '';
-
-        ray($fields, $action)->red();
 
         foreach ($fields as $field) {
 
@@ -227,8 +216,6 @@ class CreateDatabaseMigration
         ];
 
         $result = Process::path(base_path())->run($command);
-
-        // ray($result->output(), $result->errorOutput(), $result)->red();
     }
 
     protected function updateMigrationContent($content, $additions, $updates, $deletions, $additionsDown, $updatesDown, $deletionsDown)

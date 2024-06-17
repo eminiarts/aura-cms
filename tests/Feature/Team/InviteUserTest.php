@@ -56,8 +56,6 @@ test('user gets correct role', function () {
 
     expect(config('aura.teams'))->toBeTrue();
 
-    ray()->clearScreen();
-
     // Create a new Role
     $role = Role::create([
         'title' => 'Test Role',
@@ -90,8 +88,6 @@ test('user gets correct role', function () {
 
     // Go to the Registration Page and make sure it works
     $url = URL::signedRoute('aura.invitation.register', [$invitation->team, $invitation]);
-
-    ray($url);
 
     // Log out
     $this->app['auth']->logout();
@@ -130,10 +126,6 @@ test('user gets correct role', function () {
 
     // Check if the user has the correct role
     $user = User::where('email', 'test@test.ch')->first();
-
-    ray($user);
-    ray($user->hasRole('test_role'));
-    ray($user->roles);
 
     expect($user->hasRole('test_role'))->toBeTrue();
     expect($user->hasRole('super_admin'))->toBeFalse();
@@ -262,7 +254,7 @@ test('user can register using an invitation', function () {
 
     $this->assertEquals($team->id, $user->current_team_id);
 
-    $this->assertEquals([$invitation->role], $user->fields['roles']);
+    $this->assertEquals($user->fields['roles'], $invitation->role);
 
     $this->assertDatabaseMissing('team_invitations', ['id' => $invitation->id]);
 });

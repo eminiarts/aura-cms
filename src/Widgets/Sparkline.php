@@ -66,7 +66,7 @@ class Sparkline extends Widget
     {
         $currentStart = $this->getCarbonDate($this->start)->addDay();
         $currentEnd = $this->getCarbonDate($this->end);
-        $diff = $currentStart->diffInDays($currentEnd);
+        $diff = round($currentStart->diffInDays($currentEnd));
 
         $previousStart = $currentStart->copy()->subDays($diff + 1);
         $previousEnd = $currentStart->copy()->subDay();

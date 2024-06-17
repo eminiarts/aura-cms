@@ -328,7 +328,11 @@ class Aura
 
             // filter resources by permission and check if user has viewAny permission
             $resources = $resources->filter(function ($resource) {
-                $resource = app($resource);
+                if (class_exists($resource)) {
+                    $resource = app($resource);
+                } else {
+                    return false;
+                }
 
                 return auth()->user()->can('viewAny', $resource);
             });

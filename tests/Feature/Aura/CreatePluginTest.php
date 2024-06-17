@@ -75,7 +75,6 @@ it('creates a field plugin', function () {
         ->expectsOutput('Plugin created successfully!')
         ->assertExitCode(0);
 
-    ray($pluginDirectory);
     // Assert that the plugin directory and files were created correctly
     expect(File::exists("{$pluginDirectory}/src"))->toBeTrue();
     expect(File::exists("{$pluginDirectory}/configure.php"))->toBeFalse();

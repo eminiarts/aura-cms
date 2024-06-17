@@ -20,8 +20,6 @@ trait SaveMetaFields
                     return;
                 }
 
-                //ray($post->attributes['fields'])->green();
-
                 foreach ($post->attributes['fields'] as $key => $value) {
 
                     $class = $post->fieldClassBySlug($key);
@@ -83,6 +81,9 @@ trait SaveMetaFields
                         // Save the meta field to the model, so it can be saved in the Meta table
                         $post->saveMetaField([$key => $value]);
                     }
+
+                    // Save the meta field to the model, so it can be saved in the Meta table
+                    // $post->saveMetaField([$key => $value]);
                 }
 
                 unset($post->attributes['fields']);
@@ -106,8 +107,7 @@ trait SaveMetaFields
                     }
 
                     if ($post->usesMeta()) {
-                        // ray($value);
-                        $post->meta()->updateOrCreate(['key' => $key], ['value' => is_array($value) ? json_encode($value) : $value]);
+                        $post->meta()->updateOrCreate(['key' => $key], ['value' => $value]);
                     }
 
                 }

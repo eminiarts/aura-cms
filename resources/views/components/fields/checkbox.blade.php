@@ -1,11 +1,5 @@
 <x-aura::fields.wrapper :field="$field">
 
-@php
-if($this->form['fields'][$field['slug']] === null) {
-    $this->form['fields'][$field['slug']] = [];
-}
-@endphp
-
     @foreach($field['options'] as $key => $option)
 
         @if (is_array($option))

@@ -37,12 +37,9 @@ class ModifyDatabaseMigration
 
         $schema = $this->generateSchema($newFields);
 
-        ray($schema)->blue();
-
         if ($this->migrationExists($migrationName)) {
             //$this->error("Migration '{$migrationName}' already exists.");
             //return 1;
-            ray('migration exists');
             $migrationFile = $this->getMigrationPath($migrationName);
         } else {
             Artisan::call('make:migration', [
@@ -72,12 +69,8 @@ class ModifyDatabaseMigration
 
         $this->files->put($migrationFile, $replacedContent2);
 
-        ray("Migration '{$migrationName}' updated successfully.");
-
         // Run "pint" on the migration file
         $this->runPint($migrationFile);
-
-        ray($migrationFile)->green();
 
         // Run the migration
         Artisan::call('aura:schema-update', ['migration' => $migrationFile]);
@@ -85,8 +78,6 @@ class ModifyDatabaseMigration
 
     protected function generateColumn($field)
     {
-        // ray($field)->green();
-
         $fieldInstance = app($field['type']);
         $columnType = $fieldInstance->tableColumnType;
 

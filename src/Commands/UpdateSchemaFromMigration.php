@@ -50,8 +50,6 @@ class UpdateSchemaFromMigration extends Command
         $dropColumns = array_diff($existingColumns, array_keys($desiredColumns));
         $dropColumns = array_diff($dropColumns, ['id', 'created_at', 'updated_at', 'deleted_at']);
 
-        ray($newColumns, $existingColumns, $desiredColumns, $dropColumns)->red();
-
         if (! Schema::hasTable($table)) {
             $this->info("Table '{$table}' does not exist. Running the migration...");
 
@@ -66,8 +64,6 @@ class UpdateSchemaFromMigration extends Command
         // Add new columns
         Schema::table($table, function (Blueprint $table) use ($existingColumns, $desiredColumns) {
             $newColumns = array_diff(array_keys($desiredColumns), $existingColumns);
-
-            ray($newColumns, $existingColumns, $desiredColumns)->red();
 
             foreach ($newColumns as $column) {
 

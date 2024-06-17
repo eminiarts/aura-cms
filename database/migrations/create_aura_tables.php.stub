@@ -132,16 +132,15 @@ return new class () extends Migration {
             $table->foreignId('parent_id')->nullable()->index();
             $table->integer('order')->nullable();
             if(config('aura.teams')){
-                $table->foreignId('team_id')->index()->nullable();
+                $table->foreignId('team_id')->nullable();
             }
             $table->timestamps();
             $table->softDeletes();
 
             if(config('aura.teams')) {
                 $table->index(['team_id', 'type']); // Add the new, optimized index
-                $table->index(['type', 'team_id', 'created_at']);
             } else {
-                $table->index(['slug', 'type', 'status', 'created_at', 'id']);
+                $table->index(['type', 'status', 'created_at', 'id']);
             }
         });
 

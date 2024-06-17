@@ -2,13 +2,9 @@
 
 namespace Tests\Feature\Livewire;
 
-use Livewire\Livewire;
-use Aura\Base\Resource;
-use Aura\Base\Fields\Text;
-use Aura\Base\Facades\Aura;
-use Illuminate\Support\Facades\DB;
 use Aura\Base\Livewire\Resource\Create;
-
+use Aura\Base\Resource;
+use Illuminate\Support\Facades\DB;
 
 class NestedGroupFieldsModel extends Resource
 {
@@ -81,12 +77,10 @@ test('create model with nested fields', function () {
 
     // dd($model->toArray());
 
-    ray($model->inputFieldsSlugs());
-
     $meta = DB::table('post_meta')->get();
 
     $this->assertDatabaseMissing('post_meta', [
         'key' => 'settings',
-        'post_id' => $model->id
+        'post_id' => $model->id,
     ]);
 });
