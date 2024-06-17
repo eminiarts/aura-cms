@@ -6,9 +6,9 @@ use Aura\Base\Traits\FieldsOnComponent;
 use Aura\Base\Traits\InputFields;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Artisan;
-use LivewireUI\Modal\ModalComponent;
+use Livewire\Component;
 
-class CreateResource extends ModalComponent
+class CreateResource extends Component
 {
     use FieldsOnComponent;
     use InputFields;
@@ -18,6 +18,11 @@ class CreateResource extends ModalComponent
             'name' => '',
         ],
     ];
+
+    public function closemodal()
+    {
+        $this->dispatch('closeModal');
+    }
 
     public static function getFields()
     {
@@ -36,7 +41,7 @@ class CreateResource extends ModalComponent
     {
         abort_if(app()->environment('production'), 403);
 
-        abort_unless(auth()->user()->resource->isSuperAdmin(), 403);
+        abort_unless(auth()->user()->isSuperAdmin(), 403);
     }
 
     public function render()
@@ -53,7 +58,7 @@ class CreateResource extends ModalComponent
 
     public function save()
     {
-        abort_unless(auth()->user()->resource->isSuperAdmin(), 403);
+        abort_unless(auth()->user()->isSuperAdmin(), 403);
 
         $name = $this->form['fields']['name'];
         $slug = str($name)->slug();

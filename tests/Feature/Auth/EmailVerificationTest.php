@@ -2,8 +2,7 @@
 
 namespace Tests\Feature\Auth;
 
-use Aura\Base\Models\User;
-use Aura\Base\Providers\RouteServiceProvider;
+use Aura\Base\Resources\User;
 use Illuminate\Auth\Events\Verified;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\URL;
@@ -37,7 +36,7 @@ test('email can be verified', function () {
 
     Event::assertDispatched(Verified::class);
     expect($user->fresh()->hasVerifiedEmail())->toBeTrue();
-    $response->assertRedirect(RouteServiceProvider::HOME.'?verified=1');
+    $response->assertRedirect(config('aura.auth.redirect').'?verified=1');
 });
 
 test('email is not verified with invalid hash', function () {

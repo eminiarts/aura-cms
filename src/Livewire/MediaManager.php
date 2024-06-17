@@ -3,9 +3,9 @@
 namespace Aura\Base\Livewire;
 
 use Aura\Base\Resources\Attachment;
-use LivewireUI\Modal\ModalComponent;
+use Livewire\Component;
 
-class MediaManager extends ModalComponent
+class MediaManager extends Component
 {
     public $field;
 
@@ -27,7 +27,7 @@ class MediaManager extends ModalComponent
         return '7xl';
     }
 
-    public function mount($slug, $selected, $test)
+    public function mount($slug, $selected)
     {
         $this->selected = $selected;
         $this->fieldSlug = $slug;
@@ -55,7 +55,7 @@ class MediaManager extends ModalComponent
         // If selected is deffered, emit event to table to update selected, then emit back to updateField
 
         // Close Modal
-        $this->closeModal();
+        // $this->closeModal();
     }
 
     // Select Attachment

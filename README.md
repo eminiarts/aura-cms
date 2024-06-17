@@ -71,6 +71,13 @@ composer test
 vendor/bin/pest
 ```
 
+Run tests with the other configuration
+```bash
+vendor/bin/pest -c phpunit-without-teams.xml
+
+pp -c phpunit-without-teams.xml
+```
+
 ```bash
 XDEBUG_MODE=coverage vendor/bin/pest --coverage --min=80
 ```

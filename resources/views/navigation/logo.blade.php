@@ -1,12 +1,12 @@
 @php
     $logo = $darkLogo = null;
 
-    if($settings && (isset($settings['app-logo'][0]) || isset($settings['app-logo-darkmode'][0]))) {
-        $logo = isset($settings['app-logo'][0]) ? $settings['app-logo'][0] : null;
-        $darkLogo = isset($settings['app-logo-darkmode'][0]) ? $settings['app-logo-darkmode'][0] : null;
-    } elseif($appSettings && (isset($appSettings['app-logo'][0]) || isset($appSettings['app-logo-darkmode'][0]))) {
-        $logo = isset($appSettings['app-logo'][0]) ? $appSettings['app-logo'][0] : null;
-        $darkLogo = isset($appSettings['app-logo-darkmode'][0]) ? $appSettings['app-logo-darkmode'][0] : null;
+    if($settings && (isset($settings['logo'][0]) || isset($settings['logo-darkmode'][0]))) {
+        $logo = isset($settings['logo'][0]) ? $settings['logo'][0] : null;
+        $darkLogo = isset($settings['logo-darkmode'][0]) ? $settings['logo-darkmode'][0] : null;
+    } elseif($appSettings && (isset($appSettings['logo'][0]) || isset($appSettings['logo-darkmode'][0]))) {
+        $logo = isset($appSettings['logo'][0]) ? $appSettings['logo'][0] : null;
+        $darkLogo = isset($appSettings['logo-darkmode'][0]) ? $appSettings['logo-darkmode'][0] : null;
     }
 
     // Debugging: Dump the logo variables
@@ -15,19 +15,25 @@
 @endphp
 
 @if($logo || $darkLogo)
+    <div class="pr-3 {{ ($compact ? 'w-40' : 'w-48') }}">
     @if($logo && $darkLogo)
-        <x-aura::image class="object-contain object-left w-48 h-10 aura-sidebar-logo" :id="$logo"></x-aura::image>
-        <x-aura::image class="object-contain object-left w-48 h-10 aura-sidebar-logo-dark" :id="$darkLogo"></x-aura::image>
+        <x-aura::image class="object-contain object-left w-full h-10 aura-sidebar-logo" :id="$logo"></x-aura::image>
+        <x-aura::image class="object-contain object-left w-full h-10 aura-sidebar-logo-dark" :id="$darkLogo"></x-aura::image>
         {{-- @dump('1') --}}
     @elseif(isset($darklogo) && $darklogo)
-        <x-aura::image class="object-contain object-left w-48 h-10" :id="$darklogo" alt="{{ $settings['title'] ?? '' }}"></x-aura::image>
+        <x-aura::image class="object-contain object-left w-full h-10" :id="$darklogo" alt="{{ $settings['title'] ?? '' }}"></x-aura::image>
     @else
-        <x-aura::image class="object-contain object-left w-48 h-10" :id="$logo" alt="{{ $settings['title'] ?? '' }}"></x-aura::image>
+        <x-aura::image class="object-contain object-left w-full h-10" :id="$logo" alt="{{ $settings['title'] ?? '' }}"></x-aura::image>
     @endif
+    </div>
 @else
     @if($sidebarType == 'light')
-        <x-aura::application-logo class="h-8 text-gray-700 fill-current dark:text-white" />
+        <div class="px-2 {{ ($compact ? 'w-28' : 'w-48') }}">
+            <x-aura::application-logo class="w-full h-8 text-gray-700 fill-current dark:text-white" />
+        </div>
     @else
-        <x-aura::application-logo class="h-8 text-white fill-current dark:text-white" />
+        <div class="px-2 {{ ($compact ? 'w-28' : 'w-48') }}">
+            <x-aura::application-logo class="w-full h-8 text-white fill-current dark:text-white" />
+        </div>
     @endif
 @endif

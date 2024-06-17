@@ -2,8 +2,7 @@
 
 namespace Tests\Feature\Auth;
 
-use Aura\Base\Models\User;
-use Aura\Base\Providers\RouteServiceProvider;
+use Aura\Base\Resources\User;
 
 test('login screen can be rendered', function () {
     $response = $this->get('/login');
@@ -20,7 +19,7 @@ test('users can authenticate using the login screen', function () {
     ]);
 
     $this->assertAuthenticated();
-    $response->assertRedirect(RouteServiceProvider::HOME);
+    $response->assertRedirect(config('aura.auth.redirect'));
 });
 
 test('users can not authenticate with invalid password', function () {

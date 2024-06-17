@@ -4,7 +4,6 @@ namespace Aura\Base\Http\Controllers\Auth;
 
 use Aura\Base\Facades\Aura;
 use Aura\Base\Http\Controllers\Controller;
-use Aura\Base\Providers\RouteServiceProvider;
 use Aura\Base\Resources\Role;
 use Aura\Base\Resources\Team;
 use Aura\Base\Resources\User;
@@ -24,7 +23,7 @@ class RegisteredUserController extends Controller
     public function create()
     {
         // If team registration is disabled, we show a 404 page.
-        abort_if(! config('aura.features.register'), 404);
+        abort_if(! config('aura.auth.registration'), 404);
 
         return view('aura::auth.register');
     }
@@ -38,7 +37,7 @@ class RegisteredUserController extends Controller
      */
     public function store(Request $request)
     {
-        abort_if(! config('aura.features.register'), 404);
+        abort_if(! config('aura.auth.registration'), 404);
 
         if (config('aura.teams')) {
             $request->validate([
@@ -68,9 +67,8 @@ class RegisteredUserController extends Controller
             // Create Role
             $role = Role::create(['type' => 'Role', 'title' => 'Super Admin', 'slug' => 'super_admin', 'name' => 'Super Admin', 'description' => 'Super Admin has can perform everything.', 'super_admin' => true, 'permissions' => [], 'team_id' => $team->id, 'user_id' => $user->id]);
 
-            $user->update(['fields' => ['roles' => [$role->id]]]);
+            $user->update(['roles' => [$role->id]]);
         } else {
-            // ray('no teams');
             // no aura.teams
             $request->validate([
                 'name' => ['required', 'string', 'max:255'],
@@ -88,7 +86,7 @@ class RegisteredUserController extends Controller
 
             $role = Role::where('slug', 'user')->firstOrFail();
 
-            $user->update(['fields' => ['roles' => [$role->id]]]);
+            $user->update(['roles' => [$role->id]]);
         }
 
         event(new Registered($user));
@@ -96,6 +94,6 @@ class RegisteredUserController extends Controller
         Auth::login($user);
         // ray('user logged in');
 
-        return redirect(RouteServiceProvider::HOME);
+        return redirect(config('aura.auth.redirect'));
     }
 }

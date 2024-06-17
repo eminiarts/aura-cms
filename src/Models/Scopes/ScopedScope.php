@@ -18,13 +18,16 @@ class ScopedScope implements Scope
         if ($model instanceof \Aura\Base\Resources\Role) {
             return $builder;
         }
-
-        // Superadmin
-        if (auth()->user() && auth()->user()->resource->isSuperAdmin()) {
+        if ($model instanceof \Aura\Base\Resources\User) {
             return $builder;
         }
 
-        if (auth()->user() && auth()->user()->resource->hasPermissionTo('scope', $model)) {
+        // Superadmin
+        if (auth()->user() && auth()->user()->isSuperAdmin()) {
+            return $builder;
+        }
+
+        if (auth()->user() && auth()->user()->hasPermissionTo('scope', $model)) {
             $builder->where($model->getTable().'.user_id', auth()->user()->id);
         }
 

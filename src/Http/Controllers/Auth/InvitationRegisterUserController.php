@@ -2,9 +2,7 @@
 
 namespace Aura\Base\Http\Controllers\Auth;
 
-use Aura\Base\Facades\Aura;
 use Aura\Base\Http\Controllers\Controller;
-use Aura\Base\Providers\RouteServiceProvider;
 use Aura\Base\Resources\Team;
 use Aura\Base\Resources\TeamInvitation;
 use Aura\Base\Resources\User;
@@ -24,7 +22,7 @@ class InvitationRegisterUserController extends Controller
     public function create(Request $request, Team $team, TeamInvitation $teamInvitation)
     {
         // If team registration is disabled, we show a 404 page.
-        abort_if(! Aura::option('user_invitations'), 404);
+        abort_if(! config('aura.auth.user_invitations'), 404);
 
         return view('aura::auth.user_invitation', [
             'team' => $team,
@@ -41,7 +39,7 @@ class InvitationRegisterUserController extends Controller
      */
     public function store(Request $request, Team $team, TeamInvitation $teamInvitation)
     {
-        abort_if(! Aura::option('user_invitations'), 404);
+        abort_if(! config('aura.auth.user_invitations'), 404);
 
         $request->validate([
             'name' => ['required', 'string', 'max:255'],
@@ -65,6 +63,6 @@ class InvitationRegisterUserController extends Controller
 
         Auth::login($user);
 
-        return redirect(RouteServiceProvider::HOME);
+        return redirect(config('aura.auth.redirect'));
     }
 }

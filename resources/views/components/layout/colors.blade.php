@@ -3,7 +3,7 @@
 @endphp
 
 @php
-    $settings = app('aura')::getOption('team-settings');
+    $settings = app('aura')::getOption('settings');
     $appSettings = app('aura')::options();
 @endphp
 

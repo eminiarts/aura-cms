@@ -12,6 +12,7 @@ use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Filesystem\Filesystem;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Vite;
 use Illuminate\Support\HtmlString;
 use Illuminate\Support\Str;
 use RuntimeException;
@@ -249,8 +250,8 @@ class Aura
     public function getOption($name)
     {
         if (config('aura.teams') && optional(optional(auth()->user())->resource)->currentTeam) {
-            return Cache::remember(auth()->user()->current_team_id.'aura.'.$name, now()->addHour(), function () use ($name) {
-                $option = auth()->user()->resource->currentTeam->getOption($name);
+            return Cache::remember(auth()->user()->current_team_id.'.aura.'.$name, now()->addHour(), function () use ($name) {
+                $option = auth()->user()->currentTeam->getOption($name);
 
                 if ($option) {
                     if (is_string($option)) {
@@ -261,6 +262,8 @@ class Aura
                 } else {
                     $settings = [];
                 }
+
+                // ray($settings);
 
                 return $settings;
 
@@ -325,7 +328,11 @@ class Aura
 
             // filter resources by permission and check if user has viewAny permission
             $resources = $resources->filter(function ($resource) {
-                $resource = app($resource);
+                if (class_exists($resource)) {
+                    $resource = app($resource);
+                } else {
+                    return false;
+                }
 
                 return auth()->user()->can('viewAny', $resource);
             });
@@ -394,6 +401,11 @@ class Aura
         });
     }
 
+    public function pro()
+    {
+        return true;
+    }
+
     public function registerFields(array $fields): void
     {
         $this->fields = array_merge($this->fields, $fields);
@@ -460,9 +472,9 @@ class Aura
     public function updateOption($key, $value)
     {
         if (config('aura.teams')) {
-            auth()->user()->resource->currentTeam->updateOption($key, $value);
+            auth()->user()->currentTeam->updateOption($key, $value);
         } else {
-            Option::withoutGlobalScopes([TeamScope::class])->updateOrCreate(['name' => $key, 'team_id' => 0], ['value' => $value]);
+            Option::withoutGlobalScopes([TeamScope::class])->updateOrCreate(['name' => $key], ['value' => $value]);
         }
     }
 
@@ -499,5 +511,23 @@ class Aura
         } else {
             echo $export;
         }
+    }
+
+    public function viteScripts()
+    {
+        return Vite::getFacadeRoot()
+            ->useHotFile('vendor/aura/hot')
+            ->useBuildDirectory('vendor/aura')->withEntryPoints([
+                'resources/js/app.js',
+            ]);
+    }
+
+    public function viteStyles()
+    {
+        return Vite::getFacadeRoot()
+            ->useHotFile('vendor/aura/hot')
+            ->useBuildDirectory('vendor/aura')->withEntryPoints([
+                'resources/css/app.css',
+            ]);
     }
 }

@@ -9,22 +9,13 @@ trait QueryFilters
 {
     /**
      * Apply custom filter to the query.
-     *
-     * @return \Illuminate\Database\Eloquent\Builder
      */
     /**
      * Apply custom filter to the query.
-     *
-     * @param Builder $query
-     * @return Builder
      */
-    
 
     /**
      * Apply custom filter to the query.
-     *
-     * @param Builder $query
-     * @return Builder
      */
     protected function applyCustomFilter(Builder $query): Builder
     {
@@ -62,10 +53,6 @@ trait QueryFilters
 
     /**
      * Apply filter based on whether the field belongs to custom table fields or meta fields.
-     *
-     * @param Builder $query
-     * @param array $filter
-     * @return void
      */
     protected function applyFilterBasedOnType(Builder $query, array $filter): void
     {
@@ -75,10 +62,6 @@ trait QueryFilters
             $this->applyMetaFieldFilter($query, $filter);
         }
     }
-
-    
-
-
 
     protected function applyIsEmptyMetaFilter(Builder $query, array $filter): void
     {

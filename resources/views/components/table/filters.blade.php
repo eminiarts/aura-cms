@@ -112,56 +112,11 @@
 
         {{-- <x-aura::button.transparent size="xs" wire:click="saveFilter" class="mt-4">Save as Template</x-aura::button.transparent> --}}
 
-        {{-- Save Filter Modal Button --}}
-        <x-aura::button.transparent size="xs" wire:click="$set('showSaveFilterModal', true)" class="mt-4">
-            {{ __('Save as Template') }}
-        </x-aura::button.transparent>
-
-        {{-- Ask for a name to save the filter --}}
-        <x-aura::dialog-modal wire:model="showSaveFilterModal">
-            <x-slot name="title">
-                {{ __('Save Filter') }}
-            </x-slot>
-
-            <x-slot name="content">
-                <div>
-                    <div>
-
-                        <x-aura::input.wrapper label="Filter Name*" error="filter.name" :help="__('Enter a Filter Name')">
-                            
-                        <x-aura::input.text required wire:model="filter.name" error="filter.name" :placeholder="__('Enter a Name for the Filter')"></x-aura::input.text>
-
-                         </x-aura::input.wrapper>
-
-                        <x-aura::input.wrapper label="Icon" error="filter.icon" :help="__('Icon (optional)')">
-                            
-                        <x-aura::input.text required wire:model="filter.icon" error="filter.icon" :placeholder="__('Icon (optional)')"></x-aura::input.text>
-
-                         </x-aura::input.wrapper>
-
-                    </div>
-                    
-                    <div class="mt-4">
-                         <x-aura::input.wrapper label="{{ __('Table Tabs') }}" error="filter.global" :help="__('Show above the Table of the Index Page')">
-                            
-                            <x-aura::input.toggle wire:model="filter.global" error="filter.global" label-after="Add this filter to the Tabs of the Index Page" ></x-aura::input.toggle>
-
-                         </x-aura::input.wrapper>
-                         
-                         <x-aura::input.wrapper label="{{ __('Public Filter') }}" error="filter.public" :help="__('Make this filter available for everyone')">
-                            
-                            <x-aura::input.toggle wire:model="filter.public" error="filter.public" label-after="Make this filter available for everyone"></x-aura::input.toggle>
-
-                         </x-aura::input.wrapper>
-                    </div>
-                </div>
-            </x-slot>
-
-            <x-slot name="footer">
-                <x-aura::button.primary wire:click="saveFilter">{{ __('Save as Template') }}</x-aura::button.primary>
-            </x-slot>
-        </x-aura::dialog-modal>
 
     </div>
 
+<div class="flex justify-between items-center">
     <x-aura::button.primary wire:click="$refresh" class="mt-4">{{ __('Search') }}</x-aura::button.primary>
+        @include('aura::components.table.filters-save-as-template')
+
+</div>

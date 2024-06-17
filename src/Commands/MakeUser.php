@@ -8,6 +8,9 @@ use Aura\Base\Resources\User;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 
+use function Laravel\Prompts\password;
+use function Laravel\Prompts\text;
+
 class MakeUser extends Command
 {
     protected $description = 'Creates an Aura Super Admin.';
@@ -19,11 +22,9 @@ class MakeUser extends Command
 
     public function handle(): int
     {
-        $name = $this->ask('What is your name?');
-
-        $email = $this->ask('What is your email?');
-
-        $password = $this->secret('What is your password?');
+        $name = $this->option('name') ?? text('What is your name?');
+        $email = $this->option('email') ?? text('What is your email?');
+        $password = $this->option('password') ?? password('What is your password?');
 
         $user = User::create([
             'name' => $name,
@@ -48,13 +49,12 @@ class MakeUser extends Command
 
         auth()->loginUsingId($user->id);
 
-        // Create Role
         $roleData = [
             'type' => 'Role',
             'title' => 'Super Admin',
             'slug' => 'super_admin',
             'name' => 'Super Admin',
-            'description' => 'Super Admin has can perform everything.',
+            'description' => 'Super Admin can perform everything.',
             'super_admin' => true,
             'permissions' => [],
             'user_id' => $user->id,
@@ -66,10 +66,7 @@ class MakeUser extends Command
 
         $role = Role::create($roleData);
 
-        $user->update(['fields' => ['roles' => [$role->id]]]);
-
-        // Attach the user to the team
-        //$team->users()->attach($user->id, ['role' => $role->id]);
+        $user->update(['roles' => [$role->id]]);
 
         $this->info('User created successfully.');
 

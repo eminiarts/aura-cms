@@ -91,8 +91,8 @@ class ConditionalLogic
     private static function checkRoleCondition($condition)
     {
         return match ($condition['operator']) {
-            '==' => auth()->user()->resource->hasRole($condition['value']),
-            '!=' => ! auth()->user()->resource->hasRole($condition['value']),
+            '==' => auth()->user()->hasRole($condition['value']),
+            '!=' => ! auth()->user()->hasRole($condition['value']),
             default => false
         };
     }
@@ -126,7 +126,7 @@ class ConditionalLogic
 
     private static function handleRoleCondition($condition)
     {
-        if (auth()->user()->resource->isSuperAdmin()) {
+        if (auth()->user()->isSuperAdmin()) {
             return true;
         }
 

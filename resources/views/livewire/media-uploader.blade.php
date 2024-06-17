@@ -170,7 +170,7 @@
                     <div class="mt-2">
                         {{-- @dump($for, $field['slug'], $selected) --}}
                         <x-aura::button.light
-                            wire:click="$dispatch('openModal', { component: 'aura::media-manager', arguments: { test: '1', model: {{ json_encode($for) }}, slug: '{{ $field['slug'] }}', selected: {{ json_encode($selected) }} }})">
+                            wire:click="$dispatch('openModal', { component: 'aura::media-manager', arguments: { model: {{ json_encode($for) }}, slug: '{{ $field['slug'] }}', selected: {{ json_encode($selected) }} }})">
                             <x-slot:icon>
                                 <x-aura::icon icon="media" class="" />
                             </x-slot>

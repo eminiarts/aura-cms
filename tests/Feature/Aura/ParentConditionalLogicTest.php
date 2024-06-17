@@ -1,13 +1,13 @@
 <?php
 
 use Aura\Base\Facades\Aura;
-use Aura\Base\Models\User;
 use Aura\Base\Pipeline\AddIdsToFields;
 use Aura\Base\Pipeline\ApplyParentConditionalLogic;
 use Aura\Base\Pipeline\ApplyTabs;
 use Aura\Base\Pipeline\MapFields;
 use Aura\Base\Resource;
 use Aura\Base\Resources\Role;
+use Aura\Base\Resources\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
@@ -301,7 +301,7 @@ test('role condition as a Super Admin', function () {
     $this->assertFalse(Aura::checkCondition($model, $fields->firstWhere('slug', 'tab-1')));
 
     // Attach Super Admin Role to User
-    // $user->resource()->update(['fields' => ['roles' => [$r->id]]]);
+    // $user->resource()->update(['roles' => [$r->id]]);
 
     // Clear the cache
     Aura::clearConditionsCache();
@@ -337,7 +337,7 @@ test('role condition as a Admin', function () {
     // $this->assertFalse(Aura::checkCondition($model, $fields->firstWhere('slug', 'tab-1')));
 
     // Attach Admin Role to User
-    $user->resource->update(['fields' => ['roles' => [$role->id]]]);
+    $user->resource->update(['roles' => [$role->id]]);
 
     $user->refresh();
 

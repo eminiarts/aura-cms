@@ -1,40 +1,35 @@
-<div class="p-8">
-    <h2 class="text-3xl font-semibold"> Invite User </h2>
+<div class="">
 
-    <div class="flex flex-wrap">
+    <form wire:submit="save">
+        <x-aura::dialog.title>{{ __('Invite User') }}</x-aura::dialog.title>
 
-        <div class="w-1/3 pr-4">
-            <div class="mb-4 -mx-4">
-                @foreach($this->fields as $key => $field)
-                <style >
-                    #resource-field-{{ optional($field)['slug'] }}-wrapper {
-                        width: {{ optional(optional($field)['style'])['width'] ?? '100' }}%;
-                    }
+        <div class="flex flex-wrap">
 
-                    @media screen and (max-width: 768px) {
-                        #resource-field-{{ optional($field)['slug'] }}-wrapper {
-                            width: 100%;
-                        }
-                    }
-                </style>
-                <div wire:key="resource-field-{{ $key }}"
-                id="resource-field-{{ optional($field)['slug'] }}-wrapper">
-                <x-dynamic-component :component="$field['field']->component" :field="$field" :form="$form" />
+            <div class="w-full">
+                <div class="mb-4 flex flex-wrap items-start -mx-4">
+                    @foreach ($this->fields as $key => $field)
+                        
+                            <x-dynamic-component :component="$field['field']->component" :field="$field" :form="$form" />
+                    @endforeach
                 </div>
-                @endforeach
             </div>
+        </div>
 
-            <x-aura::button size="xl" wire:click="save">
-            <div wire:loading>
-                <x-aura::icon.loading  />
-            </div>
-            Invite
-        </x-aura::button>
-    </div>
+        <x-aura::dialog.footer>
+            <x-aura::dialog.close>
+                <x-aura::button.transparent>
+                    {{ __('Cancel') }}
+                </x-aura::button.transparent>
+            </x-aura::dialog.close>
 
-    <div class="w-2/3">
-        <livewire:aura::table :model="app('Aura\Base\Resources\TeamInvitation')"/>
-    </div>
-</div>
+            <x-aura::button.primary type="submit">
+                <div wire:loading wire:target="save">
+                    <x-aura::icon.loading />
+                </div>
+                {{ __('Invite') }}
+            </x-aura::button.primary>
+        </x-aura::dialog.footer>
+
+    </form>
 
 </div>

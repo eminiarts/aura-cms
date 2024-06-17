@@ -11,7 +11,7 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
     @php
-        $settings = app('aura')::getOption('team-settings');
+        $settings = app('aura')::getOption('settings');
         $appSettings = app('aura')::options();
     @endphp
 
@@ -23,7 +23,7 @@
 
     @auraStyles
 </head>
-<body class="overflow-hidden antialiased text-gray-800 bg-white dark:bg-gray-900 dark:text-gray-200">
+<body class="overflow-hidden antialiased text-gray-900 bg-white dark:bg-gray-900 dark:text-gray-100">
 
 <div
     x-data="aura"
@@ -75,13 +75,17 @@
 
 @stack('modals')
 
+
+
 <x-aura::notification/>
 
 @if(config('aura.features.notifications'))
 <livewire:aura::notifications/>
 @endif
 
-@livewire('wire-elements-modal')
+{{-- @livewire('wire-elements-modal') --}}
+
+@livewire('aura::modals')
 
 
 @auraScripts

@@ -62,8 +62,6 @@ class Profile extends Component
      */
     public function confirmUserDeletion()
     {
-        $this->dispatch('confirming-delete-user');
-
         $this->confirmingUserDeletion = true;
     }
 
@@ -234,7 +232,7 @@ class Profile extends Component
     {
         $this->checkAuthorization();
 
-        $this->model = auth()->user()->resource;
+        $this->model = auth()->user();
 
         $this->form = $this->model->attributesToArray();
 

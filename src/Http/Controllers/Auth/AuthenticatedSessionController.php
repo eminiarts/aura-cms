@@ -4,7 +4,6 @@ namespace Aura\Base\Http\Controllers\Auth;
 
 use Aura\Base\Http\Controllers\Controller;
 use Aura\Base\Http\Requests\Auth\LoginRequest;
-use Aura\Base\Providers\RouteServiceProvider;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -50,6 +49,6 @@ class AuthenticatedSessionController extends Controller
 
         $request->session()->regenerate();
 
-        return redirect()->intended(RouteServiceProvider::HOME);
+        return redirect()->intended(config('aura.auth.redirect'));
     }
 }

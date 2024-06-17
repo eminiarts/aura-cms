@@ -160,6 +160,7 @@ class Resource extends Model
             $defaultValues = collect($this->inputFieldsSlugs())
                 ->mapWithKeys(fn ($value, $key) => [$value => null])
                 ->map(fn ($value, $key) => $meta[$key] ?? $value)
+                ->filter(fn ($value, $key) => strpos($key, '.') === false)
                 ->map(function ($value, $key) {
                     // if the value is in $this->hidden, set it to null
                     if (in_array($key, $this->hidden)) {
@@ -207,6 +208,8 @@ class Resource extends Model
             });
         }
 
+        // ray($this->fieldsAttributeCache);
+
         return $this->fieldsAttributeCache;
     }
 
@@ -225,6 +228,10 @@ class Resource extends Model
 
     public function getMeta($key = null)
     {
+        if ($this->usesCustomTable() && ! $this->usesCustomMeta()) {
+            return collect();
+        }
+
         if ($this->usesMeta() && optional($this)->meta && ! is_string($this->meta)) {
 
             $meta = $this->meta->pluck('value', 'key');
@@ -338,9 +345,7 @@ class Resource extends Model
         static::addGlobalScope(new ScopedScope());
 
         static::creating(function ($model) {
-            // if (! $model->team_id) {
-            //     $model->team_id = 1;
-            // }
+
         });
 
         static::saved(function ($model) {

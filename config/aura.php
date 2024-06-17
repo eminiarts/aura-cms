@@ -48,7 +48,7 @@ return [
     |
     */
 
-    'teams' => true,
+    'teams' => env('AURA_TEAMS', true),
 
     /*
    |--------------------------------------------------------------------------
@@ -62,7 +62,7 @@ return [
     'components' => [
         'dashboard' => Aura\Base\Livewire\Dashboard::class,
         'profile' => Aura\Base\Livewire\Profile::class,
-        'team_settings' => Aura\Base\Livewire\TeamSettings::class,
+        'settings' => Aura\Base\Livewire\Settings::class,
         'config' => Aura\Base\Livewire\Config::class,
     ],
 
@@ -100,7 +100,6 @@ return [
         'flows' => false,
         'forms' => true,
 
-        'resource_editor' => config('app.env') == 'production' ? false : true,
         'theme_options' => true,
         'global_config' => true,
 
@@ -111,10 +110,30 @@ return [
         'resource_view' => true,
         'resource_edit' => true,
 
-        'register' => true,
+    ],
 
-        'team_registration' => true,
+    'auth' => [
+        'registration' => true,
+
+        'redirect' => '/admin',
+        '2fa' => true,
         'user_invitations' => true,
+        'create_teams' => true,
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Resource Editor
+    |--------------------------------------------------------------------------
+    |
+    | You can decide to enable or disable the migrations for custom tables
+    | that are created by the resource editor.
+    |
+    */
+
+    'resource_editor' => [
+        'enabled' => config('app.env') == 'production' ? false : true,
+        'custom_table_migrations' => false, // false, true = single (default), multiple
     ],
 
     /*

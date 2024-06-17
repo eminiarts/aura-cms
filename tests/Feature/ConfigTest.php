@@ -7,9 +7,7 @@ beforeEach(function () {
     $this->actingAs($this->user = createSuperAdmin());
 });
 
-// make sure only superadmins can access this component
 test('config features test', function () {
-
     expect(config('aura.features'))->toMatchArray([
         'global_search' => true,
         'notifications' => true,
@@ -17,13 +15,18 @@ test('config features test', function () {
         'plugins' => true,
         'flows' => false,
         'forms' => true,
-        'resource_editor' => config('app.env') == 'production' ? false : true,
         'theme_options' => true,
         'global_config' => true,
         'user_profile' => true,
         'create_resource' => true,
         'resource_view' => true,
         'resource_edit' => true,
-        'register' => true,
+    ]);
+});
+
+test('resource editor', function () {
+    expect(config('aura.resource_editor'))->toMatchArray([
+        'enabled' => config('app.env') == 'production' ? false : true,
+        'custom_table_migrations' => false,
     ]);
 });

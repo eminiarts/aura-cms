@@ -2,8 +2,8 @@
 
 namespace Aura\Base\Policies;
 
-use Aura\Base\Models\User;
 use Aura\Base\Resource;
+use Aura\Base\Resources\User;
 use Illuminate\Auth\Access\HandlesAuthorization;
 
 class ResourcePolicy

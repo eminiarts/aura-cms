@@ -41,14 +41,30 @@ trait SaveFieldAttributes
                     if (! array_key_exists($slug, $post->attributes['fields'])) {
                         $post->attributes['fields'][$slug] = $post->attributes[$slug];
                     }
+
+                    // Set the field value into nested fields array if it contains a dot
+                    if (strpos($slug, '.') !== false) {
+                        self::setNestedFieldValue($post->attributes['fields'], $slug, $post->attributes[$slug]);
+                        // Unset the attribute from the main attributes array
+                        // unset($post->attributes[$slug]);
+                        unset($post->attributes['fields'][$slug]);
+                    } else {
+                        // If no dot, set the attribute directly in fields
+                        // $post->attributes['fields'][$slug] = $post->attributes[$slug];
+                    }
                 }
 
                 if ($slug == 'title') {
                     return;
                 }
 
-                // Dont Unset Field if it is in baseFillable
+                // Dont unset Field if it is in baseFillable
                 if (in_array($slug, $post->baseFillable)) {
+                    return;
+                }
+
+                // Dont unset Field if it is uses customTable
+                if ($post->usesCustomTable() && ! $post->usesCustomMeta()) {
                     return;
                 }
 
@@ -56,5 +72,27 @@ trait SaveFieldAttributes
                 unset($post->attributes[$slug]);
             });
         });
+    }
+
+    /**
+     * Set a nested field value based on the slug with dots.
+     *
+     * @param  string  $slug
+     * @param  mixed  $value
+     * @return void
+     */
+    protected static function setNestedFieldValue(array &$fields, $slug, $value)
+    {
+        $keys = explode('.', $slug);
+        $temp = &$fields;
+
+        foreach ($keys as $key) {
+            if (! isset($temp[$key])) {
+                $temp[$key] = [];
+            }
+            $temp = &$temp[$key];
+        }
+
+        $temp = $value;
     }
 }

@@ -2,8 +2,7 @@
 
 namespace Tests\Feature;
 
-use Aura\Base\Models\User;
-use Aura\Base\Providers\RouteServiceProvider;
+use Aura\Base\Resources\User;
 use Aura\Base\Tests\TestCase;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
@@ -28,7 +27,7 @@ class AuthenticationTest extends TestCase
         ]);
 
         $this->assertAuthenticated();
-        $response->assertRedirect(RouteServiceProvider::HOME);
+        $response->assertRedirect(config('aura.auth.redirect'));
     }
 
     public function test_users_can_not_authenticate_with_invalid_password()

@@ -190,6 +190,8 @@ public function indexTableSettings()
             'actions' => true,
             'bulk_actions' => true,
             'header' => true,
+            'edit_in_modal' => false, // true, false, 'sidebar', 'modal'
+            'create_in_modal' => false, // true, false, 'sidebar', 'modal'
             'views' => [
                 'table' => 'aura::components.table.index',
                 'list' => $this->tableView(),

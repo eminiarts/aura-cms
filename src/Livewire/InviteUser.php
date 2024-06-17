@@ -8,9 +8,9 @@ use Aura\Base\Traits\InputFields;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Mail;
-use LivewireUI\Modal\ModalComponent;
+use Livewire\Component;
 
-class InviteUser extends ModalComponent
+class InviteUser extends Component
 {
     use AuthorizesRequests;
     use InputFields;
@@ -31,6 +31,9 @@ class InviteUser extends ModalComponent
                 'placeholder' => 'email@example.com',
                 'validation' => 'required|email',
                 'slug' => 'email',
+                'style' => [
+                    'width' => '50',
+                ],
             ],
             [
                 'name' => 'Role',
@@ -38,6 +41,9 @@ class InviteUser extends ModalComponent
                 'validation' => 'required',
                 'slug' => 'role',
                 'options' => Role::get()->pluck('title', 'id')->toArray(),
+                'style' => [
+                    'width' => '50',
+                ],
             ],
         ];
     }
@@ -47,11 +53,6 @@ class InviteUser extends ModalComponent
         $fields = collect($this->mappedFields());
 
         return $this->fieldsForView($fields);
-    }
-
-    public static function modalMaxWidth(): string
-    {
-        return '7xl';
     }
 
     public function render()
@@ -102,5 +103,6 @@ class InviteUser extends ModalComponent
         $this->notify('Erfolgreich eingeladen.');
 
         $this->dispatch('closeModal');
+        $this->dispatch('refreshTable');
     }
 }

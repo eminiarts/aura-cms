@@ -4,20 +4,24 @@ use Aura\Base\Facades\Aura;
 use Aura\Base\Resources\Post;
 use Aura\Base\Resources\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Artisan;
 
 uses(RefreshDatabase::class);
 
 // Before each test, create a Superadmin and login
 beforeEach(function () {
+    Artisan::call('cache:clear');
+
+    $this->withoutExceptionHandling();
     // Create User
     $this->actingAs($this->user = createSuperAdmin());
 });
 
 // Define datasets
 dataset('auraPages', [
-    'aura.team.settings',
+    'aura.settings',
     'aura.profile',
-    'aura.config',
+    // 'aura.config', // Not available atm
 ]);
 
 dataset('postTypes', [
@@ -28,6 +32,11 @@ dataset('postTypes', [
     'Permission',
     'Attachment',
 ]);
+
+// Test Post Index Pages
+test('Check user authorization', function () {
+    expect(auth()->user()->isSuperAdmin())->toBeTrue();
+});
 
 // Test Aura Pages
 test('Check Aura Pages (with Teams)', function ($routeName) {

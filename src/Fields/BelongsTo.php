@@ -13,6 +13,8 @@ class BelongsTo extends Field
 
     public $optionGroup = 'Relationship Fields';
 
+    public $tableColumnType = 'bigIncrements';
+
     public string $type = 'input';
 
     public $view = 'aura::fields.view-value';

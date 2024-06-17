@@ -12,9 +12,9 @@
 
 <div class="px-2" id="resource-field-{{ optional($field)['slug'] }}-wrapper">
     <div class="aura-card {{ $field['style']['class'] ?? '' }}">
-        <div class="mt-1 mb-2">
-          @if($field['name'] != 'Main Panel')
-        <div class="px-2">
+        <div class="mb-2">
+          @if(isset($field['name']))
+        <div class="px-2 mt-1">
           <h2 class="font-semibold">{{ __($field['name']) }}</h2>
         </div>
         @endif
