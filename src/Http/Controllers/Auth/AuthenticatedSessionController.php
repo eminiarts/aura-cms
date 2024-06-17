@@ -48,7 +48,6 @@ class AuthenticatedSessionController extends Controller
         $request->authenticate();
 
         $request->session()->regenerate();
-        ray(config('aura.auth.redirect'));
 
         return redirect()->intended(config('aura.auth.redirect'));
     }

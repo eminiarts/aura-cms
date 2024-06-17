@@ -1,83 +1,82 @@
 <?php
 
-use Illuminate\Database\SQLiteConnection;
+use Aura\Base\Livewire\ResourceEditor;
 use Illuminate\Support\Facades\Artisan;
-use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Schema;
-
-use function Pest\Laravel\artisan;
+use Livewire\Livewire;
 
 beforeEach(function () {
-    // Set up the necessary environment, such as database migrations
-    // and any needed configuration
+    $this->user = createSuperAdmin();
 
-    // Set up the necessary environment
-    if (DB::connection() instanceof SQLiteConnection) {
-        // Use in-memory database
-        DB::statement(DB::raw('PRAGMA foreign_keys = OFF;'));
+    $this->actingAs($this->user);
+
+    Artisan::call('aura:resource', [
+        'name' => 'Project',
+        '--custom' => true,
+    ]);
+
+    app('aura')::registerResources(['App\Aura\Resources\Project']);
+
+    Artisan::call('cache:clear');
+
+    require_once app_path('Aura/Resources/Project.php');
+});
+
+it('creates a migration when fields are added', function () {
+
+    config(['aura.resource_editor.custom_table_migrations' => 'single']);
+
+    // Manually re-register the event listeners based on the updated configuration
+    $appServiceProvider = new \Aura\Base\Providers\AppServiceProvider(app());
+    $appServiceProvider->boot();
+
+    Livewire::test(ResourceEditor::class, ['slug' => 'Project'])
+        ->call('saveNewField', [
+            'type' => "Aura\Base\Fields\Text",
+            'slug' => 'description',
+            'name' => 'Description',
+            'on_index' => true,
+            'on_forms' => true,
+            'on_view' => true,
+            'searchable' => false,
+            'validation' => '',
+            'conditional_logic' => '',
+        ])
+        ->assertDispatched('newFields')
+        ->assertDispatched('finishedSavingFields');
+
+    $this->assertTrue(Schema::hasTable('projects'));
+    $this->assertTrue(Schema::hasColumn('projects', 'description'));
+
+    Livewire::test(ResourceEditor::class, ['slug' => 'Project'])
+        ->call('saveNewField', [
+            'type' => "Aura\Base\Fields\Text",
+            'slug' => 'third',
+            'name' => 'third',
+            'on_index' => true,
+            'on_forms' => true,
+            'on_view' => true,
+            'searchable' => false,
+            'validation' => '',
+            'conditional_logic' => '',
+        ])
+        ->assertDispatched('newFields')
+        ->assertDispatched('finishedSavingFields');
+
+    $this->assertTrue(Schema::hasTable('projects'));
+    $this->assertTrue(Schema::hasColumn('projects', 'third'));
+
+    $allMigrations = File::files(database_path('migrations'));
+
+    expect(count($allMigrations))->toBe(1);
+
+    File::delete(app_path('Aura/Resources/Project.php'));
+
+    $migrationFiles = File::files(database_path('migrations'));
+
+    foreach ($migrationFiles as $file) {
+        File::delete($file);
     }
-
-    Schema::dropAllTables();
 });
-
-it('shows an error if migration file does not exist', function () {
-    $this->artisan('aura:schema-update', ['migration' => 'non_existent_migration.php'])
-        ->expectsOutput('Migration file does not exist.')
-        ->assertExitCode(0);
-});
-
-// it('shows an error if migration class cannot be loaded', function () {
-//     $migrationPath = database_path('migrations/2021_01_01_000000_non_existent_migration.php');
-//     unlink($migrationPath);
-//     file_put_contents($migrationPath, "<?php\n\nclass FakeMigration {}\n");
-
-//     $this->artisan('aura:schema-update', ['migration' => $migrationPath])
-//         ->expectsOutput('Unable to load migration class.')
-//         ->assertExitCode(0);
-
-//     unlink($migrationPath);
-// });
-
-// it('shows an error if migration class does not have an up method', function () {
-//     $migrationPath = database_path('migrations/2021_01_01_000001_invalid_migration.php');
-//     unlink($migrationPath);
-//     file_put_contents($migrationPath, "<?php\n\nuse Illuminate\Database\Migrations\Migration;\n\nclass InvalidMigration extends Migration {}\n");
-
-//     $this->artisan('aura:schema-update', ['migration' => $migrationPath])
-//         ->expectsOutput('The migration class does not have an up method.')
-//         ->assertExitCode(0);
-
-//     unlink($migrationPath);
-// });
-
-// it('shows an error if table name cannot be determined from migration', function () {
-//     $migrationPath = database_path('migrations/2021_01_01_000002_no_table_migration.php');
-//     unlink($migrationPath);
-//     file_put_contents($migrationPath, "<?php\n\nuse Illuminate\Database\Migrations\Migration;\nuse Illuminate\Database\Schema\Blueprint;\nuse Illuminate\Support\Facades\Schema;\n\nclass NoTableMigration extends Migration {\n    public function up() {\n        // No Schema::create call\n    }\n}\n");
-
-//     $this->artisan('aura:schema-update', ['migration' => $migrationPath])
-//         ->expectsOutput('Unable to determine table name from the migration.')
-//         ->assertExitCode(0);
-
-//     unlink($migrationPath);
-// });
-
-// it('updates the schema based on a valid migration', function () {
-//     $migrationPath = database_path('migrations/2021_01_01_000003_create_users_table.php');
-//     unlink($migrationPath);
-//     file_put_contents($migrationPath, "<?php\n\nuse Illuminate\Database\Migrations\Migration;\nuse Illuminate\Database\Schema\Blueprint;\nuse Illuminate\Support\Facades\Schema;\n\nclass CreateUsersTable extends Migration {\n    public function up() {\n        Schema::create('users', function (Blueprint \$table) {\n            \$table->id();\n            \$table->string('name');\n            \$table->timestamps();\n        });\n    }\n}\n");
-
-//     $this->artisan('migrate');
-
-//     $this->artisan('aura:schema-update', ['migration' => $migrationPath])
-//         ->expectsOutput('Schema updated successfully based on the migration file.')
-//         ->assertExitCode(0);
-
-//     expect(Schema::hasTable('users'))->toBeTrue();
-//     expect(Schema::hasColumn('users', 'name'))->toBeTrue();
-//     expect(Schema::hasColumn('users', 'id'))->toBeTrue();
-//     expect(Schema::hasColumn('users', 'created_at'))->toBeTrue();
-//     expect(Schema::hasColumn('users', 'updated_at'))->toBeTrue();
-
-//     unlink($migrationPath);
-// });

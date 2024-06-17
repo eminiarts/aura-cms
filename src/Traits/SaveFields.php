@@ -4,6 +4,7 @@ namespace Aura\Base\Traits;
 
 use Aura\Base\Events\SaveFields as SaveFieldsEvent;
 use Aura\Base\Facades\Aura;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 trait SaveFields
@@ -13,8 +14,6 @@ trait SaveFields
         if (preg_split('#\r?\n#', $str, 0) !== null) {
             return $str2;
         }
-
-        ray($str, $str2);
 
         // Get first Line
         $line = preg_split('#\r?\n#', $str, 0)[1];
@@ -61,34 +60,28 @@ trait SaveFields
 
         $a = new \ReflectionClass($this->model::class);
 
-        $file = file_get_contents($a->getFileName());
+        if (Storage::exists($a->getFileName())) {
+            $file = Storage::get($a->getFileName());
 
-        $replacement = Aura::varexport($this->setKeysToFields($fields), true);
+            $replacement = Aura::varexport($this->setKeysToFields($fields), true);
 
-        // dd($replacement);
+            preg_match('/function\s+getFields\s*\((?:[^()]+)*?\s*\)\s*(?<functionBody>{(?:[^{}]+|(?-1))*+})/ms', $file, $matches);
 
-        preg_match('/function\s+getFields\s*\((?:[^()]+)*?\s*\)\s*(?<functionBody>{(?:[^{}]+|(?-1))*+})/ms', $file, $matches);
+            $body = $matches['functionBody'];
 
-        $body = $matches['functionBody'];
+            preg_match('/return (\[.*\]);/ms', $body, $matches2);
 
-        preg_match('/return (\[.*\]);/ms', $body, $matches2);
+            $replaced = Str::replace(
+                $matches2[1],
+                $this->formatIndentation($matches2[1], $replacement),
+                $file
+            );
 
-        $replaced = Str::replace(
-            $matches2[1],
-            $this->formatIndentation($matches2[1], $replacement),
-            $file
-        );
-
-        // dd($matches[1], $replacement, $this->formatIndentation($matches[1], $replacement));
-
-        file_put_contents($a->getFileName(), $replaced);
-
-        // ray($this->mappedFields);
+            Storage::put($a->getFileName(), $replaced);
+        }
 
         // Trigger the event to change the database schema
         event(new SaveFieldsEvent($fieldsWithIds, $this->mappedFields, $this->model));
-
-        ray($fieldsWithIds, $this->mappedFields, $this->model);
 
         $this->dispatch('refreshComponent');
 

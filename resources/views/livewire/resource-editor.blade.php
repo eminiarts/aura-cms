@@ -109,8 +109,6 @@
         </div>
     </div>
 
-    {{-- @dd($this->mappedFields) --}}
-    {{-- @dump($this->mappedFields) --}}
 
     <div class="mt-8">
 
@@ -187,8 +185,6 @@
                         <div class="flex flex-wrap -mx-2 min-w-full draggable-container reorder-item focus:outline-none" id="field_{{ $tab['_id'] }}" x-show="activeTab === {{ $loop->index }}" wire:key="resource-tab-{{ $tab['_id'] }}">
 
                             @if ( optional($tab)['fields'] )
-
-                    @dump($this->mappedFields)
 
                             @foreach($tab['fields'] as $field)
 
@@ -273,8 +269,6 @@
                         })
                     }
                 }" wire:key="resource2-fields">
-
-                    {{-- @dump($this->mappedFields) --}}
 
                     @foreach($this->mappedFields as $field)
 

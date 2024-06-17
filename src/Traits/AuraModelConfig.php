@@ -384,7 +384,7 @@ trait AuraModelConfig
         if (static::$customMeta) {
             $metaRelation = (new \ReflectionClass($this))->getMethod('meta')->getDeclaringClass()->getName();
 
-            ray($metaRelation, self::class, $this->getMetaTable());
+            // ray($metaRelation, self::class, $this->getMetaTable());
 
             if ($metaRelation === self::class && $this->getMetaTable() === 'post_meta') {
 
@@ -576,6 +576,6 @@ trait AuraModelConfig
 
     protected function getMetaTable()
     {
-        return (new Meta)->getTable();
+        return (new Meta())->getTable();
     }
 }

@@ -223,10 +223,10 @@ class Table extends Component
     {
         $headers = $this->settings['columns'];
 
-        // ray('headers', Aura::getOption($this->settings['columns_global_key']), $this->settings['columns_global_key'], $headers);
-
         if ($this->settings['sort_columns'] && $this->settings['columns_global_key']) {
-            return Aura::getOption($this->settings['columns_global_key']) ?? $headers->toArray();
+            $option = Aura::getOption($this->settings['columns_global_key']);
+
+            return empty($option) ? $headers->toArray() : $option;
         }
 
         if ($this->settings['sort_columns'] && $this->settings['columns_user_key'] && $sort = auth()->user()->getOption($this->settings['columns_user_key'])) {

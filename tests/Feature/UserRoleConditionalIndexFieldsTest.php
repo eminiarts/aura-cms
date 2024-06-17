@@ -1,13 +1,11 @@
 <?php
 
+use Aura\Base\ConditionalLogic;
 use Aura\Base\Facades\Aura;
 use Aura\Base\Models\Post;
 use Aura\Base\Resource;
 use Aura\Base\Resources\Role;
 use Aura\Base\Resources\User;
-use Illuminate\Foundation\Testing\RefreshDatabase;
-
-uses(RefreshDatabase::class);
 
 beforeEach(fn () => $this->actingAs($this->user = User::factory()->create()));
 
@@ -118,14 +116,15 @@ test('user can view his headers', function () {
 });
 
 test('super admin can get all fields', function () {
-    $role = Role::create(['type' => 'Role', 'title' => 'Super Admin', 'slug' => 'super_admin', 'name' => 'Super Admin', 'description' => 'Super Admin has can perform everything.', 'super_admin' => true, 'permissions' => []]);
 
-    // Attach role to User
-    $this->user->resource->update(['roles' => [$role->id]]);
-    $this->user->refresh();
+    $user = createSuperAdmin();
+
+    $this->actingAs($user);
 
     // Create a new Post
     $post = UserRoleConditionalIndexFieldsModel::create(['title' => 'Test Post', 'slug' => 'test-post', 'fields' => ['text1' => 'Text 1', 'text2' => 'Text 2', 'text3' => 'Text 3']]);
+
+    $post->clearFieldsAttributeCache();
 
     // Assert Post is in DB
     expect($post->exists)->toBeTrue();
@@ -133,8 +132,11 @@ test('super admin can get all fields', function () {
     // Assert Post Meta are saved in DB
     expect($post->meta()->count())->toBe(3);
 
-    $post = $post->fresh();
+    ConditionalLogic::clearConditionsCache();
 
+    $post = (new UserRoleConditionalIndexFieldsModel)::find($post->id);
+
+    $post->clearFieldsAttributeCache();
     // Super Admin should be able to call $post->text1, it should return 'Text 1'
     expect($post->text1)->toBe('Text 1');
 
