@@ -12,15 +12,12 @@
     <div class="flex justify-between items-center mt-4">
         <form method="POST" action="{{ route('aura.verification.send') }}">
             @csrf
-
-            <div>
-                <x-aura::primary-button>
-                    {{ __('Resend Verification Email') }}
-                </x-aura::primary-button>
+            <div class="flex justify-end items-center">
+                <x-aura::button id="register-button" type="submit" block>{{ __('Resend Verification Email') }}</x-aura::button>
             </div>
         </form>
 
-        <form method="POST" action="{{ route('logout') }}">
+        <form method="POST" action="{{ route('aura.logout') }}">
             @csrf
 
             <button type="submit" class="text-sm text-gray-600 underline rounded-md hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">

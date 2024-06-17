@@ -15,6 +15,8 @@ return new class () extends Migration {
         Schema::dropIfExists('users');
         Schema::dropIfExists('password_resets');
         Schema::dropIfExists('sessions');
+        Schema::dropIfExists('jobs');
+        Schema::dropIfExists('job_batches');
         Schema::dropIfExists('failed_jobs');
         Schema::dropIfExists('personal_access_tokens');
         Schema::dropIfExists('teams');
@@ -24,7 +26,6 @@ return new class () extends Migration {
         Schema::dropIfExists('user_meta');
         Schema::dropIfExists('team_meta');
         Schema::dropIfExists('notifications');
-        Schema::dropIfExists('jobs');
         Schema::dropIfExists('posts');
         Schema::dropIfExists('post_meta');
     }
@@ -46,7 +47,6 @@ return new class () extends Migration {
             if(config('aura.teams')) {
                 $table->foreignId('current_team_id')->nullable();
             }
-            $table->string('profile_photo_path', 2048)->nullable();
             $table->timestamps();
             $table->softDeletes();
         });
@@ -59,27 +59,18 @@ return new class () extends Migration {
             $table->timestamp('created_at')->nullable();
         });
 
-        Schema::dropIfExists('failed_jobs');
-
-        Schema::create('failed_jobs', function (Blueprint $table) {
-            $table->id();
-            $table->string('uuid')->unique();
-            $table->text('connection');
-            $table->text('queue');
-            $table->longText('payload');
-            $table->longText('exception');
-            $table->timestamp('failed_at')->useCurrent();
-        });
+        
 
         Schema::dropIfExists('personal_access_tokens');
 
         Schema::create('personal_access_tokens', function (Blueprint $table) {
-            $table->bigIncrements('id');
+            $table->id();
             $table->morphs('tokenable');
             $table->string('name');
             $table->string('token', 64)->unique();
             $table->text('abilities')->nullable();
             $table->timestamp('last_used_at')->nullable();
+            $table->timestamp('expires_at')->nullable();
             $table->timestamps();
         });
 
@@ -96,6 +87,7 @@ return new class () extends Migration {
                 $table->id();
                 $table->foreignId('user_id')->index();
                 $table->string('name');
+                //$table->string('description')->nullable();
                 $table->timestamps();
                 $table->softDeletes();
             });
@@ -140,16 +132,15 @@ return new class () extends Migration {
             $table->foreignId('parent_id')->nullable()->index();
             $table->integer('order')->nullable();
             if(config('aura.teams')){
-                $table->foreignId('team_id')->index();
+                $table->foreignId('team_id')->nullable();
             }
             $table->timestamps();
             $table->softDeletes();
 
             if(config('aura.teams')) {
                 $table->index(['team_id', 'type']); // Add the new, optimized index
-                $table->index(['type', 'team_id', 'created_at']);
             } else {
-                $table->index(['slug', 'type', 'status', 'created_at', 'id']);
+                $table->index(['type', 'status', 'created_at', 'id']);
             }
         });
 
@@ -197,14 +188,44 @@ return new class () extends Migration {
             $table->timestamps();
         });
 
-        Schema::create('jobs', function (Blueprint $table) {
-            $table->bigIncrements('id');
-            $table->string('queue')->index();
-            $table->longText('payload');
-            $table->unsignedTinyInteger('attempts');
-            $table->unsignedInteger('reserved_at')->nullable();
-            $table->unsignedInteger('available_at');
-            $table->unsignedInteger('created_at');
+     
+        if (!Schema::hasTable('jobs')) {
+            Schema::create('jobs', function (Blueprint $table) {
+                $table->id();
+                $table->string('queue')->index();
+                $table->longText('payload');
+                $table->unsignedTinyInteger('attempts');
+                $table->unsignedInteger('reserved_at')->nullable();
+                $table->unsignedInteger('available_at');
+                $table->unsignedInteger('created_at');
+            });
+        }
+
+        if (!Schema::hasTable('job_batches')) {
+        Schema::create('job_batches', function (Blueprint $table) {
+            $table->string('id')->primary();
+            $table->string('name');
+            $table->integer('total_jobs');
+            $table->integer('pending_jobs');
+            $table->integer('failed_jobs');
+            $table->longText('failed_job_ids');
+            $table->mediumText('options')->nullable();
+            $table->integer('cancelled_at')->nullable();
+            $table->integer('created_at');
+            $table->integer('finished_at')->nullable();
         });
+    }
+
+    if (!Schema::hasTable('failed_jobs')) {
+        Schema::create('failed_jobs', function (Blueprint $table) {
+            $table->id();
+            $table->string('uuid')->unique();
+            $table->text('connection');
+            $table->text('queue');
+            $table->longText('payload');
+            $table->longText('exception');
+            $table->timestamp('failed_at')->useCurrent();
+        });
+    }
     }
 };

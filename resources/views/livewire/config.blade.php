@@ -1,9 +1,15 @@
 <div>
     @section('title', 'Global Config ')
+    <div class="mb-6">
+        <x-aura::breadcrumbs>
+            <x-aura::breadcrumbs.li :href="route('aura.dashboard')" title="" icon="dashboard" iconClass="text-gray-500 w-7 h-7 mr-0" />
+            <x-aura::breadcrumbs.li title="Global Config" />
+        </x-aura::breadcrumbs>
+    </div>
 
-    <div class="flex justify-between items-center">
+    <div class="flex justify-between items-center mb-6">
         <div>
-            <h1 class="text-3xl font-semibold">Configuration</h1>
+            <h1 class="mb-2 text-3xl font-semibold">Configuration</h1>
             <h3>These Settings are applied globally.</h3>
         </div>
 

@@ -18,7 +18,7 @@ class MakeResource extends GeneratorCommand
      *
      * @var string
      */
-    protected $signature = 'aura:resource {name}';
+    protected $signature = 'aura:resource {name} {--custom}';
 
     /**
      * The type of class being generated.
@@ -45,7 +45,10 @@ class MakeResource extends GeneratorCommand
      */
     protected function getStub()
     {
-        // current dir /Stubs/make-resource.stub
+        if ($this->option('custom')) {
+            return __DIR__.'/Stubs/make-custom-resource.stub';
+        }
+
         return __DIR__.'/Stubs/make-resource.stub';
     }
 
@@ -62,6 +65,7 @@ class MakeResource extends GeneratorCommand
 
         $stub = str_replace('PostName', ucfirst($this->argument('name')), $stub);
         $stub = str_replace('PostSlug', str($this->argument('name'))->slug(), $stub);
+        $stub = str_replace('post_slug', str($this->argument('name'))->snake()->plural(), $stub);
 
         return $stub;
     }

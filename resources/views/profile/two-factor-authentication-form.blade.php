@@ -71,7 +71,7 @@
                             inputmode="numeric" autofocus autocomplete="one-time-code" wire:model="code"
                             wire:keydown.enter="confirmTwoFactorAuthentication" />
 
-                        <x-aura::jet-input-error for="code" class="mt-2" />
+                        <x-aura::input-error for="code" class="mt-2" />
                     </div>
                 @endif
 
@@ -96,10 +96,13 @@
             @if (!$this->enabled)
 
                 <x-aura::confirms-password wire:then="enableTwoFactorAuthentication" :confirmingPassword="$confirmingPassword">
-                    <x-aura::button.primary type="button" wire:loading.attr="disabled">
+                    
+                <x-aura::button.primary type="button" wire:loading.attr="disabled">
                         {{ __('Enable') }}
                     </x-aura::button.primary>
+
                 </x-aura::confirms-password>
+
             @elseif ($showingConfirmation)
                 <x-aura::confirms-password wire:then="confirmTwoFactorAuthentication">
                     <x-aura::button.primary type="button" class="mr-3" wire:loading.attr="disabled">

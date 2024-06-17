@@ -2,16 +2,18 @@
 
 namespace Aura\Base\Traits;
 
+use Aura\Base\Events\SaveFields as SaveFieldsEvent;
 use Aura\Base\Facades\Aura;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 trait SaveFields
 {
     public function formatIndentation($str, $str2)
     {
-        // if (preg_split('#\r?\n#', $str, 0) !== null) {
-        //     return $str2;
-        // }
+        if (preg_split('#\r?\n#', $str, 0) !== null) {
+            return $str2;
+        }
 
         // Get first Line
         $line = preg_split('#\r?\n#', $str, 0)[1];
@@ -46,31 +48,42 @@ trait SaveFields
 
     public function saveFields($fields)
     {
+        $fieldsWithIds = $fields;
+
+        // Unset Mapping of Fields
+        foreach ($fields as &$field) {
+            unset($field['field']);
+            unset($field['field_type']);
+            unset($field['_id']);
+            unset($field['_parent_id']);
+        }
+
         $a = new \ReflectionClass($this->model::class);
 
-        $file = file_get_contents($a->getFileName());
+        if (Storage::exists($a->getFileName())) {
+            $file = Storage::get($a->getFileName());
 
-        $replacement = Aura::varexport($this->setKeysToFields($fields), true);
+            $replacement = Aura::varexport($this->setKeysToFields($fields), true);
 
-        // dd($replacement);
+            preg_match('/function\s+getFields\s*\((?:[^()]+)*?\s*\)\s*(?<functionBody>{(?:[^{}]+|(?-1))*+})/ms', $file, $matches);
 
-        preg_match('/function\s+getFields\s*\((?:[^()]+)*?\s*\)\s*(?<functionBody>{(?:[^{}]+|(?-1))*+})/ms', $file, $matches);
+            $body = $matches['functionBody'];
 
-        $body = $matches['functionBody'];
+            preg_match('/return (\[.*\]);/ms', $body, $matches2);
 
-        preg_match('/return (\[.*\]);/ms', $body, $matches2);
+            $replaced = Str::replace(
+                $matches2[1],
+                $this->formatIndentation($matches2[1], $replacement),
+                $file
+            );
 
-        $replaced = Str::replace(
-            $matches2[1],
-            $this->formatIndentation($matches2[1], $replacement),
-            $file
-        );
+            Storage::put($a->getFileName(), $replaced);
+        }
 
-        // dd($matches[1], $replacement, $this->formatIndentation($matches[1], $replacement));
+        // Trigger the event to change the database schema
+        event(new SaveFieldsEvent($fieldsWithIds, $this->mappedFields, $this->model));
 
-        file_put_contents($a->getFileName(), $replaced);
-
-        // sleep(3);
+        $this->dispatch('refreshComponent');
 
         $this->notify('Saved successfully.');
     }
@@ -157,8 +170,6 @@ trait SaveFields
 
         // Run "pint" on the migration file
         exec('./vendor/bin/pint '.$a->getFileName());
-
-        sleep(1);
 
         // $this->notify('Saved Props successfully.');
     }

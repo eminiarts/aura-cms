@@ -39,6 +39,8 @@ class AuthServiceProvider extends ServiceProvider
             return view('aura::auth.login');
         });
 
+        Fortify::ignoreRoutes();
+
         // Password reset link in email template...
         ResetPassword::createUrlUsing(static function ($notifiable, $token) {
             return route('aura.password.reset', $token);
@@ -58,6 +60,7 @@ class AuthServiceProvider extends ServiceProvider
 
         // Set Configuration of fortify.redirects.login to /admin/dashboard
         app('config')->set('fortify.redirects.login', '/admin/dashboard');
+        // app('config')->set('fortify.views', false);
     }
 
     /**

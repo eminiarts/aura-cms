@@ -4,7 +4,7 @@ namespace Aura\Base\Fields;
 
 class Json extends Field
 {
-    public $component = 'aura::fields.code';
+    public $component = 'aura::fields.json';
 
     public $view = 'aura::fields.view-value';
 
@@ -22,34 +22,34 @@ class Json extends Field
         return json_decode($value, true);
     }
 
-    public function getFields()
-    {
-        return array_merge(parent::getFields(), [
-            [
-                'label' => 'Code',
-                'name' => 'Code',
-                'type' => 'Aura\\Base\\Fields\\Tab',
-                'slug' => 'code',
-                'style' => [],
-            ],
-            [
-                'label' => 'Language',
-                'name' => 'Language',
-                'type' => 'Aura\\Base\\Fields\\Select',
-                'validation' => 'required',
-                'slug' => 'language',
-                'options' => [
-                    'html' => 'HTML',
-                    'css' => 'CSS',
-                    'javascript' => 'JavaScript',
-                    'php' => 'PHP',
-                    'json' => 'JSON',
-                    'yaml' => 'YAML',
-                    'markdown' => 'Markdown',
-                ],
-            ],
-        ]);
-    }
+    // public function getFields()
+    // {
+    //     return array_merge(parent::getFields(), [
+    //         [
+    //             'label' => 'JSON',
+    //             'name' => 'JSON',
+    //             'type' => 'Aura\\Base\\Fields\\Tab',
+    //             'slug' => 'json',
+    //             'style' => [],
+    //         ],
+    //         [
+    //             'label' => 'Language',
+    //             'name' => 'Language',
+    //             'type' => 'Aura\\Base\\Fields\\Select',
+    //             'validation' => 'required',
+    //             'slug' => 'language',
+    //             'options' => [
+    //                 'html' => 'HTML',
+    //                 'css' => 'CSS',
+    //                 'javascript' => 'JavaScript',
+    //                 'php' => 'PHP',
+    //                 'json' => 'JSON',
+    //                 'yaml' => 'YAML',
+    //                 'markdown' => 'Markdown',
+    //             ],
+    //         ],
+    //     ]);
+    // }
 
     public function set($value)
     {

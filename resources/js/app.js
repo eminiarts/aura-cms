@@ -6,32 +6,19 @@ import collapse from '@alpinejs/collapse';
 import focus from '@alpinejs/focus';
 import ui from '@alpinejs/ui';
 
+import modal from './modal.js';
+
 import { Sortable } from '@shopify/draggable';
 import tippy from 'tippy.js';
 
-import flatpickr from "flatpickr";
-
-import Pickr from '@simonwep/pickr';
-// import { German } from "flatpickr/dist/l10n/de.js"
-
-// import ace
-
-import Tagify from '@yaireo/tagify'
-
-window.Tagify = Tagify;
 window.Alpine = Alpine;
 window.Sortable = Sortable;
 window.tippy = tippy;
 
-window.Pickr = Pickr;
-
-// window.german = German;
-window.flatpickr = flatpickr;
-// flatpickr.localize(German); // default locale is now German
-
 Alpine.plugin(collapse);
 Alpine.plugin(focus);
 Alpine.plugin(ui);
+Alpine.plugin(modal);
 
 Alpine.data('aura', () => ({
   loading: false,

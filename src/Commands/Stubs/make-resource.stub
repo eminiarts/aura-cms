@@ -22,19 +22,6 @@ class PostName extends Resource
 
     public static function getFields()
     {
-        return [
-            [
-                'name' => 'Title',
-                'type' => 'Aura\\Base\\Fields\\Text',
-                'validation' => 'required',
-                'on_index' => true,
-                'on_view' => true,
-                'on_forms' => true,
-                'slug' => 'title',
-                'style' => [
-                    'width' => '100',
-                ],
-            ],
-        ];
+        return [];
     }
 }

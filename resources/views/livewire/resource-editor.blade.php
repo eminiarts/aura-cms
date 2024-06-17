@@ -109,8 +109,6 @@
         </div>
     </div>
 
-    {{-- @dd($this->mappedFields) --}}
-    {{-- @dump($this->mappedFields) --}}
 
     <div class="mt-8">
 
@@ -187,7 +185,9 @@
                         <div class="flex flex-wrap -mx-2 min-w-full draggable-container reorder-item focus:outline-none" id="field_{{ $tab['_id'] }}" x-show="activeTab === {{ $loop->index }}" wire:key="resource-tab-{{ $tab['_id'] }}">
 
                             @if ( optional($tab)['fields'] )
+
                             @foreach($tab['fields'] as $field)
+
 
                                 <div class="resource-field-{{ optional($field)['slug'] }}-wrapper px-2 reorder-item draggable-item" id="field_{{ $field['_id'] }}" wire:key="pt-field-{{ $field['_id'] }}">
                                     <style >
@@ -269,8 +269,6 @@
                         })
                     }
                 }" wire:key="resource2-fields">
-
-                    {{-- @dd($this->mappedFields) --}}
 
                     @foreach($this->mappedFields as $field)
 
@@ -383,7 +381,7 @@
     <livewire:aura::edit-resource-field />
 
     @once
-    @push('scripts')
+    @assets
 
         <style >
             .draggable--original *{
@@ -408,7 +406,7 @@
             }
         </style>
 
-    @endpush
+    @endassets
     @endonce
 
 </div>

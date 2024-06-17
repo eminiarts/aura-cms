@@ -2,16 +2,18 @@
 
 namespace Aura\Base;
 
-use Aura\Base\Commands\AuraCommand;
 use Aura\Base\Commands\CreateAuraPlugin;
 use Aura\Base\Commands\CreateResourceMigration;
 use Aura\Base\Commands\CreateResourcePermissions;
 use Aura\Base\Commands\DatabaseToResources;
+use Aura\Base\Commands\ExtendUserModel;
+use Aura\Base\Commands\InstallConfigCommand;
 use Aura\Base\Commands\MakeField;
 use Aura\Base\Commands\MakeResource;
 use Aura\Base\Commands\MakeUser;
 use Aura\Base\Commands\PublishCommand;
 use Aura\Base\Commands\TransformTableToResource;
+use Aura\Base\Commands\UpdateSchemaFromMigration;
 use Aura\Base\Facades\Aura;
 use Aura\Base\Livewire\Attachment\Index as AttachmentIndex;
 use Aura\Base\Livewire\BookmarkPage;
@@ -25,6 +27,7 @@ use Aura\Base\Livewire\GlobalSearch;
 use Aura\Base\Livewire\InviteUser;
 use Aura\Base\Livewire\MediaManager;
 use Aura\Base\Livewire\MediaUploader;
+use Aura\Base\Livewire\Modals;
 use Aura\Base\Livewire\Navigation;
 use Aura\Base\Livewire\Notifications;
 use Aura\Base\Livewire\PluginsPage;
@@ -36,7 +39,6 @@ use Aura\Base\Livewire\Resource\Index;
 use Aura\Base\Livewire\Resource\View;
 use Aura\Base\Livewire\ResourceEditor;
 use Aura\Base\Livewire\Table\Table;
-use Aura\Base\Livewire\TeamSettings;
 use Aura\Base\Livewire\TwoFactorAuthenticationForm;
 use Aura\Base\Navigation\Navigation as AuraNavigation;
 use Aura\Base\Policies\ResourcePolicy;
@@ -112,12 +114,13 @@ class AuraServiceProvider extends PackageServiceProvider
         Livewire::component('aura::attachment-index', AttachmentIndex::class);
         Livewire::component('aura::user-two-factor-authentication-form', TwoFactorAuthenticationForm::class);
         Livewire::component('aura::create-resource', CreateResource::class);
-        Livewire::component('aura::edit-resource', ResourceEditor::class);
-        Livewire::component('aura::team-settings', TeamSettings::class);
+        Livewire::component('aura::resource-editor', ResourceEditor::class);
+        Livewire::component('aura::settings', app(config('aura.components.settings')));
         Livewire::component('aura::invite-user', InviteUser::class);
         Livewire::component('aura::config', app(config('aura.components.config')));
 
         Livewire::component('aura::profile', app(config('aura.components.profile')));
+        Livewire::component('aura::modals', Modals::class);
 
         // Flows
         Livewire::component('aura::create-flow', CreateFlow::class);
@@ -153,7 +156,7 @@ class AuraServiceProvider extends PackageServiceProvider
             ->hasMigrations(['create_aura_tables', 'create_flows_table'])
             ->runsMigrations()
             ->hasCommands([
-                AuraCommand::class,
+                InstallConfigCommand::class,
                 MakeResource::class,
                 MakeUser::class,
                 CreateAuraPlugin::class,
@@ -163,6 +166,8 @@ class AuraServiceProvider extends PackageServiceProvider
                 DatabaseToResources::class,
                 TransformTableToResource::class,
                 CreateResourcePermissions::class,
+                ExtendUserModel::class,
+                UpdateSchemaFromMigration::class,
             ])
             ->hasInstallCommand(function (InstallCommand $command) {
                 $command
@@ -170,10 +175,18 @@ class AuraServiceProvider extends PackageServiceProvider
                         $command->info('Hello, thank you for installing Aura!');
                     })
                     ->publishConfigFile()
+                    ->publishAssets()
                     ->publishMigrations()
                     ->askToRunMigrations()
                     ->copyAndRegisterServiceProviderInApp()
-                    ->askToStarRepoOnGitHub('aura-cms/base');
+                    ->askToStarRepoOnGitHub('aura-cms/base')
+                    ->endWith(function (InstallCommand $command) {
+                        $command->call('aura:extend-user-model');
+
+                        if ($command->confirm('Do you want to create a user?', true) || User::count() === 0) {
+                            $command->call('aura:user');
+                        }
+                    });
             });
 
     }
@@ -183,6 +196,7 @@ class AuraServiceProvider extends PackageServiceProvider
         if ($this->app->runningInConsole()) {
             $this->publishes([
                 $this->package->basePath('/../resources/dist') => public_path("vendor/{$this->package->shortName()}"),
+                $this->package->basePath('/../resources/libs') => public_path("vendor/{$this->package->shortName()}/libs"),
                 $this->package->basePath('/../resources/public') => public_path("vendor/{$this->package->shortName()}/public"),
             ], "{$this->package->shortName()}-assets");
         }
@@ -207,7 +221,7 @@ class AuraServiceProvider extends PackageServiceProvider
         });
 
         Blade::if('superadmin', function () {
-            return auth()->user()->resource->isSuperAdmin();
+            return auth()->user()->isSuperAdmin();
         });
 
         Blade::if('local', function () {

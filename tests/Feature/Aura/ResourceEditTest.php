@@ -61,7 +61,7 @@ test('vendor resource can not be edited', function () {
 });
 
 test('edit resource should be allowed', function () {
-    $config = config('aura.features.resource_editor');
+    $config = config('aura.resource_editor.enabled');
 
     $this->assertTrue($config);
 });
@@ -69,9 +69,9 @@ test('edit resource should be allowed', function () {
 test('edit resource can be turned off in config', function () {
     createSuperAdmin();
 
-    config(['aura.features.resource_editor' => false]);
+    config(['aura.resource_editor.enabled' => false]);
 
-    $config = config('aura.features.resource_editor');
+    $config = config('aura.resource_editor.enabled');
 
     $this->assertFalse($config);
 
@@ -86,9 +86,9 @@ test('edit resource should not be available in production', function () {
     config(['app.env' => 'production']);
 
     // Set aura.resource_editor to true
-    config(['aura.features.resource_editor' => false]);
+    config(['aura.resource_editor.enabled' => false]);
 
-    $config = config('aura.features.resource_editor');
+    $config = config('aura.resource_editor.enabled');
 
     $this->assertFalse($config);
 });

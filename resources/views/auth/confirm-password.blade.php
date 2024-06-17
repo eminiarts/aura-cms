@@ -15,13 +15,12 @@
                             name="password"
                             required autocomplete="current-password" />
 
-            <x-aura::input-error :messages="$errors->get('password')" class="mt-2" />
+            <x-aura::input-error :for="$errors->get('password')" class="mt-2" />
         </div>
 
-        <div class="flex justify-end mt-4">
-            <x-aura::primary-button>
-                {{ __('Confirm') }}
-            </x-aura::primary-button>
+        <div class="flex justify-end items-center mt-6">
+            <x-aura::button type="submit" block>{{ __('Confirm') }}</x-aura::button>
         </div>
+
     </form>
 </x-aura::layout.guest>

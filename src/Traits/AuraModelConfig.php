@@ -3,6 +3,7 @@
 namespace Aura\Base\Traits;
 
 use Aura\Base\ConditionalLogic;
+use Aura\Base\Exceptions\InvalidMetaTableException;
 use Aura\Base\Models\Meta;
 use Aura\Base\Resources\Team;
 use Illuminate\Support\Str;
@@ -16,6 +17,8 @@ trait AuraModelConfig
     public static $contextMenu = true;
 
     public static $createEnabled = true;
+
+    public static $customMeta = false;
 
     public static $customTable = false;
 
@@ -95,31 +98,10 @@ trait AuraModelConfig
         $this->mergeFillable($this->inputFieldsSlugs());
     }
 
-    /**
-     * @param  string  $key
-     * @return mixed
-     */
-    // public function __get($key)
-    // {
-    //     // // Title is a special case, for now
-    //     if ($key == 'title') {
-    //         return $this->getAttributeValue($key);
-    //     }
-
-    //     // Does not work atm
-    //     // if ($key == 'roles') {
-    //     //     return;
-    //     //     return $this->getRolesField();
-    //     // }
-
-    //     $value = parent::__get($key);
-
-    //     if ($value) {
-    //         return $value;
-    //     }
-
-    //     return $this->displayFieldValue($key, $value);
-    // }
+    public function allowedToPerformActions()
+    {
+        return false;
+    }
 
     public function createUrl()
     {
@@ -174,11 +156,6 @@ trait AuraModelConfig
         if ($this->getType() && $this->id) {
             return route('aura.resource.edit', ['slug' => $this->getType(), 'id' => $this->id]);
         }
-    }
-
-    public function allowedToPerformActions()
-    {
-        return false;
     }
 
     public function editView()
@@ -404,6 +381,17 @@ trait AuraModelConfig
             return;
         }
 
+        if (static::$customMeta) {
+            $metaRelation = (new \ReflectionClass($this))->getMethod('meta')->getDeclaringClass()->getName();
+
+            // ray($metaRelation, self::class, $this->getMetaTable());
+
+            if ($metaRelation === self::class && $this->getMetaTable() === 'post_meta') {
+
+                throw new InvalidMetaTableException();
+            }
+        }
+
         return $this->hasMany(Meta::class, 'post_id');
         //->whereIn('key', $this->inputFieldsSlugs())
     }
@@ -493,9 +481,9 @@ trait AuraModelConfig
     /**
      * Scope a query to only include models where meta contains a specific value.
      *
-     * @param \Illuminate\Database\Eloquent\Builder $query
-     * @param string $key
-     * @param mixed $value
+     * @param  \Illuminate\Database\Eloquent\Builder  $query
+     * @param  string  $key
+     * @param  mixed  $value
      * @return \Illuminate\Database\Eloquent\Builder
      */
     public function scopeWhereMetaContains($query, $key, $value)
@@ -522,6 +510,37 @@ trait AuraModelConfig
             return __($this->getType())." (#{$this->id})";
         }
     }
+
+    public static function usesCustomMeta(): bool
+    {
+        return static::$customMeta;
+    }
+
+    /**
+     * @param  string  $key
+     * @return mixed
+     */
+    // public function __get($key)
+    // {
+    //     // // Title is a special case, for now
+    //     if ($key == 'title') {
+    //         return $this->getAttributeValue($key);
+    //     }
+
+    //     // Does not work atm
+    //     // if ($key == 'roles') {
+    //     //     return;
+    //     //     return $this->getRolesField();
+    //     // }
+
+    //     $value = parent::__get($key);
+
+    //     if ($value) {
+    //         return $value;
+    //     }
+
+    //     return $this->displayFieldValue($key, $value);
+    // }
 
     public static function usesCustomTable(): bool
     {
@@ -553,5 +572,10 @@ trait AuraModelConfig
     public function viewView()
     {
         return 'aura::livewire.resource.view';
+    }
+
+    protected function getMetaTable()
+    {
+        return (new Meta())->getTable();
     }
 }

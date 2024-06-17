@@ -2,7 +2,7 @@
 
 namespace Aura\Base\Http\Requests;
 
-use Aura\Base\Models\User;
+use Aura\Base\Resources\User;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 

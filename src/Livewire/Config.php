@@ -101,7 +101,7 @@ class Config extends Component
             [
                 'name' => 'App Logo',
                 'type' => 'Aura\\Base\\Fields\\Image',
-                'slug' => 'app-logo',
+                'slug' => 'logo',
                 'style' => [
                     'width' => '50',
                 ],
@@ -109,7 +109,7 @@ class Config extends Component
             [
                 'name' => 'App Logo (Darkmode)',
                 'type' => 'Aura\\Base\\Fields\\Image',
-                'slug' => 'app-logo-darkmode',
+                'slug' => 'logo-darkmode',
                 'style' => [
                     'width' => '50',
                 ],
@@ -404,7 +404,7 @@ class Config extends Component
     {
         abort_unless(config('aura.features.global_config'), 404);
 
-        abort_unless(auth()->user()->resource->isSuperAdmin(), 403);
+        abort_unless(auth()->user()->isSuperAdmin(), 403);
 
         $this->model = Aura::getGlobalOptions();
 

@@ -22,14 +22,6 @@ $values = $field['field']->values($field['model']);
 
 @endphp
 
-{{-- @dump($field['slug']) --}}
-{{-- @dump($this->form['fields'][$field['slug']]) --}}
-
-@once
-@push('scripts')
-@endpush
-@endonce
-
 <x-aura::fields.wrapper :field="$field">
 
 <div
@@ -64,7 +56,7 @@ $values = $field['field']->values($field['model']);
 
         <button
             x-listbox:button
-            class="flex items-center justify-between gap-2 w-52 bg-white pl-5 pr-3 py-2.5 rounded-md shadow relative"
+            class="flex relative gap-2 justify-between items-center py-2.5 pr-3 pl-5 w-52 bg-white rounded-md shadow"
         >
             <span x-text="value ? findItem(value) : 'Select User'" class="truncate"></span>
 
@@ -77,7 +69,7 @@ $values = $field['field']->values($field['model']);
             x-listbox:options
             x-transition.origin.top.right
             x-cloak
-            class="absolute left-0 z-10 w-auto mt-2 origin-top-right bg-white border border-gray-400/30 divide-y divide-gray-100 rounded-md shadow-md outline-none"
+            class="absolute left-0 z-10 mt-2 w-auto bg-white rounded-md border divide-y divide-gray-100 shadow-md origin-top-right outline-none border-gray-400/30"
         >
           <li>
             <div>
@@ -85,7 +77,7 @@ $values = $field['field']->values($field['model']);
               <input
                 x-model="search"
                 autofocus
-                class="w-full px-4 py-2.5 text-gray-900 placeholder-gray-500 border-none focus:outline-none"
+                class="px-4 py-2.5 w-full placeholder-gray-500 text-gray-900 border-none focus:outline-none"
                 placeholder="Search..."
 
             </div>
@@ -99,7 +91,7 @@ $values = $field['field']->values($field['model']);
                         'text-gray-600': ! $listboxOption.isActive,
                         'opacity-50 cursor-not-allowed': $listboxOption.isDisabled,
                     }"
-                    class="flex items-center justify-between w-full gap-2 px-4 py-2 text-sm transition-colors cursor-default"
+                    class="flex gap-2 justify-between items-center px-4 py-2 w-full text-sm transition-colors cursor-default"
                 >
                     <div class="flex items-center space-x-2">
                     <img :src="item.avatar" class="w-8 rounded-full">

@@ -3,7 +3,6 @@
 use Aura\Base\Facades\Aura;
 use Aura\Base\Livewire\Config;
 use Aura\Base\Livewire\InviteUser;
-use Aura\Base\Providers\RouteServiceProvider;
 use Aura\Base\Resources\Role;
 use Aura\Base\Resources\Team;
 use Aura\Base\Resources\TeamInvitation;
@@ -19,13 +18,18 @@ uses(RefreshDatabase::class);
 
 // Before each test, create a Superadmin and login
 beforeEach(function () {
+
+    $this->withoutExceptionHandling();
+
     $this->actingAs($this->user = createSuperAdmin());
 
-    // Enable Team Registration
-    // Aura::setOption('team_registration', true);
+    // config('aura.teams')
+    config(['aura.teams' => true]);
 });
 
 test('user can be invited', function () {
+
+    $this->withoutExceptionHandling();
     // Test InviteUser Livewire Component
     $component = Livewire::test(InviteUser::class)
         ->call('save')
@@ -49,6 +53,8 @@ test('user can be invited', function () {
 });
 
 test('user gets correct role', function () {
+
+    expect(config('aura.teams'))->toBeTrue();
 
     // Create a new Role
     $role = Role::create([
@@ -111,7 +117,7 @@ test('user gets correct role', function () {
     $this->assertAuthenticated();
 
     // Assert is on dashboard
-    $response->assertRedirect(RouteServiceProvider::HOME);
+    $response->assertRedirect(config('aura.auth.redirect'));
 
     // Check if the Team Invitation is deleted
     $this->assertDatabaseMissing('team_invitations', [
@@ -142,6 +148,9 @@ test('Team Invitation can be created', function () {
 
 // create a test to see if /register route is available
 test('register route is available', function () {
+
+    $this->withoutExceptionHandling();
+
     // log the user out
     $this->app['auth']->logout();
 
@@ -173,7 +182,7 @@ test('user_invitations can be enabled', function () {
         ->call('save')
         ->assertHasNoErrors();
 
-    expect(Aura::option('user_invitations'))->toBeTrue();
+    expect(config('aura.auth.user_invitations'))->toBeTrue();
 
     expect(app('aura')::option('user_invitations'))->toBeTrue();
 });
@@ -184,7 +193,7 @@ test('user_invitations can be disabled', function () {
         ->call('save')
         ->assertHasNoErrors();
 
-    expect(Aura::option('user_invitations'))->toBeTrue();
+    expect(config('aura.auth.user_invitations'))->toBeTrue();
 
     expect(app('aura')::option('user_invitations'))->toBeTrue();
 });
@@ -235,7 +244,7 @@ test('user can register using an invitation', function () {
         'password_confirmation' => 'password',
     ]);
 
-    $response->assertRedirect(RouteServiceProvider::HOME);
+    $response->assertRedirect(config('aura.auth.redirect'));
 
     $user = User::where('email', $invitation->email)->first();
 
@@ -245,7 +254,7 @@ test('user can register using an invitation', function () {
 
     $this->assertEquals($team->id, $user->current_team_id);
 
-    $this->assertEquals([$invitation->role], $user->fields['roles']);
+    $this->assertEquals($user->fields['roles'], $invitation->role);
 
     $this->assertDatabaseMissing('team_invitations', ['id' => $invitation->id]);
 });
@@ -280,7 +289,7 @@ test('email and role are required in the invite user component', function () {
     $user->teams()->attach($team->id);
 
     livewire(InviteUser::class, ['team' => $team])
-        ->set('resource', ['fields' => [
+        ->set('form', ['fields' => [
             'email' => 'invited@test.com',
             'role' => Role::first()->id,
         ]])

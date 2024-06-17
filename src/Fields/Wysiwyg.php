@@ -8,5 +8,7 @@ class Wysiwyg extends Field
 
     public $optionGroup = 'JS Fields';
 
+    public $tableColumnType = 'text';
+
     public $view = 'aura::fields.view-value';
 }

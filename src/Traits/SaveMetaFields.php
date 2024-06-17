@@ -10,11 +10,18 @@ trait SaveMetaFields
     protected static function bootSaveMetaFields()
     {
         static::saving(function ($post) {
+
             if (isset($post->attributes['fields'])) {
 
-                // ray('saving', $post->attributes['fields']);
+                // Dont save Meta Fields if it is uses customTable
+                if ($post->usesCustomTable() && ! $post->usesCustomMeta()) {
+                    unset($post->attributes['fields']);
+
+                    return;
+                }
 
                 foreach ($post->attributes['fields'] as $key => $value) {
+
                     $class = $post->fieldClassBySlug($key);
 
                     // Do not continue if the Field is not found
@@ -70,8 +77,13 @@ trait SaveMetaFields
                         continue;
                     }
 
+                    if (in_array($key, $post->getFillable())) {
+                        // Save the meta field to the model, so it can be saved in the Meta table
+                        $post->saveMetaField([$key => $value]);
+                    }
+
                     // Save the meta field to the model, so it can be saved in the Meta table
-                    $post->saveMetaField([$key => $value]);
+                    // $post->saveMetaField([$key => $value]);
                 }
 
                 unset($post->attributes['fields']);

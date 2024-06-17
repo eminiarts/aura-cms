@@ -5,6 +5,7 @@ use Aura\Base\Resources\Role;
 use Aura\Base\Resources\Team;
 use Aura\Base\Resources\User;
 use Aura\Base\Tests\TestCase;
+use Illuminate\Foundation\Testing\DatabaseMigrations;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(TestCase::class)->in(__DIR__);
@@ -15,6 +16,11 @@ uses()->group('table')->in('Feature/Table');
 uses()->group('resource')->in('Feature/Resource');
 
 uses(RefreshDatabase::class)->in('Feature');
+
+// uses(\Illuminate\Foundation\Testing\RefreshDatabase::class);
+uses(DatabaseMigrations::class)->in('DatabaseMigrations');
+
+// uses(\Illuminate\Foundation\Testing\LazilyRefreshDatabase::class)->in('Feature');
 
 /*
 |--------------------------------------------------------------------------
@@ -60,6 +66,30 @@ function createSuperAdmin()
 
     // Create Team
     $team = Team::factory()->create();
+
+    $user->refresh();
+
+    return $user;
+}
+
+function createSuperAdminWithoutTeam()
+{
+    $user = User::factory()->create();
+
+    auth()->login($user);
+
+    $role = Role::create([
+        'type' => 'Role',
+        'title' => 'Super Admin',
+        'slug' => 'super_admin',
+        'name' => 'Super Admin',
+        'description' => 'Super Admin can perform everything.',
+        'super_admin' => true,
+        'permissions' => [],
+        'user_id' => $user->id,
+    ]);
+
+    $user->update(['roles' => [$role->id]]);
 
     $user->refresh();
 
@@ -145,7 +175,7 @@ function createAdmin()
         'scope-TeamInvitation' => false,
     ]]);
 
-    $user->update(['fields' => ['roles' => [$role->id]]]);
+    $user->update(['roles' => [$role->id]]);
     $user->refresh();
 
     return $user;

@@ -21,11 +21,11 @@
         $darkLogo = $logo;
     }
 
-    if (!$logo && $appLogo = optional($appOptions)['app-logo']) {
+    if (!$logo && $appLogo = optional($appOptions)['logo']) {
         $logo = optional(Attachment::find($appLogo)->first())->path();
     }
 
-    if (!$darkLogo && $appLogoDark = optional($appOptions)['app-logo-darkmode']) {
+    if (!$darkLogo && $appLogoDark = optional($appOptions)['logo-darkmode']) {
         $darkLogo = optional(Attachment::find($appLogoDark)->first())->path();
     }
 

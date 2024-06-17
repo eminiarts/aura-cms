@@ -12,7 +12,7 @@
 ])
 
 @php
-    $settings = app('aura')::getOption('team-settings');
+    $settings = app('aura')::getOption('settings');
     $sidebarType = $settings['sidebar-type'] ?? 'primary';
     // Check if the route exists before using it to prevent RouteNotFoundException
     $isActive = false;
@@ -88,7 +88,7 @@
                     href="{{ $href }}" wire:navigate
                 @endif
 
-                tabindex="{{ $route ? '5' : '' }}"
+                tabindex="{{ $route ? '0' : '' }}"
 
                 @class([
                     $getBaseClasses(),
@@ -103,7 +103,7 @@
                 @endif
         >
             <div class="flex justify-between w-full">
-                <div class="flex justify-between items-center ml-0 font-semibold truncate {{ $compact ? 'space-x-2 text-sm' : 'space-x-3 text-base' }}">{{ $slot }}</div>
+                <div class="flex justify-between items-center ml-0 font-medium truncate {{ $compact ? 'space-x-2 text-sm' : 'space-x-3 text-base' }}">{{ $slot }}</div>
 
                 @php
                     $badgeColorClasses = [

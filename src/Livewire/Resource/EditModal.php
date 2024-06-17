@@ -15,7 +15,7 @@ class EditModal extends ModalComponent
         return '7xl';
     }
 
-    public function mount($post, $type)
+    public function mount($resource, $type)
     {
     }
 

@@ -11,7 +11,6 @@ class ResourceEditorFake extends ResourceEditor
 
     public function saveFields($fields)
     {
-        //dump('saveFields', $fields);
         $this->toSave = $fields;
     }
 }
@@ -88,17 +87,23 @@ it('current resource fields', function () {
 
 it('can add fields', function () {
     $component = Livewire::test(ResourceEditorFake::class, ['slug' => 'Model'])
-        ->call('addField', ...[2, 'new_field', 'Aura\\Base\\Fields\\Text', '']);
+        ->call('saveNewField', ['type' => "Aura\Base\Fields\Text",
+            'slug' => 'description',
+            'name' => 'Description', ]);
 
     expect($component->fieldsArray)->toBeArray();
     expect($component->fieldsArray)->toHaveCount(4);
 
-    $component->call('addField', ...[4, 'new_field_2', 'Aura\\Base\\Fields\\Text', '']);
+    $component->call('saveNewField', ['type' => "Aura\Base\Fields\Text",
+        'slug' => 'description2',
+        'name' => 'Description2', ]);
 
     expect($component->fieldsArray)->toBeArray();
     expect($component->fieldsArray)->toHaveCount(5);
 
-    $component->call('addField', ...[5, 'new_field_2', 'Aura\\Base\\Fields\\Text', '']);
+    $component->call('saveNewField', ['type' => "Aura\Base\Fields\Text",
+        'slug' => 'description3',
+        'name' => 'Description3', ]);
 
     expect($component->fieldsArray)->toBeArray();
     expect($component->fieldsArray)->toHaveCount(6);
@@ -107,12 +112,12 @@ it('can add fields', function () {
 it('can delete fields', function () {
     $component = Livewire::test(ResourceEditorFake::class, ['slug' => 'Model']);
 
-    $component->call('deleteField', ['slug' => 'panel-1']);
+    $component->call('deleteField', ['slug' => 'panel-1', 'type' => "Aura\Base\Fields\Text", 'name' => 'Description3']);
 
     expect($component->fieldsArray)->toBeArray();
     expect($component->fieldsArray)->toHaveCount(2);
 
-    $component->call('deleteField', ['slug' => 'total']);
+    $component->call('deleteField', ['slug' => 'total', 'type' => "Aura\Base\Fields\Text", 'name' => 'Description3']);
 
     expect($component->fieldsArray)->toHaveCount(1);
 });

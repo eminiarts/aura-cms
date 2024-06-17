@@ -12,6 +12,15 @@ class Code extends Field
 
     public function get($field, $value)
     {
+        // If value is a JSON encoded string, decode it
+        $decodedValue = json_decode($value, true);
+
+        // Check if decoding was successful and re-encode for formatting
+        if (json_last_error() === JSON_ERROR_NONE) {
+            return json_encode($decodedValue, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+        }
+
+        return $value;
         if (is_array($value) || $value === null) {
             return $value;
         }
@@ -45,11 +54,26 @@ class Code extends Field
                     'markdown' => 'Markdown',
                 ],
             ],
+            [
+                'label' => 'Line Numbers',
+                'name' => 'line_numbers',
+                'type' => 'Aura\\Base\\Fields\\Boolean',
+                'slug' => 'line_numbers',
+            ],
+            [
+                'label' => 'Minimum Height',
+                'name' => 'min_height',
+                'type' => 'Aura\\Base\\Fields\\Number',
+                'slug' => 'min_height',
+                'validation' => 'nullable|numeric|min:100', // Assuming a reasonable minimum height of 100px
+            ],
         ]);
     }
 
     public function set($value)
     {
+        return $value;
+
         return json_encode($value);
     }
 }

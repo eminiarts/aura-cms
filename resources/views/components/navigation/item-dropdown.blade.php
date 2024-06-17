@@ -7,7 +7,7 @@
 ])
 
 @php
-    $settings = app('aura')::getOption('team-settings');
+    $settings = app('aura')::getOption('settings');
 @endphp
 
 @php

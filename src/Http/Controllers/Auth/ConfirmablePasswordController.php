@@ -3,7 +3,6 @@
 namespace Aura\Base\Http\Controllers\Auth;
 
 use Aura\Base\Http\Controllers\Controller;
-use Aura\Base\Providers\RouteServiceProvider;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\ValidationException;
@@ -38,6 +37,6 @@ class ConfirmablePasswordController extends Controller
 
         $request->session()->put('auth.password_confirmed_at', time());
 
-        return redirect()->intended(RouteServiceProvider::HOME);
+        return redirect()->intended(config('aura.auth.redirect'));
     }
 }

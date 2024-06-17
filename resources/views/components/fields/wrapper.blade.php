@@ -18,7 +18,7 @@
     $slug = Str::slug(optional($field)['slug']);
 @endphp
 
-<div id="resource-field-{{ $slug }}-wrapper" class="{{ $wrapperClass }}">
+<div id="resource-field-{{ $slug }}-wrapper" {{ $attributes->merge(['class' => $wrapperClass]) }}>
     <style>
         #resource-field-{{ $slug }}-wrapper {
             width: {{ optional(optional($field)['style'])['width'] ?? '100' }}%;

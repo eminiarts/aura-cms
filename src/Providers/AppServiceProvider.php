@@ -2,10 +2,13 @@
 
 namespace Aura\Base\Providers;
 
-use Livewire\Livewire;
-use Aura\Base\Widgets\ValueWidget;
-use Aura\Base\Navigation\Navigation;
+use Aura\Base\Events\SaveFields;
 use Aura\Base\Facades\DynamicFunctions;
+use Aura\Base\Listeners\CreateDatabaseMigration;
+use Aura\Base\Listeners\ModifyDatabaseMigration;
+use Aura\Base\Listeners\SyncDatabase;
+use Aura\Base\Navigation\Navigation;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -25,34 +28,34 @@ class AppServiceProvider extends ServiceProvider
                 'onclick' => "Livewire.dispatch('openModal', { component : 'aura::create-resource' })",
                 'route' => false,
                 'conditional_logic' => DynamicFunctions::add(function () {
-                    return auth()->user()->resource->isSuperAdmin();
+                    return auth()->user()->isSuperAdmin();
                 }),
             ] : null,
             config('aura.features.theme_options') ? [
-                'icon' => "<x-aura::icon icon='brush' />",
-                'name' => 'Theme Options',
-                'slug' => 'theme_options',
+                'icon' => "<x-aura::icon icon='config' />",
+                'name' => 'Settings',
+                'slug' => 'settings',
                 'group' => 'settings',
                 'sort' => 300,
-                'route' => 'aura.team.settings',
+                'route' => 'aura.settings',
                 'conditional_logic' => DynamicFunctions::add(function () {
-                    return auth()->user()->resource->isSuperAdmin();
-                }),
-            ] : null,
-            config('aura.features.global_config') ? [
-                'icon' => "<x-aura::icon icon='adjustments' />",
-                'name' => 'Global Config',
-                'slug' => 'global_config',
-                'group' => 'settings',
-                'sort' => 300,
-                'route' => 'aura.config',
-                'conditional_logic' => DynamicFunctions::add(function () {
-                    return auth()->user()->resource->isSuperAdmin();
+                    return auth()->user()->isSuperAdmin();
                 }),
             ] : null,
         ]));
 
-    
+        // Register event and listener
+        // Event::listen(SaveFields::class, SyncDatabase::class);
+
+        $customTableMigrations = config('aura.resource_editor.custom_table_migrations');
+
+        if ($customTableMigrations === 'multiple') {
+            // Create New Migrations every time a new field is saved
+            Event::listen(SaveFields::class, CreateDatabaseMigration::class);
+        } elseif ($customTableMigrations === true || $customTableMigrations === 'single') {
+            // Modify Existing Migration every time a new field is saved, syncs the database
+            Event::listen(SaveFields::class, ModifyDatabaseMigration::class);
+        }
 
     }
 

@@ -16,7 +16,7 @@
         {{ app('aura')::injectView('breadcrumbs_after') }}
 
         <div>
-            @if (config('aura.features.resource_editor'))
+            @if (config('aura.resource_editor.enabled'))
                     @if ($resource->isAppResource())
                         <x-aura::button.transparent :href="route('aura.resource.editor', $slug)" size="">
                             <x-aura::icon icon="cog" class="mr-2" />
@@ -35,5 +35,5 @@
 
     {{ app('aura')::injectView('widgets_after') }}
 
-    <livewire:aura::table :model="$resource" :settings="$resource->indexTableSettings()"/>
+    <livewire:aura::table :model="$resource" :settings="$resource->indexTableSettings()" />
 </div>
