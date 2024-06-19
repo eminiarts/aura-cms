@@ -7,33 +7,55 @@ class ConditionalLogic
     private static $shouldDisplayFieldCache = [];
 
     public static function checkCondition($model, $field, $post = null)
-    {
-        $conditions = $field['conditional_logic'] ?? null;
-        if (! $conditions || ! auth()->user()) {
-            return true;
-        }
+{
+    $conditions = $field['conditional_logic'] ?? null;
 
-        foreach ($conditions as $condition) {
-            if (! $model || $condition instanceof \Closure) {
-                return $condition($model, $post) === false ? false : true;
-            }
-
-            if (! is_array($condition)) {
-                continue;
-            }
-
-            $show = match ($condition['field']) {
-                'role' => self::handleRoleCondition($condition),
-                default => self::handleDefaultCondition($model, $condition, $post)
-            };
-
-            if (! $show) {
-                return false;
-            }
-        }
-
+    // Check if conditions are set and if the user is authenticated
+    if (! $conditions || ! auth()->user()) {
         return true;
     }
+
+    ray('he', auth()->user()?->id, $field, $conditions)->blue();
+
+    // Ensure $conditions is an array or a closure
+    if (!is_array($conditions) && !($conditions instanceof \Closure)) {
+        return true;
+    }
+
+    // If $conditions is a closure, execute it
+    if ($conditions instanceof \Closure) {
+        try {
+            return $conditions($model, $post) !== false;
+        } catch (\Exception $e) {
+            // Log the exception or handle it as needed
+            ray($e->getMessage())->red();
+            return false;
+        }
+    }
+
+    foreach ($conditions as $condition) {
+        ray($condition)->green();
+
+        if (! $model || $condition instanceof \Closure) {
+            return $condition($model, $post) === false ? false : true;
+        }
+
+        if (! is_array($condition)) {
+            continue;
+        }
+
+        $show = match ($condition['field']) {
+            'role' => self::handleRoleCondition($condition),
+            default => self::handleDefaultCondition($model, $condition, $post)
+        };
+
+        if (! $show) {
+            return false;
+        }
+    }
+
+    return true;
+}
 
     public static function clearConditionsCache()
     {
@@ -69,7 +91,12 @@ class ConditionalLogic
             return true;
         }
 
-        $cacheKey = md5(get_class($model).json_encode($field).json_encode($post));
+        $cacheKey = md5(get_class($model).json_encode($field['slug']).json_encode($post ? $post['id'] : null) . auth()->user()?->id );
+
+        ray($cacheKey, $field['slug'], auth()->user()?->id, self::$shouldDisplayFieldCache[$cacheKey]
+            ?? null)->purple();
+
+            // return self::checkCondition($model, $field, $post);
 
         return self::$shouldDisplayFieldCache[$cacheKey]
             ??= self::checkCondition($model, $field, $post);
