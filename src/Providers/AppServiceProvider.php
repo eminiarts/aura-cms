@@ -3,14 +3,14 @@
 namespace Aura\Base\Providers;
 
 use Aura\Base\Events\SaveFields;
-use Aura\Base\Navigation\Navigation;
-use Aura\Base\Listeners\SyncDatabase;
-use Illuminate\Support\Facades\Event;
 use Aura\Base\Facades\DynamicFunctions;
-use Illuminate\Support\ServiceProvider;
-use Illuminate\Support\Facades\Validator;
 use Aura\Base\Listeners\CreateDatabaseMigration;
 use Aura\Base\Listeners\ModifyDatabaseMigration;
+use Aura\Base\Listeners\SyncDatabase;
+use Aura\Base\Navigation\Navigation;
+use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
 {
