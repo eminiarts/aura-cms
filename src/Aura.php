@@ -247,6 +247,11 @@ class Aura
         }
     }
 
+    public function getInjectViews(): array
+    {
+        return $this->injectViews;
+    }
+
     public function getOption($name)
     {
         if (config('aura.teams') && optional(optional(auth()->user())->resource)->currentTeam) {
@@ -308,14 +313,9 @@ class Aura
         return array_unique($this->widgets);
     }
 
-    public function getInjectViews(): array
-    {
-        return $this->injectViews;
-    }
-
     public function injectView(string $name): Htmlable
     {
-        if(isset($this->injectViews[$name])) {
+        if (isset($this->injectViews[$name])) {
             ray($name, $this->injectViews[$name]);
         }
 
