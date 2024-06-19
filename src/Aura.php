@@ -308,8 +308,19 @@ class Aura
         return array_unique($this->widgets);
     }
 
+    public function getInjectViews(): array
+    {
+        return $this->injectViews;
+    }
+
     public function injectView(string $name): Htmlable
     {
+        if(isset($this->injectViews[$name])) {
+            ray($name, $this->injectViews[$name]);
+        }
+
+        // ray($name);
+
         $hooks = array_map(
             fn (callable $hook): string => (string) app()->call($hook),
             $this->injectViews[$name] ?? [],
@@ -414,6 +425,8 @@ class Aura
     public function registerInjectView(string $name, Closure $callback): void
     {
         $this->injectViews[$name][] = $callback;
+
+        // ray($this->injectViews);
     }
 
     public function registerResources(array $resources): void

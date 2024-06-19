@@ -16,9 +16,9 @@
             monacoContent: @js($content),
             monacoLanguage: 'json',
             monacoPlaceholder: true,
-            monacoPlaceholderText: 'Start typing here',
+            monacoPlaceholderText: '',
             monacoLoader: true,
-            monacoFontSize: '15px',
+            monacoFontSize: '14px',
             monacoId: $id('monaco-editor'),
             monacoEditor(editor) {
                 editor.onDidChangeModelContent((e) => {
@@ -105,6 +105,9 @@
     @assets
         @once
             @push('styles')
+
+            {{-- <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.39.0/min/vs/loader.min.js"></script> --}}
+
                 <style type="text/css" media="screen">
                     .editor {
                         /* position: absolute;
