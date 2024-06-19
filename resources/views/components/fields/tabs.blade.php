@@ -81,9 +81,7 @@
             </li>
         @endcheckCondition
         @endforeach
-
     </ul>
-
     <div role="tabpanels" class="rounded-b-lg border-t border-gray-400/30 dark:border-gray-700">
         @foreach($field['fields'] ?? [] as $key => $field)
         <x-aura::fields.conditions :field="$field" :model="$model" wire:key="tab-section-condition-{{ $key }}-{{ $fieldHash }}">
@@ -99,6 +97,4 @@
         </x-aura::fields.conditions>
         @endforeach
     </div>
-
-
 </div>
