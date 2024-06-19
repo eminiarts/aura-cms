@@ -59,7 +59,7 @@ test('super admin can view all headers', function () {
     $role = Role::create(['type' => 'Role', 'title' => 'Super Admin', 'slug' => 'super_admin', 'description' => 'Super Admin has can perform everything.', 'super_admin' => true, 'permissions' => []]);
 
     // Attach role to User
-    $this->user->resource->update(['roles' => [$role->id]]);
+    $this->user->update(['roles' => [$role->id]]);
     $this->user->refresh();
     $model = new UserRoleConditionalIndexFieldsModel();
 
@@ -80,7 +80,7 @@ test('admin can view his headers', function () {
     $role = Role::create(['type' => 'Role', 'title' => 'Admin', 'slug' => 'admin', 'description' => 'Admin has can perform everything.', 'super_admin' => false, 'permissions' => []]);
 
     // Attach role to User
-    $this->user->resource->update(['roles' => [$role->id]]);
+    $this->user->update(['roles' => [$role->id]]);
     $this->user->refresh();
 
     // Test getHeaders()
@@ -100,7 +100,7 @@ test('user can view his headers', function () {
     $role = Role::create(['type' => 'Role', 'title' => 'Moderator', 'slug' => 'moderator', 'description' => 'Moderator has can perform everything.', 'super_admin' => false, 'permissions' => []]);
 
     // Attach role to User
-    $this->user->resource->update(['roles' => [$role->id]]);
+    $this->user->update(['roles' => [$role->id]]);
 
     // Test getHeaders()
     $headers = $model->getHeaders();
@@ -151,7 +151,7 @@ test('admin can get all fields except text1', function () {
     $role = Role::create(['type' => 'Role', 'title' => 'Admin', 'slug' => 'admin', 'name' => 'Admin', 'description' => 'Admin has can perform everything.', 'super_admin' => false, 'permissions' => []]);
 
     // Attach role to User
-    $this->user->resource->update(['roles' => [$role->id]]);
+    $this->user->update(['roles' => [$role->id]]);
     $this->user->refresh();
 
     // Create a new Post
@@ -182,7 +182,7 @@ test('user can get all fields except text1 and text2', function () {
     $role = Role::create(['type' => 'Role', 'title' => 'User', 'slug' => 'user', 'name' => 'User', 'description' => 'Simple User', 'super_admin' => false, 'permissions' => []]);
 
     // Attach role to User
-    $this->user->resource->update(['roles' => [$role->id]]);
+    $this->user->update(['roles' => [$role->id]]);
 
     // Create a new Post
     $post = UserRoleConditionalIndexFieldsModel::create(['title' => 'Test Post', 'slug' => 'test-post', 'fields' => ['text1' => 'Text 1', 'text2' => 'Text 2', 'text3' => 'Text 3']]);

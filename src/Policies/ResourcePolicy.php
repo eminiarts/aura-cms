@@ -21,11 +21,11 @@ class ResourcePolicy
             return false;
         }
 
-        if ($user->resource->isSuperAdmin()) {
+        if ($user->isSuperAdmin()) {
             return true;
         }
 
-        if ($user->resource->hasPermissionTo('create', $resource)) {
+        if ($user->hasPermissionTo('create', $resource)) {
             return true;
         }
 
@@ -40,12 +40,12 @@ class ResourcePolicy
      */
     public function delete(User $user, $resource)
     {
-        if ($user->resource->isSuperAdmin()) {
+        if ($user->isSuperAdmin()) {
             return true;
         }
 
         // Scoped Posts
-        if ($user->resource->hasPermissionTo('scope', $resource) && $user->resource->hasPermissionTo('delete', $resource)) {
+        if ($user->hasPermissionTo('scope', $resource) && $user->hasPermissionTo('delete', $resource)) {
             if ($resource->user_id == $user->id) {
                 return true;
             } else {
@@ -53,7 +53,7 @@ class ResourcePolicy
             }
         }
 
-        if ($user->resource->hasPermissionTo('delete', $resource)) {
+        if ($user->hasPermissionTo('delete', $resource)) {
             return true;
         }
 
@@ -68,11 +68,11 @@ class ResourcePolicy
      */
     public function forceDelete(User $user, $resource)
     {
-        if ($user->resource->isSuperAdmin()) {
+        if ($user->isSuperAdmin()) {
             return true;
         }
 
-        if ($user->resource->hasPermissionTo('forceDelete', $resource)) {
+        if ($user->hasPermissionTo('forceDelete', $resource)) {
             return true;
         }
 
@@ -87,10 +87,10 @@ class ResourcePolicy
      */
     public function restore(User $user, $resource)
     {
-        if ($user->resource->isSuperAdmin()) {
+        if ($user->isSuperAdmin()) {
             return true;
         }
-        if ($user->resource->hasPermissionTo('restore', $resource)) {
+        if ($user->hasPermissionTo('restore', $resource)) {
             return true;
         }
 
@@ -109,12 +109,12 @@ class ResourcePolicy
             return false;
         }
 
-        if ($user->resource->isSuperAdmin()) {
+        if ($user->isSuperAdmin()) {
             return true;
         }
 
         // Scoped Posts
-        if ($user->resource->hasPermissionTo('scope', $resource) && $user->resource->hasPermissionTo('update', $resource)) {
+        if ($user->hasPermissionTo('scope', $resource) && $user->hasPermissionTo('update', $resource)) {
             if ($resource->user_id == $user->id) {
                 return true;
             } else {
@@ -122,7 +122,7 @@ class ResourcePolicy
             }
         }
 
-        if ($user->resource->hasPermissionTo('update', $resource)) {
+        if ($user->hasPermissionTo('update', $resource)) {
             return true;
         }
 
@@ -148,12 +148,12 @@ class ResourcePolicy
         }
 
         // Check if the user is a superadmin
-        if ($user->resource->isSuperAdmin()) {
+        if ($user->isSuperAdmin()) {
             return true;
         }
 
         // Scoped Posts
-        if ($user->resource->hasPermissionTo('scope', $resource) && $user->resource->hasPermissionTo('view', $resource)) {
+        if ($user->hasPermissionTo('scope', $resource) && $user->hasPermissionTo('view', $resource)) {
             if ($resource->user_id == $user->id) {
                 return true;
             } else {
@@ -161,7 +161,7 @@ class ResourcePolicy
             }
         }
 
-        if ($user->resource->hasPermissionTo('view', $resource)) {
+        if ($user->hasPermissionTo('view', $resource)) {
             return true;
         }
 
@@ -179,11 +179,11 @@ class ResourcePolicy
             return false;
         }
 
-        if ($user->resource->isSuperAdmin()) {
+        if ($user->isSuperAdmin()) {
             return true;
         }
 
-        if ($user->resource->hasPermissionTo('viewAny', $resource)) {
+        if ($user->hasPermissionTo('viewAny', $resource)) {
             return true;
         }
 

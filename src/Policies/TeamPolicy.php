@@ -17,7 +17,7 @@ class TeamPolicy
      */
     public function addTeamMember(User $user, Team $team)
     {
-        if ($user->resource->isSuperAdmin()) {
+        if ($user->isSuperAdmin()) {
             return true;
         }
 
@@ -36,7 +36,7 @@ class TeamPolicy
             return false;
         }
 
-        // if ($user->resource->isSuperAdmin()) {
+        // if ($user->isSuperAdmin()) {
         //     return true;
         // }
 
@@ -52,7 +52,7 @@ class TeamPolicy
      */
     public function delete(User $user, Team $team)
     {
-        if ($user->resource->isSuperAdmin()) {
+        if ($user->isSuperAdmin()) {
             return true;
         }
 
@@ -61,11 +61,11 @@ class TeamPolicy
 
     public function inviteUsers(User $user, Team $team)
     {
-        if ($user->resource->isSuperAdmin()) {
+        if ($user->isSuperAdmin()) {
             return true;
         }
 
-        if ($user->resource->hasPermissionTo('invite-users', $team)) {
+        if ($user->hasPermissionTo('invite-users', $team)) {
             return true;
         }
 
@@ -80,7 +80,7 @@ class TeamPolicy
     public function removeTeamMember(User $user, Team $team)
     {
 
-        if ($user->resource->isSuperAdmin()) {
+        if ($user->isSuperAdmin()) {
             return true;
         }
 
@@ -97,7 +97,7 @@ class TeamPolicy
         if ($team::$editEnabled === false) {
             return false;
         }
-        if ($user->resource->isSuperAdmin()) {
+        if ($user->isSuperAdmin()) {
             return true;
         }
 
@@ -112,7 +112,7 @@ class TeamPolicy
     public function updateTeamMember(User $user, Team $team)
     {
 
-        if ($user->resource->isSuperAdmin()) {
+        if ($user->isSuperAdmin()) {
             return true;
         }
 
@@ -126,7 +126,7 @@ class TeamPolicy
      */
     public function view(User $user, Team $team)
     {
-        // if ($user->resource->isSuperAdmin()) {
+        // if ($user->isSuperAdmin()) {
         //     return true;
         // }
 
@@ -149,7 +149,7 @@ class TeamPolicy
             return false;
         }
 
-        if ($user->resource->isSuperAdmin()) {
+        if ($user->isSuperAdmin()) {
             return true;
         }
 

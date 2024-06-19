@@ -288,7 +288,7 @@ test('role condition as a Super Admin', function () {
         ApplyParentConditionalLogic::class,
     ]);
 
-    // dd($this->user->resource->isSuperAdmin());
+    // dd($this->user->isSuperAdmin());
     $superAdmin = $this->user;
 
     // Create a normal user
@@ -301,7 +301,7 @@ test('role condition as a Super Admin', function () {
     $this->assertFalse(Aura::checkCondition($model, $fields->firstWhere('slug', 'tab-1')));
 
     // Attach Super Admin Role to User
-    // $user->resource()->update(['roles' => [$r->id]]);
+    // $user()->update(['roles' => [$r->id]]);
 
     // Clear the cache
     Aura::clearConditionsCache();
@@ -337,7 +337,7 @@ test('role condition as a Admin', function () {
     // $this->assertFalse(Aura::checkCondition($model, $fields->firstWhere('slug', 'tab-1')));
 
     // Attach Admin Role to User
-    $user->resource->update(['roles' => [$role->id]]);
+    $user->update(['roles' => [$role->id]]);
 
     $user->refresh();
 

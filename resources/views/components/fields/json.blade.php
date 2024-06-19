@@ -42,7 +42,7 @@
 
     @once
         @assets
-            @vite(['resources/js/monaco.js'], 'vendor/aura')
+            @vite(['resources/js/monaco.js'], 'vendor/aura/libs')
         @endassets
     @endonce
 

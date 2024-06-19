@@ -43,7 +43,7 @@ class ConditionalLogic
     public static function fieldIsVisibleTo($field, $user)
     {
         $conditions = $field['conditional_logic'] ?? null;
-        if (! $conditions || $user->resource->isSuperAdmin()) {
+        if (! $conditions || $user->isSuperAdmin()) {
             return true;
         }
 
