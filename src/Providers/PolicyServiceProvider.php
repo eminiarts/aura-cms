@@ -37,7 +37,7 @@ class PolicyServiceProvider extends ServiceProvider
         //     dd('before');
 
         //     return true;
-        //     if ($user->resource->isSuperAdmin()) {
+        //     if ($user->isSuperAdmin()) {
         //         return true;
         //     }
         // });

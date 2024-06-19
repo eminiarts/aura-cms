@@ -86,7 +86,7 @@ class AuraServiceProvider extends PackageServiceProvider
             //     return false;
             // }
 
-            // if ($user->resource->isSuperAdmin()) {
+            // if ($user->isSuperAdmin()) {
             //     return true;
             // }
         });

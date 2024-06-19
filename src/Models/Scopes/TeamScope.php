@@ -20,6 +20,8 @@ class TeamScope implements Scope
         }
 
         return $builder;
+        
+        return $builder;
 
         // If the Model is a Team Resource, don't apply the scope
         if (auth()->user() && $model instanceof \Aura\Base\Resources\Team) {

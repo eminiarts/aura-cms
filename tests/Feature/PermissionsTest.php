@@ -270,7 +270,7 @@ test('scoped posts', function () {
     $r = Role::first();
 
     // Attach to User
-    $this->user->resource->update(['roles' => [$r->id]]);
+    $this->user->update(['roles' => [$r->id]]);
 
     $user = \Aura\Base\Resources\User::find(1);
 
