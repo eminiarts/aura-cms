@@ -11,62 +11,63 @@
 
         <div>
             <div id="" x-data="{
-                editor: null,
-            
-                init() {
-            
-                    this.editor = monaco.editor.create($refs.editor, {
-                        value: @js($content),
-                        language: 'json',
-                        automaticLayout: true,
-                        minimap: {
-                            enabled: false
-                        },
-                        padding: {
-                            top: 16,
-                            bottom: 16,
-                        },
-                        scrollBeyondLastLine: false, // Disable scrolling beyond the last line
-                        revealHorizontalRightPadding: 0,
-            
-                        fontSize: 14, // Set the font size
-                        // fontFamily: 'Consolas, Courier New, monospace', // Set the font family
-                        lineHeight: 24, // Set the line height
-                        lineNumbers: '{{ optional($field)['line_numbers'] ? 'on' : 'off' }}', // Enable line numbers
-                        renderWhitespace: 'off', // Render whitespace characters
-                        wordWrap: 'on', // Enable word wrapping
-                        folding: true, // Enable code folding
-            
-                        matchBrackets: 'always', // Highlight matching brackets
-            
-                        autoIndent: 'full', // Enable auto indentation
-                        smoothScrolling: true, // Enable smooth scrolling
-                        scrollbar: {
-                            vertical: 'visible', // Always show vertical scrollbar
-                            horizontal: 'visible', // Always show horizontal scrollbar
-                        },
-                        suggestOnTriggerCharacters: true, // Enable IntelliSense suggestions on trigger characters
-                        quickSuggestions: {
-                            other: true,
-                            comments: true,
-                            strings: true
-                        },
-                        renderIndentGuides: false, // Disable rendering of indent guides
-                        guides: {
-                            indentation: false // Disable indentation guides
-                        }
-            
-                    });
-            
-                    // Listen for changes in the editor and update Livewire model
-                    this.editor.onDidChangeModelContent(() => {
-                        //content = this.editor.getValue();
-                        console.log('content changed ');
-            
-                    });
-                },
-            
-            }" x-ref="editor" wire:ignore class="w-full h-full editor"></div>
+    editor: null,
+    init() {
+        // Set JSON language defaults
+        monaco.languages.json.jsonDefaults.setDiagnosticsOptions({
+            validate: true,
+            schemas: [],
+            enableSchemaRequest: true,
+            allowComments: true,
+            trailingCommas: 'ignore'
+        });
+
+        this.editor = monaco.editor.create($refs.editor, {
+            value: @js($content),
+            language: 'json',
+            automaticLayout: true,
+            minimap: {
+                enabled: true
+            },
+            padding: {
+                top: 16,
+                bottom: 16,
+            },
+            scrollBeyondLastLine: false, // Disable scrolling beyond the last line
+            revealHorizontalRightPadding: 0,
+            fontSize: 14, // Set the font size
+            // fontFamily: 'Consolas, Courier New, monospace', // Set the font family
+            lineHeight: 24, // Set the line height
+            lineNumbers: '{{ optional($field)['line_numbers'] ? 'on' : 'off' }}', // Enable line numbers
+            renderWhitespace: 'off', // Render whitespace characters
+            wordWrap: 'on', // Enable word wrapping
+            folding: true, // Enable code folding
+            matchBrackets: 'always', // Highlight matching brackets
+            autoIndent: 'full', // Enable auto indentation
+            smoothScrolling: true, // Enable smooth scrolling
+            scrollbar: {
+                vertical: 'visible', // Always show vertical scrollbar
+                horizontal: 'visible', // Always show horizontal scrollbar
+            },
+            suggestOnTriggerCharacters: true, // Enable IntelliSense suggestions on trigger characters
+            quickSuggestions: {
+                other: true,
+                comments: true,
+                strings: true
+            },
+            renderIndentGuides: false, // Disable rendering of indent guides
+            guides: {
+                indentation: false // Disable indentation guides
+            }
+        });
+
+        // Listen for changes in the editor and update Livewire model
+        this.editor.onDidChangeModelContent(() => {
+            console.log('content changed');
+        });
+    },
+}" x-ref="editor" wire:ignore class="w-full h-full editor"></div>
+
         </div>
 
     </div>
