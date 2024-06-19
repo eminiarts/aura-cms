@@ -2,6 +2,8 @@
 
 namespace Aura\Base;
 
+use Illuminate\Support\Facades\Cache;
+
 class ConditionalLogic
 {
     private static $shouldDisplayFieldCache = [];
@@ -11,14 +13,12 @@ class ConditionalLogic
         $conditions = $field['conditional_logic'] ?? null;
 
         // Check if conditions are set and if the user is authenticated
-        if (! $conditions || ! auth()->user()) {
+        if (!$conditions || !auth()->check()) {
             return true;
         }
 
-        ray('he', auth()->user()?->id, $field, $conditions)->blue();
-
         // Ensure $conditions is an array or a closure
-        if (! is_array($conditions) && ! ($conditions instanceof \Closure)) {
+        if (!is_array($conditions) && !($conditions instanceof \Closure)) {
             return true;
         }
 
@@ -28,20 +28,13 @@ class ConditionalLogic
                 return $conditions($model, $post) !== false;
             } catch (\Exception $e) {
                 // Log the exception or handle it as needed
-                ray($e->getMessage())->red();
-
+                // Log::error($e->getMessage());
                 return false;
             }
         }
 
         foreach ($conditions as $condition) {
-            ray($condition)->green();
-
-            if (! $model || $condition instanceof \Closure) {
-                return $condition($model, $post) === false ? false : true;
-            }
-
-            if (! is_array($condition)) {
+            if (!is_array($condition)) {
                 continue;
             }
 
@@ -50,7 +43,7 @@ class ConditionalLogic
                 default => self::handleDefaultCondition($model, $condition, $post)
             };
 
-            if (! $show) {
+            if (!$show) {
                 return false;
             }
         }
@@ -66,15 +59,12 @@ class ConditionalLogic
     public static function fieldIsVisibleTo($field, $user)
     {
         $conditions = $field['conditional_logic'] ?? null;
-        if (! $conditions || $user->isSuperAdmin()) {
+        if (!$conditions || $user->isSuperAdmin()) {
             return true;
         }
 
         foreach ($conditions as $condition) {
-            if (! $field) {
-                return false;
-            }
-            if ($condition['field'] === 'role' && ! self::checkRoleCondition($condition)) {
+            if ($condition['field'] === 'role' && !self::checkRoleCondition($condition)) {
                 return false;
             }
         }
@@ -84,24 +74,15 @@ class ConditionalLogic
 
     public static function shouldDisplayField($model, $field, $post = null)
     {
-        if (! $field) {
+        if (!$field || empty($field['conditional_logic'])) {
             return true;
         }
 
-        if (empty($field['conditional_logic'])) {
-            return true;
-        }
+        $cacheKey = md5(get_class($model) . json_encode($field) . json_encode($post) . auth()->id());
 
-        $cacheKey = md5(get_class($model).json_encode($field).json_encode($post).auth()->user()?->id);
-
-        ray($cacheKey)->red();
-
-        //ray($cacheKey, $field['slug'], auth()->user()?->id, self::$shouldDisplayFieldCache[$cacheKey] ?? null)->purple();
-
-        // return self::checkCondition($model, $field, $post);
-
-        return self::$shouldDisplayFieldCache[$cacheKey]
-            ??= self::checkCondition($model, $field, $post);
+        return Cache::remember('conditions_'. $cacheKey, now()->addMinutes(15), function () use ($model, $field, $post) {
+            return self::checkCondition($model, $field, $post);
+        });
     }
 
     private static function checkFieldCondition($condition, $fieldValue)
@@ -121,33 +102,19 @@ class ConditionalLogic
     {
         return match ($condition['operator']) {
             '==' => auth()->user()->hasRole($condition['value']),
-            '!=' => ! auth()->user()->hasRole($condition['value']),
+            '!=' => !auth()->user()->hasRole($condition['value']),
             default => false
         };
     }
 
     private static function handleDefaultCondition($model, $condition, $post)
     {
-        // if($post) {
-        //     $model = $post;
-        // }
-
-        if (is_array($model) && array_key_exists($condition['field'], $model)) {
-            return self::checkFieldCondition($condition, $model[$condition['field']]);
-        }
-
         $fieldValue = method_exists($model, 'getMeta')
             ? $model->getMeta($condition['field'])
             : data_get($model->post['fields'] ?? [], $condition['field']);
 
-        if (! $fieldValue) {
-            return false;
-        }
-
         if (str_contains($condition['field'], '.')) {
-            $fieldValue = is_array($model)
-                ? data_get($model, $condition['field'])
-                : data_get($model->getMeta()->toArray(), $condition['field']);
+            $fieldValue = data_get($model, $condition['field']);
         }
 
         return self::checkFieldCondition($condition, $fieldValue);
@@ -155,10 +122,6 @@ class ConditionalLogic
 
     private static function handleRoleCondition($condition)
     {
-        if (auth()->user()->isSuperAdmin()) {
-            return true;
-        }
-
-        return self::checkRoleCondition($condition);
+        return auth()->user()->isSuperAdmin() || self::checkRoleCondition($condition);
     }
 }
