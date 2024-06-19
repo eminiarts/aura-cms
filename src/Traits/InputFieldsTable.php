@@ -17,15 +17,11 @@ trait InputFieldsTable
     public function getTableHeaders()
     {
         $fields = $this->indexHeaderFields()
-            // ->filter(function ($field) {
-            //     return $field['field_type'] !== 'repeater';
-            // })
             ->pluck('name', 'slug');
-        // ->prepend('ID', 'id')
 
-        // filter out fields that are not on the index
+        // filter out fields that are not on the index or should not be displayed
         $fields = $fields->filter(function ($field, $slug) {
-            return $this->isFieldOnIndex($slug);
+            return $this->isFieldOnIndex($slug) && $this->shouldDisplayField($this->fieldBySlug($slug));
         });
 
         return $fields;
