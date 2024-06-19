@@ -53,7 +53,7 @@ class Json extends Field
 
     public function set($value)
     {
-        dd('hier', $value);
+        // dd('hier', $value);
 
         if (is_array($value)) {
             return json_encode($value);
