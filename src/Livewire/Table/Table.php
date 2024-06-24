@@ -344,7 +344,19 @@ class Table extends Component
         }
 
         // Save the columns for the current user.
-        $orderedSort = array_merge(array_flip($slugs), $this->headers());
+        $headers = $this->columns;
+
+        if ($headers instanceof \Illuminate\Support\Collection) {
+            $headers = $headers->toArray();
+        }
+
+        $orderedSort = [];
+
+        foreach ($slugs as $slug) {
+            if (array_key_exists($slug, $headers)) {
+                $orderedSort[$slug] = $headers[$slug];
+            }
+        }
 
         auth()->user()->updateOption($this->settings['columns_user_key'], $orderedSort);
     }
