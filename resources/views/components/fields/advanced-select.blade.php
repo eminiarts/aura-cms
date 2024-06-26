@@ -328,7 +328,7 @@
         @click.away="closeListbox()">
 
         <div class="relative p-0 w-full bg-transparent border-0 aura-input">
-            <label class="sr-only">Select Item</label>
+            <label class="sr-only">{{ __('Select Entry') }}</label>
 
             <button type="button"
                 class="relative flex items-center justify-between w-full px-3 pt-0 pb-0 border rounded-lg shadow-xs appearance-none min-h-[2.625rem] border-gray-500/30 focus:border-primary-300 focus:outline-none ring-gray-900/10 focus:ring focus:ring-primary-300 focus:ring-opacity-50 dark:focus:ring-primary-500 dark:focus:ring-opacity-50 dark:bg-gray-900 dark:border-gray-700"
@@ -379,7 +379,7 @@
                 </template>
 
                 <template x-if="!value || value.length == 0">
-                    <span class="text-gray-400">Select Item</span>
+                    <span class="text-gray-400">{{ __('Select Entry') }}</span>
                 </template>
 
                 <!-- Heroicons up/down -->
@@ -401,7 +401,7 @@
                             <div>
                                 <input x-model.debounce.500ms="search" autofocus x-ref="searchField"
                                     class="px-4 py-2.5 w-full placeholder-gray-500 text-gray-900 border-none focus:outline-none"
-                                    placeholder="Search...">
+                                    placeholder="{{ __('Search...')}}">
                             </div>
                         </li>
                     </template>
