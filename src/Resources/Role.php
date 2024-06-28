@@ -102,6 +102,9 @@ class Role extends Resource
                 'type' => 'Aura\\Base\\Fields\\Permissions',
                 'validation' => '',
                 'conditional_logic' => function ($model, $form) {
+
+                    ray('check', $form);
+                    
                     if (optional(optional($form)['fields'])['super_admin']) {
                         return false;
                     }
