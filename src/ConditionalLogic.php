@@ -78,8 +78,16 @@ class ConditionalLogic
             return true;
         }
 
+        if(!$post) {
+            $post = $model->getAttributes();
+        }
+
         $cacheKey = md5(get_class($model) . json_encode($field) . json_encode($post) . auth()->id());
 
+        // ray($cacheKey, json_encode($post) );
+
+        return self::checkCondition($model, $field, $post);
+        
         return Cache::remember('conditions_'. $cacheKey, now()->addMinutes(15), function () use ($model, $field, $post) {
             return self::checkCondition($model, $field, $post);
         });

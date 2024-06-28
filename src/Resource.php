@@ -204,6 +204,7 @@ class Resource extends Model
                 });
 
             $this->fieldsAttributeCache = $defaultValues->filter(function ($value, $key) {
+                 return true; // for now
                 return $this->shouldDisplayField($this->fieldBySlug($key));
             });
         }

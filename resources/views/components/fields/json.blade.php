@@ -3,7 +3,9 @@
         class="overflow-hidden w-full bg-white rounded-lg border appearance-none border-gray-500/30 shadow-xs focus:border-primary-300 focus:outline-none ring-gray-900/10 focus:ring focus:ring-primary-300 focus:ring-opacity-50 dark:focus:ring-primary-500 dark:focus:ring-opacity-50 dark:bg-gray-900">
 
         @php
-            $content = json_encode($form['fields'][$field['slug']], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
+            $fieldSlug = $field['slug'];
+            $fieldContent = $form['fields'][$fieldSlug] ?? '';
+            $content = json_encode($fieldContent, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
 
             // dump($content);
 
@@ -24,7 +26,7 @@
                 editor.onDidChangeModelContent((e) => {
                     this.monacoContent = editor.getValue();
                     this.updatePlaceholder(editor.getValue());
-                    console.log(this.monacoContent);
+                    {{-- console.log(this.monacoContent); --}}
                     $wire.$set('form.fields.{{ $field['slug'] }}', this.monacoContent);
                 });
                 editor.onDidBlurEditorWidget(() => {
