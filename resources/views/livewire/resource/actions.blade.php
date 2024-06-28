@@ -31,6 +31,7 @@
             @endif
         @endforeach
     @else
+
         <x-aura::dropdown width="w-72">
             <x-slot name="trigger">
                 <x-aura::button.transparent>
@@ -42,8 +43,10 @@
                 <div class="px-0">
                     @foreach($this->actions as $action => $options)
 
+
                     @if(optional($options)['confirm'] === true)
-                    <div @click="stopPropagation($event)">
+                    
+                    <div @click="stopPropagation($event)" key="action_{{$action}}">
                         <x-aura::confirms-action
                             wire:then="singleAction('{{ $action }}')"
                             :title="__(optional($options)['confirm-title'])"
