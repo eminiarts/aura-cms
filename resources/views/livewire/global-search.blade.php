@@ -23,7 +23,6 @@
                 this.loadVisitedPages();
 
                 this.$watch(() => this.search, () => {
-                    console.log('select first');
                     this.selectFirst();
                 });
             },
@@ -33,7 +32,13 @@
                 this.visitedPages = JSON.parse(localStorage.getItem(key)) || [];
             },
 
-            openSearch() {
+            openSearch($event) {
+
+                // Prevent search from opening when typing in input fields
+                if ($event.explicitOriginalTarget.tagName.toLowerCase() === 'input' || $event.explicitOriginalTarget.tagName.toLowerCase() === 'textarea') {
+                    return;
+                }
+
                 this.show = !this.show;
                 setTimeout(() => {
                     this.$refs.searchField.focus()
@@ -89,7 +94,7 @@
                 link.click();
             },
 
-        }" x-ref="searchContainer" style="display: none;" @search.window="openSearch()" @keydown.escape.window="escapeSearch()" @keydown.cmd.1.prevent="openBookmark(1)" @keydown.cmd.2.prevent="openBookmark(2)" @keydown.cmd.3.prevent="openBookmark(3)" @keydown.cmd.4.prevent="openBookmark(4)" @keydown.cmd.5.prevent="openBookmark(5)" @keydown.cmd.6.prevent="openBookmark(6)" @keydown.cmd.7.prevent="openBookmark(7)" @keydown.cmd.8.prevent="openBookmark(8)" @keydown.cmd.9.prevent="openBookmark(9)">
+        }" x-ref="searchContainer" style="display: none;" @search.window="openSearch($event)" @keydown.escape.window="escapeSearch()" @keydown.cmd.1.prevent="openBookmark(1)" @keydown.cmd.2.prevent="openBookmark(2)" @keydown.cmd.3.prevent="openBookmark(3)" @keydown.cmd.4.prevent="openBookmark(4)" @keydown.cmd.5.prevent="openBookmark(5)" @keydown.cmd.6.prevent="openBookmark(6)" @keydown.cmd.7.prevent="openBookmark(7)" @keydown.cmd.8.prevent="openBookmark(8)" @keydown.cmd.9.prevent="openBookmark(9)">
             <div class="fixed inset-0 z-30">
                 <div class="absolute inset-0 backdrop-blur-sm bg-black/10 dark:bg-black/20"></div>
                 <div class="flex absolute inset-0 justify-center items-center">
