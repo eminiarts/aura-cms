@@ -396,6 +396,8 @@ trait AuraModelConfig
         //->whereIn('key', $this->inputFieldsSlugs())
     }
 
+   
+
     public function navigation()
     {
         return [
@@ -574,8 +576,15 @@ trait AuraModelConfig
         return 'aura::livewire.resource.view';
     }
 
-    protected function getMetaTable()
+    public function getMetaTable()
     {
-        return (new Meta())->getTable();
+        return $this->meta()->getRelated()->getTable();
+
+        //return (new Meta())->getTable();
+    }
+
+    public function getMetaForeignKey()
+    {
+        return $this->meta()->getForeignKeyName();
     }
 }
