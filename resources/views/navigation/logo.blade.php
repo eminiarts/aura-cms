@@ -1,5 +1,6 @@
 @php
     $logo = $darkLogo = null;
+    $settings = $this->settings;
 
     if($settings && (isset($settings['logo'][0]) || isset($settings['logo-darkmode'][0]))) {
         $logo = isset($settings['logo'][0]) ? $settings['logo'][0] : null;

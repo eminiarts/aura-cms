@@ -1,26 +1,7 @@
-@php
-use Aura\Base\Resources\Team;
-use Aura\Base\Facades\Aura;
-$settings = app('aura')::getOption('settings');
+<div class="aura-sidebar aura-sidebar-type-{{ $this->sidebarType }} aura-darkmode-type-{{ $this->darkmodeType }}
 
-$appSettings = app('aura')::options();
-
-// dd($settings);
-
-$sidebarToggled = auth()->check() ? auth()->user()->getOptionSidebarToggled() : true;
-
-$darkmodeType = $settings['darkmode-type'] ?? 'auto';
-
-$sidebarDarkmodeType = $settings['sidebar-darkmode-type'] ?? 'dark';
-
-
-$compact = ($settings['sidebar-size'] ?? null) === 'compact';
-@endphp
-
-<div class="aura-sidebar aura-sidebar-type-{{ $sidebarType }} aura-darkmode-type-{{ $darkmodeType }}
-
-        @if($darkmodeType == 'auto')
-            aura-sidebar-darkmode-type-{{ $sidebarDarkmodeType }}
+        @if($this->darkmodeType == 'auto')
+            aura-sidebar-darkmode-type-{{ $this->sidebarDarkmodeType }}
         @endif">
 
     <style>
@@ -33,7 +14,7 @@ $compact = ($settings['sidebar-size'] ?? null) === 'compact';
 
     <div
             x-data="{
-        sidebarToggled: {{ $sidebarToggled ? 'true' : 'false' }},
+        sidebarToggled: {{ $this->sidebarToggled ? 'true' : 'false' }},
         init() {
             {{-- console.log('init', this.sidebarToggled); --}}
 
@@ -48,15 +29,11 @@ $compact = ($settings['sidebar-size'] ?? null) === 'compact';
             });
         },
         toggleSidebar: async function() {
-            console.log('click toggleSidebar');
             if (window.innerWidth < 768) {
-                console.log('toggleSidebar async mobile');
                 this.sidebarToggled = !this.sidebarToggled;
             } else {
-                console.log('toggleSidebar async desktop1', this.sidebarToggled);
                 await $wire.toggleSidebar();
                 this.sidebarToggled = !this.sidebarToggled;
-                console.log('toggleSidebar async desktop2', this.sidebarToggled);
             }
         }
     }">
@@ -78,10 +55,10 @@ $compact = ($settings['sidebar-size'] ?? null) === 'compact';
         </div>
 
         <div
-            class="relative mobile-load-hidden overflow-x-visible flex-shrink-0 aura-navigation {{ $sidebarToggled ? ($compact ? 'open-sidebar md:w-56' : 'open-sidebar md:w-72') : 'closed-sidebar w-20' }}"
+            class="relative mobile-load-hidden overflow-x-visible flex-shrink-0 aura-navigation {{ $this->sidebarToggled ? ($this->compact ? 'open-sidebar md:w-56' : 'open-sidebar md:w-72') : 'closed-sidebar w-20' }}"
 
             x-bind:class="{
-                'open-sidebar {{ $compact ? 'md:w-56' : 'md:w-72' }}': sidebarToggled,
+                'open-sidebar {{ $this->compact ? 'md:w-56' : 'md:w-72' }}': sidebarToggled,
                 'closed-sidebar w-20': !sidebarToggled,
             }"
         >
@@ -102,17 +79,17 @@ $compact = ($settings['sidebar-size'] ?? null) === 'compact';
             </button>
         </div> --}}
             <div
-                class="aura-sidebar-bg fixed top-0 left-0 z-10 flex flex-col flex-shrink-0 h-screen border-r shadow-xl {{ $sidebarToggled ? ($compact ? 'w-56' : 'w-72') : 'w-20' }}
+                class="aura-sidebar-bg fixed top-0 left-0 z-10 flex flex-col flex-shrink-0 h-screen border-r shadow-xl {{ $this->sidebarToggled ? ($this->compact ? 'w-56' : 'w-72') : 'w-20' }}
             "
                     x-bind:class="{
-                '{{ $compact ? 'w-56' : 'w-72' }}': sidebarToggled,
+                '{{ $this->compact ? 'w-56' : 'w-72' }}': sidebarToggled,
                 'w-20': !sidebarToggled,
             }"
             >
 
                 <div class="flex overflow-y-auto overflow-x-visible flex-col flex-1 px-0 pt-0 pb-5 space-y-1 aura-sidebar-scrollbar">
 
-                    <div class="flex flex-col {{ $compact ? 'px-2' : 'px-4' }} space-y-1">
+                    <div class="flex flex-col {{ $this->compact ? 'px-2' : 'px-4' }} space-y-1">
                         <div class="flex-shrink-0 h-[4.5rem] flex items-center justify-between">
 
                             <div class="hide-collapsed">
@@ -155,7 +132,7 @@ $compact = ($settings['sidebar-size'] ?? null) === 'compact';
 
                     </div>
 
-                    <div class="flex flex-col {{ $compact ? 'px-2' : 'px-4' }} space-y-1">
+                    <div class="flex flex-col {{ $this->compact ? 'px-2' : 'px-4' }} space-y-1">
 
                         @includeIf('navigation.before')
 
@@ -166,7 +143,7 @@ $compact = ($settings['sidebar-size'] ?? null) === 'compact';
                     </div>
                 </div>
 
-                <div class=" flex-shrink-0 {{ $compact ? 'px-2' : 'px-4' }} min-h-[4.5rem] py-2 flex flex-wrap items-center border-t aura-sidebar-footer">
+                <div class=" flex-shrink-0 {{ $this->compact ? 'px-2' : 'px-4' }} min-h-[4.5rem] py-2 flex flex-wrap items-center border-t aura-sidebar-footer">
                     @impersonating($guard = null)
                     <div class="w-full">
                         <x-aura::button.primary :href="route('impersonate.leave')" class="my-2 w-full" size="xs">
