@@ -3,14 +3,11 @@
 namespace Aura\Base\Livewire;
 
 use Livewire\Component;
-
+use Livewire\Attributes\Computed;
 class Navigation extends Component
 {
     public $iconClass;
 
-    public $sidebarToggled;
-
-    public $sidebarType;
 
     public $toggledGroups = [];
 
@@ -19,15 +16,43 @@ class Navigation extends Component
         return '';
     }
 
-    public function getSidebarType()
+    #[Computed]
+    public function settings()
     {
-        $settings = app('aura')::getOption('settings');
+        if (config('aura.teams')) {
+        return app('aura')::getOption('team-settings');
+        } 
 
-        if ($settings && isset($settings['sidebar-type'])) {
-            return $settings['sidebar-type'];
-        }
+        return app('aura')::getOption('settings');
+    }
 
-        return 'primary';
+    #[Computed]
+    public function sidebarToggled(){
+        return auth()->check() ? auth()->user()->getOptionSidebarToggled() : true;
+    }
+
+    #[Computed]
+    public function sidebarType(): string
+    {
+        return $this->settings['sidebar-type'] ?? 'primary';
+    }
+
+    #[Computed]
+    public function darkmodeType(): string
+    {
+        return $this->settings['darkmode-type'] ?? 'auto';
+    }
+    
+    #[Computed]
+    public function compact(): string
+    {
+        return ($this->settings['sidebar-size'] ?? null) === 'compact';
+    }
+
+    #[Computed]
+    public function sidebarDarkmodeType(): string
+    {
+        return $this->settings['sidebar-darkmode-type'] ?? 'dark';
     }
 
     public function isToggled($group)
@@ -50,7 +75,6 @@ class Navigation extends Component
             $this->sidebarToggled = auth()->user()->getOptionSidebarToggled();
         }
 
-        $this->sidebarType = $this->getSidebarType();
         $this->iconClass = $this->getIconClass($this->sidebarType);
     }
 

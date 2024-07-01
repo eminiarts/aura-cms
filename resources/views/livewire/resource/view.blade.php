@@ -23,7 +23,7 @@
     {{-- @dump($resource) --}}
     {{-- @dump($this->fields) --}}
 
-    <style >
+    {{-- <style >
         .aura-view-post-container input, .aura-input {
             border: 0 !important;
             background-color: var(--gray-100)!important;
@@ -47,7 +47,7 @@
         line-height: 1.5;
         color: var(--gray-700);
     }
-    </style>
+    </style> --}}
 
     <div class="grid gap-6 mt-4 aura-view-post-container sm:grid-cols-3" x-data="{
          init() {

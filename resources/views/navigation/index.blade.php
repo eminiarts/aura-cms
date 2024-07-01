@@ -3,17 +3,17 @@
         @if ($group !== '')
             <div wire:key="toggle-{{ $group }}" wire:click="toggleGroup('{{ $group }}')"
                 class="cursor-pointer">
-                <x-aura::navigation.heading :toggled="$this->isToggled($group)" :compact="$compact">
+                <x-aura::navigation.heading :toggled="$this->isToggled($group)" :compact="$this->compact">
                     {{ __($group) }}
                 </x-aura::navigation.heading>
             </div>
         @endif
 
         @if ($this->isToggled($group))
-            <div class="flex flex-col {{ $compact ? 'space-y-0.5' : 'space-y-1' }}">
+            <div class="flex flex-col {{ $this->compact ? 'space-y-0.5' : 'space-y-1' }}">
                 @foreach ($resources as $resource)
                     @if (isset($resource['dropdown']) && $resource['dropdown'] !== false)
-                        <x-aura::navigation.dropdown :compact="$compact">
+                        <x-aura::navigation.dropdown :compact="$this->compact">
                             <x-slot:title>
                                 <div class="aura-sidebar-icon">
 
@@ -33,7 +33,7 @@
                             <x-slot:mobile>
 
                                 @foreach($resource['items'] as $r)
-                                    <x-aura::navigation.item-dropdown route="aura.resource.index" :id="$r['type']" :strict="false" :compact="$compact">
+                                    <x-aura::navigation.item-dropdown route="aura.resource.index" :id="$r['type']" :strict="false" :compact="$this->compact">
                                         <div class="aura-sidebar-icon">
                                             {!! $r['icon'] !!}
                                         </div>
@@ -44,7 +44,7 @@
                             </x-slot:mobile>
 
                             @foreach ($resource['items'] as $r)
-                                <x-aura::navigation.item :route="$r['route']" :strict="false" :compact="$compact">
+                                <x-aura::navigation.item :route="$r['route']" :strict="false" :compact="$this->compact">
                                     <div class="aura-sidebar-icon">
                                         {!! $r['icon'] !!}
                                     </div>
@@ -56,7 +56,7 @@
                         {{-- @dd($resource) --}}
                         @if(isset($resource['resource']))
                             @can('viewAny', app($resource['resource']))
-                                <x-aura::navigation.item :route="$resource['route']" :strict="false" :tooltip="__($resource['name'])" :compact="$compact" :badge="$resource['badge'] ?? null" :badgeColor="$resource['badgeColor'] ?? null">
+                                <x-aura::navigation.item :route="$resource['route']" :strict="false" :tooltip="__($resource['name'])" :compact="$this->compact" :badge="$resource['badge'] ?? null" :badgeColor="$resource['badgeColor'] ?? null">
                                     <div class="aura-sidebar-icon">
                                         {!! $resource['icon'] !!}
                                     </div>
@@ -65,7 +65,7 @@
                             @endcan
                         @else
 
-                            <x-aura::navigation.item :route="$resource['route']" :strict="false" :tooltip="__($resource['name'])" :compact="$compact" :badge="$resource['badge'] ?? null" :badgeColor="$resource['badgeColor'] ?? null" :onclick="$resource['onclick'] ?? ''"
+                            <x-aura::navigation.item :route="$resource['route']" :strict="false" :tooltip="__($resource['name'])" :compact="$this->compact" :badge="$resource['badge'] ?? null" :badgeColor="$resource['badgeColor'] ?? null" :onclick="$resource['onclick'] ?? ''"
 
                             >
                                 @if($resource['icon'] !== '')
