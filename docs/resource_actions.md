@@ -159,3 +159,19 @@ public array $actions = [
 In this example, the `$actions` property defines an action called "create" with a label "Create Post". It also specifies an icon with the class "fa fa-plus", which will be displayed next to the label. Finally, it applies a custom CSS class to the action element with the class "text-green-500 hover:text-green-700".
 
 Note that the `icon` and `icon-view` properties are mutually exclusive: you can only use one of them for each action.
+
+
+## Custom Actions
+
+```php
+'editSeriesInfo' => [
+    'label' => 'Serienbuchung bearbeiten',
+    'icon-view' => 'components.icon.edit',
+    'onclick' => "Livewire.dispatch('openModal', {component: 'edit-series-modal', arguments: {model: ".$this->id.'}})',
+    'conditional_logic' => function () {
+        return $this->isSeries();
+    },
+],
+```
+
+In this example, the `editSeriesInfo` action is defined with a label, an icon view, an `onclick` event, and a `conditional_logic` function. The `onclick` event will dispatch a Livewire event to open a modal with the `edit-series-modal` component and pass the model ID as an argument. The `conditional_logic` function will determine whether the action should be displayed based on the `isSeries` method of the model.
