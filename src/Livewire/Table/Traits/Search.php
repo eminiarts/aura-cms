@@ -26,28 +26,31 @@ trait Search
 
             $searchableFields = $this->model->getSearchableFields()->pluck('slug');
 
-            // ray('searchableFields', $searchableFields, $this->model);
+            ray('searchableFields', $searchableFields, $this->model);
 
             $metaFields = $searchableFields->filter(function ($field) {
                 return $this->model->isMetaField($field);
             });
 
             if ($metaFields->count() > 0) {
+
+                $metaTable = $this->model->getMetaTable();
+
                 $query
                     ->select($this->model->getTable().'.*')
-                    ->leftJoin('post_meta', function ($join) use ($metaFields) {
-                        $join->on($this->model->getTable().'.id', '=', 'post_meta.post_id')
-                            ->whereIn('post_meta.key', $metaFields);
+                    ->leftJoin($metaTable, function ($join) use ($metaFields, $metaTable) {
+                        $join->on($this->model->getTable().'.id', '=', $metaTable .'.' . $this->model->getMetaForeignKey())
+                            ->whereIn( $metaTable . '.key', $metaFields);
                     })
-                    ->where(function ($query) {
+                    ->where(function ($query) use ($metaTable){
                         // Todo: Meta fields on Custom Tables may not have a title field.
 
                         $query
                             ->when($this->model->getTable() == 'posts', function ($query) {
                                 $query->where($this->model->getTable().'.title', 'like', $this->search.'%');
                             })
-                            ->orWhere(function ($query) {
-                                $query->where('post_meta.value', 'LIKE', '%'.$this->search.'%');
+                            ->orWhere(function ($query) use($metaTable) {
+                                $query->where($metaTable .'.value', 'LIKE', '%'.$this->search.'%');
                             });
                     })
                     ->groupBy($this->model->getTable().'.id');
