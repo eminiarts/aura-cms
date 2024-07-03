@@ -21,7 +21,7 @@ trait SaveFieldAttributes
             }
 
             collect($post->inputFieldsSlugs())->each(function ($slug) use ($post) {
-                if (optional($post->attributes)[$slug]) {
+                if (isset($post->attributes[$slug])) {
                     $class = $post->fieldClassBySlug($slug);
 
                     // Do not continue if the Field is not found

@@ -22,8 +22,6 @@ trait SaveMetaFields
 
                 foreach ($post->attributes['fields'] as $key => $value) {
 
-                    // ray('saving', $key, $value);
-
                     $class = $post->fieldClassBySlug($key);
 
                     // Do not continue if the Field is not found
@@ -95,12 +93,8 @@ trait SaveMetaFields
         });
 
         static::saved(function ($post) {
-            // ray('saved');
             if (isset($post->metaFields)) {
 
-                // ray('saved', $post->metaFields, $post->usesMeta());
-
-                // dd($post->metaFields, $post);
                 foreach ($post->metaFields as $key => $value) {
                     // if there is a function set{Slug}Field on the model, use it
                     $method = 'set'.Str::studly($key).'Field';
@@ -112,7 +106,6 @@ trait SaveMetaFields
                     }
 
                     if ($post->usesMeta()) {
-                        // ray('save meta', $key, $value);
                         $post->meta()->updateOrCreate(['key' => $key], ['value' => $value]);
                     }
 
