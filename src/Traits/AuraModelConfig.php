@@ -458,7 +458,15 @@ trait AuraModelConfig
 
     public function scopeWhereMeta($query, ...$args)
     {
-        if (count($args) === 2) {
+        if (count($args) === 3) {
+            $key = $args[0];
+            $operator = $args[1];
+            $value = $args[2];
+
+            return $query->whereHas('meta', function ($query) use ($key, $operator, $value) {
+                $query->where('key', $key)->where('value', $operator, $value);
+            });
+        } elseif (count($args) === 2) {
             $key = $args[0];
             $value = $args[1];
 
@@ -479,7 +487,6 @@ trait AuraModelConfig
 
         return $query;
     }
-
     /**
      * Scope a query to only include models where meta contains a specific value.
      *
