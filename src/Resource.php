@@ -64,8 +64,6 @@ class Resource extends Model
             }
         }
 
-        // ray($method);
-
         // Default behavior for methods not handled dynamically
         return parent::__call($method, $parameters);
     }
@@ -208,8 +206,6 @@ class Resource extends Model
                 return $this->shouldDisplayField($this->fieldBySlug($key));
             });
         }
-
-        // ray($this->fieldsAttributeCache);
 
         return $this->fieldsAttributeCache;
     }
