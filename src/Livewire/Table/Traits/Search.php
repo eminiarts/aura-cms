@@ -11,6 +11,14 @@ trait Search
     public function applySearch($query)
     {
         if ($this->search) {
+
+            // Check if there is a search method in the model (modifySearch()), and call it.
+            if (method_exists($this->model, 'modifySearch')) {
+                $query = $this->model->modifySearch($query, $this->search);
+
+                return $query;
+            }
+
             $searchableFields = $this->model->getSearchableFields()->pluck('slug');
             $metaFields = $searchableFields->filter(fn($field) => $this->model->isMetaField($field));
 
@@ -35,10 +43,7 @@ trait Search
                 }
             });
 
-            // Check if there is a search method in the model (modifySearch()), and call it.
-            if (method_exists($this->model, 'modifySearch')) {
-                $query = $this->model->modifySearch($query, $this->search);
-            }
+            
         }
 
         return $query;
