@@ -236,6 +236,8 @@ class Table extends Component
             })->toArray();
         }
 
+        // ray('headers', $sort);
+
         return $headers;
     }
 
@@ -285,10 +287,12 @@ class Table extends Component
             }
         }
 
-        if (auth()->user()->getOptionColumns($this->model()->getType())) {
-            $this->columns = auth()->user()->getOptionColumns($this->model()->getType());
-        } else {
-            $this->columns = $this->model()->getDefaultColumns();
+        if (empty($this->columns)) {
+            if (auth()->user()->getOptionColumns($this->model()->getType())) {
+                $this->columns = auth()->user()->getOptionColumns($this->model()->getType());
+            } else {
+                $this->columns = $this->model()->getDefaultColumns();
+            }
         }
 
         $this->initiateSettings();
