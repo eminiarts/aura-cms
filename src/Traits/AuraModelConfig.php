@@ -497,10 +497,13 @@ trait AuraModelConfig
      */
     public function scopeWhereMetaContains($query, $key, $value)
     {
+        ray($query, $key, $value)->red();
+
         return $query->whereHas('meta', function ($query) use ($key, $value) {
-            $query->where('key', $key)
-                ->where('value', 'REGEXP', "(^|[^0-9]){$value}([^0-9]|$)");
-        });
+        $value = is_numeric($value) ? (int) $value : $value;
+        $query->where('key', $key)
+              ->whereRaw("JSON_CONTAINS(value, ?)", [json_encode($value)]);
+    });
     }
 
     public function singularName()

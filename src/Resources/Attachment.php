@@ -24,6 +24,39 @@ class Attachment extends Resource
 
     protected static ?string $group = 'Aura';
 
+    public array $actions = [
+        'deleteAttachment' => [
+            'label' => 'Delete',
+            'icon-view' => 'aura::components.actions.trash',
+            'class' => 'hover:text-red-700 text-red-500 font-bold',
+            'confirm' => true,
+            'confirm-title' => 'Delete Post?',
+            'confirm-content' => 'Are you sure you want to delete this post?',
+            'confirm-button' => 'Delete',
+            'confirm-button-class' => 'ml-3 bg-red-600 hover:bg-red-700',
+        ],
+    ];
+
+    public array $bulkActions = [
+        // 'deleteSelected' => 'Delete',
+        // 'deleteSelected' => [
+        //     'label' => 'Delete',
+        //     'method' => 'collection',
+        // ],
+    ];
+
+    public function deleteAttachment() {
+        parent::delete();
+
+        return redirect()->route('aura.resource.index', ['slug' => 'Attachment']);
+    }
+
+    public function deleteSelected($ids) {
+        self::whereIn('id', $ids)->delete();
+
+        // return redirect()->route('aura.resource.index', ['slug' => 'Attachment'])->with('success', $deletedCount . ' attachments have been deleted.');
+    }
+
     public function defaultPerPage()
     {
         return 25;
