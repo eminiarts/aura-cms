@@ -4,14 +4,15 @@
             let quill = new window.Quill(this.$refs.quill, { theme: 'snow' })
     
             quill.on('text-change', function() {
-                $dispatch('input', quill.root.innerHTML);
+                $wire.$set('form.fields.{{ optional($field)['slug'] }}', quill.root.innerHTML);
             });
         },
-    }" x-ref="quill" wire:model="form.fields.{{ optional($field)['slug'] }}">
+    }" x-ref="quill">
         {!! $this->form['fields'][$field['slug']] ?? '' !!}
     </div>
 
 </x-aura::fields.wrapper>
+
 
 @assets
     @once
