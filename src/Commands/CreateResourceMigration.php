@@ -93,12 +93,12 @@ class CreateResourceMigration extends Command
         $combined = $baseFields->merge($fields)->merge(collect([
             [
                 'name' => 'User Id',
-                'type' => 'Aura\\Base\\Fields\\ID',
+                'type' => 'Aura\\Base\\Fields\\BelongsTo',
                 'slug' => 'user_id',
             ],
             [
                 'name' => 'Team Id',
-                'type' => 'Aura\\Base\\Fields\\ID',
+                'type' => 'Aura\\Base\\Fields\\BelongsTo',
                 'slug' => 'team_id',
             ],
             [
@@ -164,7 +164,13 @@ class CreateResourceMigration extends Command
         $fieldInstance = app($field['type']);
         $columnType = $fieldInstance->tableColumnType;
 
-        return "\$table->{$columnType}('{$field['slug']}')->nullable();\n";
+        $column = "\$table->{$columnType}('{$field['slug']}')";
+        
+        if ($fieldInstance->tableNullable) {
+            $column .= "->nullable()";
+        }
+
+        return $column . ";\n";
     }
 
     protected function generateSchema($fields)
