@@ -290,7 +290,7 @@ class ResourceEditor extends Component
 
         // $this->notify('Successfully generated migration for: '.$this->model->name);
 
-        $this->dispatch('closeModal');
+        $this->dispatch('close-modal');
     }
 
     public function getActionsProperty()
