@@ -9,9 +9,11 @@
     $confirmableId = md5($attributes->wire('then'));
 @endphp
 
-<div {{ $attributes->wire('then') }} x-data="{ showModal: false }" x-on:action-confirmed.window="setTimeout(() => $event.detail.id === '{{ $confirmableId }}' && $dispatch('then'), 250); showModal = false;">
 
     <x-aura::dialog>
+
+<div {{ $attributes->wire('then') }} x-on:action-confirmed.window="setTimeout(() => $event.detail.id === '{{ $confirmableId }}' && $dispatch('then'), 250); dialogOpen = false; console.log('confirmed')">
+
 
     <x-aura::dialog.open>
     <div>
@@ -33,17 +35,19 @@
                     </x-aura::button.transparent>
                 </x-aura::dialog.close>
 
-                 <x-aura::button.primary 
-        class="{{ $button_class }}" 
-        x-on:click="$wire.call('confirmAction', '{{ $confirmableId }}').then(() => { dialogOpen = false; })"
-        wire:loading.attr="disabled"
-    >
-                <div wire:loading wire:target="confirmAction">
+                <x-aura::button.primary class="{{ $button_class }}" wire:click="confirmAction('{{ $confirmableId }}')" wire:loading.attr="disabled">
+
+                 <div >
+                    <div wire:loading>
                     <x-aura::icon.loading />
                 </div>
-        {{ $button }}
-    </x-aura::button.primary>
+                
+                    {{ $button }}
+                 </div>
+                </x-aura::button.primary>
             </x-aura::dialog.footer>
         </x-aura::dialog.panel>
-    </x-aura::dialog>
+
 </div>
+
+    </x-aura::dialog>
