@@ -13,7 +13,7 @@ class BelongsTo extends Field
 
     public $optionGroup = 'Relationship Fields';
 
-    public $tableColumnType = 'bigIncrements';
+    public $tableColumnType = 'bigInteger';
 
     public string $type = 'input';
 
