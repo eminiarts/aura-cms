@@ -2,6 +2,4 @@
 
 namespace Aura\Base\Policies;
 
-class OptionPolicy extends ResourcePolicy
-{
-}
+class OptionPolicy extends ResourcePolicy {}

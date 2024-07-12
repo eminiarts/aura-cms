@@ -20,12 +20,12 @@ trait Search
             }
 
             $searchableFields = $this->model->getSearchableFields()->pluck('slug');
-            $metaFields = $searchableFields->filter(fn($field) => $this->model->isMetaField($field));
+            $metaFields = $searchableFields->filter(fn ($field) => $this->model->isMetaField($field));
 
             $query->where(function ($query) use ($searchableFields, $metaFields) {
                 // Search in regular fields
                 foreach ($searchableFields as $field) {
-                    if (!$metaFields->contains($field)) {
+                    if (! $metaFields->contains($field)) {
                         $query->orWhere($this->model->getTable().'.'.$field, 'like', '%'.$this->search.'%');
                     }
                 }
@@ -43,7 +43,6 @@ trait Search
                 }
             });
 
-            
         }
 
         return $query;

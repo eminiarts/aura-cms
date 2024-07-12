@@ -2,6 +2,8 @@
     $logo = $darkLogo = null;
     $settings = $this->settings;
 
+    $compact = $this->compact;
+
     if($settings && (isset($settings['logo'][0]) || isset($settings['logo-darkmode'][0]))) {
         $logo = isset($settings['logo'][0]) ? $settings['logo'][0] : null;
         $darkLogo = isset($settings['logo-darkmode'][0]) ? $settings['logo-darkmode'][0] : null;

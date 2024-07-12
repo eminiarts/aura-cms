@@ -43,7 +43,5 @@ class PolicyServiceProvider extends ServiceProvider
         // });
     }
 
-    public function register(): void
-    {
-    }
+    public function register(): void {}
 }

@@ -12,18 +12,6 @@ class Attachment extends Resource
 {
     use DispatchesJobs;
 
-    public static $contextMenu = false;
-
-    public static ?string $name = 'Media';
-
-    public static ?string $slug = 'attachment';
-
-    public static ?int $sort = 2;
-
-    public static string $type = 'Attachment';
-
-    protected static ?string $group = 'Aura';
-
     public array $actions = [
         'deleteAttachment' => [
             'label' => 'Delete',
@@ -45,17 +33,17 @@ class Attachment extends Resource
         // ],
     ];
 
-    public function deleteAttachment() {
-        parent::delete();
+    public static $contextMenu = false;
 
-        return redirect()->route('aura.resource.index', ['slug' => 'Attachment']);
-    }
+    public static ?string $name = 'Media';
 
-    public function deleteSelected($ids) {
-        self::whereIn('id', $ids)->delete();
+    public static ?string $slug = 'attachment';
 
-        // return redirect()->route('aura.resource.index', ['slug' => 'Attachment'])->with('success', $deletedCount . ' attachments have been deleted.');
-    }
+    public static ?int $sort = 2;
+
+    public static string $type = 'Attachment';
+
+    protected static ?string $group = 'Aura';
 
     public function defaultPerPage()
     {
@@ -65,6 +53,20 @@ class Attachment extends Resource
     public function defaultTableView()
     {
         return 'grid';
+    }
+
+    public function deleteAttachment()
+    {
+        parent::delete();
+
+        return redirect()->route('aura.resource.index', ['slug' => 'Attachment']);
+    }
+
+    public function deleteSelected($ids)
+    {
+        self::whereIn('id', $ids)->delete();
+
+        // return redirect()->route('aura.resource.index', ['slug' => 'Attachment'])->with('success', $deletedCount . ' attachments have been deleted.');
     }
 
     public function filePath($size = null)

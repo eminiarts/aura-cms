@@ -2,47 +2,15 @@
 
 namespace Aura\Base\Livewire;
 
-use Livewire\Component;
 use Livewire\Attributes\Computed;
+use Livewire\Component;
+
 class Navigation extends Component
 {
     public $iconClass;
 
-
     public $toggledGroups = [];
 
-    public function getIconClass($sidebarType)
-    {
-        return '';
-    }
-
-    #[Computed]
-    public function settings()
-    {
-        if (config('aura.teams')) {
-        return app('aura')::getOption('team-settings');
-        } 
-
-        return app('aura')::getOption('settings');
-    }
-
-    #[Computed]
-    public function sidebarToggled(){
-        return auth()->check() ? auth()->user()->getOptionSidebarToggled() : true;
-    }
-
-    #[Computed]
-    public function sidebarType(): string
-    {
-        return $this->settings['sidebar-type'] ?? 'primary';
-    }
-
-    #[Computed]
-    public function darkmodeType(): string
-    {
-        return $this->settings['darkmode-type'] ?? 'auto';
-    }
-    
     #[Computed]
     public function compact(): string
     {
@@ -50,9 +18,14 @@ class Navigation extends Component
     }
 
     #[Computed]
-    public function sidebarDarkmodeType(): string
+    public function darkmodeType(): string
     {
-        return $this->settings['sidebar-darkmode-type'] ?? 'dark';
+        return $this->settings['darkmode-type'] ?? 'auto';
+    }
+
+    public function getIconClass($sidebarType)
+    {
+        return '';
     }
 
     public function isToggled($group)
@@ -81,6 +54,34 @@ class Navigation extends Component
     public function render()
     {
         return view('aura::livewire.navigation');
+    }
+
+    #[Computed]
+    public function settings()
+    {
+        if (config('aura.teams')) {
+            // return app('aura')::getOption('team-settings');
+        }
+
+        return app('aura')::getOption('settings');
+    }
+
+    #[Computed]
+    public function sidebarDarkmodeType(): string
+    {
+        return $this->settings['sidebar-darkmode-type'] ?? 'dark';
+    }
+
+    #[Computed]
+    public function sidebarToggled()
+    {
+        return auth()->check() ? auth()->user()->getOptionSidebarToggled() : true;
+    }
+
+    #[Computed]
+    public function sidebarType(): string
+    {
+        return $this->settings['sidebar-type'] ?? 'primary';
     }
 
     public function toggleGroup($group)

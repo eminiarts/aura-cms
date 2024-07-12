@@ -214,8 +214,7 @@ class Post extends Resource
                 'conditional_logic' => [
                 ],
                 'slug' => 'password',
-                'hydrate' => function ($set, $model, $state, $get) {
-                },
+                'hydrate' => function ($set, $model, $state, $get) {},
                 'on_index' => false,
                 'on_forms' => true,
                 'on_view' => false,
@@ -506,9 +505,7 @@ class Post extends Resource
         ];
     }
 
-    public function testAction()
-    {
-    }
+    public function testAction() {}
 
     // public static function getWidgets(): array
     // {

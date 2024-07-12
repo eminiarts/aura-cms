@@ -202,7 +202,8 @@ class Resource extends Model
                 });
 
             $this->fieldsAttributeCache = $defaultValues->filter(function ($value, $key) {
-                 return true; // for now
+                return true; // for now
+
                 return $this->shouldDisplayField($this->fieldBySlug($key));
             });
         }
@@ -341,9 +342,7 @@ class Resource extends Model
 
         static::addGlobalScope(new ScopedScope());
 
-        static::creating(function ($model) {
-
-        });
+        static::creating(function ($model) {});
 
         static::saved(function ($model) {
             $model->clearFieldsAttributeCache();

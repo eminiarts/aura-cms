@@ -33,9 +33,16 @@
                     </x-aura::button.transparent>
                 </x-aura::dialog.close>
 
-                <x-aura::button.primary class="{{ $button_class }}" wire:click="confirmAction('{{ $confirmableId }}')" wire:loading.attr="disabled">
-                    {{ $button }}
-                </x-aura::button.primary>
+                 <x-aura::button.primary 
+        class="{{ $button_class }}" 
+        x-on:click="$wire.call('confirmAction', '{{ $confirmableId }}').then(() => { dialogOpen = false; })"
+        wire:loading.attr="disabled"
+    >
+                <div wire:loading wire:target="confirmAction">
+                    <x-aura::icon.loading />
+                </div>
+        {{ $button }}
+    </x-aura::button.primary>
             </x-aura::dialog.footer>
         </x-aura::dialog.panel>
     </x-aura::dialog>

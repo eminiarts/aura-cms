@@ -15,9 +15,7 @@ class FlowNotification extends Notification
      *
      * @return void
      */
-    public function __construct(public $resource, public $message)
-    {
-    }
+    public function __construct(public $resource, public $message) {}
 
     /**
      * Get the array representation of the notification.

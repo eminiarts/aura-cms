@@ -54,8 +54,6 @@ test('HasMany Field shown on Edit', function () {
 
 });
 
-test('HasMany query Meta Fields with posts table', function () {
-});
+test('HasMany query Meta Fields with posts table', function () {});
 
-test('HasMany query with custom tables', function () {
-});
+test('HasMany query with custom tables', function () {});

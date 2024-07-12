@@ -174,15 +174,9 @@ trait AuraModelConfig
         }
     }
 
-    public function getBadge()
-    {
+    public function getBadge() {}
 
-    }
-
-    public function getBadgeColor()
-    {
-
-    }
+    public function getBadgeColor() {}
 
     public function getBaseFillable()
     {
@@ -251,6 +245,18 @@ trait AuraModelConfig
     public function getIndexRoute()
     {
         return route('aura.resource.index', $this->getSlug());
+    }
+
+    public function getMetaForeignKey()
+    {
+        return $this->meta()->getForeignKeyName();
+    }
+
+    public function getMetaTable()
+    {
+        return $this->meta()->getRelated()->getTable();
+
+        //return (new Meta())->getTable();
     }
 
     public static function getName(): ?string
@@ -396,8 +402,6 @@ trait AuraModelConfig
         //->whereIn('key', $this->inputFieldsSlugs())
     }
 
-   
-
     public function navigation()
     {
         return [
@@ -487,6 +491,7 @@ trait AuraModelConfig
 
         return $query;
     }
+
     /**
      * Scope a query to only include models where meta contains a specific value.
      *
@@ -500,10 +505,10 @@ trait AuraModelConfig
         // ray($query, $key, $value)->red();
 
         return $query->whereHas('meta', function ($query) use ($key, $value) {
-        $value = is_numeric($value) ? (int) $value : $value;
-        $query->where('key', $key)
-              ->whereRaw("JSON_CONTAINS(value, ?)", [json_encode($value)]);
-    });
+            $value = is_numeric($value) ? (int) $value : $value;
+            $query->where('key', $key)
+                ->whereRaw('JSON_CONTAINS(value, ?)', [json_encode($value)]);
+        });
     }
 
     public function singularName()
@@ -584,17 +589,5 @@ trait AuraModelConfig
     public function viewView()
     {
         return 'aura::livewire.resource.view';
-    }
-
-    public function getMetaTable()
-    {
-        return $this->meta()->getRelated()->getTable();
-
-        //return (new Meta())->getTable();
-    }
-
-    public function getMetaForeignKey()
-    {
-        return $this->meta()->getForeignKeyName();
     }
 }

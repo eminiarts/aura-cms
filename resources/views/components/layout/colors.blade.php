@@ -4,10 +4,9 @@
 
 @php
     $settings = app('aura')::getOption('settings');
-    $appSettings = app('aura')::options();
 @endphp
 
-{{-- @dd('hier2', $settings, $appSettings) --}}
+{{-- @dd('hier2', $settings, optional($settings)['color-palette']) --}}
 
 @if($settings)
     <style>
@@ -309,17 +308,17 @@
         @elseif (optional($settings)['color-palette'] == 'indigo' )
 
     :root {
-            --primary-25: 240 239 255
-            --primary-50: 224 231 255
-            --primary-100: 199 210 254
-            --primary-200: 165 180 252
-            --primary-300: 129 140 248
-            --primary-400: 99 182 241
-            --primary-500: 79 70 229
-            --primary-600: 67 56 202
-            --primary-700: 55 48 163
-            --primary-800: 49 46 129
-            --primary-900: 39 44 97
+            --primary-25: 240 239 255;
+            --primary-50: 224 231 255;
+            --primary-100: 199 210 254;
+            --primary-200: 165 180 252;
+            --primary-300: 129 140 248;
+            --primary-400: 99 182 241;
+            --primary-500: 79 70 229;
+            --primary-600: 67 56 202;
+            --primary-700: 55 48 163;
+            --primary-800: 49 46 129;
+            --primary-900: 39 44 97;
         }
 
         @elseif (optional($settings)['color-palette'] == 'violet' )

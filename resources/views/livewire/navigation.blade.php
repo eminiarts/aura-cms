@@ -1,9 +1,7 @@
 <div class="aura-sidebar aura-sidebar-type-{{ $this->sidebarType }} aura-darkmode-type-{{ $this->darkmodeType }}
-
         @if($this->darkmodeType == 'auto')
             aura-sidebar-darkmode-type-{{ $this->sidebarDarkmodeType }}
         @endif">
-
     <style>
         @media screen and (max-width: 768px) {
             .mobile-load-hidden {
