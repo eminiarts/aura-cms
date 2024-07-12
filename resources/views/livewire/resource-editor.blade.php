@@ -232,14 +232,15 @@
             </div>
 
         @else
-            <div>
+        
+            {{-- <div>
                 <button
                     class="px-2 py-1 focus:outline-none"
                     wire:click="addNewTab()"
                 >
                     <span class="ml-2">+ New Tab</span>
                 </button>
-            </div>
+            </div> --}}
 
 
             @if (count($this->mappedFields) > 0)
@@ -294,50 +295,50 @@
                 </div>
             @else
                 <div class="text-center">
-                    
+                    <div class="py-6">
+                        <h3 class="mt-4 text-base font-semibold text-gray-900">No fields</h3>
+                    <p class="mt-1 text-sm text-gray-500">Get started by choosing a template for your resource.</p>
+                    </div>
 
                     <div class="mt-0">
-                        <div class="p-0 w-full">
+                        <div class="py-4 w-full">
 
-    <div class="grid grid-flow-col auto-cols-max justify-between space-x-8 w-full">
-        <div class="flex flex-col justify-between items-center p-6 my-6 bg-gray-100 rounded-md">
-            <div class="flex flex-col items-center my-6">
-            <h3 class="text-lg font-semibold">Plain</h3>
-            <span class="text-sm text-gray-500">Without Tabs and Panels</span>
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 w-full">
+        <div class="flex flex-col justify-between items-center p-6 bg-gray-100 rounded-md">
+            <div class="flex flex-col items-center mb-6 text-center">
+                <h3 class="text-lg font-semibold">Plain</h3>
+                <span class="text-sm text-gray-500">Without Tabs and Panels</span>
             </div>
             
-
-            <x-aura::icon.template-plain />
+            <x-aura::icon.template-plain class="mb-6" />
 
             <x-aura::button size="lg" wire:click="addTemplateFields('Plain')">Choose Template</x-aura::button>
         </div>
 
-        <div class="flex flex-col justify-between items-center p-6 my-6 bg-gray-100 rounded-md">
-            <div class="flex flex-col items-center my-6">
-            <h3 class="text-lg font-semibold">Tabs</h3>
-            <span class="text-sm text-gray-500">Use global Tabs to group Fields</span>
+        <div class="flex flex-col justify-between items-center p-6 bg-gray-100 rounded-md">
+            <div class="flex flex-col items-center mb-6 text-center">
+                <h3 class="text-lg font-semibold">Tabs</h3>
+                <span class="text-sm text-gray-500">Use global Tabs to group Fields</span>
             </div>
 
-            <x-aura::icon.template-tabs />
+            <x-aura::icon.template-tabs class="mb-6" />
             
-
             <x-aura::button size="lg" wire:click="addTemplateFields('TabsWithPanels')">Choose Template</x-aura::button>
         </div>
 
-        <div class="flex flex-col justify-between items-center p-6 my-6 bg-gray-100 rounded-md">
-            <div class="flex flex-col items-center my-6">
-            <h3 class="text-lg font-semibold">Tabs and Panels</h3>
-            <span class="text-sm text-gray-500">Complex Models require both</span>
+        <div class="flex flex-col justify-between items-center p-6 bg-gray-100 rounded-md">
+            <div class="flex flex-col items-center mb-6 text-center">
+                <h3 class="text-lg font-semibold">Tabs and Panels</h3>
+                <span class="text-sm text-gray-500">Complex Models require both</span>
             </div>
 
-            <x-aura::icon.template-tabs-panels />
+            <x-aura::icon.template-tabs-panels class="mb-6" />
             
-
             <x-aura::button size="lg" wire:click="addTemplateFields('TabsWithPanels')">Choose Template</x-aura::button>
         </div>
     </div>
 
-    <div class="flex justify-start mb-2 w-full">
+    {{-- <div class="flex justify-start mb-2 w-full">
         <span class="text-sm font-semibold text-gray-500">More templates</span>
     </div>
     <div class="flex justify-start space-x-2 w-full">
@@ -347,7 +348,7 @@
         <x-aura::button.border wire:click="addTemplateFields('TabsWithPanels')">TabsWithPanels</x-aura::button.border>
         <x-aura::button.border wire:click="addTemplateFields('PanelWithSidebar')">PanelWithSidebar</x-aura::button.border>
         <x-aura::button.border wire:click="addTemplateFields('PanelWithTabs')">PanelWithTabs</x-aura::button.border>
-    </div>
+    </div> --}}
 </div>
 
                     </div>
