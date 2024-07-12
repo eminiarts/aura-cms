@@ -2,6 +2,4 @@
 
 namespace Aura\Base\Policies;
 
-class UserPolicy extends ResourcePolicy
-{
-}
+class UserPolicy extends ResourcePolicy {}

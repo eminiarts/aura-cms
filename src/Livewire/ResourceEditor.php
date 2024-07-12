@@ -239,11 +239,58 @@ class ResourceEditor extends Component
 
     public function generateMigration()
     {
+        // We need to set
+        // public static $customTable = true;
+        // in the resource class
+        // and set public static ?string $slug = 'company';
+
+        $resourceClass = new \ReflectionClass($this->model::class);
+        $filePath = $resourceClass->getFileName();
+
+        if (file_exists($filePath)) {
+            $file = file_get_contents($filePath);
+
+            // Add or update $customTable
+            if (strpos($file, 'public static $customTable') === false) {
+                $file = preg_replace(
+                    '/(class\s+'.$resourceClass->getShortName().'\s+extends\s+\S+\s*{)/i',
+                    "$1\n    public static \$customTable = true;",
+                    $file
+                );
+            } else {
+                $file = preg_replace(
+                    '/public\s+static\s+\$customTable\s*=\s*(?:true|false);/i',
+                    'public static $customTable = true;',
+                    $file
+                );
+            }
+
+            // Add or update $slug
+            $tableName = Str::lower($this->model->getPluralName());
+            if (strpos($file, 'protected $table') === false) {
+                $file = preg_replace(
+                    '/(class\s+'.$resourceClass->getShortName().'\s+extends\s+\S+\s*{)/i',
+                    "$1\n    protected \$table = '$tableName';",
+                    $file
+                );
+            } else {
+                $file = preg_replace(
+                    '/protected\s+\$table\s*=\s*[\'"].*?[\'"]\s*;/i',
+                    "protected \$table = '$tableName';",
+                    $file
+                );
+            }
+
+            file_put_contents($filePath, $file);
+        }
+
         Artisan::call('aura:create-resource-migration', [
             'resource' => $this->model::class,
         ]);
 
-        $this->notify('Successfully generated migration for: '.$this->model->name);
+        // $this->notify('Successfully generated migration for: '.$this->model->name);
+
+        $this->dispatch('closeModal');
     }
 
     public function getActionsProperty()

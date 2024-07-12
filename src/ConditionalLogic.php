@@ -13,12 +13,12 @@ class ConditionalLogic
         $conditions = $field['conditional_logic'] ?? null;
 
         // Check if conditions are set and if the user is authenticated
-        if (!$conditions || !auth()->check()) {
+        if (! $conditions || ! auth()->check()) {
             return true;
         }
 
         // Ensure $conditions is an array or a closure
-        if (!is_array($conditions) && !($conditions instanceof \Closure)) {
+        if (! is_array($conditions) && ! ($conditions instanceof \Closure)) {
             return true;
         }
 
@@ -34,7 +34,7 @@ class ConditionalLogic
         }
 
         foreach ($conditions as $condition) {
-            if (!is_array($condition)) {
+            if (! is_array($condition)) {
                 continue;
             }
 
@@ -43,7 +43,7 @@ class ConditionalLogic
                 default => self::handleDefaultCondition($model, $condition, $post)
             };
 
-            if (!$show) {
+            if (! $show) {
                 return false;
             }
         }
@@ -59,12 +59,12 @@ class ConditionalLogic
     public static function fieldIsVisibleTo($field, $user)
     {
         $conditions = $field['conditional_logic'] ?? null;
-        if (!$conditions || $user->isSuperAdmin()) {
+        if (! $conditions || $user->isSuperAdmin()) {
             return true;
         }
 
         foreach ($conditions as $condition) {
-            if ($condition['field'] === 'role' && !self::checkRoleCondition($condition)) {
+            if ($condition['field'] === 'role' && ! self::checkRoleCondition($condition)) {
                 return false;
             }
         }
@@ -74,21 +74,21 @@ class ConditionalLogic
 
     public static function shouldDisplayField($model, $field, $post = null)
     {
-        if (!$field || empty($field['conditional_logic'])) {
+        if (! $field || empty($field['conditional_logic'])) {
             return true;
         }
 
-        if(!$post) {
+        if (! $post) {
             $post = $model->getAttributes();
         }
 
-        $cacheKey = md5(get_class($model) . json_encode($field) . json_encode($post) . auth()->id());
+        $cacheKey = md5(get_class($model).json_encode($field).json_encode($post).auth()->id());
 
         // ray($cacheKey, json_encode($post) );
 
         return self::checkCondition($model, $field, $post);
-        
-        return Cache::remember('conditions_'. $cacheKey, now()->addMinutes(15), function () use ($model, $field, $post) {
+
+        return Cache::remember('conditions_'.$cacheKey, now()->addMinutes(15), function () use ($model, $field, $post) {
             return self::checkCondition($model, $field, $post);
         });
     }
@@ -110,7 +110,7 @@ class ConditionalLogic
     {
         return match ($condition['operator']) {
             '==' => auth()->user()->hasRole($condition['value']),
-            '!=' => !auth()->user()->hasRole($condition['value']),
+            '!=' => ! auth()->user()->hasRole($condition['value']),
             default => false
         };
     }

@@ -104,7 +104,7 @@ class Role extends Resource
                 'conditional_logic' => function ($model, $form) {
 
                     ray('check', $form);
-                    
+
                     if (optional(optional($form)['fields'])['super_admin']) {
                         return false;
                     }

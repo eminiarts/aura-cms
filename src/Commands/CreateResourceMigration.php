@@ -34,7 +34,8 @@ class CreateResourceMigration extends Command
             return 1;
         }
 
-        $resource = new $resourceClass();
+        $resource = app($resourceClass);
+
 
         if (! method_exists($resource, 'getFields')) {
             $this->error("Method 'getFields' not found in the '{$resourceClass}' class.");
@@ -42,7 +43,10 @@ class CreateResourceMigration extends Command
             return 1;
         }
 
-        $tableName = $resource->getTable();
+
+        $tableName = Str::lower($resource->getPluralName());
+
+
         $migrationName = "create_{$tableName}_table";
 
         $baseFields = collect([

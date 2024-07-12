@@ -86,5 +86,4 @@ test('media grid view', function () {
     expect($attachment->defaultTableView())->toBe('grid');
 });
 
-test('media can be selected', function () {
-});
+test('media can be selected', function () {});

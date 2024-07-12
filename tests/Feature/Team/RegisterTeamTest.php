@@ -12,8 +12,7 @@ beforeEach(function () {
     $this->actingAs($this->user = createSuperAdmin());
 });
 
-test('team can be registered', function () {
-});
+test('team can be registered', function () {});
 
 // test('registration config can be disabled', function () {
 //     // test Config Livewire component
