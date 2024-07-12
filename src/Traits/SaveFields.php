@@ -48,6 +48,7 @@ trait SaveFields
 
     public function saveFields($fields)
     {
+        ray('saveFields', $fields);
         $fieldsWithIds = $fields;
 
         // Unset Mapping of Fields
@@ -60,8 +61,12 @@ trait SaveFields
 
         $a = new \ReflectionClass($this->model::class);
 
-        if (Storage::exists($a->getFileName())) {
-            $file = Storage::get($a->getFileName());
+        $filePath = $a->getFileName();
+
+        ray($a->getFileName(), Storage::exists($a->getFileName()), file_exists($filePath))->red();
+
+        if (file_exists($filePath)) {
+            $file = file_get_contents($filePath);
 
             $replacement = Aura::varexport($this->setKeysToFields($fields), true);
 
@@ -77,7 +82,9 @@ trait SaveFields
                 $file
             );
 
-            Storage::put($a->getFileName(), $replaced);
+            ray('replaced', $replaced);
+
+            file_put_contents($filePath, $replaced);
         }
 
         // Trigger the event to change the database schema
