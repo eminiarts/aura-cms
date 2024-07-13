@@ -1,6 +1,10 @@
 <x-aura::layout.login>
     <!-- Session Status -->
     <x-aura::auth-session-status class="mb-4" :status="session('status')" />
+    
+    @local
+    <a href="{{ route('aura.login-as', ['id' => app(config('aura.resources.user'))::first()->id]) }}">Admin</a>
+    @endlocal
 
     <form method="POST" action="">
         @csrf

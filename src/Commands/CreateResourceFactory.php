@@ -71,7 +71,7 @@ class CreateResourceFactory extends Command
         }
 
         // Generate factory content
-        $factoryContent = $this->generateFactoryContent($resource, $modelName);
+        $factoryContent = $this->generateFactoryContent($resourceClass, $modelName);
 
         // Update the factory file
         $this->files->put($factoryPath, $factoryContent);
@@ -81,7 +81,7 @@ class CreateResourceFactory extends Command
 
     protected function generateFactoryContent($resource, $modelName)
     {
-        $fields = $resource->getFields();
+        $fields = app($resource)->getFields();
         $factoryDefinition = $this->generateFactoryDefinition($fields);
 
         return <<<PHP

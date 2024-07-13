@@ -19,6 +19,7 @@ Route::middleware(config('aura.middleware.aura-admin'))->group(function () {
     Route::impersonate();
 });
 
+
 Route::domain(config('aura.domain'))
     ->middleware(config('aura.middleware.aura-admin'))
     ->name('aura.')

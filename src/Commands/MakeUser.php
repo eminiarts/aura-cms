@@ -53,7 +53,6 @@ class MakeUser extends Command
             'type' => 'Role',
             'title' => 'Super Admin',
             'slug' => 'super_admin',
-            'name' => 'Super Admin',
             'description' => 'Super Admin can perform everything.',
             'super_admin' => true,
             'permissions' => [],
