@@ -19,7 +19,6 @@
             window.dispatchEvent(new Event('resize'));
 
             if (index !== undefined){
-                console.log('index', index, this.currentIndex)
                 this.currentIndex = index;
             }
         },

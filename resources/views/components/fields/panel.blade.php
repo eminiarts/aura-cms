@@ -11,7 +11,7 @@
 </style>
 
 <div class="px-2" id="resource-field-{{ optional($field)['slug'] }}-wrapper">
-    <div class="aura-card {{ $field['style']['class'] ?? '' }}">
+    <div class="{{ $field['style']['class'] ?? 'aura-card' }}">
         <div class="mb-2">
           @if(isset($field['name']))
         <div class="px-2 mt-1">
