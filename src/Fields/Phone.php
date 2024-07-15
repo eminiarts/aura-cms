@@ -8,7 +8,7 @@ class Phone extends Field
 
     public $optionGroup = 'Input Fields';
 
-    // public $view = 'components.fields.phone';
+    public $view = 'aura::fields.view-value';
 
     public function getFields()
     {

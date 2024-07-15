@@ -8,7 +8,7 @@ class Status extends Field
 
     public $optionGroup = 'Choice Fields';
 
-    public $view = 'aura::fields.status';
+    public $view = 'aura::fields.view-value';
 
     public function getFields()
     {

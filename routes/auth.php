@@ -25,24 +25,17 @@ Route::get('logout', [AuthenticatedSessionController::class, 'destroy'])->name('
 
 
 Route::middleware('guest')->name('aura.')->group(function () {
-
     Route::get('/login-as/{id}', function ($id) {
-    if (!app()->environment('local')) {
-        abort(404);
-    }
+        if (!app()->environment('local')) {
+            abort(404);
+        }
 
-    $user = app(config('aura.resources.user'))->findOrFail($id);
+        $user = app(config('aura.resources.user'))->findOrFail($id);
 
-    // dd($user->toArray());
-    if (!auth()->loginUsingId($user->id)) {
-        return "Failed to log in";
-    }
+        auth()->loginUsingId($user->id);
 
-    auth()->loginUsingId($user->id);
-
-
-    return redirect()->route('aura.dashboard');
-})->name('login-as');
+        return redirect()->route('aura.dashboard');
+    })->name('login-as');
 
     Route::get('login', [AuthenticatedSessionController::class, 'create'])
         ->name('login');

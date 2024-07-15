@@ -56,7 +56,7 @@
 
             inputs.forEach((input) => {
                 if (!input.hasAttribute('readonly')) {
-                    input.setAttribute('readonly', true);
+                   // input.setAttribute('readonly', true);
                 }
             });
         }

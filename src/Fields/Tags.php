@@ -12,7 +12,7 @@ class Tags extends Field
 
     public string $type = 'input';
 
-    // public $view = 'components.fields.tags';
+    public $view = 'aura::fields.view-value';
 
     public function display($field, $value, $model)
     {
