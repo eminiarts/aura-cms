@@ -39,7 +39,7 @@
 
         <div class="flex items-center space-x-2">
             @include('aura::livewire.resource.actions')
-            <x-aura::button size="lg" wire:click="save">
+            <x-aura::button wire:click="save">
                 <div wire:loading>
                     <x-aura::icon.loading />
                 </div>
@@ -303,7 +303,7 @@
                     <div class="mt-0">
                         <div class="py-4 w-full">
                             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 w-full">
-                                <div class="flex flex-col justify-between items-center p-6 bg-gray-100 rounded-md transition-all duration-300 border-2 border-transparent hover:border-2 hover:border-blue-500 cursor-pointer" wire:click="addTemplateFields('g')">
+                                <div class="flex flex-col justify-between items-center p-6 bg-gray-100 rounded-md transition-all duration-300 border-2 border-transparent hover:border-2 hover:border-blue-500 cursor-pointer" wire:click="addTemplateFields('Plain')">
                                     <div class="flex flex-col items-center mb-6 text-center">
                                         <h3 class="text-lg font-semibold">Plain</h3>
                                         <span class="text-sm text-gray-500">Without Tabs and Panels</span>
