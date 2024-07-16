@@ -42,7 +42,7 @@ x-data="{
             let tagValues = [];
 
             if(this.value.length > 0) {
-                tagValues = JSON.parse(this.value).map(id => {
+                tagValues = this.value.map(id => {
                     let option = this.options.find(option => option.id === id);
                     return option ? {id: id, value: option.value} : {};
                 });

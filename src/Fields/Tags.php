@@ -10,9 +10,16 @@ class Tags extends Field
 
     public bool $taxonomy = true;
 
-    public string $type = 'relation';
+    public string $type = 'input';
 
     public $view = 'aura::fields.view-value';
+
+    public function get($class, $value)
+    {
+        ray($class, $value)->green();
+        $values = $value->pluck('id')->toArray();
+        return $values;
+    }
 
     public function display($field, $value, $model)
     {
