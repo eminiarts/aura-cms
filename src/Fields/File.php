@@ -19,7 +19,7 @@ class File extends Field
         return json_decode($value, true);
     }
 
-    public function set($value)
+    public function set($post, $field, $value)
     {
         // dump('setting file here', $value);
         if (is_null($value)) {

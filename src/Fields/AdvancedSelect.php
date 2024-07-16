@@ -107,7 +107,7 @@ class AdvancedSelect extends Field
         })->toArray();
     }
 
-    public function set($value)
+    public function set($post, $field, $value)
     {
         return json_encode($value);
     }

@@ -11,6 +11,10 @@ if (key_exists('resource', $field) ) {
     $taxonomy = app($field['resource']);
 
 }
+
+// $values = $this->model->tags->pluck('title', 'id')->toArray();
+
+dump($this->form['fields']);
 @endphp
 
 

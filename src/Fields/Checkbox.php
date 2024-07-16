@@ -85,7 +85,7 @@ class Checkbox extends Field
         return $field['options'] ?? [];
     }
 
-    public function set($value)
+    public function set($post, $field, $value)
     {
         if (is_array($value)) {
             return json_encode($value);
