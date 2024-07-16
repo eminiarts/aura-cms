@@ -16,9 +16,13 @@ class Tags extends Field
 
     public function get($class, $value)
     {
-        ray($class, $value)->green();
-        $values = $value->pluck('id')->toArray();
-        return $values;
+        if (is_array($value)) {
+            return array_column($value, 'id');
+        } elseif (is_object($value) && method_exists($value, 'pluck')) {
+            return $value->pluck('id')->toArray();
+        } else {
+            return [];
+        }
     }
 
     public function display($field, $value, $model)
@@ -44,19 +48,11 @@ class Tags extends Field
 
     public function saved($post, $field, $value)
     {
-        ray('saved tags', $value, $field);
-
-        // $value are the ids
-        // $field['resource'] is the type
-
-
-
         if (is_string($value)) {
             $value = json_decode($value, true);
         }
 
-        // Assuming $model is an instance of the model that has the tags relationship
-        // and Tag is the model name for tags
+        dd($value);
 
         $ids = collect($value)->map(function ($tagName) use ($field) {
             $tag = app($field['resource'])->where('title', $tagName)->first();
@@ -74,7 +70,6 @@ class Tags extends Field
         })->toArray();
 
         if (is_array($ids)) {
-            ray('sync here', $post, $ids)->red();
             $post->tags()->sync($ids);
         } else {
             $post->tags()->sync([]);
