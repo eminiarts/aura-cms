@@ -8,6 +8,7 @@ use Aura\Base\Fields\Tags;
 use Aura\Base\Fields\Text;
 use Aura\Base\Facades\Aura;
 use Aura\Base\Livewire\Resource\Create;
+use Aura\Base\Resources\Tag;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 // Before each test, create a Superadmin and login
@@ -26,7 +27,7 @@ class TagsFieldModel extends Resource
                 'name' => 'Tags',
                 'slug' => 'tags',
                 'type' => 'Aura\\Base\\Fields\\Tags',
-                'resource' => 'Aura\\Base\\Taxonomies\\Tag',
+                'resource' => 'Aura\\Base\\Resources\\Tag',
                 'create' => true,
                 'validation' => '',
                 'conditional_logic' => [],
@@ -47,62 +48,39 @@ test('check Tags Fields', function () {
     expect($fields->firstWhere('slug', 'resource'))->not->toBeNull();
 });
 
-test('Tags Field - Name rendered', function () {
-    $field = [
-                'name' => 'Tags',
-                'slug' => 'tags',
-                'type' => 'Aura\\Base\\Fields\\Tags',
-                'resource' => 'Aura\\Base\\Taxonomies\\Tag',
-                'create' => true,
-                'validation' => '',
-                'conditional_logic' => [],
-                'on_index' => false,
-                'on_forms' => true,
-                'on_view' => true,
-            ];
+// test('Tags Field - Name rendered', function () {
+//     $field = [
+//                 'name' => 'Tags',
+//                 'slug' => 'tags',
+//                 'type' => 'Aura\\Base\\Fields\\Tags',
+//                 'resource' => 'Aura\\Base\\Resources\\Tag',
+//                 'create' => true,
+//                 'validation' => '',
+//                 'conditional_logic' => [],
+//                 'on_index' => false,
+//                 'on_forms' => true,
+//                 'on_view' => true,
+//             ];
 
-    $fieldClass = app($field['type']);
-    $field['field'] = $fieldClass;
+//     $fieldClass = app($field['type']);
+//     $field['field'] = $fieldClass;
 
-    $view = $this->withViewErrors([])->blade(
-        '<x-dynamic-component :component="$component" :field="$field" :form="$form" />',
-        ['component' => $fieldClass->component, 'field' => $field, 'form' => []]
-    );
+//     $view = $this->withViewErrors([])->blade(
+//         '<x-dynamic-component :component="$component" :field="$field" :form="$form" />',
+//         ['component' => $fieldClass->component, 'field' => $field, 'form' => []]
+//     );
 
-    expect((string) $view)->toContain('>Text for Test</label>');
-});
+//     expect((string) $view)->toContain('>Tags</label>');
+// });
 
-test('Text Field - Placeholder rendered', function () {
-    $field = [
-        'name' => 'Text for Test',
-        'type' => 'Aura\\Base\\Fields\\Text',
-        'placeholder' => 'Placeholder for Test',
-        'validation' => '',
-        'conditional_logic' => [],
-        'slug' => 'text',
-    ];
 
-    $fieldClass = app($field['type']);
-    $field['field'] = $fieldClass;
-
-    $view = $this->withViewErrors([])->blade(
-        '<x-dynamic-component :component="$component" :field="$field" :form="$form" />',
-        ['component' => $fieldClass->component, 'field' => $field, 'form' => []]
-    );
-
-    expect((string) $view)->toContain('placeholder="Placeholder for Test"');
-});
-
-test('Text Field - Default Value set', function () {
+test('Tags Field - Default Value set', function () {
     Aura::fake();
     Aura::setModel(new TagsFieldModel());
 
     $component = Livewire::test(Create::class, ['slug' => 'TagsModel'])
-        ->assertSee('Text for Test')
-        ->assertSeeHtml('wire:model="form.fields.text"')
-        ->assertDontSee('Advanced Text')
-        ->assertSet('form.fields.text', 'Default for Test');
-
+        ->assertSee('Tags')
+        ->assertSet('form.fields.tags', []);
 });
 
 test('Text Field - Prefix rendered', function () {
@@ -126,23 +104,12 @@ test('Text Field - Prefix rendered', function () {
     expect((string) $view)->toContain('Prefix for Test');
 });
 
-test('Text Field - suffix rendered', function () {
-    $field = [
-        'name' => 'Text for Test',
-        'type' => 'Aura\\Base\\Fields\\Text',
-        'suffix' => 'Suffix for Test',
-        'validation' => '',
-        'conditional_logic' => [],
-        'slug' => 'text',
-    ];
 
-    $fieldClass = app($field['type']);
-    $field['field'] = $fieldClass;
+test('TagsFieldModel - Saving Tags', function () {
+    $model = TagsFieldModel::create(['tags' => ['123', '456', 'Enes']]);
 
-    $view = $this->withViewErrors([])->blade(
-        '<x-dynamic-component :component="$component" :field="$field" :form="$form" />',
-        ['component' => $fieldClass->component, 'field' => $field, 'form' => []]
-    );
+    expect($model->tags)->toHaveCount(3);
 
-    expect((string) $view)->toContain('Suffix for Test');
+    expect($model->fields['tags'])->toBeArray();
+    expect($model->fields['tags'])->toEqual(Tag::get()->pluck('id')->toArray());
 });

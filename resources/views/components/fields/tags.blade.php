@@ -5,26 +5,21 @@ $taxonomy = null;
 
 if (key_exists('resource', $field) ) {
     $values = app($field['resource'])->get()->map(function ($tag) {
-        return ['id' => $tag->id, 'value' => $tag->title];
+        return ['id' => $tag->id, 'value' => $tag->title()];
     })->toArray();
-
-    $taxonomy = app($field['resource']);
-
 }
 
-// $values = $this->model->tags->pluck('title', 'id')->toArray();
+dump($values);
 
-dump($this->form['fields']);
 @endphp
-
-
-<x-aura::fields.wrapper :field="$field">
 
 @once
     @assets
         @vite(['resources/js/tagify.js'], 'vendor/aura/libs')
     @endassets
 @endonce
+
+<x-aura::fields.wrapper :field="$field">
 
 <div
 wire:ignore
@@ -53,6 +48,10 @@ x-data="{
             var tagify = new window.Tagify(this.$refs.tags, {
                 whitelist: this.options,
                 maxTags: 10,
+                @if( $field['create'] === false)
+                enforceWhitelist: true,
+                createInvalidTags: false,
+                @endif
                 value: tagValues,
                 originalInputValueFormat: valuesArr => valuesArr.map(item => item.id),
                 dropdown: {
