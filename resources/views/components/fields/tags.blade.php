@@ -13,14 +13,21 @@ if (key_exists('resource', $field) ) {
 }
 @endphp
 
+@assets
+    @once
+        @push('scripts')
+                @vite(['resources/js/tagify.js'], 'vendor/aura/libs')
+        @endpush
+    @endonce
+@endassets
+
 
 <x-aura::fields.wrapper :field="$field">
 
-@once
-    @assets
-        @vite(['resources/js/tagify.js'], 'vendor/aura/libs')
-    @endassets
-@endonce
+
+  
+
+
 
 <div
 wire:ignore
