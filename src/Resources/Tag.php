@@ -20,6 +20,11 @@ class Tag extends Resource
         return 'fields.tags';
     }
 
+    public function title()
+    {
+        return $this->title;
+    }
+
     public static function getFields()
     {
         return [

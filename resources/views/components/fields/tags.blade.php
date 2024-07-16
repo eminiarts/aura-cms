@@ -10,7 +10,8 @@ if (key_exists('resource', $field) ) {
 }
 
 dump($values);
-
+dump($this->form['fields']);
+dump($this->model->users);
 @endphp
 
 @once
@@ -48,7 +49,7 @@ x-data="{
             var tagify = new window.Tagify(this.$refs.tags, {
                 whitelist: this.options,
                 maxTags: 10,
-                @if( $field['create'] === false)
+                @if( optional($field)['create'] === false)
                 enforceWhitelist: true,
                 createInvalidTags: false,
                 @endif
@@ -64,7 +65,7 @@ x-data="{
 
             this.$refs.tags.addEventListener('change', (e) => {
                 // Update the value to be an array of selected tag values
-                this.value = tagify.value.map(item => item.value);
+                this.value = tagify.value.map(item => item.id || item.value);
             });
         });
     }
