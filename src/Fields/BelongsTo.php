@@ -168,7 +168,7 @@ class BelongsTo extends Field
         return $model->hasMany($field['resource'], $field['relation']);
     }
 
-    public function set($value)
+    public function set($post, $field, $value)
     {
         // Set the value to the id of the model
         return $value;

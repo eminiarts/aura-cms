@@ -59,7 +59,7 @@ return new class () extends Migration {
             $table->timestamp('created_at')->nullable();
         });
 
-        
+
 
         Schema::dropIfExists('personal_access_tokens');
 
@@ -110,7 +110,7 @@ return new class () extends Migration {
 
                 $table->unique(['team_id', 'email']);
             });
-              
+
             Schema::create('team_meta', function (Blueprint $table) {
                 $table->id();
                 if(config('aura.teams')) {
@@ -153,6 +153,14 @@ return new class () extends Migration {
             $table->index(['post_id', 'key']);
         });
 
+        Schema::create('post_relations', function (Blueprint $table) {
+            $table->foreignId('post_id')->index();
+            $table->morphs('related');
+            $table->timestamps();
+
+            $table->index(['post_id', 'related_id', 'related_type']);
+        });
+
         Schema::create('options', function (Blueprint $table) {
             $table->id();
             $table->string('name');
@@ -188,7 +196,7 @@ return new class () extends Migration {
             $table->timestamps();
         });
 
-     
+
         if (!Schema::hasTable('jobs')) {
             Schema::create('jobs', function (Blueprint $table) {
                 $table->id();

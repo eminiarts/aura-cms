@@ -10,18 +10,20 @@ class Tags extends Field
 
     public bool $taxonomy = true;
 
-    public string $type = 'input';
+    public string $type = 'relation';
 
     public $view = 'aura::fields.view-value';
 
     public function display($field, $value, $model)
     {
+        return $value;
+
         if (is_string($value)) {
             $value = json_decode($value, true);
         }
 
         //  dd($value, app($field['resource'])->whereIn('id',$value)->pluck('title')->map(function ($value) {
-        //     return "<span class='px-2 py-1 text-xs text-white rounded-full bg-primary-500 whitespace-nowrap'>$value</span>";
+        //     return "<span class='px-2 py-1 text-xs text-white whitespace-nowrap rounded-full bg-primary-500'>$value</span>";
         // })->implode(' '));
 
         if (! is_array($value) || count($value) === 0) {
@@ -29,19 +31,18 @@ class Tags extends Field
         }
 
         return app($field['resource'])->query()->whereIn('id', $value)->pluck('title')->map(function ($v) {
-            return "<span class='px-2 py-1 text-xs text-white rounded-full bg-primary-500 whitespace-nowrap'>$v</span>";
+            return "<span class='px-2 py-1 text-xs text-white whitespace-nowrap rounded-full bg-primary-500'>$v</span>";
         })->implode(' ');
     }
 
-    public function getFields()
+    public function saved($post, $field, $value)
     {
-        return array_merge(parent::getFields(), [
-        ]);
-    }
+        ray('saved tags', $value, $field);
 
-    public function set($value, $field)
-    {
-        // ray('set tags', $value, $field);
+        // $value are the ids
+        // $field['resource'] is the type
+
+
 
         if (is_string($value)) {
             $value = json_decode($value, true);
@@ -50,7 +51,7 @@ class Tags extends Field
         // Assuming $model is an instance of the model that has the tags relationship
         // and Tag is the model name for tags
 
-        $value = collect($value)->map(function ($tagName) use ($field) {
+        $ids = collect($value)->map(function ($tagName) use ($field) {
             $tag = app($field['resource'])->where('title', $tagName)->first();
 
             if ($tag) {
@@ -65,10 +66,52 @@ class Tags extends Field
             }
         })->toArray();
 
-        if (is_array($value)) {
-            return json_encode($value);
+        if (is_array($ids)) {
+            ray('sync here', $post, $ids)->red();
+            $post->tags()->sync($ids);
+        } else {
+            $post->tags()->sync([]);
         }
+    }
 
-        return $value;
+    // public function get($field, $value)
+    // {
+    //     // dd($value);
+    //     if (! $value) {
+    //         return;
+    //     }
+
+    //     if (is_string($value)) {
+    //         return json_decode($value, true);
+    //     }
+
+    //     return $value;
+    // }
+
+    public function getFields()
+    {
+        return array_merge(parent::getFields(), [
+            [
+                'name' => 'Tags',
+                'type' => 'Aura\\Base\\Fields\\Tab',
+                'slug' => 'tags-tab',
+                'style' => [],
+            ],
+            [
+                'name' => 'Create',
+                'type' => 'Aura\\Base\\Fields\\Boolean',
+                'validation' => 'required',
+                'instructions' => 'Allow new creations of Tags',
+                'slug' => 'create',
+                'default' => false,
+            ],
+            [
+                'name' => 'Resource',
+                'type' => 'Aura\\Base\\Fields\\Text',
+                'validation' => '',
+                'slug' => 'resource',
+            ],
+
+        ]);
     }
 }

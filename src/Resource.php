@@ -2,24 +2,27 @@
 
 namespace Aura\Base;
 
-use Aura\Base\Models\Scopes\ScopedScope;
+use Illuminate\Support\Str;
+use Aura\Base\Resources\Tag;
+use Aura\Base\Resources\Post;
+use Aura\Base\Resources\User;
+use Aura\Flows\Resources\Flow;
+use Aura\Base\Traits\InputFields;
+use Aura\Base\Traits\SaveMetaFields;
+use Aura\Base\Traits\AuraModelConfig;
 use Aura\Base\Models\Scopes\TeamScope;
 use Aura\Base\Models\Scopes\TypeScope;
-use Aura\Base\Resources\User;
-use Aura\Base\Traits\AuraModelConfig;
 use Aura\Base\Traits\InitialPostFields;
-use Aura\Base\Traits\InputFields;
+use Illuminate\Database\Eloquent\Model;
+use Aura\Base\Models\Scopes\ScopedScope;
 use Aura\Base\Traits\InteractsWithTable;
 use Aura\Base\Traits\SaveFieldAttributes;
-use Aura\Base\Traits\SaveMetaFields;
 use Aura\Flows\Jobs\TriggerFlowOnCreatePostEvent;
-use Aura\Flows\Jobs\TriggerFlowOnDeletedPostEvent;
 use Aura\Flows\Jobs\TriggerFlowOnUpdatePostEvent;
-use Aura\Flows\Resources\Flow;
-use Illuminate\Database\Eloquent\Concerns\HasTimestamps;
+use Aura\Flows\Jobs\TriggerFlowOnDeletedPostEvent;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Str;
+use Illuminate\Database\Eloquent\Relations\MorphToMany;
+use Illuminate\Database\Eloquent\Concerns\HasTimestamps;
 
 class Resource extends Model
 {
@@ -349,8 +352,8 @@ class Resource extends Model
         });
 
         // static::created(function ($post) {
-        //     dispatch(new TriggerFlowOnCreatePostEvent($post));
-        // });
+        //     dispatch(new TriggerFlowOnCr
+
 
         // static::updated(function ($post) {
         //     dispatch(new TriggerFlowOnUpdatePostEvent($post));
@@ -359,5 +362,19 @@ class Resource extends Model
         // static::deleted(function ($post) {
         //     dispatch(new TriggerFlowOnDeletedPostEvent($post));
         // });
+    }
+
+    /**
+     * Get all of the posts that are assigned this tag.
+     */
+    /* public function posts(): MorphToMany
+    {
+        return $this->morphedByMany(Post::class, 'taggable');
+    } */
+
+    public function tags(): MorphToMany
+    {
+        return $this->morphToMany(Tag::class, 'related', 'post_relations', 'post_id', 'related_id')
+            ->withTimestamps();
     }
 }

@@ -89,7 +89,7 @@ class Date extends Field
         ]);
     }
 
-    public function set($value)
+    public function set($post, $field, $value)
     {
         return $value;
     }

@@ -34,7 +34,7 @@ class Image extends Field
             $additionalImagesCount = count($values);
             $circleHtml = '';
             if ($additionalImagesCount > 0) {
-                $circleHtml = "<div class='flex items-center justify-center w-10 h-10 font-bold text-center text-gray-800 bg-gray-200 rounded-full'>+{$additionalImagesCount}</div>";
+                $circleHtml = "<div class='flex justify-center items-center w-10 h-10 font-bold text-center text-gray-800 bg-gray-200 rounded-full'>+{$additionalImagesCount}</div>";
             }
 
             return "<div class='flex items-center space-x-2'>{$imageHtml}{$circleHtml}</div>";
@@ -99,7 +99,7 @@ class Image extends Field
         ]);
     }
 
-    public function set($value)
+    public function set($post, $field, $value)
     {
         return json_encode($value);
     }

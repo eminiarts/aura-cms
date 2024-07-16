@@ -59,7 +59,8 @@ trait SaveMetaFields
                     }
 
                     if (method_exists($class, 'set')) {
-                        $value = $class->set($value, $field);
+                        $value = $class->set($post, $field, $value);
+                        // $value = $class->set($value, $field);
                     }
 
                     if ($class instanceof \Aura\Base\Fields\ID) {
@@ -101,6 +102,21 @@ trait SaveMetaFields
 
                     if (method_exists($post, $method)) {
                         $post = $post->{$method}($value);
+
+                        continue;
+                    }
+
+                    $field = $post->fieldBySlug($key);
+                    $class = $post->fieldClassBySlug($key);
+
+                    // if (isset($field['set']) && $field['set'] instanceof \Closure) {
+                    //     // dd('here');
+                    //     $value = call_user_func($field['set'], $post, $field, $value);
+                    // }
+
+                    if (method_exists($class, 'saved')) {
+                        $value = $class->saved($post, $field, $value);
+                        // $value = $class->set($value, $field);
 
                         continue;
                     }

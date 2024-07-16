@@ -28,7 +28,7 @@ class SelectRelation extends Field
         return json_decode($value, true);
     }
 
-    public function set($value)
+    public function set($post, $field, $value)
     {
         return json_encode($value);
     }
