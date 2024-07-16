@@ -83,11 +83,6 @@ class Resource extends Model
             return $value;
         }
 
-        // If the key is in the fields array, then we want to return that
-        if (is_null($value) && isset($this->fields[$key])) {
-            return $this->fields[$key];
-        }
-
         if ($this->getFieldSlugs()->contains($key)) {
             $fieldClass = $this->fieldClassBySlug($key);
             // $groupedField = $this->groupedFieldBySlug($key);
@@ -95,8 +90,13 @@ class Resource extends Model
             if ($fieldClass->isRelation()) {
                 $field = $this->fieldBySlug($key);
 
-                return $fieldClass->get($this, $field);
+                return $fieldClass->getRelation($this, $field);
             }
+        }
+
+        // If the key is in the fields array, then we want to return that
+        if (is_null($value) && isset($this->fields[$key])) {
+            return $this->fields[$key];
         }
 
         return $value;
@@ -170,7 +170,19 @@ class Resource extends Model
 
                     $class = $this->fieldClassBySlug($key);
 
+                    if($key == 'users') {
+                        ray($class && $this->{$key} && method_exists($class, 'get'), $this->{$key})->red();
+                    }
+
+                    if ($class && $class->isRelation() && $this->{$key} && method_exists($class, 'get')) {
+                        ray('22 should get users', $class, $key);
+                        return $class->get($class, $this->{$key});
+                    }
+
+
+
                     if ($class && isset($this->{$key}) && method_exists($class, 'get')) {
+                        // ray('should get users', $class, $key);
                         return $class->get($class, $this->{$key});
                     }
 
@@ -372,9 +384,10 @@ class Resource extends Model
         return $this->morphedByMany(Post::class, 'taggable');
     } */
 
-    public function tags(): MorphToMany
-    {
-        return $this->morphToMany(Tag::class, 'related', 'post_relations', 'post_id', 'related_id')
-            ->withTimestamps();
-    }
+    // public function tags(): MorphToMany
+    // {
+    //     return $this->morphToMany(Tag::class, 'related', 'post_relations', 'post_id', 'related_id')
+    //         ->withTimestamps()
+    //         ;
+    // }
 }
