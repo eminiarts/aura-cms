@@ -119,11 +119,9 @@ trait AuraModelConfig
             $value = $this->displayFieldValue($key, $this->fields[$key]);
 
             // if $value is an array, implode it
-            ray($key);
             if (is_array($value)) {
                 $formattedValues = array_map(function ($subArray) {
                     if (is_array($subArray)) {
-                        ray($subArray);
                         return '['.implode(', ', $subArray).']';
                     }
 

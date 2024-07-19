@@ -28,16 +28,19 @@ class Tags extends Field
          ->withTimestamps()
          ->withPivot('resource_type')
          ->wherePivot('resource_type', $field['resource']);
-
-
     }
 
     public function getRelation($model, $field) {
 
-        ray('hier');
-        $relationshipQuery = $this->relationship($model, $field);
+        if (!$model->exists) {
+            return collect();
+        }
 
-        return $relationshipQuery->get();
+            $relationshipQuery = $this->relationship($model, $field);
+
+            return $relationshipQuery->get();
+
+
     }
 
     public function get($class, $value)
@@ -54,7 +57,6 @@ class Tags extends Field
 
     public function display($field, $value, $model)
     {
-        return $value;
 
         if (is_string($value)) {
             $value = json_decode($value, true);
