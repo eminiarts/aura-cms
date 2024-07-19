@@ -26,6 +26,26 @@ class HasMany extends Field
         return $relationshipQuery->get();
     }
 
+    public function relationship($model, $field)
+    {
+        return $model
+         ->morphedByMany($field['resource'], 'related', 'post_relations', 'resource_id', 'related_id')
+         ->withTimestamps()
+         ->withPivot('related_type')
+         ->wherePivot('related_type', $field['resource']);
+    }
+
+
+    public function getRelation($model, $field) {
+        if (!$model->exists) {
+            return collect();
+        }
+
+        $relationshipQuery = $this->relationship($model, $field);
+
+        return $relationshipQuery->get();
+    }
+
     public function queryFor($query, $component)
     {
 
@@ -46,8 +66,15 @@ class HasMany extends Field
 
         // ray($component->field);
 
-        if (optional($component->field)['relation']) {
+        ray('hasMany', $model->id, $component->field);
 
+        if (isset($component->field['resource'])) {
+            $relationship = $this->relationship($model, $field);
+            return $relationship->getQuery();
+        }
+
+
+        if (optional($component->field)['relation']) {
             if ($model->id) {
                 return $query->whereHas('meta', function ($query) use ($field, $model) {
                     $query->where('key', $field['relation'])
@@ -85,20 +112,20 @@ class HasMany extends Field
 
     // public $view = 'components.fields.hasmany';
 
-    public function relationship($model, $field)
-    {
-        // If it's a meta field
-        if ($model->usesMeta()) {
-            return $model->hasManyThrough(
-                $field['resource'],
-                Meta::class,
-                'value',     // Foreign key on the post_meta table
-                'id',        // Foreign key on the reviews table
-                'id',        // Local key on the products table
-                'post_id'    // Local key on the post_meta table
-            )->where('post_meta.key', $field['relation']);
-        }
+    // public function relationship($model, $field)
+    // {
+    //     // If it's a meta field
+    //     if ($model->usesMeta()) {
+    //         return $model->hasManyThrough(
+    //             $field['resource'],
+    //             Meta::class,
+    //             'value',     // Foreign key on the post_meta table
+    //             'id',        // Foreign key on the reviews table
+    //             'id',        // Local key on the products table
+    //             'post_id'    // Local key on the post_meta table
+    //         )->where('post_meta.key', $field['relation']);
+    //     }
 
-        return $model->hasMany($field['resource'], $field['relation']);
-    }
+    //     return $model->hasMany($field['resource'], $field['relation']);
+    // }
 }

@@ -9,9 +9,9 @@ if (key_exists('resource', $field) ) {
     })->toArray();
 }
 
-dump($values);
-dump($this->form['fields']);
-dump($this->model->users);
+// dump($values);
+// dump($this->form['fields']);
+// dump($this->model->users);
 @endphp
 
 @once
