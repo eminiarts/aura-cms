@@ -127,7 +127,7 @@ class ModelWithGroups extends Resource
 }
 
 test('fields get grouped when field group is true', function () {
-    $model = new ModelWithGroups();
+    $model = new ModelWithGroups;
 
     $fields = $model->getGroupedFields();
 

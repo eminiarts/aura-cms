@@ -45,7 +45,7 @@ test('Number Field can be rendered', function () {
     // show all exceptions
     //$this->withoutExceptionHandling();
 
-    $model = new NumberFieldModel();
+    $model = new NumberFieldModel;
 
     $component = Livewire::test(Create::class, ['slug' => 'Post'])
         ->call('setModel', $model)

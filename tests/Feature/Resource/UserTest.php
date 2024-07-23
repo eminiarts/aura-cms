@@ -15,7 +15,7 @@ it('has a searchable name', function () {
 });
 
 test('check User Fields', function () {
-    $slug = new User();
+    $slug = new User;
 
     $fields = collect($slug->getFields());
 

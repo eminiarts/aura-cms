@@ -93,7 +93,7 @@ class DoNotDeferConditionalLogicTestModel extends Resource
 }
 
 test('defer should be false on field that is in conditional logic', function () {
-    $model = new DoNotDeferConditionalLogicTestModel();
+    $model = new DoNotDeferConditionalLogicTestModel;
 
     $editFields = $model->editFields();
 
@@ -110,7 +110,7 @@ test('defer should be false on field that is in conditional logic', function () 
 });
 
 test('defer should be false on field that is in conditional logic - create view', function () {
-    $model = new DoNotDeferConditionalLogicTestModel();
+    $model = new DoNotDeferConditionalLogicTestModel;
     $createFields = $model->createFields();
 
     Aura::fake();
@@ -140,7 +140,7 @@ test('defer should be false on field that is in conditional logic - create view'
 });
 
 test('defer should be false on field that is in conditional logic - edit view', function () {
-    $model = new DoNotDeferConditionalLogicTestModel();
+    $model = new DoNotDeferConditionalLogicTestModel;
     $editFields = $model->editFields();
 
     $post = $model->create([

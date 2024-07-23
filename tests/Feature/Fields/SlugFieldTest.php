@@ -50,7 +50,7 @@ class SlugFieldModel extends Resource
 }
 
 test('Slug Field Test', function () {
-    $model = new SlugFieldModel();
+    $model = new SlugFieldModel;
 
     $component = Livewire::test(Create::class, ['slug' => 'Post'])
         ->call('setModel', $model)
@@ -104,7 +104,7 @@ test('Slug Field Test', function () {
 });
 
 test('check Slug Fields', function () {
-    $slug = new Slug();
+    $slug = new Slug;
 
     $fields = collect($slug->getFields());
 

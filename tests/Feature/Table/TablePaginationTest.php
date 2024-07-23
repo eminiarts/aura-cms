@@ -27,7 +27,7 @@ test('table can be paginated', function () {
     $eleven = Post::skip(10)->first();
 
     // Test the Table Component
-    $component = Livewire::test(Table::class, ['query' => null, 'model' => new Post()])
+    $component = Livewire::test(Table::class, ['query' => null, 'model' => new Post])
     // ->assertSee('Showing 1 to 10 of 21 results')
         ->assertSee('Showing')
         ->assertSee('1')

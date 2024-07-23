@@ -41,7 +41,7 @@ test('Date Field in Livewire Component', function () {
 
     // $this->withoutExceptionHandling();
 
-    $model = new DateFieldModel();
+    $model = new DateFieldModel;
 
     $component = Livewire::test(Create::class, ['slug' => 'Post'])
         ->call('setModel', $model)
@@ -71,7 +71,7 @@ test('Date Field in Livewire Component', function () {
 
 test('Date Field in View', function () {
 
-    $model = new DateFieldModel();
+    $model = new DateFieldModel;
 
     Aura::fake();
     Aura::setModel($model);

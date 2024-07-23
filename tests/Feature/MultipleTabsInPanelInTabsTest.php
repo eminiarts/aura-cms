@@ -105,7 +105,7 @@ class MultipleTabsInPanelInTabsTestModel extends Resource
 }
 
 test('multiple tabs in panels in tabs are possible', function () {
-    $model = new MultipleTabsInPanelInTabsTestModel();
+    $model = new MultipleTabsInPanelInTabsTestModel;
 
     $fields = $model->getGroupedFields();
 

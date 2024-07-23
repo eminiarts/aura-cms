@@ -46,7 +46,7 @@ beforeEach(function () {
 });
 
 test('check Checkbox Fields', function () {
-    $slug = new Checkbox();
+    $slug = new Checkbox;
 
     $fields = collect($slug->getFields());
 

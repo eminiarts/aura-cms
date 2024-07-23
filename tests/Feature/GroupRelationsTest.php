@@ -65,7 +65,7 @@ class GroupRelationsTestModel extends Resource
 }
 
 test('hasMany - fields should not be grouped', function () {
-    $model = new GroupRelationsTestModel();
+    $model = new GroupRelationsTestModel;
 
     $fields = $model->getGroupedFields();
 
@@ -73,13 +73,13 @@ test('hasMany - fields should not be grouped', function () {
 });
 
 test('hasMany - field should not be grouped', function () {
-    expect((new HasMany())->group)->toBe(false);
+    expect((new HasMany)->group)->toBe(false);
 });
 
 test('hasOne - field should not be grouped', function () {
-    expect((new HasOne())->group)->toBe(false);
+    expect((new HasOne)->group)->toBe(false);
 });
 
 test('hasOneOfMany - field should not be grouped', function () {
-    expect((new HasOneOfMany())->group)->toBe(false);
+    expect((new HasOneOfMany)->group)->toBe(false);
 });

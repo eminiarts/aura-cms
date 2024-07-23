@@ -49,7 +49,7 @@ class AdvancedSelectFieldModel extends Resource
 }
 
 test('AdvancedSelect Field Test', function () {
-    $model = new AdvancedSelectFieldModel();
+    $model = new AdvancedSelectFieldModel;
 
     $component = Livewire::test(Create::class, ['slug' => 'Post'])
         ->call('setModel', $model)
@@ -125,7 +125,7 @@ test('advancedselect field gets displayed correctly on edit view', function () {
 });
 
 test('Advanced Select - Fields', function () {
-    $slug = new AdvancedSelect();
+    $slug = new AdvancedSelect;
 
     $fields = collect($slug->getFields());
 
@@ -135,7 +135,7 @@ test('Advanced Select - Fields', function () {
 });
 
 test('Advanced Select - Check values function exists', function () {
-    $advancedSelect = new AdvancedSelect();
+    $advancedSelect = new AdvancedSelect;
     expect(method_exists($advancedSelect, 'values'))->toBeTrue();
 });
 
@@ -244,7 +244,7 @@ test('searchable fields API Mock', function () {
 
     $response->assertStatus(200);
 
-    $field = new AdvancedSelect();
+    $field = new AdvancedSelect;
 
     $request = new \Illuminate\Http\Request([
         'model' => Role::class,
