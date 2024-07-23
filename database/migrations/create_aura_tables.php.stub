@@ -154,11 +154,11 @@ return new class () extends Migration {
         });
 
         Schema::create('post_relations', function (Blueprint $table) {
-            $table->foreignId('post_id')->index();
+            $table->morphs('resource');
             $table->morphs('related');
             $table->timestamps();
 
-            $table->index(['post_id', 'related_id', 'related_type']);
+            $table->index(['resource_id', 'related_id', 'related_type']);
         });
 
         Schema::create('options', function (Blueprint $table) {
