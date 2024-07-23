@@ -50,7 +50,7 @@ class Status extends Field
                 'validation' => '',
                 'slug' => 'key',
                 'style' => [
-                    'width' => '50',
+                    'width' => '33',
                 ],
 
             ],
@@ -60,9 +60,17 @@ class Status extends Field
                 'validation' => '',
                 'slug' => 'value',
                 'style' => [
-                    'width' => '50',
+                    'width' => '33',
                 ],
-
+            ],
+            [
+                'name' => 'Color',
+                'type' => 'Aura\\Base\\Fields\\Color',
+                'validation' => '',
+                'slug' => 'color',
+                'style' => [
+                    'width' => '33',
+                ],
             ],
 
             [
