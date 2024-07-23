@@ -117,12 +117,16 @@ class ConditionalLogic
 
     private static function handleDefaultCondition($model, $condition, $post)
     {
-        $fieldValue = method_exists($model, 'getMeta')
-            ? $model->getMeta($condition['field'])
-            : data_get($model->post['fields'] ?? [], $condition['field']);
-
-        if (str_contains($condition['field'], '.')) {
+        if (is_array($model)) {
             $fieldValue = data_get($model, $condition['field']);
+        } else {
+            $fieldValue = method_exists($model, 'getMeta')
+                ? $model->getMeta($condition['field'])
+                : data_get($model->post['fields'] ?? [], $condition['field']);
+
+            if (str_contains($condition['field'], '.')) {
+                $fieldValue = data_get($model, $condition['field']);
+            }
         }
 
         return self::checkFieldCondition($condition, $fieldValue);
