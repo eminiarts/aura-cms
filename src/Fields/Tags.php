@@ -3,6 +3,7 @@
 namespace Aura\Base\Fields;
 
 use Illuminate\Support\Str;
+use InvalidArgumentException;
 
 class Tags extends Field
 {
@@ -88,9 +89,9 @@ class Tags extends Field
 
     public function relationship($model, $field)
     {
-        // If no resource is set, return an empty query
+        // Check if resource is set
         if (!isset($field['resource']) || empty($field['resource'])) {
-            return $model->newQuery()->whereRaw('1 = 0');
+            throw new InvalidArgumentException("The 'resource' key is not set or is empty in the field configuration.");
         }
 
         // If it's a meta field
