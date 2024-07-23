@@ -10,43 +10,6 @@ class AdvancedSelect extends Field
 
     public $view = 'aura::fields.view-value';
 
-    public function isRelation()
-    {
-        return true;
-    }
-
-    public function relationship($model, $field)
-    {
-        // If it's a meta field
-         return $model
-         ->morphToMany($field['resource'], 'related', 'post_relations', 'related_id', 'resource_id')
-         ->withTimestamps()
-         ->withPivot('resource_type')
-         ->wherePivot('resource_type', $field['resource']);
-    }
-
-    public function getRelation($model, $field) {
-
-        if (!$model->exists) {
-            return collect();
-        }
-
-            $relationshipQuery = $this->relationship($model, $field);
-
-            return $relationshipQuery->get();
-    }
-
-    public function get($class, $value)
-    {
-        if (is_array($value)) {
-            return array_column($value, 'id');
-        } elseif (is_object($value) && method_exists($value, 'pluck')) {
-            return $value->pluck('id')->toArray();
-        } else {
-            return [];
-        }
-    }
-
     public function api($request)
     {
         $searchableFields = app($request->model)->getSearchableFields()->pluck('slug')->toArray();
@@ -82,24 +45,15 @@ class AdvancedSelect extends Field
         return $items->title();
     }
 
-    public function saved($post, $field, $value)
+    public function get($class, $value)
     {
-        if (is_string($value)) {
-            $value = json_decode($value, true);
-        }
-
-        $ids = $value;
-
-        if (is_array($ids)) {
-            ray($ids);
-            $post->{$field['slug']}()->syncWithPivotValues($ids, [
-                'resource_type' => $field['resource'],
-            ]);
+        if (is_array($value)) {
+            return array_column($value, 'id');
+        } elseif (is_object($value) && method_exists($value, 'pluck')) {
+            return $value->pluck('id')->toArray();
         } else {
-            $post->{$field['slug']}()->sync([]);
+            return [];
         }
-
-        ray($post);
     }
 
     public function getFields()
@@ -130,6 +84,53 @@ class AdvancedSelect extends Field
                 'slug' => 'multiple',
             ],
         ]);
+    }
+
+    public function getRelation($model, $field)
+    {
+
+        if (! $model->exists) {
+            return collect();
+        }
+
+        $relationshipQuery = $this->relationship($model, $field);
+
+        return $relationshipQuery->get();
+    }
+
+    public function isRelation()
+    {
+        return true;
+    }
+
+    public function relationship($model, $field)
+    {
+        // If it's a meta field
+        return $model
+            ->morphToMany($field['resource'], 'related', 'post_relations', 'related_id', 'resource_id')
+            ->withTimestamps()
+            ->withPivot('resource_type')
+            ->wherePivot('resource_type', $field['resource']);
+    }
+
+    public function saved($post, $field, $value)
+    {
+        if (is_string($value)) {
+            $value = json_decode($value, true);
+        }
+
+        $ids = $value;
+
+        if (is_array($ids)) {
+            ray($ids);
+            $post->{$field['slug']}()->syncWithPivotValues($ids, [
+                'resource_type' => $field['resource'],
+            ]);
+        } else {
+            $post->{$field['slug']}()->sync([]);
+        }
+
+        ray($post);
     }
 
     public function selectedValues($model, $values)

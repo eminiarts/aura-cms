@@ -2,27 +2,26 @@
 
 namespace Aura\Base;
 
-use Illuminate\Support\Str;
-use Aura\Base\Resources\Tag;
-use Aura\Base\Resources\Post;
-use Aura\Base\Resources\User;
-use Aura\Flows\Resources\Flow;
-use Aura\Base\Traits\InputFields;
-use Aura\Base\Traits\SaveMetaFields;
-use Aura\Base\Traits\AuraModelConfig;
+use Aura\Base\Models\Scopes\ScopedScope;
 use Aura\Base\Models\Scopes\TeamScope;
 use Aura\Base\Models\Scopes\TypeScope;
+use Aura\Base\Resources\Post;
+use Aura\Base\Resources\Tag;
+use Aura\Base\Resources\User;
+use Aura\Base\Traits\AuraModelConfig;
 use Aura\Base\Traits\InitialPostFields;
-use Illuminate\Database\Eloquent\Model;
-use Aura\Base\Models\Scopes\ScopedScope;
+use Aura\Base\Traits\InputFields;
 use Aura\Base\Traits\InteractsWithTable;
 use Aura\Base\Traits\SaveFieldAttributes;
-use Aura\Flows\Jobs\TriggerFlowOnCreatePostEvent;
-use Aura\Flows\Jobs\TriggerFlowOnUpdatePostEvent;
+use Aura\Base\Traits\SaveMetaFields;
 use Aura\Flows\Jobs\TriggerFlowOnDeletedPostEvent;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Relations\MorphToMany;
+use Aura\Flows\Jobs\TriggerFlowOnUpdatePostEvent;
+use Aura\Flows\Resources\Flow;
 use Illuminate\Database\Eloquent\Concerns\HasTimestamps;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\MorphToMany;
+use Illuminate\Support\Str;
 
 class Resource extends Model
 {
@@ -170,16 +169,15 @@ class Resource extends Model
 
                     $class = $this->fieldClassBySlug($key);
 
-                    if($key == 'users') {
+                    if ($key == 'users') {
                         ray($class && $this->{$key} && method_exists($class, 'get'), $this->{$key})->red();
                     }
 
                     if ($class && $class->isRelation() && $this->{$key} && method_exists($class, 'get')) {
                         ray('22 should get users', $class, $key);
+
                         return $class->get($class, $this->{$key});
                     }
-
-
 
                     if ($class && isset($this->{$key}) && method_exists($class, 'get')) {
                         // ray('should get users', $class, $key);
@@ -365,7 +363,6 @@ class Resource extends Model
 
         // static::created(function ($post) {
         //     dispatch(new TriggerFlowOnCr
-
 
         // static::updated(function ($post) {
         //     dispatch(new TriggerFlowOnUpdatePostEvent($post));

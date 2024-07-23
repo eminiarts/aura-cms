@@ -6,9 +6,9 @@ class Email extends Field
 {
     public $component = 'aura::fields.email';
 
-    public $view = 'aura::fields.view-value';
-
     public $optionGroup = 'Input Fields';
+
+    public $view = 'aura::fields.view-value';
 
     public function getFields()
     {

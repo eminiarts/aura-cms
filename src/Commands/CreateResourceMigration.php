@@ -36,16 +36,13 @@ class CreateResourceMigration extends Command
 
         $resource = app($resourceClass);
 
-
         if (! method_exists($resource, 'getFields')) {
             $this->error("Method 'getFields' not found in the '{$resourceClass}' class.");
 
             return 1;
         }
 
-
         $tableName = Str::lower($resource->getPluralName());
-
 
         $migrationName = "create_{$tableName}_table";
 
@@ -165,12 +162,12 @@ class CreateResourceMigration extends Command
         $columnType = $fieldInstance->tableColumnType;
 
         $column = "\$table->{$columnType}('{$field['slug']}')";
-        
+
         if ($fieldInstance->tableNullable) {
-            $column .= "->nullable()";
+            $column .= '->nullable()';
         }
 
-        return $column . ";\n";
+        return $column.";\n";
     }
 
     protected function generateSchema($fields)
