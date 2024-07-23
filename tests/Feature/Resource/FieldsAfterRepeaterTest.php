@@ -54,7 +54,7 @@ class FieldsAfterRepeaterModel extends Resource
 }
 
 test('multiple should be after the repeater', function () {
-    $model = new FieldsAfterRepeaterModel();
+    $model = new FieldsAfterRepeaterModel;
 
     $fields = $model->createFields();
 

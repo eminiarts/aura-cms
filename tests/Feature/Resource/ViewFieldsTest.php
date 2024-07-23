@@ -44,7 +44,7 @@ class ViewFieldsTestModel extends Resource
 }
 
 test('field inherits on_view from parent', function () {
-    $model = new ViewFieldsTestModel();
+    $model = new ViewFieldsTestModel;
 
     $fields = $model->viewFields();
 
@@ -102,7 +102,7 @@ class ViewFieldsTestModel2 extends Resource
 }
 
 test('field is hidden when on_view is false', function () {
-    $model = new ViewFieldsTestModel2();
+    $model = new ViewFieldsTestModel2;
 
     $fields = $model->viewFields();
 

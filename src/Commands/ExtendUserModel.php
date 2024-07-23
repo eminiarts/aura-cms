@@ -18,7 +18,7 @@ class ExtendUserModel extends Command
 
     public function handle()
     {
-        $filesystem = new Filesystem();
+        $filesystem = new Filesystem;
         $userModelPath = app_path('Models/User.php');
 
         if ($filesystem->exists($userModelPath)) {

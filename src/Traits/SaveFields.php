@@ -4,7 +4,6 @@ namespace Aura\Base\Traits;
 
 use Aura\Base\Events\SaveFields as SaveFieldsEvent;
 use Aura\Base\Facades\Aura;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 trait SaveFields

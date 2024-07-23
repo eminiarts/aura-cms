@@ -29,7 +29,7 @@ class UserMeta extends Meta
      */
     protected static function booted()
     {
-        static::addGlobalScope(new TeamScope());
+        static::addGlobalScope(new TeamScope);
 
         static::saving(function ($post) {
             if (config('aura.teams') && ! $post->team_id && auth()->user()) {

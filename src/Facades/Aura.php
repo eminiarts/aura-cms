@@ -17,7 +17,7 @@ class Aura extends Facade
      */
     public static function fake()
     {
-        static::swap($fake = new AuraFake());
+        static::swap($fake = new AuraFake);
 
         return $fake;
     }

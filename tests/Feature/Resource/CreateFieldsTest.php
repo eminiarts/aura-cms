@@ -54,7 +54,7 @@ class CreateFieldsTestModel extends Resource
 }
 
 test('if the first tab is hidden, tabs should be applied correctly to second tab', function () {
-    $model = new CreateFieldsTestModel();
+    $model = new CreateFieldsTestModel;
 
     $fields = $model->createFields();
 
@@ -72,7 +72,7 @@ test('if the first tab is hidden, tabs should be applied correctly to second tab
 });
 
 test('check on_create inheritance', function () {
-    $model = new CreateFieldsTestModel();
+    $model = new CreateFieldsTestModel;
 
     $fields = $model->sendThroughPipeline($model->fieldsCollection(), [
         ApplyTabs::class,

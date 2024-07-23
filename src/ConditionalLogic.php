@@ -12,7 +12,7 @@ class ConditionalLogic
     {
         $conditions = $field['conditional_logic'] ?? null;
 
-        if (!$conditions || !Auth::check()) {
+        if (! $conditions || ! Auth::check()) {
             return true;
         }
 
@@ -20,13 +20,13 @@ class ConditionalLogic
             return self::executeClosure($conditions, $model, $post);
         }
 
-        if (!is_array($conditions)) {
+        if (! is_array($conditions)) {
             return true;
         }
 
         foreach ($conditions as $condition) {
             if ($condition instanceof \Closure) {
-                if (!self::executeClosure($condition, $model, $post)) {
+                if (! self::executeClosure($condition, $model, $post)) {
                     return false;
                 }
             } elseif (is_array($condition)) {
@@ -34,7 +34,7 @@ class ConditionalLogic
                     ? self::handleRoleCondition($condition)
                     : self::handleDefaultCondition($model, $condition, $post);
 
-                if (!$show) {
+                if (! $show) {
                     return false;
                 }
             }
@@ -51,12 +51,12 @@ class ConditionalLogic
     public static function fieldIsVisibleTo($field, $user)
     {
         $conditions = $field['conditional_logic'] ?? null;
-        if (!$conditions || $user->isSuperAdmin()) {
+        if (! $conditions || $user->isSuperAdmin()) {
             return true;
         }
 
         foreach ($conditions as $condition) {
-            if (!$field || ($condition['field'] === 'role' && !self::checkRoleCondition($condition))) {
+            if (! $field || ($condition['field'] === 'role' && ! self::checkRoleCondition($condition))) {
                 return false;
             }
         }
@@ -66,11 +66,11 @@ class ConditionalLogic
 
     public static function shouldDisplayField($model, $field, $post = null)
     {
-        if (!$field || empty($field['conditional_logic'])) {
+        if (! $field || empty($field['conditional_logic'])) {
             return true;
         }
 
-        $cacheKey = md5(get_class($model) . json_encode($field) . json_encode($post) . Auth::id());
+        $cacheKey = md5(get_class($model).json_encode($field).json_encode($post).Auth::id());
 
         return self::$shouldDisplayFieldCache[$cacheKey]
             ??= self::checkCondition($model, $field, $post);
@@ -92,11 +92,22 @@ class ConditionalLogic
     private static function checkRoleCondition($condition)
     {
         $user = Auth::user();
+
         return match ($condition['operator']) {
             '==' => $user->hasRole($condition['value']),
-            '!=' => !$user->hasRole($condition['value']),
+            '!=' => ! $user->hasRole($condition['value']),
             default => false
         };
+    }
+
+    private static function executeClosure(\Closure $closure, $model, $post = null)
+    {
+        try {
+            return $closure($model, $post) !== false;
+        } catch (\Exception $e) {
+            // Log the exception or handle it as needed
+            return false;
+        }
     }
 
     private static function handleDefaultCondition($model, $condition, $post)
@@ -109,7 +120,7 @@ class ConditionalLogic
             ? $model->getMeta($condition['field'])
             : data_get($model->post['fields'] ?? [], $condition['field']);
 
-        if (!$fieldValue && str_contains($condition['field'], '.')) {
+        if (! $fieldValue && str_contains($condition['field'], '.')) {
             $fieldValue = is_array($model)
                 ? data_get($model, $condition['field'])
                 : data_get($model->getMeta()->toArray(), $condition['field']);
@@ -125,15 +136,5 @@ class ConditionalLogic
         }
 
         return self::checkRoleCondition($condition);
-    }
-
-    private static function executeClosure(\Closure $closure, $model, $post = null)
-    {
-        try {
-            return $closure($model, $post) !== false;
-        } catch (\Exception $e) {
-            // Log the exception or handle it as needed
-            return false;
-        }
     }
 }

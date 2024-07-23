@@ -90,7 +90,7 @@ class Tags extends Field
     public function relationship($model, $field)
     {
         // Check if resource is set
-        if (!isset($field['resource']) || empty($field['resource'])) {
+        if (! isset($field['resource']) || empty($field['resource'])) {
             throw new InvalidArgumentException("The 'resource' key is not set or is empty in the field configuration.");
         }
 

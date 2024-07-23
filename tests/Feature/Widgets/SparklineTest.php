@@ -34,11 +34,11 @@ beforeEach(function () {
         'created_at' => Carbon::now()->subDays(35),
     ]);
 
-    $this->widget = (new Post())->widgets()->first();
+    $this->widget = (new Post)->widgets()->first();
 });
 
 it('calculates current and previous values correctly', function () {
-    $widgetTest = Livewire::test(Sparkline::class, ['widget' => ['method' => 'count', 'name' => 'Total Posts Created'], 'model' => new Post()])
+    $widgetTest = Livewire::test(Sparkline::class, ['widget' => ['method' => 'count', 'name' => 'Total Posts Created'], 'model' => new Post])
         ->set('start', Carbon::now()->subDays(15))
         ->set('end', Carbon::now());
 
@@ -52,7 +52,7 @@ it('calculates current and previous values correctly', function () {
 });
 
 it('correctly handles date range for current and previous', function () {
-    $widgetTest = Livewire::test(Sparkline::class, ['widget' => ['method' => 'count', 'name' => 'Total Posts Created'], 'model' => new Post()])
+    $widgetTest = Livewire::test(Sparkline::class, ['widget' => ['method' => 'count', 'name' => 'Total Posts Created'], 'model' => new Post])
         ->set('start', Carbon::now()->endOfDay()->subDays(30))
         ->set('end', Carbon::now()->endOfDay());
 
@@ -81,7 +81,7 @@ it('correctly handles date range for current and previous', function () {
 it('calculates values correctly for given date range', function () {
     $widget = ['method' => 'count', 'name' => 'Total Posts Created'];
 
-    $sparklineTest = Livewire::test(Sparkline::class, ['widget' => $widget, 'model' => new Post()])
+    $sparklineTest = Livewire::test(Sparkline::class, ['widget' => $widget, 'model' => new Post])
         ->set('start', Carbon::now()->subDays(30))
         ->set('end', Carbon::now());
 
@@ -97,7 +97,7 @@ it('calculates values correctly for given date range', function () {
 it('updates date range correctly', function () {
     $widget = ['method' => 'count', 'name' => 'Total Posts Created'];
 
-    $sparklineTest = Livewire::test(Sparkline::class, ['widget' => $widget, 'model' => new Post()])
+    $sparklineTest = Livewire::test(Sparkline::class, ['widget' => $widget, 'model' => new Post])
         ->set('start', Carbon::now()->subDays(30))
         ->set('end', Carbon::now());
 
@@ -119,7 +119,7 @@ it('calculates values for the current date range correctly', function () {
         'created_at' => Carbon::now()->subMinutes(5),
     ]);
 
-    $sparklineTest = Livewire::test(Sparkline::class, ['widget' => $widget, 'model' => new Post()])
+    $sparklineTest = Livewire::test(Sparkline::class, ['widget' => $widget, 'model' => new Post])
         ->set('start', Carbon::now()->subDays(30))
         ->set('end', Carbon::now());
 
@@ -137,7 +137,7 @@ it('calculates values for the current date range correctly', function () {
 it('calculates values for the previous date range correctly', function () {
     $widget = ['method' => 'sum', 'name' => 'Total Posts Created'];
 
-    $sparklineTest = Livewire::test(Sparkline::class, ['widget' => $widget, 'model' => new Post()])
+    $sparklineTest = Livewire::test(Sparkline::class, ['widget' => $widget, 'model' => new Post])
         ->set('start', Carbon::now()->subDays(30))
         ->set('end', Carbon::now());
 
@@ -161,7 +161,7 @@ it('calculates values for a custom column correctly', function () {
         'created_at' => Carbon::now()->subMinutes(5),
     ]);
 
-    $sparklineTest = Livewire::test(Sparkline::class, ['widget' => array_merge($widget, ['column' => 'number']), 'model' => new Post()])
+    $sparklineTest = Livewire::test(Sparkline::class, ['widget' => array_merge($widget, ['column' => 'number']), 'model' => new Post])
         ->set('start', Carbon::now()->subDays(30))
         ->set('end', Carbon::now()->endOfDay());
 
@@ -182,7 +182,7 @@ it('mounts with the correct method if specified in the widget', function () {
         'created_at' => Carbon::now()->subMinutes(5),
     ]);
 
-    $sparklineTest = Livewire::test(Sparkline::class, ['widget' => array_merge($widget, ['method' => 'sum']), 'model' => new Post()])
+    $sparklineTest = Livewire::test(Sparkline::class, ['widget' => array_merge($widget, ['method' => 'sum']), 'model' => new Post])
         ->set('start', Carbon::now()->subDays(30))
         ->set('end', Carbon::now());
 
@@ -205,7 +205,7 @@ it('calculates sum correctly', function () {
         'created_at' => Carbon::now()->subMinutes(5),
     ]);
 
-    $sparklineTest = Livewire::test(Sparkline::class, ['widget' => array_merge($widget, ['column' => 'number']), 'model' => new Post()])
+    $sparklineTest = Livewire::test(Sparkline::class, ['widget' => array_merge($widget, ['column' => 'number']), 'model' => new Post])
         ->set('start', Carbon::now()->subDays(30))
         ->set('end', Carbon::now()->endOfDay());
 
@@ -231,7 +231,7 @@ it('calculates avg correctly', function () {
         'created_at' => Carbon::now()->subMinutes(5),
     ]);
 
-    $sparklineTest = Livewire::test(Sparkline::class, ['widget' => array_merge($widget, ['column' => 'number']), 'model' => new Post()])
+    $sparklineTest = Livewire::test(Sparkline::class, ['widget' => array_merge($widget, ['column' => 'number']), 'model' => new Post])
         ->set('start', Carbon::now()->subDays(30))
         ->set('end', Carbon::now()->endOfDay());
 
@@ -257,7 +257,7 @@ it('calculates min correctly', function () {
         'created_at' => Carbon::now()->subMinutes(5),
     ]);
 
-    $sparklineTest = Livewire::test(Sparkline::class, ['widget' => array_merge($widget, ['column' => 'number']), 'model' => new Post()])
+    $sparklineTest = Livewire::test(Sparkline::class, ['widget' => array_merge($widget, ['column' => 'number']), 'model' => new Post])
         ->set('start', Carbon::now()->subDays(30))
         ->set('end', Carbon::now()->endOfDay());
 
@@ -283,7 +283,7 @@ it('calculates max correctly', function () {
         'created_at' => Carbon::now()->subMinutes(5),
     ]);
 
-    $sparklineTest = Livewire::test(Sparkline::class, ['widget' => array_merge($widget, ['column' => 'number']), 'model' => new Post()])
+    $sparklineTest = Livewire::test(Sparkline::class, ['widget' => array_merge($widget, ['column' => 'number']), 'model' => new Post])
         ->set('start', Carbon::now()->subDays(30))
         ->set('end', Carbon::now()->endOfDay());
 
@@ -297,7 +297,7 @@ it('calculates max correctly', function () {
 it('renders sparkline correctly', function () {
     $widget = ['method' => 'max', 'name' => 'Test Name'];
 
-    Livewire::test(Sparkline::class, ['widget' => $widget, 'model' => new Post()])
+    Livewire::test(Sparkline::class, ['widget' => $widget, 'model' => new Post])
         ->assertOk()
         ->assertSet('loaded', false)
         ->set('loaded', true)
