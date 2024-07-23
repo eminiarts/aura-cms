@@ -88,6 +88,11 @@ class Tags extends Field
 
     public function relationship($model, $field)
     {
+        // If no resource is set, return an empty query
+        if (!isset($field['resource']) || empty($field['resource'])) {
+            return $model->newQuery()->whereRaw('1 = 0');
+        }
+
         // If it's a meta field
         return $model
             ->morphToMany($field['resource'], 'related', 'post_relations', 'related_id', 'resource_id')

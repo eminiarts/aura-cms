@@ -384,22 +384,21 @@ trait AuraModelConfig
     public function meta()
     {
         if (! $this->usesMeta()) {
-            return;
+            return null;
         }
 
         if (static::$customMeta) {
-            $metaRelation = (new \ReflectionClass($this))->getMethod('meta')->getDeclaringClass()->getName();
+            $metaClass = $this->getCustomMetaClass();
+            $metaTable = (new $metaClass)->getTable();
 
-            // ray($metaRelation, self::class, $this->getMetaTable());
-
-            if ($metaRelation === self::class && $this->getMetaTable() === 'post_meta') {
-
-                throw new InvalidMetaTableException();
+            if ($metaTable === 'post_meta') {
+                throw new InvalidMetaTableException("Custom meta table is not properly defined for " . get_class($this));
             }
+
+            return $this->hasMany($metaClass, 'post_id');
         }
 
         return $this->hasMany(Meta::class, 'post_id');
-        //->whereIn('key', $this->inputFieldsSlugs())
     }
 
     public function navigation()
@@ -531,6 +530,16 @@ trait AuraModelConfig
     public static function usesCustomMeta(): bool
     {
         return static::$customMeta;
+    }
+
+    /**
+     * Get the custom meta class for this model
+     *
+     * @return string
+     */
+    protected function getCustomMetaClass()
+    {
+        return get_class($this) . 'Meta';
     }
 
     /**
