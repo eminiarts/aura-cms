@@ -154,7 +154,7 @@ class Resource extends Model
 
     public function getFieldsAttribute()
     {
-        if (! isset($this->fieldsAttributeCache) || $this->fieldsAttributeCache === null) {
+        if (!isset($this->fieldsAttributeCache) || $this->fieldsAttributeCache === null) {
             $meta = $this->getMeta();
 
             $defaultValues = collect($this->inputFieldsSlugs())
@@ -162,29 +162,12 @@ class Resource extends Model
                 ->map(fn ($value, $key) => $meta[$key] ?? $value)
                 ->filter(fn ($value, $key) => strpos($key, '.') === false)
                 ->map(function ($value, $key) {
-                    // if the value is in $this->hidden, set it to null
-                    if (in_array($key, $this->hidden)) {
-                        // return null;
-                    }
-
                     $class = $this->fieldClassBySlug($key);
 
-                    if ($key == 'users') {
-                        ray($class && $this->{$key} && method_exists($class, 'get'), $this->{$key})->red();
-                    }
-
                     if ($class && $class->isRelation() && $this->{$key} && method_exists($class, 'get')) {
-                        ray('22 should get users', $class, $key);
-
                         return $class->get($class, $this->{$key});
                     }
 
-                    if ($class && isset($this->{$key}) && method_exists($class, 'get')) {
-                        // ray('should get users', $class, $key);
-                        return $class->get($class, $this->{$key});
-                    }
-
-                    // if $this->{$key} is set, then we want to use that
                     if (isset($this->{$key})) {
                         return $this->{$key};
                     }
@@ -193,19 +176,15 @@ class Resource extends Model
                         return $class->get($class, $this->attributes[$key]);
                     }
 
-                    // if $this->attributes[$key] is set, then we want to use that
                     if (isset($this->attributes[$key])) {
                         return $this->attributes[$key];
                     }
 
-                    // if there is a function get{Slug}Field on the model, use it
                     $method = 'get'.Str::studly($key).'Field';
 
                     if (method_exists($this, $method)) {
                         return $this->{$method}();
                     }
-
-                    $class = $this->fieldClassBySlug($key);
 
                     if ($class && isset(optional($this)->{$key}) && method_exists($class, 'get')) {
                         return $class->get($class, $this->{$key} ?? null);
@@ -215,9 +194,8 @@ class Resource extends Model
                 });
 
             $this->fieldsAttributeCache = $defaultValues->filter(function ($value, $key) {
-                return true; // for now
-
-                return $this->shouldDisplayField($this->fieldBySlug($key));
+                $field = $this->fieldBySlug($key);
+                return $this->shouldDisplayField($field);
             });
         }
 
