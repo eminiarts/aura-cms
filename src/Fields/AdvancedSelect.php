@@ -12,14 +12,19 @@ class AdvancedSelect extends Field
 
     public function api($request)
     {
-        $searchableFields = app($request->model)->getSearchableFields()->pluck('slug')->toArray();
+        $model = app($request->model);
+        $searchableFields = $model->getSearchableFields()->pluck('slug')->toArray();
 
-        return app($request->model)->searchIn($searchableFields, $request->search)->take(5)->get()->map(function ($item) {
+        return $model->searchIn($searchableFields, $request->search, $model)
+        ->take(5)
+        ->get()
+        ->map(function ($item) {
             return [
                 'id' => $item->id,
                 'title' => $item->title(),
             ];
-        })->toArray();
+        })
+        ->toArray();
     }
 
     public function display($field, $value, $model)

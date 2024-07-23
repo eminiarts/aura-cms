@@ -208,11 +208,23 @@ class AuraServiceProvider extends PackageServiceProvider
         });
 
         // Search in multiple columns
-        Builder::macro('searchIn', function ($columns, $search) {
-            return $this->where(function ($query) use ($columns, $search) {
+        Builder::macro('searchIn', function ($columns, $search, $model) {
+            return $this->where(function ($query) use ($columns, $search, $model) {
                 foreach (Arr::wrap($columns) as $column) {
-                    $query->orWhere($column, 'like', '%'.$search.'%');
-                    // $query->orWhere($column, 'like', $search . '%');
+                    if ($model->isMetaField($column)) {
+                        $metaTable = $model->getMetaTable();
+                        $metaForeignKey = $model->getMetaForeignKey();
+                        
+                        $query->orWhereExists(function ($subquery) use ($metaTable, $metaForeignKey, $column, $search, $model) {
+                            $subquery->select(DB::raw(1))
+                                ->from($metaTable)
+                                ->whereColumn($model->getTable() . '.id', $metaTable . '.' . $metaForeignKey)
+                                ->where($metaTable . '.key', $column)
+                                ->where($metaTable . '.value', 'like', '%' . $search . '%');
+                        });
+                    } else {
+                        $query->orWhere($column, 'like', '%' . $search . '%');
+                    }
                 }
             });
         });
