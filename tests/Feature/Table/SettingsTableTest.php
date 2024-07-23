@@ -596,7 +596,7 @@ test('bulk_actions settings', function () {
 
     expect($component->settings)->toHaveKey('bulk_actions', true);
 
-    $component->assertSeeHtml('<div class="bulk-actions">');
+    $component->assertSeeHtml('<div class="bulk-actions');
 
     // Disable bulk_actions
 
@@ -606,7 +606,7 @@ test('bulk_actions settings', function () {
 
     expect($component->settings)->toHaveKey('bulk_actions', false);
 
-    $component->assertDontSeeHtml('<div class="bulk-actions">');
+    $component->assertDontSeeHtml('<div class="bulk-actions');
 });
 
 test('sort_columns settings', function () {
