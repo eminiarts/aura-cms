@@ -53,21 +53,25 @@ class Field implements Wireable
         $componentName = $this->index;
         // If the component name starts with 'aura::', remove it
         if (Str::startsWith($componentName, 'aura::')) {
-            $componentName = Str::after($componentName, 'aura::');
+         //   $componentName = Str::after($componentName, 'aura::');
         }
         
         // Ensure the component name starts with 'fields.'
         if (!Str::startsWith($componentName, 'fields.')) {
-            $componentName = 'fields.' . $componentName;
+           // $componentName = 'fields.' . $componentName;
         }
         
         ray($this->index, $componentName);
         
-        return Blade::renderComponent($componentName, [
-            'row' => $model,
-            'field' => $field,
-            'value' => $value
-        ]);
+        return Blade::render(
+            '<x-dynamic-component :component="$componentName" :row="$row" :field="$field" :value="$value" />',
+            [
+                'componentName' => $componentName,
+                'row' => $model,
+                'field' => $field,
+                'value' => $value
+            ]
+        );
     }
 
         if (optional($field)['display_view']) {

@@ -13,7 +13,7 @@ class Status extends Field
     // Change all $component to $edit?
     public $edit = 'aura::fields.status';
     
-    public $index = 'aura::fields.status-view';
+    public $index = 'aura::fields.status-index';
 
     public function getFields()
     {
