@@ -14,7 +14,7 @@ it('has a searchable name', function () {
 });
 
 test('check Role Fields', function () {
-    $slug = new Role();
+    $slug = new Role;
 
     $fields = collect($slug->getFields());
 
