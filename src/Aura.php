@@ -316,7 +316,7 @@ class Aura
     public function injectView(string $name): Htmlable
     {
         if (isset($this->injectViews[$name])) {
-            ray($name, $this->injectViews[$name]);
+            // ray($name, $this->injectViews[$name]);
         }
 
         // ray($name);

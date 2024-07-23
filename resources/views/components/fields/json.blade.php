@@ -117,7 +117,7 @@
                                                         right: 0;
                                                         bottom: 0;
                                                         left: 0; */
-                        min-height: 300px;
+                        min-height: {{ $field['height'] ?? '300'}}px;
                     }
                 </style>
             @endpush

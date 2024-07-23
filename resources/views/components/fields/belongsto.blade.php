@@ -11,7 +11,6 @@
 
 {{-- @dump($this->form['fields'][$field['slug']], $values) --}}
 
-<div wire:key="belongsto-{{ $field['slug'] }}" class="w-full">
     <x-aura::fields.wrapper :field="$field">
 
         <div class="w-full" wire:ignore x-data="{
@@ -165,4 +164,3 @@
 
     </x-aura::fields.wrapper>
 
-</div>
