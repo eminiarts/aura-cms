@@ -18,12 +18,16 @@
 
     if ($api) {
         $values = [];
-        $selectedValues = $field['field']->selectedValues($field['resource'], optional($this->form['fields'])[$field['slug']]);
+        $selectedValues = $field['field']->selectedValues($field['resource'], optional($this->form['fields'])[$field['slug']], $field);
+
+        // dd($selectedValues);
     } else {
         // $values = $field['field']->values($field['model']);
-        $values = $field['field']->values($field['resource']);
+        $values = $field['field']->values($field['resource'], $field);
         $selectedValues = [];
     }
+
+    // dd($values);
 @endphp
 
 <x-aura::fields.wrapper :field="$field">
@@ -49,6 +53,7 @@
         api: @js($api),
         model: @js($field['resource']),
         field: @js($field['type']),
+        fullField: @js($field),
         multiple: @js($multiple),
         slug: @js($field['slug']),
         searchable: {{ Js::from($field['searchable'] ?? true) }},
@@ -56,19 +61,19 @@
         search: null,
         showListbox: false,
         loading: false,
-    
+
         dragging: false,
         dragIndex: null,
         dragX: 0,
-    
+
         boundStopDragging: null,
         boundMoveItem: null,
-    
+
         updateSelectedItemsOrder() {
             const newOrder = Array.from(this.$refs.selectedItemsContainer.querySelectorAll('.draggable-selectmany-item')).map(item => parseInt(item.getAttribute('data-id')));
-    
+
             const validIds = newOrder.filter(item => !isNaN(item));
-    
+
             this.$nextTick(() => {
                 this.value = newOrder;
                 this.selectedItems = newOrder.map(id => this.items.find(item => item.id === id));
@@ -76,7 +81,7 @@
                 this.showListbox = false;
             });
         },
-    
+
         init() {
             this.boundStopDragging = this.stopDragging.bind(this);
             this.boundMoveItem = this.moveItem.bind(this);
@@ -92,12 +97,14 @@
                     this.selectedItems = this.items.filter(item => this.value.includes(item.id));
                 }
             }
-    
+
+            console.log(this.items);
+
             Livewire.on('resourceCreated', data => {
                 this.items.push({ id: data.form.id, title: data.title });
                 this.toggleItem({ id: data.form.id, title: data.title });
             })
-    
+
             // Watch this.search and fetch new values, debounce for 500ms
             this.$watch('search', () => {
                 if (this.api) {
@@ -105,10 +112,10 @@
                 }
             }, { debounce: 500 });
         },
-    
+
         fetchApi() {
             this.loading = true;
-    
+
             fetch('/admin/api/fields/values', {
                     method: 'POST',
                     credentials: 'include',
@@ -120,6 +127,7 @@
                         model: this.model,
                         slug: this.slug,
                         field: this.field,
+                        fullField: this.fullField,
                         search: this.search,
                     }),
                 })
@@ -129,81 +137,81 @@
                     this.loading = false;
                 });
         },
-    
+
         get filteredItems() {
             var items = this.items;
             if (this.search) {
                 return items.filter(item => item.title.toLowerCase().includes(this.search.toLowerCase()));
             }
             if (items.length === 0) {
-    
+
                 if (this.selectedItems && this.selectedItems.length > 0) {
                     return this.selectedItems;
                 }
-    
+
                 return [];
             }
-    
+
             if (!this.selectedItems || this.selectedItems.length === 0) {
                 return items;
             }
             // return this.selectedItems and items and remove duplicates by id
             return [...this.selectedItems, ...items].filter((item, index, self) => self.findIndex(i => i.id === item.id) === index).sort((a, b) => a.id - b.id);
         },
-    
+
         isActive(item) {
             if (!this.multiple) {
                 return this.value === item.id;
             }
             return this.value.includes(item.id);
         },
-    
+
         isDisabled(item) {
             return false;
         },
-    
+
         isSelected(item) {
             if (!this.multiple) {
                 return this.value === item.id;
             }
             return this.value.includes(item.id);
         },
-    
+
         toggleListbox() {
             this.showListbox = !this.showListbox;
-    
+
             if (!this.showListbox) {
                 this.$refs.listboxButton.focus();
             }
-    
+
             if (this.showListbox && this.searchable) {
                 this.$nextTick(() => {
                     this.$refs.searchField.focus();
                 });
             }
         },
-    
+
         closeListbox() {
             if (this.showListbox) {
                 this.showListbox = false;
             }
         },
-    
+
         toggleItem(item) {
             // singular
-    
+
             console.log(this.multiple, this.value, item.id);
-    
+
             if (!this.multiple) {
                 this.value = item.id;
                 this.selectedItems = [item];
                 this.showListbox = false;
                 return;
             }
-    
+
             if (this.isSelected(item)) {
                 this.value = this.value.filter(i => i !== item.id);
-    
+
                 {{-- this.$nextTick(() => {
                     this.selectedItems = this.selectedItems.filter(i => i.id !== item.id);
                 }); --}}
@@ -218,7 +226,7 @@
                 });
             }
         },
-    
+
         selectedItem(id) {
             if (!id) {
                 return false;
@@ -231,7 +239,7 @@
             }
             return this.selectedItems.find(item => item.id === id).title;
         },
-    
+
         focusNext(e) {
             const items = this.$refs.listbox.querySelectorAll(`[role='option']`);
             const active = e.target;
@@ -260,7 +268,7 @@
             }
             items[index - 1].focus();
         },
-    
+
         startDragging(index, event) {
             this.dragging = true;
             this.dragIndex = index;
@@ -270,7 +278,7 @@
             window.addEventListener('mouseup', this.boundStopDragging);
             window.addEventListener('mousemove', this.boundMoveItem);
         },
-    
+
         moveItem(event) {
             if (!this.dragging) return;
             const containerRect = this.$refs.selectedItemsContainer.getBoundingClientRect();
@@ -280,20 +288,20 @@
             const clampedX = Math.min(Math.max(event.clientX, minX), maxX);
             this.dragX = clampedX - containerRect.left;
             this.$refs.draggingItem.style.left = this.dragX + 'px';
-    
+
             const minY = containerRect.top;
             const maxY = containerRect.bottom - this.$refs.draggingItem.offsetHeight;
             const clampedY = Math.min(Math.max(event.clientY, minY), maxY);
             this.dragY = clampedY - containerRect.top;
             this.$refs.draggingItem.style.top = this.dragY + 'px';
-    
+
             const newIndex = this.findNewIndex();
             if (newIndex !== this.dragIndex) {
                 this.value.splice(newIndex, 0, this.value.splice(this.dragIndex, 1)[0]);
                 this.dragIndex = newIndex;
             }
         },
-    
+
         stopDragging() {
             window.removeEventListener('mouseup', this.boundStopDragging);
             window.removeEventListener('mousemove', this.boundMoveItem);
@@ -301,7 +309,7 @@
             this.dragIndex = null;
             this.updateSelectedItemsOrder();
         },
-    
+
         findNewIndex() {
             const itemsContainer = this.$refs.selectedItemsContainer;
             const draggingItem = this.$refs.draggingItem;
@@ -309,17 +317,17 @@
             const itemHeight = draggingItem.offsetHeight;
             const containerWidth = itemsContainer.clientWidth;
             const numCols = Math.floor(containerWidth / itemWidth);
-    
+
             // Calculate the X and Y index based on the current dragX and dragY position
             const colIndex = Math.floor(this.dragX / itemWidth);
             const rowIndex = Math.floor(this.dragY / itemHeight);
-    
+
             // Calculate the new index based on the flex structure
             let newIndex = rowIndex * numCols + colIndex;
-    
+
             // Clamp the new index within the valid range
             newIndex = Math.max(0, Math.min(newIndex, this.items.length - 1));
-    
+
             return newIndex;
         }
     }" @keydown.down.stop.prevent="focusNext"
@@ -347,7 +355,9 @@
                             <div class="inline-flex gap-1 items-center px-2 py-0.5 mr-2 mb-2 text-xs font-medium leading-4 rounded-full bg-primary-100 text-primary-800 draggable-selectmany-item"
                                 :data-id="item" @mousedown.prevent="startDragging(index, $event)"
                                 :class="{ 'shadow-item': index == dragIndex }">
+
                                 <span class="" x-text="selectedItem(item)"></span>
+                                <span>custom text here</span>
 
                                 <!-- Small x svg -->
                                 <svg @mousedown.prevent="value = value.filter(i => i !== item)"
@@ -437,7 +447,12 @@
                                 @keydown.space.stop.prevent="toggleItem(item)">
                                 <div class="flex items-center space-x-2">
                                     <div>
-                                        <span x-text="item.title" class="font-semibold"></span>
+                                        <template x-if="item.view">
+                                            <div x-html="item.view"></div>
+                                        </template>
+                                        <template x-if="!item.view">
+                                            <span x-text="item.title" class="font-semibold"></span>
+                                        </template>
                                     </div>
                                     <span x-show="isSelected(item)" class="font-semibold text-primary-600">&check;</span>
                                 </div>
