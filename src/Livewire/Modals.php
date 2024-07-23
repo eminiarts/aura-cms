@@ -15,7 +15,7 @@ class Modals extends Component
     public function closeModal($id = null): void
     {
         ray('closeModal', $id);
-        
+
         if ($id) {
             unset($this->modals[$id]);
             $this->activeModals = array_values(array_filter($this->activeModals, function ($modalId) use ($id) {
