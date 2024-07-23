@@ -14,12 +14,23 @@ class AdvancedSelect extends Field
     {
         $searchableFields = app($request->model)->getSearchableFields()->pluck('slug')->toArray();
 
-        return app($request->model)->searchIn($searchableFields, $request->search)->take(5)->get()->map(function ($item) {
+        $field = $request->fullField;
+
+        dd(app($request->model)->getBaseFillable());
+
+        dd(app($request->model)->searchIn($searchableFields, $request->search)->take(5)->get(), $searchableFields, $request->search);
+
+        $values = app($request->model)->searchIn($searchableFields, $request->search)->take(5)->get()->map(function ($item) use ($field) {
             return [
                 'id' => $item->id,
                 'title' => $item->title(),
+                'view' => view($field['view'], ['item' => $item])->render()
             ];
         })->toArray();
+
+        dd($values);
+
+        return $values;
     }
 
     public function display($field, $value, $model)
@@ -70,6 +81,18 @@ class AdvancedSelect extends Field
                 'type' => 'Aura\\Base\\Fields\\Text',
                 'validation' => '',
                 'slug' => 'resource',
+            ],
+            [
+                'name' => 'Custom View',
+                'type' => 'Aura\\Base\\Fields\\Text',
+                'validation' => '',
+                'slug' => 'view',
+            ],
+            [
+                'name' => 'Custom View Selected',
+                'type' => 'Aura\\Base\\Fields\\Text',
+                'validation' => '',
+                'slug' => 'view-selected',
             ],
             [
                 'name' => 'Allow Create New',
@@ -133,7 +156,7 @@ class AdvancedSelect extends Field
         ray($post);
     }
 
-    public function selectedValues($model, $values)
+    public function selectedValues($model, $values, $field)
     {
         if (! $values) {
             return;
@@ -144,7 +167,7 @@ class AdvancedSelect extends Field
             $values = [$values];
         }
 
-        return app($model)->find($values)->map(function ($item) {
+        return app($model)->get()->map(function ($item) use ($field) {
             return [
                 'id' => $item->id,
                 'title' => $item->title(),
@@ -157,12 +180,13 @@ class AdvancedSelect extends Field
         return json_encode($value);
     }
 
-    public function values($model)
+    public function values($model, $field)
     {
-        return app($model)->get()->map(function ($item) {
+        return app($model)->get()->map(function ($item) use ($field) {
             return [
                 'id' => $item->id,
                 'title' => $item->title(),
+                'view' => view($field['view'], ['item' => $item])->render()
             ];
         })->toArray();
     }
