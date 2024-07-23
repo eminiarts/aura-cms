@@ -2,14 +2,12 @@
 
 namespace Tests\Feature\Livewire;
 
-use Livewire\Livewire;
-use Aura\Base\Resource;
-use Aura\Base\Fields\Tags;
-use Aura\Base\Fields\Text;
 use Aura\Base\Facades\Aura;
+use Aura\Base\Fields\Tags;
 use Aura\Base\Livewire\Resource\Create;
+use Aura\Base\Resource;
 use Aura\Base\Resources\Tag;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Livewire\Livewire;
 
 // Before each test, create a Superadmin and login
 beforeEach(function () {
@@ -23,7 +21,7 @@ class TagsFieldModel extends Resource
     public static function getFields()
     {
         return [
-             [
+            [
                 'name' => 'Tags',
                 'slug' => 'tags',
                 'type' => 'Aura\\Base\\Fields\\Tags',
@@ -73,7 +71,6 @@ test('check Tags Fields', function () {
 //     expect((string) $view)->toContain('>Tags</label>');
 // });
 
-
 test('Tags Field - Default Value set', function () {
     Aura::fake();
     Aura::setModel(new TagsFieldModel());
@@ -103,7 +100,6 @@ test('Text Field - Prefix rendered', function () {
 
     expect((string) $view)->toContain('Prefix for Test');
 });
-
 
 test('TagsFieldModel - Saving Tags', function () {
     $model = TagsFieldModel::create(['tags' => ['123', '456', 'Enes']]);

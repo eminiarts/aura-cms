@@ -2,15 +2,10 @@
 
 namespace Tests\Feature\Livewire;
 
-use Livewire\Livewire;
+use Aura\Base\Livewire\Resource\Create;
 use Aura\Base\Resource;
-use Aura\Base\Fields\Tags;
-use Aura\Base\Fields\Text;
-use Aura\Base\Facades\Aura;
 use Aura\Base\Resources\Tag;
 use Aura\Base\Resources\User;
-use Aura\Base\Livewire\Resource\Create;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 
 // Before each test, create a Superadmin and login
 beforeEach(function () {
@@ -24,7 +19,7 @@ class TagsRelationFieldModel extends Resource
     public static function getFields()
     {
         return [
-             [
+            [
                 'name' => 'User Tags',
                 'slug' => 'users',
                 'type' => 'Aura\\Base\\Fields\\Tags',

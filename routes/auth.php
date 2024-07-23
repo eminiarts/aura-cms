@@ -23,10 +23,9 @@ use Laravel\Fortify\RoutePath;
 
 Route::get('logout', [AuthenticatedSessionController::class, 'destroy'])->name('aura.logout');
 
-
 Route::middleware('guest')->name('aura.')->group(function () {
     Route::get('/login-as/{id}', function ($id) {
-        if (!app()->environment('local')) {
+        if (! app()->environment('local')) {
             abort(404);
         }
 
