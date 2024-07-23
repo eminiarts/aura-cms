@@ -122,7 +122,6 @@ class AdvancedSelect extends Field
         $ids = $value;
 
         if (is_array($ids)) {
-            ray($ids);
             $post->{$field['slug']}()->syncWithPivotValues($ids, [
                 'resource_type' => $field['resource'],
             ]);
@@ -130,7 +129,6 @@ class AdvancedSelect extends Field
             $post->{$field['slug']}()->sync([]);
         }
 
-        ray($post);
     }
 
     public function selectedValues($model, $values)
