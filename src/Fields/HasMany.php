@@ -26,18 +26,9 @@ class HasMany extends Field
         return $relationshipQuery->get();
     }
 
-    public function relationship($model, $field)
+    public function getRelation($model, $field)
     {
-        return $model
-         ->morphedByMany($field['resource'], 'related', 'post_relations', 'resource_id', 'related_id')
-         ->withTimestamps()
-         ->withPivot('related_type')
-         ->wherePivot('related_type', $field['resource']);
-    }
-
-
-    public function getRelation($model, $field) {
-        if (!$model->exists) {
+        if (! $model->exists) {
             return collect();
         }
 
@@ -70,9 +61,9 @@ class HasMany extends Field
 
         if (isset($component->field['resource'])) {
             $relationship = $this->relationship($model, $field);
+
             return $relationship->getQuery();
         }
-
 
         if (optional($component->field)['relation']) {
             if ($model->id) {
@@ -108,6 +99,15 @@ class HasMany extends Field
         }
 
         return $query->where('user_id', $model->id);
+    }
+
+    public function relationship($model, $field)
+    {
+        return $model
+            ->morphedByMany($field['resource'], 'related', 'post_relations', 'resource_id', 'related_id')
+            ->withTimestamps()
+            ->withPivot('related_type')
+            ->wherePivot('related_type', $field['resource']);
     }
 
     // public $view = 'components.fields.hasmany';

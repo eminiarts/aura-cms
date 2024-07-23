@@ -5,8 +5,7 @@ namespace Aura\Base\Commands;
 use Illuminate\Console\Command;
 use Illuminate\Filesystem\Filesystem;
 use Illuminate\Support\Facades\Artisan;
-use Illuminate\Support\Str;
-use function Laravel\Prompts\select;
+
 use function Laravel\Prompts\search;
 
 class CreateResourceFactory extends Command
@@ -27,7 +26,7 @@ class CreateResourceFactory extends Command
     {
         $resourceClass = $this->argument('resource');
 
-        if (!$resourceClass) {
+        if (! $resourceClass) {
             $resources = collect(\Aura\Base\Facades\Aura::getResources())->mapWithKeys(function ($resource) {
                 return [$resource => $resource];
             });
@@ -35,22 +34,24 @@ class CreateResourceFactory extends Command
             $resourceClass = search(
                 'Search for the resource you want to create a factory for',
                 fn (string $value) => strlen($value) > 0
-                    ? $resources->filter(function($resource) use ($value) {
+                    ? $resources->filter(function ($resource) use ($value) {
                         return str_contains(strtolower($resource), strtolower($value));
-                      })->all()
+                    })->all()
                     : $resources->all()
             );
         }
 
-        if (!class_exists($resourceClass)) {
+        if (! class_exists($resourceClass)) {
             $this->error("Resource class '{$resourceClass}' not found.");
+
             return 1;
         }
 
         $resource = app($resourceClass);
 
-        if (!method_exists($resource, 'getFields')) {
+        if (! method_exists($resource, 'getFields')) {
             $this->error("Method 'getFields' not found in the '{$resourceClass}' class.");
+
             return 1;
         }
 
@@ -65,8 +66,9 @@ class CreateResourceFactory extends Command
 
         $factoryPath = database_path("factories/{$factoryName}.php");
 
-        if (!$this->files->exists($factoryPath)) {
+        if (! $this->files->exists($factoryPath)) {
             $this->error("Unable to create factory file '{$factoryName}'.");
+
             return 1;
         }
 
@@ -143,6 +145,7 @@ PHP;
                 return '$this->faker->randomElement(["option1", "option2", "option3"])';
             case 'BelongsTo':
                 $relatedModel = class_basename($field['resource']);
+
                 return "\\{$field['resource']}::factory()";
             default:
                 return '$this->faker->word';
