@@ -2,10 +2,13 @@
 
 namespace Aura\Base\Fields;
 
-use Aura\Base\Traits\InputFields;
-use Illuminate\Support\Traits\Macroable;
-use Illuminate\Support\Traits\Tappable;
 use Livewire\Wireable;
+use Illuminate\Support\Str;
+use Aura\Base\Traits\InputFields;
+use Illuminate\Support\Facades\View;
+use Illuminate\Support\Facades\Blade;
+use Illuminate\Support\Traits\Tappable;
+use Illuminate\Support\Traits\Macroable;
 
 class Field implements Wireable
 {
@@ -32,6 +35,8 @@ class Field implements Wireable
     public string $type = 'input';
 
     public $view = null;
+    
+    public $index = null;
 
     public function component()
     {
@@ -44,8 +49,29 @@ class Field implements Wireable
 
     public function display($field, $value, $model)
     {
+       if ($this->index) {
+        $componentName = $this->index;
+        // If the component name starts with 'aura::', remove it
+        if (Str::startsWith($componentName, 'aura::')) {
+            $componentName = Str::after($componentName, 'aura::');
+        }
+        
+        // Ensure the component name starts with 'fields.'
+        if (!Str::startsWith($componentName, 'fields.')) {
+            $componentName = 'fields.' . $componentName;
+        }
+        
+        ray($this->index, $componentName);
+        
+        return Blade::renderComponent($componentName, [
+            'row' => $model,
+            'field' => $field,
+            'value' => $value
+        ]);
+    }
+
         if (optional($field)['display_view']) {
-            return view($field['display_view'], ['row' => $model, 'field' => $field])->render();
+            return view($field['display_view'], ['row' => $model, 'field' => $field, 'value' => $value])->render();
         }
 
         return $value;
