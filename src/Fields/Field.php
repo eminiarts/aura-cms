@@ -61,8 +61,6 @@ class Field implements Wireable
            // $componentName = 'fields.' . $componentName;
         }
         
-        ray($this->index, $componentName);
-        
         return Blade::render(
             '<x-dynamic-component :component="$componentName" :row="$row" :field="$field" :value="$value" />',
             [
