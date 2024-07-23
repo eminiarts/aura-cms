@@ -16,15 +16,15 @@ class AdvancedSelect extends Field
         $searchableFields = $model->getSearchableFields()->pluck('slug')->toArray();
 
         return $model->searchIn($searchableFields, $request->search, $model)
-        ->take(5)
-        ->get()
-        ->map(function ($item) {
-            return [
-                'id' => $item->id,
-                'title' => $item->title(),
-            ];
-        })
-        ->toArray();
+            ->take(5)
+            ->get()
+            ->map(function ($item) {
+                return [
+                    'id' => $item->id,
+                    'title' => $item->title(),
+                ];
+            })
+            ->toArray();
     }
 
     public function display($field, $value, $model)

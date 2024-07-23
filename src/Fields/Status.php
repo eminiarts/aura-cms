@@ -6,14 +6,14 @@ class Status extends Field
 {
     public $component = 'aura::fields.status';
 
+    // Change all $component to $edit?
+    public $edit = 'aura::fields.status';
+
+    public $index = 'aura::fields.status-index';
+
     public $optionGroup = 'Choice Fields';
 
     public $view = 'aura::fields.status-view';
-    
-    // Change all $component to $edit?
-    public $edit = 'aura::fields.status';
-    
-    public $index = 'aura::fields.status-index';
 
     public function getFields()
     {

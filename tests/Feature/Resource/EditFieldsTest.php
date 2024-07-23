@@ -54,7 +54,7 @@ class EditFieldsTestModel extends Resource
 }
 
 test('if the first tab is hidden, tabs should be applied correctly to second tab', function () {
-    $model = new EditFieldsTestModel();
+    $model = new EditFieldsTestModel;
 
     $fields = $model->editFields();
 
@@ -72,7 +72,7 @@ test('if the first tab is hidden, tabs should be applied correctly to second tab
 });
 
 test('check on_edit inheritance', function () {
-    $model = new EditFieldsTestModel();
+    $model = new EditFieldsTestModel;
 
     $fields = $model->sendThroughPipeline($model->fieldsCollection(), [
         ApplyTabs::class,

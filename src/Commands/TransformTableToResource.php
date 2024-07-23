@@ -114,7 +114,7 @@ EOT;
 
     private function saveResourceFile(string $resourceName, string $resourceContent)
     {
-        $filesystem = new Filesystem();
+        $filesystem = new Filesystem;
 
         $resourcesDirectory = app_path('Aura/Resources');
         if (! $filesystem->exists($resourcesDirectory)) {

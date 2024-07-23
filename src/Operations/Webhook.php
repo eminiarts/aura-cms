@@ -17,7 +17,7 @@ class Webhook extends BaseOperation
         $body = $operation->options['body'] ?? '';
 
         // call the webhook
-        $client = new \GuzzleHttp\Client();
+        $client = new \GuzzleHttp\Client;
         $response = $client->request($method, $URL, [
             'headers' => $headers,
             'body' => $body,

@@ -2,13 +2,12 @@
 
 namespace Aura\Base\Fields;
 
-use Livewire\Wireable;
-use Illuminate\Support\Str;
 use Aura\Base\Traits\InputFields;
-use Illuminate\Support\Facades\View;
 use Illuminate\Support\Facades\Blade;
-use Illuminate\Support\Traits\Tappable;
+use Illuminate\Support\Str;
 use Illuminate\Support\Traits\Macroable;
+use Illuminate\Support\Traits\Tappable;
+use Livewire\Wireable;
 
 class Field implements Wireable
 {
@@ -21,6 +20,8 @@ class Field implements Wireable
     public $field;
 
     public bool $group = false;
+
+    public $index = null;
 
     public bool $on_forms = true;
 
@@ -35,8 +36,6 @@ class Field implements Wireable
     public string $type = 'input';
 
     public $view = null;
-    
-    public $index = null;
 
     public function component()
     {
@@ -49,28 +48,28 @@ class Field implements Wireable
 
     public function display($field, $value, $model)
     {
-       if ($this->index) {
-        $componentName = $this->index;
-        // If the component name starts with 'aura::', remove it
-        if (Str::startsWith($componentName, 'aura::')) {
-         //   $componentName = Str::after($componentName, 'aura::');
+        if ($this->index) {
+            $componentName = $this->index;
+            // If the component name starts with 'aura::', remove it
+            if (Str::startsWith($componentName, 'aura::')) {
+                //   $componentName = Str::after($componentName, 'aura::');
+            }
+
+            // Ensure the component name starts with 'fields.'
+            if (! Str::startsWith($componentName, 'fields.')) {
+                // $componentName = 'fields.' . $componentName;
+            }
+
+            return Blade::render(
+                '<x-dynamic-component :component="$componentName" :row="$row" :field="$field" :value="$value" />',
+                [
+                    'componentName' => $componentName,
+                    'row' => $model,
+                    'field' => $field,
+                    'value' => $value,
+                ]
+            );
         }
-        
-        // Ensure the component name starts with 'fields.'
-        if (!Str::startsWith($componentName, 'fields.')) {
-           // $componentName = 'fields.' . $componentName;
-        }
-        
-        return Blade::render(
-            '<x-dynamic-component :component="$componentName" :row="$row" :field="$field" :value="$value" />',
-            [
-                'componentName' => $componentName,
-                'row' => $model,
-                'field' => $field,
-                'value' => $value
-            ]
-        );
-    }
 
         if (optional($field)['display_view']) {
             return view($field['display_view'], ['row' => $model, 'field' => $field, 'value' => $value])->render();
@@ -92,7 +91,7 @@ class Field implements Wireable
 
     public static function fromLivewire($data)
     {
-        $field = new static();
+        $field = new static;
 
         $field->type = $data['type'];
         $field->view = $data['view'];

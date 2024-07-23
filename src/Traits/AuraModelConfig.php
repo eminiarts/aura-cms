@@ -384,7 +384,7 @@ trait AuraModelConfig
     public function meta()
     {
         if (! $this->usesMeta()) {
-            return null;
+            return;
         }
 
         if (static::$customMeta) {
@@ -392,7 +392,7 @@ trait AuraModelConfig
             $metaTable = (new $metaClass)->getTable();
 
             if ($metaTable === 'post_meta') {
-                throw new InvalidMetaTableException("Custom meta table is not properly defined for " . get_class($this));
+                throw new InvalidMetaTableException('Custom meta table is not properly defined for '.get_class($this));
             }
 
             return $this->hasMany($metaClass, 'post_id');
@@ -533,16 +533,6 @@ trait AuraModelConfig
     }
 
     /**
-     * Get the custom meta class for this model
-     *
-     * @return string
-     */
-    protected function getCustomMetaClass()
-    {
-        return get_class($this) . 'Meta';
-    }
-
-    /**
      * @param  string  $key
      * @return mixed
      */
@@ -598,5 +588,15 @@ trait AuraModelConfig
     public function viewView()
     {
         return 'aura::livewire.resource.view';
+    }
+
+    /**
+     * Get the custom meta class for this model
+     *
+     * @return string
+     */
+    protected function getCustomMetaClass()
+    {
+        return get_class($this).'Meta';
     }
 }
