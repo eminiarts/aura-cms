@@ -5,7 +5,7 @@
             <span class="flex items-center">
                 <span x-show="selected" x-text="selected ? $refs.listbox.querySelector(`[data-value='${selected}']`).textContent : ''" 
                       :class="selected ? $refs.listbox.querySelector(`[data-value='${selected}']`).getAttribute('data-color') : ''"
-                      class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"></span>
+                      class="text-xs font-medium me-2 px-2.5 py-0.5 rounded"></span>
                 <span x-show="!selected" class="text-gray-500">Select {{ $field['name'] }}...</span>
             </span>
             <span class="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
@@ -24,7 +24,7 @@
                      data-value="{{ $option['key'] }}"
                      data-color="{{ $option['color'] }}">
                     <span class="flex items-center">
-                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ $option['color'] }}">
+                        <span class="text-xs font-medium me-2 px-2.5 py-0.5 rounded {{ $option['color'] }}">
                             {{ $option['value'] }}
                         </span>
                     </span>

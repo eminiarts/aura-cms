@@ -4,7 +4,7 @@
         $statusOption = collect($field['options'])->firstWhere('key', $status);
     @endphp
     @if($statusOption)
-        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ $statusOption['color'] }}">
+        <span class="text-xs font-medium px-2.5 py-0.5 rounded {{ $statusOption['color'] }}">
             {{ $statusOption['value'] }}
         </span>
     @else
