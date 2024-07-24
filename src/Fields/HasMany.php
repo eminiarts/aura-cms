@@ -19,8 +19,6 @@ class HasMany extends Field
 
     public function get($model, $field)
     {
-        // ray($field, $model);
-
         $relationshipQuery = $this->relationship($model, $field);
 
         return $relationshipQuery->get();
@@ -54,10 +52,6 @@ class HasMany extends Field
         if (is_callable(optional($field)['relation'])) {
             return $field['relation']($query, $model);
         }
-
-        // ray($component->field);
-
-        ray('hasMany', $model->id, $component->field);
 
         if (isset($component->field['resource'])) {
             $relationship = $this->relationship($model, $field);

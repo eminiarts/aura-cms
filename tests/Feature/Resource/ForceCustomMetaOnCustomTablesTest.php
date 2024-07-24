@@ -150,8 +150,6 @@ test('custom Table is forced to use custom meta', function () {
         'option2' => 'Option 2',
     ]);
 
-    // dd(DB::table('post_meta')->get());
-
     $meta = DB::table('post_meta')->get();
 
     $meta1 = $meta->where('key', 'meta_1')->first();

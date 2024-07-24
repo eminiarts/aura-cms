@@ -122,7 +122,7 @@ class CustomTableFilterModel extends Resource
                 'name' => 'Tags',
                 'slug' => 'tags',
                 'type' => 'Aura\\Base\\Fields\\Tags',
-                'model' => 'Aura\\Base\\Resources\\Tag',
+                'resource' => 'Aura\\Base\\Resources\\Tag',
                 'create' => true,
                 'validation' => '',
                 'conditional_logic' => [],

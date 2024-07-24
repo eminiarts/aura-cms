@@ -1,3 +1,5 @@
 <x-aura::fields.wrapper :field="$field">
-    {!! $this->model->display($field['slug']) !!}
+    <div class="truncate">
+        {!! $this->model->display($field['slug']) !!}
+    </div>
 </x-aura::fields.wrapper>

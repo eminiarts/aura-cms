@@ -29,7 +29,6 @@ class EditResourceField extends Component
 
     public function activate($params)
     {
-        ray('in resource field');
         if (! $params) {
             $this->field = [
                 'type' => 'Aura\Base\Fields\Text',
