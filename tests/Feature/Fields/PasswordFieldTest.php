@@ -46,7 +46,7 @@ class PasswordFieldModel extends Resource
 }
 
 test('Password Field Test', function () {
-    $model = new PasswordFieldModel();
+    $model = new PasswordFieldModel;
 
     $component = Livewire::test(Create::class, ['slug' => 'Post'])
         ->call('setModel', $model)
@@ -81,7 +81,7 @@ test('Password Field Test', function () {
 });
 
 test('password field gets not overwritten if saved as null', function () {
-    $model = new PasswordFieldModel();
+    $model = new PasswordFieldModel;
 
     $component = Livewire::test(Create::class, ['slug' => 'Post'])
         ->call('setModel', $model)
@@ -131,7 +131,7 @@ test('password field gets not overwritten if saved as null', function () {
 });
 
 test('password field gets not overwritten if saved as empty string', function () {
-    $model = new PasswordFieldModel();
+    $model = new PasswordFieldModel;
 
     $component = Livewire::test(Create::class, ['slug' => 'Post'])
         ->call('setModel', $model)

@@ -69,7 +69,7 @@ class ParentConditionalLogicModel extends Resource
 }
 
 test('fields merge parent conditional logic', function () {
-    $model = new ParentConditionalLogicModel();
+    $model = new ParentConditionalLogicModel;
 
     $fields = $model->sendThroughPipeline($model->fieldsCollection(), [
         ApplyTabs::class,
@@ -219,7 +219,7 @@ class AdvancedParentConditionalLogicModel extends Resource
 }
 
 test('fields merge parent conditional logic - more advanced Example', function () {
-    $model = new AdvancedParentConditionalLogicModel();
+    $model = new AdvancedParentConditionalLogicModel;
 
     $fields = $model->sendThroughPipeline($model->fieldsCollection(), [
         ApplyTabs::class,
@@ -279,7 +279,7 @@ test('fields merge parent conditional logic - more advanced Example', function (
 
 test('role condition as a Super Admin', function () {
 
-    $model = new AdvancedParentConditionalLogicModel();
+    $model = new AdvancedParentConditionalLogicModel;
 
     $fields = $model->sendThroughPipeline($model->fieldsCollection(), [
         ApplyTabs::class,
@@ -317,7 +317,7 @@ test('role condition as a Super Admin', function () {
 });
 
 test('role condition as a Admin', function () {
-    $model = new AdvancedParentConditionalLogicModel();
+    $model = new AdvancedParentConditionalLogicModel;
 
     $fields = $model->sendThroughPipeline($model->fieldsCollection(), [
         ApplyTabs::class,
@@ -360,7 +360,7 @@ test('role condition as a Admin', function () {
 });
 
 test('role condition as a User', function () {
-    $model = new AdvancedParentConditionalLogicModel();
+    $model = new AdvancedParentConditionalLogicModel;
 
     $fields = $model->sendThroughPipeline($model->fieldsCollection(), [
         ApplyTabs::class,

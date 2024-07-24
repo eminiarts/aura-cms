@@ -38,7 +38,7 @@ class TagsFieldModel extends Resource
 }
 
 test('check Tags Fields', function () {
-    $slug = new Tags();
+    $slug = new Tags;
 
     $fields = collect($slug->getFields());
 
@@ -73,7 +73,7 @@ test('check Tags Fields', function () {
 
 test('Tags Field - Default Value set', function () {
     Aura::fake();
-    Aura::setModel(new TagsFieldModel());
+    Aura::setModel(new TagsFieldModel);
 
     $component = Livewire::test(Create::class, ['slug' => 'TagsModel'])
         ->assertSee('Tags')

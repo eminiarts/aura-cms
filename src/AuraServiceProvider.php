@@ -219,12 +219,12 @@ class AuraServiceProvider extends PackageServiceProvider
                         $query->orWhereExists(function ($subquery) use ($metaTable, $metaForeignKey, $column, $search, $model) {
                             $subquery->select(DB::raw(1))
                                 ->from($metaTable)
-                                ->whereColumn($model->getTable() . '.id', $metaTable . '.' . $metaForeignKey)
-                                ->where($metaTable . '.key', $column)
-                                ->where($metaTable . '.value', 'like', '%' . $search . '%');
+                                ->whereColumn($model->getTable().'.id', $metaTable.'.'.$metaForeignKey)
+                                ->where($metaTable.'.key', $column)
+                                ->where($metaTable.'.value', 'like', '%'.$search.'%');
                         });
                     } else {
-                        $query->orWhere($column, 'like', '%' . $search . '%');
+                        $query->orWhere($column, 'like', '%'.$search.'%');
                     }
                 }
             });
@@ -270,19 +270,19 @@ class AuraServiceProvider extends PackageServiceProvider
         parent::packageRegistered();
 
         $this->app->singleton('hook_manager', function ($app) {
-            return new HookManager();
+            return new HookManager;
         });
 
         $this->app->singleton('dynamicFunctions', function ($app) {
-            return new \Aura\Base\Facades\DynamicFunctions();
+            return new \Aura\Base\Facades\DynamicFunctions;
         });
 
         $this->app->singleton('dynamic_functions', function ($app) {
-            return new DynamicFunctions();
+            return new DynamicFunctions;
         });
 
         $this->app->singleton('navigation', function ($app) {
-            return new AuraNavigation();
+            return new AuraNavigation;
         });
 
         $this->app->scoped('aura', function (): Aura {

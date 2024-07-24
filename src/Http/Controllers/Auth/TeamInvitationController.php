@@ -20,7 +20,7 @@ class TeamInvitationController extends Controller
      */
     public function accept(Request $request, $invitationId)
     {
-        $model = new TeamInvitation();
+        $model = new TeamInvitation;
 
         $invitation = $model::whereKey($invitationId)->firstOrFail();
 
@@ -51,7 +51,7 @@ class TeamInvitationController extends Controller
         $invitation = $model::whereKey($invitationId)->firstOrFail();
 
         if (! Gate::forUser($request->user())->check('removeTeamMember', $invitation->team)) {
-            throw new AuthorizationException();
+            throw new AuthorizationException;
         }
 
         $invitation->delete();

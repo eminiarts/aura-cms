@@ -121,7 +121,7 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
     // Reset to default create Method from Laravel
     public static function create($fields)
     {
-        $model = new static();
+        $model = new static;
 
         return tap($model->newModelInstance($fields), function ($instance) {
             $instance->save();

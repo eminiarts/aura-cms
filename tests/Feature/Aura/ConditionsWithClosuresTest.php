@@ -92,7 +92,7 @@ class ConditionalLogicWithoutClosuresModel extends Resource
 }
 
 test('Conditional Logic with Closures - true', function () {
-    $model = new ConditionalLogicWithClosuresModel();
+    $model = new ConditionalLogicWithClosuresModel;
 
     $field = collect($model->getFields())->firstWhere('slug', 'text2');
 
@@ -102,7 +102,7 @@ test('Conditional Logic with Closures - true', function () {
 });
 
 test('Conditional Logic with Closures - false', function () {
-    $model = new ConditionalLogicWithClosuresModel();
+    $model = new ConditionalLogicWithClosuresModel;
 
     $field = collect($model->getFields())->firstWhere('slug', 'text2');
 
@@ -118,7 +118,7 @@ test('Conditional Logic with Closures - false', function () {
 });
 
 test('Conditional Logic with Closures - config true', function () {
-    $model = new ConditionalLogicWithClosuresModel();
+    $model = new ConditionalLogicWithClosuresModel;
 
     $field = collect($model->getFields())->firstWhere('slug', 'text2');
 
@@ -134,7 +134,7 @@ test('Conditional Logic with Closures - config true', function () {
 });
 
 test('Conditional Logic with Closures - config false', function () {
-    $model = new ConditionalLogicWithClosuresModel();
+    $model = new ConditionalLogicWithClosuresModel;
 
     $field = collect($model->getFields())->firstWhere('slug', 'text2');
 
@@ -153,7 +153,7 @@ test('Conditional Logic with Closures - config false', function () {
 });
 
 test('Conditional Logic with Closures - returns false for superadmin', function () {
-    $model = new ConditionalLogicWithClosuresModel();
+    $model = new ConditionalLogicWithClosuresModel;
 
     $field = collect($model->getFields())->firstWhere('slug', 'text2');
 
@@ -172,7 +172,7 @@ test('Conditional Logic with Closures - returns false for superadmin', function 
 });
 
 test('Resource Builder not accessible if fields contain closure', function () {
-    $model = new ConditionalLogicWithClosuresModel();
+    $model = new ConditionalLogicWithClosuresModel;
 
     Aura::fake();
     Aura::setModel($model);
@@ -183,7 +183,7 @@ test('Resource Builder not accessible if fields contain closure', function () {
 });
 
 test('Resource Builder  accessible if fields dont contain closure', function () {
-    $model = new ConditionalLogicWithoutClosuresModel();
+    $model = new ConditionalLogicWithoutClosuresModel;
 
     Aura::fake();
     Aura::setModel($model);
@@ -194,7 +194,7 @@ test('Resource Builder  accessible if fields dont contain closure', function () 
 });
 
 test('fieldsHaveClosures() without closures', function () {
-    $model = new ConditionalLogicWithClosuresModel();
+    $model = new ConditionalLogicWithClosuresModel;
 
     expect($model->fieldsHaveClosures($model->getFields()))->toBeTrue();
 
@@ -219,7 +219,7 @@ test('fieldsHaveClosures() without closures', function () {
 });
 
 test('fieldsHaveClosures() with closures', function () {
-    $model = new ConditionalLogicWithClosuresModel();
+    $model = new ConditionalLogicWithClosuresModel;
 
     expect($model->fieldsHaveClosures($model->getFields()))->toBeTrue();
 

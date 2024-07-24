@@ -85,7 +85,7 @@ class ModelRecursive extends Resource
 }
 
 test('recursive field function', function () {
-    $model = new ModelRecursive();
+    $model = new ModelRecursive;
 
     $fields = $model->getGroupedFields();
 
