@@ -4,14 +4,13 @@ namespace Aura\Base\Fields;
 
 class Status extends Field
 {
-    public $view = 'aura::fields.status-view';
-
     public $edit = 'aura::fields.status';
 
     public $index = 'aura::fields.status-index';
 
     public $optionGroup = 'Choice Fields';
 
+    public $view = 'aura::fields.status-view';
 
     public function getFields()
     {

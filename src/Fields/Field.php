@@ -43,7 +43,7 @@ class Field implements Wireable
             return $this->view;
         }
 
-        if($this->edit) {
+        if ($this->edit) {
             return $this->edit;
         }
 
