@@ -91,7 +91,7 @@
                 class="py-4 w-full"
                 wire:key="tab-section-{{ $key }}-{{ $fieldHash }}"
             >
-                <x-dynamic-component :component="$field['field']->component" :field="$field" :form="$form" />
+                <x-dynamic-component :component="$field['field']->component()" :field="$field" :form="$form" />
             </section>
         </x-aura::fields.conditions>
         @endforeach

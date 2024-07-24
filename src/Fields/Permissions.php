@@ -4,7 +4,7 @@ namespace Aura\Base\Fields;
 
 class Permissions extends Field
 {
-    public $component = 'aura::fields.permissions';
+    public $edit = 'aura::fields.permissions';
 
     public $view = 'aura::fields.permissions-view';
 

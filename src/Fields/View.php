@@ -4,7 +4,7 @@ namespace Aura\Base\Fields;
 
 class View extends Field
 {
-    public $component = 'aura::fields.view';
+    public $edit = 'aura::fields.view';
 
     // public $view = 'components.fields.view';
 

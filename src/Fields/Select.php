@@ -4,7 +4,7 @@ namespace Aura\Base\Fields;
 
 class Select extends Field
 {
-    public $component = 'aura::fields.select';
+    public $edit = 'aura::fields.select';
 
     public $optionGroup = 'Choice Fields';
 

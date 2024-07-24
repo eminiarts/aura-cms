@@ -4,7 +4,7 @@ namespace Aura\Base\Fields;
 
 class Phone extends Field
 {
-    public $component = 'aura::fields.phone';
+    public $edit = 'aura::fields.phone';
 
     public $optionGroup = 'Input Fields';
 

@@ -4,7 +4,7 @@ namespace Aura\Base\Fields;
 
 class AdvancedSelect extends Field
 {
-    public $component = 'aura::fields.advanced-select';
+    public $edit = 'aura::fields.advanced-select';
 
     public $optionGroup = 'JS Fields';
 
@@ -24,8 +24,8 @@ class AdvancedSelect extends Field
             return [
                 'id' => $item->id,
                 'title' => $item->title(),
-                'view' => view($field['view'], ['item' => $item])->render(),
-                'selected_view' => view($field['selected_view'], ['item' => $item])->render(),
+                'view' => isset($field['view']) ? view($field['view'], ['item' => $item])->render() : null,
+                'selected_view' => isset($field['selected_view']) ? view($field['selected_view'], ['item' => $item])->render() : null,
             ];
         })
         ->toArray();
@@ -169,8 +169,8 @@ class AdvancedSelect extends Field
             return [
                 'id' => $item->id,
                 'title' => $item->title(),
-                'view' => view($field['view'], ['item' => $item])->render(),
-                'selected_view' => view($field['selected_view'], ['item' => $item])->render(),
+                'view' => isset($field['view']) ? view($field['view'], ['item' => $item])->render() : null,
+                'selected_view' => isset($field['selected_view']) ? view($field['selected_view'], ['item' => $item])->render() : null,
             ];
         })->toArray();
     }
@@ -186,8 +186,8 @@ class AdvancedSelect extends Field
             return [
                 'id' => $item->id,
                 'title' => $item->title(),
-                'view' => view($field['view'], ['item' => $item])->render(),
-                'selected_view' => view($field['selected_view'], ['item' => $item])->render(),
+                'view' => isset($field['view']) ? view($field['view'], ['item' => $item])->render() : null,
+                'selected_view' => isset($field['selected_view']) ? view($field['selected_view'], ['item' => $item])->render() : null,
 
             ];
         })->toArray();

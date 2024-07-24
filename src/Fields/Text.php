@@ -4,7 +4,7 @@ namespace Aura\Base\Fields;
 
 class Text extends Field
 {
-    public $component = 'aura::fields.text';
+    public $edit = 'aura::fields.text';
 
     public $optionGroup = 'Input Fields';
 

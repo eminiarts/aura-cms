@@ -65,7 +65,7 @@ test('check Tags Fields', function () {
 
 //     $view = $this->withViewErrors([])->blade(
 //         '<x-dynamic-component :component="$component" :field="$field" :form="$form" />',
-//         ['component' => $fieldClass->component, 'field' => $field, 'form' => []]
+//         ['component' => $fieldClass->component(), 'field' => $field, 'form' => []]
 //     );
 
 //     expect((string) $view)->toContain('>Tags</label>');
@@ -95,7 +95,7 @@ test('Text Field - Prefix rendered', function () {
 
     $view = $this->withViewErrors([])->blade(
         '<x-dynamic-component :component="$component" :field="$field" :form="$form" />',
-        ['component' => $fieldClass->component, 'field' => $field, 'form' => []]
+        ['component' => $fieldClass->component(), 'field' => $field, 'form' => []]
     );
 
     expect((string) $view)->toContain('Prefix for Test');

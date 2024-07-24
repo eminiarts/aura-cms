@@ -4,7 +4,7 @@ namespace Aura\Base\Fields;
 
 class Time extends Field
 {
-    public $component = 'aura::fields.time';
+    public $edit = 'aura::fields.time';
 
     // public $view = 'components.fields.time';
 

@@ -4,7 +4,7 @@ namespace Aura\Base\Fields;
 
 class Panel extends Field
 {
-    public $component = 'aura::fields.panel';
+    public $edit = 'aura::fields.panel';
 
     public bool $group = true;
 

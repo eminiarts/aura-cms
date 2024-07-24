@@ -4,7 +4,7 @@ namespace Aura\Base\Fields;
 
 class Color extends Field
 {
-    public $component = 'aura::fields.color';
+    public $edit = 'aura::fields.color';
 
     public $optionGroup = 'JS Fields';
 
