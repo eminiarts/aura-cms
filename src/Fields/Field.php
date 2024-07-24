@@ -15,7 +15,7 @@ class Field implements Wireable
     use Macroable;
     use Tappable;
 
-    public $component = null;
+    public $edit = null;
 
     public $field;
 
@@ -39,11 +39,14 @@ class Field implements Wireable
 
     public function component()
     {
-        if ($this->view && is_string(request()->route()->action['uses']) && str(request()->route()->action['uses'])->contains('View')) {
+        if ($this->view && optional(request()->route())->action && is_string(optional(request()->route()->action)['uses']) && Str::contains(optional(request()->route()->action)['uses'], 'View')) {
             return $this->view;
         }
 
-        return $this->component;
+        if($this->edit) {
+            return $this->edit;
+        }
+
     }
 
     public function display($field, $value, $model)
@@ -78,7 +81,7 @@ class Field implements Wireable
         return $value;
     }
 
-    // public $component;
+    // public $edit;
 
     public function field($field)
     {

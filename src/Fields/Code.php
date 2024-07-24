@@ -4,7 +4,7 @@ namespace Aura\Base\Fields;
 
 class Code extends Field
 {
-    public $component = 'aura::fields.code';
+    public $edit = 'aura::fields.code';
 
     public $optionGroup = 'JS Fields';
 

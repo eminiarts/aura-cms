@@ -6,7 +6,7 @@ use Illuminate\Support\Facades\Hash;
 
 class Password extends Field
 {
-    public $component = 'aura::fields.password';
+    public $edit = 'aura::fields.password';
 
     public $optionGroup = 'Input Fields';
 

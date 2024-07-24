@@ -4,7 +4,7 @@ namespace Aura\Base\Fields;
 
 class BelongsToMany extends Field
 {
-    public $component = 'aura::fields.has-many';
+    public $edit = 'aura::fields.has-many';
 
     public bool $group = true;
 

@@ -8,7 +8,7 @@ In the View, each field is wrapped:
 @foreach($this->fields as $key => $field)
 <x-fields.conditions :field="$field" :model="$model">
     <div wire:key="resource-field-{{ $key }}">
-        <x-dynamic-component :component="$field['field']->component" :field="$field" :form="$form" />
+        <x-dynamic-component :component="$field['field']->component()" :field="$field" :form="$form" />
     </div>
 </x-fields.conditions>
 @endforeach

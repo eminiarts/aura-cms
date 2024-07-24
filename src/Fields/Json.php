@@ -4,7 +4,7 @@ namespace Aura\Base\Fields;
 
 class Json extends Field
 {
-    public $component = 'aura::fields.json';
+    public $edit = 'aura::fields.json';
 
     public $view = 'aura::fields.view-value';
 

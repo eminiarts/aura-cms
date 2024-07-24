@@ -7,5 +7,4 @@
             {{ $statusOption['value'] }}
         </span>
     @else
-        <span class="text-gray-500 dark:text-gray-400">No status set</span>
     @endif

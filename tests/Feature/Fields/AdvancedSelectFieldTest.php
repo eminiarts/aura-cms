@@ -182,7 +182,7 @@ test('Advanced Select Field - entangle', function () {
 
     $view = $this->withViewErrors([])->blade(
         '<x-dynamic-component :component="$component" :field="$field" :form="$form" />',
-        ['component' => $fieldClass->component, 'field' => $field, 'form' => []]
+        ['component' => $fieldClass->component(), 'field' => $field, 'form' => []]
     );
 
     expect((string) $view)->toContain('value: $wire.entangle(\'form.fields.select\'),');
@@ -203,7 +203,7 @@ test('Advanced Select Field - create button true', function () {
 
     $view = $this->withViewErrors([])->blade(
         '<x-dynamic-component :component="$component" :field="$field" :form="$form" />',
-        ['component' => $fieldClass->component, 'field' => $field, 'form' => []]
+        ['component' => $fieldClass->component(), 'field' => $field, 'form' => []]
     );
 
     expect((string) $view)->toContain('Select');
@@ -225,7 +225,7 @@ test('Advanced Select Field - create button false', function () {
 
     $view = $this->withViewErrors([])->blade(
         '<x-dynamic-component :component="$component" :field="$field" :form="$form" />',
-        ['component' => $fieldClass->component, 'field' => $field, 'form' => []]
+        ['component' => $fieldClass->component(), 'field' => $field, 'form' => []]
     );
 
     expect((string) $view)->toContain('Select');

@@ -4,7 +4,7 @@ namespace Aura\Base\Fields;
 
 class HorizontalLine extends Field
 {
-    public $component = 'aura::fields.hr';
+    public $edit = 'aura::fields.hr';
 
     public $optionGroup = 'Layout Fields';
 

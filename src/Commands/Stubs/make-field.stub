@@ -6,7 +6,7 @@ use Aura\Base\Fields\Field;
 
 class FieldName extends Field
 {
-    public $component = 'fields.FieldSlug';
+    public $edit = 'fields.FieldSlug';
 
     public $view = 'fields.FieldSlug-view';
 
