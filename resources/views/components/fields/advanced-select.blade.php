@@ -76,8 +76,11 @@
 
             this.$nextTick(() => {
                 this.value = newOrder;
-                this.selectedItems = newOrder.map(id => this.items.find(item => item.id === id));
-                // this.$wire.set('form.fields.{{ $field['slug'] }}', validIds);
+
+                console.log('updateSelectedItemsOrder', this.items, this.selectedItems, newOrder);
+
+                this.selectedItems = newOrder.map(id => this.selectedItems.find(item => item.id === id));
+                this.$wire.set('form.fields.{{ $field['slug'] }}', validIds);
                 this.showListbox = false;
             });
         },
@@ -98,7 +101,7 @@
                 }
             }
 
-            console.log(this.items);
+            console.log(this.items, this.value);
 
             Livewire.on('resourceCreated', data => {
                 this.items.push({ id: data.form.id, title: data.title });
@@ -135,12 +138,14 @@
                 .then(data => {
                     this.items = data;
                     this.loading = false;
+
+                    console.log('new items: ', this.items);
                 });
         },
 
         get filteredItems() {
             var items = this.items;
-            if (this.search) {
+            if (!this.api && this.search) {
                 return items.filter(item => item.title.toLowerCase().includes(this.search.toLowerCase()));
             }
             if (items.length === 0) {
@@ -209,21 +214,24 @@
                 return;
             }
 
+            if (!Array.isArray(this.value)) {
+                this.value = [];
+            }
+
+            if (!Array.isArray(this.selectedItems)) {
+                this.selectedItems = [];
+            }
+
             if (this.isSelected(item)) {
                 this.value = this.value.filter(i => i !== item.id);
-
-                {{-- this.$nextTick(() => {
-                    this.selectedItems = this.selectedItems.filter(i => i.id !== item.id);
-                }); --}}
+                this.selectedItems = this.selectedItems.filter(i => i.id !== item.id);
             } else {
-                if (this.selectedItems.length === 0) {
-                    this.selectedItems.push(item);
-                } else if (!this.selectedItems.find(i => i.id === item.id)) {
+                if (!this.selectedItems.find(i => i.id === item.id)) {
                     this.selectedItems.push(item);
                 }
-                this.$nextTick(() => {
+                if (!this.value.includes(item.id)) {
                     this.value.push(item.id);
-                });
+                }
             }
         },
 
@@ -238,6 +246,19 @@
                 return;
             }
             return this.selectedItems.find(item => item.id === id).title;
+        },
+
+        selectedItemMarkup(id) {
+            if (!id) {
+                return false;
+            }
+            if (this.selectedItems.length === 0) {
+                return;
+            }
+            if (!this.selectedItems) {
+                return;
+            }
+            return this.selectedItems.find(item => item.id === id);
         },
 
         focusNext(e) {
@@ -356,8 +377,14 @@
                                 :data-id="item" @mousedown.prevent="startDragging(index, $event)"
                                 :class="{ 'shadow-item': index == dragIndex }">
 
-                                <span class="" x-text="selectedItem(item)"></span>
-                                <span>custom text here</span>
+                                <div>
+                                    <template x-if="item && selectedItemMarkup(item) && selectedItemMarkup(item).selected_view" :key="item">
+                                        <span x-html="selectedItemMarkup(item).selected_view"></span>
+                                    </template>
+                                    <template x-if="!selectedItemMarkup(item).selected_view" :key="item">
+                                        <span class="" x-text="selectedItemMarkup(item).title"></span>
+                                    </template>
+                                </div>
 
                                 <!-- Small x svg -->
                                 <svg @mousedown.prevent="value = value.filter(i => i !== item)"
@@ -374,7 +401,12 @@
                         <div x-show="dragging"
                             class="inline-flex gap-1 items-center px-2 py-0.5 mr-2 mb-2 text-xs font-medium leading-4 rounded-full bg-primary-100 text-primary-800 dragging-item"
                             x-ref="draggingItem">
-                            <span class="" x-text="selectedItem(value[dragIndex])"></span>
+                            <template x-if="value[dragIndex] && selectedItemMarkup(value[dragIndex]) && selectedItemMarkup(value[dragIndex]).selected_view" :key="item">
+                                <span x-html="selectedItemMarkup(value[dragIndex]).selected_view"></span>
+                            </template>
+                            <template x-if="!selectedItemMarkup(value[dragIndex]).selected_view" :key="item">
+                                <span class="" x-text="selectedItemMarkup(value[dragIndex]).title"></span>
+                            </template>
 
                             <!-- Small x svg -->
                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"
