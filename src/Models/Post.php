@@ -283,9 +283,9 @@ class Post extends BaseResource
      */
     protected static function booted()
     {
-        static::addGlobalScope(new TypeScope());
+        static::addGlobalScope(new TypeScope);
 
-        static::addGlobalScope(new TeamScope());
+        static::addGlobalScope(new TeamScope);
 
         // static::created(function ($post) {
         //     dispatch(new TriggerFlowOnCreatePostEvent($post));

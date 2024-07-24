@@ -45,7 +45,7 @@ beforeEach(function () {
 });
 
 test('check Radio Fields', function () {
-    $slug = new Radio();
+    $slug = new Radio;
 
     $fields = collect($slug->getFields());
 

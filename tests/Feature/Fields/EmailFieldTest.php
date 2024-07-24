@@ -36,7 +36,7 @@ class EmailFieldModel extends Resource
 }
 
 test('check Email Fields', function () {
-    $slug = new Email();
+    $slug = new Email;
 
     $fields = collect($slug->getFields());
 
@@ -46,7 +46,7 @@ test('check Email Fields', function () {
 });
 
 test('Email Field', function () {
-    $model = new EmailFieldModel();
+    $model = new EmailFieldModel;
 
     $component = Livewire::test(Create::class, ['slug' => 'Post'])
         ->call('setModel', $model)

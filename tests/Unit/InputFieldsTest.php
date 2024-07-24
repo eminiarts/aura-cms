@@ -61,7 +61,7 @@ class TestInputFieldsClass2 extends Resource
 }
 
 test('can get field by slug', function () {
-    $inputFields = new TestInputFieldsClass();
+    $inputFields = new TestInputFieldsClass;
     $field = $inputFields->fieldBySlug('title');
 
     $this->assertEquals([
@@ -73,7 +73,7 @@ test('can get field by slug', function () {
 });
 
 test('field validation rules are generated', function () {
-    $inputFields = new TestInputFieldsClass();
+    $inputFields = new TestInputFieldsClass;
     $validationRules = $inputFields->validationRules();
 
     $this->assertEquals([
@@ -83,7 +83,7 @@ test('field validation rules are generated', function () {
 });
 
 test('can get table headers', function () {
-    $inputFields = new TestInputFieldsClass();
+    $inputFields = new TestInputFieldsClass;
     $tableHeaders = $inputFields->getTableHeaders();
 
     $this->assertInstanceOf(\Illuminate\Support\Collection::class, $tableHeaders);
@@ -93,21 +93,21 @@ test('can get table headers', function () {
 });
 
 test('check default table view', function () {
-    $inputFields = new TestInputFieldsClass();
+    $inputFields = new TestInputFieldsClass;
     $defaultTableView = $inputFields->defaultTableView();
 
     $this->assertEquals('list', $defaultTableView);
 });
 
 test('check default per page value', function () {
-    $inputFields = new TestInputFieldsClass();
+    $inputFields = new TestInputFieldsClass;
     $defaultPerPage = $inputFields->defaultPerPage();
 
     $this->assertEquals(10, $defaultPerPage);
 });
 
 test('field resourceFieldValidationRules prepend resource.fields', function () {
-    $inputFields = new TestInputFieldsClass();
+    $inputFields = new TestInputFieldsClass;
 
     $rules = $inputFields->resourceFieldValidationRules();
 
@@ -118,7 +118,7 @@ test('field resourceFieldValidationRules prepend resource.fields', function () {
 });
 
 test('field validation allows array of rules', function () {
-    $inputFields = new TestInputFieldsClass2();
+    $inputFields = new TestInputFieldsClass2;
 
     // Override the getFields method to return an array of rules
     $rules = $inputFields->resourceFieldValidationRules();

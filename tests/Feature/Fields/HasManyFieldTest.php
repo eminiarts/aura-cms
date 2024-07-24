@@ -42,7 +42,7 @@ class HasManyFieldModel extends Resource
 }
 
 test('HasMany Field not shown in Create', function () {
-    $model = new HasManyFieldModel();
+    $model = new HasManyFieldModel;
 
     $component = Livewire::test(Create::class, ['slug' => 'Post'])
         ->call('setModel', $model);
@@ -50,7 +50,7 @@ test('HasMany Field not shown in Create', function () {
 });
 
 test('HasMany Field shown on Edit', function () {
-    $model = new HasManyFieldModel();
+    $model = new HasManyFieldModel;
 
 });
 

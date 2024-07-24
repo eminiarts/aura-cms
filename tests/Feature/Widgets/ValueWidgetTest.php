@@ -34,11 +34,11 @@ beforeEach(function () {
         'created_at' => Carbon::now()->subDays(35),
     ]);
 
-    $this->widget = (new Post())->widgets()->first();
+    $this->widget = (new Post)->widgets()->first();
 });
 
 it('calculates count correctly', function () {
-    $widgetTest = Livewire::test(ValueWidget::class, ['widget' => ['method' => 'count', 'name' => 'Total Posts Created'], 'model' => new Post()])
+    $widgetTest = Livewire::test(ValueWidget::class, ['widget' => ['method' => 'count', 'name' => 'Total Posts Created'], 'model' => new Post])
         ->set('start', Carbon::now()->subDays(30))
         ->set('end', Carbon::now());
     //->assertSet('value', 2)
@@ -49,7 +49,7 @@ it('calculates count correctly', function () {
 });
 
 it('calculates avg correctly', function () {
-    $widgetTest = Livewire::test(ValueWidget::class, ['widget' => ['method' => 'avg', 'column' => 'number', 'name' => 'Widget'], 'model' => new Post()])
+    $widgetTest = Livewire::test(ValueWidget::class, ['widget' => ['method' => 'avg', 'column' => 'number', 'name' => 'Widget'], 'model' => new Post])
         ->set('start', Carbon::now()->subDays(30))
         ->set('end', Carbon::now());
 
@@ -59,7 +59,7 @@ it('calculates avg correctly', function () {
 });
 
 it('calculates sum correctly', function () {
-    $widgetTest = Livewire::test(ValueWidget::class, ['widget' => ['method' => 'sum', 'column' => 'number', 'name' => 'Widget'], 'model' => new Post()])
+    $widgetTest = Livewire::test(ValueWidget::class, ['widget' => ['method' => 'sum', 'column' => 'number', 'name' => 'Widget'], 'model' => new Post])
         ->set('start', Carbon::now()->subDays(30))
         ->set('end', Carbon::now());
 
@@ -69,7 +69,7 @@ it('calculates sum correctly', function () {
 });
 
 it('calculates min correctly', function () {
-    $widgetTest = Livewire::test(ValueWidget::class, ['widget' => ['method' => 'min', 'column' => 'number', 'name' => 'Widget'], 'model' => new Post()])
+    $widgetTest = Livewire::test(ValueWidget::class, ['widget' => ['method' => 'min', 'column' => 'number', 'name' => 'Widget'], 'model' => new Post])
         ->set('start', Carbon::now()->subDays(30))
         ->set('end', Carbon::now());
 
@@ -79,7 +79,7 @@ it('calculates min correctly', function () {
 });
 
 it('calculates max correctly', function () {
-    $widgetTest = Livewire::test(ValueWidget::class, ['widget' => ['method' => 'max', 'column' => 'number', 'name' => 'Widget'], 'model' => new Post()])
+    $widgetTest = Livewire::test(ValueWidget::class, ['widget' => ['method' => 'max', 'column' => 'number', 'name' => 'Widget'], 'model' => new Post])
         ->set('start', Carbon::now()->subDays(30))
         ->set('end', Carbon::now());
 
@@ -89,7 +89,7 @@ it('calculates max correctly', function () {
 });
 
 it('returns correct calculated values for current, previous, change', function () {
-    $widgetTest = Livewire::test(ValueWidget::class, ['widget' => ['method' => 'count', 'name' => 'Total Posts Created', 'slug' => 'total_posts_created'], 'model' => new Post()])
+    $widgetTest = Livewire::test(ValueWidget::class, ['widget' => ['method' => 'count', 'name' => 'Total Posts Created', 'slug' => 'total_posts_created'], 'model' => new Post])
         ->set('start', Carbon::now()->subDays(15))
         ->set('end', Carbon::now());
 
@@ -104,7 +104,7 @@ it('returns correct calculated values for current, previous, change', function (
 });
 
 it('formats a number to 2 decimals', function () {
-    $widgetTest = Livewire::test(ValueWidget::class, ['widget' => ['method' => 'max', 'column' => 'number', 'name' => 'Widget'], 'model' => new Post()])
+    $widgetTest = Livewire::test(ValueWidget::class, ['widget' => ['method' => 'max', 'column' => 'number', 'name' => 'Widget'], 'model' => new Post])
         ->set('start', Carbon::now()->subDays(30))
         ->set('end', Carbon::now());
 

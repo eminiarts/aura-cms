@@ -154,7 +154,7 @@ class Resource extends Model
 
     public function getFieldsAttribute()
     {
-        if (!isset($this->fieldsAttributeCache) || $this->fieldsAttributeCache === null) {
+        if (! isset($this->fieldsAttributeCache) || $this->fieldsAttributeCache === null) {
             $meta = $this->getMeta();
 
             $defaultValues = collect($this->inputFieldsSlugs())
@@ -195,6 +195,7 @@ class Resource extends Model
 
             $this->fieldsAttributeCache = $defaultValues->filter(function ($value, $key) {
                 $field = $this->fieldBySlug($key);
+
                 return $this->shouldDisplayField($field);
             });
         }
@@ -326,12 +327,12 @@ class Resource extends Model
     protected static function booted()
     {
         if (! static::$customTable) {
-            static::addGlobalScope(new TypeScope());
+            static::addGlobalScope(new TypeScope);
         }
 
         static::addGlobalScope(app(TeamScope::class));
 
-        static::addGlobalScope(new ScopedScope());
+        static::addGlobalScope(new ScopedScope);
 
         static::creating(function ($model) {});
 

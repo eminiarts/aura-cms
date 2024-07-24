@@ -43,7 +43,7 @@ test('Boolean Field Test', function () {
     // show all exceptions
     //$this->withoutExceptionHandling();
 
-    $model = new BooleanFieldModel();
+    $model = new BooleanFieldModel;
 
     $component = Livewire::test(Create::class, ['slug' => 'Post'])
         ->call('setModel', $model)

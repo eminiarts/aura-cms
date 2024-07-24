@@ -59,7 +59,7 @@ class ResourceEditorTestModel extends Post
 beforeEach(function () {
     $this->actingAs($this->user = createSuperAdmin());
 
-    $appResource = new ResourceEditorTestModel();
+    $appResource = new ResourceEditorTestModel;
 
     $this->assertTrue($appResource->isAppResource());
     $this->assertFalse($appResource->isVendorResource());

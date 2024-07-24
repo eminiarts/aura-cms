@@ -38,7 +38,7 @@ beforeEach(function () {
 });
 
 test('check Text Fields', function () {
-    $slug = new Text();
+    $slug = new Text;
 
     $fields = collect($slug->getFields());
 
@@ -91,7 +91,7 @@ test('Text Field - Placeholder rendered', function () {
 
 test('Text Field - Default Value set', function () {
     Aura::fake();
-    Aura::setModel(new TextFieldModel());
+    Aura::setModel(new TextFieldModel);
 
     $component = Livewire::test(Create::class, ['slug' => 'TextModel'])
         ->assertSee('Text for Test')

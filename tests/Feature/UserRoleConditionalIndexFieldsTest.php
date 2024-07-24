@@ -61,7 +61,7 @@ test('super admin can view all headers', function () {
     // Attach role to User
     $this->user->update(['roles' => [$role->id]]);
     $this->user->refresh();
-    $model = new UserRoleConditionalIndexFieldsModel();
+    $model = new UserRoleConditionalIndexFieldsModel;
 
     // Test getHeaders()
     $headers = $model->getHeaders();
@@ -74,7 +74,7 @@ test('super admin can view all headers', function () {
 });
 
 test('admin can view his headers', function () {
-    $model = new UserRoleConditionalIndexFieldsModel();
+    $model = new UserRoleConditionalIndexFieldsModel;
 
     // Assert Admin sees only Text 2 and ID
     $role = Role::create(['type' => 'Role', 'title' => 'Admin', 'slug' => 'admin', 'description' => 'Admin has can perform everything.', 'super_admin' => false, 'permissions' => []]);
@@ -94,7 +94,7 @@ test('admin can view his headers', function () {
 });
 
 test('user can view his headers', function () {
-    $model = new UserRoleConditionalIndexFieldsModel();
+    $model = new UserRoleConditionalIndexFieldsModel;
 
     // Assert Moderator sees only Text 3 and ID
     $role = Role::create(['type' => 'Role', 'title' => 'Moderator', 'slug' => 'moderator', 'description' => 'Moderator has can perform everything.', 'super_admin' => false, 'permissions' => []]);

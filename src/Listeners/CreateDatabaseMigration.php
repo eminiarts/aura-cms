@@ -207,7 +207,7 @@ class CreateDatabaseMigration
     protected function runPint($migrationFile)
     {
         $command = [
-            (new ExecutableFinder())->find('php', 'php', [
+            (new ExecutableFinder)->find('php', 'php', [
                 '/usr/local/bin',
                 '/opt/homebrew/bin',
             ]),

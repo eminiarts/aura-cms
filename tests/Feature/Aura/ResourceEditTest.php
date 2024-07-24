@@ -25,7 +25,7 @@ class ResourceEditModel extends Resource
 
 test('resource in app can be edited', function () {
     // create a app resource
-    $appResource = new ResourceEditModel();
+    $appResource = new ResourceEditModel;
 
     $this->assertTrue($appResource->isAppResource());
     $this->assertFalse($appResource->isVendorResource());
@@ -42,7 +42,7 @@ test('resource in app can be edited', function () {
 });
 
 test('vendor resource can not be edited', function () {
-    $userResource = new User();
+    $userResource = new User;
 
     $this->assertFalse($userResource->isAppResource());
     $this->assertTrue($userResource->isVendorResource());

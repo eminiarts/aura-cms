@@ -181,7 +181,7 @@ class ComplexFieldsTestModel extends Resource
 }
 
 test('complex fields are possible and working correctly', function () {
-    $model = new ComplexFieldsTestModel();
+    $model = new ComplexFieldsTestModel;
 
     $fields = $model->getGroupedFields();
 

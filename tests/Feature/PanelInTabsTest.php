@@ -54,7 +54,7 @@ class PanelInTabsModel extends Resource
 }
 
 test('fields get grouped when field group is true', function () {
-    $model = new PanelInTabsModel();
+    $model = new PanelInTabsModel;
 
     $fields = $model->getGroupedFields();
 

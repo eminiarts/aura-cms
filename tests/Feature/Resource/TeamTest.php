@@ -15,7 +15,7 @@ it('has a searchable name', function () {
 });
 
 test('check Team Fields', function () {
-    $slug = new Team();
+    $slug = new Team;
 
     $fields = collect($slug->getFields());
 
@@ -24,7 +24,7 @@ test('check Team Fields', function () {
 });
 
 test('Team uses SoftDeletes', function () {
-    $team = new Team();
+    $team = new Team;
     $team->name = 'Test Team';
     $team->save();
 
@@ -41,7 +41,7 @@ test('Team uses SoftDeletes', function () {
 });
 
 test('Team create also creates a super_admin Role', function () {
-    $team = new Team();
+    $team = new Team;
     $team->name = 'Test Team';
     $team->save();
 

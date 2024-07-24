@@ -54,7 +54,7 @@ test('navigation item is visible', function () {
 
     $nav = Aura::navigation();
 
-    expect((new NavigationModel())->pluralName())->toBe('NavigationModels');
+    expect((new NavigationModel)->pluralName())->toBe('NavigationModels');
 
     // Use firstWhere to find the item. If the item is found, it will not be null.
     $item = collect($nav['Resources'])->firstWhere('resource', 'NavigationModel');
@@ -93,7 +93,7 @@ test('navigation item is hidden when the Role has no access to it', function () 
 
     $nav = Aura::navigation();
 
-    expect((new NavigationModel())->pluralName())->toBe('NavigationModels');
+    expect((new NavigationModel)->pluralName())->toBe('NavigationModels');
 
     // Use firstWhere to find the item. If the item is found, it will not be null.
     $item = collect($nav['Resources'])->firstWhere('resource', 'NavigationModel');
@@ -121,7 +121,7 @@ test('navigation items can be grouped', function () {
 
     $nav = Aura::navigation();
 
-    expect((new GroupedNavigationModel())->pluralName())->toBe('NavigationModels');
+    expect((new GroupedNavigationModel)->pluralName())->toBe('NavigationModels');
 
     expect($nav['Custom Group'])->not->toBeNull();
 
@@ -144,7 +144,7 @@ test('navigation items can be dropdown', function () {
 
     $nav = Aura::navigation();
 
-    expect((new DropdownNavigationModel())->pluralName())->toBe('NavigationModels');
+    expect((new DropdownNavigationModel)->pluralName())->toBe('NavigationModels');
     expect($nav['Custom Group'])->not->toBeNull();
     expect($nav['Custom Group'][0]['group'])->toBe('Custom Group');
     expect($nav['Custom Group'][0]['dropdown'])->toBe('Custom Dropdown');

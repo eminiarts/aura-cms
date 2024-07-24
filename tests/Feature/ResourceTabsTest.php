@@ -59,7 +59,7 @@ class Model1 extends Resource
 }
 
 test('model get tabs', function () {
-    $model = new Model1();
+    $model = new Model1;
 
     $fields = $model->getGroupedFields();
 
@@ -144,7 +144,7 @@ class Model2 extends Resource
 }
 
 test('model get tabs extended', function () {
-    $model = new Model2();
+    $model = new Model2;
 
     $fields = $model->getGroupedFields();
 
