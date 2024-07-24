@@ -117,13 +117,13 @@ class Post extends Resource
     {
         // get all flows with type "manual"
 
-        $flows = Flow::where('trigger', 'manual')
-            ->where('options->resource', $this->getType())
-            ->get();
+        // $flows = Flow::where('trigger', 'manual')
+        //     ->where('options->resource', $this->getType())
+        //     ->get();
 
-        foreach ($flows as $flow) {
-            $this->bulkActions['callFlow.'.$flow->id] = $flow->name;
-        }
+        // foreach ($flows as $flow) {
+        //     $this->bulkActions['callFlow.'.$flow->id] = $flow->name;
+        // }
 
         return $this->bulkActions;
     }
@@ -281,7 +281,7 @@ class Post extends Resource
                 'name' => 'Tags',
                 'slug' => 'tags',
                 'type' => 'Aura\\Base\\Fields\\Tags',
-                'model' => 'Aura\\Base\\Resources\\Tag',
+                'resource' => 'Aura\\Base\\Resources\\Tag',
                 'create' => true,
                 'validation' => '',
                 'conditional_logic' => [],
@@ -294,7 +294,7 @@ class Post extends Resource
                 'name' => 'Categories',
                 'slug' => 'categories',
                 'type' => 'Aura\\Base\\Fields\\Tags',
-                'model' => 'Aura\\Base\\Resources\\Category',
+                'resource' => 'Aura\\Base\\Resources\\Category',
                 'create' => true,
                 'validation' => '',
                 'conditional_logic' => [],

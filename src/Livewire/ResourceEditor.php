@@ -64,8 +64,6 @@ class ResourceEditor extends Component
     {
         $fields = collect($this->fieldsArray);
 
-        ray('here 0');
-
         // check if collection has an item with type = "Aura\Base\Fields\Tab" and global = true
         $hasGlobalTabs = $fields->where('type', 'Aura\Base\Fields\Tab')->where('global', true)->count();
         $globalTab = [
@@ -84,12 +82,8 @@ class ResourceEditor extends Component
             $fields->push($globalTab);
         }
 
-        ray('here 1');
-
         $this->hasGlobalTabs = true;
         $this->updateGlobalTabs();
-
-        ray('here 2');
 
         $fields = $fields->toArray();
 
@@ -99,14 +93,9 @@ class ResourceEditor extends Component
 
         $this->newFields = $this->model->mapToGroupedFields($this->fieldsArray);
 
-        ray('here 3');
         // $this->dispatch('refreshComponent');
 
-        ray('field here:', $globalTab);
-
         $this->dispatch('openSlideOver', component: 'edit-field', parameters: ['fieldSlug' => $globalTab['slug'], 'slug' => $this->slug, 'field' => $globalTab]);
-
-        ray('here 4');
 
         $this->dispatch('finishedSavingFields');
 
@@ -363,7 +352,6 @@ class ResourceEditor extends Component
 
     public function mount($slug)
     {
-        // ray()->clearScreen();
         $this->slug = $slug;
 
         $this->model = Aura::findResourceBySlug($slug);
@@ -377,7 +365,6 @@ class ResourceEditor extends Component
 
         $this->fieldsArray = $this->model->getFieldsWithIds()->toArray();
 
-        // ray($this->fieldsArray);
 
         if (count($this->mappedFields) > 0 && $this->mappedFields[0]['type'] == "Aura\Base\Fields\Tab" && array_key_exists('global', $this->mappedFields[0]) && $this->mappedFields[0]['global']) {
             $this->hasGlobalTabs = true;

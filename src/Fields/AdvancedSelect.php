@@ -12,23 +12,23 @@ class AdvancedSelect extends Field
 
     public function api($request)
     {
-        $searchableFields = app($request->model)->getSearchableFields()->pluck('slug')->toArray();
+        $model = app($request->model);
+        $searchableFields = $model->getSearchableFields()->pluck('slug')->toArray();
 
         $field = $request->fullField;
 
-        dd(app($request->model)->getBaseFillable());
-
-        dd(app($request->model)->searchIn($searchableFields, $request->search)->take(5)->get(), $searchableFields, $request->search);
-
-        $values = app($request->model)->searchIn($searchableFields, $request->search)->take(5)->get()->map(function ($item) use ($field) {
+        $values = $model->searchIn($searchableFields, $request->search, $model)
+        ->take(5)
+        ->get()
+        ->map(function ($item) use ($field) {
             return [
                 'id' => $item->id,
                 'title' => $item->title(),
-                'view' => view($field['view'], ['item' => $item])->render()
+                'view' => view($field['view'], ['item' => $item])->render(),
+                'selected_view' => view($field['selected_view'], ['item' => $item])->render(),
             ];
-        })->toArray();
-
-        dd($values);
+        })
+        ->toArray();
 
         return $values;
     }
@@ -145,7 +145,6 @@ class AdvancedSelect extends Field
         $ids = $value;
 
         if (is_array($ids)) {
-            ray($ids);
             $post->{$field['slug']}()->syncWithPivotValues($ids, [
                 'resource_type' => $field['resource'],
             ]);
@@ -153,13 +152,12 @@ class AdvancedSelect extends Field
             $post->{$field['slug']}()->sync([]);
         }
 
-        ray($post);
     }
 
     public function selectedValues($model, $values, $field)
     {
         if (! $values) {
-            return;
+            return [];
         }
 
         // if $values is a string, convert it to an array
@@ -167,10 +165,12 @@ class AdvancedSelect extends Field
             $values = [$values];
         }
 
-        return app($model)->get()->map(function ($item) use ($field) {
+        return app($model)->whereIn('id', $values)->get()->map(function ($item) use ($field) {
             return [
                 'id' => $item->id,
                 'title' => $item->title(),
+                'view' => view($field['view'], ['item' => $item])->render(),
+                'selected_view' => view($field['selected_view'], ['item' => $item])->render(),
             ];
         })->toArray();
     }
@@ -186,7 +186,9 @@ class AdvancedSelect extends Field
             return [
                 'id' => $item->id,
                 'title' => $item->title(),
-                'view' => view($field['view'], ['item' => $item])->render()
+                'view' => view($field['view'], ['item' => $item])->render(),
+                'selected_view' => view($field['selected_view'], ['item' => $item])->render(),
+
             ];
         })->toArray();
     }

@@ -122,22 +122,19 @@ test('defer should be false on field that is in conditional logic - create view'
         ->assertSeeHtml('wire:model="form.fields.select_type"')
         ->assertDontSee('Advanced Text')
         ->set('form.fields.select_type', 'advanced');
-    // Somehow it does not work
-    // ->assertSee('Advanced Text')
 
-    $show = ConditionalLogic::checkCondition([
+    $modelData = [
         'title' => null,
         'slug' => null,
         'select_type' => 'advanced',
-    ], $createFields[3]);
+    ];
+
+    $show = ConditionalLogic::checkCondition($modelData, $createFields[3]);
 
     expect($show)->toBeTrue();
 
-    $show = ConditionalLogic::checkCondition([
-        'title' => null,
-        'slug' => null,
-        'select_type' => null,
-    ], $createFields[3]);
+    $modelData['select_type'] = null;
+    $show = ConditionalLogic::checkCondition($modelData, $createFields[3]);
 
     expect($show)->toBeFalse();
 });
@@ -153,8 +150,6 @@ test('defer should be false on field that is in conditional logic - edit view', 
         'advanced_text' => 'test',
     ]);
 
-    // dd($post->toArray());
-
     Aura::fake();
     Aura::setModel($post);
 
@@ -164,22 +159,20 @@ test('defer should be false on field that is in conditional logic - edit view', 
         ->assertSeeHtml('wire:model="form.fields.select_type"')
         ->assertDontSee('Advanced Text')
         ->set('form.fields.select_type', 'advanced');
-    // Somehow it does not work
-    // ->assertSee('Advanced Text')
 
-    $show = ConditionalLogic::checkCondition([
-        'title' => null,
-        'slug' => null,
+    $modelData = [
+        'title' => 'Test',
+        'slug' => 'test',
         'select_type' => 'advanced',
-    ], $editFields[3]);
+        'advanced_text' => 'test',
+    ];
+
+    $show = ConditionalLogic::checkCondition($modelData, $editFields[3]);
 
     expect($show)->toBeTrue();
 
-    $show = ConditionalLogic::checkCondition([
-        'title' => null,
-        'slug' => null,
-        'select_type' => null,
-    ], $editFields[3]);
+    $modelData['select_type'] = 'simple';
+    $show = ConditionalLogic::checkCondition($modelData, $editFields[3]);
 
     expect($show)->toBeFalse();
 });
