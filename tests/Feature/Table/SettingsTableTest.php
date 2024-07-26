@@ -394,7 +394,7 @@ test('table columns settings', function () {
 test('views settings', function () {
     $settings = [
         'views' => [
-            'table' => 'custom.table.table',
+            'table' => 'custom.table.list_view',
             'list' => 'custom.table.list',
             'grid' => 'custom.table.grid',
             'filter' => 'custom.table.filter',
@@ -422,7 +422,7 @@ test('views settings', function () {
 test('views settings - table', function () {
     $settings = [
         'views' => [
-            'table' => 'custom.table.table',
+            'table' => 'custom.table.list_view',
         ],
     ];
 
@@ -502,7 +502,7 @@ test('default_view settings', function () {
 
     expect($component->settings['views'])->toMatchArray([
         'table' => 'aura::components.table.index',
-        'list' => 'aura::components.table.table',
+        'list' => 'aura::components.table.list_view',
         'grid' => false,
         'filter' => 'aura::components.table.filter',
         'header' => 'aura::components.table.header',
