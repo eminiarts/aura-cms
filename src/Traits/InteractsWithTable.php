@@ -41,6 +41,6 @@ trait InteractsWithTable
 
     public function tableView()
     {
-        return 'aura::components.table.table';
+        return 'aura::components.table.list_view';
     }
 }
