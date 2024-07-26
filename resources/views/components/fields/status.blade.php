@@ -1,5 +1,5 @@
 <x-aura::fields.wrapper :field="$field">
-    <div x-data="{ open: false, selected: @entangle('form.fields.' . $field['slug']) }" class="relative">
+    <div x-data="{ open: false, selected: @entangle('form.fields.' . $field['slug']) }" class="relative" wire:ignore>
         <button @click="open = !open" type="button" 
                 class="relative w-full bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-md shadow-sm pl-3 pr-10 py-2 text-left cursor-default focus:outline-none focus:ring-1 focus:ring-primary-500 focus:border-primary-500 sm:text-sm">
             <span class="flex items-center">
