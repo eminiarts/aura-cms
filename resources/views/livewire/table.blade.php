@@ -174,7 +174,7 @@
     }">
         @include($this->settings['views']['header'])
 
-        @dump($this->settings)
+        {{-- @dump($this->settings) --}}
 
         <div class="mt-4">
 
@@ -205,23 +205,9 @@
                     {{-- Columns --}}
                     @if ($this->settings['settings'] || $this->settings['filters'])
                         <div class="flex space-x-2">
-                            @if ($model->tableGridView())
-                                <div>
-                                    <span class="inline-flex isolate rounded-md shadow-sm">
-                                        <button wire:click="$set('settings.default_view', 'grid')" type="button"
-                                            class="inline-flex relative items-center px-2 py-2 text-sm font-medium bg-white rounded-l-md border border-gray-500/30 hover:bg-gray-50 focus:z-10 focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500 dark:bg-gray-900 dark:border-gray-700 dark:hover:bg-gray-800">
-                                            <span class="sr-only">Grid Layout</span>
 
-                                            <x-aura::icon icon="grid" size="sm" />
-                                        </button>
-                                        <button wire:click="$set('settings.default_view', 'list')" type="button"
-                                            class="inline-flex relative items-center px-2 py-2 -ml-px text-sm font-medium bg-white rounded-r-md border border-gray-500/30 hover:bg-gray-50 focus:z-10 focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500 dark:bg-gray-900 dark:border-gray-700 dark:hover:bg-gray-800">
-                                            <span class="sr-only">List Layout</span>
-                                            <x-aura::icon icon="list" size="sm" />
-                                        </button>
-                                    </span>
-                                </div>
-                            @endif
+                            @include('aura::components.table.switch-view')
+                          
 
                             @if ($this->settings['settings'])
                                 @if ($this->settings['default_view'] == 'list' && $model->showTableSettings())
@@ -249,6 +235,10 @@
                 @elseif($this->settings['default_view'] == 'list')
                     <div class="aura-table-list-view">
                         @include($this->settings['views']['table'])
+                    </div>
+                @elseif($this->settings['default_view'] == 'kanban')
+                    <div class="aura-table-kanban-view">
+                        @include($this->settings['views']['kanban'])
                     </div>
                 @endif
             </div>
