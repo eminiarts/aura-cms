@@ -40,6 +40,7 @@ trait Settings
                 'table' => 'aura::components.table.index',
                 'list' => $this->model->tableView(),
                 'grid' => $this->model->tableGridView(),
+                'kanban' => $this->model->tableKanbanView(),
                 'filter' => 'aura::components.table.filter',
                 'header' => 'aura::components.table.header',
                 'row' => $this->model->rowView(),

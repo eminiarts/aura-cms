@@ -33,6 +33,11 @@ trait InteractsWithTable
     {
         return false;
     }
+    
+    public function tableKanbanView()
+    {
+        return false;
+    }
 
     public function tableRowView()
     {
