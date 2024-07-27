@@ -8,8 +8,8 @@ use Livewire\Attributes\On;
 trait SwitchView
 {
     public $currentView;
-    
-    protected function initializeView()
+
+    public function mountSwitchView()
     {
         $userPreference = auth()->user()->getOption('table_view.' . $this->model()->getType());
 
