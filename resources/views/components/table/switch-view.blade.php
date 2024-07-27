@@ -1,3 +1,4 @@
+  @if ($model->tableGridView() || $model->tableKanbanView())
   <div>
       <span class="inline-flex isolate rounded-md shadow-sm">
           <button wire:click="switchView('list')" type="button"
@@ -23,3 +24,4 @@
           @endif
       </span>
   </div>
+  @endif
