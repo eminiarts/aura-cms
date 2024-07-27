@@ -207,16 +207,15 @@
                         <div class="flex space-x-2">
 
                             @include('aura::components.table.switch-view')
-                          
 
                             @if ($this->settings['settings'])
-                                @if ($this->settings['default_view'] == 'list' && $model->showTableSettings())
+                                @if ($currentView == 'list' && $model->showTableSettings())
                                     @include('aura::components.table.settings')
                                 @endif
                             @endif
                             
                             @if ($this->settings['settings'])
-                                @if ($this->settings['default_view'] == 'kanban' && $model->showTableSettings())
+                                @if ($currentView == 'kanban' && $model->showTableSettings())
                                     @include('aura::components.table.kanban-settings')
                                 @endif
                             @endif
@@ -234,15 +233,15 @@
             </div>
 
             <div class="aura-table">
-                @if ($this->settings['default_view'] == 'grid')
+                @if ($currentView == 'grid')
                     <div class="aura-table-grid-view">
                         @include($this->settings['views']['grid'])
                     </div>
-                @elseif($this->settings['default_view'] == 'list')
+                @elseif($currentView == 'list')
                     <div class="aura-table-list-view">
                         @include($this->settings['views']['table'])
                     </div>
-                @elseif($this->settings['default_view'] == 'kanban')
+                @elseif($currentView == 'kanban')
                     <div class="aura-table-kanban-view">
                         @include($this->settings['views']['kanban'])
                     </div>
