@@ -31,6 +31,32 @@ trait Kanban
         }
     }
 
+    public function reorderKanbanColumns($newOrder)
+    {
+        // Filter out empty values from $newOrder using Laravel's collection methods
+        $newOrder = collect($newOrder)->filter()->values();
+
+        $reorderedStatuses = collect();
+
+        // Reorder based on $newOrder
+        foreach ($newOrder as $key) {
+            if (isset($this->kanbanStatuses[$key])) {
+                $reorderedStatuses[$key] = $this->kanbanStatuses[$key];
+            }
+        }
+
+        // Add any remaining statuses that weren't in $newOrder
+        foreach ($this->kanbanStatuses as $key => $status) {
+            if (!$reorderedStatuses->has($key)) {
+                $reorderedStatuses[$key] = $status;
+            }
+        }
+
+        $this->kanbanStatuses = $reorderedStatuses->toArray();
+
+        $this->saveKanbanStatusesOrder();
+    }
+
     public function reorderKanbanStatuses($statuses)
     {
         // Create a new collection from the ordered status keys
