@@ -321,6 +321,11 @@ trait AuraModelConfig
             return false;
         }
 
+        // If the model does not use meta, return false
+        if (! $this->usesMeta()) {
+            return false;
+        }
+
         // If the key is in Base fillable, it is not a meta field
         if (in_array($key, $this->getBaseFillable())) {
             return false;
