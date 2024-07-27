@@ -214,6 +214,12 @@
                                     @include('aura::components.table.settings')
                                 @endif
                             @endif
+                            
+                            @if ($this->settings['settings'])
+                                @if ($this->settings['default_view'] == 'kanban' && $model->showTableSettings())
+                                    @include('aura::components.table.kanban-settings')
+                                @endif
+                            @endif
 
                             @if ($this->settings['filters'])
                                 @include($this->settings['views']['filter'])
