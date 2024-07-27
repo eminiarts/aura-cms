@@ -38,8 +38,8 @@ trait InteractsWithTable
     {
         return false;
     }
-    
-    public function kanbanQuery()
+
+    public function kanbanQuery($query)
     {
         return false;
     }

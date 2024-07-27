@@ -12,18 +12,20 @@ trait Kanban
 {
     public $kanbanStatuses = [];
 
-    public function initializeKanban()
+    public function mountKanban()
     {
+        if($this->currentView != 'kanban') {
+            return;
+        }
+
         $this->initializeKanbanStatuses();
 
         if (method_exists($this->model, 'kanbanPagination')) {
-
-            // dd($this->model->kanbanPagination());
-
-            ray('setting per page');
             $this->perPage = $this->model->kanbanPagination();
         }
+
     }
+
     protected function initializeKanbanStatuses()
     {
         $statuses = $this->model->fieldBySlug('status')['options'];
@@ -102,7 +104,7 @@ trait Kanban
     protected function applyKanbanQuery($query)
     {
 
-        if($this->model->kanbanQuery()) {
+        if($this->model->kanbanQuery($query)) {
             return $this->model->kanbanQuery($query);
         }
 

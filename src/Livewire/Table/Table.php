@@ -23,6 +23,7 @@ use Aura\Base\Livewire\Table\Traits\SwitchView;
  */
 class Table extends Component
 {
+    use SwitchView;
     use BulkActions;
     use Filters;
     use PerPagePagination;
@@ -32,7 +33,6 @@ class Table extends Component
     use Settings;
     use Sorting;
     use Kanban;
-    use SwitchView;
 
     public $bulkActionsView = 'aura::components.table.bulkActions';
 
@@ -299,17 +299,7 @@ class Table extends Component
             }
         }
 
-        $this->initiateSettings();
-
         $this->setTaxonomyFilters();
-
-        $this->initializeView();
-
-        if($this->currentView == 'kanban')
-        {
-            $this->initializeKanban();
-        }
-
     }
 
     public function openBulkActionModal($action, $data)
@@ -395,11 +385,6 @@ class Table extends Component
     {
         $this->selected = $id;
         $this->lastClickedRow = $id;
-    }
-
-    public function setPageTen()
-    {
-        $this->setPage(10);
     }
 
     /**

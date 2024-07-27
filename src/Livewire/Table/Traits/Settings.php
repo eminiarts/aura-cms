@@ -51,7 +51,7 @@ trait Settings
         ];
     }
 
-    public function initiateSettings()
+    public function mountSettings()
     {
         $this->settings = $this->array_merge_recursive_distinct($this->defaultSettings(), $this->settings ?: []);
     }
