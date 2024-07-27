@@ -23,6 +23,7 @@ use Aura\Base\Livewire\Table\Traits\SwitchView;
  */
 class Table extends Component
 {
+    use Settings;
     use SwitchView;
     use BulkActions;
     use Filters;
@@ -30,7 +31,6 @@ class Table extends Component
     use QueryFilters;
     use Search;
     use Select;
-    use Settings;
     use Sorting;
     use Kanban;
 

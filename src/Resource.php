@@ -51,7 +51,16 @@ class Resource extends Model
      */
     protected $table = 'posts';
 
-    protected $with = ['meta'];
+    protected $with = [];
+
+    public function __construct(array $attributes = [])
+    {
+        parent::__construct($attributes);
+
+        if ($this->usesMeta()) {
+            $this->with[] = 'meta';
+        }
+    }
 
     public function __call($method, $parameters)
     {
