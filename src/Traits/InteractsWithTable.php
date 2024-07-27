@@ -38,6 +38,11 @@ trait InteractsWithTable
     {
         return false;
     }
+    
+    public function kanbanQuery()
+    {
+        return false;
+    }
 
     public function tableRowView()
     {

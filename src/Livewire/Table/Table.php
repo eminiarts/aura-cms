@@ -16,6 +16,7 @@ use Aura\Base\Livewire\Table\Traits\Settings;
 use Aura\Base\Livewire\Table\Traits\BulkActions;
 use Aura\Base\Livewire\Table\Traits\QueryFilters;
 use Aura\Base\Livewire\Table\Traits\PerPagePagination;
+use Aura\Base\Livewire\Table\Traits\SwitchView;
 
 /**
  * Class Table
@@ -31,6 +32,7 @@ class Table extends Component
     use Settings;
     use Sorting;
     use Kanban;
+    use SwitchView;
 
     public $bulkActionsView = 'aura::components.table.bulkActions';
 
@@ -301,7 +303,13 @@ class Table extends Component
 
         $this->setTaxonomyFilters();
 
-        $this->initializeKanbanStatuses();
+        $this->initializeView();
+
+        if($this->currentView == 'kanban')
+        {
+            $this->initializeKanban();
+        }
+
     }
 
     public function openBulkActionModal($action, $data)
@@ -458,6 +466,11 @@ class Table extends Component
             } catch (\Exception $e) {
                 // Handle the exception
             }
+        }
+
+        // Kanban Query
+        if ($this->currentView == 'kanban') {
+            $query = $this->applyKanbanQuery($query);
         }
 
         // when model is instance Resource, eager load meta

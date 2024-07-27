@@ -10,9 +10,20 @@ use Livewire\Attributes\On;
  */
 trait Kanban
 {
-
     public $kanbanStatuses = [];
 
+    public function initializeKanban()
+    {
+        $this->initializeKanbanStatuses();
+
+        if (method_exists($this->model, 'kanbanPagination')) {
+
+            // dd($this->model->kanbanPagination());
+
+            ray('setting per page');
+            $this->perPage = $this->model->kanbanPagination();
+        }
+    }
     protected function initializeKanbanStatuses()
     {
         $statuses = $this->model->fieldBySlug('status')['options'];
@@ -86,5 +97,15 @@ trait Kanban
     protected function saveKanbanStatusesOrder()
     {
         auth()->user()->updateOption('kanban_statuses.'.$this->model()->getType(), $this->kanbanStatuses);
+    }
+
+    protected function applyKanbanQuery($query)
+    {
+
+        if($this->model->kanbanQuery()) {
+            return $this->model->kanbanQuery($query);
+        }
+
+        return $query;
     }
 }
