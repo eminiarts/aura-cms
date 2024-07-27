@@ -249,10 +249,6 @@
             </div>
         </div>
 
-
-        @dump($this->perPage)
-
-
         @if ($this->settings['filters'])
             <x-aura::sidebar title="Filters" show="showFilters">
                 <x-slot:heading class="font-semibold">
