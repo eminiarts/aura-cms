@@ -45,10 +45,11 @@ class CustomizeComponent extends Command
 
     protected function createCustomComponent($componentType, $resourceName)
     {
-        $componentName = "{$componentType}{$resourceName}";
+        // Extract the class name from the full namespace
+        $resourceClass = class_basename($resourceName);
+        $componentName = "{$componentType}{$resourceClass}";
         
         $stubPath = __DIR__.'/Stubs/livewire.custom.stub';
-
         $componentPath = app_path("Http/Livewire/{$componentName}.php");
 
         $stub = file_get_contents($stubPath);
@@ -57,6 +58,13 @@ class CustomizeComponent extends Command
             ['App\\Http\\Livewire', $componentName, "Aura\\Http\\Livewire\\{$componentType}"],
             $stub
         );
+
+        // Ensure the directory exists
+        $directory = dirname($componentPath);
+        
+        if (!is_dir($directory)) {
+            mkdir($directory, 0755, true);
+        }
 
         file_put_contents($componentPath, $stub);
 
@@ -68,12 +76,13 @@ class CustomizeComponent extends Command
         $routeFile = base_path('routes/web.php');
         $routeContents = file_get_contents($routeFile);
 
+        $resourceClass = class_basename($resourceName);
         $search = "Route::get('/{slug}/{id}/" . Str::lower($componentType) . "', {$componentType}::class)->name('resource." . Str::lower($componentType) . "');";
-        $replace = "Route::get('/{slug}/{id}/" . Str::lower($componentType) . "', App\\Http\\Livewire\\{$componentType}{$resourceName}::class)->name('resource." . Str::lower($componentType) . "');";
+        $replace = "Route::get('/{slug}/{id}/" . Str::lower($componentType) . "', App\\Http\\Livewire\\{$componentType}{$resourceClass}::class)->name('resource." . Str::lower($componentType) . "');";
 
         $updatedContents = str_replace($search, $replace, $routeContents);
         file_put_contents($routeFile, $updatedContents);
 
-        $this->components->info("Updated route for: {$componentType}{$resourceName}");
+        $this->components->info("Updated route for: {$componentType}{$resourceClass}");
     }
 }
