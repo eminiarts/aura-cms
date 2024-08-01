@@ -2,37 +2,37 @@
 
 namespace Aura\Base\Livewire\Table;
 
-use Aura\Base\Resource;
-use Livewire\Component;
 use Aura\Base\Facades\Aura;
-use Aura\Base\Resources\User;
-use Livewire\Attributes\Computed;
+use Aura\Base\Livewire\Table\Traits\BulkActions;
+use Aura\Base\Livewire\Table\Traits\Filters;
 use Aura\Base\Livewire\Table\Traits\Kanban;
+use Aura\Base\Livewire\Table\Traits\PerPagePagination;
+use Aura\Base\Livewire\Table\Traits\QueryFilters;
 use Aura\Base\Livewire\Table\Traits\Search;
 use Aura\Base\Livewire\Table\Traits\Select;
-use Aura\Base\Livewire\Table\Traits\Filters;
-use Aura\Base\Livewire\Table\Traits\Sorting;
 use Aura\Base\Livewire\Table\Traits\Settings;
-use Aura\Base\Livewire\Table\Traits\BulkActions;
-use Aura\Base\Livewire\Table\Traits\QueryFilters;
-use Aura\Base\Livewire\Table\Traits\PerPagePagination;
+use Aura\Base\Livewire\Table\Traits\Sorting;
 use Aura\Base\Livewire\Table\Traits\SwitchView;
+use Aura\Base\Resource;
+use Aura\Base\Resources\User;
+use Livewire\Attributes\Computed;
+use Livewire\Component;
 
 /**
  * Class Table
  */
 class Table extends Component
 {
-    use Settings;
-    use SwitchView;
     use BulkActions;
     use Filters;
+    use Kanban;
     use PerPagePagination;
     use QueryFilters;
     use Search;
     use Select;
+    use Settings;
     use Sorting;
-    use Kanban;
+    use SwitchView;
 
     public $bulkActionsView = 'aura::components.table.bulkActions';
 
@@ -387,6 +387,18 @@ class Table extends Component
         $this->lastClickedRow = $id;
     }
 
+    public function updateCardStatus($cardId, $newStatus)
+    {
+        $card = $this->model->find($cardId);
+        if ($card) {
+            $card->status = $newStatus;
+            $card->save();
+            $this->notify('Card status updated successfully');
+        } else {
+            $this->notify('Card not found', 'error');
+        }
+    }
+
     /**
      * Update the columns in the table.
      *
@@ -488,17 +500,5 @@ class Table extends Component
         $query = $query->paginate($this->perPage);
 
         return $query;
-    }
-
-    public function updateCardStatus($cardId, $newStatus)
-    {
-        $card = $this->model->find($cardId);
-        if ($card) {
-            $card->status = $newStatus;
-            $card->save();
-            $this->notify('Card status updated successfully');
-        } else {
-            $this->notify('Card not found', 'error');
-        }
     }
 }

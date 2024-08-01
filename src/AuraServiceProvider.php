@@ -150,12 +150,14 @@ class AuraServiceProvider extends PackageServiceProvider
     */
     public function configurePackage(Package $package): void
     {
+        ray('configurePackage');
+
         $package
             ->name('aura')
             ->hasConfigFile()
             ->hasViews('aura')
             ->hasAssets()
-            ->hasRoute('web')
+
             ->hasMigrations(['create_aura_tables', 'create_flows_table'])
             ->runsMigrations()
             ->hasCommands([
@@ -261,6 +263,14 @@ class AuraServiceProvider extends PackageServiceProvider
         // $resources = Aura::resources()->mapWithKeys(function ($resource) {
         //     return [$resource => 'Aura\Base\Resources\\'.str($resource)->title];
         // })->toArray();
+
+        ray('packageBooted');
+
+        // Defer route loading until after all providers have booted
+        $this->app->booted(function () {
+            ray('load routes last')->green();
+            $this->loadRoutesFrom(__DIR__.'/../routes/web.php');
+        });
 
         $this
             ->bootGate()
