@@ -1,0 +1,10 @@
+<?php
+
+namespace {{ namespace }};
+
+use {{ baseClass }};
+
+class {{ class }} extends {{ baseClass }}
+{
+    // Add your custom logic here
+}
