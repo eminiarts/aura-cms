@@ -2,7 +2,6 @@
 
 namespace Aura\Base\Livewire\Table\Traits;
 
-use Illuminate\Support\Str;
 use Livewire\Attributes\On;
 
 /**
@@ -14,7 +13,7 @@ trait Kanban
 
     public function mountKanban()
     {
-        if($this->currentView != 'kanban') {
+        if ($this->currentView != 'kanban') {
             return;
         }
 
@@ -24,24 +23,6 @@ trait Kanban
             $this->perPage = $this->model->kanbanPagination();
         }
 
-    }
-
-    protected function initializeKanbanStatuses()
-    {
-        $statuses = $this->model->fieldBySlug('status')['options'];
-        $this->kanbanStatuses = collect($statuses)->mapWithKeys(function ($status) {
-            return [$status['key'] => [
-                'value' => $status['value'],
-                'color' => $status['color'],
-                'visible' => true,
-            ]];
-        })->toArray();
-
-        // Load user preferences if they exist
-        $userPreferences = auth()->user()->getOption('kanban_statuses.'.$this->model()->getType());
-        if ($userPreferences) {
-            $this->kanbanStatuses = $userPreferences;
-        }
     }
 
     public function reorderKanbanColumns($newOrder)
@@ -60,7 +41,7 @@ trait Kanban
 
         // Add any remaining statuses that weren't in $newOrder
         foreach ($this->kanbanStatuses as $key => $status) {
-            if (!$reorderedStatuses->has($key)) {
+            if (! $reorderedStatuses->has($key)) {
                 $reorderedStatuses[$key] = $status;
             }
         }
@@ -96,18 +77,36 @@ trait Kanban
         $this->saveKanbanStatusesOrder();
     }
 
-    protected function saveKanbanStatusesOrder()
-    {
-        auth()->user()->updateOption('kanban_statuses.'.$this->model()->getType(), $this->kanbanStatuses);
-    }
-
     protected function applyKanbanQuery($query)
     {
 
-        if($this->model->kanbanQuery($query)) {
+        if ($this->model->kanbanQuery($query)) {
             return $this->model->kanbanQuery($query);
         }
 
         return $query;
+    }
+
+    protected function initializeKanbanStatuses()
+    {
+        $statuses = $this->model->fieldBySlug('status')['options'];
+        $this->kanbanStatuses = collect($statuses)->mapWithKeys(function ($status) {
+            return [$status['key'] => [
+                'value' => $status['value'],
+                'color' => $status['color'],
+                'visible' => true,
+            ]];
+        })->toArray();
+
+        // Load user preferences if they exist
+        $userPreferences = auth()->user()->getOption('kanban_statuses.'.$this->model()->getType());
+        if ($userPreferences) {
+            $this->kanbanStatuses = $userPreferences;
+        }
+    }
+
+    protected function saveKanbanStatusesOrder()
+    {
+        auth()->user()->updateOption('kanban_statuses.'.$this->model()->getType(), $this->kanbanStatuses);
     }
 }

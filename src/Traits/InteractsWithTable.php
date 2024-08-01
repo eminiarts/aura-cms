@@ -24,6 +24,11 @@ trait InteractsWithTable
         return 'list';
     }
 
+    public function kanbanQuery($query)
+    {
+        return false;
+    }
+
     public function showTableSettings()
     {
         return true;
@@ -33,13 +38,8 @@ trait InteractsWithTable
     {
         return false;
     }
-    
-    public function tableKanbanView()
-    {
-        return false;
-    }
 
-    public function kanbanQuery($query)
+    public function tableKanbanView()
     {
         return false;
     }
