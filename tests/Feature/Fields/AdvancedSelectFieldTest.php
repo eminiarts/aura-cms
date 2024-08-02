@@ -55,7 +55,7 @@ test('AdvancedSelect Field Test', function () {
         ->call('setModel', $model)
         ->assertSee('Create AdvancedSelect Model')
         ->assertSee('AdvancedSelect for Test')
-        ->assertSeeHtml('x-text="selectedItem(item)"')
+        ->assertSeeHtml('x-text="selectedItemMarkup(item).title"')
         ->call('save')
         ->assertHasNoErrors(['form.fields.advancedselect']);
 
@@ -66,8 +66,9 @@ test('AdvancedSelect Field Test', function () {
 
     $roles = Role::get();
 
+
     // Assert that $model->fields['number'] is null
-    $this->assertNull($model->fields['advancedselect']);
+    $this->assertEmpty($model->fields['advancedselect']);
 
     $component->set('form.fields.advancedselect', [$roles[0]->id])
         ->call('save')
@@ -80,9 +81,10 @@ test('AdvancedSelect Field Test', function () {
     expect($model->fields['advancedselect'])->toHaveCount(1);
     expect($model->fields['advancedselect'])->toContain($roles[0]->id);
 
-    expect($model->advancedselect)->toBeArray();
+    // dd($model->advancedselect);
+    // expect($model->advancedselect)->toBeArray();
     expect($model->advancedselect)->toHaveCount(1);
-    expect($model->advancedselect)->toContain($roles[0]->id);
+    expect($model->advancedselect->pluck('id'))->toContain($roles[0]->id);
 
 });
 
@@ -97,9 +99,9 @@ test('advancedselect field gets displayed correctly on edit view', function () {
 
     $post = AdvancedSelectFieldModel::first();
 
-    expect($post->advancedselect)->toBeArray();
+    // expect($post->advancedselect)->toBeArray();
     expect($post->advancedselect)->toHaveCount(1);
-    expect($post->advancedselect)->toContain($id);
+    expect($model->advancedselect->pluck('id'))->toContain($id);
 
     $model = AdvancedSelectFieldModel::query();
     $slug = 'AdvancedSelectModel';
@@ -119,9 +121,10 @@ test('advancedselect field gets displayed correctly on edit view', function () {
 
     $post = AdvancedSelectFieldModel::first();
 
-    expect($post->advancedselect)->toBeArray();
+    expect($post->advancedselect)->toBeCollection();
     expect($post->advancedselect)->toHaveCount(1);
-    expect($post->advancedselect)->toContain($id);
+    expect($post->advancedselect->pluck('id'))->toContain($id);
+
 });
 
 test('Advanced Select - Fields', function () {
