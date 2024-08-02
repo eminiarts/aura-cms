@@ -5,22 +5,15 @@ namespace Aura\Base;
 use Aura\Base\Models\Scopes\ScopedScope;
 use Aura\Base\Models\Scopes\TeamScope;
 use Aura\Base\Models\Scopes\TypeScope;
-use Aura\Base\Resources\Post;
-use Aura\Base\Resources\Tag;
-use Aura\Base\Resources\User;
 use Aura\Base\Traits\AuraModelConfig;
 use Aura\Base\Traits\InitialPostFields;
 use Aura\Base\Traits\InputFields;
 use Aura\Base\Traits\InteractsWithTable;
 use Aura\Base\Traits\SaveFieldAttributes;
 use Aura\Base\Traits\SaveMetaFields;
-use Aura\Flows\Jobs\TriggerFlowOnDeletedPostEvent;
-use Aura\Flows\Jobs\TriggerFlowOnUpdatePostEvent;
-use Aura\Flows\Resources\Flow;
 use Illuminate\Database\Eloquent\Concerns\HasTimestamps;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\MorphToMany;
 use Illuminate\Support\Str;
 
 class Resource extends Model
