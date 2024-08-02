@@ -62,6 +62,8 @@ class ResourceWithCustomTableAndCustomMetaModel extends Resource
 
     public static string $type = 'Project';
 
+    public static bool $usesMeta = true;
+
     // cast options to array
     protected $casts = [
         'options' => 'array',

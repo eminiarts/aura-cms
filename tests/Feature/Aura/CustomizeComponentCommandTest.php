@@ -1,28 +1,25 @@
 <?php
 
-use Aura\Base\Commands\CustomizeComponent;
 // beforeEach(fn () => $this->actingAs($this->user = User::factory()->create()));
-use Aura\Base\Facades\Aura;
 use Aura\Base\Resources\User;
 use Illuminate\Support\Facades\File;
-
-use function Pest\Laravel\artisan;
-
 
 beforeEach(function () {
     // Set up a fake application structure
     config(['aura.path' => 'admin']);
-    
-    if (!File::exists(base_path('routes'))) {
+
+    if (! File::exists(base_path('routes'))) {
         File::makeDirectory(base_path('routes'));
     }
     File::put(base_path('routes/web.php'), '<?php');
 
-    $this->app->bind('aura', fn () => new class {
-        public function getResources() {
+    $this->app->bind('aura', fn () => new class
+    {
+        public function getResources()
+        {
             return [
                 'App\Models\User' => 'User',
-                'App\Models\Post' => 'Post'
+                'App\Models\Post' => 'Post',
             ];
         }
     });
@@ -36,12 +33,12 @@ afterEach(function () {
 
 it('creates a custom component file and updates routes', function () {
     $this->artisan('aura:customize-component')
-         ->expectsQuestion('Which component would you like to customize?', 'Edit')
-         ->expectsQuestion('For which resource?', 'App\Models\User')
-         ->assertSuccessful();
+        ->expectsQuestion('Which component would you like to customize?', 'Edit')
+        ->expectsQuestion('For which resource?', 'App\Models\User')
+        ->assertSuccessful();
 
     expect(File::exists(app_path('Http/Livewire/EditUser.php')))->toBeTrue();
-    
+
     $content = File::get(app_path('Http/Livewire/EditUser.php'));
     expect($content)
         ->toContain('namespace App\Http\Livewire;')
@@ -56,12 +53,12 @@ it('creates a custom component file and updates routes', function () {
 
 it('handles different component types', function ($componentType) {
     $this->artisan('aura:customize-component')
-         ->expectsQuestion('Which component would you like to customize?', $componentType)
-         ->expectsQuestion('For which resource?', 'App\Models\Post')
-         ->assertSuccessful();
+        ->expectsQuestion('Which component would you like to customize?', $componentType)
+        ->expectsQuestion('For which resource?', 'App\Models\Post')
+        ->assertSuccessful();
 
     expect(File::exists(app_path("Http/Livewire/{$componentType}Post.php")))->toBeTrue();
-    
+
     $content = File::get(app_path("Http/Livewire/{$componentType}Post.php"));
     expect($content)
         ->toContain("namespace App\Http\Livewire;")
@@ -79,9 +76,9 @@ it('handles non-existent directories', function () {
     File::deleteDirectory(app_path('Http'));
 
     $this->artisan('aura:customize-component')
-         ->expectsQuestion('Which component would you like to customize?', 'Create')
-         ->expectsQuestion('For which resource?', 'App\Models\User')
-         ->assertSuccessful();
+        ->expectsQuestion('Which component would you like to customize?', 'Create')
+        ->expectsQuestion('For which resource?', 'App\Models\User')
+        ->assertSuccessful();
 
     expect(File::exists(app_path('Http/Livewire/CreateUser.php')))->toBeTrue();
 });
@@ -96,9 +93,9 @@ Route::get("/", function () {
 ');
 
     $this->artisan('aura:customize-component')
-         ->expectsQuestion('Which component would you like to customize?', 'Edit')
-         ->expectsQuestion('For which resource?', 'App\Models\User')
-         ->assertSuccessful();
+        ->expectsQuestion('Which component would you like to customize?', 'Edit')
+        ->expectsQuestion('For which resource?', 'App\Models\User')
+        ->assertSuccessful();
 
     $routeContent = File::get(base_path('routes/web.php'));
     expect($routeContent)

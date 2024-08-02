@@ -35,6 +35,10 @@ class UserMeta extends Meta
             if (config('aura.teams') && ! $post->team_id && auth()->user()) {
                 $post->team_id = auth()->user()->current_team_id;
             }
+
+            if (config('aura.teams') && ! $post->team_id) {
+                $post->team_id = 1;
+            }
         });
     }
 }

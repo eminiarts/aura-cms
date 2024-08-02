@@ -127,7 +127,7 @@ return new class () extends Migration {
             $table->longText('content')->nullable();
             $table->string('type', 20);
             $table->string('status', 20)->default('publish');
-            $table->string('slug')->index();
+            $table->string('slug')->index()->nullable();
             $table->foreignId('user_id')->nullable()->index();
             $table->foreignId('parent_id')->nullable()->index();
             $table->integer('order')->nullable();

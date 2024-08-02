@@ -9,7 +9,10 @@ trait SaveMetaFields
 {
     protected static function bootSaveMetaFields()
     {
+
         static::saving(function ($post) {
+
+            // ray('saving', $post)->red();
 
             if (isset($post->attributes['fields'])) {
 
