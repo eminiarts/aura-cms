@@ -150,8 +150,6 @@ class AuraServiceProvider extends PackageServiceProvider
     */
     public function configurePackage(Package $package): void
     {
-        ray('configurePackage');
-
         $package
             ->name('aura')
             ->hasConfigFile()
