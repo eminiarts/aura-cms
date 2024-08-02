@@ -88,16 +88,6 @@ trait AuraModelConfig
 
     protected static string $type = 'Resource';
 
-    public function __construct(array $attributes = [])
-    {
-        parent::__construct($attributes);
-
-        $this->baseFillable = $this->getFillable();
-
-        // Merge fillable fields from fields
-        $this->mergeFillable($this->inputFieldsSlugs());
-    }
-
     public function allowedToPerformActions()
     {
         return false;

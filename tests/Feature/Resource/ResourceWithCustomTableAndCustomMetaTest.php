@@ -132,6 +132,9 @@ class ResourceWithCustomTableAndCustomMetaModel extends Resource
 }
 
 test('custom Table - Fields get saved correctly when fillable are set and meta are used', function () {
+
+    ray()->clearScreen();
+
     $resource = ResourceWithCustomTableAndCustomMetaModel::create([
         'name' => 'Test Post 1',
         'status' => 'publish',

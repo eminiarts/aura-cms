@@ -57,6 +57,11 @@ class Resource extends Model
     {
         parent::__construct($attributes);
 
+        $this->baseFillable = $this->getFillable();
+
+        // Merge fillable fields from fields
+        $this->mergeFillable($this->inputFieldsSlugs());
+
         if ($this->usesMeta()) {
             $this->with[] = 'meta';
         }
