@@ -23,7 +23,6 @@ trait SwitchView
 
     protected function saveViewPreference()
     {
-        ray($this->currentView, $this->model()->getType());
         auth()->user()->updateOption('table_view.'.$this->model()->getType(), $this->currentView);
     }
 }

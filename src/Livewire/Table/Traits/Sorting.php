@@ -68,7 +68,6 @@ trait Sorting
             }
 
             if ($this->model->usesMeta() && $this->model->isMetaField($field)) {
-                ray('isMetaField');
                 $query->leftJoin('post_meta', function ($join) use ($field) {
                     $join->on('posts.id', '=', 'post_meta.post_id')
                         ->where('post_meta.key', '=', "$field");
