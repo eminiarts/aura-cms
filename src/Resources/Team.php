@@ -244,13 +244,11 @@ class Team extends Resource
 
             // Create a Super Admin role for the team
             $role = Role::create([
-                'type' => 'Role',
-                'title' => 'Super Admin',
+                'name' => 'Super Admin',
                 'slug' => 'super_admin',
                 'description' => 'Super Admin has can perform everything.',
                 'super_admin' => true,
                 'permissions' => [],
-                'user_id' => $user ? $user->id : null,
                 'team_id' => $team->id,
             ]);
 

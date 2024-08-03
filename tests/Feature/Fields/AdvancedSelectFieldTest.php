@@ -66,7 +66,6 @@ test('AdvancedSelect Field Test', function () {
 
     $roles = Role::get();
 
-
     // Assert that $model->fields['number'] is null
     $this->assertEmpty($model->fields['advancedselect']);
 

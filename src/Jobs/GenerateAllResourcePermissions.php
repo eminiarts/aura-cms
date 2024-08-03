@@ -33,7 +33,6 @@ class GenerateAllResourcePermissions
             Permission::firstOrCreate(
                 ['slug' => 'view-'.$r::$slug],
                 [
-                    'title' => 'View '.$r->pluralName(),
                     'name' => 'View '.$r->pluralName(),
                     'slug' => 'view-'.$r::$slug,
                     'group' => $r->pluralName(),
@@ -43,7 +42,6 @@ class GenerateAllResourcePermissions
             Permission::firstOrCreate(
                 ['slug' => 'viewAny-'.$r::$slug],
                 [
-                    'title' => 'View Any '.$r->pluralName(),
                     'name' => 'View Any '.$r->pluralName(),
                     'slug' => 'viewAny-'.$r::$slug,
                     'group' => $r->pluralName(),
@@ -53,7 +51,6 @@ class GenerateAllResourcePermissions
             Permission::firstOrCreate(
                 ['slug' => 'create-'.$r::$slug],
                 [
-                    'title' => 'Create '.$r->pluralName(),
                     'name' => 'Create '.$r->pluralName(),
                     'slug' => 'create-'.$r::$slug,
                     'group' => $r->pluralName(),
@@ -63,7 +60,6 @@ class GenerateAllResourcePermissions
             Permission::firstOrCreate(
                 ['slug' => 'update-'.$r::$slug],
                 [
-                    'title' => 'Update '.$r->pluralName(),
                     'name' => 'Update '.$r->pluralName(),
                     'slug' => 'update-'.$r::$slug,
                     'group' => $r->pluralName(),
@@ -73,7 +69,6 @@ class GenerateAllResourcePermissions
             Permission::firstOrCreate(
                 ['slug' => 'restore-'.$r::$slug],
                 [
-                    'title' => 'Restore '.$r->pluralName(),
                     'name' => 'Restore '.$r->pluralName(),
                     'slug' => 'restore-'.$r::$slug,
                     'group' => $r->pluralName(),
@@ -83,7 +78,6 @@ class GenerateAllResourcePermissions
             Permission::firstOrCreate(
                 ['slug' => 'delete-'.$r::$slug],
                 [
-                    'title' => 'Delete '.$r->pluralName(),
                     'name' => 'Delete '.$r->pluralName(),
                     'slug' => 'delete-'.$r::$slug,
                     'group' => $r->pluralName(),
@@ -93,7 +87,6 @@ class GenerateAllResourcePermissions
             Permission::firstOrCreate(
                 ['slug' => 'forceDelete-'.$r::$slug],
                 [
-                    'title' => 'Force Delete '.$r->pluralName(),
                     'name' => 'Force Delete '.$r->pluralName(),
                     'slug' => 'forceDelete-'.$r::$slug,
                     'group' => $r->pluralName(),
@@ -103,7 +96,6 @@ class GenerateAllResourcePermissions
             Permission::firstOrCreate(
                 ['slug' => 'scope-'.$r::$slug],
                 [
-                    'title' => 'Scope '.$r->pluralName(),
                     'name' => 'Scope '.$r->pluralName(),
                     'slug' => 'scope-'.$r::$slug,
                     'group' => $r->pluralName(),
