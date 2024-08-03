@@ -8,6 +8,39 @@ use Aura\Base\Resource;
 
 class Role extends Resource
 {
+    public static $customTable = true;
+
+    public static $globalSearch = false;
+
+    public static ?string $slug = 'role';
+
+    public static ?int $sort = 2;
+
+    public static string $type = 'Role';
+
+    public static bool $usesMeta = false;
+
+    protected static $dropdown = 'Users';
+
+    protected static ?string $group = 'Aura';
+
+    protected $table = 'roles';
+
+    protected $with = [];
+
+    protected $casts = [
+        'permissions' => 'array',
+    ];
+
+    protected $fillable = [
+        'name',
+        'slug',
+        'description',
+        'super_admin',
+        'permissions',
+        'team_id',
+    ];
+
     public array $actions = [
         'createMissingPermissions' => [
             'label' => 'Create Missing Permissions',
@@ -25,20 +58,6 @@ class Role extends Resource
         'deleteSelected' => 'Delete',
     ];
 
-    public static $globalSearch = false;
-
-    public static ?string $slug = 'role';
-
-    public static ?int $sort = 2;
-
-    public static string $type = 'Role';
-
-    protected static $dropdown = 'Users';
-
-    protected static ?string $group = 'Aura';
-
-    protected $with = ['meta'];
-
     public function createMissingPermissions()
     {
         GenerateAllResourcePermissions::dispatch();
@@ -49,7 +68,7 @@ class Role extends Resource
         return [
             [
                 'name' => 'Name',
-                'slug' => 'title',
+                'slug' => 'name',
                 'type' => 'Aura\\Base\\Fields\\Text',
                 'validation' => '',
                 'conditional_logic' => [],
@@ -63,7 +82,7 @@ class Role extends Resource
                 'name' => 'Slug',
                 'slug' => 'slug',
                 'type' => 'Aura\\Base\\Fields\\Slug',
-                'based_on' => 'title',
+                'based_on' => 'name',
                 'custom' => false,
                 'disabled' => true,
                 'validation' => 'required',

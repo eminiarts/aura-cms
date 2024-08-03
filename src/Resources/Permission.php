@@ -7,15 +7,21 @@ use Aura\Base\Resource;
 
 class Permission extends Resource
 {
+    public static $customTable = true;
+
     public static $globalSearch = false;
 
     public static ?string $slug = 'permission';
+
+    public static bool $usesMeta = false;
 
     protected static $dropdown = 'Users';
 
     protected static ?string $group = 'Aura';
 
     protected static ?int $sort = 3;
+
+    protected $table = 'permissions';
 
     protected static bool $title = false;
 

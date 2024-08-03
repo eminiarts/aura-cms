@@ -265,7 +265,7 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
                 'conditional_logic' => [],
                 'slug' => 'password',
                 'on_forms' => true,
-                'on_edit' => false,
+                'on_edit' => true,
                 'on_create' => true,
                 'on_index' => false,
                 'on_view' => false,
