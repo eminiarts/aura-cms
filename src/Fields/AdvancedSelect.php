@@ -8,7 +8,7 @@ class AdvancedSelect extends Field
 
     public $optionGroup = 'JS Fields';
 
-    public $view = 'aura::fields.view-value';
+    public $view = 'aura::fields.advanced-select-view';
 
     public function api($request)
     {
@@ -24,8 +24,8 @@ class AdvancedSelect extends Field
             return [
                 'id' => $item->id,
                 'title' => $item->title(),
-                'view' => view($field['view'], ['item' => $item])->render(),
-                'selected_view' => view($field['selected_view'], ['item' => $item])->render(),
+                'view' => isset($field['view']) ? view($field['view'], ['item' => $item])->render() : false,
+                'selected_view' => isset($field['selected_view']) ? view($field['selected_view'], ['item' => $item])->render() : false,
             ];
         })
         ->toArray();
@@ -169,8 +169,8 @@ class AdvancedSelect extends Field
             return [
                 'id' => $item->id,
                 'title' => $item->title(),
-                'view' => view($field['view'], ['item' => $item])->render(),
-                'selected_view' => view($field['selected_view'], ['item' => $item])->render(),
+                'view' => isset($field['view']) ? view($field['view'], ['item' => $item])->render() : false,
+                'selected_view' => isset($field['selected_view']) ? view($field['selected_view'], ['item' => $item])->render() : false,
             ];
         })->toArray();
     }
@@ -186,8 +186,8 @@ class AdvancedSelect extends Field
             return [
                 'id' => $item->id,
                 'title' => $item->title(),
-                'view' => view($field['view'], ['item' => $item])->render(),
-                'selected_view' => view($field['selected_view'], ['item' => $item])->render(),
+                'view' => isset($field['view']) ? view($field['view'], ['item' => $item])->render() : false,
+                'selected_view' => isset($field['selected_view']) ? view($field['selected_view'], ['item' => $item])->render() : false,
 
             ];
         })->toArray();
