@@ -4,7 +4,7 @@ namespace Aura\Base\Fields;
 
 class Heading extends Field
 {
-    public $component = 'aura::fields.heading';
+    public $edit = 'aura::fields.heading';
 
     public $optionGroup = 'Layout Fields';
 

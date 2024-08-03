@@ -5,12 +5,14 @@ namespace Aura\Base\Livewire\Table;
 use Aura\Base\Facades\Aura;
 use Aura\Base\Livewire\Table\Traits\BulkActions;
 use Aura\Base\Livewire\Table\Traits\Filters;
+use Aura\Base\Livewire\Table\Traits\Kanban;
 use Aura\Base\Livewire\Table\Traits\PerPagePagination;
 use Aura\Base\Livewire\Table\Traits\QueryFilters;
 use Aura\Base\Livewire\Table\Traits\Search;
 use Aura\Base\Livewire\Table\Traits\Select;
 use Aura\Base\Livewire\Table\Traits\Settings;
 use Aura\Base\Livewire\Table\Traits\Sorting;
+use Aura\Base\Livewire\Table\Traits\SwitchView;
 use Aura\Base\Resource;
 use Aura\Base\Resources\User;
 use Livewire\Attributes\Computed;
@@ -23,12 +25,14 @@ class Table extends Component
 {
     use BulkActions;
     use Filters;
+    use Kanban;
     use PerPagePagination;
     use QueryFilters;
     use Search;
     use Select;
     use Settings;
     use Sorting;
+    use SwitchView;
 
     public $bulkActionsView = 'aura::components.table.bulkActions';
 
@@ -295,8 +299,6 @@ class Table extends Component
             }
         }
 
-        $this->initiateSettings();
-
         $this->setTaxonomyFilters();
     }
 
@@ -327,7 +329,7 @@ class Table extends Component
      */
     public function render()
     {
-        return view('aura::livewire.table.table', [
+        return view('aura::livewire.table', [
             'parent' => $this->parent,
             'rows' => $this->rows(),
         ]);
@@ -385,9 +387,16 @@ class Table extends Component
         $this->lastClickedRow = $id;
     }
 
-    public function setPageTen()
+    public function updateCardStatus($cardId, $newStatus)
     {
-        $this->setPage(10);
+        $card = $this->model->find($cardId);
+        if ($card) {
+            $card->status = $newStatus;
+            $card->save();
+            $this->notify('Card status updated successfully');
+        } else {
+            $this->notify('Card not found', 'error');
+        }
     }
 
     /**
@@ -454,6 +463,11 @@ class Table extends Component
             } catch (\Exception $e) {
                 // Handle the exception
             }
+        }
+
+        // Kanban Query
+        if ($this->currentView == 'kanban') {
+            $query = $this->applyKanbanQuery($query);
         }
 
         // when model is instance Resource, eager load meta

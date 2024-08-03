@@ -7,7 +7,7 @@ use InvalidArgumentException;
 
 class Tags extends Field
 {
-    public $component = 'aura::fields.tags';
+    public $edit = 'aura::fields.tags';
 
     public bool $taxonomy = true;
 

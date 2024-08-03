@@ -4,7 +4,7 @@ namespace Aura\Base\Fields;
 
 class AdvancedSelect extends Field
 {
-    public $component = 'aura::fields.advanced-select';
+    public $edit = 'aura::fields.advanced-select';
 
     public $optionGroup = 'JS Fields';
 
@@ -18,17 +18,17 @@ class AdvancedSelect extends Field
         $field = $request->fullField;
 
         $values = $model->searchIn($searchableFields, $request->search, $model)
-        ->take(5)
-        ->get()
-        ->map(function ($item) use ($field) {
-            return [
-                'id' => $item->id,
-                'title' => $item->title(),
-                'view' => isset($field['view']) ? view($field['view'], ['item' => $item])->render() : false,
-                'selected_view' => isset($field['selected_view']) ? view($field['selected_view'], ['item' => $item])->render() : false,
-            ];
-        })
-        ->toArray();
+            ->take(5)
+            ->get()
+            ->map(function ($item) use ($field) {
+                return [
+                    'id' => $item->id,
+                    'title' => $item->title(),
+                    'view' => isset($field['view']) ? view($field['view'], ['item' => $item])->render() : null,
+                    'selected_view' => isset($field['selected_view']) ? view($field['selected_view'], ['item' => $item])->render() : null,
+                ];
+            })
+            ->toArray();
 
         return $values;
     }
@@ -169,8 +169,8 @@ class AdvancedSelect extends Field
             return [
                 'id' => $item->id,
                 'title' => $item->title(),
-                'view' => isset($field['view']) ? view($field['view'], ['item' => $item])->render() : false,
-                'selected_view' => isset($field['selected_view']) ? view($field['selected_view'], ['item' => $item])->render() : false,
+                'view' => isset($field['view']) ? view($field['view'], ['item' => $item])->render() : null,
+                'selected_view' => isset($field['selected_view']) ? view($field['selected_view'], ['item' => $item])->render() : null,
             ];
         })->toArray();
     }
@@ -186,8 +186,8 @@ class AdvancedSelect extends Field
             return [
                 'id' => $item->id,
                 'title' => $item->title(),
-                'view' => isset($field['view']) ? view($field['view'], ['item' => $item])->render() : false,
-                'selected_view' => isset($field['selected_view']) ? view($field['selected_view'], ['item' => $item])->render() : false,
+                'view' => isset($field['view']) ? view($field['view'], ['item' => $item])->render() : null,
+                'selected_view' => isset($field['selected_view']) ? view($field['selected_view'], ['item' => $item])->render() : null,
 
             ];
         })->toArray();

@@ -4,7 +4,7 @@ namespace Aura\Base\Fields;
 
 class Repeater extends Field
 {
-    public $component = 'aura::fields.repeater';
+    public $edit = 'aura::fields.repeater';
 
     public bool $group = true;
 

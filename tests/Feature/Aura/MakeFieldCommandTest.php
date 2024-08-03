@@ -38,7 +38,7 @@ test('field command and contents', function () {
     expect($fieldClass)->toContain("namespace App\Aura\Fields;");
     expect($fieldClass)->toContain('use Aura\Base\Fields\Field;');
     expect($fieldClass)->toContain('class TestField extends Field');
-    expect($fieldClass)->toContain('public $component = \'fields.testfield\';');
+    expect($fieldClass)->toContain('public $edit = \'fields.testfield\';');
     expect($fieldClass)->toContain('public $view = \'fields.testfield-view\';');
     expect($fieldClass)->toContain('public function getFields()');
 

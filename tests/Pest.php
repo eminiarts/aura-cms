@@ -48,11 +48,6 @@ expect()->extend('toBeOne', function () {
 |
 */
 
-function something()
-{
-    // ..
-}
-
 function createPost($type)
 {
     return Post::factory()->create(['type' => $type]);

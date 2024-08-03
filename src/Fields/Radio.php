@@ -4,7 +4,7 @@ namespace Aura\Base\Fields;
 
 class Radio extends Field
 {
-    public $component = 'aura::fields.radio';
+    public $edit = 'aura::fields.radio';
 
     public $optionGroup = 'Choice Fields';
 

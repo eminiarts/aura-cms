@@ -4,7 +4,7 @@ namespace Aura\Base\Fields;
 
 class SelectRelation extends Field
 {
-    public $component = 'aura::fields.select-relation';
+    public $edit = 'aura::fields.select-relation';
 
     // public $view = 'components.fields.select-relation';
 

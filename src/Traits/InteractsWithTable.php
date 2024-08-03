@@ -24,12 +24,22 @@ trait InteractsWithTable
         return 'list';
     }
 
+    public function kanbanQuery($query)
+    {
+        return false;
+    }
+
     public function showTableSettings()
     {
         return true;
     }
 
     public function tableGridView()
+    {
+        return false;
+    }
+
+    public function tableKanbanView()
     {
         return false;
     }
@@ -41,6 +51,6 @@ trait InteractsWithTable
 
     public function tableView()
     {
-        return 'aura::components.table.table';
+        return 'aura::components.table.list-view';
     }
 }

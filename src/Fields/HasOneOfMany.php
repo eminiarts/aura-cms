@@ -4,7 +4,7 @@ namespace Aura\Base\Fields;
 
 class HasOneOfMany extends Field
 {
-    public $component = 'aura::fields.has-one-of-many';
+    public $edit = 'aura::fields.has-one-of-many';
 
     public bool $group = false;
 

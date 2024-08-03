@@ -19,7 +19,7 @@
                 </style>
                 <div wire:key="resource-field-{{ $key }}"
                     id="resource-field-{{ optional($field)['slug'] }}-wrapper">
-                    <x-dynamic-component :component="$field['field']->component" :field="$field" :form="$form" />
+                    <x-dynamic-component :component="$field['field']->component()" :field="$field" :form="$form" />
                 </div>
             @endforeach
         </div>

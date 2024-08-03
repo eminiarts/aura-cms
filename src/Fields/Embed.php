@@ -4,7 +4,7 @@ namespace Aura\Base\Fields;
 
 class Embed extends Field
 {
-    public $component = 'aura::fields.embed';
+    public $edit = 'aura::fields.embed';
 
     // public $view = 'components.fields.embed';
 

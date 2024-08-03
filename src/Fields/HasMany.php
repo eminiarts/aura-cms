@@ -7,7 +7,7 @@ use Aura\Flows\Resources\Operation;
 
 class HasMany extends Field
 {
-    public $component = 'aura::fields.has-many';
+    public $edit = 'aura::fields.has-many';
 
     public bool $group = false;
 

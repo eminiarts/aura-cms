@@ -4,7 +4,7 @@ namespace Aura\Base\Fields;
 
 class LivewireComponent extends Field
 {
-    public $component = 'aura::fields.livewire-component';
+    public $edit = 'aura::fields.livewire-component';
 
     // public $view = 'components.fields.livewire-component';
 

@@ -1,0 +1,15 @@
+<?php
+
+namespace {{ namespace }};
+
+use {{ baseClass }};
+
+class {{ class }} extends {{ componentType }}
+{
+    // Add your custom logic here
+
+    public function mount($id, $slug = '{{ resourceClass }}')
+    {
+        parent::mount($slug, $id);
+    }
+}

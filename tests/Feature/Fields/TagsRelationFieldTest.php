@@ -41,8 +41,8 @@ test('TagsRelationFieldModel - Saving Tags', function () {
 
     $model = TagsRelationFieldModel::create(['users' => $users->pluck('id')]);
 
-    expect($model->tags)->toHaveCount(3);
+    expect($model->users)->toHaveCount(3);
 
     expect($model->fields['users'])->toBeArray();
-    expect($model->fields['users'])->toEqual(Tag::get()->pluck('id')->toArray());
+    expect($model->fields['users'])->toEqual($users->pluck('id')->toArray());
 });

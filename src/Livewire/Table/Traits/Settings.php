@@ -40,17 +40,18 @@ trait Settings
                 'table' => 'aura::components.table.index',
                 'list' => $this->model->tableView(),
                 'grid' => $this->model->tableGridView(),
+                'kanban' => $this->model->tableKanbanView(),
                 'filter' => 'aura::components.table.filter',
                 'header' => 'aura::components.table.header',
                 'row' => $this->model->rowView(),
                 'bulkActions' => 'aura::components.table.bulkActions',
-                'table_header' => 'aura::components.table.table_header',
+                'table-header' => 'aura::components.table.table-header',
                 'table_footer' => 'aura::components.table.footer',
             ],
         ];
     }
 
-    public function initiateSettings()
+    public function mountSettings()
     {
         $this->settings = $this->array_merge_recursive_distinct($this->defaultSettings(), $this->settings ?: []);
     }
