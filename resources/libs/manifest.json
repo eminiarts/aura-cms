@@ -603,7 +603,7 @@
     "src": "resources/js/pickr.js"
   },
   "resources/js/quill.js": {
-    "file": "assets/quill-6ac07fb9.js",
+    "file": "assets/quill-1e8f153e.js",
     "imports": [
       "__commonjsHelpers-725317a4.js"
     ],
