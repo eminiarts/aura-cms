@@ -4,7 +4,7 @@ namespace Aura\Base\Fields;
 
 class ID extends Field
 {
-    public $component = 'aura::fields.text';
+    public $edit = 'aura::fields.text';
 
     public bool $on_forms = false;
 

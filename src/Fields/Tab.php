@@ -4,7 +4,7 @@ namespace Aura\Base\Fields;
 
 class Tab extends Field
 {
-    public $component = 'aura::fields.tab';
+    public $edit = 'aura::fields.tab';
 
     public bool $group = true;
 

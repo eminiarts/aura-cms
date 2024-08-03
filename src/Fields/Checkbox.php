@@ -4,7 +4,7 @@ namespace Aura\Base\Fields;
 
 class Checkbox extends Field
 {
-    public $component = 'aura::fields.checkbox';
+    public $edit = 'aura::fields.checkbox';
 
     public $optionGroup = 'Choice Fields';
 

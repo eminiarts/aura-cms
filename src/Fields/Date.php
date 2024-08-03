@@ -4,7 +4,7 @@ namespace Aura\Base\Fields;
 
 class Date extends Field
 {
-    public $component = 'aura::fields.date';
+    public $edit = 'aura::fields.date';
 
     public $optionGroup = 'Input Fields';
 

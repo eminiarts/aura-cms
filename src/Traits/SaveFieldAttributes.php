@@ -16,6 +16,11 @@ trait SaveFieldAttributes
     {
         static::saving(function ($post) {
 
+            // ray('saving', $post->attributes)->blue();
+            if ($post->name == 'Test Post 1') {
+                // dd($post)->red();
+            }
+
             if (! optional($post->attributes)['fields']) {
                 $post->attributes['fields'] = [];
             }
@@ -63,14 +68,21 @@ trait SaveFieldAttributes
                     return;
                 }
 
+                // ray($post->usesCustomTable(), $post->usesCustomMeta());
                 // Dont unset Field if it is uses customTable
                 if ($post->usesCustomTable() && ! $post->usesCustomMeta()) {
                     return;
                 }
+                // if ($post->usesCustomTable() && $post->usesCustomMeta()) {
+                //     return;
+                // }
 
                 // Unset fields from the attributes
                 unset($post->attributes[$slug]);
             });
+
+            // ray('saving', $post)->green();
+
         });
     }
 

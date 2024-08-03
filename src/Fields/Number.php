@@ -4,7 +4,7 @@ namespace Aura\Base\Fields;
 
 class Number extends Field
 {
-    public $component = 'aura::fields.number';
+    public $edit = 'aura::fields.number';
 
     public $optionGroup = 'Input Fields';
 

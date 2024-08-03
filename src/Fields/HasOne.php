@@ -6,7 +6,7 @@ class HasOne extends AdvancedSelect
 {
     public bool $api = true;
 
-    public $component = 'aura::fields.has-one';
+    public $edit = 'aura::fields.has-one';
 
     public bool $group = false;
 

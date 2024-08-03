@@ -6,7 +6,7 @@ use Aura\Base\Resources\Attachment;
 
 class Image extends Field
 {
-    public $component = 'aura::fields.image';
+    public $edit = 'aura::fields.image';
 
     public $optionGroup = 'Media Fields';
 

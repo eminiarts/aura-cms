@@ -4,7 +4,7 @@ namespace Aura\Base\Fields;
 
 class Group extends Field
 {
-    public $component = 'aura::fields.group';
+    public $edit = 'aura::fields.group';
 
     public bool $group = true;
 

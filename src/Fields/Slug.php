@@ -4,7 +4,7 @@ namespace Aura\Base\Fields;
 
 class Slug extends Field
 {
-    public $component = 'aura::fields.slug';
+    public $edit = 'aura::fields.slug';
 
     public $optionGroup = 'Input Fields';
 

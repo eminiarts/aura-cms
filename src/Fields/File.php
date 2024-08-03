@@ -4,7 +4,7 @@ namespace Aura\Base\Fields;
 
 class File extends Field
 {
-    public $component = 'aura::fields.file';
+    public $edit = 'aura::fields.file';
 
     public $optionGroup = 'Media Fields';
 

@@ -4,9 +4,6 @@ namespace Aura\Base\Fields;
 
 class Status extends Field
 {
-    public $component = 'aura::fields.status';
-
-    // Change all $component to $edit?
     public $edit = 'aura::fields.status';
 
     public $index = 'aura::fields.status-index';

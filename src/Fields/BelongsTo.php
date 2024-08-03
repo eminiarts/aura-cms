@@ -7,7 +7,7 @@ use Illuminate\Support\Str;
 
 class BelongsTo extends Field
 {
-    public $component = 'aura::fields.belongsto';
+    public $edit = 'aura::fields.belongsto';
 
     public bool $group = false;
 
@@ -102,7 +102,7 @@ class BelongsTo extends Field
     public function display($field, $value, $model)
     {
         if (optional($field)['display_view']) {
-            return view($field['display_view'], ['row' => $model, 'field' => $field])->render();
+            return view($field['display_view'], ['row' => $model, 'field' => $field, 'value' => $value])->render();
         }
 
         if ($field['resource'] && $value) {

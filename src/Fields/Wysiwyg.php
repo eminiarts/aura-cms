@@ -4,7 +4,7 @@ namespace Aura\Base\Fields;
 
 class Wysiwyg extends Field
 {
-    public $component = 'aura::fields.wysiwyg';
+    public $edit = 'aura::fields.wysiwyg';
 
     public $optionGroup = 'JS Fields';
 

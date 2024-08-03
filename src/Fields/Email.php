@@ -4,7 +4,7 @@ namespace Aura\Base\Fields;
 
 class Email extends Field
 {
-    public $component = 'aura::fields.email';
+    public $edit = 'aura::fields.email';
 
     public $optionGroup = 'Input Fields';
 
