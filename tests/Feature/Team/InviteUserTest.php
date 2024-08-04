@@ -58,7 +58,7 @@ test('user gets correct role', function () {
 
     // Create a new Role
     $role = Role::create([
-        'title' => 'Test Role',
+        'name' => 'Test Role',
         'slug' => 'test_role',
         'permissions' => [
             'test_permission' => true,
@@ -254,9 +254,7 @@ test('user can register using an invitation', function () {
 
     $this->assertEquals($team->id, $user->current_team_id);
 
-    // dd($user->fields['roles'], $invitation->role, $user->toArray());
-
-    $this->assertEquals($user->fields['roles'][0], $invitation->role);
+    expect($user->roles->first()->id)->toEqual($invitation->role);
 
     $this->assertDatabaseMissing('team_invitations', ['id' => $invitation->id]);
 });
@@ -288,7 +286,12 @@ test('email and role are required in the invite user component', function () {
     // Attach the user to the team
     $user = User::find($user->id);
     $user->update(['fields' => ['roles' => [Role::first()->id]]]);
-    $user->teams()->attach($team->id);
+
+    //$role->users()->sync([$user->id => ['resource_type' => Role::class]]);
+
+    // $user->roles()->sync([Role::first()->id => ['resource_type' => User::class]]);
+
+    // $user->teams()->attach($team->id);
 
     livewire(InviteUser::class, ['team' => $team])
         ->set('form', ['fields' => [
