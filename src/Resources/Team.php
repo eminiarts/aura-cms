@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Cache;
 use Aura\Base\Database\Factories\TeamFactory;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 
 class Team extends Resource
@@ -238,6 +239,11 @@ class Team extends Resource
                   ->where('post_relations.related_type', '=', User::class);
          })
          ->where('post_relations.related_id', '=', DB::raw('users.id'));
+    }
+
+       public function roles(): HasMany
+    {
+        return $this->hasMany(Role::class);
     }
 
 
