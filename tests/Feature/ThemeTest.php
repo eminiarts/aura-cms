@@ -16,7 +16,7 @@ uses(RefreshDatabase::class);
 beforeEach(fn () => $this->actingAs($this->user = createSuperAdmin()));
 
 test('Team Settings Component can be rendered', function () {
-    $role = Role::create(['type' => 'Role', 'title' => 'Super Admin', 'slug' => 'super_admin', 'description' => 'Super Admin has can perform everything.', 'super_admin' => true, 'permissions' => []]);
+    $role = Role::create(['name' => 'Super Admin', 'slug' => 'super_admin', 'description' => 'Super Admin has can perform everything.', 'super_admin' => true, 'permissions' => []]);
 
     // Attach to User
     $user = \Aura\Base\Resources\User::find(1);
@@ -29,7 +29,7 @@ test('Team Settings Component can be rendered', function () {
 });
 
 test('Default Team Settings are created', function () {
-    $role = Role::create(['type' => 'Role', 'title' => 'Super Admin', 'slug' => 'super_admin', 'description' => 'Super Admin has can perform everything.', 'super_admin' => true, 'permissions' => []]);
+    $role = Role::create(['name' => 'Super Admin', 'slug' => 'super_admin', 'description' => 'Super Admin has can perform everything.', 'super_admin' => true, 'permissions' => []]);
 
     // Attach to User
     $user = \Aura\Base\Resources\User::find(1);
@@ -65,7 +65,7 @@ test('Default Team Settings are created', function () {
 });
 
 test('Team Settings can be saved', function () {
-    $role = Role::create(['type' => 'Role', 'title' => 'Super Admin', 'slug' => 'super_admin', 'description' => 'Super Admin has can perform everything.', 'super_admin' => true, 'permissions' => []]);
+    $role = Role::create(['name' => 'Super Admin', 'slug' => 'super_admin', 'description' => 'Super Admin has can perform everything.', 'super_admin' => true, 'permissions' => []]);
 
     // Attach to User
     $user = \Aura\Base\Resources\User::find(1);
@@ -78,7 +78,7 @@ test('Team Settings can be saved', function () {
     $secondTeam = $teams->last();
 
     // we need to create a role for the second team
-    $role2 = Role::create(['type' => 'Role', 'title' => 'Super Admin', 'slug' => 'super_admin', 'description' => 'Super Admin has can perform everything.', 'super_admin' => true, 'permissions' => []]);
+    $role2 = Role::create(['name' => 'Super Admin', 'slug' => 'super_admin', 'description' => 'Super Admin has can perform everything.', 'super_admin' => true, 'permissions' => []]);
 
     $this->user->teams()->attach([
         $secondTeam->id => ['key' => 'roles', 'value' => $role2->id],

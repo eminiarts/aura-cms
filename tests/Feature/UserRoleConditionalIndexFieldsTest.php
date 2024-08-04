@@ -56,7 +56,7 @@ class UserRoleConditionalIndexFieldsModel extends Resource
 }
 
 test('super admin can view all headers', function () {
-    $role = Role::create(['type' => 'Role', 'title' => 'Super Admin', 'slug' => 'super_admin', 'description' => 'Super Admin has can perform everything.', 'super_admin' => true, 'permissions' => []]);
+    $role = Role::create(['name' => 'Super Admin', 'slug' => 'super_admin', 'description' => 'Super Admin has can perform everything.', 'super_admin' => true, 'permissions' => []]);
 
     // Attach role to User
     $this->user->update(['roles' => [$role->id]]);
@@ -77,7 +77,7 @@ test('admin can view his headers', function () {
     $model = new UserRoleConditionalIndexFieldsModel;
 
     // Assert Admin sees only Text 2 and ID
-    $role = Role::create(['type' => 'Role', 'title' => 'Admin', 'slug' => 'admin', 'description' => 'Admin has can perform everything.', 'super_admin' => false, 'permissions' => []]);
+    $role = Role::create(['name' => 'Admin', 'slug' => 'admin', 'description' => 'Admin has can perform everything.', 'super_admin' => false, 'permissions' => []]);
 
     // Attach role to User
     $this->user->update(['roles' => [$role->id]]);
@@ -97,7 +97,7 @@ test('user can view his headers', function () {
     $model = new UserRoleConditionalIndexFieldsModel;
 
     // Assert Moderator sees only Text 3 and ID
-    $role = Role::create(['type' => 'Role', 'title' => 'Moderator', 'slug' => 'moderator', 'description' => 'Moderator has can perform everything.', 'super_admin' => false, 'permissions' => []]);
+    $role = Role::create(['name' => 'Moderator', 'slug' => 'moderator', 'description' => 'Moderator has can perform everything.', 'super_admin' => false, 'permissions' => []]);
 
     // Attach role to User
     $this->user->update(['roles' => [$role->id]]);
@@ -148,7 +148,7 @@ test('super admin can get all fields', function () {
 });
 
 test('admin can get all fields except text1', function () {
-    $role = Role::create(['type' => 'Role', 'title' => 'Admin', 'slug' => 'admin', 'name' => 'Admin', 'description' => 'Admin has can perform everything.', 'super_admin' => false, 'permissions' => []]);
+    $role = Role::create(['name' => 'Admin', 'slug' => 'admin', 'name' => 'Admin', 'description' => 'Admin has can perform everything.', 'super_admin' => false, 'permissions' => []]);
 
     // Attach role to User
     $this->user->update(['roles' => [$role->id]]);
@@ -179,7 +179,7 @@ test('admin can get all fields except text1', function () {
 });
 
 test('user can get all fields except text1 and text2', function () {
-    $role = Role::create(['type' => 'Role', 'title' => 'User', 'slug' => 'user', 'name' => 'User', 'description' => 'Simple User', 'super_admin' => false, 'permissions' => []]);
+    $role = Role::create(['name' => 'User', 'slug' => 'user', 'name' => 'User', 'description' => 'Simple User', 'super_admin' => false, 'permissions' => []]);
 
     // Attach role to User
     $this->user->update(['roles' => [$role->id]]);
