@@ -66,6 +66,12 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
         'name', 'email', 'password', 'fields', 'current_team_id', 'email_verified_at', 'two_factor_secret', 'two_factor_recovery_codes', 'two_factor_confirmed_at', 'remember_token',
     ];
 
+    public function getMorphClass(): string
+    {
+        // dd($this::class);
+        return $this::class;
+    } 
+
     protected static ?string $group = 'Admin';
 
     /**
@@ -250,7 +256,7 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
                 'slug' => 'roles',
                 'resource' => 'Aura\\Base\\Resources\\Role',
                 'type' => 'Aura\\Base\\Fields\\AdvancedSelect',
-                'validation' => 'required',
+                'validation' => '',
                 'conditional_logic' => [],
                 'wrapper' => '',
                 'on_index' => false,
@@ -698,35 +704,35 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
         });
     }
 
-    public function roles()
-    {
-        $roles = $this->belongsToMany(Role::class, 'user_meta', 'user_id', 'value')
-            ->wherePivot('key', 'roles');
+    // public function roles()
+    // {
+    //     $roles = $this->belongsToMany(Role::class, 'user_meta', 'user_id', 'value')
+    //         ->wherePivot('key', 'roles');
 
-        if (config('aura.teams')) {
-            $roles = $roles->withPivot('team_id');
-        }
+    //     if (config('aura.teams')) {
+    //         $roles = $roles->withPivot('team_id');
+    //     }
 
-        return config('aura.teams') ? $roles->wherePivot('team_id', $this->current_team_id) : $roles;
-    }
+    //     return config('aura.teams') ? $roles->wherePivot('team_id', $this->current_team_id) : $roles;
+    // }
 
-    public function setRolesField($value)
-    {
-        // Save the roles
-        if (config('aura.teams')) {
-            $this->roles()->syncWithPivotValues($value, ['key' => 'roles', 'team_id' => $this->current_team_id]);
-        } else {
-            $this->roles()->syncWithPivotValues($value, ['key' => 'roles']);
-        }
+    // public function setRolesField($value)
+    // {
+    //     // Save the roles
+    //     if (config('aura.teams')) {
+    //         $this->roles()->syncWithPivotValues($value, ['key' => 'roles', 'team_id' => $this->current_team_id]);
+    //     } else {
+    //         $this->roles()->syncWithPivotValues($value, ['key' => 'roles']);
+    //     }
 
-        // Unset the roles field
-        unset($this->attributes['fields']['roles']);
+    //     // Unset the roles field
+    //     unset($this->attributes['fields']['roles']);
 
-        // Clear Cache 'user.' . $this->id . '.roles'
-        Cache::forget('user.'.$this->id.'.roles');
+    //     // Clear Cache 'user.' . $this->id . '.roles'
+    //     Cache::forget('user.'.$this->id.'.roles');
 
-        return $this;
-    }
+    //     return $this;
+    // }
 
     /**
      * Switch the user's context to the given team.

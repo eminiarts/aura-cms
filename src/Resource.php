@@ -77,6 +77,11 @@ class Resource extends Model
         return parent::__call($method, $parameters);
     }
 
+    // public function getMorphClass(): string
+    // {
+    //     return $this->getType();
+    // } 
+
     /**
      * @param  string  $key
      * @return mixed
