@@ -130,7 +130,7 @@ class AdvancedSelect extends Field
     {
         // ray('relationship', $model, $field)->blue();
 
-        $morphClass= $field['resource'];
+        $morphClass = $field['resource'];
 
         return $model
             ->morphToMany($morphClass, 'related', 'post_relations', 'related_id', 'resource_id')

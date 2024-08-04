@@ -34,7 +34,7 @@ trait SaveFieldAttributes
 
                     $class = $post->fieldClassBySlug($slug);
 
-                    if($slug == 'password') {
+                    if ($slug == 'password') {
                         // ray('Password Field', $class)->red();
                     }
 

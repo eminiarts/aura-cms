@@ -106,7 +106,7 @@ trait SaveMetaFields
                 foreach ($post->metaFields as $key => $value) {
 
                     ray($key, $value)->red();
-                    
+
                     // if there is a function set{Slug}Field on the model, use it
                     $method = 'set'.Str::studly($key).'Field';
 
