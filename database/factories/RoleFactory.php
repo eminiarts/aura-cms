@@ -30,8 +30,7 @@ class RoleFactory extends Factory
             'slug' => str($name)->slug(),
             'user_id' => 1,
             'team_id' => 1,
-            'parent_id' => null,
-            'order' => null,
+            // 'order' => null,
         ];
     }
 }
