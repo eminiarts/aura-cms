@@ -2,9 +2,10 @@
 
 namespace Aura\Base\Resources;
 
-use Aura\Base\Jobs\GenerateAllResourcePermissions;
-use Aura\Base\Models\Meta;
 use Aura\Base\Resource;
+use Aura\Base\Models\Meta;
+use Aura\Base\Jobs\GenerateAllResourcePermissions;
+use Illuminate\Database\Eloquent\Relations\MorphToMany;
 
 class Role extends Resource
 {
@@ -165,9 +166,11 @@ class Role extends Resource
         }
     }
 
-    public function users()
+    public function users(): MorphToMany
     {
-        return $this->belongsToMany(User::class, 'user_meta', 'value', 'user_id')
-            ->wherePivot('key', 'roles');
+        return $this->morphedByMany(User::class, 'related', 'post_relations', 'resource_id', 'related_id')
+            ->withTimestamps()
+            ->withPivot('resource_type')
+            ->where('resource_type', Role::class);
     }
 }
