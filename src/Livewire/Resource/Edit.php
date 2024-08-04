@@ -114,9 +114,9 @@ class Edit extends Component
     {
         $this->validate();
 
-        // ray()->clearScreen();
+        ray()->clearScreen();
         // dd('saving', $this->form, $this->model);
-        // ray('saving', $this->form['fields']);
+        ray('saving', $this->form['fields']);
 
         // unset($this->form['fields']['group']);
 
