@@ -8,39 +8,6 @@ use Aura\Base\Resource;
 
 class Role extends Resource
 {
-    public static $customTable = true;
-
-    public static $globalSearch = false;
-
-    public static ?string $slug = 'role';
-
-    public static ?int $sort = 2;
-
-    public static string $type = 'Role';
-
-    public static bool $usesMeta = false;
-
-    protected static $dropdown = 'Users';
-
-    protected static ?string $group = 'Aura';
-
-    protected $table = 'roles';
-
-    protected $with = [];
-
-    protected $casts = [
-        'permissions' => 'array',
-    ];
-
-    protected $fillable = [
-        'name',
-        'slug',
-        'description',
-        'super_admin',
-        'permissions',
-        'team_id',
-    ];
-
     public array $actions = [
         'createMissingPermissions' => [
             'label' => 'Create Missing Permissions',
@@ -57,6 +24,39 @@ class Role extends Resource
     public array $bulkActions = [
         'deleteSelected' => 'Delete',
     ];
+
+    public static $customTable = true;
+
+    public static $globalSearch = false;
+
+    public static ?string $slug = 'role';
+
+    public static ?int $sort = 2;
+
+    public static string $type = 'Role';
+
+    public static bool $usesMeta = false;
+
+    protected $casts = [
+        'permissions' => 'array',
+    ];
+
+    protected static $dropdown = 'Users';
+
+    protected $fillable = [
+        'name',
+        'slug',
+        'description',
+        'super_admin',
+        'permissions',
+        'team_id',
+    ];
+
+    protected static ?string $group = 'Aura';
+
+    protected $table = 'roles';
+
+    protected $with = [];
 
     public function createMissingPermissions()
     {

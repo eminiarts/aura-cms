@@ -66,12 +66,6 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
         'name', 'email', 'password', 'fields', 'current_team_id', 'email_verified_at', 'two_factor_secret', 'two_factor_recovery_codes', 'two_factor_confirmed_at', 'remember_token',
     ];
 
-    public function getMorphClass(): string
-    {
-        // dd($this::class);
-        return $this::class;
-    } 
-
     protected static ?string $group = 'Admin';
 
     /**
@@ -408,6 +402,12 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
         return $initials;
     }
 
+    public function getMorphClass(): string
+    {
+        // dd($this::class);
+        return $this::class;
+    }
+
     public function getOption($option)
     {
         $option = 'user.'.$this->id.'.'.$option;
@@ -626,16 +626,13 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
 
     public function indexQuery($query)
     {
-        // Query where user_meta key = roles and team_id = auth()->user()->current_team_id
         if (config('aura.teams')) {
-            return $query->whereHas('meta', function ($query) {
-                $query->where('key', 'roles')->where('team_id', auth()->user()->current_team_id);
+            return $query->whereHas('roles', function ($query) {
+                $query->where('team_id', auth()->user()->current_team_id);
             });
         }
 
-        return $query->whereHas('meta', function ($query) {
-            $query->where('key', 'roles');
-        });
+        return $query->whereHas('roles');
     }
 
     /**

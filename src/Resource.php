@@ -80,7 +80,7 @@ class Resource extends Model
     // public function getMorphClass(): string
     // {
     //     return $this->getType();
-    // } 
+    // }
 
     /**
      * @param  string  $key
