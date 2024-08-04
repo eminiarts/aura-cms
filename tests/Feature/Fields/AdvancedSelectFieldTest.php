@@ -165,7 +165,7 @@ it('returns field values for a valid request', function () {
 
     $response->assertStatus(200)
         ->assertJson([
-            ['id' => $role->id, 'title' => $role->title()],
+            ['id' => $role->id, 'title' => $role->name()],
         ]);
 });
 

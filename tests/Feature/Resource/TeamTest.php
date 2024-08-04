@@ -48,6 +48,6 @@ test('Team create also creates a super_admin Role', function () {
     $role = Role::where('slug', 'super_admin')->where('team_id', $team->id)->first();
 
     expect($role)->not->toBeNull();
-    expect($role->title)->toEqual('Super Admin');
+    expect($role->name)->toEqual('Super Admin');
     expect($role->super_admin)->toBeTrue();
 });

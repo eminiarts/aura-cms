@@ -40,6 +40,7 @@ class Role extends Resource
 
     protected $casts = [
         'permissions' => 'array',
+        'super_admin' => 'boolean',
     ];
 
     protected static $dropdown = 'Users';
