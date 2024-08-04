@@ -329,7 +329,7 @@ test('role condition as a Admin', function () {
     $role = Role::create(['name' => 'Super Admin', 'slug' => 'admin', 'name' => 'Super Admin', 'description' => 'Super Admin has can perform everything.', 'admin' => false, 'permissions' => []]);
 
     // assert there is a role in the db
-    $this->assertDatabaseHas('posts', ['type' => 'Role', 'id' => $role->id]);
+    $this->assertDatabaseHas('roles', ['id' => $role->id]);
 
     $user = User::factory()->create();
 
