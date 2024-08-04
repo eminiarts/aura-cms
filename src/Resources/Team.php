@@ -2,11 +2,13 @@
 
 namespace Aura\Base\Resources;
 
-use Aura\Base\Database\Factories\TeamFactory;
-use Aura\Base\Models\TeamMeta;
 use Aura\Base\Resource;
-use Illuminate\Database\Eloquent\SoftDeletes;
+use Aura\Base\Models\TeamMeta;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Cache;
+use Aura\Base\Database\Factories\TeamFactory;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 
 class Team extends Resource
 {
@@ -210,10 +212,35 @@ class Team extends Resource
         Cache::forget($option);
     }
 
-    public function users()
+    // public function users()
+    // {
+    //     return $this->belongsToMany(User::class, 'post_relations', 'team_id', 'roleable_id')
+    //         ->where('roleable_type', User::class);
+    // }
+    // public function users()
+    // {
+    //     return $this->hasManyThrough(Role::class, User::class);
+    // }
+
+    public function users(): HasManyThrough
     {
-        return $this->belongsToMany(User::class, 'user_meta', 'team_id', 'user_id')->wherePivot('key', 'roles');
+        return $this->hasManyThrough(
+            User::class,
+            Role::class,
+            'team_id', // Foreign key on roles table...
+            'id', // Foreign key on users table...
+            'id', // Local key on teams table...
+            'id' // Local key on roles table...
+        )->distinct() // To avoid duplicate users
+         ->join('post_relations', function ($join) {
+             $join->on('post_relations.resource_id', '=', 'roles.id')
+                  ->where('post_relations.resource_type', '=', Role::class)
+                  ->where('post_relations.related_type', '=', User::class);
+         })
+         ->where('post_relations.related_id', '=', DB::raw('users.id'));
     }
+
+
 
     protected static function booted()
     {
@@ -254,12 +281,10 @@ class Team extends Resource
 
             // Attach the current user to the team
             if ($user) {
-                $team->users()->attach($user->id, [
-                    'key' => 'roles',
-                    'value' => $role->id,
-                ]);
+                // $role->users()->sync([$user->id]);
+                $role->users()->sync([$user->id => ['resource_type' => Role::class]]);
 
-                // Clear cache of Cache('user.'.$this->id.'.teams')
+                // Clear cache of Cache('user.'.$user->id.'.teams')
                 Cache::forget('user.'.$user->id.'.teams');
             }
         });

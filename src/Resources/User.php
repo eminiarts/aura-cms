@@ -16,6 +16,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Foundation\Auth\Access\Authorizable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rules\Password;
 use Lab404\Impersonate\Models\Impersonate;
@@ -535,6 +536,8 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
     {
         $cachedRoles = $this->cachedRoles()->pluck('slug');
 
+        ray($cachedRoles, $roles)->red();
+
         if (! $cachedRoles) {
             return false;
         }
@@ -786,6 +789,8 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
 
     protected function cachedRoles(): mixed
     {
+        ray('roles', $this->roles, DB::table('user_meta')->get(), DB::table('post_relations')->get())->blue();
+
         return $this->roles;
 
         return Cache::remember($this->getCacheKeyForRoles(), now()->addMinutes(60), function () {
