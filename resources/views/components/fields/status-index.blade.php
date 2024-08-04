@@ -1,4 +1,5 @@
-    @php
+<div class="truncate">
+        @php
         $status = $row->{$field['slug']};
         $statusOption = collect($field['options'])->firstWhere('key', $status);
     @endphp
@@ -8,3 +9,4 @@
         </span>
     @else
     @endif
+</div>
