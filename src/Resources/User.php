@@ -2,26 +2,27 @@
 
 namespace Aura\Base\Resources;
 
-use Aura\Base\Database\Factories\UserFactory;
-use Aura\Base\Models\UserMeta;
 use Aura\Base\Resource;
+use Illuminate\Support\Str;
+use Aura\Base\Models\UserMeta;
+use Laravel\Sanctum\HasApiTokens;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Auth\Authenticatable;
 use Illuminate\Auth\MustVerifyEmail;
-use Illuminate\Auth\Passwords\CanResetPassword;
-use Illuminate\Contracts\Auth\Access\Authorizable as AuthorizableContract;
-use Illuminate\Contracts\Auth\Authenticatable as AuthenticatableContract;
-use Illuminate\Contracts\Auth\CanResetPassword as CanResetPasswordContract;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Foundation\Auth\Access\Authorizable;
-use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Str;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Notifications\Notifiable;
 use Illuminate\Validation\Rules\Password;
 use Lab404\Impersonate\Models\Impersonate;
+use Aura\Base\Database\Factories\UserFactory;
 use Laravel\Fortify\TwoFactorAuthenticatable;
-use Laravel\Sanctum\HasApiTokens;
+use Illuminate\Auth\Passwords\CanResetPassword;
+use Illuminate\Foundation\Auth\Access\Authorizable;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Contracts\Auth\Authenticatable as AuthenticatableContract;
+use Illuminate\Contracts\Auth\Access\Authorizable as AuthorizableContract;
+use Illuminate\Contracts\Auth\CanResetPassword as CanResetPasswordContract;
 
 class User extends Resource implements AuthenticatableContract, AuthorizableContract, CanResetPasswordContract
 {
@@ -536,7 +537,7 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
     {
         $cachedRoles = $this->cachedRoles()->pluck('slug');
 
-        ray($cachedRoles, $roles)->red();
+        // ray($cachedRoles, $roles)->red();
 
         if (! $cachedRoles) {
             return false;
@@ -760,9 +761,18 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
      *
      * @return \Illuminate\Database\Eloquent\Relations\BelongsToMany
      */
-    public function teams()
+    public function teams(): BelongsToMany
     {
-        return $this->belongsToMany(Team::class, 'user_meta', 'user_id', 'team_id')->wherePivot('key', 'roles');
+        return $this->belongsToMany(Team::class, 'post_relations', 'related_id', 'resource_id')
+            ->withTimestamps()
+            ->withPivot('resource_type')
+            ->wherePivot('related_type', User::class)
+            ->whereHas('roles', function ($query) {
+                $query->where('post_relations.resource_type', Role::class)
+                    ->whereRaw('post_relations.resource_id = roles.id');
+            })
+            ->select('teams.*')
+            ->distinct();
     }
 
     public function title()
@@ -789,7 +799,7 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
 
     protected function cachedRoles(): mixed
     {
-        ray('roles', $this->roles, DB::table('user_meta')->get(), DB::table('post_relations')->get())->blue();
+        // ray('roles', $this->roles, DB::table('user_meta')->get(), DB::table('post_relations')->get())->blue();
 
         return $this->roles;
 
