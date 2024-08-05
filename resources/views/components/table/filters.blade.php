@@ -84,6 +84,7 @@
                     <option value="starts_with">{{ __('starts with') }}</option>
                     <option value="ends_with">{{ __('ends with') }}</option>
                     <option value="is_empty">{{ __('is empty') }}</option>
+                    <option value="is_not_empty">{{ __('is not empty') }}</option>
                 </select>
             </div>
 
