@@ -54,8 +54,6 @@ trait QueryFilters
 
     protected function applyMetaFieldFilter(Builder $query, array $filter): Builder
     {
-        ray('applyMetaFieldFilter', $filter);
-
         switch ($filter['operator']) {
             case 'is_empty':
                 $this->applyIsEmptyMetaFilter($query, $filter);
@@ -137,8 +135,6 @@ trait QueryFilters
 
     protected function applyTableFieldFilter(Builder $query, array $filter): Builder
     {
-        ray($filter);
-
         switch ($filter['operator']) {
             case 'contains':
                 $query->where($filter['name'], 'like', '%' . $filter['value'] . '%');
