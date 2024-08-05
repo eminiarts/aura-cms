@@ -15,26 +15,35 @@ beforeEach(function () {
 
     $role = Role::first();
 
-    $this->user = User::factory()->create([
+    $this->user2 = User::factory()->create([
         'name' => 'Test User',
         'email' => 'test@example.com',
+        'roles' => $role->id,
     ]);
 
-    $this->user2 = User::factory()->create([
+    $this->user3 = User::factory()->create([
         'name' => 'Test User 2',
         'email' => 'user2@example.com',
+        'roles' => $role->id,
     ]);
 
-    $team = Team::first();
+    // $team = Team::first();
 
-    $team->users()->attach($this->user->id, [
-        'key' => 'roles',
-        'value' => $role->id,
-    ]);
-    $team->users()->attach($this->user2->id, [
-        'key' => 'roles',
-        'value' => $role->id,
-    ]);
+    // $this->user->roles = [$role->id];
+    // $this->user->save();
+
+
+    // $this->user2->roles = [$role->id];
+    // $this->user->save();
+
+    // $team->users()->attach($this->user->id, [
+    //     'key' => 'roles',
+    //     'value' => $role->id,
+    // ]);
+    // $team->users()->attach($this->user2->id, [
+    //     'key' => 'roles',
+    //     'value' => $role->id,
+    // ]);
 
 });
 

@@ -49,7 +49,6 @@ trait SaveFieldAttributes
                         // If the password is available in the $post->attributes, unset it
                         if (empty($post->attributes[$slug])) {
                             unset($post->attributes[$slug]);
-                            ray('Unset Empty Password Field')->red();
                         }
 
                         return;
