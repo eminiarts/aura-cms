@@ -656,9 +656,10 @@ test('table filter - custom filter - is_not_empty', function () {
 
     $component->set('filters.custom.0.operator', 'is_not_empty');
 
-    $component->set('filters.custom.0.value', '200');
+    $component->set('filters.custom.0.name', 'meta');
 
-    expect($component->filters['custom'][0]['value'])->toBe('200');
+    expect($component->filters['custom'][0]['value'])->toBeNull();
+    expect($component->filters['custom'][0]['name'])->toBe('meta');
 
     $component->assertViewHas('rows', function ($rows) {
         return count($rows->items()) === 1;
@@ -668,20 +669,13 @@ test('table filter - custom filter - is_not_empty', function () {
         return $rows->items()[0]->id === $post2->id;
     });
 
-    $component->set('filters.custom.0.value', '');
+    $component->set('filters.custom.0.operator', 'is_empty');
+
+    $component->set('filters.custom.0.name', 'meta');
 
     $component->assertViewHas('rows', function ($rows) {
-        return count($rows->items()) === 2;
+        return count($rows->items()) === 1;
     });
 
-    //expect($component->rows->items()[0]->id)->toBeLessThan($post2->id);
-
-    //$component->set('filters.custom.0.value', '');
-
-    //expect($component->rows->items())->toHaveCount(2);
-
-    // expect($component->rowsQuery->toSql())->toBe('select * from "posts" where "posts"."type" = ? and "posts"."team_id" = ? order by "posts"."id" desc limit 10 offset 0');
-
-    // expect($component->rowsQuery->getBindings()[0])->toBe('Post');
-    //expect($component->rowsQuery->getBindings()[1])->toBe('');
+   
 });
