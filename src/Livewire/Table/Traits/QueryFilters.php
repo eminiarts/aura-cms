@@ -28,9 +28,11 @@ trait QueryFilters
         // Apply a single wrapper for 'AND' or 'OR' depending on the mainOperator setting
         $query->where(function ($query) use ($mainOperator) {
             foreach ($this->filters['custom'] as $filter) {
-                if (empty($filter['name']) || (empty($filter['value']) && $filter['operator'] !== 'is_empty')) {
+                if (empty($filter['name']) || (empty($filter['value']) && !in_array($filter['operator'], ['is_empty', 'is_not_empty']))) {
                     continue;
                 }
+
+                ray('applyCustomFilter',$filter);
 
                 // Check if the field and operator necessitate a separate closure
                 if ($mainOperator === 'or') {
@@ -43,7 +45,7 @@ trait QueryFilters
             }
         });
 
-        // ray($this->filters);
+        ray($this->filters);
         // ray($query->toSql());
         // ray($query->getBindings());
         // ray($query);
@@ -84,6 +86,9 @@ trait QueryFilters
      */
     protected function applyMetaFieldFilter(Builder $query, array $filter): Builder
     {
+
+        ray('applyMetaFieldFilter',$filter);
+
         if ($filter['operator'] == 'is_empty') {
             $this->applyIsEmptyMetaFilter($query, $filter);
 
@@ -134,6 +139,8 @@ trait QueryFilters
      */
     protected function applyTableFieldFilter(Builder $query, array $filter)
     {
+        ray($filter);
+
         switch ($filter['operator']) {
             case 'contains':
                 $query->where($filter['name'], 'like', '%'.$filter['value'].'%');
@@ -162,6 +169,8 @@ trait QueryFilters
             case 'is_empty':
                 return $query->whereNull($filter['name']);
             case 'is_not_empty':
+
+                ray('is_not_empty');
                 return $query->whereNotNull($filter['name']);
         }
 
