@@ -64,8 +64,7 @@ class RegisteredUserController extends Controller
 
             $user->save();
 
-            // Create Role
-            $role = Role::create(['name' => 'Super Admin', 'slug' => 'super_admin', 'name' => 'Super Admin', 'description' => 'Super Admin has can perform everything.', 'super_admin' => true, 'permissions' => [], 'team_id' => $team->id, 'user_id' => $user->id]);
+            $role = $team->roles->first();
 
             $user->update(['roles' => [$role->id]]);
         } else {
