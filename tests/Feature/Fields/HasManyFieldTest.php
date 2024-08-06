@@ -119,9 +119,17 @@ test('HasMany query with custom tables', function () {
 
         public static $customTable = true;
 
-        public function items()
+        public static function getFields()
         {
-            return $this->hasMany(CustomChildModel::class, 'user_id');
+            return [
+                [
+                    'name' => 'Items',
+                    'type' => 'Aura\\Base\\Fields\\HasMany',
+                    'column' => 'parent_id', // if you set a column, it will do a direct hasMany instead of polymorphic relationship
+                    'resource' => CustomChildModel::class,
+                    'slug' => 'items',
+                ],
+            ];
         }
     }
 
@@ -142,10 +150,10 @@ test('HasMany query with custom tables', function () {
         'type' => 'Resource',
     ]);
 
-    // Create child items without the 'content' field
+    // Create child items
     for ($i = 1; $i <= 3; $i++) {
         CustomChildModel::create([
-            'user_id' => $parentModel->id,
+            'parent_id' => $parentModel->id,
             'name' => "Item $i",
             'team_id' => 1,
             'type' => 'Resource',
@@ -158,7 +166,7 @@ test('HasMany query with custom tables', function () {
     expect($parentModel->items()->count())->toBe(3);
     expect($parentModel->items()->first())->toBeInstanceOf(CustomChildModel::class);
 
-    // Clean up: drop the custom table
+    // Clean up: drop the custom tables
     Schema::dropIfExists('custom_items');
     Schema::dropIfExists('custom_parents');
 });

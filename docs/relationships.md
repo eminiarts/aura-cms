@@ -116,3 +116,5 @@ $reviews = $product->reviews;
 ---
 
 This documentation assumes that you have a `Review` model, and products can have multiple reviews. The `post_meta` table holds the connection between the products and their reviews. Adjust the scenario and model names as needed to fit your actual use case.
+
+
