@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Cache;
 use Aura\Base\Database\Factories\TeamFactory;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Aura\Base\Jobs\GenerateAllResourcePermissions;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 
@@ -293,6 +294,9 @@ class Team extends Resource
                 // Clear cache of Cache('user.'.$user->id.'.teams')
                 Cache::forget('user.'.$user->id.'.teams');
             }
+
+            // Create all permissions for the team
+            GenerateAllResourcePermissions::dispatch($team->id);
         });
 
         static::deleted(function ($team) {

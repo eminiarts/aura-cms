@@ -2,6 +2,7 @@
 
 use Aura\Base\Resource;
 use Aura\Base\Resources\User;
+use Aura\Base\ConditionalLogic;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
@@ -49,15 +50,14 @@ class BasicConditionalLogicOnFieldModel extends Resource
 }
 
 test('Field X gets shown when value of Y is true', function () {
-    //    $model = new BasicConditionalLogicOnFieldModel();
-    //
-    //    $model->save();
-    //
-    //    $model->update([
-    //        'fields' => [
-    //            'text1' => 'test',
-    //        ],
-    //    ]);
-
-    // $this->assertCount(1, $fields);
+    $model = new BasicConditionalLogicOnFieldModel();
+    
+    $model->text1 = 'test';
+    
+    $fields = $model->getFields();
+    $field = collect($fields)->firstWhere('slug', 'text2');
+    
+    $result = ConditionalLogic::checkCondition($model, $field);
+    
+    $this->assertTrue($result);
 });

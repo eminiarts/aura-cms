@@ -2,10 +2,14 @@
 
 namespace Tests\Feature\Livewire;
 
-use Aura\Base\Livewire\Resource\Create;
-use Aura\Base\Resource;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
+use Aura\Base\Resource;
+use Aura\Base\Resources\Post;
+use Aura\Base\Resources\User;
+use Aura\Base\Livewire\Resource\Edit;
+use Illuminate\Support\Facades\Schema;
+use Aura\Base\Livewire\Resource\Create;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 
 // Refresh Database on every test
 uses(RefreshDatabase::class);
@@ -15,45 +19,114 @@ beforeEach(function () {
     $this->actingAs($this->user = createSuperAdmin());
 });
 
-// Create Resource for this test
+// Create Re
 class HasManyFieldModel extends Resource
 {
-    public static $singularName = 'HasMany Model';
-
-    public static ?string $slug = 'hasmany-model';
-
     public static string $type = 'HasManyModel';
 
     public static function getFields()
     {
         return [
             [
-                'name' => 'Hasmany for Test',
+                'name' => 'Posts',
                 'type' => 'Aura\\Base\\Fields\\HasMany',
-                'resource' => 'Aura\\Base\\Resources\\Post',
-                'validation' => 'numeric|nullable',
-                'conditional_logic' => [],
-                'suffix' => '%',
-                'prefix' => 'CHF',
-                'slug' => 'hasmany',
+                'resource' => Post::class,
+                'slug' => 'posts',
             ],
         ];
     }
+
+    // public function posts()
+    // {
+    //     return $this->hasMany(Post::class, 'user_id');
+    // }
 }
 
 test('HasMany Field not shown in Create', function () {
-    $model = new HasManyFieldModel;
-
-    $component = Livewire::test(Create::class, ['slug' => 'Post'])
-        ->call('setModel', $model);
-    //->assertSee('Hasmany for Test')
+    $model = new HasManyFieldModel();
+    
+    $createFields = $model->createFields();
+    
+    expect($createFields)->not->toContain(function ($field) {
+        return $field['type'] === 'Aura\\Base\\Fields\\HasMany';
+    });
 });
 
 test('HasMany Field shown on Edit', function () {
-    $model = new HasManyFieldModel;
-
+    $model = new HasManyFieldModel();
+    
+    $editFields = $model->editFields();
+    
+    expect($editFields)->toContain(function ($field) {
+        return $field['type'] === 'Aura\\Base\\Fields\\HasMany';
+    });
 });
 
-test('HasMany query Meta Fields with posts table', function () {});
+test('HasMany query Meta Fields with posts table', function () {
+    $user = User::factory()->create();
+    $posts = Post::factory()->count(3)->create(['user_id' => $user->id]);
+    
+    $model = new HasManyFieldModel();
+    $model->id = $user->id;
+    
+    expect($model->posts()->count())->toBe(3);
+    expect($model->posts()->first())->toBeInstanceOf(Post::class);
+});
 
-test('HasMany query with custom tables', function () {});
+test('HasMany query with custom tables', function () {
+    // Create a custom table for this test
+    Schema::create('custom_items', function ($table) {
+        $table->id();
+        $table->foreignId('user_id');
+        $table->string('name');
+        $table->timestamps();
+    });
+
+    // Define a CustomItem model for this test
+    class CustomItem extends Resource
+    {
+        protected $table = 'custom_items';
+        protected $fillable = ['user_id', 'name'];
+    }
+
+    // Define a model with HasMany relationship to CustomItem
+    class CustomTableHasManyFieldModel extends Resource
+    {
+        public static string $type = 'CustomTableHasManyModel';
+
+        public static function getFields()
+        {
+            return [
+                [
+                    'name' => 'Custom Items',
+                    'type' => 'Aura\\Base\\Fields\\HasMany',
+                    'resource' => CustomItem::class,
+                    'slug' => 'customItems',
+                ],
+            ];
+        }
+
+        public function customItems()
+        {
+            return $this->hasMany(CustomItem::class, 'user_id');
+        }
+    }
+
+    $user = User::factory()->create();
+    $customItems = collect([
+        ['user_id' => $user->id, 'name' => 'Item 1'],
+        ['user_id' => $user->id, 'name' => 'Item 2'],
+        ['user_id' => $user->id, 'name' => 'Item 3'],
+    ])->map(function ($item) {
+        return CustomItem::create($item);
+    });
+
+    $model = new CustomTableHasManyFieldModel();
+    $model->id = $user->id;
+
+    expect($model->customItems()->count())->toBe(3);
+    expect($model->customItems()->first())->toBeInstanceOf(CustomItem::class);
+
+    // Clean up: drop the custom table
+    Schema::dropIfExists('custom_items');
+});
