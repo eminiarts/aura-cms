@@ -89,7 +89,9 @@ test('media grid view', function () {
 test('media can be selected', function () {
     $attachment = Attachment::factory()->create();
 
-    Livewire::test(MediaUploader::class)
-        ->call('selectMedia', $attachment->id)
-        ->assertSet('selectedMedia', [$attachment->id]);
+    Livewire::test(Table::class, ['model' => new Attachment])
+        ->set('selected', [$attachment->id])
+        ->assertSet('selected', [$attachment->id])
+        ->assertSet('selectAll', false)
+        ->assertSet('selectPage', false);
 });
