@@ -1,8 +1,10 @@
 <?php
 
+use Livewire\Livewire;
 use Aura\Base\Resources\Post;
 use Aura\Base\Resources\Role;
 use Aura\Base\Resources\User;
+use Aura\Base\Livewire\Resource\Edit;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
@@ -364,14 +366,33 @@ test('a admin can access users', function () {
 
 
 test('scoped query on index page', function () {
+    // Create a role with necessary permissions
+    $role = Role::create([
+        'name' => 'Post Viewer',
+        'slug' => 'post_viewer',
+        'description' => 'Can view posts',
+        'super_admin' => false,
+        'permissions' => [
+            'viewAny-post' => true,
+            'view-post' => true,
+            'scope-post' => true,
+        ]
+    ]);
+
+    // Create a user and assign the role
     $user = User::factory()->create();
+    $user->update(['roles' => [$role->id]]);
     $this->actingAs($user);
     
+    // Create posts
     $userPosts = Post::factory()->count(3)->create(['user_id' => $user->id]);
     $otherPosts = Post::factory()->count(2)->create();
     
+    // Make the request
     $response = $this->get(route('aura.resource.index', ['slug' => 'Post']));
     
+    // Assert the response
+    $response->assertStatus(200);
     $response->assertSee($userPosts[0]->title)
         ->assertSee($userPosts[1]->title)
         ->assertSee($userPosts[2]->title)
@@ -380,19 +401,41 @@ test('scoped query on index page', function () {
 });
 
 test('user can only delete his own posts', function () {
+    // Create a role with necessary permissions
+    $role = Role::create([
+        'name' => 'Post Manager',
+        'slug' => 'post_manager',
+        'description' => 'Can manage own posts',
+        'super_admin' => false,
+        'permissions' => [
+            'viewAny-post' => true,
+            'view-post' => true,
+            'create-post' => true,
+            'update-post' => true,
+            'delete-post' => true,
+            'scope-post' => true,
+        ]
+    ]);
+
+    // Create a user and assign the role
     $user = User::factory()->create();
+    $user->update(['roles' => [$role->id]]);
     $this->actingAs($user);
     
     $userPost = Post::factory()->create(['user_id' => $user->id]);
     $otherPost = Post::factory()->create();
     
-    $this->delete(route('aura.resource.destroy', ['slug' => 'Post', 'id' => $userPost->id]))
-        ->assertStatus(302);
+       // Attempt to delete user's own post
+    Livewire::test(Edit::class, ['slug' => 'Post', 'id' => $userPost->id])
+        ->call('singleAction', 'delete')
+        ->assertDispatched('notify')
+        ->assertSuccessful();
+
+        $this->assertDatabaseMissing('posts', ['id' => $userPost->id]);
     
-    $this->assertDatabaseMissing('posts', ['id' => $userPost->id]);
-    
-    $this->delete(route('aura.resource.destroy', ['slug' => 'Post', 'id' => $otherPost->id]))
-        ->assertStatus(403);
-    
+    // Attempt to delete another user's post
+    Livewire::test(Edit::class, ['slug' => 'Post', 'id' => $otherPost->id])
+        ->assertForbidden();
+
     $this->assertDatabaseHas('posts', ['id' => $otherPost->id]);
 });
