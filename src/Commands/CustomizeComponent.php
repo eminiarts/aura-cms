@@ -2,7 +2,6 @@
 
 namespace Aura\Base\Commands;
 
-use Aura\Base\Facades\Aura;
 use Illuminate\Console\Command;
 use Illuminate\Support\Str;
 

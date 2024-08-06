@@ -19,7 +19,6 @@ class GenerateAllResourcePermissions
     /**
      * Create a new job instance.
      *
-     * @param int|null $teamId
      * @return void
      */
     public function __construct(?int $teamId = null)

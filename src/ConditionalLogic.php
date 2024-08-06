@@ -8,38 +8,36 @@ class ConditionalLogic
 {
     private static $shouldDisplayFieldCache = [];
 
-   public static function checkCondition($model, $field, $post = null)
+    public static function checkCondition($model, $field, $post = null)
     {
         $conditions = $field['conditional_logic'] ?? null;
 
-        
-
         if (! $conditions) {
-            
+
             return true;
         }
 
         if (! Auth::check()) {
-            
+
             return false;
         }
 
         if ($conditions instanceof \Closure) {
             $result = self::executeClosure($conditions, $model, $post);
-            
+
             return $result;
         }
 
         if (! is_array($conditions)) {
-            
+
             return true;
         }
 
         foreach ($conditions as $index => $condition) {
-            
+
             if ($condition instanceof \Closure) {
                 $result = self::executeClosure($condition, $model, $post);
-                
+
                 if (! $result) {
                     return false;
                 }
@@ -47,50 +45,19 @@ class ConditionalLogic
                 $show = $condition['field'] === 'role'
                     ? self::handleRoleCondition($condition)
                     : self::handleDefaultCondition($model, $condition, $post);
-                
+
                 if (! $show) {
                     return false;
                 }
             }
         }
 
-        
         return true;
-    }
-
-    private static function handleDefaultCondition($model, $condition, $post)
-    {
-        $fieldValue = null;
-
-        if (is_object($model)) {
-            if (property_exists($model, $condition['field'])) {
-                $fieldValue = $model->{$condition['field']};
-            } elseif (method_exists($model, 'getMeta')) {
-                $fieldValue = $model->getMeta($condition['field']);
-            }
-        } elseif (is_array($model) && array_key_exists($condition['field'], $model)) {
-            $fieldValue = $model[$condition['field']];
-        }
-
-        if ($fieldValue === null && $post !== null) {
-            $fieldValue = data_get($post['fields'] ?? [], $condition['field']);
-        }
-
-        if ($fieldValue === null && str_contains($condition['field'], '.')) {
-            $fieldValue = is_array($model)
-                ? data_get($model, $condition['field'])
-                : data_get($model instanceof \ArrayAccess ? $model->toArray() : (array) $model, $condition['field']);
-        }
-
-        
-        $result = $fieldValue !== null ? self::checkFieldCondition($condition, $fieldValue) : false;
-        
-        return $result;
     }
 
     public static function checkFieldCondition($condition, $fieldValue)
     {
-        
+
         $result = match ($condition['operator']) {
             '==' => $fieldValue == $condition['value'],
             '!=' => $fieldValue != $condition['value'],
@@ -100,7 +67,7 @@ class ConditionalLogic
             '>=' => $fieldValue >= $condition['value'],
             default => false
         };
-        
+
         return $result;
     }
 
@@ -137,8 +104,6 @@ class ConditionalLogic
             ??= self::checkCondition($model, $field, $post);
     }
 
-   
-
     private static function checkRoleCondition($condition)
     {
         $user = Auth::user();
@@ -160,6 +125,34 @@ class ConditionalLogic
         }
     }
 
+    private static function handleDefaultCondition($model, $condition, $post)
+    {
+        $fieldValue = null;
+
+        if (is_object($model)) {
+            if (property_exists($model, $condition['field'])) {
+                $fieldValue = $model->{$condition['field']};
+            } elseif (method_exists($model, 'getMeta')) {
+                $fieldValue = $model->getMeta($condition['field']);
+            }
+        } elseif (is_array($model) && array_key_exists($condition['field'], $model)) {
+            $fieldValue = $model[$condition['field']];
+        }
+
+        if ($fieldValue === null && $post !== null) {
+            $fieldValue = data_get($post['fields'] ?? [], $condition['field']);
+        }
+
+        if ($fieldValue === null && str_contains($condition['field'], '.')) {
+            $fieldValue = is_array($model)
+                ? data_get($model, $condition['field'])
+                : data_get($model instanceof \ArrayAccess ? $model->toArray() : (array) $model, $condition['field']);
+        }
+
+        $result = $fieldValue !== null ? self::checkFieldCondition($condition, $fieldValue) : false;
+
+        return $result;
+    }
 
     private static function handleRoleCondition($condition)
     {

@@ -79,7 +79,7 @@ test('Team Settings can be saved', function () {
 
     // we need to create a role for the second team
     $role2 = Role::create(['name' => 'Super Admin', 'slug' => 'super_admin6', 'description' => 'Super Admin has can perform everything.', 'super_admin' => true, 'permissions' => []]);
-    
+
     $role2->users()->sync([$this->user->id => ['resource_type' => Role::class]]);
 
     // Default Team Settings

@@ -1,12 +1,10 @@
 <?php
 
-use Livewire\Livewire;
-use Aura\Base\Resources\Role;
-use Aura\Base\Resources\Team;
-use Aura\Base\Resources\User;
-use Illuminate\Support\Facades\DB;
 use Aura\Base\Livewire\Table\Table;
+use Aura\Base\Resources\Role;
+use Aura\Base\Resources\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Livewire\Livewire;
 
 uses(RefreshDatabase::class);
 
@@ -31,8 +29,6 @@ beforeEach(function () {
     // Maybe there is a better way to do this
     $role->users()->syncWithoutDetaching([$this->user2->id => ['resource_type' => Role::class]]);
     $role->users()->syncWithoutDetaching([$this->user3->id => ['resource_type' => Role::class]]);
-
-   
 
 });
 

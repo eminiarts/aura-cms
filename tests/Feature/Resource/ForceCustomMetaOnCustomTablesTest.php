@@ -1,14 +1,12 @@
 <?php
 
-use Aura\Base\Exceptions\InvalidMetaTableException;
 use Aura\Base\Livewire\Table\Table;
 use Aura\Base\Models\Meta;
+use Aura\Base\Models\Scopes\TeamScope;
 use Aura\Base\Resource;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
-use Aura\Base\Models\Scopes\TeamScope;
-use Illuminate\Database\Eloquent\Model;
 
 afterEach(function () {
     Schema::dropIfExists('custom_projects');
@@ -64,9 +62,13 @@ class ForceCustomMetaOnCustomTablesModelMeta extends Meta
 class ForceCustomMetaOnCustomTablesModel extends Resource
 {
     public static $customMeta = true;
+
     public static $customTable = true;
+
     public static $singularName = 'Project';
+
     public static ?string $slug = 'project';
+
     public static string $type = 'Project';
 
     protected $casts = [
