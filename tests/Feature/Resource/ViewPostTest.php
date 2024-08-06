@@ -1,8 +1,12 @@
 <?php
 
-use Aura\Base\Resources\Post;
+use Livewire\Livewire;
 
+use Aura\Base\Resource;
+use Aura\Base\Facades\Aura;
+use Aura\Base\Resources\Post;
 use function Pest\Livewire\livewire;
+use Aura\Base\Livewire\Resource\View;
 
 // Before each test, create a Superadmin and login
 beforeEach(function () {
@@ -43,19 +47,60 @@ test('post view - view fields are displayed correctly', function () {
     expect($component->viewFields)->toBeArray();
 });
 
-test('post view - can be customized', function () {
-    $post = Post::factory()->create();
+test('resource view - can be customized via viewView method', function () {
+    // Define a custom resource for this test
+    class CustomViewResource extends Resource
+    {
+        public function viewView()
+        {
+            return 'custom.resource.view';
+        }
 
-    // Assuming you have a custom view at resources/views/vendor/aura/post/view.blade.php
-    $customViewPath = resource_path('views/vendor/aura/post/view.blade.php');
+        public static function getFields()
+        {
+            return [
+                [
+                    'name' => 'Title',
+                    'type' => 'Aura\\Base\\Fields\\Text',
+                    'slug' => 'title',
+                ],
+                [
+                    'name' => 'Content',
+                    'type' => 'Aura\\Base\\Fields\\Textarea',
+                    'slug' => 'content',
+                ],
+            ];
+        }
+    }
 
-    // Create a temporary custom view file
-    file_put_contents($customViewPath, '<div>Custom Post View: {{ $post->title }}</div>');
+    // Create the custom resource
+    $customResource = CustomViewResource::create([
+        'title' => 'Custom Resource Title',
+        'content' => 'Custom Resource Content',
+        'team_id' => 1,
+        'type' => 'CustomViewResource',
+    ]);
 
-    $response = $this->get(route('aura.resource.view', ['slug' => 'Post', 'id' => $post->id]));
+    // Create a custom view file
+    $customViewPath = resource_path('views/custom/resource/view.blade.php');
+    $customViewContent = '<div>Custom Resource View: {{ $model->title }}</div>';
 
-    $response->assertSee("Custom Post View: {$post->title}");
+    // Ensure the directory exists
+    if (!file_exists(dirname($customViewPath))) {
+        mkdir(dirname($customViewPath), 0777, true);
+    }
+
+    file_put_contents($customViewPath, $customViewContent);
+
+    Aura::fake();
+    Aura::setModel($customResource);
+
+    // Test the Livewire component
+    Livewire::test(View::class, ['slug' => 'CustomViewResource', 'id' => $customResource->id])
+        ->assertSee("Custom Resource View: {$customResource->title}");
 
     // Clean up: remove the temporary view file
     unlink($customViewPath);
+    rmdir(dirname($customViewPath));
+    rmdir(dirname(dirname($customViewPath)));
 });
