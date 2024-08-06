@@ -8,6 +8,7 @@ use Aura\Base\Resources\Team;
 use Aura\Base\Resources\User;
 
 use function Pest\Livewire\livewire;
+use function Pest\Laravel\post;
 
 // Before each test, create a Superadmin and login
 beforeEach(function () {
@@ -76,24 +77,34 @@ test('aura config site is working', function () {
 //     expect(app('aura')::option('team_registration'))->toBeTrue();
 // });
 
-test('team can be registered', function () {
-    $user = User::factory()->create();
-    $this->actingAs($user);
 
-    $teamData = [
-        'name' => 'New Team',
-        'description' => 'A test team',
+test('team can be registered with user', function () {
+    // Ensure registration is enabled
+    config(['aura.auth.registration' => true]);
+    config(['aura.teams' => true]);
+
+    $userData = [
+        'name' => 'John Doe',
+        'email' => 'john@example.com',
+        'password' => 'password',
+        'password_confirmation' => 'password',
+        'team' => 'New Team',
     ];
 
-    $response = $this->post(route('aura.teams.store'), $teamData);
+    $response = post(route('aura.register.post'), $userData);
 
-    $response->assertRedirect();
+    $response->assertRedirect(config('aura.auth.redirect'));
 
-    $this->assertDatabaseHas('teams', [
-        'name' => 'New Team',
-        'description' => 'A test team',
-    ]);
+    expect(User::where('email', 'john@example.com')->first())
+        ->toExist()
+        ->name->toBe('John Doe');
 
+    expect(Team::where('name', 'New Team')->first())
+        ->toExist();
+
+    $user = User::where('email', 'john@example.com')->first();
     $team = Team::where('name', 'New Team')->first();
-    $this->assertTrue($user->belongsToTeam($team));
+
+    expect($user->current_team_id)->toBe($team->id);
+    expect($user->belongsToTeam($team))->toBeTrue();
 });
