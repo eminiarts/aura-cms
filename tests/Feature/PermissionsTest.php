@@ -315,13 +315,8 @@ test('scoped posts', function () {
     $response->assertStatus(200);
 });
 
-test('scoped query on index page', function () {
-    // Make Sure Query is scoped on Index
-});
 
-test('user can only delete his own posts', function () {
-    // Make Sure Query is scoped on Delete
-});
+
 
 test('a admin can access users', function () {
     $role = Role::create(['name' => 'Admin', 'slug' => 'admin', 'description' => ' Admin has can perform almost everything.', 'super_admin' => false, 'permissions' => [
@@ -364,4 +359,40 @@ test('a admin can access users', function () {
 
     // Assert Response
     $response->assertStatus(200);
+});
+
+
+
+test('scoped query on index page', function () {
+    $user = User::factory()->create();
+    $this->actingAs($user);
+    
+    $userPosts = Post::factory()->count(3)->create(['user_id' => $user->id]);
+    $otherPosts = Post::factory()->count(2)->create();
+    
+    $response = $this->get(route('aura.resource.index', ['slug' => 'Post']));
+    
+    $response->assertSee($userPosts[0]->title)
+        ->assertSee($userPosts[1]->title)
+        ->assertSee($userPosts[2]->title)
+        ->assertDontSee($otherPosts[0]->title)
+        ->assertDontSee($otherPosts[1]->title);
+});
+
+test('user can only delete his own posts', function () {
+    $user = User::factory()->create();
+    $this->actingAs($user);
+    
+    $userPost = Post::factory()->create(['user_id' => $user->id]);
+    $otherPost = Post::factory()->create();
+    
+    $this->delete(route('aura.resource.destroy', ['slug' => 'Post', 'id' => $userPost->id]))
+        ->assertStatus(302);
+    
+    $this->assertDatabaseMissing('posts', ['id' => $userPost->id]);
+    
+    $this->delete(route('aura.resource.destroy', ['slug' => 'Post', 'id' => $otherPost->id]))
+        ->assertStatus(403);
+    
+    $this->assertDatabaseHas('posts', ['id' => $otherPost->id]);
 });
