@@ -8,24 +8,6 @@ use Illuminate\Support\Facades\Schema;
 use Livewire\Livewire;
 
 beforeEach(function () {
-    // $this->user = createSuperAdmin();
-
-    // $this->actingAs($this->user);
-
-    // Artisan::call('aura:resource', [
-    //     'name' => 'Project',
-    //     '--custom' => true,
-    // ]);
-
-    // app('aura')::registerResources(['App\Aura\Resources\Project']);
-
-    // Artisan::call('cache:clear');
-
-    // require_once app_path('Aura/Resources/Project.php');
-});
-
-it('creates a migration when fields are added', function () {
-
     $this->user = createSuperAdmin();
 
     $this->actingAs($this->user);
@@ -40,6 +22,9 @@ it('creates a migration when fields are added', function () {
     Artisan::call('cache:clear');
 
     require_once app_path('Aura/Resources/Project.php');
+});
+
+it('creates a migration when fields are added', function () {
 
     config(['aura.resource_editor.custom_table_migrations' => 'single']);
 
