@@ -81,8 +81,6 @@ class RegisteredUserController extends Controller
                 'password' => Hash::make($request->password),
             ]);
 
-            // ray('user created', $user);
-
             $role = Role::where('slug', 'user')->firstOrFail();
 
             $user->update(['roles' => [$role->id]]);
@@ -91,7 +89,6 @@ class RegisteredUserController extends Controller
         event(new Registered($user));
 
         Auth::login($user);
-        // ray('user logged in');
 
         return redirect(config('aura.auth.redirect'));
     }
