@@ -7,6 +7,8 @@ use Aura\Base\Resource;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
+use Aura\Base\Models\Scopes\TeamScope;
+use Illuminate\Database\Eloquent\Model;
 
 afterEach(function () {
     Schema::dropIfExists('custom_projects');
@@ -27,7 +29,50 @@ beforeEach(function () {
         $table->foreignId('team_id');
         $table->timestamps();
     });
+
+    Schema::create('custom_projects_meta', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('custom_projects_id');
+            $table->string('key')->nullable();
+            $table->longText('value')->nullable();
+            if (config('aura.teams')) {
+                $table->foreignId('team_id')->index();
+            }
+        });
 });
+
+
+
+
+class ForceCustomMetaOnCustomTablesModelMeta extends Meta
+{
+    /**
+     * The table associated with the model.
+     *
+     * @var string
+     */
+    protected $table = 'custom_projects_meta';
+
+    /**
+     * The "booted" method of the model.
+     *
+     * @return void
+     */
+    protected static function booted()
+    {
+        static::addGlobalScope(new TeamScope);
+
+        static::saving(function ($post) {
+            if (config('aura.teams') && ! $post->team_id && auth()->user()) {
+                $post->team_id = auth()->user()->current_team_id;
+            }
+
+            if (config('aura.teams') && ! $post->team_id) {
+                $post->team_id = 1;
+            }
+        });
+    }
+}
 
 class ForceCustomMetaOnCustomTablesModel extends Resource
 {
@@ -102,13 +147,16 @@ class ForceCustomMetaOnCustomTablesModel extends Resource
         ];
     }
 
-    // public function meta()
-    // {
-    //     return $this->hasMany(ForceCustomMetaOnCustomTablesModelMeta::class, 'team_id');
-    // }
+    public function meta()
+    {
+        return $this->hasMany(ForceCustomMetaOnCustomTablesModelMeta::class, 'team_id');
+    }
 }
 
 test('custom Table is forced to use custom meta', function () {
+
+    $this->withoutExceptionHandling();
+
     $resource = ForceCustomMetaOnCustomTablesModel::create([
         'name' => 'Test Post 1',
         'status' => 'publish',
