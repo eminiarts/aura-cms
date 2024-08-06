@@ -26,12 +26,6 @@ trait QueryFilters
         return $query;
     }
 
-    protected function isValidFilter(array $filter): bool
-    {
-        return !empty($filter['name']) && 
-               (!empty($filter['value']) || in_array($filter['operator'], ['is_empty', 'is_not_empty']));
-    }
-
     protected function applyFilter(Builder $query, array $filter, string $mainOperator): void
     {
         if ($mainOperator === 'or') {
@@ -52,6 +46,33 @@ trait QueryFilters
         }
     }
 
+    protected function applyIsEmptyMetaFilter(Builder $query, array $filter): void
+    {
+        $query->where(function ($query) use ($filter) {
+            $query->whereDoesntHave('meta', function (Builder $query) use ($filter) {
+                $query->where('key', '=', $filter['name']);
+            })
+                ->orWhereHas('meta', function (Builder $query) use ($filter) {
+                    $query->where('key', '=', $filter['name'])
+                        ->where(function ($query) {
+                            $query->where('value', '=', '')
+                                ->orWhereNull('value');
+                        });
+                });
+        });
+    }
+
+    protected function applyIsNotEmptyMetaFilter(Builder $query, array $filter): void
+    {
+        $query->whereHas('meta', function (Builder $query) use ($filter) {
+            $query->where('key', '=', $filter['name'])
+                ->where(function ($query) {
+                    $query->where('value', '!=', '')
+                        ->whereNotNull('value');
+                });
+        });
+    }
+
     protected function applyMetaFieldFilter(Builder $query, array $filter): Builder
     {
         switch ($filter['operator']) {
@@ -68,55 +89,20 @@ trait QueryFilters
         return $query;
     }
 
-    protected function applyIsEmptyMetaFilter(Builder $query, array $filter): void
-    {
-        $query->where(function ($query) use ($filter) {
-            $query->whereDoesntHave('meta', function (Builder $query) use ($filter) {
-                $query->where('key', '=', $filter['name']);
-            })
-            ->orWhereHas('meta', function (Builder $query) use ($filter) {
-                $query->where('key', '=', $filter['name'])
-                      ->where(function ($query) {
-                          $query->where('value', '=', '')
-                                ->orWhereNull('value');
-                      });
-            });
-        });
-    }
-
-    protected function applyIsNotEmptyMetaFilter(Builder $query, array $filter): void
-    {
-        $query->whereHas('meta', function (Builder $query) use ($filter) {
-            $query->where('key', '=', $filter['name'])
-                  ->where(function ($query) {
-                      $query->where('value', '!=', '')
-                            ->whereNotNull('value');
-                  });
-        });
-    }
-
-    protected function applyStandardMetaFilter(Builder $query, array $filter): void
-    {
-        $query->whereHas('meta', function (Builder $query) use ($filter) {
-            $query->where('key', '=', $filter['name']);
-            $this->applyOperatorCondition($query, $filter);
-        });
-    }
-
     protected function applyOperatorCondition(Builder $query, array $filter): void
     {
         switch ($filter['operator']) {
             case 'contains':
-                $query->where('value', 'like', '%' . $filter['value'] . '%');
+                $query->where('value', 'like', '%'.$filter['value'].'%');
                 break;
             case 'does_not_contain':
-                $query->where('value', 'not like', '%' . $filter['value'] . '%');
+                $query->where('value', 'not like', '%'.$filter['value'].'%');
                 break;
             case 'starts_with':
-                $query->where('value', 'like', $filter['value'] . '%');
+                $query->where('value', 'like', $filter['value'].'%');
                 break;
             case 'ends_with':
-                $query->where('value', 'like', '%' . $filter['value']);
+                $query->where('value', 'like', '%'.$filter['value']);
                 break;
             case 'is':
                 $query->where('value', '=', $filter['value']);
@@ -133,20 +119,28 @@ trait QueryFilters
         }
     }
 
+    protected function applyStandardMetaFilter(Builder $query, array $filter): void
+    {
+        $query->whereHas('meta', function (Builder $query) use ($filter) {
+            $query->where('key', '=', $filter['name']);
+            $this->applyOperatorCondition($query, $filter);
+        });
+    }
+
     protected function applyTableFieldFilter(Builder $query, array $filter): Builder
     {
         switch ($filter['operator']) {
             case 'contains':
-                $query->where($filter['name'], 'like', '%' . $filter['value'] . '%');
+                $query->where($filter['name'], 'like', '%'.$filter['value'].'%');
                 break;
             case 'does_not_contain':
-                $query->where($filter['name'], 'not like', '%' . $filter['value'] . '%');
+                $query->where($filter['name'], 'not like', '%'.$filter['value'].'%');
                 break;
             case 'starts_with':
-                $query->where($filter['name'], 'like', $filter['value'] . '%');
+                $query->where($filter['name'], 'like', $filter['value'].'%');
                 break;
             case 'ends_with':
-                $query->where($filter['name'], 'like', '%' . $filter['value']);
+                $query->where($filter['name'], 'like', '%'.$filter['value']);
                 break;
             case 'is':
                 $query->where($filter['name'], '=', $filter['value']);
@@ -163,12 +157,12 @@ trait QueryFilters
             case 'is_empty':
                 $query->where(function ($query) use ($filter) {
                     $query->whereNull($filter['name'])
-                          ->orWhere($filter['name'], '=', '');
+                        ->orWhere($filter['name'], '=', '');
                 });
                 break;
             case 'is_not_empty':
                 $query->whereNotNull($filter['name'])
-                      ->where($filter['name'], '!=', '');
+                    ->where($filter['name'], '!=', '');
                 break;
         }
 
@@ -179,7 +173,7 @@ trait QueryFilters
     {
         if ($this->filters['taxonomy']) {
             foreach ($this->filters['taxonomy'] as $key => $taxonomy) {
-                if (!$taxonomy) {
+                if (! $taxonomy) {
                     continue;
                 }
 
@@ -198,5 +192,11 @@ trait QueryFilters
         }
 
         return $query;
+    }
+
+    protected function isValidFilter(array $filter): bool
+    {
+        return ! empty($filter['name']) &&
+               (! empty($filter['value']) || in_array($filter['operator'], ['is_empty', 'is_not_empty']));
     }
 }

@@ -2,9 +2,9 @@
 
 namespace Aura\Base\Resources;
 
-use Aura\Base\Resource;
-use Aura\Base\Models\Meta;
 use Aura\Base\Jobs\GenerateAllResourcePermissions;
+use Aura\Base\Models\Meta;
+use Aura\Base\Resource;
 use Illuminate\Database\Eloquent\Relations\MorphToMany;
 
 class Role extends Resource

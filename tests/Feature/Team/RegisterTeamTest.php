@@ -1,19 +1,18 @@
 <?php
 
 use Aura\Base\Facades\Aura;
+use Aura\Base\Livewire\Config;
+use Aura\Base\Models\Scopes\TeamScope;
+use Aura\Base\Resources\Option;
 use Aura\Base\Resources\Team;
 use Aura\Base\Resources\User;
-use Aura\Base\Livewire\Config;
 
-use Aura\Base\Resources\Option;
 use function Pest\Livewire\livewire;
-use Aura\Base\Models\Scopes\TeamScope;
 
 // Before each test, create a Superadmin and login
 beforeEach(function () {
     $this->actingAs($this->user = createSuperAdmin());
 });
-
 
 // test('registration config can be disabled', function () {
 //     // test Config Livewire component
@@ -77,26 +76,24 @@ test('aura config site is working', function () {
 //     expect(app('aura')::option('team_registration'))->toBeTrue();
 // });
 
-
-
 test('team can be registered', function () {
     $user = User::factory()->create();
     $this->actingAs($user);
-    
+
     $teamData = [
         'name' => 'New Team',
         'description' => 'A test team',
     ];
-    
+
     $response = $this->post(route('aura.teams.store'), $teamData);
-    
+
     $response->assertRedirect();
-    
+
     $this->assertDatabaseHas('teams', [
         'name' => 'New Team',
         'description' => 'A test team',
     ]);
-    
+
     $team = Team::where('name', 'New Team')->first();
     $this->assertTrue($user->belongsToTeam($team));
 });

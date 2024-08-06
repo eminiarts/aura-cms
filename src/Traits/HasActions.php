@@ -32,7 +32,7 @@ trait HasActions
     {
         // Authorize
         $this->authorize('update', $this->model);
-        
+
         $response = $this->model->{$action}();
 
         if ($response instanceof \Illuminate\Http\RedirectResponse) {

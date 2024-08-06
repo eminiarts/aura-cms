@@ -2,14 +2,12 @@
 
 namespace Tests\Feature\Livewire;
 
-use Livewire\Livewire;
+use Aura\Base\Livewire\Resource\Create;
 use Aura\Base\Resource;
 use Aura\Base\Resources\Post;
 use Aura\Base\Resources\User;
-use Aura\Base\Livewire\Resource\Edit;
-use Illuminate\Support\Facades\Schema;
-use Aura\Base\Livewire\Resource\Create;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Schema;
 
 // Refresh Database on every test
 uses(RefreshDatabase::class);
@@ -43,20 +41,20 @@ class HasManyFieldModel extends Resource
 }
 
 test('HasMany Field not shown in Create', function () {
-    $model = new HasManyFieldModel();
-    
+    $model = new HasManyFieldModel;
+
     $createFields = $model->createFields();
-    
+
     expect($createFields)->not->toContain(function ($field) {
         return $field['type'] === 'Aura\\Base\\Fields\\HasMany';
     });
 });
 
 test('HasMany Field shown on Edit', function () {
-    $model = new HasManyFieldModel();
-    
+    $model = new HasManyFieldModel;
+
     $editFields = $model->editFields();
-    
+
     expect($editFields)->toContain(function ($field) {
         return $field['type'] === 'Aura\\Base\\Fields\\HasMany';
     });
@@ -65,10 +63,10 @@ test('HasMany Field shown on Edit', function () {
 test('HasMany query Meta Fields with posts table', function () {
     $user = User::factory()->create();
     $posts = Post::factory()->count(3)->create(['user_id' => $user->id]);
-    
-    $model = new HasManyFieldModel();
+
+    $model = new HasManyFieldModel;
     $model->id = $user->id;
-    
+
     expect($model->posts()->count())->toBe(3);
     expect($model->posts()->first())->toBeInstanceOf(Post::class);
 });
@@ -85,14 +83,20 @@ test('HasMany query with custom tables', function () {
     // Define a CustomItem model for this test
     class CustomItem extends Resource
     {
-        protected $table = 'custom_items';
         protected $fillable = ['user_id', 'name'];
+
+        protected $table = 'custom_items';
     }
 
     // Define a model with HasMany relationship to CustomItem
     class CustomTableHasManyFieldModel extends Resource
     {
         public static string $type = 'CustomTableHasManyModel';
+
+        public function customItems()
+        {
+            return $this->hasMany(CustomItem::class, 'user_id');
+        }
 
         public static function getFields()
         {
@@ -105,11 +109,6 @@ test('HasMany query with custom tables', function () {
                 ],
             ];
         }
-
-        public function customItems()
-        {
-            return $this->hasMany(CustomItem::class, 'user_id');
-        }
     }
 
     $user = User::factory()->create();
@@ -121,7 +120,7 @@ test('HasMany query with custom tables', function () {
         return CustomItem::create($item);
     });
 
-    $model = new CustomTableHasManyFieldModel();
+    $model = new CustomTableHasManyFieldModel;
     $model->id = $user->id;
 
     expect($model->customItems()->count())->toBe(3);

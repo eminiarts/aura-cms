@@ -1,11 +1,11 @@
 <?php
 
-use Livewire\Livewire;
+use Aura\Base\Livewire\Resource\Edit;
 use Aura\Base\Resources\Post;
 use Aura\Base\Resources\Role;
 use Aura\Base\Resources\User;
-use Aura\Base\Livewire\Resource\Edit;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Livewire\Livewire;
 
 uses(RefreshDatabase::class);
 
@@ -317,9 +317,6 @@ test('scoped posts', function () {
     $response->assertStatus(200);
 });
 
-
-
-
 test('a admin can access users', function () {
     $role = Role::create(['name' => 'Admin', 'slug' => 'admin', 'description' => ' Admin has can perform almost everything.', 'super_admin' => false, 'permissions' => [
         'viewAny-user' => true,
@@ -363,8 +360,6 @@ test('a admin can access users', function () {
     $response->assertStatus(200);
 });
 
-
-
 test('scoped query on index page', function () {
     // Create a role with necessary permissions
     $role = Role::create([
@@ -376,21 +371,21 @@ test('scoped query on index page', function () {
             'viewAny-post' => true,
             'view-post' => true,
             'scope-post' => true,
-        ]
+        ],
     ]);
 
     // Create a user and assign the role
     $user = User::factory()->create();
     $user->update(['roles' => [$role->id]]);
     $this->actingAs($user);
-    
+
     // Create posts
     $userPosts = Post::factory()->count(3)->create(['user_id' => $user->id]);
     $otherPosts = Post::factory()->count(2)->create();
-    
+
     // Make the request
     $response = $this->get(route('aura.resource.index', ['slug' => 'Post']));
-    
+
     // Assert the response
     $response->assertStatus(200);
     $response->assertSee($userPosts[0]->title)
@@ -414,25 +409,25 @@ test('user can only delete his own posts', function () {
             'update-post' => true,
             'delete-post' => true,
             'scope-post' => true,
-        ]
+        ],
     ]);
 
     // Create a user and assign the role
     $user = User::factory()->create();
     $user->update(['roles' => [$role->id]]);
     $this->actingAs($user);
-    
+
     $userPost = Post::factory()->create(['user_id' => $user->id]);
     $otherPost = Post::factory()->create();
-    
-       // Attempt to delete user's own post
+
+    // Attempt to delete user's own post
     Livewire::test(Edit::class, ['slug' => 'Post', 'id' => $userPost->id])
         ->call('singleAction', 'delete')
         ->assertDispatched('notify')
         ->assertSuccessful();
 
-        $this->assertDatabaseMissing('posts', ['id' => $userPost->id]);
-    
+    $this->assertDatabaseMissing('posts', ['id' => $userPost->id]);
+
     // Attempt to delete another user's post
     Livewire::test(Edit::class, ['slug' => 'Post', 'id' => $otherPost->id])
         ->assertForbidden();

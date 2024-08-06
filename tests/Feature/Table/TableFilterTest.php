@@ -677,5 +677,4 @@ test('table filter - custom filter - is_not_empty', function () {
         return count($rows->items()) === 1;
     });
 
-   
 });

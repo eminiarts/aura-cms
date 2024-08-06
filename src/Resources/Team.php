@@ -2,15 +2,15 @@
 
 namespace Aura\Base\Resources;
 
-use Aura\Base\Resource;
-use Aura\Base\Models\TeamMeta;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Cache;
 use Aura\Base\Database\Factories\TeamFactory;
-use Illuminate\Database\Eloquent\SoftDeletes;
 use Aura\Base\Jobs\GenerateAllResourcePermissions;
+use Aura\Base\Models\TeamMeta;
+use Aura\Base\Resource;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasManyThrough;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 
 class Team extends Resource
 {
@@ -195,6 +195,11 @@ class Team extends Resource
         return $this->hasMany(TeamMeta::class, 'team_id');
     }
 
+    public function roles(): HasMany
+    {
+        return $this->hasMany(Role::class);
+    }
+
     public function teamInvitations()
     {
         return $this->hasMany(TeamInvitation::class, 'team_id');
@@ -234,20 +239,13 @@ class Team extends Resource
             'id', // Local key on teams table...
             'id' // Local key on roles table...
         )->distinct() // To avoid duplicate users
-         ->join('post_relations', function ($join) {
-             $join->on('post_relations.resource_id', '=', 'roles.id')
-                  ->where('post_relations.resource_type', '=', Role::class)
-                  ->where('post_relations.related_type', '=', User::class);
-         })
-         ->where('post_relations.related_id', '=', DB::raw('users.id'));
+            ->join('post_relations', function ($join) {
+                $join->on('post_relations.resource_id', '=', 'roles.id')
+                    ->where('post_relations.resource_type', '=', Role::class)
+                    ->where('post_relations.related_type', '=', User::class);
+            })
+            ->where('post_relations.related_id', '=', DB::raw('users.id'));
     }
-
-       public function roles(): HasMany
-    {
-        return $this->hasMany(Role::class);
-    }
-
-
 
     protected static function booted()
     {
