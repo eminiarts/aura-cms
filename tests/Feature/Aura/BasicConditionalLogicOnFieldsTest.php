@@ -7,13 +7,16 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
 
-beforeEach(fn () => $this->actingAs($this->user = User::factory()->create()));
+beforeEach(fn () => $this->actingAs($this->user = createSuperAdmin()));
+
 
 class BasicConditionalLogicOnFieldModel extends Resource
 {
     public static ?string $slug = 'page';
 
     public static string $type = 'Page';
+
+    public $text1;
 
     public static function getFields()
     {
@@ -49,6 +52,8 @@ class BasicConditionalLogicOnFieldModel extends Resource
     }
 }
 
+
+
 test('Field X gets shown when value of Y is true', function () {
     $model = new BasicConditionalLogicOnFieldModel();
     
@@ -58,6 +63,9 @@ test('Field X gets shown when value of Y is true', function () {
     $field = collect($fields)->firstWhere('slug', 'text2');
     
     $result = ConditionalLogic::checkCondition($model, $field);
+    
+    $condition = $field['conditional_logic'][0];
+    $fieldValue = $model->text1;
     
     $this->assertTrue($result);
 });
