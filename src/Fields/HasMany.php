@@ -97,6 +97,10 @@ class HasMany extends Field
 
     public function relationship($model, $field)
     {
+        if(isset($field['column'])) {
+            return $model->hasMany($field['resource'], $field['column']);
+        }
+
         return $model
             ->morphedByMany($field['resource'], 'related', 'post_relations', 'resource_id', 'related_id')
             ->withTimestamps()
