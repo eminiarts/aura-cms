@@ -1,9 +1,9 @@
 <?php
 
+use Livewire\Livewire;
+use Aura\Base\Resource;
 use Aura\Base\Facades\Aura;
 use Aura\Base\Livewire\ResourceEditor;
-use Aura\Base\Models\Post;
-use Livewire\Livewire;
 
 class ResourceEditorFake extends ResourceEditor
 {
@@ -15,7 +15,7 @@ class ResourceEditorFake extends ResourceEditor
     }
 }
 
-class ResourceEditorTestModel extends Post
+class ResourceEditorTestModel extends Resource
 {
     public static ?string $slug = 'model';
 
