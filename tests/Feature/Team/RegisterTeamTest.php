@@ -61,10 +61,9 @@ beforeEach(function () {
 //     expect($options->team_registration)->toBeTrue();
 // });
 
-test('aura config site is working', function () {
-    $this->markTestSkipped('config not available atm');
+test('aura settings site is working', function () {
     // make sure the site route('aura.config') is working
-    $this->get(route('aura.config'))->assertOk();
+    $this->get(route('aura.settings'))->assertOk();
 });
 
 // test('registration config can be enabled and called from the aura facade', function () {
