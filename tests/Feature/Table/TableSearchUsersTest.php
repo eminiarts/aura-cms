@@ -1,11 +1,12 @@
 <?php
 
-use Aura\Base\Livewire\Table\Table;
+use Livewire\Livewire;
 use Aura\Base\Resources\Role;
 use Aura\Base\Resources\Team;
 use Aura\Base\Resources\User;
+use Illuminate\Support\Facades\DB;
+use Aura\Base\Livewire\Table\Table;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Livewire\Livewire;
 
 uses(RefreshDatabase::class);
 
@@ -27,36 +28,23 @@ beforeEach(function () {
         'roles' => $role->id,
     ]);
 
-    // $team = Team::first();
+    // Maybe there is a better way to do this
+    $role->users()->syncWithoutDetaching([$this->user2->id => ['resource_type' => Role::class]]);
+    $role->users()->syncWithoutDetaching([$this->user3->id => ['resource_type' => Role::class]]);
 
-    // $this->user->roles = [$role->id];
-    // $this->user->save();
-
-
-    // $this->user2->roles = [$role->id];
-    // $this->user->save();
-
-    // $team->users()->attach($this->user->id, [
-    //     'key' => 'roles',
-    //     'value' => $role->id,
-    // ]);
-    // $team->users()->attach($this->user2->id, [
-    //     'key' => 'roles',
-    //     'value' => $role->id,
-    // ]);
+   
 
 });
 
 test('search user by email', function () {
-
-    $this->withoutExceptionHandling();
-
     // Visit the Post Index Page
     $component = Livewire::test(Table::class, ['model' => $this->user])
         ->assertSet('search', null);
 
-    // $html = $component->html();
-    // ray($html);
+    $component->assertViewHas('rows', function ($rows) {
+        return count($rows->items()) === 3;
+    });
+
     $component
         ->assertSeeHtml('Test User')
         ->assertSee('Test User 2')
@@ -68,5 +56,4 @@ test('search user by email', function () {
 
     // $component->sorts should be []
     $this->assertEmpty($component->sorts);
-
 });
