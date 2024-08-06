@@ -2,13 +2,14 @@
 
 namespace Tests\Feature\Livewire;
 
+use Aura\Base\Livewire\Resource\Create;
 use Aura\Base\Resource;
 use Aura\Base\Resources\Post;
 use Aura\Base\Resources\User;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
-use Aura\Base\Livewire\Resource\Create;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 
 // Refresh Database on every test
 uses(RefreshDatabase::class);
@@ -86,60 +87,78 @@ test('HasMany query Meta Fields with posts table', function () {
 });
 
 test('HasMany query with custom tables', function () {
-    // Create a custom table for this test
-    Schema::create('custom_items', function ($table) {
+    // Migration for custom_parents table
+    Schema::create('custom_parents', function (Blueprint $table) {
         $table->id();
-        $table->foreignId('user_id');
         $table->string('name');
+        $table->unsignedBigInteger('team_id');
+        $table->string('type');
         $table->timestamps();
+        $table->foreignId('user_id')->nullable();
+    });
+
+    // Migration for custom_items table
+    Schema::create('custom_items', function (Blueprint $table) {
+        $table->id();
+        $table->unsignedBigInteger('parent_id');
+        $table->string('name');
+        $table->unsignedBigInteger('team_id');
+        $table->string('type');
+        $table->timestamps();
+        $table->foreignId('user_id')->nullable();
+
+        $table->foreign('parent_id')->references('id')->on('custom_parents');
     });
 
     // Define a CustomItem model for this test
-    class CustomItem extends Resource
+    class CustomParentModel extends Resource
     {
-        protected $fillable = ['user_id', 'name'];
+        protected $table = 'custom_parents';
+
+        protected $fillable = ['name', 'team_id', 'type'];
+
+        public static $customTable = true;
+
+        public function items()
+        {
+            return $this->hasMany(CustomChildModel::class, 'user_id');
+        }
+    }
+
+    class CustomChildModel extends Resource
+    {
+        protected $fillable = ['parent_id', 'name', 'team_id', 'type'];
+
+        public static $customTable = true;
 
         protected $table = 'custom_items';
     }
 
-    // Define a model with HasMany relationship to CustomItem
-    class CustomTableHasManyFieldModel extends Resource
-    {
-        public static string $type = 'CustomTableHasManyModel';
+    $user = User::factory()->create();
+    // Create a parent model
+    $parentModel = CustomParentModel::create([
+        'name' => 'Parent Model',
+        'team_id' => 1,
+        'type' => 'Resource',
+    ]);
 
-        public function customItems()
-        {
-            return $this->hasMany(CustomItem::class, 'user_id');
-        }
-
-        public static function getFields()
-        {
-            return [
-                [
-                    'name' => 'Custom Items',
-                    'type' => 'Aura\\Base\\Fields\\HasMany',
-                    'resource' => CustomItem::class,
-                    'slug' => 'customItems',
-                ],
-            ];
-        }
+    // Create child items without the 'content' field
+    for ($i = 1; $i <= 3; $i++) {
+        CustomChildModel::create([
+            'user_id' => $parentModel->id,
+            'name' => "Item $i",
+            'team_id' => 1,
+            'type' => 'Resource',
+        ]);
     }
 
-    $user = User::factory()->create();
-    $customItems = collect([
-        ['user_id' => $user->id, 'name' => 'Item 1'],
-        ['user_id' => $user->id, 'name' => 'Item 2'],
-        ['user_id' => $user->id, 'name' => 'Item 3'],
-    ])->map(function ($item) {
-        return CustomItem::create($item);
-    });
+    // Refresh the parent model to ensure relationships are loaded
+    $parentModel = $parentModel->fresh();
 
-    $model = new CustomTableHasManyFieldModel;
-    $model->id = $user->id;
-
-    expect($model->customItems()->count())->toBe(3);
-    expect($model->customItems()->first())->toBeInstanceOf(CustomItem::class);
+    expect($parentModel->items()->count())->toBe(3);
+    expect($parentModel->items()->first())->toBeInstanceOf(CustomChildModel::class);
 
     // Clean up: drop the custom table
     Schema::dropIfExists('custom_items');
+    Schema::dropIfExists('custom_parents');
 });
