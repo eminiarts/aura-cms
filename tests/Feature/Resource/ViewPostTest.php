@@ -1,13 +1,13 @@
 <?php
 
-use Livewire\Livewire;
-
-use Aura\Base\Resource;
 use Aura\Base\Facades\Aura;
+use Aura\Base\Livewire\Resource\View;
+use Aura\Base\Resource;
 use Aura\Base\Resources\Post;
 use Illuminate\Support\Facades\DB;
+use Livewire\Livewire;
+
 use function Pest\Livewire\livewire;
-use Aura\Base\Livewire\Resource\View;
 
 // Before each test, create a Superadmin and login
 beforeEach(function () {
@@ -54,11 +54,6 @@ test('resource view - can be customized via viewView method', function () {
     {
         public static string $type = 'CustomViewResource';
 
-        public function viewView()
-        {
-            return 'custom.resource.view';
-        }
-
         public static function getFields()
         {
             return [
@@ -74,51 +69,16 @@ test('resource view - can be customized via viewView method', function () {
                 ],
             ];
         }
+
+        public function viewView()
+        {
+            return 'custom.resource.view';
+        }
     }
 
     Aura::registerResources([
         CustomViewResource::class,
     ]);
-
-    // Add this at the beginning of your test
-DB::listen(function($query) {
-    ray($query->sql, $query->bindings)->orange();
-});
-
-// After your model creation
-ray('Database connection:')->red();
-ray(DB::connection()->getName())->red();
-
-// ray('Tables in database:')->red();
-// ray(DB::connection()->getDoctrineSchemaManager()->listTableNames())->red();
-
-     // Create the custom resource
-    $customResource = new CustomViewResource([
-        'title' => 'Custom Resource Title',
-        'content' => 'Custom Resource Content',
-        'team_id' => 1,
-        'type' => 'CustomViewResource',
-    ]);
-
-    ray('Before save:')->purple();
-    ray($customResource)->purple();
-
-    $saved = $customResource->save();
-
-    ray('Save result:')->purple();
-    ray($saved)->purple();
-
-    ray('After save:')->purple();
-    ray($customResource)->purple();
-
-    $this->assertDatabaseHas('posts', ['type' => 'CustomViewResource']);
-
-    // Check database state immediately after creation
-    ray('Database state after creation:')->purple();
-    ray(CustomViewResource::all())->purple();
-    ray('Count: ' . CustomViewResource::count())->purple();
-
-    dd(CustomViewResource::count());
 
     // Create the custom resource
     $customResource = CustomViewResource::create([
@@ -130,49 +90,21 @@ ray(DB::connection()->getName())->red();
 
     $this->assertDatabaseHas('posts', ['type' => 'CustomViewResource']);
 
-
     // Create a custom view file
     $customViewPath = resource_path('views/custom/resource/view.blade.php');
     $customViewContent = '<div>Custom Resource View: {{ $model->title }}</div>';
 
     // Ensure the directory exists
-    if (!file_exists(dirname($customViewPath))) {
+    if (! file_exists(dirname($customViewPath))) {
         mkdir(dirname($customViewPath), 0777, true);
     }
 
     file_put_contents($customViewPath, $customViewContent);
 
-    ray()->clearScreen();
-
-     // Check database state immediately after creation
-    ray('After creation:')->purple();
-    ray(CustomViewResource::all())->purple();
-    ray('Count: ' . CustomViewResource::count())->purple();
-
-    // ... Your custom view file creation ...
-
     Aura::fake();
     Aura::setModel($query = CustomViewResource::query());
 
-    // Check database state after Aura::fake()
-    ray('After Aura::fake():')->red();
-    ray(CustomViewResource::all())->red();
-    ray('Count: ' . CustomViewResource::count())->red();
-
-    ray($customResource);
-
-    ray(CustomViewResource::get())->purple();
-
-    dd(CustomViewResource::count());
-    // Test the Livewire component
-    
-    $component = Livewire::test(View::class, ['slug' => 'CustomViewResource', 'id' => $customResource->id]);
-
-    ray($component->html());
-
-    $component->assertSee("Custom Resource View:");
-
-
+    Livewire::test(View::class, ['slug' => 'CustomViewResource', 'id' => $customResource->id])->assertSee('Custom Resource View: Custom Resource Title');
 
     // Clean up: remove the temporary view file
     unlink($customViewPath);

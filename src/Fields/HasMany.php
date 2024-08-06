@@ -97,7 +97,7 @@ class HasMany extends Field
 
     public function relationship($model, $field)
     {
-        if(isset($field['column'])) {
+        if (isset($field['column'])) {
             return $model->hasMany($field['resource'], $field['column']);
         }
 

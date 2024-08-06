@@ -113,11 +113,11 @@ test('HasMany query with custom tables', function () {
     // Define a CustomItem model for this test
     class CustomParentModel extends Resource
     {
-        protected $table = 'custom_parents';
+        public static $customTable = true;
 
         protected $fillable = ['name', 'team_id', 'type'];
 
-        public static $customTable = true;
+        protected $table = 'custom_parents';
 
         public static function getFields()
         {
@@ -135,9 +135,9 @@ test('HasMany query with custom tables', function () {
 
     class CustomChildModel extends Resource
     {
-        protected $fillable = ['parent_id', 'name', 'team_id', 'type'];
-
         public static $customTable = true;
+
+        protected $fillable = ['parent_id', 'name', 'team_id', 'type'];
 
         protected $table = 'custom_items';
     }
