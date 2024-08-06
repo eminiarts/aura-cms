@@ -2,12 +2,13 @@
 
 namespace Tests\Feature\Livewire;
 
-use Aura\Base\Livewire\Resource\Create;
 use Aura\Base\Resource;
 use Aura\Base\Resources\Post;
 use Aura\Base\Resources\User;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
+use Aura\Base\Livewire\Resource\Create;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 
 // Refresh Database on every test
 uses(RefreshDatabase::class);
@@ -55,17 +56,30 @@ test('HasMany Field shown on Edit', function () {
 
     $editFields = $model->editFields();
 
-    expect($editFields)->toContain(function ($field) {
-        return $field['type'] === 'Aura\\Base\\Fields\\HasMany';
+    $hasHasManyField = collect($editFields)->contains(function ($field) {
+        return isset($field['field']) && $field['field'] instanceof \Aura\Base\Fields\HasMany;
     });
+
+    expect($hasHasManyField)->toBeTrue();
 });
 
 test('HasMany query Meta Fields with posts table', function () {
-    $user = User::factory()->create();
-    $posts = Post::factory()->count(3)->create(['user_id' => $user->id]);
+    $model = HasManyFieldModel::create();
 
-    $model = new HasManyFieldModel;
-    $model->id = $user->id;
+    // Create 3 posts
+    $posts = Post::factory()->count(3)->create();
+
+    // Create entries in post_relations table to mimic connections
+    foreach ($posts as $post) {
+        DB::table('post_relations')->insert([
+            'resource_type' => HasManyFieldModel::class,
+            'resource_id' => $model->id,
+            'related_type' => Post::class,
+            'related_id' => $post->id,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+    }
 
     expect($model->posts()->count())->toBe(3);
     expect($model->posts()->first())->toBeInstanceOf(Post::class);
