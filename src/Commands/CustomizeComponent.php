@@ -21,11 +21,15 @@ class CustomizeComponent extends Command
             default: 'Edit'
         );
 
-        $resources = app('aura')->getResources();
+        $resources = collect(app('aura')::getResources())->mapWithKeys(function ($resource) {
+            return [$resource => class_basename($resource)];
+        });
+
 
         $resourceOptions = collect($resources)->mapWithKeys(function ($resourceName, $resourceClass) {
             return [$resourceClass => $resourceName];
         })->toArray();
+
 
         $resourceClass = select(
             label: 'For which resource?',
