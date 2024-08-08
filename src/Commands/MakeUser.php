@@ -50,9 +50,8 @@ class MakeUser extends Command
         auth()->loginUsingId($user->id);
 
         $roleData = [
-            'type' => 'Role',
             'name' => 'Super Admin',
-            'slug' => 'super_admin2',
+            'slug' => 'super_admin',
             'description' => 'Super Admin can perform everything.',
             'super_admin' => true,
             'permissions' => [],

@@ -406,9 +406,8 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
 
     public function getMorphClass(): string
     {
-        // dd($this::class);
-        return $this::class;
-    }
+        return "Aura\Base\Resources\User";
+    }  
 
     public function getOption($option)
     {
