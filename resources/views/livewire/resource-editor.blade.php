@@ -232,7 +232,7 @@
             </div>
 
         @else
-        
+
             {{-- <div>
                 <button
                     class="px-2 py-1 focus:outline-none"
@@ -302,17 +302,17 @@
 
                     <div class="mt-0">
                         <div class="py-4 w-full">
-                            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 w-full">
-                                <div class="flex flex-col justify-between items-center p-6 bg-gray-100 rounded-md transition-all duration-300 border-2 border-transparent hover:border-2 hover:border-blue-500 cursor-pointer" wire:click="addTemplateFields('Plain')">
+                            <div class="grid grid-cols-1 gap-6 w-full md:grid-cols-2 lg:grid-cols-3">
+                                <div class="flex flex-col justify-between items-center p-6 bg-gray-100 rounded-md border-2 border-transparent transition-all duration-300 cursor-pointer hover:border-2 hover:border-blue-500" wire:click="addTemplateFields('Plain')">
                                     <div class="flex flex-col items-center mb-6 text-center">
                                         <h3 class="text-lg font-semibold">Plain</h3>
                                         <span class="text-sm text-gray-500">Without Tabs and Panels</span>
                                     </div>
-                                    
+
                                     <x-aura::icon.template-plain class="mb-6" />
                                 </div>
 
-                                <div class="flex flex-col justify-between items-center p-6 bg-gray-100 rounded-md transition-all duration-300 border-2 border-transparent hover:border-2 hover:border-blue-500 cursor-pointer" wire:click="addTemplateFields('TabsWithPanels')">
+                                <div class="flex flex-col justify-between items-center p-6 bg-gray-100 rounded-md border-2 border-transparent transition-all duration-300 cursor-pointer hover:border-2 hover:border-blue-500" wire:click="addTemplateFields('TabsWithPanels')">
                                     <div class="flex flex-col items-center mb-6 text-center">
                                         <h3 class="text-lg font-semibold">Tabs</h3>
                                         <span class="text-sm text-gray-500">Use global Tabs to group Fields</span>
@@ -321,7 +321,7 @@
                                     <x-aura::icon.template-tabs class="mb-6" />
                                 </div>
 
-                                <div class="flex flex-col justify-between items-center p-6 bg-gray-100 rounded-md transition-all duration-300 border-2 border-transparent hover:border-2 hover:border-blue-500 cursor-pointer" wire:click="addTemplateFields('TabsWithPanels')">
+                                <div class="flex flex-col justify-between items-center p-6 bg-gray-100 rounded-md border-2 border-transparent transition-all duration-300 cursor-pointer hover:border-2 hover:border-blue-500" wire:click="addTemplateFields('TabsWithPanels')">
                                     <div class="flex flex-col items-center mb-6 text-center">
                                         <h3 class="text-lg font-semibold">Tabs and Panels</h3>
                                         <span class="text-sm text-gray-500">Complex Models require both</span>

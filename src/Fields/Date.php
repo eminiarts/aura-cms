@@ -12,6 +12,8 @@ class Date extends Field
 
     public $view = 'aura::fields.view-value';
 
+    public $index = 'aura::fields.date-index';
+
     public function get($field, $value)
     {
         return $value;

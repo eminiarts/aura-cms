@@ -76,11 +76,10 @@
 
     </div>
 
-    @assets
         @once
-            <script>console.log('Assets here once?');</script>
-            @vite(['resources/js/monaco.js'], 'vendor/aura/libs')
+            @push('scripts')
+                @vite(['resources/js/monaco.js'], 'vendor/aura/libs')
+            @endpush
         @endonce
-    @endassets
 
 </x-aura::fields.wrapper>

@@ -26,8 +26,10 @@ class Tags extends Field
             return '';
         }
 
-        return app($field['resource'])->query()->whereIn('id', $value)->pluck('title')->map(function ($v) {
-            return "<span class='px-2 py-1 text-xs text-white whitespace-nowrap rounded-full bg-primary-500'>$v</span>";
+        $resource = app($field['resource'])->query()->whereIn('id', $value)->get();
+        return $resource->map(function ($item) {
+            $title = $item->title ?? $item->title();
+            return "<span class='px-2 py-1 text-xs text-white whitespace-nowrap rounded-full bg-primary-500'>$title</span>";
         })->implode(' ');
     }
 

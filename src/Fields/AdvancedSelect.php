@@ -2,6 +2,10 @@
 
 namespace Aura\Base\Fields;
 
+use Aura\Base\Fields\Field;
+use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Blade;
+
 class AdvancedSelect extends Field
 {
     public $edit = 'aura::fields.advanced-select';
@@ -9,6 +13,8 @@ class AdvancedSelect extends Field
     public $optionGroup = 'JS Fields';
 
     public $view = 'aura::fields.advanced-select-view';
+
+    public $index = 'aura::fields.advanced-select-index';
 
     public function api($request)
     {
@@ -24,8 +30,8 @@ class AdvancedSelect extends Field
                 return [
                     'id' => $item->id,
                     'title' => $item->title(),
-                    'view' => isset($field['view']) ? view($field['view'], ['item' => $item])->render() : null,
-                    'selected_view' => isset($field['selected_view']) ? view($field['selected_view'], ['item' => $item])->render() : null,
+                    'view' => isset($field['view_select']) ? view($field['view_select'], ['item' => $item, 'field' => $field])->render() : view('aura::components.fields.advanced-select-view-select', ['item' => $item, 'field' => $field])->render(),
+                    'view_selected' => isset($field['view_selected']) ? view($field['view_selected'], ['item' => $item, 'field' => $field])->render() : view('aura::components.fields.advanced-select-view-selected', ['item' => $item, 'field' => $field])->render(),
                 ];
             })
             ->toArray();
@@ -33,28 +39,29 @@ class AdvancedSelect extends Field
         return $values;
     }
 
-    public function display($field, $value, $model)
-    {
-        if (! $value) {
-            return;
-        }
+    // public function display($field, $value, $model)
+    // {
+    //     if (! $value) {
+    //         return;
+    //     }
 
-        $items = app($field['resource'])->find($value);
 
-        if (! $items) {
-            return;
-        }
+    //     $items = app($field['resource'])->find($value);
 
-        // return $item->title;
+    //     if (! $items) {
+    //         return;
+    //     }
 
-        if ($items instanceof \Illuminate\Support\Collection) {
-            return $items->map(function ($item) {
-                return $item->title();
-            })->implode(', ');
-        }
+    //     // return $item->title;
 
-        return $items->title();
-    }
+    //     if ($items instanceof \Illuminate\Support\Collection) {
+    //         return $items->map(function ($item) {
+    //             return $item->title();
+    //         })->implode(', ');
+    //     }
+
+    //     return $items->title();
+    // }
 
     public function get($class, $value)
     {
@@ -82,18 +89,41 @@ class AdvancedSelect extends Field
                 'validation' => '',
                 'slug' => 'resource',
             ],
+
             [
-                'name' => 'Custom View',
+                'name' => 'Thumbnail slug',
                 'type' => 'Aura\\Base\\Fields\\Text',
                 'validation' => '',
-                'slug' => 'view',
+                'slug' => 'thumbnail',
             ],
+
             [
                 'name' => 'Custom View Selected',
                 'type' => 'Aura\\Base\\Fields\\Text',
                 'validation' => '',
-                'slug' => 'view-selected',
+                'slug' => 'view_selected',
             ],
+            [
+                'name' => 'Custom View Select',
+                'type' => 'Aura\\Base\\Fields\\Text',
+                'validation' => '',
+                'slug' => 'view_select',
+            ],
+
+            [
+                'name' => 'Custom View View',
+                'type' => 'Aura\\Base\\Fields\\Text',
+                'validation' => '',
+                'slug' => 'view_view',
+            ],
+            [
+                'name' => 'Custom View Index',
+                'type' => 'Aura\\Base\\Fields\\Text',
+                'validation' => '',
+                'slug' => 'view_index',
+            ],
+
+
             [
                 'name' => 'Allow Create New',
                 'type' => 'Aura\\Base\\Fields\\Boolean',
@@ -169,8 +199,8 @@ class AdvancedSelect extends Field
             return [
                 'id' => $item->id,
                 'title' => $item->title(),
-                'view' => isset($field['view']) ? view($field['view'], ['item' => $item])->render() : null,
-                'selected_view' => isset($field['selected_view']) ? view($field['selected_view'], ['item' => $item])->render() : null,
+                'view' => isset($field['view_select']) ? view($field['view_select'], ['item' => $item, 'field' => $field])->render() : view('aura::components.fields.advanced-select-view-select', ['item' => $item, 'field' => $field])->render(),
+                'view_selected' => isset($field['view_selected']) ? view($field['view_selected'], ['item' => $item, 'field' => $field])->render() : view('aura::components.fields.advanced-select-view-selected', ['item' => $item, 'field' => $field])->render(),
             ];
         })->toArray();
     }
@@ -186,8 +216,8 @@ class AdvancedSelect extends Field
             return [
                 'id' => $item->id,
                 'title' => $item->title(),
-                'view' => isset($field['view']) ? view($field['view'], ['item' => $item])->render() : null,
-                'selected_view' => isset($field['selected_view']) ? view($field['selected_view'], ['item' => $item])->render() : null,
+                'view' => isset($field['view_select']) ? view($field['view_select'], ['item' => $item, 'field' => $field])->render() : view('aura::components.fields.advanced-select-view-select', ['item' => $item, 'field' => $field])->render(),
+                'view_selected' => isset($field['view_selected']) ? view($field['view_selected'], ['item' => $item, 'field' => $field])->render() : view('aura::components.fields.advanced-select-view-selected', ['item' => $item, 'field' => $field])->render(),
 
             ];
         })->toArray();

@@ -20,7 +20,7 @@
 
 @media screen and (min-width: 768px) {
     .aura-content {
-        width: calc(100% - 18rem);
+        width: calc(100% - 18rem) !important;
     }
 }
 

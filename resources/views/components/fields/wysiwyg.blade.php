@@ -2,7 +2,7 @@
     <div x-data="{
         init() {
             let quill = new window.Quill(this.$refs.quill, { theme: 'snow' })
-    
+
             quill.on('text-change', function() {
                 $wire.$set('form.fields.{{ optional($field)['slug'] }}', quill.root.innerHTML);
             });
@@ -14,10 +14,8 @@
 </x-aura::fields.wrapper>
 
 
-@assets
     @once
         @push('scripts')
             @vite(['resources/js/quill.js'], 'vendor/aura/libs')
         @endpush
     @endonce
-@endassets

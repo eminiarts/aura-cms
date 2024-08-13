@@ -373,17 +373,19 @@
                         @mouseup.prevent="stopDragging()" x-ref="selectedItemsContainer">
                         <template x-for="(item, index) in value" :key="item">
 
-                            <div class="inline-flex gap-1 items-center px-2 py-0.5 mr-2 mb-2 text-xs font-medium leading-4 rounded-full bg-primary-100 text-primary-800 draggable-selectmany-item"
+                            <div class="inline-flex gap-1 items-center py-0.5 pr-2 pl-1 mr-2 mb-2 text-xs font-medium leading-4 rounded-full bg-primary-100 text-primary-800 draggable-selectmany-item"
                                 :data-id="item" @mousedown.prevent="startDragging(index, $event)"
                                 :class="{ 'shadow-item': index == dragIndex }">
 
                                 <div>
-                                    <template x-if="item && selectedItemMarkup(item) && selectedItemMarkup(item).selected_view" :key="item">
-                                        <span x-html="selectedItemMarkup(item).selected_view"></span>
+                                    <template x-if="item && selectedItemMarkup(item) && selectedItemMarkup(item).view_selected" :key="item">
+                                        <span x-html="selectedItemMarkup(item).view_selected"></span>
                                     </template>
-                                    <template x-if="!selectedItemMarkup(item).selected_view" :key="item">
+
+                                    <template x-if="!selectedItemMarkup(item).view_selected" :key="item">
                                         <span class="" x-text="selectedItemMarkup(item).title"></span>
                                     </template>
+
                                 </div>
 
                                 <!-- Small x svg -->
@@ -401,10 +403,10 @@
                         <div x-show="dragging"
                             class="inline-flex gap-1 items-center px-2 py-0.5 mr-2 mb-2 text-xs font-medium leading-4 rounded-full bg-primary-100 text-primary-800 dragging-item"
                             x-ref="draggingItem">
-                            <template x-if="value[dragIndex] && selectedItemMarkup(value[dragIndex]) && selectedItemMarkup(value[dragIndex]).selected_view" :key="item">
-                                <span x-html="selectedItemMarkup(value[dragIndex]).selected_view"></span>
+                            <template x-if="value[dragIndex] && selectedItemMarkup(value[dragIndex]) && selectedItemMarkup(value[dragIndex]).view_selected" :key="item">
+                                <span x-html="selectedItemMarkup(value[dragIndex]).view_selected"></span>
                             </template>
-                            <template x-if="!selectedItemMarkup(value[dragIndex]).selected_view" :key="item">
+                            <template x-if="!selectedItemMarkup(value[dragIndex]).view_selected" :key="item">
                                 <span class="" x-text="selectedItemMarkup(value[dragIndex]).title"></span>
                             </template>
 
@@ -437,7 +439,7 @@
 
             <template x-if="showListbox">
                 <ul x-ref="listbox" x-transition.origin.top x-cloak
-                    class="overflow-y-auto absolute left-0 z-10 mt-2 w-full max-h-64 bg-white rounded-md border divide-y shadow-md origin-top outline-none divide-gray-500/30 border-gray-500/30 dark:border-gray-700 dark:bg-gray-900 dark:divide-gray-700">
+                    class="overflow-y-auto absolute left-0 z-10 mt-2 w-full max-h-96 bg-white rounded-md border divide-y shadow-md origin-top outline-none divide-gray-500/30 border-gray-500/30 dark:border-gray-700 dark:bg-gray-900 dark:divide-gray-700">
                     <template x-if="searchable">
                         <li>
                             <div>
@@ -467,9 +469,9 @@
                         <template x-for="item in filteredItems" :key="item.id">
                             <li :value="item.id"
                                 :class="{
-                                    'dark:bg-primary-500/20 dark:hover:bg-primary-500/30 dark:focus:bg-primary-500/30 bg-primary-50 hover:bg-primary-100 focus:bg-primary-100 focus:outline-none': isActive(
+                                    'dark:bg-primary-500/20 dark:hover:bg-primary-500/30 dark:focus:bg-primary-500/30 bg-primary-50 hover:bg-primary-100 ': isActive(
                                         item),
-                                    'dark:bg-gray-900 dark:hover:bg-gray-800 dark:focus:bg-gray-800 bg-white hover:bg-primary-100 focus:bg-primary-100 focus:outline-none':
+                                    'dark:bg-gray-900 dark:hover:bg-gray-800 dark:focus:bg-gray-800 bg-white hover:bg-gray-50 focus:bg-gray-100 ':
                                         !isSelected(item),
                                     'opacity-50 cursor-not-allowed': isDisabled(item),
                                 }"
