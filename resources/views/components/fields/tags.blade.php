@@ -15,9 +15,9 @@ if (key_exists('resource', $field) ) {
 @endphp
 
 @once
-    @assets
+    @push('scripts')
         @vite(['resources/js/tagify.js'], 'vendor/aura/libs')
-    @endassets
+    @endpush
 @endonce
 
 <x-aura::fields.wrapper :field="$field">
@@ -73,7 +73,7 @@ x-data="{
 class=""
 >
 
-<input x-ref="tags" name='tags' class='px-3 py-2 w-full bg-white rounded-lg appearance-none shadow-xs border-gray-500/30 tags focus:border-primary-300 focus:outline-none ring-gray-900/10 focus:ring focus:ring-primary-300 focus:ring-opacity-50 dark:focus:ring-primary-500 dark:focus:ring-opacity-50 dark:bg-gray-900 dark:border-gray-700' placeholder='{{ $field['name'] }}'>
+<input x-ref="tags" name='tags' class='flex items-center h-[42px] w-full bg-white rounded-lg appearance-none shadow-xs border-gray-500/30 tags focus:border-primary-300 focus:outline-none ring-gray-900/10 focus:ring focus:ring-primary-300 focus:ring-opacity-50 dark:focus:ring-primary-500 dark:focus:ring-opacity-50 dark:bg-gray-900 dark:border-gray-700' placeholder='{{ $field['name'] }}'>
 
 </div>
 </x-aura::fields.wrapper>

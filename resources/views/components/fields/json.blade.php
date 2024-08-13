@@ -84,7 +84,7 @@
         }, 5);" :id="monacoId"
             class="flex flex-col items-center relative justify-start w-full bg-white min-h-[250px] pt-3 h-100">
             <div x-show="monacoLoader"
-                class="absolute inset-0 z-20 flex items-center justify-center w-full h-full duration-1000 ease-out">
+                class="flex absolute inset-0 z-20 justify-center items-center w-full h-full duration-1000 ease-out">
                 <svg class="w-4 h-4 text-gray-400 animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none"
                     viewBox="0 0 24 24">
                     <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor"
@@ -98,13 +98,12 @@
                 <div x-ref="monacoEditorElement" class="w-full h-full text-lg editor"></div>
                 <div x-ref="monacoPlaceholderElement" x-show="monacoPlaceholder" @click="monacoEditorFocus()"
                     :style="'font-size: ' + monacoFontSize"
-                    class="w-full text-sm font-mono absolute z-50 text-gray-500 ml-14 -translate-x-0.5 mt-0.5 left-0 top-0"
+                    class="absolute top-0 left-0 z-50 mt-0.5 ml-14 w-full font-mono text-sm text-gray-500 -translate-x-0.5"
                     x-text="monacoPlaceholderText"></div>
             </div>
         </div>
 
     </div>
-    @assets
         @once
             @push('styles')
 
@@ -112,16 +111,10 @@
 
                 <style type="text/css" media="screen">
                     .editor {
-                        /* position: absolute;
-                                                        top: 0;
-                                                        right: 0;
-                                                        bottom: 0;
-                                                        left: 0; */
                         min-height: {{ $field['height'] ?? '300'}}px;
                     }
                 </style>
             @endpush
         @endonce
-    @endassets
 
 </x-aura::fields.wrapper>
