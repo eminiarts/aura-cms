@@ -50,12 +50,12 @@ class CustomizeComponent extends Command
         $componentName = "{$componentType}{$resourceName}";
 
         $stubPath = __DIR__.'/Stubs/livewire.custom.stub';
-        $componentPath = app_path("Http/Livewire/{$componentName}.php");
+        $componentPath = app_path("Livewire/{$componentName}.php");
 
         $stub = file_get_contents($stubPath);
         $stub = str_replace(
             ['{{ namespace }}', '{{ class }}', '{{ baseClass }}', '{{ componentType }}', '{{ resourceClass }}'],
-            ['App\\Http\\Livewire', $componentName, "Aura\\Base\\Livewire\\Resource\\{$componentType}", $componentType, $resourceName],
+            ['App\\Livewire', $componentName, "Aura\\Base\\Livewire\\Resource\\{$componentType}", $componentType, $resourceName],
             $stub
         );
 
@@ -78,7 +78,7 @@ class CustomizeComponent extends Command
 
         $resourceSlug = Str::kebab($resourceName);
 
-        $newRoute = "Route::get('admin/{$resourceSlug}/{id}/".Str::lower($componentType)."', App\\Http\\Livewire\\{$componentType}{$resourceName}::class)->name('{$resourceSlug}.".Str::lower($componentType)."');";
+        $newRoute = "Route::get('admin/{$resourceSlug}/{id}/".Str::lower($componentType)."', App\\Livewire\\{$componentType}{$resourceName}::class)->name('{$resourceSlug}.".Str::lower($componentType)."');";
 
         // Append the new route to the end of the file
         $updatedContents = $routeContents."\n".$newRoute;
