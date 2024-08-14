@@ -469,9 +469,9 @@
                         <template x-for="item in filteredItems" :key="item.id">
                             <li :value="item.id"
                                 :class="{
-                                    'dark:bg-primary-500/20 dark:hover:bg-primary-500/30 dark:focus:bg-primary-500/30 bg-primary-50 hover:bg-primary-100 ': isActive(
+                                    'dark:bg-primary-500/20 dark:hover:bg-primary-500/30 dark:focus:bg-primary-500/30 bg-primary-50 hover:bg-primary-100 focus:outline-none': isActive(
                                         item),
-                                    'dark:bg-gray-900 dark:hover:bg-gray-800 dark:focus:bg-gray-800 bg-white hover:bg-gray-50 focus:bg-gray-100 ':
+                                    'dark:bg-gray-900 dark:hover:bg-gray-800 dark:focus:bg-gray-800 bg-white hover:bg-gray-50 focus:bg-gray-100 focus:outline-none':
                                         !isSelected(item),
                                     'opacity-50 cursor-not-allowed': isDisabled(item),
                                 }"
