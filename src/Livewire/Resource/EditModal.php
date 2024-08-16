@@ -3,17 +3,13 @@
 namespace Aura\Base\Livewire\Resource;
 
 use LivewireUI\Modal\ModalComponent;
+use Aura\Base\Livewire\Resource\Edit;
 
-class EditModal extends ModalComponent
+class EditModal extends Edit
 {
     public $resource;
 
     public $type;
-
-    public static function modalMaxWidth(): string
-    {
-        return '7xl';
-    }
 
     public function mount($resource, $type) {}
 
