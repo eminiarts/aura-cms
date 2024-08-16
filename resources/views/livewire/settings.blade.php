@@ -23,7 +23,7 @@
         </div>
     </div>
 
- 
+
     @foreach($this->fieldsForView as $key => $field)
         <style>
             #resource-field-{{ optional($field)['slug'] }}-wrapper {
@@ -40,7 +40,7 @@
         @checkCondition($model, $field, $form)
             <div wire:key="resource-field-{{ $key }}"
             id="resource-field-{{ optional($field)['slug'] }}-wrapper">
-            <x-dynamic-component :component="$field['field']->component()" :field="$field" :form="$form" />
+            <x-dynamic-component :component="$field['field']->edit()" :field="$field" :form="$form" />
             </div>
         @endcheckCondition
     @endforeach

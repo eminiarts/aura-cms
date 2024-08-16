@@ -37,16 +37,18 @@ class Field implements Wireable
 
     public $view = null;
 
-    public function component()
+    public function edit()
     {
-        if ($this->view && optional(request()->route())->action && is_string(optional(request()->route()->action)['uses']) && Str::contains(optional(request()->route()->action)['uses'], 'View')) {
-            return $this->view;
-        }
-
         if ($this->edit) {
             return $this->edit;
         }
+    }
 
+    public function view()
+    {
+        if ($this->view) {
+            return $this->view;
+        }
     }
 
     public function display($field, $value, $model)
@@ -306,10 +308,10 @@ class Field implements Wireable
         return $value;
     }
 
-    public function view($view, $data = [], $mergeData = [])
-    {
-        $this->view = $view;
+    // public function view($view, $data = [], $mergeData = [])
+    // {
+    //     $this->view = $view;
 
-        return $this;
-    }
+    //     return $this;
+    // }
 }

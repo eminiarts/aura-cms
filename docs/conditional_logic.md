@@ -8,7 +8,7 @@ In the View, each field is wrapped:
 @foreach($this->fields as $key => $field)
 <x-fields.conditions :field="$field" :model="$model">
     <div wire:key="resource-field-{{ $key }}">
-        <x-dynamic-component :component="$field['field']->component()" :field="$field" :form="$form" />
+        <x-dynamic-component :component="$field['field']->edit()" :field="$field" :form="$form" />
     </div>
 </x-fields.conditions>
 @endforeach
@@ -31,4 +31,4 @@ In the View, each field is wrapped:
 11. If the operator is <, the condition will be satisfied if the value of the field is less than the specified value.
 12. If the operator is >=, the condition will be satisfied if the value of the field is greater than or equal to the specified value.
 13. If the user is a super admin, the condition will be satisfied.
-14. If the model does not have the field specified in the condition, the condition will not be satisfied. 
+14. If the model does not have the field specified in the condition, the condition will not be satisfied.

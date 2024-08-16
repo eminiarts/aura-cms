@@ -136,6 +136,19 @@ class AdvancedSelect extends Field
                 'validation' => '',
                 'slug' => 'multiple',
             ],
+
+            // [
+            //     'name' => 'Min Items',
+            //     'type' => 'Aura\\Base\\Fields\\Number',
+            //     'validation' => 'min:0',
+            //     'slug' => 'min_items',
+            // ],
+            // [
+            //     'name' => 'Max Items',
+            //     'type' => 'Aura\\Base\\Fields\\Number',
+            //     'validation' => 'min:0',
+            //     'slug' => 'max_items',
+            // ],
         ]);
     }
 

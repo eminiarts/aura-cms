@@ -3,7 +3,7 @@
     @if(optional($field)['fields'])
         @foreach($field['fields'] as $key => $field)
             @checkCondition($this->model ?? $model, $field, $this->form ?? $form)
-                <x-dynamic-component :component="$field['field']->component()" :field="$field" :form="$form" />
+                <x-dynamic-component :component="$field['field']->edit()" :field="$field" :form="$form" />
             @endcheckCondition
         @endforeach
     @else

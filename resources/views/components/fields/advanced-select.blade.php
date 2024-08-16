@@ -50,6 +50,7 @@
         value: $wire.entangle('form.fields.{{ $field['slug'] }}'),
         items: @js($values),
         selectedItems: @js($selectedValues),
+        deselectedItems: [],
         api: @js($api),
         model: @js($field['resource']),
         field: @js($field['type']),
@@ -136,7 +137,7 @@
                 })
                 .then(response => response.json())
                 .then(data => {
-                    this.items = data;
+                    this.items = data.sort((a, b) => a.id - b.id);
                     this.loading = false;
 
                     console.log('new items: ', this.items);
@@ -160,7 +161,14 @@
             if (!this.selectedItems || this.selectedItems.length === 0) {
                 return items;
             }
-            // return this.selectedItems and items and remove duplicates by id
+
+
+
+            // return this.selectedItems, items, and deselectedItems and remove duplicates by id
+            {{-- if (!this.search || this.search == '') {
+                return [...this.selectedItems, ...items].filter((item, index, self) => self.findIndex(i => i.id === item.id) === index).sort((a, b) => a.id - b.id);
+            } --}}
+
             return [...this.selectedItems, ...items].filter((item, index, self) => self.findIndex(i => i.id === item.id) === index).sort((a, b) => a.id - b.id);
         },
 
@@ -204,8 +212,7 @@
 
         toggleItem(item) {
             // singular
-
-            console.log(this.multiple, this.value, item.id);
+            {{-- console.log(this.multiple, this.value, item.id); --}}
 
             if (!this.multiple) {
                 this.value = item.id;
@@ -224,7 +231,9 @@
 
             if (this.isSelected(item)) {
                 this.value = this.value.filter(i => i !== item.id);
-                this.selectedItems = this.selectedItems.filter(i => i.id !== item.id);
+                if (!this.deselectedItems.find(i => i.id === item.id)) {
+                    this.deselectedItems.push(item);
+                }
             } else {
                 if (!this.selectedItems.find(i => i.id === item.id)) {
                     this.selectedItems.push(item);
@@ -232,6 +241,7 @@
                 if (!this.value.includes(item.id)) {
                     this.value.push(item.id);
                 }
+                this.deselectedItems = this.deselectedItems.filter(i => i.id !== item.id);
             }
         },
 
@@ -360,7 +370,7 @@
             <label class="sr-only">{{ __('Select Entry') }}</label>
 
             <button type="button"
-                class="relative flex items-center justify-between w-full px-3 pt-0 pb-0 border rounded-lg shadow-xs appearance-none min-h-[2.625rem] border-gray-500/30 focus:border-primary-300 focus:outline-none ring-gray-900/10 focus:ring focus:ring-primary-300 focus:ring-opacity-50 dark:focus:ring-primary-500 dark:focus:ring-opacity-50 dark:bg-gray-900 dark:border-gray-700"
+                class="relative flex items-center justify-between w-full px-3 pt-1 pb-0 border rounded-lg shadow-xs appearance-none min-h-[2.625rem] border-gray-500/30 focus:border-primary-300 focus:outline-none ring-gray-900/10 focus:ring focus:ring-primary-300 focus:ring-opacity-50 dark:focus:ring-primary-500 dark:focus:ring-opacity-50 dark:bg-gray-900 dark:border-gray-700"
                 x-ref="listboxButton" @click="toggleListbox">
 
                 <template x-if="value && !multiple">
@@ -369,11 +379,11 @@
                 </template>
 
                 <template x-if="value && value.length > 0 && multiple">
-                    <div class="flex flex-wrap items-center pt-2" @mousemove.prevent="moveItem($event)"
+                    <div class="flex flex-wrap items-center pt-0" @mousemove.prevent="moveItem($event)"
                         @mouseup.prevent="stopDragging()" x-ref="selectedItemsContainer">
                         <template x-for="(item, index) in value" :key="item">
 
-                            <div class="inline-flex gap-1 items-center py-0.5 pr-2 pl-1 mr-2 mb-2 text-xs font-medium leading-4 rounded-full bg-primary-100 text-primary-800 draggable-selectmany-item"
+                            <div class="inline-flex gap-1 items-center py-0.5 pr-2 pl-1 mr-2 mb-1 text-xs font-medium leading-4 rounded-full bg-primary-100 text-primary-800 draggable-selectmany-item"
                                 :data-id="item" @mousedown.prevent="startDragging(index, $event)"
                                 :class="{ 'shadow-item': index == dragIndex }">
 
@@ -423,7 +433,7 @@
                 </template>
 
                 <template x-if="!value || value.length == 0">
-                    <span class="text-gray-400">{{ __('Select Entry') }}</span>
+                    <span class="mb-1 text-gray-400">{{ __('Select Entry') }}</span>
                 </template>
 
                 <!-- Heroicons up/down -->
@@ -441,10 +451,10 @@
                 <ul x-ref="listbox" x-transition.origin.top x-cloak
                     class="overflow-y-auto absolute left-0 z-10 mt-2 w-full max-h-96 bg-white rounded-md border divide-y shadow-md origin-top outline-none divide-gray-500/30 border-gray-500/30 dark:border-gray-700 dark:bg-gray-900 dark:divide-gray-700">
                     <template x-if="searchable">
-                        <li>
+                        <li class="border-none">
                             <div>
                                 <input x-model.debounce.500ms="search" autofocus x-ref="searchField"
-                                    class="px-4 py-2.5 w-full placeholder-gray-500 text-gray-900 border-none focus:outline-none"
+                                    class="px-4 py-2.5 w-full placeholder-gray-500 text-gray-900 border-none focus:ring-primary-600 focus:outline-none"
                                     placeholder="{{ __('Search...')}}">
                             </div>
                         </li>
@@ -475,7 +485,7 @@
                                         !isSelected(item),
                                     'opacity-50 cursor-not-allowed': isDisabled(item),
                                 }"
-                                class="flex gap-2 justify-between items-center px-4 py-2 w-full text-sm transition-colors cursor-pointer"
+                                class="flex gap-2 justify-between items-center px-4 py-2 w-full text-sm transition-colors cursor-pointer focus:ring-primary-600"
                                 tabindex="0" role="option" @click="toggleItem(item)"
                                 @keydown.enter.stop.prevent="toggleItem(item)"
                                 @keydown.space.stop.prevent="toggleItem(item)">

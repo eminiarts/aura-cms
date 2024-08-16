@@ -63,11 +63,11 @@
     }">
 
         <div class="col-span-1 mx-0 sm:col-span-3">
-
+            {{-- @dd($this->viewFields) --}}
             <div class="flex flex-wrap items-start -mx-2">
                 @foreach($this->viewFields as $key => $field)
                 <x-aura::fields.conditions :field="$field" :model="$model" wire:key="resource-field-{{ $key }}">
-                    <x-dynamic-component :component="$field['field']->component()" :field="$field" :form="$form" />
+                    <x-dynamic-component :component="$field['field']->view()" :field="$field" :form="$form" />
                 </x-aura::fields.conditions>
                 @endforeach
             </div>
