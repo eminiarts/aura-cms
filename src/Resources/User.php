@@ -55,7 +55,7 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
      */
     protected $casts = [
         'email_verified_at' => 'datetime',
-        'password' => 'hashed',
+        // 'password' => 'hashed',
     ];
 
     protected static $dropdown = 'Users';
