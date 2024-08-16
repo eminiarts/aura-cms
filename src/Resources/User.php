@@ -55,6 +55,7 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
      */
     protected $casts = [
         'email_verified_at' => 'datetime',
+        'password' => 'hashed',
     ];
 
     protected static $dropdown = 'Users';
@@ -191,7 +192,7 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
         return [
             [
                 'type' => 'Aura\\Base\\Fields\\Tab',
-                'name' => 'User details',
+                'name' => 'Details',
                 'slug' => 'tab-user',
                 'global' => true,
             ],
@@ -272,27 +273,6 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
                 'on_index' => false,
                 'on_view' => false,
             ],
-
-            // [
-            //     'type' => 'Aura\\Base\\Fields\\Tab',
-            //     'name' => 'Posts',
-            //     'slug' => 'tab-posts',
-            //     'global' => true,
-            // ],
-            // [
-            //     'name' => 'Posts',
-            //     'slug' => 'posts',
-            //     'type' => 'Aura\\Base\\Fields\\HasMany',
-            //     'resource' => 'Aura\\Base\\Resources\\Post',
-            //     'validation' => '',
-            //     'wrapper' => '',
-            //     'on_index' => false,
-            //     'on_forms' => true,
-            //     'on_view' => true,
-            //     'style' => [
-            //         'width' => '100',
-            //     ],
-            // ],
             [
                 'type' => 'Aura\\Base\\Fields\\Tab',
                 'name' => 'Teams',
@@ -339,7 +319,6 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
                 'conditional_logic' => [],
                 'slug' => '2fa',
             ],
-
         ];
     }
 

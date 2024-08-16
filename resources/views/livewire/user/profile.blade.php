@@ -3,11 +3,28 @@
 
     {{ app('aura')::injectView('profile_before_header') }}
 
-    <div>
-        <h1 class="text-3xl font-semibold">{{ __('Profile') }}</h1>
-        <h3> {{ __('Update your account\'s profile information and email address.') }}</h3>
+    <div class="mb-6">
+        <x-aura::breadcrumbs>
+            <x-aura::breadcrumbs.li :href="route('aura.dashboard')" title="" icon="dashboard" iconClass="text-gray-500 w-7 h-7 mr-0" />
+            <x-aura::breadcrumbs.li title="Profile" />
+        </x-aura::breadcrumbs>
     </div>
 
+    <div class="flex justify-between items-center mb-6">
+        <div>
+            <h1 class="mb-2 text-3xl font-semibold">Profile</h1>
+        </div>
+
+        <div>
+            <x-aura::button wire:click="save">
+                <div wire:loading wire:target="save">
+                    <x-aura::icon.loading  />
+                </div>
+                {{ __('Save') }}
+            </x-aura::button>
+        </div>
+    </div>
+   
     {{ app('aura')::injectView('profile_after_header') }}
 
     <x-aura::validation-errors />
@@ -32,10 +49,5 @@
     </x-aura::fields.conditions>
     @endforeach
 
-    <x-aura::button size="xl" wire:click="save">
-        <div wire:loading>
-            <x-aura::icon.loading  />
-        </div>
-        {{ __('Save') }}
-    </x-aura::button>
+  
 </div>
