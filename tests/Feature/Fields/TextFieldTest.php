@@ -62,7 +62,7 @@ test('Text Field - Name rendered', function () {
 
     $view = $this->withViewErrors([])->blade(
         '<x-dynamic-component :component="$component" :field="$field" :form="$form" />',
-        ['component' => $fieldClass->component(), 'field' => $field, 'form' => []]
+        ['component' => $fieldClass->edit(), 'field' => $field, 'form' => []]
     );
 
     expect((string) $view)->toContain('>Text for Test</label>');
@@ -83,7 +83,7 @@ test('Text Field - Placeholder rendered', function () {
 
     $view = $this->withViewErrors([])->blade(
         '<x-dynamic-component :component="$component" :field="$field" :form="$form" />',
-        ['component' => $fieldClass->component(), 'field' => $field, 'form' => []]
+        ['component' => $fieldClass->edit(), 'field' => $field, 'form' => []]
     );
 
     expect((string) $view)->toContain('placeholder="Placeholder for Test"');
@@ -116,7 +116,7 @@ test('Text Field - Prefix rendered', function () {
 
     $view = $this->withViewErrors([])->blade(
         '<x-dynamic-component :component="$component" :field="$field" :form="$form" />',
-        ['component' => $fieldClass->component(), 'field' => $field, 'form' => []]
+        ['component' => $fieldClass->edit(), 'field' => $field, 'form' => []]
     );
 
     expect((string) $view)->toContain('Prefix for Test');
@@ -137,7 +137,7 @@ test('Text Field - suffix rendered', function () {
 
     $view = $this->withViewErrors([])->blade(
         '<x-dynamic-component :component="$component" :field="$field" :form="$form" />',
-        ['component' => $fieldClass->component(), 'field' => $field, 'form' => []]
+        ['component' => $fieldClass->edit(), 'field' => $field, 'form' => []]
     );
 
     expect((string) $view)->toContain('Suffix for Test');

@@ -8,8 +8,8 @@
             <div class="w-full">
                 <div class="mb-4 flex flex-wrap items-start -mx-4">
                     @foreach ($this->fields as $key => $field)
-                        
-                            <x-dynamic-component :component="$field['field']->component()" :field="$field" :form="$form" />
+
+                            <x-dynamic-component :component="$field['field']->edit()" :field="$field" :form="$form" />
                     @endforeach
                 </div>
             </div>

@@ -130,7 +130,7 @@ test('Slug Field - Without Custom Checkbox', function () {
 
     $view = $this->withViewErrors([])->blade(
         '<x-dynamic-component :component="$component" :field="$field" />',
-        ['component' => $fieldClass->component(), 'field' => $field]
+        ['component' => $fieldClass->edit(), 'field' => $field]
     );
 
     $view->assertSee('Slug for Test');
@@ -145,7 +145,7 @@ test('Slug Field - Without Custom Checkbox', function () {
 
     $view = $this->withViewErrors([])->blade(
         '<x-dynamic-component :component="$component" :field="$field" />',
-        ['component' => $fieldClass->component(), 'field' => $field]
+        ['component' => $fieldClass->edit(), 'field' => $field]
     );
 
     $view->assertSee('Slug for Test');
@@ -171,7 +171,7 @@ test('Slug Field - only disabled input - true', function () {
 
     $view = $this->withViewErrors([])->blade(
         '<x-dynamic-component :component="$component" :field="$field" />',
-        ['component' => $fieldClass->component(), 'field' => $field]
+        ['component' => $fieldClass->edit(), 'field' => $field]
     );
 
     $view->assertSee('Slug for Test');
@@ -197,7 +197,7 @@ test('Slug Field - disabled input - false', function () {
 
     $view = $this->withViewErrors([])->blade(
         '<x-dynamic-component :component="$component" :field="$field" />',
-        ['component' => $fieldClass->component(), 'field' => $field]
+        ['component' => $fieldClass->edit(), 'field' => $field]
     );
 
     $view->assertSee('Slug for Test');
@@ -224,7 +224,7 @@ test('Slug Field - custom - false ', function () {
 
     $view = $this->withViewErrors([])->blade(
         '<x-dynamic-component :component="$component" :field="$field" />',
-        ['component' => $fieldClass->component(), 'field' => $field]
+        ['component' => $fieldClass->edit(), 'field' => $field]
     );
 
     expect((string) $view)->not->toContain('<div class="custom-slug');
@@ -245,7 +245,7 @@ test('Slug Field - custom - true', function () {
 
     $view = $this->withViewErrors([])->blade(
         '<x-dynamic-component :component="$component" :field="$field" />',
-        ['component' => $fieldClass->component(), 'field' => $field]
+        ['component' => $fieldClass->edit(), 'field' => $field]
     );
 
     expect((string) $view)->toContain('<div class="custom-slug');

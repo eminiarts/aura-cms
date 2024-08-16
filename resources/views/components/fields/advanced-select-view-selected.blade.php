@@ -1,4 +1,4 @@
-<div class="flex items-center space-x-2">
+<div class="flex items-center space-x-2 advanced-select-view-selected">
     @if(isset($field['thumbnail']) && $field['thumbnail'] && $field['thumbnail'] != '')
         @if($item->{$field['thumbnail']})
             <x-aura::image :id="$item->{$field['thumbnail']}" alt="{{ $item->title() }}" class="object-cover w-6 h-6 rounded-full shrink-0" />

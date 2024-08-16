@@ -29,7 +29,7 @@ if (optional($this)->model && isset($field['get']) && $field['get'] instanceof \
 
                         <div class="flex flex-wrap flex-1 items-center space-x-0">
                         @foreach($group as $field)
-                            <x-dynamic-component :component="$field['field']->component()" :field="$field" :form="$form" />
+                            <x-dynamic-component :component="$field['field']->edit()" :field="$field" :form="$form" />
                         @endforeach
                         </div>
 
