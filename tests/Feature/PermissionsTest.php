@@ -1,19 +1,21 @@
 <?php
 
+use Aura\Base\Livewire\Resource\Edit;
 use Aura\Base\Resources\Post;
 use Aura\Base\Resources\Role;
 use Aura\Base\Resources\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Livewire\Livewire;
 
 uses(RefreshDatabase::class);
 
 beforeEach(fn () => $this->actingAs($this->user = User::factory()->create()));
 
 test('a super admin can perform any action', function () {
-    $role = Role::create(['type' => 'Role', 'title' => 'Super Admin', 'slug' => 'super_admin', 'description' => 'Super Admin has can perform everything.', 'super_admin' => true, 'permissions' => []]);
+    $role = Role::create(['name' => 'Super Admin', 'slug' => 'super_admin', 'description' => 'Super Admin has can perform everything.', 'super_admin' => true, 'permissions' => []]);
 
     // assert there is a role in the db
-    $this->assertDatabaseHas('posts', ['type' => 'Role', 'id' => $role->id]);
+    $this->assertDatabaseHas('roles', ['id' => $role->id]);
 
     $r = Role::first();
 
@@ -21,7 +23,7 @@ test('a super admin can perform any action', function () {
     $this->assertTrue($r->fields['super_admin']);
 
     // Assert name is Super Admin
-    $this->assertEquals('Super Admin', $r->title);
+    $this->assertEquals('Super Admin', $r->name);
 
     // Attach to User
     $user = \Aura\Base\Resources\User::find(1);
@@ -47,7 +49,7 @@ test('a super admin can perform any action', function () {
 });
 
 test('a admin can perform assigned actions', function () {
-    $role = Role::create(['type' => 'Role', 'title' => 'Admin', 'slug' => 'admin', 'name' => 'Admin', 'description' => ' Admin has can perform almost everything.', 'super_admin' => false, 'permissions' => [
+    $role = Role::create(['name' => 'Admin', 'slug' => 'admin', 'name' => 'Admin', 'description' => ' Admin has can perform almost everything.', 'super_admin' => false, 'permissions' => [
         'viewAny-post' => true,
         'view-post' => true,
         'create-post' => true,
@@ -61,7 +63,7 @@ test('a admin can perform assigned actions', function () {
     $post = Post::create(['type' => 'Post', 'title' => 'Test Post', 'slug' => 'test-post', 'name' => 'Test Post', 'description' => 'Test Post', 'fields' => []]);
 
     // assert there is a role in the db
-    $this->assertDatabaseHas('posts', ['type' => 'Role', 'id' => $role->id]);
+    $this->assertDatabaseHas('roles', ['id' => $role->id]);
 
     $r = Role::first();
 
@@ -69,7 +71,7 @@ test('a admin can perform assigned actions', function () {
     $this->assertNotTrue($r->fields['super_admin']);
 
     // Assert name is Admin
-    $this->assertEquals('Admin', $r->title);
+    $this->assertEquals('Admin', $r->name);
 
     // Attach to User
     $user = \Aura\Base\Resources\User::find(1);
@@ -93,7 +95,7 @@ test('a admin can perform assigned actions', function () {
 });
 
 test('a moderator can only view posts but not edit them', function () {
-    $role = Role::create(['type' => 'Role', 'title' => 'Moderator', 'slug' => 'admin', 'name' => 'Moderator', 'description' => ' Moderator has can perform almost everything.', 'super_admin' => false, 'permissions' => [
+    $role = Role::create(['name' => 'Moderator', 'slug' => 'admin', 'name' => 'Moderator', 'description' => ' Moderator has can perform almost everything.', 'super_admin' => false, 'permissions' => [
         'viewAny-post' => true,
         'view-post' => true,
         'create-post' => false,
@@ -107,7 +109,7 @@ test('a moderator can only view posts but not edit them', function () {
     $post = Post::create(['type' => 'Post', 'title' => 'Test Post', 'slug' => 'test-post', 'name' => 'Test Post', 'description' => 'Test Post', 'fields' => []]);
 
     // assert there is a role in the db
-    $this->assertDatabaseHas('posts', ['type' => 'Role', 'id' => $role->id]);
+    $this->assertDatabaseHas('roles', ['id' => $role->id]);
 
     $r = Role::first();
 
@@ -115,7 +117,7 @@ test('a moderator can only view posts but not edit them', function () {
     $this->assertNotTrue($r->fields['super_admin']);
 
     // Assert name is Admin
-    $this->assertEquals('Moderator', $r->title);
+    $this->assertEquals('Moderator', $r->name);
 
     // Attach to User
     $user = \Aura\Base\Resources\User::find(1);
@@ -138,7 +140,7 @@ test('a moderator can access index page', function () {
 
     // $this->withoutExceptionHandling();
 
-    $role = Role::create(['type' => 'Role', 'title' => 'Moderator', 'slug' => 'admin', 'description' => ' Moderator has can perform almost everything.', 'super_admin' => false, 'permissions' => [
+    $role = Role::create(['name' => 'Moderator', 'slug' => 'admin', 'description' => ' Moderator has can perform almost everything.', 'super_admin' => false, 'permissions' => [
         'viewAny-post' => true,
         'view-post' => true,
         'create-post' => false,
@@ -152,7 +154,7 @@ test('a moderator can access index page', function () {
     $post = Post::create(['type' => 'Post', 'title' => 'Test Post', 'slug' => 'test-post', 'name' => 'Test Post', 'description' => 'Test Post', 'fields' => []]);
 
     // assert there is a role in the db
-    $this->assertDatabaseHas('posts', ['type' => 'Role', 'id' => $role->id]);
+    $this->assertDatabaseHas('roles', ['id' => $role->id]);
 
     $r = Role::first();
 
@@ -160,7 +162,7 @@ test('a moderator can access index page', function () {
     $this->assertNotTrue($r->fields['super_admin']);
 
     // Assert name is Admin
-    $this->assertEquals('Moderator', $r->title);
+    $this->assertEquals('Moderator', $r->name);
 
     // Attach to User
     $user = \Aura\Base\Resources\User::find(1);
@@ -188,7 +190,7 @@ test('a moderator can access index page', function () {
 });
 
 test('a admin can access all pages', function () {
-    $role = Role::create(['type' => 'Role', 'title' => 'Admin', 'slug' => 'admin', 'description' => ' Admin has can perform almost everything.', 'super_admin' => false, 'permissions' => [
+    $role = Role::create(['name' => 'Admin', 'slug' => 'admin', 'description' => ' Admin has can perform almost everything.', 'super_admin' => false, 'permissions' => [
         'viewAny-post' => true,
         'view-post' => true,
         'create-post' => true,
@@ -205,7 +207,8 @@ test('a admin can access all pages', function () {
     // $this->withoutExceptionHandling();
 
     // assert there is a role in the db
-    $this->assertDatabaseHas('posts', ['type' => 'Role', 'id' => $role->id]);
+
+    $this->assertDatabaseHas('roles', ['id' => $role->id]);
 
     $r = Role::first();
 
@@ -213,7 +216,7 @@ test('a admin can access all pages', function () {
     $this->assertNotTrue($r->fields['super_admin']);
 
     // Assert name is Admin
-    $this->assertEquals('Admin', $r->title);
+    $this->assertEquals('Admin', $r->name);
 
     // Attach to User
     $user = \Aura\Base\Resources\User::find(1);
@@ -241,7 +244,7 @@ test('a admin can access all pages', function () {
 });
 
 test('scoped posts', function () {
-    $role = Role::create(['type' => 'Role', 'title' => 'Admin', 'slug' => 'admin', 'name' => 'Admin', 'description' => ' Admin has can perform almost everything.', 'super_admin' => false, 'permissions' => [
+    $role = Role::create(['name' => 'Admin', 'slug' => 'admin', 'name' => 'Admin', 'description' => ' Admin has can perform almost everything.', 'super_admin' => false, 'permissions' => [
         'viewAny-post' => true,
         'view-post' => true,
         'create-post' => true,
@@ -314,16 +317,8 @@ test('scoped posts', function () {
     $response->assertStatus(200);
 });
 
-test('scoped query on index page', function () {
-    // Make Sure Query is scoped on Index
-});
-
-test('user can only delete his own posts', function () {
-    // Make Sure Query is scoped on Delete
-});
-
 test('a admin can access users', function () {
-    $role = Role::create(['type' => 'Role', 'title' => 'Admin', 'slug' => 'admin', 'description' => ' Admin has can perform almost everything.', 'super_admin' => false, 'permissions' => [
+    $role = Role::create(['name' => 'Admin', 'slug' => 'admin', 'description' => ' Admin has can perform almost everything.', 'super_admin' => false, 'permissions' => [
         'viewAny-user' => true,
         'view-user' => true,
         'create-user' => true,
@@ -363,4 +358,79 @@ test('a admin can access users', function () {
 
     // Assert Response
     $response->assertStatus(200);
+});
+
+test('scoped query on index page', function () {
+    // Create a role with necessary permissions
+    $role = Role::create([
+        'name' => 'Post Viewer',
+        'slug' => 'post_viewer',
+        'description' => 'Can view posts',
+        'super_admin' => false,
+        'permissions' => [
+            'viewAny-post' => true,
+            'view-post' => true,
+            'scope-post' => true,
+        ],
+    ]);
+
+    // Create a user and assign the role
+    $user = User::factory()->create();
+    $user->update(['roles' => [$role->id]]);
+    $this->actingAs($user);
+
+    // Create posts
+    $userPosts = Post::factory()->count(3)->create(['user_id' => $user->id]);
+    $otherPosts = Post::factory()->count(2)->create();
+
+    // Make the request
+    $response = $this->get(route('aura.resource.index', ['slug' => 'Post']));
+
+    // Assert the response
+    $response->assertStatus(200);
+    $response->assertSee($userPosts[0]->title)
+        ->assertSee($userPosts[1]->title)
+        ->assertSee($userPosts[2]->title)
+        ->assertDontSee($otherPosts[0]->title)
+        ->assertDontSee($otherPosts[1]->title);
+});
+
+test('user can only delete his own posts', function () {
+    // Create a role with necessary permissions
+    $role = Role::create([
+        'name' => 'Post Manager',
+        'slug' => 'post_manager',
+        'description' => 'Can manage own posts',
+        'super_admin' => false,
+        'permissions' => [
+            'viewAny-post' => true,
+            'view-post' => true,
+            'create-post' => true,
+            'update-post' => true,
+            'delete-post' => true,
+            'scope-post' => true,
+        ],
+    ]);
+
+    // Create a user and assign the role
+    $user = User::factory()->create();
+    $user->update(['roles' => [$role->id]]);
+    $this->actingAs($user);
+
+    $userPost = Post::factory()->create(['user_id' => $user->id]);
+    $otherPost = Post::factory()->create();
+
+    // Attempt to delete user's own post
+    Livewire::test(Edit::class, ['slug' => 'Post', 'id' => $userPost->id])
+        ->call('singleAction', 'delete')
+        ->assertDispatched('notify')
+        ->assertSuccessful();
+
+    $this->assertDatabaseMissing('posts', ['id' => $userPost->id]);
+
+    // Attempt to delete another user's post
+    Livewire::test(Edit::class, ['slug' => 'Post', 'id' => $otherPost->id])
+        ->assertForbidden();
+
+    $this->assertDatabaseHas('posts', ['id' => $otherPost->id]);
 });

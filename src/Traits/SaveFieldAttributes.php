@@ -16,7 +16,8 @@ trait SaveFieldAttributes
     {
         static::saving(function ($post) {
 
-            // ray('saving', $post->attributes)->blue();
+            // ray('SaveFieldAttributes', $post->attributes)->blue();
+
             if ($post->name == 'Test Post 1') {
                 // dd($post)->red();
             }
@@ -26,8 +27,16 @@ trait SaveFieldAttributes
             }
 
             collect($post->inputFieldsSlugs())->each(function ($slug) use ($post) {
-                if (isset($post->attributes[$slug])) {
+
+                // ray($slug, array_key_exists( $slug, $post->attributes))->blue();
+
+                if (array_key_exists($slug, $post->attributes)) {
+
                     $class = $post->fieldClassBySlug($slug);
+
+                    if ($slug == 'password') {
+                        // ray('Password Field', $class)->red();
+                    }
 
                     // Do not continue if the Field is not found
                     if (! $class) {
@@ -36,6 +45,12 @@ trait SaveFieldAttributes
 
                     // Do not set password fields manually, since they would overwrite the hashed password
                     if ($class instanceof \Aura\Base\Fields\Password) {
+
+                        // If the password is available in the $post->attributes, unset it
+                        if (empty($post->attributes[$slug])) {
+                            unset($post->attributes[$slug]);
+                        }
+
                         return;
                     }
 

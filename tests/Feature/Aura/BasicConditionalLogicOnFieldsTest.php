@@ -1,16 +1,18 @@
 <?php
 
+use Aura\Base\ConditionalLogic;
 use Aura\Base\Resource;
-use Aura\Base\Resources\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
 
-beforeEach(fn () => $this->actingAs($this->user = User::factory()->create()));
+beforeEach(fn () => $this->actingAs($this->user = createSuperAdmin()));
 
 class BasicConditionalLogicOnFieldModel extends Resource
 {
     public static ?string $slug = 'page';
+
+    public $text1;
 
     public static string $type = 'Page';
 
@@ -49,15 +51,17 @@ class BasicConditionalLogicOnFieldModel extends Resource
 }
 
 test('Field X gets shown when value of Y is true', function () {
-    //    $model = new BasicConditionalLogicOnFieldModel();
-    //
-    //    $model->save();
-    //
-    //    $model->update([
-    //        'fields' => [
-    //            'text1' => 'test',
-    //        ],
-    //    ]);
+    $model = new BasicConditionalLogicOnFieldModel;
 
-    // $this->assertCount(1, $fields);
+    $model->text1 = 'test';
+
+    $fields = $model->getFields();
+    $field = collect($fields)->firstWhere('slug', 'text2');
+
+    $result = ConditionalLogic::checkCondition($model, $field);
+
+    $condition = $field['conditional_logic'][0];
+    $fieldValue = $model->text1;
+
+    $this->assertTrue($result);
 });

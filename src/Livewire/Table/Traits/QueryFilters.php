@@ -7,16 +7,6 @@ use Illuminate\Support\Facades\DB;
 
 trait QueryFilters
 {
-    /**
-     * Apply custom filter to the query.
-     */
-    /**
-     * Apply custom filter to the query.
-     */
-
-    /**
-     * Apply custom filter to the query.
-     */
     protected function applyCustomFilter(Builder $query): Builder
     {
         if (empty($this->filters['custom'])) {
@@ -25,35 +15,28 @@ trait QueryFilters
 
         $mainOperator = $this->filters['operator'] ?? 'and';
 
-        // Apply a single wrapper for 'AND' or 'OR' depending on the mainOperator setting
         $query->where(function ($query) use ($mainOperator) {
             foreach ($this->filters['custom'] as $filter) {
-                if (empty($filter['name']) || (empty($filter['value']) && $filter['operator'] !== 'is_empty')) {
-                    continue;
-                }
-
-                // Check if the field and operator necessitate a separate closure
-                if ($mainOperator === 'or') {
-                    $query->orWhere(function ($subQuery) use ($filter) {
-                        $this->applyFilterBasedOnType($subQuery, $filter);
-                    });
-                } else {
-                    $this->applyFilterBasedOnType($query, $filter);
+                if ($this->isValidFilter($filter)) {
+                    $this->applyFilter($query, $filter, $mainOperator);
                 }
             }
         });
 
-        // ray($this->filters);
-        // ray($query->toSql());
-        // ray($query->getBindings());
-        // ray($query);
-
         return $query;
     }
 
-    /**
-     * Apply filter based on whether the field belongs to custom table fields or meta fields.
-     */
+    protected function applyFilter(Builder $query, array $filter, string $mainOperator): void
+    {
+        if ($mainOperator === 'or') {
+            $query->orWhere(function ($subQuery) use ($filter) {
+                $this->applyFilterBasedOnType($subQuery, $filter);
+            });
+        } else {
+            $this->applyFilterBasedOnType($query, $filter);
+        }
+    }
+
     protected function applyFilterBasedOnType(Builder $query, array $filter): void
     {
         if ($this->model->usesCustomTable() || $this->model->isTableField($filter['name'])) {
@@ -70,69 +53,81 @@ trait QueryFilters
                 $query->where('key', '=', $filter['name']);
             })
                 ->orWhereHas('meta', function (Builder $query) use ($filter) {
-                    $query->where('key', '=', $filter['name']);
-                    $query->where('value', '=', '');
-                    // now we're checking for empty values
-                    // what about null values?
-                    // null, ""
+                    $query->where('key', '=', $filter['name'])
+                        ->where(function ($query) {
+                            $query->where('value', '=', '')
+                                ->orWhereNull('value');
+                        });
                 });
         });
     }
 
-    /**
-     * Apply filters to the meta fields query
-     */
+    protected function applyIsNotEmptyMetaFilter(Builder $query, array $filter): void
+    {
+        $query->whereHas('meta', function (Builder $query) use ($filter) {
+            $query->where('key', '=', $filter['name'])
+                ->where(function ($query) {
+                    $query->where('value', '!=', '')
+                        ->whereNotNull('value');
+                });
+        });
+    }
+
     protected function applyMetaFieldFilter(Builder $query, array $filter): Builder
     {
-        if ($filter['operator'] == 'is_empty') {
-            $this->applyIsEmptyMetaFilter($query, $filter);
-
-            // where
-            // where not exists
-            // or where key = name AND value = null
-            return $query;
+        switch ($filter['operator']) {
+            case 'is_empty':
+                $this->applyIsEmptyMetaFilter($query, $filter);
+                break;
+            case 'is_not_empty':
+                $this->applyIsNotEmptyMetaFilter($query, $filter);
+                break;
+            default:
+                $this->applyStandardMetaFilter($query, $filter);
         }
-
-        $query->whereHas('meta', function (Builder $query) use ($filter) {
-            $query->where('key', '=', $filter['name']);
-
-            switch ($filter['operator']) {
-                case 'contains':
-                    $query->where('value', 'like', '%'.$filter['value'].'%');
-                    break;
-                case 'does_not_contain':
-                    $query->where('value', 'not like', '%'.$filter['value'].'%');
-                    break;
-                case 'starts_with':
-                    $query->where('value', 'like', $filter['value'].'%');
-                    break;
-                case 'ends_with':
-                    $query->where('value', 'like', '%'.$filter['value']);
-                    break;
-                case 'is':
-                    $query->where('value', '=', $filter['value']);
-                    break;
-                case 'is_not':
-                    $query->where('value', '!=', $filter['value']);
-                    break;
-                case 'greater_than':
-                    $query->where('value', '>', $filter['value']);
-                    break;
-                case 'less_than':
-                    $query->where('value', '<', $filter['value']);
-                    break;
-            }
-        });
 
         return $query;
     }
 
-    /**
-     * Apply filter for table fields
-     *
-     * @return Builder
-     */
-    protected function applyTableFieldFilter(Builder $query, array $filter)
+    protected function applyOperatorCondition(Builder $query, array $filter): void
+    {
+        switch ($filter['operator']) {
+            case 'contains':
+                $query->where('value', 'like', '%'.$filter['value'].'%');
+                break;
+            case 'does_not_contain':
+                $query->where('value', 'not like', '%'.$filter['value'].'%');
+                break;
+            case 'starts_with':
+                $query->where('value', 'like', $filter['value'].'%');
+                break;
+            case 'ends_with':
+                $query->where('value', 'like', '%'.$filter['value']);
+                break;
+            case 'is':
+                $query->where('value', '=', $filter['value']);
+                break;
+            case 'is_not':
+                $query->where('value', '!=', $filter['value']);
+                break;
+            case 'greater_than':
+                $query->where('value', '>', $filter['value']);
+                break;
+            case 'less_than':
+                $query->where('value', '<', $filter['value']);
+                break;
+        }
+    }
+
+    protected function applyStandardMetaFilter(Builder $query, array $filter): void
+    {
+        $query->whereHas('meta', function (Builder $query) use ($filter) {
+            $query->where('key', '=', $filter['name']);
+            $this->applyOperatorCondition($query, $filter);
+        });
+    }
+
+    protected function applyTableFieldFilter(Builder $query, array $filter): Builder
     {
         switch ($filter['operator']) {
             case 'contains':
@@ -160,28 +155,24 @@ trait QueryFilters
                 $query->where($filter['name'], '<', $filter['value']);
                 break;
             case 'is_empty':
-                return $query->whereNull($filter['name']);
+                $query->where(function ($query) use ($filter) {
+                    $query->whereNull($filter['name'])
+                        ->orWhere($filter['name'], '=', '');
+                });
+                break;
             case 'is_not_empty':
-                return $query->whereNotNull($filter['name']);
+                $query->whereNotNull($filter['name'])
+                    ->where($filter['name'], '!=', '');
+                break;
         }
 
         return $query;
     }
 
-    /**
-     * Apply taxonomy filter to the query
-     *
-     * @return \Illuminate\Database\Eloquent\Builder
-     */
-    protected function applyTaxonomyFilter(Builder $query)
+    protected function applyTaxonomyFilter(Builder $query): Builder
     {
-        // if (app()->environment('testing')) {
-        //     return $query;
-        // }
-
         if ($this->filters['taxonomy']) {
             foreach ($this->filters['taxonomy'] as $key => $taxonomy) {
-
                 if (! $taxonomy) {
                     continue;
                 }
@@ -197,10 +188,15 @@ trait QueryFilters
                             }
                         });
                 });
-
             }
         }
 
         return $query;
+    }
+
+    protected function isValidFilter(array $filter): bool
+    {
+        return ! empty($filter['name']) &&
+               (! empty($filter['value']) || in_array($filter['operator'], ['is_empty', 'is_not_empty']));
     }
 }

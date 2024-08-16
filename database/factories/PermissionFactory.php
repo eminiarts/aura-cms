@@ -20,13 +20,13 @@ class PermissionFactory extends Factory
     public function definition()
     {
         return [
-            'title' => $name = $this->faker->name(),
-            'name' => str($name)->slug(),
-            'content' => $this->faker->paragraph(),
-            'type' => 'Permission',
+            'name' => $name = $this->faker->name(),
+            'slug' => str($name)->slug(),
+            'group' => $this->faker->name(),
+            'description' => $this->faker->paragraph(),
             'user_id' => 1,
-            'parent_id' => null,
-            'order' => null,
+            // 'parent_id' => null,
+            // 'order' => null,
 
         ];
     }

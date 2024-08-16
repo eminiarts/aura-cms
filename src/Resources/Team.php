@@ -3,10 +3,14 @@
 namespace Aura\Base\Resources;
 
 use Aura\Base\Database\Factories\TeamFactory;
+use Aura\Base\Jobs\GenerateAllResourcePermissions;
 use Aura\Base\Models\TeamMeta;
 use Aura\Base\Resource;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 
 class Team extends Resource
 {
@@ -191,6 +195,11 @@ class Team extends Resource
         return $this->hasMany(TeamMeta::class, 'team_id');
     }
 
+    public function roles(): HasMany
+    {
+        return $this->hasMany(Role::class);
+    }
+
     public function teamInvitations()
     {
         return $this->hasMany(TeamInvitation::class, 'team_id');
@@ -210,9 +219,32 @@ class Team extends Resource
         Cache::forget($option);
     }
 
-    public function users()
+    // public function users()
+    // {
+    //     return $this->belongsToMany(User::class, 'post_relations', 'team_id', 'roleable_id')
+    //         ->where('roleable_type', User::class);
+    // }
+    // public function users()
+    // {
+    //     return $this->hasManyThrough(Role::class, User::class);
+    // }
+
+    public function users(): HasManyThrough
     {
-        return $this->belongsToMany(User::class, 'user_meta', 'team_id', 'user_id')->wherePivot('key', 'roles');
+        return $this->hasManyThrough(
+            User::class,
+            Role::class,
+            'team_id', // Foreign key on roles table...
+            'id', // Foreign key on users table...
+            'id', // Local key on teams table...
+            'id' // Local key on roles table...
+        )->distinct() // To avoid duplicate users
+            ->join('post_relations', function ($join) {
+                $join->on('post_relations.resource_id', '=', 'roles.id')
+                    ->where('post_relations.resource_type', '=', Role::class)
+                    ->where('post_relations.related_type', '=', User::class);
+            })
+            ->where('post_relations.related_id', '=', DB::raw('users.id'));
     }
 
     protected static function booted()
@@ -244,26 +276,25 @@ class Team extends Resource
 
             // Create a Super Admin role for the team
             $role = Role::create([
-                'type' => 'Role',
-                'title' => 'Super Admin',
+                'name' => 'Super Admin',
                 'slug' => 'super_admin',
                 'description' => 'Super Admin has can perform everything.',
                 'super_admin' => true,
                 'permissions' => [],
-                'user_id' => $user ? $user->id : null,
                 'team_id' => $team->id,
             ]);
 
             // Attach the current user to the team
             if ($user) {
-                $team->users()->attach($user->id, [
-                    'key' => 'roles',
-                    'value' => $role->id,
-                ]);
+                // $role->users()->sync([$user->id]);
+                $role->users()->sync([$user->id => ['resource_type' => Role::class]]);
 
-                // Clear cache of Cache('user.'.$this->id.'.teams')
+                // Clear cache of Cache('user.'.$user->id.'.teams')
                 Cache::forget('user.'.$user->id.'.teams');
             }
+
+            // Create all permissions for the team
+            GenerateAllResourcePermissions::dispatch($team->id);
         });
 
         static::deleted(function ($team) {

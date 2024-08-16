@@ -1,18 +1,20 @@
 <?php
 
 use Aura\Base\Facades\Aura;
+use Aura\Base\Resources\Team;
+use Aura\Base\Resources\User;
 use Aura\Base\Livewire\Config;
-use Aura\Base\Models\Scopes\TeamScope;
 use Aura\Base\Resources\Option;
+use function Pest\Laravel\post;
 
 use function Pest\Livewire\livewire;
+use Illuminate\Support\Facades\Auth;
+use Aura\Base\Models\Scopes\TeamScope;
 
 // Before each test, create a Superadmin and login
 beforeEach(function () {
     $this->actingAs($this->user = createSuperAdmin());
 });
-
-test('team can be registered', function () {});
 
 // test('registration config can be disabled', function () {
 //     // test Config Livewire component
@@ -59,10 +61,9 @@ test('team can be registered', function () {});
 //     expect($options->team_registration)->toBeTrue();
 // });
 
-test('aura config site is working', function () {
-    $this->markTestSkipped('config not available atm');
+test('aura settings site is working', function () {
     // make sure the site route('aura.config') is working
-    $this->get(route('aura.config'))->assertOk();
+    $this->get(route('aura.settings'))->assertOk();
 });
 
 // test('registration config can be enabled and called from the aura facade', function () {
@@ -75,3 +76,43 @@ test('aura config site is working', function () {
 
 //     expect(app('aura')::option('team_registration'))->toBeTrue();
 // });
+
+
+test('team can be registered with user', function () {
+    // Ensure registration is enabled
+    config(['aura.auth.registration' => true]);
+    config(['aura.teams' => true]);
+    
+    // Set the redirect path explicitly for the test
+    config(['aura.auth.redirect' => '/admin']);
+
+    // Act as guest
+    // Ensure no user is authenticated
+    Auth::logout();
+
+    $userData = [
+        'name' => 'John Doe',
+        'email' => 'john@example.com',
+        'password' => 'password',
+        'password_confirmation' => 'password',
+        'team' => 'New Team',
+    ];
+
+    $this->withoutExceptionHandling();
+    $response = post(route('aura.register.post'), $userData);
+
+    $response->assertRedirect('/admin');
+
+    $user = User::where('email', 'john@example.com')->first();
+    expect($user)->not()->toBeNull();
+    expect($user->name)->toBe('John Doe');
+
+    $team = Team::where('name', 'New Team')->first();
+    expect($team)->not()->toBeNull();
+
+    $user = User::where('email', 'john@example.com')->first();
+    $team = Team::where('name', 'New Team')->first();
+
+    expect($user->current_team_id)->toBe($team->id);
+    expect($user->belongsToTeam($team))->toBeTrue();
+});

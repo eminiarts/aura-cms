@@ -2,7 +2,6 @@
 
 namespace Aura\Base\Database\Factories;
 
-use Aura\Base\Resources\Post;
 use Aura\Base\Resources\Role;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
@@ -26,13 +25,11 @@ class RoleFactory extends Factory
     public function definition()
     {
         return [
-            'title' => $name = $this->faker->name(),
+            'name' => $name = $this->faker->name(),
             'slug' => str($name)->slug(),
-            'type' => 'Role', //$this->faker->randomElement(['Post', 'Project', 'Invoice', 'Page', 'Post', 'Post']),
             'user_id' => 1,
             'team_id' => 1,
-            'parent_id' => null,
-            'order' => null,
+            // 'order' => null,
         ];
     }
 }
