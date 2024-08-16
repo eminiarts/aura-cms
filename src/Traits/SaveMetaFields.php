@@ -12,12 +12,14 @@ trait SaveMetaFields
 
         static::saving(function ($post) {
 
-            // ray('saving', $post)->red();
+            // ray('SaveMetaFields', $post->attributes)->red();
 
             if (isset($post->attributes['fields'])) {
 
                 // Dont save Meta Fields if it is uses customTable
                 if ($post->usesCustomTable() && ! $post->usesCustomMeta()) {
+
+                    // ray('hier')->red();
                     unset($post->attributes['fields']);
 
                     return;
@@ -26,6 +28,8 @@ trait SaveMetaFields
                 foreach ($post->attributes['fields'] as $key => $value) {
 
                     $class = $post->fieldClassBySlug($key);
+
+                    // ray($key, $value)->red();
 
                     // Do not continue if the Field is not found
                     if (! $class) {
@@ -100,6 +104,9 @@ trait SaveMetaFields
             if (isset($post->metaFields)) {
 
                 foreach ($post->metaFields as $key => $value) {
+
+                    // ray($key, $value)->red();
+
                     // if there is a function set{Slug}Field on the model, use it
                     $method = 'set'.Str::studly($key).'Field';
 
@@ -118,6 +125,8 @@ trait SaveMetaFields
                     // }
 
                     if (method_exists($class, 'saved')) {
+                        // ray('saved', $class);
+
                         $value = $class->saved($post, $field, $value);
                         // $value = $class->set($value, $field);
 

@@ -171,16 +171,21 @@ class AdvancedSelect extends Field
 
     public function relationship($model, $field)
     {
-        // If it's a meta field
+        // ray('relationship', $model, $field)->blue();
+
+        $morphClass = $field['resource'];
+
         return $model
-            ->morphToMany($field['resource'], 'related', 'post_relations', 'related_id', 'resource_id')
+            ->morphToMany($morphClass, 'related', 'post_relations', 'related_id', 'resource_id')
             ->withTimestamps()
             ->withPivot('resource_type')
-            ->wherePivot('resource_type', $field['resource']);
+            ->wherePivot('resource_type', $morphClass);
     }
 
     public function saved($post, $field, $value)
     {
+        // ray('saved here', $post, $field, $value)->blue();
+
         if (is_string($value)) {
             $value = json_decode($value, true);
         }

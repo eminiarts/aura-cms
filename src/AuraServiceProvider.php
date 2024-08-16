@@ -56,6 +56,7 @@ use Aura\Base\Widgets\SparklineBar;
 use Aura\Base\Widgets\ValueWidget;
 use Aura\Base\Widgets\Widgets;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\DB;
@@ -266,6 +267,19 @@ class AuraServiceProvider extends PackageServiceProvider
         $this->app->booted(function () {
             $this->loadRoutesFrom(__DIR__.'/../routes/web.php');
         });
+
+        // Register the morph map to handle both user classes
+        // Relation::morphMap([
+        //     'Aura\Base\Resources\User' => 'App\Models\User',
+        //     'Aura\Base\Resources\User' => 'Aura\Base\Resources\User',
+        // ]);
+
+        // Relation::morphMap([
+        //     'Aura\Base\Resources\User' => 'App\Models\User',
+        //     'Aura\Base\Resources\User' => 'Aura\Base\Resources\User',
+        // ]);
+
+        // ray('relation');
 
         $this
             ->bootGate()

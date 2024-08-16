@@ -1,9 +1,9 @@
 <?php
 
 use Aura\Base\Livewire\Resource\Create;
+use Aura\Base\Resources\Role;
 use Aura\Base\Resources\Team;
 use Aura\Base\Resources\User;
-use Illuminate\Support\Facades\DB;
 
 use function Pest\Livewire\livewire;
 
@@ -18,7 +18,8 @@ test('team can be created', function () {
 
     // Expect 1 team
     expect($teams->count())->toBe(1);
-    expect(DB::table('posts')->where('type', 'Role')->count())->toBe(1);
+
+    expect(Role::count())->toBe(1);
 
     $component = livewire(Create::class, ['slug' => 'Team'])
         ->set('form.fields.name', 'Test Team')

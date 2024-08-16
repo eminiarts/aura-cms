@@ -24,6 +24,8 @@ test('new users can register', function () {
     // Create team
     Team::factory()->create();
 
+    $this->withoutExceptionHandling();
+
     $response = $this->post(route('aura.register'), [
         'name' => 'Test User',
         'team' => 'Test Team',
@@ -44,8 +46,7 @@ test('new users can register', function () {
     $team = Team::where('name', 'Test Team')->first();
 
     // Assert a Post with type="Role" is created
-    $this->assertDatabaseHas('posts', [
-        'type' => 'Role',
+    $this->assertDatabaseHas('roles', [
         'team_id' => $team->id,
     ]);
 

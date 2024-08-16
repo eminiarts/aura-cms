@@ -1,39 +1,65 @@
 <?php
 
 use Aura\Base\Jobs\GenerateAllResourcePermissions;
+use Aura\Base\Resources\Permission;
+use Aura\Base\Resources\Team;
+use Illuminate\Support\Facades\Schema;
 
-// Before each test, create a Superadmin and login
-beforeEach(function () {
-    $this->actingAs($this->user = createSuperAdmin());
+test('roles have its custom table', function () {
+    $this->assertTrue(Schema::hasTable('roles'));
+
+    $expectedColumns = ['id', 'team_id', 'name', 'slug', 'description', 'super_admin', 'permissions', 'created_at', 'updated_at'];
+    $actualColumns = Schema::getColumnListing('roles');
+
+    foreach ($expectedColumns as $column) {
+        $this->assertContains($column, $actualColumns, "The roles table is missing the {$column} column.");
+    }
 });
 
-test('roles have its custom table', function () {});
+test('permissions have its custom table', function () {
+    $this->assertTrue(Schema::hasTable('permissions'));
 
-test('permissions have its custom table', function () {});
+    $expectedColumns = ['id', 'team_id', 'name', 'slug', 'created_at', 'updated_at'];
+    $actualColumns = Schema::getColumnListing('permissions');
 
-test('when we create a team, a default super admin should be created', function () {});
+    foreach ($expectedColumns as $column) {
+        $this->assertContains($column, $actualColumns, "The permissions table is missing the {$column} column.");
+    }
+});
 
-test('when we create a team, all permissions should be created', function () {});
+test('when we create a team, a default super admin should be created', function () {
+    $team = Team::factory()->create();
+
+    $this->assertDatabaseHas('roles', [
+        'team_id' => $team->id,
+        'name' => 'Super Admin',
+        'super_admin' => true,
+    ]);
+});
+
+test('when we create a team, all permissions should be created', function () {
+    $team = Team::factory()->create();
+
+    $this->assertDatabaseHas('permissions', ['team_id' => $team->id]);
+    $this->assertGreaterThan(0, Permission::where('team_id', $team->id)->count());
+});
 
 test('when creating permissions, we do not want to include the team resource', function () {
-
     GenerateAllResourcePermissions::dispatch();
+
+    $this->assertDatabaseMissing('permissions', [
+        'name' => 'Create Teams',
+    ]);
 });
 
 test('when creating permissions, we want to create these permissions for all resources', function () {
-
     GenerateAllResourcePermissions::dispatch();
 
-    // Check that these permissions exist
-    //  View Users
-    // View Any Users
-    // Create Users
-    // Update Users
-    // Restore Users
-    // Delete Users
-    // Force Delete Users
-    // Scope Users
-});
+    $expectedPermissions = ['View', 'View Any', 'Create', 'Update', 'Restore', 'Delete', 'Force Delete'];
 
-// How do we allow custom Permissions? And how do we check them?
-// Different Permissions Tests, scope, etc
+    foreach ($expectedPermissions as $permission) {
+        $this->assertDatabaseHas('permissions', [
+            'name' => "{$permission} Users",
+        ]);
+    }
+});

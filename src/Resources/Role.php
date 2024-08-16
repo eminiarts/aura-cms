@@ -5,6 +5,7 @@ namespace Aura\Base\Resources;
 use Aura\Base\Jobs\GenerateAllResourcePermissions;
 use Aura\Base\Models\Meta;
 use Aura\Base\Resource;
+use Illuminate\Database\Eloquent\Relations\MorphToMany;
 
 class Role extends Resource
 {
@@ -25,6 +26,8 @@ class Role extends Resource
         'deleteSelected' => 'Delete',
     ];
 
+    public static $customTable = true;
+
     public static $globalSearch = false;
 
     public static ?string $slug = 'role';
@@ -33,11 +36,29 @@ class Role extends Resource
 
     public static string $type = 'Role';
 
+    public static bool $usesMeta = false;
+
+    protected $casts = [
+        'permissions' => 'array',
+        'super_admin' => 'boolean',
+    ];
+
     protected static $dropdown = 'Users';
+
+    protected $fillable = [
+        'name',
+        'slug',
+        'description',
+        'super_admin',
+        'permissions',
+        'team_id',
+    ];
 
     protected static ?string $group = 'Aura';
 
-    protected $with = ['meta'];
+    protected $table = 'roles';
+
+    protected $with = [];
 
     public function createMissingPermissions()
     {
@@ -49,7 +70,7 @@ class Role extends Resource
         return [
             [
                 'name' => 'Name',
-                'slug' => 'title',
+                'slug' => 'name',
                 'type' => 'Aura\\Base\\Fields\\Text',
                 'validation' => '',
                 'conditional_logic' => [],
@@ -63,7 +84,7 @@ class Role extends Resource
                 'name' => 'Slug',
                 'slug' => 'slug',
                 'type' => 'Aura\\Base\\Fields\\Slug',
-                'based_on' => 'title',
+                'based_on' => 'name',
                 'custom' => false,
                 'disabled' => true,
                 'validation' => 'required',
@@ -146,9 +167,11 @@ class Role extends Resource
         }
     }
 
-    public function users()
+    public function users(): MorphToMany
     {
-        return $this->belongsToMany(User::class, 'user_meta', 'value', 'user_id')
-            ->wherePivot('key', 'roles');
+        return $this->morphedByMany(User::class, 'related', 'post_relations', 'resource_id', 'related_id')
+            ->withTimestamps()
+            ->withPivot('resource_type')
+            ->where('resource_type', Role::class);
     }
 }

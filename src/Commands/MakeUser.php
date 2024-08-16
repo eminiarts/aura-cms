@@ -50,13 +50,13 @@ class MakeUser extends Command
         auth()->loginUsingId($user->id);
 
         $roleData = [
-            'type' => 'Role',
-            'title' => 'Super Admin',
+            'name' => 'Super Admin',
             'slug' => 'super_admin',
             'description' => 'Super Admin can perform everything.',
             'super_admin' => true,
             'permissions' => [],
             'user_id' => $user->id,
+            'team_id' => $team->id ?? null,
         ];
 
         if (config('aura.teams')) {

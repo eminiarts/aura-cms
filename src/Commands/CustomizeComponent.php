@@ -2,7 +2,6 @@
 
 namespace Aura\Base\Commands;
 
-use Aura\Base\Facades\Aura;
 use Illuminate\Console\Command;
 use Illuminate\Support\Str;
 
@@ -22,29 +21,33 @@ class CustomizeComponent extends Command
             default: 'Edit'
         );
 
-        $resources = Aura::getResources();
+        $resources = collect(app('aura')::getResources())->mapWithKeys(function ($resource) {
+            return [$resource => class_basename($resource)];
+        });
 
-        $resourceOptions = collect($resources)->mapWithKeys(function ($resource) {
-            return [$resource => app($resource)->getType()];
+
+        $resourceOptions = collect($resources)->mapWithKeys(function ($resourceName, $resourceClass) {
+            return [$resourceClass => $resourceName];
         })->toArray();
 
-        $resourceName = select(
+
+        $resourceClass = select(
             label: 'For which resource?',
             options: $resourceOptions,
             scroll: 10
         );
 
-        $this->createCustomComponent($componentType, $resourceName);
-        $this->updateRoute($componentType, $resourceName);
+        $resourceName = $resources[$resourceClass];
+
+        $this->createCustomComponent($componentType, $resourceClass, $resourceName);
+        $this->updateRoute($componentType, $resourceClass, $resourceName);
 
         $this->components->info("Custom {$componentType} component for {$resourceName} has been created and route has been updated.");
     }
 
-    protected function createCustomComponent($componentType, $resourceName)
+    protected function createCustomComponent($componentType, $resourceClass, $resourceName)
     {
-        // Extract the class name from the full namespace
-        $resourceClass = class_basename($resourceName);
-        $componentName = "{$componentType}{$resourceClass}";
+        $componentName = "{$componentType}{$resourceName}";
 
         $stubPath = __DIR__.'/Stubs/livewire.custom.stub';
         $componentPath = app_path("Http/Livewire/{$componentName}.php");
@@ -52,7 +55,7 @@ class CustomizeComponent extends Command
         $stub = file_get_contents($stubPath);
         $stub = str_replace(
             ['{{ namespace }}', '{{ class }}', '{{ baseClass }}', '{{ componentType }}', '{{ resourceClass }}'],
-            ['App\\Http\\Livewire', $componentName, "Aura\\Base\\Livewire\\Resource\\{$componentType}", $componentType, $resourceClass],
+            ['App\\Http\\Livewire', $componentName, "Aura\\Base\\Livewire\\Resource\\{$componentType}", $componentType, $resourceName],
             $stub
         );
 
@@ -68,21 +71,20 @@ class CustomizeComponent extends Command
         $this->components->info("Created component: {$componentName}");
     }
 
-    protected function updateRoute($componentType, $resourceName)
+    protected function updateRoute($componentType, $resourceClass, $resourceName)
     {
         $routeFile = base_path('routes/web.php');
         $routeContents = file_get_contents($routeFile);
 
-        $resourceClass = class_basename($resourceName);
-        $resourceSlug = Str::kebab($resourceClass);
+        $resourceSlug = Str::kebab($resourceName);
 
-        $newRoute = "Route::get('admin/{$resourceSlug}/{id}/".Str::lower($componentType)."', App\\Http\\Livewire\\{$componentType}{$resourceClass}::class)->name('{$resourceSlug}.".Str::lower($componentType)."');";
+        $newRoute = "Route::get('admin/{$resourceSlug}/{id}/".Str::lower($componentType)."', App\\Http\\Livewire\\{$componentType}{$resourceName}::class)->name('{$resourceSlug}.".Str::lower($componentType)."');";
 
         // Append the new route to the end of the file
         $updatedContents = $routeContents."\n".$newRoute;
 
         file_put_contents($routeFile, $updatedContents);
 
-        $this->components->info("Added new route for: {$componentType}{$resourceClass}");
+        $this->components->info("Added new route for: {$componentType}{$resourceName}");
     }
 }

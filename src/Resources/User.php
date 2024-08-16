@@ -13,9 +13,11 @@ use Illuminate\Contracts\Auth\Authenticatable as AuthenticatableContract;
 use Illuminate\Contracts\Auth\CanResetPassword as CanResetPasswordContract;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Foundation\Auth\Access\Authorizable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rules\Password;
 use Lab404\Impersonate\Models\Impersonate;
@@ -250,7 +252,7 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
                 'slug' => 'roles',
                 'resource' => 'Aura\\Base\\Resources\\Role',
                 'type' => 'Aura\\Base\\Fields\\AdvancedSelect',
-                'validation' => 'required',
+                'validation' => '',
                 'conditional_logic' => [],
                 'wrapper' => '',
                 'on_index' => false,
@@ -265,7 +267,7 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
                 'conditional_logic' => [],
                 'slug' => 'password',
                 'on_forms' => true,
-                'on_edit' => false,
+                'on_edit' => true,
                 'on_create' => true,
                 'on_index' => false,
                 'on_view' => false,
@@ -402,6 +404,11 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
         return $initials;
     }
 
+    public function getMorphClass(): string
+    {
+        return "Aura\Base\Resources\User";
+    }  
+
     public function getOption($option)
     {
         $option = 'user.'.$this->id.'.'.$option;
@@ -529,6 +536,8 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
     {
         $cachedRoles = $this->cachedRoles()->pluck('slug');
 
+        // ray($cachedRoles, $roles)->red();
+
         if (! $cachedRoles) {
             return false;
         }
@@ -620,16 +629,13 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
 
     public function indexQuery($query)
     {
-        // Query where user_meta key = roles and team_id = auth()->user()->current_team_id
         if (config('aura.teams')) {
-            return $query->whereHas('meta', function ($query) {
-                $query->where('key', 'roles')->where('team_id', auth()->user()->current_team_id);
+            return $query->whereHas('roles', function ($query) {
+                $query->where('team_id', auth()->user()->current_team_id);
             });
         }
 
-        return $query->whereHas('meta', function ($query) {
-            $query->where('key', 'roles');
-        });
+        return $query->whereHas('roles');
     }
 
     /**
@@ -698,35 +704,35 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
         });
     }
 
-    public function roles()
-    {
-        $roles = $this->belongsToMany(Role::class, 'user_meta', 'user_id', 'value')
-            ->wherePivot('key', 'roles');
+    // public function roles()
+    // {
+    //     $roles = $this->belongsToMany(Role::class, 'user_meta', 'user_id', 'value')
+    //         ->wherePivot('key', 'roles');
 
-        if (config('aura.teams')) {
-            $roles = $roles->withPivot('team_id');
-        }
+    //     if (config('aura.teams')) {
+    //         $roles = $roles->withPivot('team_id');
+    //     }
 
-        return config('aura.teams') ? $roles->wherePivot('team_id', $this->current_team_id) : $roles;
-    }
+    //     return config('aura.teams') ? $roles->wherePivot('team_id', $this->current_team_id) : $roles;
+    // }
 
-    public function setRolesField($value)
-    {
-        // Save the roles
-        if (config('aura.teams')) {
-            $this->roles()->syncWithPivotValues($value, ['key' => 'roles', 'team_id' => $this->current_team_id]);
-        } else {
-            $this->roles()->syncWithPivotValues($value, ['key' => 'roles']);
-        }
+    // public function setRolesField($value)
+    // {
+    //     // Save the roles
+    //     if (config('aura.teams')) {
+    //         $this->roles()->syncWithPivotValues($value, ['key' => 'roles', 'team_id' => $this->current_team_id]);
+    //     } else {
+    //         $this->roles()->syncWithPivotValues($value, ['key' => 'roles']);
+    //     }
 
-        // Unset the roles field
-        unset($this->attributes['fields']['roles']);
+    //     // Unset the roles field
+    //     unset($this->attributes['fields']['roles']);
 
-        // Clear Cache 'user.' . $this->id . '.roles'
-        Cache::forget('user.'.$this->id.'.roles');
+    //     // Clear Cache 'user.' . $this->id . '.roles'
+    //     Cache::forget('user.'.$this->id.'.roles');
 
-        return $this;
-    }
+    //     return $this;
+    // }
 
     /**
      * Switch the user's context to the given team.
@@ -751,12 +757,19 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
 
     /**
      * Get all of the teams the user belongs to.
-     *
-     * @return \Illuminate\Database\Eloquent\Relations\BelongsToMany
      */
-    public function teams()
+    public function teams(): BelongsToMany
     {
-        return $this->belongsToMany(Team::class, 'user_meta', 'user_id', 'team_id')->wherePivot('key', 'roles');
+        return $this->belongsToMany(Team::class, 'post_relations', 'related_id', 'resource_id')
+            ->withTimestamps()
+            ->withPivot('resource_type')
+            ->wherePivot('related_type', User::class)
+            ->whereHas('roles', function ($query) {
+                $query->where('post_relations.resource_type', Role::class)
+                    ->whereRaw('post_relations.resource_id = roles.id');
+            })
+            ->select('teams.*')
+            ->distinct();
     }
 
     public function title()
@@ -783,6 +796,8 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
 
     protected function cachedRoles(): mixed
     {
+        // ray('roles', $this->roles, DB::table('user_meta')->get(), DB::table('post_relations')->get())->blue();
+
         return $this->roles;
 
         return Cache::remember($this->getCacheKeyForRoles(), now()->addMinutes(60), function () {
