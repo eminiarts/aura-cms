@@ -89,7 +89,7 @@ class Profile extends Component
         return [
             [
                 'type' => 'Aura\\Base\\Fields\\Tab',
-                'name' => 'User details',
+                'name' => 'Details',
                 'slug' => 'tab-user',
                 'global' => true,
             ],
