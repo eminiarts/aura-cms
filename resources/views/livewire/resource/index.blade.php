@@ -5,15 +5,11 @@
 
     <div class="flex justify-between items-start">
 
-        {{ app('aura')::injectView('breadcrumbs_before') }}
-
         <x-aura::breadcrumbs>
             <x-aura::breadcrumbs.li :href="route('aura.dashboard')" title="" icon="dashboard"
                 iconClass="text-gray-500 w-7 h-7 mr-0" />
             <x-aura::breadcrumbs.li :title="__(Str::of($slug)->title->plural->toString())" />
         </x-aura::breadcrumbs>
-
-        {{ app('aura')::injectView('breadcrumbs_after') }}
 
         <div>
             @if (config('aura.resource_editor.enabled'))
