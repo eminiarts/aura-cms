@@ -24,6 +24,8 @@ class View extends Component
 
     public $slug;
 
+    public $mode = 'view';
+
     public $tax;
 
     // Listen for selectedAttachment
