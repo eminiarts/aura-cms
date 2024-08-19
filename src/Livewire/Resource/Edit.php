@@ -36,6 +36,8 @@ class Edit extends Component
 
     public $tax;
 
+    public $mode = 'edit';
+
     // Listen for selectedAttachment
     protected $listeners = [
         'updateField' => 'updateField',

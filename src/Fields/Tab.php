@@ -6,6 +6,8 @@ class Tab extends Field
 {
     public $edit = 'aura::fields.tab';
 
+    public $view = 'aura::fields.tab';
+
     public bool $group = true;
 
     public $optionGroup = 'Structure Fields';

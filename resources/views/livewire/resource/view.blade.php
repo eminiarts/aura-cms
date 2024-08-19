@@ -20,34 +20,6 @@
     </div>
     @endif
 
-    {{-- @dump($resource) --}}
-    {{-- @dump($this->fields) --}}
-
-    {{-- <style >
-        .aura-view-post-container input, .aura-input {
-            border: 0 !important;
-            background-color: var(--gray-100)!important;
-            /* pointer-events: none !important; */
-            box-shadow: none !important;
-        }
-
-    input[type="text"],
-    input[type="email"],
-    input[type="password"],
-    input[type="url"],
-    input[type="tel"],
-    input[type="number"],
-    textarea,
-    select {
-        background-color: var(--gray-100)!important;
-        border-radius: 0.375rem;
-        border: 1px solid var(--gray-200) !important;
-        padding: 0.5rem;
-        font-size: 1rem;
-        line-height: 1.5;
-        color: var(--gray-700);
-    }
-    </style> --}}
 
     <div class="grid gap-6 mt-4 aura-view-post-container sm:grid-cols-3" x-data="{
          init() {
@@ -67,7 +39,7 @@
             <div class="flex flex-wrap items-start -mx-2">
                 @foreach($this->viewFields as $key => $field)
                 <x-aura::fields.conditions :field="$field" :model="$model" wire:key="resource-field-{{ $key }}">
-                    <x-dynamic-component :component="$field['field']->view()" :field="$field" :form="$form" />
+                    <x-dynamic-component :component="$field['field']->view()" :field="$field" :form="$form" :mode="$mode" />
                 </x-aura::fields.conditions>
                 @endforeach
             </div>

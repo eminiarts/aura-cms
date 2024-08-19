@@ -40,7 +40,7 @@
         @checkCondition($model, $field, $form)
             <div wire:key="resource-field-{{ $key }}"
             id="resource-field-{{ optional($field)['slug'] }}-wrapper">
-            <x-dynamic-component :component="$field['field']->edit()" :field="$field" :form="$form" />
+            <x-dynamic-component :component="$field['field']->edit()" mode="edit" :field="$field" :form="$form" />
             </div>
         @endcheckCondition
     @endforeach

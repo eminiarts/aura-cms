@@ -57,7 +57,7 @@
     </style>
     <x-aura::fields.conditions :field="$field" :model="$this">
         <div wire:key="resource-field-{{ $key }}" id="resource-field-{{ optional($field)['slug'] }}-wrapper">
-            <x-dynamic-component :component="$field['field']->edit()" :field="$field" :form="$form" />
+            <x-dynamic-component :component="$field['field']->edit()" mode="edit" :field="$field" :form="$form" />
         </div>
     </x-aura::fields.conditions>
     @endforeach

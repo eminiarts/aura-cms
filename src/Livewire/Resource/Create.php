@@ -31,6 +31,8 @@ class Create extends Component
 
     public $tax;
 
+    public $mode = 'edit';
+
     protected $listeners = ['updateField' => 'updateField'];
 
     public function callMethod($method, $params = [], $captureReturnValueCallback = null)

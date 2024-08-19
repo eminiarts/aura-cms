@@ -46,8 +46,13 @@ class Field implements Wireable
 
     public function view()
     {
+        // ray($this, $this->view);
         if ($this->view) {
             return $this->view;
+        }
+
+        if ($this->edit) {
+            return $this->edit;
         }
     }
 

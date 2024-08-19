@@ -1,8 +1,10 @@
-@aware(['model', 'form'])
+@aware(['model', 'form', 'mode'])
 
 @php
     // Create md5 hash of the field array
     $fieldHash = md5(json_encode($field));
+
+    ray($mode);
 @endphp
 
 <div
@@ -81,19 +83,7 @@
         @endcheckCondition
         @endforeach
     </ul>
-    <div role="tabpanels" class="rounded-b-lg border-t border-gray-400/30 dark:border-gray-700">
-        @foreach($field['fields'] ?? [] as $key => $field)
-        <x-aura::fields.conditions :field="$field" :model="$model" wire:key="tab-section-condition-{{ $key }}-{{ $fieldHash }}">
-            <section
-                x-show="isSelected($id('tab', {{ $key }}))"
-                :aria-labelledby="$id('tab', {{ $key }})"
-                role="tabpanel"
-                class="py-4 w-full"
-                wire:key="tab-section-{{ $key }}-{{ $fieldHash }}"
-            >
-                <x-dynamic-component :component="$field['field']->edit()" :field="$field" :form="$form" />
-            </section>
-        </x-aura::fields.conditions>
-        @endforeach
+    <div role="tabpanels" class="px-2 py-4 rounded-b-lg border-t border-gray-400/30 dark:border-gray-700">
+        <x-aura::fields.fields />
     </div>
 </div>
