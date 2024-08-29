@@ -2,8 +2,8 @@
 
 <template x-if="selected && selected.length > 0" key="bulk-select">
 
-        <div class="flex z-[1] absolute bottom-0 left-1/2 justify-center w-full max-w-2xl transform -translate-x-1/2 dark">
-            <div class="px-6 py-4 mb-6 w-full text-sm text-white bg-gray-800 rounded-lg shadow-lg transform">
+        <div class="flex z-[1] absolute bottom-0 left-1/2 justify-center w-full max-w-2xl transform -translate-x-1/2 ">
+            <div class="px-6 py-4 mb-6 w-full text-sm text-gray-800 rounded-xl border border-gray-200 shadow-lg backdrop-blur-sm transform bg-white/60">
 
             <template x-if="!selectAll">
                 <div class="flex justify-between items-center">
