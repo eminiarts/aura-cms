@@ -101,8 +101,6 @@ class Table extends Component
 
     public $resource;
 
-    public $rowIds;
-
     /**
      * Validation rules.
      *
@@ -165,7 +163,16 @@ class Table extends Component
 
     public function boot()
     {
-        $this->rowIds = $this->rows()->pluck('id')->toArray();
+    }
+
+    #[Computed]
+    public function rowIds()
+    {
+        $rowIds = $this->rows()->pluck('id')->toArray();
+
+        $this->dispatch('rowIdsUpdated', $rowIds);
+
+        return $rowIds;
     }
 
     /**
@@ -332,6 +339,7 @@ class Table extends Component
         return view('aura::livewire.table', [
             'parent' => $this->parent,
             'rows' => $this->rows(),
+            'rowIds' => $this->rowIds,
         ]);
     }
 
@@ -412,11 +420,6 @@ class Table extends Component
             //ray('Save the columns for the current user', $this->columns);
             auth()->user()->updateOption('columns.'.$this->model()->getType(), $this->columns);
         }
-    }
-
-    public function updatedPage($page)
-    {
-        $this->rowIds = $this->rows()->pluck('id')->toArray();
     }
 
     /**

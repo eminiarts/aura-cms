@@ -9,8 +9,8 @@
             <option value="">
                 {{ __('Select a filter') }}
             </option>
-            @foreach($this->userFilters as $name => $userFilter)
-            <option value="{{ $name }}">{{ $userFilter['name'] }}</option>
+            @foreach($this->userFilters as $slug => $userFilter)
+            <option value="{{ $slug }}">{{ $userFilter['name'] }}</option>
             @endforeach
         </select>
 
