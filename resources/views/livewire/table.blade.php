@@ -1,6 +1,6 @@
 <div @selectfieldrows.window="selectRows($event.detail)" {{-- wire:poll.10000ms --}} x-data="{
     selected: @entangle('selected'),
-    rows: @entangle('rowIds'),
+    rows: @js($rowIds),
     lastSelectedId: null,
     total: @js($rows->total()),
     selectPage: false,
@@ -20,6 +20,11 @@
     init() {
         Livewire.on('selectedRows', (updatedSelected) => {
             this.selected = updatedSelected[0];
+        });
+
+        Livewire.on('rowIdsUpdated', (ids) => {
+            this.rows = ids[0];
+            this.selectPage = false;
         });
 
         if (this.selectAll) {
@@ -154,14 +159,14 @@
             this.$dispatch('inset-sidebar', { element: this.$refs.sidebar })
         },
         init() {
-    
+
             Livewire.dispatch('tableMounted')
-    
+
             const sortable = new window.Sortable(document.querySelectorAll('.sortable-wrapper'), {
                 draggable: '.sortable',
                 handle: '.drag-handle'
             });
-    
+
             sortable.on('sortable:stop', () => {
                 setTimeout(() => {
                     @this.reorder(
@@ -213,7 +218,7 @@
                                     @include('aura::components.table.settings')
                                 @endif
                             @endif
-                            
+
                             @if ($this->settings['settings'])
                                 @if ($currentView == 'kanban' && $model->showTableSettings())
                                     @include('aura::components.table.kanban-settings')

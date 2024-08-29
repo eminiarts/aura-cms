@@ -146,24 +146,27 @@ trait Filters
         ]);
 
         $newFilter = array_merge($this->filters, $this->filter);
+        $slug = Str::slug($this->filter['name']);
 
-        // ray($newFilter)->green();
-        // ray($this->filter, $this->filters)->red();
+        // If the slug is empty (e.g., for numbers or special characters), generate a unique identifier
+        if (empty($slug)) {
+            $slug = 'filter_' . Str::random(10);
+        }
+
+        $newFilter['slug'] = $slug;
 
         if ($this->filters) {
-
             // Save for Team
             if ($this->filter['global']) {
-                auth()->user()->currentTeam->updateOption($this->model->getType().'.filters.'.Str::slug($this->filter['name']), $newFilter);
+                auth()->user()->currentTeam->updateOption($this->model->getType().'.filters.'.$slug, $newFilter);
             }
             // Save for User
             else {
-                auth()->user()->updateOption($this->model->getType().'.filters.'.Str::slug($this->filter['name']), $newFilter);
+                auth()->user()->updateOption($this->model->getType().'.filters.'.$slug, $newFilter);
             }
-
         }
 
-        $this->selectedFilter = Str::slug($this->filter['name']);
+        $this->selectedFilter = $slug;
         $this->notify('Filter saved successfully!');
         $this->showSaveFilterModal = false;
         $this->reset('filter');
@@ -209,30 +212,27 @@ trait Filters
     public function userFilters()
     {
         $userFilters = auth()->user()->getOption($this->model()->getType().'.filters.*') ?? collect();
-
         $teamFilters = collect();
 
         if (config('aura.teams')) {
-
             $teamFilters = optional(auth()->user()->currentTeam)->getOption($this->model()->getType().'.filters.*') ?? collect();
-
         }
 
-        // Add 'type' => 'user' to each user filter
-        $userFilters = $userFilters->map(function ($filter) {
+        // Add 'type' => 'user' and ensure 'slug' exists for each user filter
+        $userFilters = $userFilters->map(function ($filter, $key) {
             $filter['type'] = 'user';
-
+            $filter['slug'] = $filter['slug'] ?? $key;
             return $filter;
         });
 
-        // Add 'type' => 'team' to each team filter
-        $teamFilters = $teamFilters->map(function ($filter) {
+        // Add 'type' => 'team' and ensure 'slug' exists for each team filter
+        $teamFilters = $teamFilters->map(function ($filter, $key) {
             $filter['type'] = 'team';
-
+            $filter['slug'] = $filter['slug'] ?? $key;
             return $filter;
         });
 
         // Use concat to merge collections and convert to array
-        return collect($userFilters)->merge($teamFilters)->toArray();
+        return collect($userFilters)->merge($teamFilters)->keyBy('slug')->toArray();
     }
 }
