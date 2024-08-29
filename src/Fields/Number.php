@@ -100,4 +100,14 @@ class Number extends Field
             'is_not_empty' => __('is not empty'),
         ];
     }
+
+    public function getFilterValues($model, $field)
+    {
+        // For number fields, we don't typically provide predefined values
+        // But we could return min and max values if they're defined in the field config
+        return [
+            'min' => $field['min'] ?? null,
+            'max' => $field['max'] ?? null,
+        ];
+    }
 }

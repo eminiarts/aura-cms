@@ -9,7 +9,7 @@ use Illuminate\Support\Traits\Macroable;
 use Illuminate\Support\Traits\Tappable;
 use Livewire\Wireable;
 
-class Field implements Wireable
+abstract class Field implements Wireable
 {
     use InputFields;
     use Macroable;
@@ -333,4 +333,11 @@ class Field implements Wireable
 
     //     return $this;
     // }
+
+    public function getFilterValues($model, $field)
+    {
+        // Default implementation returns an empty array
+        // Most field types don't need predefined values for filtering
+        return [];
+    }
 }

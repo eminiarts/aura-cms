@@ -108,4 +108,9 @@ class Select extends Field
             'is_not_empty' => __('is not empty'),
         ];
     }
+
+    public function getFilterValues($model, $field)
+    {
+        return $this->options($model, $field);
+    }
 }

@@ -240,11 +240,13 @@ trait Filters
     public function fieldsForFilter()
     {
         return $this->fields->mapWithKeys(function ($field) {
+            $fieldInstance = app($field['type']);
             return [
                 $field['slug'] => [
                     'name' => $field['name'],
                     'type' => class_basename($field['type']),
-                    'filterOptions' => app($field['type'])->filterOptions(),
+                    'filterOptions' => $fieldInstance->filterOptions(),
+                    'filterValues' => $fieldInstance->getFilterValues($this->model, $field),
                 ]
             ];
         });
