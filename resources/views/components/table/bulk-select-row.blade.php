@@ -2,41 +2,43 @@
 
 <template x-if="selected && selected.length > 0" key="bulk-select">
 
-        <div class="p-2 bg-primary-50 dark:bg-gray-900 dark:text-white text-gray-900 rounded-lg text-sm">
+        <div class="flex z-[1] absolute bottom-0 left-1/2 justify-center w-full max-w-2xl transform -translate-x-1/2 dark">
+            <div class="px-6 py-4 mb-6 w-full text-sm text-white bg-gray-800 rounded-lg shadow-lg transform">
 
             <template x-if="!selectAll">
-                <div>
-                    <template x-if="selected">
-                        <span>
-                            {{ __('You have selected') }} <strong x-text="selected.length"></strong>
-                            <span x-text="selected.length === 1 ? '{{ __('row') }}' : '{{ __('rows') }}'"></span>.
-                        </span>
-                    </template>
+                <div class="flex justify-between items-center">
+                    <div>
+                        <template x-if="selected">
+                            <span>
+                                {{ __('You have selected') }} <strong x-text="selected.length"></strong>
+                                <span x-text="selected.length === 1 ? '{{ __('row') }}' : '{{ __('rows') }}'"></span>.
+                            </span>
+                        </template>
 
-                    <button x-on:click="selectAllRows" type="button"
-                        class="ml-1 text-sm font-medium leading-5 text-gray-700 text-primary-600 underline transition duration-150 ease-in-out focus:outline-none focus:text-gray-800 focus:underline dark:text-white dark:hover:text-gray-400">
-                        {{ __('Select all') }} 
-                    </button>
+                        <x-aura::button.border size="xs" x-on:click="selectAllRows">
+                            {{ __('Select all') }}
+                        </x-aura::button.border>
+                    </div>
 
-                    <button x-on:click="resetBulk();" type="button"
-                        class="ml-1 text-sm font-medium leading-5 text-gray-700 text-primary-600 underline transition duration-150 ease-in-out focus:outline-none focus:text-gray-800 focus:underline dark:text-white dark:hover:text-gray-400">
+                    <x-aura::button.border size="xs" x-on:click="resetBulk();">
                         {{ __('Unselect all') }}
-                    </button>
+                    </x-aura::button.border>
                 </div>
             </template>
 
             <template x-if="selectAll" key="select-all">
-                <div>
+                <div class="flex justify-between items-center">
                     <span>
                         {{ __('You have selected all') }}
-                        {{-- <strong x-text="selected.length"></strong> --}}
+                        <strong x-text="selected.length"></strong>
+                        <span x-text="selected.length === 1 ? '{{ __('row') }}' : '{{ __('rows') }}'"></span>.
                     </span>
 
-                    <button x-on:click="resetBulk()" type="button"
-                        class="ml-1 text-sm font-medium leading-5 text-gray-700 text-primary-600 underline transition duration-150 ease-in-out focus:outline-none focus:text-gray-800 focus:underline dark:text-white dark:hover:text-gray-400">
+                    <x-aura::button.border size="xs" x-on:click="resetBulk();">
                         {{ __('Unselect all') }}
-                    </button>
+                    </x-aura::button.border>
                 </div>
             </template>
+            </div>
         </div>
     </template>
