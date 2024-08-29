@@ -2,7 +2,7 @@
     @if(count($widgets) > 0)
     <div wire:key="widgets-filter">
 
-        <div id="widget-filter-dropdown" class="relative flex justify-end">
+        <div id="widget-filter-dropdown" class="flex relative justify-end">
             {{-- <x-aura::dropdown align="right" width="60">
                 <x-slot name="trigger">
                     <x-aura::button.border>
@@ -20,7 +20,7 @@
                         <div class="p-4" role="none">
                             <div class="flex flex-col space-y-2">
                                 <label for="selected" class="block text-sm font-medium text-gray-700">Date Range:</label>
-                                <select id="selected" wire:model.live="selected" class="block w-full py-2 pl-3 pr-10 text-base border-gray-300 rounded-md focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm">
+                                <select id="selected" wire:model.live="selected" class="block py-2 pr-10 pl-3 w-full text-base rounded-md border-gray-300 focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm">
                                     @foreach($model->widgetSettings['options'] as $key => $label)
                                     <option value="{{ $key }}">{{ $label }}</option>
                                     @endforeach
@@ -28,9 +28,9 @@
                                 <div>
                                     @if($selected === 'custom')
                                         <label for="start" class="block text-sm font-medium text-gray-700">From:</label>
-                                        <input type="date" id="start" wire:model.live="start" class="block w-full py-2 pl-3 pr-10 text-base border-gray-300 rounded-md focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm">
+                                        <input type="date" id="start" wire:model.live="start" class="block py-2 pr-10 pl-3 w-full text-base rounded-md border-gray-300 focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm">
                                         <label for="end" class="block text-sm font-medium text-gray-700">To:</label>
-                                        <input type="date" id="end" wire:model.live="end" class="block w-full py-2 pl-3 pr-10 text-base border-gray-300 rounded-md focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm">
+                                        <input type="date" id="end" wire:model.live="end" class="block py-2 pr-10 pl-3 w-full text-base rounded-md border-gray-300 focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm">
                                     @endif
                                 </div>
                             </div>
@@ -42,7 +42,7 @@
                         <div class="p-4" role="none">
                             <div class="flex flex-col space-y-2">
                                 <label for="selected" class="block text-sm font-medium text-gray-700">Date Range:</label>
-                                <select id="selected" wire:model.live="selected" class="mt-2 block w-full rounded-md border-0 py-1.5 pl-3 pr-10 text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-primary-600 sm:text-sm sm:leading-6">
+                                <select id="selected" wire:model.live="selected" class="block py-1.5 pr-10 pl-3 mt-2 w-full text-gray-900 rounded-md border-0 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-primary-600 sm:text-sm sm:leading-6">
                                     @foreach($model->widgetSettings['options'] as $key => $label)
                                     <option value="{{ $key }}">{{ $label }}</option>
                                     @endforeach
@@ -50,9 +50,9 @@
                                 <div>
                                     @if($selected === 'custom')
                                         <label for="start" class="block text-sm font-medium text-gray-700">From:</label>
-                                        <input type="date" id="start" wire:model.live="start" class="block w-full py-2 pl-3 pr-10 text-base border-gray-300 rounded-md focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm">
+                                        <input type="date" id="start" wire:model.live="start" class="block py-2 pr-10 pl-3 w-full text-base rounded-md border-gray-300 focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm">
                                         <label for="end" class="block text-sm font-medium text-gray-700">To:</label>
-                                        <input type="date" id="end" wire:model.live="end" class="block w-full py-2 pl-3 pr-10 text-base border-gray-300 rounded-md focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm">
+                                        <input type="date" id="end" wire:model.live="end" class="block py-2 pr-10 pl-3 w-full text-base rounded-md border-gray-300 focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm">
                                     @endif
                                 </div>
                             </div>
@@ -61,7 +61,7 @@
         </div>
     </div>
 
-    <div class="flex flex-wrap items-stretch mt-4 -mx-2">
+    <div class="flex flex-wrap items-stretch -mx-2 mt-4">
         @foreach ($widgets as $key => $widget)
         {{-- Conditions --}}
         {{-- Widget Style Width --}}
@@ -77,7 +77,7 @@
                     }
                 }
             </style>
-           <div wire:key="widgets_component_{{ $key }}">
+           <div class="overflow-hidden" wire:key="widgets_component_{{ $key }}">
             @livewire($widget['type'], ['widget' => $widget, 'model' => $model, 'start' => $start, 'end' => $end], key($widget['slug']))
            </div>
         </div>
