@@ -10,5 +10,5 @@
             </div>
         @endif
     @endif
-    <span class="font-medium text-gray-800">{{ $item->title }}</span>
+    <span class="font-medium text-gray-800">{{ $item->title() }}</span>
 </div>

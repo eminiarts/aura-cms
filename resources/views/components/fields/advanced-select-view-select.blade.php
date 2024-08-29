@@ -8,7 +8,7 @@
         @endif
     @endif
     <div>
-      <span class="font-semibold text-gray-800">{{ $item->title }}</span>
+      <span class="font-semibold text-gray-800">{{ $item->title() }}</span>
       @if(isset($field['description']) && $field['description'] && $field['description'] != '')
         @if($item->{$field['description']})
           <div class="line-clamp-1">
