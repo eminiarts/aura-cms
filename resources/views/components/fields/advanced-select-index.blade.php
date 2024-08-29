@@ -25,7 +25,7 @@
                         </div>
                     @endif
                 @endif
-                <span class="px-2 text-sm font-medium text-gray-800 truncate">{{ $item->title }}</span>
+                <span class="px-2 text-sm font-medium text-gray-800 truncate">{{ $item->title() }}</span>
             </div>
         @endif
     @endforeach
