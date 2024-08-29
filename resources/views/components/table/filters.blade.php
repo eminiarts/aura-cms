@@ -87,9 +87,21 @@
 
             <div class="mt-2 mb-0 w-full">
                 <div class="w-full">
-                    <x-aura::input.wrapper placeholder="Value" error="filters.custom.{{ $key }}.value">
-                        <x-aura::input.text wire:model="filters.custom.{{ $key}}.value"></x-aura::input.text>
-                    </x-aura::input.wrapper>
+                    @php
+                            $fieldType = $this->fieldsForFilter[$filters['custom'][$key]['name']]['type'];
+                        @endphp
+                        @if($fieldType === 'Select')
+                            <select wire:model="filters.custom.{{ $key }}.value" class="block py-2 pr-10 pl-3 mt-1 w-full text-base rounded-md border-gray-500/30 focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm">
+                                <option value="">{{ __('Select a value') }}</option>
+                                @foreach($this->fieldsForFilter[$filters['custom'][$key]['name']]['filterValues'] as $optionValue => $optionLabel)
+                                    <option value="{{ $optionValue }}">{{ $optionLabel }}</option>
+                                @endforeach
+                            </select>
+                        @else
+                            <x-aura::input.wrapper placeholder="Value" error="filters.custom.{{ $key }}.value">
+                                <x-aura::input.text wire:model="filters.custom.{{ $key}}.value"></x-aura::input.text>
+                            </x-aura::input.wrapper>
+                        @endif
                 </div>
             </div>
         </div>
