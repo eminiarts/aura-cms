@@ -97,16 +97,16 @@ trait Filters
         $this->dispatch('refreshTable');
     }
 
-    /**
-     * Get the fields for filter .
-     *
-     * @return mixed
-     */
-    #[Computed]
-    public function FieldsForFilter()
-    {
-        return $this->fields->pluck('name', 'slug');
-    }
+    // /**
+    //  * Get the fields for filter .
+    //  *
+    //  * @return mixed
+    //  */
+    // #[Computed]
+    // public function fieldsForFilter()
+    // {
+    //     return $this->fields->pluck('name', 'slug');
+    // }
 
     /**
      * Remove a custom filter.
@@ -234,5 +234,31 @@ trait Filters
 
         // Use concat to merge collections and convert to array
         return collect($userFilters)->merge($teamFilters)->keyBy('slug')->toArray();
+    }
+
+    #[Computed]
+    public function fieldsForFilter()
+    {
+        return $this->fields->mapWithKeys(function ($field) {
+            return [
+                $field['slug'] => [
+                    'name' => $field['name'],
+                    'type' => class_basename($field['type']),
+                    'filterOptions' => app($field['type'])->filterOptions(),
+                ]
+            ];
+        });
+    }
+
+    public function updatedFiltersCustom($value, $key)
+    {
+        $parts = explode('.', $key);
+        if (count($parts) === 3 && $parts[2] === 'name') {
+            $index = $parts[1];
+            // Reset the operator when the field changes
+            $this->filters['custom'][$index]['operator'] = array_key_first($this->fieldsForFilter[$value]['filterOptions']);
+            // Also reset the value
+            $this->filters['custom'][$index]['value'] = null;
+        }
     }
 }

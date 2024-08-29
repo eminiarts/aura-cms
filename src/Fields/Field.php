@@ -276,6 +276,20 @@ class Field implements Wireable
         ];
     }
 
+    public function filterOptions()
+    {
+        return [
+            'contains' => __('contains'),
+            'does_not_contain' => __('does not contain'),
+            'is' => __('is'),
+            'is_not' => __('is not'),
+            'starts_with' => __('starts with'),
+            'ends_with' => __('ends with'),
+            'is_empty' => __('is empty'),
+            'is_not_empty' => __('is not empty'),
+        ];
+    }
+
     public function isDisabled($model, $field)
     {
         if (optional($field)['disabled'] instanceof \Closure) {

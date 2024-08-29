@@ -86,4 +86,18 @@ class Number extends Field
     {
         return (int) $value;
     }
+
+    public function filterOptions()
+    {
+        return [
+            'equals' => __('equals'),
+            'not_equals' => __('does not equal'),
+            'greater_than' => __('greater than'),
+            'less_than' => __('less than'),
+            'greater_than_or_equal' => __('greater than or equal to'),
+            'less_than_or_equal' => __('less than or equal to'),
+            'is_empty' => __('is empty'),
+            'is_not_empty' => __('is not empty'),
+        ];
+    }
 }

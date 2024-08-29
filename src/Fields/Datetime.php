@@ -111,4 +111,18 @@ class Datetime extends Field
     {
         return $value;
     }
+
+    public function filterOptions()
+    {
+        return [
+            'is' => __('is'),
+            'is_not' => __('is not'),
+            'before' => __('before'),
+            'after' => __('after'),
+            'on_or_before' => __('on or before'),
+            'on_or_after' => __('on or after'),
+            'is_empty' => __('is empty'),
+            'is_not_empty' => __('is not empty'),
+        ];
+    }
 }

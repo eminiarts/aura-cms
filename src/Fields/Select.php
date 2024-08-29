@@ -98,4 +98,14 @@ class Select extends Field
         // return the options defined in the field
         return $field['options'] ?? [];
     }
+
+    public function filterOptions()
+    {
+        return [
+            'is' => __('is'),
+            'is_not' => __('is not'),
+            'is_empty' => __('is empty'),
+            'is_not_empty' => __('is not empty'),
+        ];
+    }
 }
