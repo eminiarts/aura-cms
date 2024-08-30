@@ -177,42 +177,36 @@ class AdvancedSelect extends Field
 
     public function relationship($model, $field)
     {
-        // ray('relationship', $model, $field)->blue();
-
         $morphClass = $field['resource'];
 
         return $model
             ->morphToMany($morphClass, 'related', 'post_relations', 'related_id', 'resource_id')
             ->withTimestamps()
-            ->withPivot('resource_type')
+            ->withPivot('resource_type', 'slug', 'order')
             ->wherePivot('resource_type', $morphClass);
     }
 
     public function saved($post, $field, $value)
     {
-        ray('saved here', $post, $field, $value)->blue();
-
-
         if (is_string($value)) {
             $value = json_decode($value, true);
         }
 
-        if (!$field['multiple']) {
-            $ids = is_null($value) ? [] : [$value];
-        } else {
-            $ids = $value;
+        $ids = $field['multiple'] ? (array)$value : (is_null($value) ? [] : [$value]);
+
+        $pivotData = [];
+        foreach ($ids as $index => $item) {
+            $id = is_array($item) ? ($item['id'] ?? null) : $item;
+            if ($id !== null && (is_string($id) || is_int($id))) {
+                $pivotData[$id] = [
+                    'resource_type' => $field['resource'],
+                    'slug' => $field['slug'],
+                    'order' => $index + 1,
+                ];
+            }
         }
 
-        $ids = $value;
-
-        if (is_array($ids)) {
-            $post->{$field['slug']}()->syncWithPivotValues($ids, [
-                'resource_type' => $field['resource'],
-            ]);
-        } else {
-            $post->{$field['slug']}()->sync([]);
-        }
-
+        $post->{$field['slug']}()->sync($pivotData);
     }
 
     public function selectedValues($model, $values, $field)
