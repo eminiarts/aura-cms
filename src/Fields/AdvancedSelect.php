@@ -205,7 +205,25 @@ class AdvancedSelect extends Field
             }
         }
 
-        $post->{$field['slug']}()->sync($pivotData);
+
+        // Get the current relations for this specific field
+        $currentRelations = $post->{$field['slug']}()
+            ->wherePivot('slug', $field['slug'])
+            ->pluck('resource_id')
+            ->toArray();
+
+        // Detach only the relations for this specific field that are not in the new set
+        $toDetach = array_diff($currentRelations, array_keys($pivotData));
+        if (!empty($toDetach)) {
+            $post->{$field['slug']}()->detach($toDetach);
+        }
+
+        // dd('stop', $pivotData);
+
+        // Attach or update the new relations
+        foreach ($pivotData as $id => $data) {
+            $post->{$field['slug']}()->syncWithoutDetaching([$id => $data]);
+        }
     }
 
     public function selectedValues($model, $values, $field)
