@@ -28,6 +28,8 @@
     }
 
     // dd($values);
+
+    dump($selectedValues);
 @endphp
 
 <x-aura::fields.wrapper :field="$field">
@@ -45,6 +47,9 @@
         }
     </style>
 
+    @dump('selectedValues', $selectedValues)
+    @dump('values', $values)
+    @dump('api', $api)
 
     <div wire:ignore class="w-full" x-data="{
         value: $wire.entangle('form.fields.{{ $field['slug'] }}'),
@@ -87,6 +92,7 @@
         },
 
         init() {
+            console.log('init', 'selectedItems', this.selectedItems, 'value', this.value, 'items', this.items, 'multiple', this.multiple, 'api', this.api);
             this.boundStopDragging = this.stopDragging.bind(this);
             this.boundMoveItem = this.moveItem.bind(this);
             if (this.api) {
@@ -96,13 +102,14 @@
                     this.value = [];
                 }
                 if (!this.multiple) {
+                    console.log('not multiple');
                     this.selectedItems = this.items.filter(item => item.id === this.value);
                 } else {
                     this.selectedItems = this.items.filter(item => this.value.includes(item.id));
                 }
             }
 
-            console.log(this.items, this.value);
+            {{-- console.log(this.items, this.value); --}}
 
             Livewire.on('resourceCreated', data => {
                 this.items.push({ id: data.form.id, title: data.title });
@@ -161,13 +168,6 @@
             if (!this.selectedItems || this.selectedItems.length === 0) {
                 return items;
             }
-
-
-
-            // return this.selectedItems, items, and deselectedItems and remove duplicates by id
-            {{-- if (!this.search || this.search == '') {
-                return [...this.selectedItems, ...items].filter((item, index, self) => self.findIndex(i => i.id === item.id) === index).sort((a, b) => a.id - b.id);
-            } --}}
 
             return [...this.selectedItems, ...items].filter((item, index, self) => self.findIndex(i => i.id === item.id) === index).sort((a, b) => a.id - b.id);
         },
@@ -372,9 +372,13 @@
                 class="relative flex items-center justify-between w-full px-3 pt-1 pb-0 border rounded-lg shadow-xs appearance-none min-h-[2.625rem] border-gray-500/30 focus:border-primary-300 focus:outline-none ring-gray-900/10 focus:ring focus:ring-primary-300 focus:ring-opacity-50 dark:focus:ring-primary-500 dark:focus:ring-opacity-50 dark:bg-gray-900 dark:border-gray-700"
                 x-ref="listboxButton" @click="toggleListbox">
 
-                <template x-if="value && !multiple && !Array.isArray(value)">
+                <pre x-html="value + ', ' + !multiple + ', ' + Array.isArray(value)"></pre>
+                <pre x-html="selectedItemMarkup(value)"></pre>
+                <pre x-html="this.selectedItems"></pre>
+                <template x-if="value && !multiple && Array.isArray(value)">
                     <div class="flex">
-                        <span x-html="selectedItemMarkup(value).view_selected"></span>
+                        not multiple with value here
+                        {{-- <span x-html="selectedItemMarkup(value).view_selected"></span> --}}
                     </div>
                 </template>
 
