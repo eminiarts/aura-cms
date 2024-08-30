@@ -30,7 +30,7 @@ return new class extends Migration
         Schema::dropIfExists('posts');
         Schema::dropIfExists('post_meta');
         Schema::dropIfExists('meta');
-        Schema::dropIfExists('relations');
+        Schema::dropIfExists('post_relations');
         Schema::dropIfExists('roles');
         Schema::dropIfExists('permissions');
     }
@@ -168,9 +168,12 @@ return new class extends Migration
         Schema::create('post_relations', function (Blueprint $table) {
             $table->morphs('resource');
             $table->morphs('related');
+            $table->integer('order')->nullable();
+            $table->string('slug')->nullable();
             $table->timestamps();
 
             $table->index(['resource_id', 'related_id', 'related_type']);
+            $table->index('slug');
         });
 
         Schema::create('roles', function (Blueprint $table) {

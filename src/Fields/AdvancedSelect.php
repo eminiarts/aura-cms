@@ -65,10 +65,13 @@ class AdvancedSelect extends Field
 
     public function get($class, $value)
     {
+        ray('get', $class, $value);
         if (is_array($value)) {
             return array_column($value, 'id');
         } elseif (is_object($value) && method_exists($value, 'pluck')) {
             return $value->pluck('id')->toArray();
+        } elseif (is_int($value)) {
+            return $value;
         } else {
             return [];
         }
@@ -154,12 +157,15 @@ class AdvancedSelect extends Field
 
     public function getRelation($model, $field)
     {
-
         if (! $model->exists) {
             return collect();
         }
 
         $relationshipQuery = $this->relationship($model, $field);
+
+        // if (!isset($field['multiple']) || !$field['multiple']) {
+        //     return collect([$relationshipQuery->first()]);
+        // }
 
         return $relationshipQuery->get();
     }
@@ -184,10 +190,17 @@ class AdvancedSelect extends Field
 
     public function saved($post, $field, $value)
     {
-        // ray('saved here', $post, $field, $value)->blue();
+        ray('saved here', $post, $field, $value)->blue();
+
 
         if (is_string($value)) {
             $value = json_decode($value, true);
+        }
+
+        if (!$field['multiple']) {
+            $ids = is_null($value) ? [] : [$value];
+        } else {
+            $ids = $value;
         }
 
         $ids = $value;
