@@ -29,7 +29,7 @@
 
     // dd($values);
 
-    dump($selectedValues);
+    // dump($selectedValues);
 @endphp
 
 <x-aura::fields.wrapper :field="$field">
@@ -47,9 +47,9 @@
         }
     </style>
 
-    @dump('selectedValues', $selectedValues)
+    {{-- @dump('selectedValues', $selectedValues)
     @dump('values', $values)
-    @dump('api', $api)
+    @dump('api', $api) --}}
 
     <div wire:ignore class="w-full" x-data="{
         value: $wire.entangle('form.fields.{{ $field['slug'] }}'),

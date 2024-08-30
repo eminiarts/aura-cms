@@ -161,13 +161,7 @@ class AdvancedSelect extends Field
             return collect();
         }
 
-        $relationshipQuery = $this->relationship($model, $field);
-
-        // if (!isset($field['multiple']) || !$field['multiple']) {
-        //     return collect([$relationshipQuery->first()]);
-        // }
-
-        return $relationshipQuery->get();
+        return $this->relationship($model, $field)->get();
     }
 
     public function isRelation()
@@ -183,7 +177,12 @@ class AdvancedSelect extends Field
             ->morphToMany($morphClass, 'related', 'post_relations', 'related_id', 'resource_id')
             ->withTimestamps()
             ->withPivot('resource_type', 'slug', 'order')
-            ->wherePivot('resource_type', $morphClass);
+            ->wherePivot('resource_type', $morphClass)
+            ->where(function ($query) use ($field) {
+                $query->where('post_relations.slug', $field['slug'])
+                      ->orWhereNull('post_relations.slug');
+            })
+            ->orderBy('post_relations.order');
     }
 
     public function saved($post, $field, $value)
