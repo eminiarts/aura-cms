@@ -188,7 +188,8 @@ class AdvancedSelect extends Field
             $value = json_decode($value, true);
         }
 
-        $ids = $field['multiple'] ? (array)$value : (is_null($value) ? [] : [$value]);
+        $ids = $value;
+        ray('saved', $post, $field, $value, $ids);
 
         $pivotData = [];
         foreach ($ids as $index => $item) {
