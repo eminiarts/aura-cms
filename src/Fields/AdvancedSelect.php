@@ -65,7 +65,7 @@ class AdvancedSelect extends Field
 
     public function get($class, $value)
     {
-        ray('get', $class, $value);
+        // ray('get', $class, $value);
         if (is_array($value)) {
             return array_column($value, 'id');
         } elseif (is_object($value) && method_exists($value, 'pluck')) {
@@ -174,15 +174,12 @@ class AdvancedSelect extends Field
         $morphClass = $field['resource'];
 
         return $model
-            ->morphToMany($morphClass, 'related', 'post_relations', 'related_id', 'resource_id')
-            ->withTimestamps()
-            ->withPivot('resource_type', 'slug', 'order')
-            ->wherePivot('resource_type', $morphClass)
-            ->where(function ($query) use ($field) {
-                $query->where('post_relations.slug', $field['slug'])
-                      ->orWhereNull('post_relations.slug');
-            })
-            ->orderBy('post_relations.order');
+        ->morphToMany($morphClass, 'related', 'post_relations', 'related_id', 'resource_id')
+        ->withTimestamps()
+        ->withPivot('resource_type', 'slug', 'order')
+        ->wherePivot('resource_type', $morphClass)
+        ->wherePivot('slug', $field['slug'])  // Only this specific slug
+        ->orderBy('post_relations.order');
     }
 
     public function saved($post, $field, $value)
@@ -205,7 +202,6 @@ class AdvancedSelect extends Field
             }
         }
 
-
         // Get the current relations for this specific field
         $currentRelations = $post->{$field['slug']}()
             ->wherePivot('slug', $field['slug'])
@@ -215,15 +211,19 @@ class AdvancedSelect extends Field
         // Detach only the relations for this specific field that are not in the new set
         $toDetach = array_diff($currentRelations, array_keys($pivotData));
         if (!empty($toDetach)) {
-            $post->{$field['slug']}()->detach($toDetach);
+            $post->{$field['slug']}()->wherePivot('slug', $field['slug'])->detach($toDetach);
         }
 
-        // dd('stop', $pivotData);
+        ray('pivotData', $pivotData);
 
-        // Attach or update the new relations
-        foreach ($pivotData as $id => $data) {
-            $post->{$field['slug']}()->syncWithoutDetaching([$id => $data]);
-        }
+        ray('1 ' . $field['slug'], $post->{$field['slug']}()->get());
+
+            // Attach or update the new relations
+            foreach ($pivotData as $id => $data) {
+                $post->{$field['slug']}()->syncWithoutDetaching([$id => $data]);
+            }
+
+        ray('2 ' . $field['slug'], $post->{$field['slug']}()->get());
     }
 
     public function selectedValues($model, $values, $field)
