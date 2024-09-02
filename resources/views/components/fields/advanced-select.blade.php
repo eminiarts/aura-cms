@@ -172,21 +172,11 @@
             return [...this.selectedItems, ...items].filter((item, index, self) => self.findIndex(i => i.id === item.id) === index).sort((a, b) => a.id - b.id);
         },
 
-        isActive(item) {
-            if (!this.multiple) {
-                return this.value === item.id;
-            }
-            return this.value.includes(item.id);
-        },
-
         isDisabled(item) {
             return false;
         },
 
         isSelected(item) {
-            if (!this.multiple) {
-                return this.value === item.id;
-            }
             return this.value.includes(item.id);
         },
 
@@ -215,7 +205,7 @@
             {{-- console.log(this.multiple, this.value, item.id); --}}
 
             if (!this.multiple) {
-                this.value = item.id;
+                this.value = [item.id];
                 this.selectedItems = [item];
                 this.showListbox = false;
                 return;
@@ -259,6 +249,7 @@
         },
 
         selectedItemMarkup(id) {
+            console.log('selectedItemMarkup', id, this.selectedItems);
             if (!id) {
                 return false;
             }
@@ -372,13 +363,14 @@
                 class="relative flex items-center justify-between w-full px-3 pt-1 pb-0 border rounded-lg shadow-xs appearance-none min-h-[2.625rem] border-gray-500/30 focus:border-primary-300 focus:outline-none ring-gray-900/10 focus:ring focus:ring-primary-300 focus:ring-opacity-50 dark:focus:ring-primary-500 dark:focus:ring-opacity-50 dark:bg-gray-900 dark:border-gray-700"
                 x-ref="listboxButton" @click="toggleListbox">
 
-                {{-- <pre x-html="value + ', ' + !multiple + ', ' + Array.isArray(value)"></pre>
-                <pre x-html="selectedItemMarkup(value)"></pre>
+                {{-- <pre x-html="value"></pre> --}}
+                {{-- <pre x-html="selectedItemMarkup(value)"></pre>
                 <pre x-html="this.selectedItems"></pre> --}}
                 <template x-if="value && !multiple && Array.isArray(value)">
                     <div class="flex">
-                        not multiple with value here
-                        {{-- <span x-html="selectedItemMarkup(value).view_selected"></span> --}}
+                        <template x-for="(item, index) in value" :key="item">
+                        <span x-html="selectedItemMarkup(item).view_selected"></span>
+                        </template>
                     </div>
                 </template>
 
@@ -386,6 +378,7 @@
                     <div class="flex flex-wrap items-center pt-0" @mousemove.prevent="moveItem($event)"
                         @mouseup.prevent="stopDragging()" x-ref="selectedItemsContainer">
                         <template x-for="(item, index) in value" :key="item">
+                            {{-- <pre x-html="'item: ' + item + ', selected: ' + selectedItemMarkup(item)"></pre> --}}
 
                             <div class="inline-flex gap-1 items-center py-0.5 pr-2 pl-1 mr-2 mb-1 text-xs font-medium leading-4 rounded-full bg-primary-100 text-primary-800 draggable-selectmany-item"
                                 :data-id="item" @mousedown.prevent="startDragging(index, $event)"
@@ -483,7 +476,7 @@
                         <template x-for="item in filteredItems" :key="item.id">
                             <li :value="item.id"
                                 :class="{
-                                    'dark:bg-primary-500/20 dark:hover:bg-primary-500/30 dark:focus:bg-primary-500/30 bg-primary-50 hover:bg-primary-100 focus:outline-none': isActive(
+                                    'dark:bg-primary-500/20 dark:hover:bg-primary-500/30 dark:focus:bg-primary-500/30 bg-primary-50 hover:bg-primary-100 focus:outline-none': isSelected(
                                         item),
                                     'dark:bg-gray-900 dark:hover:bg-gray-800 dark:focus:bg-gray-800 bg-white hover:bg-gray-50 focus:bg-gray-100 focus:outline-none':
                                         !isSelected(item),
