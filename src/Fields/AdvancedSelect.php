@@ -63,9 +63,15 @@ class AdvancedSelect extends Field
     //     return $items->title();
     // }
 
-    public function get($class, $value)
+    public function get($class, $value, $field = null)
     {
-        // ray('get', $class, $value);
+         ray( $class, $value, $field)->blue();
+
+        if (!($field['multiple'] ?? true) && !($field['polymorphic_relation'] ?? false)) {
+            // dd('hier');
+            return [(int) $value];
+        }
+
         if (is_array($value)) {
             return array_column($value, 'id');
         } elseif (is_object($value) && method_exists($value, 'pluck')) {
@@ -164,22 +170,32 @@ class AdvancedSelect extends Field
         return $this->relationship($model, $field)->get();
     }
 
-    public function isRelation()
+    public function isRelation($field = null)
     {
+        if (optional($field)['polymorphic_relation'] === false) {
+            return false;
+        }
+
         return true;
     }
 
     public function relationship($model, $field)
     {
+        if (!($field['multiple'] ?? true) && !($field['polymorphic_relation'] ?? true)) {
+            $resourceClass = $field['resource'];
+            $value = $model->meta()->where('key', $field['slug'])->value('value');
+            return $resourceClass::where('id', $value);
+        }
+
         $morphClass = $field['resource'];
 
         return $model
-        ->morphToMany($morphClass, 'related', 'post_relations', 'related_id', 'resource_id')
-        ->withTimestamps()
-        ->withPivot('resource_type', 'slug', 'order')
-        ->wherePivot('resource_type', $morphClass)
-        ->wherePivot('slug', $field['slug'])  // Only this specific slug
-        ->orderBy('post_relations.order');
+            ->morphToMany($morphClass, 'related', 'post_relations', 'related_id', 'resource_id')
+            ->withTimestamps()
+            ->withPivot('resource_type', 'slug', 'order')
+            ->wherePivot('resource_type', $morphClass)
+            ->wherePivot('slug', $field['slug'])
+            ->orderBy('post_relations.order');
     }
 
     public function saved($post, $field, $value)
@@ -189,9 +205,20 @@ class AdvancedSelect extends Field
         }
 
         $ids = $value;
-        ray('saved', $post, $field, $value, $ids);
+
+        // ray('saved', $post, $field, $value, $ids);
+
+        if (!($field['multiple'] ?? true) && !($field['polymorphic_relation'] ?? true)) {
+            // Save as meta
+            $post->meta()->updateOrCreate(['key' => $field['slug']], ['value' => $ids ?? null]);
+            return;
+        }
 
         $pivotData = [];
+
+        if (empty($ids)) {
+            return;
+        }
         foreach ($ids as $index => $item) {
             $id = is_array($item) ? ($item['id'] ?? null) : $item;
             if ($id !== null && (is_string($id) || is_int($id))) {
@@ -215,16 +242,16 @@ class AdvancedSelect extends Field
             $post->{$field['slug']}()->wherePivot('slug', $field['slug'])->detach($toDetach);
         }
 
-        ray('pivotData', $pivotData);
+        // ray('pivotData', $pivotData);
 
-        ray('1 ' . $field['slug'], $post->{$field['slug']}()->get());
+        // ray('1 ' . $field['slug'], $post->{$field['slug']}()->get());
 
             // Attach or update the new relations
             foreach ($pivotData as $id => $data) {
                 $post->{$field['slug']}()->syncWithoutDetaching([$id => $data]);
             }
 
-        ray('2 ' . $field['slug'], $post->{$field['slug']}()->get());
+        // ray('2 ' . $field['slug'], $post->{$field['slug']}()->get());
     }
 
     public function selectedValues($model, $values, $field)
@@ -250,6 +277,11 @@ class AdvancedSelect extends Field
 
     public function set($post, $field, $value)
     {
+        if (!$field['multiple'] && !($field['polymorphic_relation'] ?? false)) {
+            if (is_array($value) && !empty($value)) {
+                return $value[0];
+            }
+        }
         return json_encode($value);
     }
 

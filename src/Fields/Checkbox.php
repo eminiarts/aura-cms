@@ -10,7 +10,7 @@ class Checkbox extends Field
 
     // public $view = 'components.fields.checkbox';
 
-    public function get($field, $value)
+    public function get($class, $value, $field = null)
     {
         // dd($value);
         if ($value === null || $value === false) {

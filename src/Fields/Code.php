@@ -10,7 +10,7 @@ class Code extends Field
 
     // public $view = 'components.fields.code';
 
-    public function get($field, $value)
+    public function get($class, $value, $field = null)
     {
         // If value is a JSON encoded string, decode it
         $decodedValue = json_decode($value, true);

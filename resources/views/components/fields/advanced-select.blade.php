@@ -30,6 +30,9 @@
     // dd($values);
 
     // dump($selectedValues);
+
+    // dump($values, $selectedValues);
+    // dump(optional($this->form['fields'])[$field['slug']]);
 @endphp
 
 <x-aura::fields.wrapper :field="$field">
@@ -103,7 +106,8 @@
                 }
                 if (!this.multiple) {
                     console.log('not multiple');
-                    this.selectedItems = this.items.filter(item => item.id === this.value);
+                    this.selectedItems = this.items.filter(item => this.value.includes(item.id));
+                    console.log('selectedItems', this.selectedItems);
                 } else {
                     this.selectedItems = this.items.filter(item => this.value.includes(item.id));
                 }

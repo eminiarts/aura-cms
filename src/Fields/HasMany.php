@@ -17,9 +17,9 @@ class HasMany extends Field
 
     public $view = 'aura::fields.has-many-view';
 
-    public function get($model, $field)
+    public function get($class, $value, $field = null)
     {
-        $relationshipQuery = $this->relationship($model, $field);
+        $relationshipQuery = $this->relationship($class, $value);
 
         return $relationshipQuery->get();
     }

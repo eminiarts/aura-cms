@@ -17,7 +17,7 @@ class Repeater extends Field
 
     // public $view = 'components.fields.repeater';
 
-    public function get($field, $value)
+    public function get($class, $value, $field = null)
     {
         // $fields = $this->getFields();
         // dd($field, $value, $fields);

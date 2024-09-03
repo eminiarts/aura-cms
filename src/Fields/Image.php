@@ -45,7 +45,7 @@ class Image extends Field
         }
     }
 
-    public function get($field, $value)
+    public function get($class, $value, $field = null)
     {
         if (is_string($value)) {
             return json_decode($value, true);

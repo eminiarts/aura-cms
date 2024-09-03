@@ -97,9 +97,28 @@ class Resource extends Model
         if ($this->getFieldSlugs()->contains($key)) {
             $fieldClass = $this->fieldClassBySlug($key);
             // $groupedField = $this->groupedFieldBySlug($key);
-
             if ($fieldClass->isRelation()) {
+                // ray('is relation', $key);
                 $field = $this->fieldBySlug($key);
+
+                if ($key == 'actorsnew') {
+                    ray('polymorphic_relation', $field, optional($field)['polymorphic_relation'], optional($field)['polymorphic_relation'] === false)->green();
+                }
+
+
+                if (optional($field)['polymorphic_relation'] === false) {
+
+                    return $value;
+
+                    dd('hier 2', $field, $value, $key);
+
+                    if (is_null($value) && isset($this->fields[$key])) {
+
+                        ray($value, $this->fields[$key])->green();
+
+                        return $this->fields[$key];
+                    }
+                }
 
                 return $fieldClass->getRelation($this, $field);
             }
@@ -168,16 +187,38 @@ class Resource extends Model
     {
         if (! isset($this->fieldsAttributeCache) || $this->fieldsAttributeCache === null) {
             $meta = $this->getMeta();
-
+            if(get_class($this) == 'App\Aura\Resources\Genre') {
+                ray($meta)->red();
+            }
             $defaultValues = collect($this->inputFieldsSlugs())
                 ->mapWithKeys(fn ($value, $key) => [$value => null])
                 ->map(fn ($value, $key) => $meta[$key] ?? $value)
                 ->filter(fn ($value, $key) => strpos($key, '.') === false)
                 ->map(function ($value, $key) {
                     $class = $this->fieldClassBySlug($key);
+                    $field = collect($this->inputFields())->firstWhere('slug', $key);
 
-                    if ($class && $class->isRelation() && $this->{$key} && method_exists($class, 'get')) {
-                        return $class->get($class, $this->{$key});
+                    // if ($class && $class->isRelation() && !isset($this->{$key}) && $this->{$key}() && method_exists($class, 'get')) {
+
+                    //     dd('hier 1', $class, $key, $field, $this->inputFields());
+                    //     ray('class', $class, $key, $this->inputFields());
+
+                    //     ray('field', $field);
+                    //     if ($field && isset($field['field'])) {
+                    //         return $class->get($class, $this->{$key}(), $field);
+                    //     }
+                    //     return $class->get($class, $this->{$key}(), $field);
+                    // }
+
+                    if ($class && $class->isRelation($field) && $this->{$key} && method_exists($class, 'get')) {
+
+                        // ray('class', $class, $key, $this->fieldsAttributeCache, $this->inputFields());
+
+                        // ray('field', $field);
+                        if ($field && isset($field['field'])) {
+                            return $class->get($class, $this->{$key}, $field);
+                        }
+                        return $class->get($class, $this->{$key}, $field);
                     }
 
                     if (isset($this->{$key})) {
@@ -185,7 +226,7 @@ class Resource extends Model
                     }
 
                     if ($class && isset($this->attributes[$key]) && method_exists($class, 'get')) {
-                        return $class->get($class, $this->attributes[$key]);
+                        return $class->get($class, $this->attributes[$key], $field);
                     }
 
                     if (isset($this->attributes[$key])) {
@@ -199,7 +240,7 @@ class Resource extends Model
                     }
 
                     if ($class && isset(optional($this)->{$key}) && method_exists($class, 'get')) {
-                        return $class->get($class, $this->{$key} ?? null);
+                        return $class->get($class, $this->{$key} ?? null, $field);
                     }
 
                     return $value;
@@ -240,10 +281,12 @@ class Resource extends Model
 
             // Cast Attributes
             $meta = $meta->map(function ($meta, $key) {
+                $field = $this->fieldBySlug($key);
+
                 $class = $this->fieldClassBySlug($key);
 
                 if ($class && method_exists($class, 'get')) {
-                    return $class->get($class, $meta);
+                    return $class->get($class, $meta, $field);
                 }
 
                 return $meta;

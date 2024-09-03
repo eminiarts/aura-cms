@@ -33,7 +33,7 @@ class Tags extends Field
         })->implode(' ');
     }
 
-    public function get($class, $value)
+    public function get($class, $value, $field = null)
     {
         if (is_array($value)) {
             return array_column($value, 'id');
