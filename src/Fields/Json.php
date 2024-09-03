@@ -13,7 +13,7 @@ class Json extends Field
         return json_encode($value);
     }
 
-    public function get($field, $value)
+    public function get($class, $value, $field = null)
     {
         if (is_array($value) || $value === null) {
             return $value;

@@ -109,7 +109,7 @@ abstract class Field implements Wireable
         return $field;
     }
 
-    public function get($field, $value)
+    public function get($class, $value, $field = null)
     {
         return $value;
     }

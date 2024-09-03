@@ -19,7 +19,7 @@ class SelectRelation extends Field
         return app($field['resource'])->find($values)->pluck('name')->implode(',');
     }
 
-    public function get($field, $value)
+    public function get($class, $value, $field = null)
     {
         if (! $value) {
             return;

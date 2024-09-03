@@ -19,7 +19,7 @@ class Boolean extends Field
         }
     }
 
-    public function get($field, $value)
+    public function get($class, $value, $field = null)
     {
         return (bool) $value;
     }

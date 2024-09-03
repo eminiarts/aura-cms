@@ -14,7 +14,7 @@ class Datetime extends Field
 
     public $view = 'aura::fields.view-value';
 
-    public function get($field, $value)
+    public function get($class, $value, $field = null)
     {
         return $value;
     }

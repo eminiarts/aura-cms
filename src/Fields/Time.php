@@ -10,7 +10,7 @@ class Time extends Field
 
     public $optionGroup = 'Input Fields';
 
-    public function get($field, $value)
+    public function get($class, $value, $field = null)
     {
         return $value;
     }

@@ -8,7 +8,7 @@ class Permissions extends Field
 
     public $view = 'aura::fields.permissions-view';
 
-    public function get($field, $value)
+    public function get($class, $value, $field = null)
     {
         if (is_array($value)) {
             return $value;
