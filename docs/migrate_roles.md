@@ -12,32 +12,46 @@ Schema::create('post_relations', function (Blueprint $table) {
   $table->index(['resource_id', 'related_id', 'related_type']);
 });
 
-Schema::create("roles", function (Blueprint $table) {
-  $table->id();
-  $table->string("name");
-  $table->string("slug");
-  $table->text("description")->nullable();
-  $table->boolean("super_admin")->default(false);
-  $table->json("permissions")->nullable();
-  $table->foreignId("user_id")->nullable();
-  $table->timestamps();
+Schema::create('roles', function (Blueprint $table) {
+            $table->id();
+            $table->string('name');
+            $table->string('slug');
+            $table->text('description')->nullable();
+            $table->boolean('super_admin')->default(false);
+            $table->json('permissions')->nullable();
+            $table->foreignId('user_id')->nullable();
+            if (config('aura.teams')) {
+                $table->foreignId('team_id')->nullable()->constrained()->onDelete('cascade');
+            }
+            $table->timestamps();
 
-  $table->unique(["slug"]);
-  $table->index("slug");
-});
+            if (config('aura.teams')) {
+                $table->unique(['slug', 'team_id']);
+            } else {
+                $table->unique(['slug']);
+            }
+            $table->index('slug');
+        });
 
-Schema::create("permissions", function (Blueprint $table) {
-  $table->id();
-  $table->string("name");
-  $table->string("slug");
-  $table->text("description")->nullable();
-  $table->string("group")->nullable();
-  $table->foreignId("user_id")->nullable();
-  $table->timestamps();
+        Schema::create('permissions', function (Blueprint $table) {
+            $table->id();
+            $table->string('name');
+            $table->string('slug');
+            $table->text('description')->nullable();
+            $table->string('group')->nullable();
+            $table->foreignId('user_id')->nullable();
+            if (config('aura.teams')) {
+                $table->foreignId('team_id')->nullable()->constrained()->onDelete('cascade');
+            }
+            $table->timestamps();
 
-  $table->unique(["slug"]);
-  $table->index("slug");
-});
+            if (config('aura.teams')) {
+                $table->unique(['slug', 'team_id']);
+            } else {
+                $table->unique(['slug']);
+            }
+            $table->index('slug');
+        });
 ```
 
 Create roles and permissions from `posts` table to `roles` and `permissions` table
