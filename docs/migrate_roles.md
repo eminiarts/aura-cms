@@ -120,41 +120,44 @@ use Illuminate\Support\Str;
 // Do it manually for each team
 $team_id = 1;
 
-$roleMappings = DB::table("roles")->where("team_id", $team_id)->pluck("id", "slug"); // Mapping of slug to new role IDs
-$usersWithRoles = DB::table("user_meta")
+// Fetch role mappings
+$roleMappings = DB::table("roles")->where("team_id", $team_id)->pluck("id", "slug");
+
+// Process users in chunks to reduce memory usage
+DB::table("user_meta")
   ->where("key", "roles")
   ->where("team_id", $team_id)
-  ->get();
+  ->orderBy('id')
+  ->chunk(1000, function ($usersWithRoles) use ($roleMappings, $team_id) {
+    foreach ($usersWithRoles as $userMeta) {
+      $oldRoleId = $userMeta->value;
 
-foreach ($usersWithRoles as $userMeta) {
-  $oldRoleId = $userMeta->value; // This is the old role ID from the `posts` table
+      // Fetch the corresponding post (old role)
+      $oldRolePost = DB::table("posts")
+        ->where("id", $oldRoleId)
+        ->where("type", "role")
+        ->where("team_id", $team_id)
+        ->first();
 
-  // Fetch the corresponding post (old role)
-  $oldRolePost = DB::table("posts")
-    ->where("id", $oldRoleId)
-    ->where("type", "role")
-    ->where("team_id", $team_id)
-    ->first();
+      if ($oldRolePost) {
+        $newRoleSlug = Str::slug($oldRolePost->title);
 
-  if ($oldRolePost) {
-    $newRoleSlug = Str::slug($oldRolePost->title); // Generate the slug based on the old role title
+        if (isset($roleMappings[$newRoleSlug])) {
+          $newRoleId = $roleMappings[$newRoleSlug];
 
-    if (isset($roleMappings[$newRoleSlug])) {
-      $newRoleId = $roleMappings[$newRoleSlug]; // Get the new role ID from the roles table
-
-      // dump($newRoleId, $oldRoleId);
-      // Insert into post_relations
-      DB::table("post_relations")->insert([
-        "resource_type" => "Aura\\Base\\Resources\\Role",
-        "resource_id" => $newRoleId, // New role ID from the roles table
-        "related_type" => "Aura\\Base\\Resources\\User",
-        "related_id" => $userMeta->user_id, // User ID from the user_meta table
-        "created_at" => now(),
-        "updated_at" => now()
-      ]);
+          // Insert into post_relations
+          DB::table("post_relations")->insert([
+            "resource_type" => "Aura\\Base\\Resources\\Role",
+            "resource_id" => $newRoleId,
+            "related_type" => "Aura\\Base\\Resources\\User",
+            "related_id" => $userMeta->user_id,
+            "created_at" => now(),
+            "updated_at" => now()
+          ]);
+        }
+      }
     }
-  }
-}
+  });
 
-echo "User-role connections migrated successfully!";
+dump("User-role connections migrated successfully!");
 ```
