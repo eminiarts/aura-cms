@@ -77,6 +77,7 @@ foreach ($rolePosts as $post) {
         'super_admin' => $meta->get('super_admin', false), // If you have a "super_admin" meta key
         'permissions' => json_encode($meta->get('permissions', [])), // If you have a "permissions" meta key
         'user_id' => $post->user_id ?? null, // Adjust this if user_id is stored elsewhere
+        'team_id' => $post->team_id ?? null, // Adjust this if team_id is stored elsewhere
         'created_at' => now(),
         'updated_at' => now(),
     ]);
@@ -99,6 +100,7 @@ foreach ($permissionPosts as $post) {
         'description' => $post->content,
         'group' => $meta->get('group', null), // If you have a "group" meta key
         'user_id' => $post->user_id ?? null, // Adjust this if user_id is stored elsewhere
+        'team_id' => $post->team_id ?? null, // Adjust this if team_id is stored elsewhere
         'created_at' => now(),
         'updated_at' => now(),
     ]);
@@ -115,9 +117,13 @@ from `posts` table to `roles` table
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
-$roleMappings = DB::table("roles")->pluck("id", "slug"); // Mapping of slug to new role IDs
+// Do it manually for each team
+$team_id = 1;
+
+$roleMappings = DB::table("roles")->where("team_id", $team_id)->pluck("id", "slug"); // Mapping of slug to new role IDs
 $usersWithRoles = DB::table("user_meta")
   ->where("key", "roles")
+  ->where("team_id", $team_id)
   ->get();
 
 foreach ($usersWithRoles as $userMeta) {
@@ -127,6 +133,7 @@ foreach ($usersWithRoles as $userMeta) {
   $oldRolePost = DB::table("posts")
     ->where("id", $oldRoleId)
     ->where("type", "role")
+    ->where("team_id", $team_id)
     ->first();
 
   if ($oldRolePost) {
