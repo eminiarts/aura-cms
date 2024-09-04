@@ -2,14 +2,15 @@
 
 namespace Aura\Base\Jobs;
 
-use Aura\Base\Facades\Aura;
-use Aura\Base\Resources\Permission;
-use Aura\Base\Resources\Team;
 use Aura\Base\Resource;
-use Illuminate\Foundation\Bus\Dispatchable;
-use Illuminate\Queue\InteractsWithQueue;
-use Illuminate\Queue\SerializesModels;
+use Aura\Base\Facades\Aura;
+use Aura\Base\Resources\Team;
 use Illuminate\Support\Facades\DB;
+use Aura\Base\Resources\Permission;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Queue\SerializesModels;
+use Illuminate\Queue\InteractsWithQueue;
+use Illuminate\Foundation\Bus\Dispatchable;
 
 class GenerateAllResourcePermissions
 {
@@ -49,16 +50,21 @@ class GenerateAllResourcePermissions
         ];
 
         foreach ($permissions as $action => $name) {
-            Permission::updateOrCreate(
-                [
-                    'slug' => "{$action}-{$resource::$slug}",
-                    'team_id' => $this->teamId,
-                ],
-                [
-                    'name' => $name,
-                    'group' => $resource->pluralName(),
-                ]
-            );
+            try {
+                Permission::updateOrCreate(
+                    [
+                        'slug' => "{$action}-{$resource::$slug}",
+                        'team_id' => $this->teamId,
+                    ],
+                    [
+                        'name' => $name,
+                        'group' => $resource->pluralName(),
+                    ]
+                );
+            } catch (\Illuminate\Database\QueryException $e) {
+                // Check if it's a duplicate entry error
+                Log::error($e->getMessage());
+            }
         }
     }
 }

@@ -156,7 +156,7 @@ class AuraServiceProvider extends PackageServiceProvider
             ->hasConfigFile()
             ->hasViews('aura')
             ->hasAssets()
-
+            ->hasRoutes('web')
             ->hasMigrations(['create_aura_tables', 'create_flows_table'])
             ->runsMigrations()
             ->hasCommands([
@@ -264,9 +264,10 @@ class AuraServiceProvider extends PackageServiceProvider
         // })->toArray();
 
         // Defer route loading until after all providers have booted
-        $this->app->booted(function () {
-            $this->loadRoutesFrom(__DIR__.'/../routes/web.php');
-        });
+        // TEMP: DISABLED ROUTES
+        // $this->app->booted(function () {
+        //     $this->loadRoutesFrom(__DIR__.'/../routes/web.php');
+        // });
 
         // Register the morph map to handle both user classes
         // Relation::morphMap([
