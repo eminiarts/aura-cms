@@ -27,12 +27,6 @@
         $selectedValues = [];
     }
 
-    // dd($values);
-
-    // dump($selectedValues);
-
-    // dump($values, $selectedValues);
-    // dump(optional($this->form['fields'])[$field['slug']]);
 @endphp
 
 <x-aura::fields.wrapper :field="$field">

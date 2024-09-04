@@ -60,6 +60,8 @@ trait SaveMetaFields
 
                     $field = $post->fieldBySlug($key);
 
+                    ray('field from SaveMetaFields', $field);
+
                     if (isset($field['set']) && $field['set'] instanceof \Closure) {
                         // dd('here');
                         $value = call_user_func($field['set'], $post, $field, $value);

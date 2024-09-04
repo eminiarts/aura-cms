@@ -101,23 +101,8 @@ class Resource extends Model
                 // ray('is relation', $key);
                 $field = $this->fieldBySlug($key);
 
-                if ($key == 'actorsnew') {
-                    ray('polymorphic_relation', $field, optional($field)['polymorphic_relation'], optional($field)['polymorphic_relation'] === false)->green();
-                }
-
-
                 if (optional($field)['polymorphic_relation'] === false) {
-
                     return $value;
-
-                    dd('hier 2', $field, $value, $key);
-
-                    if (is_null($value) && isset($this->fields[$key])) {
-
-                        ray($value, $this->fields[$key])->green();
-
-                        return $this->fields[$key];
-                    }
                 }
 
                 return $fieldClass->getRelation($this, $field);
@@ -187,37 +172,21 @@ class Resource extends Model
     {
         if (! isset($this->fieldsAttributeCache) || $this->fieldsAttributeCache === null) {
             $meta = $this->getMeta();
-            if(get_class($this) == 'App\Aura\Resources\Genre') {
-                ray($meta)->red();
-            }
+
+            // ray($meta)->red();
+
             $defaultValues = collect($this->inputFieldsSlugs())
                 ->mapWithKeys(fn ($value, $key) => [$value => null])
                 ->map(fn ($value, $key) => $meta[$key] ?? $value)
                 ->filter(fn ($value, $key) => strpos($key, '.') === false)
                 ->map(function ($value, $key) {
                     $class = $this->fieldClassBySlug($key);
-                    $field = collect($this->inputFields())->firstWhere('slug', $key);
+                    $field = $this->fieldBySlug($key);
 
-                    // if ($class && $class->isRelation() && !isset($this->{$key}) && $this->{$key}() && method_exists($class, 'get')) {
-
-                    //     dd('hier 1', $class, $key, $field, $this->inputFields());
-                    //     ray('class', $class, $key, $this->inputFields());
-
-                    //     ray('field', $field);
-                    //     if ($field && isset($field['field'])) {
-                    //         return $class->get($class, $this->{$key}(), $field);
-                    //     }
-                    //     return $class->get($class, $this->{$key}(), $field);
-                    // }
-
+                    if ($key == 'roles') {
+                        // dd('hier', $field);
+                    }
                     if ($class && $class->isRelation($field) && $this->{$key} && method_exists($class, 'get')) {
-
-                        // ray('class', $class, $key, $this->fieldsAttributeCache, $this->inputFields());
-
-                        // ray('field', $field);
-                        if ($field && isset($field['field'])) {
-                            return $class->get($class, $this->{$key}, $field);
-                        }
                         return $class->get($class, $this->{$key}, $field);
                     }
 
