@@ -65,10 +65,18 @@ class AdvancedSelect extends Field
 
     public function get($class, $value, $field = null)
     {
-         ray( $class, $value, $field)->blue();
+        //  ray('get AdvancedSelect', $class, $value, $field)->blue();
 
         if (!($field['multiple'] ?? true) && !($field['polymorphic_relation'] ?? false)) {
             // dd('hier');
+            // ray('hier before return int', $field['slug'], $value)->red();
+            if ($value instanceof \Illuminate\Support\Collection) {
+                if ($value->isEmpty()) {
+                    return [];
+                } else {
+                    return [(int) $value->first()];
+                }
+            }
             return [(int) $value];
         }
 
@@ -277,11 +285,22 @@ class AdvancedSelect extends Field
 
     public function set($post, $field, $value)
     {
-        if (!$field['multiple'] && !($field['polymorphic_relation'] ?? false)) {
+        // Add logging or debugging at the start of the method
+        // dd('AdvancedSelect set method called', ['field' => $field, 'value' => $value]);
+
+        // Check if 'multiple' key exists in $field array
+        $isMultiple = $field['multiple'] ?? false;
+
+        if ($isMultiple) {
+            return json_encode($value);
+        }
+
+        if (!$isMultiple && !($field['polymorphic_relation'] ?? false)) {
             if (is_array($value) && !empty($value)) {
                 return $value[0];
             }
         }
+
         return json_encode($value);
     }
 
