@@ -113,6 +113,7 @@ trait InputFieldsHelpers
 
     public function inputFields()
     {
+        // dump($this->getFieldsBeforeTree()->filter(fn ($item) => in_array($item['field_type'], ['input'])));
         return $this->getFieldsBeforeTree()->filter(fn ($item) => in_array($item['field_type'], ['input']));
     }
 

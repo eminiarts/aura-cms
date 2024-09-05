@@ -333,9 +333,13 @@ class AuraServiceProvider extends PackageServiceProvider
         }
 
         // Register Fields from src/Fields
-        $fields = collect(app('files')->files(__DIR__.'/Fields'))->map(function ($field) {
-            return 'Aura\Base\Fields\\'.str($field->getFilename())->replace('.php', '');
-        })->toArray();
+        $fields = collect(app('files')->files(__DIR__.'/Fields'))
+            ->map(function ($field) {
+                $className = 'Aura\Base\Fields\\'.str($field->getFilename())->replace('.php', '');
+                return $className !== 'Aura\Base\Fields\Field' ? $className : null;
+            })
+            ->filter()
+            ->toArray();
 
         app('aura')::registerFields($fields);
 

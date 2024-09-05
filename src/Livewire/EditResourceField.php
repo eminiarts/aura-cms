@@ -44,9 +44,13 @@ class EditResourceField extends Component
 
             $this->form['fields'] = $this->field;
 
+            $this->updatedField();
+
             $this->open = true;
 
             $this->mode = 'create';
+
+            // dd('add Field', $this->field);
 
             return;
         }
@@ -165,6 +169,8 @@ class EditResourceField extends Component
         if (! isset($this->field['type'])) {
             return;
         }
+
+        // dd(app($this->field['type'])->inputFields());
         $fields = app($this->field['type'])->inputFields()->pluck('slug');
 
         // fields are not set on $this->form['fields'] set it to false
