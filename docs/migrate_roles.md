@@ -12,32 +12,46 @@ Schema::create('post_relations', function (Blueprint $table) {
   $table->index(['resource_id', 'related_id', 'related_type']);
 });
 
-Schema::create("roles", function (Blueprint $table) {
-  $table->id();
-  $table->string("name");
-  $table->string("slug");
-  $table->text("description")->nullable();
-  $table->boolean("super_admin")->default(false);
-  $table->json("permissions")->nullable();
-  $table->foreignId("user_id")->nullable();
-  $table->timestamps();
+Schema::create('roles', function (Blueprint $table) {
+            $table->id();
+            $table->string('name');
+            $table->string('slug');
+            $table->text('description')->nullable();
+            $table->boolean('super_admin')->default(false);
+            $table->json('permissions')->nullable();
+            $table->foreignId('user_id')->nullable();
+            if (config('aura.teams')) {
+                $table->foreignId('team_id')->nullable()->constrained()->onDelete('cascade');
+            }
+            $table->timestamps();
 
-  $table->unique(["slug"]);
-  $table->index("slug");
-});
+            if (config('aura.teams')) {
+                $table->unique(['slug', 'team_id']);
+            } else {
+                $table->unique(['slug']);
+            }
+            $table->index('slug');
+        });
 
-Schema::create("permissions", function (Blueprint $table) {
-  $table->id();
-  $table->string("name");
-  $table->string("slug");
-  $table->text("description")->nullable();
-  $table->string("group")->nullable();
-  $table->foreignId("user_id")->nullable();
-  $table->timestamps();
+        Schema::create('permissions', function (Blueprint $table) {
+            $table->id();
+            $table->string('name');
+            $table->string('slug');
+            $table->text('description')->nullable();
+            $table->string('group')->nullable();
+            $table->foreignId('user_id')->nullable();
+            if (config('aura.teams')) {
+                $table->foreignId('team_id')->nullable()->constrained()->onDelete('cascade');
+            }
+            $table->timestamps();
 
-  $table->unique(["slug"]);
-  $table->index("slug");
-});
+            if (config('aura.teams')) {
+                $table->unique(['slug', 'team_id']);
+            } else {
+                $table->unique(['slug']);
+            }
+            $table->index('slug');
+        });
 ```
 
 Create roles and permissions from `posts` table to `roles` and `permissions` table
@@ -63,6 +77,7 @@ foreach ($rolePosts as $post) {
         'super_admin' => $meta->get('super_admin', false), // If you have a "super_admin" meta key
         'permissions' => json_encode($meta->get('permissions', [])), // If you have a "permissions" meta key
         'user_id' => $post->user_id ?? null, // Adjust this if user_id is stored elsewhere
+        'team_id' => $post->team_id ?? null, // Adjust this if team_id is stored elsewhere
         'created_at' => now(),
         'updated_at' => now(),
     ]);
@@ -85,6 +100,7 @@ foreach ($permissionPosts as $post) {
         'description' => $post->content,
         'group' => $meta->get('group', null), // If you have a "group" meta key
         'user_id' => $post->user_id ?? null, // Adjust this if user_id is stored elsewhere
+        'team_id' => $post->team_id ?? null, // Adjust this if team_id is stored elsewhere
         'created_at' => now(),
         'updated_at' => now(),
     ]);
@@ -101,39 +117,47 @@ from `posts` table to `roles` table
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
-$roleMappings = DB::table("roles")->pluck("id", "slug"); // Mapping of slug to new role IDs
-$usersWithRoles = DB::table("user_meta")
+// Do it manually for each team
+$team_id = 1;
+
+// Fetch role mappings
+$roleMappings = DB::table("roles")->where("team_id", $team_id)->pluck("id", "slug");
+
+// Process users in chunks to reduce memory usage
+DB::table("user_meta")
   ->where("key", "roles")
-  ->get();
+  ->where("team_id", $team_id)
+  ->orderBy('id')
+  ->chunk(1000, function ($usersWithRoles) use ($roleMappings, $team_id) {
+    foreach ($usersWithRoles as $userMeta) {
+      $oldRoleId = $userMeta->value;
 
-foreach ($usersWithRoles as $userMeta) {
-  $oldRoleId = $userMeta->value; // This is the old role ID from the `posts` table
+      // Fetch the corresponding post (old role)
+      $oldRolePost = DB::table("posts")
+        ->where("id", $oldRoleId)
+        ->where("type", "role")
+        ->where("team_id", $team_id)
+        ->first();
 
-  // Fetch the corresponding post (old role)
-  $oldRolePost = DB::table("posts")
-    ->where("id", $oldRoleId)
-    ->where("type", "role")
-    ->first();
+      if ($oldRolePost) {
+        $newRoleSlug = Str::slug($oldRolePost->title);
 
-  if ($oldRolePost) {
-    $newRoleSlug = Str::slug($oldRolePost->title); // Generate the slug based on the old role title
+        if (isset($roleMappings[$newRoleSlug])) {
+          $newRoleId = $roleMappings[$newRoleSlug];
 
-    if (isset($roleMappings[$newRoleSlug])) {
-      $newRoleId = $roleMappings[$newRoleSlug]; // Get the new role ID from the roles table
-
-      // dump($newRoleId, $oldRoleId);
-      // Insert into post_relations
-      DB::table("post_relations")->insert([
-        "resource_type" => "Aura\\Base\\Resources\\Role",
-        "resource_id" => $newRoleId, // New role ID from the roles table
-        "related_type" => "Aura\\Base\\Resources\\User",
-        "related_id" => $userMeta->user_id, // User ID from the user_meta table
-        "created_at" => now(),
-        "updated_at" => now()
-      ]);
+          // Insert into post_relations
+          DB::table("post_relations")->insert([
+            "resource_type" => "Aura\\Base\\Resources\\Role",
+            "resource_id" => $newRoleId,
+            "related_type" => "Aura\\Base\\Resources\\User",
+            "related_id" => $userMeta->user_id,
+            "created_at" => now(),
+            "updated_at" => now()
+          ]);
+        }
+      }
     }
-  }
-}
+  });
 
-echo "User-role connections migrated successfully!";
+dump("User-role connections migrated successfully!");
 ```
