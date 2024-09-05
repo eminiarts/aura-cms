@@ -2,7 +2,6 @@
 
 namespace Aura\Base\Fields;
 
-use Aura\Base\Fields\Field;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Blade;
 
