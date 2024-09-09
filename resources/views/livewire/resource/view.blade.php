@@ -1,6 +1,8 @@
 <div>
     @section('title', __('View '. $model->singularName()))
 
+
+
     @if(!$inModal)
     <x-aura::breadcrumbs>
         <x-aura::breadcrumbs.li :href="route('aura.dashboard')" title="" icon="dashboard" iconClass="text-gray-500 w-7 h-7 mr-0" />
@@ -10,6 +12,7 @@
     @endif
 
     @include($model->viewHeaderView())
+
 
     @if($model::usesTitle())
     <div class="mb-4">
@@ -37,6 +40,8 @@
         <div class="col-span-1 mx-0 sm:col-span-3">
             {{-- @dd($this->viewFields) --}}
             <div class="flex flex-wrap items-start -mx-2">
+                @dd('hier 2')
+                @dd($this->viewFields)
                 @foreach($this->viewFields as $key => $field)
                 <x-aura::fields.conditions :field="$field" :model="$model" wire:key="resource-field-{{ $key }}">
                     <x-dynamic-component :component="$field['field']->view()" :field="$field" :form="$form" :mode="$mode" />
