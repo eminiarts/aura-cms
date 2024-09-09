@@ -1,3 +1,5 @@
+@aware(['mode'])
+
 <style >
   #resource-field-{{ optional($field)['slug'] }}-wrapper {
     width: {{ optional(optional($field)['style'])['width'] ?? '100' }}%;

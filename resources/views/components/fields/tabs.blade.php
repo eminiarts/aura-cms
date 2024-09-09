@@ -1,5 +1,6 @@
 @aware(['model', 'form', 'mode'])
 
+{{-- @dd($mode, 'tabs') --}}
 
 
 @php

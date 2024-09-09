@@ -126,7 +126,7 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
     // Reset to default create Method from Laravel
     public static function create($fields)
     {
-        $model = new static;
+        $model = new static();
 
         return tap($model->newModelInstance($fields), function ($instance) {
             $instance->save();
@@ -546,6 +546,11 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
                 continue;
             }
 
+            // Temporary Fix. To Do: It should be an array
+            if (is_string($permissions)) {
+                $permissions = json_decode($permissions, true);
+            }
+
             foreach ($permissions as $permission => $value) {
                 if ($permission == $ability.'-'.$post::$slug && $value == true) {
                     return true;
@@ -656,13 +661,13 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
         //     $roles = $roles->withPivot('team_id');
         // }
 
-         return $this
-            ->morphToMany(Role::class, 'related', 'post_relations', 'related_id', 'resource_id')
-            ->withTimestamps()
-            ->withPivot('resource_type', 'slug', 'order')
-            ->wherePivot('resource_type', Role::class)
-            ->wherePivot('slug', 'roles')
-            ->orderBy('post_relations.order');
+        return $this
+           ->morphToMany(Role::class, 'related', 'post_relations', 'related_id', 'resource_id')
+           ->withTimestamps()
+           ->withPivot('resource_type', 'slug', 'order')
+           ->wherePivot('resource_type', Role::class)
+           ->wherePivot('slug', 'roles')
+           ->orderBy('post_relations.order');
 
 
         //     return config('aura.teams') ? $roles->wherePivot('team_id', $this->current_team_id) : $roles;
