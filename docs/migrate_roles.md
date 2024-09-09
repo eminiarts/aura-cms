@@ -144,16 +144,19 @@ DB::table("user_meta")
 
         if (isset($roleMappings[$newRoleSlug])) {
           $newRoleId = $roleMappings[$newRoleSlug];
-
-          // Insert into post_relations
-          DB::table("post_relations")->insert([
-            "resource_type" => "Aura\\Base\\Resources\\Role",
-            "resource_id" => $newRoleId,
-            "related_type" => "Aura\\Base\\Resources\\User",
-            "related_id" => $userMeta->user_id,
-            "created_at" => now(),
-            "updated_at" => now()
-          ]);
+          // Insert into post_relations if it doesn't exist
+          DB::table("post_relations")->updateOrInsert(
+            [
+              "resource_type" => "Aura\\Base\\Resources\\Role",
+              "resource_id" => $newRoleId,
+              "related_type" => "Aura\\Base\\Resources\\User",
+              "related_id" => $userMeta->user_id,
+            ],
+            [
+              "created_at" => now(),
+              "updated_at" => now()
+            ]
+          );
         }
       }
     }
