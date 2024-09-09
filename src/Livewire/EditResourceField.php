@@ -29,9 +29,11 @@ class EditResourceField extends Component
 
     public function activate($params)
     {
-        if (! $params) {
+        ray('activate', $params)->orange();
+
+        if (optional($params)['create']) {
             $this->field = [
-                'type' => 'Aura\Base\Fields\Text',
+                'type' => $params['type'] ?? 'Aura\Base\Fields\Text',
                 'slug' => '',
                 'name' => '',
                 'on_index' => true,
@@ -50,7 +52,7 @@ class EditResourceField extends Component
 
             $this->mode = 'create';
 
-            // dd('add Field', $this->field);
+            ray('add Field', $this->field)->orange();
 
             return;
         }
