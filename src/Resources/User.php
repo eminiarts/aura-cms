@@ -254,7 +254,7 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
                 'name' => 'Roles',
                 'slug' => 'roles',
                 'resource' => 'Aura\\Base\\Resources\\Role',
-                'type' => 'Aura\\Base\\Fields\\AdvancedSelect',
+                'type' => 'Aura\\Base\\Fields\\Select',
                 'multiple' => true,
                 'polymorphic_relation' => true,
                 'validation' => '',
@@ -744,7 +744,7 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
     {
         // ray('roles', $this->roles, DB::table('user_meta')->get(), DB::table('post_relations')->get())->blue();
 
-        return $this->roles;
+        //return $this->roles;
 
         return Cache::remember($this->getCacheKeyForRoles(), now()->addMinutes(60), function () {
             return $this->roles;
