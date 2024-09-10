@@ -61,7 +61,7 @@ class Repeater extends Field
         ]);
     }
 
-    public function set($value, $field)
+    public function set($post, $field, $value)
     {
         return json_encode($value);
     }
