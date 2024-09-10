@@ -63,15 +63,15 @@
               @if ($f['type'] == 'Aura\Base\Fields\Repeater')
               @elseif ($f['type'] == 'Aura\Base\Fields\Tab')
                 <div class="w-full">
-                  <x-aura::resource.add-field :id="$f['_id']" :slug="$f['slug']" :type="$f['type']"/>
+                  <x-aura::resource.add-field :id="$f['_id']" :slug="$field['slug']" :type="$f['type']" :children="$this->countChildren($field)"/>
                 </div>
               @elseif ($f['type'] == 'Aura\Base\Fields\Panel')
                 <div class="w-full">
-                  <x-aura::resource.add-field :id="$f['_id']" :slug="$f['slug']" :type="$f['type']" />
+                  <x-aura::resource.add-field :id="$f['_id']" :slug="$field['slug']" :type="$f['type']" :children="$this->countChildren($field)" />
                 </div>
               @else
                 <div class="w-full">
-                  <x-aura::resource.add-field :id="$f['_id']" :slug="$f['slug']" :type="$f['type']" />
+                  <x-aura::resource.add-field :id="$f['_id']" :slug="$field['slug']" :type="$f['type']" :children="$this->countChildren($field)" />
                 </div>
               @endif
             @endif
@@ -82,7 +82,7 @@
         <div class="flex relative flex-wrap justify-center items-center mb-4 h-12 bg-gray-50 rounded-md border border-gray-100 dark:border-gray-800 draggable-container dark:bg-black/10">
           <span class="absolute text-xs text-gray-400">Drag field here</span>
         </div>
-        <x-aura::resource.add-field :id="$field['_id']" :slug="$field['slug']" :type="$field['type']" />
+        <x-aura::resource.add-field :id="$field['_id']" :slug="$field['slug']" type="Aura\Base\Fields\Text" :children="$this->countChildren($field)" />
       @endif
 
     </div>
