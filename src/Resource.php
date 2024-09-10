@@ -174,7 +174,7 @@ class Resource extends Model
             $meta = $this->getMeta();
 
             if ($this instanceof \App\Aura\Resources\Product) {
-                ray($meta)->red();
+                //   ray($meta)->red();
             }
 
             $defaultValues = collect($this->inputFieldsSlugs())
@@ -221,14 +221,36 @@ class Resource extends Model
             ->filter(function ($value, $key) {
                 $field = $this->fieldBySlug($key);
 
-                //return true;
-
                 return $this->shouldDisplayField($field);
-            })
-            ;
+            });
         }
 
         return $this->fieldsAttributeCache;
+    }
+
+    public function getFieldsWithoutConditionalLogic()
+    {
+        $meta = $this->getMeta();
+
+        return collect($this->inputFieldsSlugs())
+            ->mapWithKeys(fn ($value, $key) => [$value => null])
+            ->map(fn ($value, $key) => $meta[$key] ?? $value)
+            ->filter(fn ($value, $key) => strpos($key, '.') === false)
+            ->map(function ($value, $key) {
+                $class = $this->fieldClassBySlug($key);
+                $field = $this->fieldBySlug($key);
+
+                if ($class && isset($this->attributes[$key]) && method_exists($class, 'get')) {
+                    return $class->get($class, $this->attributes[$key], $field);
+                }
+
+                if (isset($this->attributes[$key])) {
+                    return $this->attributes[$key];
+                }
+
+                return $value;
+            })
+            ->toArray();
     }
 
     // /**
@@ -357,12 +379,12 @@ class Resource extends Model
     protected static function booted()
     {
         if (! static::$customTable) {
-            static::addGlobalScope(new TypeScope);
+            static::addGlobalScope(new TypeScope());
         }
 
         static::addGlobalScope(app(TeamScope::class));
 
-        static::addGlobalScope(new ScopedScope);
+        static::addGlobalScope(new ScopedScope());
 
         static::creating(function ($model) {});
 

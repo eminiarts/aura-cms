@@ -287,7 +287,14 @@ class Team extends Resource
             // Attach the current user to the team
             if ($user) {
                 // $role->users()->sync([$user->id]);
-                $role->users()->sync([$user->id => ['resource_type' => Role::class]]);
+
+                $role->users()->sync([$user->id => ['resource_type' => Role::class, 'slug' => 'roles']]);
+
+                // $fields = $user->fields;
+                // $fields['roles'] = [$role->id];
+                // $user->update([
+                //     'fields' => $fields->toArray(),
+                // ]);
 
                 // Clear cache of Cache('user.'.$user->id.'.teams')
                 Cache::forget('user.'.$user->id.'.teams');
