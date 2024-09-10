@@ -158,10 +158,10 @@ class Aura
 
     public function getFieldsWithGroups(): array
     {
-        ray($this->fields)->orange();
+        //  ray($this->fields)->orange();
         return collect($this->fields)
             ->groupBy(function ($field) {
-                ray($field)->orange();
+                //  ray($field)->orange();
                 $fieldClass = app($field);
 
                 return property_exists($fieldClass, 'optionGroup') && ! empty($fieldClass->optionGroup) ? $fieldClass->optionGroup : 'Fields';
@@ -507,7 +507,7 @@ class Aura
     {
         static::$userModel = $model;
 
-        return new static;
+        return new static();
     }
 
     public function varexport($expression, $return = false)

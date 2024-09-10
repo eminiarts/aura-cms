@@ -9,9 +9,6 @@ use Aura\Base\Resource;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
 
-// Refresh Database on every test
-uses(RefreshDatabase::class);
-
 class TextFieldModel extends Resource
 {
     public static string $type = 'TextModel';
@@ -93,7 +90,14 @@ test('Text Field - Default Value set', function () {
     Aura::fake();
     Aura::setModel(new TextFieldModel);
 
-    $component = Livewire::test(Create::class, ['slug' => 'TextModel'])
+    expect(auth()->user()->isSuperAdmin())->toBeTrue();
+
+    $component = Livewire::test(Create::class, ['slug' => 'TextModel']);
+
+
+    ray($component->html());
+
+    $component
         ->assertSee('Text for Test')
         ->assertSeeHtml('wire:model="form.fields.text"')
         ->assertDontSee('Advanced Text')
