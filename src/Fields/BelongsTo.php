@@ -19,7 +19,7 @@ class BelongsTo extends Field
 
     public $view = 'aura::fields.view-value';
 
-    // public function get($model, $field)
+    // public function get($class, $model, $field)
     // {
     //     // ray($field, $model);
     //     ray()->backtrace();
