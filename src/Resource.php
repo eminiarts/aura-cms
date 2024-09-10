@@ -173,21 +173,29 @@ class Resource extends Model
         if (! isset($this->fieldsAttributeCache) || $this->fieldsAttributeCache === null) {
             $meta = $this->getMeta();
 
-            if ($this instanceof \App\Aura\Resources\Product) {
-                //   ray($meta)->red();
+          
+            try {
+              $defaultValues = collect($this->inputFieldsSlugs())
+                ->mapWithKeys(fn ($value) => [$value => null])
+                ->map(function ($value, $key) use ($meta) {
+                        return $value;
+                });
+            } catch (\Exception $e) {
+                ray($e);
+                dd('error');
             }
 
+
             $defaultValues = collect($this->inputFieldsSlugs())
-                ->mapWithKeys(fn ($value, $key) => [$value => null])
-                ->map(fn ($value, $key) => $meta[$key] ?? $value)
-                ->filter(fn ($value, $key) => strpos($key, '.') === false)
-                ->map(function ($value, $key) {
+                ->mapWithKeys(fn ($value) => [$value => null])
+                ->map(function ($value, $key) use ($meta) {
+                    if (strpos($key, '.') !== false) {
+                        return $value;
+                    }
+
                     $class = $this->fieldClassBySlug($key);
                     $field = $this->fieldBySlug($key);
 
-                    if ($key == 'roles') {
-                        // dd('hier', $field);
-                    }
                     if ($class && $class->isRelation($field) && isset($this->{$key}) && method_exists($class, 'get')) {
                         return $class->get($class, $this->{$key}, $field);
                     }
@@ -214,11 +222,13 @@ class Resource extends Model
                         return $class->get($class, $this->{$key} ?? null, $field);
                     }
 
-                    return $value;
+                    return $meta[$key] ?? $value;
                 });
 
             $this->fieldsAttributeCache = $defaultValues
             ->filter(function ($value, $key) {
+
+                return true;
                 $field = $this->fieldBySlug($key);
 
                 return $this->shouldDisplayField($field);

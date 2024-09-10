@@ -161,28 +161,28 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
 
     }
 
-    public function getAvatarUrlAttribute()
-    {
-        if (! $this->fields['avatar']) {
-            return 'https://ui-avatars.com/api/?name='.$this->getInitials().'';
-        }
+    // public function getAvatarUrlAttribute()
+    // {
+    //     if (! $this->fields['avatar']) {
+    //         return 'https://ui-avatars.com/api/?name='.$this->getInitials().'';
+    //     }
 
-        // json decode the meta value
-        $meta = is_string($this->fields['avatar']) ? json_decode($this->fields['avatar']) : $this->fields['avatar'];
+    //     // json decode the meta value
+    //     $meta = is_string($this->fields['avatar']) ? json_decode($this->fields['avatar']) : $this->fields['avatar'];
 
-        // get the attachment from the meta
-        $attachments = Attachment::find($meta);
+    //     // get the attachment from the meta
+    //     $attachments = Attachment::find($meta);
 
-        // dd(count($attachments));
+    //     // dd(count($attachments));
 
-        if ($attachments && count($attachments) > 0) {
-            $attachment = $attachments->first();
+    //     if ($attachments && count($attachments) > 0) {
+    //         $attachment = $attachments->first();
 
-            return $attachment->path('thumbnail');
-        }
+    //         return $attachment->path('thumbnail');
+    //     }
 
-        return 'https://ui-avatars.com/api/?name='.$this->getInitials().'';
-    }
+    //     return 'https://ui-avatars.com/api/?name='.$this->getInitials().'';
+    // }
 
     public function getEmailField($value)
     {
@@ -282,11 +282,9 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
                 'name' => 'Teams',
                 'slug' => 'tab-Teams',
                 'global' => true,
-                'conditional_logic' => [
-                    function () {
+                'conditional_logic' => function ($model, $post) {
                         return config('aura.teams');
                     },
-                ],
             ],
             [
                 'name' => 'Teams',
@@ -297,11 +295,10 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
                 'wrapper' => '',
                 'on_index' => false,
                 'on_forms' => true,
-                'conditional_logic' => [
-                    function () {
+                
+                'conditional_logic' => function ($model, $post) {
                         return config('aura.teams');
                     },
-                ],
                 'on_view' => true,
                 'style' => [
                     'width' => '100',
