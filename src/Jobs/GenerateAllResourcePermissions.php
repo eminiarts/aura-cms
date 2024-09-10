@@ -26,7 +26,15 @@ class GenerateAllResourcePermissions
     public function handle()
     {
         $resources = collect(Aura::getResources())->filter(function ($resource) {
-            return is_subclass_of($resource, Resource::class) && !is_subclass_of($resource, Team::class);
+            try {
+                $resourceInstance = app($resource);
+                return is_subclass_of($resourceInstance, Resource::class) && 
+                       !is_a($resourceInstance, Team::class) && 
+                       !is_subclass_of($resourceInstance, Team::class);
+            } catch (\Throwable $e) {
+                Log::warning("Resource class not found: $resource");
+                return false;
+            }
         });
 
         DB::transaction(function () use ($resources) {
