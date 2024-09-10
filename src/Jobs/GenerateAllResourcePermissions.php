@@ -51,7 +51,7 @@ class GenerateAllResourcePermissions
 
         foreach ($permissions as $action => $name) {
             try {
-                Permission::updateOrCreate(
+                Permission::withoutGlobalScopes()->updateOrCreate(
                     [
                         'slug' => "{$action}-{$resource::$slug}",
                         'team_id' => $this->teamId,

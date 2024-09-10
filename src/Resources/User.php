@@ -755,7 +755,7 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
     {
         // ray('roles', $this->roles, DB::table('user_meta')->get(), DB::table('post_relations')->get())->blue();
 
-        //return $this->roles;
+        return $this->roles;
 
         return Cache::remember($this->getCacheKeyForRoles(), now()->addMinutes(60), function () {
             return $this->roles;

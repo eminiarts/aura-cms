@@ -186,7 +186,7 @@ class Resource extends Model
                     if ($key == 'roles') {
                         // dd('hier', $field);
                     }
-                    if ($class && $class->isRelation($field) && $this->{$key} && method_exists($class, 'get')) {
+                    if ($class && $class->isRelation($field) && isset($this->{$key}) && method_exists($class, 'get')) {
                         return $class->get($class, $this->{$key}, $field);
                     }
 

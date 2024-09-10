@@ -12,7 +12,10 @@ trait SaveMetaFields
 
         static::saving(function ($post) {
 
-            // ray('SaveMetaFields', $post->attributes)->red();
+            if($post instanceof \App\Aura\Resources\Product) {
+             ray('SaveMetaFields', $post->attributes)->red();
+            }
+
 
             if (isset($post->attributes['fields'])) {
 
@@ -26,6 +29,10 @@ trait SaveMetaFields
                 }
 
                 foreach ($post->attributes['fields'] as $key => $value) {
+
+                    if($post instanceof \App\Aura\Resources\Product && $key === 'additional_services') {
+                         ray('key value', $key, $value)->red();
+                    }
 
                     $class = $post->fieldClassBySlug($key);
 
@@ -60,7 +67,7 @@ trait SaveMetaFields
 
                     $field = $post->fieldBySlug($key);
 
-                    ray('field from SaveMetaFields', $field);
+                    // ray('field from SaveMetaFields', $field);
 
                     if (isset($field['set']) && $field['set'] instanceof \Closure) {
                         // dd('here');
@@ -87,6 +94,10 @@ trait SaveMetaFields
                         continue;
                     }
 
+                    if($post instanceof \App\Aura\Resources\Product && $key === 'additional_services') {
+                         ray('key value', $key, $value)->green();
+                    }
+
                     if (in_array($key, $post->getFillable())) {
                         // Save the meta field to the model, so it can be saved in the Meta table
                         $post->saveMetaField([$key => $value]);
@@ -99,6 +110,11 @@ trait SaveMetaFields
                 unset($post->attributes['fields']);
 
                 $post->clearFieldsAttributeCache();
+            }
+
+
+            if($post instanceof \App\Aura\Resources\Product) {
+                ray('end', $post)->blue();
             }
         });
 
