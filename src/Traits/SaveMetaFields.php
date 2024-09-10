@@ -12,8 +12,8 @@ trait SaveMetaFields
 
         static::saving(function ($post) {
 
-            if($post instanceof \App\Aura\Resources\Product) {
-             ray('SaveMetaFields', $post->attributes)->red();
+            if ($post instanceof \App\Aura\Resources\Product) {
+                // ray('SaveMetaFields', $post->attributes)->red();
             }
 
 
@@ -30,8 +30,8 @@ trait SaveMetaFields
 
                 foreach ($post->attributes['fields'] as $key => $value) {
 
-                    if($post instanceof \App\Aura\Resources\Product && $key === 'additional_services') {
-                         ray('key value', $key, $value)->red();
+                    if ($post instanceof \App\Aura\Resources\Product && $key === 'additional_services') {
+                        //ray('key value', $key, $value)->red();
                     }
 
                     $class = $post->fieldClassBySlug($key);
@@ -94,8 +94,8 @@ trait SaveMetaFields
                         continue;
                     }
 
-                    if($post instanceof \App\Aura\Resources\Product && $key === 'additional_services') {
-                         ray('key value', $key, $value)->green();
+                    if ($post instanceof \App\Aura\Resources\Product && $key === 'additional_services') {
+                        // ray('key value', $key, $value)->green();
                     }
 
                     if (in_array($key, $post->getFillable())) {
@@ -113,8 +113,8 @@ trait SaveMetaFields
             }
 
 
-            if($post instanceof \App\Aura\Resources\Product) {
-                ray('end', $post)->blue();
+            if ($post instanceof \App\Aura\Resources\Product) {
+                // ray('end', $post)->blue();
             }
         });
 
