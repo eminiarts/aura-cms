@@ -173,7 +173,9 @@ class Resource extends Model
         if (! isset($this->fieldsAttributeCache) || $this->fieldsAttributeCache === null) {
             $meta = $this->getMeta();
 
-            // ray($meta)->red();
+            if ($this instanceof \App\Aura\Resources\Product) {
+                ray($meta)->red();
+            }
 
             $defaultValues = collect($this->inputFieldsSlugs())
                 ->mapWithKeys(fn ($value, $key) => [$value => null])
@@ -215,11 +217,15 @@ class Resource extends Model
                     return $value;
                 });
 
-            $this->fieldsAttributeCache = $defaultValues->filter(function ($value, $key) {
+            $this->fieldsAttributeCache = $defaultValues
+            ->filter(function ($value, $key) {
                 $field = $this->fieldBySlug($key);
 
+                //return true;
+
                 return $this->shouldDisplayField($field);
-            });
+            })
+            ;
         }
 
         return $this->fieldsAttributeCache;
