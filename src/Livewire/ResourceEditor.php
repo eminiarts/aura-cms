@@ -55,9 +55,9 @@ class ResourceEditor extends Component
         ];
     }
 
-    public function addField($type)
+    public function addField($id, $slug, $type, $children)
     {
-        $this->dispatch('openSlideOver', component: 'edit-field', parameters: ['create' => true, 'type' => $type]);
+        $this->dispatch('openSlideOver', component: 'edit-field', parameters: ['create' => true, 'type' => $type, 'id' => $id, 'slug' => $slug, 'children' => $children]);
     }
 
     public function addNewTab()
@@ -510,11 +510,20 @@ class ResourceEditor extends Component
         $this->dispatch('finishedSavingFields');
     }
 
-    public function saveNewField($field)
+    public function saveNewField($field, $index, $slug)
     {
-        // push new field to fieldsArray
-        $this->fieldsArray[] = $field;
+        // Find the index of the item with slug of $slug in $this->fieldsArray
+        $parentIndex = collect($this->fieldsArray)->search(function ($item) use ($slug) {
+            return $item['slug'] === $slug;
+        });
 
+        $newFieldIndex = (int) $parentIndex + (int) $index + 1;
+
+        ray('1', $this->fieldsArray, $parentIndex, $index, $newFieldIndex);
+        // push new field to fieldsArray
+        array_splice($this->fieldsArray, $newFieldIndex, 0, [$field]);
+
+        ray('2', $this->fieldsArray);
         $this->saveFields($this->fieldsArray);
 
         $this->newFields = $this->model->mapToGroupedFields($this->fieldsArray);

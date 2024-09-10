@@ -22,6 +22,10 @@ class EditResourceField extends Component
 
     public $open = false;
 
+    public $newFieldIndex = null;
+
+    public $newFieldSlug = null;
+
     public $reservedWords = ['id', 'type'];
 
     // listener for newFields
@@ -43,6 +47,10 @@ class EditResourceField extends Component
                 'validation' => '',
                 'conditional_logic' => '',
             ];
+
+            ray('children', $params['slug'], $params['children']);
+            $this->newFieldIndex = $params['children'];
+            $this->newFieldSlug = $params['slug'];
 
             $this->form['fields'] = $this->field;
 
@@ -156,7 +164,7 @@ class EditResourceField extends Component
         $this->validate();
 
         if ($this->mode == 'create') {
-            $this->dispatch('saveNewField', $this->form['fields']);
+            $this->dispatch('saveNewField', $this->form['fields'], $this->newFieldIndex, $this->newFieldSlug);
         } else {
             // emit event to parent with slug and value
             $this->dispatch('saveField', ['slug' => $this->fieldSlug, 'value' => $this->form['fields']]);
