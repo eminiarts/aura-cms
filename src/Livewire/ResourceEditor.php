@@ -516,16 +516,11 @@ class ResourceEditor extends Component
         $parentIndex = collect($this->fieldsArray)->search(function ($item) use ($slug) {
             return $item['slug'] === $slug;
         });
-
         $newFieldIndex = (int) $parentIndex + (int) $index + 1;
-
-        ray('1', $this->fieldsArray, $parentIndex, $index, $newFieldIndex);
         // push new field to fieldsArray
         array_splice($this->fieldsArray, $newFieldIndex, 0, [$field]);
 
-        ray('2', $this->fieldsArray);
         $this->saveFields($this->fieldsArray);
-
         $this->newFields = $this->model->mapToGroupedFields($this->fieldsArray);
 
         // emit new fields
