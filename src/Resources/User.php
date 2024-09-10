@@ -254,7 +254,7 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
                 'name' => 'Roles',
                 'slug' => 'roles',
                 'resource' => 'Aura\\Base\\Resources\\Role',
-                'type' => 'Aura\\Base\\Fields\\Select',
+                'type' => 'Aura\\Base\\Fields\\AdvancedSelect',
                 'multiple' => true,
                 'polymorphic_relation' => true,
                 'validation' => '',
