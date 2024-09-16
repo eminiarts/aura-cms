@@ -64,24 +64,30 @@ class AdvancedSelect extends Field
 
     public function get($class, $value, $field = null)
     {
+        //  ray('get ........', $class, $value, $field)->blue();
+
 
           if (isset($field['polymorphic_relation']) && $field['polymorphic_relation'] === false) {
             // ray('save meta', $field['slug'], $ids);
 
-                // ray('get ........', $class, $value, $field)->blue();
+                //  ray('get ........', $class, $value, $field)->blue();
 
+            if (empty($value)) {
+                return null;
+            }
 
             if (is_string($value)) {
+                // ray('is_string', $value);
                 $decoded = json_decode($value, true);
                 if (json_last_error() === JSON_ERROR_NONE) {
+                    // ray($decoded);
                     return $decoded;
                 }
                 return $value;
             }
            
-
             // ray('save meta', $post->meta()->get());
-            return;
+            return $value;
         }
 
         if (!($field['multiple'] ?? true) && !($field['polymorphic_relation'] ?? false)) {
@@ -234,7 +240,7 @@ class AdvancedSelect extends Field
         //ray('saved', $post, $field, $value, $ids);
 
         if (isset($field['polymorphic_relation']) && $field['polymorphic_relation'] === false) {
-            ray('save meta', $field['slug'], $ids);
+            // ray('save meta', $field['slug'], $ids);
             // Save as meta
             $post->meta()->updateOrCreate(['key' => $field['slug']], ['value' => $ids ?? null]);
 

@@ -98,10 +98,15 @@ class Resource extends Model
             $fieldClass = $this->fieldClassBySlug($key);
             // $groupedField = $this->groupedFieldBySlug($key);
             if ($fieldClass->isRelation()) {
-                // ray('is relation', $key);
+                //  ray('is relation', $key, $value);
                 $field = $this->fieldBySlug($key);
 
                 if (optional($field)['polymorphic_relation'] === false) {
+
+                    if (is_null($value) && isset($this->fields[$key])) {
+                        return $this->fields[$key];
+                    }
+
                     return $value;
                 }
 
@@ -197,6 +202,11 @@ class Resource extends Model
                     $field = $this->fieldBySlug($key);
 
                     if ($class && $class->isRelation($field) && isset($this->{$key}) && method_exists($class, 'get')) {
+                        return $class->get($class, $this->{$key}, $field);
+                    }
+                    
+                    // Without relation
+                    if ($class && isset($this->{$key}) && method_exists($class, 'get')) {
                         return $class->get($class, $this->{$key}, $field);
                     }
 
