@@ -64,7 +64,25 @@ class AdvancedSelect extends Field
 
     public function get($class, $value, $field = null)
     {
-        //  ray('get AdvancedSelect', $class, $value, $field)->blue();
+
+          if (isset($field['polymorphic_relation']) && $field['polymorphic_relation'] === false) {
+            // ray('save meta', $field['slug'], $ids);
+
+                // ray('get ........', $class, $value, $field)->blue();
+
+
+            if (is_string($value)) {
+                $decoded = json_decode($value, true);
+                if (json_last_error() === JSON_ERROR_NONE) {
+                    return $decoded;
+                }
+                return $value;
+            }
+           
+
+            // ray('save meta', $post->meta()->get());
+            return;
+        }
 
         if (!($field['multiple'] ?? true) && !($field['polymorphic_relation'] ?? false)) {
             // dd('hier');
@@ -213,11 +231,14 @@ class AdvancedSelect extends Field
 
         $ids = $value;
 
-        // ray('saved', $post, $field, $value, $ids);
+        //ray('saved', $post, $field, $value, $ids);
 
-        if (!($field['multiple'] ?? true) && !($field['polymorphic_relation'] ?? true)) {
+        if (isset($field['polymorphic_relation']) && $field['polymorphic_relation'] === false) {
+            ray('save meta', $field['slug'], $ids);
             // Save as meta
             $post->meta()->updateOrCreate(['key' => $field['slug']], ['value' => $ids ?? null]);
+
+            // ray('save meta', $post->meta()->get());
             return;
         }
 
@@ -226,10 +247,17 @@ class AdvancedSelect extends Field
         if (empty($ids)) {
             return;
         }
-        
+
         if (is_int($ids)) {
             return;
         }
+
+        // Temporary fix for the issue
+        if (is_string($ids) && json_decode($ids) !== null) {
+            $ids = json_decode($ids, true);
+        }
+
+        // ray('ids', $ids);
 
         foreach ($ids as $index => $item) {
             $id = is_array($item) ? ($item['id'] ?? null) : $item;
@@ -258,10 +286,10 @@ class AdvancedSelect extends Field
 
         // ray('1 ' . $field['slug'], $post->{$field['slug']}()->get());
 
-            // Attach or update the new relations
-            foreach ($pivotData as $id => $data) {
-                $post->{$field['slug']}()->syncWithoutDetaching([$id => $data]);
-            }
+        // Attach or update the new relations
+        foreach ($pivotData as $id => $data) {
+            $post->{$field['slug']}()->syncWithoutDetaching([$id => $data]);
+        }
 
         // ray('2 ' . $field['slug'], $post->{$field['slug']}()->get());
     }
