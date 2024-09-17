@@ -239,10 +239,11 @@ class AdvancedSelect extends Field
 
         //ray('saved', $post, $field, $value, $ids);
 
-        if (isset($field['polymorphic_relation']) && $field['polymorphic_relation'] === false) {
+        if (optional($field)['polymorphic_relation'] === false) {
             // ray('save meta', $field['slug'], $ids);
             // Save as meta
-            $post->meta()->updateOrCreate(['key' => $field['slug']], ['value' => $ids ?? null]);
+            $value = is_array($ids) ? json_encode($ids) : $ids;
+            $post->meta()->updateOrCreate(['key' => $field['slug']], ['value' => $value ?? null]);
 
             // ray('save meta', $post->meta()->get());
             return;
