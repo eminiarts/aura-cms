@@ -1,5 +1,7 @@
 @aware(['mode'])
 
+{{-- @dd($mode) --}}
+
 <style >
   #resource-field-{{ optional($field)['slug'] }}-wrapper {
     width: {{ optional(optional($field)['style'])['width'] ?? '100' }}%;
@@ -21,7 +23,7 @@
         </div>
         @endif
 
-        <x-aura::fields.fields />
+        <x-aura::fields.fields :mode="$mode" />
         </div>
     </div>
 </div>
