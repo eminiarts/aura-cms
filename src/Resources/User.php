@@ -754,16 +754,14 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
      */
     public function teams(): BelongsToMany
     {
-        return $this->belongsToMany(Team::class, 'post_relations', 'related_id', 'resource_id')
-            ->withTimestamps()
-            ->withPivot('resource_type')
-            ->wherePivot('related_type', User::class)
-            ->whereHas('roles', function ($query) {
-                $query->where('post_relations.resource_type', Role::class)
-                    ->whereRaw('post_relations.resource_id = roles.id');
-            })
-            ->select('teams.*')
-            ->distinct();
+        return $this->belongsToMany(Team::class, 'roles', 'user_id', 'team_id')
+            ->distinct()
+            ->join('post_relations', function ($join) {
+                $join->on('roles.id', '=', 'post_relations.resource_id')
+                    ->where('post_relations.resource_type', Role::class)
+                    ->where('post_relations.related_type', User::class)
+                    ->where('post_relations.related_id', $this->id);
+            });
     }
 
     public function title()
