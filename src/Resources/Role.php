@@ -5,7 +5,6 @@ namespace Aura\Base\Resources;
 use Aura\Base\Jobs\GenerateAllResourcePermissions;
 use Aura\Base\Models\Meta;
 use Aura\Base\Resource;
-use Illuminate\Database\Eloquent\Relations\MorphToMany;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class Role extends Resource

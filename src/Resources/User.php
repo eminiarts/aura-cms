@@ -162,28 +162,31 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
 
     }
 
-    // public function getAvatarUrlAttribute()
-    // {
-    //     if (! $this->fields['avatar']) {
-    //         return 'https://ui-avatars.com/api/?name='.$this->getInitials().'';
-    //     }
+    public function getAvatarUrlAttribute()
+    {
+        return 'https://ui-avatars.com/api/?name='.$this->getInitials().'';
+        
+        // Does not work atm
+        if (! $this->fields['avatar']) {
+            return 'https://ui-avatars.com/api/?name='.$this->getInitials().'';
+        }
 
-    //     // json decode the meta value
-    //     $meta = is_string($this->fields['avatar']) ? json_decode($this->fields['avatar']) : $this->fields['avatar'];
+        // json decode the meta value
+        $meta = is_string($this->fields['avatar']) ? json_decode($this->fields['avatar']) : $this->fields['avatar'];
 
-    //     // get the attachment from the meta
-    //     $attachments = Attachment::find($meta);
+        // get the attachment from the meta
+        $attachments = Attachment::find($meta);
 
-    //     // dd(count($attachments));
+        // dd(count($attachments));
 
-    //     if ($attachments && count($attachments) > 0) {
-    //         $attachment = $attachments->first();
+        if ($attachments && count($attachments) > 0) {
+            $attachment = $attachments->first();
 
-    //         return $attachment->path('thumbnail');
-    //     }
+            return $attachment->path('thumbnail');
+        }
 
-    //     return 'https://ui-avatars.com/api/?name='.$this->getInitials().'';
-    // }
+        return 'https://ui-avatars.com/api/?name='.$this->getInitials().'';
+    }
 
     public function getEmailField($value)
     {
@@ -251,21 +254,21 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
                     'width' => '100',
                 ],
             ],
-            [
-                'name' => 'Roles',
-                'slug' => 'roles',
-                'resource' => 'Aura\\Base\\Resources\\Role',
-                'type' => 'Aura\\Base\\Fields\\AdvancedSelect',
-                'multiple' => true,
-                'polymorphic_relation' => true,
-                'validation' => '',
-                'conditional_logic' => [],
-                'wrapper' => '',
-                'on_index' => false,
-                'on_forms' => true,
-                'on_view' => true,
-                'searchable' => false,
-            ],
+            // [
+            //     'name' => 'Roles',
+            //     'slug' => 'roles',
+            //     'resource' => 'Aura\\Base\\Resources\\Role',
+            //     'type' => 'Aura\\Base\\Fields\\AdvancedSelect',
+            //     'multiple' => true,
+            //     'polymorphic_relation' => true,
+            //     'validation' => '',
+            //     'conditional_logic' => [],
+            //     'wrapper' => '',
+            //     'on_index' => false,
+            //     'on_forms' => true,
+            //     'on_view' => true,
+            //     'searchable' => false,
+            // ],
             [
                 'name' => 'Password',
                 'type' => 'Aura\\Base\\Fields\\Password',

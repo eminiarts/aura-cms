@@ -1,5 +1,4 @@
 <div class="w-64">
-
     @if(config('aura.teams'))
         @can('update', Auth::user()->currentTeam)
             <!-- Team Management -->
@@ -20,10 +19,6 @@
 
             <div class="my-2 border-t border-gray-100 dark:border-gray-600"></div>
         @endcan
-
-
-       
-
 
         @if(Auth::user()->getTeams()->count() > 1)
             <!-- Team Switcher -->
@@ -51,5 +46,4 @@
   <x-aura::dropdown-link href="{{ route('aura.logout') }}">
       {{ __('Logout') }}
   </x-aura::dropdown-link>
-
 </div>
