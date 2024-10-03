@@ -9,7 +9,6 @@
         $darkLogo = isset($settings['logo-darkmode'][0]) ? $settings['logo-darkmode'][0] : null;
     } 
     // Debugging: Dump the logo variables
-    // dump(['logo' => $logo, 'darkLogo' => $darkLogo, 'sidebarType' => $sidebarType]);
 
 @endphp
 

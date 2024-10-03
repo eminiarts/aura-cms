@@ -37,6 +37,7 @@
         $darkLogo = $logo;
     }
 
+
 @endphp
 
 @if($logo || $darkLogo)
