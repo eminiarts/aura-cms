@@ -12,9 +12,7 @@ trait SaveMetaFields
 
         static::saving(function ($post) {
 
-            if ($post instanceof \App\Aura\Resources\Product) {
-                // ray('SaveMetaFields', $post->attributes)->red();
-            }
+            // ray('SaveMetaFields', $post->attributes)->red();
 
 
             if (isset($post->attributes['fields'])) {

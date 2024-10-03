@@ -229,22 +229,11 @@ class Team extends Resource
     //     return $this->hasManyThrough(Role::class, User::class);
     // }
 
-    public function users(): HasManyThrough
+    public function users(): BelongsToMany
     {
-        return $this->hasManyThrough(
-            User::class,
-            Role::class,
-            'team_id', // Foreign key on roles table...
-            'id', // Foreign key on users table...
-            'id', // Local key on teams table...
-            'id' // Local key on roles table...
-        )->distinct() // To avoid duplicate users
-            ->join('post_relations', function ($join) {
-                $join->on('post_relations.resource_id', '=', 'roles.id')
-                    ->where('post_relations.resource_type', '=', Role::class)
-                    ->where('post_relations.related_type', '=', User::class);
-            })
-            ->where('post_relations.related_id', '=', DB::raw('users.id'));
+        return $this->belongsToMany(User::class, 'team_user')
+            ->withPivot('role_id')
+            ->withTimestamps();
     }
 
     protected static function booted()
