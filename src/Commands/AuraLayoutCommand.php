@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Console\Commands;
+namespace Aura\Base\Commands;
 
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\File;
