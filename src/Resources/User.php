@@ -5,7 +5,6 @@ namespace Aura\Base\Resources;
 use Aura\Base\Resource;
 use Illuminate\Support\Str;
 use Aura\Base\Models\UserMeta;
-use Aura\Base\Models\TeamUser;
 use Laravel\Sanctum\HasApiTokens;
 use Illuminate\Support\Facades\DB;
 use Aura\Base\Traits\ProfileFields;
@@ -703,7 +702,7 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
     public function roles(): BelongsToMany
     {
         return $this->belongsToMany(Role::class, 'team_user')
-            ->using(TeamUser::class)
+            //->using(TeamUser::class)
             ->withPivot('team_id')
             ->withTimestamps();
     }
@@ -753,7 +752,6 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
     public function teams(): BelongsToMany
     {
         return $this->belongsToMany(Team::class, 'team_user')
-            ->using(TeamUser::class)
             ->withPivot('role_id')
             ->withTimestamps();
     }
