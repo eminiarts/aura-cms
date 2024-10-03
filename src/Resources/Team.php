@@ -2,15 +2,16 @@
 
 namespace Aura\Base\Resources;
 
-use Aura\Base\Database\Factories\TeamFactory;
-use Aura\Base\Jobs\GenerateAllResourcePermissions;
-use Aura\Base\Models\TeamMeta;
 use Aura\Base\Resource;
-use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Relations\HasManyThrough;
-use Illuminate\Database\Eloquent\SoftDeletes;
-use Illuminate\Support\Facades\Cache;
+use Aura\Base\Models\TeamMeta;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Cache;
+use Aura\Base\Database\Factories\TeamFactory;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Aura\Base\Jobs\GenerateAllResourcePermissions;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 
 class Team extends Resource
 {
@@ -277,7 +278,7 @@ class Team extends Resource
             if ($user) {
                 // $role->users()->sync([$user->id]);
 
-                $role->users()->sync([$user->id => ['resource_type' => Role::class, 'slug' => 'roles']]);
+                $team->users()->attach($user->id, ['role_id' => $role->id]);
 
                 // $fields = $user->fields;
                 // $fields['roles'] = [$role->id];
