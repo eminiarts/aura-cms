@@ -55,6 +55,7 @@ use Aura\Base\Widgets\SparklineArea;
 use Aura\Base\Widgets\SparklineBar;
 use Aura\Base\Widgets\ValueWidget;
 use Aura\Base\Widgets\Widgets;
+use Aura\Base\Commands\AuraLayoutCommand;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Support\Arr;
@@ -174,6 +175,7 @@ class AuraServiceProvider extends PackageServiceProvider
                 ExtendUserModel::class,
                 UpdateSchemaFromMigration::class,
                 CreateResourceFactory::class,
+                AuraLayoutCommand::class,
             ])
             ->hasInstallCommand(function (InstallCommand $command) {
                 $command
@@ -360,4 +362,9 @@ class AuraServiceProvider extends PackageServiceProvider
     {
         return config('aura.resources');
     }
+
+    protected $commands = [
+        // ... other commands ...
+        Commands\AuraLayoutCommand::class,
+    ];
 }
