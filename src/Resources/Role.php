@@ -173,4 +173,11 @@ class Role extends Resource
             ->withPivot('team_id')
             ->withTimestamps();
     }
+
+    public function teams(): BelongsToMany
+    {
+        return $this->belongsToMany(Team::class, 'team_user')
+            ->withPivot('user_id')
+            ->withTimestamps();
+    }
 }
