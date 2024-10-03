@@ -4,6 +4,7 @@ namespace Aura\Base\Resources;
 
 use Aura\Base\Resource;
 use Aura\Base\Models\TeamMeta;
+use Aura\Base\Models\TeamUser;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Cache;
 use Aura\Base\Database\Factories\TeamFactory;
@@ -233,6 +234,7 @@ class Team extends Resource
     public function users(): BelongsToMany
     {
         return $this->belongsToMany(User::class, 'team_user')
+            ->using(TeamUser::class)
             ->withPivot('role_id')
             ->withTimestamps();
     }
