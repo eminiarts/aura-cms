@@ -24,6 +24,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Contracts\Auth\Authenticatable as AuthenticatableContract;
 use Illuminate\Contracts\Auth\Access\Authorizable as AuthorizableContract;
 use Illuminate\Contracts\Auth\CanResetPassword as CanResetPasswordContract;
+use Illuminate\Database\Query\JoinClause;
 
 class User extends Resource implements AuthenticatableContract, AuthorizableContract, CanResetPasswordContract
 {
@@ -692,22 +693,14 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
         });
     }
 
-    public function roles()
+    /**
+     * Get the roles for the user.
+     */
+    public function roles(): BelongsToMany
     {
-        // if (config('aura.teams')) {
-        //     $roles = $roles->withPivot('team_id');
-        // }
-
-        return $this
-           ->morphToMany(Role::class, 'related', 'post_relations', 'related_id', 'resource_id')
-           ->withTimestamps()
-           ->withPivot('resource_type', 'slug', 'order')
-           ->wherePivot('resource_type', Role::class)
-           ->wherePivot('slug', 'roles')
-           ->orderBy('post_relations.order');
-
-
-        //     return config('aura.teams') ? $roles->wherePivot('team_id', $this->current_team_id) : $roles;
+        return $this->belongsToMany(Role::class, 'team_user')
+            ->withPivot('team_id')
+            ->withTimestamps();
     }
 
     // public function setRolesField($value)
@@ -754,14 +747,9 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
      */
     public function teams(): BelongsToMany
     {
-        return $this->belongsToMany(Team::class, 'roles', 'user_id', 'team_id')
-            ->distinct()
-            ->join('post_relations', function ($join) {
-                $join->on('roles.id', '=', 'post_relations.resource_id')
-                    ->where('post_relations.resource_type', Role::class)
-                    ->where('post_relations.related_type', User::class)
-                    ->where('post_relations.related_id', $this->id);
-            });
+        return $this->belongsToMany(Team::class, 'team_user')
+            ->withPivot('role_id')
+            ->withTimestamps();
     }
 
     public function title()

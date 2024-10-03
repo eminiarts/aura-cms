@@ -236,7 +236,7 @@ class Resource extends Model
                 });
 
             $this->fieldsAttributeCache = $defaultValues
-            ->filter(function ($value, $key) {
+            ->filter(function ($value, $key) {  
 
                 return true;
                 $field = $this->fieldBySlug($key);
