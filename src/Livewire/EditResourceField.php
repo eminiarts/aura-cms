@@ -170,6 +170,9 @@ class EditResourceField extends Component
             $this->dispatch('saveField', ['slug' => $this->fieldSlug, 'value' => $this->form['fields']]);
         }
 
+        $this->dispatch('finishedSavingFields');
+        $this->dispatch('refresh-resource-editor');
+
         $this->open = false;
     }
 

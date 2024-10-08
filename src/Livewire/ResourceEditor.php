@@ -526,6 +526,16 @@ class ResourceEditor extends Component
         // emit new fields
         $this->dispatch('newFields', $this->fieldsArray);
         $this->dispatch('finishedSavingFields');
+
+        // Add this line to trigger a re-render
+        $this->dispatch('refreshResourceEditor');
+    }
+
+    // Add this method to handle the refresh
+    public function refreshResourceEditor()
+    {
+        $this->fieldsArray = $this->model->getFieldsWithIds()->toArray();
+        $this->newFields = $this->model->mapToGroupedFields($this->fieldsArray);
     }
 
     public function sendField($slug)
