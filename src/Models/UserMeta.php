@@ -15,12 +15,7 @@ class UserMeta extends Meta
      */
     protected $table = 'user_meta';
 
-    public function roles()
-    {
-        $roleIds = json_decode($this->value);
-
-        return Role::whereIn('id', $roleIds)->get();
-    }
+    
 
     /**
      * The "booted" method of the model.

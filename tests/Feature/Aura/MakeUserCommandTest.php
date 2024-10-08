@@ -1,6 +1,7 @@
 <?php
 
 use Aura\Base\Resources\Role;
+use Aura\Base\Resources\Team;
 use Aura\Base\Resources\User;
 use Illuminate\Support\Facades\DB;
 
@@ -34,4 +35,32 @@ it('can create a user with all required fields', function () {
     expect($role->count())->toBe(1);
 
     expect($role->first()->super_admin)->toBe(true);
+});
+
+
+it('user roles can be set via update', function () {
+    $this->user = createSuperAdmin();
+
+    $roleData = [
+            'name' => 'New Role',
+            'slug' => 'new role',
+            'description' => 'New Role',
+            'super_admin' => true,
+            'permissions' => [],
+            'user_id' => $this->user->id,
+            'team_id' => Team::first()->id,
+        ];
+
+        $role = Role::create($roleData);
+
+        $this->user->update(['roles' => [$role->id]]);
+
+    $this->user->refresh();
+
+    // ray($this->user->roles, $role->toArray());    
+
+    expect($this->user->roles->count())->toBe(1);
+    expect($this->user->roles->first()->super_admin)->toBe(true);
+    expect($this->user->current_team_id)->toBe(Team::first()->id);
+    expect($this->user->roles->first()->name)->toBe('New Role');
 });

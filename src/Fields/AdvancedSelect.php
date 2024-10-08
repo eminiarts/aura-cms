@@ -64,7 +64,31 @@ class AdvancedSelect extends Field
 
     public function get($class, $value, $field = null)
     {
-        //  ray('get AdvancedSelect', $class, $value, $field)->blue();
+        //  ray('get ........', $class, $value, $field)->blue();
+
+
+          if (isset($field['polymorphic_relation']) && $field['polymorphic_relation'] === false) {
+            // ray('save meta', $field['slug'], $ids);
+
+                //  ray('get ........', $class, $value, $field)->blue();
+
+            if (empty($value)) {
+                return null;
+            }
+
+            if (is_string($value)) {
+                // ray('is_string', $value);
+                $decoded = json_decode($value, true);
+                if (json_last_error() === JSON_ERROR_NONE) {
+                    // ray($decoded);
+                    return $decoded;
+                }
+                return $value;
+            }
+           
+            // ray('save meta', $post->meta()->get());
+            return $value;
+        }
 
         if (!($field['multiple'] ?? true) && !($field['polymorphic_relation'] ?? false)) {
             // dd('hier');
@@ -213,11 +237,15 @@ class AdvancedSelect extends Field
 
         $ids = $value;
 
-        // ray('saved', $post, $field, $value, $ids);
+        //ray('saved', $post, $field, $value, $ids);
 
-        if (!($field['multiple'] ?? true) && !($field['polymorphic_relation'] ?? true)) {
+        if (optional($field)['polymorphic_relation'] === false) {
+            // ray('save meta', $field['slug'], $ids);
             // Save as meta
-            $post->meta()->updateOrCreate(['key' => $field['slug']], ['value' => $ids ?? null]);
+            $value = is_array($ids) ? json_encode($ids) : $ids;
+            $post->meta()->updateOrCreate(['key' => $field['slug']], ['value' => $value ?? null]);
+
+            // ray('save meta', $post->meta()->get());
             return;
         }
 
@@ -226,10 +254,17 @@ class AdvancedSelect extends Field
         if (empty($ids)) {
             return;
         }
-        
+
         if (is_int($ids)) {
             return;
         }
+
+        // Temporary fix for the issue
+        if (is_string($ids) && json_decode($ids) !== null) {
+            $ids = json_decode($ids, true);
+        }
+
+        // ray('ids', $ids);
 
         foreach ($ids as $index => $item) {
             $id = is_array($item) ? ($item['id'] ?? null) : $item;
@@ -258,10 +293,10 @@ class AdvancedSelect extends Field
 
         // ray('1 ' . $field['slug'], $post->{$field['slug']}()->get());
 
-            // Attach or update the new relations
-            foreach ($pivotData as $id => $data) {
-                $post->{$field['slug']}()->syncWithoutDetaching([$id => $data]);
-            }
+        // Attach or update the new relations
+        foreach ($pivotData as $id => $data) {
+            $post->{$field['slug']}()->syncWithoutDetaching([$id => $data]);
+        }
 
         // ray('2 ' . $field['slug'], $post->{$field['slug']}()->get());
     }

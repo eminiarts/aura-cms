@@ -75,7 +75,12 @@ class Create extends Component
     {
         $this->slug = $slug;
 
+
         $this->model = Aura::findResourceBySlug($slug);
+
+        // ray($this->model);
+
+
 
         // Authorize
         $this->authorize('create', $this->model);

@@ -24,6 +24,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Contracts\Auth\Authenticatable as AuthenticatableContract;
 use Illuminate\Contracts\Auth\Access\Authorizable as AuthorizableContract;
 use Illuminate\Contracts\Auth\CanResetPassword as CanResetPasswordContract;
+use Illuminate\Database\Query\JoinClause;
 
 class User extends Resource implements AuthenticatableContract, AuthorizableContract, CanResetPasswordContract
 {
@@ -126,7 +127,7 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
     // Reset to default create Method from Laravel
     public static function create($fields)
     {
-        $model = new static;
+        $model = new static();
 
         return tap($model->newModelInstance($fields), function ($instance) {
             $instance->save();
@@ -163,6 +164,9 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
 
     public function getAvatarUrlAttribute()
     {
+        return 'https://ui-avatars.com/api/?name='.$this->getInitials().'';
+        
+        // Does not work atm
         if (! $this->fields['avatar']) {
             return 'https://ui-avatars.com/api/?name='.$this->getInitials().'';
         }
@@ -254,7 +258,7 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
                 'name' => 'Roles',
                 'slug' => 'roles',
                 'resource' => 'Aura\\Base\\Resources\\Role',
-                'type' => 'Aura\\Base\\Fields\\AdvancedSelect',
+                'type' => 'Aura\\Base\\Fields\\Roles',
                 'multiple' => true,
                 'polymorphic_relation' => true,
                 'validation' => '',
@@ -282,11 +286,9 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
                 'name' => 'Teams',
                 'slug' => 'tab-Teams',
                 'global' => true,
-                'conditional_logic' => [
-                    function () {
+                'conditional_logic' => function ($model, $post) {
                         return config('aura.teams');
                     },
-                ],
             ],
             [
                 'name' => 'Teams',
@@ -297,11 +299,10 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
                 'wrapper' => '',
                 'on_index' => false,
                 'on_forms' => true,
-                'conditional_logic' => [
-                    function () {
+                
+                'conditional_logic' => function ($model, $post) {
                         return config('aura.teams');
                     },
-                ],
                 'on_view' => true,
                 'style' => [
                     'width' => '100',
@@ -354,6 +355,46 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
     {
         return "Aura\Base\Resources\User";
     }
+
+    //     public function getFieldsAttribute()
+    // {
+    //     $meta = $this->meta->pluck('value', 'key');
+
+    //     $defaultValues = $this->inputFields()->pluck('slug')->mapWithKeys(fn ($value, $key) => [$value => null])->map(fn ($value, $key) => $meta[$key] ?? $value)->map(function ($value, $key) {
+    //         // if the value is in $this->hidden, set it to null
+    //         if (in_array($key, $this->hidden)) {
+    //             return;
+    //         }
+
+    //         // If the value is set on the model, use it
+    //         if (isset($this->attributes[$key])) {
+    //             return $this->attributes[$key];
+    //         }
+    //     });
+
+    //     if (! $meta->isEmpty()) {
+    //         // Cast Attributes
+    //         $meta = $meta->map(function ($value, $key) {
+    //             // if there is a function get{Slug}Field on the model, use it
+    //             $method = 'get'.Str::studly($key).'Field';
+
+    //             if (method_exists($this, $method)) {
+    //                 return $this->{$method}($value);
+    //             }
+
+    //             $class = $this->fieldClassBySlug($key);
+
+    //             if ($class && method_exists($class, 'get')) {
+    //                 return $class->get($class, $value);
+    //             }
+
+    //             return $value;
+    //         });
+    //     }
+
+    //     return $defaultValues->merge($meta);
+    // }
+
 
     public function getOption($option)
     {
@@ -546,6 +587,11 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
                 continue;
             }
 
+            // Temporary Fix. To Do: It should be an array
+            if (is_string($permissions)) {
+                $permissions = json_decode($permissions, true);
+            }
+
             foreach ($permissions as $permission => $value) {
                 if ($permission == $ability.'-'.$post::$slug && $value == true) {
                     return true;
@@ -577,7 +623,7 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
     {
         if (config('aura.teams')) {
             return $query->whereHas('roles', function ($query) {
-                $query->where('team_id', auth()->user()->current_team_id);
+                $query->where('roles.team_id', auth()->user()->current_team_id);
             });
         }
 
@@ -650,17 +696,16 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
         });
     }
 
-    // public function roles()
-    // {
-    //     $roles = $this->belongsToMany(Role::class, 'user_meta', 'user_id', 'value')
-    //         ->wherePivot('key', 'roles');
-
-    //     if (config('aura.teams')) {
-    //         $roles = $roles->withPivot('team_id');
-    //     }
-
-    //     return config('aura.teams') ? $roles->wherePivot('team_id', $this->current_team_id) : $roles;
-    // }
+    /**
+     * Get the roles for the user.
+     */
+    public function roles(): BelongsToMany
+    {
+        return $this->belongsToMany(Role::class, 'team_user')
+            //->using(TeamUser::class)
+            ->withPivot('team_id')
+            ->withTimestamps();
+    }
 
     // public function setRolesField($value)
     // {
@@ -706,16 +751,9 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
      */
     public function teams(): BelongsToMany
     {
-        return $this->belongsToMany(Team::class, 'post_relations', 'related_id', 'resource_id')
-            ->withTimestamps()
-            ->withPivot('resource_type')
-            ->wherePivot('related_type', User::class)
-            ->whereHas('roles', function ($query) {
-                $query->where('post_relations.resource_type', Role::class)
-                    ->whereRaw('post_relations.resource_id = roles.id');
-            })
-            ->select('teams.*')
-            ->distinct();
+        return $this->belongsToMany(Team::class, 'team_user')
+            ->withPivot('role_id')
+            ->withTimestamps();
     }
 
     public function title()
@@ -740,7 +778,7 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
         });
     }
 
-    protected function cachedRoles(): mixed
+    public function cachedRoles(): mixed
     {
         // ray('roles', $this->roles, DB::table('user_meta')->get(), DB::table('post_relations')->get())->blue();
 

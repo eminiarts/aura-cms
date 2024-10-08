@@ -1,10 +1,12 @@
 @aware(['model', 'form', 'mode'])
 
+{{-- @dd($mode, 'tabs') --}}
+
+
 @php
     // Create md5 hash of the field array
     $fieldHash = md5(json_encode($field));
 
-    ray($mode);
 @endphp
 
 <div
