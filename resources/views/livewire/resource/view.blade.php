@@ -1,6 +1,8 @@
 <div>
     @section('title', __('View '. $model->singularName()))
 
+
+
     @if(!$inModal)
     <x-aura::breadcrumbs>
         <x-aura::breadcrumbs.li :href="route('aura.dashboard')" title="" icon="dashboard" iconClass="text-gray-500 w-7 h-7 mr-0" />
@@ -10,6 +12,7 @@
     @endif
 
     @include($model->viewHeaderView())
+
 
     @if($model::usesTitle())
     <div class="mb-4">

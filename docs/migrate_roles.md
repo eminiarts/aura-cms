@@ -4,15 +4,18 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-Schema::create('post_relations', function (Blueprint $table) {
-  $table->morphs('resource');
-  $table->morphs('related');
-  $table->timestamps();
+ Schema::create('post_relations', function (Blueprint $table) {
+            $table->morphs('resource');
+            $table->morphs('related');
+            $table->integer('order')->nullable();
+            $table->string('slug')->nullable();
+            $table->timestamps();
 
-  $table->index(['resource_id', 'related_id', 'related_type']);
-});
+            $table->index(['resource_id', 'related_id', 'related_type']);
+            $table->index('slug');
+        });
 
-Schema::create('roles', function (Blueprint $table) {
+        Schema::create('roles', function (Blueprint $table) {
             $table->id();
             $table->string('name');
             $table->string('slug');
@@ -52,12 +55,14 @@ Schema::create('roles', function (Blueprint $table) {
             }
             $table->index('slug');
         });
+
 ```
 
 Create roles and permissions from `posts` table to `roles` and `permissions` table
 
 ```php
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 // Migrate roles
 $rolePosts = DB::table('posts')->where('type', 'role')->get();
@@ -87,23 +92,36 @@ foreach ($rolePosts as $post) {
 $permissionPosts = DB::table('posts')->where('type', 'permission')->get();
 
 foreach ($permissionPosts as $post) {
-    // Fetch associated meta
-    $meta = DB::table('post_meta')->where('post_id', $post->id)->pluck('value', 'key');
+    try {
+        // Fetch associated meta
+        $meta = DB::table('post_meta')->where('post_id', $post->id)->pluck('value', 'key');
 
-    // Prepare slug (if you have a specific slug generation strategy, adjust this)
-    $slug = Str::slug($post->title);
+        // Ensure title is not null
+        if (empty($post->title)) {
+            throw new Exception("Permission title cannot be null for post ID: {$post->id}");
+        }
 
-    // Create permission in the permissions table
-    DB::table('permissions')->insert([
-        'name' => $post->title,
-        'slug' => $slug,
-        'description' => $post->content,
-        'group' => $meta->get('group', null), // If you have a "group" meta key
-        'user_id' => $post->user_id ?? null, // Adjust this if user_id is stored elsewhere
-        'team_id' => $post->team_id ?? null, // Adjust this if team_id is stored elsewhere
-        'created_at' => now(),
-        'updated_at' => now(),
-    ]);
+        // Prepare slug (if you have a specific slug generation strategy, adjust this)
+        $slug = Str::slug($post->title);
+
+        // Create permission in the permissions table
+        DB::table('permissions')->insert([
+            'name' => $post->title,
+            'slug' => $slug,
+            'description' => $post->content,
+            'group' => $meta->get('group', null), // If you have a "group" meta key
+            'user_id' => $post->user_id ?? null, // Adjust this if user_id is stored elsewhere
+            'team_id' => $post->team_id ?? null, // Adjust this if team_id is stored elsewhere
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+    } catch (Exception $e) {
+        // Log the error or output it for debugging
+        echo "Failed to migrate post ID {$post->id}: " . $e->getMessage() . "\n";
+        // Continue with the next iteration
+        continue;
+    }
 }
 
 echo "Migration complete!";
@@ -144,16 +162,21 @@ DB::table("user_meta")
 
         if (isset($roleMappings[$newRoleSlug])) {
           $newRoleId = $roleMappings[$newRoleSlug];
-
-          // Insert into post_relations
-          DB::table("post_relations")->insert([
-            "resource_type" => "Aura\\Base\\Resources\\Role",
-            "resource_id" => $newRoleId,
-            "related_type" => "Aura\\Base\\Resources\\User",
-            "related_id" => $userMeta->user_id,
-            "created_at" => now(),
-            "updated_at" => now()
-          ]);
+          // Insert into post_relations if it doesn't exist
+          DB::table("post_relations")->updateOrInsert(
+            [
+              "resource_type" => "Aura\\Base\\Resources\\Role",
+              "resource_id" => $newRoleId,
+              "related_type" => "Aura\\Base\\Resources\\User",
+              "related_id" => $userMeta->user_id,
+              'slug' => 'roles',
+              'order' => 0,
+            ],
+            [
+              "created_at" => now(),
+              "updated_at" => now()
+            ]
+          );
         }
       }
     }

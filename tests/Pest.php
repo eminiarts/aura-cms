@@ -61,6 +61,7 @@ function createSuperAdmin()
 
     // Create Team
     $team = Team::factory()->create();
+    
 
     $user->refresh();
 

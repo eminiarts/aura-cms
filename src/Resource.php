@@ -98,10 +98,15 @@ class Resource extends Model
             $fieldClass = $this->fieldClassBySlug($key);
             // $groupedField = $this->groupedFieldBySlug($key);
             if ($fieldClass->isRelation()) {
-                // ray('is relation', $key);
+                //  ray('is relation', $key, $value);
                 $field = $this->fieldBySlug($key);
 
                 if (optional($field)['polymorphic_relation'] === false) {
+
+                    if (is_null($value) && isset($this->fields[$key])) {
+                        return $this->fields[$key];
+                    }
+
                     return $value;
                 }
 
@@ -173,20 +178,35 @@ class Resource extends Model
         if (! isset($this->fieldsAttributeCache) || $this->fieldsAttributeCache === null) {
             $meta = $this->getMeta();
 
-            // ray($meta)->red();
+          
+            try {
+              $defaultValues = collect($this->inputFieldsSlugs())
+                ->mapWithKeys(fn ($value) => [$value => null])
+                ->map(function ($value, $key) use ($meta) {
+                        return $value;
+                });
+            } catch (\Exception $e) {
+                ray($e);
+                dd('error');
+            }
+
 
             $defaultValues = collect($this->inputFieldsSlugs())
-                ->mapWithKeys(fn ($value, $key) => [$value => null])
-                ->map(fn ($value, $key) => $meta[$key] ?? $value)
-                ->filter(fn ($value, $key) => strpos($key, '.') === false)
-                ->map(function ($value, $key) {
+                ->mapWithKeys(fn ($value) => [$value => null])
+                ->map(function ($value, $key) use ($meta) {
+                    if (strpos($key, '.') !== false) {
+                        return $value;
+                    }
+
                     $class = $this->fieldClassBySlug($key);
                     $field = $this->fieldBySlug($key);
 
-                    if ($key == 'roles') {
-                        // dd('hier', $field);
+                    if ($class && $class->isRelation($field) && isset($this->{$key}) && method_exists($class, 'get')) {
+                        return $class->get($class, $this->{$key}, $field);
                     }
-                    if ($class && $class->isRelation($field) && $this->{$key} && method_exists($class, 'get')) {
+                    
+                    // Without relation
+                    if ($class && isset($this->{$key}) && method_exists($class, 'get')) {
                         return $class->get($class, $this->{$key}, $field);
                     }
 
@@ -212,10 +232,13 @@ class Resource extends Model
                         return $class->get($class, $this->{$key} ?? null, $field);
                     }
 
-                    return $value;
+                    return $meta[$key] ?? $value;
                 });
 
-            $this->fieldsAttributeCache = $defaultValues->filter(function ($value, $key) {
+            $this->fieldsAttributeCache = $defaultValues
+            ->filter(function ($value, $key) {  
+
+                return true;
                 $field = $this->fieldBySlug($key);
 
                 return $this->shouldDisplayField($field);
@@ -223,6 +246,31 @@ class Resource extends Model
         }
 
         return $this->fieldsAttributeCache;
+    }
+
+    public function getFieldsWithoutConditionalLogic()
+    {
+        $meta = $this->getMeta();
+
+        return collect($this->inputFieldsSlugs())
+            ->mapWithKeys(fn ($value, $key) => [$value => null])
+            ->map(fn ($value, $key) => $meta[$key] ?? $value)
+            ->filter(fn ($value, $key) => strpos($key, '.') === false)
+            ->map(function ($value, $key) {
+                $class = $this->fieldClassBySlug($key);
+                $field = $this->fieldBySlug($key);
+
+                if ($class && isset($this->attributes[$key]) && method_exists($class, 'get')) {
+                    return $class->get($class, $this->attributes[$key], $field);
+                }
+
+                if (isset($this->attributes[$key])) {
+                    return $this->attributes[$key];
+                }
+
+                return $value;
+            })
+            ->toArray();
     }
 
     // /**
@@ -351,12 +399,12 @@ class Resource extends Model
     protected static function booted()
     {
         if (! static::$customTable) {
-            static::addGlobalScope(new TypeScope);
+            static::addGlobalScope(new TypeScope());
         }
 
         static::addGlobalScope(app(TeamScope::class));
 
-        static::addGlobalScope(new ScopedScope);
+        static::addGlobalScope(new ScopedScope());
 
         static::creating(function ($model) {});
 
