@@ -60,7 +60,7 @@ class Navigation extends Component
     public function settings()
     {
         if (config('aura.teams')) {
-            return app('aura')::getOption('team-settings');
+            return app('aura')::getOption('settings');
         }
 
         return app('aura')::getOption('settings');
