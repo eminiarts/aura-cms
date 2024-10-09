@@ -1,21 +1,28 @@
 <x-aura::fields.wrapper :field="$field" wire:ignore>
     <div x-data="{
         init() {
-            let quill = new window.Quill(this.$refs.quill, { theme: 'snow' })
+            let quill = new window.Quill(this.$refs.quill, {
+                theme: 'snow',
+                readOnly: @json($field['disabled'] ?? false)
+            });
 
             quill.on('text-change', function() {
                 $wire.$set('form.fields.{{ optional($field)['slug'] }}', quill.root.innerHTML);
             });
+
+            // Fix: Use a proper JavaScript expression for $watch
+            $watch('disabled', value => {
+                quill.enable(!value);
+            });
         },
+        disabled: @json($field['disabled'] ?? false)
     }" x-ref="quill">
         {!! $this->form['fields'][$field['slug']] ?? '' !!}
     </div>
-
 </x-aura::fields.wrapper>
 
-
-    @once
-        @push('scripts')
-            @vite(['resources/js/quill.js'], 'vendor/aura/libs')
-        @endpush
-    @endonce
+@once
+    @push('scripts')
+        @vite(['resources/js/quill.js'], 'vendor/aura/libs')
+    @endpush
+@endonce

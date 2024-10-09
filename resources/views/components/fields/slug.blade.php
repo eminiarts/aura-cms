@@ -81,11 +81,11 @@
             wire:model="form.fields.{{ optional($field)['slug'] }}"
             @endif
         >
-            <x-aura::input.text type="text" x-bind:disabled="!custom" id="slug" @keyup="value = slugifyTyping($event.target.value)" x-model="value" />
+            <x-aura::input.text type="text" x-bind:disabled="!custom" id="slug" @keyup="value = slugifyTyping($event.target.value)" x-model="value" placeholder="{{ optional($field)['placeholder'] ?? optional($field)['name'] }}"/>
         </div>
 
         @if(optional($field)['custom'])
-        <div class="custom-slug flex flex-col">
+        <div class="flex flex-col custom-slug">
             <button x-ref="toggle" @click="toggleCustom()" type="button" role="switch" :aria-checked="custom"
                 :aria-labelledby="$id('boolean')"
                 :class="custom ? 'bg-primary-600 border border-primary-900/50 dark:border-gray-900' : 'bg-gray-300 shadow-inner border border-gray-500/30'"
