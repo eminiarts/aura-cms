@@ -9,6 +9,7 @@
   'class' => 'text-white bg-primary-600 hover:bg-primary-700 focus:ring-primary-500 shadow-none',
   'type' => 'button',
   'navigate' => true,
+  'disabled' => false,
 ])
 
 @php
@@ -37,17 +38,23 @@ $iconSizes = [
 if (!isset($sizes[$size])) {
   $size = 'base';
 }
+
+$disabledClass = $disabled ? 'opacity-50 cursor-not-allowed' : '';
+$class .= ' ' . $disabledClass;
+
 @endphp
 
 
 @if(isset($href))
 <a
   @if(isset($id)) id="{{ $id }}" @endif
-  tabindex="0"
-  href="{{ $href }}" @if($navigate) wire:navigate @endif
+  tabindex="{{ $disabled ? '-1' : '0' }}"
+  href="{{ $disabled ? '#' : $href }}"
+  @if($navigate && !$disabled) wire:navigate @endif
   {{$attributes->merge([
     'class' => $class . ' relative items-center focus:outline-none focus:ring-2 focus:ring-opacity-50 focus:ring-offset-2 dark:focus:ring-offset-gray-900 select-none active:scale-95 transition-transform duration-150 ease-in-out' . ' ' .  optional($sizes)[$size],
   ])}}
+  @if($disabled) aria-disabled="true" @endif
 >
   @if ($icon ?? false)
     <div class="absolute -ml-1">
@@ -59,11 +66,12 @@ if (!isset($sizes[$size])) {
 </a>
 @else
 <button
-  tabindex="0"
+  tabindex="{{ $disabled ? '-1' : '0' }}"
   type="{{ $type }}"
   {{$attributes->merge([
     'class' => $class . ' relative items-center focus:outline-none focus:ring-2 focus:ring-opacity-50 focus:ring-offset-2 dark:focus:ring-offset-gray-900 select-none active:scale-95 transition-transform duration-150 ease-in-out ' . ' ' .  optional($sizes)[$size],
   ])}}
+  @if($disabled) disabled aria-disabled="true" @endif
 >
   @if ($icon ?? false)
     <div class="absolute -ml-1">

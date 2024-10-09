@@ -67,6 +67,12 @@ class Tags extends Field
                 'validation' => '',
                 'slug' => 'resource',
             ],
+            [
+                'name' => 'Max Tags',
+                'type' => 'Aura\\Base\\Fields\\Number',
+                'validation' => '',
+                'slug' => 'max_tags',
+            ],
 
         ]);
     }

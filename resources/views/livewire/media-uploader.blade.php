@@ -1,4 +1,3 @@
-
 <div>
 
     <div>
@@ -60,6 +59,7 @@
         isDropping: false,
         isUploading: false,
         progress: 0,
+        disabled: {{ $disabled ? 'true' : 'false' }},
         init() {
             {{-- var i = 0;
             setInterval(() => {
@@ -68,6 +68,7 @@
             }, 1000); --}}
         },
         handleFileSelect(event) {
+            if (this.disabled) return;
             console.log('handleFileSelect');
             if (event.target.files.length) {
                 Array.from(event.target.files).forEach(file => {
@@ -84,6 +85,7 @@
         },
 
         handleFileDrop(event) {
+            if (this.disabled) return;
             if (event.dataTransfer.files.length > 0) {
                 this.uploadFiles(event.dataTransfer.files)
             }
@@ -106,11 +108,9 @@
             }
             )
         },
-        dragover(event) {
-            // check if is holding a file
+        handleDragOver(event) {
             if (event.dataTransfer.types.includes('Files')) {
-                {{-- event.preventDefault() --}}
-            } else {
+                this.isDropping = true;
             }
         },
         removeUpload(filename) {
@@ -118,11 +118,14 @@
         },
     }">
 
-        <div class="" x-on:drop="isDropping = false" x-on:drop.prevent="handleFileDrop($event)"
-            x-on:dragover.prevent="isDropping = true; dragover($event);"
-            x-on:dragleave.prevent="isDropping = false; ">
+        <div class=""
+            x-on:drop="!disabled && handleFileDrop($event)"
+            x-on:drop.prevent="!disabled && (isDropping = false)"
+            x-on:dragover.prevent="!disabled && handleDragOver($event)"
+            x-on:dragleave.prevent="!disabled && (isDropping = false)">
 
-            <div x-on:dragover.prevent="isDropping = true; dragover($event);"
+            <div
+                x-on:dragover.prevent="!disabled && handleDragOver($event)"
                 class="z-[1] absolute top-0 right-0 bottom-0 left-0"></div>
 
             <div class="p-4 mt-2 bg-gray-50 rounded-md border border-gray-200 dark:bg-gray-800 dark:border-gray-700" x-show="isUploading" x-cloak>
@@ -166,9 +169,8 @@
             </div>
 
             <div class="z-[2] relative">
-                @if($button)
+                @if($button && !$disabled)
                     <div class="mt-2">
-                        {{-- @dump($for, $field['slug'], $selected) --}}
                         <x-aura::button.light
                             wire:click="$dispatch('openModal', { component: 'aura::media-manager', arguments: { model: {{ json_encode($for) }}, slug: '{{ $field['slug'] }}', selected: {{ json_encode($selected) }} }})">
                             <x-slot:icon>
@@ -176,6 +178,16 @@
                             </x-slot>
 
                             <span>Media Manager</span>
+                        </x-aura::button.light>
+                    </div>
+                @elseif($disabled)
+                    <div class="mt-2">
+                        <x-aura::button.light disabled>
+                            <x-slot:icon>
+                                <x-aura::icon icon="media" class="" />
+                            </x-slot>
+
+                            <span>Media Manager is disabled</span>
                         </x-aura::button.light>
                     </div>
                 @endif
@@ -196,21 +208,16 @@
 
             <div>
 
-                @if($upload)
+                @if($upload && !$disabled)
                     <div>
                         <label for="file-upload">
                             <p class="mb-4 text-sm text-gray-900 dark:text-gray-400">Datei hierhin ziehen oder <span class="text-primary-400">hier klicken</span> um eine Datei hochzuladen.</p>
-
-                            {{-- <input type="file" id="file-upload" multiple @change="handleFileSelect" class="hidden"
-                                wire:model="media" /> --}}
-
-                                <input type="file" id="file-upload" multiple @change="handleFileSelect" class="hidden" />
-
+                            <input type="file" id="file-upload" multiple @change="handleFileSelect" class="hidden" />
                         </label>
                     </div>
                 @endif
 
-                @if($table)
+                @if($table && !$disabled)
 
                 <div class="z-[2] relative flex flex-col">
                     <div class="flex justify-between items-center mt-0">

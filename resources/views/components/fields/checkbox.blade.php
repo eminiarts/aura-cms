@@ -10,6 +10,7 @@
                     :id="$field['slug'] . $option['key']"
                     :label="$option['value']"
                     :value="$option['key']"
+                    :disabled="$field['disabled'] ?? false"
                 />
             @else
                 <x-aura::input.checkbox
@@ -18,17 +19,18 @@
                     :id="$field['slug'] . $option['key']"
                     :label="$option['value']"
                     :value="$option['key']"
+                    :disabled="$field['disabled'] ?? false"
                 />
             @endif
         @else
             @if(optional($field)['live'] === true)
                 <x-aura::input.checkbox
                     wire:model.live="form.fields.{{ optional($field)['slug'] }}"
-
                     :name="$field['slug'] . '[' . $option . ']'"
                     :id="$field['slug'] . $option"
                     :label="$option"
                     :value="$key"
+                    :disabled="$field['disabled'] ?? false"
                 />
             @else
                 <x-aura::input.checkbox
@@ -37,10 +39,10 @@
                     :id="$field['slug'] . $option"
                     :label="$option"
                     :value="$key"
+                    :disabled="$field['disabled'] ?? false"
                 />
             @endif
         @endif
-
 
     @endforeach
 

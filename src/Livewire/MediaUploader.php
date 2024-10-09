@@ -16,6 +16,8 @@ class MediaUploader extends Component
 
     public $for;
 
+    public $disabled = false;
+
     public $media = [];
 
     public $model;

@@ -14,6 +14,7 @@
                     id="post_fields_{{ optional($field)['slug'] }}"
                     :label="$option['value']"
                     :value="$option['key']"
+                    :disabled="optional($field)['disabled'] ?? false"
                 />
             @else
                 <x-aura::input.radio
@@ -22,6 +23,7 @@
                     id="post_fields_{{ optional($field)['slug'] }}"
                     :label="$option['value']"
                     :value="$option['key']"
+                    :disabled="optional($field)['disabled'] ?? false"
                 />
             @endif
         @else
@@ -32,6 +34,7 @@
                     id="post_fields_{{ optional($field)['slug'] }}"
                     :label="$option"
                     :value="$key"
+                    :disabled="optional($field)['disabled'] ?? false"
                 />
             @else
                 <x-aura::input.radio
@@ -40,6 +43,7 @@
                     id="post_fields_{{ optional($field)['slug'] }}"
                     :label="$option"
                     :value="$key"
+                    :disabled="optional($field)['disabled'] ?? false"
                 />
             @endif
         @endif

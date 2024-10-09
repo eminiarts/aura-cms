@@ -1,4 +1,3 @@
-
 @php
 $values = [];
 $taxonomy = null;
@@ -28,13 +27,13 @@ x-data="{
     multiple: true,
     value: @entangle('form.fields.' . $field['slug']),
     options: @js($values),
+    disabled: {{ isset($field['disabled']) && $field['disabled'] ? 'true' : 'false' }},
     init() {
         if (!this.value) {
             this.value = [];
         }
 
         this.$nextTick(() => {
-
             let tagValues = [];
 
             if(this.value.length > 0) {
@@ -48,7 +47,12 @@ x-data="{
 
             var tagify = new window.Tagify(this.$refs.tags, {
                 whitelist: this.options,
-                maxTags: 10,
+                readonly: this.disabled,
+
+                @if(isset($field['max_tags']))
+                    maxTags: {{ $field['max_tags'] }},
+                @endif
+
                 @if( optional($field)['create'] === false)
                 enforceWhitelist: true,
                 createInvalidTags: false,
@@ -73,7 +77,13 @@ x-data="{
 class=""
 >
 
-<input x-ref="tags" name='tags' class='flex items-center h-[42px] w-full bg-white rounded-lg appearance-none shadow-xs border-gray-500/30 tags focus:border-primary-300 focus:outline-none ring-gray-900/10 focus:ring focus:ring-primary-300 focus:ring-opacity-50 dark:focus:ring-primary-500 dark:focus:ring-opacity-50 dark:bg-gray-900 dark:border-gray-700' placeholder='{{ $field['name'] }}'>
+<input
+    x-ref="tags"
+    name='tags'
+    class='flex items-center min-h-[42px] w-full bg-white rounded-lg appearance-none shadow-xs border-gray-500/30 tags focus:border-primary-300 focus:outline-none ring-gray-900/10 focus:ring focus:ring-primary-300 focus:ring-opacity-50 dark:focus:ring-primary-500 dark:focus:ring-opacity-50 dark:bg-gray-900 dark:border-gray-700 disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed'
+    placeholder='{{ $field['name'] }}'
+    :disabled="disabled"
+>
 
 </div>
 </x-aura::fields.wrapper>

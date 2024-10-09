@@ -6,6 +6,7 @@
     :displayFormat="optional($field)['display_format'] ?? 'd.m.Y'"
     :maxDate="optional($field)['maxDate']"
     :minDate="optional($field)['minDate']"
+    :placeholder="optional($field)['placeholder'] ?? 'Select Date'"
     :weekStartsOn="optional($field)['weekStartsOn'] ?? 1"
     :enableInput="optional($field)['enable_input'] ?? true"
     :native="optional($field)['options']['native'] ?? false"
