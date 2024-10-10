@@ -1,23 +1,36 @@
 <x-aura::fields.wrapper :field="$field" wire:ignore>
-    <div x-data="{
-        init() {
-            let quill = new window.Quill(this.$refs.quill, {
-                theme: 'snow',
-                readOnly: @json($field['disabled'] ?? false)
-            });
+    <div
+        @if($field['disabled'] ?? false)
+            class="bg-gray-100 rounded-md opacity-50 cursor-not-allowed"
+        @endif
+    >
+    <div
+        @if($field['disabled'] ?? false)
+            class="pointer-events-none"
+        @endif
+    >
 
-            quill.on('text-change', function() {
-                $wire.$set('form.fields.{{ optional($field)['slug'] }}', quill.root.innerHTML);
-            });
+        <div x-data="{
+            init() {
+                let quill = new window.Quill(this.$refs.quill, {
+                    theme: 'snow',
+                    readOnly: @json($field['disabled'] ?? false)
+                });
 
-            // Fix: Use a proper JavaScript expression for $watch
-            $watch('disabled', value => {
-                quill.enable(!value);
-            });
-        },
-        disabled: @json($field['disabled'] ?? false)
-    }" x-ref="quill">
-        {!! $this->form['fields'][$field['slug']] ?? '' !!}
+                quill.on('text-change', function() {
+                    $wire.$set('form.fields.{{ optional($field)['slug'] }}', quill.root.innerHTML);
+                });
+
+                // Fix: Use a proper JavaScript expression for $watch
+                $watch('disabled', value => {
+                    quill.enable(!value);
+                });
+            },
+            disabled: @json($field['disabled'] ?? false)
+        }" x-ref="quill">
+            {!! $this->form['fields'][$field['slug']] ?? '' !!}
+        </div>
+    </div>
     </div>
 </x-aura::fields.wrapper>
 

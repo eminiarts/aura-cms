@@ -31,6 +31,7 @@
     <div wire:ignore class="flex items-center"
         x-data="{
             selectedColor: $wire.entangle('form.fields.{{ optional($field)['slug'] }}'),
+            isDisabled: {{ $field['field']->isDisabled($this->form, $field) ? 'true' : 'false' }},
             init() {
                 // Simple example, see optional options for more configuration.
                 const pickr = window.Pickr.create({
@@ -58,7 +59,6 @@
                     @endif
 
                     components: {
-
                         // Main components
                         preview: true,
                         opacity: true,
@@ -77,48 +77,60 @@
                         }
                     }
                 }).on('save', (color, source, instance) => {
-                    @if (optional($field)['format'] == 'hex')
-                        this.selectedColor = color.toHEXA().toString();
+                    if (!this.isDisabled) {
+                        @if (optional($field)['format'] == 'hex')
+                            this.selectedColor = color.toHEXA().toString();
+                        @elseif (optional($field)['format'] == 'rgb')
+                            this.selectedColor = color.toRGBA().toString(0);
+                        @elseif (optional($field)['format'] == 'hsl')
+                            this.selectedColor = color.toHSLA().toString(0);
+                        @elseif (optional($field)['format'] == 'hsv')
+                            this.selectedColor = color.toHSVA().toString(0);
+                        @elseif (optional($field)['format'] == 'cmyk')
+                            this.selectedColor = color.toCMYK().toString(0);
+                        @else
+                            this.selectedColor = color.toHEXA().toString();
+                        @endif
                         $dispatch('input', { value: this.selectedColor });
-                    @elseif (optional($field)['format'] == 'rgb')
-                        this.selectedColor = color.toRGBA().toString(0);
-                        $dispatch('input', { value: this.selectedColor });
-                    @elseif (optional($field)['format'] == 'hsl')
-                        this.selectedColor = color.toHSLA().toString(0);
-                        $dispatch('input', { value: this.selectedColor });
-                    @elseif (optional($field)['format'] == 'hsv')
-                        this.selectedColor = color.toHSVA().toString(0);
-                        $dispatch('input', { value: this.selectedColor });
-                    @elseif (optional($field)['format'] == 'cmyk')
-                        this.selectedColor = color.toCMYK().toString(0);
-                        $dispatch('input', { value: this.selectedColor });
-                    @else
-                        this.selectedColor = color.toHEXA().toString();
-                        $dispatch('input', { value: this.selectedColor });
-                    @endif
+                    }
                 });
 
-                // watch color for changes  and update the input
+                // watch color for changes and update the input
                 this.$watch('selectedColor', value => {
-                    this.$nextTick(() => {
-                        // trim the value and all characters after the 9th
-                        this.selectedColor = this.selectedColor.substring(0, 9);
-                        $dispatch('input', value);
+                    if (!this.isDisabled) {
+                        this.$nextTick(() => {
+                            // trim the value and all characters after the 9th
+                            this.selectedColor = this.selectedColor.substring(0, 9);
+                            $dispatch('input', value);
 
-                        // debounce 400ms
-                        setTimeout(() => {
-                            @if (optional($field)['format'] == 'hex')
-                            // only update if the color is 7 characters
-                            if (this.selectedColor.length == 7 || this.selectedColor.length == 4 || this.selectedColor.length == 9) {
-                                pickr.setColor(this.selectedColor);
-                            }
-                            @else
-                                pickr.setColor(this.selectedColor);
-                            @endif
-                        }, 1000);
-                    });
-
+                            // debounce 400ms
+                            setTimeout(() => {
+                                @if (optional($field)['format'] == 'hex')
+                                // only update if the color is 7 characters
+                                if (this.selectedColor.length == 7 || this.selectedColor.length == 4 || this.selectedColor.length == 9) {
+                                    pickr.setColor(this.selectedColor);
+                                }
+                                @else
+                                    pickr.setColor(this.selectedColor);
+                                @endif
+                            }, 1000);
+                        });
+                    }
                 });
+
+                // Disable/Enable the Pickr instance based on the isDisabled state
+                this.$watch('isDisabled', value => {
+                    if (value) {
+                        pickr.disable();
+                    } else {
+                        pickr.enable();
+                    }
+                });
+
+                // Initial state
+                if (this.isDisabled) {
+                    pickr.disable();
+                }
             },
         }"
     >
@@ -128,7 +140,6 @@
                 type="text"
                 class="hidden"
             />
-
         </div>
 
         <div class="ml-2">
