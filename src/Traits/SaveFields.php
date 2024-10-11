@@ -162,7 +162,7 @@ trait SaveFields
         file_put_contents($a->getFileName(), $replaced);
 
         // Run "pint" on the migration file
-        exec('./vendor/bin/pint '.$a->getFileName());
+        // exec('./vendor/bin/pint '.$a->getFileName());
 
         // $this->notify('Saved Props successfully.');
     }
@@ -186,6 +186,8 @@ trait SaveFields
 
     protected function runPint($migrationFile)
     {
+        return;
+        
         $command = [
             (new ExecutableFinder)->find('php', 'php', [
                 '/usr/local/bin',
