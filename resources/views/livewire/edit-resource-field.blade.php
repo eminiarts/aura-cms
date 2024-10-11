@@ -3,14 +3,14 @@
   <div x-data="{
     form: @entangle('form').live,
       init () {
-        // alpine watch post
+        {{-- // alpine watch post
         this.$watch('form', (value) => {
           const select = document.getElementById('post_fields_type');
           select.addEventListener('change', (event) => {
             @this.updateType();
           });
 
-        });
+        }); --}}
       }
     }">
 
