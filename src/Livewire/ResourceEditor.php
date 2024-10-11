@@ -98,7 +98,7 @@ class ResourceEditor extends Component
         $this->dispatch('openSlideOver', component: 'edit-field', parameters: ['fieldSlug' => $globalTab['slug'], 'slug' => $this->slug, 'field' => $globalTab]);
 
         $this->dispatch('finishedSavingFields');
-
+        $this->dispatch('refreshComponent');
     }
 
     public function addTemplateFields($slug)
@@ -137,6 +137,7 @@ class ResourceEditor extends Component
         $this->newFields = $this->model->mapToGroupedFields($this->fieldsArray);
 
         $this->dispatch('finishedSavingFields');
+        $this->dispatch('refreshComponent');
     }
 
     public function checkAuthorization()
@@ -193,6 +194,7 @@ class ResourceEditor extends Component
         $this->newFields = $this->model->mapToGroupedFields($this->fieldsArray);
 
         $this->dispatch('finishedSavingFields');
+        $this->dispatch('refreshComponent');
     }
 
     public function duplicateField($id, $slug)
@@ -350,6 +352,7 @@ class ResourceEditor extends Component
         $this->newFields = $this->model->mapToGroupedFields($this->fieldsArray);
 
         $this->dispatch('finishedSavingFields');
+        $this->dispatch('refreshComponent');
     }
 
     public function mount($slug)
@@ -429,16 +432,12 @@ class ResourceEditor extends Component
 
         $this->fieldsArray = $fields;
 
-        ray('reordered fields', $this->fieldsArray)->red();
-
         $this->saveFields($this->fieldsArray);
 
         $this->newFields = $this->model->mapToGroupedFields($this->fieldsArray);
 
-        ray('new fields', $this->newFields)->blue();
-
-        // Refresh the component to reflect the new order
-        $this->dispatch('refreshComponent');
+        // Remove the dispatch('refreshComponent') call
+        // $this->dispatch('refreshComponent');
 
         $this->dispatch('finishedSavingFields');
     }
@@ -535,13 +534,14 @@ class ResourceEditor extends Component
         // emit new fields
         $this->dispatch('newFields', $this->fieldsArray);
         $this->dispatch('finishedSavingFields');
+        $this->dispatch('refreshComponent');
 
         // Add this line to trigger a re-render
-        $this->dispatch('refreshResourceEditor');
+        $this->dispatch('refreshComponent');
     }
 
     // Add this method to handle the refresh
-    public function refreshResourceEditor()
+    public function refreshComponent()
     {
         $this->fieldsArray = $this->model->getFieldsWithIds()->toArray();
         $this->newFields = $this->model->mapToGroupedFields($this->fieldsArray);
