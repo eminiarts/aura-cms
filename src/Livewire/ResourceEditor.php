@@ -437,7 +437,7 @@ class ResourceEditor extends Component
         $this->newFields = $this->model->mapToGroupedFields($this->fieldsArray);
 
         // Remove the dispatch('refreshComponent') call
-        // $this->dispatch('refreshComponent');
+        $this->dispatch('refreshComponent');
 
         $this->dispatch('finishedSavingFields');
     }
@@ -537,11 +537,11 @@ class ResourceEditor extends Component
         $this->dispatch('refreshComponent');
 
         // Add this line to trigger a re-render
-        $this->dispatch('refreshComponent');
+        $this->dispatch('refreshResourceEditor');
     }
 
     // Add this method to handle the refresh
-    public function refreshComponent()
+    public function refreshResourceEditor()
     {
         $this->fieldsArray = $this->model->getFieldsWithIds()->toArray();
         $this->newFields = $this->model->mapToGroupedFields($this->fieldsArray);
