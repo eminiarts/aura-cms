@@ -32,27 +32,22 @@ trait SaveFields
 
             $replacement = Aura::varexport($this->setKeysToFields($fields), true);
 
-            // Match the getFields() function and capture its body and offset
             preg_match('/function\s+getFields\s*\((?:[^()]*?)\s*\)\s*(?<functionBody>{(?:[^{}]+|(?-1))*+})/ms', $file, $matches, PREG_OFFSET_CAPTURE);
 
             if (isset($matches['functionBody'])) {
                 $functionBody = $matches['functionBody'][0];
                 $functionBodyOffset = $matches['functionBody'][1];
 
-                // Match the return statement within the function body
                 preg_match('/return\s+(\[.*\]);/ms', $functionBody, $matches2);
 
                 if (isset($matches2[1])) {
-                    // dd($matches2[1], $replacement);
 
-                    // Replace the return statement in the function body
                     $newFunctionBody = Str::replace(
                         $matches2[1],
                         $replacement,
                         $functionBody
                     );
 
-                    // Replace the old function body with the new one in the file content
                     $newFile = substr_replace(
                         $file,
                         $newFunctionBody,
@@ -60,7 +55,6 @@ trait SaveFields
                         strlen($functionBody)
                     );
 
-                    // Write the modified content back to the file
                     file_put_contents($filePath, $newFile);
 
                     $this->runPint($filePath);
@@ -79,7 +73,9 @@ trait SaveFields
         // Trigger the event to change the database schema
         event(new SaveFieldsEvent($fieldsWithIds, $this->mappedFields, $this->model));
 
-        $this->dispatch('refreshComponent');
+        ray('saved fields', $this->mappedFields);
+
+        // $this->dispatch('refreshComponent');
 
         $this->notify('Saved successfully.');
     }
