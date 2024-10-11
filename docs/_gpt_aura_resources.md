@@ -1,11 +1,11 @@
-I will provide you with more information about Aura CMS: It is build on Laravel, Livewire, AlpineJS and TailwindCSS. It requires PHP 8.1. 
+I will provide you with more information about Aura CMS: It is build on Laravel, Livewire, AlpineJS and TailwindCSS. It requires PHP 8.1.
 
 - Resources: We have a Resource model that can be used for blog posts, news, events, etc. The posts can be categorized and tagged. The concept is based on WordPress' Posts and Taxonomies. A Resource only has a title, a slug, a description and a body (default WordPress fields). All other fields are added by the user like you would add custom fields with ACF in Wordpress (conceptually). This is why we have a posts and postmeta table. The postmeta table is used to store all additional fields. This means that a Resource can have many postmeta entries. The postmeta entries are used to store additional fields like a date, a location, a price, etc.
 - Posttype Builder: The Posttype Builder is a tool that allows the user to create custom posttypes. A posttype is a custom Resource. The user can add custom fields to the posttype. The user can also add custom taxonomies to the posttype. In the beginning we encourage to use the posts table for a Resource. When ever you are done with all fields, you can generate a migration file that will create a new table for the posttype. This way you can use the Resource with a custom Table. This is useful when you have a lot of data and want to optimize the database.
-- Taxonomies: Taxonomies are the method of classifying content and data. When you use a taxonomy you’re grouping similar things together. The taxonomy refers to the sum of those groups. As with Post Types, there are a number of default taxonomies, and you can also create your own.ies 
+- Taxonomies: Taxonomies are the method of classifying content and data. When you use a taxonomy you’re grouping similar things together. The taxonomy refers to the sum of those groups. As with Post Types, there are a number of default taxonomies, and you can also create your own.ies
 - Fields: We have a lot of different fields that you can use on the Resources. These are the fields that we have: Advanced Select, BelongsTo, BelongsToMany, Boolean, Checkbox, Code, Color, Date, Datetime, Email, Embed, Field, File, Group, HasMany, HasOne, HasOneOfMany, Heading, HorizontalLine, Image, Jobs, chp Json, LivewireComponent, Number, Panel, Password, Permissions, Phone, Radio, Repeater, Select, SelectRelation, Slug, Tab, Tabs, Tags, Text, Textarea, Time, View, ViewValue,Wysiwyg. Every Field needs to be documented.
-- Actions: A resource can have bulkActions or actions defined that you can trigger on the resource. For example: You can create an action that will send an email to all users that are selected. You can also create an action that will delete all selected users. 
-- Table: The table is the default view of a resource. You can customize the table by adding a custom View for the row. There are multiple places where you can override the default table view. You can override the table view for a specific resource, you can override the table view for a specific posttype or you can override the table view for all resources. The table also includes a search and custom filters. The filters are based on the fields that are defined on the resource. 
+- Actions: A resource can have bulkActions or actions defined that you can trigger on the resource. For example: You can create an action that will send an email to all users that are selected. You can also create an action that will delete all selected users.
+- Table: The table is the default view of a resource. You can customize the table by adding a custom View for the row. There are multiple places where you can override the default table view. You can override the table view for a specific resource, you can override the table view for a specific posttype or you can override the table view for all resources. The table also includes a search and custom filters. The filters are based on the fields that are defined on the resource.
 - Teams, Users, Roles and Permissions: Aura is multitenant by default. You can create teams and invite users to the team. The users can have different roles on the team. The roles can be defined by the user. The user can also define permissions for the roles. You can disable multitenant if you want to use Aura as a single tenant application. Permissions can be created for all resources.
 - Media Library: AuraCMS has a media library that allows you to upload files and images. These files and images can be used in the resources.
 - Flows: will be documented later.
@@ -21,7 +21,7 @@ namespace Aura\Base\Resources;
 
 use Aura\Flows\Resources\Flow;
 use Aura\Base\Database\Factories\UserFactory;
-use Aura\Base\Models\User as UserModel;
+use Aura\Base\Resources\User as UserModel;
 use Aura\Base\Models\UserMeta;
 use Aura\Base\Traits\SaveFieldAttributes;
 use Aura\Base\Traits\SaveMetaFields;
@@ -1441,7 +1441,7 @@ class Team extends Resource
             return redirect()->route('aura.dashboard');
         });
 
-       
+
     }
 
     /**
@@ -4281,7 +4281,7 @@ return new class () extends Migration {
 
                 $table->unique(['team_id', 'email']);
             });
-              
+
             Schema::create('team_meta', function (Blueprint $table) {
                 $table->id();
                 if(config('aura.teams')) {

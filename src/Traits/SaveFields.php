@@ -2,49 +2,15 @@
 
 namespace Aura\Base\Traits;
 
-use Aura\Base\Events\SaveFields as SaveFieldsEvent;
 use Aura\Base\Facades\Aura;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Process;
+use Symfony\Component\Process\ExecutableFinder;
+use Aura\Base\Events\SaveFields as SaveFieldsEvent;
 
 trait SaveFields
 {
-    public function formatIndentation($str, $str2)
-    {
-        if (preg_split('#\r?\n#', $str, 0) !== null) {
-            return $str2;
-        }
-
-        // Get first Line
-        $line = preg_split('#\r?\n#', $str, 0)[1];
-
-        // Get Spaces in first Line
-        $count = substr_count($line, ' ');
-
-        // Get second Line
-        $line2 = preg_split('#\r?\n#', $str2, 0)[1];
-
-        // Get Spaces in second Line
-        $count2 = substr_count($line2, ' ');
-
-        // Get the difference of Spaces
-        $newSpaces = str_pad('', $count - $count2, ' ');
-
-        // Str to Array
-        $new = preg_split('#\r?\n#', $str2, 0);
-
-        // Add Spaces to each line except the 1st
-        foreach ($new as $key => $line) {
-            if ($key == 0) {
-                continue;
-            }
-
-            $new[$key] = $newSpaces.$line;
-        }
-
-        // Implode Array to Text
-        return implode("\n", $new);
-    }
-
     public function saveFields($fields)
     {
         $fieldsWithIds = $fields;
@@ -66,19 +32,48 @@ trait SaveFields
 
             $replacement = Aura::varexport($this->setKeysToFields($fields), true);
 
-            preg_match('/function\s+getFields\s*\((?:[^()]+)*?\s*\)\s*(?<functionBody>{(?:[^{}]+|(?-1))*+})/ms', $file, $matches);
+            // Match the getFields() function and capture its body and offset
+            preg_match('/function\s+getFields\s*\((?:[^()]*?)\s*\)\s*(?<functionBody>{(?:[^{}]+|(?-1))*+})/ms', $file, $matches, PREG_OFFSET_CAPTURE);
 
-            $body = $matches['functionBody'];
+            if (isset($matches['functionBody'])) {
+                $functionBody = $matches['functionBody'][0];
+                $functionBodyOffset = $matches['functionBody'][1];
 
-            preg_match('/return (\[.*\]);/ms', $body, $matches2);
+                // Match the return statement within the function body
+                preg_match('/return\s+(\[.*\]);/ms', $functionBody, $matches2);
 
-            $replaced = Str::replace(
-                $matches2[1],
-                $this->formatIndentation($matches2[1], $replacement),
-                $file
-            );
+                if (isset($matches2[1])) {
+                    // dd($matches2[1], $replacement);
 
-            file_put_contents($filePath, $replaced);
+                    // Replace the return statement in the function body
+                    $newFunctionBody = Str::replace(
+                        $matches2[1],
+                        $replacement,
+                        $functionBody
+                    );
+
+                    // Replace the old function body with the new one in the file content
+                    $newFile = substr_replace(
+                        $file,
+                        $newFunctionBody,
+                        $functionBodyOffset,
+                        strlen($functionBody)
+                    );
+
+                    // Write the modified content back to the file
+                    file_put_contents($filePath, $newFile);
+
+                    $this->runPint($filePath);
+                } else {
+                    // Handle the case where the return statement is not found
+                    // You may want to add the return statement if it's missing
+                    // For now, we'll notify that the return statement was not found
+                    $this->notify('Return statement not found in getFields().');
+                }
+            } else {
+                // Handle the case where getFields() function is not found
+                $this->notify('Function getFields() not found.');
+            }
         }
 
         // Trigger the event to change the database schema
@@ -88,6 +83,7 @@ trait SaveFields
 
         $this->notify('Saved successfully.');
     }
+
 
     public function saveProps($props)
     {
@@ -190,5 +186,19 @@ trait SaveFields
 
             return [$group.'.'.$item['slug'] => $item];
         })->toArray();
+    }
+
+    protected function runPint($migrationFile)
+    {
+        $command = [
+            (new ExecutableFinder)->find('php', 'php', [
+                '/usr/local/bin',
+                '/opt/homebrew/bin',
+            ]),
+
+            'vendor/bin/pint', $migrationFile,
+        ];
+
+        $result = Process::path(base_path())->run($command);
     }
 }

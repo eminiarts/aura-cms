@@ -2,7 +2,7 @@
 
 ## Composer
 
-Install this package in your Laravel Project. You can start a new project by running 
+Install this package in your Laravel Project. You can start a new project by running
 
 `composer create-project --prefer-dist laravel/laravel project-name`
 
@@ -36,7 +36,7 @@ You can customize the views by publishing them to your project.
 3. your User model should extend `php artisan aura:migrate`
 
 ```php
-use Aura\Base\Models\User as AuraUser;
+use Aura\Base\Resources\User as AuraUser;
 
 class User extends AuraUser
 {
