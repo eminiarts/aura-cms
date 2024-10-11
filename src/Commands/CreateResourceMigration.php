@@ -212,6 +212,7 @@ class CreateResourceMigration extends Command
 
     protected function runPint($migrationFile)
     {
+        return;
         $command = [
             (new ExecutableFinder)->find('php', 'php', [
                 '/usr/local/bin',

@@ -202,4 +202,15 @@ class EditResourceField extends Component
         // emit event to parent with slug and value
         $this->dispatch('saveField', ['slug' => $this->fieldSlug, 'value' => $this->form['fields']]);
     }
+
+    public function updated($property)
+    {
+        // $property: The name of the current property that was updated
+        ray('updated', $property)->orange();
+
+        if ($property === 'form.fields.type') {
+            // $this->username = strtolower($this->username);
+            $this->updateType();
+        }
+    }
 }
