@@ -40,7 +40,7 @@ class ResourceEditor extends Component
         'saveNewField',
     ];
 
-    protected $newFields = [];
+    public $newFields = [];
 
     public function addConditionalLogicRule($key, $group)
     {
@@ -310,6 +310,8 @@ class ResourceEditor extends Component
 
     public function getMappedFieldsProperty()
     {
+        ray('getMappedFieldsProperty', $this->newFields)->blue();
+
         if ($this->newFields) {
             $this->updateGlobalTabs();
 
@@ -427,9 +429,16 @@ class ResourceEditor extends Component
 
         $this->fieldsArray = $fields;
 
+        ray('reordered fields', $this->fieldsArray)->red();
+
         $this->saveFields($this->fieldsArray);
 
         $this->newFields = $this->model->mapToGroupedFields($this->fieldsArray);
+
+        ray('new fields', $this->newFields)->blue();
+
+        // Refresh the component to reflect the new order
+        $this->dispatch('refreshComponent');
 
         $this->dispatch('finishedSavingFields');
     }
