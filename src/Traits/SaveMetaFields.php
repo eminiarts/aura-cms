@@ -19,22 +19,14 @@ trait SaveMetaFields
 
                 // Dont save Meta Fields if it is uses customTable
                 if ($post->usesCustomTable() && ! $post->usesCustomMeta()) {
-
-                    // ray('hier')->red();
                     unset($post->attributes['fields']);
-
                     return;
                 }
 
                 foreach ($post->attributes['fields'] as $key => $value) {
-
-                    if ($post instanceof \App\Aura\Resources\Product && $key === 'additional_services') {
-                        //ray('key value', $key, $value)->red();
-                    }
+                    $key = (string) $key;
 
                     $class = $post->fieldClassBySlug($key);
-
-                    // ray($key, $value)->red();
 
                     // Do not continue if the Field is not found
                     if (! $class) {
@@ -65,16 +57,12 @@ trait SaveMetaFields
 
                     $field = $post->fieldBySlug($key);
 
-                    // ray('field from SaveMetaFields', $field);
-
                     if (isset($field['set']) && $field['set'] instanceof \Closure) {
-                        // dd('here');
                         $value = call_user_func($field['set'], $post, $field, $value);
                     }
 
                     if (method_exists($class, 'set')) {
                         $value = $class->set($post, $field, $value);
-                        // $value = $class->set($value, $field);
                     }
 
                     if ($class instanceof \Aura\Base\Fields\ID) {
@@ -92,10 +80,6 @@ trait SaveMetaFields
                         continue;
                     }
 
-                    if ($post instanceof \App\Aura\Resources\Product && $key === 'additional_services') {
-                        // ray('key value', $key, $value)->green();
-                    }
-
                     if (in_array($key, $post->getFillable())) {
                         // Save the meta field to the model, so it can be saved in the Meta table
                         $post->saveMetaField([$key => $value]);
@@ -110,10 +94,6 @@ trait SaveMetaFields
                 $post->clearFieldsAttributeCache();
             }
 
-
-            if ($post instanceof \App\Aura\Resources\Product) {
-                // ray('end', $post)->blue();
-            }
         });
 
         static::saved(function ($post) {
@@ -133,7 +113,7 @@ trait SaveMetaFields
                     }
 
                     $field = $post->fieldBySlug($key);
-                    $class = $post->fieldClassBySlug($key);
+                    $class = $post->fieldClassBySlug((string) $key);
 
                     // if (isset($field['set']) && $field['set'] instanceof \Closure) {
                     //     // dd('here');
@@ -141,10 +121,7 @@ trait SaveMetaFields
                     // }
 
                     if (method_exists($class, 'saved')) {
-                        // ray('saved', $class);
-
                         $value = $class->saved($post, $field, $value);
-                        // $value = $class->set($value, $field);
 
                         continue;
                     }
@@ -156,9 +133,6 @@ trait SaveMetaFields
                 }
 
                 $post->fireModelEvent('metaSaved');
-
-                // Reload relation
-                // $post->load('meta');
             }
         });
     }

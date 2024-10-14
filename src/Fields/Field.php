@@ -135,7 +135,7 @@ abstract class Field implements Wireable
                 'label' => 'Slug',
                 'name' => 'Slug',
                 'type' => 'Aura\\Base\\Fields\\Slug',
-                'validation' => 'required',
+                'validation' => 'required|regex:/^[a-zA-Z0-9][a-zA-Z0-9_-]*$/|not_regex:/^[0-9]+$/',
                 'slug' => 'slug',
                 'based_on' => 'name',
                 'custom' => true,

@@ -138,6 +138,8 @@ class EditResourceField extends Component
 
         $rules['form.fields.slug'] = [
             'required',
+            'regex:/^[a-zA-Z0-9][a-zA-Z0-9_-]*$/',
+            'not_regex:/^[0-9]+$/',
             function ($attribute, $value, $fail) {
                 if (collect($this->form['fields'])->pluck('slug')->duplicates()->values()->contains($value)) {
                     $fail('The '.$attribute.' can not be used twice.');

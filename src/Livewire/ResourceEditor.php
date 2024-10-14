@@ -447,8 +447,8 @@ class ResourceEditor extends Component
     {
         return [
             'resource.type' => 'required|regex:/^[a-zA-Z]+$/',
-            'resource.slug' => 'required',
-            'resource.icon' => 'required',
+            'resource.slug' => 'required|regex:/^[a-zA-Z][a-zA-Z0-9_-]*$/|not_regex:/^\d+$/',
+            "resource.icon" => "required|not_regex:/'/",
             'resource.group' => '',
             'resource.dropdown' => '',
             'resource.sort' => '',
