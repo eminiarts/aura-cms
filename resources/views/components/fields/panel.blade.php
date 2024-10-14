@@ -14,6 +14,7 @@
   }
 </style>
 
+
 <div class="px-2" id="resource-field-{{ optional($field)['slug'] }}-wrapper">
     <div class="{{ $field['style']['class'] ?? 'aura-card' }}">
         <div class="mb-2">

@@ -164,6 +164,7 @@ class EditResourceField extends Component
         $this->validate();
 
         if ($this->mode == 'create') {
+            // ray('saveNewField', $this->form['fields'], $this->newFieldIndex, $this->newFieldSlug)->blue();
             $this->dispatch('saveNewField', $this->form['fields'], $this->newFieldIndex, $this->newFieldSlug);
         } else {
             // emit event to parent with slug and value

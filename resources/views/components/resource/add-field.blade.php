@@ -13,5 +13,7 @@
       @else
         Add new field
       @endif
+
+      Children: {{ $children }}
     </span>
 </button>
