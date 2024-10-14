@@ -198,7 +198,7 @@ class ResourceEditor extends Component
         $this->dispatch('refreshComponent');
     }
 
-    public function duplicateField($id, $slug)
+    public function duplicateField($id, $slug, $model)
     {
         $fields = collect($this->fieldsArray);
 
@@ -223,7 +223,7 @@ class ResourceEditor extends Component
 
         $this->newFields = $this->model->mapToGroupedFields($this->fieldsArray);
 
-        $this->dispatch('openSlideOver', component: 'edit-field', parameters: ['fieldSlug' => $field['slug'], 'slug' => $this->slug, 'field' => $field]);
+        $this->dispatch('openSlideOver', component: 'edit-field', parameters: ['fieldSlug' => $field['slug'], 'slug' => $this->slug, 'field' => $field, 'model' => $model]);
 
         $this->dispatch('finishedSavingFields');
 

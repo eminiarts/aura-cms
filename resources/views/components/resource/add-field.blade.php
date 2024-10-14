@@ -14,7 +14,5 @@
       @else
         Add new field
       @endif
-
-      Children: {{ $children }}, Model: {{ $model }}
     </span>
 </button>
