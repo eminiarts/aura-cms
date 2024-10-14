@@ -206,7 +206,7 @@
 
                                 @if ($loop->last)
                                     <div class="px-2 w-full">
-                                        <x-aura::resource.add-field :id="$field['_id']" :slug="$field['slug']" :type="$field['type']" :children="$this->countChildren($field)"/>
+                                        <x-aura::resource.add-field :id="$field['_id']" :slug="$field['slug']" :type="$field['type']" :children="$this->countChildren($field)" :model="$this->slug"/>
                                     </div>
                                 @endif
                             @endforeach
@@ -218,7 +218,7 @@
                                     <x-aura::button.transparent wire:click="insertTemplateFields({{ $tab['_id'] }}, '{{ $tab['slug'] }}', 'PanelWithSidebar')">Panel with Sidebar (70/30)</x-aura::button.transparent>
                                     <x-aura::button.transparent wire:click="insertTemplateFields({{ $tab['_id'] }}, '{{ $tab['slug'] }}', 'Plain')">Simple Panel with Text</x-aura::button.transparent>
 
-                                    <x-aura::resource.add-field :id="$tab['_id']" :slug="$tab['slug']" type="field"/>
+                                    <x-aura::resource.add-field :id="$tab['_id']" :slug="$tab['slug']" type="field" :model="$this->slug"/>
                                 </div>
                             @endif
 
@@ -288,7 +288,7 @@
 
                         @if ($loop->last)
                             <div class="px-2 w-full">
-                                <x-aura::resource.add-field :id="$field['_id']" :slug="$field['slug']" :type="$field['type']" :children="$this->countChildren($field)"/>
+                                <x-aura::resource.add-field :id="$field['_id']" :slug="$field['slug']" :type="$field['type']" :children="$this->countChildren($field)" :model="$this->slug"/>
                             </div>
                         @endif
                     @endforeach
