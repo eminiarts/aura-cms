@@ -27,7 +27,6 @@ class Number extends Field
                 'type' => 'Aura\\Base\\Fields\\Text',
                 'validation' => '',
                 'instructions' => 'Default value on create',
-                'exclude_from_nesting' => true,
                 'slug' => 'default',
             ],
             [
@@ -55,25 +54,6 @@ class Number extends Field
                 ],
             ],
 
-            // minimum value and maximum value as number fields
-            // [
-            //     'name' => 'Minimum Value',
-            //     'type' => 'Aura\\Base\\Fields\\Number',
-            //     'validation' => '',
-            //     'slug' => 'min',
-            //     'style' => [
-            //         'width' => '50',
-            //     ],
-            // ],
-            // [
-            //     'name' => 'Maximum Value',
-            //     'type' => 'Aura\\Base\\Fields\\Number',
-            //     'validation' => '',
-            //     'slug' => 'max',
-            //     'style' => [
-            //         'width' => '50',
-            //     ],
-            // ],
         ]);
     }
 

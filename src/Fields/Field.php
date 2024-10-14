@@ -170,6 +170,7 @@ abstract class Field implements Wireable
                 'instructions' => 'Defines if the field is searchable.',
                 'validation' => '',
                 'slug' => 'searchable',
+                'default' => false
             ],
 
             [

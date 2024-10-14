@@ -75,6 +75,8 @@ class EditResourceField extends Component
         $this->fieldSlug = $params['fieldSlug'];
         $this->form['fields'] = $params['field'];
 
+        $this->model = Aura::findResourceBySlug($params['model']);
+
         // dd( $params['field'] );
         $this->field = $params['field'];
 

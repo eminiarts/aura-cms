@@ -116,6 +116,7 @@ class Role extends Resource
                 'on_forms' => true,
                 'on_view' => true,
                 'live' => true,
+                'default' => false
             ],
             [
                 'name' => 'Permissions',
