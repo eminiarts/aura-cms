@@ -34,6 +34,7 @@ class ResourceEditor extends Component
 
     protected $listeners = [
         'refreshComponent' => '$refresh',
+        'finishedSavingFields' => '$refresh',
         'savedField' => 'updateFields',
         'saveField',
         'deleteField',
@@ -515,29 +516,38 @@ class ResourceEditor extends Component
 
         // emit new fields
         $this->dispatch('newFields', $this->fieldsArray);
-        
+
         $this->dispatch('refreshComponent');
-        
+
         $this->dispatch('finishedSavingFields');
     }
 
     public function saveNewField($field, $index, $slug)
     {
+        ray('saveNewField', $field, $index, $slug)->blue();
+
         // Find the index of the item with slug of $slug in $this->fieldsArray
         $parentIndex = collect($this->fieldsArray)->search(function ($item) use ($slug) {
             return $item['slug'] === $slug;
         });
         $newFieldIndex = (int) $parentIndex + (int) $index + 1;
-        // push new field to fieldsArray
+
+        ray('fieldsarray before', $this->fieldsArray)->blue();
+
         array_splice($this->fieldsArray, $newFieldIndex, 0, [$field]);
 
-        $this->saveFields($this->fieldsArray);
+        ray('fieldsarray after', $this->fieldsArray)->blue();
+
         $this->newFields = $this->model->mapToGroupedFields($this->fieldsArray);
+
+        $this->saveFields($this->fieldsArray);
+
+        ray('new fields', $this->newFields)->blue();
 
         // emit new fields
         $this->dispatch('newFields', $this->fieldsArray);
-        $this->dispatch('finishedSavingFields');
         $this->dispatch('refreshComponent');
+        $this->dispatch('finishedSavingFields');
 
         // Add this line to trigger a re-render
         $this->dispatch('refreshResourceEditor');

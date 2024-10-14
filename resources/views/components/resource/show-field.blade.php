@@ -33,8 +33,7 @@
         </div>
 
         <div>
-          {{-- <button wire:click='$dispatch("openModal", "delete-user", {{ json_encode(["user" => $user->id]) }})'>Delete User</button> --}}
-          <x-aura::tippy text="Edit field 22">
+          <x-aura::tippy text="Edit field">
              <div wire:click="$dispatch('openSlideOver', { component: 'edit-field', parameters: { fieldSlug: '{{ $field['slug'] }}', slug: '{{ $slug }}', field: @js($this->sendField($field['slug'])) }})">
             <x-aura::button.border>
               <x-aura::icon.edit class="w-5 h-5" />
@@ -47,19 +46,20 @@
       @if (isset($field['fields']))
         <div class="flex flex-wrap items-start -mx-4 draggable-container">
           @foreach($field['fields'] as $key => $f)
-
             <div
               style="width: {{ optional(optional($f)['style'])['width'] ?? '100' }}%;"
               id="field_{{ optional($f)['_id'] }}"
               class="px-4 reorder-item draggable-item"
-
+              wire:key="pt-field-{{ $f['_id'] }}"
             >
               @include('aura::components.resource.show-field', ['field' => $f, 'slug' => $slug])
             </div>
+          @endforeach
+        </div>
 
-            @if ($loop->last)
-
-            </div>
+        @foreach($field['fields'] as $key => $f)
+          @if ($loop->last)
+          <div class="w-full">
               @if ($f['type'] == 'Aura\Base\Fields\Repeater')
               @elseif ($f['type'] == 'Aura\Base\Fields\Tab')
                 <div class="w-full">
@@ -74,9 +74,9 @@
                   <x-aura::resource.add-field :id="$f['_id']" :slug="$field['slug']" :type="$f['type']" :children="$this->countChildren($field)" />
                 </div>
               @endif
-            @endif
-          @endforeach
-
+            </div>
+          @endif
+        @endforeach
 
       @else
         <div class="flex relative flex-wrap justify-center items-center mb-4 h-12 bg-gray-50 rounded-md border border-gray-100 dark:border-gray-800 draggable-container dark:bg-black/10">
