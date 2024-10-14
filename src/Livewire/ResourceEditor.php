@@ -56,9 +56,9 @@ class ResourceEditor extends Component
         ];
     }
 
-    public function addField($id, $slug, $type, $children)
+    public function addField($id, $slug, $type, $children, $model)
     {
-        $this->dispatch('openSlideOver', component: 'edit-field', parameters: ['create' => true, 'type' => $type, 'id' => $id, 'slug' => $slug, 'children' => $children]);
+        $this->dispatch('openSlideOver', component: 'edit-field', parameters: ['create' => true, 'type' => $type, 'id' => $id, 'slug' => $slug, 'children' => $children, 'model' => $model]);
     }
 
     public function addNewTab()

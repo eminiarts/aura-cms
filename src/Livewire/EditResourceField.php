@@ -2,10 +2,11 @@
 
 namespace Aura\Base\Livewire;
 
-use Aura\Base\Traits\RepeaterFields;
-use Aura\Base\Traits\SaveFields;
-use Illuminate\Support\Arr;
 use Livewire\Component;
+use Aura\Base\Facades\Aura;
+use Illuminate\Support\Arr;
+use Aura\Base\Traits\SaveFields;
+use Aura\Base\Traits\RepeaterFields;
 
 class EditResourceField extends Component
 {
@@ -26,7 +27,9 @@ class EditResourceField extends Component
 
     public $newFieldSlug = null;
 
-    public $reservedWords = ['id', 'type'];
+    public $reservedWords = ['id', 'type', ];
+
+    public $model;
 
     // listener for newFields
     protected $listeners = ['newFields' => 'newFields'];
@@ -51,6 +54,8 @@ class EditResourceField extends Component
             ray('children', $params['slug'], $params['children']);
             $this->newFieldIndex = $params['children'];
             $this->newFieldSlug = $params['slug'];
+
+            $this->model = Aura::findResourceBySlug($params['model']);
 
             $this->form['fields'] = $this->field;
 
@@ -141,6 +146,18 @@ class EditResourceField extends Component
             'regex:/^[a-zA-Z0-9][a-zA-Z0-9_-]*$/',
             'not_regex:/^[0-9]+$/',
             function ($attribute, $value, $fail) {
+
+                // Check if a field with the same slug already exists in mappedFields
+                $existingFields = $this->model->mappedFields();
+                $slugExists = collect($existingFields)->pluck('slug')->contains($value);
+
+                if ($slugExists && $value !== $this->field['slug']) {
+                    $fail("A field with the slug '{$value}' already exists.");
+                    return;
+                }
+
+                return false;
+
                 if (collect($this->form['fields'])->pluck('slug')->duplicates()->values()->contains($value)) {
                     $fail('The '.$attribute.' can not be used twice.');
                 }
