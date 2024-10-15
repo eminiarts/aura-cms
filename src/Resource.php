@@ -178,7 +178,7 @@ class Resource extends Model
         if (! isset($this->fieldsAttributeCache) || $this->fieldsAttributeCache === null) {
             $meta = $this->getMeta();
 
-          
+
             try {
               $defaultValues = collect($this->inputFieldsSlugs())
                 ->mapWithKeys(fn ($value) => [$value => null])
@@ -190,7 +190,12 @@ class Resource extends Model
                 dd('error');
             }
 
-
+    //         dd(collect($this->inputFieldsSlugs())
+    //     ->mapWithKeys(fn ($value) => [$value => null])
+    // ->map(function ($value, $key) use ($meta) {
+    //     return [$value, $key];
+    // }));
+            // return [];
             $defaultValues = collect($this->inputFieldsSlugs())
                 ->mapWithKeys(fn ($value) => [$value => null])
                 ->map(function ($value, $key) use ($meta) {
@@ -204,7 +209,7 @@ class Resource extends Model
                     if ($class && $class->isRelation($field) && isset($this->{$key}) && method_exists($class, 'get')) {
                         return $class->get($class, $this->{$key}, $field);
                     }
-                    
+
                     // Without relation
                     if ($class && isset($this->{$key}) && method_exists($class, 'get')) {
                         return $class->get($class, $this->{$key}, $field);
@@ -225,7 +230,7 @@ class Resource extends Model
                     $method = 'get'.Str::studly($key).'Field';
 
                     if (method_exists($this, $method)) {
-                        return $this->{$method}();
+                        return $this->{$method}($value);
                     }
 
                     if ($class && isset(optional($this)->{$key}) && method_exists($class, 'get')) {
@@ -236,7 +241,7 @@ class Resource extends Model
                 });
 
             $this->fieldsAttributeCache = $defaultValues
-            ->filter(function ($value, $key) {  
+            ->filter(function ($value, $key) {
 
                 return true;
                 $field = $this->fieldBySlug($key);
