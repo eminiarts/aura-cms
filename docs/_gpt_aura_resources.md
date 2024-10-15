@@ -4177,7 +4177,7 @@ return new class () extends Migration {
         Schema::dropIfExists('failed_jobs');
         Schema::dropIfExists('personal_access_tokens');
         Schema::dropIfExists('teams');
-        Schema::dropIfExists('team_user');
+        Schema::dropIfExists('user_role');
         Schema::dropIfExists('team_invitations');
         Schema::dropIfExists('taxonomies');
         Schema::dropIfExists('terms');
@@ -4263,7 +4263,7 @@ return new class () extends Migration {
                 $table->softDeletes();
             });
 
-            Schema::create('team_user', function (Blueprint $table) {
+            Schema::create('user_role', function (Blueprint $table) {
                 $table->id();
                 $table->foreignId('team_id');
                 $table->foreignId('user_id');

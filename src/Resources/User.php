@@ -701,9 +701,14 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
      */
     public function roles(): BelongsToMany
     {
-        return $this->belongsToMany(Role::class, 'team_user')
+        if (config('aura.teams')) {
+            return $this->belongsToMany(Role::class, 'user_role')
+                ->withPivot('team_id')
+                ->withTimestamps();
+        }
+        return $this->belongsToMany(Role::class, 'user_role')
             //->using(TeamUser::class)
-            ->withPivot('team_id')
+            //->withPivot('team_id')
             ->withTimestamps();
     }
 
@@ -751,7 +756,7 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
      */
     public function teams(): BelongsToMany
     {
-        return $this->belongsToMany(Team::class, 'team_user')
+        return $this->belongsToMany(Team::class, 'user_role')
             ->withPivot('role_id')
             ->withTimestamps();
     }

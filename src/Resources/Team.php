@@ -232,7 +232,7 @@ class Team extends Resource
 
     public function users(): BelongsToMany
     {
-        return $this->belongsToMany(User::class, 'team_user')
+        return $this->belongsToMany(User::class, 'user_role')
             ->withPivot('role_id')
             ->withTimestamps();
     }

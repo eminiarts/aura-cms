@@ -7,6 +7,8 @@ use Aura\Base\Resources\User;
 use Aura\Base\Tests\TestCase;
 use Illuminate\Foundation\Testing\DatabaseMigrations;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 uses(TestCase::class)->in(__DIR__);
 
@@ -22,20 +24,7 @@ uses(DatabaseMigrations::class)->in('DatabaseMigrations');
 
 // uses(\Illuminate\Foundation\Testing\LazilyRefreshDatabase::class)->in('Feature');
 
-/*
-|--------------------------------------------------------------------------
-| Expectations
-|--------------------------------------------------------------------------
-|
-| When you're writing tests, you often need to check that values meet certain conditions. The
-| "expect()" function gives you access to a set of "expectations" methods that you can use
-| to assert different things. Of course, you may extend the Expectation API at any time.
-|
-*/
 
-expect()->extend('toBeOne', function () {
-    return $this->toBe(1);
-});
 
 /*
 |--------------------------------------------------------------------------
@@ -61,7 +50,7 @@ function createSuperAdmin()
 
     // Create Team
     $team = Team::factory()->create();
-    
+
 
     $user->refresh();
 
@@ -70,6 +59,10 @@ function createSuperAdmin()
 
 function createSuperAdminWithoutTeam()
 {
+    // Dump and die the AURA_TEAMS environment variable
+    // Dump and die if there is a user_meta table
+    // Dump and die all tables
+
     $user = User::factory()->create();
 
     auth()->login($user);

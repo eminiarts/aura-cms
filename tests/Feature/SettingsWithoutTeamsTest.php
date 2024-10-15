@@ -2,11 +2,12 @@
 
 namespace Tests\Feature\Livewire;
 
-use Aura\Base\Livewire\Settings;
-use Aura\Base\Resources\Option;
-use Aura\Base\Resources\Team;
-use Illuminate\Support\Facades\DB;
 use Livewire\Livewire;
+use Aura\Base\Resources\Team;
+use Aura\Base\Resources\Option;
+use Aura\Base\Livewire\Settings;
+use Illuminate\Support\Facades\DB;
+
 
 beforeAll(function () {
     // Ensure the environment variable is set before migrations run
@@ -31,8 +32,7 @@ test('Settings Component can be rendered', function () {
     $response->assertStatus(200);
 });
 
-test('Default Team Settings are created', function () {
-
+test('Default Team Settings are created without teams', function () {
     // Default Team Settings
     Livewire::test(Settings::class)
         ->assertSee('Settings')
