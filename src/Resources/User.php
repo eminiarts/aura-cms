@@ -165,7 +165,7 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
     public function getAvatarUrlAttribute()
     {
         return 'https://ui-avatars.com/api/?name='.$this->getInitials().'';
-        
+
         // Does not work atm
         if (! $this->fields['avatar']) {
             return 'https://ui-avatars.com/api/?name='.$this->getInitials().'';
@@ -188,10 +188,10 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
         return 'https://ui-avatars.com/api/?name='.$this->getInitials().'';
     }
 
-    public function getEmailField($value)
-    {
-        return "<a class='font-bold text-primary-500' href='mailto:".$value."'>".$value.'</a>';
-    }
+    // public function getEmailField($value)
+    // {
+    //     return "<a class='font-bold text-primary-500' href='mailto:".$value."'>".$value.'</a>';
+    // }
 
     public static function getFields()
     {
@@ -234,7 +234,7 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
             ],
             [
                 'name' => 'Email',
-                'type' => 'Aura\\Base\\Fields\\Text',
+                'type' => 'Aura\\Base\\Fields\\Email',
                 'validation' => 'required|email',
                 'on_index' => true,
                 'searchable' => true,
@@ -299,7 +299,7 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
                 'wrapper' => '',
                 'on_index' => false,
                 'on_forms' => true,
-                
+
                 'conditional_logic' => function ($model, $post) {
                         return config('aura.teams');
                     },

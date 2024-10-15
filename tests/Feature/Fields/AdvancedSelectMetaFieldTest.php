@@ -21,13 +21,13 @@ beforeEach(function () {
 });
 
 // Create Resource for this test
-class AdvancedSelectFieldModel extends Resource
+class AdvancedSelectFieldMetaModel extends Resource
 {
     public static $singularName = 'AdvancedSelect Model';
 
     public static ?string $slug = 'advancedselect-model';
 
-    public static string $type = 'AdvancedSelectModel';
+    public static string $type = 'AdvancedSelectMetaModel';
 
     public static function getFields()
     {
@@ -44,13 +44,15 @@ class AdvancedSelectFieldModel extends Resource
                 'on_forms' => true,
                 'on_view' => true,
                 'searchable' => false,
+                'polymorphic_relation' => false,
+                'multiple' => true,
             ],
         ];
     }
 }
 
-test('AdvancedSelect Field Test', function () {
-    $model = new AdvancedSelectFieldModel;
+test('AdvancedSelect Meta Field Test', function () {
+    $model = new AdvancedSelectFieldMetaModel;
 
     $component = Livewire::test(Create::class, ['slug' => 'Post'])
         ->call('setModel', $model)
@@ -61,50 +63,49 @@ test('AdvancedSelect Field Test', function () {
         ->assertHasNoErrors(['form.fields.advancedselect']);
 
     // assert in db has post with type DateModel
-    $this->assertDatabaseHas('posts', ['type' => 'AdvancedSelectModel']);
+    $this->assertDatabaseHas('posts', ['type' => 'AdvancedSelectMetaModel']);
 
-    $model = AdvancedSelectFieldModel::first();
+    $model = AdvancedSelectFieldMetaModel::first();
 
     $roles = Role::get();
 
     // Assert that $model->fields['number'] is null
     $this->assertEmpty($model->fields['advancedselect']);
 
-    $component->set('form.fields.advancedselect', [[$roles[0]->id]])
+    $component->set('form.fields.advancedselect', [$roles[0]->id])
         ->call('save')
         ->assertHasNoErrors(['form.fields.advancedselect']);
 
     // get the datemodel from db
-    $model = AdvancedSelectFieldModel::orderBy('id', 'desc')->first();
+    $model = AdvancedSelectFieldMetaModel::orderBy('id', 'desc')->first();
 
     // Dump and die the post_relation table
     // dd(DB::table('post_relations')->get());
 
-    // dd($model->advancedselect);
-    // expect($model->advancedselect)->toBeArray();
+    expect($model->advancedselect)->toBeArray();
     expect($model->advancedselect)->toHaveCount(1);
-    expect($model->advancedselect->pluck('id'))->toContain($roles[0]->id);
+    expect($model->advancedselect)->toContain($roles[0]->id);
 
 });
 
 test('advancedselect field gets displayed correctly on edit view', function () {
-    $model = AdvancedSelectFieldModel::create([
+    $model = AdvancedSelectFieldMetaModel::create([
         'fields' => [
-            'advancedselect' => [[$id = Role::first()->id]],
+            'advancedselect' => [$id = Role::first()->id],
         ],
     ]);
 
-    $this->assertDatabaseHas('posts', ['type' => 'AdvancedSelectModel']);
+    $this->assertDatabaseHas('posts', ['type' => 'AdvancedSelectMetaModel']);
 
-    $post = AdvancedSelectFieldModel::first();
+    $post = AdvancedSelectFieldMetaModel::first();
 
     // expect($post->advancedselect)->toBeArray();
     // dd($post->advancedselect->toArray());
     expect($post->advancedselect)->toHaveCount(1);
-    expect($post->advancedselect->pluck('id'))->toContain($id);
+    expect($post->advancedselect)->toContain($id);
 
-    $model = AdvancedSelectFieldModel::query();
-    $slug = 'AdvancedSelectModel';
+    $model = AdvancedSelectFieldMetaModel::query();
+    $slug = 'AdvancedSelectMetaModel';
 
     Aura::fake();
     Aura::setModel($model);
@@ -119,11 +120,11 @@ test('advancedselect field gets displayed correctly on edit view', function () {
         ->assertSeeHtml('<span x-show="isSelected(item)" class="font-semibold text-primary-600">&check;</span>')
         ->call('save');
 
-    $post = AdvancedSelectFieldModel::first();
+    $post = AdvancedSelectFieldMetaModel::first();
 
-    expect($post->advancedselect)->toBeCollection();
+    expect($post->advancedselect)->toBeArray();
     expect($post->advancedselect)->toHaveCount(1);
-    expect($post->advancedselect->pluck('id'))->toContain($id);
+    expect($post->advancedselect)->toContain($id);
 
 });
 

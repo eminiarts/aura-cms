@@ -332,6 +332,8 @@ test('a admin can access users', function () {
     // Create Post
     $post = User::factory()->create();
 
+    // dd($post->toArray());
+
     // assert there is a role in the db
     $this->assertDatabaseHas('users', ['id' => $post->id]);
 
@@ -341,20 +343,24 @@ test('a admin can access users', function () {
     $user = \Aura\Base\Resources\User::find(1);
     $user->update(['roles' => [$r->id]]);
 
+    // Assert User has Admin Role
+    $this->assertTrue($user->roles->contains('slug', 'admin'));
+
     // Access Index Page
-    $response = $this->actingAs($this->user)->get(route('aura.resource.index', ['slug' => 'User']));
+    $response = $this->actingAs($user)->get(route('aura.resource.index', ['slug' => 'User']));
 
     // Assert Response
     $response->assertStatus(200);
 
     // Can Access Create Page
-    $response = $this->actingAs($this->user)->get(route('aura.resource.create', ['slug' => 'User']));
-
+    $response = $this->actingAs($user)->get(route('aura.resource.create', ['slug' => 'User']));
     // Assert Response
     $response->assertStatus(200);
 
+    $newUser = User::factory()->create();
+
     // Can Access Edit Page
-    $response = $this->actingAs($this->user)->get(route('aura.resource.edit', ['slug' => 'User', 'id' => $post->id]));
+    $response = $this->actingAs($user)->get(route('aura.resource.edit', ['slug' => 'User', 'id' => $newUser->id]));
 
     // Assert Response
     $response->assertStatus(200);

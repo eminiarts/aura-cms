@@ -85,7 +85,7 @@ class AdvancedSelect extends Field
                 }
                 return $value;
             }
-           
+
             // ray('save meta', $post->meta()->get());
             return $value;
         }
@@ -239,6 +239,8 @@ class AdvancedSelect extends Field
 
         //ray('saved', $post, $field, $value, $ids);
 
+        // dd($post->toArray(), $field, $ids);
+
         if (optional($field)['polymorphic_relation'] === false) {
             // ray('save meta', $field['slug'], $ids);
             // Save as meta
@@ -248,6 +250,9 @@ class AdvancedSelect extends Field
             // ray('save meta', $post->meta()->get());
             return;
         }
+
+                // dd($post->toArray(), $field, $ids);
+
 
         $pivotData = [];
 
@@ -297,6 +302,8 @@ class AdvancedSelect extends Field
         foreach ($pivotData as $id => $data) {
             $post->{$field['slug']}()->syncWithoutDetaching([$id => $data]);
         }
+
+        // dd('2 ' . $field['slug'], $post->{$field['slug']}()->get());
 
         // ray('2 ' . $field['slug'], $post->{$field['slug']}()->get());
     }
