@@ -15,11 +15,11 @@ beforeEach(function () {
 
     $this->app->bind('aura', fn () => new class
     {
-        public function getResources()
+        public static function getResources()
         {
             return [
-                'App\Models\User' => 'User',
-                'App\Models\Post' => 'Post',
+                'User' => 'App\Models\User',
+                'Post' => 'App\Models\Post',
             ];
         }
     });
@@ -27,7 +27,7 @@ beforeEach(function () {
 
 afterEach(function () {
     // Clean up created files
-    File::deleteDirectory(app_path('Http/Livewire'));
+    File::deleteDirectory(app_path('Livewire'));
     File::delete(base_path('routes/web.php'));
 });
 
@@ -37,18 +37,18 @@ it('creates a custom component file and updates routes', function () {
         ->expectsQuestion('For which resource?', 'App\Models\User')
         ->assertSuccessful();
 
-    expect(File::exists(app_path('Http/Livewire/EditUser.php')))->toBeTrue();
+    expect(File::exists(app_path('Livewire/EditUser.php')))->toBeTrue();
 
-    $content = File::get(app_path('Http/Livewire/EditUser.php'));
+    $content = File::get(app_path('Livewire/EditUser.php'));
     expect($content)
-        ->toContain('namespace App\Http\Livewire;')
+        ->toContain('namespace App\Livewire;')
         ->toContain('use Aura\Base\Livewire\Resource\Edit;')
         ->toContain('class EditUser extends Edit')
         ->toContain('public function mount($id, $slug = \'User\')')
         ->toContain('parent::mount($slug, $id);');
 
     $routeContent = File::get(base_path('routes/web.php'));
-    expect($routeContent)->toContain("Route::get('admin/user/{id}/edit', App\Http\Livewire\EditUser::class)->name('user.edit');");
+    expect($routeContent)->toContain("Route::get('admin/user/{id}/edit', App\Livewire\EditUser::class)->name('user.edit');");
 });
 
 it('handles different component types', function ($componentType) {
@@ -57,11 +57,11 @@ it('handles different component types', function ($componentType) {
         ->expectsQuestion('For which resource?', 'App\Models\Post')
         ->assertSuccessful();
 
-    expect(File::exists(app_path("Http/Livewire/{$componentType}Post.php")))->toBeTrue();
+    expect(File::exists(app_path("Livewire/{$componentType}Post.php")))->toBeTrue();
 
-    $content = File::get(app_path("Http/Livewire/{$componentType}Post.php"));
+    $content = File::get(app_path("Livewire/{$componentType}Post.php"));
     expect($content)
-        ->toContain("namespace App\Http\Livewire;")
+        ->toContain("namespace App\Livewire;")
         ->toContain("use Aura\Base\Livewire\Resource\\{$componentType};")
         ->toContain("class {$componentType}Post extends {$componentType}")
         ->toContain('public function mount($id, $slug = \'Post\')')
@@ -69,7 +69,7 @@ it('handles different component types', function ($componentType) {
 
     $routeContent = File::get(base_path('routes/web.php'));
     $routeName = strtolower($componentType);
-    expect($routeContent)->toContain("Route::get('admin/post/{id}/{$routeName}', App\Http\Livewire\\{$componentType}Post::class)->name('post.{$routeName}');");
+    expect($routeContent)->toContain("Route::get('admin/post/{id}/{$routeName}', App\Livewire\\{$componentType}Post::class)->name('post.{$routeName}');");
 })->with(['Index', 'Create', 'Edit', 'View']);
 
 it('handles non-existent directories', function () {
@@ -80,7 +80,7 @@ it('handles non-existent directories', function () {
         ->expectsQuestion('For which resource?', 'App\Models\User')
         ->assertSuccessful();
 
-    expect(File::exists(app_path('Http/Livewire/CreateUser.php')))->toBeTrue();
+    expect(File::exists(app_path('Livewire/CreateUser.php')))->toBeTrue();
 });
 
 it('appends new routes without overwriting existing content', function () {
@@ -101,5 +101,5 @@ Route::get("/", function () {
     expect($routeContent)
         ->toContain('// Existing routes')
         ->toContain('return view("welcome");')
-        ->toContain("Route::get('admin/user/{id}/edit', App\Http\Livewire\EditUser::class)->name('user.edit');");
+        ->toContain("Route::get('admin/user/{id}/edit', App\Livewire\EditUser::class)->name('user.edit');");
 });

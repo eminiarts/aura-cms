@@ -62,16 +62,21 @@ class Resource extends Model
 
     public function __call($method, $parameters)
     {
+        if($method == 'actors') {
+            ray('call', $method)->red();
+        }
         if ($this->getFieldSlugs()->contains($method)) {
 
             $fieldClass = $this->fieldClassBySlug($method);
 
             if ($fieldClass->isRelation()) {
+
                 $field = $this->fieldBySlug($method);
 
                 return $fieldClass->relationship($this, $field);
             }
         }
+
 
         // Default behavior for methods not handled dynamically
         return parent::__call($method, $parameters);
@@ -96,21 +101,10 @@ class Resource extends Model
 
         if ($this->getFieldSlugs()->contains($key)) {
             $fieldClass = $this->fieldClassBySlug($key);
-            // $groupedField = $this->groupedFieldBySlug($key);
             if ($fieldClass->isRelation()) {
-                //  ray('is relation', $key, $value);
                 $field = $this->fieldBySlug($key);
-
-                if (optional($field)['polymorphic_relation'] === false) {
-
-                    if (is_null($value) && isset($this->fields[$key])) {
-                        return $this->fields[$key];
-                    }
-
-                    return $value;
-                }
-
-                return $fieldClass->getRelation($this, $field);
+                $relation = $fieldClass->getRelation($this, $field);
+                return $relation ?: collect();  // Return an empty collection if relation is null
             }
         }
 
@@ -121,6 +115,27 @@ class Resource extends Model
 
         return $value;
     }
+
+    // public function __isset($key)
+    // {
+    //     if(parent::__isset($key)) {
+    //         return true;
+    //     }
+
+    //     if ($this->getFieldSlugs()->contains($key)) {
+    //         ray('contains', $key);
+    //         $fieldClass = $this->fieldClassBySlug($key);
+    //         if ($fieldClass->isRelation()) {
+    //             $field = $this->fieldBySlug($key);
+    //             $relation = $fieldClass->getRelation($this, $field);
+    //             return $relation && $relation->count() > 0;
+    //         }
+    //     }
+
+    //     return parent::__isset($key);
+
+    //     return isset($this->attributes[$key]) || isset($this->relations[$key]) || $this->hasGetMutator($key);
+    // }
 
     /**
      * @return \Illuminate\Database\Eloquent\Relations\HasMany
@@ -205,9 +220,23 @@ class Resource extends Model
                     $class = $this->fieldClassBySlug($key);
                     $field = $this->fieldBySlug($key);
 
-                    if ($class && $class->isRelation($field) && isset($this->{$key}) && method_exists($class, 'get')) {
+                    // if($key == 'actors') {
+                    //     dd($this->{$key}, isset($this->{$key}));
+                    // }
+
+
+
+                    if ($class && $class->isRelation($field) && method_exists($class, 'get') && $field['type'] != 'Aura\\Base\\Fields\\Roles') {
+                        // dd('hier', $key, $this->{$key}, $field);
                         return $class->get($class, $this->{$key}, $field);
                     }
+
+                    // if ($class && $class->isRelation($field) && $this->{$key} && method_exists($class, 'get')) {
+                    //     if($key == 'permissions') {
+                    //         return;
+                    //     }
+                    //     return $class->get($class, $this->{$key}, $field);
+                    // }
 
                     // Without relation
                     if ($class && isset($this->{$key}) && method_exists($class, 'get')) {
@@ -217,6 +246,7 @@ class Resource extends Model
                     if (isset($this->{$key})) {
                         return $this->{$key};
                     }
+
 
                     if ($class && isset($this->attributes[$key]) && method_exists($class, 'get')) {
                         return $class->get($class, $this->attributes[$key], $field);
@@ -235,6 +265,20 @@ class Resource extends Model
                     if ($class && isset(optional($this)->{$key}) && method_exists($class, 'get')) {
                         return $class->get($class, $this->{$key} ?? null, $field);
                     }
+
+
+
+
+
+                    if (optional($field)['polymorphic_relation'] === false && optional($field)['multiple'] === false) {
+                        // dd($class, $class->isRelation($field), $this->{$key}, isset($this->{$key}), method_exists($class, 'get'));
+                        return [$meta[$key]];
+                    }
+                    // if ($class && $class->isRelation($field) && $this->{$key}) {
+                    //     // dd($class, $class->isRelation($field), $this->{$key}, isset($this->{$key}), method_exists($class, 'get'));
+                    //     // dd('hier', $key, $field);
+                    //     return $class->get($class, $this->{$key}, $field);
+                    // }
 
                     return $meta[$key] ?? $value;
                 });

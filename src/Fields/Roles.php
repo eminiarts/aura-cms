@@ -21,6 +21,13 @@ class Roles extends AdvancedSelect
         return true;
     }
 
+    public function get($class, $value, $field = null)
+    {
+         ray('get roles........', $class, $value, $field)->blue();
+
+         return $value;
+    }
+
     public function relationship($model, $field)
     {
         return $model->roles()->where('team_id', $model->current_team_id);
