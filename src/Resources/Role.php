@@ -170,14 +170,18 @@ class Role extends Resource
 
     public function users(): BelongsToMany
     {
-        return $this->belongsToMany(User::class, 'team_user')
-            ->withPivot('team_id')
+        if (config('aura.teams')) {
+            return $this->belongsToMany(User::class, 'user_role')
+                ->withPivot('team_id')
+                ->withTimestamps();
+        }
+        return $this->belongsToMany(User::class, 'user_role')
             ->withTimestamps();
     }
 
     public function teams(): BelongsToMany
     {
-        return $this->belongsToMany(Team::class, 'team_user')
+        return $this->belongsToMany(Team::class, 'user_role')
             ->withPivot('user_id')
             ->withTimestamps();
     }

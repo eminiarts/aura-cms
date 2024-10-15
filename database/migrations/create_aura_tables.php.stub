@@ -21,7 +21,7 @@ return new class extends Migration
         Schema::dropIfExists('failed_jobs');
         Schema::dropIfExists('personal_access_tokens');
         Schema::dropIfExists('teams');
-        Schema::dropIfExists('team_user');
+        Schema::dropIfExists('user_role');
         Schema::dropIfExists('team_invitations');
         Schema::dropIfExists('options');
         Schema::dropIfExists('user_meta');
@@ -95,7 +95,7 @@ return new class extends Migration
                 $table->softDeletes();
             });
 
-            Schema::create('team_user', function (Blueprint $table) {
+            Schema::create('user_role', function (Blueprint $table) {
                 $table->foreignId('team_id');
                 $table->foreignId('user_id');
                 $table->foreignId('role_id');
@@ -120,6 +120,13 @@ return new class extends Migration
                 }
                 $table->string('key')->nullable();
                 $table->longText('value')->nullable();
+            });
+        } else {
+            Schema::create('user_role', function (Blueprint $table) {
+                $table->foreignId('user_id');
+                $table->foreignId('role_id');
+                $table->timestamps();
+                $table->unique(['user_id']);
             });
         }
 

@@ -30,7 +30,10 @@ class Roles extends AdvancedSelect
 
     public function relationship($model, $field)
     {
-        return $model->roles()->where('team_id', $model->current_team_id);
+        if (config('aura.teams')) {
+            return $model->roles()->where('team_id', $model->current_team_id);
+        }
+        return $model->roles();
     }
 
     public function saved($post, $field, $value)
@@ -43,15 +46,25 @@ class Roles extends AdvancedSelect
 
         if (empty($roleIds)) {
             // Remove all roles for this user in the current team
-            $post->roles()->wherePivot('team_id', $post->current_team_id)->detach();
+            if (config('aura.teams')) {
+                $post->roles()->wherePivot('team_id', $post->current_team_id)->detach();
+            } else {
+                $post->roles()->detach();
+            }
             return;
         }
 
         // Get current roles for this user in the current team
-        $currentRoleIds = $post->roles()
-            ->wherePivot('team_id', $post->current_team_id)
-            ->pluck('roles.id')
-            ->toArray();
+        if (config('aura.teams')) {
+            $currentRoleIds = $post->roles()
+                ->wherePivot('team_id', $post->current_team_id)
+                ->pluck('roles.id')
+                ->toArray();
+        } else {
+            $currentRoleIds = $post->roles()
+                ->pluck('roles.id')
+                ->toArray();
+        }
 
         // Roles to add
         $rolesToAdd = array_diff($roleIds, $currentRoleIds);
@@ -61,12 +74,20 @@ class Roles extends AdvancedSelect
 
         // Remove roles
         if (!empty($rolesToRemove)) {
-            $post->roles()->wherePivot('team_id', $post->current_team_id)->detach($rolesToRemove);
+            if (config('aura.teams')) {
+                $post->roles()->wherePivot('team_id', $post->current_team_id)->detach($rolesToRemove);
+            } else {
+                $post->roles()->detach($rolesToRemove);
+            }
         }
 
         // Add new roles
         foreach ($rolesToAdd as $roleId) {
-            $post->roles()->attach($roleId, ['team_id' => $post->current_team_id]);
+            if (config('aura.teams')) {
+                $post->roles()->attach($roleId, ['team_id' => $post->current_team_id]);
+            } else {
+                $post->roles()->attach($roleId);
+            }
         }
 
         // Clear any relevant cache

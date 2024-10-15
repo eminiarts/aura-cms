@@ -35,7 +35,7 @@ test('Aura without teams', function () {
 
     // expect teams table not to exist
     expect(Schema::hasTable('teams'))->toBeFalse();
-    expect(Schema::hasTable('team_user'))->toBeFalse();
+    // expect(Schema::hasTable('user_role'))->toBeFalse();
     expect(Schema::hasTable('team_meta'))->toBeFalse();
 });
 
