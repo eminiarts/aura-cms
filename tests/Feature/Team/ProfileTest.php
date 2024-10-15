@@ -15,7 +15,7 @@ beforeEach(function () {
 
 it('renders the profile component', function () {
     livewire(Profile::class)
-        ->assertSee('User details')
+        ->assertSee('Profile')
         ->assertSee('Personal Infos')
         ->assertSee('Password')
         ->assertSee('2FA')
@@ -26,6 +26,8 @@ it('updates the user profile', function () {
     livewire(Profile::class)
         ->set('form.fields.name', 'Updated Name')
         ->set('form.fields.email', 'updated@example.com')
+        ->set('form.fields.password', null)
+        ->set('form.fields.password_confirmation', null)
         ->call('save')
         ->assertHasNoErrors();
 
