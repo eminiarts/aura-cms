@@ -187,7 +187,7 @@ class Resource extends Model
                 });
             } catch (\Exception $e) {
                 ray($e);
-                dd('error');
+                throw new \Exception('An error occurred while processing fields');
             }
 
     //         dd(collect($this->inputFieldsSlugs())
@@ -198,11 +198,10 @@ class Resource extends Model
             // return [];
             $defaultValues = collect($this->inputFieldsSlugs())
                 ->mapWithKeys(fn ($value) => [$value => null])
+                ->filter(function ($value, $key) {
+                    return strpos($key, '.') === false;
+                })
                 ->map(function ($value, $key) use ($meta) {
-                    if (strpos($key, '.') !== false) {
-                        return $value;
-                    }
-
                     $class = $this->fieldClassBySlug($key);
                     $field = $this->fieldBySlug($key);
 
@@ -243,7 +242,7 @@ class Resource extends Model
             $this->fieldsAttributeCache = $defaultValues
             ->filter(function ($value, $key) {
 
-                return true;
+                // return true;
                 $field = $this->fieldBySlug($key);
 
                 return $this->shouldDisplayField($field);

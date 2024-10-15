@@ -165,7 +165,7 @@ test('admin can get all fields except text1', function () {
     Aura::clearConditionsCache();
     // Assert Post Meta are saved in DB
 
-    // dd($post->toArray(), $post->fields, $post->text1);
+    // dd($post->fields);
     expect($post->fields->count())->toBe(2);
 
     //  Admin should not be able to call $post->text1, it should return null
