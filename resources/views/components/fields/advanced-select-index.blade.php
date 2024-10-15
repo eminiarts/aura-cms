@@ -2,6 +2,10 @@
     $fieldItemIds = $row->fields[$field['slug']] ?? [];
     $fieldItems = [];
 
+    if (!is_array($fieldItemIds)) {
+        $fieldItemIds = [$fieldItemIds];
+    }
+
     if ($field['resource']) {
         $resourceClass = $field['resource'];
         $fieldItems = $resourceClass::whereIn('id', $fieldItemIds)->get();

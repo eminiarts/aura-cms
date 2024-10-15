@@ -30,7 +30,6 @@
 @endphp
 
 <x-aura::fields.wrapper :field="$field">
-
     <style>
         .dragging-item {
             position: absolute;
