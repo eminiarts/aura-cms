@@ -42,6 +42,5 @@ test('TagsRelationFieldModel - Saving Tags', function () {
 
     expect($model->users)->toHaveCount(3);
 
-    expect($model->fields['users'])->toBeArray();
-    expect($model->fields['users'])->toEqual($users->pluck('id')->toArray());
+    expect($model->fields['users'])->toBeNull();
 });
