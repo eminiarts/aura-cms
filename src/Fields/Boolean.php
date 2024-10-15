@@ -39,6 +39,7 @@ class Boolean extends Field
                 'type' => 'Aura\\Base\\Fields\\Boolean',
                 'instructions' => 'Default value on create',
                 'slug' => 'default',
+                'default' => false,
             ],
 
         ]);
