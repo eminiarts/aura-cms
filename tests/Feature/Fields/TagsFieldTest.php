@@ -26,6 +26,7 @@ class TagsFieldModel extends Resource
                 'slug' => 'tags',
                 'type' => 'Aura\\Base\\Fields\\Tags',
                 'resource' => 'Aura\\Base\\Resources\\Tag',
+                'polymorphic_relation' => true,
                 'create' => true,
                 'validation' => '',
                 'conditional_logic' => [],
@@ -77,7 +78,7 @@ test('Tags Field - Default Value set', function () {
 
     $component = Livewire::test(Create::class, ['slug' => 'TagsModel'])
         ->assertSee('Tags')
-        ->assertSet('form.fields.tags', []);
+        ->assertSet('form.fields.tags', null);
 });
 
 test('Text Field - Prefix rendered', function () {
@@ -105,7 +106,5 @@ test('TagsFieldModel - Saving Tags', function () {
     $model = TagsFieldModel::create(['tags' => ['123', '456', 'Enes']]);
 
     expect($model->tags)->toHaveCount(3);
-
-    expect($model->fields['tags'])->toBeArray();
-    expect($model->fields['tags'])->toEqual(Tag::get()->pluck('id')->toArray());
+    expect($model->tags)->toBeCollection();
 });
