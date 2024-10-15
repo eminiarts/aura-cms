@@ -73,8 +73,6 @@ trait SaveFields
         // Trigger the event to change the database schema
         event(new SaveFieldsEvent($fieldsWithIds, $this->mappedFields, $this->model));
 
-        ray('saved fields', $this->mappedFields);
-
         // $this->dispatch('refreshComponent');
 
         $this->notify('Saved successfully.');
@@ -187,7 +185,7 @@ trait SaveFields
     protected function runPint($migrationFile)
     {
         return;
-        
+
         $command = [
             (new ExecutableFinder)->find('php', 'php', [
                 '/usr/local/bin',

@@ -150,7 +150,7 @@ test('Slug Field - Without Custom Checkbox', function () {
 
     $view->assertSee('Slug for Test');
 
-    expect((string) $view)->toContain('<div class="custom-slug');
+    expect((string) $view)->toContain('<div class="flex flex-col custom-slug');
 
     expect((string) $view)->toContain('custom: true,');
 });
@@ -248,5 +248,5 @@ test('Slug Field - custom - true', function () {
         ['component' => $fieldClass->edit(), 'field' => $field]
     );
 
-    expect((string) $view)->toContain('<div class="custom-slug');
+    expect((string) $view)->toContain('<div class="flex flex-col custom-slug');
 });
