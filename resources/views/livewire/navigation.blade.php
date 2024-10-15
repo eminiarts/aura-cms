@@ -93,23 +93,30 @@
                             <div class="hide-collapsed">
                                 @include('aura::navigation.logo')
                             </div>
-
-
-                            <div>
+                            <div class="hide-collapsed">
                                 <button
                                     @click="toggleSidebar()"
                                     type="button"
                                     class="inline-flex relative justify-center items-center w-6 h-6 text-sm font-semibold rounded-lg shadow-none select-none focus:outline-none focus:ring-2 aura-sidebar-toggle"
                                 >
-                                    <div class="hide-collapsed">
+                                    <div>
                                         <x-aura::icon icon="minus" size="sm"/>
                                     </div>
-
-                                    <div class="show-collapsed">
-                                        <x-aura::icon icon="plus" size="sm"/>
-                                    </div>
-
                                 </button>
+                            </div>
+
+                            <div class="w-full show-collapsed">
+                                <div class="flex justify-center items-center w-full">
+                                    <button
+                                        @click="toggleSidebar()"
+                                        type="button"
+                                        class="inline-flex relative justify-center items-center w-6 h-6 text-sm font-semibold rounded-lg shadow-none select-none focus:outline-none focus:ring-2 aura-sidebar-toggle"
+                                    >
+                                        <div>
+                                            <x-aura::icon icon="plus" size="sm"/>
+                                        </div>
+                                    </button>
+                                </div>
                             </div>
 
                         </div>
