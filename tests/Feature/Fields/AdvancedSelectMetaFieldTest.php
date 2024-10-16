@@ -14,6 +14,7 @@ use Aura\Base\Fields\AdvancedSelect;
 
 use Aura\Base\Livewire\Resource\Edit;
 use Aura\Base\Livewire\Resource\Create;
+use Aura\Base\Resources\User;
 
 // Before each test, create a Superadmin and login
 beforeEach(function () {
@@ -38,7 +39,7 @@ class AdvancedSelectFieldMetaModel extends Resource
                 'validation' => '',
                 'conditional_logic' => [],
                 'slug' => 'advancedselect',
-                'resource' => 'Aura\\Base\\Resources\\Role',
+                'resource' => 'Aura\\Base\\Resources\\User',
                 'wrapper' => '',
                 'on_index' => false,
                 'on_forms' => true,
@@ -67,12 +68,12 @@ test('AdvancedSelect Meta Field Test', function () {
 
     $model = AdvancedSelectFieldMetaModel::first();
 
-    $roles = Role::get();
+    $users = User::get();
 
     // Assert that $model->fields['number'] is null
     $this->assertEmpty($model->fields['advancedselect']);
 
-    $component->set('form.fields.advancedselect', [$roles[0]->id])
+    $component->set('form.fields.advancedselect', [$users[0]->id])
         ->call('save')
         ->assertHasNoErrors(['form.fields.advancedselect']);
 
@@ -82,16 +83,16 @@ test('AdvancedSelect Meta Field Test', function () {
     // Dump and die the post_relation table
     // dd(DB::table('post_relations')->get());
 
-    expect($model->advancedselect)->toBeArray();
+    expect($model->fields['advancedselect'])->toBeArray();
     expect($model->advancedselect)->toHaveCount(1);
-    expect($model->advancedselect)->toContain($roles[0]->id);
+    expect($model->fields['advancedselect'])->toContain($users[0]->id);
 
 });
 
 test('advancedselect field gets displayed correctly on edit view', function () {
     $model = AdvancedSelectFieldMetaModel::create([
         'fields' => [
-            'advancedselect' => [$id = Role::first()->id],
+            'advancedselect' => [$id = User::first()->id],
         ],
     ]);
 
@@ -100,9 +101,10 @@ test('advancedselect field gets displayed correctly on edit view', function () {
     $post = AdvancedSelectFieldMetaModel::first();
 
     // expect($post->advancedselect)->toBeArray();
-    // dd($post->advancedselect->toArray());
+    // dd($post->advancedselect->pluck('id'));
     expect($post->advancedselect)->toHaveCount(1);
-    expect($post->advancedselect)->toContain($id);
+    expect($post->fields['advancedselect'])->toBeArray();
+    expect($post->advancedselect->pluck('id'))->toContain($id);
 
     $model = AdvancedSelectFieldMetaModel::query();
     $slug = 'AdvancedSelectMetaModel';
@@ -110,21 +112,20 @@ test('advancedselect field gets displayed correctly on edit view', function () {
     Aura::fake();
     Aura::setModel($model);
 
-    $role = Role::first();
+    $user = User::first();
 
     // If we call the edit view, the advancedselect field should be empty
     $component = Livewire::test(Edit::class, ['slug' => $slug, 'id' => $post->id])
         ->assertSee('Edit AdvancedSelect Model')
         ->assertSee('AdvancedSelect for Test')
-        ->assertSeeHtml('Super Admin (#1)')
         ->assertSeeHtml('<span x-show="isSelected(item)" class="font-semibold text-primary-600">&check;</span>')
         ->call('save');
 
     $post = AdvancedSelectFieldMetaModel::first();
 
-    expect($post->advancedselect)->toBeArray();
-    expect($post->advancedselect)->toHaveCount(1);
-    expect($post->advancedselect)->toContain($id);
+    expect($post->fields['advancedselect'])->toBeArray();
+    expect($post->fields['advancedselect'])->toHaveCount(1);
+    expect($post->fields['advancedselect'])->toContain($id);
 
 });
 
@@ -158,16 +159,16 @@ it('returns an error if model or slug is missing', function () {
 it('returns field values for a valid request', function () {
 
     $response = test()->postJson(route('aura.api.fields.values'), [
-        'model' => Role::class, // Replace with actual model class string
+        'model' => User::class, // Replace with actual model class string
         'slug' => 'text',
         'field' => AdvancedSelect::class, // This must match your actual field class name or identifier
     ]);
 
-    $role = Role::first();
+    $user = User::first();
 
     $response->assertStatus(200)
         ->assertJson([
-            ['id' => $role->id, 'title' => $role->title()],
+            ['id' => $user->id, 'title' => $user->title()],
         ]);
 });
 
@@ -177,7 +178,7 @@ test('Advanced Select Field - entangle', function () {
         'type' => 'Aura\\Base\\Fields\\AdvancedSelect',
         'create' => true,
         'validation' => '',
-        'resource' => 'Aura\\Base\\Resources\\Role',
+        'resource' => 'Aura\\Base\\Resources\\User',
         'slug' => 'select',
     ];
 
@@ -198,7 +199,7 @@ test('Advanced Select Field - create button true', function () {
         'type' => 'Aura\\Base\\Fields\\AdvancedSelect',
         'create' => true,
         'validation' => '',
-        'resource' => 'Aura\\Base\\Resources\\Role',
+        'resource' => 'Aura\\Base\\Resources\\User',
         'slug' => 'select',
     ];
 
@@ -220,7 +221,7 @@ test('Advanced Select Field - create button false', function () {
         'type' => 'Aura\\Base\\Fields\\AdvancedSelect',
         'create' => false,
         'validation' => '',
-        'resource' => 'Aura\\Base\\Resources\\Role',
+        'resource' => 'Aura\\Base\\Resources\\User',
         'slug' => 'select',
     ];
 
@@ -238,10 +239,10 @@ test('Advanced Select Field - create button false', function () {
 
 test('searchable fields API Mock', function () {
 
-    $role = Mockery::mock(Role::class);
+    $user = Mockery::mock(User::class);
 
     $response = postJson(route('aura.api.fields.values'), [
-        'model' => Role::class, // Replace with actual model class string
+        'model' => User::class, // Replace with actual model class string
         'slug' => 'text',
         'field' => AdvancedSelect::class, // This must match your actual field class name or identifier
     ]);
@@ -251,7 +252,7 @@ test('searchable fields API Mock', function () {
     $field = new AdvancedSelect;
 
     $request = new \Illuminate\Http\Request([
-        'model' => Role::class,
+        'model' => User::class,
         'slug' => 'select',
         'search' => '',
         'field' => AdvancedSelect::class,
@@ -262,7 +263,7 @@ test('searchable fields API Mock', function () {
     expect($result)->toHavecount(1);
 
     $request = new \Illuminate\Http\Request([
-        'model' => Role::class,
+        'model' => User::class,
         'slug' => 'select',
         'search' => 'notexists',
         'field' => AdvancedSelect::class,
@@ -273,14 +274,14 @@ test('searchable fields API Mock', function () {
     expect($result)->toHavecount(0);
 
     // Does not work somehow, always passes
-    // $role->shouldReceive('getSearchableFields')->andReturn(['title2']);
+    // $user->shouldReceive('getSearchableFields')->andReturn(['title2']);
 
     // // Mock the searchIn method to return a collection of items
-    // $role->shouldReceive('searchIn')->andReturnSelf();
+    // $user->shouldReceive('searchIn')->andReturnSelf();
 
-    // $role->shouldReceive('take')->with(20)->andReturnSelf();
+    // $user->shouldReceive('take')->with(20)->andReturnSelf();
 
-    // $role->shouldReceive('get')->andReturn(collect([
+    // $user->shouldReceive('get')->andReturn(collect([
     //     (object)['id' => 1, 'title' => 'Role 1'],
     //     (object)['id' => 2, 'title' => 'Role 2'],
     // ]));

@@ -17,18 +17,18 @@ beforeEach(function () {
     $this->user2 = User::factory()->create([
         'name' => 'Test User',
         'email' => 'test@example.com',
-        'roles' => $role->id,
+        'roles' => [$role->id],
     ]);
 
     $this->user3 = User::factory()->create([
         'name' => 'Test User 2',
         'email' => 'user2@example.com',
-        'roles' => $role->id,
+        'roles' => [$role->id],
     ]);
 
     // Maybe there is a better way to do this
-    $role->users()->syncWithoutDetaching([$this->user2->id => ['resource_type' => Role::class]]);
-    $role->users()->syncWithoutDetaching([$this->user3->id => ['resource_type' => Role::class]]);
+    // $role->users()->syncWithoutDetaching([$this->user2->id => ['resource_type' => Role::class]]);
+    // $role->users()->syncWithoutDetaching([$this->user3->id => ['resource_type' => Role::class]]);
 
 });
 

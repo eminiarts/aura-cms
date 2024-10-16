@@ -82,7 +82,7 @@ test('Team Settings can be saved', function () {
     //     $secondTeam->id => ['key' => 'roles', 'value' => $role2->id],
     // ]);
 
-    $role->users()->sync([$this->user->id => ['resource_type' => Role::class]]);
+    // $role->users()->sync([$this->user->id => ['resource_type' => Role::class]]);
 
     // Default Team Settings
     Livewire::test(Settings::class)
