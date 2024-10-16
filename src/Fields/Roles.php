@@ -21,12 +21,12 @@ class Roles extends AdvancedSelect
         return true;
     }
 
-    public function get($class, $value, $field = null)
-    {
-         ray('get roles........', $class, $value, $field)->blue();
+    // public function get($class, $value, $field = null)
+    // {
+    //      ray('get roles........', $class, $value, $field)->blue();
 
-         return $value;
-    }
+    //      return $value;
+    // }
 
     public function relationship($model, $field)
     {

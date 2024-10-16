@@ -212,10 +212,16 @@ class AdvancedSelect extends Field
 
     public function relationship($model, $field)
     {
-        if (!($field['multiple'] ?? true) && !($field['polymorphic_relation'] ?? true)) {
+        if (!($field['polymorphic_relation'] ?? true)) {
             $resourceClass = $field['resource'];
-            $value = $model->meta()->where('key', $field['slug'])->value('value');
-            return $resourceClass::where('id', $value);
+            if ($field['multiple'] ?? true) {
+                $values = $model->meta()->where('key', $field['slug'])->value('value');
+                $ids = json_decode($values, true) ?: [];
+                return $resourceClass::whereIn('id', $ids);
+            } else {
+                $value = $model->meta()->where('key', $field['slug'])->value('value');
+                return $resourceClass::where('id', $value);
+            }
         }
 
         $morphClass = $field['resource'];
