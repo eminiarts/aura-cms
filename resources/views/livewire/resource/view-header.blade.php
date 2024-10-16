@@ -1,7 +1,7 @@
 <div class="flex items-center justify-between my-8">
     <div>
         @yield('view-header')
-        <h1 class="text-3xl font-semibold">
+        <h1 class="text-xl font-semibold">
             {{ __('View ' . $model->singularName()) }}
         </h1>
     </div>

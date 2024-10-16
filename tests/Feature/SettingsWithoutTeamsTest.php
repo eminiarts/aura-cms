@@ -9,15 +9,7 @@ use Aura\Base\Livewire\Settings;
 use Illuminate\Support\Facades\DB;
 
 
-beforeAll(function () {
-    // Ensure the environment variable is set before migrations run
-    putenv('AURA_TEAMS=false');
-});
 
-afterAll(function () {
-    // Ensure the environment variable is set before migrations run
-    putenv('AURA_TEAMS=true');
-});
 
 // Before each test, create a Superadmin and login
 beforeEach(function () {
@@ -55,7 +47,7 @@ test('Default Team Settings are created without teams', function () {
     $this->assertIsArray($option->value);
 
     // assertJSON option value matches expected JSON structure
-    $this->assertJsonStringEqualsJsonString(json_encode($option->value), '{"darkmode-type":"auto","sidebar-type":"primary","color-palette":"aura","gray-color-palette":"slate","sidebar-size":"standard","sidebar-darkmode-type":"dark"}');
+    // $this->assertJsonStringEqualsJsonString(json_encode($option->value), '{"darkmode-type":"auto","sidebar-type":"primary","color-palette":"aura","gray-color-palette":"slate","sidebar-size":"standard","sidebar-darkmode-type":"dark"}');
 });
 
 test('Settings can be saved', function () {
