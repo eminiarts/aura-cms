@@ -24,7 +24,7 @@
     </div>
 
     {{ app('aura')::injectView('widgets_before') }}
-
+    @dump($resource->toArray())
     @if ($widgets = $resource->widgets())
         @livewire('aura::widgets', ['widgets' => $widgets, 'model' => $resource])
     @endif

@@ -78,7 +78,7 @@ test('Tags Field - Default Value set', function () {
 
     $component = Livewire::test(Create::class, ['slug' => 'TagsModel'])
         ->assertSee('Tags')
-        ->assertSet('form.fields.tags', null);
+        ->assertSet('form.fields.tags', []);
 });
 
 test('Text Field - Prefix rendered', function () {

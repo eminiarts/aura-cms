@@ -227,6 +227,8 @@ test('a admin can access all pages', function () {
     // Access Index Page
     $response = $this->actingAs($user)->get(route('aura.resource.index', ['slug' => $post->type]));
 
+    // dd($response);
+
     // Assert Response
     $response->assertStatus(200);
 
