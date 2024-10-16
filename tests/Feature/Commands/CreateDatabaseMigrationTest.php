@@ -80,7 +80,7 @@ it('saveFields listens for ModifyDatabaseMigration', function () {
             'searchable' => false,
             'validation' => '',
             'conditional_logic' => '',
-        ])
+        ], 0, 'Project')
         ->assertDispatched('newFields')
         ->assertDispatched('finishedSavingFields');
 
@@ -118,7 +118,7 @@ it('saveFields listens for CreateDatabaseMigration', function () {
             'searchable' => false,
             'validation' => '',
             'conditional_logic' => '',
-        ])
+        ], 0, 'Project')
         ->assertDispatched('newFields')
         ->assertDispatched('finishedSavingFields');
 
@@ -147,7 +147,7 @@ it('creates a migration when fields are added', function () {
             'searchable' => false,
             'validation' => '',
             'conditional_logic' => '',
-        ])
+        ], 0, 'Project')
         ->assertDispatched('newFields')
         ->assertDispatched('finishedSavingFields');
 
