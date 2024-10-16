@@ -45,6 +45,17 @@ class TableFilterModel extends Resource
                 'on_forms' => true,
                 'on_view' => true,
             ],
+            [
+                'name' => 'Number',
+                'slug' => 'number',
+                'type' => 'Aura\\Base\\Fields\\Number',
+                'validation' => 'required',
+                'conditional_logic' => [],
+                'wrapper' => '',
+                'on_index' => true,
+                'on_forms' => true,
+                'on_view' => true,
+            ]
         ];
     }
 }

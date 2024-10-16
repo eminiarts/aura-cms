@@ -89,21 +89,21 @@ it('can add fields', function () {
     $component = Livewire::test(ResourceEditorFake::class, ['slug' => 'Model'])
         ->call('saveNewField', ['type' => "Aura\Base\Fields\Text",
             'slug' => 'description',
-            'name' => 'Description', ]);
+            'name' => 'Description', ], 0, 'tab-1');
 
     expect($component->fieldsArray)->toBeArray();
     expect($component->fieldsArray)->toHaveCount(4);
 
     $component->call('saveNewField', ['type' => "Aura\Base\Fields\Text",
         'slug' => 'description2',
-        'name' => 'Description2', ]);
+        'name' => 'Description2', ], 0, 'tab-1');
 
     expect($component->fieldsArray)->toBeArray();
     expect($component->fieldsArray)->toHaveCount(5);
 
     $component->call('saveNewField', ['type' => "Aura\Base\Fields\Text",
         'slug' => 'description3',
-        'name' => 'Description3', ]);
+        'name' => 'Description3', ], 0, 'tab-1');
 
     expect($component->fieldsArray)->toBeArray();
     expect($component->fieldsArray)->toHaveCount(6);

@@ -9,6 +9,15 @@ use Aura\Base\Livewire\Settings;
 use Illuminate\Support\Facades\DB;
 
 
+beforeAll(function () {
+    // Ensure the environment variable is set before migrations run
+    putenv('AURA_TEAMS=false');
+});
+
+afterAll(function () {
+    // Ensure the environment variable is set before migrations run
+    putenv('AURA_TEAMS=true');
+});
 
 
 // Before each test, create a Superadmin and login
