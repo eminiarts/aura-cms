@@ -2,7 +2,6 @@
 
 use Aura\Base\Fields\HasMany;
 use Aura\Base\Fields\HasOne;
-use Aura\Base\Fields\HasOneOfMany;
 use Aura\Base\Resource;
 
 class GroupRelationsTestModel extends Resource
@@ -44,22 +43,6 @@ class GroupRelationsTestModel extends Resource
                     'width' => '100',
                 ],
             ],
-            [
-                'name' => 'Latest Post',
-                'slug' => 'latest_post',
-                'type' => 'Aura\\Base\\Fields\\HasOneOfMany',
-                'resource' => 'Aura\\Base\\Resources\\Post',
-                'option' => 'latest',
-                'validation' => '',
-                'conditional_logic' => [],
-                'wrapper' => '',
-                'on_index' => false,
-                'on_forms' => true,
-                'on_view' => true,
-                'style' => [
-                    'width' => '100',
-                ],
-            ],
         ];
     }
 }
@@ -69,7 +52,7 @@ test('hasMany - fields should not be grouped', function () {
 
     $fields = $model->getGroupedFields();
 
-    $this->assertCount(3, $fields);
+    $this->assertCount(2, $fields);
 });
 
 test('hasMany - field should not be grouped', function () {
@@ -78,8 +61,4 @@ test('hasMany - field should not be grouped', function () {
 
 test('hasOne - field should not be grouped', function () {
     expect((new HasOne)->group)->toBe(false);
-});
-
-test('hasOneOfMany - field should not be grouped', function () {
-    expect((new HasOneOfMany)->group)->toBe(false);
 });

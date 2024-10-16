@@ -1,5 +1,5 @@
 <div class="mx-auto max-w-8xl" >
-
+    @dump($this->settings)
     @if($this->settings['selectable'])
     <div wire:key="table-bulk-select">
         @include('aura::components.table.bulk-select-row')

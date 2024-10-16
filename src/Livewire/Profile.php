@@ -84,9 +84,11 @@ class Profile extends Component
         return Redirect::to('/');
     }
 
+
     public function getFields()
     {
-       return $this->user->getProfileFields();
+        // dd($this->user->fieldsForView());
+        return $this->user->getProfileFields();
     }
 
     public function getUserProperty()
@@ -153,8 +155,11 @@ class Profile extends Component
 
     public function save()
     {
-        // dd('save', $this->rules());
-        $this->validate();
+        // dd($this->form['fields']);
+        // $this->validate();
+
+        $validatedData = $this->validate();
+        // dd($validatedData['form']['fields'], $this->form);
 
         // dd('hier');
 
@@ -170,18 +175,25 @@ class Profile extends Component
             unset($this->form['fields']['password']);
             unset($this->form['fields']['password_confirmation']);
 
+            unset($validatedData['form']['fields']['current_password']);
+            unset($validatedData['form']['fields']['password']);
+            unset($validatedData['form']['fields']['password_confirmation']);
+
             // Logout other devices
 
             $this->logoutOtherBrowserSessions();
 
         }
-        // dd('here2', $this->form['fields']);
         if (empty(optional($this->form['fields'])['password'])) {
+            unset($this->form['fields']['current_password']);
             unset($this->form['fields']['password']);
+            unset($this->form['fields']['password_confirmation']);
         }
 
-        $this->model->update($this->form);
-
+        // dd('here2', $this->form['fields']);
+        // dd('here 3', $this->form, $validatedData['form']['fields']);
+        $this->model->update($validatedData['form']['fields']);
+        // dd('here3');
         // dd($this->form['fields'], $this->rules(), $this->model);
         return $this->notify(__('Successfully updated'));
     }

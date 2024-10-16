@@ -24,7 +24,7 @@
             </x-aura::button>
         </div>
     </div>
-   
+
     {{ app('aura')::injectView('profile_after_header') }}
 
     <x-aura::validation-errors />
@@ -49,5 +49,5 @@
     </x-aura::fields.conditions>
     @endforeach
 
-  
+
 </div>

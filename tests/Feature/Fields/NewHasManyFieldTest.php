@@ -102,7 +102,7 @@ test('movies can be attached to genres', function () {
 
     $movie1 = NewMovieModel::create([
       'title' => 'Matrix',
-      'genre' => [$genre1->id],
+      'genre' => [[$genre1->id]],
     ]);
 
     // assert in db has post with type DateModel
@@ -111,8 +111,8 @@ test('movies can be attached to genres', function () {
     // dd($movie1->toArray(), $movie1->title);
 
     $this->assertEquals('Matrix', $movie1->title);
-    $this->assertCount(1, $movie1->fields['genre']);
-    $this->assertEquals($genre1->id, $movie1->fields['genre'][0]);
+    $this->assertCount(1, $movie1->genre);
+    $this->assertEquals($genre1->id, $movie1->genre[0]->id);
 
     // dd($movie1->genre->toArray());
 
@@ -134,7 +134,7 @@ test('displays attached movies on view genre page', function () {
 
     $movie1 = NewMovieModel::create([
       'title' => 'Matrix',
-      'genre' => [$genre1->id],
+      'genre' => [[$genre1->id]],
     ]);
 
     // Aura::fake();
