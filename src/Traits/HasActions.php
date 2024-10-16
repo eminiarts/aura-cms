@@ -31,7 +31,9 @@ trait HasActions
     public function singleAction($action)
     {
         // Authorize
-        $this->authorize('update', $this->model);
+        if(!$this->model->allowedToPerformActions()) {
+            $this->authorize('update', $this->model);
+        }
 
         $response = $this->model->{$action}();
 
