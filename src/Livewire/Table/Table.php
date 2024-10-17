@@ -161,19 +161,7 @@ class Table extends Component
         return $this->query()->pluck('id')->all();
     }
 
-    public function boot()
-    {
-    }
-
-    #[Computed]
-    public function rowIds()
-    {
-        $rowIds = $this->rows()->pluck('id')->toArray();
-
-        $this->dispatch('rowIdsUpdated', $rowIds);
-
-        return $rowIds;
-    }
+    public function boot() {}
 
     /**
      * Get the create link.
@@ -373,6 +361,16 @@ class Table extends Component
         }
 
         auth()->user()->updateOption($this->settings['columns_user_key'], $orderedSort);
+    }
+
+    #[Computed]
+    public function rowIds()
+    {
+        $rowIds = $this->rows()->pluck('id')->toArray();
+
+        $this->dispatch('rowIdsUpdated', $rowIds);
+
+        return $rowIds;
     }
 
     public function selectFieldRows($value, $slug)

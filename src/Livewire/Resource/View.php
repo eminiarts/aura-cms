@@ -20,11 +20,11 @@ class View extends Component
 
     public $inModal = false;
 
+    public $mode = 'view';
+
     public $model;
 
     public $slug;
-
-    public $mode = 'view';
 
     public $tax;
 

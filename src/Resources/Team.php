@@ -2,16 +2,15 @@
 
 namespace Aura\Base\Resources;
 
-use Aura\Base\Resource;
-use Aura\Base\Models\TeamMeta;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Cache;
 use Aura\Base\Database\Factories\TeamFactory;
-use Illuminate\Database\Eloquent\SoftDeletes;
 use Aura\Base\Jobs\GenerateAllResourcePermissions;
-use Illuminate\Database\Eloquent\Relations\HasMany;
+use Aura\Base\Models\TeamMeta;
+use Aura\Base\Resource;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasManyThrough;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\Cache;
 
 class Team extends Resource
 {

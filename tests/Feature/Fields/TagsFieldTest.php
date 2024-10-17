@@ -6,7 +6,6 @@ use Aura\Base\Facades\Aura;
 use Aura\Base\Fields\Tags;
 use Aura\Base\Livewire\Resource\Create;
 use Aura\Base\Resource;
-use Aura\Base\Resources\Tag;
 use Livewire\Livewire;
 
 // Before each test, create a Superadmin and login

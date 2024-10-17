@@ -26,6 +26,8 @@ class ResourceEditor extends Component
 
     public $model;
 
+    public $newFields = [];
+
     public $reservedWords = ['id', 'type'];
 
     public $resource = [];
@@ -40,8 +42,6 @@ class ResourceEditor extends Component
         'deleteField',
         'saveNewField',
     ];
-
-    public $newFields = [];
 
     public function addConditionalLogicRule($key, $group)
     {
@@ -403,6 +403,13 @@ class ResourceEditor extends Component
         $this->dispatch('openSlideOver', component: 'edit-field', parameters: ['fieldSlug' => $fieldSlug, 'slug' => $slug, 'field' => $field]);
     }
 
+    // Add this method to handle the refresh
+    public function refreshResourceEditor()
+    {
+        $this->fieldsArray = $this->model->getFieldsWithIds()->toArray();
+        $this->newFields = $this->model->mapToGroupedFields($this->fieldsArray);
+    }
+
     public function removeConditionalLogicRule($key, $groupKey, $ruleKey)
     {
         unset($this->fields[$key]['conditional_logic'][$groupKey][$ruleKey]);
@@ -448,7 +455,7 @@ class ResourceEditor extends Component
         return [
             'resource.type' => 'required|regex:/^[a-zA-Z]+$/',
             'resource.slug' => 'required|regex:/^[a-zA-Z][a-zA-Z0-9_-]*$/|not_regex:/^\d+$/',
-            "resource.icon" => "required|not_regex:/'/",
+            'resource.icon' => "required|not_regex:/'/",
             'resource.group' => '',
             'resource.dropdown' => '',
             'resource.sort' => '',
@@ -551,13 +558,6 @@ class ResourceEditor extends Component
 
         // Add this line to trigger a re-render
         $this->dispatch('refreshResourceEditor');
-    }
-
-    // Add this method to handle the refresh
-    public function refreshResourceEditor()
-    {
-        $this->fieldsArray = $this->model->getFieldsWithIds()->toArray();
-        $this->newFields = $this->model->mapToGroupedFields($this->fieldsArray);
     }
 
     public function sendField($slug)

@@ -97,6 +97,23 @@ trait Filters
         $this->dispatch('refreshTable');
     }
 
+    #[Computed]
+    public function fieldsForFilter()
+    {
+        return $this->fields->mapWithKeys(function ($field) {
+            $fieldInstance = app($field['type']);
+
+            return [
+                $field['slug'] => [
+                    'name' => $field['name'],
+                    'type' => class_basename($field['type']),
+                    'filterOptions' => $fieldInstance->filterOptions(),
+                    'filterValues' => $fieldInstance->getFilterValues($this->model, $field),
+                ],
+            ];
+        });
+    }
+
     // /**
     //  * Get the fields for filter .
     //  *
@@ -150,7 +167,7 @@ trait Filters
 
         // If the slug is empty (e.g., for numbers or special characters), generate a unique identifier
         if (empty($slug)) {
-            $slug = 'filter_' . Str::random(10);
+            $slug = 'filter_'.Str::random(10);
         }
 
         $newFilter['slug'] = $slug;
@@ -184,6 +201,18 @@ trait Filters
             ->values()
             ->mapWithKeys(fn ($field) => [$field['slug'] => []])
             ->toArray();
+    }
+
+    public function updatedFiltersCustom($value, $key)
+    {
+        $parts = explode('.', $key);
+        if (count($parts) === 3 && $parts[2] === 'name') {
+            $index = $parts[1];
+            // Reset the operator when the field changes
+            $this->filters['custom'][$index]['operator'] = array_key_first($this->fieldsForFilter[$value]['filterOptions']);
+            // Also reset the value
+            $this->filters['custom'][$index]['value'] = null;
+        }
     }
 
     /**
@@ -222,6 +251,7 @@ trait Filters
         $userFilters = $userFilters->map(function ($filter, $key) {
             $filter['type'] = 'user';
             $filter['slug'] = $filter['slug'] ?? $key;
+
             return $filter;
         });
 
@@ -229,38 +259,11 @@ trait Filters
         $teamFilters = $teamFilters->map(function ($filter, $key) {
             $filter['type'] = 'team';
             $filter['slug'] = $filter['slug'] ?? $key;
+
             return $filter;
         });
 
         // Use concat to merge collections and convert to array
         return collect($userFilters)->merge($teamFilters)->keyBy('slug')->toArray();
-    }
-
-    #[Computed]
-    public function fieldsForFilter()
-    {
-        return $this->fields->mapWithKeys(function ($field) {
-            $fieldInstance = app($field['type']);
-            return [
-                $field['slug'] => [
-                    'name' => $field['name'],
-                    'type' => class_basename($field['type']),
-                    'filterOptions' => $fieldInstance->filterOptions(),
-                    'filterValues' => $fieldInstance->getFilterValues($this->model, $field),
-                ]
-            ];
-        });
-    }
-
-    public function updatedFiltersCustom($value, $key)
-    {
-        $parts = explode('.', $key);
-        if (count($parts) === 3 && $parts[2] === 'name') {
-            $index = $parts[1];
-            // Reset the operator when the field changes
-            $this->filters['custom'][$index]['operator'] = array_key_first($this->fieldsForFilter[$value]['filterOptions']);
-            // Also reset the value
-            $this->filters['custom'][$index]['value'] = null;
-        }
     }
 }

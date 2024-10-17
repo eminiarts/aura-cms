@@ -2,25 +2,25 @@
 
 namespace Aura\Base\Database\Factories;
 
-use Illuminate\Support\Str;
 use Aura\Base\Resources\Team;
 use Aura\Base\Resources\User;
-use Illuminate\Support\Facades\Hash;
 use Illuminate\Database\Eloquent\Factories\Factory;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 
 class UserFactory extends Factory
 {
-    /**
-     * The current password being used by the factory.
-     */
-    protected static ?string $password;
-    
     /**
      * The name of the factory's corresponding model.
      *
      * @var string
      */
     protected $model = User::class;
+
+    /**
+     * The current password being used by the factory.
+     */
+    protected static ?string $password;
 
     /**
      * Define the model's default state.

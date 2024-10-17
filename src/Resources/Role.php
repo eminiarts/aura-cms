@@ -116,7 +116,7 @@ class Role extends Resource
                 'on_forms' => true,
                 'on_view' => true,
                 'live' => true,
-                'default' => false
+                'default' => false,
             ],
             [
                 'name' => 'Permissions',
@@ -157,6 +157,13 @@ class Role extends Resource
         return $this->hasMany(Meta::class, 'post_id');
     }
 
+    public function teams(): BelongsToMany
+    {
+        return $this->belongsToMany(Team::class, 'user_role')
+            ->withPivot('user_id')
+            ->withTimestamps();
+    }
+
     public function title()
     {
         if (isset($this->title)) {
@@ -175,14 +182,8 @@ class Role extends Resource
                 ->withPivot('team_id')
                 ->withTimestamps();
         }
-        return $this->belongsToMany(User::class, 'user_role')
-            ->withTimestamps();
-    }
 
-    public function teams(): BelongsToMany
-    {
-        return $this->belongsToMany(Team::class, 'user_role')
-            ->withPivot('user_id')
+        return $this->belongsToMany(User::class, 'user_role')
             ->withTimestamps();
     }
 }

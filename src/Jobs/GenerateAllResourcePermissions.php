@@ -2,15 +2,15 @@
 
 namespace Aura\Base\Jobs;
 
-use Aura\Base\Resource;
 use Aura\Base\Facades\Aura;
-use Aura\Base\Resources\Team;
-use Illuminate\Support\Facades\DB;
+use Aura\Base\Resource;
 use Aura\Base\Resources\Permission;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Queue\SerializesModels;
-use Illuminate\Queue\InteractsWithQueue;
+use Aura\Base\Resources\Team;
 use Illuminate\Foundation\Bus\Dispatchable;
+use Illuminate\Queue\InteractsWithQueue;
+use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class GenerateAllResourcePermissions
 {
@@ -28,11 +28,13 @@ class GenerateAllResourcePermissions
         $resources = collect(Aura::getResources())->filter(function ($resource) {
             try {
                 $resourceInstance = app($resource);
-                return is_subclass_of($resourceInstance, Resource::class) && 
-                       !is_a($resourceInstance, Team::class) && 
-                       !is_subclass_of($resourceInstance, Team::class);
+
+                return is_subclass_of($resourceInstance, Resource::class) &&
+                       ! is_a($resourceInstance, Team::class) &&
+                       ! is_subclass_of($resourceInstance, Team::class);
             } catch (\Throwable $e) {
                 Log::warning("Resource class not found: $resource");
+
                 return false;
             }
         });

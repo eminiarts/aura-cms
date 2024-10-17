@@ -6,7 +6,6 @@ use Aura\Base\Facades\Aura;
 use Aura\Base\Fields\Text;
 use Aura\Base\Livewire\Resource\Create;
 use Aura\Base\Resource;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
 
 class TextFieldModel extends Resource
@@ -93,7 +92,6 @@ test('Text Field - Default Value set', function () {
     expect(auth()->user()->isSuperAdmin())->toBeTrue();
 
     $component = Livewire::test(Create::class, ['slug' => 'TextModel']);
-
 
     ray($component->html());
 

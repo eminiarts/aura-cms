@@ -2,12 +2,11 @@
 
 namespace Aura\Base\Traits;
 
-use Aura\Base\Facades\Aura;
-use Illuminate\Support\Str;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Process;
-use Symfony\Component\Process\ExecutableFinder;
 use Aura\Base\Events\SaveFields as SaveFieldsEvent;
+use Aura\Base\Facades\Aura;
+use Illuminate\Support\Facades\Process;
+use Illuminate\Support\Str;
+use Symfony\Component\Process\ExecutableFinder;
 
 trait SaveFields
 {
@@ -77,7 +76,6 @@ trait SaveFields
 
         $this->notify('Saved successfully.');
     }
-
 
     public function saveProps($props)
     {

@@ -2,6 +2,7 @@
 
 namespace Aura\Base;
 
+use Aura\Base\Commands\AuraLayoutCommand;
 use Aura\Base\Commands\CreateAuraPlugin;
 use Aura\Base\Commands\CreateResourceFactory;
 use Aura\Base\Commands\CreateResourceMigration;
@@ -55,7 +56,6 @@ use Aura\Base\Widgets\SparklineArea;
 use Aura\Base\Widgets\SparklineBar;
 use Aura\Base\Widgets\ValueWidget;
 use Aura\Base\Widgets\Widgets;
-use Aura\Base\Commands\AuraLayoutCommand;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Support\Arr;
@@ -71,6 +71,11 @@ use Spatie\LaravelPackageTools\PackageServiceProvider;
 
 class AuraServiceProvider extends PackageServiceProvider
 {
+    protected $commands = [
+        // ... other commands ...
+        Commands\AuraLayoutCommand::class,
+    ];
+
     // boot
     public function boot()
     {
@@ -339,6 +344,7 @@ class AuraServiceProvider extends PackageServiceProvider
         $fields = collect(app('files')->files(__DIR__.'/Fields'))
             ->map(function ($field) {
                 $className = 'Aura\Base\Fields\\'.str($field->getFilename())->replace('.php', '');
+
                 return $className !== 'Aura\Base\Fields\Field' ? $className : null;
             })
             ->filter()
@@ -362,9 +368,4 @@ class AuraServiceProvider extends PackageServiceProvider
     {
         return config('aura.resources');
     }
-
-    protected $commands = [
-        // ... other commands ...
-        Commands\AuraLayoutCommand::class,
-    ];
 }

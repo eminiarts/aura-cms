@@ -8,7 +8,7 @@ trait ProfileFields
 {
     public function getProfileFields()
     {
-         return [
+        return [
             [
                 'type' => 'Aura\\Base\\Fields\\Tab',
                 'name' => 'Details2',

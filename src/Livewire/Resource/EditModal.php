@@ -2,9 +2,6 @@
 
 namespace Aura\Base\Livewire\Resource;
 
-use LivewireUI\Modal\ModalComponent;
-use Aura\Base\Livewire\Resource\Edit;
-
 class EditModal extends Edit
 {
     public $resource;
