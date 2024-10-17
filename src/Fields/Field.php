@@ -37,25 +37,6 @@ abstract class Field implements Wireable
 
     public $view = null;
 
-    public function edit()
-    {
-        if ($this->edit) {
-            return $this->edit;
-        }
-    }
-
-    public function view()
-    {
-        // ray($this, $this->view);
-        if ($this->view) {
-            return $this->view;
-        }
-
-        if ($this->edit) {
-            return $this->edit;
-        }
-    }
-
     public function display($field, $value, $model)
     {
         if ($this->index) {
@@ -88,6 +69,13 @@ abstract class Field implements Wireable
         return $value;
     }
 
+    public function edit()
+    {
+        if ($this->edit) {
+            return $this->edit;
+        }
+    }
+
     // public $edit;
 
     public function field($field)
@@ -97,6 +85,20 @@ abstract class Field implements Wireable
         return $this;
 
         return get_class($this);
+    }
+
+    public function filterOptions()
+    {
+        return [
+            'contains' => __('contains'),
+            'does_not_contain' => __('does not contain'),
+            'is' => __('is'),
+            'is_not' => __('is not'),
+            'starts_with' => __('starts with'),
+            'ends_with' => __('ends with'),
+            'is_empty' => __('is empty'),
+            'is_not_empty' => __('is not empty'),
+        ];
     }
 
     public static function fromLivewire($data)
@@ -170,7 +172,7 @@ abstract class Field implements Wireable
                 'instructions' => 'Defines if the field is searchable.',
                 'validation' => '',
                 'slug' => 'searchable',
-                'default' => false
+                'default' => false,
             ],
 
             [
@@ -277,18 +279,18 @@ abstract class Field implements Wireable
         ];
     }
 
-    public function filterOptions()
+    // public function view($view, $data = [], $mergeData = [])
+    // {
+    //     $this->view = $view;
+
+    //     return $this;
+    // }
+
+    public function getFilterValues($model, $field)
     {
-        return [
-            'contains' => __('contains'),
-            'does_not_contain' => __('does not contain'),
-            'is' => __('is'),
-            'is_not' => __('is not'),
-            'starts_with' => __('starts with'),
-            'ends_with' => __('ends with'),
-            'is_empty' => __('is empty'),
-            'is_not_empty' => __('is not empty'),
-        ];
+        // Default implementation returns an empty array
+        // Most field types don't need predefined values for filtering
+        return [];
     }
 
     public function isDisabled($model, $field)
@@ -328,17 +330,15 @@ abstract class Field implements Wireable
         return $value;
     }
 
-    // public function view($view, $data = [], $mergeData = [])
-    // {
-    //     $this->view = $view;
-
-    //     return $this;
-    // }
-
-    public function getFilterValues($model, $field)
+    public function view()
     {
-        // Default implementation returns an empty array
-        // Most field types don't need predefined values for filtering
-        return [];
+        // ray($this, $this->view);
+        if ($this->view) {
+            return $this->view;
+        }
+
+        if ($this->edit) {
+            return $this->edit;
+        }
     }
 }

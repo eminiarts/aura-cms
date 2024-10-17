@@ -76,17 +76,17 @@ class Option extends Resource
     {
         static::addGlobalScope(new TeamScope);
 
-        static::saving(function ($post) {
+        static::saving(function ($option) {
 
-            if (config('aura.teams') && ! isset($post->team_id) && auth()->user()) {
-                $post->team_id = auth()->user()->current_team_id;
+            if (config('aura.teams') && ! isset($option->team_id) && auth()->user()) {
+                $option->team_id = auth()->user()->current_team_id;
             }
 
             // unset post attributes
-            unset($post->title);
-            unset($post->content);
-            unset($post->user_id);
-            unset($post->type);
+            unset($option->title);
+            unset($option->content);
+            unset($option->user_id);
+            unset($option->type);
         });
     }
 }

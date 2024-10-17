@@ -7,8 +7,6 @@ use Aura\Base\Resources\User;
 use Aura\Base\Tests\TestCase;
 use Illuminate\Foundation\Testing\DatabaseMigrations;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Schema;
 
 uses(TestCase::class)->in(__DIR__);
 
@@ -23,8 +21,6 @@ uses(RefreshDatabase::class)->in('Feature');
 uses(DatabaseMigrations::class)->in('DatabaseMigrations');
 
 // uses(\Illuminate\Foundation\Testing\LazilyRefreshDatabase::class)->in('Feature');
-
-
 
 /*
 |--------------------------------------------------------------------------
@@ -50,7 +46,6 @@ function createSuperAdmin()
 
     // Create Team
     $team = Team::factory()->create();
-
 
     $user->refresh();
 

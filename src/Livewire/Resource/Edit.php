@@ -28,6 +28,8 @@ class Edit extends Component
 
     public $inModal = false;
 
+    public $mode = 'edit';
+
     public $model;
 
     public $slug;
@@ -35,8 +37,6 @@ class Edit extends Component
     public $tab;
 
     public $tax;
-
-    public $mode = 'edit';
 
     // Listen for selectedAttachment
     protected $listeners = [

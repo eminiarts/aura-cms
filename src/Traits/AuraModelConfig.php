@@ -454,20 +454,6 @@ trait AuraModelConfig
         });
     }
 
-    public function scopeWhereNotInMeta($query, $field, $values)
-    {
-        if ($values instanceof \Illuminate\Support\Collection) {
-            $values = $values->toArray();
-        }
-        if (! is_array($values)) {
-            $values = [$values];
-        }
-
-        return $query->whereDoesntHave('meta', function ($query) use ($field, $values) {
-            $query->where('key', $field)->whereIn('value', $values);
-        });
-    }
-
     public function scopeWhereMeta($query, ...$args)
     {
         if (count($args) === 3) {
@@ -516,6 +502,20 @@ trait AuraModelConfig
             $value = is_numeric($value) ? (int) $value : $value;
             $query->where('key', $key)
                 ->whereRaw('JSON_CONTAINS(value, ?)', [json_encode($value)]);
+        });
+    }
+
+    public function scopeWhereNotInMeta($query, $field, $values)
+    {
+        if ($values instanceof \Illuminate\Support\Collection) {
+            $values = $values->toArray();
+        }
+        if (! is_array($values)) {
+            $values = [$values];
+        }
+
+        return $query->whereDoesntHave('meta', function ($query) use ($field, $values) {
+            $query->where('key', $field)->whereIn('value', $values);
         });
     }
 

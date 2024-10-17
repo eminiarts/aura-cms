@@ -98,7 +98,7 @@ class ConditionalLogic
             return true;
         }
 
-        $cacheKey = md5(get_class($model) . json_encode($field) . json_encode($post) . Auth::id());
+        $cacheKey = md5(get_class($model).json_encode($field).json_encode($post).Auth::id());
 
         return self::$shouldDisplayFieldCache[$cacheKey]
             ??= self::checkCondition($model, $field, $post);
@@ -123,6 +123,7 @@ class ConditionalLogic
                 $fields = $model->getFieldsWithoutConditionalLogic();
                 $post = ['fields' => $fields];
             }
+
             return $closure($model, $post) !== false;
         } catch (\Exception $e) {
             // Log the exception or handle it as needed

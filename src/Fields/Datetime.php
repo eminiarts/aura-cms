@@ -14,6 +14,20 @@ class Datetime extends Field
 
     public $view = 'aura::fields.view-value';
 
+    public function filterOptions()
+    {
+        return [
+            'is' => __('is'),
+            'is_not' => __('is not'),
+            'before' => __('before'),
+            'after' => __('after'),
+            'on_or_before' => __('on or before'),
+            'on_or_after' => __('on or after'),
+            'is_empty' => __('is empty'),
+            'is_not_empty' => __('is not empty'),
+        ];
+    }
+
     public function get($class, $value, $field = null)
     {
         return $value;
@@ -110,19 +124,5 @@ class Datetime extends Field
     public function set($post, $field, $value)
     {
         return $value;
-    }
-
-    public function filterOptions()
-    {
-        return [
-            'is' => __('is'),
-            'is_not' => __('is not'),
-            'before' => __('before'),
-            'after' => __('after'),
-            'on_or_before' => __('on or before'),
-            'on_or_after' => __('on or after'),
-            'is_empty' => __('is empty'),
-            'is_not_empty' => __('is not empty'),
-        ];
     }
 }

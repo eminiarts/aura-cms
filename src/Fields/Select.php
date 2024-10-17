@@ -10,6 +10,16 @@ class Select extends Field
 
     public $view = 'aura::fields.view-value';
 
+    public function filterOptions()
+    {
+        return [
+            'is' => __('is'),
+            'is_not' => __('is not'),
+            'is_empty' => __('is empty'),
+            'is_not_empty' => __('is not empty'),
+        ];
+    }
+
     public function getFields()
     {
         return array_merge(parent::getFields(), [
@@ -86,6 +96,11 @@ class Select extends Field
         ]);
     }
 
+    public function getFilterValues($model, $field)
+    {
+        return $this->options($model, $field);
+    }
+
     // public $view = 'components.fields.select';
 
     public function options($model, $field)
@@ -97,20 +112,5 @@ class Select extends Field
 
         // return the options defined in the field
         return $field['options'] ?? [];
-    }
-
-    public function filterOptions()
-    {
-        return [
-            'is' => __('is'),
-            'is_not' => __('is not'),
-            'is_empty' => __('is empty'),
-            'is_not_empty' => __('is not empty'),
-        ];
-    }
-
-    public function getFilterValues($model, $field)
-    {
-        return $this->options($model, $field);
     }
 }

@@ -2,29 +2,28 @@
 
 namespace Aura\Base\Resources;
 
-use Aura\Base\Resource;
-use Illuminate\Support\Str;
+use Aura\Base\Database\Factories\UserFactory;
 use Aura\Base\Models\UserMeta;
-use Laravel\Sanctum\HasApiTokens;
-use Illuminate\Support\Facades\DB;
+use Aura\Base\Resource;
 use Aura\Base\Traits\ProfileFields;
 use Illuminate\Auth\Authenticatable;
 use Illuminate\Auth\MustVerifyEmail;
-use Illuminate\Support\Facades\Cache;
+use Illuminate\Auth\Passwords\CanResetPassword;
+use Illuminate\Contracts\Auth\Access\Authorizable as AuthorizableContract;
+use Illuminate\Contracts\Auth\Authenticatable as AuthenticatableContract;
+use Illuminate\Contracts\Auth\CanResetPassword as CanResetPasswordContract;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Foundation\Auth\Access\Authorizable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rules\Password;
 use Lab404\Impersonate\Models\Impersonate;
-use Aura\Base\Database\Factories\UserFactory;
 use Laravel\Fortify\TwoFactorAuthenticatable;
-use Illuminate\Auth\Passwords\CanResetPassword;
-use Illuminate\Foundation\Auth\Access\Authorizable;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Relations\BelongsToMany;
-use Illuminate\Contracts\Auth\Authenticatable as AuthenticatableContract;
-use Illuminate\Contracts\Auth\Access\Authorizable as AuthorizableContract;
-use Illuminate\Contracts\Auth\CanResetPassword as CanResetPasswordContract;
-use Illuminate\Database\Query\JoinClause;
+use Laravel\Sanctum\HasApiTokens;
 
 class User extends Resource implements AuthenticatableContract, AuthorizableContract, CanResetPasswordContract
 {
@@ -36,8 +35,8 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
     use Impersonate;
     use MustVerifyEmail;
     use Notifiable;
-    use TwoFactorAuthenticatable;
     use ProfileFields;
+    use TwoFactorAuthenticatable;
 
     public static $customMeta = true;
 
@@ -107,6 +106,17 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
         });
     }
 
+    public function cachedRoles(): mixed
+    {
+        // ray('roles', $this->roles, DB::table('user_meta')->get(), DB::table('post_relations')->get())->blue();
+
+        return $this->roles;
+
+        return Cache::remember($this->getCacheKeyForRoles(), now()->addMinutes(60), function () {
+            return $this->roles;
+        });
+    }
+
     public function canBeImpersonated()
     {
         return ! $this->resource->isSuperAdmin();
@@ -127,7 +137,7 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
     // Reset to default create Method from Laravel
     public static function create($fields)
     {
-        $model = new static();
+        $model = new static;
 
         return tap($model->newModelInstance($fields), function ($instance) {
             $instance->save();
@@ -287,8 +297,8 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
                 'slug' => 'tab-Teams',
                 'global' => true,
                 'conditional_logic' => function ($model, $post) {
-                        return config('aura.teams');
-                    },
+                    return config('aura.teams');
+                },
             ],
             [
                 'name' => 'Teams',
@@ -301,11 +311,11 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
                 'on_forms' => true,
 
                 'conditional_logic' => function ($model, $post) {
-                        return config('aura.teams');
-                    },
+                    return config('aura.teams');
+                },
                 'on_view' => true,
                 'style' => [
-                    'width' => '100',
+                'width' => '100',
                 ],
             ],
             [
@@ -326,8 +336,6 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
             ],
         ];
     }
-
-
 
     public function getIcon()
     {
@@ -394,7 +402,6 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
 
     //     return $defaultValues->merge($meta);
     // }
-
 
     public function getOption($option)
     {
@@ -706,6 +713,7 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
                 ->withPivot('team_id')
                 ->withTimestamps();
         }
+
         return $this->belongsToMany(Role::class, 'user_role')
             //->using(TeamUser::class)
             //->withPivot('team_id')
@@ -770,7 +778,16 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
     {
         $option = 'user.'.$this->id.'.'.$option;
 
-        Option::updateOrCreate(['name' => $option], ['value' => $value]);
+        if (config('aura.teams')) {
+            Option::updateOrCreate([
+                'name' => $option,
+                'team_id' => $this->current_team_id,
+            ], ['value' => $value]);
+        } else {
+            Option::updateOrCreate([
+                'name' => $option,
+            ], ['value' => $value]);
+        }
 
         // Clear the cache
         Cache::forget($option);
@@ -780,17 +797,6 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
     {
         return collect($this->getWidgets())->map(function ($item) {
             return $item;
-        });
-    }
-
-    public function cachedRoles(): mixed
-    {
-        // ray('roles', $this->roles, DB::table('user_meta')->get(), DB::table('post_relations')->get())->blue();
-
-        return $this->roles;
-
-        return Cache::remember($this->getCacheKeyForRoles(), now()->addMinutes(60), function () {
-            return $this->roles;
         });
     }
 
