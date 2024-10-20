@@ -15,10 +15,9 @@
 
     {{-- @vite(['resources/css/app.css', 'resources/js/app.js', 'vendor/aura']) --}}
 
+    @auraStyles
 
     @include('aura::components.layout.favicon')
-
-    @auraStyles
 
     @php
         $loginBgUrl = $appSettings['login-bg'] ?? null;
