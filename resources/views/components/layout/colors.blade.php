@@ -3,10 +3,12 @@
 @endphp
 
 @php
-    $settings = app('aura')::getOption('settings');
+    // $settings = app('aura')::getOption('settings');
+    $settings = $settings ?? [];
+    if (empty($settings)) {
+        $settings = $appSettings;
+    }
 @endphp
-
-{{-- @dd('hier2', $settings, optional($settings)['color-palette']) --}}
 
 @if($settings)
     <style>

@@ -1,7 +1,8 @@
 @php
     use Aura\Base\Resources\Attachment;
 
-    $appOptions = app('aura')::options();
+    // $appOptions = app('aura')::options();
+    $appOptions =
 
     $logo = $darkLogo = null;
 
@@ -39,7 +40,7 @@
 
 
 @endphp
-
+<div class="w-full text-gray-800 fill-current dark:text-gray-100">
 @if($logo || $darkLogo)
     <a href="/">
         <img src="{{ $logo }}" alt="{{ config('app.name', 'Aura CMS') }}" class="block w-full dark:hidden"/>
@@ -59,3 +60,4 @@
     </svg>
 
 @endif
+</div>

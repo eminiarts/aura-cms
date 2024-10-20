@@ -1,4 +1,4 @@
-<x-aura::layout.login>
+<x-dynamic-component :component="config('aura.views.login-layout')">
     <form method="POST" action="{{ route('aura.password.store') }}">
         @csrf
 
@@ -34,4 +34,4 @@
             <x-aura::button type="submit" block>{{ __('Reset Password') }}</x-aura::button>
         </div>
     </form>
-</x-aura::layout.login>
+</x-dynamic-component>

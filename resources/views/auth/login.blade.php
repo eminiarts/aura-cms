@@ -1,10 +1,11 @@
-<x-aura::layout.login>
+<x-dynamic-component :component="config('aura.views.login-layout')">
+
     <!-- Session Status -->
     <x-aura::auth-session-status class="mb-4" :status="session('status')" />
-    
+
     @local
     <x-aura::button.border href="{{ route('aura.login-as', ['id' => app(config('aura.resources.user'))::first()->id]) }}" size="xs">
-        <x-aura::icon.user class="-ml-1 w-4 h-4 mr-2" />
+        <x-aura::icon.user class="mr-2 -ml-1 w-4 h-4" />
         Admin
     </x-aura::button.border>
     @endlocal
@@ -64,10 +65,10 @@
             <span>You don't have an account yet? <a class="text-sm text-gray-600 underline rounded-md hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500" href="/register">Register.</a></span>
         </div>
         @endif
-       
+
         <div>
 
             </div>
     </form>
 
-</x-aura::layout.login>
+</x-dynamic-component>

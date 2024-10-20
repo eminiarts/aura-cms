@@ -38,6 +38,8 @@ Route::domain(config('aura.domain'))
 
             Route::get('/settings', config('aura.components.settings'))->name('settings');
 
+            Route::get('/global-config', Config::class)->name('global-config');
+
             Route::get('/plugins', PluginsPage::class)->name('plugins');
 
             Route::get('/resources/{slug}/editor', ResourceEditor::class)->name('resource.editor');
