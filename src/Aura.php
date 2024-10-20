@@ -173,79 +173,6 @@ class Aura
             ->toArray();
     }
 
-    public function getGlobalOptions()
-    {
-        $valueString =
-        [
-            'app_name' => 'Aura CMS',
-            'app_description' => 'Aura CMS',
-            'app_url' => 'http://aura.test',
-            'app_locale' => 'en',
-            'app_timezone' => 'UTC',
-
-            'media' => [
-                'disk' => 'public',
-                'path' => 'media',
-                'max_file_size' => 10000,
-                'generate_thumbnails' => true,
-                'thumbnails' => [
-                    [
-                        'name' => 'thumbnail',
-                        'width' => 600,
-                        'height' => 600,
-                    ],
-                    [
-                        'name' => 'medium',
-                        'width' => 1200,
-                        'height' => 1200,
-                    ],
-                    [
-                        'name' => 'large',
-                        'width' => 2000,
-                        'height' => 2000,
-                    ],
-                ],
-            ],
-            'date_format' => 'd.m.Y',
-            'time_format' => 'H:i',
-            'features' => [
-                'teams' => true,
-                'users' => true,
-                'media' => true,
-                'notifications' => true,
-                'settings' => true,
-                'pages' => true,
-                'posts' => true,
-                'categories' => true,
-                'tags' => true,
-                'comments' => true,
-                'menus' => true,
-                'roles' => true,
-                'permissions' => true,
-                'activity' => true,
-                'backups' => true,
-                'updates' => true,
-                'support' => true,
-                'documentation' => true,
-            ],
-        ];
-
-        if (config('aura.teams')) {
-            return Option::withoutGlobalScopes([TeamScope::class])->firstOrCreate([
-                'name' => 'aura-settings',
-                'team_id' => 0,
-            ], [
-                'value' => json_encode($valueString),
-                'team_id' => 0,
-            ]);
-        } else {
-            return Option::firstOrCreate([
-                'name' => 'aura-settings',
-            ], [
-                'value' => json_encode($valueString),
-            ]);
-        }
-    }
 
     public function getInjectViews(): array
     {
@@ -389,32 +316,17 @@ class Aura
         });
     }
 
-    public function option($key)
-    {
-        return $this->options()[$key] ?? null;
-    }
-
     public function options()
     {
-        return Cache::rememberForever('aura-settings', function () {
-            $option = Option::withoutGlobalScopes([TeamScope::class])
-                ->where('name', 'aura-settings')
-                ->when(config('aura.teams'), function ($query, string $role) {
-                    $query->where('team_id', 0);
-                })
-                ->first();
-
-            if ($option && is_string($option->value)) {
-                return json_decode($option->value, true);
-            } else {
-                return [];
-            }
-        });
-    }
-
-    public function pro()
-    {
-        return true;
+        return [
+            'color-palette' => config('aura.theme.color-palette'),
+            'darkmode-type' => config('aura.theme.darkmode-type'),
+            'gray-color-palette' => config('aura.theme.gray-color-palette'),
+            'sidebar-size' => config('aura.theme.sidebar-size'),
+            'sidebar-darkmode-type' => config('aura.theme.sidebar-darkmode-type'),
+            'login-bg' => config('aura.theme.login-bg'),
+            'login-bg-darkmode' => config('aura.theme.login-bg-darkmode'),
+        ];
     }
 
     public function registerFields(array $fields): void
@@ -444,24 +356,6 @@ class Aura
         return view('aura::components.layout.scripts');
     }
 
-    public function setOption($key, $value)
-    {
-        $option = $this->getGlobalOptions();
-
-        if ($option && is_string($option->value)) {
-            $settings = json_decode($option->value, true);
-        } else {
-            $settings = [];
-        }
-
-        $settings[$key] = $value;
-
-        $option->value = json_encode($settings);
-        $option->save();
-
-        Cache::forget('aura-settings');
-    }
-
     public function styles()
     {
         return view('aura::components.layout.styles');
@@ -480,15 +374,6 @@ class Aura
 
             return $files;
         });
-    }
-
-    public function updateOption($key, $value)
-    {
-        if (config('aura.teams')) {
-            auth()->user()->currentTeam->updateOption($key, $value);
-        } else {
-            Option::withoutGlobalScopes([TeamScope::class])->updateOrCreate(['name' => $key], ['value' => $value]);
-        }
     }
 
     /**

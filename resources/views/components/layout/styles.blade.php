@@ -1,5 +1,5 @@
 @php
-    $settings = app('aura')::getOption('settings');
+    $settings = app('aura')::getOption('settings') ?? [];
     $appSettings = app('aura')::options();
 @endphp
 
@@ -20,3 +20,16 @@
 @stack('styles')
 
 @include('aura::components.layout.colors')
+
+<script>
+    @if(optional($settings)['darkmode-type'] == 'dark')
+    document.documentElement.classList.add('dark')
+    @elseif (optional($settings)['darkmode-type'] == 'light')
+    document.documentElement.classList.remove('dark')
+    document.documentElement.classList.remove('light')
+    @else
+    if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+        document.documentElement.classList.add('dark')
+    }
+    @endif
+</script>

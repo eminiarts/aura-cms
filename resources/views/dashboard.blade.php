@@ -1,4 +1,4 @@
-<x-aura::layout.app>
+<x-dynamic-component :component="config('aura.views.layout')">
     @php
         $dashboardComponent = config('aura.components.dashboard');
     @endphp
@@ -10,4 +10,4 @@
         {{-- @livewire(Aura\Base\Livewire\Dashboard::class); --}}
     @endif
 
-</x-aura::layout.app>
+</x-dynamic-component>

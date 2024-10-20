@@ -15,33 +15,14 @@
 
     {{-- @vite(['resources/css/app.css', 'resources/js/app.js', 'vendor/aura']) --}}
 
-    @auraStyles
-
-
-
     @php
-
-        $settings = [
-            'darkmode-type' => app('aura')::option('darkmode-type'),
-            'color-palette' => app('aura')::option('color-palette'),
-            'gray-color-palette' => app('aura')::option('gray-color-palette'),
-        ];
+        $settings = app('aura')::getOption('settings');
+        // dd($settings);
+        $appSettings = app('aura')::options();
+        // dd($settings, $appSettings);
     @endphp
 
-    @include('aura::components.layout.colors')
-
-    <script>
-        @if(optional($settings)['darkmode-type'] == 'dark')
-        document.documentElement.classList.add('dark')
-        @elseif (optional($settings)['darkmode-type'] == 'light')
-        document.documentElement.classList.remove('dark')
-        document.documentElement.classList.remove('light')
-        @else
-        if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
-            document.documentElement.classList.add('dark')
-        }
-        @endif
-    </script>
+    @auraStyles
 
 </head>
 <body class="font-sans antialiased text-gray-800 bg-white dark:bg-black dark:text-gray-100">
@@ -51,9 +32,9 @@
 @endphp
 
 @if (
-    ($image = Attachment::find(app('aura')::option('login-bg'))) &&
+    ($image = Attachment::find($appSettings['login-bg'])) &&
     $image->isNotEmpty() &&
-    ($imageDark = Attachment::find(app('aura')::option('login-bg-darkmode'))) &&
+    ($imageDark = Attachment::find($appSettings['login-bg-darkmode'])) &&
     $imageDark->isNotEmpty()
 )
     <script>
@@ -72,27 +53,27 @@
 
 <div class="isolate overflow-hidden relative bg-gray-100 bg-bottom bg-no-repeat bg-cover group dark:bg-gray-900"
 
-     {{-- @if ($image = Attachment::find(app('aura')::option('login-bg')))
+     {{-- @if ($image = Attachment::find($appSettings['login-bg'])))
      style="background-image: url('{{ $image->first()->path() }}');"
      @else
      {{-- style="background-image: url('/vendor/aura/public/img/bgop1.jpg');"
      @endif --}}
 
      @if (
-         ($image = Attachment::find(app('aura')::option('login-bg'))) &&
+         ($image = Attachment::find($appSettings['login-bg'])) &&
          $image->isNotEmpty() &&
-         ($imageDark = Attachment::find(app('aura')::option('login-bg-darkmode'))) &&
+         ($imageDark = Attachment::find($appSettings['login-bg-darkmode'])) &&
          $imageDark->isNotEmpty()
      )
          style="background-image: url('{{ $image->first()->path() }}');"
      data-darkmode-image="{{ $imageDark->first()->path() }}"
      @elseif (
-         ($image = Attachment::find(app('aura')::option('login-bg'))) &&
+         ($image = Attachment::find($appSettings['login-bg'])) &&
          $image->isNotEmpty()
      )
          style="background-image: url('{{ $image->first()->path() }}');"
      @elseif (
-         ($imageDark = Attachment::find(app('aura')::option('login-bg-darkmode'))) &&
+         ($imageDark = Attachment::find($appSettings['login-bg-darkmode'])) &&
          $imageDark->isNotEmpty()
      )
          style="background-image: url('{{ $imageDark->first()->path() }}');"
@@ -135,7 +116,7 @@
         <div class="flex justify-center px-6 w-full sm:max-w-md">
             <div class="w-2/3">
                 <a href="/">
-                    <x-aura::application-logo class="w-full text-gray-800 fill-current dark:text-gray-100"/>
+                    <x-dynamic-component :component="config('aura.views.logo')" />
                 </a>
             </div>
         </div>

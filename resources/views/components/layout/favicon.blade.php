@@ -1,7 +1,7 @@
 @php
     use Aura\Base\Resources\Attachment;
 
-    $appSettings = app('aura')::options();
+    // $appSettings = app('aura')::options();
     $favicon = $darkFavicon = false;
 
     if(isset($appSettings['app-favicon'])) {

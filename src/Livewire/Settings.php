@@ -453,12 +453,12 @@ class Settings extends Component
         abort_unless(auth()->user()->isSuperAdmin(), 403);
 
         $valueString = [
-            'darkmode-type' => 'auto',
-            'sidebar-type' => 'primary',
-            'color-palette' => 'aura',
-            'gray-color-palette' => 'slate',
-            'sidebar-size' => 'standard',
-            'sidebar-darkmode-type' => 'dark',
+            'darkmode-type' => config('aura.theme.darkmode-type'),
+            'sidebar-type' => config('aura.theme.sidebar-type'),
+            'color-palette' => config('aura.theme.color-palette'),
+            'gray-color-palette' => config('aura.theme.gray-color-palette'),
+            'sidebar-size' => config('aura.theme.sidebar-size'),
+            'sidebar-darkmode-type' => config('aura.theme.sidebar-darkmode-type'),
         ];
 
         if (config('aura.teams')) {

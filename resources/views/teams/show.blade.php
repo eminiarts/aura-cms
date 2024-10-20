@@ -1,12 +1,12 @@
-<x-aura::layout.app>
+<x-dynamic-component :component="config('aura.views.layout')">
     <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 leading-tight">
+        <h2 class="text-xl font-semibold leading-tight text-gray-800">
             {{ __('Team Settings') }}
         </h2>
     </x-slot>
 
     <div>
-        <div class="max-w-7xl mx-auto py-10 sm:px-6 lg:px-8">
+        <div class="py-10 mx-auto max-w-7xl sm:px-6 lg:px-8">
             @livewire('teams.update-team-name-form', ['team' => $team])
 
             @livewire('teams.team-member-manager', ['team' => $team])
@@ -20,4 +20,4 @@
             @endif
         </div>
     </div>
-</x-aura::layout.app>
+</x-dynamic-component>

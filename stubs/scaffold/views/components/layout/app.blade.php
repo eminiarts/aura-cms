@@ -13,8 +13,8 @@
   <title>@yield('title') • {{ config('app.name', 'Aura CMS') }}</title>
 
   @php
-      $settings = app('aura')::getOption('settings');
-      $appSettings = app('aura')::options();
+    $settings = app('aura')::getOption('settings');
+    $appSettings = app('aura')::options();
   @endphp
   @include('aura::components.layout.favicon')
 
@@ -24,7 +24,6 @@
   @vite(['resources/css/app.css'], 'vendor/aura')
   @vite('resources/css/app.css')
 
-  @include('aura::components.layout.colors')
   @livewireStyles
   @stack('styles')
 </head>

@@ -1,4 +1,4 @@
-<x-aura::layout.login>
+<x-dynamic-component :component="config('aura.views.login-layout')">
     <div class="mb-4 text-sm text-gray-600">
         {{ __('Forgot your password? No problem. Just let us know your email address and we will email you a password reset link that will allow you to choose a new one.') }}
     </div>
@@ -24,4 +24,4 @@
             <span><a class="text-sm text-gray-600 underline rounded-md hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500" href="/login">{{ __('Back to login') }}</a></span>
         </div>
     </form>
-</x-aura::layout.login>
+</x-dynamic-component>
