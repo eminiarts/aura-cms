@@ -2,18 +2,15 @@
 
 namespace Aura\Base\Fields;
 
-use Illuminate\Support\Str;
-use Illuminate\Support\Facades\Blade;
-
 class AdvancedSelect extends Field
 {
     public $edit = 'aura::fields.advanced-select';
 
+    public $index = 'aura::fields.advanced-select-index';
+
     public $optionGroup = 'JS Fields';
 
     public $view = 'aura::fields.advanced-select-view';
-
-    public $index = 'aura::fields.advanced-select-index';
 
     public function api($request)
     {
@@ -44,7 +41,6 @@ class AdvancedSelect extends Field
     //         return;
     //     }
 
-
     //     $items = app($field['resource'])->find($value);
 
     //     if (! $items) {
@@ -66,14 +62,13 @@ class AdvancedSelect extends Field
     {
         //  ray('get ........', $class, $value, $field)->blue();
 
-
-          if (isset($field['polymorphic_relation']) && $field['polymorphic_relation'] === false) {
+        if (isset($field['polymorphic_relation']) && $field['polymorphic_relation'] === false) {
             // ray('save meta', $field['slug'], $ids);
 
-                //  ray('get ........', $class, $value, $field)->blue();
+            //  ray('get ........', $class, $value, $field)->blue();
 
             if (empty($value)) {
-                return null;
+                return;
             }
 
             if (is_string($value)) {
@@ -83,6 +78,7 @@ class AdvancedSelect extends Field
                     // ray($decoded);
                     return $decoded;
                 }
+
                 return $value;
             }
 
@@ -90,7 +86,7 @@ class AdvancedSelect extends Field
             return $value;
         }
 
-        if (!($field['multiple'] ?? true) && !($field['polymorphic_relation'] ?? false)) {
+        if (! ($field['multiple'] ?? true) && ! ($field['polymorphic_relation'] ?? false)) {
             // dd('hier');
             // ray('hier before return int', $field['slug'], $value)->red();
             if ($value instanceof \Illuminate\Support\Collection) {
@@ -100,6 +96,7 @@ class AdvancedSelect extends Field
                     return [(int) $value->first()];
                 }
             }
+
             return [(int) $value];
         }
 
@@ -163,7 +160,6 @@ class AdvancedSelect extends Field
                 'slug' => 'view_index',
             ],
 
-
             [
                 'name' => 'Allow Create New',
                 'type' => 'Aura\\Base\\Fields\\Boolean',
@@ -212,14 +208,16 @@ class AdvancedSelect extends Field
 
     public function relationship($model, $field)
     {
-        if (!($field['polymorphic_relation'] ?? true)) {
+        if (! ($field['polymorphic_relation'] ?? true)) {
             $resourceClass = $field['resource'];
             if ($field['multiple'] ?? true) {
                 $values = $model->meta()->where('key', $field['slug'])->value('value');
                 $ids = json_decode($values, true) ?: [];
+
                 return $resourceClass::whereIn('id', $ids);
             } else {
                 $value = $model->meta()->where('key', $field['slug'])->value('value');
+
                 return $resourceClass::where('id', $value);
             }
         }
@@ -257,8 +255,7 @@ class AdvancedSelect extends Field
             return;
         }
 
-                // dd($post->toArray(), $field, $ids);
-
+        // dd($post->toArray(), $field, $ids);
 
         $pivotData = [];
 
@@ -296,7 +293,7 @@ class AdvancedSelect extends Field
 
         // Detach only the relations for this specific field that are not in the new set
         $toDetach = array_diff($currentRelations, array_keys($pivotData));
-        if (!empty($toDetach)) {
+        if (! empty($toDetach)) {
             $post->{$field['slug']}()->wherePivot('slug', $field['slug'])->detach($toDetach);
         }
 
@@ -347,8 +344,8 @@ class AdvancedSelect extends Field
             return json_encode($value);
         }
 
-        if (!$isMultiple && !($field['polymorphic_relation'] ?? false)) {
-            if (is_array($value) && !empty($value)) {
+        if (! $isMultiple && ! ($field['polymorphic_relation'] ?? false)) {
+            if (is_array($value) && ! empty($value)) {
                 return $value[0];
             }
         }

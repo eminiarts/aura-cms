@@ -1,11 +1,8 @@
 <?php
 
-use Aura\Base\Facades\Aura;
-use Aura\Base\Fields\AdvancedSelect;
 use Aura\Base\Livewire\Resource\Create;
 use Aura\Base\Resource;
 use Aura\Base\Resources\Genre;
-use Aura\Base\Resources\Movie;
 use Livewire\Livewire;
 
 beforeEach(function () {
@@ -47,7 +44,6 @@ class GenreModel extends Resource
     }
 }
 
-
 class MovieModel extends Resource
 {
     public static $singularName = 'Movie';
@@ -82,13 +78,13 @@ class MovieModel extends Resource
 test('displays selected genre in advanced select when api option is enabled', function () {
 
     $genre1 = GenreModel::create([
-      'title' => 'Action',
-      'thumbnail' => ['1'],
+        'title' => 'Action',
+        'thumbnail' => ['1'],
     ]);
 
     $genre2 = GenreModel::create([
-      'title' => 'Comedy',
-      'thumbnail' => ['2'],
+        'title' => 'Comedy',
+        'thumbnail' => ['2'],
     ]);
 
     $model = new MovieModel;

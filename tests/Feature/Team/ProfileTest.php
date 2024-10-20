@@ -24,13 +24,13 @@ it('renders the profile component', function () {
 
 it('updates the user profile', function () {
     livewire(Profile::class)
-    ->set('form.fields.name', 'Updated Name')
-    ->set('form.fields.email', 'updated@example.com')
-    ->set('form.fields.password', null)
+        ->set('form.fields.name', 'Updated Name')
+        ->set('form.fields.email', 'updated@example.com')
+        ->set('form.fields.password', null)
     // ->set('form.fields.password', null)
     // ->set('form.fields.password_confirmation', null)
-    ->call('save')
-    ->assertHasNoErrors();
+        ->call('save')
+        ->assertHasNoErrors();
 
     // dd('hier');
     $user = auth()->user()->fresh();

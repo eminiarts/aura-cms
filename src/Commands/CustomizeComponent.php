@@ -25,11 +25,9 @@ class CustomizeComponent extends Command
             return [$resource => class_basename($resource)];
         });
 
-
         $resourceOptions = collect($resources)->mapWithKeys(function ($resourceName, $resourceClass) {
             return [$resourceClass => $resourceName];
         })->toArray();
-
 
         $resourceClass = select(
             label: 'For which resource?',
