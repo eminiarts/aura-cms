@@ -12,6 +12,20 @@ class Number extends Field
 
     public $view = 'aura::fields.view-value';
 
+    public function filterOptions()
+    {
+        return [
+            'equals' => __('equals'),
+            'not_equals' => __('does not equal'),
+            'greater_than' => __('greater than'),
+            'less_than' => __('less than'),
+            'greater_than_or_equal' => __('greater than or equal to'),
+            'less_than_or_equal' => __('less than or equal to'),
+            'is_empty' => __('is empty'),
+            'is_not_empty' => __('is not empty'),
+        ];
+    }
+
     public function getFields()
     {
         return array_merge(parent::getFields(), [
@@ -57,30 +71,6 @@ class Number extends Field
         ]);
     }
 
-    public function set($post, $field, $value)
-    {
-        return $value;
-    }
-
-    public function value($value)
-    {
-        return (int) $value;
-    }
-
-    public function filterOptions()
-    {
-        return [
-            'equals' => __('equals'),
-            'not_equals' => __('does not equal'),
-            'greater_than' => __('greater than'),
-            'less_than' => __('less than'),
-            'greater_than_or_equal' => __('greater than or equal to'),
-            'less_than_or_equal' => __('less than or equal to'),
-            'is_empty' => __('is empty'),
-            'is_not_empty' => __('is not empty'),
-        ];
-    }
-
     public function getFilterValues($model, $field)
     {
         // For number fields, we don't typically provide predefined values
@@ -89,5 +79,15 @@ class Number extends Field
             'min' => $field['min'] ?? null,
             'max' => $field['max'] ?? null,
         ];
+    }
+
+    public function set($post, $field, $value)
+    {
+        return $value;
+    }
+
+    public function value($value)
+    {
+        return (int) $value;
     }
 }

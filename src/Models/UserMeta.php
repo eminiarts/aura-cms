@@ -3,7 +3,6 @@
 namespace Aura\Base\Models;
 
 use Aura\Base\Models\Scopes\TeamScope;
-use Aura\Base\Resources\Role;
 use Illuminate\Database\Eloquent\Model;
 
 class UserMeta extends Meta
@@ -14,8 +13,6 @@ class UserMeta extends Meta
      * @var string
      */
     protected $table = 'user_meta';
-
-    
 
     /**
      * The "booted" method of the model.

@@ -62,7 +62,7 @@ class Resource extends Model
 
     public function __call($method, $parameters)
     {
-        if($method == 'actors') {
+        if ($method == 'actors') {
             ray('call', $method)->red();
         }
         if ($this->getFieldSlugs()->contains($method)) {
@@ -76,7 +76,6 @@ class Resource extends Model
                 return $fieldClass->relationship($this, $field);
             }
         }
-
 
         // Default behavior for methods not handled dynamically
         return parent::__call($method, $parameters);
@@ -104,6 +103,7 @@ class Resource extends Model
             if ($fieldClass->isRelation()) {
                 $field = $this->fieldBySlug($key);
                 $relation = $fieldClass->getRelation($this, $field);
+
                 return $relation ?: collect();  // Return an empty collection if relation is null
             }
         }
@@ -193,23 +193,22 @@ class Resource extends Model
         if (! isset($this->fieldsAttributeCache) || $this->fieldsAttributeCache === null) {
             $meta = $this->getMeta();
 
-
             try {
-              $defaultValues = collect($this->inputFieldsSlugs())
-                ->mapWithKeys(fn ($value) => [$value => null])
-                ->map(function ($value, $key) use ($meta) {
+                $defaultValues = collect($this->inputFieldsSlugs())
+                    ->mapWithKeys(fn ($value) => [$value => null])
+                    ->map(function ($value, $key) {
                         return $value;
-                });
+                    });
             } catch (\Exception $e) {
                 ray($e);
                 throw new \Exception('An error occurred while processing fields');
             }
 
-    //         dd(collect($this->inputFieldsSlugs())
-    //     ->mapWithKeys(fn ($value) => [$value => null])
-    // ->map(function ($value, $key) use ($meta) {
-    //     return [$value, $key];
-    // }));
+            //         dd(collect($this->inputFieldsSlugs())
+            //     ->mapWithKeys(fn ($value) => [$value => null])
+            // ->map(function ($value, $key) use ($meta) {
+            //     return [$value, $key];
+            // }));
             // return [];
             $defaultValues = collect($this->inputFieldsSlugs())
                 ->mapWithKeys(fn ($value) => [$value => null])
@@ -223,8 +222,6 @@ class Resource extends Model
                     // if($key == 'actors') {
                     //     dd($this->{$key}, isset($this->{$key}));
                     // }
-
-
 
                     if ($class && $class->isRelation($field) && method_exists($class, 'get') && $field['type'] != 'Aura\\Base\\Fields\\Roles') {
                         // dd('hier', $key, $this->{$key}, $field);
@@ -247,7 +244,6 @@ class Resource extends Model
                         return $this->{$key};
                     }
 
-
                     if ($class && isset($this->attributes[$key]) && method_exists($class, 'get')) {
                         return $class->get($class, $this->attributes[$key], $field);
                     }
@@ -266,10 +262,6 @@ class Resource extends Model
                         return $class->get($class, $this->{$key} ?? null, $field);
                     }
 
-
-
-
-
                     if (optional($field)['polymorphic_relation'] === false && optional($field)['multiple'] === false) {
                         // dd($class, $class->isRelation($field), $this->{$key}, isset($this->{$key}), method_exists($class, 'get'));
                         return [$meta[$key]];
@@ -284,13 +276,13 @@ class Resource extends Model
                 });
 
             $this->fieldsAttributeCache = $defaultValues
-            ->filter(function ($value, $key) {
+                ->filter(function ($value, $key) {
 
-                // return true;
-                $field = $this->fieldBySlug($key);
+                    // return true;
+                    $field = $this->fieldBySlug($key);
 
-                return $this->shouldDisplayField($field);
-            });
+                    return $this->shouldDisplayField($field);
+                });
         }
 
         return $this->fieldsAttributeCache;
@@ -447,12 +439,12 @@ class Resource extends Model
     protected static function booted()
     {
         if (! static::$customTable) {
-            static::addGlobalScope(new TypeScope());
+            static::addGlobalScope(new TypeScope);
         }
 
         static::addGlobalScope(app(TeamScope::class));
 
-        static::addGlobalScope(new ScopedScope());
+        static::addGlobalScope(new ScopedScope);
 
         static::creating(function ($model) {});
 

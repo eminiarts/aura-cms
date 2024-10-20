@@ -1,9 +1,9 @@
 <?php
 
-use Livewire\Livewire;
-use Aura\Base\Resource;
 use Aura\Base\Facades\Aura;
 use Aura\Base\Livewire\ResourceEditor;
+use Aura\Base\Resource;
+use Livewire\Livewire;
 
 class ResourceEditorFake extends ResourceEditor
 {

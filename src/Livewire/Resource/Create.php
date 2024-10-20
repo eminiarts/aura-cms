@@ -21,6 +21,8 @@ class Create extends Component
 
     public $inModal = false;
 
+    public $mode = 'edit';
+
     public $model;
 
     public $params;
@@ -30,8 +32,6 @@ class Create extends Component
     public $slug;
 
     public $tax;
-
-    public $mode = 'edit';
 
     protected $listeners = ['updateField' => 'updateField'];
 
@@ -75,12 +75,9 @@ class Create extends Component
     {
         $this->slug = $slug;
 
-
         $this->model = Aura::findResourceBySlug($slug);
 
         // ray($this->model);
-
-
 
         // Authorize
         $this->authorize('create', $this->model);
@@ -171,8 +168,9 @@ class Create extends Component
         foreach ($fields as $field) {
             $slug = $field['slug'] ?? null;
 
-            if ($field['type'] == "Aura\Base\Fields\Boolean" && !isset($field['default'])) {
+            if ($field['type'] == "Aura\Base\Fields\Boolean" && ! isset($field['default'])) {
                 $this->form['fields'][$slug] = false;
+
                 continue;
             }
 

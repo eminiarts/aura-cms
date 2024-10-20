@@ -1,15 +1,15 @@
 <?php
 
 use Aura\Base\Facades\Aura;
+use Aura\Base\Livewire\Config;
+use Aura\Base\Models\Scopes\TeamScope;
+use Aura\Base\Resources\Option;
 use Aura\Base\Resources\Team;
 use Aura\Base\Resources\User;
-use Aura\Base\Livewire\Config;
-use Aura\Base\Resources\Option;
-use function Pest\Laravel\post;
-
-use function Pest\Livewire\livewire;
 use Illuminate\Support\Facades\Auth;
-use Aura\Base\Models\Scopes\TeamScope;
+
+use function Pest\Laravel\post;
+use function Pest\Livewire\livewire;
 
 // Before each test, create a Superadmin and login
 beforeEach(function () {
@@ -77,12 +77,11 @@ test('aura settings site is working', function () {
 //     expect(app('aura')::option('team_registration'))->toBeTrue();
 // });
 
-
 test('team can be registered with user', function () {
     // Ensure registration is enabled
     config(['aura.auth.registration' => true]);
     config(['aura.teams' => true]);
-    
+
     // Set the redirect path explicitly for the test
     config(['aura.auth.redirect' => '/admin']);
 

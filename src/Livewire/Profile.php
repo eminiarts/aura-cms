@@ -84,16 +84,10 @@ class Profile extends Component
         return Redirect::to('/');
     }
 
-
     public function getFields()
     {
         // dd($this->user->fieldsForView());
         return $this->user->getProfileFields();
-    }
-
-    public function getUserProperty()
-    {
-        return User::find(auth()->id());
     }
 
     public function getFieldsForViewProperty()
@@ -108,6 +102,11 @@ class Profile extends Component
         return $this->inputFields()->mapWithKeys(function ($field) {
             return [$field['slug'] => $this->form['fields'][$field['slug']] ?? null];
         });
+    }
+
+    public function getUserProperty()
+    {
+        return User::find(auth()->id());
     }
 
     public function logoutOtherBrowserSessions()
@@ -193,6 +192,7 @@ class Profile extends Component
         // dd('here2', $this->form['fields']);
         // dd('here 3', $this->form, $validatedData['form']['fields']);
         $this->model->update($validatedData['form']['fields']);
+
         // dd('here3');
         // dd($this->form['fields'], $this->rules(), $this->model);
         return $this->notify(__('Successfully updated'));

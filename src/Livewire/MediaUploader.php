@@ -12,11 +12,11 @@ class MediaUploader extends Component
 
     public $button = false;
 
+    public $disabled = false;
+
     public $field;
 
     public $for;
-
-    public $disabled = false;
 
     public $media = [];
 

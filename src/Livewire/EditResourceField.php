@@ -2,11 +2,11 @@
 
 namespace Aura\Base\Livewire;
 
-use Livewire\Component;
 use Aura\Base\Facades\Aura;
-use Illuminate\Support\Arr;
-use Aura\Base\Traits\SaveFields;
 use Aura\Base\Traits\RepeaterFields;
+use Aura\Base\Traits\SaveFields;
+use Illuminate\Support\Arr;
+use Livewire\Component;
 
 class EditResourceField extends Component
 {
@@ -21,15 +21,15 @@ class EditResourceField extends Component
 
     public $mode = 'edit';
 
-    public $open = false;
+    public $model;
 
     public $newFieldIndex = null;
 
     public $newFieldSlug = null;
 
-    public $reservedWords = ['id', 'type', ];
+    public $open = false;
 
-    public $model;
+    public $reservedWords = ['id', 'type'];
 
     // listener for newFields
     protected $listeners = ['newFields' => 'newFields'];
@@ -155,6 +155,7 @@ class EditResourceField extends Component
 
                 if ($slugExists && $value !== $this->field['slug']) {
                     $fail("A field with the slug '{$value}' already exists.");
+
                     return;
                 }
 
@@ -198,6 +199,17 @@ class EditResourceField extends Component
         $this->open = false;
     }
 
+    public function updated($property)
+    {
+        // $property: The name of the current property that was updated
+        ray('updated', $property)->orange();
+
+        if ($property === 'form.fields.type') {
+            // $this->username = strtolower($this->username);
+            $this->updateType();
+        }
+    }
+
     public function updatedField()
     {
         // if $this->field is undefined, return
@@ -223,16 +235,5 @@ class EditResourceField extends Component
 
         // emit event to parent with slug and value
         $this->dispatch('saveField', ['slug' => $this->fieldSlug, 'value' => $this->form['fields']]);
-    }
-
-    public function updated($property)
-    {
-        // $property: The name of the current property that was updated
-        ray('updated', $property)->orange();
-
-        if ($property === 'form.fields.type') {
-            // $this->username = strtolower($this->username);
-            $this->updateType();
-        }
     }
 }

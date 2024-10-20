@@ -2,9 +2,6 @@
 
 namespace Aura\Base\Fields;
 
-use Illuminate\Support\Str;
-use Illuminate\Support\Facades\Blade;
-
 class Roles extends AdvancedSelect
 {
     public function getRelation($model, $field)
@@ -33,6 +30,7 @@ class Roles extends AdvancedSelect
         if (config('aura.teams')) {
             return $model->roles()->where('team_id', $model->current_team_id);
         }
+
         return $model->roles();
     }
 
@@ -51,6 +49,7 @@ class Roles extends AdvancedSelect
             } else {
                 $post->roles()->detach();
             }
+
             return;
         }
 
@@ -73,7 +72,7 @@ class Roles extends AdvancedSelect
         $rolesToRemove = array_diff($currentRoleIds, $roleIds);
 
         // Remove roles
-        if (!empty($rolesToRemove)) {
+        if (! empty($rolesToRemove)) {
             if (config('aura.teams')) {
                 $post->roles()->wherePivot('team_id', $post->current_team_id)->detach($rolesToRemove);
             } else {
