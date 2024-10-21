@@ -1,5 +1,5 @@
 <div class="text-gray-300">
-    @if(config('aura.features.bookmarks'))
+    @if(config('aura.features.bookmarks') && config('aura.features.global_search'))
     <button wire:click="toggleBookmark" class="flex justify-center items-center ml-2 w-7 h-7 focus:outline-none" :class="{'text-primary-600': {{ !$this->isBookmarked ? 'true' : 'false' }}, 'text-gray-300': {{ $this->isBookmarked ? 'true' : 'false' }} }">
 
         @if(!$this->isBookmarked)
