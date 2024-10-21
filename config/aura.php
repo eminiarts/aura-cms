@@ -63,7 +63,6 @@ return [
         'dashboard' => Aura\Base\Livewire\Dashboard::class,
         'profile' => Aura\Base\Livewire\Profile::class,
         'settings' => Aura\Base\Livewire\Settings::class,
-        'config' => Aura\Base\Livewire\Config::class,
     ],
 
     'resources' => [
@@ -119,7 +118,6 @@ return [
         'forms' => true,
 
         'theme_options' => true,
-        'global_config' => true,
 
         'user_profile' => true,
 

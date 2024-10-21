@@ -1,7 +1,6 @@
 <?php
 
 use Aura\Base\Facades\Aura;
-use Aura\Base\Livewire\Config;
 use Aura\Base\Livewire\InviteUser;
 use Aura\Base\Resources\Role;
 use Aura\Base\Resources\Team;
@@ -176,27 +175,6 @@ test('user email is prefilled in the registration', function () {
     expect($invitation->exists)->toBeTrue();
 });
 
-test('user_invitations can be enabled', function () {
-    livewire(Config::class)
-        ->set('form.fields.user_invitations', true)
-        ->call('save')
-        ->assertHasNoErrors();
-
-    expect(config('aura.auth.user_invitations'))->toBeTrue();
-
-    expect(app('aura')::option('user_invitations'))->toBeTrue();
-});
-
-test('user_invitations can be disabled', function () {
-    livewire(Config::class)
-        ->set('form.fields.user_invitations', true)
-        ->call('save')
-        ->assertHasNoErrors();
-
-    expect(config('aura.auth.user_invitations'))->toBeTrue();
-
-    expect(app('aura')::option('user_invitations'))->toBeTrue();
-});
 
 test('user can register using an invitation', function () {
     $team = Team::first();
