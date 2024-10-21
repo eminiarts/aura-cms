@@ -306,7 +306,7 @@ trait InputFields
 
     public function shouldDisplayField($field)
     {
-        return ConditionalLogic::shouldDisplayField($this, $field);
+        return ConditionalLogic::shouldDisplayField($this, $field, $this->getMeta());
     }
 
     public function taxonomyFields()

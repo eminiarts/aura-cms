@@ -79,6 +79,19 @@ class CreateResourceFactory extends Command
         $this->files->put($factoryPath, $factoryContent);
 
         $this->info("Factory '{$factoryName}' created successfully.");
+
+        // Inform the user about adding the newFactory method to the Resource
+        $this->info("Don't forget to add the following method to your {$modelName} Resource:");
+        $this->info("
+    /**
+     * Create a new factory instance for the model.
+     */
+    protected static function newFactory()
+    {
+        return {$factoryName}::new();
+    }
+        ");
+
     }
 
     protected function generateFactoryContent($resource, $modelName)
