@@ -66,7 +66,7 @@ $class .= ' ' . $disabledClass;
 </a>
 @else
 <button
-  tabindex="{{ $disabled ? '-1' : '0' }}"
+  tabindex="{{ $disabled ? '-1' : ($attributes->has('tabindex') ? $attributes->get('tabindex') : '0') }}"
   type="{{ $type }}"
   {{$attributes->merge([
     'class' => $class . ' relative items-center focus:outline-none focus:ring-2 focus:ring-opacity-50 focus:ring-offset-2 dark:focus:ring-offset-gray-900 select-none active:scale-95 transition-transform duration-150 ease-in-out ' . ' ' .  optional($sizes)[$size],
