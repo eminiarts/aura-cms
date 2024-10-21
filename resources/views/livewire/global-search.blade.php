@@ -33,12 +33,20 @@
             },
 
             openSearch($event) {
-
                 // Prevent search from opening when typing in input fields
-                if ($event.explicitOriginalTarget.tagName.toLowerCase() === 'input' || $event.explicitOriginalTarget.tagName.toLowerCase() === 'textarea') {
-                    return;
+                console.log($event);
+
+                // Check if the event target is defined and has a tagName property
+                if ($event.target && $event.target.tagName) {
+                    const tagName = $event.target.tagName.toLowerCase();
+                    console.log(tagName);
+
+                    if (tagName === 'input' || tagName === 'textarea') {
+                        return;
+                    }
                 }
 
+                console.log('open search');
                 this.show = !this.show;
                 setTimeout(() => {
                     this.$refs.searchField.focus()
@@ -157,11 +165,11 @@
                                                 </li>
                                             </template>
 
-                                            <div class="px-2 py-1 text-xs font-semibold text-gray-700 dark:text-gray-200 heading-item">
-                                                {{ __('Bookmarks') }}
-                                            </div>
-
-                                            {{-- Get user option bookmarks --}}
+                                            @if(count($this->bookmarks) > 0)
+                                                <div class="px-2 py-1 text-xs font-semibold text-gray-700 dark:text-gray-200 heading-item">
+                                                    {{ __('Bookmarks') }}
+                                                </div>
+                                            @endif
 
                                             @foreach ($this->bookmarks as $key => $bookmark)
                                                 <li class="flex px-2 py-2 rounded-md cursor-pointer bookmark-item select-item hover:bg-gray-100 focus:bg-gray-200 dark:hover:bg-gray-800 dark:focus:bg-gray-700"

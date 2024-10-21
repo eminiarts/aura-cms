@@ -23,7 +23,7 @@ php
 public array $actions = [
     'createMissingPermissions' => [
         'label' => 'Create Missing Permissions',
-        'icon' => '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M3 8L15 8M15 8C15 9.65686 16.3431 11 18 11C19.6569 11 21 9.65685 21 8C21 6.34315 19.6569 5 18 5C16.3431 5 15 6.34315 15 8ZM9 16L21 16M9 16C9 17.6569 7.65685 19 6 19C4.34315 19 3 17.6569 3 16C3 14.3431 4.34315 13 6 13C7.65685 13 9 14.3431 9 16Z" stroke="black" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+        'icon' => '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M3 8L15 8M15 8C15 9.65686 16.3431 11 18 11C19.6569 11 21 9.65685 21 8C21 6.34315 19.6569 5 18 5C16.3431 5 15 6.34315 15 8ZM9 16L21 16M9 16C9 17.6569 7.65685 19 6 19C4.34315 19 3 17.6569 3 16C3 14.3431 4.34315 13 6 13C7.65685 13 9 14.3431 9 16Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
     ],
     'delete' => [
         'label' => 'Delete',
@@ -83,13 +83,13 @@ Note that the `$actions` property is an optional property in the `Post` model, a
 You can add a confirmation dialog to your actions to ask users for confirmation before executing the action. To add a confirmation dialog, use the following properties in your `$actions` property:
 
 1.  `confirm`: Set this property to `true` to enable the confirmation dialog for the action. Default value is `false`.
-    
+
 2.  `confirm-title`: The title of the confirmation dialog. This property is optional; if not provided, a default title will be used.
-    
+
 3.  `confirm-content`: The content of the confirmation dialog. This property is optional; if not provided, a default content will be used.
-    
+
 4.  `confirm-button`: The text of the confirmation button. This property is optional; if not provided, a default button text will be used.
-    
+
 
 Here's an example of how to use the confirmation properties in your `$actions`:
 
@@ -127,19 +127,19 @@ Remember that the `confirm`, `confirm-title`, `confirm-content`, and `confirm-bu
 Here's a breakdown of the possible properties you can use in the `$actions` property:
 
 1.  `label`: The label to be displayed for the action. This property is required.
-    
+
 2.  `icon`: The class name of the icon to be displayed next to the label. You can use any valid HTML markup for icons in this property.
-    
+
 3.  `icon-view`: The path to a Blade view that contains the HTML markup for the icon to be displayed next to the label. This property is an alternative to the `icon` property, and can be used when you want to display complex or dynamic icons.
-    
+
 4.  `class`: The CSS class or classes to be applied to the action element. This property is optional.
-    
+
 5.  `confirm`: Set this property to `true` to enable the confirmation dialog for the action. Default value is `false`. This property is optional.
-    
+
 6.  `confirm-title`: The title of the confirmation dialog. This property is optional; if not provided, a default title will be used.
-    
+
 7.  `confirm-content`: The content of the confirmation dialog. This property is optional; if not provided, a default content will be used.
-    
+
 8.  `confirm-button`: The text of the confirmation button. This property is optional; if not provided, a default button text will be used.
 
 You can use any combination of these properties, depending on your needs. For example, if you want to display an icon with a label and apply a custom CSS class to the action element, you can define your `$actions` property like this:
