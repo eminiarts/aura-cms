@@ -2,7 +2,6 @@
 
 use Aura\Base\Http\Controllers\Api\FieldsController;
 use Aura\Base\Livewire\Attachment\Index as AttachmentIndex;
-use Aura\Base\Livewire\Config;
 use Aura\Base\Livewire\PluginsPage;
 use Aura\Base\Livewire\Resource\Create;
 use Aura\Base\Livewire\Resource\Edit;
@@ -37,8 +36,6 @@ Route::domain(config('aura.domain'))
             Route::get('/profile', config('aura.components.profile'))->name('profile');
 
             Route::get('/settings', config('aura.components.settings'))->name('settings');
-
-            Route::get('/global-config', Config::class)->name('global-config');
 
             Route::get('/plugins', PluginsPage::class)->name('plugins');
 

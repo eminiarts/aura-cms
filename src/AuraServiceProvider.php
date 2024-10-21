@@ -20,7 +20,6 @@ use Aura\Base\Commands\UpdateSchemaFromMigration;
 use Aura\Base\Facades\Aura;
 use Aura\Base\Livewire\Attachment\Index as AttachmentIndex;
 use Aura\Base\Livewire\BookmarkPage;
-use Aura\Base\Livewire\Config;
 use Aura\Base\Livewire\CreateFlow;
 use Aura\Base\Livewire\CreateResource;
 use Aura\Base\Livewire\Dashboard;
@@ -127,7 +126,6 @@ class AuraServiceProvider extends PackageServiceProvider
         Livewire::component('aura::resource-editor', ResourceEditor::class);
         Livewire::component('aura::settings', app(config('aura.components.settings')));
         Livewire::component('aura::invite-user', InviteUser::class);
-        Livewire::component('aura::config', app(config('aura.components.config')));
 
         Livewire::component('aura::profile', app(config('aura.components.profile')));
         Livewire::component('aura::modals', Modals::class);

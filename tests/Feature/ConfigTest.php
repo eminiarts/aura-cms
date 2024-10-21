@@ -16,7 +16,6 @@ test('config features test', function () {
         'flows' => false,
         'forms' => true,
         'theme_options' => true,
-        'global_config' => true,
         'user_profile' => true,
         'create_resource' => true,
         'resource_view' => true,
