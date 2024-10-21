@@ -334,6 +334,33 @@ class Aura
         ];
     }
 
+    // public function setOption($key, $value)
+    // {
+    //     $option = $this->getGlobalOptions();
+
+    //     if ($option && is_string($option->value)) {
+    //         $settings = json_decode($option->value, true);
+    //     } else {
+    //         $settings = [];
+    //     }
+
+    //     $settings[$key] = $value;
+
+    //     $option->value = json_encode($settings);
+    //     $option->save();
+
+    //     Cache::forget('aura-settings');
+    // }
+
+    public function updateOption($key, $value)
+    {
+        if (config('aura.teams')) {
+            auth()->user()->currentTeam->updateOption($key, $value);
+        } else {
+            Option::withoutGlobalScopes([TeamScope::class])->updateOrCreate(['name' => $key], ['value' => $value]);
+        }
+    }
+
     public function registerFields(array $fields): void
     {
         $this->fields = array_merge($this->fields, $fields);
