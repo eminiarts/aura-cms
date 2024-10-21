@@ -79,14 +79,32 @@ return [
         'tag' => Aura\Base\Resources\Tag::class,
     ],
 
+    'theme' => [
+        'color-palette' => 'aura',
+        'gray-color-palette' => 'slate',
+        'darkmode-type' => 'auto',
+
+        'sidebar-size' => 'standard',
+        'sidebar-type' => 'primary',
+        'sidebar-darkmode-type' => 'dark',
+
+        'login-bg' => false,
+        'login-bg-darkmode' => false,
+
+        'app-favicon' => false,
+        'app-favicon-darkmode' => false,
+    ],
+
     'views' => [
         'layout' => 'aura::layouts.app',
+        'login-layout' => 'aura::layout.login',
         'dashboard' => 'aura::dashboard',
         'index' => 'aura::index',
         'view' => 'aura::view',
         'create' => 'aura::create',
         'edit' => 'aura::edit',
         'navigation' => 'aura::components.navigation',
+        'logo' => 'aura::application-logo',
     ],
 
     'features' => [
