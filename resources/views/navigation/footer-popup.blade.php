@@ -11,11 +11,12 @@
                 {{ __('Team Settings') }}
             </x-aura::dropdown-link>
 
-             @can('create', app(config('aura.resources.team')))
-            <x-aura::dropdown-link href="{{ route('aura.resource.create', ['slug' => 'Team']) }}">
-                {{ __('Create New Team') }}
-            </x-aura::dropdown-link>
-        @endcan
+
+            @can('create', app(config('aura.resources.team')))
+                <x-aura::dropdown-link href="{{ route('aura.resource.create', ['slug' => 'Team']) }}">
+                    {{ __('Create New Team') }}
+                </x-aura::dropdown-link>
+            @endcan
 
             <div class="my-2 border-t border-gray-100 dark:border-gray-600"></div>
         @endcan
