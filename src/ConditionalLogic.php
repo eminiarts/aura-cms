@@ -100,6 +100,10 @@ class ConditionalLogic
 
         $cacheKey = md5(get_class($model).json_encode($field).json_encode($post).Auth::id());
 
+        if($field['slug'] === 'prompt') {
+            // ray($cacheKey, $post)->blue();
+        }
+
         return self::$shouldDisplayFieldCache[$cacheKey]
             ??= self::checkCondition($model, $field, $post);
     }
