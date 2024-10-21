@@ -474,7 +474,7 @@
     @apply border-gray-400;
 }
 .aura-sidebar-type-dark .aura-sidebar-heading-border {
-    @apply border-gray-500;
+    @apply border-gray-700;
 }
 /* Dark */
 .aura-sidebar-darkmode-type-primary .aura-sidebar-heading-border {
@@ -484,7 +484,7 @@
     @apply dark:border-gray-400;
 }
 .aura-sidebar-darkmode-type-dark .aura-sidebar-heading-border {
-    @apply dark:border-gray-500;
+    @apply dark:border-gray-700;
 }
 
 

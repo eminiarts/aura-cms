@@ -33,6 +33,10 @@ class GlobalSearch extends Component
 
             // ray($resource);
             // ray($resource::getSlug());
+            if ($resource::getGlobalSearch() === false) {
+                return false;
+            }
+
             return $resource::getSlug() !== 'resource' && $resource::getSlug() !== 'flow' && $resource::getSlug() !== 'flowlog' && $resource::getSlug() !== 'operation' && $resource::getSlug() !== 'flowoperation' && $resource::getSlug() !== 'operationlog' && $resource::getSlug() !== 'option' && $resource::getSlug() !== 'team' && $resource::getSlug() !== 'user' && $resource::getSlug() !== 'product';
         });
 
@@ -44,10 +48,6 @@ class GlobalSearch extends Component
 
             // if no resource then continue
             if (! $resource) {
-                continue;
-            }
-
-            if (app($resource)->getGlobalSearch() === false) {
                 continue;
             }
 

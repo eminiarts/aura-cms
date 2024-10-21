@@ -77,7 +77,7 @@
             >
                 <div class="flex items-center ml-0 space-x-3 text-base font-semibold">
                     <div class="flex items-center ml-0 space-x-3 text-base font-semibold">
-                        <div class="sidebar-item-icon">
+                        <div class="{{ $compact ? 'sidebar-item-compact' : 'sidebar-item-icon' }}">
                             {{ $title }}
                         </div>
                     </div>
