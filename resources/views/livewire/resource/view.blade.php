@@ -1,18 +1,15 @@
-<div>
+<div wire:key="resource-view-{{ $model->id }}">
     @section('title', __('View '. $model->singularName()))
-
-
 
     @if(!$inModal)
     <x-aura::breadcrumbs>
         <x-aura::breadcrumbs.li :href="route('aura.dashboard')" title="" icon="dashboard" iconClass="text-gray-500 w-7 h-7 mr-0" />
-        <x-aura::breadcrumbs.li :href="route('aura.resource.index', $slug)" :title="__(Str::plural($slug))" />
+        <x-aura::breadcrumbs.li :href="route('aura.' . $slug . '.index')" :title="__(Str::plural($slug))" />
         <x-aura::breadcrumbs.li :title="$model->title()" />
     </x-aura::breadcrumbs>
     @endif
 
     @include($model->viewHeaderView())
-
 
     @if($model::usesTitle())
     <div class="mb-4">
@@ -22,7 +19,6 @@
         </x-aura::fields.wrapper>
     </div>
     @endif
-
 
     <div class="grid gap-6 mt-4 aura-view-post-container sm:grid-cols-3" x-data="{
          init() {
@@ -39,7 +35,7 @@
 
         <div class="col-span-1 mx-0 sm:col-span-3">
             {{-- @dd($this->viewFields) --}}
-            <div class="flex flex-wrap items-start -mx-2">
+            <div class="flex flex-wrap items-start -mx-2" wire:key="resource-view-fields">
                 @foreach($this->viewFields as $key => $field)
                 <x-aura::fields.conditions :field="$field" :model="$model" wire:key="resource-field-{{ $key }}">
                     <x-dynamic-component :component="$field['field']->view()" :field="$field" :form="$form" :mode="$mode" />
@@ -47,7 +43,8 @@
                 @endforeach
             </div>
 
-            @if (count($errors->all()))
+            <div>
+                @if (count($errors->all()))
             <div class="block">
                 <div class="mt-8 form_errors">
                     <strong class="block text-red-600">Unfortunately, there were still the following validation
@@ -62,6 +59,7 @@
                 </div>
             </div>
             @endif
+            </div>
 
         </div>
 

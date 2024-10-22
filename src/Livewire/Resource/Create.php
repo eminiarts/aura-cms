@@ -152,7 +152,7 @@ class Create extends Component
                 $this->dispatch('resourceCreated', ['for' => $this->params['for'], 'resource' => $model, 'title' => $model->title()]);
             }
         } else {
-            return redirect()->route('aura.resource.edit', [$this->slug, $model->id]);
+            return redirect()->route('aura.' . $this->getSlug() . '.edit', $model->id);
         }
     }
 
