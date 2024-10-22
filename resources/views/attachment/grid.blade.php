@@ -1,4 +1,11 @@
 <div>
+
+    @if($this->settings['table_before'])
+        {{-- @include('pro::table.table_before') --}}
+        {{ app('aura')::injectView('table_before') }}
+        {{ app('aura')::injectView('table_before_' . $this->model->getType()) }}
+    @endif
+
     <div class="grid grid-cols-2 gap-2 my-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 sm:gap-3 md:gap-4 lg:gap-5 sm:my-3 md:my-4 lg:my-5">
         @forelse($rows as $row)
         <div class="relative select-none" wire:key="grid_{{ $row->id }}">
@@ -15,8 +22,8 @@
                     </div>
                     <div class="absolute top-3 left-3">
                         <x-aura::input.checkbox
-                            id="checkbox_{{ $row->id }}"
-                            x-model="selected"
+                            id="checkbox_grid_{{ $row->id }}"
+                            x-bind:checked="selected.includes('{{ $row->id }}')"
                             :value="$row->id"
                             x-bind:class="{
                                 'opacity-0 group-hover:opacity-100': !selected.includes('{{ $row->id }}'),

@@ -24,7 +24,7 @@
                     </div>
 
                     <!-- Close Button -->
-                    <div class="absolute top-0 right-0 pt-4 pr-4 z-[2]">
+                    <div class="absolute top-0 right-0 pt-4 pr-4 z-[3]">
                         <x-aura::button.transparent tabindex="-1" x-on:click="$dialog.close()">
                             <span class="sr-only">Close modal</span>
                             <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 20 20"

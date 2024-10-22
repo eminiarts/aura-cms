@@ -5,7 +5,7 @@
 
             <tbody class="bg-white divide-y divide-gray-200 dark:bg-gray-900 dark:divide-gray-700">
                 @forelse($rows as $row)
-                    <tr class="hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors duration-200 ease-in-out"
+                    <tr class="transition-colors duration-200 ease-in-out hover:bg-gray-100 dark:hover:bg-gray-800"
                         :class="{ 'bg-primary-50 dark:bg-primary-900/50': selected.includes('{{ $row->id }}') }"
                         x-on:click="toggleRow($event, {{ $row->id }})">
                         @include($this->settings['views']['row'])
