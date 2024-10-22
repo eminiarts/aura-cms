@@ -18,6 +18,8 @@ class MediaManager extends Component
 
     public $modalAttributes;
 
+    public $initialSelectionDone = false;
+
     // Listen for select Attachment
     protected $listeners = [
         'selectedRows' => 'selectAttachment',
@@ -37,8 +39,6 @@ class MediaManager extends Component
         $this->fieldSlug = $slug;
         $this->modalAttributes = $modalAttributes;
         $this->field = app($this->model)->fieldBySlug($this->fieldSlug);
-
-        // ray('mount media manager', app($this->model), $this->fieldSlug, $this->field);
     }
 
     public function render()
@@ -63,14 +63,25 @@ class MediaManager extends Component
     #[On('selectedRows')]
     public function selectAttachment($ids)
     {
-        ray('selectAttachment', $ids);
-        $this->selected = $ids;
+        if (!$this->initialSelectionDone) {
+            ray('selectAttachment', $ids);
+            $this->selected = $ids;
+            $this->initialSelectionDone = true;
+        }
     }
 
     #[On('tableMounted')]
     public function tableMounted()
     {
-        if ($this->selected) {
+        if ($this->selected && !$this->initialSelectionDone) {
+            $this->dispatch('selectedRows', $this->selected);
+            $this->initialSelectionDone = true;
+        }
+    }
+
+    public function updated($name, $value)
+    {
+        if ($name === 'selected') {
             $this->dispatch('selectedRows', $this->selected);
         }
     }
