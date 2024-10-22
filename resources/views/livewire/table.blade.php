@@ -238,6 +238,12 @@
             </div>
 
             <div class="aura-table">
+                @if($this->settings['selectable'])
+                    <div wire:key="table-bulk-select">
+                        @include('aura::components.table.bulk-select-row')
+                    </div>
+                @endif
+
                 @if ($currentView == 'grid')
                     <div class="aura-table-grid-view">
                         @include($this->settings['views']['grid'])
