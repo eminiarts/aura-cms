@@ -4,6 +4,7 @@
     <div x-on:click.stop="console.log('stop here')">
         <div x-dialog x-model="dialogOpen" style="display: none"
             class="fixed inset-0 overflow-y-auto z-10 text-left pt-[30%] sm:pt-0">
+
             <!-- Overlay -->
             <div x-dialog:overlay x-transition:enter.opacity class="fixed inset-0 bg-black/25"></div>
 
