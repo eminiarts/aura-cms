@@ -8,7 +8,7 @@
     </x-aura::breadcrumbs>
 
     {{-- <x-slot name="header">
-        <h3 class="text-xl font-semibold">Edit Post Type</h3>
+        <h3 class="text-2xl font-semibold">Edit Post Type</h3>
     </x-slot> --}}
 
     <div x-data="{
@@ -34,7 +34,7 @@
 
     }" class="flex justify-between items-center my-8">
         <div>
-            <h1 class="text-3xl font-semibold">Edit {{ $model::getType() }} Fields</h1>
+            <h1 class="text-2xl font-semibold">Edit {{ $model::getType() }} Fields</h1>
         </div>
 
         <div class="flex items-center space-x-2">
