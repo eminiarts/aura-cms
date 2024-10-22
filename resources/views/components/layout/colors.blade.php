@@ -6,7 +6,7 @@
     // $settings = app('aura')::getOption('settings');
     $settings = $settings ?? [];
     if (empty($settings)) {
-        $settings = $appSettings;
+        $settings = $appSettings['theme'];
     }
 @endphp
 
