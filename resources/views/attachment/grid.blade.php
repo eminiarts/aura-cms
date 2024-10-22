@@ -10,7 +10,9 @@
 
             init() {
                 this.$watch('selected', (value) => {
-                    this.maxFilesReached = this.field.max_files && value.length >= this.field.max_files;
+                    if (this.field.max_files) {
+                        this.maxFilesReached = value.length >= this.field.max_files;
+                    }
                 });
             },
             toggleRow(event, id) {

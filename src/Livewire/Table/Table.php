@@ -324,7 +324,7 @@ class Table extends Component
      */
     public function render()
     {
-        return view('aura::livewire.table', [
+        return view($this->model->tableComponentView(), [
             'parent' => $this->parent,
             'rows' => $this->rows(),
             'rowIds' => $this->rowIds,

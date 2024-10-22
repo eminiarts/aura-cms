@@ -1,4 +1,4 @@
-<div @selectfieldrows.window="selectRows($event.detail)" {{-- wire:poll.10000ms --}} x-data="{
+<div @selectfieldrows.window="selectRows($event.detail)" x-data="{
     selected: @entangle('selected'),
     rows: @js($rowIds),
     lastSelectedId: null,
