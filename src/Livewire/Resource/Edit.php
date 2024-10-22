@@ -65,11 +65,14 @@ class Edit extends Component
         }
     }
 
-    public function mount($slug, $id)
+    public function mount($id)
     {
-        $this->slug = $slug;
+                // Get the slug from the current route
+        $routeName = request()->route()->getName();
+        $this->slug = explode('.', $routeName)[1] ?? null;
 
-        $this->model = Aura::findResourceBySlug($slug)->find($id);
+        
+        $this->model = Aura::findResourceBySlug($this->slug)->find($id);
 
         // Authorize
         $this->authorize('update', $this->model);

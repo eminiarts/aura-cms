@@ -4,7 +4,11 @@
     @if(!$inModal)
     <x-aura::breadcrumbs>
         <x-aura::breadcrumbs.li :href="route('aura.dashboard')" title="" icon="dashboard" iconClass="text-gray-500 w-7 h-7 mr-0" />
-        <x-aura::breadcrumbs.li :href="route('aura.' . $slug . '.index')" :title="__(Str::plural($slug))" />
+        @if(Route::has('aura.' . $model->getSlug() . '.index'))
+            <x-aura::breadcrumbs.li :href="route('aura.' . $model->getSlug() . '.index')" :title="__(Str::plural($slug))" />
+        @else
+            <x-aura::breadcrumbs.li :title="__(Str::plural($slug))" />
+        @endif
         <x-aura::breadcrumbs.li :title="$model->title()" />
     </x-aura::breadcrumbs>
     @endif

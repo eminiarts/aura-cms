@@ -590,7 +590,7 @@ trait AuraModelConfig
     public function viewUrl()
     {
         if ($this->getType() && $this->id) {
-            return route('aura.resource.view', ['slug' => $this->getType(), 'id' => $this->id]);
+            return route('aura.' . $this->getSlug() . '.view', ['id' => $this->id]);
         }
     }
 
