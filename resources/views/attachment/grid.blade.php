@@ -8,7 +8,7 @@
 
             init() {
                 Livewire.on('selectedRows', (updatedSelected) => {
-                    console.log('grid uS 2', updatedSelected);
+                    {{-- console.log('grid uS 2', updatedSelected); --}}
                     {{-- this.selected = updatedSelected[0]; --}}
                 });
             },

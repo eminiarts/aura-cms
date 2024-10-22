@@ -9,7 +9,7 @@
 
     <div class="flex justify-between items-center mb-6">
         <div>
-            <h1 class="mb-2 text-3xl font-semibold">Configuration</h1>
+            <h1 class="mb-2 text-2xl font-semibold">Configuration</h1>
             <h3>These Settings are applied globally.</h3>
         </div>
 

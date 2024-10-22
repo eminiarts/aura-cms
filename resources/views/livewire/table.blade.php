@@ -257,7 +257,7 @@
         @if ($this->settings['filters'])
             <x-aura::sidebar title="Filters" show="showFilters">
                 <x-slot:heading class="font-semibold">
-                    <h3 class="text-xl font-semibold">
+                    <h3 class="text-2xl font-semibold">
                         {{ __('Filters') }}
                     </h3>
                 </x-slot>
