@@ -44,52 +44,77 @@
     },
 
     toggleRow(event, id) {
+        console.log('toggleRow called with:', { event, id });
+        console.log('Current state:', { rows: this.rows, selected: this.selected, lastSelectedId: this.lastSelectedId });
+
         if (!this.rows || !Array.isArray(this.rows)) {
+            console.warn('this.rows is not an array, exiting toggleRow');
             return;
         }
+
         this.$nextTick(() => {
+            console.log('Inside $nextTick');
+
             if (this.field && this.field.max_files === 1) {
+                console.log('Single file selection mode');
                 if (this.selected.includes(id.toString())) {
+                    console.log('Deselecting single item');
                     this.selected = [];
                 } else {
+                    console.log('Selecting single item');
                     this.selected = [id.toString()];
                 }
             } else if (event.shiftKey && this.lastSelectedId !== null) {
+                console.log('Shift key pressed, last selected id:', this.lastSelectedId);
                 const lastIndex = this.rows.indexOf(this.lastSelectedId);
                 const currentIndex = this.rows.indexOf(id);
+                console.log('Indexes:', { lastIndex, currentIndex });
 
                 if (lastIndex === -1 || currentIndex === -1) {
+                    console.warn('Invalid indexes, exiting shift selection');
                     return;
                 }
 
                 const start = Math.min(lastIndex, currentIndex);
                 const end = Math.max(lastIndex, currentIndex);
                 const rowsToToggle = this.rows.slice(start, end + 1);
+                console.log('Rows to toggle:', rowsToToggle);
 
                 const isLastSelected = this.selected.includes(this.lastSelectedId.toString());
+                console.log('Is last selected:', isLastSelected);
 
                 if (isLastSelected) {
+                    console.log('Adding rows to selection');
                     const newSelection = [...new Set([...this.selected, ...rowsToToggle.map(String)])];
                     if (this.field && this.field.max_files) {
+                        console.log('Applying max files limit:', this.field.max_files);
                         this.selected = newSelection.slice(0, this.field.max_files);
                     } else {
                         this.selected = newSelection;
                     }
                 } else {
+                    console.log('Removing rows from selection');
                     this.selected = this.selected.filter(row => !rowsToToggle.includes(parseInt(row)));
                 }
             } else {
+                console.log('Single click selection');
                 const index = this.selected.indexOf(id.toString());
+                console.log('Index:', index, this.selected, id.toString());
                 if (index === -1) {
                     if (!this.field || !this.field.max_files || this.selected.length < this.field.max_files) {
+                        console.log('Adding item to selection');
                         this.selected.push(id.toString());
+                    } else {
+                        console.warn('Max files limit reached, cannot add more');
                     }
                 } else {
+                    console.log('Removing item from selection');
                     this.selected.splice(index, 1);
                 }
             }
 
             this.lastSelectedId = id;
+            console.log('Updated state:', { selected: this.selected, lastSelectedId: this.lastSelectedId });
         });
     },
 
@@ -147,7 +172,7 @@
     },
 
     selectRows(detail) {
-        if (detail.slug == '{{ $field['slug'] }}') {
+        if (detail.slug == '{{ optional($field)['slug'] }}') {
             this.selected = detail.value
         }
     }
@@ -156,10 +181,10 @@
     @include('aura::components.table.context-menu')
 
     <main class="" x-data="{
-        showFilters: false,
+        showAttachmentFilters: false,
         toggleFilters() {
-            this.showFilters = !this.showFilters;
-            this.$dispatch('inset-sidebar', { element: this.$refs.sidebar })
+            this.showAttachmentFilters = !this.showAttachmentFilters;
+            // this.$dispatch('inset-sidebar', { element: this.$refs.sidebar })
         },
         init() {
             Livewire.dispatch('tableMounted')
@@ -206,6 +231,27 @@
                         </div>
                     </div>
                 @endif
+
+                <div class="mb-4 ml-4 md:mb-0">
+                    <label for="file-type-filter" class="sr-only">Filter File Types</label>
+                    <div class="relative mt-1">
+                        <div class="flex absolute inset-y-0 left-0 items-center pl-3 pointer-events-none">
+                            <svg class="w-5 h-5 text-gray-500 dark:text-gray-400" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                                <path fill-rule="evenodd" d="M3 3a1 1 0 011-1h12a1 1 0 011 1v3a1 1 0 01-.293.707L12 11.414V15a1 1 0 01-.293.707l-2 2A1 1 0 018 17v-5.586L3.293 6.707A1 1 0 013 6V3z" clip-rule="evenodd"></path>
+                            </svg>
+                        </div>
+                        <select id="file-type-filter"
+                            class="block p-2.5 pl-10 w-64 max-w-full rounded-lg shadow-xs transition transition-300 border border-gray-500/30 appearance-none px-3 py-2 focus:outline-none ring-gray-900/10 focus:ring focus:border-primary-300 focus:ring-primary-300 focus:ring-opacity-50 dark:focus:ring-primary-500 dark:focus:ring-opacity-50 disabled:opacity-75 disabled:bg-gray-100 disabled:opacity-60 disabled:dark:bg-gray-800 bg-white dark:bg-transparent border dark:border-gray-700 dark:focus:border-gray-500 z-[1]"
+                            wire:model.live="fileTypeFilter">
+                            <option value="">{{ __('All File Types') }}</option>
+                            <option value="image">{{ __('Images') }}</option>
+                            <option value="document">{{ __('Documents') }}</option>
+                            <option value="video">{{ __('Videos') }}</option>
+                            <option value="audio">{{ __('Audio') }}</option>
+                            <option value="other">{{ __('Other') }}</option>
+                        </select>
+                    </div>
+                </div>
 
                 <div class="flex justify-end items-center space-x-4 w-full">
 
@@ -263,14 +309,14 @@
         </div>
 
         @if ($this->settings['filters'])
-            <x-aura::sidebar title="Filters" show="showFilters">
+            <x-aura::sidebar.mediamanager title="Filters" show="showAttachmentFilters" in_modal="true">
                 <x-slot:heading class="font-semibold">
                     <h3 class="text-2xl font-semibold">
                         {{ __('Filters') }}
                     </h3>
                 </x-slot>
                 @include('aura::components.table.filters')
-            </x-aura::sidebar>
+            </x-aura::sidebar.mediamanager>
         @endif
     </main>
 </div> {{-- This closes the context menu --}}

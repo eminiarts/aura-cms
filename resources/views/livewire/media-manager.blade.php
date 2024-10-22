@@ -26,7 +26,7 @@
     </div>
 
     <div class="z-[2] relative flex justify-end mt-4">
-        <x-aura::button class="ml-4">
+        <x-aura::button class="ml-4" x-on:click="$dialog.close()">
             {{ __('Close') }}
         </x-aura::button>
         <x-aura::button.primary class="ml-4" wire:click="select">
