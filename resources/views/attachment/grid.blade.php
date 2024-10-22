@@ -132,9 +132,12 @@
     <div>
         <p class="text-sm text-gray-600 dark:text-gray-400">
             {{ count($selected) }} {{ __('selected') }}
-            <span x-show="field.max_files">
-                ({{ __('Max') }}: {{ $field['max_files'] }})
-            </span>
+
+            @if(optional($field)['max_files'])
+                <span>
+                    ({{ __('Max') }}: {{ $field['max_files'] }})
+                </span>
+            @endif
         </p>
     </div>
 </div>

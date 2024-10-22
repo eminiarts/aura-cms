@@ -316,6 +316,11 @@ class Attachment extends Resource
         return 'aura::attachment.grid';
     }
 
+    public function tableView()
+    {
+        return 'aura::attachment.list';
+    }
+
     public function tableRowView()
     {
         return 'aura::attachment.row';
