@@ -1,6 +1,6 @@
 <div>
     <div
-        class="grid grid-cols-5 gap-4 my-4"
+        class="grid grid-cols-2 gap-2 my-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 sm:gap-3 md:gap-4 lg:gap-5 sm:my-3 md:my-4 lg:my-5"
         x-data="{
             selected: @entangle('selected'),
             rows: @js($rows->pluck('id')->toArray()),
@@ -32,14 +32,14 @@
             const end = Math.max(lastIndex, currentIndex);
             const rowsToToggle = this.rows.slice(start, end + 1);
 
-            // Determine if the initial element is selected or not
-            const shouldSelect = !this.selected.includes(this.lastSelectedId.toString());
+            // Check if the item at the last index is selected or not
+            const isLastSelected = this.selected.includes(this.lastSelectedId.toString());
 
-            if (shouldSelect) {
-                // Select the range
+            if (isLastSelected) {
+                // Select all rows in the range
                 this.selected = [...new Set([...this.selected, ...rowsToToggle.map(String)])];
             } else {
-                // Deselect the range
+                // Deselect all rows in the range
                 this.selected = this.selected.filter(row => !rowsToToggle.includes(parseInt(row)));
             }
         } else {
