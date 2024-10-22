@@ -15,6 +15,8 @@ class MediaManager extends Component
 
     public $selected = [];
 
+    public $modalAttributes;
+
     // Listen for select Attachment
     protected $listeners = [
         'selectedRows' => 'selectAttachment',
@@ -22,16 +24,17 @@ class MediaManager extends Component
         'updateField' => 'updateField',
     ];
 
-    public static function modalMaxWidth(): string
+
+    public static function modalClasses(): string
     {
-        return '7xl';
+        return 'max-w-7xl';
     }
 
-    public function mount($slug, $selected)
+    public function mount($slug, $selected, $modalAttributes)
     {
         $this->selected = $selected;
         $this->fieldSlug = $slug;
-
+        $this->modalAttributes = $modalAttributes;
         $this->field = app($this->model)->fieldBySlug($this->fieldSlug);
 
         // ray('mount media manager', app($this->model), $this->fieldSlug, $this->field);

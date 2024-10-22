@@ -1,3 +1,5 @@
+@aware(['modalAttributes'])
+
 <template x-teleport="body">
     <div x-on:click.stop="console.log('stop here')">
         <div x-dialog x-model="dialogOpen" style="display: none"
@@ -8,7 +10,7 @@
             <!-- Panel -->
             <div x-on:click="$dialog.close()" class="flex relative justify-center items-end p-0 min-h-full sm:items-center sm:p-4">
                 <div x-on:click.stop="" x-dialog:panel x-transition.in
-                    class="overflow-hidden relative w-full max-w-xl bg-white rounded-t-xl shadow-lg dark:bg-gray-800 sm:rounded-b-xl">
+                    class="overflow-hidden relative w-full bg-white rounded-t-xl shadow-lg dark:bg-gray-800 sm:rounded-b-xl {{ optional($modalAttributes)['modalClasses'] }}">
                     <!-- Mobile: Top "grab" handle... -->
                     <div class="sm:hidden absolute top-[-10px] left-0 right-0 h-[50px]" x-data="{ startY: 0, currentY: 0, moving: false, get distance() { return this.moving ? Math.max(0, this.currentY - this.startY) : 0 } }"
                         x-on:touchstart="moving = true; startY = currentY = $event.touches[0].clientY"
