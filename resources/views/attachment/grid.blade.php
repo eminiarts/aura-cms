@@ -1,75 +1,5 @@
 <div>
-    <div
-        class="grid grid-cols-2 gap-2 my-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 sm:gap-3 md:gap-4 lg:gap-5 sm:my-3 md:my-4 lg:my-5"
-        x-data="{
-            selected: @entangle('selected'),
-            rows: @js($rows->pluck('id')->toArray()),
-            lastSelectedId: null,
-            field: @js($field),
-            maxFilesReached: false,
-
-            init() {
-                this.$watch('selected', (value) => {
-                    if (this.field.max_files) {
-                        this.maxFilesReached = value.length >= this.field.max_files;
-                    }
-                });
-            },
-            toggleRow(event, id) {
-                if (!this.rows || !Array.isArray(this.rows)) {
-                    return;
-                }
-                this.$nextTick(() => {
-                    if (this.field.max_files === 1) {
-                        if (this.selected.includes(id.toString())) {
-                            this.selected = [];
-                        } else {
-                            this.selected = [id.toString()];
-                        }
-                    } else if (event.shiftKey && this.lastSelectedId !== null) {
-                        const lastIndex = this.rows.indexOf(this.lastSelectedId);
-                        const currentIndex = this.rows.indexOf(id);
-
-                        if (lastIndex === -1 || currentIndex === -1) {
-                            return;
-                        }
-
-                        const start = Math.min(lastIndex, currentIndex);
-                        const end = Math.max(lastIndex, currentIndex);
-                        const rowsToToggle = this.rows.slice(start, end + 1);
-
-                        // Check if the item at the last index is selected or not
-                        const isLastSelected = this.selected.includes(this.lastSelectedId.toString());
-
-                        if (isLastSelected) {
-                            // Select all rows in the range, respecting max_files
-                            const newSelection = [...new Set([...this.selected, ...rowsToToggle.map(String)])];
-                            if (this.field.max_files) {
-                                this.selected = newSelection.slice(0, this.field.max_files);
-                            } else {
-                                this.selected = newSelection;
-                            }
-                        } else {
-                            // Deselect all rows in the range
-                            this.selected = this.selected.filter(row => !rowsToToggle.includes(parseInt(row)));
-                        }
-                    } else {
-                        // Toggle single selection
-                        const index = this.selected.indexOf(id.toString());
-                        if (index === -1) {
-                            if (!this.field.max_files || this.selected.length < this.field.max_files) {
-                                this.selected.push(id.toString());
-                            }
-                        } else {
-                            this.selected.splice(index, 1);
-                        }
-                    }
-
-                    this.lastSelectedId = id;
-                });
-            }
-        }"
-    >
+    <div class="grid grid-cols-2 gap-2 my-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 sm:gap-3 md:gap-4 lg:gap-5 sm:my-3 md:my-4 lg:my-5">
         @forelse($rows as $row)
         <div class="relative select-none" wire:key="grid_{{ $row->id }}">
             <label for="checkbox_{{ $row->id }}" class="block cursor-pointer" x-on:click="toggleRow($event, {{ $row->id }})">
@@ -80,7 +10,6 @@
                             'opacity-50': maxFilesReached && !selected.includes('{{ $row->id }}')
                         }">
                         @include('aura::attachment.thumbnail')
-                        <!-- Add a semi-transparent overlay for selected items -->
                         <div class="rounded-lg absolute inset-0 opacity-0 shadow-[inset_0_0_0_4px_theme(colors.primary.500)]"
                              :class="{ 'opacity-100': selected.includes('{{ $row->id }}') }"></div>
                     </div>

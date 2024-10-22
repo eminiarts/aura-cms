@@ -8,14 +8,8 @@
     selectAll: @entangle('selectAll'),
     loading: false,
     oldSelected: null,
-
-    @if($field)
-    selectRows(detail) {
-        if (detail.slug == '{{ $field['slug'] }}') {
-            this.selected = detail.value
-        }
-    },
-    @endif
+    field: @js($field),
+    maxFilesReached: false,
 
     init() {
         Livewire.on('selectedRows', (updatedSelected) => {
@@ -31,26 +25,71 @@
             this.selectPage = true;
         }
 
-        @if($field)
-        {{-- Need to refactor this maybe because it's field specific --}}
-        this.$watch('selected', value => {
-            // Emit an event with the new value
-            {{-- console.log('dispatch selection-changed', this.selected, value); --}}
-            this.$dispatch('selection-changed', { selected: value, slug: '{{ $field['slug'] }}' });
+        this.$watch('selected', (value) => {
+            if (this.field && this.field.max_files) {
+                this.maxFilesReached = value.length >= this.field.max_files;
+            }
+            this.$dispatch('selection-changed', { selected: value, slug: this.field ? this.field.slug : null });
         });
-        @endif
 
-        // watch rows for changes
         this.$watch('rows', (rows) => {
             // Check if rows (array of ids) is included in this.selected. if so, set this.selectPage to true
-
-            //this.selectPage = rows.every(row => this.selected.includes(row.toString()));
         });
 
         this.$watch('currentPage', (rows) => {
             this.$nextTick(() => {
                 this.selectPage = this.rows.every(row => this.selected.includes(row));
             });
+        });
+    },
+
+    toggleRow(event, id) {
+        if (!this.rows || !Array.isArray(this.rows)) {
+            return;
+        }
+        this.$nextTick(() => {
+            if (this.field && this.field.max_files === 1) {
+                if (this.selected.includes(id.toString())) {
+                    this.selected = [];
+                } else {
+                    this.selected = [id.toString()];
+                }
+            } else if (event.shiftKey && this.lastSelectedId !== null) {
+                const lastIndex = this.rows.indexOf(this.lastSelectedId);
+                const currentIndex = this.rows.indexOf(id);
+
+                if (lastIndex === -1 || currentIndex === -1) {
+                    return;
+                }
+
+                const start = Math.min(lastIndex, currentIndex);
+                const end = Math.max(lastIndex, currentIndex);
+                const rowsToToggle = this.rows.slice(start, end + 1);
+
+                const isLastSelected = this.selected.includes(this.lastSelectedId.toString());
+
+                if (isLastSelected) {
+                    const newSelection = [...new Set([...this.selected, ...rowsToToggle.map(String)])];
+                    if (this.field && this.field.max_files) {
+                        this.selected = newSelection.slice(0, this.field.max_files);
+                    } else {
+                        this.selected = newSelection;
+                    }
+                } else {
+                    this.selected = this.selected.filter(row => !rowsToToggle.includes(parseInt(row)));
+                }
+            } else {
+                const index = this.selected.indexOf(id.toString());
+                if (index === -1) {
+                    if (!this.field || !this.field.max_files || this.selected.length < this.field.max_files) {
+                        this.selected.push(id.toString());
+                    }
+                } else {
+                    this.selected.splice(index, 1);
+                }
+            }
+
+            this.lastSelectedId = id;
         });
     },
 
@@ -107,46 +146,10 @@
         }
     },
 
-    toggleRow(event, id) {
-        this.$nextTick(() => {
-            // Check if shift key was pressed and last selected id exists
-            if (event.shiftKey && this.lastSelectedId !== null) {
-                // Get the indexes of the current and last selected rows
-                const lastIndex = this.rows.indexOf(this.lastSelectedId);
-                const currentIndex = this.rows.indexOf(id);
-
-                // Determine the start and end indexes of the rows to be selected
-                const start = Math.min(lastIndex, currentIndex);
-                const end = Math.max(lastIndex, currentIndex);
-
-                // If the current row is not already selected, remove all rows between start and end
-                if (!this.selected.includes(id.toString())) {
-                    this.selected = this.selected.filter(row => !this.rows.slice(start, end + 1).map(item => item.toString()).includes(row.toString()));
-                }
-                // Otherwise, add all rows between start and end
-                else {
-                    this.selected = [...this.selected, ...this.rows.slice(start, end + 1)].map(item => item.toString());
-
-                    // Remove duplicates from the selected rows
-                    this.selected = this.selected.filter((item, index) => this.selected.indexOf(item) === index);
-                }
-            }
-
-            this.lastSelectedId = id;
-
-            // Select All
-            if (this.selected.length === this.total) {
-                this.selectAll = true;
-            } else {
-                this.selectAll = false;
-            }
-
-            // Select Page
-            if (!this.selected.includes(id.toString())) {
-                this.selectPage = false;
-            }
-
-        });
+    selectRows(detail) {
+        if (detail.slug == '{{ $field['slug'] }}') {
+            this.selected = detail.value
+        }
     }
 }">
     {{-- Be aware that this file opens a div which closes at the end --}}
@@ -159,7 +162,6 @@
             this.$dispatch('inset-sidebar', { element: this.$refs.sidebar })
         },
         init() {
-
             Livewire.dispatch('tableMounted')
 
             const sortable = new window.Sortable(document.querySelectorAll('.sortable-wrapper'), {
