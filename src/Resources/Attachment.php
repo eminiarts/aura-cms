@@ -311,6 +311,11 @@ class Attachment extends Resource
         return asset('storage/'.$this->url);
     }
 
+    public function tableComponentView()
+    {
+        return 'aura::attachment.table';
+    }
+
     public function tableGridView()
     {
         return 'aura::attachment.grid';
