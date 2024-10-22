@@ -20,8 +20,8 @@
     @include('aura::components.layout.favicon')
 
     @php
-        $loginBgUrl = $appSettings['login-bg'] ?? null;
-        $loginBgDarkUrl = $appSettings['login-bg-darkmode'] ?? null;
+        $loginBgUrl = $appSettings['theme']['login-bg'] ?? null;
+        $loginBgDarkUrl = $appSettings['theme']['login-bg-darkmode'] ?? null;
     @endphp
 
 </head>

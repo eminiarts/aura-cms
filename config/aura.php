@@ -59,6 +59,8 @@ return [
    |
    */
 
+    'app_name' => env('APP_NAME'),
+
     'components' => [
         'dashboard' => Aura\Base\Livewire\Dashboard::class,
         'profile' => Aura\Base\Livewire\Profile::class,
@@ -136,6 +138,30 @@ return [
         '2fa' => true,
         'user_invitations' => true,
         'create_teams' => true,
+    ],
+
+    'media' => [
+        'disk' => 'public',
+        'path' => 'media',
+        'max_file_size' => 10000,
+        'generate_thumbnails' => true,
+        'thumbnails' => [
+            [
+                'name' => 'thumbnail',
+                'width' => 600,
+                'height' => 600,
+            ],
+            [
+                'name' => 'medium',
+                'width' => 1200,
+                'height' => 1200,
+            ],
+            [
+                'name' => 'large',
+                'width' => 2000,
+                'height' => 2000,
+            ],
+        ],
     ],
 
     /*

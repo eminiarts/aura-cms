@@ -316,22 +316,14 @@ class Aura
         });
     }
 
+    public function option($key)
+    {
+        return $this->options()[$key] ?? null;
+    }
+
     public function options()
     {
-        return [
-            'app-name' => config('aura.theme.app-name') ?? env('APP_NAME'),
-
-            'color-palette' => config('aura.theme.color-palette'),
-            'darkmode-type' => config('aura.theme.darkmode-type'),
-            'gray-color-palette' => config('aura.theme.gray-color-palette'),
-            'sidebar-size' => config('aura.theme.sidebar-size'),
-            'sidebar-darkmode-type' => config('aura.theme.sidebar-darkmode-type'),
-            'login-bg' => config('aura.theme.login-bg'),
-            'login-bg-darkmode' => config('aura.theme.login-bg-darkmode'),
-
-            'app-favicon' => config('aura.theme.app-favicon'),
-            'app-favicon-darkmode' => config('aura.theme.app-favicon-darkmode'),
-        ];
+        return config('aura');
     }
 
     // public function setOption($key, $value)
