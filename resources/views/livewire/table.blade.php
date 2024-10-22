@@ -244,6 +244,7 @@
                     </div>
                 @endif
 
+                @dump($this->settings)
                 @if ($currentView == 'grid')
                     <div class="aura-table-grid-view">
                         @include($this->settings['views']['grid'])
