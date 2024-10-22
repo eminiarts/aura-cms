@@ -4,6 +4,7 @@ namespace Aura\Base\Livewire;
 
 use Aura\Base\Resources\Attachment;
 use Livewire\Component;
+use Livewire\Attributes\On;
 
 class MediaManager extends Component
 {
@@ -55,18 +56,18 @@ class MediaManager extends Component
 
         $this->dispatch('media-manager-selected');
 
-        // If selected is deffered, emit event to table to update selected, then emit back to updateField
-
         // Close Modal
-        // $this->closeModal();
+        $this->dispatch('closeModal');
     }
 
-    // Select Attachment
+    #[On('selectedRows')]
     public function selectAttachment($ids)
     {
+        ray('selectAttachment', $ids);
         $this->selected = $ids;
     }
 
+    #[On('tableMounted')]
     public function tableMounted()
     {
         if ($this->selected) {
@@ -74,14 +75,11 @@ class MediaManager extends Component
         }
     }
 
-    public function updated()
-    {
-        $this->dispatch('selectedRows', $this->selected);
-    }
-
+    #[On('updateField')]
     public function updateField($field)
     {
         if ($field['slug'] == $this->fieldSlug) {
+        ray('updated', $this->selected);
             $this->selected = $field['value'];
             $this->dispatch('selectedRows', $this->selected);
         }

@@ -2,7 +2,7 @@
     <div
         class="grid grid-cols-5 gap-4 my-4"
         x-data="{
-            selected: @entangle('selected').live,
+            selected: @entangle('selected'),
             rows: @entangle('rowIds'),
             lastSelectedId: null,
 
