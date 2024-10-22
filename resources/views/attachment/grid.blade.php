@@ -3,34 +3,56 @@
         class="grid grid-cols-5 gap-4 my-4"
         x-data="{
             selected: @entangle('selected'),
-            rows: @entangle('rowIds'),
+            rows: @js($rows->pluck('id')->toArray()),
             lastSelectedId: null,
 
             init() {
-                // Remove the Livewire.on listener from here
+                console.log('Rows initialized:', this.rows);
             },
             toggleRow(event, id) {
+                console.log('Toggle row called for id:', id);
+                console.log('Current rows:', this.rows);
+
+                if (!this.rows || !Array.isArray(this.rows)) {
+                    console.error('rows is not properly initialized');
+                    return;
+                }
+
                 this.$nextTick(() => {
                     if (event.shiftKey && this.lastSelectedId !== null) {
                         const lastIndex = this.rows.indexOf(this.lastSelectedId);
                         const currentIndex = this.rows.indexOf(id);
 
+                        if (lastIndex === -1 || currentIndex === -1) {
+                            console.error('Invalid index found');
+                            return;
+                        }
+
                         const start = Math.min(lastIndex, currentIndex);
                         const end = Math.max(lastIndex, currentIndex);
 
-                        if ( (!this.selected.includes(id.toString()) && event.target.tagName !== 'DIV') || (this.selected.includes(id.toString()) && event.target.tagName === 'DIV') ) {
-                            this.selected = this.selected.filter(row => !this.rows.slice(start, end + 1).map(item => item.toString()).includes(row.toString()));
+                        const rowsToToggle = this.rows.slice(start, end + 1);
+
+                        if (this.selected.includes(id.toString())) {
+                            // Deselect the range
+                            this.selected = this.selected.filter(row => !rowsToToggle.includes(parseInt(row)));
+                        } else {
+                            // Select the range
+                            this.selected = [...new Set([...this.selected, ...rowsToToggle.map(String)])];
                         }
-                        else {
-                            this.selected = [...this.selected, ...this.rows.slice(start, end + 1)].map(item => item.toString());
-                            this.selected = this.selected.filter((item, index) => this.selected.indexOf(item) === index);
+                    } else {
+                        // Toggle single selection
+                        const index = this.selected.indexOf(id.toString());
+                        if (index === -1) {
+                            this.selected.push(id.toString());
+                        } else {
+                            this.selected.splice(index, 1);
                         }
                     }
 
                     this.lastSelectedId = id;
                 });
             }
-
         }"
     >
         @forelse($rows as $row)
@@ -47,7 +69,7 @@
                     <div class="absolute top-3 left-3">
                         <x-aura::input.checkbox
                             id="checkbox_{{ $row->id }}"
-                            x-model.debounce.150ms="selected"
+                            x-model="selected"
                             :value="$row->id"
                             x-bind:class="{ 'opacity-0 group-hover:opacity-100': !selected.includes('{{ $row->id }}'), 'opacity-100': selected.includes('{{ $row->id }}') }"
                             x-on:click.stop="toggleRow($event, {{ $row->id }})"

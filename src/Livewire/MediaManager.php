@@ -20,6 +20,8 @@ class MediaManager extends Component
 
     public $initialSelectionDone = false;
 
+    public $rowIds = []; // Add this line
+
     // Listen for select Attachment
     protected $listeners = [
         'selectedRows' => 'selectAttachment',
@@ -39,11 +41,15 @@ class MediaManager extends Component
         $this->fieldSlug = $slug;
         $this->modalAttributes = $modalAttributes;
         $this->field = app($this->model)->fieldBySlug($this->fieldSlug);
+        $this->rowIds = Attachment::pluck('id')->toArray(); // Add this line to populate rowIds
+        ray('rowIds', $this->rowIds); // Add this line for debugging
     }
 
     public function render()
     {
-        return view('aura::livewire.media-manager');
+        return view('aura::livewire.media-manager', [
+            'rows' => Attachment::paginate(25), // Adjust the number as needed
+        ]);
     }
 
     public function select()
