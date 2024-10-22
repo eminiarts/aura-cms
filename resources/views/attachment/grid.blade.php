@@ -1,6 +1,6 @@
 <div>
     <div
-        class="grid flex-1 grid-cols-5 gap-4 my-4"
+        class="grid grid-cols-5 gap-4 my-4"
         x-data="{
             selected: @entangle('selected').live,
             rows: @entangle('rowIds'),
@@ -37,67 +37,63 @@
         }"
     >
         @forelse($rows as $row)
-
         <div class="relative select-none" wire:key="grid_{{ $row->id }}">
-            <label for="checkbox_{{ $row->id }}" class="cursor-pointer" x-on:click="toggleRow($event, {{ $row->id }})">
-            <div class="block overflow-hidden w-full bg-gray-50 rounded-lg dark:bg-gray-800 group aspect-w-10 aspect-h-7 focus-within:ring-2 focus-within:ring-primary-500 focus-within:ring-offset-2 focus-within:ring-offset-gray-100">
-                @include('aura::attachment.thumbnail')
-            </div>
-            </label>
-            <div class="flex mt-2 space-x-1">
-                <div class="shrink-0">
-                    <x-aura::input.checkbox
-                        id="checkbox_{{ $row->id }}"
-                        x-model.debounce.150ms="selected"
-                        :value="$row->id"
-                        x-on:click="toggleRow($event, {{ $row->id }})"
-                    />
-                </div>
+            <label for="checkbox_{{ $row->id }}" class="block cursor-pointer" x-on:click="toggleRow($event, {{ $row->id }})">
+                <div class="relative">
+                    <div class="overflow-hidden relative w-full bg-gray-100 rounded-lg transition-all duration-300 ease-in-out dark:bg-gray-800 group aspect-w-10 aspect-h-7 focus-within:ring-2 focus-within:ring-primary-500 focus-within:ring-offset-2 focus-within:ring-offset-gray-100"
+                        :class="{ 'shadow-[inset_0_0_0_4px_rgba(59,130,246,1)]': selected.includes('{{ $row->id }}') }">
+                        @include('aura::attachment.thumbnail')
 
-                <div class="overflow-hidden flex-1 truncate">
-                    <div class="overflow-hidden w-full truncate">
-                        <div class="max-w-[10rem]">
-                            <p class="block overflow-hidden text-sm font-medium truncate pointer-events-none">{{ $row->title ?? '' }}</p>
-                        </div>
-                        <p class="block text-sm font-medium text-gray-500 pointer-events-none">{{ $row['fields']['size'] ?? '' }}</p>
+                    </div>
+                    <div class="absolute top-3 left-3">
+                        <x-aura::input.checkbox
+                            id="checkbox_{{ $row->id }}"
+                            x-model.debounce.150ms="selected"
+                            :value="$row->id"
+                            class="w-5 h-5 rounded-full border-2 border-white shadow-md transition-opacity duration-300 ease-in-out"
+
+                            x-bind:class="{ 'opacity-0 group-hover:opacity-100': !selected.includes('{{ $row->id }}'), 'opacity-100': selected.includes('{{ $row->id }}') }"
+
+                            x-on:click.stop="toggleRow($event, {{ $row->id }})"
+                        />
                     </div>
                 </div>
+            </label>
 
-                <div class="shrink-0">
-                    <a href="{{ $row->editUrl() }}">
-                        <x-aura::icon icon="edit" />
-                    </a>
+            <div class="px-1 mt-2">
+                <p class="text-sm font-medium text-gray-900 truncate dark:text-gray-100" title="{{ $row->title ?? '' }}">
+                    {{ $row->title ?? '' }}
+                </p>
+                <div class="flex justify-between items-center mt-1">
+                    <p class="text-xs text-gray-500 dark:text-gray-400">
+                        {{ $row->mime_type ?? 'Unknown' }}
+                    </p>
+                    <p class="text-xs text-gray-500 dark:text-gray-400">
+                        {{ $row->size }}
+                    </p>
                 </div>
             </div>
         </div>
-
         @empty
-
             <div class="col-span-5">
                 <div class="py-8 mx-auto text-center bg-white dark:bg-gray-900">
-                <svg class="mx-auto w-12 h-12 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"
-                    xmlns="http://www.w3.org/2000/svg">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                        d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636">
-                    </path>
-                </svg>
-
-                <h3 class="mt-2 text-sm font-medium text-gray-900">No entries available</h3>
+                    <svg class="mx-auto w-12 h-12 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                        xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636">
+                        </path>
+                    </svg>
+                    <h3 class="mt-2 text-sm font-medium text-gray-900 dark:text-gray-100">No entries available</h3>
+                </div>
             </div>
-            </div>
-
         @endforelse
-
     </div>
 
     {{ $rows->links() }}
 
     <div>
-        @php
-        @endphp
-        @if(is_int($selected) || is_array($selected))
-        {{ count($selected) }} {{ __('selected') }}
+        @if(is_countable($selected))
+            {{ count($selected) }} {{ __('selected') }}
         @endif
     </div>
-
 </div>
