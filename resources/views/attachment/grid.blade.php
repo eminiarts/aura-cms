@@ -7,10 +7,7 @@
             lastSelectedId: null,
 
             init() {
-                Livewire.on('selectedRows', (updatedSelected) => {
-                    {{-- console.log('grid uS 2', updatedSelected); --}}
-                    {{-- this.selected = updatedSelected[0]; --}}
-                });
+                // Remove the Livewire.on listener from here
             },
             toggleRow(event, id) {
                 this.$nextTick(() => {
