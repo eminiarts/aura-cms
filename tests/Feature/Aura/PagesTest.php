@@ -46,14 +46,14 @@ test('Check Aura Pages (with Teams)', function ($routeName) {
 
 // Test Post Index Pages
 test('Check Index Pages', function ($postType) {
-    $this->get(route('aura.resource.index', ['slug' => $postType]))->assertOk();
+    $this->get(route("aura.{$postType}.index"))->assertOk();
 })->with('postTypes');
 
 // Test Post Create Pages
 test('Check Create Pages', function ($postType) {
     $this->withoutExceptionHandling();
 
-    $this->get(route('aura.resource.create', ['slug' => $postType]))->assertOk();
+    $this->get(route("aura.{$postType}.create"))->assertOk();
 })->with('postTypes');
 
 // Test Post Edit and View Pages

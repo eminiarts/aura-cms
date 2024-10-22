@@ -10,7 +10,7 @@
         <x-aura::breadcrumbs>
             <x-aura::breadcrumbs.li :href="route('aura.dashboard')" title="" icon="dashboard"
                 iconClass="text-gray-500 w-7 h-7 mr-0" />
-            <x-aura::breadcrumbs.li :href="route('aura.resource.index', $slug)" :title="__(Str::plural($slug))" />
+            <x-aura::breadcrumbs.li :href="route('aura.' . $slug . '.index')" :title="__(Str::plural($slug))" />
             <x-aura::breadcrumbs.li :title="$model->title()" />
         </x-aura::breadcrumbs>
     @endif

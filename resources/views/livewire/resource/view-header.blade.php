@@ -10,7 +10,7 @@
         @include('aura::livewire.resource.actions')
 
         @can('update', $model)
-            <x-aura::button href="{{ route('aura.resource.edit', [$slug, $model->id]) }}">
+            <x-aura::button href="{{ route('aura.' . $slug . '.edit', $model->id) }}">
                 {{ __('Edit') }}
             </x-aura::button>
         @endcan

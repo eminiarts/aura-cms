@@ -176,14 +176,13 @@ class Table extends Component
         }
 
         if ($this->parent) {
-            return route('aura.resource.create', [
-                'slug' => $this->model()->getType(),
+            return route('aura.' . $this->model()->getSlug() . '.create', [
                 'for' => $this->parent->getType(),
                 'id' => $this->parent->id,
             ]);
         }
 
-        return route('aura.resource.create', ['slug' => $this->model()->getType()]);
+        return route('aura.' . $this->model()->getSlug() . '.create');
     }
 
     /**

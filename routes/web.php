@@ -1,14 +1,17 @@
 <?php
 
+use Aura\Base\Facades\Aura;
+use Aura\Base\Livewire\PluginsPage;
+use Aura\Base\Livewire\Resource\Edit;
+use Aura\Base\Livewire\Resource\View;
+use Illuminate\Support\Facades\Route;
+use Aura\Base\Livewire\Resource\Index;
+use Aura\Base\Livewire\ResourceEditor;
+use Aura\Base\Livewire\Resource\Create;
 use Aura\Base\Http\Controllers\Api\FieldsController;
 use Aura\Base\Livewire\Attachment\Index as AttachmentIndex;
-use Aura\Base\Livewire\PluginsPage;
-use Aura\Base\Livewire\Resource\Create;
-use Aura\Base\Livewire\Resource\Edit;
-use Aura\Base\Livewire\Resource\Index;
-use Aura\Base\Livewire\Resource\View;
-use Aura\Base\Livewire\ResourceEditor;
-use Illuminate\Support\Facades\Route;
+
+ray('aura routes')->red();
 
 Route::middleware(config('aura.middleware.aura-guest'))->group(function () {
     require __DIR__.'/auth.php';
@@ -43,9 +46,13 @@ Route::domain(config('aura.domain'))
 
             Route::get('/attachment', AttachmentIndex::class)->name('attachment.index');
 
-            Route::get('/{slug}', Index::class)->name('resource.index');
-            Route::get('/{slug}/create', Create::class)->name('resource.create');
-            Route::get('/{slug}/{id}/edit', Edit::class)->name('resource.edit');
-            Route::get('/{slug}/{id}', View::class)->name('resource.view');
+            foreach (Aura::getResources() as $resource) {
+                $slug = app($resource)->getSlug();
+                Route::get("/{$slug}", Index::class)->name("{$slug}.index");
+                Route::get("/{$slug}/create", Create::class)->name("{$slug}.create");
+                Route::get("/{$slug}/{id}/edit", Edit::class)->name("{$slug}.edit");
+                Route::get("/{$slug}/{id}", View::class)->name("{$slug}.view");
+            }
+
         });
     });

@@ -95,7 +95,7 @@ trait AuraModelConfig
 
     public function createUrl()
     {
-        return route('aura.resource.create', [$this->getType()]);
+        return route('aura.' . $this->getSlug() . '.create', [$this->getType()]);
     }
 
     public function createView()
@@ -144,7 +144,7 @@ trait AuraModelConfig
     public function editUrl()
     {
         if ($this->getType() && $this->id) {
-            return route('aura.resource.edit', ['slug' => $this->getType(), 'id' => $this->id]);
+            return route('aura.' . $this->getSlug() . '.edit', ['id' => $this->id]);
         }
     }
 
@@ -234,7 +234,7 @@ trait AuraModelConfig
 
     public function getIndexRoute()
     {
-        return route('aura.resource.index', $this->getSlug());
+        return route('aura.' . $this->getSlug() . '.index');
     }
 
     public function getMetaForeignKey()

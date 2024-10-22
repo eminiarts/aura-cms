@@ -105,7 +105,7 @@ class Post extends Resource
         parent::delete();
 
         // redirect to index page
-        return redirect()->route('aura.resource.index', [$this->getType()]);
+        return redirect()->route('aura.' . $this->getSlug() . '.index');
     }
 
     public function deleteSelected()
