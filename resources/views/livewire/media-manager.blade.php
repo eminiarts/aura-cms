@@ -1,6 +1,6 @@
 <div class="" x-data="{
 
-    selected: @entangle('selected').live,
+    selected: @entangle('selected'),
 
     saveModel() {
         // Save Model when Media Manager is closed
