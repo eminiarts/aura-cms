@@ -41,19 +41,18 @@
             <label for="checkbox_{{ $row->id }}" class="block cursor-pointer" x-on:click="toggleRow($event, {{ $row->id }})">
                 <div class="relative">
                     <div class="overflow-hidden relative w-full bg-gray-100 rounded-lg transition-all duration-300 ease-in-out dark:bg-gray-800 group aspect-w-10 aspect-h-7 focus-within:ring-2 focus-within:ring-primary-500 focus-within:ring-offset-2 focus-within:ring-offset-gray-100"
-                        :class="{ 'shadow-[inset_0_0_0_4px_rgba(59,130,246,1)]': selected.includes('{{ $row->id }}') }">
+                        :class="{ 'shadow-[inset_0_0_0_4px_theme(colors.primary.500)]': selected.includes('{{ $row->id }}') }">
                         @include('aura::attachment.thumbnail')
-
+                        <!-- Add a semi-transparent overlay for selected items -->
+                        <div class="rounded-lg absolute inset-0 opacity-0 shadow-[inset_0_0_0_4px_theme(colors.primary.500)]"
+                             :class="{ 'opacity-100': selected.includes('{{ $row->id }}') }"></div>
                     </div>
                     <div class="absolute top-3 left-3">
                         <x-aura::input.checkbox
                             id="checkbox_{{ $row->id }}"
                             x-model.debounce.150ms="selected"
                             :value="$row->id"
-                            class="w-5 h-5 rounded-full border-2 border-white shadow-md transition-opacity duration-300 ease-in-out"
-
                             x-bind:class="{ 'opacity-0 group-hover:opacity-100': !selected.includes('{{ $row->id }}'), 'opacity-100': selected.includes('{{ $row->id }}') }"
-
                             x-on:click.stop="toggleRow($event, {{ $row->id }})"
                         />
                     </div>
