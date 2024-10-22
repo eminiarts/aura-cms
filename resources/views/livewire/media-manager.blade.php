@@ -4,7 +4,7 @@
 
     saveModel() {
         // Save Model when Media Manager is closed
-        $wire.$dispatch('saveModel') 
+        $wire.$dispatch('saveModel')
     },
 
     changeSelected(event) {
@@ -24,6 +24,8 @@
         {{-- @dump('mediamanager', $this->selected, $field) --}}
         <livewire:aura::media-uploader :field="$field" :selected="$selected" :table="true" :model="app('Aura\Base\Resources\Attachment')" />
     </div>
+
+    @dump($modalAttributes)
 
     <div class="z-[2] relative flex justify-end mt-4">
         <x-aura::button class="ml-4">

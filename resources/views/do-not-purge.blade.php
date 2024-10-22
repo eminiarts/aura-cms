@@ -5,6 +5,8 @@
         aura-sidebar-darkmode-type-primary
         aura-sidebar-darkmode-type-light
         aura-sidebar-darkmode-type-dark
+        max-w-4xl
+        max-w-7xl
 
         $maxWidths = [
         'sm'  => 'sm:max-w-sm',
