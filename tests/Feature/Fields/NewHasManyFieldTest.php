@@ -10,6 +10,11 @@ use Livewire\Livewire;
 beforeEach(function () {
     $this->actingAs($this->user = createSuperAdmin());
 
+    // app('aura')::registerResources([
+    //     NewGenreModel::class,
+    //     NewMovieModel::class,
+    // ]);
+
     // Create some fake genres
     // Genre::factory()->count(3)->create();
 });

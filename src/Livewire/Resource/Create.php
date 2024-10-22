@@ -71,11 +71,14 @@ class Create extends Component
         return parent::callMethod($method, $params, $captureReturnValueCallback);
     }
 
-    public function mount($slug)
+    public function mount()
     {
-        $this->slug = $slug;
+                // Get the slug from the current route
+        $routeName = request()->route()->getName();
+        $this->slug = explode('.', $routeName)[1] ?? null;
+        
 
-        $this->model = Aura::findResourceBySlug($slug);
+        $this->model = Aura::findResourceBySlug($this->slug);
 
         // ray($this->model);
 

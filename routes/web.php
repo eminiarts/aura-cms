@@ -11,8 +11,6 @@ use Aura\Base\Livewire\Resource\Create;
 use Aura\Base\Http\Controllers\Api\FieldsController;
 use Aura\Base\Livewire\Attachment\Index as AttachmentIndex;
 
-ray('aura routes')->red();
-
 Route::middleware(config('aura.middleware.aura-guest'))->group(function () {
     require __DIR__.'/auth.php';
 });
