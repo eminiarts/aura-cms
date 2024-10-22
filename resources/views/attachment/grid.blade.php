@@ -10,49 +10,53 @@
                 console.log('Rows initialized:', this.rows);
             },
             toggleRow(event, id) {
-                console.log('Toggle row called for id:', id);
-                console.log('Current rows:', this.rows);
+    console.log('Toggle row called for id:', id);
+    console.log('Current rows:', this.rows);
 
-                if (!this.rows || !Array.isArray(this.rows)) {
-                    console.error('rows is not properly initialized');
-                    return;
-                }
+    if (!this.rows || !Array.isArray(this.rows)) {
+        console.error('rows is not properly initialized');
+        return;
+    }
 
-                this.$nextTick(() => {
-                    if (event.shiftKey && this.lastSelectedId !== null) {
-                        const lastIndex = this.rows.indexOf(this.lastSelectedId);
-                        const currentIndex = this.rows.indexOf(id);
+    this.$nextTick(() => {
+        if (event.shiftKey && this.lastSelectedId !== null) {
+            const lastIndex = this.rows.indexOf(this.lastSelectedId);
+            const currentIndex = this.rows.indexOf(id);
 
-                        if (lastIndex === -1 || currentIndex === -1) {
-                            console.error('Invalid index found');
-                            return;
-                        }
-
-                        const start = Math.min(lastIndex, currentIndex);
-                        const end = Math.max(lastIndex, currentIndex);
-
-                        const rowsToToggle = this.rows.slice(start, end + 1);
-
-                        if (this.selected.includes(id.toString())) {
-                            // Deselect the range
-                            this.selected = this.selected.filter(row => !rowsToToggle.includes(parseInt(row)));
-                        } else {
-                            // Select the range
-                            this.selected = [...new Set([...this.selected, ...rowsToToggle.map(String)])];
-                        }
-                    } else {
-                        // Toggle single selection
-                        const index = this.selected.indexOf(id.toString());
-                        if (index === -1) {
-                            this.selected.push(id.toString());
-                        } else {
-                            this.selected.splice(index, 1);
-                        }
-                    }
-
-                    this.lastSelectedId = id;
-                });
+            if (lastIndex === -1 || currentIndex === -1) {
+                console.error('Invalid index found');
+                return;
             }
+
+            const start = Math.min(lastIndex, currentIndex);
+            const end = Math.max(lastIndex, currentIndex);
+            const rowsToToggle = this.rows.slice(start, end + 1);
+
+            // Determine if the initial element is selected or not
+            const shouldSelect = !this.selected.includes(this.lastSelectedId.toString());
+
+            if (shouldSelect) {
+                // Select the range
+                this.selected = [...new Set([...this.selected, ...rowsToToggle.map(String)])];
+            } else {
+                // Deselect the range
+                this.selected = this.selected.filter(row => !rowsToToggle.includes(parseInt(row)));
+            }
+        } else {
+            // Toggle single selection
+            const index = this.selected.indexOf(id.toString());
+            if (index === -1) {
+                this.selected.push(id.toString());
+            } else {
+                this.selected.splice(index, 1);
+            }
+        }
+
+        this.lastSelectedId = id;
+    });
+}
+
+
         }"
     >
         @forelse($rows as $row)

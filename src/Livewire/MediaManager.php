@@ -42,7 +42,6 @@ class MediaManager extends Component
         $this->modalAttributes = $modalAttributes;
         $this->field = app($this->model)->fieldBySlug($this->fieldSlug);
         $this->rowIds = Attachment::pluck('id')->toArray(); // Add this line to populate rowIds
-        ray('rowIds', $this->rowIds); // Add this line for debugging
     }
 
     public function render()
