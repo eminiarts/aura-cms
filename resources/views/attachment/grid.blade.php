@@ -5,16 +5,25 @@
             selected: @entangle('selected'),
             rows: @js($rows->pluck('id')->toArray()),
             lastSelectedId: null,
+            field: @js($field),
+            maxFilesReached: false,
 
             init() {
-                console.log('Rows initialized:', this.rows);
+                this.$watch('selected', (value) => {
+                    this.maxFilesReached = this.field.max_files && value.length >= this.field.max_files;
+                });
             },
             toggleRow(event, id) {
                 if (!this.rows || !Array.isArray(this.rows)) {
                     return;
                 }
                 this.$nextTick(() => {
-                    if (event.shiftKey && this.lastSelectedId !== null) {
+                    if (this.field.max_files === 1) {
+                        this.selected = [id.toString()];
+                    } else if (this.field.max_files && this.selected.length >= this.field.max_files && !this.selected.includes(id.toString())) {
+                        // Max files reached, don't add more
+                        return;
+                    } else if (event.shiftKey && this.lastSelectedId !== null) {
                         const lastIndex = this.rows.indexOf(this.lastSelectedId);
                         const currentIndex = this.rows.indexOf(id);
 
@@ -56,18 +65,31 @@
             <label for="checkbox_{{ $row->id }}" class="block cursor-pointer" x-on:click="toggleRow($event, {{ $row->id }})">
                 <div class="relative">
                     <div class="overflow-hidden relative w-full bg-gray-100 rounded-lg transition-all duration-300 ease-in-out dark:bg-gray-800 group aspect-w-10 aspect-h-7 focus-within:ring-2 focus-within:ring-primary-500 focus-within:ring-offset-2 focus-within:ring-offset-gray-100"
-                        :class="{ 'shadow-[inset_0_0_0_4px_theme(colors.primary.500)]': selected.includes('{{ $row->id }}') }">
+                        :class="{
+                            'shadow-[inset_0_0_0_4px_theme(colors.primary.500)]': selected.includes('{{ $row->id }}'),
+                            'opacity-50 cursor-not-allowed': maxFilesReached && !selected.includes('{{ $row->id }}')
+                        }">
                         @include('aura::attachment.thumbnail')
                         <!-- Add a semi-transparent overlay for selected items -->
                         <div class="rounded-lg absolute inset-0 opacity-0 shadow-[inset_0_0_0_4px_theme(colors.primary.500)]"
                              :class="{ 'opacity-100': selected.includes('{{ $row->id }}') }"></div>
+                        <!-- Add an overlay with a message when max files is reached -->
+                        <div class="flex absolute inset-0 justify-center items-center bg-gray-900 bg-opacity-75 rounded-lg opacity-0 transition-opacity duration-300"
+                             :class="{ 'opacity-100': maxFilesReached && !selected.includes('{{ $row->id }}') }">
+                            <p class="text-sm font-medium text-white">Max files reached</p>
+                        </div>
                     </div>
                     <div class="absolute top-3 left-3">
                         <x-aura::input.checkbox
                             id="checkbox_{{ $row->id }}"
                             x-model="selected"
                             :value="$row->id"
-                            x-bind:class="{ 'opacity-0 group-hover:opacity-100': !selected.includes('{{ $row->id }}'), 'opacity-100': selected.includes('{{ $row->id }}') }"
+                            x-bind:class="{
+                                'opacity-0 group-hover:opacity-100': !selected.includes('{{ $row->id }}'),
+                                'opacity-100': selected.includes('{{ $row->id }}'),
+                                'cursor-not-allowed': maxFilesReached && !selected.includes('{{ $row->id }}')
+                            }"
+                            x-bind:disabled="maxFilesReached && !selected.includes('{{ $row->id }}')"
                             x-on:click.stop="toggleRow($event, {{ $row->id }})"
                         />
                     </div>
@@ -106,8 +128,11 @@
     {{ $rows->links() }}
 
     <div>
-        @if(is_countable($selected))
+        <p class="text-sm text-gray-600 dark:text-gray-400">
             {{ count($selected) }} {{ __('selected') }}
-        @endif
+            <span x-show="field.max_files">
+                ({{ __('Max') }}: {{ $field['max_files'] }})
+            </span>
+        </p>
     </div>
 </div>
