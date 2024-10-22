@@ -24,9 +24,6 @@
                         } else {
                             this.selected = [id.toString()];
                         }
-                    } else if (this.field.max_files && this.selected.length >= this.field.max_files && !this.selected.includes(id.toString())) {
-                        // Max files reached, don't add more
-                        return;
                     } else if (event.shiftKey && this.lastSelectedId !== null) {
                         const lastIndex = this.rows.indexOf(this.lastSelectedId);
                         const currentIndex = this.rows.indexOf(id);
@@ -43,8 +40,13 @@
                         const isLastSelected = this.selected.includes(this.lastSelectedId.toString());
 
                         if (isLastSelected) {
-                            // Select all rows in the range
-                            this.selected = [...new Set([...this.selected, ...rowsToToggle.map(String)])];
+                            // Select all rows in the range, respecting max_files
+                            const newSelection = [...new Set([...this.selected, ...rowsToToggle.map(String)])];
+                            if (this.field.max_files) {
+                                this.selected = newSelection.slice(0, this.field.max_files);
+                            } else {
+                                this.selected = newSelection;
+                            }
                         } else {
                             // Deselect all rows in the range
                             this.selected = this.selected.filter(row => !rowsToToggle.includes(parseInt(row)));
@@ -53,7 +55,9 @@
                         // Toggle single selection
                         const index = this.selected.indexOf(id.toString());
                         if (index === -1) {
-                            this.selected.push(id.toString());
+                            if (!this.field.max_files || this.selected.length < this.field.max_files) {
+                                this.selected.push(id.toString());
+                            }
                         } else {
                             this.selected.splice(index, 1);
                         }
