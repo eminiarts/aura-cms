@@ -168,7 +168,7 @@ class Attachment extends Resource
             ],
             [
                 'name' => 'Size',
-                'type' => 'Aura\\Base\\Fields\\ViewValue',
+                'type' => 'Aura\\Base\\Fields\\Number',
                 'validation' => 'required',
                 'on_index' => true,
                 'slug' => 'size',

@@ -51,8 +51,6 @@
 
     <p class="block font-semibold">{{ __('Custom Filters') }}</p>
 
-     {{-- @dump( $filters) --}}
-        {{-- @dump( $this->fieldsForFilter) --}}
 
         @forelse($filters['custom'] as $key => $f)
 

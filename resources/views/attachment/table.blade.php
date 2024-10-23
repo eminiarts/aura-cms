@@ -213,7 +213,7 @@
             <div class="flex flex-col justify-between w-full md:items-center md:flex-row">
 
                 @if ($this->settings['search'])
-                    <div class="mb-4 md:mb-0">
+                    <div class="mb-4 w-full md:mb-0 max-w-64">
                         <label for="table-search" class="sr-only">Search</label>
                         <div class="relative mt-1">
                             <div class="flex absolute inset-y-0 left-0 items-center pl-3 pointer-events-none">
@@ -232,25 +232,23 @@
                     </div>
                 @endif
 
-                <div class="mb-4 ml-4 md:mb-0">
-                    <label for="file-type-filter" class="sr-only">Filter File Types</label>
-                    <div class="relative mt-1">
-                        <div class="flex absolute inset-y-0 left-0 items-center pl-3 pointer-events-none">
-                            <svg class="w-5 h-5 text-gray-500 dark:text-gray-400" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-                                <path fill-rule="evenodd" d="M3 3a1 1 0 011-1h12a1 1 0 011 1v3a1 1 0 01-.293.707L12 11.414V15a1 1 0 01-.293.707l-2 2A1 1 0 018 17v-5.586L3.293 6.707A1 1 0 013 6V3z" clip-rule="evenodd"></path>
-                            </svg>
-                        </div>
-                        <select id="file-type-filter"
-                            class="block p-2.5 pl-10 w-64 max-w-full rounded-lg shadow-xs transition transition-300 border border-gray-500/30 appearance-none px-3 py-2 focus:outline-none ring-gray-900/10 focus:ring focus:border-primary-300 focus:ring-primary-300 focus:ring-opacity-50 dark:focus:ring-primary-500 dark:focus:ring-opacity-50 disabled:opacity-75 disabled:bg-gray-100 disabled:opacity-60 disabled:dark:bg-gray-800 bg-white dark:bg-transparent border dark:border-gray-700 dark:focus:border-gray-500 z-[1]"
-                            wire:model.live="fileTypeFilter">
-                            <option value="">{{ __('All File Types') }}</option>
-                            <option value="image">{{ __('Images') }}</option>
-                            <option value="document">{{ __('Documents') }}</option>
-                            <option value="video">{{ __('Videos') }}</option>
-                            <option value="audio">{{ __('Audio') }}</option>
-                            <option value="other">{{ __('Other') }}</option>
-                        </select>
-                    </div>
+                <div class="mb-4 ml-4 w-full max-w-64 md:mb-0">
+                  @if($this->settings['table_before'])
+                      @if (!empty($this->userFilters))
+                        <div class="my-4 w-full">
+                          <x-aura::input.select
+                              wire:model.live="selectedFilter"
+                              :options="collect($this->userFilters)->mapWithKeys(function ($filter, $key) {
+                                  return [$key => $filter['name']];
+                              })->prepend('Alle', '')"
+                          >
+                          </x-aura::input.select>
+                      </div>
+                  @else
+                      <div class="mb-4 w-full"></div>
+                  @endif
+
+                  @endif
                 </div>
 
                 <div class="flex justify-end items-center space-x-4 w-full">
