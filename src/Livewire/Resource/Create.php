@@ -71,12 +71,14 @@ class Create extends Component
         return parent::callMethod($method, $params, $captureReturnValueCallback);
     }
 
-    public function mount()
+    public function mount($slug = null)
     {
-                // Get the slug from the current route
-        $routeName = request()->route()->getName();
-        $this->slug = explode('.', $routeName)[1] ?? null;
+        $this->slug = $slug;
         
+        if (!$this->slug) {
+            $routeName = request()->route()->getName();
+            $this->slug = explode('.', $routeName)[1] ?? null;
+        }
 
         $this->model = Aura::findResourceBySlug($this->slug);
 
@@ -155,7 +157,7 @@ class Create extends Component
                 $this->dispatch('resourceCreated', ['for' => $this->params['for'], 'resource' => $model, 'title' => $model->title()]);
             }
         } else {
-            return redirect()->route('aura.' . $this->getSlug() . '.edit', $model->id);
+            return redirect()->route('aura.' . $this->slug . '.edit', $model->id);
         }
     }
 

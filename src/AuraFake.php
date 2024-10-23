@@ -27,13 +27,17 @@ class AuraFake extends Aura
 
         $slug = $model->getSlug();
 
-        ray('setModel', $slug);
-        
-        Route::get("/{$slug}", Index::class)->name("aura.{$slug}.index");
-        Route::get("/{$slug}/create", Create::class)->name("aura.{$slug}.create");
-        Route::get("/{$slug}/{id}/edit", Edit::class)->name("aura.{$slug}.edit");
-        Route::get("/{$slug}/{id}", View::class)->name("aura.{$slug}.view");
+        Route::domain(config('aura.domain'))
+            ->middleware(config('aura.middleware.aura-admin'))
+            ->prefix(config('aura.path')) // This is likely 'admin' from your config
+            ->name('aura.')
+            ->group(function () use ($slug) {
+                Route::get("/{$slug}", Index::class)->name("{$slug}.index");
+                Route::get("/{$slug}/create", Create::class)->name("{$slug}.create");
+                Route::get("/{$slug}/{id}/edit", Edit::class)->name("{$slug}.edit");
+                Route::get("/{$slug}/{id}", View::class)->name("{$slug}.view");
+            });
 
-        ray(Route::has("aura.{$slug}.create"));
+        Aura::clearRoutes();
     }
 }
