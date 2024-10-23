@@ -18,7 +18,7 @@ class DateFieldModel extends Resource
 {
     public static $singularName = 'Date Model';
 
-    public static ?string $slug = 'date-model';
+    public static ?string $slug = 'datemodel';
 
     public static string $type = 'DateModel';
 
@@ -77,7 +77,7 @@ test('Date Field in View', function () {
     Aura::setModel($model);
 
     $this->actingAs($this->user)
-        ->get('/admin/DateModel/create')
+        ->get('/admin/datemodel/create')
         ->assertOk()
         ->assertSee('Date for Test')
         ->assertSeeLivewire('aura::post-create');
