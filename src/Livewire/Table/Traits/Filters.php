@@ -47,6 +47,7 @@ trait Filters
             'name' => $this->fieldsForFilter->keys()->first(),
             'operator' => 'contains',
             'value' => null,
+            'main_operator' => 'and',
         ];
     }
 
