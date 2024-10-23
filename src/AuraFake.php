@@ -27,17 +27,8 @@ class AuraFake extends Aura
 
         $slug = $model->getSlug();
 
-        Route::domain(config('aura.domain'))
-            ->middleware(config('aura.middleware.aura-admin'))
-            ->prefix(config('aura.path')) // This is likely 'admin' from your config
-            ->name('aura.')
-            ->group(function () use ($slug) {
-                Route::get("/{$slug}", Index::class)->name("{$slug}.index");
-                Route::get("/{$slug}/create", Create::class)->name("{$slug}.create");
-                Route::get("/{$slug}/{id}/edit", Edit::class)->name("{$slug}.edit");
-                Route::get("/{$slug}/{id}", View::class)->name("{$slug}.view");
-            });
-
+        Aura::registerRoutes($slug);
+        
         Aura::clearRoutes();
     }
 }

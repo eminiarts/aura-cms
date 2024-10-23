@@ -12,10 +12,14 @@ use Aura\Base\Resources\Attachment;
 use Aura\Base\Traits\DefaultFields;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Vite;
+use Aura\Base\Livewire\Resource\Edit;
+use Aura\Base\Livewire\Resource\View;
 use Illuminate\Filesystem\Filesystem;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Route;
+use Aura\Base\Livewire\Resource\Index;
 use Aura\Base\Models\Scopes\TeamScope;
+use Aura\Base\Livewire\Resource\Create;
 use Symfony\Component\Finder\SplFileInfo;
 use Illuminate\Contracts\Support\Htmlable;
 
@@ -418,7 +422,21 @@ class Aura
     {
         return static::$userModel;
     }
-    
+
+    public function registerRoutes($slug)
+    {
+        Route::domain(config('aura.domain'))
+            ->middleware(config('aura.middleware.aura-admin'))
+            ->prefix(config('aura.path')) // This is likely 'admin' from your config
+            ->name('aura.')
+            ->group(function () use ($slug) {
+                Route::get("/{$slug}", Index::class)->name("{$slug}.index");
+                Route::get("/{$slug}/create", Create::class)->name("{$slug}.create");
+                Route::get("/{$slug}/{id}/edit", Edit::class)->name("{$slug}.edit");
+                Route::get("/{$slug}/{id}", View::class)->name("{$slug}.view");
+            });
+    }
+
     public function clearRoutes()
     {
         Route::getRoutes()->refreshNameLookups();
