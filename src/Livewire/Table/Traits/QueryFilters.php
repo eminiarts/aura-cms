@@ -15,8 +15,14 @@ trait QueryFilters
 
         $mainOperator = $this->filters['operator'] ?? 'and';
 
+        ray($this->filters, 'mainOperator', $mainOperator);
+
         $query->where(function ($query) use ($mainOperator) {
             foreach ($this->filters['custom'] as $filter) {
+                ray('filter here', $filter, $mainOperator);
+
+                $mainOperator = $filter['main_operator'] ?? $mainOperator;
+
                 if ($this->isValidFilter($filter)) {
                     $this->applyFilter($query, $filter, $mainOperator);
                 }
@@ -105,9 +111,11 @@ trait QueryFilters
                 $query->where('value', 'like', '%'.$filter['value']);
                 break;
             case 'is':
+            case 'equals':
                 $query->where('value', '=', $filter['value']);
                 break;
             case 'is_not':
+            case 'not_equals':
                 $query->where('value', '!=', $filter['value']);
                 break;
             case 'greater_than':
@@ -115,6 +123,30 @@ trait QueryFilters
                 break;
             case 'less_than':
                 $query->where('value', '<', $filter['value']);
+                break;
+            case 'greater_than_or_equal':
+                $query->where('value', '>=', $filter['value']);
+                break;
+            case 'less_than_or_equal':
+                $query->where('value', '<=', $filter['value']);
+                break;
+            case 'in':
+                $query->whereIn('value', explode(',', $filter['value']));
+                break;
+            case 'not_in':
+                $query->whereNotIn('value', explode(',', $filter['value']));
+                break;
+            case 'like':
+                $query->where('value', 'like', $filter['value']);
+                break;
+            case 'not_like':
+                $query->where('value', 'not like', $filter['value']);
+                break;
+            case 'regex':
+                $query->where('value', 'regexp', $filter['value']);
+                break;
+            case 'not_regex':
+                $query->where('value', 'not regexp', $filter['value']);
                 break;
         }
     }
@@ -143,9 +175,11 @@ trait QueryFilters
                 $query->where($filter['name'], 'like', '%'.$filter['value']);
                 break;
             case 'is':
+            case 'equals':
                 $query->where($filter['name'], '=', $filter['value']);
                 break;
             case 'is_not':
+            case 'not_equals':
                 $query->where($filter['name'], '!=', $filter['value']);
                 break;
             case 'greater_than':
@@ -153,6 +187,30 @@ trait QueryFilters
                 break;
             case 'less_than':
                 $query->where($filter['name'], '<', $filter['value']);
+                break;
+            case 'greater_than_or_equal':
+                $query->where($filter['name'], '>=', $filter['value']);
+                break;
+            case 'less_than_or_equal':
+                $query->where($filter['name'], '<=', $filter['value']);
+                break;
+            case 'in':
+                $query->whereIn($filter['name'], explode(',', $filter['value']));
+                break;
+            case 'not_in':
+                $query->whereNotIn($filter['name'], explode(',', $filter['value']));
+                break;
+            case 'like':
+                $query->where($filter['name'], 'like', $filter['value']);
+                break;
+            case 'not_like':
+                $query->where($filter['name'], 'not like', $filter['value']);
+                break;
+            case 'regex':
+                $query->where($filter['name'], 'regexp', $filter['value']);
+                break;
+            case 'not_regex':
+                $query->where($filter['name'], 'not regexp', $filter['value']);
                 break;
             case 'is_empty':
                 $query->where(function ($query) use ($filter) {
