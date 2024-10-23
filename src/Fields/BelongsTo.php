@@ -106,12 +106,12 @@ class BelongsTo extends Field
         }
 
         if ($field['resource'] && $value) {
-            // Get Str after last backslash from $field['resource']
-            $model = Str::afterLast($field['resource'], '\\');
+
+            $slug = app($field['resource'])->getSlug();
 
             // return $value;
 
-            return "<a class='font-semibold' href='".route('aura.'.$model.'.edit', $value)."'>".optional(app($field['resource'])::find($value))->title().'</a>';
+            return "<a class='font-semibold' href='".route('aura.'.$slug.'.edit', $value)."'>".optional(app($field['resource'])::find($value))->title().'</a>';
         }
 
         return $value;
