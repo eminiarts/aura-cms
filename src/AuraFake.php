@@ -33,5 +33,7 @@ class AuraFake extends Aura
         Route::get("/{$slug}/create", Create::class)->name("aura.{$slug}.create");
         Route::get("/{$slug}/{id}/edit", Edit::class)->name("aura.{$slug}.edit");
         Route::get("/{$slug}/{id}", View::class)->name("aura.{$slug}.view");
+
+        ray(Route::has("aura.{$slug}.create"));
     }
 }
