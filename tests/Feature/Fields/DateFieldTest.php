@@ -2,17 +2,20 @@
 
 namespace Tests\Feature\Livewire;
 
-use Aura\Base\Facades\Aura;
-use Aura\Base\Livewire\Resource\Create;
-use Aura\Base\Livewire\Resource\Edit;
-use Aura\Base\Resource;
-use Aura\Base\Resources\Post;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
+use Aura\Base\Resource;
+use Aura\Base\Facades\Aura;
+use Aura\Base\Resources\Post;
+use Aura\Base\Livewire\Resource\Edit;
+use Illuminate\Support\Facades\Route;
+use Aura\Base\Livewire\Resource\Create;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
 
-beforeEach(fn () => $this->actingAs($this->user = createSuperAdmin()));
+beforeEach(function () {
+    $this->actingAs($this->user = createSuperAdmin());   
+});
 
 class DateFieldModel extends Resource
 {
@@ -38,12 +41,14 @@ class DateFieldModel extends Resource
 }
 
 test('Date Field in Livewire Component', function () {
-
-    // $this->withoutExceptionHandling();
+    $this->withoutExceptionHandling();
 
     $model = new DateFieldModel;
 
-    $component = Livewire::test(Create::class, ['slug' => 'Post'])
+    Aura::fake();
+    Aura::setModel($model);
+
+    $component = Livewire::test(Create::class, ['slug' => 'datemodel'])
         ->call('setModel', $model)
         ->assertSee('Create Date Model')
         ->assertSee('Date for Test')
@@ -70,24 +75,17 @@ test('Date Field in Livewire Component', function () {
 });
 
 test('Date Field in View', function () {
-
     $model = new DateFieldModel;
 
     Aura::fake();
     Aura::setModel($model);
+
+    ray(Route::has("admin/datemodel/create"))->red();
+    // Add this to debug the actual route URL:
 
     $this->actingAs($this->user)
         ->get('/admin/datemodel/create')
         ->assertOk()
         ->assertSee('Date for Test')
         ->assertSeeLivewire('aura::post-create');
-
-    // $a = Aura::findResourceBySlug('DateModel');
-    // $editComponent = Livewire::test(Edit::class, ['slug' => 'Post', 'id' => $dateModel->id])
-    //     ->call('setModel', $model)
-    //     ->assertSee('Edit')
-    //     ->assertSee('Date for Test')
-    //     ->assertSee('01.01.2021')
-    //     ->call('save')
-    //     ->assertHasNoErrors(['form.fields.date']);
 });

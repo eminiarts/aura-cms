@@ -11,6 +11,8 @@ use Livewire\Livewire;
 class TextFieldModel extends Resource
 {
     public static string $type = 'TextModel';
+    
+    protected static ?string $slug = 'textmodel';
 
     public static function getFields()
     {
@@ -91,7 +93,7 @@ test('Text Field - Default Value set', function () {
 
     expect(auth()->user()->isSuperAdmin())->toBeTrue();
 
-    $component = Livewire::test(Create::class, ['slug' => 'TextModel']);
+    $component = Livewire::test(Create::class, ['slug' => 'textmodel']);
 
     ray($component->html());
 

@@ -2,21 +2,22 @@
 
 namespace Aura\Base;
 
-use Aura\Base\Models\Scopes\TeamScope;
-use Aura\Base\Resources\Attachment;
-use Aura\Base\Resources\Option;
-use Aura\Base\Resources\User;
-use Aura\Base\Traits\DefaultFields;
 use Closure;
-use Illuminate\Contracts\Support\Htmlable;
-use Illuminate\Filesystem\Filesystem;
-use Illuminate\Support\Facades\Cache;
+use RuntimeException;
+use Illuminate\Support\Str;
+use Aura\Base\Resources\User;
+use Aura\Base\Resources\Option;
+use Illuminate\Support\HtmlString;
+use Aura\Base\Resources\Attachment;
+use Aura\Base\Traits\DefaultFields;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Vite;
-use Illuminate\Support\HtmlString;
-use Illuminate\Support\Str;
-use RuntimeException;
+use Illuminate\Filesystem\Filesystem;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Route;
+use Aura\Base\Models\Scopes\TeamScope;
 use Symfony\Component\Finder\SplFileInfo;
+use Illuminate\Contracts\Support\Htmlable;
 
 class Aura
 {
@@ -416,6 +417,12 @@ class Aura
     public static function userModel()
     {
         return static::$userModel;
+    }
+    
+    public function clearRoutes()
+    {
+        Route::getRoutes()->refreshNameLookups();
+        Route::getRoutes()->refreshActionLookups();
     }
 
     public static function useUserModel(string $model)

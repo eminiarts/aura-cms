@@ -67,7 +67,7 @@ class Edit extends Component
 
     public function mount($id)
     {
-                // Get the slug from the current route
+        // Get the slug from the current route
         $routeName = request()->route()->getName();
         $this->slug = explode('.', $routeName)[1] ?? null;
 
