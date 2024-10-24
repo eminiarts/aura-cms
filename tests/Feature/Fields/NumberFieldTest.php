@@ -2,11 +2,12 @@
 
 namespace Tests\Feature\Livewire;
 
-use Aura\Base\Livewire\Resource\Create;
-use Aura\Base\Resource;
-use Aura\Base\Resources\Post;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
+use Aura\Base\Resource;
+use Aura\Base\Facades\Aura;
+use Aura\Base\Resources\Post;
+use Aura\Base\Livewire\Resource\Create;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 
 // Refresh Database on every test
 uses(RefreshDatabase::class);
@@ -14,6 +15,11 @@ uses(RefreshDatabase::class);
 // Before each test, create a Superadmin and login
 beforeEach(function () {
     $this->actingAs($this->user = createSuperAdmin());
+
+    $model = new NumberFieldModel;
+
+    Aura::fake();
+    Aura::setModel($model);
 });
 
 // Create Resource for this test
@@ -47,7 +53,7 @@ test('Number Field can be rendered', function () {
 
     $model = new NumberFieldModel;
 
-    $component = Livewire::test(Create::class, ['slug' => 'Post'])
+    $component = Livewire::test(Create::class, ['slug' => 'number-model'])
         ->call('setModel', $model)
         ->assertSee('Create Number Model')
         ->assertSee('Number for Test')
