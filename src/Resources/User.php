@@ -3,7 +3,6 @@
 namespace Aura\Base\Resources;
 
 use Aura\Base\Database\Factories\UserFactory;
-use Aura\Base\Models\UserMeta;
 use Aura\Base\Resource;
 use Aura\Base\Traits\ProfileFields;
 use Illuminate\Auth\Authenticatable;
@@ -38,9 +37,10 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
     use ProfileFields;
     use TwoFactorAuthenticatable;
 
-    public static $customMeta = true;
 
     public static $customTable = true;
+
+    public static bool $usesMeta = true;
 
     public static ?string $slug = 'user';
 
@@ -364,45 +364,6 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
         return "Aura\Base\Resources\User";
     }
 
-    //     public function getFieldsAttribute()
-    // {
-    //     $meta = $this->meta->pluck('value', 'key');
-
-    //     $defaultValues = $this->inputFields()->pluck('slug')->mapWithKeys(fn ($value, $key) => [$value => null])->map(fn ($value, $key) => $meta[$key] ?? $value)->map(function ($value, $key) {
-    //         // if the value is in $this->hidden, set it to null
-    //         if (in_array($key, $this->hidden)) {
-    //             return;
-    //         }
-
-    //         // If the value is set on the model, use it
-    //         if (isset($this->attributes[$key])) {
-    //             return $this->attributes[$key];
-    //         }
-    //     });
-
-    //     if (! $meta->isEmpty()) {
-    //         // Cast Attributes
-    //         $meta = $meta->map(function ($value, $key) {
-    //             // if there is a function get{Slug}Field on the model, use it
-    //             $method = 'get'.Str::studly($key).'Field';
-
-    //             if (method_exists($this, $method)) {
-    //                 return $this->{$method}($value);
-    //             }
-
-    //             $class = $this->fieldClassBySlug($key);
-
-    //             if ($class && method_exists($class, 'get')) {
-    //                 return $class->get($class, $value);
-    //             }
-
-    //             return $value;
-    //         });
-    //     }
-
-    //     return $defaultValues->merge($meta);
-    // }
-
     public function getOption($option)
     {
         $option = 'user.'.$this->id.'.'.$option;
@@ -666,11 +627,6 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
         }
 
         return false;
-    }
-
-    public function meta()
-    {
-        return $this->hasMany(UserMeta::class, 'user_id');
     }
 
     /**

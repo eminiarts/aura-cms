@@ -313,22 +313,9 @@ class Resource extends Model
             ->toArray();
     }
 
-    // /**
-    //  * Gets the featured image if any
-    //  * Looks in meta the _thumbnail_id field.
-    //  *
-    //  * @return string
-    //  */
-    // public function getImageAttribute()
-    // {
-    //     if ($this->thumbnail and $this->thumbnail->attachment) {
-    //         return $this->thumbnail->attachment->guid;
-    //     }
-    // }
-
     public function getMeta($key = null)
     {
-        if ($this->usesCustomTable() && ! $this->usesCustomMeta()) {
+        if ($this->usesCustomTable()) {
             return collect();
         }
 
@@ -451,31 +438,5 @@ class Resource extends Model
         static::saved(function ($model) {
             $model->clearFieldsAttributeCache();
         });
-
-        // static::created(function ($post) {
-        //     dispatch(new TriggerFlowOnCr
-
-        // static::updated(function ($post) {
-        //     dispatch(new TriggerFlowOnUpdatePostEvent($post));
-        // });
-
-        // static::deleted(function ($post) {
-        //     dispatch(new TriggerFlowOnDeletedPostEvent($post));
-        // });
     }
-
-    /**
-     * Get all of the posts that are assigned this tag.
-     */
-    /* public function posts(): MorphToMany
-    {
-        return $this->morphedByMany(Post::class, 'taggable');
-    } */
-
-    // public function tags(): MorphToMany
-    // {
-    //     return $this->morphToMany(Tag::class, 'related', 'post_relations', 'post_id', 'related_id')
-    //         ->withTimestamps()
-    //         ;
-    // }
 }

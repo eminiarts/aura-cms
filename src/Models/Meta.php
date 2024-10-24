@@ -17,14 +17,14 @@ class Meta extends Model
      */
     public $timestamps = false;
 
-    protected $fillable = ['key', 'value'];
+    protected $fillable = ['key', 'value', 'metable_type', 'metable_id'];
 
     /**
      * The table associated with the model.
      *
      * @var string
      */
-    protected $table = 'post_meta';
+    protected $table = 'meta';
 
     /**
      * @return MetaCollection
@@ -32,5 +32,13 @@ class Meta extends Model
     public function newCollection(array $models = [])
     {
         return new MetaCollection($models);
+    }
+
+    /**
+     * Get the owning metable model.
+     */
+    public function metable()
+    {
+        return $this->morphTo();
     }
 }
