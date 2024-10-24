@@ -95,7 +95,7 @@ trait AuraModelConfig
 
     public function createUrl()
     {
-        return route('aura.' . $this->getSlug() . '.create', [$this->getType()]);
+        return route('aura.' . $this->getSlug() . '.create');
     }
 
     public function createView()
