@@ -13,30 +13,42 @@ trait QueryFilters
             return $query;
         }
 
-        $mainOperator = $this->filters['operator'] ?? 'and';
+        $query->where(function ($query) {
+            foreach ($this->filters['custom'] as $groupIndex => $group) {
+                // Set default group operator to "and" if not defined
+                $group['operator'] = $group['operator'] ?? 'and';
+                $method = ($groupIndex === 0 || $group['operator'] === 'and') ? 'where' : 'orWhere';
 
-        $query->where(function ($query) use ($mainOperator) {
-            foreach ($this->filters['custom'] as $filter) {
-                $mainOperator = $filter['main_operator'] ?? $mainOperator;
-
-                if ($this->isValidFilter($filter)) {
-                    $this->applyFilter($query, $filter, $mainOperator);
-                }
+                $query->$method(function ($subQuery) use ($group) {
+                    $this->applyFilterGroup($subQuery, $group);
+                });
             }
         });
 
         return $query;
     }
 
-    protected function applyFilter(Builder $query, array $filter, string $mainOperator): void
+    protected function applyFilterGroup(Builder $query, array $group): void
     {
-        if ($mainOperator === 'or') {
-            $query->orWhere(function ($subQuery) use ($filter) {
-                $this->applyFilterBasedOnType($subQuery, $filter);
-            });
-        } else {
-            $this->applyFilterBasedOnType($query, $filter);
+        foreach ($group['filters'] as $filterIndex => $filter) {
+            if ($this->isValidFilter($filter)) {
+                if ($filterIndex > 0) {
+                    $groupOperator = $filter['main_operator'] ?? 'and';
+                    $this->applyFilter($query, $filter, $groupOperator);
+                } else {
+                    $this->applyFilter($query, $filter, 'and');
+                }
+            }
         }
+    }
+
+    protected function applyFilter(Builder $query, array $filter, string $groupOperator): void
+    {
+        $method = $groupOperator === 'or' ? 'orWhere' : 'where';
+
+        $query->$method(function ($subQuery) use ($filter) {
+            $this->applyFilterBasedOnType($subQuery, $filter);
+        });
     }
 
     protected function applyFilterBasedOnType(Builder $query, array $filter): void
@@ -306,7 +318,7 @@ trait QueryFilters
 
     protected function isValidFilter(array $filter): bool
     {
-        return ! empty($filter['name']) &&
-               (! empty($filter['value']) || in_array($filter['operator'], ['is_empty', 'is_not_empty']));
+        return !empty($filter['name']) &&
+               (!empty($filter['value']) || in_array($filter['operator'], ['is_empty', 'is_not_empty']));
     }
 }
