@@ -21,7 +21,7 @@ test('team can be created', function () {
 
     expect(Role::count())->toBe(1);
 
-    $component = livewire(Create::class, ['slug' => 'Team'])
+    $component = livewire(Create::class, ['slug' => 'team'])
         ->set('form.fields.name', 'Test Team')
         ->set('form.fields.description', 'Test Description')
         ->call('save')
