@@ -18,6 +18,9 @@ use function Pest\Laravel\postJson;
 // Before each test, create a Superadmin and login
 beforeEach(function () {
     $this->actingAs($this->user = createSuperAdmin());
+
+    Aura::fake();
+    Aura::setModel(new AdvancedSelectFieldModel);
 });
 
 // Create Resource for this test
@@ -25,7 +28,7 @@ class AdvancedSelectFieldModel extends Resource
 {
     public static $singularName = 'AdvancedSelect Model';
 
-    public static ?string $slug = 'advancedselect-model';
+    public static ?string $slug = 'advancedselect';
 
     public static string $type = 'AdvancedSelectModel';
 
@@ -52,7 +55,7 @@ class AdvancedSelectFieldModel extends Resource
 test('AdvancedSelect Field Test', function () {
     $model = new AdvancedSelectFieldModel;
 
-    $component = Livewire::test(Create::class, ['slug' => 'Post'])
+    $component = Livewire::test(Create::class, ['slug' => 'advancedselect'])
         ->call('setModel', $model)
         ->assertSee('Create AdvancedSelect Model')
         ->assertSee('AdvancedSelect for Test')
@@ -103,7 +106,7 @@ test('advancedselect field gets displayed correctly on edit view', function () {
     expect($post->advancedselect)->toHaveCount(1);
     expect($post->advancedselect->pluck('id'))->toContain($id);
 
-    $model = AdvancedSelectFieldModel::query();
+    $model = new AdvancedSelectFieldModel;
     $slug = 'AdvancedSelectModel';
 
     Aura::fake();
