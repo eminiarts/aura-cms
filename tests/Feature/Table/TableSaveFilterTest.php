@@ -1,13 +1,14 @@
 <?php
 
-use Aura\Base\Livewire\Table\Table;
-use Aura\Base\Resource;
-use Aura\Base\Resources\Post;
-use Aura\Base\Resources\Tag;
-use Aura\Base\Resources\User;
-use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\DB;
 use Livewire\Livewire;
+use Aura\Base\Resource;
+use Aura\Base\Facades\Aura;
+use Aura\Base\Resources\Tag;
+use Aura\Base\Resources\Post;
+use Aura\Base\Resources\User;
+use Illuminate\Support\Facades\DB;
+use Aura\Base\Livewire\Table\Table;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
 
@@ -15,6 +16,9 @@ uses(RefreshDatabase::class);
 beforeEach(function () {
     // Create User
     $this->actingAs($this->user = createSuperAdmin());
+
+    Aura::fake();
+    Aura::setModel(new TableSaveFilterModel);
 
     // Create Posts
     $this->resource = TableSaveFilterModel::create([
