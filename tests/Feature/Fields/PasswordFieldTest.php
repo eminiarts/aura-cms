@@ -2,24 +2,24 @@
 
 namespace Tests\Feature\Livewire;
 
-use Aura\Base\Facades\Aura;
-use Aura\Base\Livewire\Resource\Create;
-use Aura\Base\Livewire\Resource\Edit;
+use Livewire\Livewire;
 use Aura\Base\Resource;
+use Aura\Base\Facades\Aura;
 use Aura\Base\Resources\Post;
 use Aura\Base\Resources\User;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
-use Livewire\Livewire;
+use Aura\Base\Livewire\Resource\Edit;
+use Illuminate\Support\Facades\Cache;
+use Aura\Base\Livewire\Resource\Create;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 
 // Refresh Database on every test
-uses(RefreshDatabase::class);
+// uses(RefreshDatabase::class);
 
 // Before each test, create a Superadmin and login
 beforeEach(function () {
     $this->actingAs($this->user = createSuperAdmin());
 
-    // Aura::clear();
     Aura::fake();
     Aura::setModel(new PasswordFieldModel);
 });
@@ -51,6 +51,7 @@ class PasswordFieldModel extends Resource
 
 test('Password Field Test', function () {
     $model = new PasswordFieldModel;
+
 
     $component = Livewire::test(Create::class, ['slug' => 'password-model'])
         ->call('setModel', $model)
@@ -106,7 +107,7 @@ test('password field gets not overwritten if saved as null', function () {
 
     // dump($post->password);
 
-    $model = PasswordFieldModel::query();
+    $model = new PasswordFieldModel;
     $slug = 'PasswordModel';
 
     Aura::fake();
@@ -151,7 +152,7 @@ test('password field gets not overwritten if saved as empty string', function ()
     $this->assertTrue(Hash::check('123456789', $post->fields['password']));
     $this->assertTrue(Hash::check('123456789', $post->password));
 
-    $model = PasswordFieldModel::query();
+    $model = new PasswordFieldModel;
     $slug = 'PasswordModel';
 
     Aura::fake();

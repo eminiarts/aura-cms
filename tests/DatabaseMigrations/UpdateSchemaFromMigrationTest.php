@@ -8,8 +8,7 @@ use Aura\Base\Livewire\ResourceEditor;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Artisan;
 
-it('creates a migration when fields are added', function () {
-
+beforeEach(function () {
     $this->user = createSuperAdmin();
 
     $this->actingAs($this->user);
@@ -24,6 +23,26 @@ it('creates a migration when fields are added', function () {
     Artisan::call('cache:clear');
 
     require_once app_path('Aura/Resources/Project.php');
+});
+
+afterEach(function () {
+
+    if (File::exists(app_path('Aura/Resources/Project.php'))) {
+        File::delete(app_path('Aura/Resources/Project.php'));
+    }
+
+    $migrationFiles = File::files(database_path('migrations'));
+
+    foreach ($migrationFiles as $file) {
+        File::delete($file);
+    }
+
+    Aura::clear();
+    
+});
+
+it('creates a migration when fields are added', function () {
+
 
     config(['aura.resource_editor.custom_table_migrations' => 'single']);
 
@@ -70,14 +89,6 @@ it('creates a migration when fields are added', function () {
     $allMigrations = File::files(database_path('migrations'));
 
     expect(count($allMigrations))->toBe(1);
-
-    File::delete(app_path('Aura/Resources/Project.php'));
-
-    $migrationFiles = File::files(database_path('migrations'));
-
-    foreach ($migrationFiles as $file) {
-        File::delete($file);
-    }
 
     Aura::clear();
 });
