@@ -1,18 +1,21 @@
 <?php
 
-use Aura\Base\Livewire\Table\Table;
-use Aura\Base\Models\Meta;
 use Aura\Base\Resource;
+use Aura\Base\Models\Meta;
+use Aura\Base\Facades\Aura;
+use Illuminate\Support\Facades\DB;
+use Aura\Base\Livewire\Table\Table;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Schema;
 
 uses(RefreshDatabase::class);
 
 afterEach(function () {
     Schema::dropIfExists('custom_projects');
     Schema::dropIfExists('custom_projects_meta');
+
+    Aura::clear();
 });
 
 beforeEach(function () {

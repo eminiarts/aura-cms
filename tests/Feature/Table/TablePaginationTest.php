@@ -21,7 +21,7 @@ test('table can be paginated', function () {
 
     // Visit the Post Index Page
     $this->get(route('aura.post.index'))
-        ->assertSeeLivewire('aura::post-index')
+        ->assertSeeLivewire('aura::resource-index')
         ->assertSeeLivewire('aura::table');
 
     $eleven = Post::skip(10)->first();

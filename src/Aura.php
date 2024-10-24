@@ -443,6 +443,13 @@ class Aura
         Route::getRoutes()->refreshActionLookups();
     }
 
+    public function clear()
+    {
+        $this->clearRoutes();
+
+        Cache::clear();
+    }
+
     public static function useUserModel(string $model)
     {
         static::$userModel = $model;

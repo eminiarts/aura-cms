@@ -1,15 +1,25 @@
 <?php
 
-use Aura\Base\Livewire\Table\Table;
-use Aura\Base\Resource;
-use Aura\Base\Resources\Post;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
+use Aura\Base\Resource;
+use Aura\Base\Facades\Aura;
+use Aura\Base\Resources\Post;
+use Aura\Base\Livewire\Table\Table;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
 
 // Before each test, create a Superadmin and login
 beforeEach(function () {
+
+    $model = new TableSelectRowsModel;
+
+    Aura::fake();
+    Aura::setModel($model);
+
+    Cache::clear();
+
     $this->actingAs($this->user = createSuperAdmin());
 
     $faker = Faker\Factory::create();

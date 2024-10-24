@@ -105,12 +105,12 @@ class AuraServiceProvider extends PackageServiceProvider
 
     public function bootLivewireComponents()
     {
-        Livewire::component('aura::post-index', app(Index::class));
-        Livewire::component('aura::post-create', app(Create::class));
-        Livewire::component('aura::post-create-modal', app(CreateModal::class));
-        Livewire::component('aura::post-edit', app(Edit::class));
-        Livewire::component('aura::post-edit-modal', app(EditModal::class));
-        Livewire::component('aura::post-view', app(View::class));
+        Livewire::component('aura::resource-index', app(Index::class));
+        Livewire::component('aura::resource-create', app(Create::class));
+        Livewire::component('aura::resource-create-modal', app(CreateModal::class));
+        Livewire::component('aura::resource-edit', app(Edit::class));
+        Livewire::component('aura::resource-edit-modal', app(EditModal::class));
+        Livewire::component('aura::resource-view', app(View::class));
         Livewire::component('aura::table', app(Table::class));
         Livewire::component('aura::navigation', Navigation::class);
         Livewire::component('aura::global-search', GlobalSearch::class);

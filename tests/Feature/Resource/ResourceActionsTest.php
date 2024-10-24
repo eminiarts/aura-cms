@@ -50,7 +50,7 @@ test('simple single Actions work correctly', function () {
     Aura::fake();
     Aura::setModel($model);
 
-    $component = livewire('aura::post-edit', [$model->type, $model->id]);
+    $component = livewire('aura::resource-edit', [$model->type, $model->id]);
 
     $component->assertSee('Create Missing Permissions');
     $component->assertSee('Delete');
@@ -94,7 +94,7 @@ test('actions with label and icon are displayed correctly', function () {
 
     ray('test', $model->getSlug(), $model->id)->red();
 
-    $component = livewire('aura::post-edit', [$model->getSlug(), $model->id]);
+    $component = livewire('aura::resource-edit', [$model->getSlug(), $model->id]);
 
     $component->assertSee('Create Missing Permissions');
     $component->assertSee('Delete');

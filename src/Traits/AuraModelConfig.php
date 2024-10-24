@@ -267,7 +267,7 @@ trait AuraModelConfig
 
     public static function getSlug(): string
     {
-        return static::$slug;
+        return static::$slug ?? Str::slug(static::$name);
     }
 
     public static function getSort(): ?int
