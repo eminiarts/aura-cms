@@ -44,7 +44,16 @@ Route::domain(config('aura.domain'))
 
             Route::get('/attachment', AttachmentIndex::class)->name('attachment.index');
 
+            ray(Aura::getResources());
+
+            Aura::clear();
+            
             foreach (Aura::getResources() as $resource) {
+                
+                if (!class_exists($resource)) {
+                    continue;
+                }
+
                 $slug = app($resource)->getSlug();
                 Route::get("/{$slug}", Index::class)->name("{$slug}.index");
                 Route::get("/{$slug}/create", Create::class)->name("{$slug}.create");
