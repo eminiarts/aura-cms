@@ -12,12 +12,12 @@ trait SaveMetaFields
 
         static::saving(function ($post) {
 
-            // ray('SaveMetaFields', $post->attributes)->red();
+            //  ray('SaveMetaFields', $post->attributes)->red();
 
             if (isset($post->attributes['fields'])) {
 
                 // Dont save Meta Fields if it is uses customTable
-                if ($post->usesCustomTable() && ! $post->usesCustomMeta()) {
+                if ($post->usesCustomTable() && ! $post->usesMeta()) {
                     unset($post->attributes['fields']);
 
                     return;

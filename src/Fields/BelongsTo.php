@@ -51,14 +51,15 @@ class BelongsTo extends Field
         } else {
 
             $results = app($request->model)->select('posts.*')
-                ->leftJoin('post_meta', function ($join) use ($metaFields) {
-                    $join->on('posts.id', '=', 'post_meta.post_id')
-                        ->whereIn('post_meta.key', $metaFields);
+                ->leftJoin('meta', function ($join) use ($metaFields, $request) {
+                    $join->on('posts.id', '=', 'meta.metable_id')
+                        ->where('meta.metable_type', app($request->model)->getMorphClass())
+                        ->whereIn('meta.key', $metaFields);
                 })
                 ->where(function ($query) use ($request) {
                     $query->where('posts.title', 'like', '%'.$request->search.'%')
                         ->orWhere(function ($query) use ($request) {
-                            $query->where('post_meta.value', 'LIKE', '%'.$request->search.'%');
+                            $query->where('meta.value', 'LIKE', '%'.$request->search.'%');
                         });
                 })
                 ->distinct()
@@ -158,11 +159,12 @@ class BelongsTo extends Field
             return $model->hasManyThrough(
                 $field['resource'],
                 Meta::class,
-                'value',     // Foreign key on the post_meta table
-                'id',        // Foreign key on the reviews table
-                'id',        // Local key on the products table
-                'post_id'    // Local key on the post_meta table
-            )->where('post_meta.key', $field['relation']);
+                'value',     // Foreign key on the meta table
+                'id',        // Foreign key on the resource table
+                'id',        // Local key on the model table
+                'metable_id' // Local key on the meta table
+            )->where('meta.key', $field['relation'])
+             ->where('meta.metable_type', $model->getMorphClass());
         }
 
         return $model->hasMany($field['resource'], $field['relation']);

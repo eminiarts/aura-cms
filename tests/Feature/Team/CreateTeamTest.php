@@ -1,11 +1,12 @@
 <?php
 
-use Aura\Base\Livewire\Resource\Create;
 use Aura\Base\Resources\Role;
 use Aura\Base\Resources\Team;
 use Aura\Base\Resources\User;
+use Illuminate\Support\Facades\DB;
 
 use function Pest\Livewire\livewire;
+use Aura\Base\Livewire\Resource\Create;
 
 // Before each test, create a Superadmin and login
 beforeEach(function () {
@@ -38,6 +39,10 @@ test('team can be created', function () {
     expect($this->user->getTeams()->count())->toBe(2);
 
     expect($team->name)->toBe('Test Team');
+
+    ray($team->toArray());
+    ray(DB::table('meta')->get());
+
     expect($team->description)->toBe('Test Description');
 });
 

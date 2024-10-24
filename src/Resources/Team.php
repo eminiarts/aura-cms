@@ -24,7 +24,7 @@ class Team extends Resource
         ],
     ];
 
-    public static $customMeta = true;
+    public static bool $usesMeta = true;
 
     public static $customTable = true;
 
@@ -188,11 +188,6 @@ class Team extends Resource
     public static function getWidgets(): array
     {
         return [];
-    }
-
-    public function meta()
-    {
-        return $this->hasMany(TeamMeta::class, 'team_id');
     }
 
     public function roles(): HasMany

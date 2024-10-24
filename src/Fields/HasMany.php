@@ -107,23 +107,4 @@ class HasMany extends Field
             ->withPivot('related_type')
             ->wherePivot('related_type', $field['resource']);
     }
-
-    // public $view = 'components.fields.hasmany';
-
-    // public function relationship($model, $field)
-    // {
-    //     // If it's a meta field
-    //     if ($model->usesMeta()) {
-    //         return $model->hasManyThrough(
-    //             $field['resource'],
-    //             Meta::class,
-    //             'value',     // Foreign key on the post_meta table
-    //             'id',        // Foreign key on the reviews table
-    //             'id',        // Local key on the products table
-    //             'post_id'    // Local key on the post_meta table
-    //         )->where('post_meta.key', $field['relation']);
-    //     }
-
-    //     return $model->hasMany($field['resource'], $field['relation']);
-    // }
 }
