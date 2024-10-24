@@ -18,9 +18,9 @@ beforeEach(function () {
 
 class TagsFieldModel extends Resource
 {
-    public static string $type = 'TagsModel';
-
     public static ?string $slug = 'tag';
+
+    public static string $type = 'TagsModel';
 
     public static function getFields()
     {

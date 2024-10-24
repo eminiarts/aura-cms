@@ -3,7 +3,6 @@
 namespace Aura\Base\Traits;
 
 use Aura\Base\ConditionalLogic;
-use Aura\Base\Exceptions\InvalidMetaTableException;
 use Aura\Base\Models\Meta;
 use Aura\Base\Resources\Team;
 use Illuminate\Support\Str;
@@ -93,7 +92,7 @@ trait AuraModelConfig
 
     public function createUrl()
     {
-        return route('aura.' . $this->getSlug() . '.create');
+        return route('aura.'.$this->getSlug().'.create');
     }
 
     public function createView()
@@ -142,7 +141,7 @@ trait AuraModelConfig
     public function editUrl()
     {
         if ($this->getType() && $this->id) {
-            return route('aura.' . $this->getSlug() . '.edit', ['id' => $this->id]);
+            return route('aura.'.$this->getSlug().'.edit', ['id' => $this->id]);
         }
     }
 
@@ -232,7 +231,7 @@ trait AuraModelConfig
 
     public function getIndexRoute()
     {
-        return route('aura.' . $this->getSlug() . '.index');
+        return route('aura.'.$this->getSlug().'.index');
     }
 
     public function getMetaForeignKey()
@@ -523,7 +522,6 @@ trait AuraModelConfig
         }
     }
 
-   
     /**
      * @param  string  $key
      * @return mixed
@@ -573,7 +571,7 @@ trait AuraModelConfig
     public function viewUrl()
     {
         if ($this->getType() && $this->id) {
-            return route('aura.' . $this->getSlug() . '.view', ['id' => $this->id]);
+            return route('aura.'.$this->getSlug().'.view', ['id' => $this->id]);
         }
     }
 
@@ -581,6 +579,4 @@ trait AuraModelConfig
     {
         return 'aura::livewire.resource.view';
     }
-
-    
 }

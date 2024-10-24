@@ -57,8 +57,6 @@ test('navigation item is visible', function () {
         NavigationModel::class,
     ]);
 
-   
-
     $nav = Aura::navigation();
 
     expect((new NavigationModel)->pluralName())->toBe('NavigationModels');

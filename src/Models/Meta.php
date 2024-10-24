@@ -27,18 +27,18 @@ class Meta extends Model
     protected $table = 'meta';
 
     /**
-     * @return MetaCollection
-     */
-    public function newCollection(array $models = [])
-    {
-        return new MetaCollection($models);
-    }
-
-    /**
      * Get the owning metable model.
      */
     public function metable()
     {
         return $this->morphTo();
+    }
+
+    /**
+     * @return MetaCollection
+     */
+    public function newCollection(array $models = [])
+    {
+        return new MetaCollection($models);
     }
 }

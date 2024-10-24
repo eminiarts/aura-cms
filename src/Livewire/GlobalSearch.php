@@ -112,7 +112,6 @@ class GlobalSearch extends Component
     }
 
     public function render()
-
     {
         if (auth()->check()) {
             $this->bookmarks = auth()->user()->getOptionBookmarks();

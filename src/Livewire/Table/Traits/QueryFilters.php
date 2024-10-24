@@ -3,7 +3,6 @@
 namespace Aura\Base\Livewire\Table\Traits;
 
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Support\Facades\DB;
 
 trait QueryFilters
 {
