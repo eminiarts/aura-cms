@@ -17,14 +17,14 @@ class Date extends Field
     public function filterOptions()
     {
         return [
-            'is' => __('is'),
-            'is_not' => __('is not'),
-            'before' => __('before'),
-            'after' => __('after'),
-            'on_or_before' => __('on or before'),
-            'on_or_after' => __('on or after'),
-            'is_empty' => __('is empty'),
-            'is_not_empty' => __('is not empty'),
+            'date_is' => __('is'),
+            'date_is_not' => __('is not'),
+            'date_before' => __('before'),
+            'date_after' => __('after'),
+            'date_on_or_before' => __('on or before'),
+            'date_on_or_after' => __('on or after'),
+            'date_is_empty' => __('is empty'),
+            'date_is_not_empty' => __('is not empty'),
         ];
     }
 

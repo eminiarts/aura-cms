@@ -144,6 +144,34 @@ trait QueryFilters
             case 'not_regex':
                 $query->where('value', 'not regexp', $filter['value']);
                 break;
+            case 'date_is':
+                $query->whereDate('value', '=', $filter['value']);
+                break;
+            case 'date_is_not':
+                $query->whereDate('value', '!=', $filter['value']);
+                break;
+            case 'date_before':
+                $query->whereDate('value', '<', $filter['value']);
+                break;
+            case 'date_after':
+                $query->whereDate('value', '>', $filter['value']);
+                break;
+            case 'date_on_or_before':
+                $query->whereDate('value', '<=', $filter['value']);
+                break;
+            case 'date_on_or_after':
+                $query->whereDate('value', '>=', $filter['value']);
+                break;
+            case 'date_is_empty':
+                $query->where(function ($query) {
+                    $query->whereNull('value')
+                        ->orWhere('value', '=', '');
+                });
+                break;
+            case 'date_is_not_empty':
+                $query->whereNotNull('value')
+                    ->where('value', '!=', '');
+                break;
         }
     }
 
@@ -151,29 +179,7 @@ trait QueryFilters
     {
         $query->whereHas('meta', function (Builder $query) use ($filter) {
             $query->where('key', '=', $filter['name']);
-
-            switch ($filter['operator']) {
-                case 'is':
-                    $query->whereDate('value', '=', $filter['value']);
-                    break;
-                case 'is_not':
-                    $query->whereDate('value', '!=', $filter['value']);
-                    break;
-                case 'before':
-                    $query->whereDate('value', '<', $filter['value']);
-                    break;
-                case 'after':
-                    $query->whereDate('value', '>', $filter['value']);
-                    break;
-                case 'on_or_before':
-                    $query->whereDate('value', '<=', $filter['value']);
-                    break;
-                case 'on_or_after':
-                    $query->whereDate('value', '>=', $filter['value']);
-                    break;
-                default:
-                    $this->applyOperatorCondition($query, $filter);
-            }
+            $this->applyOperatorCondition($query, $filter);
         });
     }
 
@@ -193,22 +199,24 @@ trait QueryFilters
                 $query->where($filter['name'], 'like', '%'.$filter['value']);
                 break;
             case 'is':
-                $query->whereDate($filter['name'], '=', $filter['value']);
+            case 'equals':
+                $query->where($filter['name'], '=', $filter['value']);
                 break;
             case 'is_not':
-                $query->whereDate($filter['name'], '!=', $filter['value']);
+            case 'not_equals':
+                $query->where($filter['name'], '!=', $filter['value']);
                 break;
-            case 'before':
-                $query->whereDate($filter['name'], '<', $filter['value']);
+            case 'greater_than':
+                $query->where($filter['name'], '>', $filter['value']);
                 break;
-            case 'after':
-                $query->whereDate($filter['name'], '>', $filter['value']);
+            case 'less_than':
+                $query->where($filter['name'], '<', $filter['value']);
                 break;
-            case 'on_or_before':
-                $query->whereDate($filter['name'], '<=', $filter['value']);
+            case 'greater_than_or_equal':
+                $query->where($filter['name'], '>=', $filter['value']);
                 break;
-            case 'on_or_after':
-                $query->whereDate($filter['name'], '>=', $filter['value']);
+            case 'less_than_or_equal':
+                $query->where($filter['name'], '<=', $filter['value']);
                 break;
             case 'in':
                 $query->whereIn($filter['name'], explode(',', $filter['value']));
@@ -235,6 +243,34 @@ trait QueryFilters
                 });
                 break;
             case 'is_not_empty':
+                $query->whereNotNull($filter['name'])
+                    ->where($filter['name'], '!=', '');
+                break;
+            case 'date_is':
+                $query->whereDate($filter['name'], '=', $filter['value']);
+                break;
+            case 'date_is_not':
+                $query->whereDate($filter['name'], '!=', $filter['value']);
+                break;
+            case 'date_before':
+                $query->whereDate($filter['name'], '<', $filter['value']);
+                break;
+            case 'date_after':
+                $query->whereDate($filter['name'], '>', $filter['value']);
+                break;
+            case 'date_on_or_before':
+                $query->whereDate($filter['name'], '<=', $filter['value']);
+                break;
+            case 'date_on_or_after':
+                $query->whereDate($filter['name'], '>=', $filter['value']);
+                break;
+            case 'date_is_empty':
+                $query->where(function ($query) use ($filter) {
+                    $query->whereNull($filter['name'])
+                        ->orWhere($filter['name'], '=', '');
+                });
+                break;
+            case 'date_is_not_empty':
                 $query->whereNotNull($filter['name'])
                     ->where($filter['name'], '!=', '');
                 break;
