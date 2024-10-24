@@ -4,7 +4,6 @@ namespace Aura\Base\Resources;
 
 use Aura\Base\Database\Factories\TeamFactory;
 use Aura\Base\Jobs\GenerateAllResourcePermissions;
-use Aura\Base\Models\TeamMeta;
 use Aura\Base\Resource;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -233,6 +232,7 @@ class Team extends Resource
 
     protected static function booted()
     {
+        parent::booted();
         static::saving(function ($team) {
             // unset title attribute
             unset($team->title);
