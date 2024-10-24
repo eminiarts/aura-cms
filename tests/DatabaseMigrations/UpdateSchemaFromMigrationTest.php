@@ -9,6 +9,18 @@ use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Artisan;
 
 beforeEach(function () {
+    if (File::exists(app_path('Aura/Resources/Project.php'))) {
+        File::delete(app_path('Aura/Resources/Project.php'));
+    }
+
+    $migrationFiles = File::files(database_path('migrations'));
+
+    foreach ($migrationFiles as $file) {
+        File::delete($file);
+    }
+
+    Aura::clear();
+    
     $this->user = createSuperAdmin();
 
     $this->actingAs($this->user);
@@ -50,6 +62,9 @@ it('creates a migration when fields are added', function () {
     $appServiceProvider = new \Aura\Base\Providers\AppServiceProvider(app());
     $appServiceProvider->boot();
 
+    // Aura::fake();
+    // Aura::setModel(new Project);
+
     Livewire::test(ResourceEditor::class, ['slug' => 'Project'])
         ->call('saveNewField', [
             'type' => "Aura\Base\Fields\Text",
@@ -61,7 +76,7 @@ it('creates a migration when fields are added', function () {
             'searchable' => false,
             'validation' => '',
             'conditional_logic' => '',
-        ])
+        ], 0, 'test') // Provide the $index and $slug here
         ->assertDispatched('newFields')
         ->assertDispatched('finishedSavingFields');
 
@@ -79,7 +94,7 @@ it('creates a migration when fields are added', function () {
             'searchable' => false,
             'validation' => '',
             'conditional_logic' => '',
-        ])
+        ], 1, 'test') // Provide the $index and $slug here
         ->assertDispatched('newFields')
         ->assertDispatched('finishedSavingFields');
 
