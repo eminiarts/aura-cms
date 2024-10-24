@@ -15,12 +15,8 @@ trait QueryFilters
 
         $mainOperator = $this->filters['operator'] ?? 'and';
 
-        ray($this->filters, 'mainOperator', $mainOperator);
-
         $query->where(function ($query) use ($mainOperator) {
             foreach ($this->filters['custom'] as $filter) {
-                ray('filter here', $filter, $mainOperator);
-
                 $mainOperator = $filter['main_operator'] ?? $mainOperator;
 
                 if ($this->isValidFilter($filter)) {
@@ -155,7 +151,29 @@ trait QueryFilters
     {
         $query->whereHas('meta', function (Builder $query) use ($filter) {
             $query->where('key', '=', $filter['name']);
-            $this->applyOperatorCondition($query, $filter);
+
+            switch ($filter['operator']) {
+                case 'is':
+                    $query->whereDate('value', '=', $filter['value']);
+                    break;
+                case 'is_not':
+                    $query->whereDate('value', '!=', $filter['value']);
+                    break;
+                case 'before':
+                    $query->whereDate('value', '<', $filter['value']);
+                    break;
+                case 'after':
+                    $query->whereDate('value', '>', $filter['value']);
+                    break;
+                case 'on_or_before':
+                    $query->whereDate('value', '<=', $filter['value']);
+                    break;
+                case 'on_or_after':
+                    $query->whereDate('value', '>=', $filter['value']);
+                    break;
+                default:
+                    $this->applyOperatorCondition($query, $filter);
+            }
         });
     }
 
@@ -175,24 +193,22 @@ trait QueryFilters
                 $query->where($filter['name'], 'like', '%'.$filter['value']);
                 break;
             case 'is':
-            case 'equals':
-                $query->where($filter['name'], '=', $filter['value']);
+                $query->whereDate($filter['name'], '=', $filter['value']);
                 break;
             case 'is_not':
-            case 'not_equals':
-                $query->where($filter['name'], '!=', $filter['value']);
+                $query->whereDate($filter['name'], '!=', $filter['value']);
                 break;
-            case 'greater_than':
-                $query->where($filter['name'], '>', $filter['value']);
+            case 'before':
+                $query->whereDate($filter['name'], '<', $filter['value']);
                 break;
-            case 'less_than':
-                $query->where($filter['name'], '<', $filter['value']);
+            case 'after':
+                $query->whereDate($filter['name'], '>', $filter['value']);
                 break;
-            case 'greater_than_or_equal':
-                $query->where($filter['name'], '>=', $filter['value']);
+            case 'on_or_before':
+                $query->whereDate($filter['name'], '<=', $filter['value']);
                 break;
-            case 'less_than_or_equal':
-                $query->where($filter['name'], '<=', $filter['value']);
+            case 'on_or_after':
+                $query->whereDate($filter['name'], '>=', $filter['value']);
                 break;
             case 'in':
                 $query->whereIn($filter['name'], explode(',', $filter['value']));
