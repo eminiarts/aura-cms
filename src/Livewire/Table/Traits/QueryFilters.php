@@ -215,24 +215,32 @@ trait QueryFilters
         }
     }
 
-    protected function applyStandardMetaFilter(Builder $query, array $filter): void
-    {
-        if (isset($filter['options']) && isset($filter['options']['resource_type'])) {
-            $resourceType = $filter['options']['resource_type'];
-            $values = (array) $filter['value'];
+protected function applyStandardMetaFilter(Builder $query, array $filter): void
+{
+    if (isset($filter['options']) && isset($filter['options']['resource_type'])) {
 
-            $query->whereHas('actors', function ($subQuery) use ($resourceType, $values, $filter) {
-                $subQuery->where('post_relations.resource_type', $resourceType)
-                    ->whereIn('post_relations.resource_id', $values);
-            });
+        $resourceType = $filter['options']['resource_type'];
+        $values = (array) $filter['value'];
+        $slug = $filter['name'];
+        $relatedType = get_class($query->getModel());
 
-            return;
-        }
-        $query->whereHas('meta', function (Builder $query) use ($filter) {
-            $query->where('key', '=', $filter['name']);
-            $this->applyOperatorCondition($query, $filter);
+        $query->whereIn('id', function ($subQuery) use ($resourceType, $values, $slug, $relatedType) {
+            $subQuery->select('related_id')
+                ->from('post_relations')
+                ->where('post_relations.related_type', $relatedType)
+                ->where('post_relations.resource_type', $resourceType)
+                ->where('post_relations.slug', $slug)
+                ->whereIn('post_relations.resource_id', $values);
         });
+
+        return;
     }
+
+    $query->whereHas('meta', function (Builder $query) use ($filter) {
+        $query->where('key', '=', $filter['name']);
+        $this->applyOperatorCondition($query, $filter);
+    });
+}
 
     protected function applyTableFieldFilter(Builder $query, array $filter): Builder
     {
