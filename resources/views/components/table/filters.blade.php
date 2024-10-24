@@ -46,98 +46,82 @@
 
     <p class="block mt-6 font-semibold">{{ __('Custom Filters') }}</p>
 
-
-        @forelse($filters['custom'] as $key => $f)
-
-        <div class="p-4 mt-4 bg-white rounded-md border border-gray-200 shadow-sm dark:bg-gray-800 dark:border-gray-700">
-
-            <div class="flex justify-between">
-                <div class="text-base font-semibold">
-                    {{-- {{ $this->fieldsForFilter[$filters['custom'][$key]['name']]['name'] ?? '' }} --}}
-                    <div class="mt-0 mb-0 w-24">
-                        <x-aura::input.select wire:model="filters.custom.{{ $key }}.main_operator" wire:change="$refresh" id="filters_main_operator_{{ $key}}" name="filters_main_operator_{{ $key}}" :options="['and' => __('AND'), 'or' => __('OR')]" size="xs">
-                        </x-aura::input.select>
-                    </div>
-                </div>
-                <div>
-                    <div class="-mt-1 -mr-1">
-                        <x-aura::button.transparent size="xs" wire:click="removeCustomFilter('{{ $key }}')">
-                            <x-aura::icon class="text-red-600" icon="close" size="xs"/>
-                        </x-aura::button.transparent>
-                    </div>
-                </div>
-            </div>
-
-
-
-            <div class="flex space-x-1">
-                <div class="mt-2 mb-0 w-full">
+    @foreach($filters['custom'] as $groupKey => $group)
+    <div class="p-4 mt-4 bg-white rounded-md border border-gray-200 shadow-sm dark:bg-gray-800 dark:border-gray-700">
+        <div class="flex justify-between items-center mb-2">
+            <div class="text-base font-semibold">
+                @if($groupKey > 0)
                     <x-aura::input.select
-                        wire:model="filters.custom.{{ $key }}.name"
-                        wire:change="$refresh"
-                        id="filters_field_{{ $key}}"
-                        name="filters_field_{{ $key}}"
+                        wire:model="filters.custom.{{ $groupKey }}.operator"
+                        :options="['and' => __('AND'), 'or' => __('OR')]"
                         size="xs"
-                        :options="collect($this->fieldsForFilter)->mapWithKeys(function ($field, $slug) {
-                            return [$slug => $field['name']];
-                        })->toArray()"
-                    >
-                    </x-aura::input.select>
-                </div>
-
-            <div class="mt-2 mb-0 w-full">
-                <x-aura::input.select
-                    wire:model="filters.custom.{{ $key }}.operator"
-                    id="filters_operator_{{ $key}}"
-                    name="filters_operator_{{ $key}}"
-                    size="xs"
-                    :options="isset($filters['custom'][$key]['name']) && isset($this->fieldsForFilter[$filters['custom'][$key]['name']])
-                        ? $this->fieldsForFilter[$filters['custom'][$key]['name']]['filterOptions']
-                        : []"
-                >
-                </x-aura::input.select>
+                    />
+                @else
+                    {{ __('Filter Group') }} {{ $groupKey + 1 }}
+                @endif
             </div>
-            </div>
-
-            <div class="mt-2 mb-0 w-full">
-                <div class="w-full">
-                    @php
-                            $fieldType = $this->fieldsForFilter[$filters['custom'][$key]['name']]['type'];
-                        @endphp
-                        @if($fieldType === 'Select')
-                            <x-aura::input.select
-                                wire:model="filters.custom.{{ $key }}.value"
-                                size="xs"
-                                :options="collect($this->fieldsForFilter[$filters['custom'][$key]['name']]['filterValues'])->pluck('value', 'key')->prepend(__('Select a value'), '')"
-                            >
-                            </x-aura::input.select>
-                        @else
-                            <x-aura::input.wrapper placeholder="Value" error="filters.custom.{{ $key }}.value">
-                                <x-aura::input.text wire:model="filters.custom.{{ $key}}.value" size="xs" placeholder="Value"></x-aura::input.text>
-                            </x-aura::input.wrapper>
-                        @endif
-                </div>
-            </div>
+            <x-aura::button.transparent size="xs" wire:click="removeFilterGroup({{ $groupKey }})">
+                <x-aura::icon class="text-red-600" icon="close" size="xs"/>
+            </x-aura::button.transparent>
         </div>
 
-        @empty
+        @foreach($group['filters'] as $filterKey => $filter)
+        <div class="p-2 mt-2 bg-gray-100 rounded dark:bg-gray-700">
+            <div class="flex space-x-1">
+                @if($filterKey > 0)
+                <x-aura::input.select
+                    wire:model="filters.custom.{{ $groupKey }}.filters.{{ $filterKey }}.main_operator"
+                    :options="['and' => __('AND'), 'or' => __('OR')]"
+                    size="xs"
+                />
+                @endif
+                <x-aura::input.select
+                    wire:model="filters.custom.{{ $groupKey }}.filters.{{ $filterKey }}.name"
+                    wire:change="$refresh"
+                    :options="collect($this->fieldsForFilter)->mapWithKeys(function ($field, $slug) {
+                        return [$slug => $field['name']];
+                    })->toArray()"
+                    size="xs"
+                />
+                <x-aura::input.select
+                    wire:model="filters.custom.{{ $groupKey }}.filters.{{ $filterKey }}.operator"
+                    :options="isset($filter['name']) && isset($this->fieldsForFilter[$filter['name']])
+                        ? $this->fieldsForFilter[$filter['name']]['filterOptions']
+                        : []"
+                    size="xs"
+                />
+                <x-aura::input.text
+                    wire:model="filters.custom.{{ $groupKey }}.filters.{{ $filterKey }}.value"
+                    size="xs"
+                    placeholder="Value"
+                />
+                <x-aura::button.transparent size="xs" wire:click="removeFilter({{ $groupKey }}, {{ $filterKey }})">
+                    <x-aura::icon class="text-red-600" icon="close" size="xs"/>
+                </x-aura::button.transparent>
+            </div>
+        </div>
+        @endforeach
 
-        @endforelse
-
-        <x-aura::button.light size="xs" wire:click="addFilter" class="mt-4">
+        <x-aura::button.light size="xs" wire:click="addSubFilter({{ $groupKey }})" class="mt-2">
             {{ __('Add Filter') }}
         </x-aura::button.light>
-
-
-        <x-aura::button.transparent size="xs" wire:click="resetFilter" class="mt-4">
-            {{ __('Reset Filter') }}
-        </x-aura::button.transparent>
-
-
-        {{-- <x-aura::button.transparent size="xs" wire:click="saveFilter" class="mt-4">Save as Template</x-aura::button.transparent> --}}
-
-
     </div>
+    @endforeach
+
+    <x-aura::button.light size="xs" wire:click="addFilterGroup" class="mt-4">
+        {{ __('Add Filter Group') }}
+    </x-aura::button.light>
+
+
+    <x-aura::button.transparent size="xs" wire:click="resetFilter" class="mt-4">
+        {{ __('Reset Filter') }}
+    </x-aura::button.transparent>
+
+
+    {{-- <x-aura::button.transparent size="xs" wire:click="saveFilter" class="mt-4">Save as Template</x-aura::button.transparent> --}}
+
+
+</div>
 
 <div class="flex justify-between items-center">
     <x-aura::button.primary wire:click="$refresh" class="mt-4">{{ __('Search') }}</x-aura::button.primary>

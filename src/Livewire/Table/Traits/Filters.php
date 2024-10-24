@@ -207,12 +207,13 @@ trait Filters
     public function updatedFiltersCustom($value, $key)
     {
         $parts = explode('.', $key);
-        if (count($parts) === 3 && $parts[2] === 'name') {
-            $index = $parts[1];
+        if (count($parts) === 5 && $parts[4] === 'name') {
+            $groupKey = $parts[1];
+            $filterKey = $parts[3];
             // Reset the operator when the field changes
-            $this->filters['custom'][$index]['operator'] = array_key_first($this->fieldsForFilter[$value]['filterOptions']);
+            $this->filters['custom'][$groupKey]['filters'][$filterKey]['operator'] = array_key_first($this->fieldsForFilter[$value]['filterOptions']);
             // Also reset the value
-            $this->filters['custom'][$index]['value'] = null;
+            $this->filters['custom'][$groupKey]['filters'][$filterKey]['value'] = null;
         }
     }
 
@@ -266,5 +267,44 @@ trait Filters
 
         // Use concat to merge collections and convert to array
         return collect($userFilters)->merge($teamFilters)->keyBy('slug')->toArray();
+    }
+
+    public function addFilterGroup()
+    {
+        $this->filters['custom'][] = [
+            'filters' => [
+                $this->newFilter(),
+            ],
+        ];
+    }
+
+    public function addSubFilter($groupKey)
+    {
+        $this->filters['custom'][$groupKey]['filters'][] = $this->newFilter();
+    }
+
+    private function newFilter()
+    {
+        return [
+            'name' => $this->fieldsForFilter->keys()->first(),
+            'operator' => 'contains',
+            'value' => null,
+        ];
+    }
+
+    public function removeFilterGroup($groupKey)
+    {
+        unset($this->filters['custom'][$groupKey]);
+        $this->filters['custom'] = array_values($this->filters['custom']);
+    }
+
+    public function removeFilter($groupKey, $filterKey)
+    {
+        unset($this->filters['custom'][$groupKey]['filters'][$filterKey]);
+        $this->filters['custom'][$groupKey]['filters'] = array_values($this->filters['custom'][$groupKey]['filters']);
+
+        if (empty($this->filters['custom'][$groupKey]['filters'])) {
+            $this->removeFilterGroup($groupKey);
+        }
     }
 }
