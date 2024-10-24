@@ -7,6 +7,8 @@ use Aura\Base\Resources\Team;
 use Aura\Base\Resources\User;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Database\Schema\Blueprint;
 
 class MigratePostMetaToMeta extends Command
 {
@@ -18,14 +20,30 @@ class MigratePostMetaToMeta extends Command
     {
         $this->info('Starting migration of post_meta, team_meta, and user_meta to meta table...');
 
+        if (!Schema::hasTable('meta')) {
+            Schema::create('meta', function (Blueprint $table) {
+                $table->id();
+                $table->morphs('metable');
+                $table->string('key')->nullable()->index();
+                $table->longText('value')->nullable();
+                $table->index(['metable_type', 'metable_id', 'key']);
+            });
+        }
+
         // Migrate post_meta
         $postMeta = DB::table('post_meta')->get();
         foreach ($postMeta as $meta) {
+            $post = DB::table('posts')->where('id', $meta->post_id)->first();
+            $type = $post->type;
+            $metableType = \Aura\Base\Facades\Aura::findResourceBySlug($type);
+
+            // dd($metableType::class);
+
             DB::table('meta')->insert([
                 'key' => $meta->key,
                 'value' => $meta->value,
                 'metable_id' => $meta->post_id,
-                'metable_type' => Post::class,
+                'metable_type' => $metableType::class,
             ]);
         }
         $this->info('Migrated post_meta to meta table.');
