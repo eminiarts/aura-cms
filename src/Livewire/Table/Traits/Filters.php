@@ -115,6 +115,14 @@ trait Filters
         });
     }
 
+    #[Computed]
+    public function getFields()
+    {
+        return $this->fields->mapWithKeys(function ($field) {
+            return [$field['slug'] => $field];
+        });
+    }
+
     // /**
     //  * Get the fields for filter .
     //  *
@@ -289,6 +297,7 @@ trait Filters
             'name' => $this->fieldsForFilter->keys()->first(),
             'operator' => 'contains',
             'value' => null,
+            'options' => [],
         ];
     }
 

@@ -13,6 +13,8 @@ trait QueryFilters
         return $query;
     }
 
+    ray('custom filters', $this->filters['custom']);
+
     $groups = $this->filters['custom'];
 
     // Start by building the conditions from the first group
@@ -72,6 +74,7 @@ trait QueryFilters
         $method = $groupOperator === 'or' ? 'orWhere' : 'where';
 
         $query->$method(function ($subQuery) use ($filter) {
+            ray('applyFilter', $filter);
             $this->applyFilterBasedOnType($subQuery, $filter);
         });
     }
@@ -214,6 +217,17 @@ trait QueryFilters
 
     protected function applyStandardMetaFilter(Builder $query, array $filter): void
     {
+        if (isset($filter['options']) && isset($filter['options']['resource_type'])) {
+            $resourceType = $filter['options']['resource_type'];
+            $values = (array) $filter['value'];
+
+            $query->whereHas('actors', function ($subQuery) use ($resourceType, $values, $filter) {
+                $subQuery->where('post_relations.resource_type', $resourceType)
+                    ->whereIn('post_relations.resource_id', $values);
+            });
+
+            return;
+        }
         $query->whereHas('meta', function (Builder $query) use ($filter) {
             $query->where('key', '=', $filter['name']);
             $this->applyOperatorCondition($query, $filter);

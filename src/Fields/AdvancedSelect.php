@@ -12,6 +12,15 @@ class AdvancedSelect extends Field
 
     public $view = 'aura::fields.advanced-select-view';
 
+    public $filter = 'aura::fields.filters.advanced-select';
+
+    public function filter()
+    {
+        if ($this->filter) {
+            return $this->filter;
+        }
+    }
+
     public function api($request)
     {
         $model = app($request->model);

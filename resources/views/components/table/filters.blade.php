@@ -90,14 +90,68 @@
                         : []"
                     size="xs"
                 />
-                <x-aura::input.text
-                    wire:model="filters.custom.{{ $groupKey }}.filters.{{ $filterKey }}.value"
-                    size="xs"
-                    placeholder="Value"
-                />
+
+
                 <x-aura::button.transparent size="xs" wire:click="removeFilter({{ $groupKey }}, {{ $filterKey }})">
                     <x-aura::icon class="text-red-600" icon="close" size="xs"/>
                 </x-aura::button.transparent>
+            </div>
+
+            <div class="w-full">
+                <div class="w-full">
+                    @php
+                            $fieldType = $this->fieldsForFilter[$filters['custom'][$groupKey]['filters'][$filterKey]['name']]['type'];
+                        @endphp
+                        @if($fieldType === 'Select')
+                            <x-aura::input.select
+                                wire:model="filters.custom.{{ $groupKey }}.filters.{{ $filterKey }}.value"
+                                size="xs"
+                                :options="collect($this->fieldsForFilter[$filters['custom'][$groupKey]['filters'][$filterKey]['name']]['filterValues'])->pluck('value', 'key')->prepend(__('Select a value'), '')"
+                            >
+                            </x-aura::input.select>
+                        @elseif($fieldType === 'AdvancedSelect')
+                            @php
+                                $field = $this->getFields[$filters['custom'][$groupKey]['filters'][$filterKey]['name']];
+                                $mode = 'create';
+
+                                $this->filters['custom'][$groupKey]['filters'][$filterKey]['options'] = [
+                                    'resource_type' => $field['resource'],
+                                ];
+                            @endphp
+
+                            <x-dynamic-component :component="$field['field']->filter()" :field="$field" wire:key="test2" model="filters.custom.{{ $groupKey }}.filters.{{ $filterKey }}.value" />
+
+                        @elseif($fieldType === 'Tags')
+                            <div class="flex flex-wrap gap-2">
+                                @php
+                                    $field = $this->getFields[$filters['custom'][$groupKey]['filters'][$filterKey]['name']];
+
+                                    $form = [
+                                        'fields' => [
+                                            $field['slug'] => [184],
+                                        ],
+                                    ];
+                                    $mode = 'create';
+                                @endphp
+
+                                <x-dynamic-component :component="$field['field']->filter()" :field="$field" wire:key="test" model="filters.custom.{{ $groupKey }}.filters.{{ $filterKey }}.value" />
+
+                                {{-- @foreach($this->getFields[$filters['custom'][$groupKey]['filters'][$filterKey]['name']]['filterValues'] as $key => $value)
+                                    <label class="inline-flex items-center">
+                                        <input type="checkbox"
+                                               wire:model="filters.custom.{{ $groupKey }}.filters.{{ $filterKey }}.value"
+                                               value="{{ $key }}"
+                                               class="w-4 h-4 transition duration-150 ease-in-out form-checkbox text-primary-600">
+                                        <span class="ml-2 text-sm">{{ $value }}</span>
+                                    </label>
+                                @endforeach --}}
+                            </div>
+                        @else
+                            <x-aura::input.wrapper placeholder="Value" error="filters.custom.{{ $groupKey }}.filters.{{ $filterKey }}.value">
+                                <x-aura::input.text wire:model="filters.custom.{{ $groupKey }}.filters.{{ $filterKey }}.value" size="xs" placeholder="Value"></x-aura::input.text>
+                            </x-aura::input.wrapper>
+                        @endif
+                </div>
             </div>
         </div>
         @endforeach
