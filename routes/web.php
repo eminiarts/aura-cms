@@ -42,12 +42,6 @@ Route::domain(config('aura.domain'))
 
             Route::get('/resources/{slug}/editor', ResourceEditor::class)->name('resource.editor');
 
-            Route::get('/attachment', AttachmentIndex::class)->name('attachment.index');
-
-            ray(Aura::getResources());
-
-            Aura::clear();
-            
             foreach (Aura::getResources() as $resource) {
                 
                 if (!class_exists($resource)) {
@@ -60,6 +54,8 @@ Route::domain(config('aura.domain'))
                 Route::get("/{$slug}/{id}/edit", Edit::class)->name("{$slug}.edit");
                 Route::get("/{$slug}/{id}", View::class)->name("{$slug}.view");
             }
+
+            Route::get('/attachment', AttachmentIndex::class)->name('attachment.index');
 
         });
     });
