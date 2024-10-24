@@ -19,12 +19,17 @@ if (key_exists('resource', $field) ) {
     @endpush
 @endonce
 
-<x-aura::fields.wrapper :field="$field">
+@aware(['model' => null, 'size' => 'xs'])
+
 <div
 wire:ignore
 x-data="{
     multiple: true,
-    value: @entangle('form.fields.' . $field['slug']),
+
+    value: @entangle($model),
+
+    size: '{{ $size }}',
+
     options: @js($values),
     disabled: {{ isset($field['disabled']) && $field['disabled'] ? 'true' : 'false' }},
     init() {
@@ -79,10 +84,13 @@ class=""
 <input
     x-ref="tags"
     name='tags'
-    class='flex items-center min-h-[42px] w-full bg-white rounded-lg appearance-none shadow-xs border-gray-500/30 tags focus:border-primary-300 focus:outline-none ring-gray-900/10 focus:ring focus:ring-primary-300 focus:ring-opacity-50 dark:focus:ring-primary-500 dark:focus:ring-opacity-50 dark:bg-gray-900 dark:border-gray-700 disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed'
+    :class="{
+        'flex items-center w-full bg-white rounded-lg appearance-none shadow-xs border-gray-500/30 tags focus:border-primary-300 focus:outline-none ring-gray-900/10 focus:ring focus:ring-primary-300 focus:ring-opacity-50 dark:focus:ring-primary-500 dark:focus:ring-opacity-50 dark:bg-gray-900 dark:border-gray-700 disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed': true,
+        'min-h-[42px] pl-3 pr-10 py-2': size === 'default',
+        'min-h-[34px] pl-0 pr-4 py-0 text-xs': size === 'xs'
+    }"
     placeholder='{{ $field['name'] }}'
     :disabled="disabled"
 >
 
 </div>
-</x-aura::fields.wrapper>
