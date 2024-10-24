@@ -2,11 +2,12 @@
 
 namespace Tests\Feature\Livewire;
 
-use Aura\Base\Livewire\Resource\Create;
-use Aura\Base\Resource;
-use Aura\Base\Resources\Post;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
+use Aura\Base\Resource;
+use Aura\Base\Facades\Aura;
+use Aura\Base\Resources\Post;
+use Aura\Base\Livewire\Resource\Create;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 
 // Refresh Database on every test
 uses(RefreshDatabase::class);
@@ -14,6 +15,9 @@ uses(RefreshDatabase::class);
 // Before each test, create a Superadmin and login
 beforeEach(function () {
     $this->actingAs($this->user = createSuperAdmin());
+
+    Aura::fake();
+    Aura::setModel(new BooleanFieldModel);
 });
 
 // Create Resource for this test
@@ -21,7 +25,7 @@ class BooleanFieldModel extends Resource
 {
     public static $singularName = 'Boolean Model';
 
-    public static ?string $slug = 'boolean-model';
+    public static ?string $slug = 'boolean';
 
     public static string $type = 'BooleanModel';
 
@@ -45,7 +49,7 @@ test('Boolean Field Test', function () {
 
     $model = new BooleanFieldModel;
 
-    $component = Livewire::test(Create::class, ['slug' => 'Post'])
+    $component = Livewire::test(Create::class, ['slug' => 'boolean'])
         ->call('setModel', $model)
         ->assertSee('Create Boolean Model')
         ->assertSee('Boolean for Test')
@@ -67,5 +71,5 @@ test('Boolean Field Test', function () {
     $model = BooleanFieldModel::first();
 
     // Assert that $model->fields['boolean'] is false
-    $this->assertNull($model->fields['boolean']);
+    $this->assertFalse($model->fields['boolean']);
 });
