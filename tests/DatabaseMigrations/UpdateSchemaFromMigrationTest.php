@@ -1,28 +1,12 @@
 <?php
 
-use Aura\Base\Livewire\ResourceEditor;
-use Illuminate\Support\Facades\Artisan;
-use Illuminate\Support\Facades\Event;
-use Illuminate\Support\Facades\File;
-use Illuminate\Support\Facades\Schema;
 use Livewire\Livewire;
-
-beforeEach(function () {
-    // $this->user = createSuperAdmin();
-
-    // $this->actingAs($this->user);
-
-    // Artisan::call('aura:resource', [
-    //     'name' => 'Project',
-    //     '--custom' => true,
-    // ]);
-
-    // app('aura')::registerResources(['App\Aura\Resources\Project']);
-
-    // Artisan::call('cache:clear');
-
-    // require_once app_path('Aura/Resources/Project.php');
-});
+use Aura\Base\Facades\Aura;
+use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Event;
+use Aura\Base\Livewire\ResourceEditor;
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\Artisan;
 
 it('creates a migration when fields are added', function () {
 
@@ -94,4 +78,6 @@ it('creates a migration when fields are added', function () {
     foreach ($migrationFiles as $file) {
         File::delete($file);
     }
+
+    Aura::clear();
 });

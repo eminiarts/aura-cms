@@ -15,6 +15,8 @@ uses(RefreshDatabase::class);
 
 afterEach(function () {
     Schema::dropIfExists('custom_projects');
+
+    Aura::clear();
 });
 
 beforeEach(function () {

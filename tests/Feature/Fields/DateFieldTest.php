@@ -87,5 +87,5 @@ test('Date Field in View', function () {
         ->get('/admin/datemodel/create')
         ->assertOk()
         ->assertSee('Date for Test')
-        ->assertSeeLivewire('aura::post-create');
+        ->assertSeeLivewire('aura::resource-create');
 });

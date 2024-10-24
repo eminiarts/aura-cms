@@ -4,6 +4,7 @@ use Livewire\Livewire;
 use Aura\Base\Facades\Aura;
 use Aura\Base\Events\SaveFields;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Event;
 use Aura\Base\Livewire\ResourceEditor;
 use Illuminate\Support\Facades\Schema;
@@ -29,7 +30,6 @@ beforeEach(function () {
 });
 
 afterEach(function () {
-    Artisan::call('cache:clear');
 
     if (File::exists(app_path('Aura/Resources/Project.php'))) {
         File::delete(app_path('Aura/Resources/Project.php'));
@@ -40,6 +40,9 @@ afterEach(function () {
     foreach ($migrationFiles as $file) {
         File::delete($file);
     }
+
+    Aura::clear();
+    
 });
 
 it('creates a custom resource', function () {

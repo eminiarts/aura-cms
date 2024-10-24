@@ -18,6 +18,10 @@ uses(RefreshDatabase::class);
 // Before each test, create a Superadmin and login
 beforeEach(function () {
     $this->actingAs($this->user = createSuperAdmin());
+
+    // Aura::clear();
+    Aura::fake();
+    Aura::setModel(new PasswordFieldModel);
 });
 
 // Create Resource for this test
@@ -48,7 +52,7 @@ class PasswordFieldModel extends Resource
 test('Password Field Test', function () {
     $model = new PasswordFieldModel;
 
-    $component = Livewire::test(Create::class, ['slug' => 'Post'])
+    $component = Livewire::test(Create::class, ['slug' => 'password-model'])
         ->call('setModel', $model)
         ->assertSee('Create Password Model')
         ->assertSee('Password for Test')
@@ -83,7 +87,7 @@ test('Password Field Test', function () {
 test('password field gets not overwritten if saved as null', function () {
     $model = new PasswordFieldModel;
 
-    $component = Livewire::test(Create::class, ['slug' => 'Post'])
+    $component = Livewire::test(Create::class, ['slug' => 'password-model'])
         ->call('setModel', $model)
         ->set('form.fields.password', '123456789')
         ->call('save')
@@ -133,7 +137,7 @@ test('password field gets not overwritten if saved as null', function () {
 test('password field gets not overwritten if saved as empty string', function () {
     $model = new PasswordFieldModel;
 
-    $component = Livewire::test(Create::class, ['slug' => 'Post'])
+    $component = Livewire::test(Create::class, ['slug' => 'password-model'])
         ->call('setModel', $model)
         ->set('form.fields.password', '123456789')
         ->call('save')

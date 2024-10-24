@@ -40,7 +40,7 @@ class View extends Component
         return $this->form['fields'][$slug];
     }
 
-    public function mount( $id)
+    public function mount($id)
     {
         // Get the slug from the current route
         $routeName = request()->route()->getName();

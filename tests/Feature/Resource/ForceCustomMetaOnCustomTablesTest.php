@@ -1,16 +1,19 @@
 <?php
 
-use Aura\Base\Livewire\Table\Table;
-use Aura\Base\Models\Meta;
-use Aura\Base\Models\Scopes\TeamScope;
 use Aura\Base\Resource;
-use Illuminate\Database\Schema\Blueprint;
+use Aura\Base\Models\Meta;
+use Aura\Base\Facades\Aura;
 use Illuminate\Support\Facades\DB;
+use Aura\Base\Livewire\Table\Table;
+use Aura\Base\Models\Scopes\TeamScope;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Database\Schema\Blueprint;
 
 afterEach(function () {
     Schema::dropIfExists('custom_projects');
     Schema::dropIfExists('custom_projects_meta');
+
+    Aura::clear();
 });
 
 beforeEach(function () {
