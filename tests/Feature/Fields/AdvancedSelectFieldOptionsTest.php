@@ -1,10 +1,10 @@
 <?php
 
-use Livewire\Livewire;
-use Aura\Base\Resource;
 use Aura\Base\Facades\Aura;
-use Aura\Base\Resources\Genre;
 use Aura\Base\Livewire\Resource\Create;
+use Aura\Base\Resource;
+use Aura\Base\Resources\Genre;
+use Livewire\Livewire;
 
 beforeEach(function () {
     $this->actingAs($this->user = createSuperAdmin());

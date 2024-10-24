@@ -1,16 +1,15 @@
 <?php
 
-use Livewire\Livewire;
-use Aura\Base\Facades\Aura;
 use Aura\Base\Events\SaveFields;
-use Illuminate\Support\Facades\File;
-use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\Event;
-use Aura\Base\Livewire\ResourceEditor;
-use Illuminate\Support\Facades\Schema;
-use Illuminate\Support\Facades\Artisan;
+use Aura\Base\Facades\Aura;
 use Aura\Base\Listeners\CreateDatabaseMigration;
 use Aura\Base\Listeners\ModifyDatabaseMigration;
+use Aura\Base\Livewire\ResourceEditor;
+use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Schema;
+use Livewire\Livewire;
 
 beforeEach(function () {
     $this->user = createSuperAdmin();
@@ -42,7 +41,7 @@ afterEach(function () {
     }
 
     Aura::clear();
-    
+
 });
 
 it('creates a custom resource', function () {
@@ -64,7 +63,7 @@ it('resource editor is accessible', function () {
     expect($classExists)->toBeTrue();
 
     Aura::registerRoutes('project');
-    
+
     Aura::clearRoutes();
 
     $this->get(route('aura.resource.editor', ['slug' => 'Project']))

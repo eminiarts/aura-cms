@@ -1,13 +1,11 @@
 <?php
 
-use Aura\Base\Resource;
-use Aura\Base\Models\Meta;
 use Aura\Base\Facades\Aura;
-use Illuminate\Support\Facades\DB;
 use Aura\Base\Livewire\Table\Table;
-use Aura\Base\Models\Scopes\TeamScope;
-use Illuminate\Support\Facades\Schema;
+use Aura\Base\Resource;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 afterEach(function () {
     Schema::dropIfExists('custom_projects');
@@ -30,8 +28,6 @@ beforeEach(function () {
         $table->timestamps();
     });
 });
-
-
 
 class ForceCustomMetaOnCustomTablesModel extends Resource
 {
@@ -101,8 +97,6 @@ class ForceCustomMetaOnCustomTablesModel extends Resource
             ],
         ];
     }
-
-    
 }
 
 test('custom Table is using custom meta', function () {

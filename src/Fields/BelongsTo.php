@@ -3,7 +3,6 @@
 namespace Aura\Base\Fields;
 
 use Aura\Base\Models\Meta;
-use Illuminate\Support\Str;
 
 class BelongsTo extends Field
 {
@@ -164,7 +163,7 @@ class BelongsTo extends Field
                 'id',        // Local key on the model table
                 'metable_id' // Local key on the meta table
             )->where('meta.key', $field['relation'])
-             ->where('meta.metable_type', $model->getMorphClass());
+                ->where('meta.metable_type', $model->getMorphClass());
         }
 
         return $model->hasMany($field['resource'], $field['relation']);

@@ -23,8 +23,6 @@ class Team extends Resource
         ],
     ];
 
-    public static bool $usesMeta = true;
-
     public static $customTable = true;
 
     public static $globalSearch = false;
@@ -32,6 +30,8 @@ class Team extends Resource
     public static ?string $slug = 'team';
 
     public static string $type = 'Team';
+
+    public static bool $usesMeta = true;
 
     protected $fillable = [
         'name', 'user_id', 'fields',

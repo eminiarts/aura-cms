@@ -1,13 +1,13 @@
 <?php
 
-use Aura\Base\Resource;
-use Aura\Base\Models\Meta;
 use Aura\Base\Facades\Aura;
-use Illuminate\Support\Facades\DB;
 use Aura\Base\Livewire\Table\Table;
-use Illuminate\Support\Facades\Schema;
+use Aura\Base\Models\Meta;
+use Aura\Base\Resource;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 uses(RefreshDatabase::class);
 
@@ -34,8 +34,6 @@ beforeEach(function () {
     });
 
 });
-
-
 
 class ResourceWithCustomTableAndCustomMetaModel extends Resource
 {
@@ -111,8 +109,6 @@ class ResourceWithCustomTableAndCustomMetaModel extends Resource
             ],
         ];
     }
-
-   
 }
 
 test('custom Table - Fields get saved correctly when fillable are set and meta are used', function () {
@@ -159,8 +155,8 @@ test('custom Table - Fields get saved correctly when fillable are set and meta a
     ]);
 
     $meta = Meta::where('metable_id', $resource->id)
-                ->where('metable_type', ResourceWithCustomTableAndCustomMetaModel::class)
-                ->get();
+        ->where('metable_type', ResourceWithCustomTableAndCustomMetaModel::class)
+        ->get();
 
     expect($meta->count())->toBe(2);
 

@@ -18,7 +18,6 @@ use Illuminate\Foundation\Auth\Access\Authorizable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Str;
 use Illuminate\Validation\Rules\Password;
 use Lab404\Impersonate\Models\Impersonate;
 use Laravel\Fortify\TwoFactorAuthenticatable;
@@ -37,16 +36,15 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
     use ProfileFields;
     use TwoFactorAuthenticatable;
 
-
     public static $customTable = true;
-
-    public static bool $usesMeta = true;
 
     public static ?string $slug = 'user';
 
     public static ?int $sort = 1;
 
     public static string $type = 'User';
+
+    public static bool $usesMeta = true;
 
     protected $appends = ['fields'];
 
@@ -315,7 +313,7 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
                 },
                 'on_view' => true,
                 'style' => [
-                'width' => '100',
+                    'width' => '100',
                 ],
             ],
             [

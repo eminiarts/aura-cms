@@ -1,13 +1,11 @@
 <?php
 
-use Aura\Base\Resource;
 use Aura\Base\Facades\Aura;
-use Illuminate\Support\Facades\DB;
 use Aura\Base\Livewire\Table\Table;
-use Illuminate\Support\Facades\Schema;
+use Aura\Base\Resource;
 use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Foundation\Testing\RefreshDatabase;
-
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 afterEach(function () {
     Schema::dropIfExists('custom_projects');
@@ -40,9 +38,9 @@ class ResourceWithCustomTableWithoutFillableModel extends Resource
 
     public static ?string $slug = 'project';
 
-    public static bool $usesMeta = false;
-
     public static string $type = 'Project';
+
+    public static bool $usesMeta = false;
 
     // cast options to array
     protected $casts = [
