@@ -8,25 +8,50 @@ use Illuminate\Support\Facades\DB;
 trait QueryFilters
 {
     protected function applyCustomFilter(Builder $query): Builder
-    {
-        if (empty($this->filters['custom'])) {
-            return $query;
-        }
-
-        $query->where(function ($query) {
-            foreach ($this->filters['custom'] as $groupIndex => $group) {
-                // Set default group operator to "and" if not defined
-                $group['operator'] = $group['operator'] ?? 'and';
-                $method = ($groupIndex === 0 || $group['operator'] === 'and') ? 'where' : 'orWhere';
-
-                $query->$method(function ($subQuery) use ($group) {
-                    $this->applyFilterGroup($subQuery, $group);
-                });
-            }
-        });
-
+{
+    if (empty($this->filters['custom'])) {
         return $query;
     }
+
+    $groups = $this->filters['custom'];
+
+    // Start by building the conditions from the first group
+    $condition = function ($query) use ($groups) {
+        $this->applyFilterGroup($query, $groups[0]);
+    };
+
+    for ($i = 1; $i < count($groups); $i++) {
+        $group = $groups[$i];
+        $operator = $group['operator'] ?? 'and';
+
+        // Create a new condition that wraps the previous condition and combines it with the current group
+        $previousCondition = $condition;
+
+        $condition = function ($query) use ($previousCondition, $group, $operator) {
+            $query->where(function ($q) use ($previousCondition, $group, $operator) {
+                // Wrap previous conditions
+                $q->where(function ($subQ) use ($previousCondition) {
+                    $previousCondition($subQ);
+                });
+
+                // Combine with current group using its operator
+                $method = $operator === 'and' ? 'where' : 'orWhere';
+
+                $q->$method(function ($subQ) use ($group) {
+                    $this->applyFilterGroup($subQ, $group);
+                });
+            });
+        };
+    }
+
+    // Apply the accumulated condition to the main query
+    $query->where(function ($q) use ($condition) {
+        $condition($q);
+    });
+
+    return $query;
+}
+
 
     protected function applyFilterGroup(Builder $query, array $group): void
     {
