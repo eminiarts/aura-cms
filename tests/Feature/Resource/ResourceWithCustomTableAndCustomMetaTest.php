@@ -33,25 +33,9 @@ beforeEach(function () {
         $table->timestamps();
     });
 
-    Schema::create('custom_projects_meta', function (Blueprint $table) {
-        $table->id();
-        $table->foreignId('team_id')->index()->nullable();
-        $table->string('key')->nullable();
-        $table->longText('value')->nullable();
-    });
 });
 
-// Create Resource for this test
 
-class ResourceWithCustomTableAndCustomMetaModelMeta extends Meta
-{
-    /**
-     * The table associated with the model.
-     *
-     * @var string
-     */
-    protected $table = 'custom_projects_meta';
-}
 
 class ResourceWithCustomTableAndCustomMetaModel extends Resource
 {
@@ -128,10 +112,7 @@ class ResourceWithCustomTableAndCustomMetaModel extends Resource
         ];
     }
 
-    public function meta()
-    {
-        return $this->hasMany(ResourceWithCustomTableAndCustomMetaModelMeta::class, 'team_id');
-    }
+   
 }
 
 test('custom Table - Fields get saved correctly when fillable are set and meta are used', function () {
@@ -151,8 +132,6 @@ test('custom Table - Fields get saved correctly when fillable are set and meta a
     ]);
 
     expect($resource->usesCustomTable())->toBe(true);
-
-    expect($resource->usesCustomMeta())->toBe(true);
 
     expect($resource->name)->toBe('Test Post 1');
 
@@ -179,7 +158,9 @@ test('custom Table - Fields get saved correctly when fillable are set and meta a
         'option2' => 'Option 2',
     ]);
 
-    $meta = DB::table('custom_projects_meta')->get();
+    $meta = Meta::where('metable_id', $resource->id)
+                ->where('metable_type', ResourceWithCustomTableAndCustomMetaModel::class)
+                ->get();
 
     expect($meta->count())->toBe(2);
 

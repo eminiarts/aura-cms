@@ -11,7 +11,6 @@ use Illuminate\Database\Schema\Blueprint;
 
 afterEach(function () {
     Schema::dropIfExists('custom_projects');
-    Schema::dropIfExists('custom_projects_meta');
 
     Aura::clear();
 });
@@ -30,42 +29,12 @@ beforeEach(function () {
         $table->foreignId('team_id');
         $table->timestamps();
     });
-
-    Schema::create('custom_projects_meta', function (Blueprint $table) {
-        $table->id();
-        $table->foreignId('post_id')->index();
-        $table->string('key')->nullable();
-        $table->longText('value')->nullable();
-        if (config('aura.teams')) {
-            $table->foreignId('team_id')->index();
-        }
-    });
 });
 
-class ForceCustomMetaOnCustomTablesModelMeta extends Meta
-{
-    protected $table = 'custom_projects_meta';
 
-    protected static function booted()
-    {
-        static::addGlobalScope(new TeamScope);
-
-        static::saving(function ($post) {
-            if (config('aura.teams') && ! $post->team_id && auth()->user()) {
-                $post->team_id = auth()->user()->current_team_id;
-            }
-
-            if (config('aura.teams') && ! $post->team_id) {
-                $post->team_id = 1;
-            }
-        });
-    }
-}
 
 class ForceCustomMetaOnCustomTablesModel extends Resource
 {
-    public static $customMeta = true;
-
     public static $customTable = true;
 
     public static $singularName = 'Project';
@@ -133,10 +102,7 @@ class ForceCustomMetaOnCustomTablesModel extends Resource
         ];
     }
 
-    public function meta()
-    {
-        return $this->hasMany(ForceCustomMetaOnCustomTablesModelMeta::class, 'post_id');
-    }
+    
 }
 
 test('custom Table is using custom meta', function () {
@@ -155,7 +121,6 @@ test('custom Table is using custom meta', function () {
     ]);
 
     expect($resource->usesCustomTable())->toBe(true);
-    expect($resource->usesCustomMeta())->toBe(true);
     expect($resource->name)->toBe('Test Post 1');
     expect($resource->status)->toBe('publish');
     expect($resource->enabled)->toBe(true);
@@ -176,7 +141,7 @@ test('custom Table is using custom meta', function () {
         'option2' => 'Option 2',
     ]);
 
-    $meta = DB::table('custom_projects_meta')->where('post_id', $resource->id)->get();
+    $meta = DB::table('meta')->where('metable_id', $resource->id)->where('metable_type', ForceCustomMetaOnCustomTablesModel::class)->get();
 
     $meta1 = $meta->where('key', 'meta_1')->first();
     $meta2 = $meta->where('key', 'meta_2')->first();
