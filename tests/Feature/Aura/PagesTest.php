@@ -25,12 +25,12 @@ dataset('auraPages', [
 ]);
 
 dataset('postTypes', [
-    'Option',
-    'User',
-    'Post',
-    'Role',
-    'Permission',
-    'Attachment',
+    'option',
+    'user',
+    'post',
+    'role',
+    'permission',
+    'attachment',
 ]);
 
 // Test Post Index Pages
@@ -63,6 +63,6 @@ test('Check Post Edit and View Pages', function ($postType) {
 
     $post = Aura::findResourceBySlug($postType)->factory()->create();
 
-    $this->get(route('aura.resource.edit', ['slug' => $postType, 'id' => $post->id]))->assertOk();
-    $this->get(route('aura.resource.view', ['slug' => $postType, 'id' => $post->id]))->assertOk();
+    $this->get(route("aura.{$postType}.edit", ['id' => $post->id]))->assertOk();
+    $this->get(route("aura.{$postType}.view", ['id' => $post->id]))->assertOk();
 })->with('postTypes');
