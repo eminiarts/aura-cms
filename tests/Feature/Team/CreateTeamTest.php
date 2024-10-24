@@ -40,8 +40,13 @@ test('team can be created', function () {
 
     expect($team->name)->toBe('Test Team');
 
+    ray()->clearScreen();
+    
     ray($team->toArray());
     ray(DB::table('meta')->get());
+
+    ray($team->meta)->green();
+    ray($team->fields)->red();
 
     expect($team->description)->toBe('Test Description');
 });

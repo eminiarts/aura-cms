@@ -315,7 +315,7 @@ class Resource extends Model
 
     public function getMeta($key = null)
     {
-        if ($this->usesCustomTable()) {
+        if ($this->usesCustomTable() && ! $this->usesMeta()) {
             return collect();
         }
 

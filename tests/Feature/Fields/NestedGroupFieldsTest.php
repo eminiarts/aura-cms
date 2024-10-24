@@ -77,10 +77,12 @@ test('create model with nested fields', function () {
 
     // dd($model->toArray());
 
-    $meta = DB::table('post_meta')->get();
+    $meta = DB::table('meta')->get();
 
-    $this->assertDatabaseMissing('post_meta', [
+    $this->assertDatabaseMissing('meta', [
         'key' => 'settings',
-        'post_id' => $model->id,
+        'metable_id' => $model->id,
+        'metable_type' => NestedGroupFieldsModel::class,
     ]);
+
 });
