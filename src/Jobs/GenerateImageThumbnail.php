@@ -4,13 +4,12 @@ namespace Aura\Base\Jobs;
 
 use Aura\Base\Facades\Aura;
 use Aura\Base\Resources\Attachment;
+use Aura\Base\Services\ThumbnailGenerator;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
-use Illuminate\Support\Facades\Http;
-use Illuminate\Support\Facades\URL;
 
 class GenerateImageThumbnail implements ShouldQueue
 {
@@ -37,7 +36,7 @@ class GenerateImageThumbnail implements ShouldQueue
     /**
      * Execute the job.
      */
-    public function handle()
+    public function handle(ThumbnailGenerator $thumbnailGenerator)
     {
         // Skip in tests
         if (app()->environment('testing')) {
@@ -72,16 +71,11 @@ class GenerateImageThumbnail implements ShouldQueue
                     'size' => $thumbnail
                 ]);
 
-                $imageUrl = route('aura.image', [
-                    'path' => $relativePath,
-                    'width' => $thumbnail['width'],
-                    'height' => $thumbnail['height'],
-                ], false);
-
-                // Make a request to generate the thumbnail
-                ray($imageUrl, config('app.url') . $imageUrl, $relativePath);
-                $response = Http::get(config('app.url') . $imageUrl);
-                ray($response);
+                $thumbnailGenerator->generate(
+                    $relativePath,
+                    $thumbnail['width'],
+                    $thumbnail['height']
+                );
 
             } catch (\Exception $e) {
                 logger()->error('Failed to generate thumbnail', [
