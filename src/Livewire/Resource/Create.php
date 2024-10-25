@@ -74,8 +74,8 @@ class Create extends Component
     public function mount($slug = null)
     {
         $this->slug = $slug;
-        
-        if (!$this->slug) {
+
+        if (! $this->slug) {
             $routeName = request()->route()->getName();
             $this->slug = explode('.', $routeName)[1] ?? null;
         }
@@ -157,7 +157,7 @@ class Create extends Component
                 $this->dispatch('resourceCreated', ['for' => $this->params['for'], 'resource' => $model, 'title' => $model->title()]);
             }
         } else {
-            return redirect()->route('aura.' . $this->slug . '.edit', $model->id);
+            return redirect()->route('aura.'.$this->slug.'.edit', $model->id);
         }
     }
 

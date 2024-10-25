@@ -4,6 +4,7 @@ use Aura\Base\Livewire\Resource\Create;
 use Aura\Base\Resources\Role;
 use Aura\Base\Resources\Team;
 use Aura\Base\Resources\User;
+use Illuminate\Support\Facades\DB;
 
 use function Pest\Livewire\livewire;
 
@@ -38,6 +39,15 @@ test('team can be created', function () {
     expect($this->user->getTeams()->count())->toBe(2);
 
     expect($team->name)->toBe('Test Team');
+
+    ray()->clearScreen();
+
+    ray($team->toArray());
+    ray(DB::table('meta')->get());
+
+    ray($team->meta)->green();
+    ray($team->fields)->red();
+
     expect($team->description)->toBe('Test Description');
 });
 

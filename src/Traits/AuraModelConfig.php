@@ -3,7 +3,6 @@
 namespace Aura\Base\Traits;
 
 use Aura\Base\ConditionalLogic;
-use Aura\Base\Exceptions\InvalidMetaTableException;
 use Aura\Base\Models\Meta;
 use Aura\Base\Resources\Team;
 use Illuminate\Support\Str;
@@ -17,8 +16,6 @@ trait AuraModelConfig
     public static $contextMenu = true;
 
     public static $createEnabled = true;
-
-    public static $customMeta = false;
 
     public static $customTable = false;
 
@@ -95,7 +92,7 @@ trait AuraModelConfig
 
     public function createUrl()
     {
-        return route('aura.' . $this->getSlug() . '.create');
+        return route('aura.'.$this->getSlug().'.create');
     }
 
     public function createView()
@@ -144,7 +141,7 @@ trait AuraModelConfig
     public function editUrl()
     {
         if ($this->getType() && $this->id) {
-            return route('aura.' . $this->getSlug() . '.edit', ['id' => $this->id]);
+            return route('aura.'.$this->getSlug().'.edit', ['id' => $this->id]);
         }
     }
 
@@ -234,7 +231,7 @@ trait AuraModelConfig
 
     public function getIndexRoute()
     {
-        return route('aura.' . $this->getSlug() . '.index');
+        return route('aura.'.$this->getSlug().'.index');
     }
 
     public function getMetaForeignKey()
@@ -382,18 +379,7 @@ trait AuraModelConfig
             return;
         }
 
-        if (static::$customMeta) {
-            $metaClass = $this->getCustomMetaClass();
-            $metaTable = (new $metaClass)->getTable();
-
-            if ($metaTable === 'post_meta') {
-                throw new InvalidMetaTableException('Custom meta table is not properly defined for '.get_class($this));
-            }
-
-            return $this->hasMany($metaClass, 'post_id');
-        }
-
-        return $this->hasMany(Meta::class, 'post_id');
+        return $this->morphMany(Meta::class, 'metable');
     }
 
     public function navigation()
@@ -536,11 +522,6 @@ trait AuraModelConfig
         }
     }
 
-    public static function usesCustomMeta(): bool
-    {
-        return static::$customMeta;
-    }
-
     /**
      * @param  string  $key
      * @return mixed
@@ -590,22 +571,12 @@ trait AuraModelConfig
     public function viewUrl()
     {
         if ($this->getType() && $this->id) {
-            return route('aura.' . $this->getSlug() . '.view', ['id' => $this->id]);
+            return route('aura.'.$this->getSlug().'.view', ['id' => $this->id]);
         }
     }
 
     public function viewView()
     {
         return 'aura::livewire.resource.view';
-    }
-
-    /**
-     * Get the custom meta class for this model
-     *
-     * @return string
-     */
-    protected function getCustomMetaClass()
-    {
-        return get_class($this).'Meta';
     }
 }

@@ -3,7 +3,6 @@
 namespace Aura\Base\Livewire\Table\Traits;
 
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Support\Facades\DB;
 
 trait QueryFilters
 {
@@ -177,14 +176,11 @@ trait QueryFilters
                     continue;
                 }
 
-                $query->whereExists(function ($subQuery) use ($key, $taxonomy) {
-                    $subQuery->select(DB::raw(1))
-                        ->from('post_meta')
-                        ->where('post_meta.post_id', '=', DB::raw('posts.id'))
-                        ->where('post_meta.key', $key)
+                $query->whereHas('meta', function ($subQuery) use ($key, $taxonomy) {
+                    $subQuery->where('key', $key)
                         ->where(function ($subQuery) use ($taxonomy) {
                             foreach ($taxonomy as $value) {
-                                $subQuery->orWhereRaw('JSON_CONTAINS(CAST(post_meta.value as JSON), ?)', [(string) $value]);
+                                $subQuery->orWhereRaw('JSON_CONTAINS(CAST(value as JSON), ?)', [(string) $value]);
                             }
                         });
                 });

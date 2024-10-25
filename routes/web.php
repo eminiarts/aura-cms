@@ -1,15 +1,15 @@
 <?php
 
 use Aura\Base\Facades\Aura;
-use Aura\Base\Livewire\PluginsPage;
-use Aura\Base\Livewire\Resource\Edit;
-use Aura\Base\Livewire\Resource\View;
-use Illuminate\Support\Facades\Route;
-use Aura\Base\Livewire\Resource\Index;
-use Aura\Base\Livewire\ResourceEditor;
-use Aura\Base\Livewire\Resource\Create;
 use Aura\Base\Http\Controllers\Api\FieldsController;
 use Aura\Base\Livewire\Attachment\Index as AttachmentIndex;
+use Aura\Base\Livewire\PluginsPage;
+use Aura\Base\Livewire\Resource\Create;
+use Aura\Base\Livewire\Resource\Edit;
+use Aura\Base\Livewire\Resource\Index;
+use Aura\Base\Livewire\Resource\View;
+use Aura\Base\Livewire\ResourceEditor;
+use Illuminate\Support\Facades\Route;
 
 Route::middleware(config('aura.middleware.aura-guest'))->group(function () {
     require __DIR__.'/auth.php';
@@ -43,8 +43,8 @@ Route::domain(config('aura.domain'))
             Route::get('/resources/{slug}/editor', ResourceEditor::class)->name('resource.editor');
 
             foreach (Aura::getResources() as $resource) {
-                
-                if (!class_exists($resource)) {
+
+                if (! class_exists($resource)) {
                     continue;
                 }
 

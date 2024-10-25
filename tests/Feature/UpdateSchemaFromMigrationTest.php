@@ -1,12 +1,12 @@
 <?php
 
-use Livewire\Livewire;
 use Aura\Base\Facades\Aura;
-use Illuminate\Support\Facades\File;
-use Illuminate\Support\Facades\Event;
 use Aura\Base\Livewire\ResourceEditor;
-use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Schema;
+use Livewire\Livewire;
 
 beforeEach(function () {
     if (File::exists(app_path('Aura/Resources/Project.php'))) {
@@ -20,7 +20,7 @@ beforeEach(function () {
     }
 
     Aura::clear();
-    
+
     $this->user = createSuperAdmin();
 
     $this->actingAs($this->user);
@@ -50,11 +50,10 @@ afterEach(function () {
     }
 
     Aura::clear();
-    
+
 });
 
 it('creates a migration when fields are added', function () {
-
 
     config(['aura.resource_editor.custom_table_migrations' => 'single']);
 

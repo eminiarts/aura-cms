@@ -20,7 +20,7 @@ class Index extends Component
         $routeName = request()->route()->getName();
         $this->slug = explode('.', $routeName)[1] ?? null;
 
-        if (!$this->slug) {
+        if (! $this->slug) {
             // If we couldn't extract the slug, redirect to dashboard
             return redirect()->route('aura.dashboard');
         }
