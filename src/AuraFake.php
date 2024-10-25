@@ -18,5 +18,11 @@ class AuraFake extends Aura
     public function setModel($model)
     {
         $this->model = $model;
+
+        $slug = $model->getSlug();
+
+        Aura::registerRoutes($slug);
+
+        Aura::clearRoutes();
     }
 }

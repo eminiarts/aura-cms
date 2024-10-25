@@ -59,14 +59,13 @@ class Attachment extends Resource
     {
         parent::delete();
 
-        return redirect()->route('aura.resource.index', ['slug' => 'Attachment']);
+        return redirect()->route('aura.attachment.index');
     }
 
     public function deleteSelected($ids)
     {
         self::whereIn('id', $ids)->delete();
 
-        // return redirect()->route('aura.resource.index', ['slug' => 'Attachment'])->with('success', $deletedCount . ' attachments have been deleted.');
     }
 
     public function filePath($size = null)

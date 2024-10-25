@@ -33,7 +33,7 @@
                             <x-slot:mobile>
 
                                 @foreach($resource['items'] as $r)
-                                    <x-aura::navigation.item-dropdown route="aura.resource.index" :id="$r['type']" :strict="false" :compact="$this->compact">
+                                    <x-aura::navigation.item-dropdown :route="'aura.' . $r['slug'] . '.index'" :id="$r['slug']" :strict="false" :compact="$this->compact">
                                         <div class="aura-sidebar-icon">
                                             {!! $r['icon'] !!}
                                         </div>

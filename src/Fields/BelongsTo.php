@@ -3,7 +3,6 @@
 namespace Aura\Base\Fields;
 
 use Aura\Base\Models\Meta;
-use Illuminate\Support\Str;
 
 class BelongsTo extends Field
 {
@@ -51,14 +50,15 @@ class BelongsTo extends Field
         } else {
 
             $results = app($request->model)->select('posts.*')
-                ->leftJoin('post_meta', function ($join) use ($metaFields) {
-                    $join->on('posts.id', '=', 'post_meta.post_id')
-                        ->whereIn('post_meta.key', $metaFields);
+                ->leftJoin('meta', function ($join) use ($metaFields, $request) {
+                    $join->on('posts.id', '=', 'meta.metable_id')
+                        ->where('meta.metable_type', app($request->model)->getMorphClass())
+                        ->whereIn('meta.key', $metaFields);
                 })
                 ->where(function ($query) use ($request) {
                     $query->where('posts.title', 'like', '%'.$request->search.'%')
                         ->orWhere(function ($query) use ($request) {
-                            $query->where('post_meta.value', 'LIKE', '%'.$request->search.'%');
+                            $query->where('meta.value', 'LIKE', '%'.$request->search.'%');
                         });
                 })
                 ->distinct()
@@ -106,12 +106,12 @@ class BelongsTo extends Field
         }
 
         if ($field['resource'] && $value) {
-            // Get Str after last backslash from $field['resource']
-            $model = Str::afterLast($field['resource'], '\\');
+
+            $slug = app($field['resource'])->getSlug();
 
             // return $value;
 
-            return "<a class='font-semibold' href='".route('aura.resource.edit', [$model, $value])."'>".optional(app($field['resource'])::find($value))->title().'</a>';
+            return "<a class='font-semibold' href='".route('aura.'.$slug.'.edit', $value)."'>".optional(app($field['resource'])::find($value))->title().'</a>';
         }
 
         return $value;
@@ -158,11 +158,12 @@ class BelongsTo extends Field
             return $model->hasManyThrough(
                 $field['resource'],
                 Meta::class,
-                'value',     // Foreign key on the post_meta table
-                'id',        // Foreign key on the reviews table
-                'id',        // Local key on the products table
-                'post_id'    // Local key on the post_meta table
-            )->where('post_meta.key', $field['relation']);
+                'value',     // Foreign key on the meta table
+                'id',        // Foreign key on the resource table
+                'id',        // Local key on the model table
+                'metable_id' // Local key on the meta table
+            )->where('meta.key', $field['relation'])
+                ->where('meta.metable_type', $model->getMorphClass());
         }
 
         return $model->hasMany($field['resource'], $field['relation']);

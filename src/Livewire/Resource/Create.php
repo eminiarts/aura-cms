@@ -71,11 +71,16 @@ class Create extends Component
         return parent::callMethod($method, $params, $captureReturnValueCallback);
     }
 
-    public function mount($slug)
+    public function mount($slug = null)
     {
         $this->slug = $slug;
 
-        $this->model = Aura::findResourceBySlug($slug);
+        if (! $this->slug) {
+            $routeName = request()->route()->getName();
+            $this->slug = explode('.', $routeName)[1] ?? null;
+        }
+
+        $this->model = Aura::findResourceBySlug($this->slug);
 
         // ray($this->model);
 
@@ -152,7 +157,7 @@ class Create extends Component
                 $this->dispatch('resourceCreated', ['for' => $this->params['for'], 'resource' => $model, 'title' => $model->title()]);
             }
         } else {
-            return redirect()->route('aura.resource.edit', [$this->slug, $model->id]);
+            return redirect()->route('aura.'.$this->slug.'.edit', $model->id);
         }
     }
 

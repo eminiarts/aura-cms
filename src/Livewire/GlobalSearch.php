@@ -59,14 +59,15 @@ class GlobalSearch extends Component
             });
 
             $results = $model->select('posts.*')
-                ->leftJoin('post_meta', function ($join) use ($metaFields) {
-                    $join->on('posts.id', '=', 'post_meta.post_id')
-                        ->whereIn('post_meta.key', $metaFields);
+                ->leftJoin('meta', function ($join) use ($metaFields) {
+                    $join->on('posts.id', '=', 'meta.metable_id')
+                        ->where('meta.metable_type', 'App\\Models\\Post')
+                        ->whereIn('meta.key', $metaFields);
                 })
                 ->where(function ($query) {
                     $query->where('posts.title', 'like', '%'.$this->search.'%')
                         ->orWhere(function ($query) {
-                            $query->where('post_meta.value', 'LIKE', '%'.$this->search.'%');
+                            $query->where('meta.value', 'LIKE', '%'.$this->search.'%');
                         });
                 })
                 ->distinct()

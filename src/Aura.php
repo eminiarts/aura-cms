@@ -2,6 +2,10 @@
 
 namespace Aura\Base;
 
+use Aura\Base\Livewire\Resource\Create;
+use Aura\Base\Livewire\Resource\Edit;
+use Aura\Base\Livewire\Resource\Index;
+use Aura\Base\Livewire\Resource\View;
 use Aura\Base\Models\Scopes\TeamScope;
 use Aura\Base\Resources\Attachment;
 use Aura\Base\Resources\Option;
@@ -12,6 +16,7 @@ use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Filesystem\Filesystem;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Vite;
 use Illuminate\Support\HtmlString;
 use Illuminate\Support\Str;
@@ -70,9 +75,22 @@ class Aura
         return ConditionalLogic::shouldDisplayField($model, $field, $post);
     }
 
+    public function clear()
+    {
+        $this->clearRoutes();
+
+        Cache::clear();
+    }
+
     public function clearConditionsCache()
     {
         return ConditionalLogic::clearConditionsCache();
+    }
+
+    public function clearRoutes()
+    {
+        Route::getRoutes()->refreshNameLookups();
+        Route::getRoutes()->refreshActionLookups();
     }
 
     public function findResourceBySlug($slug)
@@ -172,7 +190,6 @@ class Aura
             ->sortKeys()
             ->toArray();
     }
-
 
     public function getInjectViews(): array
     {
@@ -334,33 +351,6 @@ class Aura
         ];
     }
 
-    // public function setOption($key, $value)
-    // {
-    //     $option = $this->getGlobalOptions();
-
-    //     if ($option && is_string($option->value)) {
-    //         $settings = json_decode($option->value, true);
-    //     } else {
-    //         $settings = [];
-    //     }
-
-    //     $settings[$key] = $value;
-
-    //     $option->value = json_encode($settings);
-    //     $option->save();
-
-    //     Cache::forget('aura-settings');
-    // }
-
-    public function updateOption($key, $value)
-    {
-        if (config('aura.teams')) {
-            auth()->user()->currentTeam->updateOption($key, $value);
-        } else {
-            Option::withoutGlobalScopes([TeamScope::class])->updateOrCreate(['name' => $key], ['value' => $value]);
-        }
-    }
-
     public function registerFields(array $fields): void
     {
         $this->fields = array_merge($this->fields, $fields);
@@ -376,6 +366,20 @@ class Aura
     public function registerResources(array $resources): void
     {
         $this->resources = array_merge($this->resources, $resources);
+    }
+
+    public function registerRoutes($slug)
+    {
+        Route::domain(config('aura.domain'))
+            ->middleware(config('aura.middleware.aura-admin'))
+            ->prefix(config('aura.path')) // This is likely 'admin' from your config
+            ->name('aura.')
+            ->group(function () use ($slug) {
+                Route::get("/{$slug}", Index::class)->name("{$slug}.index");
+                Route::get("/{$slug}/create", Create::class)->name("{$slug}.create");
+                Route::get("/{$slug}/{id}/edit", Edit::class)->name("{$slug}.edit");
+                Route::get("/{$slug}/{id}", View::class)->name("{$slug}.view");
+            });
     }
 
     public function registerWidgets(array $widgets): void
@@ -406,6 +410,33 @@ class Aura
 
             return $files;
         });
+    }
+
+    // public function setOption($key, $value)
+    // {
+    //     $option = $this->getGlobalOptions();
+
+    //     if ($option && is_string($option->value)) {
+    //         $settings = json_decode($option->value, true);
+    //     } else {
+    //         $settings = [];
+    //     }
+
+    //     $settings[$key] = $value;
+
+    //     $option->value = json_encode($settings);
+    //     $option->save();
+
+    //     Cache::forget('aura-settings');
+    // }
+
+    public function updateOption($key, $value)
+    {
+        if (config('aura.teams')) {
+            auth()->user()->currentTeam->updateOption($key, $value);
+        } else {
+            Option::withoutGlobalScopes([TeamScope::class])->updateOrCreate(['name' => $key], ['value' => $value]);
+        }
     }
 
     /**

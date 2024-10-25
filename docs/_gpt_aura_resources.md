@@ -3953,12 +3953,12 @@ class AuraServiceProvider extends PackageServiceProvider
         Livewire::component('app.aura.widgets.post-chart', \Aura\Base\Widgets\PostChart::class);
         Livewire::component('app.aura.widgets.sum-posts-number', \Aura\Base\Widgets\SumPostsNumber::class);
         Livewire::component('app.aura.widgets.avg-posts-number', \Aura\Base\Widgets\AvgPostsNumber::class);
-        Livewire::component('aura::post-index', Index::class);
-        Livewire::component('aura::post-create', Create::class);
-        Livewire::component('aura::post-create-modal', CreateModal::class);
-        Livewire::component('aura::post-edit', Edit::class);
-        Livewire::component('aura::post-edit-modal', EditModal::class);
-        Livewire::component('aura::post-view', View::class);
+        Livewire::component('aura::resource-index', Index::class);
+        Livewire::component('aura::resource-create', Create::class);
+        Livewire::component('aura::resource-create-modal', CreateModal::class);
+        Livewire::component('aura::resource-edit', Edit::class);
+        Livewire::component('aura::resource-edit-modal', EditModal::class);
+        Livewire::component('aura::resource-view', View::class);
         Livewire::component('aura::table', app(Table::class));
         Livewire::component('aura::navigation', Navigation::class);
         Livewire::component('aura::global-search', GlobalSearch::class);

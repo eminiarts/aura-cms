@@ -175,7 +175,6 @@ test('user email is prefilled in the registration', function () {
     expect($invitation->exists)->toBeTrue();
 });
 
-
 test('user can register using an invitation', function () {
     $team = Team::first();
 
