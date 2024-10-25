@@ -143,7 +143,9 @@ return [
     'media' => [
         'disk' => 'public',
         'path' => 'media',
+
         'max_file_size' => 10000,
+
         'generate_thumbnails' => true,
         'thumbnails' => [
             [
