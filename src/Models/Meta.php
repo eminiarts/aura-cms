@@ -17,14 +17,22 @@ class Meta extends Model
      */
     public $timestamps = false;
 
-    protected $fillable = ['key', 'value'];
+    protected $fillable = ['key', 'value', 'metable_type', 'metable_id'];
 
     /**
      * The table associated with the model.
      *
      * @var string
      */
-    protected $table = 'post_meta';
+    protected $table = 'meta';
+
+    /**
+     * Get the owning metable model.
+     */
+    public function metable()
+    {
+        return $this->morphTo();
+    }
 
     /**
      * @return MetaCollection

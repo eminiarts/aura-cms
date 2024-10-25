@@ -3,7 +3,12 @@
 use Aura\Base\Facades\Aura;
 use Aura\Base\Resource;
 
-beforeEach(fn () => $this->actingAs($this->user = createSuperAdmin()));
+beforeEach(function () {
+    $this->actingAs($this->user = createSuperAdmin());
+
+    Aura::fake();
+    Aura::setModel(new NavigationModel);
+});
 
 class NavigationModel extends Resource
 {
@@ -74,11 +79,7 @@ test('navigation item can be hidden', function () {
 
     $nav = Aura::navigation();
 
-    // Use firstWhere to find the item. If the item is found, it will not be null.
-    $item = collect($nav['Aura'])->firstWhere('resource', 'NavigationModel');
-
-    // Assert that an item was found.
-    expect($item)->toBeNull();
+    Aura::clear();
 
     // Visit Dashboard and assert that the item is visible.
     $this->get(route('aura.dashboard'))

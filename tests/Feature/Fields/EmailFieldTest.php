@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Livewire;
 
+use Aura\Base\Facades\Aura;
 use Aura\Base\Fields\Email;
 use Aura\Base\Livewire\Resource\Create;
 use Aura\Base\Resource;
@@ -11,13 +12,16 @@ use Livewire\Livewire;
 // Before each test, create a Superadmin and login
 beforeEach(function () {
     $this->actingAs($this->user = createSuperAdmin());
+
+    Aura::fake();
+    Aura::setModel(new EmailFieldModel);
 });
 
 class EmailFieldModel extends Resource
 {
     public static $singularName = 'Email Model';
 
-    public static ?string $slug = 'email-model';
+    public static ?string $slug = 'email';
 
     public static string $type = 'EmailModel';
 
@@ -48,7 +52,7 @@ test('check Email Fields', function () {
 test('Email Field', function () {
     $model = new EmailFieldModel;
 
-    $component = Livewire::test(Create::class, ['slug' => 'Post'])
+    $component = Livewire::test(Create::class, ['slug' => 'email'])
         ->call('setModel', $model)
         ->assertSee('Create Email Model')
         ->assertSee('Email for Test')

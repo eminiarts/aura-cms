@@ -27,8 +27,8 @@ test('post can be viewed', function () {
     $this->assertDatabaseHas('posts', ['title' => 'Test Post']);
 
     // Visit the Post Index Page
-    $this->get(route('aura.resource.view', [$post->type, $post->id]))
-        ->assertSeeLivewire('aura::post-view')
+    $this->get(route('aura.post.view', [$post->id]))
+        ->assertSeeLivewire('aura::resource-view')
         ->assertSee('Test Post');
 });
 
@@ -41,8 +41,11 @@ test('post view - view fields are displayed correctly', function () {
         'status' => 'publish',
     ]);
 
+    Aura::fake();
+    Aura::setModel(new Post);
+
     // LiveWire Component
-    $component = livewire('aura::post-view', [$post->type, $post->id]);
+    $component = livewire('aura::resource-view', [$post->id]);
 
     // Expect $component->viewFields to be an array
     expect($component->viewFields)->toBeArray();
@@ -53,6 +56,8 @@ test('resource view - can be customized via viewView method', function () {
     class CustomViewResource extends Resource
     {
         public static string $type = 'CustomViewResource';
+
+        protected static ?string $slug = 'custom-resource';
 
         public static function getFields()
         {
@@ -102,9 +107,9 @@ test('resource view - can be customized via viewView method', function () {
     file_put_contents($customViewPath, $customViewContent);
 
     Aura::fake();
-    Aura::setModel($query = CustomViewResource::query());
+    Aura::setModel(new CustomViewResource);
 
-    Livewire::test(View::class, ['slug' => 'CustomViewResource', 'id' => $customResource->id])->assertSee('Custom Resource View: Custom Resource Title');
+    Livewire::test(View::class, ['slug' => 'custom-resource', 'id' => $customResource->id])->assertSee('Custom Resource View: Custom Resource Title');
 
     // Clean up: remove the temporary view file
     unlink($customViewPath);

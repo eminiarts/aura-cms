@@ -16,6 +16,9 @@ uses(RefreshDatabase::class);
 // Before each test, create a Superadmin and login
 beforeEach(function () {
     $this->actingAs($this->user = createSuperAdmin());
+
+    Aura::fake();
+    Aura::setModel(new SlugFieldModel);
 });
 
 // Create Resource for this test
@@ -52,7 +55,7 @@ class SlugFieldModel extends Resource
 test('Slug Field Test', function () {
     $model = new SlugFieldModel;
 
-    $component = Livewire::test(Create::class, ['slug' => 'Post'])
+    $component = Livewire::test(Create::class, ['slug' => 'slug-model'])
         ->call('setModel', $model)
         ->assertSee('Create Slug Model')
         ->assertSee('Slug for Test')

@@ -85,7 +85,7 @@ trait SaveFieldAttributes
 
                 // ray($post->usesCustomTable(), $post->usesCustomMeta());
                 // Dont unset Field if it is uses customTable
-                if ($post->usesCustomTable() && ! $post->usesCustomMeta()) {
+                if ($post->usesCustomTable() && ! $post->usesMeta()) {
                     return;
                 }
                 // if ($post->usesCustomTable() && $post->usesCustomMeta()) {

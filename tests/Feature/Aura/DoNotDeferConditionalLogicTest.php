@@ -5,21 +5,23 @@ use Aura\Base\Facades\Aura;
 use Aura\Base\Livewire\Resource\Create;
 use Aura\Base\Livewire\Resource\Edit;
 use Aura\Base\Resource;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
-
-uses(RefreshDatabase::class);
 
 uses()->group('current');
 
 // Before each test, create a Superadmin and login
 beforeEach(function () {
     $this->actingAs($this->user = createSuperAdmin());
+
+    Aura::fake();
+    Aura::setModel(new DoNotDeferConditionalLogicTestModel);
 });
 
 class DoNotDeferConditionalLogicTestModel extends Resource
 {
     public static string $type = 'TestModel';
+
+    protected static ?string $slug = 'test';
 
     public static function getFields()
     {
@@ -116,7 +118,7 @@ test('defer should be false on field that is in conditional logic - create view'
     Aura::fake();
     Aura::setModel($model);
 
-    $component = Livewire::test(Create::class, ['slug' => 'TestModel'])
+    $component = Livewire::test(Create::class, ['slug' => 'test'])
         ->assertSee('Title*')
         ->assertSee('Type')
         ->assertSeeHtml('wire:model="form.fields.select_type"')

@@ -11,7 +11,7 @@ trait ProfileFields
         return [
             [
                 'type' => 'Aura\\Base\\Fields\\Tab',
-                'name' => 'Details2',
+                'name' => 'Details',
                 'slug' => 'tab-user',
                 'global' => true,
             ],

@@ -500,7 +500,7 @@
 
         @if ($create)
             <button
-                wire:click="$dispatch('openModal', { component: 'aura::post-create-modal', arguments: { type: '{{ $field['resource'] }}', params: { 'for': '{{ $field['slug'] }}' } }})"
+                wire:click="$dispatch('openModal', { component: 'aura::resource-create-modal', arguments: { type: '{{ $field['resource'] }}', params: { 'for': '{{ $field['slug'] }}' } }})"
                 class="text-sm cursor-pointer text-bold">
                 + {{ __('Create') }}
             </button>

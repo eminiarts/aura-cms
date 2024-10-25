@@ -119,7 +119,9 @@ test('create settings', function () {
 
     expect($component->settings)->toHaveKey('create', true);
 
-    $component->assertSeeHtml('href="'.url('/admin/Post/create').'"');
+    // dd($component->html());
+
+    $component->assertSeeHtml('href="'.url('/admin/post/create').'"');
 
     // Disable create
 
@@ -129,7 +131,7 @@ test('create settings', function () {
 
     expect($component->settings)->toHaveKey('create', false);
 
-    $component->assertDontSeeHtml('href="'.url('/admin/Post/create').'"');
+    $component->assertDontSeeHtml('href="'.url('/admin/post/create').'"');
 
 });
 

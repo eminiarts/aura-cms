@@ -1,5 +1,6 @@
 <?php
 
+use Aura\Base\Facades\Aura;
 use Aura\Base\Livewire\Table\Table;
 use Aura\Base\Resource;
 use Illuminate\Database\Schema\Blueprint;
@@ -11,6 +12,8 @@ uses(RefreshDatabase::class);
 
 afterEach(function () {
     Schema::dropIfExists('custom_projects');
+
+    Aura::clear();
 });
 
 beforeEach(function () {

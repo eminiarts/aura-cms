@@ -13,11 +13,14 @@ use Illuminate\Support\Facades\Hash;
 use Livewire\Livewire;
 
 // Refresh Database on every test
-uses(RefreshDatabase::class);
+// uses(RefreshDatabase::class);
 
 // Before each test, create a Superadmin and login
 beforeEach(function () {
     $this->actingAs($this->user = createSuperAdmin());
+
+    Aura::fake();
+    Aura::setModel(new PasswordFieldModel);
 });
 
 // Create Resource for this test
@@ -48,7 +51,7 @@ class PasswordFieldModel extends Resource
 test('Password Field Test', function () {
     $model = new PasswordFieldModel;
 
-    $component = Livewire::test(Create::class, ['slug' => 'Post'])
+    $component = Livewire::test(Create::class, ['slug' => 'password-model'])
         ->call('setModel', $model)
         ->assertSee('Create Password Model')
         ->assertSee('Password for Test')
@@ -83,7 +86,7 @@ test('Password Field Test', function () {
 test('password field gets not overwritten if saved as null', function () {
     $model = new PasswordFieldModel;
 
-    $component = Livewire::test(Create::class, ['slug' => 'Post'])
+    $component = Livewire::test(Create::class, ['slug' => 'password-model'])
         ->call('setModel', $model)
         ->set('form.fields.password', '123456789')
         ->call('save')
@@ -102,7 +105,7 @@ test('password field gets not overwritten if saved as null', function () {
 
     // dump($post->password);
 
-    $model = PasswordFieldModel::query();
+    $model = new PasswordFieldModel;
     $slug = 'PasswordModel';
 
     Aura::fake();
@@ -133,7 +136,7 @@ test('password field gets not overwritten if saved as null', function () {
 test('password field gets not overwritten if saved as empty string', function () {
     $model = new PasswordFieldModel;
 
-    $component = Livewire::test(Create::class, ['slug' => 'Post'])
+    $component = Livewire::test(Create::class, ['slug' => 'password-model'])
         ->call('setModel', $model)
         ->set('form.fields.password', '123456789')
         ->call('save')
@@ -147,7 +150,7 @@ test('password field gets not overwritten if saved as empty string', function ()
     $this->assertTrue(Hash::check('123456789', $post->fields['password']));
     $this->assertTrue(Hash::check('123456789', $post->password));
 
-    $model = PasswordFieldModel::query();
+    $model = new PasswordFieldModel;
     $slug = 'PasswordModel';
 
     Aura::fake();
