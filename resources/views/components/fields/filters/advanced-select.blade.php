@@ -1,3 +1,5 @@
+@aware(['model' => null])
+
 @php
     // Api from Field is more important than from Field Class
     $api = true;
@@ -10,14 +12,18 @@
 
     if ($api) {
         $values = [];
-        $selectedValues = [];
+        $modelParts = explode('.', $model);
+        $filterGroup = $modelParts[2] ?? 0;
+        $filterIndex = $modelParts[4] ?? 0;
+        $selectedValues = $field['field']->selectedValues($field['resource'], $this->filters['custom'][$filterGroup]['filters'][$filterIndex], $field);
+        ray($selectedValues);
     }
 
 @endphp
 
-@aware(['model' => null])
 
-<x-aura::fields.wrapper :field="$field">
+
+<div>
     <style>
         .dragging-item {
             position: absolute;
@@ -345,7 +351,7 @@
         <div class="relative p-0 w-full bg-transparent border-0 aura-input">
             <label class="sr-only">{{ __('Select Entry') }}</label>
             <button type="button"
-                class="relative flex items-center justify-between w-full px-3 pt-1 pb-0 border rounded-lg shadow-xs appearance-none min-h-[2.625rem] border-gray-500/30 focus:border-primary-300 focus:outline-none ring-gray-900/10 focus:ring focus:ring-primary-300 focus:ring-opacity-50 dark:focus:ring-primary-500 dark:focus:ring-opacity-50 dark:bg-gray-900 dark:border-gray-700"
+                class="bg-white relative flex items-center justify-between w-full px-3 pt-1 pb-0 border rounded-lg shadow-xs appearance-none min-h-[2.625rem] border-gray-500/30 focus:border-primary-300 focus:outline-none ring-gray-900/10 focus:ring focus:ring-primary-300 focus:ring-opacity-50 dark:focus:ring-primary-500 dark:focus:ring-opacity-50 dark:bg-gray-900 dark:border-gray-700"
                 x-ref="listboxButton" @click="toggleListbox">
 
                 {{-- <pre x-html="value"></pre> --}}
@@ -497,4 +503,4 @@
             </button>
         @endif
     </div>
-</x-aura::fields.wrapper>
+</div>

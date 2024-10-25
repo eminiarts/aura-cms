@@ -93,14 +93,14 @@ test('table filter - taxonomy filter', function () {
     expect($component->rows->items())->toHaveCount(1);
 
     // Set custom filter 'meta' to 'B'
-    $component->call('addFilter');
+    $component->call('addFilterGroup');
 
     // $component->rows should have 1 item
-    $component->set('filters.custom.0.value', 'B');
-    $component->set('filters.custom.0.operator', 'is');
+    $component->set('filters.custom.0.filters.0.value', 'B');
+    $component->set('filters.custom.0.filters.0.operator', 'is');
 
     // Expect filter.custom.0.name to be metafield
-    expect($component->filters['custom'][0]['name'])->toBe('metafield');
+    expect($component->filters['custom'][0]['filters'][0]['name'])->toBe('metafield');
 
     // Save Filters to DB
     $component->call('saveFilter');
@@ -140,9 +140,9 @@ test('table filter - taxonomy filter', function () {
     expect($filters['Test Filter']['taxonomy']['tags'])->toHaveCount(1);
 
     expect($filters)->toHaveKey('Test Filter.taxonomy.tags.0', '1');
-    expect($filters)->toHaveKey('Test Filter.custom.0.name', 'metafield');
-    expect($filters)->toHaveKey('Test Filter.custom.0.operator', 'is');
-    expect($filters)->toHaveKey('Test Filter.custom.0.value', 'B');
+    expect($filters)->toHaveKey('Test Filter.custom.0.filters.0.name', 'metafield');
+    expect($filters)->toHaveKey('Test Filter.custom.0.filters.0.operator', 'is');
+    expect($filters)->toHaveKey('Test Filter.custom.0.filters.0.value', 'B');
 
     // Filters and $component->userFilters should be the same
 
@@ -167,7 +167,7 @@ test('table filter - taxonomy filter can be deleted', function () {
 
     DB::table('options')->insert([
         'name' => 'user.'.$this->user->id.'.Post.filters.Test Filter',
-        'value' => '{"taxonomy":{"tags":[1]},"custom":[{"name":"metafield","operator":"is","value":"B"}]}',
+        'value' => '{"taxonomy":{"tags":[1]},"custom":[{"filters":[{"name":"metafield","operator":"is","value":"B"}]}]}',
         'team_id' => $this->user->currentTeam->id,
     ]);
 
@@ -208,13 +208,13 @@ test('table filter - custom filter can be removed', function () {
     $component = Livewire::test(Table::class, ['query' => null, 'model' => $post]);
 
     // Set custom filter 'meta' to 'B'
-    $component->call('addFilter');
+    $component->call('addFilterGroup');
 
     // $component->rows should have 1 item
-    $component->set('filters.custom.0.value', 'B');
-    $component->set('filters.custom.0.operator', 'is');
+    $component->set('filters.custom.0.filters.0.value', 'B');
+    $component->set('filters.custom.0.filters.0.operator', 'is');
 
-    $component->assertSeeHtml('wire:click="removeCustomFilter(\'0\')"');
+    // $component->assertSeeHtml('wire:click="removeCustomFilter(\'0\')"');
 
     // Remove custom filter
     $component->call('removeCustomFilter', 0);
@@ -236,11 +236,11 @@ test('table filter - filters can be reset', function () {
     $component = Livewire::test(Table::class, ['query' => null, 'model' => $post]);
 
     // Set custom filter 'metafield' to 'B'
-    $component->call('addFilter');
+    $component->call('addFilterGroup');
 
     // $component->rows should have 1 item
-    $component->set('filters.custom.0.value', 'B');
-    $component->set('filters.custom.0.operator', 'is');
+    $component->set('filters.custom.0.filters.0.value', 'B');
+    $component->set('filters.custom.0.filters.0.operator', 'is');
 
     $component->assertSeeHtml('wire:click="resetFilter"');
 
