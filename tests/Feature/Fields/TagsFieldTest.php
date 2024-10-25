@@ -11,10 +11,15 @@ use Livewire\Livewire;
 // Before each test, create a Superadmin and login
 beforeEach(function () {
     $this->actingAs($this->user = createSuperAdmin());
+
+    Aura::fake();
+    Aura::setModel(new TagsFieldModel);
 });
 
 class TagsFieldModel extends Resource
 {
+    public static ?string $slug = 'tag';
+
     public static string $type = 'TagsModel';
 
     public static function getFields()
@@ -75,7 +80,7 @@ test('Tags Field - Default Value set', function () {
     Aura::fake();
     Aura::setModel(new TagsFieldModel);
 
-    $component = Livewire::test(Create::class, ['slug' => 'TagsModel'])
+    $component = Livewire::test(Create::class, ['slug' => 'tag'])
         ->assertSee('Tags')
         ->assertSet('form.fields.tags', []);
 });

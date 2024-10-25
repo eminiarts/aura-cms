@@ -1,6 +1,7 @@
 <?php
 
 use Aura\Base\Events\SaveFields;
+use Aura\Base\Facades\Aura;
 use Aura\Base\Listeners\CreateDatabaseMigration;
 use Aura\Base\Listeners\ModifyDatabaseMigration;
 use Aura\Base\Livewire\ResourceEditor;
@@ -28,7 +29,6 @@ beforeEach(function () {
 });
 
 afterEach(function () {
-    Artisan::call('cache:clear');
 
     if (File::exists(app_path('Aura/Resources/Project.php'))) {
         File::delete(app_path('Aura/Resources/Project.php'));
@@ -39,6 +39,9 @@ afterEach(function () {
     foreach ($migrationFiles as $file) {
         File::delete($file);
     }
+
+    Aura::clear();
+
 });
 
 it('creates a custom resource', function () {
@@ -58,6 +61,10 @@ it('resource editor is accessible', function () {
     $classExists = class_exists('App\Aura\Resources\Project');
 
     expect($classExists)->toBeTrue();
+
+    Aura::registerRoutes('project');
+
+    Aura::clearRoutes();
 
     $this->get(route('aura.resource.editor', ['slug' => 'Project']))
         ->assertStatus(200)

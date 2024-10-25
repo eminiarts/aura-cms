@@ -1,5 +1,6 @@
 <?php
 
+use Aura\Base\Facades\Aura;
 use Aura\Base\Http\Controllers\Api\FieldsController;
 use Aura\Base\Livewire\Attachment\Index as AttachmentIndex;
 use Aura\Base\Livewire\PluginsPage;
@@ -41,11 +42,20 @@ Route::domain(config('aura.domain'))
 
             Route::get('/resources/{slug}/editor', ResourceEditor::class)->name('resource.editor');
 
+            foreach (Aura::getResources() as $resource) {
+
+                if (! class_exists($resource)) {
+                    continue;
+                }
+
+                $slug = app($resource)->getSlug();
+                Route::get("/{$slug}", Index::class)->name("{$slug}.index");
+                Route::get("/{$slug}/create", Create::class)->name("{$slug}.create");
+                Route::get("/{$slug}/{id}/edit", Edit::class)->name("{$slug}.edit");
+                Route::get("/{$slug}/{id}", View::class)->name("{$slug}.view");
+            }
+
             Route::get('/attachment', AttachmentIndex::class)->name('attachment.index');
 
-            Route::get('/{slug}', Index::class)->name('resource.index');
-            Route::get('/{slug}/create', Create::class)->name('resource.create');
-            Route::get('/{slug}/{id}/edit', Edit::class)->name('resource.edit');
-            Route::get('/{slug}/{id}', View::class)->name('resource.view');
         });
     });

@@ -1,5 +1,6 @@
 <?php
 
+use Aura\Base\Facades\Aura;
 use Aura\Base\Livewire\Table\Table;
 use Aura\Base\Models\Scopes\TeamScope;
 use Aura\Base\Resource;
@@ -14,6 +15,8 @@ uses(RefreshDatabase::class);
 
 afterEach(function () {
     Schema::dropIfExists('custom_projects');
+
+    Aura::clear();
 });
 
 beforeEach(function () {
@@ -30,6 +33,11 @@ beforeEach(function () {
         $table->foreignId('team_id');
         $table->timestamps();
     });
+
+    $model = new CustomTableFilterModel;
+
+    Aura::fake();
+    Aura::setModel($model);
 
     // Create a Posts
     $this->resource = CustomTableFilterModel::create([

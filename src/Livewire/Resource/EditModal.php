@@ -8,7 +8,7 @@ class EditModal extends Edit
 
     public $type;
 
-    public function mount($resource, $type) {}
+    public function mount($id) {}
 
     public function render()
     {

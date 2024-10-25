@@ -98,7 +98,7 @@ test('header settings', function () {
     expect($component->settings)->toHaveKey('header', true);
 
     $component->assertSeeHtml('<h1 class="text-3xl font-semibold">Posts</h1>');
-    $component->assertSeeHtml('href="'.url('/admin/Post/create').'"');
+    $component->assertSeeHtml('href="'.url('/admin/post/create').'"');
 
     // Disable header
 
@@ -119,7 +119,9 @@ test('create settings', function () {
 
     expect($component->settings)->toHaveKey('create', true);
 
-    $component->assertSeeHtml('href="'.url('/admin/Post/create').'"');
+    // dd($component->html());
+
+    $component->assertSeeHtml('href="'.url('/admin/post/create').'"');
 
     // Disable create
 
@@ -129,7 +131,7 @@ test('create settings', function () {
 
     expect($component->settings)->toHaveKey('create', false);
 
-    $component->assertDontSeeHtml('href="'.url('/admin/Post/create').'"');
+    $component->assertDontSeeHtml('href="'.url('/admin/post/create').'"');
 
 });
 

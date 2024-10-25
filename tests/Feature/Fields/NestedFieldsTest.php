@@ -132,8 +132,10 @@ test('create model with nested fields', function () {
         'option_3' => '3',
     ]);
 
-    $this->assertDatabaseMissing('post_meta', [
+    $this->assertDatabaseMissing('meta', [
         'key' => 'settings.option_1',
+        'metable_id' => $model->id,
+        'metable_type' => NestedFieldsModel::class,
     ]);
 });
 
@@ -149,8 +151,10 @@ test('create model with nested fields without JSON Parent', function () {
 
     expect($model->settings)->toBeNull();
 
-    $this->assertDatabaseMissing('post_meta', [
+    $this->assertDatabaseMissing('meta', [
         'key' => 'settings.option_1',
+        'metable_id' => $model->id,
+        'metable_type' => NestedFields2Model::class,
     ]);
 });
 

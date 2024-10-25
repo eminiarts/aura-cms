@@ -4,7 +4,6 @@ namespace Aura\Base\Resources;
 
 use Aura\Base\Database\Factories\TeamFactory;
 use Aura\Base\Jobs\GenerateAllResourcePermissions;
-use Aura\Base\Models\TeamMeta;
 use Aura\Base\Resource;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -24,8 +23,6 @@ class Team extends Resource
         ],
     ];
 
-    public static $customMeta = true;
-
     public static $customTable = true;
 
     public static $globalSearch = false;
@@ -33,6 +30,8 @@ class Team extends Resource
     public static ?string $slug = 'team';
 
     public static string $type = 'Team';
+
+    public static bool $usesMeta = true;
 
     protected $fillable = [
         'name', 'user_id', 'fields',
@@ -190,11 +189,6 @@ class Team extends Resource
         return [];
     }
 
-    public function meta()
-    {
-        return $this->hasMany(TeamMeta::class, 'team_id');
-    }
-
     public function roles(): HasMany
     {
         return $this->hasMany(Role::class);
@@ -238,6 +232,7 @@ class Team extends Resource
 
     protected static function booted()
     {
+        parent::booted();
         static::saving(function ($team) {
             // unset title attribute
             unset($team->title);
