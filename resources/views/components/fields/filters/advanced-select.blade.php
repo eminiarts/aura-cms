@@ -16,7 +16,8 @@
         $modelParts = explode('.', $model);
         $filterGroup = $modelParts[2] ?? 0;
         $filterIndex = $modelParts[4] ?? 0;
-        $selectedValues = $field['field']->selectedValues($field['resource'], $this->filters['custom'][$filterGroup]['filters'][$filterIndex], $field);
+
+        $selectedValues = $field['field']->selectedValues($field['resource'], $this->filters['custom'][$filterGroup]['filters'][$filterIndex]['value'], $field);
         ray($selectedValues);
     }
 

@@ -21,6 +21,7 @@ if ($block) {
 }
 
 $sizes = [
+  'icon-xs' => 'px-1 py-1 text-xs font-semibold rounded-md',
   'xs' => 'px-3.5 py-1.5 text-xs font-semibold rounded-md',
   'sm' => 'px-4 py-2.5 text-sm leading-4 font-semibold rounded-lg',
   'base' => 'px-4 py-2.5 text-sm font-semibold rounded-lg',
@@ -28,6 +29,7 @@ $sizes = [
   'xl' => 'px-7 py-3.5 text-lg font-semibold rounded-lg',
 ];
 $iconSizes = [
+  'icon-xs' => 'w-4',
   'xs' => 'w-4',
   'sm' => 'w-5',
   'base' => 'w-5',
