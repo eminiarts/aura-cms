@@ -98,7 +98,7 @@ test('header settings', function () {
     expect($component->settings)->toHaveKey('header', true);
 
     $component->assertSeeHtml('<h1 class="text-2xl font-semibold">Posts</h1>');
-    $component->assertSeeHtml('href="'.url('/admin/Post/create').'"');
+    $component->assertSeeHtml('href="'.url('/admin/post/create').'"');
 
     // Disable header
 
