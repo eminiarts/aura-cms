@@ -44,23 +44,29 @@ class ThumbnailGenerator
         $originalWidth = $image->width();
         $originalHeight = $image->height();
 
-        // Don't upscale images
-        $targetWidth = min($width, $originalWidth);
-        $targetHeight = $height ? min($height, $originalHeight) : null;
-
-        if ($targetWidth && !$targetHeight) {
-            // Skip resize if target width is larger than original
-            if ($targetWidth < $originalWidth) {
-                // Resize image to specified width, maintaining aspect ratio
-                $image->resize($targetWidth, null, function ($constraint) {
-                    $constraint->aspectRatio();
-                });
+        if ($width && !$height) {
+            // When only width is specified, maintain aspect ratio and don't upscale
+            if ($width > $originalWidth) {
+                // If requested width is larger than original, keep original size
+                return $path;
             }
+
+            // Resize image to specified width, maintaining aspect ratio
+            $image->resize($width, null, function ($constraint) {
+                $constraint->aspectRatio();
+            });
         } else {
-            // Only resize if target dimensions are smaller than original
-            if ($targetWidth < $originalWidth || $targetHeight < $originalHeight) {
-                // Resize and crop image to specified width and height
+            // When both dimensions are specified
+            if ($width > $originalWidth && $height > $originalHeight) {
+                // If both requested dimensions are larger than original,
+                // fit to the smallest possible size while maintaining aspect ratio
+                $ratio = min($originalWidth / $width, $originalHeight / $height);
+                $targetWidth = (int) ($width * $ratio);
+                $targetHeight = (int) ($height * $ratio);
                 $image->fit($targetWidth, $targetHeight);
+            } else {
+                // Otherwise use the requested dimensions
+                $image->fit($width, $height);
             }
         }
 
