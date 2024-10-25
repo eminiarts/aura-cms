@@ -97,7 +97,7 @@ test('header settings', function () {
 
     expect($component->settings)->toHaveKey('header', true);
 
-    $component->assertSeeHtml('<h1 class="text-3xl font-semibold">Posts</h1>');
+    $component->assertSeeHtml('<h1 class="text-2xl font-semibold">Posts</h1>');
     $component->assertSeeHtml('href="'.url('/admin/post/create').'"');
 
     // Disable header
@@ -108,7 +108,7 @@ test('header settings', function () {
 
     expect($component->settings)->toHaveKey('header', false);
 
-    $component->assertDontSeeHtml('<h1 class="text-3xl font-semibold">Posts</h1>');
+    $component->assertDontSeeHtml('<h1 class="text-2xl font-semibold">Posts</h1>');
     $component->assertDontSeeHtml('href="'.url('/admin/Post/create').'"');
 });
 
@@ -554,7 +554,7 @@ test('title settings', function () {
 
     expect($component->settings)->toHaveKey('title', true);
 
-    $component->assertSeeHtml('<h1 class="text-3xl font-semibold">Posts</h1>');
+    $component->assertSeeHtml('<h1 class="text-2xl font-semibold">Posts</h1>');
 
     // Disable title
 
@@ -564,7 +564,7 @@ test('title settings', function () {
 
     expect($component->settings)->toHaveKey('title', false);
 
-    $component->assertDontSeeHtml('<h1 class="text-3xl font-semibold">Posts</h1>');
+    $component->assertDontSeeHtml('<h1 class="text-2xl font-semibold">Posts</h1>');
 
 });
 

@@ -1,7 +1,7 @@
 <div class="flex justify-between items-center mt-6">
 
     @if ($this->settings['title'])
-        <h1 class="text-3xl font-semibold">{{ __($model->pluralName()) }}</h1>
+        <h1 class="text-2xl font-semibold">{{ __($model->pluralName()) }}</h1>
     @endif
 
 

@@ -221,9 +221,9 @@
 
                 <div class="z-[2] relative flex flex-col">
                     <div class="flex justify-between items-center mt-0">
-                        <h1 class="text-3xl font-semibold">
+                        {{-- <h1 class="text-2xl font-semibold">
                             {{ __('Attachments') }}
-                        </h1>
+                        </h1> --}}
 
                         <div>
                             <label for="file-upload">

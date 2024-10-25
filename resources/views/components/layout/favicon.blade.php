@@ -1,8 +1,8 @@
 @php
     $appSettings = app('aura')::options();
 
-    $favicon = $appSettings['app-favicon'] ?? '/vendor/aura/public/favicon-32x32.png';
-    $darkFavicon = $appSettings['app-favicon-darkmode'] ?? '/vendor/aura/public/favicon-darkmode-32x32.png';
+    $favicon = $appSettings['theme']['app-favicon'] ?? '/vendor/aura/public/favicon-32x32.png';
+    $darkFavicon = $appSettings['theme']['app-favicon-darkmode'] ?? '/vendor/aura/public/favicon-darkmode-32x32.png';
 
     // If dark favicon is not set, use the light favicon
     $darkFavicon = $darkFavicon ?: $favicon;

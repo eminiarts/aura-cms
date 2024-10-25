@@ -1,4 +1,4 @@
-<div @selectfieldrows.window="selectRows($event.detail)" {{-- wire:poll.10000ms --}} x-data="{
+<div @selectfieldrows.window="selectRows($event.detail)" x-data="{
     selected: @entangle('selected'),
     rows: @js($rowIds),
     lastSelectedId: null,
@@ -8,14 +8,8 @@
     selectAll: @entangle('selectAll'),
     loading: false,
     oldSelected: null,
-
-    @if($field)
-    selectRows(detail) {
-        if (detail.slug == '{{ $field['slug'] }}') {
-            this.selected = detail.value
-        }
-    },
-    @endif
+    field: @js($field),
+    maxFilesReached: false,
 
     init() {
         Livewire.on('selectedRows', (updatedSelected) => {
@@ -31,26 +25,96 @@
             this.selectPage = true;
         }
 
-        @if($field)
-        {{-- Need to refactor this maybe because it's field specific --}}
-        this.$watch('selected', value => {
-            // Emit an event with the new value
-            {{-- console.log('dispatch selection-changed', this.selected, value); --}}
-            this.$dispatch('selection-changed', { selected: value, slug: '{{ $field['slug'] }}' });
+        this.$watch('selected', (value) => {
+            if (this.field && this.field.max_files) {
+                this.maxFilesReached = value.length >= this.field.max_files;
+            }
+            this.$dispatch('selection-changed', { selected: value, slug: this.field ? this.field.slug : null });
         });
-        @endif
 
-        // watch rows for changes
         this.$watch('rows', (rows) => {
             // Check if rows (array of ids) is included in this.selected. if so, set this.selectPage to true
-
-            //this.selectPage = rows.every(row => this.selected.includes(row.toString()));
         });
 
         this.$watch('currentPage', (rows) => {
             this.$nextTick(() => {
                 this.selectPage = this.rows.every(row => this.selected.includes(row));
             });
+        });
+    },
+
+    toggleRow(event, id) {
+        console.log('toggleRow called with:', { event, id });
+        console.log('Current state:', { rows: this.rows, selected: this.selected, lastSelectedId: this.lastSelectedId });
+
+        if (!this.rows || !Array.isArray(this.rows)) {
+            console.warn('this.rows is not an array, exiting toggleRow');
+            return;
+        }
+
+        this.$nextTick(() => {
+            console.log('Inside $nextTick');
+
+            if (this.field && this.field.max_files === 1) {
+                console.log('Single file selection mode');
+                if (this.selected.includes(id.toString())) {
+                    console.log('Deselecting single item');
+                    this.selected = [];
+                } else {
+                    console.log('Selecting single item');
+                    this.selected = [id.toString()];
+                }
+            } else if (event.shiftKey && this.lastSelectedId !== null) {
+                console.log('Shift key pressed, last selected id:', this.lastSelectedId);
+                const lastIndex = this.rows.indexOf(this.lastSelectedId);
+                const currentIndex = this.rows.indexOf(id);
+                console.log('Indexes:', { lastIndex, currentIndex });
+
+                if (lastIndex === -1 || currentIndex === -1) {
+                    console.warn('Invalid indexes, exiting shift selection');
+                    return;
+                }
+
+                const start = Math.min(lastIndex, currentIndex);
+                const end = Math.max(lastIndex, currentIndex);
+                const rowsToToggle = this.rows.slice(start, end + 1);
+                console.log('Rows to toggle:', rowsToToggle);
+
+                const isLastSelected = this.selected.includes(this.lastSelectedId.toString());
+                console.log('Is last selected:', isLastSelected);
+
+                if (isLastSelected) {
+                    console.log('Adding rows to selection');
+                    const newSelection = [...new Set([...this.selected, ...rowsToToggle.map(String)])];
+                    if (this.field && this.field.max_files) {
+                        console.log('Applying max files limit:', this.field.max_files);
+                        this.selected = newSelection.slice(0, this.field.max_files);
+                    } else {
+                        this.selected = newSelection;
+                    }
+                } else {
+                    console.log('Removing rows from selection');
+                    this.selected = this.selected.filter(row => !rowsToToggle.includes(parseInt(row)));
+                }
+            } else {
+                console.log('Single click selection');
+                const index = this.selected.indexOf(id.toString());
+                console.log('Index:', index, this.selected, id.toString());
+                if (index === -1) {
+                    if (!this.field || !this.field.max_files || this.selected.length < this.field.max_files) {
+                        console.log('Adding item to selection');
+                        this.selected.push(id.toString());
+                    } else {
+                        console.warn('Max files limit reached, cannot add more');
+                    }
+                } else {
+                    console.log('Removing item from selection');
+                    this.selected.splice(index, 1);
+                }
+            }
+
+            this.lastSelectedId = id;
+            console.log('Updated state:', { selected: this.selected, lastSelectedId: this.lastSelectedId });
         });
     },
 
@@ -107,59 +171,22 @@
         }
     },
 
-    toggleRow(event, id) {
-        this.$nextTick(() => {
-            // Check if shift key was pressed and last selected id exists
-            if (event.shiftKey && this.lastSelectedId !== null) {
-                // Get the indexes of the current and last selected rows
-                const lastIndex = this.rows.indexOf(this.lastSelectedId);
-                const currentIndex = this.rows.indexOf(id);
-
-                // Determine the start and end indexes of the rows to be selected
-                const start = Math.min(lastIndex, currentIndex);
-                const end = Math.max(lastIndex, currentIndex);
-
-                // If the current row is not already selected, remove all rows between start and end
-                if (!this.selected.includes(id.toString())) {
-                    this.selected = this.selected.filter(row => !this.rows.slice(start, end + 1).map(item => item.toString()).includes(row.toString()));
-                }
-                // Otherwise, add all rows between start and end
-                else {
-                    this.selected = [...this.selected, ...this.rows.slice(start, end + 1)].map(item => item.toString());
-
-                    // Remove duplicates from the selected rows
-                    this.selected = this.selected.filter((item, index) => this.selected.indexOf(item) === index);
-                }
-            }
-
-            this.lastSelectedId = id;
-
-            // Select All
-            if (this.selected.length === this.total) {
-                this.selectAll = true;
-            } else {
-                this.selectAll = false;
-            }
-
-            // Select Page
-            if (!this.selected.includes(id.toString())) {
-                this.selectPage = false;
-            }
-
-        });
+    selectRows(detail) {
+        if (detail.slug == '{{ optional($field)['slug'] }}') {
+            this.selected = detail.value
+        }
     }
 }">
     {{-- Be aware that this file opens a div which closes at the end --}}
     @include('aura::components.table.context-menu')
 
     <main class="" x-data="{
-        showFilters: false,
+        showAttachmentFilters: false,
         toggleFilters() {
-            this.showFilters = !this.showFilters;
-            this.$dispatch('inset-sidebar', { element: this.$refs.sidebar })
+            this.showAttachmentFilters = !this.showAttachmentFilters;
+            // this.$dispatch('inset-sidebar', { element: this.$refs.sidebar })
         },
         init() {
-
             Livewire.dispatch('tableMounted')
 
             const sortable = new window.Sortable(document.querySelectorAll('.sortable-wrapper'), {
@@ -186,7 +213,7 @@
             <div class="flex flex-col justify-between w-full md:items-center md:flex-row">
 
                 @if ($this->settings['search'])
-                    <div class="mb-4 md:mb-0">
+                    <div class="mb-4 w-full md:mb-0 max-w-64">
                         <label for="table-search" class="sr-only">Search</label>
                         <div class="relative mt-1">
                             <div class="flex absolute inset-y-0 left-0 items-center pl-3 pointer-events-none">
@@ -204,6 +231,25 @@
                         </div>
                     </div>
                 @endif
+
+                <div class="mb-4 ml-4 w-full max-w-64 md:mb-0">
+                  @if($this->settings['table_before'])
+                      @if (!empty($this->userFilters))
+                        <div class="my-4 w-full">
+                          <x-aura::input.select
+                              wire:model.live="selectedFilter"
+                              :options="collect($this->userFilters)->mapWithKeys(function ($filter, $key) {
+                                  return [$key => $filter['name']];
+                              })->prepend('Alle', '')"
+                          >
+                          </x-aura::input.select>
+                      </div>
+                  @else
+                      <div class="mb-4 w-full"></div>
+                  @endif
+
+                  @endif
+                </div>
 
                 <div class="flex justify-end items-center space-x-4 w-full">
 
@@ -261,14 +307,14 @@
         </div>
 
         @if ($this->settings['filters'])
-            <x-aura::sidebar title="Filters" show="showFilters">
+            <x-aura::sidebar.mediamanager title="Filters" show="showAttachmentFilters" in_modal="true">
                 <x-slot:heading class="font-semibold">
                     <h3 class="text-2xl font-semibold">
                         {{ __('Filters') }}
                     </h3>
                 </x-slot>
                 @include('aura::components.table.filters')
-            </x-aura::sidebar>
+            </x-aura::sidebar.mediamanager>
         @endif
     </main>
 </div> {{-- This closes the context menu --}}

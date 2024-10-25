@@ -19,7 +19,7 @@
     <div class="flex">
       <div class="flex-1">
         <h2 class="text-3xl font-bold">Edit Operation</h2>
-        <h1 class="mb-4 text-3xl font-semibold">{{ $model['name'] }}</h1>
+        <h1 class="mb-4 text-2xl font-semibold">{{ $model['name'] }}</h1>
       </div>
       <div class="mt-10 space-x-2">
         <x-aura::button.danger wire:click="deleteOperation('{{ $model['id'] }}')">

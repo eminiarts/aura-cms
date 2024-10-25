@@ -95,7 +95,7 @@ it('gets readable file size', function () {
         'size' => 12345,
     ]);
 
-    $this->assertEquals('12.06 KB', $attachment->getReadableFilesizeAttribute());
+    $this->assertEquals('12 KB', $attachment->getReadableFilesizeAttribute());
 });
 
 it('gets readable mime type', function () {

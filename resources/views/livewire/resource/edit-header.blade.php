@@ -2,7 +2,7 @@
 <div class="flex items-center justify-between my-8">
     <div>
         {{ app('aura')::injectView('post_edit_title_before') }}
-        <h1 class="text-xl font-semibold">{{ __('Edit ' . $model->singularName()) }}</h1>
+        <h1 class="text-2xl font-semibold">{{ __('Edit ' . $model->singularName()) }}</h1>
         {{ app('aura')::injectView('post_edit_title_after') }}
     </div>
 

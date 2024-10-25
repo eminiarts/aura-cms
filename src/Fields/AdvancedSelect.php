@@ -12,6 +12,22 @@ class AdvancedSelect extends Field
 
     public $view = 'aura::fields.advanced-select-view';
 
+    public $filter = 'aura::fields.filters.advanced-select';
+
+    public function filter()
+    {
+        if ($this->filter) {
+            return $this->filter;
+        }
+    }
+
+    public function filterOptions()
+    {
+        return [
+            'contains' => __('contains'),
+        ];
+    }
+
     public function api($request)
     {
         $model = app($request->model);
@@ -321,6 +337,8 @@ class AdvancedSelect extends Field
         if (! is_array($values)) {
             $values = [$values];
         }
+
+        ray('selectedValues', $values);
 
         return app($model)->whereIn('id', $values)->get()->map(function ($item) use ($field) {
             return [

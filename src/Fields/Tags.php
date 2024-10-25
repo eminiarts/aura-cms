@@ -9,11 +9,20 @@ class Tags extends Field
 {
     public $edit = 'aura::fields.tags';
 
+    public $filter = 'aura::fields.filters.tags';
+
     public bool $taxonomy = true;
 
     public string $type = 'input';
 
     public $view = 'aura::fields.view-value';
+
+    public function filter()
+    {
+        if ($this->filter) {
+            return $this->filter;
+        }
+    }
 
     public function display($field, $value, $model)
     {

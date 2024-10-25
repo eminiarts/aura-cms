@@ -98,6 +98,18 @@ abstract class Field implements Wireable
             'ends_with' => __('ends with'),
             'is_empty' => __('is empty'),
             'is_not_empty' => __('is not empty'),
+            'equals' => __('equals'),
+            'not_equals' => __('does not equal'),
+            'greater_than' => __('greater than'),
+            'less_than' => __('less than'),
+            'greater_than_or_equal' => __('greater than or equal to'),
+            'less_than_or_equal' => __('less than or equal to'),
+            'in' => __('in'),
+            'not_in' => __('not in'),
+            'like' => __('like'),
+            'not_like' => __('not like'),
+            'regex' => __('matches regex'),
+            'not_regex' => __('does not match regex'),
         ];
     }
 
