@@ -21,6 +21,13 @@ class AdvancedSelect extends Field
         }
     }
 
+    public function filterOptions()
+    {
+        return [
+            'contains' => __('contains'),
+        ];
+    }
+
     public function api($request)
     {
         $model = app($request->model);
