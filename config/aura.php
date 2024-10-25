@@ -143,6 +143,8 @@ return [
     'media' => [
         'disk' => 'public',
         'path' => 'media',
+        'quality' => 80,
+        'restrict_to_dimensions' => true,
 
         'max_file_size' => 10000,
 

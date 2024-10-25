@@ -3,16 +3,40 @@
 namespace Aura\Base\Services;
 
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Str;
 use Intervention\Image\Facades\Image;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 class ThumbnailGenerator
 {
     /**
      * Generate a thumbnail for the given image path with specified dimensions
      */
-    public function generate(string $path, int $width, ?int $height = null, float $quality = 0.80): string
+    public function generate(string $path, int $width, ?int $height = null): string
     {
+        // Get config values
+        $quality = Config::get('aura.media.quality', 80) / 100;
+        $restrictDimensions = Config::get('aura.media.restrict_to_dimensions', true);
+
+        // If dimensions are restricted, validate the requested dimensions
+        if ($restrictDimensions) {
+            $allowedThumbnails = Config::get('aura.media.thumbnails', []);
+            $dimensionsAllowed = false;
+
+            foreach ($allowedThumbnails as $thumbnail) {
+                if ($thumbnail['width'] === $width &&
+                    (!$height || $thumbnail['height'] === $height)) {
+                    $dimensionsAllowed = true;
+                    break;
+                }
+            }
+
+            if (!$dimensionsAllowed) {
+                throw new NotFoundHttpException('Requested thumbnail dimensions are not allowed.');
+            }
+        }
+
         // Parse the path to get the base name
         $pathInfo = pathinfo($path);
         $basename = $pathInfo['basename'];
@@ -75,7 +99,7 @@ class ThumbnailGenerator
             Storage::disk('public')->makeDirectory($thumbnailFolder);
         }
 
-        // Save the thumbnail image with specified quality
+        // Save the thumbnail image with quality from config
         $image->save(storage_path('app/public/'.$thumbnailPath), $quality * 100);
 
         return $thumbnailPath;
