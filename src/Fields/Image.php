@@ -25,7 +25,7 @@ class Image extends Field
             $attachment = Attachment::find($firstImageValue);
 
             if ($attachment) {
-                $url = $attachment->path('media');
+                $url = $attachment->thumbnail('xs');
                 $imageHtml = "<img src='{$url}' class='object-cover w-32 h-32 rounded-lg shadow-lg'>";
             } else {
                 return $value;

@@ -64,17 +64,24 @@ class GenerateImageThumbnail implements ShouldQueue
         ]);
 
         // Generate thumbnails for each configured size
-        foreach ($settings['thumbnails'] as $thumbnail) {
+        foreach ($settings['dimensions'] as $thumbnail) {
             try {
                 logger()->info('Generating thumbnail', [
                     'relativePath' => $relativePath,
                     'size' => $thumbnail
                 ]);
 
+                $width = $thumbnail['width'] ?? null;
+                $height = $thumbnail['height'] ?? null;
+
+                if ($width === null) {
+                    throw new \InvalidArgumentException("Width is not defined for thumbnail size: " . ($thumbnail['name'] ?? 'unknown'));
+                }
+
                 $thumbnailGenerator->generate(
                     $relativePath,
-                    $thumbnail['width'],
-                    $thumbnail['height']
+                    $width,
+                    $height
                 );
 
             } catch (\Exception $e) {

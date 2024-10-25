@@ -21,12 +21,12 @@ class ThumbnailGenerator
 
         // If dimensions are restricted, validate the requested dimensions
         if ($restrictDimensions) {
-            $allowedThumbnails = Config::get('aura.media.thumbnails', []);
+            $allowedDimensions = Config::get('aura.media.dimensions', []);
             $dimensionsAllowed = false;
 
-            foreach ($allowedThumbnails as $thumbnail) {
-                if ($thumbnail['width'] === $width &&
-                    (!$height || $thumbnail['height'] === $height)) {
+            foreach ($allowedDimensions as $dimension) {
+                if ($dimension['width'] === $width &&
+                    (!$height || $dimension['height'] === $height)) {
                     $dimensionsAllowed = true;
                     break;
                 }
