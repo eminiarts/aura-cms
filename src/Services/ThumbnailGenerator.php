@@ -11,7 +11,7 @@ class ThumbnailGenerator
     /**
      * Generate a thumbnail for the given image path with specified dimensions
      */
-    public function generate(string $path, int $width, ?int $height = null): string
+    public function generate(string $path, int $width, ?int $height = null, float $quality = 0.80): string
     {
         // Parse the path to get the base name
         $pathInfo = pathinfo($path);
@@ -40,14 +40,28 @@ class ThumbnailGenerator
         // Create thumbnail
         $image = Image::make(storage_path('app/public/'.$path));
 
-        if ($width && !$height) {
-            // Resize image to specified width, maintaining aspect ratio
-            $image->resize($width, null, function ($constraint) {
-                $constraint->aspectRatio();
-            });
+        // Get original dimensions
+        $originalWidth = $image->width();
+        $originalHeight = $image->height();
+
+        // Don't upscale images
+        $targetWidth = min($width, $originalWidth);
+        $targetHeight = $height ? min($height, $originalHeight) : null;
+
+        if ($targetWidth && !$targetHeight) {
+            // Skip resize if target width is larger than original
+            if ($targetWidth < $originalWidth) {
+                // Resize image to specified width, maintaining aspect ratio
+                $image->resize($targetWidth, null, function ($constraint) {
+                    $constraint->aspectRatio();
+                });
+            }
         } else {
-            // Resize and crop image to specified width and height
-            $image->fit($width, $height);
+            // Only resize if target dimensions are smaller than original
+            if ($targetWidth < $originalWidth || $targetHeight < $originalHeight) {
+                // Resize and crop image to specified width and height
+                $image->fit($targetWidth, $targetHeight);
+            }
         }
 
         // Ensure the thumbnail directory exists
@@ -55,8 +69,8 @@ class ThumbnailGenerator
             Storage::disk('public')->makeDirectory($thumbnailFolder);
         }
 
-        // Save the thumbnail image
-        $image->save(storage_path('app/public/'.$thumbnailPath));
+        // Save the thumbnail image with specified quality
+        $image->save(storage_path('app/public/'.$thumbnailPath), $quality * 100);
 
         return $thumbnailPath;
     }
