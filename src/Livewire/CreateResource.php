@@ -24,6 +24,11 @@ class CreateResource extends Component
         $this->dispatch('closeModal');
     }
 
+    public static function modalClasses(): string
+    {
+        return 'max-w-xl';
+    }
+
     public static function getFields()
     {
         return [

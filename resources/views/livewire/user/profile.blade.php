@@ -12,7 +12,7 @@
 
     <div class="flex justify-between items-center mb-6">
         <div>
-            <h1 class="mb-2 text-3xl font-semibold">Profile</h1>
+            <h1 class="mb-2 text-2xl font-semibold">Profile</h1>
         </div>
 
         <div>

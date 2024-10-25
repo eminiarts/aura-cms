@@ -405,6 +405,11 @@ trait AuraModelConfig
         return __(static::$pluralName ?? Str::plural($this->singularName()));
     }
 
+    public function tableComponentView()
+    {
+        return 'aura::livewire.table';
+    }
+
     public function rowView()
     {
         return 'aura::components.table.row';

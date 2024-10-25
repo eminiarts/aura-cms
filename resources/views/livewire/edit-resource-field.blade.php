@@ -25,7 +25,7 @@
             @endif
           </h2>
           @if($field['slug'])
-          <h3 class="mb-4 text-xl font-semibold truncate">{{ $field['label'] ?? ''}} ({{ $field['slug'] }})</h3>
+          <h3 class="mb-4 text-2xl font-semibold truncate">{{ $field['label'] ?? ''}} ({{ $field['slug'] }})</h3>
           @endif
         </div>
         <div class="flex-shrink-0 mt-10 space-x-2">

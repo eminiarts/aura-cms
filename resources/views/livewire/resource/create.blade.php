@@ -11,7 +11,7 @@
 
     <div class="flex items-center justify-between {{ $inModal ? 'mb-8' : 'my-8'}}">
         <div>
-            <h1 class="text-xl font-semibold">{{ __('Create ' . $model->singularName()) }}</h1>
+            <h1 class="text-2xl font-semibold">{{ __('Create ' . $model->singularName()) }}</h1>
         </div>
 
         <div class="save-resource">

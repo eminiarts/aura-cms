@@ -140,38 +140,40 @@ test('table filter - custom filter - contains', function () {
     $component = Livewire::test(Table::class, ['query' => null, 'model' => $post]);
 
     // set custom filter to "A"
-    $component->call('addFilter');
+    $component->call('addFilterGroup');
 
     // $component->filter['custom'] should have 1 item
     expect($component->filters['custom'])->toHaveCount(1);
 
+    expect($component->filters['custom'][0]['filters'])->toHaveCount(1);
     // expect the first item to have the keys: 'name', 'value', 'operator'
-    expect($component->filters['custom'][0])->toHaveKeys(['name', 'value', 'operator']);
+    expect($component->filters['custom'][0]['filters'][0])->toHaveKeys(['name', 'value', 'operator']);
 
     // expect the first item name to be "meta"
-    expect($component->filters['custom'][0]['name'])->toBe('meta');
+    expect($component->filters['custom'][0]['filters'][0]['name'])->toBe('meta');
 
     // expect the first item operator to be "contains"
-    expect($component->filters['custom'][0]['operator'])->toBe('contains');
+    expect($component->filters['custom'][0]['filters'][0]['operator'])->toBe('contains');
 
     // On the component, set $filter['custom'][0]['value'] to "A"
-    $component->set('filters.custom.0.value', 'A');
+    $component->set('filters.custom.0.filters.0.value', 'A');
 
     // expect the first item value to be "A"
-    expect($component->filters['custom'][0]['value'])->toBe('A');
+    expect($component->filters['custom'][0]['filters'][0]['value'])->toBe('A');
 
     $component->assertViewHas('rows', function ($rows) use ($post2) {
         return count($rows->items()) === 1 && $rows->items()[0]->id === $post2->id;
     });
 
     // Change Filter to "B"
-    $component->set('filters.custom.0.value', 'B');
+    $component->set('filters.custom.0.filters.0.value', 'B');
     $component->assertViewHas('rows', function ($rows) use ($post) {
         return count($rows->items()) === 1 && $rows->items()[0]->id === $post->id;
     });
 
+    // dd('here', $rows->items());
     // Change Filter to "C"
-    $component->set('filters.custom.0.value', 'C');
+    $component->set('filters.custom.0.filters.0.value', 'C');
     $component->assertViewHas('rows', function ($rows) {
         return count($rows->items()) === 0;
     });
@@ -210,33 +212,35 @@ test('table filter - custom filter - does_not_contain', function () {
 
     $component = Livewire::test(Table::class, ['query' => null, 'model' => $post]);
 
-    $component->call('addFilter');
+    $component->call('addFilterGroup');
 
     expect($component->filters['custom'])->toHaveCount(1);
 
-    expect($component->filters['custom'][0])->toHaveKeys(['name', 'value', 'operator']);
+    expect($component->filters['custom'][0]['filters'])->toHaveCount(1);
 
-    expect($component->filters['custom'][0]['name'])->toBe('meta');
+    expect($component->filters['custom'][0]['filters'][0])->toHaveKeys(['name', 'value', 'operator']);
 
-    $component->set('filters.custom.0.operator', 'does_not_contain');
+    expect($component->filters['custom'][0]['filters'][0]['name'])->toBe('meta');
 
-    expect($component->filters['custom'][0]['operator'])->toBe('does_not_contain');
+    $component->set('filters.custom.0.filters.0.operator', 'does_not_contain');
 
-    $component->set('filters.custom.0.value', 'A');
+    expect($component->filters['custom'][0]['filters'][0]['operator'])->toBe('does_not_contain');
 
-    expect($component->filters['custom'][0]['value'])->toBe('A');
+    $component->set('filters.custom.0.filters.0.value', 'A');
+
+    expect($component->filters['custom'][0]['filters'][0]['value'])->toBe('A');
 
     $component->assertViewHas('rows', function ($rows) use ($post) {
         return count($rows->items()) === 1 && $rows->items()[0]->id === $post->id;
     });
 
-    $component->set('filters.custom.0.value', 'B');
+    $component->set('filters.custom.0.filters.0.value', 'B');
 
     $component->assertViewHas('rows', function ($rows) use ($post2) {
         return count($rows->items()) === 1 && $rows->items()[0]->id === $post2->id;
     });
 
-    $component->set('filters.custom.0.value', 'C');
+    $component->set('filters.custom.0.filters.0.value', 'C');
 
     $component->assertViewHas('rows', function ($rows) {
         return count($rows->items()) === 2;
@@ -277,28 +281,30 @@ test('table filter - custom filter - starts_with', function () {
     $component = Livewire::test(Table::class, ['query' => null, 'model' => $post]);
 
     // set custom filter to "A"
-    $component->call('addFilter');
+    $component->call('addFilterGroup');
 
     // $component->filter['custom'] should have 1 item
     expect($component->filters['custom'])->toHaveCount(1);
 
+    expect($component->filters['custom'][0]['filters'])->toHaveCount(1);
+
     // expect the first item to have the keys: 'name', 'value', 'operator'
-    expect($component->filters['custom'][0])->toHaveKeys(['name', 'value', 'operator']);
+    expect($component->filters['custom'][0]['filters'][0])->toHaveKeys(['name', 'value', 'operator']);
 
     // expect the first item name to be "meta"
-    expect($component->filters['custom'][0]['name'])->toBe('meta');
+    expect($component->filters['custom'][0]['filters'][0]['name'])->toBe('meta');
 
     // expect the first item operator to be "contains"
-    expect($component->filters['custom'][0]['operator'])->toBe('contains');
+    expect($component->filters['custom'][0]['filters'][0]['operator'])->toBe('contains');
 
     // Set the operator to "starts_with"
-    $component->set('filters.custom.0.operator', 'starts_with');
+    $component->set('filters.custom.0.filters.0.operator', 'starts_with');
 
     // On the component, set $filter['custom'][0]['value'] to "A"
-    $component->set('filters.custom.0.value', 'A');
+    $component->set('filters.custom.0.filters.0.value', 'A');
 
     // expect the first item value to be "A"
-    expect($component->filters['custom'][0]['value'])->toBe('A');
+    expect($component->filters['custom'][0]['filters'][0]['value'])->toBe('A');
 
     // $component should have 1 item for rows
     $component->assertViewHas('rows', function ($rows) {
@@ -311,7 +317,7 @@ test('table filter - custom filter - starts_with', function () {
     });
 
     // Change Filter to "B"
-    $component->set('filters.custom.0.value', 'B');
+    $component->set('filters.custom.0.filters.0.value', 'B');
 
     // $component should have 1 item for rows
     $component->assertViewHas('rows', function ($rows) {
@@ -324,7 +330,7 @@ test('table filter - custom filter - starts_with', function () {
     });
 
     // Change Filter to "C"
-    $component->set('filters.custom.0.value', 'C');
+    $component->set('filters.custom.0.filters.0.value', 'C');
 
     // $component should have 0 items for rows
     $component->assertViewHas('rows', function ($rows) {
@@ -373,33 +379,35 @@ test('table filter - custom filter - ends_with', function () {
 
     $component = Livewire::test(Table::class, ['query' => null, 'model' => $post]);
 
-    $component->call('addFilter');
+    $component->call('addFilterGroup');
 
     expect($component->filters['custom'])->toHaveCount(1);
 
-    expect($component->filters['custom'][0])->toHaveKeys(['name', 'value', 'operator']);
+    expect($component->filters['custom'][0]['filters'])->toHaveCount(1);
 
-    expect($component->filters['custom'][0]['name'])->toBe('meta');
+    expect($component->filters['custom'][0]['filters'][0])->toHaveKeys(['name', 'value', 'operator']);
 
-    expect($component->filters['custom'][0]['operator'])->toBe('contains');
+    expect($component->filters['custom'][0]['filters'][0]['name'])->toBe('meta');
 
-    $component->set('filters.custom.0.operator', 'ends_with');
+    expect($component->filters['custom'][0]['filters'][0]['operator'])->toBe('contains');
 
-    $component->set('filters.custom.0.value', 'meta');
+    $component->set('filters.custom.0.filters.0.operator', 'ends_with');
 
-    expect($component->filters['custom'][0]['value'])->toBe('meta');
+    $component->set('filters.custom.0.filters.0.value', 'meta');
+
+    expect($component->filters['custom'][0]['filters'][0]['value'])->toBe('meta');
 
     $component->assertViewHas('rows', function ($rows) use ($post2) {
         return count($rows->items()) === 1 && $rows->items()[0]->id === $post2->id;
     });
 
-    $component->set('filters.custom.0.value', 'amazing');
+    $component->set('filters.custom.0.filters.0.value', 'amazing');
 
     $component->assertViewHas('rows', function ($rows) use ($post) {
         return count($rows->items()) === 1 && $rows->items()[0]->id === $post->id;
     });
 
-    $component->set('filters.custom.0.value', 'C');
+    $component->set('filters.custom.0.filters.0.value', 'C');
 
     $component->assertViewHas('rows', function ($rows) {
         return count($rows->items()) === 0;
@@ -436,33 +444,35 @@ test('table filter - custom filter - is', function () {
 
     $component = Livewire::test(Table::class, ['query' => null, 'model' => $post]);
 
-    $component->call('addFilter');
+    $component->call('addFilterGroup');
 
     expect($component->filters['custom'])->toHaveCount(1);
 
-    expect($component->filters['custom'][0])->toHaveKeys(['name', 'value', 'operator']);
+    expect($component->filters['custom'][0]['filters'])->toHaveCount(1);
 
-    expect($component->filters['custom'][0]['name'])->toBe('meta');
+    expect($component->filters['custom'][0]['filters'][0])->toHaveKeys(['name', 'value', 'operator']);
 
-    expect($component->filters['custom'][0]['operator'])->toBe('contains');
+    expect($component->filters['custom'][0]['filters'][0]['name'])->toBe('meta');
 
-    $component->set('filters.custom.0.operator', 'is');
+    expect($component->filters['custom'][0]['filters'][0]['operator'])->toBe('contains');
 
-    $component->set('filters.custom.0.value', 'A custom meta');
+    $component->set('filters.custom.0.filters.0.operator', 'is');
 
-    expect($component->filters['custom'][0]['value'])->toBe('A custom meta');
+    $component->set('filters.custom.0.filters.0.value', 'A custom meta');
+
+    expect($component->filters['custom'][0]['filters'][0]['value'])->toBe('A custom meta');
 
     $component->assertViewHas('rows', function ($rows) use ($post2) {
         return count($rows->items()) === 1 && $rows->items()[0]->id === $post2->id;
     });
 
-    $component->set('filters.custom.0.value', 'B amazing');
+    $component->set('filters.custom.0.filters.0.value', 'B amazing');
 
     $component->assertViewHas('rows', function ($rows) use ($post) {
         return count($rows->items()) === 1 && $rows->items()[0]->id === $post->id;
     });
 
-    $component->set('filters.custom.0.value', 'A custom');
+    $component->set('filters.custom.0.filters.0.value', 'A custom');
 
     $component->assertViewHas('rows', function ($rows) {
         return count($rows->items()) === 0;
@@ -500,27 +510,29 @@ test('table filter - custom filter - greater_than', function () {
 
     $component = Livewire::test(Table::class, ['query' => null, 'model' => $post]);
 
-    $component->call('addFilter');
+    $component->call('addFilterGroup');
 
     expect($component->filters['custom'])->toHaveCount(1);
 
-    expect($component->filters['custom'][0])->toHaveKeys(['name', 'value', 'operator']);
+    expect($component->filters['custom'][0]['filters'])->toHaveCount(1);
 
-    expect($component->filters['custom'][0]['name'])->toBe('meta');
+    expect($component->filters['custom'][0]['filters'][0])->toHaveKeys(['name', 'value', 'operator']);
 
-    expect($component->filters['custom'][0]['operator'])->toBe('contains');
+    expect($component->filters['custom'][0]['filters'][0]['name'])->toBe('meta');
 
-    $component->set('filters.custom.0.operator', 'greater_than');
+    expect($component->filters['custom'][0]['filters'][0]['operator'])->toBe('contains');
 
-    $component->set('filters.custom.0.value', '150');
+    $component->set('filters.custom.0.filters.0.operator', 'greater_than');
 
-    expect($component->filters['custom'][0]['value'])->toBe('150');
+    $component->set('filters.custom.0.filters.0.value', '150');
+
+    expect($component->filters['custom'][0]['filters'][0]['value'])->toBe('150');
 
     $component->assertViewHas('rows', function ($rows) use ($post2) {
         return count($rows->items()) === 1 && $rows->items()[0]->id === $post2->id;
     });
 
-    $component->set('filters.custom.0.value', '200');
+    $component->set('filters.custom.0.filters.0.value', '200');
 
     $component->assertViewHas('rows', function ($rows) {
         return count($rows->items()) === 0;
@@ -558,21 +570,21 @@ test('table filter - custom filter - less_than', function () {
 
     $component = Livewire::test(Table::class, ['query' => null, 'model' => $post]);
 
-    $component->call('addFilter');
+    $component->call('addFilterGroup');
 
     expect($component->filters['custom'])->toHaveCount(1);
 
-    $component->set('filters.custom.0.operator', 'less_than');
+    $component->set('filters.custom.0.filters.0.operator', 'less_than');
 
-    $component->set('filters.custom.0.value', '150');
+    $component->set('filters.custom.0.filters.0.value', '150');
 
-    expect($component->filters['custom'][0]['value'])->toBe('150');
+    expect($component->filters['custom'][0]['filters'][0]['value'])->toBe('150');
 
     $component->assertViewHas('rows', function ($rows) use ($post) {
         return count($rows->items()) === 1 && $rows->items()[0]->id === $post->id;
     });
 
-    $component->set('filters.custom.0.value', '100');
+    $component->set('filters.custom.0.filters.0.value', '100');
 
     $component->assertViewHas('rows', function ($rows) {
         return count($rows->items()) === 0;
@@ -611,15 +623,15 @@ test('table filter - custom filter - is_empty', function () {
 
     $component = Livewire::test(Table::class, ['query' => null, 'model' => $post]);
 
-    $component->call('addFilter');
+    $component->call('addFilterGroup');
 
     expect($component->filters['custom'])->toHaveCount(1);
 
-    $component->set('filters.custom.0.operator', 'is_empty');
+    $component->set('filters.custom.0.filters.0.operator', 'is_empty');
 
-    $component->set('filters.custom.0.name', 'number');
+    $component->set('filters.custom.0.filters.0.name', 'number');
 
-    expect($component->filters['custom'][0]['value'])->toBeNull();
+    expect($component->filters['custom'][0]['filters'][0]['value'])->toBeNull();
 
     // expect($component->rows->items())->toHaveCount(1);
 
@@ -627,7 +639,7 @@ test('table filter - custom filter - is_empty', function () {
 
     // To do: Make it work with fields on the table
     // This does not work atm because we only filter meta fields (for now)
-    // $component->set('filters.custom.0.name', 'title');
+    // $component->set('filters.custom.0.filters.0.name', 'title');
     // expect($component->rows->items())->toHaveCount(0);
 
     // Inspect sql when is_null is finished
@@ -661,22 +673,22 @@ test('table filter - custom filter - is_not_empty', function () {
 
     $component = Livewire::test(Table::class, ['query' => null, 'model' => $post]);
 
-    $component->call('addFilter');
+    $component->call('addFilterGroup');
 
     expect($component->filters['custom'])->toHaveCount(1);
 
-    expect($component->filters['custom'][0])->toHaveKeys(['name', 'value', 'operator']);
+    expect($component->filters['custom'][0]['filters'][0])->toHaveKeys(['name', 'value', 'operator']);
 
-    expect($component->filters['custom'][0]['name'])->toBe('meta');
+    expect($component->filters['custom'][0]['filters'][0]['name'])->toBe('meta');
 
-    expect($component->filters['custom'][0]['operator'])->toBe('contains');
+    expect($component->filters['custom'][0]['filters'][0]['operator'])->toBe('contains');
 
-    $component->set('filters.custom.0.operator', 'is_not_empty');
+    $component->set('filters.custom.0.filters.0.operator', 'is_not_empty');
 
-    $component->set('filters.custom.0.name', 'meta');
+    $component->set('filters.custom.0.filters.0.name', 'meta');
 
-    expect($component->filters['custom'][0]['value'])->toBeNull();
-    expect($component->filters['custom'][0]['name'])->toBe('meta');
+    expect($component->filters['custom'][0]['filters'][0]['value'])->toBeNull();
+    expect($component->filters['custom'][0]['filters'][0]['name'])->toBe('meta');
 
     $component->assertViewHas('rows', function ($rows) {
         return count($rows->items()) === 1;
@@ -686,9 +698,9 @@ test('table filter - custom filter - is_not_empty', function () {
         return $rows->items()[0]->id === $post2->id;
     });
 
-    $component->set('filters.custom.0.operator', 'is_empty');
+    $component->set('filters.custom.0.filters.0.operator', 'is_empty');
 
-    $component->set('filters.custom.0.name', 'meta');
+    $component->set('filters.custom.0.filters.0.name', 'meta');
 
     $component->assertViewHas('rows', function ($rows) {
         return count($rows->items()) === 1;

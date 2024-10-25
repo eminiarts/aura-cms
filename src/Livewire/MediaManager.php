@@ -4,6 +4,7 @@ namespace Aura\Base\Livewire;
 
 use Aura\Base\Resources\Attachment;
 use Livewire\Component;
+use Livewire\Attributes\On;
 
 class MediaManager extends Component
 {
@@ -15,6 +16,12 @@ class MediaManager extends Component
 
     public $selected = [];
 
+    public $modalAttributes;
+
+    public $initialSelectionDone = false;
+
+    public $rowIds = []; // Add this line
+
     // Listen for select Attachment
     protected $listeners = [
         'selectedRows' => 'selectAttachment',
@@ -22,24 +29,26 @@ class MediaManager extends Component
         'updateField' => 'updateField',
     ];
 
-    public static function modalMaxWidth(): string
+
+    public static function modalClasses(): string
     {
-        return '7xl';
+        return 'max-w-7xl';
     }
 
-    public function mount($slug, $selected)
+    public function mount($slug, $selected, $modalAttributes)
     {
         $this->selected = $selected;
         $this->fieldSlug = $slug;
-
+        $this->modalAttributes = $modalAttributes;
         $this->field = app($this->model)->fieldBySlug($this->fieldSlug);
-
-        // ray('mount media manager', app($this->model), $this->fieldSlug, $this->field);
+        $this->rowIds = Attachment::pluck('id')->toArray(); // Add this line to populate rowIds
     }
 
     public function render()
     {
-        return view('aura::livewire.media-manager');
+        return view('aura::livewire.media-manager', [
+            'rows' => Attachment::paginate(25), // Adjust the number as needed
+        ]);
     }
 
     public function select()
@@ -52,33 +61,41 @@ class MediaManager extends Component
 
         $this->dispatch('media-manager-selected');
 
-        // If selected is deffered, emit event to table to update selected, then emit back to updateField
-
         // Close Modal
-        // $this->closeModal();
+        $this->dispatch('closeModal');
     }
 
-    // Select Attachment
+    #[On('selectedRows')]
     public function selectAttachment($ids)
     {
-        $this->selected = $ids;
+        if (!$this->initialSelectionDone) {
+            ray('selectAttachment', $ids);
+            $this->selected = $ids;
+            $this->initialSelectionDone = true;
+        }
     }
 
+    #[On('tableMounted')]
     public function tableMounted()
     {
-        if ($this->selected) {
+        if ($this->selected && !$this->initialSelectionDone) {
+            $this->dispatch('selectedRows', $this->selected);
+            $this->initialSelectionDone = true;
+        }
+    }
+
+    public function updated($name, $value)
+    {
+        if ($name === 'selected') {
             $this->dispatch('selectedRows', $this->selected);
         }
     }
 
-    public function updated()
-    {
-        $this->dispatch('selectedRows', $this->selected);
-    }
-
+    #[On('updateField')]
     public function updateField($field)
     {
         if ($field['slug'] == $this->fieldSlug) {
+        ray('updated', $this->selected);
             $this->selected = $field['value'];
             $this->dispatch('selectedRows', $this->selected);
         }

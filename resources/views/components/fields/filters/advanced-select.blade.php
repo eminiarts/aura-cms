@@ -1,35 +1,31 @@
+@aware(['model' => null, 'size' => 'default'])
+
 @php
     // Api from Field is more important than from Field Class
-    $api = optional($field)['api'] ?? false;
-
-    if (!$api) {
-        $api = optional($field['field'])->api ?? false;
-    }
+    $api = true;
 
     // Create Modal
-    $create = optional($field)['create'] ?? false;
+    $create = false;
 
     // Multiple from Field is more important than from Field Class
-    $multiple = optional($field)['multiple'] ?? true;
+    $multiple = true;
 
-    if (!isset($field['multiple'])) {
-        $multiple = optional($field['field'])->multiple ?? true;
-    }
 
     if ($api) {
         $values = [];
-        $selectedValues = $field['field']->selectedValues($field['resource'], optional($this->form['fields'])[$field['slug']], $field);
+        $modelParts = explode('.', $model);
+        $filterGroup = $modelParts[2] ?? 0;
+        $filterIndex = $modelParts[4] ?? 0;
 
-        // dd($selectedValues);
-    } else {
-        // $values = $field['field']->values($field['model']);
-        $values = $field['field']->values($field['resource'], $field);
-        $selectedValues = [];
+        $selectedValues = $field['field']->selectedValues($field['resource'], $this->filters['custom'][$filterGroup]['filters'][$filterIndex]['value'], $field);
+        ray($selectedValues);
     }
 
 @endphp
 
-<x-aura::fields.wrapper :field="$field">
+
+
+<div>
     <style>
         .dragging-item {
             position: absolute;
@@ -41,6 +37,17 @@
         .shadow-item {
             opacity: 0.4;
         }
+
+        /* Add styles for xs size */
+        .aura-input-xs {
+            font-size: 0.75rem;
+            line-height: 1rem;
+        }
+        .aura-input-xs .draggable-selectmany-item {
+            padding-top: 0.125rem;
+            padding-bottom: 0.125rem;
+            font-size: 0.65rem;
+        }
     </style>
 
     {{-- @dump('selectedValues', $selectedValues)
@@ -48,7 +55,7 @@
     @dump('api', $api) --}}
 
     <div wire:ignore class="w-full" x-data="{
-        value: $wire.entangle('form.fields.{{ $field['slug'] }}'),
+        value: @entangle($model),
         items: @js($values),
         selectedItems: @js($selectedValues),
         deselectedItems: [],
@@ -70,6 +77,8 @@
 
         boundStopDragging: null,
         boundMoveItem: null,
+
+        size: @js($size),
 
         updateSelectedItemsOrder() {
             const newOrder = Array.from(this.$refs.selectedItemsContainer.querySelectorAll('.draggable-selectmany-item')).map(item => parseInt(item.getAttribute('data-id')));
@@ -354,10 +363,14 @@
         @keydown.left.stop.prevent="focusPrevious" @keydown.escape.stop.prevent="toggleListbox"
         @click.away="closeListbox()">
 
-        <div class="relative p-0 w-full bg-transparent border-0 aura-input">
+        <div class="relative p-0 w-full bg-transparent border-0 aura-input" :class="{ 'aura-input-xs': size === 'xs' }">
             <label class="sr-only">{{ __('Select Entry') }}</label>
             <button type="button"
-                class="relative flex items-center justify-between w-full px-3 pt-1 pb-0 border rounded-lg shadow-xs appearance-none min-h-[2.625rem] border-gray-500/30 focus:border-primary-300 focus:outline-none ring-gray-900/10 focus:ring focus:ring-primary-300 focus:ring-opacity-50 dark:focus:ring-primary-500 dark:focus:ring-opacity-50 dark:bg-gray-900 dark:border-gray-700"
+                class="flex relative justify-between items-center w-full bg-white border appearance-none shadow-xs border-gray-500/30 focus:border-primary-300 focus:outline-none ring-gray-900/10 focus:ring focus:ring-primary-300 focus:ring-opacity-50 dark:focus:ring-primary-500 dark:focus:ring-opacity-50 dark:bg-gray-900 dark:border-gray-700"
+                :class="{
+                    'min-h-[2.625rem] px-3 pt-1 pb-0 rounded-lg': size === 'default',
+                    'min-h-[2rem] px-1 pt-1 pb-0 rounded-md': size === 'xs'
+                }"
                 x-ref="listboxButton" @click="toggleListbox">
 
                 {{-- <pre x-html="value"></pre> --}}
@@ -432,7 +445,7 @@
 
                 <!-- Heroicons up/down -->
                 <div class="flex absolute inset-y-0 right-0 items-center px-2 pointer-events-none shrink-0">
-                    <svg class="w-5 h-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
+                    <svg class="text-gray-400" :class="{ 'w-4 h-4': size === 'xs', 'w-5 h-5': size === 'default' }" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 15L12 18.75 15.75 15m-7.5-6L12 5.25 15.75 9" />
                     </svg>
                 </div>
@@ -440,7 +453,8 @@
 
             <template x-if="showListbox">
                 <ul x-ref="listbox" x-transition.origin.top x-cloak
-                    class="overflow-y-auto absolute left-0 z-10 mt-2 w-full max-h-96 bg-white rounded-md border divide-y shadow-md origin-top outline-none divide-gray-500/30 border-gray-500/30 dark:border-gray-700 dark:bg-gray-900 dark:divide-gray-700">
+                    class="overflow-y-auto absolute left-0 z-10 mt-2 w-full max-h-96 bg-white rounded-md border divide-y shadow-md origin-top outline-none divide-gray-500/30 border-gray-500/30 dark:border-gray-700 dark:bg-gray-900 dark:divide-gray-700"
+                    :class="{ 'text-xs': size === 'xs' }">
                     <template x-if="searchable">
                         <li class="border-none">
                             <div>
@@ -498,12 +512,5 @@
             </template>
         </div>
 
-        @if ($create)
-            <button
-                wire:click="$dispatch('openModal', { component: 'aura::resource-create-modal', arguments: { type: '{{ $field['resource'] }}', params: { 'for': '{{ $field['slug'] }}' } }})"
-                class="text-sm cursor-pointer text-bold">
-                + {{ __('Create') }}
-            </button>
-        @endif
     </div>
-</x-aura::fields.wrapper>
+</div>

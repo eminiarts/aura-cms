@@ -127,8 +127,18 @@ class Attachment extends Resource
                 'type' => 'Aura\\Base\\Fields\\ViewValue',
                 'searchable' => true,
                 'validation' => 'required',
-                'on_index' => true,
+                'on_index' => false,
                 'slug' => 'url',
+                'style' => [
+                    'width' => '100',
+                ],
+            ],
+            [
+                'name' => 'Tags',
+                'type' => 'Aura\\Base\\Fields\\Tags',
+                'resource' => 'Aura\\Base\\Resources\\Tag',
+                'validation' => '',
+                'slug' => 'tags',
                 'style' => [
                     'width' => '100',
                 ],
@@ -154,16 +164,18 @@ class Attachment extends Resource
                 'style' => [
                     'width' => '33',
                 ],
+                'display_view' => 'aura::attachment.mime_type',
             ],
             [
                 'name' => 'Size',
-                'type' => 'Aura\\Base\\Fields\\ViewValue',
+                'type' => 'Aura\\Base\\Fields\\Number',
                 'validation' => 'required',
                 'on_index' => true,
                 'slug' => 'size',
                 'style' => [
                     'width' => '33',
                 ],
+                'display_view' => 'aura::attachment.size',
             ],
             // [
             //     'name' => 'Created at',
@@ -213,7 +225,12 @@ class Attachment extends Resource
             $bytes /= 1024;
         }
 
-        return round($bytes, 2).' '.$units[$i];
+        if ($i <= 1) {
+            // For B and KB, don't round decimals
+            return (int)$bytes . ' ' . $units[$i];
+        }
+
+        return round($bytes, 2) . ' ' . $units[$i];
     }
 
     public function getReadableMimeTypeAttribute()
@@ -300,9 +317,19 @@ class Attachment extends Resource
         return asset('storage/'.$this->url);
     }
 
+    public function tableComponentView()
+    {
+        return 'aura::attachment.table';
+    }
+
     public function tableGridView()
     {
         return 'aura::attachment.grid';
+    }
+
+    public function tableView()
+    {
+        return 'aura::attachment.list';
     }
 
     public function tableRowView()
