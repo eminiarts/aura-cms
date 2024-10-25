@@ -71,7 +71,6 @@ class Edit extends Component
         $routeName = request()->route()->getName();
         $this->slug = explode('.', $routeName)[1] ?? null;
 
-        
         $this->model = Aura::findResourceBySlug($this->slug)->find($id);
 
         // Authorize

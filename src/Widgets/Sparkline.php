@@ -36,13 +36,14 @@ class Sparkline extends Widget
             ->select(DB::raw('DATE(created_at) as date'));
 
         if ($column && $this->model->isMetaField($column)) {
-            $query->leftJoin('post_meta', function ($join) use ($column) {
-                $join->on('posts.id', '=', 'post_meta.post_id')
-                    ->where('post_meta.key', '=', $column);
+            $query->leftJoin('meta', function ($join) use ($column) {
+                $join->on('posts.id', '=', 'meta.metable_id')
+                    ->where('meta.key', '=', $column)
+                    ->where('meta.metable_type', '=', get_class($this->model));
             });
 
             if (in_array($method, ['avg', 'sum', 'min', 'max'])) {
-                $query->addSelect(DB::raw("{$method}(CAST(post_meta.value as SIGNED)) as count"));
+                $query->addSelect(DB::raw("{$method}(CAST(meta.value as SIGNED)) as count"));
             } else {
                 $query->addSelect(DB::raw('COUNT(*) as count'));
             }

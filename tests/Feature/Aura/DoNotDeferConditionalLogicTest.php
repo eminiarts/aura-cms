@@ -5,9 +5,7 @@ use Aura\Base\Facades\Aura;
 use Aura\Base\Livewire\Resource\Create;
 use Aura\Base\Livewire\Resource\Edit;
 use Aura\Base\Resource;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
-
 
 uses()->group('current');
 
@@ -23,7 +21,7 @@ class DoNotDeferConditionalLogicTestModel extends Resource
 {
     public static string $type = 'TestModel';
 
-    protected static ?string $slug = "test";
+    protected static ?string $slug = 'test';
 
     public static function getFields()
     {

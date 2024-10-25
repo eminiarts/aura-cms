@@ -2,12 +2,12 @@
 
 namespace Tests\Feature\Livewire;
 
-use Livewire\Livewire;
-use Aura\Base\Resource;
 use Aura\Base\Facades\Aura;
-use Aura\Base\Resources\Post;
 use Aura\Base\Livewire\Resource\Create;
+use Aura\Base\Resource;
+use Aura\Base\Resources\Post;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Livewire\Livewire;
 
 // Refresh Database on every test
 uses(RefreshDatabase::class);

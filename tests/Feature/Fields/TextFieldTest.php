@@ -11,7 +11,7 @@ use Livewire\Livewire;
 class TextFieldModel extends Resource
 {
     public static string $type = 'TextModel';
-    
+
     protected static ?string $slug = 'textmodel';
 
     public static function getFields()

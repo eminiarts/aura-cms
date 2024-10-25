@@ -1,15 +1,15 @@
 <?php
 
-use Livewire\Livewire;
-use Aura\Base\Resource;
 use Aura\Base\Facades\Aura;
-use Aura\Base\Resources\Post;
-use Illuminate\Support\Facades\DB;
 use Aura\Base\Livewire\Table\Table;
 use Aura\Base\Models\Scopes\TeamScope;
-use Illuminate\Support\Facades\Schema;
+use Aura\Base\Resource;
+use Aura\Base\Resources\Post;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
+use Livewire\Livewire;
 
 uses(RefreshDatabase::class);
 
