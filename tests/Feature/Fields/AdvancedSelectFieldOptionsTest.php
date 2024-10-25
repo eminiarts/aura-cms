@@ -1,5 +1,6 @@
 <?php
 
+use Aura\Base\Facades\Aura;
 use Aura\Base\Livewire\Resource\Create;
 use Aura\Base\Resource;
 use Aura\Base\Resources\Genre;
@@ -7,6 +8,12 @@ use Livewire\Livewire;
 
 beforeEach(function () {
     $this->actingAs($this->user = createSuperAdmin());
+
+    Aura::fake();
+    Aura::setModel(new GenreModel);
+    Aura::registerRoutes('genre');
+    Aura::registerRoutes('movie');
+    Aura::clear();
 
     // Create some fake genres
     // Genre::factory()->count(3)->create();
@@ -89,7 +96,7 @@ test('displays selected genre in advanced select when api option is enabled', fu
 
     $model = new MovieModel;
 
-    $component = Livewire::test(Create::class, ['slug' => 'Post'])
+    $component = Livewire::test(Create::class, ['slug' => 'movie'])
         ->call('setModel', $model)
         ->assertSee('Create Movie')
         ->assertSee('Genre')

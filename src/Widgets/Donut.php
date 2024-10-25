@@ -36,18 +36,19 @@ class Donut extends Widget
             ->where('created_at', '<', $end);
 
         if ($column && $this->model->isMetaField($column)) {
-            $posts->select('posts.*', DB::raw("CAST(post_meta.value as SIGNED) as $column"))
-                ->leftJoin('post_meta', function ($join) use ($column) {
-                    $join->on('posts.id', '=', 'post_meta.post_id')
-                        ->where('post_meta.key', '=', $column);
+            $posts->select('posts.*', DB::raw("CAST(meta.value as SIGNED) as $column"))
+                ->leftJoin('meta', function ($join) use ($column) {
+                    $join->on('posts.id', '=', 'meta.metable_id')
+                        ->where('meta.key', '=', $column)
+                        ->where('meta.metable_type', '=', get_class($this->model));
                 });
         }
 
         return match ($this->method) {
-            'avg' => $posts->avg($this->model->isMetaField($column) ? DB::raw('CAST(post_meta.value as SIGNED)') : $column),
-            'sum' => $posts->sum($this->model->isMetaField($column) ? DB::raw('CAST(post_meta.value as SIGNED)') : $column),
-            'min' => $posts->min($this->model->isMetaField($column) ? DB::raw('CAST(post_meta.value as SIGNED)') : $column),
-            'max' => $posts->max($this->model->isMetaField($column) ? DB::raw('CAST(post_meta.value as SIGNED)') : $column),
+            'avg' => $posts->avg($this->model->isMetaField($column) ? DB::raw('CAST(meta.value as SIGNED)') : $column),
+            'sum' => $posts->sum($this->model->isMetaField($column) ? DB::raw('CAST(meta.value as SIGNED)') : $column),
+            'min' => $posts->min($this->model->isMetaField($column) ? DB::raw('CAST(meta.value as SIGNED)') : $column),
+            'max' => $posts->max($this->model->isMetaField($column) ? DB::raw('CAST(meta.value as SIGNED)') : $column),
             default => $posts->count(),
         };
     }

@@ -68,18 +68,17 @@ trait Sorting
             }
 
             if ($this->model->usesMeta() && $this->model->isMetaField($field)) {
-                $query->leftJoin('post_meta', function ($join) use ($field) {
-                    $join->on('posts.id', '=', 'post_meta.post_id')
-                        ->where('post_meta.key', '=', "$field");
+                $query->leftJoin('meta', function ($join) use ($field) {
+                    $join->on('posts.id', '=', 'meta.metable_id')
+                        ->where('meta.metable_type', '=', $this->model->getMorphClass())
+                        ->where('meta.key', '=', "$field");
                 })
                     ->select('posts.*')
-                    // ->orderByRaw('CASE WHEN post_meta.value IS NULL THEN 1 WHEN post_meta.value = "" THEN 1 ELSE 0 END')
                     ->when($this->model->isNumberField($field), function ($query) use ($direction) {
-                        // $query->orderByRaw('CAST(post_meta.value AS SIGNED) '.$direction);
-                        $query->orderByRaw('CAST(post_meta.value AS DECIMAL(10,2)) '.$direction);
+                        $query->orderByRaw('CAST(meta.value AS DECIMAL(10,2)) '.$direction);
                     })
                     ->when(! $this->model->isNumberField($field), function ($query) use ($direction) {
-                        $query->orderByRaw('CAST(post_meta.value AS CHAR) '.$direction);
+                        $query->orderByRaw('CAST(meta.value AS CHAR) '.$direction);
                     })
                     ->orderBy('id', 'desc');
 
@@ -94,7 +93,6 @@ trait Sorting
         $query->getQuery()->orders = null;
 
         // default sort
-        // ray($this->model->defaultTableSort(), $this->model->defaultTableSortDirection(),'defaultTableSort()');
         $query->orderBy($this->model->getTable().'.'.$this->model->defaultTableSort(), $this->model->defaultTableSortDirection());
 
         return $query;

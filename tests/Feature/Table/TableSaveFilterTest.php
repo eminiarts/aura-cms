@@ -1,5 +1,6 @@
 <?php
 
+use Aura\Base\Facades\Aura;
 use Aura\Base\Livewire\Table\Table;
 use Aura\Base\Resource;
 use Aura\Base\Resources\Post;
@@ -15,6 +16,9 @@ uses(RefreshDatabase::class);
 beforeEach(function () {
     // Create User
     $this->actingAs($this->user = createSuperAdmin());
+
+    Aura::fake();
+    Aura::setModel(new TableSaveFilterModel);
 
     // Create Posts
     $this->resource = TableSaveFilterModel::create([

@@ -5,20 +5,21 @@ use Illuminate\Support\Facades\Schema;
 
 beforeEach(fn () => $this->actingAs($this->user = createSuperAdmin()));
 
-test('post_meta table index test', function () {
+test('meta table index test', function () {
     // Check columns
-    $columns = Schema::getColumnListing('post_meta');
-    expect($columns)->toContain('post_id');
+    $columns = Schema::getColumnListing('meta');
+    expect($columns)->toContain('metable_id');
+    expect($columns)->toContain('metable_type');
     expect($columns)->toContain('key');
     expect($columns)->toContain('value');
 
     // Check indexes
-    $indexes = DB::select("PRAGMA index_list('post_meta')");
+    $indexes = DB::select("PRAGMA index_list('meta')");
     $indexNames = array_column($indexes, 'name');
 
     expect($indexNames)->toHaveCount(3);
-    expect($indexNames)->toContain('post_meta_post_id_index');
-    expect($indexNames)->toContain('post_meta_key_index');
+    expect($indexNames)->toContain('meta_metable_type_metable_id_key_index');
+    expect($indexNames)->toContain('meta_key_index');
 
     // Additional checks can be added based on specific index requirements
 });

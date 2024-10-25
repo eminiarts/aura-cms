@@ -31,7 +31,7 @@
                         <div>
                             @if ($this->createInModal)
                                 <a href="#"
-                                    wire:click.prevent="$dispatch('openModal', { component: 'aura::post-create-modal', arguments: {
+                                    wire:click.prevent="$dispatch('openModal', { component: 'aura::resource-create-modal', arguments: {
                                 type: '{{ $this->model->getType() }}',
                                 params: {
                                     'for': '{{ $this->field['relation'] ?? $parent->getType() }}',

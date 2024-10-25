@@ -1,16 +1,16 @@
 <?php
 
+use Aura\Base\Facades\Aura;
 use Aura\Base\Livewire\Table\Table;
 use Aura\Base\Resource;
 use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
-uses(RefreshDatabase::class);
-
 afterEach(function () {
     Schema::dropIfExists('custom_projects');
+
+    Aura::clear();
 });
 
 beforeEach(function () {
@@ -39,6 +39,8 @@ class ResourceWithCustomTableWithoutFillableModel extends Resource
     public static ?string $slug = 'project';
 
     public static string $type = 'Project';
+
+    public static bool $usesMeta = false;
 
     // cast options to array
     protected $casts = [
@@ -109,7 +111,7 @@ test('custom Table - Fields get saved correctly when fillable are set', function
         'option2' => 'Option 2',
     ]);
 
-    $meta = DB::table('post_meta')->where('post_id', $resource->id)->get();
+    $meta = DB::table('meta')->where('metable_id', $resource->id)->where('metable_type', ResourceWithCustomTableWithoutFillableModel::class)->get();
 
     expect($meta->where('key', 'name')->first())->toBeNull();
     expect($meta->where('key', 'options')->first())->toBeNull();
@@ -125,8 +127,9 @@ test('custom Table - Meta is not used for fields', function () {
 
     expect($resource->name)->toBeNull();
 
-    $meta = DB::table('post_meta')->insert([
-        'post_id' => $resource->id,
+    $meta = DB::table('meta')->insert([
+        'metable_id' => $resource->id,
+        'metable_type' => ResourceWithCustomTableWithoutFillableModel::class,
         'key' => 'name',
         'value' => 'Test Post 1',
     ]);

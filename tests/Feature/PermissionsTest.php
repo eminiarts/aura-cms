@@ -1,5 +1,6 @@
 <?php
 
+use Aura\Base\Facades\Aura;
 use Aura\Base\Livewire\Resource\Edit;
 use Aura\Base\Resources\Post;
 use Aura\Base\Resources\Role;
@@ -171,19 +172,19 @@ test('a moderator can access index page', function () {
     $user->refresh();
 
     // Access Index Page
-    $response = $this->actingAs($user)->get(route('aura.resource.index', ['slug' => $post->type]));
+    $response = $this->actingAs($user)->get(route('aura.'.$post->getSlug().'.index'));
 
     // Assert Response
     $response->assertStatus(200);
 
     // Attempt to Access Create Page
-    $response = $this->actingAs($user)->get(route('aura.resource.create', ['slug' => $post->type]));
+    $response = $this->actingAs($user)->get(route('aura.'.$post->getSlug().'.create'));
 
     // Assert that the action is unauthorized
     $response->assertForbidden();
 
     // Can Not Access Edit Page
-    $response = $this->actingAs($user)->get(route('aura.resource.edit', ['slug' => $post->type,  'id' => $post->id]));
+    $response = $this->actingAs($user)->get(route('aura.'.$post->getSlug().'.edit', ['id' => $post->id]));
 
     // Assert Response
     $response->assertStatus(403);
@@ -225,7 +226,7 @@ test('a admin can access all pages', function () {
     $user->refresh();
 
     // Access Index Page
-    $response = $this->actingAs($user)->get(route('aura.resource.index', ['slug' => $post->type]));
+    $response = $this->actingAs($user)->get(route('aura.'.$post->getSlug().'.index'));
 
     // dd($response);
 
@@ -233,13 +234,13 @@ test('a admin can access all pages', function () {
     $response->assertStatus(200);
 
     // Can Not Access Create Page
-    $response = $this->actingAs($user)->get(route('aura.resource.create', ['slug' => $post->type]));
+    $response = $this->actingAs($user)->get(route('aura.'.$post->getSlug().'.create'));
 
     // Assert Response
     $response->assertStatus(200);
 
     // Can Not Access Edit Page
-    $response = $this->actingAs($user)->get(route('aura.resource.edit', ['slug' => $post->type, 'id' => $post->id]));
+    $response = $this->actingAs($user)->get(route('aura.'.$post->getSlug().'.edit', ['id' => $post->id]));
 
     // Assert Response
     $response->assertStatus(200);
@@ -287,19 +288,19 @@ test('scoped posts', function () {
     // $this->withoutExceptionHandling();
 
     // Access Index Page
-    $response = $this->actingAs($user)->get(route('aura.resource.index', ['slug' => $post->type]));
+    $response = $this->actingAs($user)->get(route('aura.'.$post->getSlug().'.index'));
 
     // Assert Response
     $response->assertStatus(200);
 
     // Can Access Edit Page of Post 1
-    $response = $this->actingAs($user)->get(route('aura.resource.edit', ['slug' => $post->type, 'id' => $post->id]));
+    $response = $this->actingAs($user)->get(route('aura.'.$post->getSlug().'.edit', ['id' => $post->id]));
 
     // Assert Response
     $response->assertStatus(200);
 
     // Can not access Edit Page of Post 2
-    $response = $this->actingAs($user)->get(route('aura.resource.edit', ['slug' => $post2->type, 'id' => $post2->id]));
+    $response = $this->actingAs($user)->get(route('aura.'.$post2->getSlug().'.edit', ['id' => $post2->id]));
 
     // Assert Response is unauthorized
     $response->assertStatus(403);
@@ -307,13 +308,13 @@ test('scoped posts', function () {
     // User 2
 
     // Can not access Edit Page of Post 1
-    $response = $this->actingAs($user2)->get(route('aura.resource.edit', ['slug' => $post->type, 'id' => $post->id]));
+    $response = $this->actingAs($user2)->get(route('aura.'.$post->getSlug().'.edit', ['id' => $post->id]));
 
     // Assert Response
     $response->assertStatus(403);
 
     // User 2 can Edit Post 2
-    $response = $this->actingAs($user2)->get(route('aura.resource.edit', ['slug' => $post2->type, 'id' => $post2->id]));
+    $response = $this->actingAs($user2)->get(route('aura.'.$post2->getSlug().'.edit', ['id' => $post2->id]));
 
     // Assert Response
     $response->assertStatus(200);
@@ -349,20 +350,20 @@ test('a admin can access users', function () {
     $this->assertTrue($user->roles->contains('slug', 'admin'));
 
     // Access Index Page
-    $response = $this->actingAs($user)->get(route('aura.resource.index', ['slug' => 'User']));
+    $response = $this->actingAs($user)->get(route('aura.user.index'));
 
     // Assert Response
     $response->assertStatus(200);
 
     // Can Access Create Page
-    $response = $this->actingAs($user)->get(route('aura.resource.create', ['slug' => 'User']));
+    $response = $this->actingAs($user)->get(route('aura.user.create'));
     // Assert Response
     $response->assertStatus(200);
 
     $newUser = User::factory()->create();
 
     // Can Access Edit Page
-    $response = $this->actingAs($user)->get(route('aura.resource.edit', ['slug' => 'User', 'id' => $newUser->id]));
+    $response = $this->actingAs($user)->get(route('aura.user.edit', ['id' => $newUser->id]));
 
     // Assert Response
     $response->assertStatus(200);
@@ -392,7 +393,7 @@ test('scoped query on index page', function () {
     $otherPosts = Post::factory()->count(2)->create();
 
     // Make the request
-    $response = $this->get(route('aura.resource.index', ['slug' => 'Post']));
+    $response = $this->get(route('aura.post.index'));
 
     // Assert the response
     $response->assertStatus(200);
@@ -428,8 +429,11 @@ test('user can only delete his own posts', function () {
     $userPost = Post::factory()->create(['user_id' => $user->id]);
     $otherPost = Post::factory()->create();
 
+    Aura::fake();
+    Aura::setModel($userPost);
+
     // Attempt to delete user's own post
-    Livewire::test(Edit::class, ['slug' => 'Post', 'id' => $userPost->id])
+    Livewire::test(Edit::class, ['id' => $userPost->id])
         ->call('singleAction', 'delete')
         ->assertDispatched('notify')
         ->assertSuccessful();
