@@ -1,9 +1,10 @@
 <?php
 
-use Aura\Base\Livewire\Table\Table;
-use Aura\Base\Resources\Post;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
+use Illuminate\Support\Str;
+use Aura\Base\Resources\Post;
+use Aura\Base\Livewire\Table\Table;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
 
@@ -14,7 +15,7 @@ beforeEach(function () {
 
 test('table can be paginated', function () {
     // Create 21 posts using the Post factory
-    Post::factory()->count(21)->create();
+    Post::factory()->count(21)->create(['title' => Str::slug(fake()->words(5, true))]);
 
     // Assert Posts are created
     expect(Post::count())->toBe(21);
