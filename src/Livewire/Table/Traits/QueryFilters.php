@@ -241,6 +241,9 @@ protected function applyStandardMetaFilter(Builder $query, array $filter): void
 
     protected function applyTableFieldFilter(Builder $query, array $filter): Builder
     {
+        if (is_array($filter['value'])) {
+            $filter['value'] = implode(',', $filter['value']);
+        }
         switch ($filter['operator']) {
             case 'contains':
                 $query->where($filter['name'], 'like', '%'.$filter['value'].'%');

@@ -47,7 +47,7 @@
     <p class="block mt-6 font-semibold">{{ __('Custom Filters') }}</p>
 
     @foreach($filters['custom'] as $groupKey => $group)
-    <div class="p-4 mt-4 bg-white rounded-md border border-gray-200 shadow-sm dark:bg-gray-800 dark:border-gray-700">
+    <div class="px-3 py-3 mt-4 bg-white rounded-md border border-gray-200 shadow-sm dark:bg-gray-800 dark:border-gray-700">
         <div class="flex justify-between items-center mb-2">
             <div class="text-base font-semibold">
                 @if($groupKey > 0)
@@ -57,16 +57,18 @@
                         size="xs"
                     />
                 @else
-                    {{ __('Filter Group') }} {{ $groupKey + 1 }}
+                    <span class="text-sm">{{ __('Filter Group') }} {{ $groupKey + 1 }}</span>
                 @endif
             </div>
-            <x-aura::button.transparent size="xs" wire:click="removeFilterGroup({{ $groupKey }})">
-                <x-aura::icon class="text-red-600" icon="close" size="xs"/>
+            <div class="mr-2">
+                <x-aura::button.transparent size="icon-xs" wire:click="removeFilterGroup({{ $groupKey }})">
+                <x-aura::icon class="text-red-600" icon="trash" size="xs"/>
             </x-aura::button.transparent>
+            </div>
         </div>
 
         @foreach($group['filters'] as $filterKey => $filter)
-        <div class="p-2 mt-2 bg-gray-100 rounded dark:bg-gray-700">
+        <div class="p-2 mt-2 bg-gray-50 rounded border border-gray-200/50 dark:bg-gray-700">
             <div class="flex space-x-1">
                 @if($filterKey > 0)
                 <div class="w-16 shrink-0">
@@ -98,12 +100,12 @@
                 </div>
 
 
-                <x-aura::button.transparent size="xs" wire:click="removeFilter({{ $groupKey }}, {{ $filterKey }})">
-                    <x-aura::icon class="text-red-600" icon="close" size="xs"/>
+                <x-aura::button.transparent size="icon-xs" wire:click="removeFilter({{ $groupKey }}, {{ $filterKey }})">
+                    <x-aura::icon class="text-red-600" icon="trash" size="xs"/>
                 </x-aura::button.transparent>
             </div>
 
-            <div class="w-full">
+            <div class="mt-1 w-full">
                 <div class="w-full">
                     @php
                             $fieldType = $this->fieldsForFilter[$filters['custom'][$groupKey]['filters'][$filterKey]['name']]['type'];
@@ -125,7 +127,9 @@
                                 ];
                             @endphp
 
-                            <x-dynamic-component :component="$field['field']->filter()" :field="$field" wire:key="test2" model="filters.custom.{{ $groupKey }}.filters.{{ $filterKey }}.value" size="xs" />
+                            <div>
+                                <x-dynamic-component :component="$field['field']->filter()" :field="$field" wire:key="test2" model="filters.custom.{{ $groupKey }}.filters.{{ $filterKey }}.value" size="xs" />
+                            </div>
 
                         @elseif($fieldType === 'Tags')
                             <div class="flex flex-wrap gap-2">
