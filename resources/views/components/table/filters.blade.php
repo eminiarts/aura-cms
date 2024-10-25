@@ -125,7 +125,7 @@
                                 ];
                             @endphp
 
-                            <x-dynamic-component :component="$field['field']->filter()" :field="$field" wire:key="test2" model="filters.custom.{{ $groupKey }}.filters.{{ $filterKey }}.value" />
+                            <x-dynamic-component :component="$field['field']->filter()" :field="$field" wire:key="test2" model="filters.custom.{{ $groupKey }}.filters.{{ $filterKey }}.value" size="xs" />
 
                         @elseif($fieldType === 'Tags')
                             <div class="flex flex-wrap gap-2">

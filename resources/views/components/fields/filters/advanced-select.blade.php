@@ -1,4 +1,4 @@
-@aware(['model' => null])
+@aware(['model' => null, 'size' => 'default'])
 
 @php
     // Api from Field is more important than from Field Class
@@ -9,6 +9,7 @@
 
     // Multiple from Field is more important than from Field Class
     $multiple = true;
+
 
     if ($api) {
         $values = [];
@@ -34,6 +35,17 @@
 
         .shadow-item {
             opacity: 0.4;
+        }
+
+        /* Add styles for xs size */
+        .aura-input-xs {
+            font-size: 0.75rem;
+            line-height: 1rem;
+        }
+        .aura-input-xs .draggable-selectmany-item {
+            padding-top: 0.125rem;
+            padding-bottom: 0.125rem;
+            font-size: 0.65rem;
         }
     </style>
 
@@ -64,6 +76,8 @@
 
         boundStopDragging: null,
         boundMoveItem: null,
+
+        size: @js($size),
 
         updateSelectedItemsOrder() {
             const newOrder = Array.from(this.$refs.selectedItemsContainer.querySelectorAll('.draggable-selectmany-item')).map(item => parseInt(item.getAttribute('data-id')));
@@ -348,10 +362,14 @@
         @keydown.left.stop.prevent="focusPrevious" @keydown.escape.stop.prevent="toggleListbox"
         @click.away="closeListbox()">
 
-        <div class="relative p-0 w-full bg-transparent border-0 aura-input">
+        <div class="relative p-0 w-full bg-transparent border-0 aura-input" :class="{ 'aura-input-xs': size === 'xs' }">
             <label class="sr-only">{{ __('Select Entry') }}</label>
             <button type="button"
-                class="bg-white relative flex items-center justify-between w-full px-3 pt-1 pb-0 border rounded-lg shadow-xs appearance-none min-h-[2.625rem] border-gray-500/30 focus:border-primary-300 focus:outline-none ring-gray-900/10 focus:ring focus:ring-primary-300 focus:ring-opacity-50 dark:focus:ring-primary-500 dark:focus:ring-opacity-50 dark:bg-gray-900 dark:border-gray-700"
+                class="flex relative justify-between items-center w-full bg-white border appearance-none shadow-xs border-gray-500/30 focus:border-primary-300 focus:outline-none ring-gray-900/10 focus:ring focus:ring-primary-300 focus:ring-opacity-50 dark:focus:ring-primary-500 dark:focus:ring-opacity-50 dark:bg-gray-900 dark:border-gray-700"
+                :class="{
+                    'min-h-[2.625rem] px-3 pt-1 pb-0 rounded-lg': size === 'default',
+                    'min-h-[2rem] px-1 pt-1 pb-0 rounded-md': size === 'xs'
+                }"
                 x-ref="listboxButton" @click="toggleListbox">
 
                 {{-- <pre x-html="value"></pre> --}}
@@ -425,19 +443,17 @@
                 </template>
 
                 <!-- Heroicons up/down -->
-                <div class="shrink-0">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"
-                        class="w-5 h-5 text-gray-500 shrink-0">
-                        <path fill-rule="evenodd"
-                            d="M10 3a.75.75 0 01.55.24l3.25 3.5a.75.75 0 11-1.1 1.02L10 4.852 7.3 7.76a.75.75 0 01-1.1-1.02l3.25-3.5A.75.75 0 0110 3zm-3.76 9.2a.75.75 0 011.06.04l2.7 2.908 2.7-2.908a.75.75 0 111.1 1.02l-3.25 3.5a.75.75 0 01-1.1 0l-3.25-3.5a.75.75 0 01.04-1.06z"
-                            clip-rule="evenodd" />
+                <div class="flex absolute inset-y-0 right-0 items-center px-2 pointer-events-none shrink-0">
+                    <svg class="text-gray-400" :class="{ 'w-4 h-4': size === 'xs', 'w-5 h-5': size === 'default' }" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 15L12 18.75 15.75 15m-7.5-6L12 5.25 15.75 9" />
                     </svg>
                 </div>
             </button>
 
             <template x-if="showListbox">
                 <ul x-ref="listbox" x-transition.origin.top x-cloak
-                    class="overflow-y-auto absolute left-0 z-10 mt-2 w-full max-h-96 bg-white rounded-md border divide-y shadow-md origin-top outline-none divide-gray-500/30 border-gray-500/30 dark:border-gray-700 dark:bg-gray-900 dark:divide-gray-700">
+                    class="overflow-y-auto absolute left-0 z-10 mt-2 w-full max-h-96 bg-white rounded-md border divide-y shadow-md origin-top outline-none divide-gray-500/30 border-gray-500/30 dark:border-gray-700 dark:bg-gray-900 dark:divide-gray-700"
+                    :class="{ 'text-xs': size === 'xs' }">
                     <template x-if="searchable">
                         <li class="border-none">
                             <div>
@@ -495,12 +511,5 @@
             </template>
         </div>
 
-        @if ($create)
-            <button
-                wire:click="$dispatch('openModal', { component: 'aura::post-create-modal', arguments: { type: '{{ $field['resource'] }}', params: { 'for': '{{ $field['slug'] }}' } }})"
-                class="text-sm cursor-pointer text-bold">
-                + {{ __('Create') }}
-            </button>
-        @endif
     </div>
 </div>
