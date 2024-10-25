@@ -38,10 +38,10 @@
                 </p>
                 <div class="flex justify-between items-center mt-1">
                     <p class="text-xs text-gray-500 dark:text-gray-400">
-                        {{ $row->mime_type ?? 'Unknown' }}
+                        {{ $row->readable_mime_type }}
                     </p>
                     <p class="text-xs text-gray-500 dark:text-gray-400">
-                        {{ $row->size }}
+                        {{ $row->readable_filesize }}
                     </p>
                 </div>
             </div>
