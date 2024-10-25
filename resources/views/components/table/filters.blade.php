@@ -69,27 +69,33 @@
         <div class="p-2 mt-2 bg-gray-100 rounded dark:bg-gray-700">
             <div class="flex space-x-1">
                 @if($filterKey > 0)
-                <x-aura::input.select
-                    wire:model="filters.custom.{{ $groupKey }}.filters.{{ $filterKey }}.main_operator"
-                    :options="['and' => __('AND'), 'or' => __('OR')]"
-                    size="xs"
-                />
+                <div class="w-16 shrink-0">
+                    <x-aura::input.select
+                        wire:model="filters.custom.{{ $groupKey }}.filters.{{ $filterKey }}.main_operator"
+                        :options="['and' => __('AND'), 'or' => __('OR')]"
+                        size="xs"
+                    />
+                </div>
                 @endif
-                <x-aura::input.select
-                    wire:model="filters.custom.{{ $groupKey }}.filters.{{ $filterKey }}.name"
-                    wire:change="$refresh"
-                    :options="collect($this->fieldsForFilter)->mapWithKeys(function ($field, $slug) {
-                        return [$slug => $field['name']];
-                    })->toArray()"
-                    size="xs"
-                />
-                <x-aura::input.select
-                    wire:model="filters.custom.{{ $groupKey }}.filters.{{ $filterKey }}.operator"
-                    :options="isset($filter['name']) && isset($this->fieldsForFilter[$filter['name']])
-                        ? $this->fieldsForFilter[$filter['name']]['filterOptions']
-                        : []"
-                    size="xs"
-                />
+                <div class="flex-1">
+                    <x-aura::input.select
+                        wire:model="filters.custom.{{ $groupKey }}.filters.{{ $filterKey }}.name"
+                        wire:change="$refresh"
+                        :options="collect($this->fieldsForFilter)->mapWithKeys(function ($field, $slug) {
+                            return [$slug => $field['name']];
+                        })->toArray()"
+                        size="xs"
+                    />
+                </div>
+                <div class="flex-1">
+                    <x-aura::input.select
+                        wire:model="filters.custom.{{ $groupKey }}.filters.{{ $filterKey }}.operator"
+                        :options="isset($filter['name']) && isset($this->fieldsForFilter[$filter['name']])
+                            ? $this->fieldsForFilter[$filter['name']]['filterOptions']
+                            : []"
+                        size="xs"
+                    />
+                </div>
 
 
                 <x-aura::button.transparent size="xs" wire:click="removeFilter({{ $groupKey }}, {{ $filterKey }})">

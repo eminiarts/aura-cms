@@ -13,8 +13,6 @@ trait QueryFilters
         return $query;
     }
 
-    ray('custom filters', $this->filters['custom']);
-
     $groups = $this->filters['custom'];
 
     // Start by building the conditions from the first group
@@ -74,7 +72,6 @@ trait QueryFilters
         $method = $groupOperator === 'or' ? 'orWhere' : 'where';
 
         $query->$method(function ($subQuery) use ($filter) {
-            ray('applyFilter', $filter);
             $this->applyFilterBasedOnType($subQuery, $filter);
         });
     }
