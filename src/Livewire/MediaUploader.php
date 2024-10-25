@@ -53,16 +53,8 @@ class MediaUploader extends Component
 
     public function updatedMedia()
     {
-        // Add validation for maximum files
-        if (count($this->media) > self::MAX_FILES) {
-            $this->addError('media', __('Maximum of :count files can be uploaded at once', ['count' => self::MAX_FILES]));
-            $this->media = [];
-            return;
-        }
-
         $this->validate([
             'media.*' => 'required|max:102400', // 100MB Max, for now
-            'media' => 'max:' . self::MAX_FILES, // Add max files validation
         ]);
 
         $attachments = [];
