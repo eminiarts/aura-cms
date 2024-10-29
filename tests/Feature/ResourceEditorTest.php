@@ -64,6 +64,8 @@ beforeEach(function () {
     $this->assertTrue($appResource->isAppResource());
     $this->assertFalse($appResource->isVendorResource());
 
+    config(['aura.features.resource_editor' => true]);
+
     Aura::fake();
     Aura::setModel($appResource);
 });
