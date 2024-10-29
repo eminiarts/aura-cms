@@ -56,6 +56,7 @@ afterEach(function () {
 it('creates a migration when fields are added', function () {
 
     config(['aura.features.custom_tables_for_resources' => 'single']);
+    config(['aura.features.resource_editor' => true]);
 
     // Manually re-register the event listeners based on the updated configuration
     $appServiceProvider = new \Aura\Base\Providers\AppServiceProvider(app());

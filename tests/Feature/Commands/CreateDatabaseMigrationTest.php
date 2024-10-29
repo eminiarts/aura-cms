@@ -21,6 +21,8 @@ beforeEach(function () {
         '--custom' => true,
     ]);
 
+    config(['aura.features.resource_editor' => true]);
+
     app('aura')::registerResources(['App\Aura\Resources\Project']);
 
     Artisan::call('cache:clear');

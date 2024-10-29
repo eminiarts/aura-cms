@@ -7,6 +7,8 @@ use Aura\Base\Resources\Team;
 use Aura\Base\Resources\User;
 use Aura\Base\Tests\TestCase;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Artisan;
+use Illuminate\Contracts\Console\Kernel;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Foundation\Testing\DatabaseMigrations;
 
@@ -53,6 +55,15 @@ function createSuperAdmin()
     $user->refresh();
 
     return $user;
+}
+function bootstrapApp()
+{
+    $app = require_once base_path('bootstrap/app.php'); // Using base_path to ensure correct location
+    $kernel = $app->make(Kernel::class);
+    $kernel->bootstrap();
+
+    // Run migrations
+    // Artisan::call('migrate:fresh', ['--force' => true]);
 }
 
 function createSuperAdminWithoutTeam()

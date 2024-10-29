@@ -10,12 +10,12 @@ use Livewire\Livewire;
 
 beforeAll(function () {
     // Ensure the environment variable is set before migrations run
-    config(['aura.teams' => false]);
+    putenv('AURA_TEAMS=false');
 });
 
 afterAll(function () {
     // Ensure the environment variable is set before migrations run
-    config(['aura.teams' => true]);
+    putenv('AURA_TEAMS=true');
 });
 
 // Before each test, create a Superadmin and login
