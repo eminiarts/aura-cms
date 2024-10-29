@@ -36,7 +36,7 @@ return [
     |
     */
 
-    'teams' => env('AURA_TEAMS', true),
+    'teams' => true,
 
     /*
     |--------------------------------------------------------------------------
@@ -148,21 +148,6 @@ return [
 
     ],
 
-
-    /*
-    |--------------------------------------------------------------------------
-    | Resource Editor
-    |--------------------------------------------------------------------------
-    |
-    | You can decide to enable or disable the migrations for custom tables
-    | that are created by the resource editor.
-    |
-    */
-
-    'resource_editor' => [
-        'enabled' => config('app.env') == 'production' ? false : true,
-        'custom_table_migrations' => false, // false, true = single (default), multiple
-    ],
 
     /*
     |--------------------------------------------------------------------------
