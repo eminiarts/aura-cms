@@ -88,7 +88,9 @@ test('edit resource can be turned off in config', function () {
 });
 
 test('edit resource can be turned on in config', function () {
-    createSuperAdmin();
+    // Create a super admin user
+    $superAdmin = createSuperAdmin();
+    $this->actingAs($superAdmin);
 
     // Enable the resource editor feature
     config(['aura.features.resource_editor' => true]);
@@ -97,10 +99,11 @@ test('edit resource can be turned on in config', function () {
 
     $this->assertTrue($config);
 
-    $this->actingAs($this->user = createSuperAdmin());
-
     // visit edit resource page
     $response = $this->get(route('aura.resource.editor', 'user'));
+
+    // Check if the user has permission to edit
+    $this->assertTrue($this->user->can('edit', User::class)); // Ensure the user can edit
 
     $response->assertOk();
 });
