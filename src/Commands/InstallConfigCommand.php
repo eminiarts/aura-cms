@@ -3,11 +3,10 @@
 namespace Aura\Base\Commands;
 
 use Illuminate\Console\Command;
-use Illuminate\Support\Facades\Config;
-use Illuminate\Support\Facades\File;
 
+use function Laravel\Prompts\ask;
+use function Laravel\Prompts\choice;
 use function Laravel\Prompts\confirm;
-use function Laravel\Prompts\select;
 
 class InstallConfigCommand extends Command
 {
@@ -17,83 +16,99 @@ class InstallConfigCommand extends Command
 
     public function handle(): int
     {
-        // Teams configuration
-        $useTeams = confirm('Do you want to use teams?', true);
-        $this->updateConfig('aura.teams', $useTeams);
+        // 1. Do you want to use teams?
+        $useTeams = confirm('Do you want to use teams?');
 
-        // Features configuration
-        $modifyFeatures = confirm('Do you want to modify default features?', false);
+        // Get the config path
+        $configPath = config_path('aura.php');
+
+        // Include the config array
+        $config = include $configPath;
+
+        // Modify the 'teams' value
+        $config['teams'] = $useTeams;
+
+        // 2. Do you want to modify default features?
+        $modifyFeatures = confirm('Do you want to modify the default features?');
+
         if ($modifyFeatures) {
-            $features = config('aura.features');
-            foreach ($features as $feature => $enabled) {
-                $features[$feature] = confirm("Enable {$feature}?", $enabled);
+            // For each feature, ask if they want to enable/disable it
+            $features = $config['features'];
+
+            foreach ($features as $feature => $value) {
+                $features[$feature] = confirm("Enable feature '{$feature}'?", $value);
             }
-            $this->updateConfig('aura.features', $features);
+
+            // Update the features in config
+            $config['features'] = $features;
         }
 
-        // Registration configuration
-        $allowRegistration = confirm('Do you want to allow registration?', true);
-        $this->updateEnv('AURA_REGISTRATION', $allowRegistration ? 'true' : 'false');
+        // 3. Do you want to allow registration?
+        $allowRegistration = confirm('Do you want to allow registration?');
 
-        // Theme configuration
-        $modifyTheme = confirm('Do you want to modify the default theme?', false);
+        // Update the env variable AURA_REGISTRATION
+        $this->setEnvValue('AURA_REGISTRATION', $allowRegistration ? 'true' : 'false');
+
+        // 4. Do you want to modify the default theme?
+        $modifyTheme = confirm('Do you want to modify the default theme?');
+
         if ($modifyTheme) {
-            $theme = config('aura.theme');
-            
-            $theme['color-palette'] = select(
-                'Select color palette:',
-                ['aura', 'blue', 'red', 'green', 'yellow', 'purple', 'pink', 'indigo']
-            );
-            
-            $theme['gray-color-palette'] = select(
-                'Select gray color palette:',
-                ['slate', 'gray', 'zinc', 'neutral', 'stone']
-            );
-            
-            $theme['darkmode-type'] = select(
-                'Select darkmode type:',
-                ['auto', 'light', 'dark']
-            );
-            
-            $theme['sidebar-size'] = select(
-                'Select sidebar size:',
-                ['standard', 'compact', 'expanded']
-            );
-            
-            $theme['sidebar-type'] = select(
-                'Select sidebar type:',
-                ['primary', 'secondary', 'transparent']
-            );
+            $theme = $config['theme'];
 
-            $this->updateConfig('aura.theme', $theme);
+            foreach ($theme as $option => $currentValue) {
+                if ($option == 'color-palette') {
+                    $choices = ['aura', 'other1', 'other2'];
+                    $theme[$option] = choice("Select value for '{$option}':", $choices, $currentValue);
+                } elseif ($option == 'gray-color-palette') {
+                    $choices = ['slate', 'gray', 'cool'];
+                    $theme[$option] = choice("Select value for '{$option}':", $choices, $currentValue);
+                } elseif ($option == 'darkmode-type') {
+                    $choices = ['auto', 'manual'];
+                    $theme[$option] = choice("Select value for '{$option}':", $choices, $currentValue);
+                } elseif (is_bool($currentValue)) {
+                    // Boolean option
+                    $theme[$option] = confirm("Enable '{$option}'?", $currentValue);
+                } else {
+                    // For other options, just ask for the value
+                    $theme[$option] = ask("Enter value for '{$option}':", $currentValue);
+                }
+            }
+
+            // Update the theme in config
+            $config['theme'] = $theme;
         }
 
-        $this->info('Aura configuration has been updated successfully!');
+        // Now, write back the config file
+        $code = '<?php' . PHP_EOL . PHP_EOL . 'return ' . var_export($config, true) . ';' . PHP_EOL;
+        file_put_contents($configPath, $code);
+
+        $this->info('Aura configuration has been updated.');
 
         return self::SUCCESS;
     }
 
-    protected function updateConfig(string $key, $value): void
+    private function setEnvValue($key, $value)
     {
-        Config::set($key, $value);
-        $this->info("Updated config: {$key}");
-    }
+        $envPath = base_path('.env');
 
-    protected function updateEnv(string $key, string $value): void
-    {
-        $path = base_path('.env');
-        
-        if (File::exists($path)) {
-            $content = File::get($path);
-            
-            if (strpos($content, $key) !== false) {
-                $content = preg_replace("/^{$key}=.*/m", "{$key}={$value}", $content);
+        if (file_exists($envPath)) {
+            // Read the .env file
+            $env = file_get_contents($envPath);
+
+            // Replace the value
+            $pattern = '/^' . preg_quote($key, '/') . '=.*/m';
+            $replacement = $key . '=' . $value;
+
+            if (preg_match($pattern, $env)) {
+                // Replace existing value
+                $env = preg_replace($pattern, $replacement, $env);
             } else {
-                $content .= "\n{$key}={$value}\n";
+                // Add new value
+                $env .= PHP_EOL . $replacement;
             }
-            
-            File::put($path, $content);
-            $this->info("Updated .env: {$key}={$value}");
+
+            // Write back to the .env file
+            file_put_contents($envPath, $env);
         }
     }
 }
