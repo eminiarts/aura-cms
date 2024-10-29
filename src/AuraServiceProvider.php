@@ -158,8 +158,7 @@ class AuraServiceProvider extends PackageServiceProvider
     {
         $package
             ->name('aura')
-            ->hasConfigFile()
-            ->hasConfigFile('aura-settings')
+            ->hasConfigFile(['aura','aura-settings'])
             ->hasViews('aura')
             ->hasAssets()
             ->hasRoutes('web')
@@ -321,7 +320,6 @@ class AuraServiceProvider extends PackageServiceProvider
 
         // dd(config('aura.resources.user'));
 
-        // dd(app('aura'));
         app('aura')::registerResources([
             config('aura.resources.attachment'),
             config('aura.resources.option'),
