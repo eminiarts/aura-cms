@@ -4,9 +4,9 @@ namespace Aura\Base\Commands;
 
 use Illuminate\Console\Command;
 
-use function Laravel\Prompts\ask;
-use function Laravel\Prompts\choice;
+use function Laravel\Prompts\select;
 use function Laravel\Prompts\confirm;
+use function Laravel\Prompts\text;
 
 class InstallConfigCommand extends Command
 {
@@ -56,21 +56,48 @@ class InstallConfigCommand extends Command
             $theme = $config['theme'];
 
             foreach ($theme as $option => $currentValue) {
+
+                if (in_array($option, ['login-bg', 'login-bg-darkmode', 'app-favicon', 'app-favicon-darkmode', 'sidebar-darkmode-type'])) {
+                    continue;
+                }
+
                 if ($option == 'color-palette') {
-                    $choices = ['aura', 'other1', 'other2'];
-                    $theme[$option] = choice("Select value for '{$option}':", $choices, $currentValue);
+                    $choices = ['aura', 'red', 'orange', 'amber', 'yellow', 'lime', 'green', 'emerald', 'teal', 'cyan', 'sky', 'blue', 'indigo', 'violet', 'purple', 'fuchsia', 'pink', 'rose', 'mountain-meadow', 'sandal', 'slate', 'gray', 'zinc', 'neutral', 'stone'];
+                    $theme[$option] = select(
+                        label: "Select value for '{$option}':",
+                        options: $choices,
+                        default: $currentValue
+                    );
                 } elseif ($option == 'gray-color-palette') {
-                    $choices = ['slate', 'gray', 'cool'];
-                    $theme[$option] = choice("Select value for '{$option}':", $choices, $currentValue);
+                    $choices = ['slate', 'purple-slate', 'gray', 'zinc', 'neutral', 'stone', 'blue', 'smaragd', 'dark-slate', 'blackout'];
+                    $theme[$option] = select(
+                        label: "Select value for '{$option}':",
+                        options: $choices,
+                        default: $currentValue
+                    );
                 } elseif ($option == 'darkmode-type') {
-                    $choices = ['auto', 'manual'];
-                    $theme[$option] = choice("Select value for '{$option}':", $choices, $currentValue);
+                    $choices = ['auto', 'light', 'dark'];
+                    $theme[$option] = select(
+                        label: "Select value for '{$option}':",
+                        options: $choices,
+                        default: $currentValue
+                    );
+                } elseif ($option == 'sidebar-size') {
+                    $choices = ['standard', 'compact'];
+                    $theme[$option] = select(
+                        label: "Select value for '{$option}':",
+                        options: $choices,
+                        default: $currentValue
+                    );
                 } elseif (is_bool($currentValue)) {
                     // Boolean option
                     $theme[$option] = confirm("Enable '{$option}'?", $currentValue);
                 } else {
                     // For other options, just ask for the value
-                    $theme[$option] = ask("Enter value for '{$option}':", $currentValue);
+                    $theme[$option] = text(
+                        label: "Enter value for '{$option}':",
+                        default: $currentValue
+                    );
                 }
             }
 
