@@ -35,6 +35,9 @@ test('resource in app can be edited', function () {
     Aura::fake();
     Aura::setModel($appResource);
 
+    // Ensure the resource editor feature is enabled
+    config(['aura.features.resource_editor' => true]);
+
     // visit edit resource page
     $response = $this->get(route('aura.resource.editor', 'resource'));
 
@@ -52,6 +55,9 @@ test('vendor resource can not be edited', function () {
     Aura::fake();
     Aura::setModel($userResource);
 
+    // Ensure the resource editor feature is enabled
+    config(['aura.features.resource_editor' => true]);
+
     // visit edit resource page
     $response = $this->get(route('aura.resource.editor', 'user'));
 
@@ -60,10 +66,10 @@ test('vendor resource can not be edited', function () {
     expect($response->exception->getMessage())->toBe('Only App resources can be edited.');
 });
 
-test('edit resource should be allowed', function () {
+test('edit resource should not be allowed', function () {
     $config = config('aura.features.resource_editor');
 
-    $this->assertTrue($config);
+    $this->assertFalse($config);
 });
 
 test('edit resource can be turned off in config', function () {
@@ -79,6 +85,24 @@ test('edit resource can be turned off in config', function () {
     $response = $this->get(route('aura.resource.editor', 'user'));
 
     $response->assertStatus(404);
+});
+
+test('edit resource can be turned on in config', function () {
+    createSuperAdmin();
+
+    // Enable the resource editor feature
+    config(['aura.features.resource_editor' => true]);
+
+    $config = config('aura.features.resource_editor');
+
+    $this->assertTrue($config);
+
+    $this->actingAs($this->user = createSuperAdmin());
+
+    // visit edit resource page
+    $response = $this->get(route('aura.resource.editor', 'user'));
+
+    $response->assertOk();
 });
 
 test('edit resource should not be available in production', function () {
