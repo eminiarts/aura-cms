@@ -32,7 +32,7 @@ class AppServiceProvider extends ServiceProvider
                     return auth()->user()->isSuperAdmin();
                 }),
             ] : null,
-            config('aura.features.theme_options') ? [
+            config('aura.features.settings') ? [
                 'icon' => "<x-aura::icon icon='config' />",
                 'name' => 'Settings',
                 'slug' => 'settings',
@@ -54,7 +54,7 @@ class AppServiceProvider extends ServiceProvider
         // Register event and listener
         // Event::listen(SaveFields::class, SyncDatabase::class);
 
-        $customTableMigrations = config('aura.resource_editor.custom_table_migrations');
+        $customTableMigrations = config('aura.features.custom_tables_for_resources');
 
         if ($customTableMigrations === 'multiple') {
             // Create New Migrations every time a new field is saved

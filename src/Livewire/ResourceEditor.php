@@ -143,7 +143,7 @@ class ResourceEditor extends Component
 
     public function checkAuthorization()
     {
-        if (config('aura.resource_editor.enabled') == false) {
+        if (config('aura.features.resource_editor') == false) {
             abort(404);
         }
 

@@ -67,7 +67,7 @@ test('Settings Component can be rendered', function () {
 
     $this->withoutExceptionHandling();
 
-    expect(config('aura.features.theme_options'))->toBeTrue();
+    expect(config('aura.features.settings'))->toBeTrue();
 
     expect(auth()->user()->isSuperAdmin())->toBeTrue();
 

@@ -448,7 +448,7 @@ class Settings extends Component
 
     public function mount()
     {
-        abort_unless(config('aura.features.theme_options'), 404);
+        abort_unless(config('aura.features.settings'), 404);
 
         abort_unless(auth()->user()->isSuperAdmin(), 403);
 
