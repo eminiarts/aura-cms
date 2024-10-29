@@ -29,7 +29,7 @@ class ExtendUserModel extends Command
                     // Remove any incorrect `use` statements and add the correct one
                     $content = preg_replace('/use .+Aura\\\\Base\\\\Resources\\\\User as AuraUser;/m', '', $content);
                     $content = str_replace('extends Authenticatable', 'extends AuraUser', $content);
-                    $content = preg_replace('/^namespace [^;]+;/m', "$0\nuse Aura\\Base\\Models\\User as AuraUser;", $content);
+                    $content = preg_replace('/^namespace [^;]+;/m', "$0\nuse Aura\\Base\\Resources\\User as AuraUser;", $content);
 
                     $filesystem->put($userModelPath, $content);
 

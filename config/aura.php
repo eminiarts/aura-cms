@@ -117,8 +117,6 @@ return [
         'notifications' => true,
 
         'plugins' => true,
-        'flows' => false,
-        'forms' => true,
 
         'theme_options' => true,
 
@@ -128,7 +126,6 @@ return [
 
         'resource_view' => true,
         'resource_edit' => true,
-
     ],
 
     'auth' => [
