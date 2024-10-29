@@ -56,7 +56,7 @@ it('creates a custom resource with custom table', function () {
 
 it('resource editor is accessible', function () {
 
-    expect(config('aura.resource_editor.enabled'))->toBeTrue();
+    expect(config('aura.features.resource_editor'))->toBeTrue();
 
     $classExists = class_exists('App\Aura\Resources\Project');
 
@@ -72,7 +72,7 @@ it('resource editor is accessible', function () {
 });
 
 it('saveFields listens for ModifyDatabaseMigration', function () {
-    config(['aura.resource_editor.custom_table_migrations' => 'single']);
+    config(['aura.features.custom_tables_for_resources' => 'single']);
 
     Event::fake();
 
@@ -104,7 +104,7 @@ it('saveFields listens for ModifyDatabaseMigration', function () {
 });
 
 it('saveFields listens for CreateDatabaseMigration', function () {
-    config(['aura.resource_editor.custom_table_migrations' => 'multiple']);
+    config(['aura.features.custom_tables_for_resources' => 'multiple']);
 
     Event::fake();
 
@@ -137,7 +137,7 @@ it('saveFields listens for CreateDatabaseMigration', function () {
 
 it('creates a migration when fields are added', function () {
 
-    config(['aura.resource_editor.custom_table_migrations' => 'single']);
+    config(['aura.features.custom_tables_for_resources' => 'single']);
 
     // Manually re-register the event listeners based on the updated configuration
     $appServiceProvider = new \Aura\Base\Providers\AppServiceProvider(app());

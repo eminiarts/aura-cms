@@ -50,7 +50,7 @@ class Profile extends Component
 
     public function checkAuthorization()
     {
-        if (config('aura.features.user_profile') == false) {
+        if (config('aura.features.profile') == false) {
             abort(403, 'User profile is turned off.');
         }
     }

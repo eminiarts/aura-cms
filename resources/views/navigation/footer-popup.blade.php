@@ -33,7 +33,7 @@
         @endif
     @endif
 
-  @if(config('aura.features.user_profile'))
+  @if(config('aura.features.profile'))
   <div class="block px-4 py-2 text-xs font-semibold text-gray-400 dark:text-gray-400">
       {{ __('Manage Profile') }}
   </div>

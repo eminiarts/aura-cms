@@ -12,7 +12,7 @@
         </x-aura::breadcrumbs>
 
         <div>
-            @if (config('aura.resource_editor.enabled'))
+            @if (config('aura.features.resource_editor'))
                     @if ($resource->isAppResource())
                         <x-aura::button.transparent :href="route('aura.resource.editor', $slug)" size="">
                             <x-aura::icon icon="cog" class="mr-2" />

@@ -3,7 +3,7 @@
 return [
     /*
     |--------------------------------------------------------------------------
-    | Aura Path
+    | Path
     |--------------------------------------------------------------------------
     |
     | The default is `admin` but you can change it to whatever works best and
@@ -15,19 +15,7 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    | Aura Core Path
-    |--------------------------------------------------------------------------
-    |
-    | This is the path which AURA will use to load its core routes and assets.
-    | You may change it if it conflicts with your other routes.
-    |
-    */
-
-    'core_path' => env('AURA_CORE_PATH', 'aura'),
-
-    /*
-    |--------------------------------------------------------------------------
-    | Aura Domain
+    | Domain
     |--------------------------------------------------------------------------
     |
     | You may change the domain where AURA should be active. If the domain
@@ -39,7 +27,7 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    | Teams & Multi-tenancy
+    | Teams
     |--------------------------------------------------------------------------
     |
     | If you change this to false, you will not be able to create teams.
@@ -51,21 +39,28 @@ return [
     'teams' => env('AURA_TEAMS', true),
 
     /*
-   |--------------------------------------------------------------------------
-   | Livewire Components
-   |--------------------------------------------------------------------------
-   |
-   | You can customise the Livewire components that AURA uses to render
-   |
-   */
-
-    'app_name' => env('APP_NAME'),
+    |--------------------------------------------------------------------------
+    | Components
+    |--------------------------------------------------------------------------
+    |
+    | You can customise the Livewire components that Aura uses
+    |
+    */
 
     'components' => [
         'dashboard' => Aura\Base\Livewire\Dashboard::class,
         'profile' => Aura\Base\Livewire\Profile::class,
         'settings' => Aura\Base\Livewire\Settings::class,
     ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Resources
+    |--------------------------------------------------------------------------
+    |
+    | You can customise the resources that Aura uses
+    |
+    */
 
     'resources' => [
         'user' => Aura\Base\Resources\User::class,
@@ -79,6 +74,15 @@ return [
         'category' => Aura\Base\Resources\Category::class,
         'tag' => Aura\Base\Resources\Tag::class,
     ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Theme
+    |--------------------------------------------------------------------------
+    |
+    | You can customise the Aura theme
+    |
+    */
 
     'theme' => [
         'color-palette' => 'aura',
@@ -96,6 +100,15 @@ return [
         'app-favicon-darkmode' => false,
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Views
+    |--------------------------------------------------------------------------
+    |
+    | You can customise the views that Aura uses
+    |
+    */
+
     'views' => [
         'layout' => 'aura::layouts.app',
         'login-layout' => 'aura::layout.login',
@@ -108,34 +121,74 @@ return [
         'logo' => 'aura::application-logo',
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Features
+    |--------------------------------------------------------------------------
+    |
+    | You can customise the features that Aura uses
+    |
+    */
+
     'features' => [
         'global_search' => true,
         'bookmarks' => true,
-
         'last_visited_pages' => true,
-
         'notifications' => true,
-
         'plugins' => true,
-
-        'theme_options' => true,
-
-        'user_profile' => true,
-
+        'settings' => true,
+        'profile' => true,
         'create_resource' => true,
-
         'resource_view' => true,
         'resource_edit' => true,
+        'resource_editor' => config('app.env') == 'local' ? true : false,
+        'custom_tables_for_resources' => false, // default = false
+        // By default, resources are using the posts and meta table.
+        // If you want to use custom tables by default, you can set this to true. 
+
     ],
 
-    'auth' => [
-        'registration' => true,
 
+    /*
+    |--------------------------------------------------------------------------
+    | Resource Editor
+    |--------------------------------------------------------------------------
+    |
+    | You can decide to enable or disable the migrations for custom tables
+    | that are created by the resource editor.
+    |
+    */
+
+    'resource_editor' => [
+        'enabled' => config('app.env') == 'production' ? false : true,
+        'custom_table_migrations' => false, // false, true = single (default), multiple
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Auth
+    |--------------------------------------------------------------------------
+    |
+    | You can customise the auth features that Aura uses
+    |
+    */
+
+    'auth' => [
+        'registration' => env('AURA_REGISTRATION', true),
         'redirect' => '/admin',
         '2fa' => true,
         'user_invitations' => true,
         'create_teams' => true,
     ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Media
+    |--------------------------------------------------------------------------
+    |
+    | You can customise the media features that Aura uses
+    |
+    */
 
     'media' => [
         'disk' => 'public',
@@ -161,24 +214,11 @@ return [
         ],
     ],
 
-    /*
-    |--------------------------------------------------------------------------
-    | Resource Editor
-    |--------------------------------------------------------------------------
-    |
-    | You can decide to enable or disable the migrations for custom tables
-    | that are created by the resource editor.
-    |
-    */
-
-    'resource_editor' => [
-        'enabled' => config('app.env') == 'production' ? false : true,
-        'custom_table_migrations' => false, // false, true = single (default), multiple
-    ],
+    
 
     /*
     |--------------------------------------------------------------------------
-    | Resources
+    | Default App Paths
     |--------------------------------------------------------------------------
     |
     | This is the namespace and directory that Aura will automatically
