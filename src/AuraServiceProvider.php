@@ -196,7 +196,7 @@ class AuraServiceProvider extends PackageServiceProvider
                     ->endWith(function (InstallCommand $command) {
                         $command->call('aura:extend-user-model');
 
-                        if ($command->confirm('Do you want to create a user?', true) || User::count() === 0) {
+                        if ($command->confirm('Do you want to create a user?', true)) {
                             $command->call('aura:user');
                         }
                     });
