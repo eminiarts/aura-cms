@@ -9,13 +9,11 @@ use Illuminate\Support\Facades\Schema;
 use Livewire\Livewire;
 
 beforeAll(function () {
-    // Ensure the environment variable is set before migrations run
-    config(['aura.teams' => false]);
+    putenv('AURA_TEAMS=false');
 });
 
 afterAll(function () {
-    // Ensure the environment variable is set before migrations run
-    config(['aura.teams' => true]);
+    putenv('AURA_TEAMS=true');
 });
 
 // Before each test, create a Superadmin and login
@@ -24,10 +22,6 @@ beforeEach(function () {
 });
 
 test('Aura without teams', function () {
-    // ray()->clearScreen();
-    // Set config to not use teams
-    config(['aura.teams' => false]);
-
     expect(config('aura.teams'))->toBeFalse();
 
     // Refresh the database using the RefreshDatabase trait

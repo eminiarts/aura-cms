@@ -1,20 +1,17 @@
 <?php
 
-use Aura\Base\Resources\Option;
-use Aura\Base\Resources\Permission;
 use Aura\Base\Resources\Post;
 use Aura\Base\Resources\Role;
 use Aura\Base\Resources\User;
-
+use Aura\Base\Resources\Option;
+use Aura\Base\Resources\Permission;
+use Illuminate\Support\Facades\Artisan;
 beforeAll(function () {
-    // Ensure the environment variable is set before migrations run
-    
-    config(['aura.teams' => false]);
+    putenv('AURA_TEAMS=false');
 });
 
 afterAll(function () {
-    // Ensure the environment variable is set before migrations run
-    config(['aura.teams' => true]);
+    putenv('AURA_TEAMS=true');
 });
 
 // Before each test, create a Superadmin and login

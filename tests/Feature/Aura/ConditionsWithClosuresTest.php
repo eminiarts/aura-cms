@@ -7,10 +7,10 @@ use Aura\Base\Resource;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
 
-uses(RefreshDatabase::class);
 
 // Before each test, create a Superadmin and login
 beforeEach(function () {
+    config(['aura.features.resource_editor' => true]); // Set config value before database is seeded
     $this->actingAs($this->user = createSuperAdmin());
 });
 
