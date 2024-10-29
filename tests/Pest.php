@@ -54,10 +54,6 @@ function createSuperAdmin()
 
 function createSuperAdminWithoutTeam()
 {
-    // Dump and die the AURA_TEAMS environment variable
-    // Dump and die if there is a user_meta table
-    // Dump and die all tables
-
     $user = User::factory()->create();
 
     auth()->login($user);

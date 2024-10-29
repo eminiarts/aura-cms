@@ -11,16 +11,16 @@ use Aura\Base\Livewire\Resource\View;
 use Aura\Base\Livewire\ResourceEditor;
 use Illuminate\Support\Facades\Route;
 
-Route::middleware(config('aura.middleware.aura-guest'))->group(function () {
+Route::middleware(config('aura-settings.middleware.aura-guest'))->group(function () {
     require __DIR__.'/auth.php';
 });
 
-Route::middleware(config('aura.middleware.aura-admin'))->group(function () {
+Route::middleware(config('aura-settings.middleware.aura-admin'))->group(function () {
     Route::impersonate();
 });
 
 Route::domain(config('aura.domain'))
-    ->middleware(config('aura.middleware.aura-admin'))
+    ->middleware(config('aura-settings.middleware.aura-admin'))
     ->name('aura.')
     ->group(function () {
         // Route::prefix(config('aura.core_path'))->group(function () {

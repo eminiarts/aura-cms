@@ -4,9 +4,10 @@ namespace Aura\Base\Commands;
 
 use Illuminate\Console\Command;
 
+use function Laravel\Prompts\text;
 use function Laravel\Prompts\select;
 use function Laravel\Prompts\confirm;
-use function Laravel\Prompts\text;
+use Symfony\Component\Process\Process;
 
 class InstallConfigCommand extends Command
 {
@@ -89,6 +90,13 @@ class InstallConfigCommand extends Command
                         options: $choices,
                         default: $currentValue
                     );
+                } elseif ($option == 'sidebar-type') {
+                    $choices = ['primary', 'light', 'dark'];
+                    $theme[$option] = select(
+                        label: "Select value for '{$option}':",
+                        options: $choices,
+                        default: $currentValue
+                    );
                 } elseif (is_bool($currentValue)) {
                     // Boolean option
                     $theme[$option] = confirm("Enable '{$option}'?", $currentValue);
@@ -106,10 +114,33 @@ class InstallConfigCommand extends Command
         }
 
         // Now, write back the config file
-        $code = '<?php' . PHP_EOL . PHP_EOL . 'return ' . var_export($config, true) . ';' . PHP_EOL;
+        $arrayExport = var_export($config, true);
+        
+        // Remove numeric array keys
+        $arrayExport = preg_replace("/[0-9]+ => /", "", $arrayExport);
+        
+        $code = '<?php' . PHP_EOL . PHP_EOL . 'return ' . str_replace(
+            ['array (', ')', "[\n    ]"],
+            ['[', ']', '[]'],
+            $arrayExport
+        ) . ';' . PHP_EOL;
+        
         file_put_contents($configPath, $code);
 
         $this->info('Aura configuration has been updated.');
+
+         // Run Pint on the file after the file has been written
+        $process = new Process(['vendor/bin/pint', $configPath]);
+        $process->run();
+
+        // Check if the process was successful
+        if (!$process->isSuccessful()) {
+            $this->error('Pint formatting failed: ' . $process->getErrorOutput());
+        } else {
+            $this->info('Pint formatting completed.');
+        }
+        
+    
 
         return self::SUCCESS;
     }

@@ -159,6 +159,7 @@ class AuraServiceProvider extends PackageServiceProvider
         $package
             ->name('aura')
             ->hasConfigFile()
+            ->hasConfigFile('aura-settings')
             ->hasViews('aura')
             ->hasAssets()
             ->hasRoutes('web')
