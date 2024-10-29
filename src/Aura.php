@@ -149,24 +149,24 @@ class Aura
      */
     public function getAppResources()
     {
-        $path = config('aura.paths.resources.path');
+        $path = config('aura-settings.paths.resources.path');
 
         if (! file_exists($path)) {
             return [];
         }
 
-        return $this->getAppFiles($path, $filter = 'Resource', $namespace = config('aura.paths.resources.namespace'));
+        return $this->getAppFiles($path, $filter = 'Resource', $namespace = config('aura-settings.paths.resources.namespace'));
     }
 
     public function getAppWidgets()
     {
-        $path = config('aura.widgets.path');
+        $path = config('aura-settings.widgets.path');
 
         if (! file_exists($path)) {
             return [];
         }
 
-        return $this->getAppFiles($path, $filter = 'Widget', $namespace = config('aura.widgets.namespace'));
+        return $this->getAppFiles($path, $filter = 'Widget', $namespace = config('aura-settings.widgets.namespace'));
     }
 
     public function getFields(): array
@@ -363,7 +363,7 @@ class Aura
     public function registerRoutes($slug)
     {
         Route::domain(config('aura.domain'))
-            ->middleware(config('aura.middleware.aura-admin'))
+            ->middleware(config('aura-settings.middleware.aura-admin'))
             ->prefix(config('aura.path')) // This is likely 'admin' from your config
             ->name('aura.')
             ->group(function () use ($slug) {

@@ -34,6 +34,11 @@ class TestCase extends Orchestra
     {
         config()->set('database.default', 'testing');
 
+        // config(['aura.teams' => true]);
+
+        // load the aura config
+        config()->set('aura', require __DIR__.'/../config/aura.php');
+
         // without exception handling
         // $this->withoutExceptionHandling();
 

@@ -3485,13 +3485,13 @@ class Aura
      */
     public function getAppResources()
     {
-        $path = config('aura.paths.resources.path');
+        $path = config('aura-settings.paths.resources.path');
 
         if (! file_exists($path)) {
             return [];
         }
 
-        return $this->getAppFiles($path, $filter = 'Resource', $namespace = config('aura.paths.resources.namespace'));
+        return $this->getAppFiles($path, $filter = 'Resource', $namespace = config('aura-settings.paths.resources.namespace'));
     }
 
     /**
@@ -3513,13 +3513,13 @@ class Aura
 
     public function getAppWidgets()
     {
-        $path = config('aura.widgets.path');
+        $path = config('aura-settings.widgets.path');
 
         if (! file_exists($path)) {
             return [];
         }
 
-        return $this->getAppFiles($path, $filter = 'Widget', $namespace = config('aura.widgets.namespace'));
+        return $this->getAppFiles($path, $filter = 'Widget', $namespace = config('aura-settings.widgets.namespace'));
     }
 
     public function getFields(): array
@@ -3948,11 +3948,11 @@ class AuraServiceProvider extends PackageServiceProvider
 
     public function bootLivewireComponents()
     {
-        Livewire::component('app.aura.widgets.post-stats', \Aura\Base\Widgets\PostStats::class);
-        // Livewire::component('app.aura.widgets.total-posts', \Aura\Base\Widgets\TotalPosts::class);
-        Livewire::component('app.aura.widgets.post-chart', \Aura\Base\Widgets\PostChart::class);
-        Livewire::component('app.aura.widgets.sum-posts-number', \Aura\Base\Widgets\SumPostsNumber::class);
-        Livewire::component('app.aura.widgets.avg-posts-number', \Aura\Base\Widgets\AvgPostsNumber::class);
+        Livewire::component('app.aura-settings.widgets.post-stats', \Aura\Base\Widgets\PostStats::class);
+        // Livewire::component('app.aura-settings.widgets.total-posts', \Aura\Base\Widgets\TotalPosts::class);
+        Livewire::component('app.aura-settings.widgets.post-chart', \Aura\Base\Widgets\PostChart::class);
+        Livewire::component('app.aura-settings.widgets.sum-posts-number', \Aura\Base\Widgets\SumPostsNumber::class);
+        Livewire::component('app.aura-settings.widgets.avg-posts-number', \Aura\Base\Widgets\AvgPostsNumber::class);
         Livewire::component('aura::resource-index', Index::class);
         Livewire::component('aura::resource-create', Create::class);
         Livewire::component('aura::resource-create-modal', CreateModal::class);

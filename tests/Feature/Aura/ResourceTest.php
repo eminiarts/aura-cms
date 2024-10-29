@@ -49,7 +49,7 @@ test('Aura getAppResources()', function () {
 });
 
 test('Aura config of Resources', function () {
-    $path = config('aura.paths.resources.path');
+    $path = config('aura-settings.paths.resources.path');
 
     expect($path)->toBe(app_path('Aura/Resources'));
 });
