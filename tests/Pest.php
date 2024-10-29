@@ -1,12 +1,14 @@
 <?php
 
+use Aura\Base\Facades\Aura;
 use Aura\Base\Resources\Post;
 use Aura\Base\Resources\Role;
 use Aura\Base\Resources\Team;
 use Aura\Base\Resources\User;
 use Aura\Base\Tests\TestCase;
-use Illuminate\Foundation\Testing\DatabaseMigrations;
+use Illuminate\Support\Facades\Route;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Foundation\Testing\DatabaseMigrations;
 
 uses(TestCase::class)->in(__DIR__);
 
@@ -43,6 +45,7 @@ function createSuperAdmin()
     $user = User::factory()->create();
 
     auth()->login($user);
+
 
     // Create Team
     $team = Team::factory()->create();
