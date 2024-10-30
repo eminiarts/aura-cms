@@ -215,19 +215,34 @@ protected function applyStandardMetaFilter(Builder $query, array $filter): void
 {
     if (isset($filter['options']) && isset($filter['options']['resource_type'])) {
 
+        // dd($filter);
+
         $resourceType = $filter['options']['resource_type'];
         $values = (array) $filter['value'];
+
         $slug = $filter['name'];
         $relatedType = get_class($query->getModel());
 
-        $query->whereIn('id', function ($subQuery) use ($resourceType, $values, $slug, $relatedType) {
-            $subQuery->select('related_id')
-                ->from('post_relations')
-                ->where('post_relations.related_type', $relatedType)
-                ->where('post_relations.resource_type', $resourceType)
-                ->where('post_relations.slug', $slug)
-                ->whereIn('post_relations.resource_id', $values);
-        });
+        // dd($resourceType, $values, $filter, $relatedType);
+        if ($filter['operator'] === 'contains') {
+            $query->whereIn('id', function ($subQuery) use ($resourceType, $values, $slug, $relatedType) {
+                $subQuery->select('related_id')
+                    ->from('post_relations')
+                    ->where('post_relations.related_type', $relatedType)
+                    ->where('post_relations.resource_type', $resourceType)
+                    ->where('post_relations.slug', $slug)
+                    ->whereIn('post_relations.resource_id', $values);
+            });
+        } elseif ($filter['operator'] === 'does_not_contain') {
+            $query->whereNotIn('id', function ($subQuery) use ($resourceType, $values, $slug, $relatedType) {
+                $subQuery->select('related_id')
+                    ->from('post_relations')
+                    ->where('post_relations.related_type', $relatedType)
+                    ->where('post_relations.resource_type', $resourceType)
+                    ->where('post_relations.slug', $slug)
+                    ->whereIn('post_relations.resource_id', $values);
+            });
+        }
 
         return;
     }
@@ -332,28 +347,6 @@ protected function applyStandardMetaFilter(Builder $query, array $filter): void
                 $query->whereNotNull($filter['name'])
                     ->where($filter['name'], '!=', '');
                 break;
-        }
-
-        return $query;
-    }
-
-    protected function applyTaxonomyFilter(Builder $query): Builder
-    {
-        if ($this->filters['taxonomy']) {
-            foreach ($this->filters['taxonomy'] as $key => $taxonomy) {
-                if (! $taxonomy) {
-                    continue;
-                }
-
-                $query->whereHas('meta', function ($subQuery) use ($key, $taxonomy) {
-                    $subQuery->where('key', $key)
-                        ->where(function ($subQuery) use ($taxonomy) {
-                            foreach ($taxonomy as $value) {
-                                $subQuery->orWhereRaw('JSON_CONTAINS(CAST(value as JSON), ?)', [(string) $value]);
-                            }
-                        });
-                });
-            }
         }
 
         return $query;
