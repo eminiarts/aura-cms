@@ -24,26 +24,6 @@
 
     <hr class="my-4 border-t border-gray-400/30 dark:border-gray-700">
 
-    @forelse($this->model->taxonomyFields() as $field)
-    <div>
-        <h4 class="my-4 font-semibold text-primary-600">{{ $field['name'] }}</h4>
-        <div class="flex flex-col space-y-2">
-            @if(array_key_exists('resource', $field))
-                @foreach (app($field['resource'])->get() as $taxonomy)
-                <div class="flex items-center">
-                    <x-aura::input.checkbox wire:model="filters.taxonomy.{{ $field['slug'] }}" name="taxonomy_{{ $taxonomy->id }}" id="taxonomy_{{ $taxonomy->id }}" :label="$taxonomy->title" :value="$taxonomy->id" />
-                </div>
-                @endforeach
-            @else
-                {{-- The 'resource' key is not defined in the $field array --}}
-            @endif
-        </div>
-    </div>
-    @empty
-    @endforelse
-
-    {{-- <hr class="my-4 border-t border-gray-400/30 dark:border-gray-700"> --}}
-
     <p class="block mt-6 font-semibold">{{ __('Custom Filters') }}</p>
 
     @foreach($filters['custom'] as $groupKey => $group)
@@ -136,10 +116,13 @@
                                 @php
                                     $field = $this->getFields[$filters['custom'][$groupKey]['filters'][$filterKey]['name']];
 
-                                    $form = [
-                                        'fields' => [
-                                            $field['slug'] => [184],
-                                        ],
+                                    // $form = [
+                                    //     'fields' => [
+                                    //         $field['slug'] => [184],
+                                    //     ],
+                                    // ];
+                                    $this->filters['custom'][$groupKey]['filters'][$filterKey]['options'] = [
+                                        'resource_type' => $field['resource'],
                                     ];
                                     $mode = 'create';
                                 @endphp

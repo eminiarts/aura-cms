@@ -141,11 +141,11 @@ class Table extends Component
     {
         // return redirect to post view
         if ($data['action'] == 'view') {
-            return redirect()->route('aura.resource.view', ['slug' => $this->model()->getType(), 'id' => $data['id']]);
+            return redirect()->route('aura.'.$this->model()->getSlug().'.view', ['id' => $data['id']]);
         }
         // edit
         if ($data['action'] == 'edit') {
-            return redirect()->route('aura.resource.edit', ['slug' => $this->model()->getType(), 'id' => $data['id']]);
+            return redirect()->route('aura.'.$this->model()->getSlug().'.edit', ['id' => $data['id']]);
         }
 
         // if custom
@@ -292,8 +292,6 @@ class Table extends Component
                 $this->columns = $this->model()->getDefaultColumns();
             }
         }
-
-        $this->setTaxonomyFilters();
     }
 
     public function openBulkActionModal($action, $data)
@@ -323,6 +321,7 @@ class Table extends Component
      */
     public function render()
     {
+        ray('render', $this->search, count($this->rows()), $this->rows()->toArray());
         return view($this->model->tableComponentView(), [
             'parent' => $this->parent,
             'rows' => $this->rows(),
@@ -488,7 +487,6 @@ class Table extends Component
         $query = $this->query();
 
         if ($this->filters) {
-            $query = $this->applyTaxonomyFilter($query);
             $query = $this->applyCustomFilter($query);
         }
 

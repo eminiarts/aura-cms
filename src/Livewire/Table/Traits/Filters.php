@@ -18,7 +18,6 @@ trait Filters
      */
     // #[Reactive]
     public $filters = [
-        'taxonomy' => [],
         'custom' => [],
     ];
 
@@ -154,7 +153,6 @@ trait Filters
     public function resetFilter()
     {
         $this->reset('filters');
-        $this->setTaxonomyFilters();
     }
 
     /**
@@ -201,16 +199,6 @@ trait Filters
 
     }
 
-    /**
-     * Set taxonomy filters.
-     */
-    public function setTaxonomyFilters()
-    {
-        $this->filters['taxonomy'] = $this->model?->taxonomyFields()
-            ->values()
-            ->mapWithKeys(fn ($field) => [$field['slug'] => []])
-            ->toArray();
-    }
 
     public function updatedFiltersCustom($value, $key)
     {
@@ -235,6 +223,7 @@ trait Filters
     public function updatedSelectedFilter($filter)
     {
         if ($filter) {
+            $this->reset('filters');
             $this->filters = $this->userFilters[$filter];
         } else {
             $this->reset('filters');

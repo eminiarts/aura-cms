@@ -4,6 +4,7 @@ use Aura\Base\Facades\Aura;
 use Aura\Base\Livewire\Table\Table;
 use Aura\Base\Resource;
 use Aura\Base\Resources\Post;
+use Aura\Base\Resources\Tag;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
 
@@ -41,6 +42,19 @@ class TableFilterModel extends Resource
             [
                 'name' => 'Tags',
                 'slug' => 'tags',
+                'type' => 'Aura\\Base\\Fields\\Tags',
+                'resource' => 'Aura\\Base\\Resources\\Tag',
+                'create' => true,
+                'validation' => '',
+                'conditional_logic' => [],
+                'wrapper' => '',
+                'on_index' => true,
+                'on_forms' => true,
+                'on_view' => true,
+            ],
+            [
+                'name' => 'Other Tags',
+                'slug' => 'other_tags',
                 'type' => 'Aura\\Base\\Fields\\Tags',
                 'resource' => 'Aura\\Base\\Resources\\Tag',
                 'create' => true,
@@ -90,8 +104,10 @@ test('table filter', function () {
         ],
     ]);
 
+    // $tags = Tag::get();
+    // dd($tags->pluck('title'));
+
     expect($post->isMetaField('meta'))->toBeTrue();
-    expect($post->isTaxonomyField('meta'))->toBeFalse();
 
     // Visit the Post Index Page
     $component = Livewire::test(Table::class, ['query' => null, 'model' => $post])
@@ -101,15 +117,9 @@ test('table filter', function () {
 
     // Filters should be "taxonomy" => array:2 [ "Tag" => [] ] "custom" => [] ]
     expect($component->filters)->toBeArray();
-    expect($component->filters)->toHaveCount(2);
-    expect($component->filters)->toHaveKey('taxonomy');
+    expect($component->filters)->toHaveCount(1);
     expect($component->filters)->toHaveKey('custom');
 
-    // Taxonomy Filters should be "Tag" => []
-    expect($component->filters['taxonomy'])->toBeArray();
-    expect($component->filters['taxonomy'])->toHaveCount(1);
-    expect($component->filters['taxonomy'])->not()->toHaveKey('categories');
-    expect($component->filters['taxonomy'])->toHaveKey('tags');
 });
 
 test('table filter - custom filter - contains', function () {
@@ -186,6 +196,111 @@ test('table filter - custom filter - contains', function () {
     // // Second Binding should be "C%"
     // expect($component->rowsQuery->getBindings()[1])->toBe('%C%');
 });
+
+test('table filter - custom tags filter - contains', function () {
+    // Create a Posts
+    $post = TableFilterModel::create([
+        'title' => 'Test Post',
+        'content' => 'Test Content A',
+        'type' => 'Post',
+        'status' => 'publish',
+        'meta' => 'B',
+        'tags' => [
+            'Tag 1', 'Tag 2', 'Tag 3',
+        ],
+    ]);
+
+    $post2 = TableFilterModel::create([
+        'title' => 'Test Post 2',
+        'content' => 'Test Content B',
+        'type' => 'Post',
+        'status' => 'publish',
+        'meta' => 'A',
+        'tags' => [
+            'Tag 3', 'Tag 4', 'Tag 5',
+        ],
+        'other_tags' => [2],
+    ]);
+
+    $post3 = TableFilterModel::create([
+        'title' => 'Test Post 3',
+        'content' => 'Test Content C',
+        'type' => 'Post',
+        'status' => 'publish',
+        'meta' => 'C',
+        'other_tags' => [3],
+    ]);
+
+    $tags = Tag::get();
+
+
+    // Visit the Post Index Page
+    $component = Livewire::test(Table::class, ['query' => null, 'model' => $post]);
+
+    // set custom filter to "A"
+    $component->call('addFilterGroup');
+
+    // $component->filter['custom'] should have 1 item
+    expect($component->filters['custom'])->toHaveCount(1);
+
+    expect($component->filters['custom'][0]['filters'])->toHaveCount(1);
+    // expect the first item to have the keys: 'name', 'value', 'operator'
+    expect($component->filters['custom'][0]['filters'][0])->toHaveKeys(['name', 'value', 'operator']);
+
+    // On the component, set $filter['custom'][0]['value'] to "A"
+    $component->set('filters.custom.0.filters.0.name', 'tags');
+    $component->set('filters.custom.0.filters.0.value', $tags->first()->id);
+
+    expect($component->filters['custom'][0]['filters'][0]['name'])->toBe('tags');
+    expect($component->filters['custom'][0]['filters'][0]['operator'])->toBe('contains');
+    expect($component->filters['custom'][0]['filters'][0]['value'])->toBe($tags->first()->id);
+
+    $component->assertViewHas('rows', function ($rows) use ($post) {
+        return count($rows->items()) === 1 && $rows->items()[0]->id === $post->id;
+    });
+
+    // dd($tags->pluck('id'), $tags->first()->id, $tags->last()->id);
+
+    // Change Filter to "B"
+    $component->set('filters.custom.0.filters.0.value', $tags->last()->id);
+
+    $component->assertViewHas('rows', function ($rows) use ($post2) {
+        return count($rows->items()) === 1 && $rows->items()[0]->id === $post2->id;
+    });
+
+    $tag7 = Tag::create([
+        'title' => 'Tag 7',
+    ]);
+
+    // dd('here', $rows->items());
+    // Change Filter to "C"
+    $component->set('filters.custom.0.filters.0.value', $tag7->id);
+    $component->assertViewHas('rows', function ($rows) {
+        return count($rows->items()) === 0;
+    });
+
+    // remove tags filter and expect all posts to be returned
+    $component->set('filters.custom.0.filters.0.value', null);
+    $component->assertViewHas('rows', function ($rows) {
+        return count($rows->items()) === 3;
+    });
+
+    // expect other_tags filter to be added
+    $component->call('addFilterGroup');
+    $component->set('filters.custom.1.filters.0.name', 'other_tags');
+    $component->set('filters.custom.1.filters.0.value', $tags->first()->id);
+    expect($component->filters['custom'][1]['filters'][0]['name'])->toBe('other_tags');
+
+    $component->assertViewHas('rows', function ($rows) {
+        return count($rows->items()) === 1;
+    });
+
+    // expect post2 to be returned
+    $component->assertViewHas('rows', function ($rows) use ($post2) {
+        return count($rows->items()) === 1 && $rows->items()[0]->id === $post2->id;
+    });
+});
+
 
 test('table filter - custom filter - does_not_contain', function () {
     $post = TableFilterModel::create([
