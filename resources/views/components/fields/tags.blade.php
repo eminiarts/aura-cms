@@ -7,18 +7,12 @@ if (key_exists('resource', $field) ) {
         return ['id' => $tag->id, 'value' => $tag->title()];
     })->toArray();
 }
+
 @endphp
 
-<script>
-    // Dynamically load Tagify if it hasn't been loaded yet
-    console.log('tagify', window.tagifyLoaded);
-    if (!window.tagifyLoaded) {
-        window.tagifyLoaded = true;
-        const script = document.createElement('script');
-        script.src = '{{ Vite::asset('resources/js/tagify.js', 'vendor/aura/libs') }}';
-        document.head.appendChild(script);
-    }
-</script>
+@assets
+        @vite(['resources/js/tagify.js'], 'vendor/aura/libs')
+@endassets
 
 <x-aura::fields.wrapper :field="$field">
 <div

@@ -34,8 +34,6 @@
     </div>
 </x-aura::fields.wrapper>
 
-@once
-    @push('scripts')
-        @vite(['resources/js/quill.js'], 'vendor/aura/libs')
-    @endpush
-@endonce
+@assets
+    @vite(['resources/js/quill.js'], 'vendor/aura/libs')
+@endassets

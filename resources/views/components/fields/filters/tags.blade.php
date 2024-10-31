@@ -13,11 +13,9 @@ if (key_exists('resource', $field) ) {
 // dump($this->model->users);
 @endphp
 
-@once
-    @push('scripts')
-        @vite(['resources/js/tagify.js'], 'vendor/aura/libs')
-    @endpush
-@endonce
+@assets
+    @vite(['resources/js/tagify.js'], 'vendor/aura/libs')
+@endassets
 
 @aware(['model' => null, 'size' => 'xs'])
 

@@ -3,6 +3,11 @@
     @php
         // ray($this->filters)
     @endphp
+    @once
+    @push('scripts')
+        @vite(['resources/js/tagify.js'], 'vendor/aura/libs')
+    @endpush
+@endonce
     <div>
         {{-- select dropdown with filters @foreach($this->userFilters as $userFilter)--}}
         <x-aura::input.select
@@ -28,6 +33,11 @@
 
     @foreach($filters['custom'] as $groupKey => $group)
     <div class="px-3 py-3 mt-4 bg-white rounded-md border border-gray-200 shadow-sm dark:bg-gray-800 dark:border-gray-700">
+        @once
+        @script
+            @vite(['resources/js/tagify.js'], 'vendor/aura/libs')
+        @endscript
+        @endonce
         <div class="flex justify-between items-center mb-2">
             <div class="text-base font-semibold">
                 @if($groupKey > 0)

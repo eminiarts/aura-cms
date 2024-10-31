@@ -116,6 +116,7 @@ class Edit extends Component
 
     public function save()
     {
+        ray('saving', $this->form);
         $this->validate();
 
         // ray()->clearScreen();

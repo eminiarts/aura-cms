@@ -33,11 +33,9 @@
                 autocomplete="{{ optional($field)['autocomplete'] ?? '' }}"></x-aura::input>
         @endif
     @else
-                    @once
-                        @push('scripts')
-                                @vite(['resources/js/flatpickr.js'], 'vendor/aura/libs')
-                        @endpush
-                    @endonce
+        @assets
+            @vite(['resources/js/flatpickr.js'], 'vendor/aura/libs')
+        @endassets
 
 
         <div x-data x-init="
