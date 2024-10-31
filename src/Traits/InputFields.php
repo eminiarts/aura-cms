@@ -3,19 +3,20 @@
 namespace Aura\Base\Traits;
 
 use Aura\Base\ConditionalLogic;
-use Aura\Base\Pipeline\AddIdsToFields;
-use Aura\Base\Pipeline\ApplyParentConditionalLogic;
-use Aura\Base\Pipeline\ApplyParentDisplayAttributes;
 use Aura\Base\Pipeline\ApplyTabs;
-use Aura\Base\Pipeline\BuildTreeFromFields;
-use Aura\Base\Pipeline\DoNotDeferConditionalLogic;
-use Aura\Base\Pipeline\FilterCreateFields;
+use Aura\Base\Pipeline\MapFields;
+use Aura\Base\Pipeline\ApplyWrappers;
+use Aura\Base\Pipeline\AddIdsToFields;
+use Aura\Base\Pipeline\TransformSlugs;
 use Aura\Base\Pipeline\FilterEditFields;
 use Aura\Base\Pipeline\FilterViewFields;
-use Aura\Base\Pipeline\MapFields;
+use Aura\Base\Pipeline\FilterCreateFields;
+use Aura\Base\Pipeline\BuildTreeFromFields;
 use Aura\Base\Pipeline\RemoveClosureAttributes;
 use Aura\Base\Pipeline\RemoveValidationAttribute;
-use Aura\Base\Pipeline\TransformSlugs;
+use Aura\Base\Pipeline\DoNotDeferConditionalLogic;
+use Aura\Base\Pipeline\ApplyParentConditionalLogic;
+use Aura\Base\Pipeline\ApplyParentDisplayAttributes;
 
 trait InputFields
 {
@@ -260,6 +261,7 @@ trait InputFields
             $pipes = [
                 ApplyTabs::class,
                 MapFields::class,
+                ApplyWrappers::class,
                 AddIdsToFields::class,
                 ApplyParentConditionalLogic::class,
                 DoNotDeferConditionalLogic::class,
@@ -323,6 +325,7 @@ trait InputFields
     public function viewFields()
     {
         return $this->sendThroughPipeline($this->mappedFields(), [
+            ApplyWrappers::class,
             ApplyTabs::class,
             MapFields::class,
             AddIdsToFields::class,
