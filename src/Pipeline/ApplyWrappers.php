@@ -10,36 +10,31 @@ class ApplyWrappers implements Pipe
     public function handle($fields, Closure $next)
     {
         $newFields = [];
-        $i = 0;
-        $fieldsCount = count($fields);
+        $addedWrappers = [];
 
-        while ($i < $fieldsCount) {
-            $wrapperFields = [];
-            $field = $fields[$i];
+        foreach ($fields as $field) {
+            $wrapperInfo = $this->getFieldWrapper($field);
 
-            // Start a new wrapper
-            $wrapperFields[] = $field;
-            $i++;
+            if ($wrapperInfo && !in_array($wrapperInfo['type'], $addedWrappers)) {
+                // Add the wrapper field once
+                $wrapperField = [
+                    'label' => $wrapperInfo['type'],
+                    'name'  => $wrapperInfo['type'],
+                    'type'  => $wrapperInfo['type'],
+                    'slug'  => Str::slug($wrapperInfo['type']),
+                    'field' => app($wrapperInfo['type']),
+                ];
 
-            // Collect fields until we find a field with 'wrap' set to true
-            while ($i < $fieldsCount) {
-                if (isset($fields[$i]['wrap']) && $fields[$i]['wrap'] === true) {
-                    // Start a new wrapper in the next iteration
-                    break;
+                if ($wrapperInfo['class']) {
+                    $wrapperField['field'] = new $wrapperInfo['class']();
                 }
-                $wrapperFields[] = $fields[$i];
-                $i++;
+
+                $newFields[] = $wrapperField;
+                $addedWrappers[] = $wrapperInfo['type'];
             }
 
-            $wrapperField = [
-                'label'  => 'Wrapper',
-                'name'   => 'Wrapper',
-                'type'   => 'Wrapper',
-                'fields' => $wrapperFields,
-                'slug'   => 'wrapper',
-            ];
-
-            $newFields[] = $wrapperField;
+            // Add the field as is
+            $newFields[] = $field;
         }
 
         // Return a collection if the input was a collection
@@ -47,7 +42,56 @@ class ApplyWrappers implements Pipe
             $newFields = collect($newFields);
         }
 
+        // For debugging
+        ray($newFields);
+
         // Pass the new fields to the next pipe
         return $next($newFields);
+    }
+
+    private function getFieldWrapper($field)
+    {
+        if (isset($field['wrapper']) && $field['wrapper']) {
+            $wrapperType = $field['wrapper'];
+            $wrapperFieldClass = $field['wrapperFieldClass'] ?? null;
+            $wrapperSlug = $field['wrapperSlug'] ?? $this->getWrapperSlug($wrapperType);
+            return [
+                'type'  => $wrapperType,
+                'class' => $wrapperFieldClass,
+                'slug'  => $wrapperSlug,
+            ];
+        } elseif (isset($field['field'])) {
+            $fieldInstance = $field['field'];
+            if (isset($fieldInstance->wrapper) && $fieldInstance->wrapper) {
+                $wrapperType = $fieldInstance->wrapper;
+                $wrapperFieldClass = $fieldInstance->wrapperFieldClass ?? null;
+                $wrapperSlug = $fieldInstance->wrapperSlug ?? $this->getWrapperSlug($wrapperType);
+                return [
+                    'type'  => $wrapperType,
+                    'class' => $wrapperFieldClass,
+                    'slug'  => $wrapperSlug,
+                ];
+            }
+        } elseif (isset($field['type']) && class_exists($field['type'])) {
+            $fieldInstance = new $field['type']();
+            if (isset($fieldInstance->wrapper) && $fieldInstance->wrapper) {
+                $wrapperType = $fieldInstance->wrapper;
+                $wrapperFieldClass = $fieldInstance->wrapperFieldClass ?? null;
+                $wrapperSlug = $fieldInstance->wrapperSlug ?? $this->getWrapperSlug($wrapperType);
+                return [
+                    'type'  => $wrapperType,
+                    'class' => $wrapperFieldClass,
+                    'slug'  => $wrapperSlug,
+                ];
+            }
+        }
+
+        return null;
+    }
+
+    private function getWrapperSlug($wrapperType)
+    {
+        // Generate slug for wrapper
+        return strtolower(str_replace('\\', '-', $wrapperType));
     }
 }
