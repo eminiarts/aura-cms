@@ -108,53 +108,50 @@
     },
 
     toggleRow(event, id) {
-        this.$nextTick(() => {
-            // Convert id to string for consistent comparison
-            const idStr = id.toString();
-
-            if (event.shiftKey && this.lastSelectedId !== null) {
-                // Get indexes for shift-select range
-                const currentIndex = this.rows.indexOf(id);
-                const lastIndex = this.rows.indexOf(this.lastSelectedId);
+    this.$nextTick(() => {
+        if (event.shiftKey && this.lastSelectedId !== null) {
+            // Handle shift-select range
+            const currentIndex = this.rows.indexOf(id);
+            const lastIndex = this.rows.indexOf(this.lastSelectedId);
+            
+            if (currentIndex !== -1 && lastIndex !== -1) {
+                const start = Math.min(lastIndex, currentIndex);
+                const end = Math.max(lastIndex, currentIndex);
                 
-                if (currentIndex !== -1 && lastIndex !== -1) {
-                    const start = Math.min(lastIndex, currentIndex);
-                    const end = Math.max(lastIndex, currentIndex);
-                    
-                    // Get range of IDs between last selected and current
-                    const rangeIds = this.rows.slice(start, end + 1).map(id => id.toString());
+                const rangeIds = this.rows.slice(start, end + 1);
 
-                    if (this.selected.includes(idStr)) {
-                        // If current row is selected, deselect the range
-                        this.selected = this.selected.filter(id => !rangeIds.includes(id));
-                    } else {
-                        // If current row is not selected, select the range
-                        this.selected = [...new Set([...this.selected, ...rangeIds])];
-                    }
-                }
-            } else {
-                // Regular single row toggle
-                if (this.selected.includes(idStr)) {
-                    // Deselect if already selected
-                    this.selected = this.selected.filter(selectedId => selectedId !== idStr);
+                // Determine whether to select or deselect based on the current state of the clicked checkbox
+                const shouldSelect = !this.selected.includes(id);
+
+                if (shouldSelect) {
+                    // Select the range
+                    this.selected = [...new Set([...this.selected, ...rangeIds])];
                 } else {
-                    // Select if not already selected
-                    this.selected.push(idStr);
+                    // Deselect the range
+                    this.selected = this.selected.filter(selectedId => !rangeIds.includes(selectedId));
                 }
             }
+        } else {
+            // Regular single row toggle
+            if (this.selected.includes(id)) {
+                // Deselect if already selected
+                this.selected = this.selected.filter(selectedId => selectedId !== id);
+            } else {
+                // Select if not already selected
+                this.selected.push(id);
+            }
+        }
 
-            // Update lastSelectedId for future shift-selects
-            this.lastSelectedId = id;
+        // Update lastSelectedId for future shift-selects
+        this.lastSelectedId = id;
 
-            // Update selectAll status
-            this.selectAll = this.selected.length === this.total;
+        // Update selectAll status
+        this.selectAll = this.selected.length === this.total;
 
-            // Update selectPage status
-            this.selectPage = this.rows.every(rowId => 
-                this.selected.includes(rowId.toString())
-            );
-        });
-    }
+        // Update selectPage status
+        this.selectPage = this.rows.every(rowId => this.selected.includes(rowId));
+    });
+}
 }">
     {{-- Be aware that this file opens a div which closes at the end --}}
     @include('aura::components.table.context-menu')
