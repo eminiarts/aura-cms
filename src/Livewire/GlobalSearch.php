@@ -2,8 +2,9 @@
 
 namespace Aura\Base\Livewire;
 
-use Aura\Base\Resources\User;
 use Livewire\Component;
+use Aura\Base\Resources\User;
+use Illuminate\Support\Facades\DB;
 
 class GlobalSearch extends Component
 {
@@ -23,16 +24,12 @@ class GlobalSearch extends Component
 
         // Initialize search results array
 
-        // ray($resources);
-
         // filter out flows and flow_logs from resources
         $resources = array_filter($resources, function ($resource) {
             if ($resource === null) {
                 return false;
             }
 
-            // ray($resource);
-            // ray($resource::getSlug());
             if ($resource::getGlobalSearch() === false) {
                 return false;
             }
@@ -59,9 +56,9 @@ class GlobalSearch extends Component
             });
 
             $results = $model->select('posts.*')
-                ->leftJoin('meta', function ($join) use ($metaFields) {
+                ->leftJoin('meta', function ($join) use ($metaFields, $resource) {
                     $join->on('posts.id', '=', 'meta.metable_id')
-                        ->where('meta.metable_type', 'App\\Models\\Post')
+                        ->where('meta.metable_type', $resource)
                         ->whereIn('meta.key', $metaFields);
                 })
                 ->where(function ($query) {
@@ -85,9 +82,9 @@ class GlobalSearch extends Component
         $searchResults = $searchResults->flatten()->map(function ($item) {
             // return route aura.resource.view with slug and id
             if (isset($item->type)) {
-                $item['view_url'] = route('aura.resource.view', ['slug' => $item->type, 'id' => $item->id]);
+                $item['view_url'] = route('aura.'.strtolower($item->type).'.view', ['id' => $item->id]);
             } else {
-                $item['view_url'] = route('aura.resource.view', ['slug' => 'user', 'id' => $item->id]);
+                $item['view_url'] = route('aura.user.view', ['id' => $item->id]);
             }
 
             return $item;
