@@ -19,26 +19,18 @@ class ApplyWrappers implements Pipe
                 continue;
             }
 
-            $wrapperInfo = $this->getFieldWrapper($field);
-
-            
-
-            if ($wrapperInfo && !in_array($wrapperInfo['type'], $addedWrappers)) {
+            if (!in_array($field['field']->wrapper, $addedWrappers)) {
                 // Add the wrapper field once
                 $wrapperField = [
-                    'label' => $wrapperInfo['type'],
-                    'name'  => $wrapperInfo['type'],
-                    'type'  => $wrapperInfo['type'],
-                    'slug'  => Str::slug($wrapperInfo['type']),
-                    'field' => app($wrapperInfo['type']),
+                    'label' => $field['field']->wrapper,
+                    'name'  => $field['field']->wrapper,
+                    'type'  => $field['field']->wrapper,
+                    'slug'  => $field['field']->wrapperSlug ?? Str::slug($field['field']->wrapper),
+                    'field' => app($field['field']->wrapper),
                 ];
 
-                if ($wrapperInfo['class']) {
-                    $wrapperField['field'] = new $wrapperInfo['class']();
-                }
-
                 $newFields[] = $wrapperField;
-                $addedWrappers[] = $wrapperInfo['type'];
+                $addedWrappers[] = $field['field']->wrapper;
             }
 
             // Add the field as is
@@ -55,14 +47,5 @@ class ApplyWrappers implements Pipe
 
         // Pass the new fields to the next pipe
         return $next($newFields);
-    }
-
-    private function getFieldWrapper($field)
-    {
-        return [
-            'type'  => $field['field']->wrapper,
-            'class' => $field['field']->wrapperFieldClass ?? null,
-            'slug'  => $field['field']->wrapperSlug ?? Str::slug($field['field']->wrapper),
-        ];
     }
 }   
