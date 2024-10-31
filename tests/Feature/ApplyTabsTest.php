@@ -50,10 +50,33 @@ test('fields get grouped when field group is true', function () {
     $tabs = $model->getGroupedFields();
 
     $this->assertCount(1, $tabs);
-    $this->assertEquals($tabs[0]['name'], 'Tabs');
-    $this->assertCount(2, $tabs[0]['fields']);
-    $this->assertEquals($tabs[0]['fields'][0]['name'], 'Tab 1');
-    $this->assertEquals($tabs[0]['fields'][0]['type'], 'Aura\\Base\\Fields\\Tab');
-    $this->assertCount(1, $tabs[0]['fields'][0]['fields']);
-    $this->assertCount(1, $tabs[0]['fields'][1]['fields']);
+   
+    expect($tabs[0])->toHaveKeys([
+        'label', 'name', 'type', 'slug', 'field', '_id', '_parent_id', 
+        'conditional_logic', 'fields'
+    ]);
+
+    // Check wrapper field
+    expect($tabs[0]['label'])->toBe('Aura\Base\Fields\Tabs');
+    expect($tabs[0]['type'])->toBe('Aura\Base\Fields\Tabs');
+    expect($tabs[0]['slug'])->toBe('aurabasefieldstabs');
+    expect($tabs[0]['_id'])->toBe(1);
+    expect($tabs[0]['_parent_id'])->toBeNull();
+
+    // Check tabs array
+    expect($tabs[0]['fields'])->toHaveCount(2);
+
+    // Check first tab
+    expect($tabs[0]['fields'][0]['label'])->toBe('Tab 1');
+    expect($tabs[0]['fields'][0]['type'])->toBe('Aura\Base\Fields\Tab');
+    expect($tabs[0]['fields'][0]['field_type'])->toBe('tab');
+    expect($tabs[0]['fields'][0]['_parent_id'])->toBe(1);
+    expect($tabs[0]['fields'][0]['fields'])->toHaveCount(1);
+
+    // Check second tab
+    expect($tabs[0]['fields'][1]['label'])->toBe('Tab 2');
+    expect($tabs[0]['fields'][1]['type'])->toBe('Aura\Base\Fields\Tab');
+    expect($tabs[0]['fields'][1]['field_type'])->toBe('tab');
+    expect($tabs[0]['fields'][1]['_parent_id'])->toBe(1);
+    expect($tabs[0]['fields'][1]['fields'])->toHaveCount(1);
 });

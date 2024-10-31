@@ -55,12 +55,59 @@ test('fields get grouped when field group is true', function () {
 
     $fields = $model->getGroupedFields();
 
-    $this->assertCount(1, $fields);
-    $this->assertEquals($fields[0]['name'], 'Panel 1');
-    $this->assertCount(1, $fields[0]['fields']);
-    $this->assertEquals($fields[0]['fields'][0]['name'], 'Tabs');
-    $this->assertEquals($fields[0]['fields'][0]['fields'][0]['name'], 'Tab 1 in Panel');
-    $this->assertEquals($fields[0]['fields'][0]['fields'][1]['name'], 'Tab 2 in Panel');
-    $this->assertEquals($fields[0]['fields'][0]['fields'][0]['fields'][0]['name'], 'Text 1');
-    $this->assertEquals($fields[0]['fields'][0]['fields'][1]['fields'][0]['name'], 'Text 2');
+
+    expect($fields)->toHaveCount(1);
+
+    // Check panel wrapper
+    expect($fields[0])->toHaveKeys([
+        'label', 'name', 'type', 'slug', 'field', '_id', '_parent_id', 
+        'conditional_logic', 'fields'
+    ]);
+    expect($fields[0]['label'])->toBe('Panel 1');
+    expect($fields[0]['type'])->toBe('Aura\\Base\\Fields\\Panel');
+    expect($fields[0]['slug'])->toBe('panel');
+    expect($fields[0]['field_type'])->toBe('panel');
+    expect($fields[0]['_id'])->toBe(1);
+    expect($fields[0]['_parent_id'])->toBeNull();
+
+    // Check tabs wrapper inside panel
+    expect($fields[0]['fields'])->toHaveCount(1);
+    expect($fields[0]['fields'][0]['label'])->toBe('Aura\\Base\\Fields\\Tabs');
+    expect($fields[0]['fields'][0]['type'])->toBe('Aura\\Base\\Fields\\Tabs');
+    expect($fields[0]['fields'][0]['slug'])->toBe('aurabasefieldstabs');
+    expect($fields[0]['fields'][0]['_id'])->toBe(2);
+    expect($fields[0]['fields'][0]['_parent_id'])->toBe(1);
+
+    // Check tabs array
+    expect($fields[0]['fields'][0]['fields'])->toHaveCount(2);
+
+    // Check first tab
+    expect($fields[0]['fields'][0]['fields'][0]['label'])->toBe('Tab 1 in Panel');
+    expect($fields[0]['fields'][0]['fields'][0]['type'])->toBe('Aura\\Base\\Fields\\Tab');
+    expect($fields[0]['fields'][0]['fields'][0]['field_type'])->toBe('tab');
+    expect($fields[0]['fields'][0]['fields'][0]['_id'])->toBe(3);
+    expect($fields[0]['fields'][0]['fields'][0]['_parent_id'])->toBe(2);
+    expect($fields[0]['fields'][0]['fields'][0]['fields'])->toHaveCount(1);
+
+    // Check text field inside first tab
+    expect($fields[0]['fields'][0]['fields'][0]['fields'][0]['label'])->toBe('Text 1');
+    expect($fields[0]['fields'][0]['fields'][0]['fields'][0]['type'])->toBe('Aura\\Base\\Fields\\Text');
+    expect($fields[0]['fields'][0]['fields'][0]['fields'][0]['field_type'])->toBe('input');
+    expect($fields[0]['fields'][0]['fields'][0]['fields'][0]['_id'])->toBe(4);
+    expect($fields[0]['fields'][0]['fields'][0]['fields'][0]['_parent_id'])->toBe(3);
+
+    // Check second tab
+    expect($fields[0]['fields'][0]['fields'][1]['label'])->toBe('Tab 2 in Panel');
+    expect($fields[0]['fields'][0]['fields'][1]['type'])->toBe('Aura\\Base\\Fields\\Tab');
+    expect($fields[0]['fields'][0]['fields'][1]['field_type'])->toBe('tab');
+    expect($fields[0]['fields'][0]['fields'][1]['_id'])->toBe(5);
+    expect($fields[0]['fields'][0]['fields'][1]['_parent_id'])->toBe(2);
+    expect($fields[0]['fields'][0]['fields'][1]['fields'])->toHaveCount(1);
+
+    // Check text field inside second tab
+    expect($fields[0]['fields'][0]['fields'][1]['fields'][0]['label'])->toBe('Text 2');
+    expect($fields[0]['fields'][0]['fields'][1]['fields'][0]['type'])->toBe('Aura\\Base\\Fields\\Text');
+    expect($fields[0]['fields'][0]['fields'][1]['fields'][0]['field_type'])->toBe('input');
+    expect($fields[0]['fields'][0]['fields'][1]['fields'][0]['_id'])->toBe(6);
+    expect($fields[0]['fields'][0]['fields'][1]['fields'][0]['_parent_id'])->toBe(5);
 });
