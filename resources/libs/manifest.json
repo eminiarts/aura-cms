@@ -611,7 +611,7 @@
     "src": "resources/js/quill.js"
   },
   "resources/js/tagify.js": {
-    "file": "assets/tagify-c2d7ae9b.js",
+    "file": "assets/tagify-d92b09c9.js",
     "imports": [
       "__commonjsHelpers-725317a4.js"
     ],
