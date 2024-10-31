@@ -53,52 +53,36 @@ class TransferFromPostsToCustomTable extends Command
         info('Transfer process completed.');
     }
 
-
     protected function transferData($resourceClass)
     {
         $resourceInstance = new $resourceClass;
-        $modelClass = $resourceInstance->model ?? $resourceInstance->getModel();
-        $tableName = (new $modelClass)->getTable();
         $type = $resourceInstance->getType();
 
-        info('Transferring data to new table: ' . $tableName);
+        info('Transferring data from posts to: ' . $resourceClass);
 
-        // Get the columns that exist in the target table
-        $columns = Schema::getColumnListing($tableName);
-
-        // Fetch posts of the specific type
+        // Fetch posts of the specific type along with their meta data
         $posts = DB::table('posts')->where('type', $type)->get();
 
         foreach ($posts as $post) {
-            $newRecord = [];
-            
-            // Only include fields that exist in the target table
-            foreach ((array) $post as $key => $value) {
-                if (in_array($key, $columns)) {
-                    $newRecord[$key] = $value;
-                }
-            }
-            
-            unset($newRecord['id']); // Remove the id to let it auto-increment
 
-            // Insert into the new custom table
-            $newId = DB::table($tableName)->insertGetId($newRecord);
-
-            // Transfer meta data
+            // Get all meta for this post
             $metas = DB::table('meta')
-                ->where('metable_type', 'post')
+                ->where('metable_type', get_class($resourceInstance))
                 ->where('metable_id', $post->id)
                 ->get();
 
-            foreach ($metas as $meta) {
-                // Adjust metable_type and metable_id to point to the new table and new record
-                $metaData = (array) $meta;
-                $metaData['metable_type'] = $modelClass;
-                $metaData['metable_id'] = $newId;
+            // Prepare record data combining post and meta fields
+            $newRecord = [
+                'created_at' => $post->created_at,
+                'updated_at' => $post->updated_at,
+            ];
 
-                unset($metaData['id']); // Remove the id to let it auto-increment
-                DB::table('meta')->insert($metaData);
+            foreach ($metas as $meta) {
+                $newRecord[$meta->key] = $meta->value;
             }
+
+            // Create new record using the resource
+            app($resourceClass)->create($newRecord);
         }
 
         info('Data transfer completed.');
