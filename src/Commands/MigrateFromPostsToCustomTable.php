@@ -104,8 +104,12 @@ class MigrateFromPostsToCustomTable extends Command
         file_put_contents($filePath, $file);
         info('Modified resource class file: ' . $filePath);
 
+        // dd($resourceClass); // double backslashes to $resourceClass
+
+        // $resourceClass = str_replace('\\', '\\\\', $resourceClass);
+
         // Call the artisan command to create the migration
-        Artisan::call('aura:create-resource-migration', [
+        $this->call('aura:create-resource-migration', [
             'resource' => $resourceClass,
         ]);
 
