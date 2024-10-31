@@ -64,6 +64,7 @@ use Aura\Base\Commands\CreateResourcePermissions;
 use Aura\Base\Commands\UpdateSchemaFromMigration;
 use Aura\Base\Livewire\TwoFactorAuthenticationForm;
 use Illuminate\Database\Eloquent\Relations\Relation;
+use Aura\Base\Commands\MigrateFromPostsToCustomTable;
 use Aura\Base\Navigation\Navigation as AuraNavigation;
 use Spatie\LaravelPackageTools\PackageServiceProvider;
 use Spatie\LaravelPackageTools\Commands\InstallCommand;
@@ -181,6 +182,7 @@ class AuraServiceProvider extends PackageServiceProvider
                 CreateResourceFactory::class,
                 AuraLayoutCommand::class,
                 MigratePostMetaToMeta::class,
+                MigrateFromPostsToCustomTable::class,
             ])
             ->hasInstallCommand(function (InstallCommand $command) {
                 $command
