@@ -2,6 +2,7 @@
 
 use Aura\Base\Resource;
 use Aura\Base\Fields\Field;
+use Aura\Base\Fields\Panel;
 
 
 class TabPills extends Field
@@ -123,4 +124,79 @@ test('fields get grouped when field group is true', function () {
     expect($fields[0]['fields'][1]['fields'][0]['type'])->toBe('Aura\\Base\\Fields\\Text');
     expect($fields[0]['fields'][1]['fields'][0]['field_type'])->toBe('input');
     expect($fields[0]['fields'][1]['fields'][0]['_parent_id'])->toBe(4);
+});
+
+
+
+
+class ApplyWrappersModel2 extends Resource
+{
+    public static ?string $slug = 'page';
+
+    public static string $type = 'Page';
+
+    public static function getFields()
+    {
+        return [
+
+            [
+                'label' => 'Tabpill 1',
+                'name' => 'Tabpill 1',
+                'type' => TabPill::class,
+                'slug' => 'tabpill-1',
+                'global' => true,
+            ],
+            [
+                'label' => 'Text 1',
+                'name' => 'Text 1',
+                'type' => 'Aura\\Base\\Fields\\Text',
+                'validation' => 'numeric',
+                'conditional_logic' => [],
+                'slug' => 'text1',
+            ],
+             [
+                'label' => 'Panel 1',
+                'name' => 'Panel 1',
+                'type' => Panel::class,
+                'slug' => 'panel-1',
+            ],
+            [
+                'label' => 'Tabpill 2',
+                'name' => 'Tabpill 2',
+                'type' => TabPill::class,
+                'slug' => 'tabpill-2',
+            ],
+            [
+                'label' => 'Text 2',
+                'name' => 'Text 2',
+                'type' => 'Aura\\Base\\Fields\\Text',
+                'validation' => 'numeric',
+                'conditional_logic' => [],
+                'slug' => 'text2',
+            ],
+        ];
+    }
+}
+
+test('fields get wrapped when field wrapper is set', function () {
+    $model = new ApplyWrappersModel;
+
+    $fields = $model->getGroupedFields();
+
+    ray($fields);
+
+    expect($fields)->toHaveCount(1); // Because of the wrapper
+
+    expect($fields[0])->toHaveKeys([
+        'label', 'name', 'type', 'slug', 'field', '_id', '_parent_id', 
+        'conditional_logic', 'fields'
+    ]);
+
+    expect($fields[0]['label'])->toBe('TabPills');
+    expect($fields[0]['type'])->toBe('TabPills');
+    expect($fields[0]['slug'])->toBe('tabpills');
+    expect($fields[0]['_id'])->toBe(1);
+    expect($fields[0]['_parent_id'])->toBeNull();
+
+    
 });
