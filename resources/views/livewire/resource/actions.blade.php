@@ -1,34 +1,45 @@
-
-{{-- @dd($this->actions) --}}
+<div wire:key="resource-actions">
 @if($this->model->allowedToPerformActions() || auth()->user()->can('update', $this->model))
 @if(count($this->actions))
     @if($this->model::$showActionsAsButtons)
         {{-- Render actions as buttons --}}
         @foreach($this->actions as $action => $options)
-            @if(optional($options)['confirm'] === true)
+            <div wire:key="action_{{$action}}">
+                @if(optional($options)['confirm'] === true)
                 <x-aura::confirms-action
                     wire:then="singleAction('{{ $action }}')"
                     :title="__(optional($options)['confirm-title'])"
                     :content="__(optional($options)['confirm-content'])"
                     :button="__(optional($options)['confirm-button'])"
                     :button_class="optional($options)['confirm-button-class']"
+                    
                 >
                     <x-aura::button.transparent class="{{ $options['class'] ?? ''}}">
                         {!! $options['icon'] ?? '' !!}
+                        @if(optional($options)['icon-view'])
+                            @include($options['icon-view'])
+                        @endif
                         {{ __($options['label'] ?? '') }}
                     </x-aura::button.transparent>
                 </x-aura::confirms-action>
             @elseif(optional($options)['onclick'])
                 <x-aura::button.transparent class="{{ $options['class'] ?? ''}}" onclick="{!! $options['onclick'] !!}">
                     {!! $options['icon'] ?? '' !!}
+                    @if(optional($options)['icon-view'])
+                        @include($options['icon-view'])
+                    @endif
                     {{ __($options['label'] ?? '') }}
                 </x-aura::button.transparent>
             @else
                 <x-aura::button.transparent class="{{ $options['class'] ?? ''}}" wire:click="singleAction('{{ $action }}')">
                     {!! $options['icon'] ?? '' !!}
+                    @if(optional($options)['icon-view'])
+                        @include($options['icon-view'])
+                    @endif
                     {{ __($options['label'] ?? '') }}
                 </x-aura::button.transparent>
             @endif
+            </div>
         @endforeach
     @else
 
@@ -42,7 +53,6 @@
             <x-slot name="content">
                 <div class="px-0">
                     @foreach($this->actions as $action => $options)
-
 
                     @if(optional($options)['confirm'] === true)
                     
@@ -143,3 +153,5 @@
     @endif
 @endif
 @endif
+
+</div>
