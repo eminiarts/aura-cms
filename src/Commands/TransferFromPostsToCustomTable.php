@@ -63,6 +63,9 @@ class TransferFromPostsToCustomTable extends Command
         // Fetch posts of the specific type along with their meta data
         $posts = DB::table('posts')->where('type', $type)->get();
 
+        // Initialize progress bar
+        $this->output->progressStart($posts->count());
+
         foreach ($posts as $post) {
 
             // Get all meta for this post
@@ -83,7 +86,13 @@ class TransferFromPostsToCustomTable extends Command
 
             // Create new record using the resource
             app($resourceClass)->create($newRecord);
+
+            // Advance the progress bar
+            $this->output->progressAdvance();
         }
+
+        // Finish the progress bar
+        $this->output->progressFinish();
 
         info('Data transfer completed.');
     }
