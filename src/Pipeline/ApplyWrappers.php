@@ -13,7 +13,15 @@ class ApplyWrappers implements Pipe
         $addedWrappers = [];
 
         foreach ($fields as $field) {
+            // If no wrapper, add the field as is
+            if (!$field['field']->wrapper) {
+                $newFields[] = $field;
+                continue;
+            }
+
             $wrapperInfo = $this->getFieldWrapper($field);
+
+            
 
             if ($wrapperInfo && !in_array($wrapperInfo['type'], $addedWrappers)) {
                 // Add the wrapper field once
@@ -51,47 +59,10 @@ class ApplyWrappers implements Pipe
 
     private function getFieldWrapper($field)
     {
-        if (isset($field['wrapper']) && $field['wrapper']) {
-            $wrapperType = $field['wrapper'];
-            $wrapperFieldClass = $field['wrapperFieldClass'] ?? null;
-            $wrapperSlug = $field['wrapperSlug'] ?? $this->getWrapperSlug($wrapperType);
-            return [
-                'type'  => $wrapperType,
-                'class' => $wrapperFieldClass,
-                'slug'  => $wrapperSlug,
-            ];
-        } elseif (isset($field['field'])) {
-            $fieldInstance = $field['field'];
-            if (isset($fieldInstance->wrapper) && $fieldInstance->wrapper) {
-                $wrapperType = $fieldInstance->wrapper;
-                $wrapperFieldClass = $fieldInstance->wrapperFieldClass ?? null;
-                $wrapperSlug = $fieldInstance->wrapperSlug ?? $this->getWrapperSlug($wrapperType);
-                return [
-                    'type'  => $wrapperType,
-                    'class' => $wrapperFieldClass,
-                    'slug'  => $wrapperSlug,
-                ];
-            }
-        } elseif (isset($field['type']) && class_exists($field['type'])) {
-            $fieldInstance = new $field['type']();
-            if (isset($fieldInstance->wrapper) && $fieldInstance->wrapper) {
-                $wrapperType = $fieldInstance->wrapper;
-                $wrapperFieldClass = $fieldInstance->wrapperFieldClass ?? null;
-                $wrapperSlug = $fieldInstance->wrapperSlug ?? $this->getWrapperSlug($wrapperType);
-                return [
-                    'type'  => $wrapperType,
-                    'class' => $wrapperFieldClass,
-                    'slug'  => $wrapperSlug,
-                ];
-            }
-        }
-
-        return null;
+        return [
+            'type'  => $field['field']->wrapper,
+            'class' => $field['field']->wrapperFieldClass ?? null,
+            'slug'  => $field['field']->wrapperSlug ?? Str::slug($field['field']->wrapper),
+        ];
     }
-
-    private function getWrapperSlug($wrapperType)
-    {
-        // Generate slug for wrapper
-        return strtolower(str_replace('\\', '-', $wrapperType));
-    }
-}
+}   
