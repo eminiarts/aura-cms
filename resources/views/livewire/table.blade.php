@@ -109,43 +109,50 @@
 
     toggleRow(event, id) {
         this.$nextTick(() => {
-            // Check if shift key was pressed and last selected id exists
+            // Convert id to string for consistent comparison
+            const idStr = id.toString();
+
             if (event.shiftKey && this.lastSelectedId !== null) {
-                // Get the indexes of the current and last selected rows
-                const lastIndex = this.rows.indexOf(this.lastSelectedId);
+                // Get indexes for shift-select range
                 const currentIndex = this.rows.indexOf(id);
+                const lastIndex = this.rows.indexOf(this.lastSelectedId);
+                
+                if (currentIndex !== -1 && lastIndex !== -1) {
+                    const start = Math.min(lastIndex, currentIndex);
+                    const end = Math.max(lastIndex, currentIndex);
+                    
+                    // Get range of IDs between last selected and current
+                    const rangeIds = this.rows.slice(start, end + 1).map(id => id.toString());
 
-                // Determine the start and end indexes of the rows to be selected
-                const start = Math.min(lastIndex, currentIndex);
-                const end = Math.max(lastIndex, currentIndex);
-
-                // If the current row is not already selected, remove all rows between start and end
-                if (!this.selected.includes(id.toString())) {
-                    this.selected = this.selected.filter(row => !this.rows.slice(start, end + 1).map(item => item.toString()).includes(row.toString()));
+                    if (this.selected.includes(idStr)) {
+                        // If current row is selected, deselect the range
+                        this.selected = this.selected.filter(id => !rangeIds.includes(id));
+                    } else {
+                        // If current row is not selected, select the range
+                        this.selected = [...new Set([...this.selected, ...rangeIds])];
+                    }
                 }
-                // Otherwise, add all rows between start and end
-                else {
-                    this.selected = [...this.selected, ...this.rows.slice(start, end + 1)].map(item => item.toString());
-
-                    // Remove duplicates from the selected rows
-                    this.selected = this.selected.filter((item, index) => this.selected.indexOf(item) === index);
+            } else {
+                // Regular single row toggle
+                if (this.selected.includes(idStr)) {
+                    // Deselect if already selected
+                    this.selected = this.selected.filter(selectedId => selectedId !== idStr);
+                } else {
+                    // Select if not already selected
+                    this.selected.push(idStr);
                 }
             }
 
+            // Update lastSelectedId for future shift-selects
             this.lastSelectedId = id;
 
-            // Select All
-            if (this.selected.length === this.total) {
-                this.selectAll = true;
-            } else {
-                this.selectAll = false;
-            }
+            // Update selectAll status
+            this.selectAll = this.selected.length === this.total;
 
-            // Select Page
-            if (!this.selected.includes(id.toString())) {
-                this.selectPage = false;
-            }
-
+            // Update selectPage status
+            this.selectPage = this.rows.every(rowId => 
+                this.selected.includes(rowId.toString())
+            );
         });
     }
 }">
@@ -179,7 +186,7 @@
     }">
         @include($this->settings['views']['header'])
 
-        {{-- @dump($this->settings) --}}
+        <div x-text="selected"></div>
 
         <div class="mt-4">
 
