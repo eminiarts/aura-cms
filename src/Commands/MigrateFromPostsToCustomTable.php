@@ -6,17 +6,18 @@ use ReflectionClass;
 use Aura\Base\Facades\Aura;
 use Illuminate\Support\Str;
 use Illuminate\Console\Command;
+use function Laravel\Prompts\info;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Artisan;
 
+use function Laravel\Prompts\error;
 use function Laravel\Prompts\select;
 use function Laravel\Prompts\confirm;
-use function Laravel\Prompts\info;
-use function Laravel\Prompts\error;
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\Artisan;
 
 class MigrateFromPostsToCustomTable extends Command
 {
-    protected $signature = 'aura:migrate-from-posts-to-custom-table';
+    protected $signature = 'aura:migrate-from-posts-to-custom-table {resource?}';
     protected $description = 'Migrate resources from posts and meta tables to custom tables';
 
     public function handle()
@@ -48,7 +49,9 @@ class MigrateFromPostsToCustomTable extends Command
 
         // Step 4: Ask if should transfer data
         if (confirm('Do you want to transfer data from posts and meta tables?', true)) {
-            $this->transferData($resourceClass);
+            $this->call('aura:transfer-from-posts-to-custom-table', [
+                'resource' => $resourceClass
+            ]);
         }
 
         info('Migration process completed.');
@@ -114,44 +117,5 @@ class MigrateFromPostsToCustomTable extends Command
         ]);
 
         info('Migration generated for resource: ' . $resourceClass);
-    }
-
-    protected function transferData($resourceClass)
-    {
-        $resourceInstance = new $resourceClass;
-        $modelClass = $resourceInstance->model ?? $resourceInstance->getModel();
-        $tableName = (new $modelClass)->getTable();
-        $type = $resourceInstance->getType();
-
-        info('Transferring data to new table: ' . $tableName);
-
-        // Fetch posts of the specific type
-        $posts = DB::table('posts')->where('type', $type)->get();
-
-        foreach ($posts as $post) {
-            $newRecord = (array) $post;
-            unset($newRecord['id']); // Remove the id to let it auto-increment
-
-            // Insert into the new custom table
-            $newId = DB::table($tableName)->insertGetId($newRecord);
-
-            // Transfer meta data
-            $metas = DB::table('meta')
-                ->where('metable_type', 'post')
-                ->where('metable_id', $post->id)
-                ->get();
-
-            foreach ($metas as $meta) {
-                // Adjust metable_type and metable_id to point to the new table and new record
-                $metaData = (array) $meta;
-                $metaData['metable_type'] = $modelClass;
-                $metaData['metable_id'] = $newId;
-
-                unset($metaData['id']); // Remove the id to let it auto-increment
-                DB::table('meta')->insert($metaData);
-            }
-        }
-
-        info('Data transfer completed.');
     }
 }
