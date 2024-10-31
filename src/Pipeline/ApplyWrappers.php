@@ -19,13 +19,16 @@ class ApplyWrappers implements Pipe
                 continue;
             }
 
-            if (!in_array($field['field']->wrapper, $addedWrappers)) {
+            // ray($field)->red();
+            ray(optional($field)['wrap'])->red();
+
+            if (!in_array($field['field']->wrapper, $addedWrappers) || optional($field)['wrap'] === true) {
                 // Add the wrapper field once
                 $wrapperField = [
                     'label' => $field['field']->wrapper,
                     'name'  => $field['field']->wrapper,
                     'type'  => $field['field']->wrapper,
-                    'slug'  => $field['field']->wrapperSlug ?? Str::slug($field['field']->wrapper),
+                    'slug'  => Str::slug($field['field']->wrapper),
                     'field' => app($field['field']->wrapper),
                 ];
 
@@ -43,7 +46,7 @@ class ApplyWrappers implements Pipe
         }
 
         // For debugging
-        ray($newFields);
+        ray($newFields, $addedWrappers);
 
         // Pass the new fields to the next pipe
         return $next($newFields);
