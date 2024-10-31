@@ -27,6 +27,9 @@ trait BulkActions
             }
         });
 
+        // Clear the selected array
+        $this->selected = [];
+
         $this->notify('Erfolgreich: '.$action);
     }
 
