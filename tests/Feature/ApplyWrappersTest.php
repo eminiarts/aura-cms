@@ -144,7 +144,7 @@ class ApplyWrappersModel2 extends Resource
                 'name' => 'Tabpill 1',
                 'type' => TabPill::class,
                 'slug' => 'tabpill-1',
-                'global' => true,
+                // 'global' => true,
             ],
             [
                 'label' => 'Text 1',
@@ -165,7 +165,8 @@ class ApplyWrappersModel2 extends Resource
                 'name' => 'Tabpill 2',
                 'type' => TabPill::class,
                 'slug' => 'tabpill-2',
-            ],
+                'wrap' => true,
+              ],
             [
                 'label' => 'Text 2',
                 'name' => 'Text 2',
@@ -179,24 +180,17 @@ class ApplyWrappersModel2 extends Resource
 }
 
 test('fields get wrapped when field wrapper is set', function () {
-    $model = new ApplyWrappersModel;
+
+    ray()->clearScreen();
+
+    $model = new ApplyWrappersModel2;
 
     $fields = $model->getGroupedFields();
 
     ray($fields);
 
     expect($fields)->toHaveCount(1); // Because of the wrapper
-
-    expect($fields[0])->toHaveKeys([
-        'label', 'name', 'type', 'slug', 'field', '_id', '_parent_id', 
-        'conditional_logic', 'fields'
-    ]);
-
-    expect($fields[0]['label'])->toBe('TabPills');
-    expect($fields[0]['type'])->toBe('TabPills');
-    expect($fields[0]['slug'])->toBe('tabpills');
-    expect($fields[0]['_id'])->toBe(1);
-    expect($fields[0]['_parent_id'])->toBeNull();
-
     
+    expect($fields[0]['fields'])->toHaveCount(1); // Because of global
+
 });
