@@ -30,8 +30,9 @@ trait InputFields
     {
         // Apply Conditional Logic of Parent Fields
         return $this->sendThroughPipeline($this->fieldsCollection(), [
-            ApplyTabs::class,
+            // ApplyTabs::class,
             MapFields::class,
+            ApplyWrappers::class,
             AddIdsToFields::class,
             ApplyParentConditionalLogic::class,
             DoNotDeferConditionalLogic::class,
@@ -78,8 +79,9 @@ trait InputFields
     {
         // Apply Conditional Logic of Parent Fields
         return $this->sendThroughPipeline($this->fieldsCollection(), [
-            ApplyTabs::class,
+            // ApplyTabs::class,
             MapFields::class,
+            ApplyWrappers::class,
             AddIdsToFields::class,
             ApplyParentConditionalLogic::class,
             DoNotDeferConditionalLogic::class,
@@ -146,8 +148,9 @@ trait InputFields
 
         if (! $pipes) {
             $pipes = [
-                ApplyTabs::class,
+                // ApplyTabs::class,
                 MapFields::class,
+                ApplyWrappers::class,
                 AddIdsToFields::class,
                 ApplyParentConditionalLogic::class,
                 DoNotDeferConditionalLogic::class,
@@ -259,7 +262,7 @@ trait InputFields
 
         if (! $pipes) {
             $pipes = [
-                ApplyTabs::class,
+                // ApplyTabs::class,
                 MapFields::class,
                 ApplyWrappers::class,
                 AddIdsToFields::class,
@@ -325,9 +328,9 @@ trait InputFields
     public function viewFields()
     {
         return $this->sendThroughPipeline($this->mappedFields(), [
-            ApplyWrappers::class,
-            ApplyTabs::class,
+            // ApplyTabs::class,
             MapFields::class,
+            ApplyWrappers::class,
             AddIdsToFields::class,
             ApplyParentConditionalLogic::class,
             DoNotDeferConditionalLogic::class,
