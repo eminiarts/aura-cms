@@ -14,7 +14,6 @@ trait BulkActions
      */
     public function bulkAction(string $action)
     {
-        dd($this->selectedRowsQuery->get(), $this->selected);
         $this->selectedRowsQuery->each(function ($item, $key) use ($action) {
             if (str_starts_with($action, 'callFlow.')) {
                 $item->callFlow(explode('.', $action)[1]);

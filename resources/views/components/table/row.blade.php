@@ -7,13 +7,13 @@
     @if ($this->settings['selectable'])
         <x-aura::table.cell class="pr-0">
             <x-aura::input.checkbox
-                id="checkbox_{{ $row->id }}"
-                x-bind:checked="selected.includes('{{ $row->id }}')"
-                hideLabel
-                :label="$row->id"
-                :value="$row->id"
-                x-on:click.stop="toggleRow($event, {{ $row->id }})"
-            />
+    id="checkbox_{{ $row->id }}"
+    x-bind:checked="selected.includes({{ $row->id }})"
+    hideLabel
+    :label="$row->id"
+    :value="$row->id"
+    x-on:click.stop.prevent="toggleRow($event, {{ $row->id }})"
+/>
         </x-aura::table.cell>
     @endif
 
