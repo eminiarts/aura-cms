@@ -194,9 +194,7 @@ trait Filters
         $this->notify('Filter saved successfully!');
         $this->showSaveFilterModal = false;
         $this->reset('filter');
-
         $this->clearFiltersCache();
-
     }
 
 
@@ -222,13 +220,24 @@ trait Filters
      */
     public function updatedSelectedFilter($filter)
     {
+        ray('updatedSelectedFilter', $filter);
+        $this->clearFiltersCache();
+
+        // Reset filters first
+        $this->reset('filters');
+
         if ($filter) {
-            $this->reset('filters');
-            $this->filters = $this->userFilters[$filter];
-        } else {
-            $this->reset('filters');
+            // Get the filter data
+            $filterData = $this->userFilters[$filter];
+
+            // Force a new array assignment to trigger reactivity
+            $this->filters = [
+                'custom' => array_values($filterData['custom'] ?? [])
+            ];
         }
 
+        // Force a rerender of the component
+        $this->dispatch('refresh');
     }
 
     /**
