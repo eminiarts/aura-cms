@@ -24,6 +24,8 @@ class ImageController extends Controller
         // Generate the thumbnail
         $thumbnailPath = $this->thumbnailGenerator->generate($path, $width, $height);
 
+        // ray($thumbnailPath);
+
         // Return the thumbnail image
         return response()->file(storage_path('app/public/'.$thumbnailPath));
     }
