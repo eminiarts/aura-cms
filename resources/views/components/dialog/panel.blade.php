@@ -1,7 +1,7 @@
-@aware(['modalAttributes'])
+@aware(['modalAttributes' => ['modalClasses' => 'max-w-2xl']])
 
 <template x-teleport="body">
-    <div x-on:click.stop="console.log('stop here')">
+    <div x-on:click.stop="">
         <div x-dialog x-model="dialogOpen" style="display: none"
             class="fixed inset-0 overflow-y-auto z-10 text-left pt-[30%] sm:pt-0">
 
