@@ -10,7 +10,8 @@ class ApplyWrappers implements Pipe
     public function handle($fields, Closure $next)
     {
         $newFields = [];
-        $addedWrappers = [];
+        $addedGlobalWrappers = [];
+        $addedNonGlobalWrappers = [];
 
         foreach ($fields as $field) {
             // If no wrapper, add the field as is
@@ -19,11 +20,14 @@ class ApplyWrappers implements Pipe
                 continue;
             }
 
-            // ray($field)->red();
-            ray(optional($field)['wrap'])->red();
+            $isGlobal = isset($field['global']) && $field['global'] === true;
+            $relevantWrappers = $isGlobal ? $addedGlobalWrappers : $addedNonGlobalWrappers;
 
-            if (!in_array($field['field']->wrapper, $addedWrappers) || optional($field)['wrap'] === true) {
-                // Add the wrapper field once
+            // Add wrapper if:
+            // 1. We haven't added this type of wrapper (global/non-global) before
+            // 2. OR if wrap is explicitly set to true
+            if (!in_array($field['field']->wrapper, $relevantWrappers) || optional($field)['wrap'] === true) {
+                // Add the wrapper field
                 $wrapperField = [
                     'label' => $field['field']->wrapper,
                     'name'  => $field['field']->wrapper,
@@ -32,13 +36,15 @@ class ApplyWrappers implements Pipe
                     'field' => app($field['field']->wrapper),
                 ];
 
-                // If field is global, make wrapper global too
-                if (isset($field['global']) && $field['global'] === true) {
+                // Set global flag on wrapper if field is global
+                if ($isGlobal) {
                     $wrapperField['global'] = true;
+                    $addedGlobalWrappers[] = $field['field']->wrapper;
+                } else {
+                    $addedNonGlobalWrappers[] = $field['field']->wrapper;
                 }
 
                 $newFields[] = $wrapperField;
-                $addedWrappers[] = $field['field']->wrapper;
             }
 
             // Add the field as is
@@ -51,7 +57,7 @@ class ApplyWrappers implements Pipe
         }
 
         // For debugging
-        ray($newFields, $addedWrappers);
+        ray($newFields, $addedGlobalWrappers, $addedNonGlobalWrappers);
 
         // Pass the new fields to the next pipe
         return $next($newFields);

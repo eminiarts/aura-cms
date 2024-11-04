@@ -29,7 +29,7 @@ class MultipleTabsInPanelInTabsTestModel extends Resource
                 'name' => 'Tab 1 in Panel',
                 'type' => 'Aura\\Base\\Fields\\Tab',
                 'slug' => 'tab1-1',
-                'wrap' => true,
+                // 'wrap' => true,
             ],
             [
                 'label' => 'Text 1',

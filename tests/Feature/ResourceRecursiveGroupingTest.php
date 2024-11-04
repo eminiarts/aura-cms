@@ -91,7 +91,7 @@ test('recursive field function', function () {
 
     $this->assertCount(1, $fields);
     $this->assertCount(2, $fields[0]['fields'][0]['fields']);
-    $this->assertEquals($fields[0]['name'], 'Tabs');
+    $this->assertEquals($fields[0]['name'], 'Aura\Base\Fields\Tabs');
     $this->assertEquals($fields[0]['fields'][0]['name'], 'Tab 1');
     $this->assertEquals($fields[0]['fields'][0]['fields'][0]['name'], 'Panel 1');
     $this->assertEquals($fields[0]['fields'][0]['fields'][0]['fields'][0]['name'], 'Repeater 1');

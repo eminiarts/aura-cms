@@ -188,7 +188,7 @@ test('complex fields are possible and working correctly', function () {
     $this->assertCount(1, $fields);
     $this->assertEquals($fields[0]['name'], 'Panel');
     $this->assertCount(1, $fields[0]['fields']);
-    $this->assertEquals($fields[0]['fields'][0]['name'], 'Tabs');
+    $this->assertEquals($fields[0]['fields'][0]['name'], 'Aura\Base\Fields\Tabs');
     $this->assertEquals($fields[0]['fields'][0]['fields'][0]['name'], 'Tab 1');
     $this->assertEquals($fields[0]['fields'][0]['fields'][1]['name'], 'Tab 2');
     $this->assertEquals($fields[0]['fields'][0]['fields'][0]['fields'][0]['name'], 'Enabled');
