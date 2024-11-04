@@ -17,6 +17,14 @@ class Tags extends Field
 
     public $view = 'aura::fields.view-value';
 
+    public function filterOptions()
+    {
+        return [
+            'contains' => __('contains'),
+            'does_not_contain' => __('does not contain'),
+        ];
+    }
+
     public function filter()
     {
         if ($this->filter) {
@@ -113,12 +121,16 @@ class Tags extends Field
             throw new InvalidArgumentException("The 'resource' key is not set or is empty in the field configuration.");
         }
 
+        $morphClass = $field['resource'];
+
         // If it's a meta field
         return $model
             ->morphToMany($field['resource'], 'related', 'post_relations', 'related_id', 'resource_id')
             ->withTimestamps()
-            ->withPivot('resource_type')
-            ->wherePivot('resource_type', $field['resource']);
+            ->withPivot('resource_type', 'slug', 'order')
+            ->wherePivot('resource_type', $morphClass)
+            ->wherePivot('slug', $field['slug'])
+            ->orderBy('post_relations.order');
     }
 
     public function saved($post, $field, $value)
@@ -140,10 +152,14 @@ class Tags extends Field
                 return $tag->id;
             }
         })->toArray();
+        // if ($field['slug'] === 'tags') {
+        //     dd($ids);
+        // }
 
         if (is_array($ids)) {
             $post->{$field['slug']}()->syncWithPivotValues($ids, [
                 'resource_type' => $field['resource'],
+                'slug' => $field['slug'],
             ]);
         } else {
             $post->{$field['slug']}()->sync([]);

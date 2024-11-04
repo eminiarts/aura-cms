@@ -8,16 +8,11 @@ if (key_exists('resource', $field) ) {
     })->toArray();
 }
 
-// dump($values);
-// dump($this->form['fields']);
-// dump($this->model->users);
 @endphp
 
-@once
-    @push('scripts')
+@assets
         @vite(['resources/js/tagify.js'], 'vendor/aura/libs')
-    @endpush
-@endonce
+@endassets
 
 <x-aura::fields.wrapper :field="$field">
 <div

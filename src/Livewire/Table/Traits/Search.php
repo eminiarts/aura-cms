@@ -12,6 +12,8 @@ trait Search
     {
         if ($this->search) {
 
+            ray($this->search);
+
             // Check if there is a search method in the model (modifySearch()), and call it.
             if (method_exists($this->model, 'modifySearch')) {
                 $query = $this->model->modifySearch($query, $this->search);

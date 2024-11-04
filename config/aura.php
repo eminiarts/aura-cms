@@ -178,23 +178,33 @@ return [
     'media' => [
         'disk' => 'public',
         'path' => 'media',
+        'quality' => 80,
+        'restrict_to_dimensions' => true,
+
         'max_file_size' => 10000,
+
         'generate_thumbnails' => true,
-        'thumbnails' => [
+        'dimensions' => [
+            [
+                'name' => 'xs',
+                'width' => 200,
+            ],
+            [
+                'name' => 'sm',
+                'width' => 600,
+            ],
+            [
+                'name' => 'md',
+                'width' => 1200,
+            ],
+            [
+                'name' => 'lg',
+                'width' => 2000,
+            ],
             [
                 'name' => 'thumbnail',
                 'width' => 600,
                 'height' => 600,
-            ],
-            [
-                'name' => 'medium',
-                'width' => 1200,
-                'height' => 1200,
-            ],
-            [
-                'name' => 'large',
-                'width' => 2000,
-                'height' => 2000,
             ],
         ],
     ],

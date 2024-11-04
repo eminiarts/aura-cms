@@ -45,10 +45,8 @@ class="mx-auto max-w-sm"
 >
 <select x-ref="select" :multiple="multiple" ></select>
 
-@once
-@push('scripts')
-<link rel="stylesheet" href="/public/js/choicesJS/choices.min.css" />
-<script src="/public/js/choicesJS/choices.min.js"></script>
-@endpush
-@endonce
+@assets
+    <link rel="stylesheet" href="/public/js/choicesJS/choices.min.css" />
+    <script src="/public/js/choicesJS/choices.min.js"></script>
+@endassets
 </div>

@@ -2,6 +2,7 @@
 
 use Aura\Base\Facades\Aura;
 use Aura\Base\Http\Controllers\Api\FieldsController;
+use Aura\Base\Http\Controllers\ImageController;
 use Aura\Base\Livewire\Attachment\Index as AttachmentIndex;
 use Aura\Base\Livewire\PluginsPage;
 use Aura\Base\Livewire\Resource\Create;
@@ -39,6 +40,8 @@ Route::domain(config('aura.domain'))
             Route::get('/settings', config('aura.components.settings'))->name('settings');
 
             Route::get('/plugins', PluginsPage::class)->name('plugins');
+
+            Route::get('/img/{path}', ImageController::class)->where('path', '.*')->name('image');
 
             Route::get('/resources/{slug}/editor', ResourceEditor::class)->name('resource.editor');
 

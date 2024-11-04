@@ -20,13 +20,11 @@
     @else
 
 
-        @once
-            @push('scripts')
+        @assets
                 {{-- <link rel="stylesheet" href="/js/pickr/nano.min.css"/> <!-- 'nano' theme --> --}}
                 {{-- <script src="/js/pickr/pickr.min.js"></script> --}}
-                @vite(['resources/js/pickr.js'], 'vendor/aura/libs')
-            @endpush
-        @endonce
+            @vite(['resources/js/pickr.js'], 'vendor/aura/libs')
+        @endassets
 
     <div wire:ignore class="flex items-center"
         x-data="{
