@@ -32,6 +32,11 @@ class ApplyWrappers implements Pipe
                     'field' => app($field['field']->wrapper),
                 ];
 
+                // If field is global, make wrapper global too
+                if (isset($field['global']) && $field['global'] === true) {
+                    $wrapperField['global'] = true;
+                }
+
                 $newFields[] = $wrapperField;
                 $addedWrappers[] = $field['field']->wrapper;
             }

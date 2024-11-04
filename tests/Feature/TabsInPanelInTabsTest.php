@@ -29,6 +29,7 @@ class TabsInPanelInTabsTestModel extends Resource
                 'name' => 'Tab 1 in Panel',
                 'type' => 'Aura\\Base\\Fields\\Tab',
                 'slug' => 'tab1-1',
+                'wrap' => true,
             ],
             [
                 'label' => 'Text 1',
@@ -75,16 +76,14 @@ test('fields get grouped when field group is true', function () {
 
     $fields = $model->getGroupedFields();
 
-    ray($fields);
-
     $this->assertCount(1, $fields);
-    $this->assertEquals($fields[0]['name'], 'Tabs');
+    $this->assertEquals($fields[0]['name'], 'Aura\Base\Fields\Tabs');
     $this->assertCount(2, $fields[0]['fields']);
     $this->assertEquals($fields[0]['fields'][0]['name'], 'Tab 1');
     $this->assertEquals($fields[0]['fields'][1]['name'], 'Tab 2');
     $this->assertEquals($fields[0]['fields'][0]['fields'][0]['name'], 'Panel 1');
     $this->assertCount(1, $fields[0]['fields'][0]['fields'][0]['fields']);
     $this->assertCount(2, $fields[0]['fields'][0]['fields'][0]['fields'][0]['fields']);
-    $this->assertEquals($fields[0]['fields'][0]['fields'][0]['fields'][0]['name'], 'Tabs');
+    $this->assertEquals($fields[0]['fields'][0]['fields'][0]['fields'][0]['name'], 'Aura\Base\Fields\Tabs');
     $this->assertEquals($fields[0]['fields'][0]['fields'][0]['fields'][0]['fields'][0]['name'], 'Tab 1 in Panel');
 });

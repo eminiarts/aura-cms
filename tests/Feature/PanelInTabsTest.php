@@ -14,9 +14,9 @@ class PanelInTabsModel extends Resource
             [
                 'label' => 'Tab 1',
                 'name' => 'Tab 1',
-                'global' => true,
                 'type' => 'Aura\\Base\\Fields\\Tab',
                 'slug' => 'tab-1',
+                'global' => true,
                 'style' => [],
             ],
             [
@@ -59,7 +59,7 @@ test('fields get grouped when field group is true', function () {
     $fields = $model->getGroupedFields();
 
     $this->assertCount(1, $fields);
-    $this->assertEquals($fields[0]['name'], 'Tabs');
+    $this->assertEquals($fields[0]['name'], 'Aura\Base\Fields\Tabs');
     $this->assertCount(2, $fields[0]['fields']);
     $this->assertEquals($fields[0]['fields'][0]['name'], 'Tab 1');
     $this->assertEquals($fields[0]['fields'][1]['name'], 'Tab 2');

@@ -11,4 +11,6 @@ class Tabs extends Field
     public string $type = 'tabs';
 
     public $view = 'aura::fields.tabs';
+
+    public bool $sameLevelGrouping = false;
 }

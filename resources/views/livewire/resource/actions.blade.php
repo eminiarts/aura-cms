@@ -1,4 +1,4 @@
-<div wire:key="resource-actions">
+<div wire:key="resource-actions" class="flex flex-wrap gap-2">
 @if($this->model->allowedToPerformActions() || auth()->user()->can('update', $this->model))
 @if(count($this->actions))
     @if($this->model::$showActionsAsButtons)
@@ -12,7 +12,6 @@
                     :content="__(optional($options)['confirm-content'])"
                     :button="__(optional($options)['confirm-button'])"
                     :button_class="optional($options)['confirm-button-class']"
-                    
                 >
                     <x-aura::button.transparent class="{{ $options['class'] ?? ''}}">
                         {!! $options['icon'] ?? '' !!}
