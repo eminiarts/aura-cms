@@ -338,8 +338,6 @@ class AdvancedSelect extends Field
             $values = [$values];
         }
 
-        ray('selectedValues', $values);
-
         return app($model)->whereIn('id', $values)->get()->map(function ($item) use ($field) {
             return [
                 'id' => $item->id,

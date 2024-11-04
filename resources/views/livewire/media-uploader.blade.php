@@ -51,7 +51,12 @@
     </div>
 
     <div>
-        @error('media.*') <span class="error">{{ $message }}</span> @enderror
+        @error('media')
+            <div class="mt-2 text-sm text-red-600">{{ $message }}</div>
+        @enderror
+        @error('media.*')
+            <div class="mt-2 text-sm text-red-600">{{ $message }}</div>
+        @enderror
     </div>
 
     <div
@@ -69,13 +74,20 @@
         },
         handleFileSelect(event) {
             if (this.disabled) return;
-            console.log('handleFileSelect');
+
+            const maxFiles = {{ 20 }};
+            if (event.target.files.length > maxFiles) {
+                alert(`{{ __('Maximum of :count files can be uploaded at once', ['count' => 20]) }}`);
+                event.target.value = '';
+                return;
+            }
+
             if (event.target.files.length) {
                 Array.from(event.target.files).forEach(file => {
-                    @this.uploadMultiple('media', file, function (success) { //upload was a success and was finished
-                $this.isUploading = false
-                $this.progress = 0
-            }, () => {
+                    @this.uploadMultiple('media', file, function (success) {
+                        $this.isUploading = false
+                        $this.progress = 0
+                    }, () => {
                         console.error('Upload error');
                     }, (event) => {
                         this.progress = event.detail.progress;
@@ -86,6 +98,13 @@
 
         handleFileDrop(event) {
             if (this.disabled) return;
+
+            const maxFiles = 20;
+            if (event.dataTransfer.files.length > maxFiles) {
+                alert(`{{ __('Maximum of :count files can be uploaded at once', ['count' => 20]) }}`);
+                return;
+            }
+
             if (event.dataTransfer.files.length > 0) {
                 this.uploadFiles(event.dataTransfer.files)
             }
@@ -93,17 +112,21 @@
         uploadFiles(files) {
             const $this = this
 
-            console.log('upload multiple')
+            console.log('upload multiple', files);
 
             this.isUploading = true
+
             @this.uploadMultiple('media', files,
             function (success) { //upload was a success and was finished
+                console.log('upload success', success);
                 $this.isUploading = false
                 $this.progress = 0
             },
             function (error) { //an error occured
+                console.log('upload error', error);
             },
             function (event) { //upload progress was made
+                console.log('upload progress', event);
                 $this.progress = event.detail.progress
             }
             )

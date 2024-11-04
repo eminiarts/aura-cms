@@ -4,13 +4,12 @@ namespace Aura\Base\Jobs;
 
 use Aura\Base\Facades\Aura;
 use Aura\Base\Resources\Attachment;
+use Aura\Base\Services\ThumbnailGenerator;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
-use Illuminate\Support\Facades\Storage;
-use Intervention\Image\Facades\Image;
 
 class GenerateImageThumbnail implements ShouldQueue
 {
@@ -28,8 +27,6 @@ class GenerateImageThumbnail implements ShouldQueue
 
     /**
      * Create a new job instance.
-     *
-     * @return void
      */
     public function __construct(Attachment $attachment)
     {
@@ -38,45 +35,61 @@ class GenerateImageThumbnail implements ShouldQueue
 
     /**
      * Execute the job.
-     *
-     * @return void
      */
-    public function handle()
+    public function handle(ThumbnailGenerator $thumbnailGenerator)
     {
         // Skip in tests
         if (app()->environment('testing')) {
             return;
         }
 
-        // Set the desired storage path for the thumbnail
-        $thumbnailPath = 'thumbnails/'.basename($this->attachment->url);
+        // Get the settings from aura and check which thumbnail sizes are enabled
+        $settings = Aura::option('media');
 
-        // If the thumbnail already exists, don't generate it again
-        if (Storage::exists($thumbnailPath)) {
+        if (!$settings || !($settings['generate_thumbnails'] ?? false)) {
             return;
         }
 
-        $settings = Aura::option('media');
+        // Get the path from the fields array
+        $relativePath = $this->attachment->fields['url'] ?? null;
+        if (empty($relativePath)) {
+            logger()->error('Empty attachment URL', [
+                'attachment' => $this->attachment->toArray()
+            ]);
+            return;
+        }
 
-        // Generate the thumbnails
-        if ($settings && $settings['thumbnails']) {
-            foreach ($settings['thumbnails'] as $size) {
-                if (file_exists($this->attachment->path())) {
-                    $image = Image::make($this->attachment->path());
-                    $width = $size['width'];
+        logger()->info('Processing attachment', [
+            'relativePath' => $relativePath
+        ]);
 
-                    $height = $size['height'];
+        // Generate thumbnails for each configured size
+        foreach ($settings['dimensions'] as $thumbnail) {
+            try {
+                logger()->info('Generating thumbnail', [
+                    'relativePath' => $relativePath,
+                    'size' => $thumbnail
+                ]);
 
-                    $image->fit($width, $height, function ($constraint) {
-                        $constraint->aspectRatio();
-                        $constraint->upsize();
-                    });
+                $width = $thumbnail['width'] ?? null;
+                $height = $thumbnail['height'] ?? null;
 
-                    Storage::put('public/'.$size['name'].'/'.basename($this->attachment->url), (string) $image->encode());
-                } else {
-                    // throw new \Exception('File does not exist at path: ' . $this->attachment->path());
+                if ($width === null) {
+                    throw new \InvalidArgumentException("Width is not defined for thumbnail size: " . ($thumbnail['name'] ?? 'unknown'));
                 }
 
+                $thumbnailGenerator->generate(
+                    $relativePath,
+                    $width,
+                    $height
+                );
+
+            } catch (\Exception $e) {
+                logger()->error('Failed to generate thumbnail', [
+                    'size' => $thumbnail,
+                    'path' => $relativePath,
+                    'error' => $e->getMessage()
+                ]);
             }
         }
     }

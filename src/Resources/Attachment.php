@@ -337,16 +337,36 @@ class Attachment extends Resource
         return 'aura::attachment.row';
     }
 
-    public function thumbnail()
+    /**
+     * Get the thumbnail URL for the attachment
+     *
+     * @param string|null $size The size identifier (xs, sm, md, lg)
+     * @return string The URL to the thumbnail
+     */
+    public function thumbnail(?string $size = 'sm'): string
     {
-        $mimeTypeToThumbnail = [
-            'image/jpeg' => $this->url,
-            'image/png' => $this->url,
-            'application/pdf' => 'pdf.jpg',
-            'application/docx' => 'docx.jpg',
-        ];
+        if (!$this->isImage()) {
+            return $this->path(); // Return original path for non-images
+        }
 
-        return $mimeTypeToThumbnail[$this->mime_type] ?? 'default-thumbnail.jpg';
+        // Get configured dimensions from config
+        $configuredDimensions = config('aura.media.dimensions', []);
+
+        // Find the requested size in the config
+        $dimension = collect($configuredDimensions)
+            ->firstWhere('name', $size);
+
+        if (!$dimension) {
+            // Fallback to original if size not found
+            return $this->path();
+        }
+
+        // Generate the image URL using the named route
+        return route('aura.image', [
+            'path' => $this->url,
+            'width' => $dimension['width'],
+            'height' => $dimension['height'] ?? null,
+        ]);
     }
 
     public function thumbnail_path()

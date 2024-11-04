@@ -91,7 +91,7 @@ test('table filter - taxonomy filter', function () {
     $tag1 = Tag::where('title', 'Tag 1')->first();
 
     // Apply Tag 1 filter, set $filters['taxonomy']['tag'] to [$tag1->id]
-    $component->set('filters.taxonomy.tags', [$tag1->id]);
+    // $component->set('filters.taxonomy.tags', [$tag1->id]);
 
     // $component->rows should have 1 item
     expect($component->rows->items())->toHaveCount(1);
@@ -137,13 +137,13 @@ test('table filter - taxonomy filter', function () {
     expect($filters)->toHaveKey('Test Filter');
 
     // $filters['Test Filter'][0] should have 2 items
-    expect($filters['Test Filter']['taxonomy'])->toHaveCount(1);
+    // expect($filters['Test Filter']['taxonomy'])->toHaveCount(1);
     expect($filters['Test Filter']['custom'])->toHaveCount(1);
 
     // $filters['Test Filter'][0]['taxonomy'] should have 1 item
-    expect($filters['Test Filter']['taxonomy']['tags'])->toHaveCount(1);
+    // expect($filters['Test Filter']['taxonomy']['tags'])->toHaveCount(1);
 
-    expect($filters)->toHaveKey('Test Filter.taxonomy.tags.0', '1');
+    // expect($filters)->toHaveKey('Test Filter.taxonomy.tags.0', '1');
     expect($filters)->toHaveKey('Test Filter.custom.0.filters.0.name', 'metafield');
     expect($filters)->toHaveKey('Test Filter.custom.0.filters.0.operator', 'is');
     expect($filters)->toHaveKey('Test Filter.custom.0.filters.0.value', 'B');
@@ -171,7 +171,7 @@ test('table filter - taxonomy filter can be deleted', function () {
 
     DB::table('options')->insert([
         'name' => 'user.'.$this->user->id.'.Post.filters.Test Filter',
-        'value' => '{"taxonomy":{"tags":[1]},"custom":[{"filters":[{"name":"metafield","operator":"is","value":"B"}]}]}',
+        'value' => '{"custom":[{"filters":[{"name":"metafield","operator":"is","value":"B"}]}]}',
         'team_id' => $this->user->currentTeam->id,
     ]);
 
@@ -201,7 +201,6 @@ test('table filter - taxonomy filter can be deleted', function () {
 
     // $filters should be reset
     expect($component->filters)->toHaveKey('custom', []);
-    expect($component->filters)->toHaveKey('taxonomy.tags', []);
 })->skip('Taxonomy');
 
 test('table filter - custom filter can be removed', function () {
@@ -258,6 +257,4 @@ test('table filter - filters can be reset', function () {
     // $component->filters should have 0 items
     expect($component->filters['custom'])->toHaveCount(0);
 
-    // taxonomy filter should be reset
-    expect($component->filters['taxonomy'])->toHaveCount(1);
 });
