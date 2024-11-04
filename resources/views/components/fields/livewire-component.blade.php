@@ -1,4 +1,3 @@
-<div>
 
   <style>
   #resource-field-{{ optional($field)['slug'] }}-wrapper {
@@ -14,6 +13,4 @@
 
 <div class="px-2" id="resource-field-{{ optional($field)['slug'] }}-wrapper">
     @livewire($field['component'], ['model' => $this->model, 'field' => $field], key('livewire-component-' . optional($field)['slug']))
-</div>
-
 </div>
