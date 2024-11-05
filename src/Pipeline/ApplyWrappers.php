@@ -56,9 +56,6 @@ class ApplyWrappers implements Pipe
             $newFields = collect($newFields);
         }
 
-        // For debugging
-        ray($newFields, $addedGlobalWrappers, $addedNonGlobalWrappers);
-
         // Pass the new fields to the next pipe
         return $next($newFields);
     }
