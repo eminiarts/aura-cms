@@ -264,7 +264,7 @@ class Resource extends Model
 
                     if (optional($field)['polymorphic_relation'] === false && optional($field)['multiple'] === false) {
                         // dd($class, $class->isRelation($field), $this->{$key}, isset($this->{$key}), method_exists($class, 'get'));
-                        return [$meta[$key]];
+                        return isset($meta[$key]) ? [$meta[$key]] : [];
                     }
                     // if ($class && $class->isRelation($field) && $this->{$key}) {
                     //     // dd($class, $class->isRelation($field), $this->{$key}, isset($this->{$key}), method_exists($class, 'get'));
