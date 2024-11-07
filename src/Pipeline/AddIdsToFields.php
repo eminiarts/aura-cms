@@ -14,7 +14,7 @@ class AddIdsToFields implements Pipe
         $parentPanel = null;
         $parentTab = null;
 
-        $fields = collect($fields)->values()->map(function ($item, $key) use (&$currentParent, &$globalTabs, &$parentPanel, &$parentTab) {
+        $fields = collect($fields)->values()->map(function ($item, $key) use (&$currentParent, &$globalTabs, &$parentPanel, &$parentTab, &$fields) {
             $item['_id'] = $key + 1;
 
             $shouldNotBeNested = ! empty(optional($item)['exclude_from_nesting']) && $item['exclude_from_nesting'] === true;
@@ -22,6 +22,10 @@ class AddIdsToFields implements Pipe
             if ($shouldNotBeNested) {
                 // Set the parent ID to the one before the current parent if it's set, or null
                 $item['_parent_id'] = $currentParent ? $currentParent['_parent_id'] : null;
+
+                if ($item['field']->type === 'tab' && $currentParent['field']->type === 'panel') {
+                    $item['_parent_id'] = $item['_parent_id'] - 1;
+                }
 
                 if ($item['field']->group === true) {
                     $currentParent = $item;
@@ -48,7 +52,6 @@ class AddIdsToFields implements Pipe
 
             if ($item['field']->type !== 'panel' && $item['field']->group === true) {
                 if (optional($item)['global']) {
-
                     // If type = group
                     if ($item['field']->type === 'group') {
                         $item['_parent_id'] = $currentParent['_parent_id'];
@@ -58,7 +61,6 @@ class AddIdsToFields implements Pipe
                         $item['_parent_id'] = optional($globalTabs)['_id'];
                         $parentPanel = null;
                     }
-
                 }
                 // Same Level Grouping
                 elseif (optional($currentParent)['type'] == $item['type']) {
@@ -72,6 +74,7 @@ class AddIdsToFields implements Pipe
                     } else {
                         $item['_parent_id'] = optional($currentParent)['_id'];
                     }
+                    ray('new tab', $item, $parentTab)->red();
                     $parentTab = $item;
                 }
                 // Nested False
@@ -93,10 +96,19 @@ class AddIdsToFields implements Pipe
             } elseif ($item['field']->type !== 'panel' && $item['field']->group === false) {
                 $item['_parent_id'] = optional($currentParent)['_id'];
             } elseif ($item['field']->type == 'panel') {
+
                 if (optional($item)['global']) {
                     $item['_parent_id'] = null;
                     $parentPanel = null;
                     $currentParent = null;
+                }
+
+                if ($parentTab) {
+                    $item['_parent_id'] = $parentTab['_id'];
+                    $parentPanel = $item;
+                    $parentTab = null;
+                    $currentParent = $item;
+                    return $item;
                 }
 
                 if ($parentPanel) {

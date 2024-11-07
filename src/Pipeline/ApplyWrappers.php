@@ -44,6 +44,11 @@ class ApplyWrappers implements Pipe
                     $addedNonGlobalWrappers[] = $field['field']->wrapper;
                 }
 
+                if (($field['exclude_from_nesting'] ?? false) === true) {
+                    $wrapperField['exclude_from_nesting'] = true;
+                    $field['exclude_from_nesting'] = false;
+                }
+
                 $newFields[] = $wrapperField;
             }
 
@@ -59,4 +64,4 @@ class ApplyWrappers implements Pipe
         // Pass the new fields to the next pipe
         return $next($newFields);
     }
-}   
+}

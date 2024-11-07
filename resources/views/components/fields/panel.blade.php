@@ -18,13 +18,13 @@
 <div class="px-2" id="resource-field-{{ optional($field)['slug'] }}-wrapper">
     <div class="{{ $field['style']['class'] ?? 'aura-card' }}">
         <div class="mb-2">
-          @if(isset($field['name']))
-        <div class="px-2 mt-1">
-          <h2 class="font-semibold">{{ __($field['name']) }}</h2>
-        </div>
-        @endif
+          @if(isset($field['name']) && (!isset($field['hide_title']) || $field['hide_title'] === false))
+            <div class="px-2 mt-1">
+              <h2 class="font-semibold">{{ __($field['name']) }}</h2>
+            </div>
+          @endif
 
-        <x-aura::fields.fields :mode="$mode" />
+          <x-aura::fields.fields :mode="$mode" />
         </div>
     </div>
 </div>
