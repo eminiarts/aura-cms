@@ -17,10 +17,10 @@ class ConditionalLogic
             return true;
         }
 
-        if (! Auth::check()) {
+        // if (! Auth::check()) {
 
-            return false;
-        }
+        //     return false;
+        // }
 
         if ($conditions instanceof \Closure) {
             $result = self::executeClosure($conditions, $model, $post);
