@@ -194,11 +194,19 @@ class AuraServiceProvider extends PackageServiceProvider
                     ->publishConfigFile()
                     ->publishAssets()
                     ->publishMigrations()
-                    ->askToRunMigrations()
+                    //->askToRunMigrations()
                     ->copyAndRegisterServiceProviderInApp()
                     ->askToStarRepoOnGitHub('aura-cms/base')
                     ->endWith(function (InstallCommand $command) {
                         $command->call('aura:extend-user-model');
+
+                        if ($command->confirm('Do you want to modify the aura configuration?', true)) {
+                            $command->call('aura:install-config');
+                        }
+
+                        if ($command->confirm('Do you want to run the migrations?', true)) {
+                            $command->call('migrate');
+                        }
 
                         if ($command->confirm('Do you want to create a user?', true)) {
                             $command->call('aura:user');
