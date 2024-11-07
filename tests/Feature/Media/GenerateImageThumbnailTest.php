@@ -41,12 +41,9 @@ it('does not generate thumbnail for non-image attachments', function () {
 });
 
 it('generates thumbnails with correct dimensions from config', function () {
-    // Create a test image and store it
+    // Create a test image
     $file = UploadedFile::fake()->image('test.jpg', 2000, 2000);
-    $path = Storage::disk('public')->put('media/test.jpg', file_get_contents($file));
-
-    // Ensure the file exists
-    Storage::disk('public')->assertExists('media/test.jpg');
+    Storage::disk('public')->putFileAs('media', $file, 'test.jpg');
 
     $attachment = Attachment::create([
         'name' => 'Test Image',
@@ -83,10 +80,7 @@ it('generates thumbnails with correct dimensions from config', function () {
 it('returns original image when requested dimensions are larger than original', function () {
     // Create a small test image
     $file = UploadedFile::fake()->image('small.jpg', 100, 100);
-    Storage::disk('public')->put('media/small.jpg', file_get_contents($file));
-
-    // Ensure the file exists
-    Storage::disk('public')->assertExists('media/small.jpg');
+    Storage::disk('public')->putFileAs('media', $file, 'small.jpg');
 
     $attachment = Attachment::create([
         'name' => 'Small Image',
@@ -110,10 +104,7 @@ it('returns original image when requested dimensions are larger than original', 
 it('restricts thumbnail generation to configured dimensions when restriction is enabled', function () {
     // Create a test image
     $file = UploadedFile::fake()->image('test.jpg', 2000, 2000);
-    Storage::disk('public')->put('media/test.jpg', file_get_contents($file));
-
-    // Ensure the file exists
-    Storage::disk('public')->assertExists('media/test.jpg');
+    Storage::disk('public')->putFileAs('media', $file, 'test.jpg');
 
     $attachment = Attachment::create([
         'name' => 'Test Image',

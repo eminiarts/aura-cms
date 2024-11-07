@@ -74,9 +74,14 @@ class Option extends Resource
      */
     protected static function booted()
     {
-        static::addGlobalScope(new TeamScope);
+        // dd('here2', config('aura.teams'));
+        if (config('aura.teams')) {
+            static::addGlobalScope(new TeamScope);
+        }
 
         static::saving(function ($option) {
+
+            // dd('here3', config('aura.teams'), $option->toArray());
 
             if (config('aura.teams') && ! isset($option->team_id) && auth()->user()) {
                 $option->team_id = auth()->user()->current_team_id;
