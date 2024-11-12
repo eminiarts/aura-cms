@@ -8,6 +8,11 @@ trait Search
 {
     public $search;
 
+    public function updatedSearch()
+    {
+        $this->resetPage();
+    }
+
     public function applySearch($query)
     {
         if ($this->search) {
