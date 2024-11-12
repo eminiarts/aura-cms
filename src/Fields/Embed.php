@@ -6,7 +6,7 @@ class Embed extends Field
 {
     public $edit = 'aura::fields.embed';
 
-    // public $view = 'components.fields.embed';
+    public $view = 'aura::fields.embed';
 
     public function getFields()
     {
