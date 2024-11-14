@@ -16,19 +16,19 @@ class Password extends Field
     // {
     // }
 
+    // Initialize the field on a LiveWire component
+    public function hydrate() {
+        return null;
+    }
+
     public function getFields()
     {
         return array_merge(parent::getFields(), [
         ]);
     }
 
-    // Initialize the field on a LiveWire component
-    public function hydrate() {}
-
     public function set($post, $field, $value)
     {
-        // dd('set', $value);
-
         if ($value) {
             // Hash the password
             return Hash::make($value);

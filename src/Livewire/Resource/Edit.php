@@ -50,6 +50,8 @@ class Edit extends Component
     public function initializeModelFields()
     {
         foreach ($this->model->inputFields() as $field) {
+
+            // ray($field)->blue();
             // If the method exists in the field type, call it directly.
             if (method_exists($field['field'], 'hydrate')) {
                 $this->form['fields'][$field['slug']] = $field['field']->hydrate();
