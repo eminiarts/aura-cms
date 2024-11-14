@@ -7,7 +7,7 @@
     if($settings && (isset($settings['logo'][0]) || isset($settings['logo-darkmode'][0]))) {
         $logo = isset($settings['logo'][0]) ? $settings['logo'][0] : null;
         $darkLogo = isset($settings['logo-darkmode'][0]) ? $settings['logo-darkmode'][0] : null;
-    } 
+    }
     // Debugging: Dump the logo variables
 
 @endphp
@@ -27,7 +27,7 @@
 @else
     @if($this->sidebarType == 'light')
         <div class="px-2 {{ ($this->compact ? 'w-28' : 'w-48') }}">
-            <x-aura::application-logo class="w-full h-8 text-gray-700 fill-current dark:text-white" />
+            <x-aura::application-logo class="w-full h-8 text-gray-700 fill-current" />
         </div>
     @else
         <div class="px-2 {{ ($this->compact ? 'w-28' : 'w-48') }}">
