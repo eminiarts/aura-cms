@@ -12,7 +12,8 @@ function withOpacityValue(variable) {
 }
 
 module.exports = {
-    darkMode: 'class',
+    // darkMode: 'class',
+    darkMode: 'selector',
 
     content: [
         './vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php',
