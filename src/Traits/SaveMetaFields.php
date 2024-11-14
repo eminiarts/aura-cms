@@ -12,7 +12,7 @@ trait SaveMetaFields
 
         static::saving(function ($post) {
 
-            //   ray('SaveMetaFields', $post->attributes)->red();
+            //    ray('SaveMetaFields', $post->attributes)->red();
 
             if (isset($post->attributes['fields'])) {
 
@@ -45,13 +45,14 @@ trait SaveMetaFields
                     }
 
                     // If the $class is a Password Field and the value is null, continue
-                    if ($class instanceof \Aura\Base\Fields\Password && ($value === null || $value === '')) {
-
-                        // If the password is available in the $post->attributes or $post->attributes['fields'][$key], unset it
-                        unset($post->attributes[$key]);
-                        unset($post->attributes['fields'][$key]);
-
-                        continue;
+                    if ($class instanceof \Aura\Base\Fields\Password) {
+                        // Check if the password field is dirty
+                        if (! $post->isDirty($key)) {
+                            unset($post->attributes[$key]);
+                            unset($post->attributes['fields'][$key]);
+                            continue;
+                        }
+                        // Proceed to process the password field if it has been modified
                     }
 
                     $field = $post->fieldBySlug($key);
@@ -92,7 +93,7 @@ trait SaveMetaFields
 
                 $post->clearFieldsAttributeCache();
 
-                // ray('SaveMetaFields', $post)->red();
+                //  ray('SaveMetaFields', $post)->red();
             }
 
         });

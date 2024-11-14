@@ -276,8 +276,13 @@ class Resource extends Model
                 });
 
             $this->fieldsAttributeCache = $defaultValues
+                ->filter(function($value, $key) {
+                    // if(in_array($key, $this->hidden)) {
+                    //     //ray('hidden', $key)->blue();
+                    // }
+                    return !in_array($key, $this->hidden);
+                })
                 ->filter(function ($value, $key) {
-
                     // return true;
                     $field = $this->fieldBySlug($key);
 

@@ -161,7 +161,9 @@ class Table extends Component
         return $this->query()->pluck('id')->all();
     }
 
-    public function boot() {}
+    public function boot()
+    {
+    }
 
     /**
      * Get the create link.
@@ -321,7 +323,6 @@ class Table extends Component
      */
     public function render()
     {
-        ray('render', $this->search, count($this->rows()), $this->rows()->toArray());
         return view($this->model->tableComponentView(), [
             'parent' => $this->parent,
             'rows' => $this->rows(),
