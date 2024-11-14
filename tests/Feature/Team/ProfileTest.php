@@ -42,13 +42,15 @@ it('updates the user profile', function () {
 });
 
 it('updates the user password', function () {
-    livewire(Profile::class)
+    $component =livewire(Profile::class)
         ->set('form.fields.current_password', 'password')
         ->set('form.fields.password', 'new-Password123*&*&!!!')
         ->set('form.fields.password_confirmation', 'new-Password123*&*&!!!')
         ->call('save')
-        ->assertHasNoErrors();
+        ->assertHasNoErrors()
+        ;
 
+    
     $user = auth()->user()->fresh();
 
     expect(Hash::check('new-Password123*&*&!!!', $user->password))->toBeTrue();

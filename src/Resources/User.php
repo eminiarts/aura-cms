@@ -132,15 +132,15 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
         Cache::forget($option);
     }
 
-    // Reset to default create Method from Laravel
-    public static function create($fields)
-    {
-        $model = new static;
+    // // Reset to default create Method from Laravel
+    // public static function create($fields)
+    // {
+    //     $model = new static;
 
-        return tap($model->newModelInstance($fields), function ($instance) {
-            $instance->save();
-        });
-    }
+    //     return tap($model->newModelInstance($fields), function ($instance) {
+    //         $instance->save();
+    //     });
+    // }
 
     /**
      * Get the current team of the user's context.

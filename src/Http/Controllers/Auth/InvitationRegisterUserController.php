@@ -49,12 +49,10 @@ class InvitationRegisterUserController extends Controller
         $user = User::create([
             'name' => $request->name,
             'email' => $teamInvitation->email,
-            'password' => Hash::make($request->password),
+            'password' => $request->password,
             'current_team_id' => $team->id,
             'fields' => ['roles' => [$teamInvitation->role]],
         ]);
-
-        // dd($user->fresh()->toArray());
 
         // Delete the invitation
         $teamInvitation->delete();

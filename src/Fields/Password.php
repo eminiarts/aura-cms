@@ -2,6 +2,7 @@
 
 namespace Aura\Base\Fields;
 
+use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Hash;
 
 class Password extends Field
@@ -17,6 +18,7 @@ class Password extends Field
     // }
 
     // Initialize the field on a LiveWire component
+    // Probably not needed anymore
     public function hydrate() {
         return null;
     }
@@ -29,7 +31,16 @@ class Password extends Field
 
     public function set($post, $field, $value)
     {
+
+        
         if ($value) {
+
+            // ray('set', $value)->red();
+            // if starts with $2y$, ray
+            if (Str::startsWith($value, '$2y$')) {
+                // ray('starts with $2y$', $value)->blue();
+                // ray()->backtrace()->blue();
+            }
             // Hash the password
             return Hash::make($value);
         }
