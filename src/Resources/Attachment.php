@@ -97,11 +97,12 @@ class Attachment extends Resource
                 'name' => 'Preview',
                 'type' => 'Aura\\Base\\Fields\\Embed',
                 'validation' => '',
-                'on_index' => false,
+                'on_index' => true,
                 'slug' => 'embed',
                 'style' => [
                     'width' => '100',
                 ],
+                'display_view' => 'aura::components.fields.embed-index'
             ],
             [
                 'name' => 'Details',
