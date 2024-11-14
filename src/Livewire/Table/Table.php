@@ -161,9 +161,7 @@ class Table extends Component
         return $this->query()->pluck('id')->all();
     }
 
-    public function boot()
-    {
-    }
+    public function boot() {}
 
     /**
      * Get the create link.

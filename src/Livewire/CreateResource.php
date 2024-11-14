@@ -24,11 +24,6 @@ class CreateResource extends Component
         $this->dispatch('closeModal');
     }
 
-    public static function modalClasses(): string
-    {
-        return 'max-w-xl';
-    }
-
     public static function getFields()
     {
         return [
@@ -40,6 +35,11 @@ class CreateResource extends Component
                 'validation' => 'required|alpha:ascii',
             ],
         ];
+    }
+
+    public static function modalClasses(): string
+    {
+        return 'max-w-xl';
     }
 
     public function mount()

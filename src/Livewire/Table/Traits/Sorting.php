@@ -57,13 +57,13 @@ trait Sorting
 
         foreach ($this->sorts as $field => $direction) {
 
-             // We want to add custom Sorting. If the model has a custom sorting method, we want to use that instead of the default one. Name of the method is sort_{$field}
+            // We want to add custom Sorting. If the model has a custom sorting method, we want to use that instead of the default one. Name of the method is sort_{$field}
             if (method_exists($this->model, 'sort_'.$field)) {
                 $this->model->{'sort_'.$field}($query, $direction);
 
                 return $query;
             }
-            
+
             if ($this->model->isTaxonomyField($field)) {
                 $taxonomy = Str::singular(ucfirst($field));
 

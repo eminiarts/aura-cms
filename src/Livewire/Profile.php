@@ -27,7 +27,6 @@ class Profile extends Component
 
     public $model;
 
-
     /**
      * The user's current password.
      *

@@ -9,7 +9,7 @@ beforeEach(function () {
 
 test('config features test', function () {
     expect(config('aura.features'))->toMatchArray([
-          'global_search' => true,
+        'global_search' => true,
         'bookmarks' => true,
         'last_visited_pages' => true,
         'notifications' => true,

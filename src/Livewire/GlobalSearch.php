@@ -2,9 +2,8 @@
 
 namespace Aura\Base\Livewire;
 
-use Livewire\Component;
 use Aura\Base\Resources\User;
-use Illuminate\Support\Facades\DB;
+use Livewire\Component;
 
 class GlobalSearch extends Component
 {
@@ -109,7 +108,6 @@ class GlobalSearch extends Component
     }
 
     public function render()
-
     {
         if (auth()->check()) {
             $this->bookmarks = auth()->user()->getOptionBookmarks();

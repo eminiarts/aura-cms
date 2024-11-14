@@ -53,6 +53,7 @@ class Modals extends Component
     public function render()
     {
         ray($this->modals)->blue(); // This will show the contents of $modals in Ray
+
         return view('aura::livewire.modals');
     }
 }

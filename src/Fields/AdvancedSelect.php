@@ -6,27 +6,13 @@ class AdvancedSelect extends Field
 {
     public $edit = 'aura::fields.advanced-select';
 
+    public $filter = 'aura::fields.filters.advanced-select';
+
     public $index = 'aura::fields.advanced-select-index';
 
     public $optionGroup = 'JS Fields';
 
     public $view = 'aura::fields.advanced-select-view';
-
-    public $filter = 'aura::fields.filters.advanced-select';
-
-    public function filter()
-    {
-        if ($this->filter) {
-            return $this->filter;
-        }
-    }
-
-    public function filterOptions()
-    {
-        return [
-            'contains' => __('contains'),
-        ];
-    }
 
     public function api($request)
     {
@@ -49,6 +35,20 @@ class AdvancedSelect extends Field
             ->toArray();
 
         return $values;
+    }
+
+    public function filter()
+    {
+        if ($this->filter) {
+            return $this->filter;
+        }
+    }
+
+    public function filterOptions()
+    {
+        return [
+            'contains' => __('contains'),
+        ];
     }
 
     // public function display($field, $value, $model)

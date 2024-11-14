@@ -144,10 +144,9 @@ return [
         'resource_editor' => config('app.env') == 'local' ? true : false,
         'custom_tables_for_resources' => false, // default = false
         // By default, resources are using the posts and meta table.
-        // If you want to use custom tables by default, you can set this to true. 
+        // If you want to use custom tables by default, you can set this to true.
 
     ],
-
 
     /*
     |--------------------------------------------------------------------------

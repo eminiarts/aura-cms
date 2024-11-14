@@ -1,11 +1,11 @@
 <?php
 
+use Aura\Base\Resources\Option;
+use Aura\Base\Resources\Permission;
 use Aura\Base\Resources\Post;
 use Aura\Base\Resources\Role;
 use Aura\Base\Resources\User;
-use Aura\Base\Resources\Option;
-use Aura\Base\Resources\Permission;
-use Illuminate\Support\Facades\Artisan;
+
 beforeAll(function () {
     putenv('AURA_TEAMS=false');
 });

@@ -108,6 +108,7 @@ class AddIdsToFields implements Pipe
                     $parentPanel = $item;
                     $parentTab = null;
                     $currentParent = $item;
+
                     return $item;
                 }
 

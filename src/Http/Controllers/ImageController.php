@@ -4,7 +4,6 @@ namespace Aura\Base\Http\Controllers;
 
 use Aura\Base\Services\ThumbnailGenerator;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
 
 class ImageController extends Controller
 {
