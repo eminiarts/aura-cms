@@ -29,10 +29,16 @@ jobs:
           extensions: dom, curl, libxml, mbstring, zip, pcntl, pdo, sqlite, pdo_sqlite, bcmath, soap, intl, gd, exif, iconv, imagick, fileinfo
           coverage: none
 
+      - name: Install pdftk
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y pdftk
+
       - name: Setup problem matchers
         run: |
           echo "::add-matcher::${{ runner.tool_cache }}/php.json"
           echo "::add-matcher::${{ runner.tool_cache }}/phpunit.json"
+
       - name: Install dependencies
         run: |
           composer require "laravel/framework:11.*" "orchestra/testbench:^9.0" --no-interaction --no-update
