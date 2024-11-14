@@ -477,6 +477,38 @@ trait AuraModelConfig
         return $query;
     }
 
+    public function scopeOrWhereMeta($query, ...$args)
+    {
+        if (count($args) === 3) {
+            $key = $args[0];
+            $operator = $args[1];
+            $value = $args[2];
+
+            return $query->orWhereHas('meta', function ($query) use ($key, $operator, $value) {
+                $query->where('key', $key)->where('value', $operator, $value);
+            });
+        } elseif (count($args) === 2) {
+            $key = $args[0];
+            $value = $args[1];
+
+            return $query->orWhereHas('meta', function ($query) use ($key, $value) {
+                $query->where('key', $key)->where('value', $value);
+            });
+        } elseif (count($args) === 1 && is_array($args[0])) {
+            $metaPairs = $args[0];
+
+            return $query->orWhere(function ($query) use ($metaPairs) {
+                foreach ($metaPairs as $key => $value) {
+                    $query->whereHas('meta', function ($query) use ($key, $value) {
+                        $query->where('key', $key)->where('value', $value);
+                    });
+                }
+            });
+        }
+
+        return $query;
+    }
+
     /**
      * Scope a query to only include models where meta contains a specific value.
      *
