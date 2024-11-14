@@ -46,7 +46,7 @@ class GenerateImageThumbnail implements ShouldQueue
         // Get the settings from aura and check which thumbnail sizes are enabled
         $settings = Aura::option('media');
 
-        if (!$settings || !($settings['generate_thumbnails'] ?? false)) {
+        if (! $settings || ! ($settings['generate_thumbnails'] ?? false)) {
             return;
         }
 
@@ -54,13 +54,14 @@ class GenerateImageThumbnail implements ShouldQueue
         $relativePath = $this->attachment->fields['url'] ?? null;
         if (empty($relativePath)) {
             logger()->error('Empty attachment URL', [
-                'attachment' => $this->attachment->toArray()
+                'attachment' => $this->attachment->toArray(),
             ]);
+
             return;
         }
 
         logger()->info('Processing attachment', [
-            'relativePath' => $relativePath
+            'relativePath' => $relativePath,
         ]);
 
         // Generate thumbnails for each configured size
@@ -68,14 +69,14 @@ class GenerateImageThumbnail implements ShouldQueue
             try {
                 logger()->info('Generating thumbnail', [
                     'relativePath' => $relativePath,
-                    'size' => $thumbnail
+                    'size' => $thumbnail,
                 ]);
 
                 $width = $thumbnail['width'] ?? null;
                 $height = $thumbnail['height'] ?? null;
 
                 if ($width === null) {
-                    throw new \InvalidArgumentException("Width is not defined for thumbnail size: " . ($thumbnail['name'] ?? 'unknown'));
+                    throw new \InvalidArgumentException('Width is not defined for thumbnail size: '.($thumbnail['name'] ?? 'unknown'));
                 }
 
                 $thumbnailGenerator->generate(
@@ -88,7 +89,7 @@ class GenerateImageThumbnail implements ShouldQueue
                 logger()->error('Failed to generate thumbnail', [
                     'size' => $thumbnail,
                     'path' => $relativePath,
-                    'error' => $e->getMessage()
+                    'error' => $e->getMessage(),
                 ]);
             }
         }

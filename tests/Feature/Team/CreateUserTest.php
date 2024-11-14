@@ -1,15 +1,14 @@
 <?php
 
 use Aura\Base\Facades\Aura;
+use Aura\Base\Livewire\Resource\Create;
+use Aura\Base\Livewire\Resource\Edit;
 use Aura\Base\Resources\Role;
 use Aura\Base\Resources\Team;
 use Aura\Base\Resources\User;
-use Illuminate\Support\Facades\DB;
-use function Pest\Livewire\livewire;
-
 use Illuminate\Support\Facades\Hash;
-use Aura\Base\Livewire\Resource\Edit;
-use Aura\Base\Livewire\Resource\Create;
+
+use function Pest\Livewire\livewire;
 
 // Before each test, create a Superadmin and login
 beforeEach(function () {
@@ -39,9 +38,7 @@ test('user can be created', function () {
         ->set('form.fields.password_confirmation', 'Password123!XX')
 
         ->call('save')
-        ->assertHasNoErrors()
-        ;
-
+        ->assertHasNoErrors();
 
     // Assert user was created
     expect(User::count())->toBe($initialCount + 1);
@@ -113,7 +110,6 @@ test('user can be edited without changing password', function () {
     Aura::fake();
     Aura::setModel($user);
 
-
     ray()->clearScreen();
     // Edit user without setting password
     livewire(Edit::class, ['id' => $user->id])
@@ -141,7 +137,6 @@ test('user password can be changed when explicitly set', function () {
     ]);
 
     ray()->clearScreen();
-
 
     Aura::fake();
     Aura::setModel($user);

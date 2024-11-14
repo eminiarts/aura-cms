@@ -16,7 +16,7 @@ trait SaveFieldAttributes
     {
         static::saving(function ($post) {
 
-               // ray('SaveFieldAttributes', $post->attributes, $post)->blue();
+            // ray('SaveFieldAttributes', $post->attributes, $post)->blue();
 
             if ($post->name == 'Test Post 1') {
                 // dd($post)->red();
@@ -55,6 +55,7 @@ trait SaveFieldAttributes
                         if (! $post->isDirty($slug)) {
                             // Remove it from attributes so it won't be saved
                             unset($post->attributes[$slug]);
+
                             return;
                         }
 

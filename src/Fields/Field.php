@@ -37,9 +37,9 @@ abstract class Field implements Wireable
 
     public $view = null;
 
-    public $wrapper = null;
-    
     public $wrap = false;
+
+    public $wrapper = null;
 
     public function display($field, $value, $model)
     {

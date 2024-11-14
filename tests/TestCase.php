@@ -37,8 +37,6 @@ class TestCase extends Orchestra
         // load the aura config
         // config()->set('aura', require __DIR__.'/../config/aura.php');
 
-        
-
         // without exception handling
         // $this->withoutExceptionHandling();
 

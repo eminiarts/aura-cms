@@ -8,11 +8,6 @@ trait Search
 {
     public $search;
 
-    public function updatedSearch()
-    {
-        $this->resetPage();
-    }
-
     public function applySearch($query)
     {
         if ($this->search) {
@@ -53,5 +48,10 @@ trait Search
         }
 
         return $query;
+    }
+
+    public function updatedSearch()
+    {
+        $this->resetPage();
     }
 }

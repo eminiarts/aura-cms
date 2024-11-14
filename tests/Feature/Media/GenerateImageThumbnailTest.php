@@ -3,9 +3,9 @@
 use Aura\Base\Jobs\GenerateImageThumbnail;
 use Aura\Base\Resources\Attachment;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Http\UploadedFile;
 
 uses(RefreshDatabase::class);
 
@@ -68,9 +68,9 @@ it('generates thumbnails with correct dimensions from config', function () {
         // Check if thumbnail was created in storage
         $thumbnailPath = 'thumbnails/media/';
         if (isset($dimension['height'])) {
-            $thumbnailPath .= $dimension['width'] . '_' . $dimension['height'] . '_test.jpg';
+            $thumbnailPath .= $dimension['width'].'_'.$dimension['height'].'_test.jpg';
         } else {
-            $thumbnailPath .= $dimension['width'] . '_auto_test.jpg';
+            $thumbnailPath .= $dimension['width'].'_auto_test.jpg';
         }
 
         Storage::disk('public')->assertExists($thumbnailPath);

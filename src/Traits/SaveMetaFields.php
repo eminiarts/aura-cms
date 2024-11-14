@@ -50,6 +50,7 @@ trait SaveMetaFields
                         if (! $post->isDirty($key)) {
                             unset($post->attributes[$key]);
                             unset($post->attributes['fields'][$key]);
+
                             continue;
                         }
                         // Proceed to process the password field if it has been modified

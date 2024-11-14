@@ -55,13 +55,12 @@ test('fields get grouped when field group is true', function () {
 
     $fields = $model->getGroupedFields();
 
-
     expect($fields)->toHaveCount(1);
 
     // Check panel wrapper
     expect($fields[0])->toHaveKeys([
-        'label', 'name', 'type', 'slug', 'field', '_id', '_parent_id', 
-        'conditional_logic', 'fields'
+        'label', 'name', 'type', 'slug', 'field', '_id', '_parent_id',
+        'conditional_logic', 'fields',
     ]);
     expect($fields[0]['label'])->toBe('Panel 1');
     expect($fields[0]['type'])->toBe('Aura\\Base\\Fields\\Panel');

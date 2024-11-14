@@ -1,36 +1,32 @@
 <?php
 
-use Aura\Base\Resource;
 use Aura\Base\Facades\Aura;
+use Aura\Base\Livewire\GlobalSearch;
+use Aura\Base\Resource;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
-use Aura\Base\Livewire\GlobalSearch;
 
 uses(RefreshDatabase::class);
 
 // Before each test, create a Superadmin and login
 beforeEach(function () {
-  Aura::fake();
-  Aura::registerResources([
-    GlobalSearchModel::class,
-  ]);
-  Aura::setModel(new GlobalSearchModel);
+    Aura::fake();
+    Aura::registerResources([
+        GlobalSearchModel::class,
+    ]);
+    Aura::setModel(new GlobalSearchModel);
 
-
-  $this->actingAs($this->user = createSuperAdmin());
+    $this->actingAs($this->user = createSuperAdmin());
 });
 
 // Create Resource for this test
 class GlobalSearchModel extends Resource
 {
     public static $singularName = 'SearchPost';
-    public static ?string $slug = 'searchpost';
-    public static string $type = 'SearchPost';
 
-    public function title()
-    {
-        return $this->title;
-    }
+    public static ?string $slug = 'searchpost';
+
+    public static string $type = 'SearchPost';
 
     public static function getFields()
     {
@@ -56,6 +52,11 @@ class GlobalSearchModel extends Resource
                 'slug' => 'description',
             ],
         ];
+    }
+
+    public function title()
+    {
+        return $this->title;
     }
 }
 

@@ -50,10 +50,10 @@ test('fields get grouped when field group is true', function () {
     $tabs = $model->getGroupedFields();
 
     $this->assertCount(1, $tabs);
-   
+
     expect($tabs[0])->toHaveKeys([
-        'label', 'name', 'type', 'slug', 'field', '_id', '_parent_id', 
-        'conditional_logic', 'fields'
+        'label', 'name', 'type', 'slug', 'field', '_id', '_parent_id',
+        'conditional_logic', 'fields',
     ]);
 
     // Check wrapper field

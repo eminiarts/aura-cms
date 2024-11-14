@@ -233,7 +233,6 @@ test('table filter - custom tags filter - contains', function () {
 
     $tags = Tag::get();
 
-
     // Visit the Post Index Page
     $component = Livewire::test(Table::class, ['query' => null, 'model' => $post]);
 
@@ -300,7 +299,6 @@ test('table filter - custom tags filter - contains', function () {
         return count($rows->items()) === 1 && $rows->items()[0]->id === $post2->id;
     });
 });
-
 
 test('table filter - custom filter - does_not_contain', function () {
     $post = TableFilterModel::create([

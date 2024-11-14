@@ -1,10 +1,10 @@
 <?php
 
-use Livewire\Livewire;
-use Illuminate\Support\Str;
-use Aura\Base\Resources\Post;
 use Aura\Base\Livewire\Table\Table;
+use Aura\Base\Resources\Post;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Str;
+use Livewire\Livewire;
 
 uses(RefreshDatabase::class);
 

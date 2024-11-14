@@ -50,6 +50,20 @@ trait Filters
         ];
     }
 
+    public function addFilterGroup()
+    {
+        $this->filters['custom'][] = [
+            'filters' => [
+                $this->newFilter(),
+            ],
+        ];
+    }
+
+    public function addSubFilter($groupKey)
+    {
+        $this->filters['custom'][$groupKey]['filters'][] = $this->newFilter();
+    }
+
     public function clearFiltersCache()
     {
         auth()->user()->clearCachedOption($this->model->getType().'.filters.*');
@@ -145,6 +159,22 @@ trait Filters
         $this->filters['custom'] = array_values($this->filters['custom']);
     }
 
+    public function removeFilter($groupKey, $filterKey)
+    {
+        unset($this->filters['custom'][$groupKey]['filters'][$filterKey]);
+        $this->filters['custom'][$groupKey]['filters'] = array_values($this->filters['custom'][$groupKey]['filters']);
+
+        if (empty($this->filters['custom'][$groupKey]['filters'])) {
+            $this->removeFilterGroup($groupKey);
+        }
+    }
+
+    public function removeFilterGroup($groupKey)
+    {
+        unset($this->filters['custom'][$groupKey]);
+        $this->filters['custom'] = array_values($this->filters['custom']);
+    }
+
     /**
      * Reset the filters.
      *
@@ -197,7 +227,6 @@ trait Filters
         $this->clearFiltersCache();
     }
 
-
     public function updatedFiltersCustom($value, $key)
     {
         $parts = explode('.', $key);
@@ -232,7 +261,7 @@ trait Filters
 
             // Force a new array assignment to trigger reactivity
             $this->filters = [
-                'custom' => array_values($filterData['custom'] ?? [])
+                'custom' => array_values($filterData['custom'] ?? []),
             ];
         }
 
@@ -275,20 +304,6 @@ trait Filters
         return collect($userFilters)->merge($teamFilters)->keyBy('slug')->toArray();
     }
 
-    public function addFilterGroup()
-    {
-        $this->filters['custom'][] = [
-            'filters' => [
-                $this->newFilter(),
-            ],
-        ];
-    }
-
-    public function addSubFilter($groupKey)
-    {
-        $this->filters['custom'][$groupKey]['filters'][] = $this->newFilter();
-    }
-
     private function newFilter()
     {
         return [
@@ -297,21 +312,5 @@ trait Filters
             'value' => null,
             'options' => [],
         ];
-    }
-
-    public function removeFilterGroup($groupKey)
-    {
-        unset($this->filters['custom'][$groupKey]);
-        $this->filters['custom'] = array_values($this->filters['custom']);
-    }
-
-    public function removeFilter($groupKey, $filterKey)
-    {
-        unset($this->filters['custom'][$groupKey]['filters'][$filterKey]);
-        $this->filters['custom'][$groupKey]['filters'] = array_values($this->filters['custom'][$groupKey]['filters']);
-
-        if (empty($this->filters['custom'][$groupKey]['filters'])) {
-            $this->removeFilterGroup($groupKey);
-        }
     }
 }

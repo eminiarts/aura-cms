@@ -2,8 +2,8 @@
 
 namespace Aura\Base\Services;
 
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Config;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Intervention\Image\Facades\Image;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
@@ -26,13 +26,13 @@ class ThumbnailGenerator
 
             foreach ($allowedDimensions as $dimension) {
                 if ($dimension['width'] === $width &&
-                    (!$height || $dimension['height'] === $height)) {
+                    (! $height || $dimension['height'] === $height)) {
                     $dimensionsAllowed = true;
                     break;
                 }
             }
 
-            if (!$dimensionsAllowed) {
+            if (! $dimensionsAllowed) {
                 throw new NotFoundHttpException('Requested thumbnail dimensions are not allowed.');
             }
         }
@@ -44,7 +44,7 @@ class ThumbnailGenerator
         $thumbnailFolder = 'thumbnails/'.$folderPath;
 
         // Determine thumbnail path based on provided width and/or height
-        if ($width && !$height) {
+        if ($width && ! $height) {
             $thumbnailPath = $thumbnailFolder.$width.'_auto_'.$basename;
         } else {
             $height = $height ?: $width;
@@ -57,8 +57,8 @@ class ThumbnailGenerator
         }
 
         // Check if the original image exists
-        if (!Storage::disk('public')->exists($folderPath.$basename)) {
-            throw new \Exception('Original image not found: ' . $path);
+        if (! Storage::disk('public')->exists($folderPath.$basename)) {
+            throw new \Exception('Original image not found: '.$path);
         }
 
         // Create thumbnail
@@ -68,7 +68,7 @@ class ThumbnailGenerator
         $originalWidth = $image->width();
         $originalHeight = $image->height();
 
-        if ($width && !$height) {
+        if ($width && ! $height) {
             // When only width is specified, maintain aspect ratio and don't upscale
             if ($width > $originalWidth) {
                 // If requested width is larger than original, keep original size
@@ -95,7 +95,7 @@ class ThumbnailGenerator
         }
 
         // Ensure the thumbnail directory exists
-        if (!Storage::disk('public')->exists($thumbnailFolder)) {
+        if (! Storage::disk('public')->exists($thumbnailFolder)) {
             Storage::disk('public')->makeDirectory($thumbnailFolder);
         }
 

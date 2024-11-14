@@ -15,8 +15,9 @@ class ApplyWrappers implements Pipe
 
         foreach ($fields as $field) {
             // If no wrapper, add the field as is
-            if (!$field['field']->wrapper) {
+            if (! $field['field']->wrapper) {
                 $newFields[] = $field;
+
                 continue;
             }
 
@@ -26,13 +27,13 @@ class ApplyWrappers implements Pipe
             // Add wrapper if:
             // 1. We haven't added this type of wrapper (global/non-global) before
             // 2. OR if wrap is explicitly set to true
-            if (!in_array($field['field']->wrapper, $relevantWrappers) || optional($field)['wrap'] === true) {
+            if (! in_array($field['field']->wrapper, $relevantWrappers) || optional($field)['wrap'] === true) {
                 // Add the wrapper field
                 $wrapperField = [
                     'label' => $field['field']->wrapper,
-                    'name'  => $field['field']->wrapper,
-                    'type'  => $field['field']->wrapper,
-                    'slug'  => Str::slug($field['field']->wrapper),
+                    'name' => $field['field']->wrapper,
+                    'type' => $field['field']->wrapper,
+                    'slug' => Str::slug($field['field']->wrapper),
                     'field' => app($field['field']->wrapper),
                 ];
 
