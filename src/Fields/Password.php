@@ -15,36 +15,44 @@ class Password extends Field
 
     public function getFields()
     {
-        return array_merge(parent::getFields(), [
-        ]);
+        return array_merge(parent::getFields(), []);
     }
 
-    // public function get($field, $value)
-    // {
-    // }
-
-    // Initialize the field on a LiveWire component
-    // Probably not needed anymore
     public function hydrate() {}
 
     public function set($post, $field, &$value)
     {
         $key = $field['slug'];
 
-        // If the password field is not dirty, unset it
-        if (! $post->isDirty($key)) {
-            ray('unset', $key)->red();
-            unset($post->attributes[$key]);
-            unset($post->attributes['fields'][$key]);
-            return; // Exit the method
+        // If value is empty (null or empty string), preserve the existing password
+        if (empty($value)) {
+            // For User model
+            if ($post instanceof \App\Models\User || $post instanceof \Aura\Base\Resources\User) {
+                // Remove password from fields if it exists
+                if (isset($post->attributes['fields'][$key])) {
+                    unset($post->attributes['fields'][$key]);
+                }
+                
+                // Skip password update by returning early
+                return null;
+            }
+
+            // For other models, preserve the existing password in fields
+            if (isset($post->fields[$key])) {
+                return $post->fields[$key];
+            }
+
+            return null;
         }
 
         // If value is not empty, hash it
-        if ($value) {
-            $value = Hash::make($value);
-            ray($value)->blue();
+        $hashedValue = Hash::make($value);
+        
+        // For User model, we need to set the password attribute directly
+        if ($post instanceof \App\Models\User || $post instanceof \Aura\Base\Resources\User) {
+            $post->password = $hashedValue;
         }
 
-        return $value;
+        return $hashedValue;
     }
 }
