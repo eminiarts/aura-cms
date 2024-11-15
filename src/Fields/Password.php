@@ -27,20 +27,22 @@ class Password extends Field
     // Probably not needed anymore
     public function hydrate() {}
 
-    public function set($post, $field, $value)
+    public function set($post, $field, &$value)
     {
+        $key = $field['slug'];
 
+        // If the password field is not dirty, unset it
+        if (! $post->isDirty($key)) {
+            ray('unset', $key)->red();
+            unset($post->attributes[$key]);
+            unset($post->attributes['fields'][$key]);
+            return; // Exit the method
+        }
+
+        // If value is not empty, hash it
         if ($value) {
-
-            // ray('set', $value)->red();
-            // if starts with $2y$, ray
-            if (Str::startsWith($value, '$2y$')) {
-                // ray('starts with $2y$', $value)->blue();
-                // ray()->backtrace()->blue();
-            }
-
-            // Hash the password
-            return Hash::make($value);
+            $value = Hash::make($value);
+            ray($value)->blue();
         }
 
         return $value;

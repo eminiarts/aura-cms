@@ -277,9 +277,11 @@ class Resource extends Model
 
             $this->fieldsAttributeCache = $defaultValues
                 ->filter(function ($value, $key) {
-                    // if(in_array($key, $this->hidden)) {
-                    //     //ray('hidden', $key)->blue();
-                    // }
+                    // if its not in fillable, then we're not filtering it
+                    if (! $this->isBaseFillable($key)) {
+                        return true;
+                    }
+
                     return ! in_array($key, $this->hidden);
                 })
                 ->filter(function ($value, $key) {
@@ -364,6 +366,11 @@ class Resource extends Model
         });
 
         return $fields;
+    }
+
+    public function isBaseFillable($key)
+    {
+        return in_array($key, $this->baseFillable);
     }
 
     // Override isRelation

@@ -12,7 +12,7 @@ trait SaveMetaFields
 
         static::saving(function ($post) {
 
-            //    ray('SaveMetaFields', $post->attributes)->red();
+            // ray('SaveMetaFields', $post->attributes)->red();
 
             if (isset($post->attributes['fields'])) {
 
@@ -45,16 +45,18 @@ trait SaveMetaFields
                     }
 
                     // If the $class is a Password Field and the value is null, continue
-                    if ($class instanceof \Aura\Base\Fields\Password) {
-                        // Check if the password field is dirty
-                        if (! $post->isDirty($key)) {
-                            unset($post->attributes[$key]);
-                            unset($post->attributes['fields'][$key]);
+                    // if ($class instanceof \Aura\Base\Fields\Password) {
+                    //     // Check if the password field is dirty
+                    //     if (! $post->isDirty($key) && $post->isBaseFillable($key)) {
+                    //         // ray('isDirty', $key, $post->isBaseFillable($key))->blue();
 
-                            continue;
-                        }
-                        // Proceed to process the password field if it has been modified
-                    }
+                    //         unset($post->attributes[$key]);
+                    //         unset($post->attributes['fields'][$key]);
+
+                    //         continue;
+                    //     }
+                    //     // Proceed to process the password field if it has been modified
+                    // }
 
                     $field = $post->fieldBySlug($key);
 
@@ -63,7 +65,10 @@ trait SaveMetaFields
                     }
 
                     if (method_exists($class, 'set')) {
+                        // ray($post->password)->red();
                         $value = $class->set($post, $field, $value);
+                        // ray($key, $value,$post)->blue();
+                        // dd($post);
                     }
 
                     if ($class instanceof \Aura\Base\Fields\ID) {

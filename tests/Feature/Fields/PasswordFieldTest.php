@@ -65,7 +65,9 @@ test('Password Field Test', function () {
     $model = PasswordFieldModel::first();
 
     // Assert that $model->fields['number'] is null
-    $this->assertNull($model->fields['password']);
+    $this->assertArrayNotHasKey('password', $model->fields);
+
+    ray()->clearScreen();
 
     $component->set('form.fields.password', '123456')
         ->call('save')
@@ -76,6 +78,8 @@ test('Password Field Test', function () {
 
     // get the datemodel from db
     $model = PasswordFieldModel::orderBy('id', 'desc')->first();
+
+    // ray($model->password, $model->fields);
 
     // $this->assertEquals($model->fields['password'], null);
     $this->assertTrue(Hash::check('123456789', $model->fields['password']));
@@ -99,7 +103,7 @@ test('password field gets not overwritten if saved as null', function () {
 
     // $this->assertEquals($post->fields['password'], '123456789');
     // $this->assertEquals($post->fields['password'], null);
-    $this->assertTrue(Hash::check('123456789', $post->fields['password']));
+    $this->assertTrue(Hash::check('123456789', $post->password));
 
     $this->assertTrue(Hash::check('123456789', $post->password));
 
@@ -125,7 +129,7 @@ test('password field gets not overwritten if saved as null', function () {
 
     $post = PasswordFieldModel::first();
 
-    // dump($post->fields['password']);
+    dump($post->fields['password']);
 
     // Assert Password is still 123456789
     $this->assertTrue(Hash::check('123456789', $post->fields['password']));
