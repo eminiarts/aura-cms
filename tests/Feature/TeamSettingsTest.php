@@ -78,12 +78,6 @@ test('Team Settings can be saved', function () {
     // we need to create a role for the second team
     $role2 = Role::create(['name' => 'Super Admin', 'slug' => 'super_admin3', 'description' => 'Super Admin has can perform everything.', 'super_admin' => true, 'permissions' => []]);
 
-    // $this->user->teams()->attach([
-    //     $secondTeam->id => ['key' => 'roles', 'value' => $role2->id],
-    // ]);
-
-    // $role->users()->sync([$this->user->id => ['resource_type' => Role::class]]);
-
     // Default Team Settings
     Livewire::test(Settings::class)
         ->set('form.fields.darkmode-type', 'light')
@@ -107,7 +101,7 @@ test('Team Settings can be saved', function () {
     $this->assertEquals('red', $option->value['color-palette']);
     $this->assertEquals('zinc', $option->value['gray-color-palette']);
 
-    // acting as $this->user, get settings page and assertSee "--primary-400: #f87171;" in html
+    // acting as $this->user, get settings page and assertSee color variables
     $this->actingAs($this->user)
         ->get(route('aura.settings'))
         ->assertSee('--primary-400: 248 113 113;');
@@ -120,7 +114,7 @@ test('Team Settings can be saved', function () {
     $this->actingAs($this->user)
         ->get(route('aura.settings'))
         ->assertDontSee('--primary-400: 248 113 113;')
-        ->assertSee('--primary-400: 60 126 244;');
+        ->assertSee('--primary-400: 16 185 129;');
 
     // user switchTeam
     $this->user->switchTeam($secondTeam);
@@ -130,7 +124,7 @@ test('Team Settings can be saved', function () {
 
     $this->actingAs($this->user)
         ->get(route('aura.settings'))
-        ->assertSee('--primary-400: 60 126 244;');
+        ->assertSee('--primary-400: 16 185 129;');
 
     // assert DB has 1 record in options table
     $this->assertDatabaseCount('options', 1);
@@ -141,7 +135,7 @@ test('Team Settings can be saved', function () {
     $this->actingAs($this->user)
         ->get(route('aura.settings'))
         ->assertOk()
-        ->assertSee('--primary-400: 60 126 244;')
+        ->assertSee('--primary-400: 16 185 129;')
         ->assertDontSee('--primary-400: 248 113 113;')
         ->assertDontSee('--primary-400: 82 139 255;');
 });
