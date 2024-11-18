@@ -6,6 +6,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Storage;
+use Intervention\Image\Facades\Image;
 
 uses(RefreshDatabase::class);
 
@@ -41,15 +42,25 @@ it('does not generate thumbnail for non-image attachments', function () {
 });
 
 it('generates thumbnails with correct dimensions from config', function () {
-    // Create a test image
-    $file = UploadedFile::fake()->image('test.jpg', 2000, 2000);
-    Storage::disk('public')->putFileAs('media', $file, 'test.jpg');
+    // Create a real test image using Intervention Image
+    $width = 2000;
+    $height = 2000;
+    $imagePath = storage_path('app/public/media/test.jpg');
+    
+    // Ensure directory exists
+    if (!file_exists(dirname($imagePath))) {
+        mkdir(dirname($imagePath), 0777, true);
+    }
+    
+    // Create a real image
+    $img = Image::canvas($width, $height, '#ff0000');
+    $img->save($imagePath);
 
     $attachment = Attachment::create([
         'name' => 'Test Image',
         'url' => 'media/test.jpg',
         'mime_type' => 'image/jpeg',
-        'size' => $file->getSize(),
+        'size' => filesize($imagePath),
     ]);
 
     // Get configured dimensions
@@ -73,8 +84,13 @@ it('generates thumbnails with correct dimensions from config', function () {
             $thumbnailPath .= $dimension['width'].'_auto_test.jpg';
         }
 
-        Storage::disk('public')->assertExists($thumbnailPath);
+        // Use Storage facade's exists() method directly
+        $exists = Storage::disk('public')->exists($thumbnailPath);
+        expect($exists)->toBeTrue();
     }
+
+    // Cleanup - remove the test image
+    @unlink($imagePath);
 });
 
 it('returns original image when requested dimensions are larger than original', function () {
