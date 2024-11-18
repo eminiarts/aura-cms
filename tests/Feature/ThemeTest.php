@@ -123,7 +123,7 @@ test('Team Settings can be saved', function () {
     $this->actingAs($this->user)
         ->get(route('aura.settings'))
         ->assertDontSee('--primary-400: 248 113 113;')
-        ->assertSee('--primary-400: 60 126 244;');
+        ->assertSee('--primary-400: 16 185 129;');
 
     // user switchTeam
     $this->user->switchTeam($secondTeam);
@@ -133,7 +133,7 @@ test('Team Settings can be saved', function () {
 
     $this->actingAs($this->user)
         ->get(route('aura.settings'))
-        ->assertSee('--primary-400: 60 126 244;');
+        ->assertSee('--primary-400: 16 185 129;');
 
     // assert DB has 1 record in options table
     $this->assertDatabaseCount('options', 1);

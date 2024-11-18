@@ -52,7 +52,7 @@ test('post login works', function () {
     // Create a user
     $user = \Aura\Base\Resources\User::factory()->create([
         'email' => 'test@example.com',
-        'password' => bcrypt('password'),
+        'password' => 'password',
     ]);
 
     // Prepare login credentials
