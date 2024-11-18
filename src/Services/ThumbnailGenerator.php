@@ -25,14 +25,24 @@ class ThumbnailGenerator
             $dimensionsAllowed = false;
 
             foreach ($allowedDimensions as $dimension) {
-                if ($dimension['width'] === $width &&
-                    (! $height || $dimension['height'] === $height)) {
-                    $dimensionsAllowed = true;
-                    break;
+                if ($dimension['width'] === $width) {
+                    // If height is provided in request, it must match config
+                    if ($height !== null) {
+                        if (isset($dimension['height']) && $dimension['height'] === $height) {
+                            $dimensionsAllowed = true;
+                            break;
+                        }
+                    } else {
+                        // If no height provided in request, that's okay if config doesn't specify height
+                        if (!isset($dimension['height'])) {
+                            $dimensionsAllowed = true;
+                            break;
+                        }
+                    }
                 }
             }
 
-            if (! $dimensionsAllowed) {
+            if (!$dimensionsAllowed) {
                 throw new NotFoundHttpException('Requested thumbnail dimensions are not allowed.');
             }
         }
@@ -62,7 +72,8 @@ class ThumbnailGenerator
         }
 
         // Create thumbnail
-        $image = Image::make(storage_path('app/public/'.$path));
+        $imageContents = Storage::disk('public')->get($path);
+        $image = Image::make($imageContents);
 
         // Get original dimensions
         $originalWidth = $image->width();
@@ -96,11 +107,12 @@ class ThumbnailGenerator
 
         // Ensure the thumbnail directory exists
         if (! Storage::disk('public')->exists($thumbnailFolder)) {
-            Storage::disk('public')->makeDirectory($thumbnailFolder);
+            Storage::disk('public')->makeDirectory($thumbnailFolder, 0755, true);
         }
 
         // Save the thumbnail image with quality from config
-        $image->save(storage_path('app/public/'.$thumbnailPath), $quality * 100);
+        $image->encode('jpg', $quality * 100);
+        Storage::disk('public')->put($thumbnailPath, (string) $image);
 
         return $thumbnailPath;
     }
