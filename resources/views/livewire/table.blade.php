@@ -183,8 +183,6 @@
     }">
         @include($this->settings['views']['header'])
 
-        <div x-text="selected"></div>
-
         <div class="mt-4">
 
             <div class="flex flex-col justify-between w-full md:items-center md:flex-row">
