@@ -74,7 +74,6 @@ test('table filter - taxonomy filter', function () {
     $post = TableTaxonomyFilterModel::create([
         'title' => 'Test Post',
         'content' => 'Test Content A',
-        'type' => 'Post',
         'status' => 'publish',
         'meta' => 'B',
         'tags' => [$tag1->id, $tag2->id, $tag3->id],
@@ -83,37 +82,58 @@ test('table filter - taxonomy filter', function () {
     $post2 = TableTaxonomyFilterModel::create([
         'title' => 'Test Post 2',
         'content' => 'Test Content B',
-        'type' => 'Post',
         'status' => 'publish',
         'meta' => 'A',
         'tags' => [$tag3->id, $tag4->id, $tag5->id],
     ]);
+
+    $posts = DB::table('posts')->get();
+    ray($posts);
+
+    // expect 2 posts to be created
+    expect(TableTaxonomyFilterModel::count())->toBe(2);
 
     // Visit the Post Index Page
     $component = Livewire::test(Table::class, ['query' => null, 'model' => $post]);
 
     DB::listen(function ($query) {
         // Log the query to the console or store it for inspection
-        Log::info($query->sql, $query->bindings, $query->time);
+         // Log::info($query->sql, $query->bindings, $query->time);
     });
 
+    $relations = DB::table('post_relations')->get();
+    $posts = TableTaxonomyFilterModel::get();
+    ray($relations, $posts);
+
     // Apply Tag 1 filter
-    $component->set('filters.custom.filters', [
-        'name' => 'tags', 
-        'value' => [$tag1->id],
-        'operator' => 'contains',
-        'options' => [
-            'resource_type' => 'Aura\\Base\\Resources\\Tag',
-        ],
-    ]);
+    $component->set('filters.custom', [[
+        'filters' => [[
+            'name' => 'tags',
+            'operator' => 'contains', 
+            'value' => [$tag1->id],
+            'options' => [
+                'resource_type' => 'Aura\\Base\\Resources\\Tag',
+            ],
+        ]],
+    ]]);
 
     // Should have 1 item
     $component->assertViewHas('rows', function ($rows) use ($post) {
+        ray($rows->items());
         return count($rows->items()) === 1 && $rows->items()[0]->id === $post->id;
     });
 
     // Apply Tag 3 filter (should show both posts)
-    $component->set('filters.taxonomy.tags', [$tag3->id]);
+    $component->set('filters.custom', [[
+        'filters' => [[
+            'name' => 'tags',
+            'operator' => 'contains', 
+            'value' => [$tag3->id],
+            'options' => [
+                'resource_type' => 'Aura\\Base\\Resources\\Tag',
+            ],
+        ]],
+    ]]);
 
     // Should have 2 items
     $component->assertViewHas('rows', function ($rows) {
@@ -121,7 +141,16 @@ test('table filter - taxonomy filter', function () {
     });
 
     // Apply Tag 4 filter (should show only post2)
-    $component->set('filters.taxonomy.tags', [$tag4->id]);
+    $component->set('filters.custom', [[
+        'filters' => [[
+            'name' => 'tags',
+            'operator' => 'contains', 
+            'value' => [$tag4->id],
+            'options' => [
+                'resource_type' => 'Aura\\Base\\Resources\\Tag',
+            ],
+        ]],
+    ]]);
 
     // Should have 1 item and be post2
     $component->assertViewHas('rows', function ($rows) use ($post2) {
@@ -129,7 +158,16 @@ test('table filter - taxonomy filter', function () {
     });
 
     // Apply Tag1 and Tag4 filter (should show both posts)
-    $component->set('filters.taxonomy.tags', [$tag1->id, $tag4->id]);
+    $component->set('filters.custom', [[
+        'filters' => [[
+            'name' => 'tags',
+            'operator' => 'contains', 
+            'value' => [$tag1->id, $tag4->id],
+            'options' => [
+                'resource_type' => 'Aura\\Base\\Resources\\Tag',
+            ],
+        ]],
+    ]]);
 
     // Should have 2 items
     $component->assertViewHas('rows', function ($rows) {
@@ -143,7 +181,16 @@ test('table filter - taxonomy filter', function () {
     ]);
 
     // Apply Tag6 filter (should show no posts)
-    $component->set('filters.taxonomy.tags', [$tag6->id]);
+    $component->set('filters.custom', [[
+        'filters' => [[
+            'name' => 'tags',
+            'operator' => 'contains', 
+            'value' => [$tag6->id],
+            'options' => [
+                'resource_type' => 'Aura\\Base\\Resources\\Tag',
+            ],
+        ]],
+    ]]);
 
     // Should have 0 items
     $component->assertViewHas('rows', function ($rows) {
