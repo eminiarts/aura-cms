@@ -2,7 +2,7 @@
 
 use Aura\Base\Resource;
 
-class MultipleTabsInPanelInTabsTestModel extends Resource
+class MultipleTabsInPanelInTabsTestModelWithAnotherPanel extends Resource
 {
     public static ?string $slug = 'page';
 
@@ -10,7 +10,7 @@ class MultipleTabsInPanelInTabsTestModel extends Resource
 
     public static function getFields()
     {
-        return [
+       return [
             [
                 'name' => 'Tab 1',
                 'global' => true,
@@ -97,7 +97,9 @@ class MultipleTabsInPanelInTabsTestModel extends Resource
 }
 
 test('multiple tabs in panels in tabs are possible', function () {
-    $model = new MultipleTabsInPanelInTabsTestModel;
+    $model = new MultipleTabsInPanelInTabsTestModelWithAnotherPanel;
+
+    ray()->clearScreen();
 
     $fields = $model->getGroupedFields();
 
