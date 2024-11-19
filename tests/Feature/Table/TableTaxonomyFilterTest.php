@@ -197,12 +197,17 @@ test('table filter - taxonomy filter', function () {
         return count($rows->items()) === 0;
     });
 
-    // Inspect SQL
-    expect($component->instance()->rowsQuery->toSql())->toContain('select * from "posts" where exists (select * from "taxonomies" inner join "taxonomy_relations" on "taxonomies"."id" = "taxonomy_relations"."taxonomy_id" where "posts"."id" = "taxonomy_relations"."relatable_id" and "taxonomy_relations"."relatable_type" = ?');
 
-    // First Binding should be TableTaxonomyFilterModel
-    expect($component->instance()->rowsQuery->getBindings()[0])->toBe('TableTaxonomyFilterModel');
+    // Should have 0 items
+    $component->assertViewHas('rows', function ($rows) {
+        return count($rows->items()) === 0;
+    });
 
-    // Second Binding should be $tag6->id
-    expect($component->instance()->rowsQuery->getBindings()[1])->toBe($tag6->id);
+    
+    // Inspect the raw SQL query
+    $rawSql = $component->instance()->rowsQuery()->toRawSql();
+    expect($rawSql)->toContain('select * from "posts" where (("id" in (select "related_id" from "post_relations" where "post_relations"."related_type" = \'TableTaxonomyFilterModel\' and "post_relations"."resource_type" = \'Aura\Base\Resources\Tag\' and "post_relations"."slug" = \'tags\' and "post_relations"."resource_id" in (8)))) and "posts"."type" = \'TableTaxonomy\' order by "posts"."id" desc');
+
+    
+
 });
