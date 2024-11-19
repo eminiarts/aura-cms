@@ -31,11 +31,13 @@ class ModelRecursive extends Resource
                 'name' => 'Repeater 2',
                 'type' => 'Aura\\Base\\Fields\\Repeater',
                 'fields' => [],
+                'exclude_level' => 1,
             ],
             [
                 'name' => 'Repeater 3',
                 'type' => 'Aura\\Base\\Fields\\Repeater',
                 'fields' => [],
+                'exclude_level' => 1,
             ],
             [
                 'name' => 'Field in Repeater 3',
@@ -49,6 +51,7 @@ class ModelRecursive extends Resource
                 'name' => 'Panel 2',
                 'type' => 'Aura\\Base\\Fields\\Panel',
                 'fields' => [],
+                'exclude_level' => 2,
             ],
             [
                 'name' => 'Repeater 4',
