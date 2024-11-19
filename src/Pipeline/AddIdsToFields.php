@@ -74,7 +74,7 @@ class AddIdsToFields implements Pipe
                     } else {
                         $item['_parent_id'] = optional($currentParent)['_id'];
                     }
-                    ray('new tab', $item, $parentTab)->red();
+                    // ray('new tab', $item, $parentTab)->red();
                     $parentTab = $item;
                 }
                 // Nested False

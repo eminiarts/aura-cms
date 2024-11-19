@@ -110,6 +110,8 @@ test('user can be edited without changing password', function () {
     Aura::fake();
     Aura::setModel($user);
 
+    $this->withoutExceptionHandling();
+
     ray()->clearScreen();
     // Edit user without setting password
     livewire(Edit::class, ['id' => $user->id])
