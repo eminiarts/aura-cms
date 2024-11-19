@@ -28,7 +28,6 @@ class FieldsAfterRepeaterModel extends Resource
                 'style' => [
                     'width' => '50',
                 ],
-
             ],
             [
                 'name' => 'Name',
@@ -40,12 +39,11 @@ class FieldsAfterRepeaterModel extends Resource
                 ],
 
             ],
-
             [
                 'name' => 'Multiple',
                 'type' => 'Aura\\Base\\Fields\\Boolean',
                 'validation' => '',
-                'exclude_from_nesting' => true,
+                'exclude_level' => 1,
                 'slug' => 'multiple',
                 'instructions' => 'Allow multiple selections?',
             ],
