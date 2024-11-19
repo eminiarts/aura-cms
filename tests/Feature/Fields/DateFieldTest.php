@@ -7,7 +7,6 @@ use Aura\Base\Livewire\Resource\Create;
 use Aura\Base\Resource;
 use Aura\Base\Resources\Post;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\Route;
 use Livewire\Livewire;
 
 uses(RefreshDatabase::class);
@@ -78,9 +77,6 @@ test('Date Field in View', function () {
 
     Aura::fake();
     Aura::setModel($model);
-
-    ray(Route::has('admin/datemodel/create'))->red();
-    // Add this to debug the actual route URL:
 
     $this->actingAs($this->user)
         ->get('/admin/datemodel/create')

@@ -40,6 +40,9 @@ class Password extends Field
                     unset($post->attributes['fields'][$key]);
                 }
 
+                // Unset the password attribute from the model
+                $post->offsetUnset($key);
+
                 // Force the model to forget the password attribute
                 // $post->syncOriginal();
 
@@ -56,9 +59,8 @@ class Password extends Field
         if (empty($value)) {
             // Mark that we should skip this field
             $this->shouldSkip = true;
-            // Set a special marker to indicate we want to remove this attribute
-            $post->preventPasswordUpdate = true;
 
+            // Set a special marker to indicate we want to remove this attribute
             return;
         }
 
@@ -79,6 +81,11 @@ class Password extends Field
      */
     public function shouldSkip($post, $field)
     {
-        return $this->shouldSkip;
+       if ($this->shouldSkip) {
+            $this->shouldSkip = false;
+            return true;
+        }
+
+        return false;
     }
 }

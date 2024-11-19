@@ -112,7 +112,6 @@ test('user can be edited without changing password', function () {
 
     $this->withoutExceptionHandling();
 
-    ray()->clearScreen();
     // Edit user without setting password
     livewire(Edit::class, ['id' => $user->id])
         ->set('form.fields.name', 'Updated Name')
@@ -137,8 +136,6 @@ test('user password can be changed when explicitly set', function () {
         'password' => 'CurrentPass123!',
         'current_team_id' => Team::first()->id,
     ]);
-
-    ray()->clearScreen();
 
     Aura::fake();
     Aura::setModel($user);

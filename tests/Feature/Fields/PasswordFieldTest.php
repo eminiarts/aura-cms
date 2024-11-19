@@ -67,8 +67,6 @@ test('Password Field Test', function () {
     // Assert that $model->fields['number'] is null
     $this->assertArrayNotHasKey('password', $model->fields);
 
-    ray()->clearScreen();
-
     $component->set('form.fields.password', '123456')
         ->call('save')
         ->assertHasErrors(['form.fields.password'])
@@ -100,6 +98,8 @@ test('password field gets not overwritten if saved as null', function () {
     $this->assertDatabaseHas('posts', ['type' => 'PasswordModel']);
 
     $post = PasswordFieldModel::first();
+
+    ray($post->password);
 
     // $this->assertEquals($post->fields['password'], '123456789');
     // $this->assertEquals($post->fields['password'], null);
