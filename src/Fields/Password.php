@@ -3,7 +3,6 @@
 namespace Aura\Base\Fields;
 
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Str;
 
 class Password extends Field
 {
@@ -24,23 +23,27 @@ class Password extends Field
 
     public function saving($post, $field, $value)
     {
-        ray('...saving field', $post)->red();
+        // ray('...saving field', $post)->red();
         $key = $field['slug'];
 
-         // If value is empty (null or empty string), prevent password update entirely
+        // If value is empty (null or empty string), prevent password update entirely
         if (empty($value)) {
-            ray('...empty value')->red();
-            // For User model, remove password from both attributes and fields
+            // ray('...empty value')->red();
+            // For User model, remove password from all possible locations
             if ($post instanceof \App\Models\User || $post instanceof \Aura\Base\Resources\User) {
-                // Remove password from all possible locations
+                // Remove password from attributes if it exists
                 if (isset($post->attributes[$key])) {
                     unset($post->attributes[$key]);
                 }
+                // Remove from fields if it exists
                 if (isset($post->attributes['fields'][$key])) {
                     unset($post->attributes['fields'][$key]);
                 }
 
-                // Return the modified post object
+                // Force the model to forget the password attribute
+                // $post->syncOriginal();
+
+                // ray('Password removed from attributes', $post->attributes)->red();
                 return $post;
             }
         }
@@ -50,57 +53,32 @@ class Password extends Field
 
     public function set($post, $field, &$value)
     {
-        $key = $field['slug'];
-
-        // If value is empty (null or empty string), prevent password update entirely
         if (empty($value)) {
-            // For User model, remove password from both attributes and fields
-            if ($post instanceof \App\Models\User || $post instanceof \Aura\Base\Resources\User) {
-                // Remove password from all possible locations
-                // if (isset($post->attributes[$key])) {
-                //     unset($post->attributes[$key]);
-                // }
-                // if (isset($post->attributes['fields'][$key])) {
-                //     unset($post->attributes['fields'][$key]);
-                // }
+            // Mark that we should skip this field
+            $this->shouldSkip = true;
+            // Set a special marker to indicate we want to remove this attribute
+            $post->preventPasswordUpdate = true;
 
-                $this->shouldSkip = true;
-                
-                // Return the modified post object
-                return;
-            }
+            return;
         }
 
-        // If value is not empty, hash it
-        $hashedValue = Hash::make($value);
-        
-        // For User model, set the password attribute directly
-        // if ($post instanceof \App\Models\User || $post instanceof \Aura\Base\Resources\User) {
-        //     $post->password = $hashedValue;
-        // }
+        // Only hash if not already hashed
+        if (! Hash::isHashed($value)) {
+            return Hash::make($value);
+        }
 
-        // Don't forget to return the post in the non-empty case too
-        // return $post;
-
-        return $hashedValue;
+        return $value;
     }
 
     /**
      * Check if this field should be skipped
-     * 
-     * @param mixed $post
-     * @param array $field
+     *
+     * @param  mixed  $post
+     * @param  array  $field
      * @return bool
      */
     public function shouldSkip($post, $field)
     {
-        ray('shouldSkip', $this->shouldSkip)->red();
-
-        if ($this->shouldSkip) {
-            $this->shouldSkip = false;
-            return true;
-        }
-
-        return false;
+        return $this->shouldSkip;
     }
 }

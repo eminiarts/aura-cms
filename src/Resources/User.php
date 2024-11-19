@@ -38,6 +38,8 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
 
     public static $customTable = true;
 
+    public $preventPasswordUpdate = false;
+
     public static ?string $slug = 'user';
 
     public static ?int $sort = 1;
@@ -752,6 +754,20 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
         return collect($this->getWidgets())->map(function ($item) {
             return $item;
         });
+    }
+
+    protected static function booted()
+    {
+        parent::booted();
+
+        // static::saving(function ($user) {
+        //     // If we marked to prevent password update, remove it from attributes
+        //     if ($user->preventPasswordUpdate) {
+        //         unset($user->attributes['password']);
+        //         unset($user->preventPasswordUpdate);
+        //         // $user->preventPasswordUpdate = false;
+        //     }
+        // });
     }
 
     protected function getCacheKeyForRoles(): string

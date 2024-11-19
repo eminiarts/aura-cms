@@ -14,8 +14,8 @@ trait SaveMetaFields
 
             // ray('SaveMetaFields', $post->attributes)->red();
 
-            if($post instanceof \Aura\Base\Resources\User) {
-                ray('saving user', $post->attributes)->red();
+            if ($post instanceof \Aura\Base\Resources\User) {
+                // ray('saving user', $post->attributes)->red();
             }
 
             if (isset($post->attributes['fields'])) {
@@ -57,10 +57,9 @@ trait SaveMetaFields
                     if (method_exists($class, 'set')) {
                         // ray($post->password)->red();
 
-                    //    ray('calling set', $key, $value, $field['type'])->red();
+                        //    ray('calling set', $key, $value, $field['type'])->red();
                         // $value = $class->set($post, $field, $value);
                         $value = $class->set($post, $field, $value);
-
 
                         // if($post instanceof \Aura\Base\Resources\User && $key === 'password' && empty($value)) {
                         //     ray($key, $value,$post->attributes)->blue();
@@ -70,20 +69,26 @@ trait SaveMetaFields
                         // }
 
                         // Check if the field has a saving method
-                        if (method_exists($class, 'saving')         ) {
-                            $post = $class->saving($post, $field, $value);
-
-                            ray('...saving field from meta', $post->attributes)->purple();
-                        }
-
-                        // Check if further processing should be skipped
-                        if (method_exists($class, 'shouldSkip') && $class->shouldSkip($post, $field)) {
-                            ray('skipping')->red();
-                            ray($post->attributes)->green();
-                            continue;
-                        }
 
                         // dd($post);
+                    }
+
+                    if (method_exists($class, 'saving')) {
+                        // Store the result back to $post
+                        $modifiedPost = $class->saving($post, $field, $value);
+
+                        if ($modifiedPost) {
+                            $post = $modifiedPost;
+                        }
+
+                        ray('After saving method', $post->attributes, $modifiedPost->attributes)->purple();
+                    }
+
+                    // Check if further processing should be skipped
+                    if (method_exists($class, 'shouldSkip') && $class->shouldSkip($post, $field)) {
+                        // ray('skipping')->red();
+                        // ray($post->attributes)->green();
+                        continue;
                     }
 
                     if ($class instanceof \Aura\Base\Fields\ID) {
@@ -114,7 +119,7 @@ trait SaveMetaFields
 
                 $post->clearFieldsAttributeCache();
 
-                 ray('SaveMetaFields end', $post->attributes, $post->metaFields)->red();
+                //  ray('SaveMetaFields end', $post->attributes, $post->metaFields)->red();
             }
 
         });
@@ -124,7 +129,7 @@ trait SaveMetaFields
 
                 foreach ($post->metaFields as $key => $value) {
 
-                    ray($key, $value)->red();
+                    // ray($key, $value)->red();
 
                     // if there is a function set{Slug}Field on the model, use it
                     $method = 'set'.Str::studly($key).'Field';
