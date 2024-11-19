@@ -18,10 +18,6 @@ trait SaveFieldAttributes
 
             // ray('SaveFieldAttributes', $post->attributes, $post)->blue();
 
-            if ($post->name == 'Test Post 1') {
-                // dd($post)->red();
-            }
-
             if (! optional($post->attributes)['fields']) {
                 $post->attributes['fields'] = [];
             }
@@ -51,13 +47,15 @@ trait SaveFieldAttributes
                         //     unset($post->attributes[$slug]);
                         // }
 
-                        // Check if the password field is dirty (i.e., has been modified)
-                        if (! $post->isDirty($slug)) {
-                            // Remove it from attributes so it won't be saved
-                            unset($post->attributes[$slug]);
+                        ray('password', $post->attributes[$slug])->purple();
 
-                            return;
-                        }
+                        // Check if the password field is dirty (i.e., has been modified)
+                        // if (! $post->isDirty($slug)) {
+                        //     // Remove it from attributes so it won't be saved
+                        //     unset($post->attributes[$slug]);
+
+                        //     return;
+                        // }
 
                         // return;
                     }
