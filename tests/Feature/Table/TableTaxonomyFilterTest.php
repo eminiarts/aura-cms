@@ -98,7 +98,14 @@ test('table filter - taxonomy filter', function () {
     });
 
     // Apply Tag 1 filter
-    $component->set('filters.taxonomy.tags', [$tag1->id]);
+    $component->set('filters.custom.filters', [
+        'name' => 'tags', 
+        'value' => [$tag1->id],
+        'operator' => 'contains',
+        'options' => [
+            'resource_type' => 'Aura\\Base\\Resources\\Tag',
+        ],
+    ]);
 
     // Should have 1 item
     $component->assertViewHas('rows', function ($rows) use ($post) {
