@@ -70,11 +70,11 @@ class AddIdsToFields implements Pipe
 
             // Handle group fields (e.g., panels, tabs)
             if ($item['field']->group === true) {
-                // **New Logic to Handle Sibling Tabs**
-                if ($item['field']->type == 'tab') {
-                    // Pop previous tab if it's at the same level
+                // **New Logic to Handle Sibling Tabs and Panels**
+                if (in_array($item['field']->type, ['tab', 'panel'])) {
+                    // Pop previous tab or panel if it's at the same level
                     $lastItem = end($parentStack);
-                    if ($lastItem && $lastItem['field']->type == 'tab') {
+                    if ($lastItem && $lastItem['field']->type == $item['field']->type) {
                         array_pop($parentStack);
                     }
                 }
@@ -110,8 +110,6 @@ class AddIdsToFields implements Pipe
             }
             return $field;
         });
-
-        // ray($processedFields);
 
         return $next($processedFields);
     }
