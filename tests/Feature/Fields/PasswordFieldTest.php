@@ -99,7 +99,7 @@ test('password field gets not overwritten if saved as null', function () {
 
     $post = PasswordFieldModel::first();
 
-    ray($post->password);
+    // ray($post->password);
 
     // $this->assertEquals($post->fields['password'], '123456789');
     // $this->assertEquals($post->fields['password'], null);
@@ -129,7 +129,7 @@ test('password field gets not overwritten if saved as null', function () {
 
     $post = PasswordFieldModel::first();
 
-    dump($post->fields['password']);
+    // dump($post->fields['password']);
 
     // Assert Password is still 123456789
     $this->assertTrue(Hash::check('123456789', $post->fields['password']));
