@@ -54,11 +54,11 @@ it('generates thumbnails with correct dimensions from config', function () {
     // Create a real test image using Intervention Image
     $width = 2000;
     $height = 2000;
-    
+
     // Create a real image
     $img = Image::canvas($width, $height, '#ff0000');
     $imageStream = (string) $img->encode('jpg');
-    
+
     // Ensure media directory exists and store the image
     Storage::disk('public')->makeDirectory('media', 0755, true);
     Storage::disk('public')->put('media/test.jpg', $imageStream);
@@ -99,11 +99,11 @@ it('returns original image when requested dimensions are larger than original', 
     // Create a small test image using Intervention Image
     $width = 100;
     $height = 100;
-    
+
     // Create a real image
     $img = Image::canvas($width, $height, '#ff0000');
     $imageStream = (string) $img->encode('jpg');
-    
+
     // Store the image
     Storage::disk('public')->makeDirectory('media', 0755, true);
     Storage::disk('public')->put('media/small.jpg', $imageStream);

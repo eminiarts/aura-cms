@@ -34,7 +34,7 @@ class ThumbnailGenerator
                         }
                     } else {
                         // If no height provided in request, that's okay if config doesn't specify height
-                        if (!isset($dimension['height'])) {
+                        if (! isset($dimension['height'])) {
                             $dimensionsAllowed = true;
                             break;
                         }
@@ -42,7 +42,7 @@ class ThumbnailGenerator
                 }
             }
 
-            if (!$dimensionsAllowed) {
+            if (! $dimensionsAllowed) {
                 throw new NotFoundHttpException('Requested thumbnail dimensions are not allowed.');
             }
         }

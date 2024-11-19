@@ -138,7 +138,7 @@ test('table select rows - reset selectPage', function () {
         ->take(10)  // Default pagination is 10
         ->pluck('id')
         ->toArray();
-    
+
     $component->set('selected', $currentPageIds);
 
     // expect $selected to be an array with 10 items
@@ -168,7 +168,7 @@ test('table select rows - keep selected when another page is selected', function
         ->take(10)
         ->pluck('id')
         ->toArray();
-    
+
     $component->set('selected', $currentPageIds);
 
     // expect $selected to be an array with 10 items
@@ -186,7 +186,7 @@ test('table select rows - keep selected when another page is selected', function
         ->take(10)
         ->pluck('id')
         ->toArray();
-    
+
     $component->set('selected', array_merge($currentPageIds, $page2Ids));
 
     // expect $selected to now have 20 items (10 from each page)
