@@ -1,5 +1,5 @@
 <div>
-    @section('title', __(Str::of($slug)->title->plural->toString()))
+    @section('title', __($resource->getPluralName()))
 
     {{ app('aura')::injectView('index_before') }}
 
@@ -8,7 +8,7 @@
         <x-aura::breadcrumbs>
             <x-aura::breadcrumbs.li :href="route('aura.dashboard')" title="" icon="dashboard"
                 iconClass="text-gray-500 w-7 h-7 mr-0" />
-            <x-aura::breadcrumbs.li :title="__(Str::of($slug)->title->plural->toString())" />
+            <x-aura::breadcrumbs.li :title="__($resource->getPluralName())" />
         </x-aura::breadcrumbs>
 
         <div>
