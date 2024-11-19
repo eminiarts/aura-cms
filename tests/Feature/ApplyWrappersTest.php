@@ -176,13 +176,9 @@ class ApplyWrappersModel2 extends Resource
 
 test('fields get wrapped when field wrapper is set', function () {
 
-    ray()->clearScreen();
-
     $model = new ApplyWrappersModel2;
 
     $fields = $model->getGroupedFields();
-
-    ray($fields);
 
     expect($fields)->toHaveCount(1); // Because of the wrapper
 

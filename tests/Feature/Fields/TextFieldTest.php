@@ -95,8 +95,6 @@ test('Text Field - Default Value set', function () {
 
     $component = Livewire::test(Create::class, ['slug' => 'textmodel']);
 
-    ray($component->html());
-
     $component
         ->assertSee('Text for Test')
         ->assertSeeHtml('wire:model="form.fields.text"')

@@ -33,7 +33,9 @@ class GenerateAllResourcePermissions
                        ! is_a($resourceInstance, Team::class) &&
                        ! is_subclass_of($resourceInstance, Team::class);
             } catch (\Throwable $e) {
-                Log::warning("Resource class not found: $resource");
+                if (! app()->environment('testing')) {
+                    Log::warning("Resource class not found: $resource");
+                }
 
                 return false;
             }
