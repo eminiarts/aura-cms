@@ -59,13 +59,9 @@ class ModelWithPanel extends Resource
 }
 
 test('model get tabs with panels', function () {
-    $model = new ModelWithPanel;
+    $model = new ModelWithPanel();
 
     $fields = $model->getGroupedFields();
-
-    ray($fields);
-
-    ray(json_encode($fields));
 
     $this->assertCount(1, $fields);
     $this->assertEquals($fields[0]['name'], 'Aura\Base\Fields\Tabs');
