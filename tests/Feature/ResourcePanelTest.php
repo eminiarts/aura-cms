@@ -63,6 +63,10 @@ test('model get tabs with panels', function () {
 
     $fields = $model->getGroupedFields();
 
+    ray($fields);
+
+    ray(json_encode($fields));
+
     $this->assertCount(1, $fields);
     $this->assertEquals($fields[0]['name'], 'Aura\Base\Fields\Tabs');
     $this->assertEquals($fields[0]['fields'][0]['name'], 'Tab 1');
