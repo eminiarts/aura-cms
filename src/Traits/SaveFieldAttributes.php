@@ -47,7 +47,7 @@ trait SaveFieldAttributes
                         //     unset($post->attributes[$slug]);
                         // }
 
-                        ray('password', $post->attributes[$slug])->purple();
+                        //ray('password', $post->attributes[$slug])->purple();
 
                         // Check if the password field is dirty (i.e., has been modified)
                         // if (! $post->isDirty($slug)) {
