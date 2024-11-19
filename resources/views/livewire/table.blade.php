@@ -183,6 +183,12 @@
     }">
         @include($this->settings['views']['header'])
 
+        {{-- @dump(json_encode($this->filters)) --}}
+
+        @php
+            // ray($this->filters);
+        @endphp
+
         <div class="mt-4">
 
             <div class="flex flex-col justify-between w-full md:items-center md:flex-row">
