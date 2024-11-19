@@ -1,20 +1,25 @@
 <?php
 
-use Aura\Base\Livewire\Table\Table;
-use Aura\Base\Resource;
-use Aura\Base\Resources\Post;
-use Aura\Base\Resources\Tag;
-use Aura\Base\Resources\User;
-use Illuminate\Contracts\Database\Eloquent\Builder;
-use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
 use Livewire\Livewire;
+use Aura\Base\Resource;
+use Aura\Base\Facades\Aura;
+use Aura\Base\Resources\Tag;
+use Aura\Base\Resources\Post;
+use Aura\Base\Resources\User;
+use Illuminate\Support\Facades\DB;
+use Aura\Base\Livewire\Table\Table;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Contracts\Database\Eloquent\Builder;
 
-uses(RefreshDatabase::class);
 
 // Before each test, create a Superadmin and login
 beforeEach(function () {
+
+    Aura::fake();
+    Aura::registerResources([TableTaxonomyFilterModel::class]);
+    Aura::setModel(new TableTaxonomyFilterModel);
+    
     // Create User
     $this->actingAs($this->user = createSuperAdmin());
 });
@@ -22,11 +27,11 @@ beforeEach(function () {
 // Create Resource for this test
 class TableTaxonomyFilterModel extends Resource
 {
-    public static $singularName = 'Post';
+    public static $singularName = 'TableTaxonomy';
 
-    public static ?string $slug = 'resource';
+    public static ?string $slug = 'tabletaxonomy';
 
-    public static string $type = 'Post';
+    public static string $type = 'TableTaxonomy';
 
     public static function getFields()
     {
@@ -151,4 +156,4 @@ test('table filter - taxonomy filter', function () {
 
     // Second Binding should be $tag6->id
     expect($component->rowsQuery->getBindings()[1])->toBe($tag6->id);
-})->skip('Skip for now until we decide on how to handle taxonomies');
+});
