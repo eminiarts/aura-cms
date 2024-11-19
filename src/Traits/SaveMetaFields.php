@@ -14,6 +14,10 @@ trait SaveMetaFields
 
             // ray('SaveMetaFields', $post->attributes)->red();
 
+            if($post instanceof \Aura\Base\Resources\User) {
+                ray('saving user', $post->attributes)->red();
+            }
+
             if (isset($post->attributes['fields'])) {
 
                 // Dont save Meta Fields if it is uses customTable
@@ -33,6 +37,8 @@ trait SaveMetaFields
                         continue;
                     }
 
+                
+
                     // if there is a function set{Slug}Field on the model, use it
                     $method = 'set'.Str::studly($key).'Field';
 
@@ -44,20 +50,6 @@ trait SaveMetaFields
                         continue;
                     }
 
-                    // If the $class is a Password Field and the value is null, continue
-                    // if ($class instanceof \Aura\Base\Fields\Password) {
-                    //     // Check if the password field is dirty
-                    //     if (! $post->isDirty($key) && $post->isBaseFillable($key)) {
-                    //         // ray('isDirty', $key, $post->isBaseFillable($key))->blue();
-
-                    //         unset($post->attributes[$key]);
-                    //         unset($post->attributes['fields'][$key]);
-
-                    //         continue;
-                    //     }
-                    //     // Proceed to process the password field if it has been modified
-                    // }
-
                     $field = $post->fieldBySlug($key);
 
                     if (isset($field['set']) && $field['set'] instanceof \Closure) {
@@ -66,8 +58,24 @@ trait SaveMetaFields
 
                     if (method_exists($class, 'set')) {
                         // ray($post->password)->red();
+
+                       // ray('calling set', $key, $value)->red();
                         $value = $class->set($post, $field, $value);
-                        // ray($key, $value,$post)->blue();
+
+                        // if($post instanceof \Aura\Base\Resources\User && $key === 'password' && empty($value)) {
+                        //     ray($key, $value,$post->attributes)->blue();
+                        //     // dd($post);
+                        //     ray('continue')->red();
+                        //     continue;
+                        // }
+
+                        // Check if further processing should be skipped
+                        if (method_exists($class, 'shouldSkip') && $class->shouldSkip($post, $field)) {
+                            ray('skipping')->red();
+                            ray($post->attributes)->green();
+                            continue;
+                        }
+
                         // dd($post);
                     }
 
@@ -99,7 +107,7 @@ trait SaveMetaFields
 
                 $post->clearFieldsAttributeCache();
 
-                //  ray('SaveMetaFields', $post)->red();
+                 ray('SaveMetaFields end', $post->attributes, $post->metaFields)->red();
             }
 
         });
@@ -109,7 +117,7 @@ trait SaveMetaFields
 
                 foreach ($post->metaFields as $key => $value) {
 
-                    // ray($key, $value)->red();
+                    ray($key, $value)->red();
 
                     // if there is a function set{Slug}Field on the model, use it
                     $method = 'set'.Str::studly($key).'Field';
