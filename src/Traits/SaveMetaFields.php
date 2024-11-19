@@ -37,8 +37,6 @@ trait SaveMetaFields
                         continue;
                     }
 
-                
-
                     // if there is a function set{Slug}Field on the model, use it
                     $method = 'set'.Str::studly($key).'Field';
 
@@ -59,8 +57,10 @@ trait SaveMetaFields
                     if (method_exists($class, 'set')) {
                         // ray($post->password)->red();
 
-                       // ray('calling set', $key, $value)->red();
+                    //    ray('calling set', $key, $value, $field['type'])->red();
+                        // $value = $class->set($post, $field, $value);
                         $value = $class->set($post, $field, $value);
+
 
                         // if($post instanceof \Aura\Base\Resources\User && $key === 'password' && empty($value)) {
                         //     ray($key, $value,$post->attributes)->blue();
@@ -68,6 +68,13 @@ trait SaveMetaFields
                         //     ray('continue')->red();
                         //     continue;
                         // }
+
+                        // Check if the field has a saving method
+                        if (method_exists($class, 'saving')         ) {
+                            $post = $class->saving($post, $field, $value);
+
+                            ray('...saving field from meta', $post->attributes)->purple();
+                        }
 
                         // Check if further processing should be skipped
                         if (method_exists($class, 'shouldSkip') && $class->shouldSkip($post, $field)) {
