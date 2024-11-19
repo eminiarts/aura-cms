@@ -10,8 +10,6 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Livewire\Livewire;
 
-uses(RefreshDatabase::class);
-
 // Before each test, create a Superadmin and login
 beforeEach(function () {
     // Create User
@@ -163,7 +161,7 @@ test('table filter - taxonomy filter', function () {
 
     // After a filter is saved, the current filter should be set to the saved filter
     expect($component->selectedFilter)->toBe('Test Filter');
-})->skip('Taxonomy');
+});
 
 test('table filter - taxonomy filter can be deleted', function () {
     $post = $this->resource;
@@ -201,7 +199,7 @@ test('table filter - taxonomy filter can be deleted', function () {
 
     // $filters should be reset
     expect($component->filters)->toHaveKey('custom', []);
-})->skip('Taxonomy');
+});
 
 test('table filter - custom filter can be removed', function () {
     $post = $this->resource;

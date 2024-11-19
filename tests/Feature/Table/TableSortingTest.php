@@ -332,4 +332,4 @@ test('table sorting by taxonomy field', function () {
     // Binding should be: ["meta","Post",1]
     expect($component->rowsQuery->getBindings()[0])->toBe('MetaSortingModel');
     expect($component->rowsQuery->getBindings()[1])->toBe('Tag');
-})->skip('TODO: Fix as soon as taxonomies are finished');
+});

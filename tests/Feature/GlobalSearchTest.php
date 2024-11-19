@@ -6,8 +6,6 @@ use Aura\Base\Resource;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
 
-uses(RefreshDatabase::class);
-
 // Before each test, create a Superadmin and login
 beforeEach(function () {
     Aura::fake();
@@ -160,7 +158,7 @@ test('global search can be disabled via config', function () {
     // Verify the component doesn't work when disabled
     Livewire::test(GlobalSearch::class)
         ->assertStatus(403);
-})->skip();
+});
 
 test('global search returns empty when no matches found', function () {
 
