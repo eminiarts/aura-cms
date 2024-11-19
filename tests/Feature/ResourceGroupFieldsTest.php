@@ -55,6 +55,7 @@ class ModelWithGroups extends Resource
                 'type' => 'Aura\\Base\\Fields\\Repeater',
                 'slug' => 'repeater-1-2-2',
                 'style' => [],
+                'exclude_level' => 1,
             ],
             [
                 'label' => 'Total 1.2.2.1',
@@ -70,6 +71,7 @@ class ModelWithGroups extends Resource
                 'type' => 'Aura\\Base\\Fields\\Panel',
                 'slug' => 'panel-2',
                 'style' => [],
+                'exclude_level' => 2,
             ],
             [
                 'label' => 'Repeater 2.1',
