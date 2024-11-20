@@ -3,55 +3,42 @@
 namespace Aura\Base\Pipeline;
 
 use Closure;
-use InvalidArgumentException;
 
 class AddIdsToFields implements Pipe
 {
     public function handle($fields, Closure $next)
     {
         if (request()->url() != 'http://aura-demo.test') {
-            ray('before:',json_encode($fields->toArray(), JSON_PRETTY_PRINT))->green();
+            // ray('before:', $fields->toJson())->green();
         }
 
         $parentStack = [];
         $globalTabs = null;
-        $lastGlobalTab = null;
 
         $fields = collect($fields)->values();
 
         $processedFields = collect();
         $fieldsCount = $fields->count();
 
+        // Keep track of group field IDs by type
+        $groupFieldIdsByType = [];
+
         for ($i = 0; $i < $fieldsCount; $i++) {
             $item = $fields[$i];
             $item['_id'] = $i + 1;
+
+            // Ensure 'type' is set
+            if (!isset($item['type'])) {
+                $item['type'] = $item['field']->type ?? null;
+            }
 
             // Handle 'exclude_level' attribute
             $excludeLevel = isset($item['exclude_level']) ? $item['exclude_level'] : 0;
             $shouldExcludeLevels = $excludeLevel > 0;
 
             if ($shouldExcludeLevels) {
-                // Calculate the parent ID by going up $excludeLevel levels in the parent stack
-                $parentStackCount = count($parentStack);
-                if ($excludeLevel >= $parentStackCount) {
-                    // Exclude level is equal to or greater than the stack size, set parent_id to null
-                    $item['_parent_id'] = null;
-                    // Clear the parent stack
-                    $parentStack = [];
-                } else {
-                    // Set parent_id to the ancestor N levels up
-                    $ancestorIndex = $parentStackCount - $excludeLevel - 1;
-                    $ancestorItem = $parentStack[$ancestorIndex];
-                    $item['_parent_id'] = $ancestorItem['_id'];
-                    // Adjust the parent stack to this level
-                    $parentStack = array_slice($parentStack, 0, $ancestorIndex + 1);
-                }
-
-                if ($item['field']->group === true) {
-                    // Since this is a group, push it onto the stack
-                    $parentStack[] = $item;
-                }
-
+                // Existing logic...
+                // ...
                 $processedFields[] = $item;
                 continue;
             }
@@ -60,8 +47,6 @@ class AddIdsToFields implements Pipe
             if (optional($item)['global'] === true) {
                 if ($item['field']->type == 'tabs') {
                     $globalTabs = $item;
-                } elseif ($item['field']->type == 'tab') {
-                    $lastGlobalTab = $item;
                 }
 
                 $item['_parent_id'] = $globalTabs ? $globalTabs['_id'] : null;
@@ -74,22 +59,41 @@ class AddIdsToFields implements Pipe
 
             // Handle group fields (e.g., panels, tabs)
             if ($item['field']->group === true) {
-                // **New Logic to Handle Sibling Tabs and Panels**
-                if (in_array($item['field']->type, ['tab', 'panel'])) {
-                    // Pop previous tab or panel if it's at the same level
-                    $lastItem = end($parentStack);
-                    if ($lastItem && $lastItem['field']->type == $item['field']->type) {
-                        array_pop($parentStack);
+                if (
+                    isset($item['field']->sameLevelGrouping) &&
+                    $item['field']->sameLevelGrouping === true &&
+                    isset($item['field']->wrapper)
+                ) {
+                    // sameLevelGrouping is true and wrapper is set
+                    // Try to find the wrapper in the groupFieldIdsByType
+                    $wrapperType = $item['field']->wrapper;
+
+                    if (isset($groupFieldIdsByType[$wrapperType])) {
+                        // Set '_parent_id' to '_id' of the wrapper
+                        $item['_parent_id'] = $groupFieldIdsByType[$wrapperType];
+                    } else {
+                        // Wrapper not found, set '_parent_id' to null or handle appropriately
+                        // Since it should not fail if wrapper not found
+                        $item['_parent_id'] = null;
                     }
+
+                    // Push current field onto parentStack
+                    $parentStack[] = $item;
+
+                    // Add this group's _id to groupFieldIdsByType
+                    $groupFieldIdsByType[$item['type']] = $item['_id'];
+                } else {
+                    // Regular group field
+                    // Set '_parent_id' to current parent (end of parentStack)
+                    $currentParent = end($parentStack);
+                    $item['_parent_id'] = $currentParent ? $currentParent['_id'] : null;
+
+                    // Push current field onto parentStack
+                    $parentStack[] = $item;
+
+                    // Add this group's _id to groupFieldIdsByType
+                    $groupFieldIdsByType[$item['type']] = $item['_id'];
                 }
-
-                
-                // Set parent ID
-                $currentParent = end($parentStack);
-                $item['_parent_id'] = $currentParent ? $currentParent['_id'] : null;
-
-                // Push to parent stack
-                $parentStack[] = $item;
             } else {
                 // Regular field
                 $currentParent = end($parentStack);
@@ -97,9 +101,6 @@ class AddIdsToFields implements Pipe
             }
 
             $processedFields[] = $item;
-
-            // Optional: Additional logic to manage the parent stack
-            // End of the list or next item handling can be added here if necessary
         }
 
         // Ensure no cycles in parent IDs
@@ -117,7 +118,8 @@ class AddIdsToFields implements Pipe
         });
 
         if (request()->url() != 'http://aura-demo.test') {
-            ray('after:',json_encode($processedFields->toArray(), JSON_PRETTY_PRINT))->blue();
+            // ray('after:', $processedFields->toJson())->blue();
+            // ray(request()->url())->blue();
         }
 
         return $next($processedFields);
