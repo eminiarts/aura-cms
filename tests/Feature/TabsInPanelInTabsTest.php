@@ -76,6 +76,12 @@ test('fields get grouped when field group is true', function () {
 
     $fields = $model->getGroupedFields();
 
+
+
+    ray($fields);
+
+    expect($fields)->toBeArray();
+
     $this->assertCount(1, $fields);
     $this->assertEquals($fields[0]['name'], 'Aura\Base\Fields\Tabs');
     $this->assertCount(2, $fields[0]['fields']);
