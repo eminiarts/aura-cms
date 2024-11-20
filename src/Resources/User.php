@@ -38,6 +38,8 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
 
     public static $customTable = true;
 
+    public $preventPasswordUpdate = false;
+
     public static ?string $slug = 'user';
 
     public static ?int $sort = 1;
@@ -132,15 +134,15 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
         Cache::forget($option);
     }
 
-    // Reset to default create Method from Laravel
-    public static function create($fields)
-    {
-        $model = new static;
+    // // Reset to default create Method from Laravel
+    // public static function create($fields)
+    // {
+    //     $model = new static;
 
-        return tap($model->newModelInstance($fields), function ($instance) {
-            $instance->save();
-        });
-    }
+    //     return tap($model->newModelInstance($fields), function ($instance) {
+    //         $instance->save();
+    //     });
+    // }
 
     /**
      * Get the current team of the user's context.
@@ -752,6 +754,20 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
         return collect($this->getWidgets())->map(function ($item) {
             return $item;
         });
+    }
+
+    protected static function booted()
+    {
+        parent::booted();
+
+        // static::saving(function ($user) {
+        //     // If we marked to prevent password update, remove it from attributes
+        //     if ($user->preventPasswordUpdate) {
+        //         unset($user->attributes['password']);
+        //         unset($user->preventPasswordUpdate);
+        //         // $user->preventPasswordUpdate = false;
+        //     }
+        // });
     }
 
     protected function getCacheKeyForRoles(): string

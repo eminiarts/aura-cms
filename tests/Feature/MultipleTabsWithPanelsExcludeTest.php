@@ -2,7 +2,7 @@
 
 use Aura\Base\Resource;
 
-class MultipleTabsInPanelInTabsTestModel extends Resource
+class MultipleTabsWithPanelsExcludeModel extends Resource
 {
     public static ?string $slug = 'page';
 
@@ -10,12 +10,12 @@ class MultipleTabsInPanelInTabsTestModel extends Resource
 
     public static function getFields()
     {
-        return [
+       return [
             [
                 'name' => 'Tab 1',
-                'global' => true,
                 'type' => 'Aura\\Base\\Fields\\Tab',
                 'slug' => 'tab-1',
+                'global' => true,
             ],
             [
                 'name' => 'Panel 1',
@@ -51,7 +51,7 @@ class MultipleTabsInPanelInTabsTestModel extends Resource
                 'name' => 'Panel 2',
                 'type' => 'Aura\\Base\\Fields\\Panel',
                 'slug' => 'panel2',
-                // 'exclude_level' => 2,
+                'exclude_level' => 2,
                 // 'nested' => false,
                 // 'exclude_from_nesting' => true,
             ],
@@ -80,39 +80,36 @@ class MultipleTabsInPanelInTabsTestModel extends Resource
                 'conditional_logic' => [],
                 'slug' => 'text4',
             ],
-            [
-                'name' => 'Tab 2',
-                'global' => true,
-                'type' => 'Aura\\Base\\Fields\\Tab',
-                'slug' => 'tab-2',
-            ],
-            [
-                'name' => 'Text 2',
-                'type' => 'Aura\\Base\\Fields\\Text',
-                'validation' => 'numeric',
-                'conditional_logic' => [],
-                'slug' => 'text-2-1',
-            ],
         ];
     }
 }
 
-test('panel 2 is nested in tab 2 of panel 1', function () {
-    $model = new MultipleTabsInPanelInTabsTestModel;
+test('panel is underneath tabs, exclude level 2', function () {
+    $model = new MultipleTabsWithPanelsExcludeModel;
 
     $fields = $model->getGroupedFields();
 
-    ray($fields)->red();
-
     $this->assertCount(1, $fields);
-    $this->assertEquals($fields[0]['name'], 'Aura\Base\Fields\Tabs');
-    $this->assertCount(2, $fields[0]['fields']);
-    $this->assertEquals($fields[0]['fields'][0]['name'], 'Tab 1');
-    $this->assertEquals($fields[0]['fields'][1]['name'], 'Tab 2');
-    $this->assertEquals($fields[0]['fields'][0]['fields'][0]['name'], 'Panel 1');
-    $this->assertEquals($fields[0]['fields'][0]['fields'][0]['fields'][0]['fields'][1]['fields'][1]['name'], 'Panel 2');
-    $this->assertCount(1, $fields[0]['fields'][0]['fields'][0]['fields']);
-    $this->assertCount(2, $fields[0]['fields'][0]['fields'][0]['fields'][0]['fields']);
-    $this->assertEquals($fields[0]['fields'][0]['fields'][0]['fields'][0]['name'], 'Aura\Base\Fields\Tabs');
-    $this->assertEquals($fields[0]['fields'][0]['fields'][0]['fields'][0]['fields'][0]['name'], 'Tab 1 in Panel');
+
+    expect($fields[0]['name'])->toBe('Aura\Base\Fields\Tabs');
+    expect($fields[0]['fields'][0]['name'])->toBe('Tab 1');
+    
+    // Check Panel 1
+    expect($fields[0]['fields'][0]['fields'][0]['name'])->toBe('Panel 1');
+    expect($fields[0]['fields'][0]['fields'][0]['_id'])->toBe(3);
+    expect($fields[0]['fields'][0]['fields'][0]['_parent_id'])->toBe(2);
+
+    // Check Panel 2 - should be at same level as Panel 1's tabs due to exclude_level=2
+    $panel2 = $fields[0]['fields'][0]['fields'][0]['fields'][1];
+    expect($panel2['name'])->toBe('Panel 2');
+    expect($panel2['_id'])->toBe(9);
+    expect($panel2['_parent_id'])->toBe(3); // Should be child of Panel 1
+    expect($panel2['exclude_level'])->toBe(2);
+
+    // Verify Panel 2's tabs structure
+    expect($panel2['fields'][0]['name'])->toBe('Aura\Base\Fields\Tabs');
+    expect($panel2['fields'][0]['fields'])->toHaveCount(2);
+    expect($panel2['fields'][0]['fields'][0]['name'])->toBe('Tab 1 in Panel2');
+    expect($panel2['fields'][0]['fields'][1]['name'])->toBe('Tab 2 in Panel2');
+    
 });

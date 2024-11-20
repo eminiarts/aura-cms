@@ -2,23 +2,19 @@
 
 namespace Aura\Base\Commands;
 
-use ReflectionClass;
 use Aura\Base\Facades\Aura;
-use Illuminate\Support\Str;
 use Illuminate\Console\Command;
-use function Laravel\Prompts\info;
 use Illuminate\Support\Facades\DB;
 
 use function Laravel\Prompts\error;
+use function Laravel\Prompts\info;
 use function Laravel\Prompts\select;
-use function Laravel\Prompts\confirm;
-use Illuminate\Support\Facades\Schema;
-use Illuminate\Support\Facades\Artisan;
 
 class TransferFromPostsToCustomTable extends Command
 {
-    protected $signature = 'aura:transfer-from-posts-to-custom-table {resource?}';
     protected $description = 'Transfer resources from posts and meta tables to custom tables';
+
+    protected $signature = 'aura:transfer-from-posts-to-custom-table {resource?}';
 
     public function handle()
     {
@@ -27,8 +23,9 @@ class TransferFromPostsToCustomTable extends Command
 
         if ($resourceClass) {
             // Validate that the provided resource class exists
-            if (!class_exists($resourceClass)) {
+            if (! class_exists($resourceClass)) {
                 error("Resource class '{$resourceClass}' does not exist.");
+
                 return Command::FAILURE;
             }
         } else {
@@ -58,7 +55,7 @@ class TransferFromPostsToCustomTable extends Command
         $resourceInstance = new $resourceClass;
         $type = $resourceInstance->getType();
 
-        info('Transferring data from posts to: ' . $resourceClass);
+        info('Transferring data from posts to: '.$resourceClass);
 
         // Fetch posts of the specific type along with their meta data
         $posts = DB::table('posts')->where('type', $type)->get();

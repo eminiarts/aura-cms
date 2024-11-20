@@ -1,40 +1,38 @@
 <?php
 
-use Aura\Base\Resource;
 use Aura\Base\Fields\Field;
 use Aura\Base\Fields\Panel;
-
+use Aura\Base\Resource;
 
 class TabPills extends Field
 {
     public $edit = 'fields.tabpills-edit';
-    public $view = 'fields.tabpills-view';
 
     public bool $group = true;
 
     public bool $sameLevelGrouping = false;
 
     public string $type = 'tabpills';
-}
 
+    public $view = 'fields.tabpills-view';
+}
 
 class TabPill extends Field
 {
     public $edit = 'fields.tabpill';
 
-    public $view = 'fields.tabpill-view';
-
     public bool $group = true;
-
-    public $wrapper = TabPills::class;
 
     public $optionGroup = 'Structure Fields';
 
     public bool $sameLevelGrouping = true;
 
     public string $type = 'tab';
-}
 
+    public $view = 'fields.tabpill-view';
+
+    public $wrapper = TabPills::class;
+}
 
 class ApplyWrappersModel extends Resource
 {
@@ -86,8 +84,8 @@ test('fields get grouped when field group is true', function () {
     expect($fields)->toHaveCount(1); // Because of the wrapper
 
     expect($fields[0])->toHaveKeys([
-        'label', 'name', 'type', 'slug', 'field', '_id', '_parent_id', 
-        'conditional_logic', 'fields'
+        'label', 'name', 'type', 'slug', 'field', '_id', '_parent_id',
+        'conditional_logic', 'fields',
     ]);
 
     expect($fields[0]['label'])->toBe('TabPills');
@@ -119,15 +117,12 @@ test('fields get grouped when field group is true', function () {
     expect($fields[0]['fields'][1]['_parent_id'])->toBe(1);
     expect($fields[0]['fields'][1]['fields'])->toHaveCount(1);
 
-    // Check text field inside second tabpill  
+    // Check text field inside second tabpill
     expect($fields[0]['fields'][1]['fields'][0]['label'])->toBe('Text 2');
     expect($fields[0]['fields'][1]['fields'][0]['type'])->toBe('Aura\\Base\\Fields\\Text');
     expect($fields[0]['fields'][1]['fields'][0]['field_type'])->toBe('input');
     expect($fields[0]['fields'][1]['fields'][0]['_parent_id'])->toBe(4);
 });
-
-
-
 
 class ApplyWrappersModel2 extends Resource
 {
@@ -154,7 +149,7 @@ class ApplyWrappersModel2 extends Resource
                 'conditional_logic' => [],
                 'slug' => 'text1',
             ],
-             [
+            [
                 'label' => 'Panel 1',
                 'name' => 'Panel 1',
                 'type' => Panel::class,
@@ -166,7 +161,7 @@ class ApplyWrappersModel2 extends Resource
                 'type' => TabPill::class,
                 'slug' => 'tabpill-2',
                 'wrap' => true,
-              ],
+            ],
             [
                 'label' => 'Text 2',
                 'name' => 'Text 2',
@@ -181,16 +176,12 @@ class ApplyWrappersModel2 extends Resource
 
 test('fields get wrapped when field wrapper is set', function () {
 
-    ray()->clearScreen();
-
     $model = new ApplyWrappersModel2;
 
     $fields = $model->getGroupedFields();
 
-    ray($fields);
-
     expect($fields)->toHaveCount(1); // Because of the wrapper
-    
+
     expect($fields[0]['fields'])->toHaveCount(1); // Because of global
 
 });

@@ -8,16 +8,11 @@ trait Search
 {
     public $search;
 
-    public function updatedSearch()
-    {
-        $this->resetPage();
-    }
-
     public function applySearch($query)
     {
         if ($this->search) {
 
-            ray($this->search);
+            // ray($this->search);
 
             // Check if there is a search method in the model (modifySearch()), and call it.
             if (method_exists($this->model, 'modifySearch')) {
@@ -53,5 +48,10 @@ trait Search
         }
 
         return $query;
+    }
+
+    public function updatedSearch()
+    {
+        $this->resetPage();
     }
 }

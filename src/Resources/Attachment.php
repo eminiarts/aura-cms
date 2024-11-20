@@ -102,7 +102,7 @@ class Attachment extends Resource
                 'style' => [
                     'width' => '100',
                 ],
-                'display_view' => 'aura::components.fields.embed-index'
+                'display_view' => 'aura::components.fields.embed-index',
             ],
             [
                 'name' => 'Details',
@@ -228,10 +228,10 @@ class Attachment extends Resource
 
         if ($i <= 1) {
             // For B and KB, don't round decimals
-            return (int)$bytes . ' ' . $units[$i];
+            return (int) $bytes.' '.$units[$i];
         }
 
-        return round($bytes, 2) . ' ' . $units[$i];
+        return round($bytes, 2).' '.$units[$i];
     }
 
     public function getReadableMimeTypeAttribute()
@@ -328,25 +328,25 @@ class Attachment extends Resource
         return 'aura::attachment.grid';
     }
 
-    public function tableView()
-    {
-        return 'aura::attachment.list';
-    }
-
     public function tableRowView()
     {
         return 'aura::attachment.row';
     }
 
+    public function tableView()
+    {
+        return 'aura::attachment.list';
+    }
+
     /**
      * Get the thumbnail URL for the attachment
      *
-     * @param string|null $size The size identifier (xs, sm, md, lg)
+     * @param  string|null  $size  The size identifier (xs, sm, md, lg)
      * @return string The URL to the thumbnail
      */
     public function thumbnail(?string $size = 'sm'): string
     {
-        if (!$this->isImage()) {
+        if (! $this->isImage()) {
             return $this->path(); // Return original path for non-images
         }
 
@@ -357,7 +357,7 @@ class Attachment extends Resource
         $dimension = collect($configuredDimensions)
             ->firstWhere('name', $size);
 
-        if (!$dimension) {
+        if (! $dimension) {
             // Fallback to original if size not found
             return $this->path();
         }

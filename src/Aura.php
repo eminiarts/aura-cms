@@ -362,7 +362,6 @@ class Aura
 
     public function registerRoutes($slug)
     {
-        ray('hier');
         Route::domain(config('aura.domain'))
             ->middleware(config('aura-settings.middleware.aura-admin'))
             ->prefix(config('aura.path')) // This is likely 'admin' from your config

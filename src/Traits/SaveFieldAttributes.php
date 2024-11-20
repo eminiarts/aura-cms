@@ -16,11 +16,7 @@ trait SaveFieldAttributes
     {
         static::saving(function ($post) {
 
-            // ray('SaveFieldAttributes', $post->attributes)->blue();
-
-            if ($post->name == 'Test Post 1') {
-                // dd($post)->red();
-            }
+            // ray('SaveFieldAttributes', $post->attributes, $post)->blue();
 
             if (! optional($post->attributes)['fields']) {
                 $post->attributes['fields'] = [];
@@ -47,11 +43,21 @@ trait SaveFieldAttributes
                     if ($class instanceof \Aura\Base\Fields\Password) {
 
                         // If the password is available in the $post->attributes, unset it
-                        if (empty($post->attributes[$slug])) {
-                            unset($post->attributes[$slug]);
-                        }
+                        // if (empty($post->attributes[$slug])) {
+                        //     unset($post->attributes[$slug]);
+                        // }
 
-                        return;
+                        //ray('password', $post->attributes[$slug])->purple();
+
+                        // Check if the password field is dirty (i.e., has been modified)
+                        // if (! $post->isDirty($slug)) {
+                        //     // Remove it from attributes so it won't be saved
+                        //     unset($post->attributes[$slug]);
+
+                        //     return;
+                        // }
+
+                        // return;
                     }
 
                     if ($class instanceof \Aura\Base\Fields\ID) {

@@ -2,8 +2,8 @@
 
 namespace Aura\Base\Services;
 
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Config;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Intervention\Image\Facades\Image;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
@@ -25,14 +25,24 @@ class ThumbnailGenerator
             $dimensionsAllowed = false;
 
             foreach ($allowedDimensions as $dimension) {
-                if ($dimension['width'] === $width &&
-                    (!$height || $dimension['height'] === $height)) {
-                    $dimensionsAllowed = true;
-                    break;
+                if ($dimension['width'] === $width) {
+                    // If height is provided in request, it must match config
+                    if ($height !== null) {
+                        if (isset($dimension['height']) && $dimension['height'] === $height) {
+                            $dimensionsAllowed = true;
+                            break;
+                        }
+                    } else {
+                        // If no height provided in request, that's okay if config doesn't specify height
+                        if (! isset($dimension['height'])) {
+                            $dimensionsAllowed = true;
+                            break;
+                        }
+                    }
                 }
             }
 
-            if (!$dimensionsAllowed) {
+            if (! $dimensionsAllowed) {
                 throw new NotFoundHttpException('Requested thumbnail dimensions are not allowed.');
             }
         }
@@ -44,7 +54,7 @@ class ThumbnailGenerator
         $thumbnailFolder = 'thumbnails/'.$folderPath;
 
         // Determine thumbnail path based on provided width and/or height
-        if ($width && !$height) {
+        if ($width && ! $height) {
             $thumbnailPath = $thumbnailFolder.$width.'_auto_'.$basename;
         } else {
             $height = $height ?: $width;
@@ -57,18 +67,19 @@ class ThumbnailGenerator
         }
 
         // Check if the original image exists
-        if (!Storage::disk('public')->exists($folderPath.$basename)) {
-            throw new \Exception('Original image not found: ' . $path);
+        if (! Storage::disk('public')->exists($folderPath.$basename)) {
+            throw new \Exception('Original image not found: '.$path);
         }
 
         // Create thumbnail
-        $image = Image::make(storage_path('app/public/'.$path));
+        $imageContents = Storage::disk('public')->get($path);
+        $image = Image::make($imageContents);
 
         // Get original dimensions
         $originalWidth = $image->width();
         $originalHeight = $image->height();
 
-        if ($width && !$height) {
+        if ($width && ! $height) {
             // When only width is specified, maintain aspect ratio and don't upscale
             if ($width > $originalWidth) {
                 // If requested width is larger than original, keep original size
@@ -95,12 +106,13 @@ class ThumbnailGenerator
         }
 
         // Ensure the thumbnail directory exists
-        if (!Storage::disk('public')->exists($thumbnailFolder)) {
-            Storage::disk('public')->makeDirectory($thumbnailFolder);
+        if (! Storage::disk('public')->exists($thumbnailFolder)) {
+            Storage::disk('public')->makeDirectory($thumbnailFolder, 0755, true);
         }
 
         // Save the thumbnail image with quality from config
-        $image->save(storage_path('app/public/'.$thumbnailPath), $quality * 100);
+        $image->encode('jpg', $quality * 100);
+        Storage::disk('public')->put($thumbnailPath, (string) $image);
 
         return $thumbnailPath;
     }

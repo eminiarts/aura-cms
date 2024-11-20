@@ -2,23 +2,22 @@
 
 namespace Aura\Base\Commands;
 
-use ReflectionClass;
 use Aura\Base\Facades\Aura;
-use Illuminate\Support\Str;
 use Illuminate\Console\Command;
-use function Laravel\Prompts\info;
-use Illuminate\Support\Facades\DB;
-
-use function Laravel\Prompts\error;
-use function Laravel\Prompts\select;
-use function Laravel\Prompts\confirm;
-use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Str;
+use ReflectionClass;
+
+use function Laravel\Prompts\confirm;
+use function Laravel\Prompts\error;
+use function Laravel\Prompts\info;
+use function Laravel\Prompts\select;
 
 class MigrateFromPostsToCustomTable extends Command
 {
-    protected $signature = 'aura:migrate-from-posts-to-custom-table {resource?}';
     protected $description = 'Migrate resources from posts and meta tables to custom tables';
+
+    protected $signature = 'aura:migrate-from-posts-to-custom-table {resource?}';
 
     public function handle()
     {
@@ -39,7 +38,7 @@ class MigrateFromPostsToCustomTable extends Command
         $resourceClass = $resourceOptions[$resourceName];
 
         // Step 2: Generate migration and modify resource
-        info('Generating migration for resource: ' . $resourceName);
+        info('Generating migration for resource: '.$resourceName);
         $this->generateMigration($resourceClass);
 
         // Step 3: Ask if should run migration
@@ -50,7 +49,7 @@ class MigrateFromPostsToCustomTable extends Command
         // Step 4: Ask if should transfer data
         if (confirm('Do you want to transfer data from posts and meta tables?', true)) {
             $this->call('aura:transfer-from-posts-to-custom-table', [
-                'resource' => $resourceClass
+                'resource' => $resourceClass,
             ]);
         }
 
@@ -63,8 +62,9 @@ class MigrateFromPostsToCustomTable extends Command
         $reflection = new ReflectionClass($resourceClass);
         $filePath = $reflection->getFileName();
 
-        if (!file_exists($filePath)) {
-            error('Resource class file not found: ' . $filePath);
+        if (! file_exists($filePath)) {
+            error('Resource class file not found: '.$filePath);
+
             return;
         }
 
@@ -73,7 +73,7 @@ class MigrateFromPostsToCustomTable extends Command
         // Add or update $customTable
         if (strpos($file, 'public static $customTable') === false) {
             $file = preg_replace(
-                '/(class\s+' . $reflection->getShortName() . '\s+extends\s+\S+\s*{)/i',
+                '/(class\s+'.$reflection->getShortName().'\s+extends\s+\S+\s*{)/i',
                 "$1\n    public static \$customTable = true;",
                 $file
             );
@@ -92,7 +92,7 @@ class MigrateFromPostsToCustomTable extends Command
 
         if (strpos($file, 'protected $table') === false) {
             $file = preg_replace(
-                '/(class\s+' . $reflection->getShortName() . '\s+extends\s+\S+\s*{)/i',
+                '/(class\s+'.$reflection->getShortName().'\s+extends\s+\S+\s*{)/i',
                 "$1\n    protected \$table = '$tableName';",
                 $file
             );
@@ -105,7 +105,7 @@ class MigrateFromPostsToCustomTable extends Command
         }
 
         file_put_contents($filePath, $file);
-        info('Modified resource class file: ' . $filePath);
+        info('Modified resource class file: '.$filePath);
 
         // dd($resourceClass); // double backslashes to $resourceClass
 
@@ -116,6 +116,6 @@ class MigrateFromPostsToCustomTable extends Command
             'resource' => $resourceClass,
         ]);
 
-        info('Migration generated for resource: ' . $resourceClass);
+        info('Migration generated for resource: '.$resourceClass);
     }
 }

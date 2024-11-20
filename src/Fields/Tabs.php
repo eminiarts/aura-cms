@@ -8,9 +8,9 @@ class Tabs extends Field
 
     public bool $group = true;
 
+    public bool $sameLevelGrouping = false;
+
     public string $type = 'tabs';
 
     public $view = 'aura::fields.tabs';
-
-    public bool $sameLevelGrouping = false;
 }

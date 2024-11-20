@@ -3,8 +3,8 @@
 namespace Aura\Base\Livewire;
 
 use Aura\Base\Resources\Attachment;
-use Livewire\Component;
 use Livewire\Attributes\On;
+use Livewire\Component;
 
 class MediaManager extends Component
 {
@@ -12,15 +12,15 @@ class MediaManager extends Component
 
     public $fieldSlug;
 
-    public $model;
-
-    public $selected = [];
+    public $initialSelectionDone = false;
 
     public $modalAttributes;
 
-    public $initialSelectionDone = false;
+    public $model;
 
     public $rowIds = []; // Add this line
+
+    public $selected = [];
 
     // Listen for select Attachment
     protected $listeners = [
@@ -28,7 +28,6 @@ class MediaManager extends Component
         'tableMounted',
         'updateField' => 'updateField',
     ];
-
 
     public static function modalClasses(): string
     {
@@ -68,7 +67,7 @@ class MediaManager extends Component
     #[On('selectedRows')]
     public function selectAttachment($ids)
     {
-        if (!$this->initialSelectionDone) {
+        if (! $this->initialSelectionDone) {
             ray('selectAttachment', $ids);
             $this->selected = $ids;
             $this->initialSelectionDone = true;
@@ -78,7 +77,7 @@ class MediaManager extends Component
     #[On('tableMounted')]
     public function tableMounted()
     {
-        if ($this->selected && !$this->initialSelectionDone) {
+        if ($this->selected && ! $this->initialSelectionDone) {
             $this->dispatch('selectedRows', $this->selected);
             $this->initialSelectionDone = true;
         }
@@ -95,7 +94,7 @@ class MediaManager extends Component
     public function updateField($field)
     {
         if ($field['slug'] == $this->fieldSlug) {
-        ray('updated', $this->selected);
+            ray('updated', $this->selected);
             $this->selected = $field['value'];
             $this->dispatch('selectedRows', $this->selected);
         }

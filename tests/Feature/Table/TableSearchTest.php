@@ -7,7 +7,6 @@ use Aura\Base\Resources\Post;
 use Aura\Base\Resources\Tag;
 use Aura\Base\Resources\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\DB;
 use Livewire\Livewire;
 
 uses(RefreshDatabase::class);
@@ -97,7 +96,7 @@ test('search table title', function () {
     // $component->set('filters.taxonomy.tags', [$tag1->id]);
 
     // $component->rows should have 1 item
-    $component->assertViewHas('rows', function ($rows) use ($post) {
+    $component->assertViewHas('rows', function ($rows) {
         return count($rows->items()) === 2;
     });
 
@@ -107,14 +106,14 @@ test('search table title', function () {
 
     // dd($component->search);
 
-    $component->assertViewHas('rows', function ($rows) use ($post) {
+    $component->assertViewHas('rows', function ($rows) {
         // dd(count($rows->items()));
         return count($rows->items()) === 1;
     });
 
     $component->set('search', 'Test');
 
-    $component->assertViewHas('rows', function ($rows) use ($post) {
+    $component->assertViewHas('rows', function ($rows) {
         return count($rows->items()) === 2;
     });
 

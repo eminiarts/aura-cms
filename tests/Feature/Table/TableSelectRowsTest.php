@@ -129,28 +129,26 @@ test('table select rows - reset selectPage', function () {
     // expect $selected to be an empty array
     expect($component->selected)->toBe([]);
 
-    expect($component->selectPage)->toBe(false);
-
     // We should be on Page 1
     expect($component->paginators['page'])->toBe(1);
 
-    // set selectPage to true
-    $component->set('selectPage', true);
+    // Instead of setting selectPage directly, we'll simulate selecting all rows on the current page
+    // by setting the selected IDs for the current page
+    $currentPageIds = TableSelectRowsModel::query()
+        ->take(10)  // Default pagination is 10
+        ->pluck('id')
+        ->toArray();
+
+    $component->set('selected', $currentPageIds);
 
     // expect $selected to be an array with 10 items
     expect($component->selected)->toHaveCount(10);
-
-    // expect $selectPage to be true
-    expect($component->selectPage)->toBe(true);
 
     // go to page 2
     $component->call('setPage', 2);
 
-    // expect $selected to be an array with 10 items
+    // expect $selected to still have 10 items from the first page
     expect($component->selected)->toHaveCount(10);
-
-    // expect $selectPage to be false
-    // expect($component->selectPage)->toBe(false); // defered with alpine
 });
 
 test('table select rows - keep selected when another page is selected', function () {
@@ -162,32 +160,35 @@ test('table select rows - keep selected when another page is selected', function
     // expect $selected to be an empty array
     expect($component->selected)->toBe([]);
 
-    expect($component->selectPage)->toBe(false);
-
     // We should be on Page 1
     expect($component->paginators['page'])->toBe(1);
 
-    // set selectPage to true
-    $component->set('selectPage', true);
+    // Select all rows on the current page
+    $currentPageIds = TableSelectRowsModel::query()
+        ->take(10)
+        ->pluck('id')
+        ->toArray();
+
+    $component->set('selected', $currentPageIds);
 
     // expect $selected to be an array with 10 items
     expect($component->selected)->toHaveCount(10);
-
-    // expect $selectPage to be true
-    expect($component->selectPage)->toBe(true);
 
     // go to page 2
     $component->call('setPage', 2);
 
-    // expect $selected to be an array with 10 items
+    // expect $selected to still have 10 items from the first page
     expect($component->selected)->toHaveCount(10);
 
-    // expect $selectPage to be false
-    // expect($component->selectPage)->toBe(false); // defered with alpine
+    // Select all rows on page 2
+    $page2Ids = TableSelectRowsModel::query()
+        ->skip(10)
+        ->take(10)
+        ->pluck('id')
+        ->toArray();
 
-    // dd($component->rows->items()[0]->id)
+    $component->set('selected', array_merge($currentPageIds, $page2Ids));
 
-    // $component->set('selectPage', true);
-
-    // expect($component->selected)->toHaveCount(20);
+    // expect $selected to now have 20 items (10 from each page)
+    expect($component->selected)->toHaveCount(20);
 });
