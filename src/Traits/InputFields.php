@@ -231,18 +231,18 @@ trait InputFields
     }
 
     // Used in Resource
-    public function getFieldsWithIds($fields = null)
-    {
-        if (! $fields) {
-            $fields = $this->mappedFields();
-        }
+    // public function getFieldsWithIds($fields = null)
+    // {
+    //     if (! $fields) {
+    //         $fields = $this->mappedFields();
+    //     }
 
-        $pipes = [
-            AddIdsToFields::class,
-        ];
+    //     $pipes = [
+    //         AddIdsToFields::class,
+    //     ];
 
-        return $this->sendThroughPipeline($fields, $pipes);
-    }
+    //     return $this->sendThroughPipeline($fields, $pipes);
+    // }
 
     /**
      * This code is used to render the form fields in the correct order.
@@ -337,6 +337,15 @@ trait InputFields
             ApplyParentDisplayAttributes::class,
             FilterViewFields::class,
             BuildTreeFromFields::class,
+        ]);
+    }
+
+    public function getFieldsWithIds()
+    {
+        return $this->sendThroughPipeline($this->fieldsCollection(), [
+            MapFields::class,
+            ApplyWrappers::class,
+            AddIdsToFields::class,
         ]);
     }
 }
