@@ -80,6 +80,12 @@ it('can add new tab', function () {
         ->assertDispatched('openSlideOver');
 });
 
+it('can edit tab', function () {
+    Livewire::test(ResourceEditorFake::class, ['slug' => 'Model'])
+        ->call('openSidebar', ['fieldSlug' => 'tab-1', 'slug' => 'model'])
+        ->assertDispatched('openSlideOver');
+});
+
 it('current resource fields', function () {
     $component = Livewire::test(ResourceEditorFake::class, ['slug' => 'Model']);
 

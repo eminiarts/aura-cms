@@ -14,10 +14,10 @@ class Text extends Field
     {
         return array_merge(parent::getFields(), [
             [
-                'label' => 'Text',
                 'name' => 'Text',
                 'type' => 'Aura\\Base\\Fields\\Tab',
                 'slug' => 'text-tab',
+                'global' => true,
                 'style' => [],
             ],
             [

@@ -136,21 +136,19 @@ abstract class Field implements Wireable
     {
         return [
             [
-                'label' => 'Field',
                 'name' => 'Field',
                 'type' => 'Aura\\Base\\Fields\\Tab',
                 'slug' => 'field',
+                'global' => true,
                 'style' => [],
             ],
             [
-                'label' => 'Name',
                 'name' => 'Name',
                 'type' => 'Aura\\Base\\Fields\\Text',
                 'validation' => 'required',
                 'slug' => 'name',
             ],
             [
-                'label' => 'Slug',
                 'name' => 'Slug',
                 'type' => 'Aura\\Base\\Fields\\Slug',
                 'validation' => 'required|regex:/^[a-zA-Z0-9][a-zA-Z0-9_-]*$/|not_regex:/^[0-9]+$/',
@@ -160,14 +158,12 @@ abstract class Field implements Wireable
                 'disabled' => true,
             ],
             [
-                'label' => 'Validation',
                 'name' => 'Validation',
                 'type' => 'Aura\\Base\\Fields\\Text',
                 'validation' => '',
                 'slug' => 'validation',
             ],
             [
-                'label' => 'Type',
                 'name' => 'Type',
                 'type' => 'Aura\\Base\\Fields\\Select',
                 'live' => true,
@@ -196,6 +192,7 @@ abstract class Field implements Wireable
                 'type' => 'Aura\\Base\\Fields\\Tab',
                 'slug' => 'tab-2',
                 'style' => [],
+                'global' => true,
             ],
 
             [
@@ -230,15 +227,14 @@ abstract class Field implements Wireable
             ],
 
             [
-                'label' => 'Conditional Logic',
                 'name' => 'Conditional Logic',
                 'type' => 'Aura\\Base\\Fields\\Tab',
                 'slug' => 'conditional_logic',
                 'style' => [],
+                'global' => true,
             ],
 
             [
-                'label' => 'Add Condition',
                 'name' => 'Add Condition',
                 'type' => 'Aura\\Base\\Fields\\Repeater',
                 'validation' => '',
@@ -249,7 +245,6 @@ abstract class Field implements Wireable
                 'slug' => 'conditional_logic',
             ],
             [
-                'label' => 'Type',
                 'name' => 'Type',
                 'type' => 'Aura\\Base\\Fields\\Text',
                 'validation' => '',
@@ -261,7 +256,6 @@ abstract class Field implements Wireable
                 ],
             ],
             [
-                'label' => 'Operator',
                 'name' => 'Operator',
                 'type' => 'Aura\\Base\\Fields\\Select',
                 'validation' => '',
@@ -281,7 +275,6 @@ abstract class Field implements Wireable
                 ],
             ],
             [
-                'label' => 'Value',
                 'name' => 'Value',
                 'type' => 'Aura\\Base\\Fields\\Text',
                 'validation' => '',

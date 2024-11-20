@@ -110,7 +110,7 @@ class ResourceEditor extends Component
 
         // go through each field and add a random string to the slug
         foreach ($newFields as $key => $field) {
-            $newFields[$key]['slug'] = $field['slug'].'_'.Str::random(4);
+            $newFields[$key]['slug'] = $field['slug'];
         }
 
         // check if newfields has a global tab
@@ -400,7 +400,7 @@ class ResourceEditor extends Component
         // get field with fieldSlug from this fieldsarray
         $field = collect($this->fieldsArray)->where('slug', $fieldSlug)->first();
 
-        $this->dispatch('openSlideOver', component: 'edit-field', parameters: ['fieldSlug' => $fieldSlug, 'slug' => $slug, 'field' => $field, 'model' => $slug]);
+        $this->dispatch('openSlideOver', component: 'edit-field', parameters: ['fieldSlug' => $fieldSlug, 'field' => $field, 'model' => $slug]);
     }
 
     // Add this method to handle the refresh
@@ -529,27 +529,13 @@ class ResourceEditor extends Component
         $this->dispatch('finishedSavingFields');
     }
 
-    public function saveNewField($field, $index, $slug)
+    public function saveNewField($field, $index)
     {
-        // ray('saveNewField', $field, $index, $slug)->blue();
-
-        // Find the index of the item with slug of $slug in $this->fieldsArray
-        $parentIndex = collect($this->fieldsArray)->search(function ($item) use ($slug) {
-            return $item['slug'] === $slug;
-        });
-        $newFieldIndex = (int) $parentIndex + (int) $index + 1;
-
-        // ray('fieldsarray before', $this->fieldsArray)->blue();
-
-        array_splice($this->fieldsArray, $newFieldIndex, 0, [$field]);
-
-        // ray('fieldsarray after', $this->fieldsArray)->blue();
+        array_splice($this->fieldsArray, $index, 0, [$field]);
 
         $this->newFields = $this->model->mapToGroupedFields($this->fieldsArray);
 
         $this->saveFields($this->fieldsArray);
-
-        // ray('new fields', $this->newFields)->blue();
 
         // emit new fields
         $this->dispatch('newFields', $this->fieldsArray);
