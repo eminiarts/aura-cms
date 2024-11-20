@@ -61,7 +61,7 @@ class Profile extends Component
     {
         $this->validate(['password' => ['required', 'current_password']]);
 
-        $user = User::find(auth()->id());
+        $user = app(config('aura.resources.user'))::find(auth()->id());
 
         $user->delete();
 
@@ -94,7 +94,7 @@ class Profile extends Component
 
     public function getUserProperty()
     {
-        return User::find(auth()->id());
+        return app(config('aura.resources.user'))::find(auth()->id());
     }
 
     public function logoutOtherBrowserSessions()
