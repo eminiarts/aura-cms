@@ -70,18 +70,18 @@ class AddIdsToFields implements Pipe
 
             // Handle group fields (e.g., panels, tabs)
             if ($item['field']->group === true) {
-                // **Logic to Handle Sibling Tabs**
-                if ($item['field']->type === 'tab') {
-                    // Search the stack backwards for the last tab
+                // **Logic to Handle Sibling Tabs/Panels within Tabs field**
+                if (in_array($item['field']->type, ['tab', 'panel'])) {
+                    // Search the stack backwards for the last Tabs field
                     for ($j = count($parentStack) - 1; $j >= 0; $j--) {
-                        if ($parentStack[$j]['field']->type === 'tab') {
-                            $item['_parent_id'] = $parentStack[$j]['_parent_id'];
+                        if ($parentStack[$j]['type'] === 'Aura\\Base\\Fields\\Tabs') {
+                            $item['_parent_id'] = $parentStack[$j]['_id'];
                             break;
                         }
                     }
-                } 
+                }
 
-                // If _parent_id is not set by the tab logic, use the standard logic
+                // If _parent_id is not set by the above logic, use the standard logic
                 if (!isset($item['_parent_id'])) {
                     $currentParent = end($parentStack);
                     $item['_parent_id'] = $currentParent ? $currentParent['_id'] : null;
