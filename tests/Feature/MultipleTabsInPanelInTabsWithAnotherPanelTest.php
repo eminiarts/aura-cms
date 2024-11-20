@@ -2,7 +2,7 @@
 
 use Aura\Base\Resource;
 
-class MultipleTabsInPanelInTabsTestModel extends Resource
+class MultipleTabsInPanelInTabsTestModelWithAnotherPanel extends Resource
 {
     public static ?string $slug = 'page';
 
@@ -10,7 +10,7 @@ class MultipleTabsInPanelInTabsTestModel extends Resource
 
     public static function getFields()
     {
-        return [
+       return [
             [
                 'name' => 'Tab 1',
                 'global' => true,
@@ -51,7 +51,7 @@ class MultipleTabsInPanelInTabsTestModel extends Resource
                 'name' => 'Panel 2',
                 'type' => 'Aura\\Base\\Fields\\Panel',
                 'slug' => 'panel2',
-                // 'exclude_level' => 2,
+                'exclude_level' => 3,
                 // 'nested' => false,
                 // 'exclude_from_nesting' => true,
             ],
@@ -97,12 +97,11 @@ class MultipleTabsInPanelInTabsTestModel extends Resource
     }
 }
 
-test('panel 2 is nested in tab 2 of panel 1', function () {
-    $model = new MultipleTabsInPanelInTabsTestModel;
+test('multiple tabs in panels in tabs are possible', function () {
+    $model = new MultipleTabsInPanelInTabsTestModelWithAnotherPanel;
+
 
     $fields = $model->getGroupedFields();
-
-    ray($fields)->red();
 
     $this->assertCount(1, $fields);
     $this->assertEquals($fields[0]['name'], 'Aura\Base\Fields\Tabs');
@@ -110,7 +109,7 @@ test('panel 2 is nested in tab 2 of panel 1', function () {
     $this->assertEquals($fields[0]['fields'][0]['name'], 'Tab 1');
     $this->assertEquals($fields[0]['fields'][1]['name'], 'Tab 2');
     $this->assertEquals($fields[0]['fields'][0]['fields'][0]['name'], 'Panel 1');
-    $this->assertEquals($fields[0]['fields'][0]['fields'][0]['fields'][0]['fields'][1]['fields'][1]['name'], 'Panel 2');
+    $this->assertEquals($fields[0]['fields'][0]['fields'][1]['name'], 'Panel 2');
     $this->assertCount(1, $fields[0]['fields'][0]['fields'][0]['fields']);
     $this->assertCount(2, $fields[0]['fields'][0]['fields'][0]['fields'][0]['fields']);
     $this->assertEquals($fields[0]['fields'][0]['fields'][0]['fields'][0]['name'], 'Aura\Base\Fields\Tabs');

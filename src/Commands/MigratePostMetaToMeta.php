@@ -6,9 +6,9 @@ use Aura\Base\Resources\Post;
 use Aura\Base\Resources\Team;
 use Aura\Base\Resources\User;
 use Illuminate\Console\Command;
+use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
-use Illuminate\Database\Schema\Blueprint;
 
 class MigratePostMetaToMeta extends Command
 {
@@ -20,7 +20,7 @@ class MigratePostMetaToMeta extends Command
     {
         $this->info('Starting migration of post_meta, team_meta, and user_meta to meta table...');
 
-        if (!Schema::hasTable('meta')) {
+        if (! Schema::hasTable('meta')) {
             Schema::create('meta', function (Blueprint $table) {
                 $table->id();
                 $table->morphs('metable');

@@ -27,17 +27,6 @@ class Profile extends Component
 
     public $model;
 
-    // protected $validationAttributes = [
-    //     'form.fields.signatur' => 'signatur',
-    // ];
-
-    // protected function validationAttributes()
-    // {
-    //     return [
-    //         'form.fields.signatur' => __('Signature'),
-    //     ];
-    // }
-
     /**
      * The user's current password.
      *
@@ -86,7 +75,6 @@ class Profile extends Component
 
     public function getFields()
     {
-        // dd($this->user->fieldsForView());
         return $this->user->getProfileFields();
     }
 
@@ -154,7 +142,7 @@ class Profile extends Component
 
     public function save()
     {
-        // dd($this->form['fields']);
+        //  dd($this->form['fields']);
         // $this->validate();
 
         $validatedData = $this->validate();
@@ -166,7 +154,7 @@ class Profile extends Component
         if (optional($this->form['fields'])['current_password'] && optional($this->form['fields'])['password']) {
 
             $this->model->update([
-                'password' => bcrypt($this->form['fields']['password']),
+                'password' => $this->form['fields']['password'],
             ]);
 
             // unset password fields

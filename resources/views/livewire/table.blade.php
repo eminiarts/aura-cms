@@ -183,7 +183,11 @@
     }">
         @include($this->settings['views']['header'])
 
-        <div x-text="selected"></div>
+        {{-- @dump(json_encode($this->filters)) --}}
+
+        @php
+            // ray($this->filters);
+        @endphp
 
         <div class="mt-4">
 

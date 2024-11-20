@@ -321,7 +321,6 @@ class Table extends Component
      */
     public function render()
     {
-        ray('render', $this->search, count($this->rows()), $this->rows()->toArray());
         return view($this->model->tableComponentView(), [
             'parent' => $this->parent,
             'rows' => $this->rows(),
@@ -484,6 +483,16 @@ class Table extends Component
      */
     protected function rows()
     {
+        return $this->rowsQuery()->paginate($this->perPage);
+    }
+
+    /**
+     * Build the query for the rows.
+     *
+     * @return mixed
+     */
+    public function rowsQuery()
+    {
         $query = $this->query();
 
         if ($this->filters) {
@@ -494,8 +503,6 @@ class Table extends Component
         $query = $this->applySearch($query);
 
         $query = $this->applySorting($query);
-
-        $query = $query->paginate($this->perPage);
 
         return $query;
     }

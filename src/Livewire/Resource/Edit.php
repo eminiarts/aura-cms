@@ -50,6 +50,8 @@ class Edit extends Component
     public function initializeModelFields()
     {
         foreach ($this->model->inputFields() as $field) {
+
+            // ray($field)->blue();
             // If the method exists in the field type, call it directly.
             if (method_exists($field['field'], 'hydrate')) {
                 $this->form['fields'][$field['slug']] = $field['field']->hydrate();
@@ -116,12 +118,12 @@ class Edit extends Component
 
     public function save()
     {
-        ray('saving', $this->form);
+        // ray('saving', $this->form);
         $this->validate();
 
-        // ray()->clearScreen();
+        //
         // // dd('saving', $this->form, $this->model);
-        // ray('saving', $this->form['fields']);
+        //  ray('saving', $this->form['fields']);
 
         // unset($this->form['fields']['group']);
 

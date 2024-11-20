@@ -17,21 +17,6 @@ class Tags extends Field
 
     public $view = 'aura::fields.view-value';
 
-    public function filterOptions()
-    {
-        return [
-            'contains' => __('contains'),
-            'does_not_contain' => __('does not contain'),
-        ];
-    }
-
-    public function filter()
-    {
-        if ($this->filter) {
-            return $this->filter;
-        }
-    }
-
     public function display($field, $value, $model)
     {
 
@@ -50,6 +35,21 @@ class Tags extends Field
 
             return "<span class='px-2 py-1 text-xs text-white whitespace-nowrap rounded-full bg-primary-500'>$title</span>";
         })->implode(' ');
+    }
+
+    public function filter()
+    {
+        if ($this->filter) {
+            return $this->filter;
+        }
+    }
+
+    public function filterOptions()
+    {
+        return [
+            'contains' => __('contains'),
+            'does_not_contain' => __('does not contain'),
+        ];
     }
 
     public function get($class, $value, $field = null)

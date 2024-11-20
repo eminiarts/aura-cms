@@ -9,7 +9,6 @@ use Aura\Base\Resources\User;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules;
 
 class InvitationRegisterUserController extends Controller
@@ -49,12 +48,10 @@ class InvitationRegisterUserController extends Controller
         $user = User::create([
             'name' => $request->name,
             'email' => $teamInvitation->email,
-            'password' => Hash::make($request->password),
+            'password' => $request->password,
             'current_team_id' => $team->id,
             'fields' => ['roles' => [$teamInvitation->role]],
         ]);
-
-        // dd($user->fresh()->toArray());
 
         // Delete the invitation
         $teamInvitation->delete();

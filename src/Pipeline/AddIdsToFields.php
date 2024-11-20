@@ -9,125 +9,108 @@ class AddIdsToFields implements Pipe
 {
     public function handle($fields, Closure $next)
     {
-        $currentParent = null;
+        $parentStack = [];
         $globalTabs = null;
-        $parentPanel = null;
-        $parentTab = null;
+        $lastGlobalTab = null;
 
-        $fields = collect($fields)->values()->map(function ($item, $key) use (&$currentParent, &$globalTabs, &$parentPanel, &$parentTab, &$fields) {
-            $item['_id'] = $key + 1;
+        $fields = collect($fields)->values();
 
-            $shouldNotBeNested = ! empty(optional($item)['exclude_from_nesting']) && $item['exclude_from_nesting'] === true;
+        $processedFields = collect();
+        $fieldsCount = $fields->count();
 
-            if ($shouldNotBeNested) {
-                // Set the parent ID to the one before the current parent if it's set, or null
-                $item['_parent_id'] = $currentParent ? $currentParent['_parent_id'] : null;
+        for ($i = 0; $i < $fieldsCount; $i++) {
+            $item = $fields[$i];
+            $item['_id'] = $i + 1;
 
-                if ($item['field']->type === 'tab' && $currentParent['field']->type === 'panel') {
-                    $item['_parent_id'] = $item['_parent_id'] - 1;
+            // Handle 'exclude_level' attribute
+            $excludeLevel = isset($item['exclude_level']) ? $item['exclude_level'] : 0;
+            $shouldExcludeLevels = $excludeLevel > 0;
+
+            if ($shouldExcludeLevels) {
+                // Calculate the parent ID by going up $excludeLevel levels in the parent stack
+                $parentStackCount = count($parentStack);
+                if ($excludeLevel >= $parentStackCount) {
+                    // Exclude level is equal to or greater than the stack size, set parent_id to null
+                    $item['_parent_id'] = null;
+                    // Clear the parent stack
+                    $parentStack = [];
+                } else {
+                    // Set parent_id to the ancestor N levels up
+                    $ancestorIndex = $parentStackCount - $excludeLevel - 1;
+                    $ancestorItem = $parentStack[$ancestorIndex];
+                    $item['_parent_id'] = $ancestorItem['_id'];
+                    // Adjust the parent stack to this level
+                    $parentStack = array_slice($parentStack, 0, $ancestorIndex + 1);
                 }
 
                 if ($item['field']->group === true) {
-                    $currentParent = $item;
+                    // Since this is a group, push it onto the stack
+                    $parentStack[] = $item;
                 }
 
-                // Try
-                $parentPanel = false;
-                $currentParent = $item;
-
-                return $item;
+                $processedFields[] = $item;
+                continue;
             }
 
-            if (optional($item)['global'] === true && ! $globalTabs) {
+            // Handle global fields
+            if (optional($item)['global'] === true) {
                 if ($item['field']->type == 'tabs') {
                     $globalTabs = $item;
+                } elseif ($item['field']->type == 'tab') {
+                    $lastGlobalTab = $item;
                 }
 
-                $item['_parent_id'] = null;
-                $currentParent = $item;
-                $parentPanel = null;
+                $item['_parent_id'] = $globalTabs ? $globalTabs['_id'] : null;
+                // Reset the parent stack to only include the current global item
+                $parentStack = [$item];
 
-                return $item;
+                $processedFields[] = $item;
+                continue;
             }
 
-            if ($item['field']->type !== 'panel' && $item['field']->group === true) {
-                if (optional($item)['global']) {
-                    // If type = group
-                    if ($item['field']->type === 'group') {
-                        $item['_parent_id'] = $currentParent['_parent_id'];
-                        $currentParent = $item;
-                        $parentPanel = null;
-                    } else {
-                        $item['_parent_id'] = optional($globalTabs)['_id'];
-                        $parentPanel = null;
+            // Handle group fields (e.g., panels, tabs)
+            if ($item['field']->group === true) {
+                // **New Logic to Handle Sibling Tabs and Panels**
+                if (in_array($item['field']->type, ['tab', 'panel'])) {
+                    // Pop previous tab or panel if it's at the same level
+                    $lastItem = end($parentStack);
+                    if ($lastItem && $lastItem['field']->type == $item['field']->type) {
+                        array_pop($parentStack);
                     }
                 }
-                // Same Level Grouping
-                elseif (optional($currentParent)['type'] == $item['type']) {
-                    // Easier Option for now, should refactor
-                    $item['_parent_id'] = $currentParent['_parent_id'];
-                }
-                // Parent Tab
-                elseif ($item['field']->type == 'tab') {
-                    if ($parentTab) {
-                        $item['_parent_id'] = $parentTab['_parent_id'];
-                    } else {
-                        $item['_parent_id'] = optional($currentParent)['_id'];
-                    }
-                    ray('new tab', $item, $parentTab)->red();
-                    $parentTab = $item;
-                }
-                // Nested False
-                elseif (optional($item)['nested'] === false) {
-                    // dd($item);
-                    $item['_parent_id'] = optional($currentParent)['_id'];
-                }
 
-                // If Tab is set to Global, set it to GlobalTabs
-                else {
-                    $item['_parent_id'] = optional($currentParent)['_id'];
-                }
+                // Set parent ID
+                $currentParent = end($parentStack);
+                $item['_parent_id'] = $currentParent ? $currentParent['_id'] : null;
 
-                if (optional($item)['nested'] === true) {
-                    $item['_parent_id'] = optional($currentParent)['_id'];
-                }
-
-                $currentParent = $item;
-            } elseif ($item['field']->type !== 'panel' && $item['field']->group === false) {
-                $item['_parent_id'] = optional($currentParent)['_id'];
-            } elseif ($item['field']->type == 'panel') {
-
-                if (optional($item)['global']) {
-                    $item['_parent_id'] = null;
-                    $parentPanel = null;
-                    $currentParent = null;
-                }
-
-                if ($parentTab) {
-                    $item['_parent_id'] = $parentTab['_id'];
-                    $parentPanel = $item;
-                    $parentTab = null;
-                    $currentParent = $item;
-                    return $item;
-                }
-
-                if ($parentPanel) {
-                    $item['_parent_id'] = $parentPanel['_parent_id'];
-                } else {
-                    $item['_parent_id'] = optional($currentParent)['_id'];
-                }
-
-                $currentParent = $item;
-                $parentPanel = $item;
-                $parentTab = null;
+                // Push to parent stack
+                $parentStack[] = $item;
             } else {
-
-                throw new InvalidArgumentException('Unexpected field configuration.');
+                // Regular field
+                $currentParent = end($parentStack);
+                $item['_parent_id'] = $currentParent ? $currentParent['_id'] : null;
             }
 
-            return $item;
+            $processedFields[] = $item;
+
+            // Optional: Additional logic to manage the parent stack
+            // End of the list or next item handling can be added here if necessary
+        }
+
+        // Ensure no cycles in parent IDs
+        $idMap = $processedFields->pluck('_id')->all();
+
+        $processedFields = $processedFields->transform(function ($field) use ($idMap) {
+            if ($field['_parent_id'] === $field['_id']) {
+                $field['_parent_id'] = null;
+            }
+            // Also ensure _parent_id exists in idMap
+            if ($field['_parent_id'] && !in_array($field['_parent_id'], $idMap)) {
+                $field['_parent_id'] = null;
+            }
+            return $field;
         });
 
-        return $next($fields);
+        return $next($processedFields);
     }
 }

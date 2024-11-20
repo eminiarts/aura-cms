@@ -313,7 +313,7 @@ class ResourceEditor extends Component
 
     public function getMappedFieldsProperty()
     {
-        ray('getMappedFieldsProperty', $this->newFields)->blue();
+        // ray('getMappedFieldsProperty', $this->newFields)->blue();
 
         if ($this->newFields) {
             $this->updateGlobalTabs();
@@ -531,7 +531,7 @@ class ResourceEditor extends Component
 
     public function saveNewField($field, $index, $slug)
     {
-        ray('saveNewField', $field, $index, $slug)->blue();
+        // ray('saveNewField', $field, $index, $slug)->blue();
 
         // Find the index of the item with slug of $slug in $this->fieldsArray
         $parentIndex = collect($this->fieldsArray)->search(function ($item) use ($slug) {
@@ -539,17 +539,17 @@ class ResourceEditor extends Component
         });
         $newFieldIndex = (int) $parentIndex + (int) $index + 1;
 
-        ray('fieldsarray before', $this->fieldsArray)->blue();
+        // ray('fieldsarray before', $this->fieldsArray)->blue();
 
         array_splice($this->fieldsArray, $newFieldIndex, 0, [$field]);
 
-        ray('fieldsarray after', $this->fieldsArray)->blue();
+        // ray('fieldsarray after', $this->fieldsArray)->blue();
 
         $this->newFields = $this->model->mapToGroupedFields($this->fieldsArray);
 
         $this->saveFields($this->fieldsArray);
 
-        ray('new fields', $this->newFields)->blue();
+        // ray('new fields', $this->newFields)->blue();
 
         // emit new fields
         $this->dispatch('newFields', $this->fieldsArray);

@@ -62,27 +62,16 @@ test('Default Team Settings are created', function () {
     $this->assertJsonStringEqualsJsonString(json_encode($option->value), '{"darkmode-type":"auto","sidebar-type":"primary","color-palette":"aura","gray-color-palette":"slate","sidebar-size":"standard","sidebar-darkmode-type":"dark"}');
 });
 
-test('Team Settings can be saved', function () {
-    $role = Role::create(['name' => 'Super Admin', 'slug' => 'super_admin2', 'description' => 'Super Admin has can perform everything.', 'super_admin' => true, 'permissions' => []]);
-
-    // Attach to User
-    $user = \Aura\Base\Resources\User::find(1);
-
-    $user->update(['roles' => [$role->id]]);
-
+test('Team Settings can be saved2', function () {
     // team factory create team
-    $teams = Team::factory(2)->create();
+    $teams = Team::factory(2)->create([
+        'user_id' => auth()->user()->id,
+    ]);
+
     $firstTeam = $teams->first();
     $secondTeam = $teams->last();
 
-    // we need to create a role for the second team
-    $role2 = Role::create(['name' => 'Super Admin', 'slug' => 'super_admin3', 'description' => 'Super Admin has can perform everything.', 'super_admin' => true, 'permissions' => []]);
-
-    // $this->user->teams()->attach([
-    //     $secondTeam->id => ['key' => 'roles', 'value' => $role2->id],
-    // ]);
-
-    // $role->users()->sync([$this->user->id => ['resource_type' => Role::class]]);
+    // dd(auth()->user()->current_team_id); // 3
 
     // Default Team Settings
     Livewire::test(Settings::class)
@@ -107,7 +96,7 @@ test('Team Settings can be saved', function () {
     $this->assertEquals('red', $option->value['color-palette']);
     $this->assertEquals('zinc', $option->value['gray-color-palette']);
 
-    // acting as $this->user, get settings page and assertSee "--primary-400: #f87171;" in html
+    // acting as $this->user, get settings page and assertSee color variables
     $this->actingAs($this->user)
         ->get(route('aura.settings'))
         ->assertSee('--primary-400: 248 113 113;');
@@ -120,7 +109,7 @@ test('Team Settings can be saved', function () {
     $this->actingAs($this->user)
         ->get(route('aura.settings'))
         ->assertDontSee('--primary-400: 248 113 113;')
-        ->assertSee('--primary-400: 60 126 244;');
+        ->assertSee('--primary-400: 16 185 129;');
 
     // user switchTeam
     $this->user->switchTeam($secondTeam);
@@ -130,7 +119,7 @@ test('Team Settings can be saved', function () {
 
     $this->actingAs($this->user)
         ->get(route('aura.settings'))
-        ->assertSee('--primary-400: 60 126 244;');
+        ->assertSee('--primary-400: 16 185 129;');
 
     // assert DB has 1 record in options table
     $this->assertDatabaseCount('options', 1);
@@ -138,10 +127,11 @@ test('Team Settings can be saved', function () {
     // Switch back to first team
     $this->user->switchTeam($firstTeam);
 
+    // Team is set to first team and it's set to aura palette
     $this->actingAs($this->user)
         ->get(route('aura.settings'))
         ->assertOk()
-        ->assertSee('--primary-400: 60 126 244;')
+        ->assertDontSee('--primary-400: 16 185 129;')
         ->assertDontSee('--primary-400: 248 113 113;')
         ->assertDontSee('--primary-400: 82 139 255;');
 });

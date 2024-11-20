@@ -3,11 +3,11 @@
 namespace Aura\Base\Commands;
 
 use Illuminate\Console\Command;
-
-use function Laravel\Prompts\text;
-use function Laravel\Prompts\select;
-use function Laravel\Prompts\confirm;
 use Symfony\Component\Process\Process;
+
+use function Laravel\Prompts\confirm;
+use function Laravel\Prompts\select;
+use function Laravel\Prompts\text;
 
 class InstallConfigCommand extends Command
 {
@@ -115,32 +115,30 @@ class InstallConfigCommand extends Command
 
         // Now, write back the config file
         $arrayExport = var_export($config, true);
-        
+
         // Remove numeric array keys
-        $arrayExport = preg_replace("/[0-9]+ => /", "", $arrayExport);
-        
-        $code = '<?php' . PHP_EOL . PHP_EOL . 'return ' . str_replace(
+        $arrayExport = preg_replace('/[0-9]+ => /', '', $arrayExport);
+
+        $code = '<?php'.PHP_EOL.PHP_EOL.'return '.str_replace(
             ['array (', ')', "[\n    ]"],
             ['[', ']', '[]'],
             $arrayExport
-        ) . ';' . PHP_EOL;
-        
+        ).';'.PHP_EOL;
+
         file_put_contents($configPath, $code);
 
         $this->info('Aura configuration has been updated.');
 
-         // Run Pint on the file after the file has been written
+        // Run Pint on the file after the file has been written
         $process = new Process(['vendor/bin/pint', $configPath]);
         $process->run();
 
         // Check if the process was successful
-        if (!$process->isSuccessful()) {
-            $this->error('Pint formatting failed: ' . $process->getErrorOutput());
+        if (! $process->isSuccessful()) {
+            $this->error('Pint formatting failed: '.$process->getErrorOutput());
         } else {
             $this->info('Pint formatting completed.');
         }
-        
-    
 
         return self::SUCCESS;
     }
@@ -154,15 +152,15 @@ class InstallConfigCommand extends Command
             $env = file_get_contents($envPath);
 
             // Replace the value
-            $pattern = '/^' . preg_quote($key, '/') . '=.*/m';
-            $replacement = $key . '=' . $value;
+            $pattern = '/^'.preg_quote($key, '/').'=.*/m';
+            $replacement = $key.'='.$value;
 
             if (preg_match($pattern, $env)) {
                 // Replace existing value
                 $env = preg_replace($pattern, $replacement, $env);
             } else {
                 // Add new value
-                $env .= PHP_EOL . $replacement;
+                $env .= PHP_EOL.$replacement;
             }
 
             // Write back to the .env file

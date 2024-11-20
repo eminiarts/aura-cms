@@ -12,7 +12,11 @@ trait SaveMetaFields
 
         static::saving(function ($post) {
 
-            //  ray('SaveMetaFields', $post->attributes)->red();
+            // ray('SaveMetaFields', $post->attributes)->red();
+
+            if ($post instanceof \Aura\Base\Resources\User) {
+                // ray('saving user', $post->attributes)->red();
+            }
 
             if (isset($post->attributes['fields'])) {
 
@@ -44,17 +48,6 @@ trait SaveMetaFields
                         continue;
                     }
 
-                    // If the $class is a Password Field and the value is null, continue
-                    if ($class instanceof \Aura\Base\Fields\Password && ($value === null || $value === '')) {
-
-                        // If the password is available in the $post->attributes, unset it
-                        if (isset($post->attributes[$key])) {
-                            unset($post->attributes[$key]);
-                        }
-
-                        continue;
-                    }
-
                     $field = $post->fieldBySlug($key);
 
                     if (isset($field['set']) && $field['set'] instanceof \Closure) {
@@ -62,7 +55,40 @@ trait SaveMetaFields
                     }
 
                     if (method_exists($class, 'set')) {
+                        // ray($post->password)->red();
+
+                        //    ray('calling set', $key, $value, $field['type'])->red();
+                        // $value = $class->set($post, $field, $value);
                         $value = $class->set($post, $field, $value);
+
+                        // if($post instanceof \Aura\Base\Resources\User && $key === 'password' && empty($value)) {
+                        //     ray($key, $value,$post->attributes)->blue();
+                        //     // dd($post);
+                        //     ray('continue')->red();
+                        //     continue;
+                        // }
+
+                        // Check if the field has a saving method
+
+                        // dd($post);
+                    }
+
+                    if (method_exists($class, 'saving')) {
+                        // Store the result back to $post
+                        $modifiedPost = $class->saving($post, $field, $value);
+
+                        if ($modifiedPost) {
+                            $post = $modifiedPost;
+                        }
+
+                        // ray('After saving method', $post->attributes, $modifiedPost->attributes)->purple();
+                    }
+
+                    // Check if further processing should be skipped
+                    if (method_exists($class, 'shouldSkip') && $class->shouldSkip($post, $field)) {
+                        // ray('skipping')->red();
+                        // ray($post->attributes)->green();
+                        continue;
                     }
 
                     if ($class instanceof \Aura\Base\Fields\ID) {
@@ -92,6 +118,8 @@ trait SaveMetaFields
                 unset($post->attributes['fields']);
 
                 $post->clearFieldsAttributeCache();
+
+                //  ray('SaveMetaFields end', $post->attributes, $post->metaFields)->red();
             }
 
         });
