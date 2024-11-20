@@ -112,7 +112,8 @@ class AddIdsToFields implements Pipe
         });
 
         if (request()->url() != 'http://aura-demo.test') {
-            // ray('after:', $processedFields->toJson())->blue();
+            ray('after:', $processedFields->toJson())->blue();
+            ray('after:', $processedFields->toArray())->blue();
             // ray(request()->url())->blue();
         }
 
