@@ -10,7 +10,7 @@ class AddIdsToFields implements Pipe
     public function handle($fields, Closure $next)
     {
         if (request()->url() != 'http://aura-demo.test') {
-            ray('before:', $fields->toJson())->green()->once();
+            // ray('before:', $fields->toJson())->green()->once();
         }
 
         $parentStack = [];
@@ -70,21 +70,36 @@ class AddIdsToFields implements Pipe
 
             // Handle group fields (e.g., panels, tabs)
             if ($item['field']->group === true) {
-                // **Logic to Handle Sibling Tabs/Panels within Tabs field**
-                if (in_array($item['field']->type, ['tab', 'panel'])) {
-                    // Search the stack backwards for the last Tabs field
+                $currentParent = end($parentStack);
+                
+                if ($item['field']->type === 'panel') {
+                    // For panels, look for the most recent tab in the stack
                     for ($j = count($parentStack) - 1; $j >= 0; $j--) {
-                        if ($parentStack[$j]['type'] === 'Aura\\Base\\Fields\\Tabs') {
+                        if ($parentStack[$j]['field']->type === 'tab') {
                             $item['_parent_id'] = $parentStack[$j]['_id'];
                             break;
                         }
                     }
-                }
-
-                // If _parent_id is not set by the above logic, use the standard logic
-                if (!isset($item['_parent_id'])) {
-                    $currentParent = end($parentStack);
-                    $item['_parent_id'] = $currentParent ? $currentParent['_id'] : null;
+                    // If no tab was found, use the current parent
+                    if (!isset($item['_parent_id'])) {
+                        $item['_parent_id'] = $currentParent ? $currentParent['_id'] : null;
+                    }
+                } else {
+                    // For other group fields (like tabs)
+                    if (in_array($item['field']->type, ['tab'])) {
+                        // Look for the nearest tabs container
+                        for ($j = count($parentStack) - 1; $j >= 0; $j--) {
+                            if ($parentStack[$j]['type'] === 'Aura\\Base\\Fields\\Tabs') {
+                                $item['_parent_id'] = $parentStack[$j]['_id'];
+                                break;
+                            }
+                        }
+                    }
+                    
+                    // If no specific parent was found, use the current parent
+                    if (!isset($item['_parent_id'])) {
+                        $item['_parent_id'] = $currentParent ? $currentParent['_id'] : null;
+                    }
                 }
 
                 // Push to parent stack
@@ -112,9 +127,8 @@ class AddIdsToFields implements Pipe
         });
 
         if (request()->url() != 'http://aura-demo.test') {
-            ray('after:', $processedFields->toJson())->blue()->once();
-            ray('after:', $processedFields->toArray())->blue()->once();
-            // ray(request()->url())->blue();
+            // ray('after:', $processedFields->toJson())->blue()->once();
+            // ray('after:', $processedFields->toArray())->blue()->once();
         }
 
         return $next($processedFields);
