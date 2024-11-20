@@ -51,7 +51,8 @@ test('tab is not grouped in repeater', function () {
     $fields = $model->getGroupedFields();
 
 
-    ray($fields)->red();
+    // ray(json_encode($fields))->red();
+    // ray($fields)->red();
 
     $this->assertCount(1, $fields);
     $this->assertEquals($fields[0]['name'], 'Aura\Base\Fields\Tabs');
