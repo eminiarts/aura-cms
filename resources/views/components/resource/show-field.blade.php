@@ -34,7 +34,7 @@
 
         <div>
           <x-aura::tippy text="Edit field">
-             <div wire:click="$dispatch('openSlideOver', { component: 'edit-field', parameters: { fieldSlug: '{{ $field['slug'] }}', slug: '{{ $slug }}', field: @js($this->sendField($field['slug'])) }})">
+             <div wire:click="$dispatch('openSlideOver', { component: 'edit-field', parameters: { fieldSlug: '{{ $field['slug'] }}', slug: '{{ $slug }}', model: '{{ $this->slug }}', field: @js($this->sendField($field['slug'])) }})">
             <x-aura::button.border>
               <x-aura::icon.edit class="w-5 h-5" />
             </x-aura::button.border>

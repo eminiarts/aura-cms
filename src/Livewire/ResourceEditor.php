@@ -96,7 +96,7 @@ class ResourceEditor extends Component
 
         // $this->dispatch('refreshComponent');
 
-        $this->dispatch('openSlideOver', component: 'edit-field', parameters: ['fieldSlug' => $globalTab['slug'], 'slug' => $this->slug, 'field' => $globalTab]);
+        $this->dispatch('openSlideOver', component: 'edit-field', parameters: ['fieldSlug' => $globalTab['slug'], 'slug' => $this->slug, 'field' => $globalTab, 'model' => $this->slug]);
 
         $this->dispatch('finishedSavingFields');
         $this->dispatch('refreshComponent');
@@ -400,7 +400,7 @@ class ResourceEditor extends Component
         // get field with fieldSlug from this fieldsarray
         $field = collect($this->fieldsArray)->where('slug', $fieldSlug)->first();
 
-        $this->dispatch('openSlideOver', component: 'edit-field', parameters: ['fieldSlug' => $fieldSlug, 'slug' => $slug, 'field' => $field]);
+        $this->dispatch('openSlideOver', component: 'edit-field', parameters: ['fieldSlug' => $fieldSlug, 'slug' => $slug, 'field' => $field, 'model' => $slug]);
     }
 
     // Add this method to handle the refresh
