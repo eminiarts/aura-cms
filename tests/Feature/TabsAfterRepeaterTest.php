@@ -48,7 +48,11 @@ class TabsAfterRepeaterModel extends Resource
 test('tab is not grouped in repeater', function () {
     $model = new TabsAfterRepeaterModel;
 
+    ray()->clearScreen();
+
     $fields = $model->getGroupedFields();
+
+
 
 
     // ray(json_encode($fields))->red();

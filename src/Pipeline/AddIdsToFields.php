@@ -9,6 +9,10 @@ class AddIdsToFields implements Pipe
 {
     public function handle($fields, Closure $next)
     {
+        if (request()->url() != 'http://aura-demo.test') {
+            ray('before:',json_encode($fields->toArray(), JSON_PRETTY_PRINT))->green();
+        }
+
         $parentStack = [];
         $globalTabs = null;
         $lastGlobalTab = null;
@@ -79,6 +83,7 @@ class AddIdsToFields implements Pipe
                     }
                 }
 
+                
                 // Set parent ID
                 $currentParent = end($parentStack);
                 $item['_parent_id'] = $currentParent ? $currentParent['_id'] : null;
@@ -110,6 +115,10 @@ class AddIdsToFields implements Pipe
             }
             return $field;
         });
+
+        if (request()->url() != 'http://aura-demo.test') {
+            ray('after:',json_encode($processedFields->toArray(), JSON_PRETTY_PRINT))->blue();
+        }
 
         return $next($processedFields);
     }
