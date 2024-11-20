@@ -3,6 +3,7 @@
 namespace Aura\Base\Pipeline;
 
 use Closure;
+use InvalidArgumentException;
 
 class AddIdsToFields implements Pipe
 {
@@ -14,31 +15,41 @@ class AddIdsToFields implements Pipe
 
         $parentStack = [];
         $globalTabs = null;
-
+        $lastGlobalTab = null;
         $fields = collect($fields)->values();
-
         $processedFields = collect();
         $fieldsCount = $fields->count();
-
-        // Keep track of group field IDs by type
-        $groupFieldIdsByType = [];
 
         for ($i = 0; $i < $fieldsCount; $i++) {
             $item = $fields[$i];
             $item['_id'] = $i + 1;
-
-            // Ensure 'type' is set
-            if (!isset($item['type'])) {
-                $item['type'] = $item['field']->type ?? null;
-            }
 
             // Handle 'exclude_level' attribute
             $excludeLevel = isset($item['exclude_level']) ? $item['exclude_level'] : 0;
             $shouldExcludeLevels = $excludeLevel > 0;
 
             if ($shouldExcludeLevels) {
-                // Existing logic...
-                // ...
+                // Calculate the parent ID by going up $excludeLevel levels in the parent stack
+                $parentStackCount = count($parentStack);
+                if ($excludeLevel >= $parentStackCount) {
+                    // Exclude level is equal to or greater than the stack size, set parent_id to null
+                    $item['_parent_id'] = null;
+                    // Clear the parent stack
+                    $parentStack = [];
+                } else {
+                    // Set parent_id to the ancestor N levels up
+                    $ancestorIndex = $parentStackCount - $excludeLevel - 1;
+                    $ancestorItem = $parentStack[$ancestorIndex];
+                    $item['_parent_id'] = $ancestorItem['_id'];
+                    // Adjust the parent stack to this level
+                    $parentStack = array_slice($parentStack, 0, $ancestorIndex + 1);
+                }
+
+                if ($item['field']->group === true) {
+                    // Since this is a group, push it onto the stack
+                    $parentStack[] = $item;
+                }
+
                 $processedFields[] = $item;
                 continue;
             }
@@ -47,53 +58,37 @@ class AddIdsToFields implements Pipe
             if (optional($item)['global'] === true) {
                 if ($item['field']->type == 'tabs') {
                     $globalTabs = $item;
+                } elseif ($item['field']->type == 'tab') {
+                    $lastGlobalTab = $item;
                 }
-
                 $item['_parent_id'] = $globalTabs ? $globalTabs['_id'] : null;
                 // Reset the parent stack to only include the current global item
                 $parentStack = [$item];
-
                 $processedFields[] = $item;
                 continue;
             }
 
             // Handle group fields (e.g., panels, tabs)
             if ($item['field']->group === true) {
-                if (
-                    isset($item['field']->sameLevelGrouping) &&
-                    $item['field']->sameLevelGrouping === true &&
-                    isset($item['field']->wrapper)
-                ) {
-                    // sameLevelGrouping is true and wrapper is set
-                    // Try to find the wrapper in the groupFieldIdsByType
-                    $wrapperType = $item['field']->wrapper;
-
-                    if (isset($groupFieldIdsByType[$wrapperType])) {
-                        // Set '_parent_id' to '_id' of the wrapper
-                        $item['_parent_id'] = $groupFieldIdsByType[$wrapperType];
-                    } else {
-                        // Wrapper not found, set '_parent_id' to null or handle appropriately
-                        // Since it should not fail if wrapper not found
-                        $item['_parent_id'] = null;
+                // **Logic to Handle Sibling Tabs**
+                if ($item['field']->type === 'tab') {
+                    // Search the stack backwards for the last tab
+                    for ($j = count($parentStack) - 1; $j >= 0; $j--) {
+                        if ($parentStack[$j]['field']->type === 'tab') {
+                            $item['_parent_id'] = $parentStack[$j]['_parent_id'];
+                            break;
+                        }
                     }
+                } 
 
-                    // Push current field onto parentStack
-                    $parentStack[] = $item;
-
-                    // Add this group's _id to groupFieldIdsByType
-                    $groupFieldIdsByType[$item['type']] = $item['_id'];
-                } else {
-                    // Regular group field
-                    // Set '_parent_id' to current parent (end of parentStack)
+                // If _parent_id is not set by the tab logic, use the standard logic
+                if (!isset($item['_parent_id'])) {
                     $currentParent = end($parentStack);
                     $item['_parent_id'] = $currentParent ? $currentParent['_id'] : null;
-
-                    // Push current field onto parentStack
-                    $parentStack[] = $item;
-
-                    // Add this group's _id to groupFieldIdsByType
-                    $groupFieldIdsByType[$item['type']] = $item['_id'];
                 }
+
+                // Push to parent stack
+                $parentStack[] = $item;
             } else {
                 // Regular field
                 $currentParent = end($parentStack);
@@ -105,7 +100,6 @@ class AddIdsToFields implements Pipe
 
         // Ensure no cycles in parent IDs
         $idMap = $processedFields->pluck('_id')->all();
-
         $processedFields = $processedFields->transform(function ($field) use ($idMap) {
             if ($field['_parent_id'] === $field['_id']) {
                 $field['_parent_id'] = null;
