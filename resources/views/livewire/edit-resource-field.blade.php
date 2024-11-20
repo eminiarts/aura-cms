@@ -40,6 +40,8 @@
         </div>
       </div>
 
+      @dd($this->groupedFields)
+
       @foreach($this->groupedFields as $key => $field)
         <style >
           #resource-field-{{ optional($field)['slug'] }}-wrapper {

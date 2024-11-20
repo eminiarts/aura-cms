@@ -2,9 +2,9 @@
 
 namespace Aura\Base\Templates;
 
-class TabsWithPanels
+class Tabs
 {
-    public string $name = 'TabsWithPanels';
+    public string $name = 'Tabs';
 
     public function getFields()
     {
@@ -16,13 +16,6 @@ class TabsWithPanels
                 'global' => true,
                 'conditional_logic' => [],
                 'slug' => 'tab_1',
-            ],
-            [
-                'name' => 'Panel 1',
-                'type' => 'Aura\\Base\\Fields\\Panel',
-                'validation' => '',
-                'conditional_logic' => [],
-                'slug' => 'panel_1',
             ],
             [
                 'name' => 'Text 1',
@@ -41,13 +34,6 @@ class TabsWithPanels
                 'global' => true,
                 'conditional_logic' => [],
                 'slug' => 'tab_2',
-            ],
-            [
-                'name' => 'Panel 2',
-                'type' => 'Aura\\Base\\Fields\\Panel',
-                'validation' => '',
-                'conditional_logic' => [],
-                'slug' => 'panel_2',
             ],
             [
                 'name' => 'Text 2',

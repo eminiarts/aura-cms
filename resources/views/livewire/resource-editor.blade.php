@@ -125,7 +125,7 @@
                 }
             ">
                 <div class="flex items-center pt-3 -mb-px">
-                    <div class="flex">
+                    <div class="flex resource-editor-tabs">
                         <template x-for="(tab, index) in tabs" :key="index">
                             <div
                                 :class="{
@@ -133,10 +133,9 @@
                                     'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-500/30 dark:hover:text-gray-500 dark:hover:border-gray-600 whitespace-nowrap px-4 border-b-2 font-semibold text-sm' : activeTab !== index
                                 }"
                                 class="flex px-2 py-1 focus:outline-none"
+                                :id="'resource-editor-tab-' + index"
                             >
-                                <button
-                                    @click="activeTab = index"
-                                >
+                                <button @click="activeTab = index">
                                     <span x-text="tab.name"></span>
                                 </button>
                                 <button class="ml-2 text-gray-400 hover:text-gray-500 dark:text-gray-600 dark:hover:text-gray-500" @click="$wire.openSidebar(tab.slug, '{{ $model::getSlug() }}')">
@@ -312,7 +311,7 @@
                                     <x-aura::icon.template-plain class="mb-6" />
                                 </div>
 
-                                <div class="flex flex-col justify-between items-center p-6 bg-gray-100 rounded-md border-2 border-transparent transition-all duration-300 cursor-pointer hover:border-2 hover:border-blue-500" wire:click="addTemplateFields('TabsWithPanels')">
+                                <div class="flex flex-col justify-between items-center p-6 bg-gray-100 rounded-md border-2 border-transparent transition-all duration-300 cursor-pointer hover:border-2 hover:border-blue-500" wire:click="addTemplateFields('Tabs')">
                                     <div class="flex flex-col items-center mb-6 text-center">
                                         <h3 class="text-lg font-semibold">Tabs</h3>
                                         <span class="text-sm text-gray-500">Use global Tabs to group Fields</span>

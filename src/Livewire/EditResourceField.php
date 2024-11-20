@@ -36,8 +36,6 @@ class EditResourceField extends Component
 
     public function activate($params)
     {
-        ray('activate', $params)->orange();
-
         if (optional($params)['create']) {
             $this->field = [
                 'type' => $params['type'] ?? 'Aura\Base\Fields\Text',
@@ -51,9 +49,9 @@ class EditResourceField extends Component
                 'conditional_logic' => '',
             ];
 
-            ray('children', $params['slug'], $params['children']);
-            $this->newFieldIndex = $params['children'];
-            $this->newFieldSlug = $params['slug'];
+            ray('newFieldIndex', $params['id'], $params['children'])->blue();
+
+            $this->newFieldIndex = $params['id'] + $params['children'];
 
             $this->model = Aura::findResourceBySlug($params['model']);
 
@@ -64,8 +62,6 @@ class EditResourceField extends Component
             $this->open = true;
 
             $this->mode = 'create';
-
-            ray('add Field', $this->field)->orange();
 
             return;
         }
@@ -108,6 +104,7 @@ class EditResourceField extends Component
 
     public function getGroupedFieldsProperty()
     {
+        dd('test', $this->field, app($this->field['type'])->getGroupedFields());
         return app($this->field['type'])->getGroupedFields();
     }
 
@@ -187,7 +184,8 @@ class EditResourceField extends Component
 
         if ($this->mode == 'create') {
             // ray('saveNewField', $this->form['fields'], $this->newFieldIndex, $this->newFieldSlug)->blue();
-            $this->dispatch('saveNewField', $this->form['fields'], $this->newFieldIndex, $this->newFieldSlug);
+            ray('saveNewField', $this->form['fields'], $this->newFieldIndex)->blue();
+            $this->dispatch('saveNewField', $this->form['fields'], $this->newFieldIndex);
         } else {
             // emit event to parent with slug and value
             $this->dispatch('saveField', ['slug' => $this->fieldSlug, 'value' => $this->form['fields']]);

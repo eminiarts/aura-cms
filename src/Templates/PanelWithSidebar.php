@@ -13,7 +13,6 @@ class PanelWithSidebar
                 'name' => 'Panel 1',
                 'type' => 'Aura\\Base\\Fields\\Panel',
                 'validation' => '',
-                'on_index' => true,
                 'conditional_logic' => [],
                 'slug' => 'panel-1',
                 'style' => [
@@ -35,7 +34,6 @@ class PanelWithSidebar
                 'name' => 'Panel 2',
                 'type' => 'Aura\\Base\\Fields\\Panel',
                 'validation' => '',
-                'on_index' => true,
                 'conditional_logic' => [],
                 'slug' => 'panel-2',
                 'style' => [
