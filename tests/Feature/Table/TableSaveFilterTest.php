@@ -174,8 +174,8 @@ test('table filter - taxonomy filter can be deleted', function () {
     $post2 = $this->resource2;
 
     DB::table('options')->insert([
-        'name' => 'user.'.$this->user->id.'.Post.filters.Test Filter',
-        'value' => '{"custom":[{"filters":[{"name":"metafield","operator":"is","value":"B"}]}]}',
+        'name' => 'user.'.$this->user->id.'.Post.filters.test-filter',
+        'value' => '{"custom":[{"filters":[{"name":"tags","operator":"contains","value":[303],"options":{"resource_type":"Aura\\\\Base\\\\Resources\\\\Tag"}}]}],"name":"Test Filter","public":false,"global":false,"slug":"test-filter"}',
         'team_id' => $this->user->currentTeam->id,
     ]);
 
@@ -185,17 +185,17 @@ test('table filter - taxonomy filter can be deleted', function () {
     // Filter $component->userFilters should have 1 item
     expect($component->userFilters)->toHaveCount(1);
 
-    // $component->userFilters should have a key 'Test Filter'
-    expect($component->userFilters)->toHaveKey('Test Filter');
+    // $component->userFilters should have a key 'test-filter'
+    expect($component->userFilters)->toHaveKey('test-filter');
 
-    // Set selected filter to 'Test Filter'
-    $component->set('selectedFilter', 'Test Filter');
+    // Set selected filter to 'test-filter'
+    $component->set('selectedFilter', 'test-filter');
 
     // Should see "Delete Filter" button
     $component->assertSee('Delete Filter');
 
     // Click "Delete Filter" button
-    $component->call('deleteFilter', 'Test Filter');
+    $component->call('deleteFilter', 'test-filter');
 
     // $component->userFilters should have 0 items
     expect($component->userFilters)->toHaveCount(0);
