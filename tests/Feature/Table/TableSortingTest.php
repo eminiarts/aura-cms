@@ -318,6 +318,9 @@ test('table sorting by taxonomy field', function () {
     $this->assertEquals(['tags' => 'asc'], $component->sorts);
 
     $query = $component->get('rowsQuery');
+
+    ray($component);
+    // dd($query, 'hier');
     $rows = $query->get();
     expect($rows[0]->id)->toBe($post->id);
     expect($rows[1]->id)->toBe($post2->id);
@@ -328,6 +331,9 @@ test('table sorting by taxonomy field', function () {
     $this->assertEquals(['tags' => 'desc'], $component->sorts);
 
     $query = $component->get('rowsQuery');
+
+    // dd('hier');
+    // dd($query);
     $rows = $query->get();
     expect($rows[0]->id)->toBe($post2->id);
     expect($rows[1]->id)->toBe($post->id);
