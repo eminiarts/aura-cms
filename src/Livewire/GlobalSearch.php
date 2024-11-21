@@ -100,6 +100,11 @@ class GlobalSearch extends Component
 
     public function mount()
     {
+        // if global search is disabled, abort with 403
+        if (! config('aura.features.global_search')) {
+            abort(403, 'Global search is disabled');
+        }
+
         if (auth()->check()) {
             $this->bookmarks = auth()->user()->getOptionBookmarks();
         } else {

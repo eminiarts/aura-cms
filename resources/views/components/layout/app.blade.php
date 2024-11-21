@@ -72,7 +72,9 @@
 
     @yield('sidebar')
 
-    <livewire:aura::global-search/>
+    @if(config('aura.features.global_search'))
+        <livewire:aura::global-search/>
+    @endif
 </div>
 
 @stack('modals')
