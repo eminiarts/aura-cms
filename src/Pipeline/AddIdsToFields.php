@@ -96,16 +96,16 @@ class AddIdsToFields implements Pipe
                             $item['_parent_id'] = $currentParent ? $currentParent['_id'] : null;
                         }
                     } else {
-                        // Handle panel fields
-                        if ($item['field']->type === 'panel') {
-                            // For panels, look for the most recent tab in the stack
-                            for ($j = count($parentStack) - 1; $j >= 0; $j--) {
-                                if ($parentStack[$j]['field']->type === 'tab') {
-                                    $item['_parent_id'] = $parentStack[$j]['_id'];
-                                    break;
-                                }
-                            }
-                        }
+                        // // Handle panel fields
+                        // if ($item['field']->type === 'panel') {
+                        //     // For panels, look for the most recent tab in the stack
+                        //     for ($j = count($parentStack) - 1; $j >= 0; $j--) {
+                        //         if ($parentStack[$j]['field']->type === 'tab') {
+                        //             $item['_parent_id'] = $parentStack[$j]['_id'];
+                        //             break;
+                        //         }
+                        //     }
+                        // }
                         
                         // If no specific parent was found, use the current parent
                         if (!isset($item['_parent_id'])) {
