@@ -110,6 +110,7 @@ class ModelWithGroups extends Resource
                 'type' => 'Aura\\Base\\Fields\\Panel',
                 'slug' => 'panel-3',
                 'style' => [],
+                'same_level_grouping' => false, // Override default true to allow tab 2
             ],
             [
                 'label' => 'Text 3',
@@ -122,10 +123,6 @@ class ModelWithGroups extends Resource
         ];
     }
 
-    public static function getWidgets(): array
-    {
-        return [];
-    }
 }
 
 test('fields get grouped when field group is true', function () {

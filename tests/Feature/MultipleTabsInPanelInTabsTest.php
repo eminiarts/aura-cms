@@ -51,6 +51,7 @@ class MultipleTabsInPanelInTabsTestModel extends Resource
                 'name' => 'Panel 2',
                 'type' => 'Aura\\Base\\Fields\\Panel',
                 'slug' => 'panel2',
+                'same_level_grouping' => false,
                 // 'exclude_level' => 2,
                 // 'nested' => false,
                 // 'exclude_from_nesting' => true,

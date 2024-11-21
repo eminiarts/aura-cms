@@ -51,9 +51,8 @@ class MultipleTabsWithPanelsExcludeModel extends Resource
                 'name' => 'Panel 2',
                 'type' => 'Aura\\Base\\Fields\\Panel',
                 'slug' => 'panel2',
-                'exclude_level' => 2,
-                // 'nested' => false,
-                // 'exclude_from_nesting' => true,
+                'exclude_level' => 3,
+                'same_level_grouping' => false,
             ],
             [
                 'name' => 'Tab 1 in Panel2',
@@ -87,7 +86,11 @@ class MultipleTabsWithPanelsExcludeModel extends Resource
 test('panel is underneath tabs, exclude level 2', function () {
     $model = new MultipleTabsWithPanelsExcludeModel;
 
+    ray()->clearScreen();
+
     $fields = $model->getGroupedFields();
+
+    ray($fields)->red()->once();
 
     $this->assertCount(1, $fields);
 
@@ -104,7 +107,7 @@ test('panel is underneath tabs, exclude level 2', function () {
     expect($panel2['name'])->toBe('Panel 2');
     expect($panel2['_id'])->toBe(9);
     expect($panel2['_parent_id'])->toBe(3); // Should be child of Panel 1
-    expect($panel2['exclude_level'])->toBe(2);
+    expect($panel2['exclude_level'])->toBe(3);
 
     // Verify Panel 2's tabs structure
     expect($panel2['fields'][0]['name'])->toBe('Aura\Base\Fields\Tabs');
