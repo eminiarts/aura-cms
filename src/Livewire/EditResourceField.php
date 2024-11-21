@@ -104,7 +104,7 @@ class EditResourceField extends Component
 
     public function getGroupedFieldsProperty()
     {
-        dd('test', $this->field, app($this->field['type'])->getGroupedFields());
+        // dd('test', $this->field, app($this->field['type'])->getGroupedFields());
         return app($this->field['type'])->getGroupedFields();
     }
 

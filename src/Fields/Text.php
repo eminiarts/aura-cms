@@ -17,7 +17,7 @@ class Text extends Field
                 'name' => 'Text',
                 'type' => 'Aura\\Base\\Fields\\Tab',
                 'slug' => 'text-tab',
-                'global' => true,
+                // 'global' => true,
                 'style' => [],
             ],
             [

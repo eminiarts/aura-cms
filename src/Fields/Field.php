@@ -139,7 +139,7 @@ abstract class Field implements Wireable
                 'name' => 'Field',
                 'type' => 'Aura\\Base\\Fields\\Tab',
                 'slug' => 'field',
-                'global' => true,
+
                 'style' => [],
             ],
             [
@@ -192,7 +192,7 @@ abstract class Field implements Wireable
                 'type' => 'Aura\\Base\\Fields\\Tab',
                 'slug' => 'tab-2',
                 'style' => [],
-                'global' => true,
+
             ],
 
             [
@@ -231,7 +231,7 @@ abstract class Field implements Wireable
                 'type' => 'Aura\\Base\\Fields\\Tab',
                 'slug' => 'conditional_logic',
                 'style' => [],
-                'global' => true,
+
             ],
 
             [

@@ -440,6 +440,8 @@ class ResourceEditor extends Component
 
         $this->fieldsArray = $fields;
 
+        dd($this->fieldsArray);
+
         $this->newFields = $this->model->mapToGroupedFields($this->fieldsArray);
 
         $this->saveFields($this->fieldsArray);
