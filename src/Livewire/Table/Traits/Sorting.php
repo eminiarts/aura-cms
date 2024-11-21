@@ -65,12 +65,21 @@ trait Sorting
             }
 
             if ($this->model->isTaxonomyField($field)) {
-                $taxonomy = Str::singular(ucfirst($field));
+                $resourceType = $this->model->fieldBySlug($field)['resource'];
 
-                $query->withFirstTaxonomy($taxonomy, $this->model->getMorphClass())
-                    ->orderByRaw('CASE WHEN first_taxonomy IS NULL THEN 1 WHEN first_taxonomy = "" THEN 1 ELSE 0 END')
-                    ->orderBy('first_taxonomy', $direction)
-                    ->orderBy('id', 'desc');
+                // dd($resourceType);
+
+                
+                $query->leftJoin('post_relations as pr', function ($join) use ($resourceType) {
+                    $join->on('posts.id', '=', 'pr.related_id')
+                        ->where('pr.related_type', '=', $this->model->getMorphClass())
+                        ->where('pr.resource_type', '=', $resourceType)
+                        ->where('pr.slug', '=', Str::plural(Str::lower(class_basename($resourceType))));
+                })
+                ->select('posts.*')
+                ->groupBy('posts.id')
+                ->orderByRaw('MIN(pr.resource_id) ' . $direction)
+                ->orderBy('posts.id', 'desc');
 
                 return $query;
             }
