@@ -80,24 +80,27 @@ class AddIdsToFields implements Pipe
                         $item['_parent_id'] = $lastGroupId;
                     }
                 } else {
-                    if ($item['field']->type === 'panel') {
-                        // For panels, look for the most recent tab in the stack
+                    // Check if field has a wrapper class defined
+                    if (isset($item['field']->wrapper)) {
+                        // Look for the nearest wrapper in the parent stack
                         for ($j = count($parentStack) - 1; $j >= 0; $j--) {
-                            if ($parentStack[$j]['field']->type === 'tab') {
+                            if (isset($parentStack[$j]['field']) && 
+                                $parentStack[$j]['field'] instanceof $item['field']->wrapper) {
                                 $item['_parent_id'] = $parentStack[$j]['_id'];
                                 break;
                             }
                         }
-                        // If no tab was found, use the current parent
+                        
+                        // If no wrapper was found, use current parent
                         if (!isset($item['_parent_id'])) {
                             $item['_parent_id'] = $currentParent ? $currentParent['_id'] : null;
                         }
                     } else {
-                        // For other group fields (like tabs)
-                        if (in_array($item['field']->type, ['tab', 'TabPill'])) {
-                            // Look for the nearest container (tabs or TabPills)
+                        // Handle panel fields
+                        if ($item['field']->type === 'panel') {
+                            // For panels, look for the most recent tab in the stack
                             for ($j = count($parentStack) - 1; $j >= 0; $j--) {
-                                if (in_array($parentStack[$j]['type'], ['Aura\\Base\\Fields\\Tabs', 'TabPills'])) {
+                                if ($parentStack[$j]['field']->type === 'tab') {
                                     $item['_parent_id'] = $parentStack[$j]['_id'];
                                     break;
                                 }
