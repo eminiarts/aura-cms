@@ -10,7 +10,7 @@ class AddIdsToFields implements Pipe
     public function handle($fields, Closure $next)
     {
         if (request()->url() != 'http://aura-demo.test') {
-            // ray('before:', $fields->toJson())->green()->once();
+            ray('before:', json_encode($fields, JSON_PRETTY_PRINT))->green()->once();
         }
 
         $parentStack = [];
@@ -82,18 +82,40 @@ class AddIdsToFields implements Pipe
                 } else {
                     // Check if field has a wrapper class defined
                     if (isset($item['field']->wrapper)) {
-                        // Look for the nearest wrapper in the parent stack
-                        for ($j = count($parentStack) - 1; $j >= 0; $j--) {
-                            if (isset($parentStack[$j]['field']) && 
-                                $parentStack[$j]['field'] instanceof $item['field']->wrapper) {
-                                $item['_parent_id'] = $parentStack[$j]['_id'];
-                                break;
+
+                        dd($item['field']->wrapper);
+                        // If wrap is true, find the most recent wrapper
+                        if (isset($item['wrap']) && $item['wrap'] === true) {
+                            $wrapperClass = $item['field']->wrapper;
+
+                            dd($wrapperClass);
+                            
+                            // Find the last matching wrapper in processed fields
+                            $lastWrapperField = null;
+                            foreach ($processedFields->reverse() as $processedField) {
+                                if ($processedField['type'] === $wrapperClass) {
+                                    $lastWrapperField = $processedField;
+                                    break;
+                                }
+                            }
+                            
+                            $item['_parent_id'] = $lastWrapperField ? $lastWrapperField['_id'] : null;
+                        } else {
+                            // Look for the nearest wrapper in the parent stack
+                            for ($j = count($parentStack) - 1; $j >= 0; $j--) {
+                                if (isset($parentStack[$j]['field']) &&
+                                    $parentStack[$j]['type'] === $item['field']->wrapper) {
+                                    $item['_parent_id'] = $parentStack[$j]['_id'];
+                                    break;
+                                }
+                            }
+                            
+                            // If no wrapper found, use current parent
+                            if (!isset($item['_parent_id'])) {
+                                $item['_parent_id'] = $currentParent ? $currentParent['_id'] : null;
                             }
                         }
-                    }
-                    
-                    // If no specific parent was found, use the current parent
-                    if (!isset($item['_parent_id'])) {
+                    } else {
                         $item['_parent_id'] = $currentParent ? $currentParent['_id'] : null;
                     }
                 }
@@ -123,8 +145,9 @@ class AddIdsToFields implements Pipe
         });
 
         if (request()->url() != 'http://aura-demo.test') {
-            // ray('after:', $processedFields->toJson())->blue()->once();
-            ray('after:', $processedFields->toArray())->blue()->once();
+            ray('after:', json_encode($processedFields, JSON_PRETTY_PRINT))->blue()->once();
+
+            
         }
 
         return $next($processedFields);
