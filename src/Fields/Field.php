@@ -31,6 +31,8 @@ abstract class Field implements Wireable
 
     public $tableNullable = true;
 
+    public bool $sameLevelGrouping = false;
+
     public bool $taxonomy = false;
 
     public string $type = 'input';

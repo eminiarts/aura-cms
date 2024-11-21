@@ -19,8 +19,6 @@ class AddIdsToFields implements Pipe
         $fields = collect($fields)->values();
         $processedFields = collect();
         $fieldsCount = $fields->count();
-        $lastGroupType = null;
-        $lastGroupId = null;
 
         for ($i = 0; $i < $fieldsCount; $i++) {
             $item = $fields[$i];
@@ -34,16 +32,21 @@ class AddIdsToFields implements Pipe
                 // Calculate the parent ID by going up $excludeLevel levels in the parent stack
                 $parentStackCount = count($parentStack);
                 if ($excludeLevel >= $parentStackCount) {
+                    // Exclude level is equal to or greater than the stack size, set parent_id to null
                     $item['_parent_id'] = null;
+                    // Clear the parent stack
                     $parentStack = [];
                 } else {
+                    // Set parent_id to the ancestor N levels up
                     $ancestorIndex = $parentStackCount - $excludeLevel - 1;
                     $ancestorItem = $parentStack[$ancestorIndex];
                     $item['_parent_id'] = $ancestorItem['_id'];
+                    // Adjust the parent stack to this level
                     $parentStack = array_slice($parentStack, 0, $ancestorIndex + 1);
                 }
 
                 if ($item['field']->group === true) {
+                    // Since this is a group, push it onto the stack
                     $parentStack[] = $item;
                 }
 
@@ -59,26 +62,32 @@ class AddIdsToFields implements Pipe
                     $lastGlobalTab = $item;
                 }
                 $item['_parent_id'] = $globalTabs ? $globalTabs['_id'] : null;
+                // Reset the parent stack to only include the current global item
                 $parentStack = [$item];
                 $processedFields[] = $item;
                 continue;
             }
 
-            // Handle group fields (e.g., panels, tabs, tabpills)
+            // Handle group fields (e.g., panels, tabs)
             if ($item['field']->group === true) {
                 $currentParent = end($parentStack);
-                
-                // Special handling for same-level grouping
-                if (isset($item['field']->sameLevelGrouping) && $item['field']->sameLevelGrouping === true) {
-                    if ($lastGroupType === $item['type']) {
-                        // If this is the same type as the last group, use the same parent
-                        $item['_parent_id'] = $lastGroupId;
-                    } else {
-                        // New group type, update tracking
-                        $lastGroupType = $item['type'];
-                        $lastGroupId = $currentParent ? $currentParent['_id'] : null;
-                        $item['_parent_id'] = $lastGroupId;
+
+                if ($item['field']->sameLevelGrouping === true) {
+                    // For same level grouping, find previous group item of the same type
+                    $previousGroupItem = null;
+                    for ($j = count($processedFields) - 1; $j >= 0; $j--) {
+                        if ($processedFields[$j]['field']->group === true && $processedFields[$j]['type'] === $item['type']) {
+                            $previousGroupItem = $processedFields[$j];
+                            break;
+                        }
                     }
+                    if ($previousGroupItem) {
+                        $item['_parent_id'] = $previousGroupItem['_parent_id'];
+                    } else {
+                        $item['_parent_id'] = $currentParent ? $currentParent['_id'] : null;
+                    }
+                    // Push to parentStack
+                    $parentStack[] = $item;
                 } else {
                     if ($item['field']->type === 'panel') {
                         // For panels, look for the most recent tab in the stack
@@ -94,25 +103,24 @@ class AddIdsToFields implements Pipe
                         }
                     } else {
                         // For other group fields (like tabs)
-                        if (in_array($item['field']->type, ['tab', 'TabPill'])) {
-                            // Look for the nearest container (tabs or TabPills)
+                        if (in_array($item['field']->type, ['tab'])) {
+                            // Look for the nearest tabs container
                             for ($j = count($parentStack) - 1; $j >= 0; $j--) {
-                                if (in_array($parentStack[$j]['type'], ['Aura\\Base\\Fields\\Tabs', 'TabPills'])) {
+                                if ($parentStack[$j]['type'] === 'Aura\\Base\\Fields\\Tabs') {
                                     $item['_parent_id'] = $parentStack[$j]['_id'];
                                     break;
                                 }
                             }
                         }
-                        
+
                         // If no specific parent was found, use the current parent
                         if (!isset($item['_parent_id'])) {
                             $item['_parent_id'] = $currentParent ? $currentParent['_id'] : null;
                         }
                     }
+                    // Push to parentStack
+                    $parentStack[] = $item;
                 }
-
-                // Push to parent stack
-                $parentStack[] = $item;
             } else {
                 // Regular field
                 $currentParent = end($parentStack);
