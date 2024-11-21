@@ -49,11 +49,11 @@ class MultipleTabsBelowEachOtherModel extends Resource
             ],
             [
                 'name' => 'Panel 2',
-                'type' => 'Aura\\Base\\Fields\\Group',
+                'type' => 'Aura\\Base\\Fields\\Panel',
                 'slug' => 'panel2',
-                'exclude_level' => 2,
-                // 'nested' => false,
-                // 'exclude_from_nesting' => true,
+                'exclude_level' => 3,
+                'same_level_grouping' => false,
+                // 'exclude_level' => 2,
             ],
             [
                 'name' => 'Tab 1 in Panel2',
@@ -87,7 +87,11 @@ class MultipleTabsBelowEachOtherModel extends Resource
 test('multiple tabs in panels in tabs are possible', function () {
     $model = new MultipleTabsBelowEachOtherModel;
 
+    ray()->clearScreen();
+
     $fields = $model->getGroupedFields();
+
+    ray($fields)->red()->once();
 
     // Check root level structure
     expect($fields)->toHaveCount(1);
@@ -108,10 +112,10 @@ test('multiple tabs in panels in tabs are possible', function () {
     // Check Panel 2
     $panel2 = $panel1['fields'][1];
     expect($panel2['name'])->toBe('Panel 2');
-    expect($panel2['type'])->toBe('Aura\Base\Fields\Group');
+    expect($panel2['type'])->toBe('Aura\Base\Fields\Panel');
     expect($panel2['_id'])->toBe(9);
     expect($panel2['_parent_id'])->toBe(3); // Should be child of Panel 1
-    expect($panel2['exclude_level'])->toBe(2);
+    expect($panel2['exclude_level'])->toBe(3);
 
     // Check Panel 2's tabs structure
     expect($panel2['fields'][0]['name'])->toBe('Aura\Base\Fields\Tabs');

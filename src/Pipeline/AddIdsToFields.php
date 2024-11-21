@@ -97,8 +97,14 @@ class AddIdsToFields implements Pipe
                         $item['_parent_id'] = $currentParent ? $currentParent['_id'] : null;
                     }
                 }
-                // Finally check for sameLevelGrouping
-                elseif (isset($item['field']->sameLevelGrouping) && $item['field']->sameLevelGrouping === true) {
+                // Check for sameLevelGrouping, considering the override
+                elseif (
+                    // Check if same_level_grouping is not explicitly set to false in the item
+                    (!isset($item['same_level_grouping']) || $item['same_level_grouping'] !== false) &&
+                    // And check if sameLevelGrouping is true in the field
+                    isset($item['field']->sameLevelGrouping) && 
+                    $item['field']->sameLevelGrouping === true
+                ) {
                     if ($lastGroupType === $item['type']) {
                         // If this is the same type as the last group, use the same parent
                         $item['_parent_id'] = $lastGroupId;
