@@ -17,6 +17,50 @@ beforeEach(function () {
     Aura::setModel(new MetaSortingModel);
 });
 
+
+// Create Resource for this test
+class MetaSortingModel extends Resource
+{
+    public static $singularName = 'Post';
+
+    public static ?string $slug = 'resource';
+
+    public static string $type = 'Post';
+
+    public static function getFields()
+    {
+        return [
+            [
+                'name' => 'Meta',
+                'type' => 'Aura\\Base\\Fields\\Text',
+                'validation' => 'required',
+                'conditional_logic' => [],
+                'slug' => 'meta',
+            ],
+            [
+                'name' => 'Number',
+                'type' => 'Aura\\Base\\Fields\\Number',
+                'validation' => '',
+                'conditional_logic' => [],
+                'slug' => 'number',
+            ],
+            [
+                'name' => 'Tags',
+                'slug' => 'tags',
+                'type' => 'Aura\\Base\\Fields\\Tags',
+                'resource' => 'Aura\\Base\\Resources\\Tag',
+                'create' => true,
+                'validation' => '',
+                'conditional_logic' => [],
+                'wrapper' => '',
+                'on_index' => true,
+                'on_forms' => true,
+                'on_view' => true,
+            ],
+        ];
+    }
+}
+
 test('table default sorting', function () {
     // Create a Post
     $post = Post::create([
@@ -97,48 +141,6 @@ test('table default sorting', function () {
     });
 });
 
-// Create Resource for this test
-class MetaSortingModel extends Resource
-{
-    public static $singularName = 'Post';
-
-    public static ?string $slug = 'resource';
-
-    public static string $type = 'Post';
-
-    public static function getFields()
-    {
-        return [
-            [
-                'name' => 'Meta',
-                'type' => 'Aura\\Base\\Fields\\Text',
-                'validation' => 'required',
-                'conditional_logic' => [],
-                'slug' => 'meta',
-            ],
-            [
-                'name' => 'Number',
-                'type' => 'Aura\\Base\\Fields\\Number',
-                'validation' => '',
-                'conditional_logic' => [],
-                'slug' => 'number',
-            ],
-            [
-                'name' => 'Tags',
-                'slug' => 'tags',
-                'type' => 'Aura\\Base\\Fields\\Tags',
-                'resource' => 'Aura\\Base\\Resources\\Tag',
-                'create' => true,
-                'validation' => '',
-                'conditional_logic' => [],
-                'wrapper' => '',
-                'on_index' => true,
-                'on_forms' => true,
-                'on_view' => true,
-            ],
-        ];
-    }
-}
 
 test('table sorting by meta field', function () {
     // Create a Posts
@@ -301,7 +303,7 @@ test('table sorting by taxonomy field', function () {
     ]);
 
     expect($post->isTaxonomyField('tags'))->toBeTrue();
-    expect($post->isMetaField('tags'))->toBeFalse();
+    expect($post->isMetaField('tags'))->toBeTrue();
 
     // Visit the Post Index Page
     $component = Livewire::test(Table::class, ['query' => null, 'model' => $post])
