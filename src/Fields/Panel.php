@@ -8,6 +8,8 @@ class Panel extends Field
 
     public bool $group = true;
 
+    public bool $sameLevelGrouping = true;
+
     public $optionGroup = 'Structure Fields';
 
     // Type Panel is used for grouping fields. A Panel can't be nested inside another Panel or other grouped Fields.
