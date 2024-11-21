@@ -78,7 +78,7 @@ class TableSaveFilterModel extends Resource
     }
 }
 
-test('table filter - taxonomy filter', function () {
+test('table filter - taxonomy filter2', function () {
     $post = $this->resource;
     $post2 = $this->resource2;
 
@@ -91,18 +91,29 @@ test('table filter - taxonomy filter', function () {
     // Apply Tag 1 filter, set $filters['taxonomy']['tag'] to [$tag1->id]
     // $component->set('filters.taxonomy.tags', [$tag1->id]);
 
+    $component->call('addFilterGroup');
+
+    // Contains
+    $component->set('filters.custom.0.filters.0.name', 'tags');
+    $component->set('filters.custom.0.filters.0.operator', 'contains');
+    $component->set('filters.custom.0.filters.0.value', [$tag1->id]);
+
+
     // $component->rows should have 1 item
-    expect($component->rows->items())->toHaveCount(1);
+    $component->assertViewHas('rows', function ($rows) {
+        return count($rows->items()) === 1;
+    });
 
     // Set custom filter 'meta' to 'B'
     $component->call('addFilterGroup');
 
     // $component->rows should have 1 item
-    $component->set('filters.custom.0.filters.0.value', 'B');
-    $component->set('filters.custom.0.filters.0.operator', 'is');
+    $component->set('filters.custom.1.filters.0.value', 'B');
+    $component->set('filters.custom.1.filters.0.operator', 'is');
 
     // Expect filter.custom.0.name to be metafield
-    expect($component->filters['custom'][0]['filters'][0]['name'])->toBe('metafield');
+    expect($component->filters['custom'][1]['filters'][0]['name'])->toBe('metafield');
+
 
     // Save Filters to DB
     $component->call('saveFilter');
@@ -121,7 +132,7 @@ test('table filter - taxonomy filter', function () {
     $component->assertHasNoErrors();
 
     // Get DB options
-    $db = DB::table('options')->where('name', 'like', 'user.'.$this->user->id.'.Post.filters.Test Filter')->get();
+    $db = DB::table('options')->where('name', 'like', 'user.'.$this->user->id.'.Post.filters.test-filter')->get();
 
     // $db should have 1 item
     expect($db)->toHaveCount(1);
@@ -132,35 +143,30 @@ test('table filter - taxonomy filter', function () {
     expect($filters)->toHaveCount(1);
 
     // $filters should have a key 'Test Filter'
-    expect($filters)->toHaveKey('Test Filter');
+    expect($filters)->toHaveKey('test-filter');
 
     // $filters['Test Filter'][0] should have 2 items
     // expect($filters['Test Filter']['taxonomy'])->toHaveCount(1);
-    expect($filters['Test Filter']['custom'])->toHaveCount(1);
-
-    // $filters['Test Filter'][0]['taxonomy'] should have 1 item
-    // expect($filters['Test Filter']['taxonomy']['tags'])->toHaveCount(1);
+    expect($filters['test-filter']['custom'])->toHaveCount(2);
 
     // expect($filters)->toHaveKey('Test Filter.taxonomy.tags.0', '1');
-    expect($filters)->toHaveKey('Test Filter.custom.0.filters.0.name', 'metafield');
-    expect($filters)->toHaveKey('Test Filter.custom.0.filters.0.operator', 'is');
-    expect($filters)->toHaveKey('Test Filter.custom.0.filters.0.value', 'B');
+    expect($filters)->toHaveKey('test-filter.custom.0.filters.0.name', 'tags');
+    expect($filters)->toHaveKey('test-filter.custom.0.filters.0.operator', 'contains');
+    expect($filters)->toHaveKey('test-filter.custom.0.filters.0.value', [$tag1->id]);
 
     // Filters and $component->userFilters should be the same
-
     expect($filters->toArray())->toBe($component->userFilters);
 
     // Assert $filter.name is empty
     expect($component->filter['name'])->toBe('');
 
     // Component rows should have 1 item
-    expect($component->rows->items())->toHaveCount(1);
-
-    // $post->id should be the same as $component->rows->items()[0]->id
-    expect($post->id)->toBe($component->rows->items()[0]->id);
+    $component->assertViewHas('rows', function ($rows) use ($post) {
+        return count($rows->items()) === 1 && $rows->items()[0]->id === $post->id;
+    });
 
     // After a filter is saved, the current filter should be set to the saved filter
-    expect($component->selectedFilter)->toBe('Test Filter');
+    expect($component->selectedFilter)->toBe('test-filter');
 });
 
 test('table filter - taxonomy filter can be deleted', function () {
