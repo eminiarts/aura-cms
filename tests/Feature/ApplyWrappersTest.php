@@ -130,64 +130,68 @@ test('fields get grouped when field group is true', function () {
     expect($fields[0]['fields'][1]['fields'][0]['_parent_id'])->toBe(4);
 });
 
-// class ApplyWrappersModel2 extends Resource
-// {
-//     public static ?string $slug = 'page';
+class ApplyWrappersModel2 extends Resource
+{
+    public static ?string $slug = 'page';
 
-//     public static string $type = 'Page';
+    public static string $type = 'Page';
 
-//     public static function getFields()
-//     {
-//         return [
+    public static function getFields()
+    {
+        return [
 
-//             [
-//                 'label' => 'Tabpill 1',
-//                 'name' => 'Tabpill 1',
-//                 'type' => TabPill::class,
-//                 'slug' => 'tabpill-1',
-//                 // 'global' => true,
-//             ],
-//             [
-//                 'label' => 'Text 1',
-//                 'name' => 'Text 1',
-//                 'type' => 'Aura\\Base\\Fields\\Text',
-//                 'validation' => 'numeric',
-//                 'conditional_logic' => [],
-//                 'slug' => 'text1',
-//             ],
-//             [
-//                 'label' => 'Panel 1',
-//                 'name' => 'Panel 1',
-//                 'type' => Panel::class,
-//                 'slug' => 'panel-1',
-//             ],
-//             [
-//                 'label' => 'Tabpill 2',
-//                 'name' => 'Tabpill 2',
-//                 'type' => TabPill::class,
-//                 'slug' => 'tabpill-2',
-//                 'wrap' => true,
-//             ],
-//             [
-//                 'label' => 'Text 2',
-//                 'name' => 'Text 2',
-//                 'type' => 'Aura\\Base\\Fields\\Text',
-//                 'validation' => 'numeric',
-//                 'conditional_logic' => [],
-//                 'slug' => 'text2',
-//             ],
-//         ];
-//     }
-// }
+            [
+                'label' => 'Tabpill 1',
+                'name' => 'Tabpill 1',
+                'type' => TabPill::class,
+                'slug' => 'tabpill-1',
+                // 'global' => true,
+            ],
+            [
+                'label' => 'Text 1',
+                'name' => 'Text 1',
+                'type' => 'Aura\\Base\\Fields\\Text',
+                'validation' => 'numeric',
+                'conditional_logic' => [],
+                'slug' => 'text1',
+            ],
+            [
+                'label' => 'Panel 1',
+                'name' => 'Panel 1',
+                'type' => Panel::class,
+                'slug' => 'panel-1',
+            ],
+            [
+                'label' => 'Tabpill 2',
+                'name' => 'Tabpill 2',
+                'type' => TabPill::class,
+                'slug' => 'tabpill-2',
+                'wrap' => true,
+            ],
+            [
+                'label' => 'Text 2',
+                'name' => 'Text 2',
+                'type' => 'Aura\\Base\\Fields\\Text',
+                'validation' => 'numeric',
+                'conditional_logic' => [],
+                'slug' => 'text2',
+            ],
+        ];
+    }
+}
 
-// test('fields get wrapped when field wrapper is set', function () {
+test('fields get wrapped when field wrapper is set', function () {
 
-//     $model = new ApplyWrappersModel2;
+    $model = new ApplyWrappersModel2;
 
-//     $fields = $model->getGroupedFields();
+    ray()->clearScreen();
 
-//     expect($fields)->toHaveCount(1); // Because of the wrapper
+    $fields = $model->getGroupedFields();
 
-//     expect($fields[0]['fields'])->toHaveCount(1); // Because of global
+    ray($fields)->red()->once();
 
-// });
+    expect($fields)->toHaveCount(1); // Because of the wrapper
+
+    expect($fields[0]['fields'])->toHaveCount(1); // Because of global
+
+});
