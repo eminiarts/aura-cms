@@ -10,7 +10,7 @@ class AddIdsToFields implements Pipe
     public function handle($fields, Closure $next)
     {
         if (request()->url() != 'http://aura-demo.test') {
-            ray('before:', json_encode($fields, JSON_PRETTY_PRINT))->green()->once();
+            // ray('before:', $fields->toJson())->green()->once();
         }
 
         $parentStack = [];
@@ -68,8 +68,37 @@ class AddIdsToFields implements Pipe
             if ($item['field']->group === true) {
                 $currentParent = end($parentStack);
                 
-                // Special handling for same-level grouping
-                if (isset($item['field']->sameLevelGrouping) && $item['field']->sameLevelGrouping === true) {
+                // First check for wrap=true
+                if (isset($item['wrap']) && $item['wrap'] === true && isset($item['field']->wrapper)) {
+                    // Find the last matching wrapper in processed fields
+                    $lastWrapperField = null;
+                    foreach ($processedFields->reverse() as $processedField) {
+                        if ($processedField['type'] === $item['field']->wrapper) {
+                            $lastWrapperField = $processedField;
+                            break;
+                        }
+                    }
+                    
+                    $item['_parent_id'] = $lastWrapperField ? $lastWrapperField['_id'] : null;
+                }
+                // Then check for wrapper
+                elseif (isset($item['field']->wrapper)) {
+                    // Look for the nearest wrapper in the parent stack
+                    for ($j = count($parentStack) - 1; $j >= 0; $j--) {
+                        if (isset($parentStack[$j]['field']) &&
+                            $parentStack[$j]['type'] === $item['field']->wrapper) {
+                            $item['_parent_id'] = $parentStack[$j]['_id'];
+                            break;
+                        }
+                    }
+                    
+                    // If no wrapper found, use current parent
+                    if (!isset($item['_parent_id'])) {
+                        $item['_parent_id'] = $currentParent ? $currentParent['_id'] : null;
+                    }
+                }
+                // Finally check for sameLevelGrouping
+                elseif (isset($item['field']->sameLevelGrouping) && $item['field']->sameLevelGrouping === true) {
                     if ($lastGroupType === $item['type']) {
                         // If this is the same type as the last group, use the same parent
                         $item['_parent_id'] = $lastGroupId;
@@ -79,45 +108,9 @@ class AddIdsToFields implements Pipe
                         $lastGroupId = $currentParent ? $currentParent['_id'] : null;
                         $item['_parent_id'] = $lastGroupId;
                     }
-                } else {
-                    // Check if field has a wrapper class defined
-                    if (isset($item['field']->wrapper)) {
-
-                        dd($item['field']->wrapper);
-                        // If wrap is true, find the most recent wrapper
-                        if (isset($item['wrap']) && $item['wrap'] === true) {
-                            $wrapperClass = $item['field']->wrapper;
-
-                            dd($wrapperClass);
-                            
-                            // Find the last matching wrapper in processed fields
-                            $lastWrapperField = null;
-                            foreach ($processedFields->reverse() as $processedField) {
-                                if ($processedField['type'] === $wrapperClass) {
-                                    $lastWrapperField = $processedField;
-                                    break;
-                                }
-                            }
-                            
-                            $item['_parent_id'] = $lastWrapperField ? $lastWrapperField['_id'] : null;
-                        } else {
-                            // Look for the nearest wrapper in the parent stack
-                            for ($j = count($parentStack) - 1; $j >= 0; $j--) {
-                                if (isset($parentStack[$j]['field']) &&
-                                    $parentStack[$j]['type'] === $item['field']->wrapper) {
-                                    $item['_parent_id'] = $parentStack[$j]['_id'];
-                                    break;
-                                }
-                            }
-                            
-                            // If no wrapper found, use current parent
-                            if (!isset($item['_parent_id'])) {
-                                $item['_parent_id'] = $currentParent ? $currentParent['_id'] : null;
-                            }
-                        }
-                    } else {
-                        $item['_parent_id'] = $currentParent ? $currentParent['_id'] : null;
-                    }
+                }
+                else {
+                    $item['_parent_id'] = $currentParent ? $currentParent['_id'] : null;
                 }
 
                 // Push to parent stack
@@ -145,9 +138,8 @@ class AddIdsToFields implements Pipe
         });
 
         if (request()->url() != 'http://aura-demo.test') {
-            ray('after:', json_encode($processedFields, JSON_PRETTY_PRINT))->blue()->once();
-
-            
+            // ray('after:', $processedFields->toJson())->blue()->once();
+            // ray('after:', $processedFields->toArray())->blue()->once();
         }
 
         return $next($processedFields);
