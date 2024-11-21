@@ -80,7 +80,7 @@ class Select extends Field
                 'type' => 'Aura\\Base\\Fields\\Text',
                 'validation' => '',
                 'instructions' => 'Default value on create',
-                'exclude_from_nesting' => true,
+                'exclude_level' => '1',
                 'slug' => 'default',
             ],
 
