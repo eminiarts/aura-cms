@@ -80,16 +80,12 @@ trait Filters
      */
     public function deleteFilter($filterName)
     {
-        dump('deleteFilter', $filterName);
-
         // Retrieve the filter using the provided key
         $filter = $this->userFilters[$filterName] ?? null;
 
         if (! $filter) {
             throw new \InvalidArgumentException('Invalid filter name: '.$filterName);
         }
-
-        dump('filter', $filter, $this->model->getType());
 
         switch ($filter['type']) {
             case 'user':
@@ -103,9 +99,7 @@ trait Filters
         }
 
         $this->notify('Success: Filter deleted!');
-
         $this->clearFiltersCache();
-
         $this->reset(['filters', 'selectedFilter']);
         
         // Refresh Component
@@ -278,7 +272,6 @@ trait Filters
     #[Computed]
     public function userFilters()
     {
-        dump('userFilters.....');
         $userFilters = auth()->user()->getOption($this->model()->getType().'.filters.*') ?? collect();
         $teamFilters = collect();
 

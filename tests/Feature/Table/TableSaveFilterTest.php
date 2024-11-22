@@ -197,9 +197,9 @@ test('table filter - taxonomy filter can be deleted', function () {
     // Click "Delete Filter" button
     $component->call('deleteFilter', 'test-filter');
 
-    // dd('should be here');
-
-    dump($component->userFilters);
+    // Refresh the component
+    $component->dispatch('refreshTable');
+    $component = $component->instance();
 
     // $component->userFilters should have 0 items
     expect($component->userFilters)->toHaveCount(0);
