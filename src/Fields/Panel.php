@@ -8,7 +8,7 @@ class Panel extends Field
 
     public bool $group = true;
 
-    public bool $sameLevelGrouping = true;
+    public bool $sameLevelGrouping = false;
 
     public $optionGroup = 'Structure Fields';
 

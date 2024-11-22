@@ -53,8 +53,6 @@ class Json extends Field
 
     public function set($post, $field, $value)
     {
-        // dd('hier', $value);
-
         if (is_array($value)) {
             return json_encode($value);
         }

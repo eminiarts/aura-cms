@@ -71,7 +71,7 @@
                 </div>
               @else
                 <div class="w-full">
-                  <x-aura::resource.add-field :id="$f['_id']" :slug="$field['slug']" :type="$f['type']" :children="$this->countChildren($f)" :model="$this->slug" />
+                  <x-aura::resource.add-field :id="$f['_id']" :slug="$field['slug']" type="Aura\Base\Fields\Text" :children="$this->countChildren($f)" :model="$this->slug" />
                 </div>
               @endif
             </div>

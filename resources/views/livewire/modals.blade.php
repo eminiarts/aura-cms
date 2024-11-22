@@ -9,10 +9,6 @@
                 </x-aura::dialog.slideover>
             @else
                 <x-aura::dialog.panel :modalAttributes="$modal['modalAttributes']">
-                    {{-- @dump($activeModals) --}}
-                    @php
-                        ray('hier222223', $modal);
-                    @endphp
                     @livewire($modal['name'], array_merge($modal['arguments'], ['modalAttributes' => $modal['modalAttributes']]), key($id))
                 </x-aura::dialog.panel>
             @endif
