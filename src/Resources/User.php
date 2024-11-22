@@ -166,6 +166,8 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
     {
         $option = 'user.'.$this->id.'.'.$option;
 
+        dump('deleteOption', $option);
+
         Option::whereName($option)->delete();
 
         Cache::forget($option);
