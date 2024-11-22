@@ -1,6 +1,9 @@
 <?php
 
 use Illuminate\Support\Facades\File;
+use function Pest\Laravel\artisan;
+
+uses(\Aura\Base\Tests\TestCase::class)->in('Feature/Aura');
 
 beforeEach(function () {
     $configContent = <<<'PHP'
@@ -25,14 +28,21 @@ PHP;
 });
 
 afterEach(function () {
+    // Clean up the config file
     $configPath = config_path('aura.php');
     if (File::exists($configPath)) {
         File::delete($configPath);
     }
+    
+    // Reset config in memory
+    config(['aura' => null]);
+    
+    // Clear application instance to ensure fresh state
+    $this->refreshApplication();
 });
 
 test('it can modify aura configuration', function () {
-    $this->artisan('aura:install-config')
+    artisan('aura:install-config')
         ->expectsConfirmation('Do you want to use teams?', 'yes')
         ->expectsConfirmation('Do you want to modify the default features?', 'no')
         ->expectsConfirmation('Do you want to allow registration?', 'yes')
@@ -44,7 +54,7 @@ test('it can modify aura configuration', function () {
 });
 
 test('it can modify features configuration', function () {
-    $this->artisan('aura:install-config')
+    artisan('aura:install-config')
         ->expectsConfirmation('Do you want to use teams?', 'no')
         ->expectsConfirmation('Do you want to modify the default features?', 'yes')
         ->expectsConfirmation("Enable feature 'teams'?", 'no')
@@ -59,7 +69,7 @@ test('it can modify features configuration', function () {
 });
 
 test('it can modify theme configuration', function () {
-    $this->artisan('aura:install-config')
+    artisan('aura:install-config')
         ->expectsConfirmation('Do you want to use teams?', 'no')
         ->expectsConfirmation('Do you want to modify the default features?', 'no')
         ->expectsConfirmation('Do you want to allow registration?', 'no')
