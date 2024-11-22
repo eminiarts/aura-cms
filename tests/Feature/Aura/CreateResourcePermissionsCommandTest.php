@@ -22,18 +22,24 @@ beforeEach(function () {
         $table->foreignId('team_id')->nullable()->constrained()->nullOnDelete();
         $table->timestamps();
     });
+
+    // Mock Aura::getResources() to return a test resource
+    Aura::shouldReceive('getResources')
+        ->andReturn([
+            \Aura\Base\Resources\User::class
+        ]);
 });
 
-it('can create permissions for resources', function () {
+test('it can create permissions for resources', function () {
     // Create a user for authentication
     $user = User::factory()->create(['id' => 1]);
     
     // Run the command
     $this->artisan('aura:create-resource-permissions')
-        ->assertExitCode(0);
+        ->assertSuccessful();
 
     // Get all resources
-    $resources = Aura::getResources();
+    $resources = [User::class];
     
     // For each resource, verify that all necessary permissions were created
     foreach ($resources as $resource) {
@@ -47,24 +53,24 @@ it('can create permissions for resources', function () {
         ];
         
         foreach ($permissionTypes as $type) {
-            $this->assertDatabaseHas('permissions', [
+            expect(Permission::where([
                 'slug' => "{$type}-{$slug}",
                 'group' => $r->pluralName(),
-            ]);
+            ])->exists())->toBeTrue();
         }
     }
 });
 
-it('does not duplicate existing permissions', function () {
+test('it does not duplicate existing permissions', function () {
     // Create a user for authentication
     $user = User::factory()->create(['id' => 1]);
     
     // Run the command twice
-    $this->artisan('aura:create-resource-permissions');
-    $this->artisan('aura:create-resource-permissions');
+    $this->artisan('aura:create-resource-permissions')->assertSuccessful();
+    $this->artisan('aura:create-resource-permissions')->assertSuccessful();
     
     // Get the first resource to test with
-    $resources = Aura::getResources();
+    $resources = [User::class];
     $resource = app($resources[0]);
     $slug = $resource::$slug;
     
