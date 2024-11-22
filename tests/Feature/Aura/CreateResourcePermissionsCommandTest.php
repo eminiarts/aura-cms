@@ -8,21 +8,6 @@ use Illuminate\Support\Facades\Schema;
 use Illuminate\Database\Schema\Blueprint;
 
 beforeEach(function () {
-    // Clear permissions table
-    Schema::dropIfExists('permissions');
-
-    // Create permissions table with the correct structure
-    Schema::create('permissions', function (Blueprint $table) {
-        $table->id();
-        $table->string('name');
-        $table->string('title');
-        $table->string('slug')->unique();
-        $table->string('group')->nullable();
-        $table->foreignId('user_id')->nullable()->constrained()->nullOnDelete();
-        $table->foreignId('team_id')->nullable()->constrained()->nullOnDelete();
-        $table->timestamps();
-    });
-
     // Mock Aura::getResources() to return a test resource
     Aura::shouldReceive('getResources')
         ->andReturn([
