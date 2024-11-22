@@ -78,7 +78,7 @@ class TableSaveFilterModel extends Resource
     }
 }
 
-test('table filter - taxonomy filter2', function () {
+test('table filter - taxonomy filter', function () {
     $post = $this->resource;
     $post2 = $this->resource2;
 
@@ -196,6 +196,10 @@ test('table filter - taxonomy filter can be deleted', function () {
 
     // Click "Delete Filter" button
     $component->call('deleteFilter', 'test-filter');
+
+    // dd('should be here');
+
+    dump($component->userFilters);
 
     // $component->userFilters should have 0 items
     expect($component->userFilters)->toHaveCount(0);
