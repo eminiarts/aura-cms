@@ -168,26 +168,19 @@
 
                             sortable.on('sortable:stop', () => {
                                 Alpine.nextTick(() => {
-                                    console.log('2', Array.from(document.querySelectorAll('.reorder-item')).map(el => el.id));
-                                    @this.reorder(
-                                        Array.from(document.querySelectorAll('.reorder-item')).map(el => el.id)
-                                    )
+                                    @this.reorder(Array.from(document.querySelectorAll('.reorder-item')).map(el => el.id))
                                 })
                             });
                         })
                     }
                 }">
-
                     @if($this->mappedFields)
                         @foreach($this->mappedFields as $tab)
-
                         <div class="flex flex-wrap -mx-2 min-w-full draggable-container reorder-item focus:outline-none" id="field_{{ $tab['_id'] }}" x-show="activeTab === {{ $loop->index }}" wire:key="resource-tab-{{ $tab['_id'] }}">
 
                             @if ( optional($tab)['fields'] )
 
                             @foreach($tab['fields'] as $field)
-
-
                                 <div class="resource-field-{{ optional($field)['slug'] }}-wrapper px-2 reorder-item draggable-item" id="field_{{ $field['_id'] }}" wire:key="pt-field-{{ $field['_id'] }}">
                                     <style >
                                     .resource-field-{{ optional($field)['slug'] }}-wrapper {
@@ -212,7 +205,6 @@
 
                             @else
                                 <div x-cloak class="px-2 w-full">
-
                                     <span class="text-sm font-semibold">Presets</span>
                                     <x-aura::button.transparent wire:click="insertTemplateFields({{ $tab['_id'] }}, '{{ $tab['slug'] }}', 'PanelWithSidebar')">Panel with Sidebar (70/30)</x-aura::button.transparent>
                                     <x-aura::button.transparent wire:click="insertTemplateFields({{ $tab['_id'] }}, '{{ $tab['slug'] }}', 'Plain')">Simple Panel with Text</x-aura::button.transparent>
@@ -255,9 +247,10 @@
                                 },
                             });
 
+                            const $el = document.querySelector('#field_2 .draggable-handle');
+
                             sortable.on('sortable:stop', () => {
                                 Alpine.nextTick(() => {
-                                    console.log('1', Array.from(document.querySelectorAll('.reorder-item')).map(el => el.id));
                                     @this.reorder(
                                         Array.from(document.querySelectorAll('.reorder-item')).map(el => el.id)
                                     )
@@ -268,7 +261,6 @@
                 }" wire:key="resource2-fields">
 
                     @foreach($this->mappedFields as $field)
-
                         <div class="px-2 reorder-item draggable-item resource-field-{{ optional($field)['slug'] }}-wrapper" id="field_{{ $field['_id'] }}" wire:key="pt-field-{{ $field['_id'] }}">
                             <style >
                                 .resource-field-{{ optional($field)['slug'] }}-wrapper {

@@ -76,35 +76,25 @@ class AdvancedSelect extends Field
 
     public function get($class, $value, $field = null)
     {
-        //  ray('get ........', $class, $value, $field)->blue();
-
         if (isset($field['polymorphic_relation']) && $field['polymorphic_relation'] === false) {
-            // ray('save meta', $field['slug'], $ids);
-
-            //  ray('get ........', $class, $value, $field)->blue();
 
             if (empty($value)) {
                 return;
             }
 
             if (is_string($value)) {
-                // ray('is_string', $value);
                 $decoded = json_decode($value, true);
                 if (json_last_error() === JSON_ERROR_NONE) {
-                    // ray($decoded);
                     return $decoded;
                 }
 
                 return $value;
             }
 
-            // ray('save meta', $post->meta()->get());
             return $value;
         }
 
         if (! ($field['multiple'] ?? true) && ! ($field['polymorphic_relation'] ?? false)) {
-            // dd('hier');
-            // ray('hier before return int', $field['slug'], $value)->red();
             if ($value instanceof \Illuminate\Support\Collection) {
                 if ($value->isEmpty()) {
                     return [];

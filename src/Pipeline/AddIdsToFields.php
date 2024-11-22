@@ -10,7 +10,7 @@ class AddIdsToFields implements Pipe
     public function handle($fields, Closure $next)
     {
         if (request()->url() != 'http://aura-demo.test') {
-            // ray('before:', $fields->toJson())->green()->once();
+             ray('before:', $fields->toJson())->green()->once();
         }
 
         $parentStack = [];
@@ -67,7 +67,7 @@ class AddIdsToFields implements Pipe
             // Handle group fields
             if ($item['field']->group === true) {
                 $currentParent = end($parentStack);
-                
+
                 // First check for wrap=true
                 if (isset($item['wrap']) && $item['wrap'] === true && isset($item['field']->wrapper)) {
                     // Find the last matching wrapper in processed fields
@@ -78,7 +78,7 @@ class AddIdsToFields implements Pipe
                             break;
                         }
                     }
-                    
+
                     $item['_parent_id'] = $lastWrapperField ? $lastWrapperField['_id'] : null;
                 }
                 // Then check for wrapper
@@ -91,7 +91,7 @@ class AddIdsToFields implements Pipe
                             break;
                         }
                     }
-                    
+
                     // If no wrapper found, use current parent
                     if (!isset($item['_parent_id'])) {
                         $item['_parent_id'] = $currentParent ? $currentParent['_id'] : null;
@@ -102,7 +102,7 @@ class AddIdsToFields implements Pipe
                     // Check if same_level_grouping is not explicitly set to false in the item
                     (!isset($item['same_level_grouping']) || $item['same_level_grouping'] !== false) &&
                     // And check if sameLevelGrouping is true in the field
-                    isset($item['field']->sameLevelGrouping) && 
+                    isset($item['field']->sameLevelGrouping) &&
                     $item['field']->sameLevelGrouping === true
                 ) {
                     if ($lastGroupType === $item['type']) {
@@ -144,8 +144,8 @@ class AddIdsToFields implements Pipe
         });
 
         if (request()->url() != 'http://aura-demo.test') {
-            // ray('after:', $processedFields->toJson())->blue()->once();
-            //  ray('after:', $processedFields->toArray())->blue()->once();
+             ray('after:', $processedFields->toJson())->blue()->once();
+             ray('after:', $processedFields->toArray())->blue()->once();
         }
 
         return $next($processedFields);

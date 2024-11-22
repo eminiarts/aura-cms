@@ -1,9 +1,6 @@
 <div autocomplete="off">
     @section('title', __('Edit ' . $model->singularName()))
 
-
-    {{-- @dd('hier', $mode); --}}
-
     {{ app('aura')::injectView('post_edit_breadcrumbs_before') }}
 
     @if (!$inModal)

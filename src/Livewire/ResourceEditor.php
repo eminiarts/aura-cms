@@ -65,6 +65,11 @@ class ResourceEditor extends Component
     {
         $fields = collect($this->fieldsArray);
 
+        // Remove the first field if it's a Tab field
+        if ($fields->isNotEmpty() && isset($fields->first()['type']) && $fields->first()['type'] === 'Aura\Base\Fields\Tabs') {
+            $fields->shift();
+        }
+
         // check if collection has an item with type = "Aura\Base\Fields\Tab" and global = true
         $hasGlobalTabs = $fields->where('type', 'Aura\Base\Fields\Tab')->where('global', true)->count();
         $globalTab = [
@@ -428,11 +433,16 @@ class ResourceEditor extends Component
     {
         $this->validate();
 
+        $fields = array_values($this->fieldsArray);
+
+        // Remove the first field if it's a Tab field
+        if (!empty($fields) && isset($fields[0]['type']) && $fields[0]['type'] === 'Aura\Base\Fields\Tabs') {
+            array_shift($fields);
+        }
+
         $ids = collect($ids)->map(function ($id) {
             return (int) Str::after($id, 'field_') - 1;
         });
-
-        $fields = array_values($this->fieldsArray);
 
         $fields = $ids->map(function ($id) use ($fields) {
             return $fields[$id];
@@ -440,15 +450,12 @@ class ResourceEditor extends Component
 
         $this->fieldsArray = $fields;
 
-        dd($this->fieldsArray);
-
         $this->newFields = $this->model->mapToGroupedFields($this->fieldsArray);
 
         $this->saveFields($this->fieldsArray);
 
         // Remove the dispatch('refreshComponent') call
         $this->dispatch('refreshComponent');
-
         $this->dispatch('finishedSavingFields');
     }
 

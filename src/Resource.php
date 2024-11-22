@@ -224,7 +224,6 @@ class Resource extends Model
                     // }
 
                     if ($class && $class->isRelation($field) && method_exists($class, 'get') && $field['type'] != 'Aura\\Base\\Fields\\Roles') {
-                        // dd('hier', $key, $this->{$key}, $field);
                         return $class->get($class, $this->{$key}, $field);
                     }
 
@@ -268,7 +267,6 @@ class Resource extends Model
                     }
                     // if ($class && $class->isRelation($field) && $this->{$key}) {
                     //     // dd($class, $class->isRelation($field), $this->{$key}, isset($this->{$key}), method_exists($class, 'get'));
-                    //     // dd('hier', $key, $field);
                     //     return $class->get($class, $this->{$key}, $field);
                     // }
 
