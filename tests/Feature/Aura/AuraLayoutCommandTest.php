@@ -6,15 +6,7 @@ use function Pest\Laravel\artisan;
 uses()->group('aura', 'command');
 
 uses()->beforeEach(function () {
-    // Register service providers
-    $this->app->register(\Aura\Base\AuraServiceProvider::class);
-    $this->app->register(\Lab404\Impersonate\ImpersonateServiceProvider::class);
-    $this->app->register(\Livewire\LivewireServiceProvider::class);
-
-    // Add impersonate middleware
-    $this->app->make(\Illuminate\Contracts\Http\Kernel::class)
-        ->pushMiddleware(\Lab404\Impersonate\Middleware\ImpersonateMiddleware::class);
-
+   
     // Configure package
     config(['aura' => [
         'name' => 'aura',
