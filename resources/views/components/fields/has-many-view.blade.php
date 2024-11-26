@@ -9,7 +9,6 @@
         <livewire:aura::table
             :model="app($field['resource'])"
             :field="$field"
-            :editInModal="true"
             :settings="$field['table_settings'] ?? [
                 'filters' => false,
                 // 'actions' => false,
@@ -24,7 +23,6 @@
                 //     'contact_email' => 'Contact Email'
                 // ]
             ]"
-            :createInModal="true"
             :parent="$this->model->setRelations([])"
             :disabled="true"
             />

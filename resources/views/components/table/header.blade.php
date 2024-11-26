@@ -29,7 +29,7 @@
                 @if ($this->settings['create'])
                     <div class="create-resource">
                         <div>
-                            @if ($this->createInModal)
+                            @if ($this->settings['create_in_modal'])
                                 <a href="#"
                                     wire:click.prevent="$dispatch('openModal', { component: 'aura::resource-create-modal', arguments: {
                                 type: '{{ $this->model->getType() }}',

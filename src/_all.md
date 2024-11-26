@@ -11873,12 +11873,7 @@ class Table extends Component
      */
     public $columns = [];
 
-    /**
-     * Indicates if the Create Component should be in a Modal.
-     *
-     * @var bool
-     */
-    public $createInModal = false;
+  
 
     public $disabled;
 
