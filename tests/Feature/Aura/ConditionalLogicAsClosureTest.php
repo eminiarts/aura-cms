@@ -31,9 +31,6 @@ class ConditionalLogicAsClosureModel extends Resource
                 'type' => 'Aura\\Base\\Fields\\Text',
                 'validation' => '',
                 'conditional_logic' => function ($model, $post) {
-                    //ray($model, $post);
-                    dump($post['fields']['text1'])->red();
-
                     return $post['fields']['text1'] === 'test';
                 },
                 'slug' => 'text2',

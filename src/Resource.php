@@ -297,13 +297,26 @@ class Resource extends Model
     {
         $meta = $this->getMeta();
 
-        return collect($this->inputFieldsSlugs())
-            ->mapWithKeys(fn ($value, $key) => [$value => null])
-            ->map(fn ($value, $key) => $meta[$key] ?? $value)
-            ->filter(fn ($value, $key) => strpos($key, '.') === false)
-            ->map(function ($value, $key) {
+        $defaultValues = collect($this->inputFieldsSlugs())
+            ->mapWithKeys(fn ($value) => [$value => null])
+            ->filter(function ($value, $key) {
+                return strpos($key, '.') === false;
+            })
+            ->map(function ($value, $key) use ($meta) {
                 $class = $this->fieldClassBySlug($key);
                 $field = $this->fieldBySlug($key);
+
+                if ($class && method_exists($class, 'isRelation') && $class->isRelation($field) && method_exists($class, 'get') && $field['type'] != 'Aura\\Base\\Fields\\Roles') {
+                    return $class->get($class, $this->{$key}, $field);
+                }
+
+                if ($class && isset($this->{$key}) && method_exists($class, 'get')) {
+                    return $class->get($class, $this->{$key}, $field);
+                }
+
+                if (isset($this->{$key})) {
+                    return $this->{$key};
+                }
 
                 if ($class && isset($this->attributes[$key]) && method_exists($class, 'get')) {
                     return $class->get($class, $this->attributes[$key], $field);
@@ -313,9 +326,46 @@ class Resource extends Model
                     return $this->attributes[$key];
                 }
 
-                return $value;
-            })
-            ->toArray();
+                $method = 'get'.Str::studly($key).'Field';
+
+                if (method_exists($this, $method)) {
+                    return $this->{$method}($value);
+                }
+
+                if ($class && isset(optional($this)->{$key}) && method_exists($class, 'get')) {
+                    return $class->get($class, $this->{$key} ?? null, $field);
+                }
+
+                if (optional($field)['polymorphic_relation'] === false && optional($field)['multiple'] === false) {
+                    return isset($meta[$key]) ? [$meta[$key]] : [];
+                }
+
+                return $meta[$key] ?? $value;
+            });
+
+        return $defaultValues->toArray();
+    }
+
+    public function getFieldsAttribute()
+    {
+        if (! isset($this->fieldsAttributeCache) || $this->fieldsAttributeCache === null) {
+            $defaultValues = collect($this->getFieldsWithoutConditionalLogic());
+
+            $this->fieldsAttributeCache = $defaultValues
+                ->filter(function ($value, $key) {
+                    if (! $this->isBaseFillable($key)) {
+                        return true;
+                    }
+
+                    return ! in_array($key, $this->hidden);
+                })
+                ->filter(function ($value, $key) {
+                    $field = $this->fieldBySlug($key);
+                    return ConditionalLogic::shouldDisplayField($this, $field, ['fields' => $this->getFieldsWithoutConditionalLogic()]);
+                });
+        }
+
+        return $this->fieldsAttributeCache;
     }
 
     public function getMeta($key = null)
@@ -436,12 +486,12 @@ class Resource extends Model
     protected static function booted()
     {
         if (! static::$customTable) {
-            static::addGlobalScope(new TypeScope);
+            static::addGlobalScope(new TypeScope());
         }
 
         static::addGlobalScope(app(TeamScope::class));
 
-        static::addGlobalScope(new ScopedScope);
+        static::addGlobalScope(new ScopedScope());
 
         static::creating(function ($model) {});
 
