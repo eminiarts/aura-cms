@@ -128,7 +128,7 @@ class ConditionalLogic
                 $post = ['fields' => $fields];
             }
 
-            return $closure($model, $post) !== false;
+            return $closure($model, $post);
         } catch (\Exception $e) {
             // Log the exception or handle it as needed
             return false;
