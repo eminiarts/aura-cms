@@ -349,19 +349,24 @@ class Resource extends Model
     public function getFieldsAttribute()
     {
         if (! isset($this->fieldsAttributeCache) || $this->fieldsAttributeCache === null) {
-            $defaultValues = collect($this->getFieldsWithoutConditionalLogic());
-
-            $this->fieldsAttributeCache = $defaultValues
-                ->filter(function ($value, $key) {
-                    if (! $this->isBaseFillable($key)) {
+            // Get fields only once and store in a variable
+            $fieldsWithoutLogic = $this->getFieldsWithoutConditionalLogic();
+            
+            $this->fieldsAttributeCache = collect($fieldsWithoutLogic)
+                ->filter(function ($value, $key) use ($fieldsWithoutLogic) {
+                    // Early return if not base fillable and not hidden
+                    if (!$this->isBaseFillable($key) && !in_array($key, $this->hidden)) {
                         return true;
                     }
-
-                    return ! in_array($key, $this->hidden);
-                })
-                ->filter(function ($value, $key) {
+                    
+                    // Skip if key is hidden
+                    if (in_array($key, $this->hidden)) {
+                        return false;
+                    }
+                    
+                    // Check conditional logic only if we haven't already filtered out the field
                     $field = $this->fieldBySlug($key);
-                    return ConditionalLogic::shouldDisplayField($this, $field, ['fields' => $this->getFieldsWithoutConditionalLogic()]);
+                    return ConditionalLogic::shouldDisplayField($this, $field, ['fields' => $fieldsWithoutLogic]);
                 });
         }
 
