@@ -8,7 +8,7 @@ class Panel extends Field
 
     public bool $group = true;
 
-    public bool $sameLevelGrouping = false;
+    public bool $sameLevelGrouping = true;
 
     public $optionGroup = 'Structure Fields';
 
@@ -18,7 +18,10 @@ class Panel extends Field
     public function getFields()
     {
         $fields = collect(parent::getFields())->filter(function ($field) {
-            // check if the slug of the field starts with "on", if yes filter it out
+            // Filter out fields with slug starting with "on_" or equal to "searchable"
+            if ($field['slug'] === 'searchable') {
+                return false;
+            }
             return ! str_starts_with($field['slug'], 'on_');
         })->toArray();
 
