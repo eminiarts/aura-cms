@@ -67,7 +67,9 @@ trait Filters
     public function clearFiltersCache()
     {
         auth()->user()->clearCachedOption($this->model->getType().'.filters.*');
-        auth()->user()->currentTeam->clearCachedOption($this->model->getType().'.filters.*');
+        if (config('aura.teams')) {
+            auth()->user()->currentTeam?->clearCachedOption($this->model->getType().'.filters.*');
+        }
     }
 
     /**
@@ -87,26 +89,19 @@ trait Filters
 
         switch ($filter['type']) {
             case 'user':
-                auth()->user()->deleteOption($this->model->getType().'.filters.'.$filterName);
-
+                auth()->user()->deleteOption($this->model->getType().'.filters.'.$filter['slug']);
                 break;
             case 'team':
                 auth()->user()->currentTeam->deleteOption($this->model->getType().'.filters.'.$filterName);
-
                 break;
             default:
-                // Handle unexpected type value
                 throw new \InvalidArgumentException('Invalid filter type: '.$filter['type']);
         }
 
         $this->notify('Success: Filter deleted!');
         $this->clearFiltersCache();
-        $this->reset('filters');
-
-        $filters = $this->userFilters;
-
-        $this->reset('selectedFilter');
-
+        $this->reset(['filters', 'selectedFilter']);
+        
         // Refresh Component
         $this->dispatch('refreshTable');
     }

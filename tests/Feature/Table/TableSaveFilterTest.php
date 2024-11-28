@@ -91,18 +91,29 @@ test('table filter - taxonomy filter', function () {
     // Apply Tag 1 filter, set $filters['taxonomy']['tag'] to [$tag1->id]
     // $component->set('filters.taxonomy.tags', [$tag1->id]);
 
+    $component->call('addFilterGroup');
+
+    // Contains
+    $component->set('filters.custom.0.filters.0.name', 'tags');
+    $component->set('filters.custom.0.filters.0.operator', 'contains');
+    $component->set('filters.custom.0.filters.0.value', [$tag1->id]);
+
+
     // $component->rows should have 1 item
-    expect($component->rows->items())->toHaveCount(1);
+    $component->assertViewHas('rows', function ($rows) {
+        return count($rows->items()) === 1;
+    });
 
     // Set custom filter 'meta' to 'B'
     $component->call('addFilterGroup');
 
     // $component->rows should have 1 item
-    $component->set('filters.custom.0.filters.0.value', 'B');
-    $component->set('filters.custom.0.filters.0.operator', 'is');
+    $component->set('filters.custom.1.filters.0.value', 'B');
+    $component->set('filters.custom.1.filters.0.operator', 'is');
 
     // Expect filter.custom.0.name to be metafield
-    expect($component->filters['custom'][0]['filters'][0]['name'])->toBe('metafield');
+    expect($component->filters['custom'][1]['filters'][0]['name'])->toBe('metafield');
+
 
     // Save Filters to DB
     $component->call('saveFilter');
@@ -121,7 +132,7 @@ test('table filter - taxonomy filter', function () {
     $component->assertHasNoErrors();
 
     // Get DB options
-    $db = DB::table('options')->where('name', 'like', 'user.'.$this->user->id.'.Post.filters.Test Filter')->get();
+    $db = DB::table('options')->where('name', 'like', 'user.'.$this->user->id.'.Post.filters.test-filter')->get();
 
     // $db should have 1 item
     expect($db)->toHaveCount(1);
@@ -132,35 +143,30 @@ test('table filter - taxonomy filter', function () {
     expect($filters)->toHaveCount(1);
 
     // $filters should have a key 'Test Filter'
-    expect($filters)->toHaveKey('Test Filter');
+    expect($filters)->toHaveKey('test-filter');
 
     // $filters['Test Filter'][0] should have 2 items
     // expect($filters['Test Filter']['taxonomy'])->toHaveCount(1);
-    expect($filters['Test Filter']['custom'])->toHaveCount(1);
-
-    // $filters['Test Filter'][0]['taxonomy'] should have 1 item
-    // expect($filters['Test Filter']['taxonomy']['tags'])->toHaveCount(1);
+    expect($filters['test-filter']['custom'])->toHaveCount(2);
 
     // expect($filters)->toHaveKey('Test Filter.taxonomy.tags.0', '1');
-    expect($filters)->toHaveKey('Test Filter.custom.0.filters.0.name', 'metafield');
-    expect($filters)->toHaveKey('Test Filter.custom.0.filters.0.operator', 'is');
-    expect($filters)->toHaveKey('Test Filter.custom.0.filters.0.value', 'B');
+    expect($filters)->toHaveKey('test-filter.custom.0.filters.0.name', 'tags');
+    expect($filters)->toHaveKey('test-filter.custom.0.filters.0.operator', 'contains');
+    expect($filters)->toHaveKey('test-filter.custom.0.filters.0.value', [$tag1->id]);
 
     // Filters and $component->userFilters should be the same
-
     expect($filters->toArray())->toBe($component->userFilters);
 
     // Assert $filter.name is empty
     expect($component->filter['name'])->toBe('');
 
     // Component rows should have 1 item
-    expect($component->rows->items())->toHaveCount(1);
-
-    // $post->id should be the same as $component->rows->items()[0]->id
-    expect($post->id)->toBe($component->rows->items()[0]->id);
+    $component->assertViewHas('rows', function ($rows) use ($post) {
+        return count($rows->items()) === 1 && $rows->items()[0]->id === $post->id;
+    });
 
     // After a filter is saved, the current filter should be set to the saved filter
-    expect($component->selectedFilter)->toBe('Test Filter');
+    expect($component->selectedFilter)->toBe('test-filter');
 });
 
 test('table filter - taxonomy filter can be deleted', function () {
@@ -168,8 +174,8 @@ test('table filter - taxonomy filter can be deleted', function () {
     $post2 = $this->resource2;
 
     DB::table('options')->insert([
-        'name' => 'user.'.$this->user->id.'.Post.filters.Test Filter',
-        'value' => '{"custom":[{"filters":[{"name":"metafield","operator":"is","value":"B"}]}]}',
+        'name' => 'user.'.$this->user->id.'.Post.filters.test-filter',
+        'value' => '{"custom":[{"filters":[{"name":"tags","operator":"contains","value":[303],"options":{"resource_type":"Aura\\\\Base\\\\Resources\\\\Tag"}}]}],"name":"Test Filter","public":false,"global":false,"slug":"test-filter"}',
         'team_id' => $this->user->currentTeam->id,
     ]);
 
@@ -179,17 +185,21 @@ test('table filter - taxonomy filter can be deleted', function () {
     // Filter $component->userFilters should have 1 item
     expect($component->userFilters)->toHaveCount(1);
 
-    // $component->userFilters should have a key 'Test Filter'
-    expect($component->userFilters)->toHaveKey('Test Filter');
+    // $component->userFilters should have a key 'test-filter'
+    expect($component->userFilters)->toHaveKey('test-filter');
 
-    // Set selected filter to 'Test Filter'
-    $component->set('selectedFilter', 'Test Filter');
+    // Set selected filter to 'test-filter'
+    $component->set('selectedFilter', 'test-filter');
 
     // Should see "Delete Filter" button
     $component->assertSee('Delete Filter');
 
     // Click "Delete Filter" button
-    $component->call('deleteFilter', 'Test Filter');
+    $component->call('deleteFilter', 'test-filter');
+
+    // Refresh the component
+    $component->dispatch('refreshTable');
+    $component = $component->instance();
 
     // $component->userFilters should have 0 items
     expect($component->userFilters)->toHaveCount(0);
