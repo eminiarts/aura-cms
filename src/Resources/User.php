@@ -169,7 +169,6 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
         Option::whereName($option)->delete();
 
         Cache::forget($option);
-
     }
 
     public function getAvatarUrlAttribute()

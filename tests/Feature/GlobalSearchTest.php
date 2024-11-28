@@ -144,14 +144,15 @@ test('global search can be disabled via config', function () {
     // First verify search works with feature enabled
     config(['aura.features.global_search' => true]);
 
-    $this->get(route('aura.index'))
+    $this->get(route('aura.dashboard'))
         ->assertOk()
         ->assertSee('global-search');
 
     // Now disable global search
     config(['aura.features.global_search' => false]);
 
-    $this->get(route('aura.index'))
+
+    $this->get(route('aura.dashboard'))
         ->assertOk()
         ->assertDontSee('global-search');
 
