@@ -65,11 +65,6 @@ class ResourceEditor extends Component
     {
         $fields = collect($this->fieldsArray);
 
-        // Remove the first field if it's a Tab field
-        if ($fields->isNotEmpty() && isset($fields->first()['type']) && $fields->first()['type'] === 'Aura\Base\Fields\Tabs') {
-            $fields->shift();
-        }
-
         // check if collection has an item with type = "Aura\Base\Fields\Tab" and global = true
         $hasGlobalTabs = $fields->where('type', 'Aura\Base\Fields\Tab')->where('global', true)->count();
         $globalTab = [
@@ -374,7 +369,7 @@ class ResourceEditor extends Component
             abort(403, 'Your fields have closures. You can not use the Resource Builder with Closures.');
         }
 
-        $this->fieldsArray = $this->model->getFieldsWithIds()->toArray();
+        $this->fieldsArray = $this->model->getFieldsWithIdsWithoutWrappers()->toArray();
 
         if (count($this->mappedFields) > 0 && $this->mappedFields[0]['type'] == "Aura\Base\Fields\Tab" && array_key_exists('global', $this->mappedFields[0]) && $this->mappedFields[0]['global']) {
             $this->hasGlobalTabs = true;
@@ -434,11 +429,6 @@ class ResourceEditor extends Component
         $this->validate();
 
         $fields = array_values($this->fieldsArray);
-
-        // Remove the first field if it's a Tab field
-        if (!empty($fields) && isset($fields[0]['type']) && $fields[0]['type'] === 'Aura\Base\Fields\Tabs') {
-            array_shift($fields);
-        }
 
         $ids = collect($ids)->map(function ($id) {
             return (int) Str::after($id, 'field_') - 1;

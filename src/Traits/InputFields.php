@@ -344,7 +344,15 @@ trait InputFields
     {
         return $this->sendThroughPipeline($this->fieldsCollection(), [
             MapFields::class,
-            // ApplyWrappers::class,
+            ApplyWrappers::class,
+            AddIdsToFields::class,
+        ]);
+    }
+
+    public function getFieldsWithIdsWithoutWrappers()
+    {
+        return $this->sendThroughPipeline($this->fieldsCollection(), [
+            MapFields::class,
             AddIdsToFields::class,
         ]);
     }

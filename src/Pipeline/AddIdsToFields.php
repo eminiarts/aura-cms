@@ -10,7 +10,7 @@ class AddIdsToFields implements Pipe
     public function handle($fields, Closure $next)
     {
         if (request()->url() != 'http://aura-demo.test') {
-             ray('before:', $fields->toJson())->green()->once();
+            //  ray('before:', $fields->toJson())->green()->once();
         }
 
         $parentStack = [];
@@ -97,7 +97,7 @@ class AddIdsToFields implements Pipe
                         $item['_parent_id'] = $currentParent ? $currentParent['_id'] : null;
                     }
                 }
-                // Check for sameLevelGrouping, considering the override
+                // Check for sameLevelGrouping, considering special case for panels under tabs
                 elseif (
                     // Check if same_level_grouping is not explicitly set to false in the item
                     (!isset($item['same_level_grouping']) || $item['same_level_grouping'] !== false) &&
@@ -106,8 +106,28 @@ class AddIdsToFields implements Pipe
                     $item['field']->sameLevelGrouping === true
                 ) {
                     if ($lastGroupType === $item['type']) {
-                        // If this is the same type as the last group, use the same parent
-                        $item['_parent_id'] = $lastGroupId;
+                        // For panels, check if we're still under the same tab parent
+                        if ($item['type'] === 'Aura\\Base\\Fields\\Panel') {
+                            // Find the closest tab parent in the stack
+                            $closestTabParent = null;
+                            for ($j = count($parentStack) - 1; $j >= 0; $j--) {
+                                if ($parentStack[$j]['type'] === 'Aura\\Base\\Fields\\Tab') {
+                                    $closestTabParent = $parentStack[$j];
+                                    break;
+                                }
+                            }
+
+                            // If we're under a tab, use that tab as parent
+                            if ($closestTabParent) {
+                                $item['_parent_id'] = $closestTabParent['_id'];
+                            } else {
+                                // If no tab parent, use same level grouping as before
+                                $item['_parent_id'] = $lastGroupId;
+                            }
+                        } else {
+                            // For non-panel items, use regular same level grouping
+                            $item['_parent_id'] = $lastGroupId;
+                        }
                     } else {
                         // New group type, update tracking
                         $lastGroupType = $item['type'];
@@ -144,8 +164,8 @@ class AddIdsToFields implements Pipe
         });
 
         if (request()->url() != 'http://aura-demo.test') {
-             ray('after:', $processedFields->toJson())->blue()->once();
-             ray('after:', $processedFields->toArray())->blue()->once();
+            //  ray('after:', $processedFields->toJson())->blue()->once();
+            //  ray('after:', $processedFields->toArray())->blue()->once();
         }
 
         return $next($processedFields);
