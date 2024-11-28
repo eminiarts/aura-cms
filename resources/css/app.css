@@ -567,3 +567,4 @@
 .aura-sidebar-darkmode-type-dark .aura-sidebar-team-switcher {
     @apply dark:text-white dark:bg-gray-800;
 }
+
