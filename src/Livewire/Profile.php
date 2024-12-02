@@ -75,7 +75,7 @@ class Profile extends Component
 
     public function getFields()
     {
-        return $this->user->getProfileFields();
+        return $this->model->getProfileFields();
     }
 
     public function getFieldsForViewProperty()
@@ -92,10 +92,10 @@ class Profile extends Component
         });
     }
 
-    public function getUserProperty()
-    {
-        return app(config('aura.resources.user'))::find(auth()->id());
-    }
+    // public function getUserProperty()
+    // {
+    //     return app(config('aura.resources.user'))::find(auth()->id());
+    // }
 
     public function logoutOtherBrowserSessions()
     {
@@ -109,13 +109,32 @@ class Profile extends Component
 
     public function mount()
     {
+        ray('MOUNT - Before checkAuthorization')->blue();
         $this->checkAuthorization();
 
-        $this->model = auth()->user();
+        ray('MOUNT - Before auth()->user()')->blue();
+        $this->model = Auth::user();
+        ray('MOUNT - After auth()->user() - model type: ' . get_class($this->model))->blue();
 
         $this->form = $this->model->attributesToArray();
+        ray('MOUNT - After attributesToArray - model type: ' . get_class($this->model))->blue();
+    }
 
-        // dd($this->form['fields'], $this->model);
+    public function hydrate()
+    {
+        ray('HYDRATE - Before fix - model type: ' . get_class($this->model))->purple();
+        
+        // Re-fetch the user model to ensure correct type
+        if ($this->model && isset($this->model->id)) {
+            $this->model = Auth::user();
+        }
+        
+        ray('HYDRATE - After fix - model type: ' . get_class($this->model))->purple();
+    }
+
+    public function dehydrate()
+    {
+        ray('DEHYDRATE - model type: ' . get_class($this->model))->orange();
     }
 
     public function render()
@@ -142,11 +161,12 @@ class Profile extends Component
 
     public function save()
     {
-        //  dd($this->form['fields']);
+        ray('SAVE - Start - model type: ' . get_class($this->model))->red();
+        //   ray($this->form['fields']);
         // $this->validate();
 
         $validatedData = $this->validate();
-        // dd($validatedData['form']['fields'], $this->form);
+        // ray($validatedData['form']['fields'], $this->form);
 
         // dd('hier');
 
@@ -177,9 +197,13 @@ class Profile extends Component
             unset($this->form['fields']['password_confirmation']);
         }
 
+        // dd($this->model);
+
         // dd('here2', $this->form['fields']);
-        // dd('here 3', $this->form, $validatedData['form']['fields']);
-        $this->model->update($validatedData['form']['fields']);
+        // ray('here 3', $this->form, $validatedData['form']['fields'])->red();
+        $this->model->update(['fields' => $validatedData['form']['fields']]);
+
+        ray(get_class($this->model));
 
         // dd('here3');
         // dd($this->form['fields'], $this->rules(), $this->model);
