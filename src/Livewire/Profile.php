@@ -109,27 +109,16 @@ class Profile extends Component
 
     public function mount()
     {
-        ray('MOUNT - Before checkAuthorization')->blue();
         $this->checkAuthorization();
-
-        ray('MOUNT - Before auth()->user()')->blue();
         $this->model = Auth::user();
-        ray('MOUNT - After auth()->user() - model type: ' . get_class($this->model))->blue();
-
         $this->form = $this->model->attributesToArray();
-        ray('MOUNT - After attributesToArray - model type: ' . get_class($this->model))->blue();
     }
 
     public function hydrate()
     {
-        ray('HYDRATE - Before fix - model type: ' . get_class($this->model))->purple();
-        
-        // Re-fetch the user model to ensure correct type
         if ($this->model && isset($this->model->id)) {
             $this->model = Auth::user();
         }
-        
-        ray('HYDRATE - After fix - model type: ' . get_class($this->model))->purple();
     }
 
     public function dehydrate()
@@ -161,23 +150,13 @@ class Profile extends Component
 
     public function save()
     {
-        ray('SAVE - Start - model type: ' . get_class($this->model))->red();
-        //   ray($this->form['fields']);
-        // $this->validate();
-
         $validatedData = $this->validate();
-        // ray($validatedData['form']['fields'], $this->form);
 
-        // dd('hier');
-
-        // if $this->form['fields']['current_password'] and  is set, save password
         if (optional($this->form['fields'])['current_password'] && optional($this->form['fields'])['password']) {
-
             $this->model->update([
                 'password' => $this->form['fields']['password'],
             ]);
 
-            // unset password fields
             unset($this->form['fields']['current_password']);
             unset($this->form['fields']['password']);
             unset($this->form['fields']['password_confirmation']);
@@ -186,35 +165,23 @@ class Profile extends Component
             unset($validatedData['form']['fields']['password']);
             unset($validatedData['form']['fields']['password_confirmation']);
 
-            // Logout other devices
-
             $this->logoutOtherBrowserSessions();
-
         }
+
         if (empty(optional($this->form['fields'])['password'])) {
             unset($this->form['fields']['current_password']);
             unset($this->form['fields']['password']);
             unset($this->form['fields']['password_confirmation']);
         }
 
-        // dd($this->model);
-
-        // dd('here2', $this->form['fields']);
-        // ray('here 3', $this->form, $validatedData['form']['fields'])->red();
         $this->model->update(['fields' => $validatedData['form']['fields']]);
 
-        ray(get_class($this->model));
-
-        // dd('here3');
-        // dd($this->form['fields'], $this->rules(), $this->model);
         return $this->notify(__('Successfully updated'));
     }
 
     public function updateField($data)
     {
-        // dd($data);
         $this->form['fields'][$data['slug']] = $data['value'];
-        // $this->save();
 
         $this->dispatch('selectedMediaUpdated', [
             'slug' => $data['slug'],
