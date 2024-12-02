@@ -41,7 +41,7 @@
             }
         }
     </style>
-    <x-aura::fields.conditions :field="$field" :model="$this">
+    <x-aura::fields.conditions :field="$field" :model="$this->model">
         <div wire:key="resource-field-{{ $key }}"
         id="resource-field-{{ optional($field)['slug'] }}-wrapper">
         <x-dynamic-component :component="$field['field']->edit()" :field="$field" :form="$form" mode="edit" />
