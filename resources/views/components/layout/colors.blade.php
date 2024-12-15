@@ -1024,6 +1024,7 @@
     $selectedPalette = $settings['color-palette'] ?? 'aura';
     $selectedGrayPalette = $settings['gray-color-palette'] ?? 'slate';
 
+
     if ($selectedPalette === 'custom') {
         $colors = [];
         foreach ($colorShades as $shade) {

@@ -92,13 +92,17 @@ class Resource extends Model
      */
     public function __get($key)
     {
-        $value = parent::__get($key);
+        try {
+            $value = parent::__get($key);
 
-        if ($value) {
-            return $value;
+            if ($value) {
+                return $value;
+            }
+        } catch (\Exception $e) {
+            $value = null;
         }
 
-        if ($this->getFieldSlugs()->contains($key)) {
+        if ($this   ->getFieldSlugs()->contains($key)) {
             $fieldClass = $this->fieldClassBySlug($key);
             if ($fieldClass->isRelation()) {
                 $field = $this->fieldBySlug($key);
