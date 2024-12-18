@@ -19,18 +19,20 @@ class TeamScope implements Scope
             return $builder;
         }
 
-        return $builder;
-
-        return $builder;
+        // return $builder;
 
         // If the Model is a Team Resource, don't apply the scope
-        if (auth()->user() && $model instanceof \Aura\Base\Resources\Team) {
-            return $builder->whereId(auth()->user()->current_team_id);
-        }
+        $teamClass = app(config('aura.resources.team'));
+        
+        // if (auth()->user() && $model instanceof $teamClass) {
+        //     return $builder->whereId(auth()->user()->current_team_id);
+        // }
 
-        if (auth()->user() && $model instanceof \Aura\Base\Resources\Role) {
-            return $builder->where('posts.team_id', auth()->user()->current_team_id);
-        }
+        // if (auth()->user() && $model instanceof \Aura\Base\Resources\Role) {
+        //     return $builder->where('posts.team_id', auth()->user()->current_team_id);
+        // }
+
+       // return $builder;
 
         // if (auth()->user() && $model->getTable() == 'posts') {
         //     return $builder->where('posts.team_id', auth()->user()->current_team_id);
@@ -39,6 +41,10 @@ class TeamScope implements Scope
         // if(auth()->guest()) {
         //     return $builder;
         // }
+
+        return $builder;
+
+    dd(auth()->user()->current_team_id);
 
         if (auth()->user() && $model->getTable() == 'posts') {
             return $builder->where($model->getTable().'.team_id', auth()->user()->current_team_id);
