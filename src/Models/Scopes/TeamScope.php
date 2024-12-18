@@ -21,13 +21,9 @@ class TeamScope implements Scope
             return $builder;
         }
 
-         // Get user without triggering scopes
-         $user = auth()->user();
-        
-         if (!$user) {
+         if (auth()->guest()) {
              return $builder;
          }
- 
 
         $userClass = app(config('aura.resources.user'));
 
@@ -46,7 +42,7 @@ class TeamScope implements Scope
         }
 
         // Get user without triggering scopes
-        $user = auth()->user();
+        $user = auth()->getUser();
         
         if (!$user) {
             return $builder;
@@ -63,7 +59,7 @@ class TeamScope implements Scope
         if($model->getTable() == 'teams') {
             return $builder;
         }
-
+        
         // Temporary Fix
         if($model->getTable() == 'users') {
             return $builder;
