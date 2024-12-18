@@ -21,9 +21,9 @@ class TeamScope implements Scope
             return $builder;
         }
 
-         if (auth()->guest()) {
-             return $builder;
-         }
+        if (app()->runningInConsole()) {
+            return $builder;
+        }
 
         $userClass = app(config('aura.resources.user'));
 
