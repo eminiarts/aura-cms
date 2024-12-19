@@ -22,6 +22,7 @@ class TeamScope implements Scope
         }
 
         if (app()->runningInConsole()) {
+            ray('runningInConsole')->red();
             return $builder;
         }
 
