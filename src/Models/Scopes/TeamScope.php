@@ -21,8 +21,8 @@ class TeamScope implements Scope
             return $builder;
         }
 
+        // Don't apply scope in console
         if (app()->runningInConsole()) {
-            ray('runningInConsole')->red();
             return $builder;
         }
 
