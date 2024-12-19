@@ -42,8 +42,13 @@ class TeamScope implements Scope
             // return $builder->whereId(auth()->user()->current_team_id);
         }
 
+
+        // Temporary Fix
+        if($model->getTable() == 'users') {
+            return $builder;
+        } 
         // Get user without triggering scopes
-        $user = auth()->getUser();
+        $user = auth()->user();
         
         if (!$user) {
             return $builder;
@@ -61,10 +66,6 @@ class TeamScope implements Scope
             return $builder;
         }
         
-        // Temporary Fix
-        if($model->getTable() == 'users') {
-            return $builder;
-        }
 
         return $builder->where($model->getTable().'.team_id', $currentTeamId);
     }
