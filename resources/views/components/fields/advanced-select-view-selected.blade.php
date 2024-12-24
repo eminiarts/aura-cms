@@ -1,7 +1,7 @@
 <div class="flex items-center space-x-2 advanced-select-view-selected">
     @if(isset($field['thumbnail']) && $field['thumbnail'] && $field['thumbnail'] != '')
-        @if($item->{$field['thumbnail']})
-            <x-aura::image :id="$item->{$field['thumbnail']}" alt="{{ $item->title() }}" class="object-cover w-6 h-6 rounded-full shrink-0" />
+        @if($item->{$field['thumbnail']} && $item->{$field['thumbnail']}[0])
+            <x-aura::image :id="$item->{$field['thumbnail']}[0]" alt="{{ $item->title() }}" class="object-cover w-6 h-6 rounded-full shrink-0" />
         @else
             <div class="flex justify-center items-center w-6 h-6 bg-gray-300 rounded-full">
                 {{-- <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">

@@ -1,6 +1,9 @@
 @php
     $settings = app('aura')::getOption('settings') ?? [];
-    $appSettings = app('aura')::options();
+    $appSettings = app('aura')::options() ?? [];
+
+    $settings = empty($settings) ? config('aura.theme') : $settings;
+    $appSettings = empty($appSettings) ? config('aura.theme') : $appSettings;
 @endphp
 
 <style>[x-cloak] {
