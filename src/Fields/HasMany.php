@@ -100,12 +100,19 @@ class HasMany extends Field
         if (isset($field['column'])) {
             return $model->hasMany($field['resource'], $field['column']);
         }
-        ray($field);
-
+    
+        if ($field['reverse'] ?? false) {
+            return $model
+                ->morphedByMany($field['resource'], 'related', 'post_relations', 'resource_id', 'related_id')
+                ->withTimestamps()
+                ->withPivot('related_type')
+                ->wherePivot('related_type', $field['resource']);
+        }
+    
         return $model
-            ->morphedByMany($field['resource'], 'related', 'post_relations', 'resource_id', 'related_id')
+            ->morphedByMany($field['resource'], 'resource', 'post_relations', 'related_id', 'resource_id')
             ->withTimestamps()
-            ->withPivot('related_type')
-            ->wherePivot('related_type', $field['resource']);
+            ->withPivot('resource_type')
+            ->wherePivot('resource_type', $field['resource']);
     }
 }

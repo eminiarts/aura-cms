@@ -254,6 +254,16 @@ class AdvancedSelect extends Field
 
         $morphClass = $field['resource'];
 
+        if ($field['reverse'] ?? false) {
+            return $model
+                ->morphToMany($morphClass, 'related', 'post_relations', 'related_id', 'resource_id')
+                ->withTimestamps()
+                ->withPivot('resource_type', 'slug', 'order')
+                ->wherePivot('resource_type', $morphClass)
+                ->wherePivot('slug', $field['slug'])
+                ->orderBy('post_relations.order');
+        }
+
         return $model
             ->morphToMany($morphClass, 'resource', 'post_relations', 'resource_id', 'related_id')
             ->withTimestamps()
