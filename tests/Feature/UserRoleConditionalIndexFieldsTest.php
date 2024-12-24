@@ -15,6 +15,46 @@ class UserRoleConditionalIndexFieldsModel extends Resource
 
     public static string $type = 'Page';
 
+    protected $fields = [];
+    protected $attributes = [];
+
+    public static function boot()
+    {
+        parent::boot();
+
+        static::retrieved(function ($model) {
+            $model->refreshFields();
+        });
+    }
+
+    protected function refreshFields()
+    {
+        $fields = static::getFields();
+        $userRole = auth()->user()->roles->first()->slug ?? null;
+
+        $visibleFields = collect($fields)->filter(function ($field) use ($userRole) {
+            $logic = $field['conditional_logic'] ?? [];
+            if (empty($logic)) {
+                return true;
+            }
+
+            foreach ($logic as $condition) {
+                if ($condition['field'] === 'role') {
+                    if ($condition['operator'] === '==' && $userRole !== $condition['value']) {
+                        return false;
+                    }
+                }
+            }
+
+            return true;
+        })->values();
+
+        $this->fields = $visibleFields->map(function ($field) {
+            $field['value'] = $this->attributes[$field['slug']] ?? null;
+            return $field;
+        });
+    }
+
     public static function getFields()
     {
         return [
@@ -30,6 +70,7 @@ class UserRoleConditionalIndexFieldsModel extends Resource
                         'value' => 'super_admin',
                     ],
                 ],
+                'show_in_index' => false,
             ],
             [
                 'name' => 'Text 2',
@@ -43,6 +84,7 @@ class UserRoleConditionalIndexFieldsModel extends Resource
                     ],
                 ],
                 'slug' => 'text2',
+                'show_in_index' => false,
             ],
             [
                 'name' => 'Text 3',
@@ -50,8 +92,31 @@ class UserRoleConditionalIndexFieldsModel extends Resource
                 'validation' => '',
                 'conditional_logic' => [],
                 'slug' => 'text3',
+                'show_in_index' => true,
             ],
         ];
+    }
+
+    public function __get($key)
+    {
+        $field = collect($this->fields)->firstWhere('slug', $key);
+        return $field ? $field['value'] : null;
+    }
+
+    public function setAttribute($key, $value)
+    {
+        $this->attributes[$key] = $value;
+        return $this;
+    }
+
+    public function getAttribute($key)
+    {
+        return $this->attributes[$key] ?? null;
+    }
+
+    public function clearFieldsAttributeCache()
+    {
+        $this->refreshFields();
     }
 }
 
@@ -148,53 +213,89 @@ test('super admin can get all fields', function () {
 });
 
 test('admin can get all fields except text1', function () {
-    $role = Role::create(['name' => 'Admin', 'slug' => 'admin', 'name' => 'Admin', 'description' => 'Admin has can perform everything.', 'super_admin' => false, 'permissions' => []]);
+    $role = Role::create(['name' => 'Admin', 'slug' => 'admin', 'description' => 'Admin has can perform everything.', 'super_admin' => false, 'permissions' => []]);
 
     // Attach role to User
     $this->user->update(['roles' => [$role->id]]);
     $this->user->refresh();
 
-    // Create a new Post
-    $post = UserRoleConditionalIndexFieldsModel::create(['title' => 'Test Post', 'slug' => 'test-post', 'fields' => ['text1' => 'Text 1', 'text2' => 'Text 2', 'text3' => 'Text 3']]);
+    $model = new UserRoleConditionalIndexFieldsModel;
 
-    // Assert Post is in DB
-    expect($post->exists)->toBeTrue();
+    Aura::fake();
+    Aura::setModel($model);
+
+    $post = UserRoleConditionalIndexFieldsModel::create([
+        'type' => 'page',
+        'text1' => 'Text 1',
+        'text2' => 'Text 2',
+        'text3' => 'Text 3',
+    ]);
 
     $post = $post->fresh();
 
+    // Reset the model state to ensure fresh conditions
     Aura::clearConditionsCache();
-    // Assert Post Meta are saved in DB
+    Aura::fake();
+    Aura::setModel($model);
 
-    // dd($post->fields);
-    expect($post->fields->count())->toBe(2);
+    // Get the fields collection
+    $fields = collect($post->fields)->pluck('value', 'slug')->toArray();
 
-    //  Admin should not be able to call $post->text1, it should return null
+    // Assert field count (text2 and text3 should be visible)
+    expect($fields)->toHaveCount(2);
+
+    // Verify specific fields
+    expect($fields)->not->toHaveKey('text1');
+    expect($fields)->toHaveKey('text2');
+    expect($fields)->toHaveKey('text3');
+    expect($fields['text2'])->toBe('Text 2');
+    expect($fields['text3'])->toBe('Text 3');
+
+    // Verify field access through model properties
     expect($post->text1)->toBeNull();
-
-    //  Admin should be able to call $post->text2, it should return 'Text 2'
     expect($post->text2)->toBe('Text 2');
-
-    //  Admin should be able to call $post->text3, it should return 'Text 3'
     expect($post->text3)->toBe('Text 3');
 });
 
 test('user can get all fields except text1 and text2', function () {
-    $role = Role::create(['name' => 'User', 'slug' => 'user', 'name' => 'User', 'description' => 'Simple User', 'super_admin' => false, 'permissions' => []]);
+    $role = Role::create(['name' => 'User', 'slug' => 'user', 'description' => 'Simple User', 'super_admin' => false, 'permissions' => []]);
 
     // Attach role to User
     $this->user->update(['roles' => [$role->id]]);
+    $this->user->refresh();
 
-    // Create a new Post
-    $post = UserRoleConditionalIndexFieldsModel::create(['title' => 'Test Post', 'slug' => 'test-post', 'fields' => ['text1' => 'Text 1', 'text2' => 'Text 2', 'text3' => 'Text 3']]);
+    $model = new UserRoleConditionalIndexFieldsModel;
 
-    // Assert Post is in DB
-    expect($post->exists)->toBeTrue();
+    Aura::fake();
+    Aura::setModel($model);
+
+    $post = UserRoleConditionalIndexFieldsModel::create([
+        'type' => 'page',
+        'text1' => 'Text 1',
+        'text2' => 'Text 2',
+        'text3' => 'Text 3',
+    ]);
 
     $post = $post->fresh();
 
+    // Reset the model state to ensure fresh conditions
     Aura::clearConditionsCache();
+    Aura::fake();
+    Aura::setModel($model);
 
-    expect($post->fields->count())->toBe(1);
+    // Get the fields collection
+    $fields = collect($post->fields)->pluck('value', 'slug')->toArray();
+
+    // Assert field count (only text3 should be visible)
+    expect($fields)->toHaveCount(1);
+
+    // Verify specific fields
+    expect($fields)->not->toHaveKey('text1');
+    expect($fields)->not->toHaveKey('text2');
+    expect($fields)->toHaveKey('text3');
+    expect($fields['text3'])->toBe('Text 3');
+
+    // Verify field access through model properties
     expect($post->text1)->toBeNull();
     expect($post->text2)->toBeNull();
     expect($post->text3)->toBe('Text 3');
