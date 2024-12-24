@@ -5,7 +5,6 @@ namespace Aura\Base\Policies;
 use Aura\Base\Resources\Team;
 use Aura\Base\Resources\User;
 use Illuminate\Auth\Access\HandlesAuthorization;
-use Illuminate\Support\Facades\Gate;
 
 class TeamPolicy
 {
@@ -18,7 +17,7 @@ class TeamPolicy
      */
     public function addTeamMember(User $user, Team $team)
     {
-        if (Gate::allows('AuraGlobalAdmin')) {
+        if ($user->isAuraGlobalAdmin()) {
             return true;
         }
 
@@ -40,7 +39,7 @@ class TeamPolicy
             return false;
         }
 
-        if (Gate::allows('AuraGlobalAdmin')) {
+        if ($user->isAuraGlobalAdmin()) {
             return true;
         }
 
@@ -54,7 +53,7 @@ class TeamPolicy
      */
     public function delete(User $user, Team $team)
     {
-        if (Gate::allows('AuraGlobalAdmin')) {
+        if ($user->isAuraGlobalAdmin()) {
             return true;
         }
 
@@ -63,7 +62,7 @@ class TeamPolicy
 
     public function inviteUsers(User $user, Team $team)
     {
-        if (Gate::allows('AuraGlobalAdmin')) {
+        if ($user->isAuraGlobalAdmin()) {
             return true;
         }
 
@@ -82,7 +81,7 @@ class TeamPolicy
     public function removeTeamMember(User $user, Team $team)
     {
 
-        if (Gate::allows('AuraGlobalAdmin')) {
+        if ($user->isAuraGlobalAdmin()) {
             return true;
         }
 
@@ -99,7 +98,7 @@ class TeamPolicy
         if ($team::$editEnabled === false) {
             return false;
         }
-        if (Gate::allows('AuraGlobalAdmin')) {
+        if ($user->isAuraGlobalAdmin()) {
             return true;
         }
 
@@ -114,7 +113,7 @@ class TeamPolicy
     public function updateTeamMember(User $user, Team $team)
     {
 
-        if (Gate::allows('AuraGlobalAdmin')) {
+        if ($user->isAuraGlobalAdmin()) {
             return true;
         }
 
@@ -151,7 +150,7 @@ class TeamPolicy
             return false;
         }
 
-        if (Gate::allows('AuraGlobalAdmin')) {
+        if ($user->isAuraGlobalAdmin()) {
             return true;
         }
 
