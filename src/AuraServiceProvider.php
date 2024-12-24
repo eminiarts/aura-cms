@@ -330,7 +330,6 @@ class AuraServiceProvider extends PackageServiceProvider
             return app(Aura::class);
         });
 
-
         app('aura')::registerResources([
             config('aura.resources.attachment'),
             config('aura.resources.option'),
@@ -338,7 +337,6 @@ class AuraServiceProvider extends PackageServiceProvider
             config('aura.resources.role'),
             config('aura.resources.user'),
         ]);
-
 
         if (config('aura.teams')) {
             app('aura')::registerResources([

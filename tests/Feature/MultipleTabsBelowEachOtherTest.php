@@ -97,7 +97,7 @@ test('multiple tabs in panels in tabs are possible', function () {
     expect($fields)->toHaveCount(1);
     expect($fields[0]['name'])->toBe('Aura\Base\Fields\Tabs');
     expect($fields[0]['fields'])->toHaveCount(1);
-    
+
     // Check Tab 1
     expect($fields[0]['fields'][0]['name'])->toBe('Tab 1');
     expect($fields[0]['fields'][0]['_id'])->toBe(2);

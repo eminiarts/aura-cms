@@ -14,7 +14,7 @@ class ResourceEditorFake extends ResourceEditor
         $this->slug = $slug;
         $this->model = Aura::findResourceBySlug($slug);
         $this->checkAuthorization();
-        
+
         // Initialize with exactly the fields from getFields()
         $this->fieldsArray = $this->model->getFields();
         $this->newFields = $this->model->mapToGroupedFields($this->fieldsArray);
@@ -118,14 +118,14 @@ it('current resource fields', function () {
 
 it('can add fields', function () {
     $component = Livewire::test(ResourceEditorFake::class, ['slug' => 'Model']);
-    
+
     // Verify initial state
     expect($component->fieldsArray)->toHaveCount(3);
 
     $component->call('saveNewField', [
         'type' => "Aura\Base\Fields\Text",
         'slug' => 'description',
-        'name' => 'Description'
+        'name' => 'Description',
     ], 0, 'tab-1');
 
     expect($component->fieldsArray)->toBeArray();
@@ -134,7 +134,7 @@ it('can add fields', function () {
     $component->call('saveNewField', [
         'type' => "Aura\Base\Fields\Text",
         'slug' => 'description2',
-        'name' => 'Description2'
+        'name' => 'Description2',
     ], 0, 'tab-1');
 
     expect($component->fieldsArray)->toHaveCount(5);
@@ -142,7 +142,7 @@ it('can add fields', function () {
     $component->call('saveNewField', [
         'type' => "Aura\Base\Fields\Text",
         'slug' => 'description3',
-        'name' => 'Description3'
+        'name' => 'Description3',
     ], 0, 'tab-1');
 
     expect($component->fieldsArray)->toHaveCount(6);
@@ -150,19 +150,19 @@ it('can add fields', function () {
 
 it('can delete fields', function () {
     $component = Livewire::test(ResourceEditorFake::class, ['slug' => 'Model']);
-    
+
     // Verify initial state
     expect($component->fieldsArray)->toHaveCount(3);
 
     $component->call('deleteField', [
-        'slug' => 'panel-1'
+        'slug' => 'panel-1',
     ]);
 
     expect($component->fieldsArray)->toBeArray();
     expect($component->fieldsArray)->toHaveCount(2);
 
     $component->call('deleteField', [
-        'slug' => 'total'
+        'slug' => 'total',
     ]);
 
     expect($component->fieldsArray)->toHaveCount(1);

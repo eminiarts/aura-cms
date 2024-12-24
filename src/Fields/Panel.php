@@ -8,9 +8,9 @@ class Panel extends Field
 
     public bool $group = true;
 
-    public bool $sameLevelGrouping = true;
-
     public $optionGroup = 'Structure Fields';
+
+    public bool $sameLevelGrouping = true;
 
     // Type Panel is used for grouping fields. A Panel can't be nested inside another Panel or other grouped Fields.
     public string $type = 'panel';
@@ -22,6 +22,7 @@ class Panel extends Field
             if ($field['slug'] === 'searchable') {
                 return false;
             }
+
             return ! str_starts_with($field['slug'], 'on_');
         })->toArray();
 

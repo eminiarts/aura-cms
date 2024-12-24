@@ -27,11 +27,11 @@ abstract class Field implements Wireable
 
     public $optionGroup = 'Fields';
 
+    public bool $sameLevelGrouping = false;
+
     public $tableColumnType = 'string';
 
     public $tableNullable = true;
-
-    public bool $sameLevelGrouping = false;
 
     public bool $taxonomy = false;
 

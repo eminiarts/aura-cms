@@ -1,16 +1,15 @@
 <?php
 
-use Livewire\Livewire;
-use Aura\Base\Resource;
 use Aura\Base\Facades\Aura;
-use Aura\Base\Resources\Tag;
-use Aura\Base\Resources\Post;
-use Aura\Base\Resources\User;
-use Illuminate\Support\Facades\DB;
 use Aura\Base\Livewire\Table\Table;
-use Illuminate\Support\Facades\Log;
+use Aura\Base\Resource;
+use Aura\Base\Resources\Post;
+use Aura\Base\Resources\Tag;
+use Aura\Base\Resources\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Contracts\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Livewire\Livewire;
 
 uses(RefreshDatabase::class);
 
@@ -19,7 +18,7 @@ beforeEach(function () {
     Aura::fake();
     Aura::registerResources([TableTaxonomyFilterModel::class]);
     Aura::setModel(new TableTaxonomyFilterModel);
-    
+
     // Create User
     $this->actingAs($this->user = createSuperAdmin());
 });
@@ -98,7 +97,7 @@ test('table filter - taxonomy filter', function () {
 
     DB::listen(function ($query) {
         // Log the query to the console or store it for inspection
-         // Log::info($query->sql, $query->bindings, $query->time);
+        // Log::info($query->sql, $query->bindings, $query->time);
     });
 
     $relations = DB::table('post_relations')->get();
@@ -109,7 +108,7 @@ test('table filter - taxonomy filter', function () {
     $component->set('filters.custom', [[
         'filters' => [[
             'name' => 'tags',
-            'operator' => 'contains', 
+            'operator' => 'contains',
             'value' => [$tag1->id],
             'options' => [
                 'resource_type' => 'Aura\\Base\\Resources\\Tag',
@@ -120,6 +119,7 @@ test('table filter - taxonomy filter', function () {
     // Should have 1 item
     $component->assertViewHas('rows', function ($rows) use ($post) {
         ray($rows->items());
+
         return count($rows->items()) === 1 && $rows->items()[0]->id === $post->id;
     });
 
@@ -127,7 +127,7 @@ test('table filter - taxonomy filter', function () {
     $component->set('filters.custom', [[
         'filters' => [[
             'name' => 'tags',
-            'operator' => 'contains', 
+            'operator' => 'contains',
             'value' => [$tag3->id],
             'options' => [
                 'resource_type' => 'Aura\\Base\\Resources\\Tag',
@@ -144,7 +144,7 @@ test('table filter - taxonomy filter', function () {
     $component->set('filters.custom', [[
         'filters' => [[
             'name' => 'tags',
-            'operator' => 'contains', 
+            'operator' => 'contains',
             'value' => [$tag4->id],
             'options' => [
                 'resource_type' => 'Aura\\Base\\Resources\\Tag',
@@ -161,7 +161,7 @@ test('table filter - taxonomy filter', function () {
     $component->set('filters.custom', [[
         'filters' => [[
             'name' => 'tags',
-            'operator' => 'contains', 
+            'operator' => 'contains',
             'value' => [$tag1->id, $tag4->id],
             'options' => [
                 'resource_type' => 'Aura\\Base\\Resources\\Tag',
@@ -184,7 +184,7 @@ test('table filter - taxonomy filter', function () {
     $component->set('filters.custom', [[
         'filters' => [[
             'name' => 'tags',
-            'operator' => 'contains', 
+            'operator' => 'contains',
             'value' => [$tag6->id],
             'options' => [
                 'resource_type' => 'Aura\\Base\\Resources\\Tag',
@@ -197,17 +197,13 @@ test('table filter - taxonomy filter', function () {
         return count($rows->items()) === 0;
     });
 
-
     // Should have 0 items
     $component->assertViewHas('rows', function ($rows) {
         return count($rows->items()) === 0;
     });
 
-    
     // Inspect the raw SQL query
     $rawSql = $component->instance()->rowsQuery()->toRawSql();
     expect($rawSql)->toContain('select * from "posts" where (("id" in (select "related_id" from "post_relations" where "post_relations"."related_type" = \'TableTaxonomyFilterModel\' and "post_relations"."resource_type" = \'Aura\Base\Resources\Tag\' and "post_relations"."slug" = \'tags\' and "post_relations"."resource_id" in (8)))) and "posts"."type" = \'TableTaxonomy\' order by "posts"."id" desc');
-
-    
 
 });

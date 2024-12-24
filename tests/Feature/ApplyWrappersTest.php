@@ -87,8 +87,6 @@ test('fields get grouped when field group is true', function () {
 
     expect($fields)->toHaveCount(1); // Because of the wrapper
 
-
-
     expect($fields[0])->toHaveKeys([
         'label', 'name', 'type', 'slug', 'field', '_id', '_parent_id',
         'conditional_logic', 'fields',

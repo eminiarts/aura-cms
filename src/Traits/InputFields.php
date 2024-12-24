@@ -230,6 +230,23 @@ trait InputFields
         return $this->sendThroughPipeline($fields, $pipes);
     }
 
+    public function getFieldsWithIds()
+    {
+        return $this->sendThroughPipeline($this->fieldsCollection(), [
+            MapFields::class,
+            ApplyWrappers::class,
+            AddIdsToFields::class,
+        ]);
+    }
+
+    public function getFieldsWithIdsWithoutWrappers()
+    {
+        return $this->sendThroughPipeline($this->fieldsCollection(), [
+            MapFields::class,
+            AddIdsToFields::class,
+        ]);
+    }
+
     // Used in Resource
     // public function getFieldsWithIds($fields = null)
     // {
@@ -337,23 +354,6 @@ trait InputFields
             ApplyParentDisplayAttributes::class,
             FilterViewFields::class,
             BuildTreeFromFields::class,
-        ]);
-    }
-
-    public function getFieldsWithIds()
-    {
-        return $this->sendThroughPipeline($this->fieldsCollection(), [
-            MapFields::class,
-            ApplyWrappers::class,
-            AddIdsToFields::class,
-        ]);
-    }
-
-    public function getFieldsWithIdsWithoutWrappers()
-    {
-        return $this->sendThroughPipeline($this->fieldsCollection(), [
-            MapFields::class,
-            AddIdsToFields::class,
         ]);
     }
 }

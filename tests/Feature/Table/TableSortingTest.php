@@ -17,7 +17,6 @@ beforeEach(function () {
     Aura::setModel(new MetaSortingModel);
 });
 
-
 // Create Resource for this test
 class MetaSortingModel extends Resource
 {
@@ -140,7 +139,6 @@ test('table default sorting', function () {
         return $rows->items()[1]->id === $post2->id;
     });
 });
-
 
 test('table sorting by meta field', function () {
     // Create a Posts

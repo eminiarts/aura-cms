@@ -3,7 +3,6 @@
 namespace Aura\Base\Pipeline;
 
 use Closure;
-use InvalidArgumentException;
 
 class AddIdsToFields implements Pipe
 {
@@ -48,6 +47,7 @@ class AddIdsToFields implements Pipe
                 }
 
                 $processedFields[] = $item;
+
                 continue;
             }
 
@@ -61,6 +61,7 @@ class AddIdsToFields implements Pipe
                 $item['_parent_id'] = $globalTabs ? $globalTabs['_id'] : null;
                 $parentStack = [$item];
                 $processedFields[] = $item;
+
                 continue;
             }
 
@@ -93,14 +94,14 @@ class AddIdsToFields implements Pipe
                     }
 
                     // If no wrapper found, use current parent
-                    if (!isset($item['_parent_id'])) {
+                    if (! isset($item['_parent_id'])) {
                         $item['_parent_id'] = $currentParent ? $currentParent['_id'] : null;
                     }
                 }
                 // Check for sameLevelGrouping, considering special case for panels under tabs
                 elseif (
                     // Check if same_level_grouping is not explicitly set to false in the item
-                    (!isset($item['same_level_grouping']) || $item['same_level_grouping'] !== false) &&
+                    (! isset($item['same_level_grouping']) || $item['same_level_grouping'] !== false) &&
                     // And check if sameLevelGrouping is true in the field
                     isset($item['field']->sameLevelGrouping) &&
                     $item['field']->sameLevelGrouping === true
@@ -134,8 +135,7 @@ class AddIdsToFields implements Pipe
                         $lastGroupId = $currentParent ? $currentParent['_id'] : null;
                         $item['_parent_id'] = $lastGroupId;
                     }
-                }
-                else {
+                } else {
                     $item['_parent_id'] = $currentParent ? $currentParent['_id'] : null;
                 }
 
@@ -157,9 +157,10 @@ class AddIdsToFields implements Pipe
                 $field['_parent_id'] = null;
             }
             // Also ensure _parent_id exists in idMap
-            if ($field['_parent_id'] && !in_array($field['_parent_id'], $idMap)) {
+            if ($field['_parent_id'] && ! in_array($field['_parent_id'], $idMap)) {
                 $field['_parent_id'] = null;
             }
+
             return $field;
         });
 

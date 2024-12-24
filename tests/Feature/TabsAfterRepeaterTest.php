@@ -52,9 +52,6 @@ test('tab is not grouped in repeater', function () {
 
     $fields = $model->getGroupedFields();
 
-
-
-
     // ray(json_encode($fields))->red();
     // ray($fields)->red();
 

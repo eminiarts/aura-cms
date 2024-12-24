@@ -110,13 +110,12 @@ test('panel 2 is nested in tab 2 of panel 1', function () {
     $panel2 = $fields->where('slug', 'panel2')->first();
 
     expect($panel2)->toBeArray();
-    
+
     expect($panel2['_parent_id'])->toBe(7);
 
     // dd('done');
 
     $fields = $model->getGroupedFields();
-
 
     ray($fields)->red()->once();
 

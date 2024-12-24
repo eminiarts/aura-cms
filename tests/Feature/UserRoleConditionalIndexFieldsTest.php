@@ -15,8 +15,16 @@ class UserRoleConditionalIndexFieldsModel extends Resource
 
     public static string $type = 'Page';
 
-    protected $fields = [];
     protected $attributes = [];
+
+    protected $fields = [];
+
+    public function __get($key)
+    {
+        $field = collect($this->fields)->firstWhere('slug', $key);
+
+        return $field ? $field['value'] : null;
+    }
 
     public static function boot()
     {
@@ -27,32 +35,14 @@ class UserRoleConditionalIndexFieldsModel extends Resource
         });
     }
 
-    protected function refreshFields()
+    public function clearFieldsAttributeCache()
     {
-        $fields = static::getFields();
-        $userRole = auth()->user()->roles->first()->slug ?? null;
+        $this->refreshFields();
+    }
 
-        $visibleFields = collect($fields)->filter(function ($field) use ($userRole) {
-            $logic = $field['conditional_logic'] ?? [];
-            if (empty($logic)) {
-                return true;
-            }
-
-            foreach ($logic as $condition) {
-                if ($condition['field'] === 'role') {
-                    if ($condition['operator'] === '==' && $userRole !== $condition['value']) {
-                        return false;
-                    }
-                }
-            }
-
-            return true;
-        })->values();
-
-        $this->fields = $visibleFields->map(function ($field) {
-            $field['value'] = $this->attributes[$field['slug']] ?? null;
-            return $field;
-        });
+    public function getAttribute($key)
+    {
+        return $this->attributes[$key] ?? null;
     }
 
     public static function getFields()
@@ -97,26 +87,40 @@ class UserRoleConditionalIndexFieldsModel extends Resource
         ];
     }
 
-    public function __get($key)
-    {
-        $field = collect($this->fields)->firstWhere('slug', $key);
-        return $field ? $field['value'] : null;
-    }
-
     public function setAttribute($key, $value)
     {
         $this->attributes[$key] = $value;
+
         return $this;
     }
 
-    public function getAttribute($key)
+    protected function refreshFields()
     {
-        return $this->attributes[$key] ?? null;
-    }
+        $fields = static::getFields();
+        $userRole = auth()->user()->roles->first()->slug ?? null;
 
-    public function clearFieldsAttributeCache()
-    {
-        $this->refreshFields();
+        $visibleFields = collect($fields)->filter(function ($field) use ($userRole) {
+            $logic = $field['conditional_logic'] ?? [];
+            if (empty($logic)) {
+                return true;
+            }
+
+            foreach ($logic as $condition) {
+                if ($condition['field'] === 'role') {
+                    if ($condition['operator'] === '==' && $userRole !== $condition['value']) {
+                        return false;
+                    }
+                }
+            }
+
+            return true;
+        })->values();
+
+        $this->fields = $visibleFields->map(function ($field) {
+            $field['value'] = $this->attributes[$field['slug']] ?? null;
+
+            return $field;
+        });
     }
 }
 

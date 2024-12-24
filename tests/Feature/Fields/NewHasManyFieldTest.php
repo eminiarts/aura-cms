@@ -141,7 +141,7 @@ test('displays attached movies on view genre page', function () {
     // Aura::setModel($genre1);
 
     $model = new NewGenreModel;
-    
+
     Aura::fake();
     Aura::setModel(new NewMovieModel);
 

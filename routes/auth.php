@@ -1,27 +1,27 @@
 <?php
 
-use Illuminate\Support\Str;
-use Laravel\Fortify\RoutePath;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Route;
-use Aura\Base\Http\Controllers\SwitchTeamController;
-use Aura\Base\Http\Controllers\Auth\PasswordController;
+use Aura\Base\Http\Controllers\Auth\AuthenticatedSessionController;
+use Aura\Base\Http\Controllers\Auth\ConfirmablePasswordController;
+use Aura\Base\Http\Controllers\Auth\EmailVerificationNotificationController;
+use Aura\Base\Http\Controllers\Auth\EmailVerificationPromptController;
+use Aura\Base\Http\Controllers\Auth\InvitationRegisterUserController;
 use Aura\Base\Http\Controllers\Auth\NewPasswordController;
-use Aura\Base\Http\Controllers\Auth\VerifyEmailController;
-use Laravel\Fortify\Http\Controllers\RecoveryCodeController;
+use Aura\Base\Http\Controllers\Auth\PasswordController;
+use Aura\Base\Http\Controllers\Auth\PasswordResetLinkController;
 use Aura\Base\Http\Controllers\Auth\RegisteredUserController;
 use Aura\Base\Http\Controllers\Auth\TeamInvitationController;
-use Laravel\Fortify\Http\Controllers\TwoFactorQrCodeController;
-use Aura\Base\Http\Controllers\Auth\PasswordResetLinkController;
-use Aura\Base\Http\Controllers\Auth\ConfirmablePasswordController;
-use Laravel\Fortify\Http\Controllers\TwoFactorSecretKeyController;
-use Aura\Base\Http\Controllers\Auth\AuthenticatedSessionController;
-use Aura\Base\Http\Controllers\Auth\InvitationRegisterUserController;
-use Aura\Base\Http\Controllers\Auth\EmailVerificationPromptController;
-use Laravel\Fortify\Http\Controllers\TwoFactorAuthenticationController;
-use Aura\Base\Http\Controllers\Auth\EmailVerificationNotificationController;
-use Laravel\Fortify\Http\Controllers\TwoFactorAuthenticatedSessionController;
+use Aura\Base\Http\Controllers\Auth\VerifyEmailController;
+use Aura\Base\Http\Controllers\SwitchTeamController;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Str;
 use Laravel\Fortify\Http\Controllers\ConfirmedTwoFactorAuthenticationController;
+use Laravel\Fortify\Http\Controllers\RecoveryCodeController;
+use Laravel\Fortify\Http\Controllers\TwoFactorAuthenticatedSessionController;
+use Laravel\Fortify\Http\Controllers\TwoFactorAuthenticationController;
+use Laravel\Fortify\Http\Controllers\TwoFactorQrCodeController;
+use Laravel\Fortify\Http\Controllers\TwoFactorSecretKeyController;
+use Laravel\Fortify\RoutePath;
 
 Route::get('logout', [AuthenticatedSessionController::class, 'destroy'])->name('aura.logout');
 Route::post('logout', [AuthenticatedSessionController::class, 'destroy']);

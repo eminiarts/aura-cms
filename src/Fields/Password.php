@@ -81,8 +81,9 @@ class Password extends Field
      */
     public function shouldSkip($post, $field)
     {
-       if ($this->shouldSkip) {
+        if ($this->shouldSkip) {
             $this->shouldSkip = false;
+
             return true;
         }
 

@@ -1,7 +1,6 @@
 <?php
 
 use Illuminate\Support\Facades\File;
-use Illuminate\Support\Str;
 
 beforeEach(function () {
     // Create a temporary User model file for testing
@@ -20,7 +19,7 @@ class User extends Authenticatable
 PHP;
 
     // Ensure the Models directory exists
-    if (!File::exists(app_path('Models'))) {
+    if (! File::exists(app_path('Models'))) {
         File::makeDirectory(app_path('Models'), 0755, true);
     }
 

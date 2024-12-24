@@ -10,7 +10,7 @@ class MultipleTabsWithPanelsExcludeModel extends Resource
 
     public static function getFields()
     {
-       return [
+        return [
             [
                 'name' => 'Tab 1',
                 'type' => 'Aura\\Base\\Fields\\Tab',
@@ -96,7 +96,7 @@ test('panel is underneath tabs, exclude level 2', function () {
 
     expect($fields[0]['name'])->toBe('Aura\Base\Fields\Tabs');
     expect($fields[0]['fields'][0]['name'])->toBe('Tab 1');
-    
+
     // Check Panel 1
     expect($fields[0]['fields'][0]['fields'][0]['name'])->toBe('Panel 1');
     expect($fields[0]['fields'][0]['fields'][0]['_id'])->toBe(3);
@@ -114,5 +114,5 @@ test('panel is underneath tabs, exclude level 2', function () {
     expect($panel2['fields'][0]['fields'])->toHaveCount(2);
     expect($panel2['fields'][0]['fields'][0]['name'])->toBe('Tab 1 in Panel2');
     expect($panel2['fields'][0]['fields'][1]['name'])->toBe('Tab 2 in Panel2');
-    
+
 });

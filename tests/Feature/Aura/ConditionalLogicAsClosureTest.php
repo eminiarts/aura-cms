@@ -1,6 +1,5 @@
 <?php
 
-use Aura\Base\ConditionalLogic;
 use Aura\Base\Resource;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
@@ -48,7 +47,7 @@ test('Field with a conditional logic closure is accessible', function () {
     $model = ConditionalLogicAsClosureModel::create(
         [
             'text1' => 'test',
-            'text2' => 'secret'
+            'text2' => 'secret',
         ]
     );
 

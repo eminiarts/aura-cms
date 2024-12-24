@@ -145,16 +145,16 @@ class Attachment extends Resource
                     'width' => '100',
                 ],
             ],
-            [
-                'name' => 'Tags',
-                'type' => 'Aura\\Base\\Fields\\Tags',
-                'resource' => 'Aura\\Base\\Resources\\Tag',
-                'validation' => '',
-                'slug' => 'tags',
-                'style' => [
-                    'width' => '100',
-                ],
-            ],
+            // [
+            //     'name' => 'Tags',
+            //     'type' => 'Aura\\Base\\Fields\\Tags',
+            //     'resource' => 'Aura\\Base\\Resources\\Tag',
+            //     'validation' => '',
+            //     'slug' => 'tags',
+            //     'style' => [
+            //         'width' => '100',
+            //     ],
+            // ],
             [
                 'name' => 'Thumbnail',
                 'type' => 'Aura\\Base\\Fields\\ViewValue',

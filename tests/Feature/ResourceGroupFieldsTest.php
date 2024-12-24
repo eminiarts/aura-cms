@@ -122,7 +122,6 @@ class ModelWithGroups extends Resource
             ],
         ];
     }
-
 }
 
 test('fields get grouped when field group is true', function () {
