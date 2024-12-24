@@ -141,10 +141,14 @@ test('displays attached movies on view genre page', function () {
     // Aura::setModel($genre1);
 
     $model = new NewGenreModel;
+    
     Aura::fake();
+    Aura::setModel(new NewMovieModel);
+
     Aura::setModel($model);
 
     $component = Livewire::test(View::class, ['slug' => 'NewGenreModel', 'id' => $genre1->id]);
+
     // ray($component->html());
     $component
         ->assertSee('View Genre')
