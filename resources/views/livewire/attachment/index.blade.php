@@ -4,7 +4,7 @@
 
     <div class="mb-6">
         <x-aura::breadcrumbs>
-            <x-aura::breadcrumbs.li :href="route('aura.dashboard')" title="" icon="dashboard" iconClass="text-gray-500 w-7 h-7 mr-0" />
+            <x-aura::breadcrumbs.li :href="route('aura.dashboard')" title="" icon="dashboard" iconClass="text-gray-500 w-6 h-6 mr-0" />
             <x-aura::breadcrumbs.li :title="Str::plural($slug)"  />
         </x-aura::breadcrumbs.li>
     </div>

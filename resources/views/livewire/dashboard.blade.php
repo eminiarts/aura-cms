@@ -9,6 +9,8 @@
         <x-aura::dashboard.quick-actions cols="6"/>
 
         <x-aura::dashboard.users cols="4"/>
+
         <x-aura::dashboard.media cols="4"/>
+
         <x-aura::dashboard.recent-activity cols="4"/>
     </div>

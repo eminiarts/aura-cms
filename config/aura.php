@@ -68,11 +68,8 @@ return [
         'team-invitation' => Aura\Base\Resources\TeamInvitation::class,
         'role' => Aura\Base\Resources\Role::class,
         'permission' => Aura\Base\Resources\Permission::class,
-        'post' => Aura\Base\Resources\Post::class,
         'option' => Aura\Base\Resources\Option::class,
         'attachment' => Aura\Base\Resources\Attachment::class,
-        'category' => Aura\Base\Resources\Category::class,
-        'tag' => Aura\Base\Resources\Tag::class,
     ],
 
     /*
