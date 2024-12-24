@@ -36,7 +36,17 @@ trait PerPagePagination
      */
     public function mountPerPagePagination()
     {
-        $this->perPage = session()->has('perPage') ? session()->get('perPage') : $this->model()->defaultPerPage();
+        if (session()->has('perPage')) {
+            $this->perPage = session()->get('perPage');
+            return;
+        }
+
+        if (isset($this->settings['per_page'])) {
+            $this->perPage = $this->settings['per_page'];
+            return;
+        }
+
+        $this->perPage = $this->model()->defaultPerPage();
     }
 
     /**
