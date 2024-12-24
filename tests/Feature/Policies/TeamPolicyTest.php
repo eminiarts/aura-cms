@@ -79,13 +79,21 @@ test('regular user cannot add team members', function () {
     expect($this->policy->addTeamMember($this->regularUser, $this->team))->toBeFalse();
 });
 
-test('only aura global admin can create teams when enabled', function () {
+test('only aura global admin or super admin can create teams when enabled', function () {
     Team::$createEnabled = true;
     
     $this->actingAs($this->auraGlobalAdmin);
-    expect($this->policy->create($this->auraGlobalAdmin, Team::class))->toBeTrue()
-        ->and($this->policy->create($this->regularUser, Team::class))->toBeFalse()
-        ->and($this->policy->create($this->teamOwner, Team::class))->toBeFalse();
+    expect($this->policy->create($this->auraGlobalAdmin, Team::class))->toBeTrue();
+    
+    $superAdmin = createSuperAdmin();
+    $this->actingAs($superAdmin);
+    expect($this->policy->create($superAdmin, Team::class))->toBeFalse();
+    
+    $this->actingAs($this->regularUser);
+    expect($this->policy->create($this->regularUser, Team::class))->toBeFalse();
+    
+    $this->actingAs($this->teamOwner);
+    expect($this->policy->create($this->teamOwner, Team::class))->toBeFalse();
 });
 
 test('no one can create teams when disabled', function () {
