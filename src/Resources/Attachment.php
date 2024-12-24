@@ -125,6 +125,17 @@ class Attachment extends Resource
             ],
             [
                 'name' => 'Url',
+                'type' => 'Aura\\Base\\Fields\\Text',
+                'searchable' => true,
+                'on_index' => false,
+                'on_forms' => false,
+                'slug' => 'url',
+                'style' => [
+                    'width' => '100',
+                ],
+            ],
+            [
+                'name' => 'Url',
                 'type' => 'Aura\\Base\\Fields\\ViewValue',
                 'searchable' => true,
                 'validation' => 'required',

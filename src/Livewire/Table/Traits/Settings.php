@@ -9,7 +9,6 @@ trait Settings
         return [
             'per_page' => 10,
             'columns' => $this->model->getTableHeaders(),
-            'filters' => [],
             'search' => '',
             'sort' => [
                 'column' => 'id',

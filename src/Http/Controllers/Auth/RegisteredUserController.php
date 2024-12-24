@@ -47,13 +47,13 @@ class RegisteredUserController extends Controller
                 'password' => ['required', 'confirmed', Rules\Password::defaults()],
             ]);
 
-            $user = User::create([
+            $user = app(config('aura.resources.user'))::create([
                 'name' => $request->name,
                 'email' => $request->email,
                 'password' => Hash::make($request->password),
             ]);
 
-            $team = Team::create([
+            $team = app(config('aura.resources.team'))::create([
                 'name' => $request->team,
                 'user_id' => $user->id,
                 'created_at' => now(),
@@ -75,13 +75,13 @@ class RegisteredUserController extends Controller
                 'password' => ['required', 'confirmed', Rules\Password::defaults()],
             ]);
 
-            $user = User::create([
+            $user = app(config('aura.resources.user'))::create([
                 'name' => $request->name,
                 'email' => $request->email,
                 'password' => Hash::make($request->password),
             ]);
 
-            $role = Role::where('slug', 'user')->firstOrFail();
+            $role = app(config('aura.resources.role'))::where('slug', 'user')->firstOrFail();
 
             $user->update(['roles' => [$role->id]]);
         }

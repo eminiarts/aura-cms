@@ -1,18 +1,18 @@
 <div>
-    @section('title', 'Profile • ')
+    @section('title', 'Profile')
 
     {{ app('aura')::injectView('profile_before_header') }}
 
     <div class="mb-6">
         <x-aura::breadcrumbs>
             <x-aura::breadcrumbs.li :href="route('aura.dashboard')" title="" icon="dashboard" iconClass="text-gray-500 w-6 h-6 mr-0" />
-            <x-aura::breadcrumbs.li title="Profile" />
+            <x-aura::breadcrumbs.li title="{{ __('Profile') }}" />
         </x-aura::breadcrumbs>
     </div>
 
     <div class="flex justify-between items-center mb-6">
         <div>
-            <h1 class="mb-2 text-2xl font-semibold">Profile</h1>
+            <h1 class="mb-2 text-2xl font-semibold">{{ __('Profile') }}</h1>
         </div>
 
         <div>
@@ -41,7 +41,7 @@
             }
         }
     </style>
-    <x-aura::fields.conditions :field="$field" :model="$this">
+    <x-aura::fields.conditions :field="$field" :model="$this->model">
         <div wire:key="resource-field-{{ $key }}"
         id="resource-field-{{ optional($field)['slug'] }}-wrapper">
         <x-dynamic-component :component="$field['field']->edit()" :field="$field" :form="$form" mode="edit" />

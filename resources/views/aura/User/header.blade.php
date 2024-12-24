@@ -23,7 +23,7 @@
                 </x-aura::button.light>
             @endif
 
-            @if($this->createInModal)
+            @if($this->settings['create_in_modal'])
             <a href="#" wire:click.prevent="$dispatch('openModal', 'resource.create-modal', {{ json_encode(['type' => $this->model->getType(), 'params' => [
             'for' => $this->parent->getType(), 'id' => $this->parent->id
             ]]) }})">

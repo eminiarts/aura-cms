@@ -1,5 +1,4 @@
-{{-- If createInModal is true, open a Modal --}}
-@if($this->editInModal)
+@if($this->settings['edit_in_modal'])
 <a href="#" wire:click.prevent="$dispatch('openModal', { component: 'aura::resource-edit-modal', arguments: { 'resource': {{ $row->id }}, 'type': '{{ $row->getType() }}' }, modalAttributes: {'slideOver': true }})">
     <x-aura::icon icon="edit" />
 </a>

@@ -43,21 +43,8 @@ class Table extends Component
      */
     public $columns = [];
 
-    /**
-     * Indicates if the Create Component should be in a Modal.
-     *
-     * @var bool
-     */
-    public $createInModal = false;
-
     public $disabled;
 
-    /**
-     * Indicates if the Edit Component should be in a Modal.
-     *
-     * @var bool
-     */
-    public $editInModal = false;
 
     /**
      * The field of the parent.
