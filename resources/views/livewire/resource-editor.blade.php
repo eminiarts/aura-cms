@@ -2,7 +2,7 @@
     @section('title', 'Edit ' . $model::getType() . ' Fields • ')
 
     <x-aura::breadcrumbs>
-        <x-aura::breadcrumbs.li :href="route('aura.dashboard')" title="" icon="dashboard" iconClass="text-gray-500 w-7 h-7 mr-0" />
+        <x-aura::breadcrumbs.li :href="route('aura.dashboard')" title="" icon="dashboard" iconClass="text-gray-500 w-6 h-6 mr-0" />
         <x-aura::breadcrumbs.li :href="route('aura.resource.editor', $model::getSlug())" title="Resources" />
         <x-aura::breadcrumbs.li :title="$model::getType()" />
     </x-aura::breadcrumbs>

@@ -20,6 +20,14 @@ class AppServiceProvider extends ServiceProvider
     public function boot()
     {
         Navigation::add(array_filter([
+            config('aura.features.dashboard') ? [
+                'icon' => "<x-aura::icon icon='dashboard' />",
+                'name' => 'Dashboard',
+                'slug' => 'dashboard',
+                'sort' => 0,
+                'group' => 'Aura',
+                'route' => 'aura.dashboard',
+            ] : null,
             config('aura.features.create_resource') ? [
                 'icon' => "<x-aura::icon icon='collection' />",
                 'name' => 'Create Resource',

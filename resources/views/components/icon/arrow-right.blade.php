@@ -1,1 +1,1 @@
-<svg {{ $attributes }} fill="none" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><path d="m6 12 4-4-4-4" stroke="currentColor" stroke-width="1.333" stroke-linecap="round" stroke-linejoin="round"/></svg>
+<svg {{ $attributes ?? '' }} fill="none" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><path d="m6 12 4-4-4-4" stroke="currentColor" stroke-width="1.333" stroke-linecap="round" stroke-linejoin="round"/></svg>

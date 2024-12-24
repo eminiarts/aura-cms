@@ -330,19 +330,15 @@ class AuraServiceProvider extends PackageServiceProvider
             return app(Aura::class);
         });
 
-        // dd(config('aura.resources.user'));
 
         app('aura')::registerResources([
             config('aura.resources.attachment'),
             config('aura.resources.option'),
-            config('aura.resources.post'),
             config('aura.resources.permission'),
             config('aura.resources.role'),
             config('aura.resources.user'),
-            config('aura.resources.tag'),
         ]);
 
-        // dd(config('aura.resources.post'));
 
         if (config('aura.teams')) {
             app('aura')::registerResources([
