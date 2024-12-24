@@ -603,7 +603,9 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
     }
 
     /**
-     * Returns true if the user has at least one role that is a super admin.
+     * Global Admin of Aura.
+     *
+     * @return bool
      */
     public function isAuraGlobalAdmin(): bool
     {
