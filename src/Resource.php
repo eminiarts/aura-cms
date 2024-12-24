@@ -92,13 +92,17 @@ class Resource extends Model
      */
     public function __get($key)
     {
-        $value = parent::__get($key);
+        try {
+            $value = parent::__get($key);
 
-        if ($value) {
-            return $value;
+            if ($value) {
+                return $value;
+            }
+        } catch (\Exception $e) {
+            $value = null;
         }
 
-        if ($this->getFieldSlugs()->contains($key)) {
+        if ($this   ->getFieldSlugs()->contains($key)) {
             $fieldClass = $this->fieldClassBySlug($key);
             if ($fieldClass->isRelation()) {
                 $field = $this->fieldBySlug($key);
@@ -188,122 +192,31 @@ class Resource extends Model
         return $this->stripShortcodes($this->resource_excerpt);
     }
 
-    public function getFieldsAttribute()
-    {
-        if (! isset($this->fieldsAttributeCache) || $this->fieldsAttributeCache === null) {
-            $meta = $this->getMeta();
-
-            try {
-                $defaultValues = collect($this->inputFieldsSlugs())
-                    ->mapWithKeys(fn ($value) => [$value => null])
-                    ->map(function ($value, $key) {
-                        return $value;
-                    });
-            } catch (\Exception $e) {
-                ray($e);
-                throw new \Exception('An error occurred while processing fields');
-            }
-
-            //         dd(collect($this->inputFieldsSlugs())
-            //     ->mapWithKeys(fn ($value) => [$value => null])
-            // ->map(function ($value, $key) use ($meta) {
-            //     return [$value, $key];
-            // }));
-            // return [];
-            $defaultValues = collect($this->inputFieldsSlugs())
-                ->mapWithKeys(fn ($value) => [$value => null])
-                ->filter(function ($value, $key) {
-                    return strpos($key, '.') === false;
-                })
-                ->map(function ($value, $key) use ($meta) {
-                    $class = $this->fieldClassBySlug($key);
-                    $field = $this->fieldBySlug($key);
-
-                    // if($key == 'actors') {
-                    //     dd($this->{$key}, isset($this->{$key}));
-                    // }
-
-                    if ($class && $class->isRelation($field) && method_exists($class, 'get') && $field['type'] != 'Aura\\Base\\Fields\\Roles') {
-                        return $class->get($class, $this->{$key}, $field);
-                    }
-
-                    // if ($class && $class->isRelation($field) && $this->{$key} && method_exists($class, 'get')) {
-                    //     if($key == 'permissions') {
-                    //         return;
-                    //     }
-                    //     return $class->get($class, $this->{$key}, $field);
-                    // }
-
-                    // Without relation
-                    if ($class && isset($this->{$key}) && method_exists($class, 'get')) {
-                        return $class->get($class, $this->{$key}, $field);
-                    }
-
-                    if (isset($this->{$key})) {
-                        return $this->{$key};
-                    }
-
-                    if ($class && isset($this->attributes[$key]) && method_exists($class, 'get')) {
-                        return $class->get($class, $this->attributes[$key], $field);
-                    }
-
-                    if (isset($this->attributes[$key])) {
-                        return $this->attributes[$key];
-                    }
-
-                    $method = 'get'.Str::studly($key).'Field';
-
-                    if (method_exists($this, $method)) {
-                        return $this->{$method}($value);
-                    }
-
-                    if ($class && isset(optional($this)->{$key}) && method_exists($class, 'get')) {
-                        return $class->get($class, $this->{$key} ?? null, $field);
-                    }
-
-                    if (optional($field)['polymorphic_relation'] === false && optional($field)['multiple'] === false) {
-                        // dd($class, $class->isRelation($field), $this->{$key}, isset($this->{$key}), method_exists($class, 'get'));
-                        return isset($meta[$key]) ? [$meta[$key]] : [];
-                    }
-                    // if ($class && $class->isRelation($field) && $this->{$key}) {
-                    //     // dd($class, $class->isRelation($field), $this->{$key}, isset($this->{$key}), method_exists($class, 'get'));
-                    //     return $class->get($class, $this->{$key}, $field);
-                    // }
-
-                    return $meta[$key] ?? $value;
-                });
-
-            $this->fieldsAttributeCache = $defaultValues
-                ->filter(function ($value, $key) {
-                    // if its not in fillable, then we're not filtering it
-                    if (! $this->isBaseFillable($key)) {
-                        return true;
-                    }
-
-                    return ! in_array($key, $this->hidden);
-                })
-                ->filter(function ($value, $key) {
-                    // return true;
-                    $field = $this->fieldBySlug($key);
-
-                    return $this->shouldDisplayField($field);
-                });
-        }
-
-        return $this->fieldsAttributeCache;
-    }
 
     public function getFieldsWithoutConditionalLogic()
     {
         $meta = $this->getMeta();
 
-        return collect($this->inputFieldsSlugs())
-            ->mapWithKeys(fn ($value, $key) => [$value => null])
-            ->map(fn ($value, $key) => $meta[$key] ?? $value)
-            ->filter(fn ($value, $key) => strpos($key, '.') === false)
-            ->map(function ($value, $key) {
+        $defaultValues = collect($this->inputFieldsSlugs())
+            ->mapWithKeys(fn ($value) => [$value => null])
+            ->filter(function ($value, $key) {
+                return strpos($key, '.') === false;
+            })
+            ->map(function ($value, $key) use ($meta) {
                 $class = $this->fieldClassBySlug($key);
                 $field = $this->fieldBySlug($key);
+
+                if ($class && method_exists($class, 'isRelation') && $class->isRelation($field) && method_exists($class, 'get') && $field['type'] != 'Aura\\Base\\Fields\\Roles') {
+                    return $class->get($class, $this->{$key}, $field);
+                }
+
+                if ($class && isset($this->{$key}) && method_exists($class, 'get')) {
+                    return $class->get($class, $this->{$key}, $field);
+                }
+
+                if (isset($this->{$key})) {
+                    return $this->{$key};
+                }
 
                 if ($class && isset($this->attributes[$key]) && method_exists($class, 'get')) {
                     return $class->get($class, $this->attributes[$key], $field);
@@ -313,9 +226,51 @@ class Resource extends Model
                     return $this->attributes[$key];
                 }
 
-                return $value;
-            })
-            ->toArray();
+                $method = 'get'.Str::studly($key).'Field';
+
+                if (method_exists($this, $method)) {
+                    return $this->{$method}($value);
+                }
+
+                if ($class && isset(optional($this)->{$key}) && method_exists($class, 'get')) {
+                    return $class->get($class, $this->{$key} ?? null, $field);
+                }
+
+                if (optional($field)['polymorphic_relation'] === false && optional($field)['multiple'] === false) {
+                    return isset($meta[$key]) ? [$meta[$key]] : [];
+                }
+
+                return $meta[$key] ?? $value;
+            });
+
+        return $defaultValues->toArray();
+    }
+
+    public function getFieldsAttribute()
+    {
+        if (! isset($this->fieldsAttributeCache) || $this->fieldsAttributeCache === null) {
+            // Get fields only once and store in a variable
+            $fieldsWithoutLogic = $this->getFieldsWithoutConditionalLogic();
+            
+            $this->fieldsAttributeCache = collect($fieldsWithoutLogic)
+                ->filter(function ($value, $key) use ($fieldsWithoutLogic) {
+                    // Early return if not base fillable and not hidden
+                    if (!$this->isBaseFillable($key) && !in_array($key, $this->hidden)) {
+                        return true;
+                    }
+                    
+                    // Skip if key is hidden
+                    if (in_array($key, $this->hidden)) {
+                        return false;
+                    }
+                    
+                    // Check conditional logic only if we haven't already filtered out the field
+                    $field = $this->fieldBySlug($key);
+                    return ConditionalLogic::shouldDisplayField($this, $field, ['fields' => $fieldsWithoutLogic]);
+                });
+        }
+
+        return $this->fieldsAttributeCache;
     }
 
     public function getMeta($key = null)
@@ -436,12 +391,12 @@ class Resource extends Model
     protected static function booted()
     {
         if (! static::$customTable) {
-            static::addGlobalScope(new TypeScope);
+            static::addGlobalScope(new TypeScope());
         }
 
         static::addGlobalScope(app(TeamScope::class));
 
-        static::addGlobalScope(new ScopedScope);
+        static::addGlobalScope(new ScopedScope());
 
         static::creating(function ($model) {});
 

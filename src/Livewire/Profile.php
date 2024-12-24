@@ -75,7 +75,7 @@ class Profile extends Component
 
     public function getFields()
     {
-        return $this->user->getProfileFields();
+        return $this->model->getProfileFields();
     }
 
     public function getFieldsForViewProperty()
@@ -92,10 +92,10 @@ class Profile extends Component
         });
     }
 
-    public function getUserProperty()
-    {
-        return app(config('aura.resources.user'))::find(auth()->id());
-    }
+    // public function getUserProperty()
+    // {
+    //     return app(config('aura.resources.user'))::find(auth()->id());
+    // }
 
     public function logoutOtherBrowserSessions()
     {
@@ -110,12 +110,20 @@ class Profile extends Component
     public function mount()
     {
         $this->checkAuthorization();
-
-        $this->model = auth()->user();
-
+        $this->model = Auth::user();
         $this->form = $this->model->attributesToArray();
+    }
 
-        // dd($this->form['fields'], $this->model);
+    public function hydrate()
+    {
+        if ($this->model && isset($this->model->id)) {
+            $this->model = Auth::user();
+        }
+    }
+
+    public function dehydrate()
+    {
+        ray('DEHYDRATE - model type: ' . get_class($this->model))->orange();
     }
 
     public function render()
@@ -142,22 +150,13 @@ class Profile extends Component
 
     public function save()
     {
-        //  dd($this->form['fields']);
-        // $this->validate();
-
         $validatedData = $this->validate();
-        // dd($validatedData['form']['fields'], $this->form);
 
-        // dd('hier');
-
-        // if $this->form['fields']['current_password'] and  is set, save password
         if (optional($this->form['fields'])['current_password'] && optional($this->form['fields'])['password']) {
-
             $this->model->update([
                 'password' => $this->form['fields']['password'],
             ]);
 
-            // unset password fields
             unset($this->form['fields']['current_password']);
             unset($this->form['fields']['password']);
             unset($this->form['fields']['password_confirmation']);
@@ -166,31 +165,23 @@ class Profile extends Component
             unset($validatedData['form']['fields']['password']);
             unset($validatedData['form']['fields']['password_confirmation']);
 
-            // Logout other devices
-
             $this->logoutOtherBrowserSessions();
-
         }
+
         if (empty(optional($this->form['fields'])['password'])) {
             unset($this->form['fields']['current_password']);
             unset($this->form['fields']['password']);
             unset($this->form['fields']['password_confirmation']);
         }
 
-        // dd('here2', $this->form['fields']);
-        // dd('here 3', $this->form, $validatedData['form']['fields']);
-        $this->model->update($validatedData['form']['fields']);
+        $this->model->update(['fields' => $validatedData['form']['fields']]);
 
-        // dd('here3');
-        // dd($this->form['fields'], $this->rules(), $this->model);
         return $this->notify(__('Successfully updated'));
     }
 
     public function updateField($data)
     {
-        // dd($data);
         $this->form['fields'][$data['slug']] = $data['value'];
-        // $this->save();
 
         $this->dispatch('selectedMediaUpdated', [
             'slug' => $data['slug'],

@@ -1,6 +1,5 @@
 @aware(['model', 'form', 'mode'])
 
-{{-- @dd($mode, 'tabs') --}}
 
 
 @php
@@ -8,6 +7,8 @@
     $fieldHash = md5(json_encode($field));
 
 @endphp
+
+{{-- @dump($field['fields']) --}}
 
 <div
     x-data="{

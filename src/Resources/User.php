@@ -156,7 +156,11 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
         }
 
         if (is_null($this->current_team_id) && $this->id) {
-            $this->switchTeam($this->personalTeam());
+            $team_id = $this->teams()->first()->id ?? null;
+
+            if ($team_id) {
+                $this->switchTeam($team_id);
+            }
         }
 
         return $this->belongsTo(config('aura.resources.team'), 'current_team_id');

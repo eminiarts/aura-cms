@@ -32,12 +32,24 @@ class MigratePostMetaToMeta extends Command
 
         // Migrate post_meta
         $postMeta = DB::table('post_meta')->get();
+        $this->output->progressStart(count($postMeta));
         foreach ($postMeta as $meta) {
             $post = DB::table('posts')->where('id', $meta->post_id)->first();
+            
+            // Skip if post doesn't exist anymore
+            if (!$post) {
+                $this->output->progressAdvance();
+                continue;
+            }
+
             $type = $post->type;
             $metableType = \Aura\Base\Facades\Aura::findResourceBySlug($type);
 
-            // dd($metableType::class);
+            // Skip if metableType is not found
+            if (!$metableType) {
+                $this->output->progressAdvance();
+                continue;
+            }
 
             DB::table('meta')->insert([
                 'key' => $meta->key,
@@ -45,31 +57,55 @@ class MigratePostMetaToMeta extends Command
                 'metable_id' => $meta->post_id,
                 'metable_type' => $metableType::class,
             ]);
+            $this->output->progressAdvance();
         }
+        $this->output->progressFinish();
         $this->info('Migrated post_meta to meta table.');
 
         // Migrate team_meta
         $teamMeta = DB::table('team_meta')->get();
+        $this->output->progressStart(count($teamMeta));
         foreach ($teamMeta as $meta) {
+            $team = DB::table('teams')->where('id', $meta->team_id)->first();
+            
+            // Skip if team doesn't exist anymore
+            if (!$team) {
+                $this->output->progressAdvance();
+                continue;
+            }
+
             DB::table('meta')->insert([
                 'key' => $meta->key,
                 'value' => $meta->value,
                 'metable_id' => $meta->team_id,
                 'metable_type' => Team::class,
             ]);
+            $this->output->progressAdvance();
         }
+        $this->output->progressFinish();
         $this->info('Migrated team_meta to meta table.');
 
         // Migrate user_meta
         $userMeta = DB::table('user_meta')->get();
+        $this->output->progressStart(count($userMeta));
         foreach ($userMeta as $meta) {
+            $user = DB::table('users')->where('id', $meta->user_id)->first();
+            
+            // Skip if user doesn't exist anymore
+            if (!$user) {
+                $this->output->progressAdvance();
+                continue;
+            }
+
             DB::table('meta')->insert([
                 'key' => $meta->key,
                 'value' => $meta->value,
                 'metable_id' => $meta->user_id,
                 'metable_type' => User::class,
             ]);
+            $this->output->progressAdvance();
         }
+        $this->output->progressFinish();
         $this->info('Migrated user_meta to meta table.');
 
         $this->info('Migration completed successfully.');

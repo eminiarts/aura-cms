@@ -134,6 +134,19 @@ class AdvancedSelect extends Field
             ],
 
             [
+                'name' => 'Return Type',
+                'type' => 'Aura\\Base\\Fields\\Radio',
+                'validation' => '',
+                'slug' => 'return_type',
+                'options' => [
+                    'id' => 'Ids',
+                    'object' => 'Objects'
+
+                ],
+                'default' => 'id',
+            ],
+
+            [
                 'name' => 'Thumbnail slug',
                 'type' => 'Aura\\Base\\Fields\\Text',
                 'validation' => '',
@@ -205,6 +218,10 @@ class AdvancedSelect extends Field
     {
         if (! $model->exists) {
             return collect();
+        }
+
+          if(optional($field)['return_type'] == 'id') {
+            return $model->fields[$field['slug']];
         }
 
         return $this->relationship($model, $field)->get();
