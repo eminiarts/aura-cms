@@ -16,7 +16,6 @@ class SwitchTeamController extends Controller
     {
         $team = app(config('aura.resources.team'))::findOrFail($request->team_id);
 
-
         if (! $request->user()->switchTeam($team)) {
             abort(403);
         }

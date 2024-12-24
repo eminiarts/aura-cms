@@ -33,10 +33,10 @@
 //     if (File::exists($configPath)) {
 //         File::delete($configPath);
 //     }
-    
+
 //     // Reset config in memory
 //     config(['aura' => null]);
-    
+
 //     // Clear application instance to ensure fresh state
 //     $this->refreshApplication();
 // });
@@ -75,12 +75,12 @@
 //         ->expectsConfirmation('Do you want to allow registration?', 'no')
 //         ->expectsConfirmation('Do you want to modify the default theme?', 'yes')
 //         ->expectsChoice("Select value for 'color-palette':", 'blue', [
-//             'aura', 'red', 'orange', 'amber', 'yellow', 'lime', 'green', 'emerald', 'teal', 
-//             'cyan', 'sky', 'blue', 'indigo', 'violet', 'purple', 'fuchsia', 'pink', 'rose', 
+//             'aura', 'red', 'orange', 'amber', 'yellow', 'lime', 'green', 'emerald', 'teal',
+//             'cyan', 'sky', 'blue', 'indigo', 'violet', 'purple', 'fuchsia', 'pink', 'rose',
 //             'mountain-meadow', 'sandal', 'slate', 'gray', 'zinc', 'neutral', 'stone'
 //         ])
 //         ->expectsChoice("Select value for 'gray-color-palette':", 'zinc', [
-//             'slate', 'purple-slate', 'gray', 'zinc', 'neutral', 'stone', 'blue', 'smaragd', 
+//             'slate', 'purple-slate', 'gray', 'zinc', 'neutral', 'stone', 'blue', 'smaragd',
 //             'dark-slate', 'blackout'
 //         ])
 //         ->expectsChoice("Select value for 'darkmode-type':", 'dark', ['auto', 'light', 'dark'])

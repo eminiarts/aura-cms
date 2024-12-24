@@ -59,7 +59,7 @@ class ModelWithPanel extends Resource
 }
 
 test('model get tabs with panels', function () {
-    $model = new ModelWithPanel();
+    $model = new ModelWithPanel;
 
     ray()->clearScreen();
 

@@ -5,6 +5,7 @@ namespace Aura\Base\Policies;
 use Aura\Base\Resources\Team;
 use Aura\Base\Resources\User;
 use Illuminate\Auth\Access\HandlesAuthorization;
+use Illuminate\Support\Facades\Gate;
 
 class TeamPolicy
 {
@@ -17,6 +18,10 @@ class TeamPolicy
      */
     public function addTeamMember(User $user, Team $team)
     {
+        if (Gate::allows('AuraGlobalAdmin')) {
+            return true;
+        }
+
         if ($user->isSuperAdmin()) {
             return true;
         }
@@ -31,18 +36,15 @@ class TeamPolicy
      */
     public function create(User $user, $team)
     {
-
         if ($team::$createEnabled === false) {
             return false;
         }
 
-        // if ($user->isSuperAdmin()) {
-        //     return true;
-        // }
+        if (Gate::allows('AuraGlobalAdmin')) {
+            return true;
+        }
 
-        // todo: maybe do this as a setting
-
-        return true;
+        return false;
     }
 
     /**
@@ -52,7 +54,7 @@ class TeamPolicy
      */
     public function delete(User $user, Team $team)
     {
-        if ($user->isSuperAdmin()) {
+        if (Gate::allows('AuraGlobalAdmin')) {
             return true;
         }
 
@@ -61,7 +63,7 @@ class TeamPolicy
 
     public function inviteUsers(User $user, Team $team)
     {
-        if ($user->isSuperAdmin()) {
+        if (Gate::allows('AuraGlobalAdmin')) {
             return true;
         }
 
@@ -80,7 +82,7 @@ class TeamPolicy
     public function removeTeamMember(User $user, Team $team)
     {
 
-        if ($user->isSuperAdmin()) {
+        if (Gate::allows('AuraGlobalAdmin')) {
             return true;
         }
 
@@ -97,7 +99,7 @@ class TeamPolicy
         if ($team::$editEnabled === false) {
             return false;
         }
-        if ($user->isSuperAdmin()) {
+        if (Gate::allows('AuraGlobalAdmin')) {
             return true;
         }
 
@@ -112,7 +114,7 @@ class TeamPolicy
     public function updateTeamMember(User $user, Team $team)
     {
 
-        if ($user->isSuperAdmin()) {
+        if (Gate::allows('AuraGlobalAdmin')) {
             return true;
         }
 
@@ -149,7 +151,7 @@ class TeamPolicy
             return false;
         }
 
-        if ($user->isSuperAdmin()) {
+        if (Gate::allows('AuraGlobalAdmin')) {
             return true;
         }
 

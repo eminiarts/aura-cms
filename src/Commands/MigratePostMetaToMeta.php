@@ -35,10 +35,11 @@ class MigratePostMetaToMeta extends Command
         $this->output->progressStart(count($postMeta));
         foreach ($postMeta as $meta) {
             $post = DB::table('posts')->where('id', $meta->post_id)->first();
-            
+
             // Skip if post doesn't exist anymore
-            if (!$post) {
+            if (! $post) {
                 $this->output->progressAdvance();
+
                 continue;
             }
 
@@ -46,8 +47,9 @@ class MigratePostMetaToMeta extends Command
             $metableType = \Aura\Base\Facades\Aura::findResourceBySlug($type);
 
             // Skip if metableType is not found
-            if (!$metableType) {
+            if (! $metableType) {
                 $this->output->progressAdvance();
+
                 continue;
             }
 
@@ -67,10 +69,11 @@ class MigratePostMetaToMeta extends Command
         $this->output->progressStart(count($teamMeta));
         foreach ($teamMeta as $meta) {
             $team = DB::table('teams')->where('id', $meta->team_id)->first();
-            
+
             // Skip if team doesn't exist anymore
-            if (!$team) {
+            if (! $team) {
                 $this->output->progressAdvance();
+
                 continue;
             }
 
@@ -90,10 +93,11 @@ class MigratePostMetaToMeta extends Command
         $this->output->progressStart(count($userMeta));
         foreach ($userMeta as $meta) {
             $user = DB::table('users')->where('id', $meta->user_id)->first();
-            
+
             // Skip if user doesn't exist anymore
-            if (!$user) {
+            if (! $user) {
                 $this->output->progressAdvance();
+
                 continue;
             }
 

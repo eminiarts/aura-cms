@@ -140,7 +140,7 @@ class AdvancedSelect extends Field
                 'slug' => 'return_type',
                 'options' => [
                     'id' => 'Ids',
-                    'object' => 'Objects'
+                    'object' => 'Objects',
 
                 ],
                 'default' => 'id',
@@ -220,7 +220,7 @@ class AdvancedSelect extends Field
             return collect();
         }
 
-          if(optional($field)['return_type'] == 'id') {
+        if (optional($field)['return_type'] == 'id') {
             return $model->fields[$field['slug']];
         }
 

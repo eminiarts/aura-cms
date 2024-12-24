@@ -32,40 +32,38 @@ class TeamScope implements Scope
         if ($model instanceof $userClass) {
             return $builder;
         }
-        
+
         // If the Model is a Team Resource, don't apply the scope
         $teamClass = app(config('aura.resources.team'));
-        
+
         if (auth()->user() && $model instanceof $teamClass) {
             // For Now
             return $builder;
             // return $builder->whereId(auth()->user()->current_team_id);
         }
 
-
         // Temporary Fix
-        if($model->getTable() == 'users') {
+        if ($model->getTable() == 'users') {
             return $builder;
-        } 
+        }
         // Get user without triggering scopes
         $user = auth()->user();
-        
-        if (!$user) {
+
+        if (! $user) {
             return $builder;
         }
 
         // Get the current_team_id directly from the user attributes to avoid scope
         $currentTeamId = $user->getAttribute('current_team_id');
-        
+
         if ($model->getTable() == 'posts') {
             return $builder->where($model->getTable().'.team_id', $currentTeamId);
         }
 
         // Temporary Fix
-        if($model->getTable() == 'teams') {
+        if ($model->getTable() == 'teams') {
             return $builder;
         }
-        
 
         return $builder->where($model->getTable().'.team_id', $currentTeamId);
     }

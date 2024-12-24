@@ -102,7 +102,7 @@ class Resource extends Model
             $value = null;
         }
 
-        if ($this   ->getFieldSlugs()->contains($key)) {
+        if ($this->getFieldSlugs()->contains($key)) {
             $fieldClass = $this->fieldClassBySlug($key);
             if ($fieldClass->isRelation()) {
                 $field = $this->fieldBySlug($key);
@@ -192,6 +192,33 @@ class Resource extends Model
         return $this->stripShortcodes($this->resource_excerpt);
     }
 
+    public function getFieldsAttribute()
+    {
+        if (! isset($this->fieldsAttributeCache) || $this->fieldsAttributeCache === null) {
+            // Get fields only once and store in a variable
+            $fieldsWithoutLogic = $this->getFieldsWithoutConditionalLogic();
+
+            $this->fieldsAttributeCache = collect($fieldsWithoutLogic)
+                ->filter(function ($value, $key) use ($fieldsWithoutLogic) {
+                    // Early return if not base fillable and not hidden
+                    if (! $this->isBaseFillable($key) && ! in_array($key, $this->hidden)) {
+                        return true;
+                    }
+
+                    // Skip if key is hidden
+                    if (in_array($key, $this->hidden)) {
+                        return false;
+                    }
+
+                    // Check conditional logic only if we haven't already filtered out the field
+                    $field = $this->fieldBySlug($key);
+
+                    return ConditionalLogic::shouldDisplayField($this, $field, ['fields' => $fieldsWithoutLogic]);
+                });
+        }
+
+        return $this->fieldsAttributeCache;
+    }
 
     public function getFieldsWithoutConditionalLogic()
     {
@@ -244,33 +271,6 @@ class Resource extends Model
             });
 
         return $defaultValues->toArray();
-    }
-
-    public function getFieldsAttribute()
-    {
-        if (! isset($this->fieldsAttributeCache) || $this->fieldsAttributeCache === null) {
-            // Get fields only once and store in a variable
-            $fieldsWithoutLogic = $this->getFieldsWithoutConditionalLogic();
-            
-            $this->fieldsAttributeCache = collect($fieldsWithoutLogic)
-                ->filter(function ($value, $key) use ($fieldsWithoutLogic) {
-                    // Early return if not base fillable and not hidden
-                    if (!$this->isBaseFillable($key) && !in_array($key, $this->hidden)) {
-                        return true;
-                    }
-                    
-                    // Skip if key is hidden
-                    if (in_array($key, $this->hidden)) {
-                        return false;
-                    }
-                    
-                    // Check conditional logic only if we haven't already filtered out the field
-                    $field = $this->fieldBySlug($key);
-                    return ConditionalLogic::shouldDisplayField($this, $field, ['fields' => $fieldsWithoutLogic]);
-                });
-        }
-
-        return $this->fieldsAttributeCache;
     }
 
     public function getMeta($key = null)
@@ -391,12 +391,12 @@ class Resource extends Model
     protected static function booted()
     {
         if (! static::$customTable) {
-            static::addGlobalScope(new TypeScope());
+            static::addGlobalScope(new TypeScope);
         }
 
         static::addGlobalScope(app(TeamScope::class));
 
-        static::addGlobalScope(new ScopedScope());
+        static::addGlobalScope(new ScopedScope);
 
         static::creating(function ($model) {});
 

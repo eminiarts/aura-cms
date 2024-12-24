@@ -1,6 +1,5 @@
 <?php
 
-use Aura\Base\Resources\User;
 use Illuminate\Support\Facades\DB;
 
 beforeEach(function () {
@@ -33,13 +32,18 @@ it('can transfer data from posts to custom table', function () {
     )');
 
     // Create a mock resource class for testing
-    $mockResourceClass = new class {
+    $mockResourceClass = new class
+    {
         public $name = 'Test Resource';
-        public function getType() {
-            return 'test-resource';
-        }
-        public function create($data) {
+
+        public function create($data)
+        {
             return DB::table('test_resources')->insert($data);
+        }
+
+        public function getType()
+        {
+            return 'test-resource';
         }
     };
 
@@ -48,11 +52,11 @@ it('can transfer data from posts to custom table', function () {
         'metable_type' => get_class($mockResourceClass),
         'metable_id' => 1,
         'key' => 'test_field',
-        'value' => 'test_value'
+        'value' => 'test_value',
     ]);
 
     $this->artisan('aura:transfer-from-posts-to-custom-table', [
-        'resource' => get_class($mockResourceClass)
+        'resource' => get_class($mockResourceClass),
     ])->assertExitCode(0);
 
     // Verify that data was transferred correctly

@@ -101,7 +101,7 @@ trait Filters
         $this->notify('Success: Filter deleted!');
         $this->clearFiltersCache();
         $this->reset(['filters', 'selectedFilter']);
-        
+
         // Refresh Component
         $this->dispatch('refreshTable');
     }

@@ -3,7 +3,6 @@
 use Aura\Base\Facades\Aura;
 use Aura\Base\Livewire\GlobalSearch;
 use Aura\Base\Resource;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
 
 // Before each test, create a Superadmin and login
@@ -150,7 +149,6 @@ test('global search can be disabled via config', function () {
 
     // Now disable global search
     config(['aura.features.global_search' => false]);
-
 
     $this->get(route('aura.dashboard'))
         ->assertOk()

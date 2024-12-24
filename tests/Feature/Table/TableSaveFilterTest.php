@@ -6,7 +6,6 @@ use Aura\Base\Resource;
 use Aura\Base\Resources\Post;
 use Aura\Base\Resources\Tag;
 use Aura\Base\Resources\User;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Livewire\Livewire;
 
@@ -98,7 +97,6 @@ test('table filter - taxonomy filter', function () {
     $component->set('filters.custom.0.filters.0.operator', 'contains');
     $component->set('filters.custom.0.filters.0.value', [$tag1->id]);
 
-
     // $component->rows should have 1 item
     $component->assertViewHas('rows', function ($rows) {
         return count($rows->items()) === 1;
@@ -113,7 +111,6 @@ test('table filter - taxonomy filter', function () {
 
     // Expect filter.custom.0.name to be metafield
     expect($component->filters['custom'][1]['filters'][0]['name'])->toBe('metafield');
-
 
     // Save Filters to DB
     $component->call('saveFilter');

@@ -69,17 +69,16 @@ trait Sorting
 
                 // dd($resourceType);
 
-                
                 $query->leftJoin('post_relations as pr', function ($join) use ($resourceType) {
                     $join->on('posts.id', '=', 'pr.related_id')
                         ->where('pr.related_type', '=', $this->model->getMorphClass())
                         ->where('pr.resource_type', '=', $resourceType)
                         ->where('pr.slug', '=', Str::plural(Str::lower(class_basename($resourceType))));
                 })
-                ->select('posts.*')
-                ->groupBy('posts.id')
-                ->orderByRaw('MIN(pr.resource_id) ' . $direction)
-                ->orderBy('posts.id', 'desc');
+                    ->select('posts.*')
+                    ->groupBy('posts.id')
+                    ->orderByRaw('MIN(pr.resource_id) '.$direction)
+                    ->orderBy('posts.id', 'desc');
 
                 return $query;
             }

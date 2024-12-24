@@ -45,7 +45,6 @@ class Table extends Component
 
     public $disabled;
 
-
     /**
      * The field of the parent.
      *
@@ -357,6 +356,27 @@ class Table extends Component
         return $rowIds;
     }
 
+    /**
+     * Build the query for the rows.
+     *
+     * @return mixed
+     */
+    public function rowsQuery()
+    {
+        $query = $this->query();
+
+        if ($this->filters) {
+            $query = $this->applyCustomFilter($query);
+        }
+
+        // Search
+        $query = $this->applySearch($query);
+
+        $query = $this->applySorting($query);
+
+        return $query;
+    }
+
     public function selectFieldRows($value, $slug)
     {
         if ($slug == $this->field['slug']) {
@@ -471,26 +491,5 @@ class Table extends Component
     protected function rows()
     {
         return $this->rowsQuery()->paginate($this->perPage);
-    }
-
-    /**
-     * Build the query for the rows.
-     *
-     * @return mixed
-     */
-    public function rowsQuery()
-    {
-        $query = $this->query();
-
-        if ($this->filters) {
-            $query = $this->applyCustomFilter($query);
-        }
-
-        // Search
-        $query = $this->applySearch($query);
-
-        $query = $this->applySorting($query);
-
-        return $query;
     }
 }

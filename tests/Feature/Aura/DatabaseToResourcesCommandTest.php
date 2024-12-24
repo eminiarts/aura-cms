@@ -1,7 +1,8 @@
 <?php
 
-use function Pest\Laravel\artisan;
 use Illuminate\Support\Facades\Schema;
+
+use function Pest\Laravel\artisan;
 
 beforeEach(function () {
 
@@ -9,11 +10,11 @@ beforeEach(function () {
     // Mock the Schema facade
     Schema::shouldReceive('getConnection->getDoctrineSchemaManager->listTableNames')
         ->andReturn(['test_table', 'another_table', 'migrations']);
-    
+
     // Mock getColumnListing for any table
     Schema::shouldReceive('getColumnListing')
         ->andReturn(['id', 'name', 'created_at', 'updated_at']);
-    
+
     // Mock getColumnType for any column
     Schema::shouldReceive('getColumnType')
         ->andReturn('string');

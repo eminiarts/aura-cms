@@ -54,6 +54,11 @@ class Profile extends Component
         $this->confirmingUserDeletion = true;
     }
 
+    public function dehydrate()
+    {
+        ray('DEHYDRATE - model type: '.get_class($this->model))->orange();
+    }
+
     /**
      * Delete the current user.
      */
@@ -92,6 +97,13 @@ class Profile extends Component
         });
     }
 
+    public function hydrate()
+    {
+        if ($this->model && isset($this->model->id)) {
+            $this->model = Auth::user();
+        }
+    }
+
     // public function getUserProperty()
     // {
     //     return app(config('aura.resources.user'))::find(auth()->id());
@@ -112,18 +124,6 @@ class Profile extends Component
         $this->checkAuthorization();
         $this->model = Auth::user();
         $this->form = $this->model->attributesToArray();
-    }
-
-    public function hydrate()
-    {
-        if ($this->model && isset($this->model->id)) {
-            $this->model = Auth::user();
-        }
-    }
-
-    public function dehydrate()
-    {
-        ray('DEHYDRATE - model type: ' . get_class($this->model))->orange();
     }
 
     public function render()

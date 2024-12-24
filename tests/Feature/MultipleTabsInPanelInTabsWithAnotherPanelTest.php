@@ -10,7 +10,7 @@ class MultipleTabsInPanelInTabsTestModelWithAnotherPanel extends Resource
 
     public static function getFields()
     {
-       return [
+        return [
             [
                 'name' => 'Tab 1',
                 'global' => true,
@@ -99,7 +99,6 @@ class MultipleTabsInPanelInTabsTestModelWithAnotherPanel extends Resource
 
 test('multiple tabs in panels in tabs are possible', function () {
     $model = new MultipleTabsInPanelInTabsTestModelWithAnotherPanel;
-
 
     ray()->clearScreen();
 

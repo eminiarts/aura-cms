@@ -6,7 +6,7 @@
 // uses()->group('aura', 'command');
 
 // uses()->beforeEach(function () {
-   
+
 //     // Configure package
 //     config(['aura' => [
 //         'name' => 'aura',

@@ -18,6 +18,7 @@ use Illuminate\Foundation\Auth\Access\Authorizable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\Rules\Password;
 use Lab404\Impersonate\Models\Impersonate;
 use Laravel\Fortify\TwoFactorAuthenticatable;
@@ -599,6 +600,14 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
         }
 
         return $query->whereHas('roles');
+    }
+
+    /**
+     * Returns true if the user has at least one role that is a super admin.
+     */
+    public function isAuraGlobalAdmin(): bool
+    {
+        return Gate::allows('AuraGlobalAdmin');
     }
 
     /**

@@ -140,7 +140,7 @@ class TabsWithFieldsModel extends Resource
                     'width' => '100',
                 ],
             ],
-        
+
             [
                 'name' => 'PLZ*',
                 'type' => 'Aura\\Base\\Fields\\Text',
@@ -225,7 +225,7 @@ class TabsWithFieldsModel extends Resource
                     'Privatperson' => 'Privatperson',
                     'Unternehmen' => 'Unternehmen',
                 ],
-               
+
                 'slug' => 'account_type',
                 'style' => [
                     'width' => '60',
@@ -239,7 +239,7 @@ class TabsWithFieldsModel extends Resource
                 'name' => 'Firma',
                 'type' => 'Aura\\Base\\Fields\\Text',
                 'validation' => '',
-                
+
                 'slug' => 'firma',
                 'style' => [
                     'width' => '60',
@@ -366,7 +366,6 @@ class TabsWithFieldsModel extends Resource
                 'slug' => '2fa',
             ],
 
-          
         ];
     }
 }
@@ -380,12 +379,11 @@ test('fields get grouped when field group is true', function () {
 
     expect($fields)->toBeArray();
 
-
     $this->assertCount(1, $fields);
     $this->assertEquals($fields[0]['name'], 'Aura\Base\Fields\Tabs');
     $this->assertCount(4, $fields[0]['fields']);
     $this->assertEquals($fields[0]['fields'][0]['name'], 'User details');
     $this->assertEquals($fields[0]['fields'][1]['name'], 'Öffentliches Profil');
     $this->assertEquals($fields[0]['fields'][0]['fields'][0]['name'], 'Personal Infos');
-    
+
 });

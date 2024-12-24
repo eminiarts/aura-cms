@@ -197,8 +197,6 @@ class Settings extends Component
                     'salmon' => 'Salmon',
                     'autumn-rust' => 'Autumn Rust',
 
-
-
                     'slate' => 'Slate',
                     'dark-slate' => 'Dark Slate',
                     'blackout' => 'Blackout',
