@@ -100,7 +100,7 @@ class HasMany extends Field
         if (isset($field['column'])) {
             return $model->hasMany($field['resource'], $field['column']);
         }
-
+        ray($field);
         return $model
             ->morphedByMany($field['resource'], 'related', 'post_relations', 'resource_id', 'related_id')
             ->withTimestamps()

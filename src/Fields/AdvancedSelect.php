@@ -167,6 +167,13 @@ class AdvancedSelect extends Field
             ],
 
             [
+                'name' => 'Polymorphic Relation',
+                'type' => 'Aura\\Base\\Fields\\Boolean',
+                'validation' => '',
+                'slug' => 'polymorphic_relation',
+            ],
+
+            [
                 'name' => 'Allow Create New',
                 'type' => 'Aura\\Base\\Fields\\Boolean',
                 'validation' => '',
