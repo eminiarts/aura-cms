@@ -200,7 +200,7 @@ public function indexTableSettings()
                 'header' => 'aura::components.table.header',
                 'row' => $this->rowView(),
                 'bulkActions' => 'aura::components.table.bulkActions',
-                'table-header' => 'aura::components.table.table-header',
+                'table_header' => 'aura::components.table.table-header',
                 'table_footer' => 'aura::components.table.footer',
             ],
         ];

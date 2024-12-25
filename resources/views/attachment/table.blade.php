@@ -278,7 +278,7 @@
                     @endif
 
                     @if ($this->settings['bulk_actions'])
-                        @include($this->settings['views']['bulkActions'])
+                        @include($this->settings['views']['bulk_actions'])
                     @endif
                 </div>
             </div>

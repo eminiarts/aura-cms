@@ -584,7 +584,7 @@ trait Settings
                 'header' => 'aura::components.table.header',
                 'row' => $this->model->rowView(),
                 'bulkActions' => 'aura::components.table.bulkActions',
-                'table-header' => 'aura::components.table.table-header',
+                'table_header' => 'aura::components.table.table-header',
                 'table_footer' => 'aura::components.table.footer',
             ],
         ];

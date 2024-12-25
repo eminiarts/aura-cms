@@ -5,6 +5,8 @@
         {{ app('aura')::injectView('table_before_' . $this->model->getType()) }}
     @endif
 
+    @include($this->settings['views']['filter_tabs'])
+
     @include($this->settings['views']['list'])
 
     @if($this->settings['table_after'])
