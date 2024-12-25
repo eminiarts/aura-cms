@@ -1,9 +1,9 @@
 <?php
 
 use Aura\Base\Policies\TeamPolicy;
+use Aura\Base\Resources\Role;
 use Aura\Base\Resources\Team;
 use Aura\Base\Resources\User;
-use Aura\Base\Resources\Role;
 use Illuminate\Support\Facades\Gate;
 
 beforeEach(function () {
@@ -21,7 +21,7 @@ beforeEach(function () {
     $this->regularUser = User::factory()->create();
     $this->teamOwner = User::factory()->create();
     $this->auraGlobalAdmin = User::factory()->create(['email' => 'bajram@eminiarts.ch']);
-    
+
     // Create owner role with all permissions
     $ownerRole = Role::create([
         'team_id' => $this->team->id,
@@ -40,13 +40,13 @@ beforeEach(function () {
             'invite-users' => true,
             'remove-team-members' => true,
             'update-team-members' => true,
-        ]
+        ],
     ]);
 
     // Set current team and attach owner role
     $this->teamOwner->update([
         'current_team_id' => $this->team->id,
-        'roles' => [$ownerRole->id]
+        'roles' => [$ownerRole->id],
     ]);
     $this->teamOwner->refresh();
 
@@ -55,7 +55,7 @@ beforeEach(function () {
 
     // Attach team members with role
     $this->team->users()->syncWithPivotValues($this->teamOwner->id, [
-        'role_id' => $ownerRole->id
+        'role_id' => $ownerRole->id,
     ]);
 });
 
@@ -81,24 +81,24 @@ test('regular user cannot add team members', function () {
 
 test('only aura global admin or super admin can create teams when enabled', function () {
     Team::$createEnabled = true;
-    
+
     $this->actingAs($this->auraGlobalAdmin);
     expect($this->policy->create($this->auraGlobalAdmin, Team::class))->toBeTrue();
-    
+
     $superAdmin = createSuperAdmin();
     $this->actingAs($superAdmin);
     expect($this->policy->create($superAdmin, Team::class))->toBeFalse();
-    
+
     $this->actingAs($this->regularUser);
     expect($this->policy->create($this->regularUser, Team::class))->toBeFalse();
-    
+
     $this->actingAs($this->teamOwner);
     expect($this->policy->create($this->teamOwner, Team::class))->toBeFalse();
 });
 
 test('no one can create teams when disabled', function () {
     Team::$createEnabled = false;
-    
+
     $this->actingAs($this->auraGlobalAdmin);
     expect($this->policy->create($this->auraGlobalAdmin, Team::class))->toBeFalse()
         ->and($this->policy->create($this->regularUser, Team::class))->toBeFalse()
@@ -132,7 +132,7 @@ test('team owner can invite users', function () {
 
 test('user with invite permission can invite users', function () {
     $userWithPermission = User::factory()->create();
-    
+
     $memberRole = Role::create([
         'team_id' => $this->team->id,
         'type' => 'Role',
@@ -143,22 +143,22 @@ test('user with invite permission can invite users', function () {
         'super_admin' => false,
         'permissions' => [
             'invite-users-team' => true,
-            'view-team' => true
-        ]
+            'view-team' => true,
+        ],
     ]);
 
     // Set current team
     $userWithPermission->update([
         'current_team_id' => $this->team->id,
-        'roles' => [$memberRole->id]
+        'roles' => [$memberRole->id],
     ]);
     $userWithPermission->refresh();
 
     // Attach team member with role
     $this->team->users()->syncWithPivotValues($userWithPermission->id, [
-        'role_id' => $memberRole->id
+        'role_id' => $memberRole->id,
     ]);
-    
+
     $this->actingAs($userWithPermission);
     expect($this->policy->inviteUsers($userWithPermission, $this->team))->toBeTrue();
 });
@@ -197,7 +197,7 @@ test('team owner can update their team when enabled', function () {
 
 test('no one can update team when disabled', function () {
     Team::$editEnabled = false;
-    
+
     $this->actingAs($this->auraGlobalAdmin);
     expect($this->policy->update($this->auraGlobalAdmin, $this->team))->toBeFalse()
         ->and($this->policy->update($this->regularUser, $this->team))->toBeFalse();
@@ -220,7 +220,7 @@ test('regular user cannot update team member permissions', function () {
 
 test('team member can view team', function () {
     $teamMember = User::factory()->create();
-    
+
     $memberRole = Role::create([
         'team_id' => $this->team->id,
         'type' => 'Role',
@@ -229,13 +229,13 @@ test('team member can view team', function () {
         'name' => 'Member',
         'description' => 'Team Member Role',
         'super_admin' => false,
-        'permissions' => ['view-team' => true]
+        'permissions' => ['view-team' => true],
     ]);
 
     $this->team->users()->syncWithPivotValues($teamMember->id, [
-        'role_id' => $memberRole->id
+        'role_id' => $memberRole->id,
     ]);
-    
+
     $this->actingAs($teamMember);
     expect($this->policy->view($teamMember, $this->team))->toBeTrue();
 });
@@ -260,7 +260,7 @@ test('team owner can view any team when enabled', function () {
 
 test('no one can view any team when disabled', function () {
     Team::$indexViewEnabled = false;
-    
+
     $this->actingAs($this->auraGlobalAdmin);
     expect($this->policy->viewAny($this->auraGlobalAdmin, $this->team))->toBeFalse()
         ->and($this->policy->viewAny($this->regularUser, $this->team))->toBeFalse();

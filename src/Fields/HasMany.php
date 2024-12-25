@@ -24,6 +24,29 @@ class HasMany extends Field
         return $relationshipQuery->get();
     }
 
+    public function getFields()
+    {
+        return array_merge(parent::getFields(), [
+            [
+                'name' => 'Has Many',
+                'type' => 'Aura\\Base\\Fields\\Tab',
+                'slug' => 'has_many',
+            ],
+            // If table settings are modified, you can set the create_link to the foreign key
+            // eg: /admin/resources/create?actor=437" -> foreign_key=actor
+            [
+                'name' => 'Foreign Key',
+                'type' => 'Aura\\Base\\Fields\\Text',
+                'slug' => 'foreign_key',
+            ],
+            [
+                'name' => 'Resource',
+                'type' => 'Aura\\Base\\Fields\\Text',
+                'slug' => 'resource',
+            ],
+        ]);
+    }
+
     public function getRelation($model, $field)
     {
         if (! $model->exists) {
@@ -100,7 +123,7 @@ class HasMany extends Field
         if (isset($field['column'])) {
             return $model->hasMany($field['resource'], $field['column']);
         }
-    
+
         if ($field['reverse'] ?? false) {
             return $model
                 ->morphedByMany($field['resource'], 'related', 'post_relations', 'resource_id', 'related_id')
@@ -108,34 +131,11 @@ class HasMany extends Field
                 ->withPivot('related_type')
                 ->wherePivot('related_type', $field['resource']);
         }
-    
+
         return $model
             ->morphedByMany($field['resource'], 'resource', 'post_relations', 'related_id', 'resource_id')
             ->withTimestamps()
             ->withPivot('resource_type')
             ->wherePivot('resource_type', $field['resource']);
-    }
-
-    public function getFields()
-    {
-        return array_merge(parent::getFields(), [
-            [
-                'name' => 'Has Many',
-                'type' => 'Aura\\Base\\Fields\\Tab',
-                'slug' => 'has_many',
-            ],
-            // If table settings are modified, you can set the create_link to the foreign key
-            // eg: /admin/resources/create?actor=437" -> foreign_key=actor
-            [
-                'name' => 'Foreign Key',
-                'type' => 'Aura\\Base\\Fields\\Text',
-                'slug' => 'foreign_key',
-            ],
-            [
-                'name' => 'Resource',
-                'type' => 'Aura\\Base\\Fields\\Text',
-                'slug' => 'resource',
-            ],
-        ]);
     }
 }

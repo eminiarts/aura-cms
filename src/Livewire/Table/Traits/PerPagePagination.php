@@ -38,11 +38,13 @@ trait PerPagePagination
     {
         if (session()->has('perPage')) {
             $this->perPage = session()->get('perPage');
+
             return;
         }
 
         if (isset($this->settings['per_page'])) {
             $this->perPage = $this->settings['per_page'];
+
             return;
         }
 

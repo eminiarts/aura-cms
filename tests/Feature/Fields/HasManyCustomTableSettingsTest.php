@@ -6,10 +6,6 @@ use Aura\Base\Livewire\Resource\Create;
 use Aura\Base\Resource;
 use Aura\Base\Resources\Post;
 use Aura\Base\Resources\User;
-use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Schema;
 
 // Before each test, create a Superadmin and login
 beforeEach(function () {
@@ -62,5 +58,5 @@ test('search in hasMany does not lose query scope', function () {
     Post::factory()->count(10)->create();
 
     // Visit the Post Index Page
-    
+
 });
