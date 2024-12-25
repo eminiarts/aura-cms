@@ -157,16 +157,22 @@ class Table extends Component
     #[Computed]
     public function createLink()
     {
-        if ($this->model()->createUrl()) {
-            return $this->model()->createUrl();
+        if ($this->settings['create_url']) {
+            return $this->settings['create_url'];
         }
-
+          
         if ($this->parent) {
             return route('aura.'.$this->model()->getSlug().'.create', [
                 'for' => $this->parent->getType(),
                 'id' => $this->parent->id,
             ]);
         }
+
+
+        if ($this->model()->createUrl()) {
+            return $this->model()->createUrl();
+        }
+
 
         return route('aura.'.$this->model()->getSlug().'.create');
     }

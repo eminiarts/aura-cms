@@ -30,6 +30,7 @@ trait Settings
             'table_before' => true,
             'table_after' => true,
             'create' => true,
+            'create_url' => null,
             'actions' => true,
             'bulk_actions' => true,
             'header' => true,

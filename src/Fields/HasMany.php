@@ -115,4 +115,27 @@ class HasMany extends Field
             ->withPivot('resource_type')
             ->wherePivot('resource_type', $field['resource']);
     }
+
+    public function getFields()
+    {
+        return array_merge(parent::getFields(), [
+            [
+                'name' => 'Has Many',
+                'type' => 'Aura\\Base\\Fields\\Tab',
+                'slug' => 'has_many',
+            ],
+            // If table settings are modified, you can set the create_link to the foreign key
+            // eg: /admin/resources/create?actor=437" -> foreign_key=actor
+            [
+                'name' => 'Foreign Key',
+                'type' => 'Aura\\Base\\Fields\\Text',
+                'slug' => 'foreign_key',
+            ],
+            [
+                'name' => 'Resource',
+                'type' => 'Aura\\Base\\Fields\\Text',
+                'slug' => 'resource',
+            ],
+        ]);
+    }
 }
