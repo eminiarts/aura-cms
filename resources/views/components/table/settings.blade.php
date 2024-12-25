@@ -42,12 +42,17 @@
                     <div class="flex justify-between items-center">
                         <x-aura::label value="{{ __('Per page') }}" />
                         <x-aura::input.group borderless inline paddingless for="perPage" label="">
-                            <x-aura::input.select wire:model.live="perPage" id="perPage" class="bg-gray-50 rounded-md">
-                                <option value="10">10</option>
-                                <option value="25">25</option>
-                                <option value="50">50</option>
-                                <option value="100">100</option>
-                            </x-aura::input.select>
+                            <x-aura::input.select 
+                                wire:model.live="perPage" 
+                                id="perPage" 
+                                class="bg-gray-50 rounded-md"
+                                :options="[
+                                    10 => '10',
+                                    25 => '25',
+                                    50 => '50',
+                                    100 => '100'
+                                ]"
+                            />
                         </x-aura::input.group>
                     </div>
 
