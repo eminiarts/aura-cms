@@ -26,7 +26,7 @@ class Image extends Field
 
             if ($attachment) {
                 $url = $attachment->thumbnail('xs');
-                $imageHtml = "<img src='{$url}' class='object-cover w-32 h-32 rounded-lg shadow-lg'>";
+                $imageHtml = "<img src='{$url}' class='object-cover rounded-lg shadow-lg' style='width: 6rem;'>";
             } else {
                 return $value;
             }
