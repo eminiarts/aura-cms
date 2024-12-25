@@ -13,7 +13,7 @@
                 'search' => false,
             ];
 
-            if($field['foreign_key']) {
+            if(optional($field)['foreign_key']) {
                 $defaultSettings['create_url']  = app($field['resource'])->createUrl() . '?' . $field['foreign_key']  . '=' . $this->model->id;
                 
                 $defaultSettings['create_url']  = app($field['resource'])->createUrl() . '?' . http_build_query([$field['foreign_key'] => [$this->model->id]]);
