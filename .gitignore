@@ -13,3 +13,4 @@ node_modules
 html
 *.DS_Store
 .phpunit.cache
+.git.backup
