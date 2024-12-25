@@ -82,39 +82,45 @@ class Create extends Component
 
         $this->model = Aura::findResourceBySlug($this->slug);
 
-        // ray($this->model);
-
         // Authorize
         $this->authorize('create', $this->model);
 
         // Array instead of Eloquent Model
         $this->form = $this->model->toArray();
 
-        // get "for" and "id" params from url
-        $for = request()->get('for');
-        $id = request()->get('id');
+        // Initialize the post fields with defaults
+        $this->initializeFieldsWithDefaults();
 
-        // if params are set, set the post's "for" and "id" fields
+        // Get all URL parameters
+        $urlParameters = request()->query();
+
+        // Process each URL parameter
+        foreach ($urlParameters as $key => $value) {
+            // Check if this parameter corresponds to a form field
+            if (array_key_exists($key, $this->form['fields'])) {
+                // If the value is already an array, use it directly
+                if (is_array($value)) {
+                    $this->form['fields'][$key] = array_map(function($v) {
+                        return is_numeric($v) ? (int)$v : $v;
+                    }, $value);
+                } else {
+                    // If it's a single value, convert to integer if numeric
+                    $this->form['fields'][$key] = is_numeric($value) ? (int)$value : $value;
+                }
+            }
+        }
+
+        // Handle legacy 'for' and 'id' parameters for backward compatibility
         if ($this->params) {
             if ($this->params['for'] == 'User') {
                 $this->form['fields']['user_id'] = (int) $this->params['id'];
             }
 
-            // if there is a key in post's fields named $this->params['for'], set it to $this->params['id']
-            if (optional($this->params)['for'] && optional($this->params)['id'] && array_key_exists($this->params['for'], $this->form['fields'])) {
+            if (optional($this->params)['for'] && optional($this->params)['id'] && 
+                array_key_exists($this->params['for'], $this->form['fields'])) {
                 $this->form['fields'][$this->params['for']] = (int) $this->params['id'];
             }
         }
-
-        // If $for is "User", set the user_id to the $id
-        // This needs to be more dynamic, but it works for now
-        if ($for == 'User') {
-            $this->form['fields']['user_id'] = (int) $id;
-        }
-
-        // Initialize the post fields with defaults
-        $this->initializeFieldsWithDefaults();
-
     }
 
     public function render()
