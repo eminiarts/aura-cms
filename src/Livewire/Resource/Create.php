@@ -109,18 +109,6 @@ class Create extends Component
                 }
             }
         }
-
-        // Handle legacy 'for' and 'id' parameters for backward compatibility
-        if ($this->params) {
-            if ($this->params['for'] == 'User') {
-                $this->form['fields']['user_id'] = (int) $this->params['id'];
-            }
-
-            if (optional($this->params)['for'] && optional($this->params)['id'] && 
-                array_key_exists($this->params['for'], $this->form['fields'])) {
-                $this->form['fields'][$this->params['for']] = (int) $this->params['id'];
-            }
-        }
     }
 
     public function render()
