@@ -83,7 +83,6 @@
                 "Aura\\Base\\Providers\\AuthServiceProvider",
                 "Aura\\Base\\Providers\\AppServiceProvider",
                 "Aura\\Base\\AuraServiceProvider",
-                "Aura\\Pro\\ProServiceProvider",
                 "Aura\\Flows\\FlowsServiceProvider",
                 "Aura\\Export\\ExportServiceProvider"
             ],
