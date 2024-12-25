@@ -4,26 +4,29 @@
         @php
             unset($field['relation']);
             unset($field['conditional_logic']);
+            $defaultSettings = [
+                'filters' => false,
+                'global_filters' => false,
+                'header_before' => false,
+                'header_after' => false,
+                'settings' => false,
+                'search' => false,
+            ];
+
+            if($field['foreign_key']) {
+                $defaultSettings['create_url']  = app($field['resource'])->createUrl() . '?' . $field['foreign_key']  . '=' . $this->model->id;
+                
+                $defaultSettings['create_url']  = app($field['resource'])->createUrl() . '?' . http_build_query([$field['foreign_key'] => [$this->model->id]]);
+            }
+
+            $mergedSettings = array_merge($defaultSettings, $field['table_settings'] ?? []);
         @endphp
 
         <livewire:aura::table
             :model="app($field['resource'])"
             :field="$field"
-            :settings="$field['table_settings'] ?? [
-                'filters' => false,
-                // 'actions' => false,
-                'global_filters' => false,
-                // 'create' => false,
-                'header_before' => false,
-                'header_after' => false,
-                'settings' => false,
-                'search' => false,
-                // 'columns' => [
-                //     'name' => 'Name',
-                //     'contact_email' => 'Contact Email'
-                // ]
-            ]"
-            :parent="$this->model->setRelations([])"
+            :settings="$mergedSettings"
+            :parent="$this->model"
             :disabled="true"
             />
     </div>

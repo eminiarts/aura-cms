@@ -168,7 +168,6 @@ class Table extends Component
             ]);
         }
 
-
         if ($this->model()->createUrl()) {
             return $this->model()->createUrl();
         }
