@@ -44,9 +44,10 @@ trait Settings
                 'filter' => 'aura::components.table.filter',
                 'header' => 'aura::components.table.header',
                 'row' => $this->model->rowView(),
-                'bulkActions' => 'aura::components.table.bulkActions',
-                'table-header' => 'aura::components.table.table-header',
+                'bulk_actions' => 'aura::components.table.bulk-actions',
+                'table_header' => 'aura::components.table.table-header',
                 'table_footer' => 'aura::components.table.footer',
+                'filter_tabs' => 'aura::components.table.filter-tabs',
             ],
         ];
     }

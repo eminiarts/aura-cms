@@ -1,7 +1,7 @@
 <div class="flex flex-col mt-2" wire:key="table-index">
     <div class="overflow-hidden overflow-x-auto min-w-full align-middle border border-gray-400/30 sm:rounded-lg dark:border-gray-700">
         <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-            @include($this->settings['views']['table-header'])
+            @include($this->settings['views']['table_header'])
 
             <tbody class="bg-white divide-y divide-gray-200 dark:bg-gray-900 dark:divide-gray-700">
                 @forelse($rows as $row)
