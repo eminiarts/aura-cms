@@ -604,8 +604,6 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
 
     /**
      * Global Admin of Aura.
-     *
-     * @return bool
      */
     public function isAuraGlobalAdmin(): bool
     {
