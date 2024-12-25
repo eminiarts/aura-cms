@@ -18,13 +18,13 @@
             </svg>
         </button>
     </span>
-</x-slot>
+</x-slot>       
 
 <x-slot name="content">
     <div class="w-60">
         <div role="none">
-            @if($this->bulkActions)
-                @foreach($this->bulkActions as $action => $data)
+            @if($this->bulk_actions)
+                @foreach($this->bulk_actions as $action => $data)
                     @if(is_array($data) && isset($data['modal']))
                     <!-- if it's an array and has a modal, then open the modal -->
                     <a wire:click="openBulkActionModal('{{ $action }}', {{json_encode($data)}})"
