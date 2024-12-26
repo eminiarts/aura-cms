@@ -255,12 +255,19 @@
             @if($table && !$disabled)
 
             <div class="z-[2] relative flex flex-col">
-                <div class="flex justify-between items-center mt-0">
-                    {{-- <h1 class="text-2xl font-semibold">
-                        {{ __('Attachments') }}
-                    </h1> --}}
 
-                    <div class="flex justify-end w-full">
+                <div class="flex justify-between items-start">
+
+    <div class="mb-6">
+        <x-aura::breadcrumbs>
+            <x-aura::breadcrumbs.li :href="route('aura.dashboard')" title="" icon="dashboard" iconClass="text-gray-500 w-6 h-6 mr-0" />
+            <x-aura::breadcrumbs.li :title="__('Attachments')"  />
+        </x-aura::breadcrumbs.li>
+    </div>
+
+   <div>
+   
+    <div class="flex justify-end w-full">
                         <div x-data="{ 
                             openFileUpload() {
                                 document.getElementById('file-upload').click();
@@ -282,6 +289,17 @@
                                 wire:model="media" />
                         </div>
                     </div>
+   
+   </div>
+
+    </div>
+
+                <div class="flex justify-between items-center mt-0">
+                    <h1 class="text-2xl font-semibold">
+                        {{ __('Attachments') }}
+                    </h1>
+
+                   
                 </div>
                 <livewire:aura::table :model="$model" :field="$field" />
             </div>
