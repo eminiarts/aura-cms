@@ -4,7 +4,7 @@
         <div class="cursor-pointer flex items-center space-x-2 p-2
                    {{ $this->selectedFilter == null ? 'border-b border-black border-1 text-gray-900 dark:text-gray-200 dark:border-gray-100 font-semibold' : 'text-gray-500' }}"
             wire:click="$set('selectedFilter', null)">
-            Alle
+            {{ __('All') }}
         </div>
 
         @foreach ($this->userFilters as $name => $userFilter)
