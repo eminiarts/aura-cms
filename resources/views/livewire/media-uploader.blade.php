@@ -227,43 +227,66 @@
                 </div>
             </div>
 
-
-
-            <div>
-
+            <div class="flex justify-end mb-4">
                 @if($upload && !$disabled)
-                    <div>
-                        <label for="file-upload">
-                            <p class="mb-4 text-sm text-gray-900 dark:text-gray-400">Datei hierhin ziehen oder <span class="text-primary-400">hier klicken</span> um eine Datei hochzuladen.</p>
-                            <input type="file" id="file-upload" multiple @change="handleFileSelect" class="hidden" />
-                        </label>
+                    <div x-data="{ 
+                        openFileUpload() {
+                            document.getElementById('file-upload').click();
+                        }
+                    }">
+                        <x-aura::button.border 
+                            type="button" 
+                            class="flex items-center space-x-2" 
+                            x-on:click="openFileUpload()">
+                            <x-aura::icon.upload class="w-5 h-5" />
+                            <span>{{ __('Upload Files') }}</span>
+                        </x-aura::button.border>
+                        
+                        <input type="file" 
+                            id="file-upload" 
+                            multiple 
+                            @change="handleFileSelect" 
+                            class="hidden" 
+                            wire:model="media" />
                     </div>
-                @endif
-
-                @if($table && !$disabled)
-
-                <div class="z-[2] relative flex flex-col">
-                    <div class="flex justify-between items-center mt-0">
-                        {{-- <h1 class="text-2xl font-semibold">
-                            {{ __('Attachments') }}
-                        </h1> --}}
-
-                        <div>
-                            <label for="file-upload">
-                                <p class="mb-2 text-sm text-gray-500 dark:text-gray-400"><span
-                                        class="font-semibold">{{ __('Click to upload or drag and drop') }}</span></p>
-
-                                <input type="file" id="file-upload" multiple @change="handleFileSelect" class="hidden"
-                                    wire:model="media" />
-                            </label>
-                        </div>
-                    </div>
-                    <livewire:aura::table :model="$model" :field="$field" />
-                </div>
-
                 @endif
             </div>
 
+            @if($table && !$disabled)
+
+            <div class="z-[2] relative flex flex-col">
+                <div class="flex justify-between items-center mt-0">
+                    {{-- <h1 class="text-2xl font-semibold">
+                        {{ __('Attachments') }}
+                    </h1> --}}
+
+                    <div class="flex justify-end w-full">
+                        <div x-data="{ 
+                            openFileUpload() {
+                                document.getElementById('file-upload').click();
+                            }
+                        }">
+                            <x-aura::button.border 
+                                type="button" 
+                                class="flex items-center space-x-2" 
+                                x-on:click="openFileUpload()">
+                                <x-aura::icon.upload class="w-5 h-5" />
+                                <span>{{ __('Upload Files') }}</span>
+                            </x-aura::button.border>
+                            
+                            <input type="file" 
+                                id="file-upload" 
+                                multiple 
+                                @change="handleFileSelect" 
+                                class="hidden" 
+                                wire:model="media" />
+                        </div>
+                    </div>
+                </div>
+                <livewire:aura::table :model="$model" :field="$field" />
+            </div>
+
+            @endif
         </div>
 
     </div>
