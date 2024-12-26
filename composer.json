@@ -52,10 +52,7 @@
     "autoload": {
         "psr-4": {
             "Aura\\Base\\": "src",
-            "Aura\\Base\\Database\\Factories\\": "database/factories",
-            "Aura\\Flows\\": "plugins/aura/flows/src",
-            "Aura\\Pro\\": "plugins/aura/pro/src",
-            "Aura\\Export\\": "plugins/aura/export/src"
+            "Aura\\Base\\Database\\Factories\\": "database/factories"
         }
     },
     "autoload-dev": {
@@ -82,9 +79,7 @@
                 "Lab404\\Impersonate\\ImpersonateServiceProvider",
                 "Aura\\Base\\Providers\\AuthServiceProvider",
                 "Aura\\Base\\Providers\\AppServiceProvider",
-                "Aura\\Base\\AuraServiceProvider",
-                "Aura\\Flows\\FlowsServiceProvider",
-                "Aura\\Export\\ExportServiceProvider"
+                "Aura\\Base\\AuraServiceProvider"
             ],
             "aliases": {
                 "Aura": "Aura\\Base\\Facades\\Aura"
