@@ -5,11 +5,11 @@ namespace Aura\Base\Tests\Resources;
 use Aura\Base\Resource;
 use Aura\Flows\Resources\Flow;
 use Aura\Base\Widgets\PostChart;
-use Aura\Base\Database\Factories\PostFactory;
 use Aura\Base\Widgets\TotalPosts;
 use Aura\Export\Traits\Exportable;
 use Aura\Base\Widgets\AvgPostsNumber;
 use Aura\Base\Widgets\SumPostsNumber;
+use Aura\Base\Tests\Factories\PostFactory;
 
 class Post extends Resource
 {
@@ -292,7 +292,7 @@ class Post extends Resource
                 'name' => 'Categories',
                 'slug' => 'categories',
                 'type' => 'Aura\\Base\\Fields\\Tags',
-                'resource' => 'Aura\\Base\\Resources\\Category',
+                'resource' => 'Aura\\Base\\Tests\\Resources\\Category',
                 'create' => true,
                 'validation' => '',
                 'conditional_logic' => [],
