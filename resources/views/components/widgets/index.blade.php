@@ -78,7 +78,7 @@
                 }
             </style>
            <div class="overflow-hidden" wire:key="widgets_component_{{ $key }}">
-            @livewire($widget['type'], ['widget' => $widget, 'model' => $model, 'start' => $start, 'end' => $end], key($widget['slug']))
+            @livewire($widget['type'], ['widget' => $widget, 'model' => $this->resource, 'start' => $start, 'end' => $end], key($widget['slug']))
            </div>
         </div>
         @endforeach
