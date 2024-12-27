@@ -1,15 +1,10 @@
 <?php
 
-use Aura\Base\Resources\Post;
+use Aura\Base\Tests\Resources\Post;
 use Aura\Base\Widgets\ValueWidget;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
 use Livewire\Livewire;
-
-uses(RefreshDatabase::class);
-
-// current
-// uses()->group('current');
 
 // Before each test, create a Superadmin and login
 beforeEach(function () {
@@ -18,19 +13,28 @@ beforeEach(function () {
     // Create 3 posts before each test
     Post::create([
         'title' => 'Post 1',
+        'slug' => 'post-1',
         'number' => 10,
+        'user_id' => $this->user->id,
+        'team_id' => $this->user->team_id,
         'created_at' => Carbon::now()->subDays(15),
     ]);
 
     Post::create([
         'title' => 'Post 2',
+        'slug' => 'post-2',
         'number' => 20,
+        'user_id' => $this->user->id,
+        'team_id' => $this->user->team_id,
         'created_at' => Carbon::now()->subDays(25),
     ]);
 
     Post::create([
         'title' => 'Post 3',
+        'slug' => 'post-3',
         'number' => 30,
+        'user_id' => $this->user->id,
+        'team_id' => $this->user->team_id,
         'created_at' => Carbon::now()->subDays(35),
     ]);
 

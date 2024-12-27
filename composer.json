@@ -57,7 +57,7 @@
     },
     "autoload-dev": {
         "psr-4": {
-            "Aura\\Base\\Tests\\": "tests"
+            "Aura\\Base\\Tests\\": "tests/"
         }
     },
     "scripts": {

@@ -4,7 +4,7 @@ namespace Tests\Feature\Livewire;
 
 use Aura\Base\Livewire\Resource\Create;
 use Aura\Base\Resource;
-use Aura\Base\Resources\Post;
+use Aura\Base\Tests\Resources\Post;
 use Aura\Base\Resources\User;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Foundation\Testing\RefreshDatabase;

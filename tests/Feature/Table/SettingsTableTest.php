@@ -3,7 +3,7 @@
 use Aura\Base\Facades\Aura;
 use Aura\Base\Livewire\Table\Table;
 use Aura\Base\Resources\Option;
-use Aura\Base\Resources\Post;
+use Aura\Base\Tests\Resources\Post;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\View\ViewException;
 use Livewire\Livewire;

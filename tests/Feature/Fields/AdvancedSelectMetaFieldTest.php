@@ -7,7 +7,7 @@ use Aura\Base\Fields\AdvancedSelect;
 use Aura\Base\Livewire\Resource\Create;
 use Aura\Base\Livewire\Resource\Edit;
 use Aura\Base\Resource;
-use Aura\Base\Resources\Post;
+use Aura\Base\Tests\Resources\Post;
 use Aura\Base\Resources\Role;
 use Aura\Base\Resources\User;
 use DB;

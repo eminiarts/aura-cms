@@ -1,6 +1,6 @@
 <?php
 
-use Aura\Base\Resources\Post;
+use Aura\Base\Tests\Resources\Post;
 use Aura\Base\Resources\Team;
 use Aura\Base\Resources\User;
 use Illuminate\Support\Facades\DB;

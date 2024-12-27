@@ -6,7 +6,7 @@ use Aura\Base\Facades\Aura;
 use Aura\Base\Fields\Email;
 use Aura\Base\Livewire\Resource\Create;
 use Aura\Base\Resource;
-use Aura\Base\Resources\Post;
+use Aura\Base\Tests\Resources\Post;
 use Livewire\Livewire;
 
 // Before each test, create a Superadmin and login
