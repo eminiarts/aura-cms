@@ -4,7 +4,7 @@ use Aura\Base\Facades\Aura;
 use Aura\Base\Livewire\Table\Table;
 use Aura\Base\Models\Scopes\TeamScope;
 use Aura\Base\Resource;
-use Aura\Base\Resources\Post;
+use Aura\Base\Tests\Resources\Post;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;

@@ -3,7 +3,7 @@
 use Aura\Base\Facades\Aura;
 use Aura\Base\Livewire\Table\Table;
 use Aura\Base\Resource;
-use Aura\Base\Resources\Post;
+use Aura\Base\Tests\Resources\Post;
 use Aura\Base\Resources\Tag;
 use Aura\Base\Resources\User;
 use Illuminate\Support\Facades\DB;

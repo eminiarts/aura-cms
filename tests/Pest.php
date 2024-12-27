@@ -1,16 +1,15 @@
 <?php
 
-use Aura\Base\Resources\Post;
 use Aura\Base\Resources\Role;
 use Aura\Base\Resources\Team;
 use Aura\Base\Resources\User;
-use Aura\Base\Tests\TestCase;
-use Illuminate\Contracts\Console\Kernel;
 use Illuminate\Foundation\Testing\DatabaseMigrations;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Artisan;
+use Aura\Base\Tests\Resources\Post;
+use Illuminate\Support\Facades\Schema;
 
-uses(TestCase::class)->in(__DIR__);
+uses(Aura\Base\Tests\TestCase::class)->in(__DIR__);
 
 uses()->group('fields')->in('Feature/Fields');
 uses()->group('flows')->in('Feature/Flows');
@@ -35,9 +34,9 @@ uses(DatabaseMigrations::class)->in('DatabaseMigrations');
 |
 */
 
-function createPost($type)
+function createPost(array $attributes = []): Post
 {
-    return Post::factory()->create(['type' => $type]);
+    return Post::factory()->create($attributes);
 }
 
 function createSuperAdmin()
@@ -53,6 +52,7 @@ function createSuperAdmin()
 
     return $user;
 }
+
 function bootstrapApp()
 {
     $app = require_once base_path('bootstrap/app.php'); // Using base_path to ensure correct location
