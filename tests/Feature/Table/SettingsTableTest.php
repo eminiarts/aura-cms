@@ -12,6 +12,9 @@ use Livewire\Livewire;
 beforeEach(function () {
     $this->actingAs($this->user = createSuperAdmin());
 
+    Aura::fake();
+    Aura::setModel(new Post);
+
     // Create a post
     $this->post = Post::factory()->create();
 });
