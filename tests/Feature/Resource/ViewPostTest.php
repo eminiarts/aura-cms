@@ -12,6 +12,9 @@ use function Pest\Livewire\livewire;
 // Before each test, create a Superadmin and login
 beforeEach(function () {
     $this->actingAs($this->user = createSuperAdmin());
+
+    Aura::fake();
+    Aura::setModel(new Post);
 });
 
 test('post can be viewed', function () {

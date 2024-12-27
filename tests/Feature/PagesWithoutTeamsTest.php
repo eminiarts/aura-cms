@@ -1,10 +1,11 @@
 <?php
 
+use Aura\Base\Facades\Aura;
+use Aura\Base\Resources\Role;
+use Aura\Base\Resources\User;
 use Aura\Base\Resources\Option;
 use Aura\Base\Resources\Permission;
 use Aura\Base\Tests\Resources\Post;
-use Aura\Base\Resources\Role;
-use Aura\Base\Resources\User;
 
 beforeAll(function () {
     putenv('AURA_TEAMS=false');
@@ -17,6 +18,9 @@ afterAll(function () {
 // Before each test, create a Superadmin and login
 beforeEach(function () {
     $this->actingAs($this->user = createSuperAdminWithoutTeam());
+
+    Aura::fake();
+    Aura::setModel(new Post);
 });
 
 test('Aura without teams - pages', function () {

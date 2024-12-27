@@ -23,8 +23,8 @@
             </div>
         </div>
 
-        <div class="grid grid-cols-2 gap-4">
-            <button onclick="Livewire.dispatch('openModal', { component: 'aura::create-resource' })" class="flex items-center p-4 text-left rounded-lg transition group hover:bg-gray-50 dark:hover:bg-gray-700/50">
+        <div class="grid grid-cols-2 gap-4 @if(!config('aura.teams')) grid-cols-3 @endif">
+            <button onclick="Livewire.dispatch('openModal', { component: 'aura::create-resource' })" class="flex items-center p-4 text-left rounded-lg transition group hover:bg-gray-50 dark:hover:bg-gray-700/50 @if(!config('aura.teams')) col-span-1 @endif">
                 <div class="p-2 mr-4 bg-green-50 rounded-lg shrink-0 dark:bg-green-900/50 group-hover:bg-green-100 dark:group-hover:bg-green-900/70">
 
                     <svg class="text-green-600 size-6 dark:text-green-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"  color="currentColor" fill="none">
@@ -54,6 +54,7 @@
                 </div>
             </a>
 
+            @if (config('aura.teams'))
             <a href="{{ route('aura.team.edit', ['id' => auth()->user()->current_team_id]) }}" class="flex items-center p-4 rounded-lg transition group hover:bg-gray-50 dark:hover:bg-gray-700/50">
                 <div class="p-2 mr-4 bg-blue-50 rounded-lg shrink-0 dark:bg-blue-900/50 group-hover:bg-blue-100 dark:group-hover:bg-blue-900/70">
 
@@ -69,6 +70,7 @@
                     <span class="text-xs text-gray-500 dark:text-gray-400">Manage team settings</span>
                 </div>
             </a>
+            @endif
 
             <a href="{{ route('aura.plugins') }}" class="flex items-center p-4 rounded-lg transition group hover:bg-gray-50 dark:hover:bg-gray-700/50">
                 <div class="p-2 mr-4 bg-purple-50 rounded-lg shrink-0 dark:bg-purple-900/50 group-hover:bg-purple-100 dark:group-hover:bg-purple-900/70">
