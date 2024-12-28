@@ -10,7 +10,13 @@ use Livewire\Livewire;
 
 uses(RefreshDatabase::class);
 
-beforeEach(fn () => $this->actingAs($this->user = User::factory()->create()));
+beforeEach(function () {
+    $this->user = User::factory()->create();
+    $this->actingAs($this->user);
+
+    Aura::fake();
+    Aura::setModel(new Post);
+});
 
 test('a super admin can perform any action', function () {
     $role = Role::create(['name' => 'Super Admin', 'slug' => 'super_admin', 'description' => 'Super Admin has can perform everything.', 'super_admin' => true, 'permissions' => []]);

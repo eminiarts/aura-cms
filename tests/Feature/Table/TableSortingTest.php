@@ -14,6 +14,8 @@ beforeEach(function () {
     $this->actingAs($this->user = createSuperAdmin());
 
     Aura::fake();
+
+    Aura::setModel(new Post);
     Aura::setModel(new MetaSortingModel);
 });
 

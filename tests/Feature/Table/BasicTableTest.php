@@ -1,16 +1,20 @@
 <?php
 
+use Livewire\Livewire;
+use Aura\Base\Facades\Aura;
+use Aura\Base\Resources\User;
 use Aura\Base\Livewire\Table\Table;
 use Aura\Base\Tests\Resources\Post;
-use Aura\Base\Resources\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Livewire\Livewire;
 
 uses(RefreshDatabase::class);
 
 // Before each test, create a Superadmin and login
 beforeEach(function () {
     $this->actingAs($this->user = createSuperAdmin());
+
+    Aura::fake();
+    Aura::setModel(new Post);
 });
 
 test('table can be rendered', function () {
