@@ -1,11 +1,11 @@
 ![Aura CMS](path/to/logo.png)
 
-# Aura CMS - The Modern TALL Stack Content Management System
+# Aura CMS - The Modern CMS for Laravel Developers
 
-[![Latest Version on Packagist](https://img.shields.io/packagist/v/eminiarts/aura.svg?style=flat-square)](https://packagist.org/packages/eminiarts/aura)
-[![GitHub Tests Action Status](https://img.shields.io/github/workflow/status/eminiarts/aura/run-tests?label=tests)](https://github.com/eminiarts/aura/actions?query=workflow%3Arun-tests+branch%3Amain)
-[![GitHub Code Style Action Status](https://img.shields.io/github/workflow/status/eminiarts/aura/Fix%20PHP%20code%20style%20issues?label=code%20style)](https://github.com/eminiarts/aura/actions?query=workflow%3A"Fix+PHP+code+style+issues"+branch%3Amain)
-[![Total Downloads](https://img.shields.io/packagist/dt/eminiarts/aura.svg?style=flat-square)](https://packagist.org/packages/eminiarts/aura)
+[![Latest Version on Packagist](https://img.shields.io/packagist/v/eminiarts/aura-cms.svg?style=flat-square)](https://packagist.org/packages/eminiarts/aura-cms)
+[![GitHub Tests Action Status](https://img.shields.io/github/workflow/status/eminiarts/aura-cms/run-tests?label=tests)](https://github.com/eminiarts/aura-cms/actions?query=workflow%3Arun-tests+branch%3Amain)
+[![GitHub Code Style Action Status](https://img.shields.io/github/workflow/status/eminiarts/aura-cms/Fix%20PHP%20code%20style%20issues?label=code%20style)](https://github.com/eminiarts/aura-cms/actions?query=workflow%3A"Fix+PHP+code+style+issues"+branch%3Amain)
+[![Total Downloads](https://img.shields.io/packagist/dt/eminiarts/aura-cms.svg?style=flat-square)](https://packagist.org/packages/eminiarts/aura-cms)
 
 Aura CMS is a powerful, flexible content management system built on the TALL stack (Tailwind CSS, Alpine.js, Laravel, and Livewire). It combines the best practices of modern Laravel development with an intuitive admin interface, making it perfect for developers who want to build custom applications quickly without sacrificing flexibility.
 
@@ -41,7 +41,7 @@ laravel new my-project
 cd my-project
 
 # Install Aura CMS
-composer require eminiarts/aura
+composer require eminiarts/aura-cms
 
 # Run the installer
 php artisan aura:install
