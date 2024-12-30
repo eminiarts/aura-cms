@@ -2,7 +2,6 @@
 
 use Aura\Base\Tests\Resources\Post;
 use Aura\Base\Widgets\ValueWidget;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
 use Livewire\Livewire;
 
