@@ -1,104 +1,103 @@
+![Aura CMS](path/to/logo.png)
 
-# Aura, the Laravel CMS (TALL Stack)
+# Aura CMS - The Modern TALL Stack Content Management System
 
 [![Latest Version on Packagist](https://img.shields.io/packagist/v/eminiarts/aura.svg?style=flat-square)](https://packagist.org/packages/eminiarts/aura)
 [![GitHub Tests Action Status](https://img.shields.io/github/workflow/status/eminiarts/aura/run-tests?label=tests)](https://github.com/eminiarts/aura/actions?query=workflow%3Arun-tests+branch%3Amain)
 [![GitHub Code Style Action Status](https://img.shields.io/github/workflow/status/eminiarts/aura/Fix%20PHP%20code%20style%20issues?label=code%20style)](https://github.com/eminiarts/aura/actions?query=workflow%3A"Fix+PHP+code+style+issues"+branch%3Amain)
 [![Total Downloads](https://img.shields.io/packagist/dt/eminiarts/aura.svg?style=flat-square)](https://packagist.org/packages/eminiarts/aura)
 
-This is where your description should go. Limit it to a paragraph or two. Consider adding a small example.
+Aura CMS is a powerful, flexible content management system built on the TALL stack (Tailwind CSS, Alpine.js, Laravel, and Livewire). It combines the best practices of modern Laravel development with an intuitive admin interface, making it perfect for developers who want to build custom applications quickly without sacrificing flexibility.
 
-## Installation
+## ✨ Features
 
-You can install the package via composer:
+### 🎯 Core Features
+- **Resource System**: Similar to WordPress post types but supercharged with Laravel's Eloquent
+- **Dynamic Fields**: Inspired by Advanced Custom Fields (ACF) with 25+ field types
+- **Team Management**: Built-in multi-tenancy support (optional)
+- **Role-Based Access Control**: Comprehensive permissions system
+- **Media Management**: Built-in media library with image optimization
+- **Theme System**: Customizable themes with dark mode support
+
+### 💡 Developer Experience
+- **Visual Resource Editor**: Build your resources and fields visually
+- **Custom Fields API**: Create your own field types
+- **Plugin System**: Extend functionality with custom plugins
+- **Flexible Storage**: Start with posts table, migrate to custom tables when ready
+- **TALL Stack**: Leverage the power of Tailwind, Alpine.js, Laravel, and Livewire
+
+### 🚀 User Experience
+- **Global Search**: Quick navigation with keyboard shortcuts (⇧⌘K)
+- **Bookmarks**: Save frequently accessed pages
+- **Recent Pages**: Track last visited pages
+- **Customizable Tables**: Sort, filter, and save views
+- **Responsive Design**: Works seamlessly on all devices
+
+## 🛠 Installation
 
 ```bash
+# Create a new Laravel project
+laravel new my-project
+cd my-project
+
+# Install Aura CMS
 composer require eminiarts/aura
-```
 
-You can install Aura with:
-
-```bash
+# Run the installer
 php artisan aura:install
 ```
 
-You can publish and run the migrations with:
+The installer will guide you through:
+- Publishing configuration files
+- Running migrations
+- Setting up your first admin user
+- Configuring themes and features
+
+## 📚 Documentation
+
+Visit our [documentation](docs/installation.md) for detailed guides on:
+
+- [Getting Started](docs/installation.md)
+- [Creating Resources](docs/resource.md)
+- [Field Types](docs/fields.md)
+- [Relationships](docs/relationships.md)
+- [Actions](docs/resource_actions.md)
+- [Plugins](docs/plugins.md)
+- [Customization](docs/customizing-post-view.md)
+
+## 🧪 Testing
 
 ```bash
-php artisan vendor:publish --tag="aura-migrations"
-php artisan migrate
-```
-
-You can publish the assets with:
-
-```bash
-php artisan vendor:publish --tag="aura-assets"
-```
-
-You can publish the config file with:
-
-```bash
-php artisan vendor:publish --tag="aura-config"
-```
-
-This is the contents of the published config file:
-
-```php
-return [
-];
-```
-
-Optionally, you can publish the views using
-
-```bash
-php artisan vendor:publish --tag="aura-views"
-```
-
-## Usage
-
-```php
-$aura = new Aura\Base();
-echo $aura->echoPhrase('Hello, Eminiarts!');
-```
-
-## Testing
-
-```bash
+# Run all tests
 composer test
-```
 
-```bash
+# Run tests with Pest
 vendor/bin/pest
-```
 
-Run tests with the other configuration
-```bash
+# Run tests without teams
 vendor/bin/pest -c phpunit-without-teams.xml
 
-pp -c phpunit-without-teams.xml
-```
-
-```bash
+# Run tests with coverage
 XDEBUG_MODE=coverage vendor/bin/pest --coverage --min=80
 ```
 
-## Changelog
+## 🤝 Contributing
 
-Please see [CHANGELOG](CHANGELOG.md) for more information on what has changed recently.
+We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) for details.
 
-## Contributing
+## 🔒 Security
 
-Please see [CONTRIBUTING](CONTRIBUTING.md) for details.
+If you discover any security-related issues, please email security@eminiarts.com instead of using the issue tracker.
 
-## Security Vulnerabilities
+## 📄 License
 
-Please review [our security policy](../../security/policy) on how to report security vulnerabilities.
+Aura CMS is open-source software licensed under the [MIT license](LICENSE.md).
 
-## Credits
+## 🙏 Credits
 
 - [Emini Arts](https://github.com/eminiarts)
 - [All Contributors](../../contributors)
 
-## License
+---
 
-The MIT License (MIT). Please see [License File](LICENSE.md) for more information.
+Built with ❤️ by [Emini Arts](https://eminiarts.com)
