@@ -3,13 +3,12 @@
 namespace Aura\Base\Tests\Resources;
 
 use Aura\Base\Resource;
-use Aura\Flows\Resources\Flow;
-use Aura\Base\Widgets\PostChart;
-use Aura\Base\Widgets\TotalPosts;
-use Aura\Export\Traits\Exportable;
-use Aura\Base\Widgets\AvgPostsNumber;
-use Aura\Base\Widgets\SumPostsNumber;
 use Aura\Base\Tests\Factories\PostFactory;
+use Aura\Base\Widgets\AvgPostsNumber;
+use Aura\Base\Widgets\PostChart;
+use Aura\Base\Widgets\SumPostsNumber;
+use Aura\Base\Widgets\TotalPosts;
+use Aura\Flows\Resources\Flow;
 
 class Post extends Resource
 {

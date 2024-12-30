@@ -3,11 +3,10 @@
 use Aura\Base\Resources\Role;
 use Aura\Base\Resources\Team;
 use Aura\Base\Resources\User;
+use Aura\Base\Tests\Resources\Post;
 use Illuminate\Foundation\Testing\DatabaseMigrations;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Artisan;
-use Aura\Base\Tests\Resources\Post;
-use Illuminate\Support\Facades\Schema;
 
 uses(Aura\Base\Tests\TestCase::class)->in(__DIR__);
 

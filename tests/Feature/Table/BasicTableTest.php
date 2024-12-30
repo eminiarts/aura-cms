@@ -1,11 +1,11 @@
 <?php
 
-use Livewire\Livewire;
 use Aura\Base\Facades\Aura;
-use Aura\Base\Resources\User;
 use Aura\Base\Livewire\Table\Table;
+use Aura\Base\Resources\User;
 use Aura\Base\Tests\Resources\Post;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Livewire\Livewire;
 
 uses(RefreshDatabase::class);
 

@@ -1,8 +1,8 @@
 <?php
 
-use Aura\Base\Tests\Resources\Post;
 use Aura\Base\Resources\Team;
 use Aura\Base\Resources\User;
+use Aura\Base\Tests\Resources\Post;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
