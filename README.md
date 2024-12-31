@@ -102,4 +102,4 @@ Aura CMS is open-source software licensed under the [MIT license](LICENSE.md).
 
 ---
 
-Built with ❤️ by [Emini Arts](https://eminiarts.com)
+Built with ❤️ by [Emini Arts](https://eminiarts.ch)
