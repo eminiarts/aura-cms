@@ -243,7 +243,7 @@ trait AuraModelConfig
     {
         return $this->meta()->getRelated()->getTable();
 
-        //return (new Meta())->getTable();
+        // return (new Meta())->getTable();
     }
 
     public static function getName(): ?string

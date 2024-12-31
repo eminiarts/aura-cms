@@ -194,7 +194,7 @@ class AuraServiceProvider extends PackageServiceProvider
                     ->publishConfigFile()
                     ->publishAssets()
                     ->publishMigrations()
-                    //->askToRunMigrations()
+                    // ->askToRunMigrations()
                     ->copyAndRegisterServiceProviderInApp()
                     ->askToStarRepoOnGitHub('aura-cms/base')
                     ->endWith(function (InstallCommand $command) {
@@ -365,8 +365,8 @@ class AuraServiceProvider extends PackageServiceProvider
 
     public function registeringPackage()
     {
-        //$package->hasRoute('web');
-        //$this->loadRoutesFrom(__DIR__.'/../routes/web.php');
+        // $package->hasRoute('web');
+        // $this->loadRoutesFrom(__DIR__.'/../routes/web.php');
     }
 
     protected function getResources(): array

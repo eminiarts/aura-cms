@@ -45,7 +45,7 @@ class BooleanFieldModel extends Resource
 
 test('Boolean Field Test', function () {
     // show all exceptions
-    //$this->withoutExceptionHandling();
+    // $this->withoutExceptionHandling();
 
     $model = new BooleanFieldModel;
 
@@ -54,15 +54,15 @@ test('Boolean Field Test', function () {
         ->assertSee('Create Boolean Model')
         ->assertSee('Boolean for Test')
         ->assertSeeHtml('<button x-ref="toggle"')
-        //->assertMissingHtml('class="bg-primary-600"')
+        // ->assertMissingHtml('class="bg-primary-600"')
         ->assertSeeHtml('bg-gray-300')
         ->assertSeeHtml('bg-primary-600')
         ->call('save')
         ->assertHasNoErrors(['form.fields.boolean']);
 
-    //->assertSeeHtml('type="email"')
-    //->call('save')
-    //->assertHasNoErrors(['form.fields.email']);
+    // ->assertSeeHtml('type="email"')
+    // ->call('save')
+    // ->assertHasNoErrors(['form.fields.email']);
 
     // assert in db has post with type DateModel
     $this->assertDatabaseHas('posts', ['type' => 'BooleanModel']);

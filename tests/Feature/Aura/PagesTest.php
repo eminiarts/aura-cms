@@ -3,9 +3,7 @@
 use Aura\Base\Facades\Aura;
 use Aura\Base\Resources\User;
 use Aura\Base\Tests\Resources\Post;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Artisan;
-
 
 // Before each test, create a Superadmin and login
 beforeEach(function () {

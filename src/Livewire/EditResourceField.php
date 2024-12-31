@@ -200,7 +200,7 @@ class EditResourceField extends Component
     public function updated($property)
     {
         // $property: The name of the current property that was updated
-        //ray('updated', $property)->orange();
+        // ray('updated', $property)->orange();
 
         if ($property === 'form.fields.type') {
             // $this->username = strtolower($this->username);

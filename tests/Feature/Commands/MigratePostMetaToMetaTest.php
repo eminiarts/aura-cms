@@ -3,8 +3,8 @@
 use Aura\Base\Facades\Aura;
 use Aura\Base\Resources\Team;
 use Aura\Base\Resources\User;
-use Illuminate\Support\Facades\DB;
 use Aura\Base\Tests\Resources\Post;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 beforeEach(function () {
@@ -79,7 +79,7 @@ it('can migrate meta data from old tables to new meta table', function () {
 
     Aura::fake();
     Aura::setModel(new Post);
-    
+
     // Create test data
     $post = DB::table('posts')->insertGetId([
         'type' => 'post',

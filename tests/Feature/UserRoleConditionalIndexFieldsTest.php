@@ -1,8 +1,6 @@
 <?php
 
-use Aura\Base\ConditionalLogic;
 use Aura\Base\Facades\Aura;
-use Aura\Base\Models\Post;
 use Aura\Base\Resource;
 use Aura\Base\Resources\Role;
 use Aura\Base\Resources\User;
@@ -15,13 +13,13 @@ class UserRoleConditionalIndexFieldsModel extends Resource
 
     public static string $type = 'Page';
 
-    protected $table = 'posts';
-
-    protected $fillable = ['type'];
-
     protected $attributes = [];
 
     protected $fields = [];
+
+    protected $fillable = ['type'];
+
+    protected $table = 'posts';
 
     public function __get($key)
     {
@@ -30,6 +28,7 @@ class UserRoleConditionalIndexFieldsModel extends Resource
         }
 
         $field = collect($this->fields)->firstWhere('slug', $key);
+
         return $field ? $field['value'] : null;
     }
 
@@ -49,6 +48,7 @@ class UserRoleConditionalIndexFieldsModel extends Resource
     public function clearFieldsAttributeCache()
     {
         $this->refreshFields();
+
         return $this;
     }
 
@@ -103,14 +103,10 @@ class UserRoleConditionalIndexFieldsModel extends Resource
         ];
     }
 
-    public static function usesMeta(): string
-    {
-        return 'meta';
-    }
-
     public function getMeta($key = null)
     {
         $meta = $this->meta()->pluck('value', 'key')->toArray();
+
         return $key ? ($meta[$key] ?? null) : $meta;
     }
 
@@ -126,11 +122,18 @@ class UserRoleConditionalIndexFieldsModel extends Resource
     {
         if (in_array($key, ['text1', 'text2', 'text3'])) {
             $this->saveMeta($key, $value);
+
             return $this;
         }
 
         $this->attributes[$key] = $value;
+
         return $this;
+    }
+
+    public static function usesMeta(): string
+    {
+        return 'meta';
     }
 
     protected function refreshFields()
@@ -164,6 +167,7 @@ class UserRoleConditionalIndexFieldsModel extends Resource
         $this->fields = $visibleFields->map(function ($field) use ($meta) {
             $slug = $field['slug'];
             $field['value'] = $meta[$slug] ?? null;
+
             return $field;
         });
 
@@ -239,7 +243,7 @@ test('super admin can get all fields', function () {
     $this->user->refresh();
 
     $model = new UserRoleConditionalIndexFieldsModel;
-    
+
     Aura::fake();
     Aura::setModel($model);
 

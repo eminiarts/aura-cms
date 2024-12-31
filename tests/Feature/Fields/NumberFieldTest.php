@@ -49,7 +49,7 @@ class NumberFieldModel extends Resource
 
 test('Number Field can be rendered', function () {
     // show all exceptions
-    //$this->withoutExceptionHandling();
+    // $this->withoutExceptionHandling();
 
     $model = new NumberFieldModel;
 

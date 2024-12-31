@@ -5,11 +5,11 @@ namespace Aura\Base\Commands;
 use Aura\Base\Facades\Aura;
 use Aura\Base\Resources\Team;
 use Aura\Base\Resources\User;
-use Illuminate\Console\Command;
-use Illuminate\Support\Facades\DB;
 use Aura\Base\Tests\Resources\Post;
-use Illuminate\Support\Facades\Schema;
+use Illuminate\Console\Command;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 class MigratePostMetaToMeta extends Command
 {

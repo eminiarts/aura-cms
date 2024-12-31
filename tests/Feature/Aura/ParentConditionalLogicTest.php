@@ -293,7 +293,7 @@ test('role condition as a Super Admin', function () {
         'slug' => 'super_admin',
         'description' => 'Super Admin can perform everything.',
         'super_admin' => true,
-        'permissions' => []
+        'permissions' => [],
     ]);
 
     // Create a normal user without super admin role

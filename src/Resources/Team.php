@@ -256,8 +256,8 @@ class Team extends Resource
                 // $user->switchTeam($team);
 
                 $user->current_team_id = $team->id;
-                //ray('current_team_id', $user->current_team_id)->red();
-                //ray($user);
+                // ray('current_team_id', $user->current_team_id)->red();
+                // ray($user);
                 $user->save();
             }
 

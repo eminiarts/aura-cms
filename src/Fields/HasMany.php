@@ -2,10 +2,7 @@
 
 namespace Aura\Base\Fields;
 
-use Aura\Base\Models\Meta;
 use Aura\Flows\Resources\Flow;
-use Aura\Flows\Resources\FlowLog;
-use Aura\Flows\Resources\Operation;
 
 class HasMany extends Field
 {
@@ -76,6 +73,7 @@ class HasMany extends Field
 
         if (isset($component->field['resource'])) {
             $relationship = $this->relationship($model, $field);
+
             return $relationship->getQuery();
         }
 

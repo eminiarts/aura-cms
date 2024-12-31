@@ -12,7 +12,7 @@ use Livewire\Livewire;
 // Before each test, create a Superadmin and login
 beforeEach(function () {
     $this->actingAs($this->user = createSuperAdmin());
-    
+
     Aura::fake();
     Aura::setModel(new HasManyCustomTableModel);
     Aura::registerRoutes('has-many-model');
@@ -21,9 +21,9 @@ beforeEach(function () {
 // Create Re
 class HasManyCustomTableModel extends Resource
 {
-    public static string $type = 'HasManyModel';
-
     public static ?string $slug = 'has-many-model';
+
+    public static string $type = 'HasManyModel';
 
     public static function getFields()
     {

@@ -35,7 +35,7 @@ trait BulkActions
 
     public function bulkCollectionAction($action)
     {
-        //$action = $this->model->getBulkActions()[$action];
+        // $action = $this->model->getBulkActions()[$action];
         $ids = $this->selectedRowsQuery->pluck('id')->toArray();
 
         $response = $this->model->{$action}($ids);

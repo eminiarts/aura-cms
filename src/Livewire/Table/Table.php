@@ -423,7 +423,7 @@ class Table extends Component
     {
         // Save the columns for the current user.
         if ($this->columns) {
-            //ray('Save the columns for the current user', $this->columns);
+            // ray('Save the columns for the current user', $this->columns);
             auth()->user()->updateOption('columns.'.$this->model()->getType(), $this->columns);
         }
     }

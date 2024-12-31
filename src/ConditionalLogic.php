@@ -167,7 +167,7 @@ class ConditionalLogic
     private static function handleRoleCondition($condition)
     {
         $user = Auth::user();
-        
+
         if ($condition['operator'] === '==' && $condition['value'] === 'super_admin') {
             return $user->isSuperAdmin();
         }

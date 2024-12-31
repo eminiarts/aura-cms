@@ -509,7 +509,7 @@ test('default_view settings', function () {
     ];
 
     $component = Livewire::test(Table::class, ['model' => $this->post, 'settings' => $settings]);
-    
+
     expect($component->settings)->toHaveKey('default_view', 'list');
 });
 

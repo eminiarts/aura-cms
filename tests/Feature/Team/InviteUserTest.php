@@ -264,7 +264,7 @@ test('email and role are required in the invite user component', function () {
     $user = User::find($user->id);
     $user->update(['fields' => ['roles' => [Role::first()->id]]]);
 
-    //$role->users()->sync([$user->id => ['resource_type' => Role::class]]);
+    // $role->users()->sync([$user->id => ['resource_type' => Role::class]]);
 
     // $user->roles()->sync([Role::first()->id => ['resource_type' => User::class]]);
 

@@ -44,7 +44,7 @@ it('calculates count correctly', function () {
     $widgetTest = Livewire::test(ValueWidget::class, ['widget' => ['method' => 'count', 'name' => 'Total Posts Created'], 'model' => new Post])
         ->set('start', Carbon::now()->subDays(30))
         ->set('end', Carbon::now());
-    //->assertSet('value', 2)
+    // ->assertSet('value', 2)
 
     $widget = $widgetTest->instance();
 

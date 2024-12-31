@@ -38,8 +38,8 @@ class ModifyDatabaseMigration
         $schema = $this->generateSchema($newFields);
 
         if ($this->migrationExists($migrationName)) {
-            //$this->error("Migration '{$migrationName}' already exists.");
-            //return 1;
+            // $this->error("Migration '{$migrationName}' already exists.");
+            // return 1;
             $migrationFile = $this->getMigrationPath($migrationName);
         } else {
             Artisan::call('make:migration', [

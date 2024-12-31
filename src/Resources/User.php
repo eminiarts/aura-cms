@@ -684,8 +684,8 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
         }
 
         return $this->belongsToMany(Role::class, 'user_role')
-            //->using(TeamUser::class)
-            //->withPivot('team_id')
+            // ->using(TeamUser::class)
+            // ->withPivot('team_id')
             ->withTimestamps();
     }
 

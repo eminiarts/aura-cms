@@ -72,7 +72,7 @@ test('HasMany Field shown on Edit', function () {
 
 test('HasMany query Meta Fields with posts table', function () {
     $model = HasManyFieldModel::create([
-        'type' => 'HasManyModel'
+        'type' => 'HasManyModel',
     ]);
 
     // Create 3 posts
@@ -95,14 +95,14 @@ test('HasMany query Meta Fields with posts table', function () {
     $query = $model->posts();
     $sql = $query->toSql();
     $bindings = $query->getBindings();
-    
+
     // Dump the SQL and bindings for debugging
     dump([
         'sql' => $sql,
         'bindings' => $bindings,
         'model_id' => $model->id,
         'model_type' => get_class($model),
-        'post_relations' => DB::table('post_relations')->get()
+        'post_relations' => DB::table('post_relations')->get(),
     ]);
 
     expect($model->posts()->count())->toBe(3);
