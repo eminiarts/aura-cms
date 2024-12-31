@@ -15,3 +15,6 @@ html
 .phpunit.cache
 .git.backup
 plugins/
+.vscode
+.cursorrules
+.windsurfrules

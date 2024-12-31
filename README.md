@@ -89,7 +89,7 @@ We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) f
 
 ## 🔒 Security
 
-If you discover any security-related issues, please email security@eminiarts.com instead of using the issue tracker.
+If you discover any security-related issues, please email support@eminiarts.ch instead of using the issue tracker.
 
 ## 📄 License
 
