@@ -278,7 +278,6 @@ test('fields merge parent conditional logic - more advanced Example', function (
 });
 
 test('role condition as a Super Admin', function () {
-
     $model = new AdvancedParentConditionalLogicModel;
 
     $fields = $model->sendThroughPipeline($model->fieldsCollection(), [
@@ -288,25 +287,31 @@ test('role condition as a Super Admin', function () {
         ApplyParentConditionalLogic::class,
     ]);
 
-    // dd($this->user->isSuperAdmin());
-    $superAdmin = $this->user;
+    // Create a super admin role
+    $superAdminRole = Role::create([
+        'name' => 'Super Admin',
+        'slug' => 'super_admin',
+        'description' => 'Super Admin can perform everything.',
+        'super_admin' => true,
+        'permissions' => []
+    ]);
 
-    // Create a normal user
-    $user2 = User::factory()->create();
-
-    // act as $user2
-    $this->actingAs($user2);
+    // Create a normal user without super admin role
+    $normalUser = User::factory()->create();
+    $this->actingAs($normalUser);
 
     // As a normal User, "Tab 1" should not be visible
     $this->assertFalse(Aura::checkCondition($model, $fields->firstWhere('slug', 'tab-1')));
 
-    // Attach Super Admin Role to User
-    // $user()->update(['roles' => [$r->id]]);
+    // Create a super admin user
+    $superAdmin = User::factory()->create();
+    $superAdmin->update(['roles' => [$superAdminRole->id]]);
+    $superAdmin->refresh();
 
     // Clear the cache
     Aura::clearConditionsCache();
 
-    // act as $this->user
+    // Act as super admin
     $this->actingAs($superAdmin);
 
     // As a Super Admin, "Tab 1" should be visible
