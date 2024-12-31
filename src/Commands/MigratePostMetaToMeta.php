@@ -2,13 +2,14 @@
 
 namespace Aura\Base\Commands;
 
-use Aura\Base\Resources\Post;
+use Aura\Base\Facades\Aura;
 use Aura\Base\Resources\Team;
 use Aura\Base\Resources\User;
 use Illuminate\Console\Command;
-use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\DB;
+use Aura\Base\Tests\Resources\Post;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Database\Schema\Blueprint;
 
 class MigratePostMetaToMeta extends Command
 {
@@ -34,6 +35,7 @@ class MigratePostMetaToMeta extends Command
         $postMeta = DB::table('post_meta')->get();
         $this->output->progressStart(count($postMeta));
         foreach ($postMeta as $meta) {
+
             $post = DB::table('posts')->where('id', $meta->post_id)->first();
 
             // Skip if post doesn't exist anymore
@@ -44,7 +46,7 @@ class MigratePostMetaToMeta extends Command
             }
 
             $type = $post->type;
-            $metableType = \Aura\Base\Facades\Aura::findResourceBySlug($type);
+            $metableType = Aura::findResourceBySlug($type);
 
             // Skip if metableType is not found
             if (! $metableType) {
