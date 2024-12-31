@@ -3,6 +3,8 @@
 namespace Aura\Base\Fields;
 
 use Aura\Base\Models\Meta;
+use Aura\Flows\Resources\Flow;
+use Aura\Flows\Resources\FlowLog;
 use Aura\Flows\Resources\Operation;
 
 class HasMany extends Field
@@ -60,7 +62,6 @@ class HasMany extends Field
 
     public function queryFor($query, $component)
     {
-
         $field = $component->field;
         $model = $component->model;
 
@@ -69,16 +70,12 @@ class HasMany extends Field
             $model = $component->parent;
         }
 
-        // if $field['relation'] is set, check if meta with key $field['relation'] exists, apply whereHas meta to the query
-
-        // if optional($field)['relation'] is closure
         if (is_callable(optional($field)['relation'])) {
             return $field['relation']($query, $model);
         }
 
         if (isset($component->field['resource'])) {
             $relationship = $this->relationship($model, $field);
-
             return $relationship->getQuery();
         }
 
@@ -99,20 +96,23 @@ class HasMany extends Field
             return $query;
         }
 
-        if ($model instanceof \Aura\Flows\Resources\Flow) {
-            return $query->where('flow_id', $model->id);
+        // Only include Flow-related checks if the classes exist
+        if (class_exists('Aura\Flows\Resources\Flow')) {
+            if ($model instanceof \Aura\Flows\Resources\Flow) {
+                return $query->where('flow_id', $model->id);
+            }
         }
 
-        if ($model instanceof \Aura\Flows\Resources\Flow) {
-            return $query->where('flow_id', $model->id);
+        if (class_exists('Aura\Flows\Resources\Operation')) {
+            if ($model instanceof \Aura\Flows\Resources\Operation) {
+                return $query->where('operation_id', $model->id);
+            }
         }
 
-        if ($model instanceof Operation) {
-            return $query->where('operation_id', $model->id);
-        }
-
-        if ($model instanceof \Aura\Flows\Resources\FlowLog) {
-            return $query->where('flow_log_id', $model->id);
+        if (class_exists('Aura\Flows\Resources\FlowLog')) {
+            if ($model instanceof \Aura\Flows\Resources\FlowLog) {
+                return $query->where('flow_log_id', $model->id);
+            }
         }
 
         return $query->where('user_id', $model->id);
@@ -128,14 +128,16 @@ class HasMany extends Field
             return $model
                 ->morphedByMany($field['resource'], 'related', 'post_relations', 'resource_id', 'related_id')
                 ->withTimestamps()
-                ->withPivot('related_type')
-                ->wherePivot('related_type', $field['resource']);
+                ->withPivot('resource_type', 'slug')
+                ->wherePivot('resource_type', $field['resource'])
+                ->wherePivot('slug', $field['slug']);
         }
 
         return $model
             ->morphedByMany($field['resource'], 'resource', 'post_relations', 'related_id', 'resource_id')
             ->withTimestamps()
-            ->withPivot('resource_type')
-            ->wherePivot('resource_type', $field['resource']);
+            ->withPivot('resource_type', 'slug')
+            ->wherePivot('resource_type', $field['resource'])
+            ->wherePivot('slug', $field['slug']);
     }
 }

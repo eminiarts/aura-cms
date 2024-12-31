@@ -39,6 +39,8 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
 
     public static $customTable = true;
 
+    public static bool $indexViewEnabled = true;
+
     public $preventPasswordUpdate = false;
 
     public static ?string $slug = 'user';
@@ -548,7 +550,6 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
         }
 
         foreach ($roles as $role) {
-
             if ($role->super_admin) {
                 return true;
             }

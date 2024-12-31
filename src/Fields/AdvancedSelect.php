@@ -317,11 +317,21 @@ class AdvancedSelect extends Field
         foreach ($ids as $index => $item) {
             $id = is_array($item) ? ($item['id'] ?? null) : $item;
             if ($id !== null && (is_string($id) || is_int($id))) {
-                $pivotData[$id] = [
-                    'resource_type' => $field['resource'],
-                    'slug' => $field['slug'],
-                    'order' => $index + 1,
-                ];
+                if ($field['reverse'] ?? false) {
+                    $pivotData[$id] = [
+                        'resource_type' => $field['resource'],
+                        'related_type' => get_class($post),
+                        'slug' => $field['slug'],
+                        'order' => $index + 1,
+                    ];
+                } else {
+                    $pivotData[$id] = [
+                        'resource_type' => get_class($post),
+                        'related_type' => $field['resource'],
+                        'slug' => $field['slug'],
+                        'order' => $index + 1,
+                    ];
+                }
             }
         }
 
@@ -347,8 +357,6 @@ class AdvancedSelect extends Field
         }
 
         // dd('2 ' . $field['slug'], $post->{$field['slug']}()->get());
-
-        // ray('2 ' . $field['slug'], $post->{$field['slug']}()->get());
     }
 
     public function selectedValues($model, $values, $field)

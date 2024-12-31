@@ -204,6 +204,6 @@ test('table filter - taxonomy filter', function () {
 
     // Inspect the raw SQL query
     $rawSql = $component->instance()->rowsQuery()->toRawSql();
-    expect($rawSql)->toContain('select * from "posts" where (("id" in (select "related_id" from "post_relations" where "post_relations"."related_type" = \'TableTaxonomyFilterModel\' and "post_relations"."resource_type" = \'Aura\Base\Tests\Resources\Tag\' and "post_relations"."slug" = \'tags\' and "post_relations"."resource_id" in (8)))) and "posts"."type" = \'TableTaxonomy\' order by "posts"."id" desc');
+    expect($rawSql)->toContain('select * from "posts" where (("id" in (select "related_id" from "post_relations" where "post_relations"."related_type" = \'TableTaxonomyFilterModel\' and "post_relations"."resource_type" = \'Aura\Base\Resources\Tag\' and "post_relations"."slug" = \'tags\' and "post_relations"."resource_id" in (8)))) and "posts"."type" = \'TableTaxonomy\' order by "posts"."id" desc');
 
 });

@@ -24,6 +24,8 @@ class HasManyFieldModel extends Resource
 {
     public static string $type = 'HasManyModel';
 
+    protected $fillable = ['type'];
+
     public static function getFields()
     {
         return [
@@ -36,10 +38,14 @@ class HasManyFieldModel extends Resource
         ];
     }
 
-    // public function posts()
-    // {
-    //     return $this->hasMany(Post::class, 'user_id');
-    // }
+    public function posts()
+    {
+        return $this->morphedByMany(Post::class, 'related', 'post_relations', 'resource_id', 'related_id')
+            ->withTimestamps()
+            ->withPivot('resource_type', 'slug')
+            ->wherePivot('related_type', Post::class)
+            ->wherePivot('slug', 'posts');
+    }
 }
 
 test('HasMany Field not shown in Create', function () {
@@ -65,7 +71,9 @@ test('HasMany Field shown on Edit', function () {
 });
 
 test('HasMany query Meta Fields with posts table', function () {
-    $model = HasManyFieldModel::create();
+    $model = HasManyFieldModel::create([
+        'type' => 'HasManyModel'
+    ]);
 
     // Create 3 posts
     $posts = Post::factory()->count(3)->create();
@@ -77,10 +85,25 @@ test('HasMany query Meta Fields with posts table', function () {
             'resource_id' => $model->id,
             'related_type' => Post::class,
             'related_id' => $post->id,
+            'slug' => 'posts',
             'created_at' => now(),
             'updated_at' => now(),
         ]);
     }
+
+    // Debug: Check the relationship query
+    $query = $model->posts();
+    $sql = $query->toSql();
+    $bindings = $query->getBindings();
+    
+    // Dump the SQL and bindings for debugging
+    dump([
+        'sql' => $sql,
+        'bindings' => $bindings,
+        'model_id' => $model->id,
+        'model_type' => get_class($model),
+        'post_relations' => DB::table('post_relations')->get()
+    ]);
 
     expect($model->posts()->count())->toBe(3);
     expect($model->posts()->first())->toBeInstanceOf(Post::class);

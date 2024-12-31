@@ -341,16 +341,24 @@ test('a admin can access users', function () {
     // Create Post
     $post = User::factory()->create();
 
-    // dd($post->toArray());
-
     // assert there is a role in the db
     $this->assertDatabaseHas('users', ['id' => $post->id]);
+    $this->assertDatabaseHas('roles', ['slug' => 'admin']);
 
     $r = Role::first();
 
     // Attach to User
     $user = \Aura\Base\Resources\User::find(1);
-    $user->update(['roles' => [$r->id]]);
+    $user->roles()->sync([$r->id]);
+
+    // Assert role was synced
+    $this->assertDatabaseHas('user_role', [
+        'user_id' => $user->id,
+        'role_id' => $r->id,
+    ]);
+
+    // Refresh user model
+    $user = $user->fresh();
 
     // Assert User has Admin Role
     $this->assertTrue($user->roles->contains('slug', 'admin'));
