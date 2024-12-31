@@ -1,4 +1,4 @@
-![Aura CMS](path/to/logo.png)
+![Aura CMS](/resources/public/img/aura.png)
 
 # Aura CMS - The Modern CMS for Laravel Developers
 
