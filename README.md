@@ -4,6 +4,8 @@
 
 > **Note**: Official documentation and launch will be available in the first week of January 2025. Stay tuned!
 
+![Aura CMS Screenshot](/resources/public/img/screenshot.png)
+
 [![Latest Version on Packagist](https://img.shields.io/packagist/v/eminiarts/aura-cms.svg?style=flat-square)](https://packagist.org/packages/eminiarts/aura-cms)
 [![GitHub Tests Action Status](https://img.shields.io/github/workflow/status/eminiarts/aura-cms/run-tests?label=tests)](https://github.com/eminiarts/aura-cms/actions?query=workflow%3Arun-tests+branch%3Amain)
 [![GitHub Code Style Action Status](https://img.shields.io/github/workflow/status/eminiarts/aura-cms/Fix%20PHP%20code%20style%20issues?label=code%20style)](https://github.com/eminiarts/aura-cms/actions?query=workflow%3A"Fix+PHP+code+style+issues"+branch%3Amain)
