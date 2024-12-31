@@ -2,6 +2,8 @@
 
 # Aura CMS - The Modern CMS for Laravel Developers
 
+> **Note**: Official documentation and launch will be available in the first week of January 2025. Stay tuned!
+
 [![Latest Version on Packagist](https://img.shields.io/packagist/v/eminiarts/aura-cms.svg?style=flat-square)](https://packagist.org/packages/eminiarts/aura-cms)
 [![GitHub Tests Action Status](https://img.shields.io/github/workflow/status/eminiarts/aura-cms/run-tests?label=tests)](https://github.com/eminiarts/aura-cms/actions?query=workflow%3Arun-tests+branch%3Amain)
 [![GitHub Code Style Action Status](https://img.shields.io/github/workflow/status/eminiarts/aura-cms/Fix%20PHP%20code%20style%20issues?label=code%20style)](https://github.com/eminiarts/aura-cms/actions?query=workflow%3A"Fix+PHP+code+style+issues"+branch%3Amain)
@@ -13,7 +15,7 @@ Aura CMS is a powerful, flexible content management system built on the TALL sta
 
 ### 🎯 Core Features
 - **Resource System**: Similar to WordPress post types but supercharged with Laravel's Eloquent
-- **Dynamic Fields**: Inspired by Advanced Custom Fields (ACF) with 25+ field types
+- **Dynamic Fields**: Powerful field system with 25+ customizable field types for building complex content structures
 - **Team Management**: Built-in multi-tenancy support (optional)
 - **Role-Based Access Control**: Comprehensive permissions system
 - **Media Management**: Built-in media library with image optimization
