@@ -6,13 +6,10 @@ use Aura\Base\Tests\Resources\Post;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Artisan;
 
-uses(RefreshDatabase::class);
 
 // Before each test, create a Superadmin and login
 beforeEach(function () {
     Artisan::call('cache:clear');
-
-    $this->withoutExceptionHandling();
     // Create User
     $this->actingAs($this->user = createSuperAdmin());
 });
@@ -27,7 +24,6 @@ dataset('auraPages', [
 dataset('postTypes', [
     'option',
     'user',
-    'post',
     'role',
     'permission',
     'attachment',

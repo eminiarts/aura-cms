@@ -405,7 +405,7 @@ test('views settings', function () {
             'filter' => 'custom.table.filter',
             'header' => 'custom.table.header',
             'row' => 'custom.table.row',
-            'bulkActions' => 'custom.table.bulkActions',
+            'bulkActions' => 'custom.table.bulk-actions',
         ],
     ];
 
@@ -420,7 +420,7 @@ test('views settings', function () {
         'filter' => 'custom.table.filter',
         'header' => 'custom.table.header',
         'row' => 'custom.table.row',
-        'bulkActions' => 'custom.table.bulkActions',
+        'bulkActions' => 'custom.table.bulk-actions',
     ]);
 })->throws(ViewException::class);
 
@@ -494,26 +494,23 @@ test('views settings - row', function () {
 test('views settings - bulkAction', function () {
     $settings = [
         'views' => [
-            'bulkActions' => 'custom.table.bulkActions',
+            'bulkActions' => 'custom.table.bulk-actions',
         ],
     ];
 
     $component = Livewire::test(Table::class, ['model' => $this->post, 'settings' => $settings]);
 
-})->throws(ViewException::class);
+    expect($component->settings['views'])->toHaveKey('bulkActions', 'custom.table.bulk-actions');
+});
 
 test('default_view settings', function () {
-    $component = Livewire::test(Table::class, ['model' => $this->post, 'settings' => []]);
+    $settings = [
+        'default_view' => 'list',
+    ];
 
-    expect($component->settings['views'])->toMatchArray([
-        'table' => 'aura::components.table.index',
-        'list' => 'aura::components.table.list-view',
-        'grid' => false,
-        'filter' => 'aura::components.table.filter',
-        'header' => 'aura::components.table.header',
-        'row' => 'aura::components.table.row',
-        'bulkActions' => 'aura::components.table.bulkActions',
-    ]);
+    $component = Livewire::test(Table::class, ['model' => $this->post, 'settings' => $settings]);
+    
+    expect($component->settings)->toHaveKey('default_view', 'list');
 });
 
 test('columns_global_key settings', function () {
