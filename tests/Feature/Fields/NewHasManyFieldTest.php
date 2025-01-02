@@ -134,7 +134,7 @@ test('displays attached movies on view genre page', function () {
 
     $movie1 = NewMovieModel::create([
         'title' => 'Matrix',
-        'genre' => [[$genre1->id]],
+        'genre' => [$genre1->id],
     ]);
 
     // Aura::fake();
@@ -149,7 +149,7 @@ test('displays attached movies on view genre page', function () {
 
     $component = Livewire::test(View::class, ['slug' => 'NewGenreModel', 'id' => $genre1->id]);
 
-    // ray($component->html());
+    ray($component->html());
     $component
         ->assertSee('View Genre')
         ->assertSee('movies')
