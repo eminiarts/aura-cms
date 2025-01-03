@@ -20,11 +20,7 @@ class BookmarkPage extends Component
         $bookmarkUrls = array_column($bookmarks, 'url');
         $key = array_search($this->site['url'], $bookmarkUrls);
 
-        if ($key !== false) {
-            return false;
-        } else {
-            return true;
-        }
+        return $key !== false;
     }
 
     public function mount($site)
