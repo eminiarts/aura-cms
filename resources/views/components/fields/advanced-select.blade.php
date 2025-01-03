@@ -19,10 +19,7 @@
     if ($api) {
         $values = [];
         $selectedValues = $field['field']->selectedValues($field['resource'], optional($this->form['fields'])[$field['slug']], $field);
-
-        // dd($selectedValues);
     } else {
-        // $values = $field['field']->values($field['model']);
         $values = $field['field']->values($field['resource'], $field);
         $selectedValues = [];
     }
@@ -43,10 +40,6 @@
             opacity: 0.4;
         }
     </style>
-
-    {{-- @dump('selectedValues', $selectedValues)
-    @dump('values', $values)
-    @dump('api', $api) --}}
 
     <div wire:ignore class="w-full" x-data="{
         value: $wire.entangle('form.fields.{{ $field['slug'] }}'),
