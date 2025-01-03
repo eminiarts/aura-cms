@@ -95,15 +95,21 @@ class AdvancedSelect extends Field
         }
 
         if (! ($field['multiple'] ?? true) && ! ($field['polymorphic_relation'] ?? false)) {
+            if (is_int($value)) {
+                return [$value];
+            }
+            if ($value instanceof \Illuminate\Database\Eloquent\Model) {
+                // ray($value)->green();
+                return [$value->id];
+            }
             if ($value instanceof \Illuminate\Support\Collection) {
                 if ($value->isEmpty()) {
                     return [];
-                } else {
-                    return [(int) $value->first()];
                 }
+                $first = $value->first();
+                return [$first instanceof \Illuminate\Database\Eloquent\Model ? $first->id : $first];
             }
-
-            return [(int) $value];
+            return is_numeric($value) ? [(int)$value] : [];
         }
 
         if (is_array($value)) {
@@ -224,6 +230,10 @@ class AdvancedSelect extends Field
             return $model->fields[$field['slug']];
         }
 
+        if (optional($field)['multiple'] === false) {
+            return $this->relationship($model, $field)->first();
+        }
+
         return $this->relationship($model, $field)->get();
     }
 
@@ -281,7 +291,7 @@ class AdvancedSelect extends Field
 
         $ids = $value;
 
-        // ray('saved', $post, $field, $value, $ids);
+        ray('saved', $post, $field, $value, $ids);
 
         // dd($post->toArray(), $field, $ids);
 
@@ -295,24 +305,12 @@ class AdvancedSelect extends Field
             return;
         }
 
-        // dd($post->toArray(), $field, $ids);
-
         $pivotData = [];
-
-        if (empty($ids)) {
-            return;
-        }
-
+     
+        // If it's an int, make it an array
         if (is_int($ids)) {
-            return;
+            $ids = [$ids];
         }
-
-        // Temporary fix for the issue
-        if (is_string($ids) && json_decode($ids) !== null) {
-            $ids = json_decode($ids, true);
-        }
-
-        // ray('ids', $ids);
 
         foreach ($ids as $index => $item) {
             $id = is_array($item) ? ($item['id'] ?? null) : $item;
@@ -338,25 +336,20 @@ class AdvancedSelect extends Field
         // Get the current relations for this specific field
         $currentRelations = $post->{$field['slug']}()
             ->wherePivot('slug', $field['slug'])
-            ->pluck('resource_id')
+            ->pluck('related_id')
             ->toArray();
 
         // Detach only the relations for this specific field that are not in the new set
         $toDetach = array_diff($currentRelations, array_keys($pivotData));
+
         if (! empty($toDetach)) {
             $post->{$field['slug']}()->wherePivot('slug', $field['slug'])->detach($toDetach);
         }
-
-        // ray('pivotData', $pivotData);
-
-        // ray('1 ' . $field['slug'], $post->{$field['slug']}()->get());
 
         // Attach or update the new relations
         foreach ($pivotData as $id => $data) {
             $post->{$field['slug']}()->syncWithoutDetaching([$id => $data]);
         }
-
-        // dd('2 ' . $field['slug'], $post->{$field['slug']}()->get());
     }
 
     public function selectedValues($model, $values, $field)
@@ -382,20 +375,21 @@ class AdvancedSelect extends Field
 
     public function set($post, $field, $value)
     {
-        // Add logging or debugging at the start of the method
-        // dd('AdvancedSelect set method called', ['field' => $field, 'value' => $value]);
+        // Check if 'multiple' key exists in $field array and set default to true
+        $isMultiple = $field['multiple'] ?? true;
 
-        // Check if 'multiple' key exists in $field array
-        $isMultiple = $field['multiple'] ?? false;
+        if (optional($field)['multiple'] === false) {
+            $isMultiple = false;
+        }
 
         if ($isMultiple) {
             return json_encode($value);
         }
 
         if (! $isMultiple && ! ($field['polymorphic_relation'] ?? false)) {
-            if (is_array($value) && ! empty($value)) {
-                return $value[0];
-            }
+            // if (is_array($value) && ! empty($value)) {
+            //     return $value[0];
+            // }
         }
 
         return json_encode($value);
