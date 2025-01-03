@@ -4,10 +4,7 @@ namespace Tests\Feature\Livewire;
 
 use Aura\Base\Livewire\Resource\Create;
 use Aura\Base\Resource;
-use Aura\Base\Resources\User;
 use Aura\Base\Tests\Resources\Post;
-use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
@@ -15,10 +12,6 @@ use Illuminate\Support\Facades\Schema;
 beforeEach(function () {
     $this->actingAs($this->user = createSuperAdmin());
     Post::factory(3)->create();
-});
-
-afterEach(function () {
-    // Schema::dropIfExists('meta');
 });
 
 class HasManyFieldOptionsModel extends Resource
@@ -59,7 +52,6 @@ class HasManyFieldOptionsModel2 extends Resource
         ];
     }
 }
-
 class HasManyFieldOptionsModel3 extends Resource
 {
     public static string $type = 'HasManyModel';
@@ -124,6 +116,36 @@ class HasManyFieldOptionsModel5 extends Resource
     }
 }
 
+class HasManyFieldOptionsModel6 extends Resource
+{
+    public static string $type = 'HasManyModel';
+
+    protected $fillable = ['type'];
+
+    public static function getFields()
+    {
+        return [
+            [
+                'name' => 'Posts',
+                'type' => 'Aura\\Base\\Fields\\AdvancedSelect',
+                'resource' => Post::class,
+                'slug' => 'posts',
+                'reverse' => true,
+            ],
+        ];
+    }
+
+    public function posts()
+    {
+        return $this->morphToMany(Post::class, 'resource', 'post_relations', 'resource_id', 'related_id')
+            ->withTimestamps()
+            ->withPivot('resource_type', 'slug', 'order')
+            ->wherePivot('related_type', Post::class)
+            ->wherePivot('slug', 'posts')
+            ->orderBy('post_relations.order');
+    }
+}
+
 test('HasMany relation is working correctly', function () {
     $model = new HasManyFieldOptionsModel;
 
@@ -169,9 +191,8 @@ test('HasMany relation is working correctly', function () {
     ]);
 
     // Verify timestamps are set
-    $relations->each(fn ($relation) => 
-        expect($relation->created_at)->not->toBeNull()
-            ->and($relation->updated_at)->not->toBeNull()
+    $relations->each(fn ($relation) => expect($relation->created_at)->not->toBeNull()
+        ->and($relation->updated_at)->not->toBeNull()
     );
 });
 
@@ -224,7 +245,7 @@ test('HasMany relation updates correctly when relations change', function () {
     $relations = DB::table('post_relations')
         ->where('resource_id', $model->id)
         ->get();
-    
+
     expect($relations)->toHaveCount(1);
     expect($relations[0]->related_id)->toBe(2)
         ->and($relations[0]->order)->toBe(1);
@@ -252,7 +273,7 @@ test('Single relation (multiple => false) saves and retrieves correctly', functi
     $relations = DB::table('post_relations')
         ->where('resource_id', $model->id)
         ->get();
-    
+
     // Should only have one relation
     expect($relations)->toHaveCount(1);
     expect($relations[0]->related_id)->toBe(2)
@@ -272,7 +293,7 @@ test('Single relation (multiple => false) saves and retrieves correctly', functi
     $relations = DB::table('post_relations')
         ->where('resource_id', $model->id)
         ->get();
-    
+
     expect($relations)->toHaveCount(1);
     expect($relations[0]->related_id)->toBe(3)
         ->and($relations[0]->order)->toBe(1);
@@ -313,7 +334,7 @@ test('Multiple relation (multiple => true) behaves same as original implementati
         ->where('resource_id', $model->id)
         ->orderBy('order')
         ->get();
-    
+
     // Should have all three relations
     expect($relations)->toHaveCount(3);
     expect($relations[0]->related_id)->toBe(1)
@@ -335,7 +356,7 @@ test('Multiple relation (multiple => true) behaves same as original implementati
     $relations = DB::table('post_relations')
         ->where('resource_id', $model->id)
         ->get();
-    
+
     expect($relations)->toHaveCount(1);
     expect($relations[0]->related_id)->toBe(2)
         ->and($relations[0]->order)->toBe(1);
@@ -363,7 +384,7 @@ test('Single relation (multiple => false) saves int only', function () {
     $relations = DB::table('post_relations')
         ->where('resource_id', $model->id)
         ->get();
-    
+
     // Should only have one relation
     expect($relations)->toHaveCount(1);
     expect($relations[0]->related_id)->toBe(2)
@@ -383,7 +404,7 @@ test('Single relation (multiple => false) saves int only', function () {
     $relations = DB::table('post_relations')
         ->where('resource_id', $model->id)
         ->get();
-    
+
     expect($relations)->toHaveCount(1);
     expect($relations[0]->related_id)->toBe(3)
         ->and($relations[0]->order)->toBe(1);
@@ -423,7 +444,7 @@ test('Single polymorphic relation (multiple => false, polymorphic => true) works
     $relations = DB::table('post_relations')
         ->where('resource_id', $model->id)
         ->get();
-    
+
     // Should only have one relation
     expect($relations)->toHaveCount(1);
     expect($relations[0]->related_id)->toBe(2)
@@ -442,7 +463,7 @@ test('Single polymorphic relation (multiple => false, polymorphic => true) works
     $relations = DB::table('post_relations')
         ->where('resource_id', $model->id)
         ->get();
-    
+
     expect($relations)->toHaveCount(1);
     expect($relations[0]->related_id)->toBe(3)
         ->and($relations[0]->order)->toBe(1)
@@ -480,7 +501,7 @@ test('Multiple meta field (multiple => true, polymorphic => false) saves as meta
         ->first();
 
     expect($meta)->not->toBeNull();
-    
+
     // Meta value should be JSON array of IDs
     $value = json_decode($meta->value, true);
     expect($value)->toBe([1, 2, 3]);
@@ -520,4 +541,94 @@ test('Multiple meta field (multiple => true, polymorphic => false) saves as meta
 
     expect(json_decode($meta->value))->toBeEmpty();
     expect($model->posts)->toBeEmpty();
+});
+
+test('reverse_polymorphic_relation_saves_and_retrieves_correctly', function () {
+    $model = HasManyFieldOptionsModel6::create(['type' => 'test']);
+    $posts = Post::factory()->count(3)->create();
+
+    // Save the relation
+    $model->fields = [
+        'posts' => [1, 2, 3],
+    ];
+    $model->save();
+
+    // Check relations were saved correctly
+    $relations = DB::table('post_relations')
+        ->where('resource_id', $model->id)
+        ->where('resource_type', HasManyFieldOptionsModel6::class)
+        ->where('slug', 'posts')
+        ->orderBy('order')
+        ->get();
+
+    expect($relations)->toHaveCount(0);
+
+
+    ray( DB::table('post_relations'));
+    
+    // Check relations were saved correctly
+    $relations = DB::table('post_relations')
+         ->where('related_id', $model->id)
+         ->where('related_type', HasManyFieldOptionsModel6::class)
+         ->where('slug', 'posts')
+        ->orderBy('order')
+        ->get();
+
+        dd($relations);
+
+    expect($relations)->toHaveCount(3);
+
+    expect($relations->pluck('related_id')->toArray())->toBe([1, 2, 3]);
+    expect($relations->pluck('related_type')->unique()->first())->toBe(Post::class);
+
+    // Check order is preserved
+    expect($relations->pluck('order')->toArray())->toBe([1, 2, 3]);
+
+    // Check we can retrieve the relation from both sides
+    $model->refresh();
+    expect($model->posts)->toHaveCount(3);
+    expect($model->posts->pluck('id')->toArray())->toBe([1, 2, 3]);
+
+    // Check reverse relation works
+    $post = Post::find(1);
+    expect($post->hasManyModels)->toHaveCount(1);
+    expect($post->hasManyModels->first()->id)->toBe($model->id);
+
+    // Test updating relations
+    $model->fields = [
+        'posts' => [2, 3], // Remove post 1
+    ];
+    $model->save();
+
+    $relations = DB::table('post_relations')
+        ->where('resource_id', $model->id)
+        ->where('resource_type', HasManyFieldOptionsModel6::class)
+        ->where('slug', 'posts')
+        ->orderBy('order')
+        ->get();
+
+    expect($relations)->toHaveCount(2);
+    expect($relations->pluck('related_id')->toArray())->toBe([2, 3]);
+
+    // Check the removed relation is gone from both sides
+    $model->refresh();
+    expect($model->posts)->toHaveCount(2);
+    expect($model->posts->pluck('id')->toArray())->toBe([2, 3]);
+
+    $post = Post::find(1);
+    expect($post->hasManyModels)->toHaveCount(0);
+
+    // Test clearing relations
+    $model->fields = [
+        'posts' => [],
+    ];
+    $model->save();
+
+    $relations = DB::table('post_relations')
+        ->where('resource_id', $model->id)
+        ->where('resource_type', HasManyFieldOptionsModel6::class)
+        ->where('slug', 'posts')
+        ->get();
+
+    expect($relations)->toHaveCount(0);
 });

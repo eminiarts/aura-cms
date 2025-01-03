@@ -107,9 +107,11 @@ class AdvancedSelect extends Field
                     return [];
                 }
                 $first = $value->first();
+
                 return [$first instanceof \Illuminate\Database\Eloquent\Model ? $first->id : $first];
             }
-            return is_numeric($value) ? [(int)$value] : [];
+
+            return is_numeric($value) ? [(int) $value] : [];
         }
 
         if (is_array($value)) {
@@ -306,7 +308,7 @@ class AdvancedSelect extends Field
         }
 
         $pivotData = [];
-     
+
         // If it's an int, make it an array
         if (is_int($ids)) {
             $ids = [$ids];

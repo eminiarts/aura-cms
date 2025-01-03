@@ -7,7 +7,6 @@ use Aura\Base\Resource;
 use Aura\Base\Resources\User;
 use Aura\Base\Tests\Resources\Post;
 use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
