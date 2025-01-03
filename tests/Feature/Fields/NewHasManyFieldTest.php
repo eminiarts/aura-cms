@@ -1,6 +1,6 @@
-<?php
+    <?php
 
-use Aura\Base\Facades\Aura;
+    use Aura\Base\Facades\Aura;
 use Aura\Base\Livewire\Resource\Create;
 use Aura\Base\Livewire\Resource\View;
 use Aura\Base\Resource;
@@ -103,7 +103,7 @@ test('movies can be attached to genres', function () {
 
     $movie1 = NewMovieModel::create([
         'title' => 'Matrix',
-        'genre' => [[$genre1->id]],
+        'genre' => [$genre1->id],
     ]);
 
     // assert in db has post with type DateModel
@@ -134,7 +134,7 @@ test('displays attached movies on view genre page', function () {
 
     $movie1 = NewMovieModel::create([
         'title' => 'Matrix',
-        'genre' => [$genre1->id],
+        'genre' => [[$genre1->id]],
     ]);
 
     // Aura::fake();

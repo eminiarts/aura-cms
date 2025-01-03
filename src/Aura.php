@@ -95,21 +95,26 @@ class Aura
 
     public function findResourceBySlug($slug)
     {
+        // First check direct class match
         if (in_array($slug, $this->getResources())) {
             return app($slug);
         }
 
-        $resources = collect($this->getResources())->map(function ($resource) {
-            return Str::afterLast($resource, '\\');
-        });
+        foreach ($this->getResources() as $resourceClass) {
+            $resource = app($resourceClass);
 
-        $index = $resources->search(function ($item) use ($slug) {
-            return Str::slug($item) == Str::slug($slug);
-        });
+            // Check for static $slug property
+            if (isset($resource::$slug) && $resource::$slug === $slug) {
+                return $resource;
+            }
 
-        if ($index !== false) {
-            return app($this->getResources()[$index]);
+            // Fallback to class name based slug
+            $className = Str::afterLast($resourceClass, '\\');
+            if (Str::slug($className) === Str::slug($slug)) {
+                return $resource;
+            }
         }
+
     }
 
     public static function findTemplateBySlug($slug)
