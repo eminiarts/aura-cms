@@ -37,6 +37,46 @@ class HasManyFieldOptionsModel extends Resource
     }
 }
 
+class HasManyFieldOptionsModel2 extends Resource
+{
+    public static string $type = 'HasManyModel';
+
+    protected $fillable = ['type'];
+
+    public static function getFields()
+    {
+        return [
+            [
+                'name' => 'Posts',
+                'type' => 'Aura\\Base\\Fields\\AdvancedSelect',
+                'resource' => Post::class,
+                'slug' => 'posts',
+                'multiple' => false,
+            ],
+        ];
+    }
+}
+
+class HasManyFieldOptionsModel3 extends Resource
+{
+    public static string $type = 'HasManyModel';
+
+    protected $fillable = ['type'];
+
+    public static function getFields()
+    {
+        return [
+            [
+                'name' => 'Posts',
+                'type' => 'Aura\\Base\\Fields\\AdvancedSelect',
+                'resource' => Post::class,
+                'slug' => 'posts',
+                'multiple' => true,
+            ],
+        ];
+    }
+}
+
 test('HasMany relation is working correctly', function () {
     $model = new HasManyFieldOptionsModel;
 
@@ -152,4 +192,115 @@ test('HasMany relation updates correctly when relations change', function () {
         ->whereIn('related_id', [1, 3])
         ->count()
     )->toBe(0);
+});
+
+test('Single relation (multiple => false) saves and retrieves correctly', function () {
+    $model = new HasManyFieldOptionsModel2;
+
+    // Save single post - wrap in array since the field might expect it internally
+    $model->posts = [2];
+    $model->save();
+
+    // Verify database state
+    $relations = DB::table('post_relations')
+        ->where('resource_id', $model->id)
+        ->get();
+    
+    // Should only have one relation
+    expect($relations)->toHaveCount(1);
+    expect($relations[0]->related_id)->toBe(2)
+        ->and($relations[0]->order)->toBe(1);
+
+    // Verify through model relation
+    expect($model->posts)->not->toBeNull();
+
+    // dd($model->posts);
+    expect($model->posts->id)->toBe(2);
+
+    // Update to different post
+    $model->posts = [3];
+    $model->save();
+
+    // Verify updated state
+    $relations = DB::table('post_relations')
+        ->where('resource_id', $model->id)
+        ->get();
+    
+    expect($relations)->toHaveCount(1);
+    expect($relations[0]->related_id)->toBe(3)
+        ->and($relations[0]->order)->toBe(1);
+
+    // Verify old relation was deleted
+    expect(DB::table('post_relations')
+        ->where('resource_id', $model->id)
+        ->where('related_id', 2)
+        ->count()
+    )->toBe(0);
+
+    // Verify through model relation after update
+    expect($model->posts->id)->toBe(3);
+
+    // Test setting to null
+    $model->posts = null;
+    $model->save();
+
+    // Verify all relations are deleted
+    expect(DB::table('post_relations')
+        ->where('resource_id', $model->id)
+        ->count()
+    )->toBe(0);
+
+    // Verify model relation is null
+    expect($model->posts)->toBeNull();
+});
+
+test('Multiple relation (multiple => true) behaves same as original implementation', function () {
+    $model = new HasManyFieldOptionsModel3;
+
+    // Save multiple posts
+    $model->posts = [1, 2, 3];
+    $model->save();
+
+    // Verify database state
+    $relations = DB::table('post_relations')
+        ->where('resource_id', $model->id)
+        ->orderBy('order')
+        ->get();
+    
+    // Should have all three relations
+    expect($relations)->toHaveCount(3);
+    expect($relations[0]->related_id)->toBe(1)
+        ->and($relations[0]->order)->toBe(1);
+    expect($relations[1]->related_id)->toBe(2)
+        ->and($relations[1]->order)->toBe(2);
+    expect($relations[2]->related_id)->toBe(3)
+        ->and($relations[2]->order)->toBe(3);
+
+    // Verify through model relation
+    expect($model->posts)->toHaveCount(3);
+    expect($model->posts->pluck('id')->toArray())->toBe([1, 2, 3]);
+
+    // Update to different posts
+    $model->posts = [2];
+    $model->save();
+
+    // Verify updated state
+    $relations = DB::table('post_relations')
+        ->where('resource_id', $model->id)
+        ->get();
+    
+    expect($relations)->toHaveCount(1);
+    expect($relations[0]->related_id)->toBe(2)
+        ->and($relations[0]->order)->toBe(1);
+
+    // Verify old relations were deleted
+    expect(DB::table('post_relations')
+        ->where('resource_id', $model->id)
+        ->whereIn('related_id', [1, 3])
+        ->count()
+    )->toBe(0);
+
+    // Verify through model relation after update
+    expect($model->posts)->toHaveCount(1);
+    expect($model->posts->first()->id)->toBe(2);
 });
