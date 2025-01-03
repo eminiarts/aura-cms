@@ -142,6 +142,44 @@ class HasManyFieldOptionsModel7 extends Resource
     }
 }
 
+class HasManyFieldOptionsModel8 extends Resource
+{
+    public static string $type = 'HasManyModel';
+
+    public static function getFields()
+    {
+        return [
+            [
+                'name' => 'Posts',
+                'type' => 'Aura\\Base\\Fields\\AdvancedSelect',
+                'resource' => Post::class,
+                'slug' => 'posts',
+                'polymorphic_relation' => false,
+                'return_type' => 'id',
+            ],
+        ];
+    }
+}
+
+class HasManyFieldOptionsModel9 extends Resource
+{
+    public static string $type = 'HasManyModel';
+
+    public static function getFields()
+    {
+        return [
+            [
+                'name' => 'Posts',
+                'type' => 'Aura\\Base\\Fields\\AdvancedSelect',
+                'resource' => Post::class,
+                'slug' => 'posts',
+                'polymorphic_relation' => false,
+                'return_type' => 'object',
+            ],
+        ];
+    }
+}
+
 test('HasMany relation is working correctly', function () {
     $model = new HasManyFieldOptionsModel;
 
@@ -616,4 +654,129 @@ test('reverse polymorphic relation saves and retrieves correctly', function () {
         ->get();
 
     expect($relations)->toHaveCount(0);
+});
+
+test('reverse with polymorphic_relation = false should be ignored', function () {
+    $model = HasManyFieldOptionsModel7::create(['type' => 'test']);
+
+    // Save the relation
+    $model->fields = [
+        'posts' => [1, 2, 3],
+    ];
+    $model->save();
+
+    // Verify data was saved in meta table
+    $meta = $model->meta()->where('key', 'posts')->first();
+    expect($meta)->not->toBeNull();
+    expect(json_decode($meta->value))->toBe([1, 2, 3]);
+
+    // Verify no relations were created in post_relations table
+    $relations = DB::table('post_relations')
+        ->where('related_id', $model->id)
+        ->where('related_type', HasManyFieldOptionsModel7::class)
+        ->where('slug', 'posts')
+        ->get();
+
+    expect($relations)->toHaveCount(0);
+
+    // Verify we can retrieve the values
+    $model->refresh();
+    expect($model->fields['posts'])->toBe([1, 2, 3]);
+
+    // Test updating relations
+    $model->fields = [
+        'posts' => [2, 3],
+    ];
+    $model->save();
+
+    $meta = $model->meta()->where('key', 'posts')->first();
+    expect(json_decode($meta->value))->toBe([2, 3]);
+
+    // Test clearing relations
+    $model->fields = [
+        'posts' => [],
+    ];
+    $model->save();
+
+    $meta = $model->meta()->where('key', 'posts')->first();
+    expect(json_decode($meta->value))->toBe([]);
+});
+
+
+test('return_type = id should return ids instead of objects', function () {
+    $model = HasManyFieldOptionsModel8::create(['type' => 'test']);
+
+    // Save the relation
+    $model->fields = [
+        'posts' => [1, 2, 3],
+    ];
+    $model->save();
+
+    // Verify data was saved in meta table
+    $meta = $model->meta()->where('key', 'posts')->first();
+    expect($meta)->not->toBeNull();
+    expect(json_decode($meta->value))->toBe([1, 2, 3]);
+
+    // Verify that posts returns array of ids instead of objects
+    $model->refresh();
+    expect($model->posts)->toBe([1, 2, 3]);
+
+    // Test updating relations
+    $model->fields = [
+        'posts' => [2, 3],
+    ];
+    $model->save();
+
+    $model->refresh();
+    expect($model->posts)->toBe([2, 3]);
+
+    // Test clearing relations
+    $model->fields = [
+        'posts' => [],
+    ];
+    $model->save();
+
+    $model->refresh();
+    expect($model->posts)->toBeEmpty();
+});
+
+test('return_type = object should return model objects', function () {
+    $model = HasManyFieldOptionsModel9::create(['type' => 'test']);
+
+    // Save the relation
+    $model->fields = [
+        'posts' => [1, 2, 3],
+    ];
+    $model->save();
+
+    // Verify data was saved in meta table
+    $meta = $model->meta()->where('key', 'posts')->first();
+    expect($meta)->not->toBeNull();
+    expect(json_decode($meta->value))->toBe([1, 2, 3]);
+
+    // Verify that posts returns Post objects
+    $model->refresh();
+    expect($model->posts)->toHaveCount(3);
+    expect($model->posts)->each->toBeInstanceOf(Post::class);
+    expect($model->posts->pluck('id')->toArray())->toBe([1, 2, 3]);
+
+    // Test updating relations
+    $model->fields = [
+        'posts' => [2, 3],
+    ];
+    $model->save();
+
+    $model->refresh();
+    expect($model->posts)->toHaveCount(2);
+    expect($model->posts)->each->toBeInstanceOf(Post::class);
+    expect($model->posts->pluck('id')->toArray())->toBe([2, 3]);
+
+    // Test clearing relations
+    $model->fields = [
+        'posts' => [],
+    ];
+    $model->save();
+
+    $model->refresh();
+    expect($model->posts)->toBeEmpty();
 });
