@@ -198,38 +198,39 @@
             }
         },
 
-        toggleItem(item) {
-            // singular
-            {{-- console.log(this.multiple, this.value, item.id); --}}
-
+        selectItem(item) {
             if (!this.multiple) {
-                this.value = [item.id];
-                this.selectedItems = [item];
-                this.showListbox = false;
-                return;
-            }
-
-            if (!Array.isArray(this.value)) {
-                this.value = [];
-            }
-
-            if (!Array.isArray(this.selectedItems)) {
-                this.selectedItems = [];
-            }
-
-            if (this.isSelected(item)) {
-                this.value = this.value.filter(i => i !== item.id);
-                if (!this.deselectedItems.find(i => i.id === item.id)) {
-                    this.deselectedItems.push(item);
+                if (this.value && this.value[0] === item.id) {
+                    // Deselect if clicking the same item
+                    this.value = [];
+                    this.selectedItems = [];
+                } else {
+                    this.value = [item.id];
+                    this.selectedItems = [item];
                 }
             } else {
-                if (!this.selectedItems.find(i => i.id === item.id)) {
-                    this.selectedItems.push(item);
+                if (!Array.isArray(this.value)) {
+                    this.value = [];
                 }
-                if (!this.value.includes(item.id)) {
-                    this.value.push(item.id);
+
+                if (!Array.isArray(this.selectedItems)) {
+                    this.selectedItems = [];
                 }
-                this.deselectedItems = this.deselectedItems.filter(i => i.id !== item.id);
+
+                if (this.isSelected(item)) {
+                    this.value = this.value.filter(i => i !== item.id);
+                    if (!this.deselectedItems.find(i => i.id === item.id)) {
+                        this.deselectedItems.push(item);
+                    }
+                } else {
+                    if (!this.selectedItems.find(i => i.id === item.id)) {
+                        this.selectedItems.push(item);
+                    }
+                    if (!this.value.includes(item.id)) {
+                        this.value.push(item.id);
+                    }
+                    this.deselectedItems = this.deselectedItems.filter(i => i.id !== item.id);
+                }
             }
         },
 
@@ -361,81 +362,77 @@
                 class="relative flex items-center justify-between w-full px-3 pt-1 pb-0 border rounded-lg shadow-xs appearance-none min-h-[2.625rem] border-gray-500/30 focus:border-primary-300 focus:outline-none ring-gray-900/10 focus:ring focus:ring-primary-300 focus:ring-opacity-50 dark:focus:ring-primary-500 dark:focus:ring-opacity-50 dark:bg-gray-900 dark:border-gray-700"
                 x-ref="listboxButton" @click="toggleListbox">
 
-                {{-- <pre x-html="value"></pre> --}}
-                {{-- <pre x-html="selectedItemMarkup(value)"></pre>
-                <pre x-html="this.selectedItems"></pre> --}}
-                <template x-if="value && !multiple && Array.isArray(value)">
-                    <div class="flex">
-                        <template x-for="(item, index) in value" :key="item">
-                        <span x-html="selectedItemMarkup(item).view_selected"></span>
-                        </template>
-                    </div>
-                </template>
+                <div class="flex items-center w-full">
+                    <!-- Placeholder text on the left -->
+                    <template x-if="!value || value.length === 0">
+                        <span class="block text-sm text-gray-500 truncate dark:text-gray-400">{{ __('Select Entry') }}</span>
+                    </template>
 
-                <template x-if="value && value.length > 0 && multiple">
-                    <div class="flex flex-wrap items-center pt-0" @mousemove.prevent="moveItem($event)"
-                        @mouseup.prevent="stopDragging()" x-ref="selectedItemsContainer">
-                        <template x-for="(item, index) in value" :key="item">
-                            {{-- <pre x-html="'item: ' + item + ', selected: ' + selectedItemMarkup(item)"></pre> --}}
+                    <!-- Selected items -->
+                    <template x-if="value && value.length > 0 && !multiple">
+                        <span class="block text-sm truncate" x-html="selectedItemMarkup(value[0]).title || selectedItemMarkup(value[0])"></span>
+                    </template>
 
-                            <div class="inline-flex gap-1 items-center py-0.5 pr-2 pl-1 mr-2 mb-1 text-xs font-medium leading-4 rounded-full bg-primary-100 text-primary-800 draggable-selectmany-item"
-                                :data-id="item" @mousedown.prevent="startDragging(index, $event)"
-                                :class="{ 'shadow-item': index == dragIndex }">
+                    <template x-if="value && value.length > 0 && multiple">
+                        <div class="flex flex-wrap items-center pt-0" @mousemove.prevent="moveItem($event)"
+                            @mouseup.prevent="stopDragging()" x-ref="selectedItemsContainer">
+                            <template x-for="(item, index) in value" :key="item">
+                                {{-- <pre x-html="'item: ' + item + ', selected: ' + selectedItemMarkup(item)"></pre> --}}
 
-                                <div>
-                                    <template x-if="item && selectedItemMarkup(item) && selectedItemMarkup(item).view_selected" :key="item">
-                                        <span x-html="selectedItemMarkup(item).view_selected"></span>
-                                    </template>
+                                <div class="inline-flex gap-1 items-center py-0.5 pr-2 pl-1 mr-2 mb-1 text-xs font-medium leading-4 rounded-full bg-primary-100 text-primary-800 draggable-selectmany-item"
+                                    :data-id="item" @mousedown.prevent="startDragging(index, $event)"
+                                    :class="{ 'shadow-item': index == dragIndex }">
 
-                                    <template x-if="!selectedItemMarkup(item).view_selected" :key="item">
-                                        <span class="" x-text="selectedItemMarkup(item).title"></span>
-                                    </template>
+                                    <div>
+                                        <template x-if="item && selectedItemMarkup(item) && selectedItemMarkup(item).view_selected" :key="item">
+                                            <span x-html="selectedItemMarkup(item).view_selected"></span>
+                                        </template>
 
+                                        <template x-if="!selectedItemMarkup(item).view_selected" :key="item">
+                                            <span class="" x-text="selectedItemMarkup(item).title"></span>
+                                        </template>
+
+                                    </div>
+
+                                    <!-- Small x svg -->
+                                    <svg @mousedown.prevent="value = value.filter(i => i !== item)"
+                                        @click.stop.prevent="value = value.filter(i => i !== item)"
+                                        xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 20 20" stroke-width="1.5" stroke="currentColor" class="w-4 h-4 cursor-pointer text-primary-300">
+                                        <path fill-rule="evenodd"
+                                            d="M5.293 5.293a1 1 0 011.414 0L10 8.586l3.293-3.293a1 1 0 111.414 1.414L11.414 10l3.293 3.293a1 1 0 01-1.414 1.414L10 11.414l-3.293 3.293a1 1 0 01-1.414-1.414L8.586 10 5.293 6.707a1 1 0 010-1.414z"
+                                            clip-rule="evenodd" />
+                                    </svg>
                                 </div>
+                            </template>
+
+                            <div x-show="dragging"
+                                class="inline-flex gap-1 items-center px-2 py-0.5 mr-2 mb-2 text-xs font-medium leading-4 rounded-full bg-primary-100 text-primary-800 dragging-item"
+                                x-ref="draggingItem">
+                                <template x-if="value[dragIndex] && selectedItemMarkup(value[dragIndex]) && selectedItemMarkup(value[dragIndex]).view_selected" :key="item">
+                                    <span x-html="selectedItemMarkup(value[dragIndex]).view_selected"></span>
+                                </template>
+                                <template x-if="!selectedItemMarkup(value[dragIndex]).view_selected" :key="item">
+                                    <span class="" x-text="selectedItemMarkup(value[dragIndex]).title"></span>
+                                </template>
 
                                 <!-- Small x svg -->
-                                <svg @mousedown.prevent="value = value.filter(i => i !== item)"
-                                    @click.stop.prevent="value = value.filter(i => i !== item)"
-                                    xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"
                                     class="-mr-1 w-4 h-4 cursor-pointer text-primary-300">
                                     <path fill-rule="evenodd"
                                         d="M5.293 5.293a1 1 0 011.414 0L10 8.586l3.293-3.293a1 1 0 111.414 1.414L11.414 10l3.293 3.293a1 1 0 01-1.414 1.414L10 11.414l-3.293 3.293a1 1 0 01-1.414-1.414L8.586 10 5.293 6.707a1 1 0 010-1.414z"
                                         clip-rule="evenodd" />
                                 </svg>
                             </div>
-                        </template>
-
-                        <div x-show="dragging"
-                            class="inline-flex gap-1 items-center px-2 py-0.5 mr-2 mb-2 text-xs font-medium leading-4 rounded-full bg-primary-100 text-primary-800 dragging-item"
-                            x-ref="draggingItem">
-                            <template x-if="value[dragIndex] && selectedItemMarkup(value[dragIndex]) && selectedItemMarkup(value[dragIndex]).view_selected" :key="item">
-                                <span x-html="selectedItemMarkup(value[dragIndex]).view_selected"></span>
-                            </template>
-                            <template x-if="!selectedItemMarkup(value[dragIndex]).view_selected" :key="item">
-                                <span class="" x-text="selectedItemMarkup(value[dragIndex]).title"></span>
-                            </template>
-
-                            <!-- Small x svg -->
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"
-                                class="-mr-1 w-4 h-4 cursor-pointer text-primary-300">
-                                <path fill-rule="evenodd"
-                                    d="M5.293 5.293a1 1 0 011.414 0L10 8.586l3.293-3.293a1 1 0 111.414 1.414L11.414 10l3.293 3.293a1 1 0 01-1.414 1.414L10 11.414l-3.293 3.293a1 1 0 01-1.414-1.414L8.586 10 5.293 6.707a1 1 0 010-1.414z"
-                                    clip-rule="evenodd" />
-                            </svg>
                         </div>
+
+                    </template>
+
+                    <!-- Heroicons up/down -->
+                    <div class="flex absolute inset-y-0 right-0 items-center px-2 pointer-events-none shrink-0">
+                        <svg class="w-5 h-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 15L12 18.75 15.75 15m-7.5-6L12 5.25 15.75 9" />
+                        </svg>
                     </div>
-
-                </template>
-
-                <template x-if="!value || value.length == 0">
-                    <span class="mb-1 text-gray-400">{{ __('Select Entry') }}</span>
-                </template>
-
-                <!-- Heroicons up/down -->
-                <div class="flex absolute inset-y-0 right-0 items-center px-2 pointer-events-none shrink-0">
-                    <svg class="w-5 h-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 15L12 18.75 15.75 15m-7.5-6L12 5.25 15.75 9" />
-                    </svg>
                 </div>
             </button>
 
@@ -478,9 +475,9 @@
                                     'opacity-50 cursor-not-allowed': isDisabled(item),
                                 }"
                                 class="flex gap-2 justify-between items-center px-4 py-2 w-full text-sm transition-colors cursor-pointer focus:ring-primary-600"
-                                tabindex="0" role="option" @click="toggleItem(item)"
-                                @keydown.enter.stop.prevent="toggleItem(item)"
-                                @keydown.space.stop.prevent="toggleItem(item)">
+                                tabindex="0" role="option" @click="selectItem(item)"
+                                @keydown.enter.stop.prevent="selectItem(item)"
+                                @keydown.space.stop.prevent="selectItem(item)">
                                 <div class="flex items-center space-x-2">
                                     <div>
                                         <template x-if="item.view">
