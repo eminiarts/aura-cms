@@ -270,7 +270,8 @@ class AdvancedSelect extends Field
             return $model
                 ->morphToMany($morphClass, 'related', 'post_relations', 'related_id', 'resource_id')
                 ->withTimestamps()
-                ->withPivot('resource_type', 'slug', 'order')
+                ->withPivot('resource_type', 'related_type', 'slug', 'order')
+                ->wherePivot('related_type', get_class($model))
                 ->wherePivot('resource_type', $morphClass)
                 ->wherePivot('slug', $field['slug'])
                 ->orderBy('post_relations.order');
@@ -279,8 +280,9 @@ class AdvancedSelect extends Field
         return $model
             ->morphToMany($morphClass, 'resource', 'post_relations', 'resource_id', 'related_id')
             ->withTimestamps()
-            ->withPivot('resource_type', 'slug', 'order')
+            ->withPivot('resource_type', 'related_type', 'slug', 'order')
             ->wherePivot('related_type', $morphClass)
+            ->wherePivot('resource_type', get_class($model))
             ->wherePivot('slug', $field['slug'])
             ->orderBy('post_relations.order');
     }
@@ -293,23 +295,14 @@ class AdvancedSelect extends Field
 
         $ids = $value;
 
-        ray('saved', $post, $field, $value, $ids);
-
-        // dd($post->toArray(), $field, $ids);
-
         if (optional($field)['polymorphic_relation'] === false) {
-            // ray('save meta', $field['slug'], $ids);
-            // Save as meta
             $value = is_array($ids) ? json_encode($ids) : $ids;
             $post->meta()->updateOrCreate(['key' => $field['slug']], ['value' => $value ?? null]);
-
-            // ray('save meta', $post->meta()->get());
             return;
         }
 
         $pivotData = [];
 
-        // If it's an int, make it an array
         if (is_int($ids)) {
             $ids = [$ids];
         }
@@ -335,22 +328,14 @@ class AdvancedSelect extends Field
             }
         }
 
-        // Get the current relations for this specific field
-        $currentRelations = $post->{$field['slug']}()
-            ->wherePivot('slug', $field['slug'])
-            ->pluck('related_id')
-            ->toArray();
-
-        // Detach only the relations for this specific field that are not in the new set
-        $toDetach = array_diff($currentRelations, array_keys($pivotData));
-
-        if (! empty($toDetach)) {
-            $post->{$field['slug']}()->wherePivot('slug', $field['slug'])->detach($toDetach);
-        }
-
-        // Attach or update the new relations
-        foreach ($pivotData as $id => $data) {
-            $post->{$field['slug']}()->syncWithoutDetaching([$id => $data]);
+        $relation = $post->{$field['slug']}();
+        
+        // Clear existing relations for this field
+        $relation->wherePivot('slug', $field['slug'])->detach();
+        
+        // Attach new relations
+        if (!empty($pivotData)) {
+            $relation->attach($pivotData);
         }
     }
 

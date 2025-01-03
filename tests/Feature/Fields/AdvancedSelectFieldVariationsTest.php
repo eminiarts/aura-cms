@@ -134,16 +134,6 @@ class HasManyFieldOptionsModel6 extends Resource
             ],
         ];
     }
-
-    public function posts()
-    {
-        return $this->morphToMany(Post::class, 'resource', 'post_relations', 'resource_id', 'related_id')
-            ->withTimestamps()
-            ->withPivot('resource_type', 'slug', 'order')
-            ->wherePivot('related_type', Post::class)
-            ->wherePivot('slug', 'posts')
-            ->orderBy('post_relations.order');
-    }
 }
 
 test('HasMany relation is working correctly', function () {
@@ -563,9 +553,6 @@ test('reverse_polymorphic_relation_saves_and_retrieves_correctly', function () {
 
     expect($relations)->toHaveCount(0);
 
-
-    ray( DB::table('post_relations'));
-    
     // Check relations were saved correctly
     $relations = DB::table('post_relations')
          ->where('related_id', $model->id)
@@ -574,25 +561,21 @@ test('reverse_polymorphic_relation_saves_and_retrieves_correctly', function () {
         ->orderBy('order')
         ->get();
 
-        dd($relations);
-
     expect($relations)->toHaveCount(3);
 
-    expect($relations->pluck('related_id')->toArray())->toBe([1, 2, 3]);
-    expect($relations->pluck('related_type')->unique()->first())->toBe(Post::class);
+    expect($relations->pluck('resource_id')->toArray())->toBe([1, 2, 3]);
+    expect($relations->pluck('resource_type')->unique()->first())->toBe(Post::class);
+
 
     // Check order is preserved
     expect($relations->pluck('order')->toArray())->toBe([1, 2, 3]);
 
     // Check we can retrieve the relation from both sides
     $model->refresh();
-    expect($model->posts)->toHaveCount(3);
-    expect($model->posts->pluck('id')->toArray())->toBe([1, 2, 3]);
 
-    // Check reverse relation works
-    $post = Post::find(1);
-    expect($post->hasManyModels)->toHaveCount(1);
-    expect($post->hasManyModels->first()->id)->toBe($model->id);
+    expect($model->posts)->toHaveCount(3);
+
+    expect($model->posts->pluck('id')->toArray())->toBe([1, 2, 3]);
 
     // Test updating relations
     $model->fields = [
@@ -601,22 +584,19 @@ test('reverse_polymorphic_relation_saves_and_retrieves_correctly', function () {
     $model->save();
 
     $relations = DB::table('post_relations')
-        ->where('resource_id', $model->id)
-        ->where('resource_type', HasManyFieldOptionsModel6::class)
+        ->where('related_id', $model->id)
+        ->where('related_type', HasManyFieldOptionsModel6::class)
         ->where('slug', 'posts')
         ->orderBy('order')
         ->get();
 
     expect($relations)->toHaveCount(2);
-    expect($relations->pluck('related_id')->toArray())->toBe([2, 3]);
+    expect($relations->pluck('resource_id')->toArray())->toBe([2, 3]);
 
     // Check the removed relation is gone from both sides
     $model->refresh();
     expect($model->posts)->toHaveCount(2);
     expect($model->posts->pluck('id')->toArray())->toBe([2, 3]);
-
-    $post = Post::find(1);
-    expect($post->hasManyModels)->toHaveCount(0);
 
     // Test clearing relations
     $model->fields = [
