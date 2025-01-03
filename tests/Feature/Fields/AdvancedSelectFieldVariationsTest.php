@@ -14,8 +14,11 @@ use Illuminate\Support\Facades\Schema;
 // Before each test, create a Superadmin and login
 beforeEach(function () {
     $this->actingAs($this->user = createSuperAdmin());
-
     Post::factory(3)->create();
+});
+
+afterEach(function () {
+    // Schema::dropIfExists('meta');
 });
 
 class HasManyFieldOptionsModel extends Resource
@@ -72,6 +75,50 @@ class HasManyFieldOptionsModel3 extends Resource
                 'resource' => Post::class,
                 'slug' => 'posts',
                 'multiple' => true,
+            ],
+        ];
+    }
+}
+
+class HasManyFieldOptionsModel4 extends Resource
+{
+    public static string $type = 'HasManyModel';
+
+    protected $fillable = ['type'];
+
+    public static function getFields()
+    {
+        return [
+            [
+                'name' => 'Posts',
+                'type' => 'Aura\\Base\\Fields\\AdvancedSelect',
+                'resource' => Post::class,
+                'slug' => 'posts',
+                'multiple' => false,
+                'polymorphic_relation' => true,
+            ],
+        ];
+    }
+}
+
+class HasManyFieldOptionsModel5 extends Resource
+{
+    use \Aura\Base\Traits\SaveMetaFields;
+
+    public static string $type = 'HasManyModel';
+
+    protected $fillable = ['type'];
+
+    public static function getFields()
+    {
+        return [
+            [
+                'name' => 'Posts',
+                'type' => 'Aura\\Base\\Fields\\AdvancedSelect',
+                'resource' => Post::class,
+                'slug' => 'posts',
+                'multiple' => true,
+                'polymorphic_relation' => false,
             ],
         ];
     }
@@ -305,8 +352,6 @@ test('Multiple relation (multiple => true) behaves same as original implementati
     expect($model->posts->first()->id)->toBe(2);
 });
 
-
-
 test('Single relation (multiple => false) saves int only', function () {
     $model = new HasManyFieldOptionsModel2;
 
@@ -364,5 +409,115 @@ test('Single relation (multiple => false) saves int only', function () {
     )->toBe(0);
 
     // Verify model relation is null
+    expect($model->posts)->toBeEmpty();
+});
+
+test('Single polymorphic relation (multiple => false, polymorphic => true) works correctly', function () {
+    $model = new HasManyFieldOptionsModel4;
+
+    // Save single post
+    $model->posts = 2;
+    $model->save();
+
+    // Verify database state
+    $relations = DB::table('post_relations')
+        ->where('resource_id', $model->id)
+        ->get();
+    
+    // Should only have one relation
+    expect($relations)->toHaveCount(1);
+    expect($relations[0]->related_id)->toBe(2)
+        ->and($relations[0]->order)->toBe(1)
+        ->and($relations[0]->related_type)->toBe(Post::class);
+
+    // Verify through model relation
+    expect($model->posts)->not->toBeNull();
+    expect($model->posts->id)->toBe(2);
+
+    // Update to different post
+    $model->posts = 3;
+    $model->save();
+
+    // Verify updated state
+    $relations = DB::table('post_relations')
+        ->where('resource_id', $model->id)
+        ->get();
+    
+    expect($relations)->toHaveCount(1);
+    expect($relations[0]->related_id)->toBe(3)
+        ->and($relations[0]->order)->toBe(1)
+        ->and($relations[0]->related_type)->toBe(Post::class);
+
+    // Verify old relation was deleted
+    expect(DB::table('post_relations')
+        ->where('resource_id', $model->id)
+        ->where('related_id', 2)
+        ->count()
+    )->toBe(0);
+
+    // Test setting to empty
+    $model->posts = [];
+    $model->save();
+
+    expect(DB::table('post_relations')
+        ->where('resource_id', $model->id)
+        ->count()
+    )->toBe(0);
+});
+
+test('Multiple meta field (multiple => true, polymorphic => false) saves as meta', function () {
+    $model = new HasManyFieldOptionsModel5;
+
+    // Save multiple posts
+    $model->posts = [1, 2, 3];
+    $model->save();
+
+    // Should save in meta table instead of relations
+    $meta = DB::table('meta')
+        ->where('metable_id', $model->id)
+        ->where('metable_type', HasManyFieldOptionsModel5::class)
+        ->where('key', 'posts')
+        ->first();
+
+    expect($meta)->not->toBeNull();
+    
+    // Meta value should be JSON array of IDs
+    $value = json_decode($meta->value, true);
+    expect($value)->toBe([1, 2, 3]);
+
+    // Verify through model accessor
+    expect($model->posts)->toHaveCount(3);
+    expect($model->posts->pluck('id')->toArray())->toBe([1, 2, 3]);
+
+    // Update to single post
+    $model->posts = [2];
+    $model->save();
+
+    // Verify meta was updated
+    $meta = DB::table('meta')
+        ->where('metable_id', $model->id)
+        ->where('metable_type', HasManyFieldOptionsModel5::class)
+        ->where('key', 'posts')
+        ->first();
+
+    $value = json_decode($meta->value, true);
+    expect($value)->toBe([2]);
+
+    // Verify through model
+    expect($model->posts)->toHaveCount(1);
+    expect($model->posts->first()->id)->toBe(2);
+
+    // Test setting to empty
+    $model->posts = [];
+    $model->save();
+
+    // Meta should be deleted or set to empty array
+    $meta = DB::table('meta')
+        ->where('metable_id', $model->id)
+        ->where('metable_type', HasManyFieldOptionsModel5::class)
+        ->where('key', 'posts')
+        ->first();
+
+    expect(json_decode($meta->value))->toBeEmpty();
     expect($model->posts)->toBeEmpty();
 });
