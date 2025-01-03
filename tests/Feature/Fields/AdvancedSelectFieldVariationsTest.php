@@ -2,11 +2,9 @@
 
 namespace Tests\Feature\Livewire;
 
-use Aura\Base\Livewire\Resource\Create;
 use Aura\Base\Resource;
 use Aura\Base\Tests\Resources\Post;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Schema;
 
 // Before each test, create a Superadmin and login
 beforeEach(function () {
@@ -17,8 +15,6 @@ beforeEach(function () {
 class HasManyFieldOptionsModel extends Resource
 {
     public static string $type = 'HasManyModel';
-
-    protected $fillable = ['type'];
 
     public static function getFields()
     {
@@ -37,8 +33,6 @@ class HasManyFieldOptionsModel2 extends Resource
 {
     public static string $type = 'HasManyModel';
 
-    protected $fillable = ['type'];
-
     public static function getFields()
     {
         return [
@@ -55,8 +49,6 @@ class HasManyFieldOptionsModel2 extends Resource
 class HasManyFieldOptionsModel3 extends Resource
 {
     public static string $type = 'HasManyModel';
-
-    protected $fillable = ['type'];
 
     public static function getFields()
     {
@@ -75,8 +67,6 @@ class HasManyFieldOptionsModel3 extends Resource
 class HasManyFieldOptionsModel4 extends Resource
 {
     public static string $type = 'HasManyModel';
-
-    protected $fillable = ['type'];
 
     public static function getFields()
     {
@@ -99,7 +89,6 @@ class HasManyFieldOptionsModel5 extends Resource
 
     public static string $type = 'HasManyModel';
 
-    protected $fillable = ['type'];
 
     public static function getFields()
     {
@@ -120,7 +109,23 @@ class HasManyFieldOptionsModel6 extends Resource
 {
     public static string $type = 'HasManyModel';
 
-    protected $fillable = ['type'];
+    public static function getFields()
+    {
+        return [
+            [
+                'name' => 'Posts',
+                'type' => 'Aura\\Base\\Fields\\AdvancedSelect',
+                'resource' => Post::class,
+                'slug' => 'posts',
+                'reverse' => true,
+            ],
+        ];
+    }
+}
+
+class HasManyFieldOptionsModel7 extends Resource
+{
+    public static string $type = 'HasManyModel';
 
     public static function getFields()
     {
@@ -130,6 +135,7 @@ class HasManyFieldOptionsModel6 extends Resource
                 'type' => 'Aura\\Base\\Fields\\AdvancedSelect',
                 'resource' => Post::class,
                 'slug' => 'posts',
+                'polymorphic_relation' => false,
                 'reverse' => true,
             ],
         ];
@@ -533,9 +539,8 @@ test('Multiple meta field (multiple => true, polymorphic => false) saves as meta
     expect($model->posts)->toBeEmpty();
 });
 
-test('reverse_polymorphic_relation_saves_and_retrieves_correctly', function () {
+test('reverse polymorphic relation saves and retrieves correctly', function () {
     $model = HasManyFieldOptionsModel6::create(['type' => 'test']);
-    $posts = Post::factory()->count(3)->create();
 
     // Save the relation
     $model->fields = [
