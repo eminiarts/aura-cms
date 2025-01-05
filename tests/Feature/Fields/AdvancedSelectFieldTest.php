@@ -2,18 +2,18 @@
 
 namespace Tests\Feature\Livewire;
 
-use Aura\Base\Facades\Aura;
-use Aura\Base\Fields\AdvancedSelect;
-use Aura\Base\Livewire\Resource\Create;
-use Aura\Base\Livewire\Resource\Edit;
-use Aura\Base\Resource;
-use Aura\Base\Resources\Role;
-use Aura\Base\Tests\Resources\Post;
-use DB;
-use Livewire\Livewire;
 use Mockery;
-
+use Livewire\Livewire;
+use Aura\Base\Resource;
+use Aura\Base\Facades\Aura;
+use Aura\Base\Resources\Role;
+use Illuminate\Support\Facades\DB;
+use Aura\Base\Tests\Resources\Post;
 use function Pest\Laravel\postJson;
+use Aura\Base\Fields\AdvancedSelect;
+use Aura\Base\Livewire\Resource\Edit;
+
+use Aura\Base\Livewire\Resource\Create;
 
 // Before each test, create a Superadmin and login
 beforeEach(function () {
@@ -56,7 +56,6 @@ test('AdvancedSelect Field Test', function () {
     $model = new AdvancedSelectFieldModel;
 
     $component = Livewire::test(Create::class, ['slug' => 'advancedselect'])
-        ->call('setModel', $model)
         ->assertSee('Create AdvancedSelect Model')
         ->assertSee('AdvancedSelect for Test')
         ->assertSeeHtml('x-text="selectedItemMarkup(item).title"')
@@ -73,18 +72,13 @@ test('AdvancedSelect Field Test', function () {
     // Assert that $model->fields['number'] is null
     $this->assertEmpty($model->fields['advancedselect']);
 
-    $component->set('form.fields.advancedselect', [[$roles[0]->id]])
+    $component->set('form.fields.advancedselect', [$roles[0]->id])
         ->call('save')
         ->assertHasNoErrors(['form.fields.advancedselect']);
 
-    // get the datemodel from db
     $model = AdvancedSelectFieldModel::orderBy('id', 'desc')->first();
 
-    // Dump and die the post_relation table
-    // dd(DB::table('post_relations')->get());
-
-    // dd($model->advancedselect);
-    // expect($model->advancedselect)->toBeArray();
+    expect($model->advancedselect)->toBeCollection();
     expect($model->advancedselect)->toHaveCount(1);
     expect($model->advancedselect->pluck('id'))->toContain($roles[0]->id);
 
@@ -93,7 +87,7 @@ test('AdvancedSelect Field Test', function () {
 test('advancedselect field gets displayed correctly on edit view', function () {
     $model = AdvancedSelectFieldModel::create([
         'fields' => [
-            'advancedselect' => [[$id = Role::first()->id]],
+            'advancedselect' => [$id = Role::first()->id],
         ],
     ]);
 
