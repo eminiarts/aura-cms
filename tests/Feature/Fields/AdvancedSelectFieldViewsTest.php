@@ -2,13 +2,14 @@
 
 namespace Tests\Feature\Livewire;
 
-use Aura\Base\Resource;
-use Aura\Base\Tests\Resources\Post;
-use Illuminate\Support\Facades\DB;
 use Livewire\Livewire;
-use Illuminate\Support\Facades\View;
-use Illuminate\Support\Facades\File;
+use Aura\Base\Resource;
 use Aura\Base\Facades\Aura;
+use Illuminate\Support\Facades\DB;
+use Aura\Base\Resources\Attachment;
+use Aura\Base\Tests\Resources\Post;
+use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\View;
 use Aura\Base\Livewire\Resource\Index;
 use Aura\Base\Livewire\Resource\View as ResourceView;
 
@@ -143,14 +144,20 @@ test('custom view_view renders correctly', function () {
 });
 
 test('thumbnail field is properly handled in index view', function () {
-    Aura::fake();
-    Aura::setModel(new HasManyFieldViewsModelThumbnail);
+   
 
     $model = HasManyFieldViewsModelThumbnail::create([]);
     $post = Post::first();
+
+    $attachment = Attachment::create([
+        'name' => 'Test Attachment',
+        'url' => 'test-url.jpg',
+        'mime_type' => 'image/jpeg',
+        'size' => 12345,
+    ]);
     
     // Create a post with an image
-    $post->image = ['image1.jpg'];
+    $post->image = [$attachment->id];
     $post->save();
 
     $model->fields = [
@@ -158,9 +165,12 @@ test('thumbnail field is properly handled in index view', function () {
     ];
     $model->save();
 
+    Aura::fake();
+    Aura::setModel(new HasManyFieldViewsModelThumbnail);
+
     // Test the index view
-    Livewire::test(Index::class)
-        ->assertSee('image1.jpg');
+    $component = Livewire::test(Index::class)
+      ->assertSeeHtml('thumbnail-image');
 
     // Assert thumbnail field is set
     $field = $model->getFields()[0];
