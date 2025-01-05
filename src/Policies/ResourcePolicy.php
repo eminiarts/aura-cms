@@ -137,7 +137,6 @@ class ResourcePolicy
      */
     public function view(User $user, $resource)
     {
-        ray('view', $resource);
         // Check if the config resource view is enabled
         if (config('aura.resource-view-enabled') === false) {
             return false;
