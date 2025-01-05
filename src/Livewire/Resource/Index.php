@@ -16,14 +16,10 @@ class Index extends Component
 
     public function mount()
     {
+        ray('mount');
         // Get the slug from the current route
         $routeName = request()->route()->getName();
         $this->slug = explode('.', $routeName)[1] ?? null;
-
-        if (! $this->slug) {
-            // If we couldn't extract the slug, redirect to dashboard
-            return redirect()->route('aura.dashboard');
-        }
 
         $this->resource = Aura::findResourceBySlug($this->slug);
 

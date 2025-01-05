@@ -168,6 +168,9 @@ test('thumbnail field is properly handled in index view', function () {
 });
 
 test('custom view_index renders correctly', function () {
+
+    $this->withoutExceptionHandling();
+
     $model = HasManyFieldViewsModelCustomIndex::create([]);
     $post = Post::first();
     
@@ -175,6 +178,8 @@ test('custom view_index renders correctly', function () {
         'posts' => [$post->id],
     ];
     $model->save();
+
+    ray('here', $model);
 
     Aura::fake();
     Aura::setModel(new HasManyFieldViewsModelCustomIndex);
