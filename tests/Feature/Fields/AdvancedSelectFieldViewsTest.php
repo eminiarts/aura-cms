@@ -47,7 +47,6 @@ afterEach(function () {
 class HasManyFieldViewsModel extends Resource
 {
     public static string $type = 'HasManyModel';
-
     protected static ?string $slug = 'has-many-model';
 
     public static function getFields()
@@ -65,8 +64,7 @@ class HasManyFieldViewsModel extends Resource
 
 class HasManyFieldViewsModelCustomView extends Resource
 {
-    public static string $type = 'HasManyModel';
-
+    public static string $type = 'hasmanymodel';
     protected static ?string $slug = 'hasmanymodel';
 
     public static function getFields()
@@ -106,6 +104,7 @@ class HasManyFieldViewsModelThumbnail extends Resource
 class HasManyFieldViewsModelCustomIndex extends Resource
 {
     public static string $type = 'HasManyModel';
+    protected static ?string $slug = 'has-many-model';
 
     public static function getFields()
     {
@@ -122,37 +121,22 @@ class HasManyFieldViewsModelCustomIndex extends Resource
 }
 
 test('custom view_view renders correctly', function () {
-
-    $this->withoutExceptionHandling();
-   
-    ray()->clearScreen();
-    ray('starting here');
-   
-    $model = HasManyFieldViewsModelCustomView::create(['type' => 'test']);
+    $model = HasManyFieldViewsModelCustomView::create([]);
     $post = Post::first();
-    
     // Create test posts
     $model->fields = [
         'posts' => [$post->id],
     ];
+
     $model->save();
 
     Aura::fake();
-
-    //ray($model);
     Aura::setModel(new HasManyFieldViewsModelCustomView());
-
-    
-    // dd(auth()->user()->isSuperAdmin());
 
     // Test the view component
     $component = Livewire::test(ResourceView::class, ['id' => $model->id])
-        //->assertSee('custom-post-view')
-        ;
-
+        ->assertSee('custom-post-view');
         
-        dd($component->html());
-
     // Assert view_view is used
     $field = $model->getFields()[0];
     expect($field['view_view'])->toBe('custom.post-view');
@@ -162,7 +146,7 @@ test('thumbnail field is properly handled in index view', function () {
     Aura::fake();
     Aura::setModel(new HasManyFieldViewsModelThumbnail);
 
-    $model = HasManyFieldViewsModelThumbnail::create(['type' => 'test']);
+    $model = HasManyFieldViewsModelThumbnail::create([]);
     $post = Post::first();
     
     // Create a post with an image
@@ -184,16 +168,16 @@ test('thumbnail field is properly handled in index view', function () {
 });
 
 test('custom view_index renders correctly', function () {
-    Aura::fake();
-    Aura::setModel(new HasManyFieldViewsModelCustomIndex);
-
-    $model = HasManyFieldViewsModelCustomIndex::create(['type' => 'test']);
+    $model = HasManyFieldViewsModelCustomIndex::create([]);
     $post = Post::first();
     
     $model->fields = [
         'posts' => [$post->id],
     ];
     $model->save();
+
+    Aura::fake();
+    Aura::setModel(new HasManyFieldViewsModelCustomIndex);
 
     // Test the index view
     Livewire::test(Index::class)
@@ -208,7 +192,7 @@ test('default view rendering when no custom views are specified', function () {
     Aura::fake();
     Aura::setModel(new HasManyFieldViewsModel);
 
-    $model = HasManyFieldViewsModel::create(['type' => 'test']);
+    $model = HasManyFieldViewsModel::create([]);
     $post = Post::first();
     
     $model->fields = [
@@ -229,7 +213,7 @@ test('thumbnail with missing image shows placeholder', function () {
     Aura::fake();
     Aura::setModel(new HasManyFieldViewsModelThumbnail);
 
-    $model = HasManyFieldViewsModelThumbnail::create(['type' => 'test']);
+    $model = HasManyFieldViewsModelThumbnail::create([]);
     $post = Post::first();
     
     $model->fields = [
@@ -246,7 +230,7 @@ test('multiple items render correctly in index view', function () {
     Aura::fake();
     Aura::setModel(new HasManyFieldViewsModel);
 
-    $model = HasManyFieldViewsModel::create(['type' => 'test']);
+    $model = HasManyFieldViewsModel::create([]);
     $posts = Post::take(2)->get();
     
     $model->fields = [

@@ -8,10 +8,7 @@ class AuraFake extends Aura
 
     public function findResourceBySlug($slug)
     {
-        ray('findResourceBySlug', $this->model)->green(); 
-
         if ($this->model) {
-            ray('should return model');
             return $this->model;
         }
 
@@ -20,7 +17,6 @@ class AuraFake extends Aura
 
     public function setModel($model)
     {
-        ray('set model');
         $this->model = $model;
 
         $slug = $model->getSlug();
