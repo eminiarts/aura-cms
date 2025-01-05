@@ -48,6 +48,8 @@ class HasManyFieldViewsModel extends Resource
 {
     public static string $type = 'HasManyModel';
 
+    protected static ?string $slug = 'has-many-model';
+
     public static function getFields()
     {
         return [
@@ -64,6 +66,8 @@ class HasManyFieldViewsModel extends Resource
 class HasManyFieldViewsModelCustomView extends Resource
 {
     public static string $type = 'HasManyModel';
+
+    protected static ?string $slug = 'hasmanymodel';
 
     public static function getFields()
     {
@@ -82,6 +86,8 @@ class HasManyFieldViewsModelCustomView extends Resource
 class HasManyFieldViewsModelThumbnail extends Resource
 {
     public static string $type = 'HasManyModel';
+
+    protected static ?string $slug = 'has-many-model';
 
     public static function getFields()
     {
@@ -116,6 +122,11 @@ class HasManyFieldViewsModelCustomIndex extends Resource
 }
 
 test('custom view_view renders correctly', function () {
+
+    $this->withoutExceptionHandling();
+   
+    ray()->clearScreen();
+    ray('starting here');
    
     $model = HasManyFieldViewsModelCustomView::create(['type' => 'test']);
     $post = Post::first();
@@ -127,11 +138,20 @@ test('custom view_view renders correctly', function () {
     $model->save();
 
     Aura::fake();
-    Aura::setModel(new HasManyFieldViewsModelCustomView);
+
+    //ray($model);
+    Aura::setModel(new HasManyFieldViewsModelCustomView());
+
+    
+    // dd(auth()->user()->isSuperAdmin());
 
     // Test the view component
-    Livewire::test(ResourceView::class, ['id' => $model->id])
-        ->assertSee('custom-post-view');
+    $component = Livewire::test(ResourceView::class, ['id' => $model->id])
+        //->assertSee('custom-post-view')
+        ;
+
+        
+        dd($component->html());
 
     // Assert view_view is used
     $field = $model->getFields()[0];

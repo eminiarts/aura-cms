@@ -49,7 +49,7 @@ class View extends Component
         $this->model = Aura::findResourceBySlug($this->slug)->find($id);
 
         // Authorize
-        // ray($this->model, $slug, auth()->user());
+        ray($this->model, $id,  Aura::findResourceBySlug($this->slug)->find($id))->blue();
 
         $this->authorize('view', $this->model);
 
