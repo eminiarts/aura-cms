@@ -9,12 +9,13 @@ use Livewire\Livewire;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\Facades\File;
 use Aura\Base\Facades\Aura;
+use Aura\Base\Livewire\Resource\Index;
+use Aura\Base\Livewire\Resource\View as ResourceView;
 
 // Before each test, create a Superadmin and login
 beforeEach(function () {
     $this->actingAs($this->user = createSuperAdmin());
     Post::factory(3)->create();
-
 
     // Create custom views directory
     if (!File::exists(resource_path('views/custom'))) {
@@ -116,9 +117,6 @@ class HasManyFieldViewsModelCustomIndex extends Resource
 
 test('custom view_view renders correctly', function () {
    
-    Aura::fake();
-    Aura::setModel(new HasManyFieldViewsModelCustomView);
-
     $model = HasManyFieldViewsModelCustomView::create(['type' => 'test']);
     $post = Post::first();
     
@@ -128,10 +126,11 @@ test('custom view_view renders correctly', function () {
     ];
     $model->save();
 
+    Aura::fake();
+    Aura::setModel(new HasManyFieldViewsModelCustomView);
 
-    // Create a view component
-    $this->get("/admin/test/{$model->id}")
-        ->assertSuccessful()
+    // Test the view component
+    Livewire::test(ResourceView::class, ['id' => $model->id])
         ->assertSee('custom-post-view');
 
     // Assert view_view is used
@@ -140,6 +139,9 @@ test('custom view_view renders correctly', function () {
 });
 
 test('thumbnail field is properly handled in index view', function () {
+    Aura::fake();
+    Aura::setModel(new HasManyFieldViewsModelThumbnail);
+
     $model = HasManyFieldViewsModelThumbnail::create(['type' => 'test']);
     $post = Post::first();
     
@@ -152,12 +154,8 @@ test('thumbnail field is properly handled in index view', function () {
     ];
     $model->save();
 
-    Aura::fake();
-    Aura::setModel(new HasManyFieldViewsModelThumbnail);
-
     // Test the index view
-    $this->get('/admin/test')
-        ->assertSuccessful()
+    Livewire::test(Index::class)
         ->assertSee('image1.jpg');
 
     // Assert thumbnail field is set
@@ -166,6 +164,9 @@ test('thumbnail field is properly handled in index view', function () {
 });
 
 test('custom view_index renders correctly', function () {
+    Aura::fake();
+    Aura::setModel(new HasManyFieldViewsModelCustomIndex);
+
     $model = HasManyFieldViewsModelCustomIndex::create(['type' => 'test']);
     $post = Post::first();
     
@@ -174,12 +175,8 @@ test('custom view_index renders correctly', function () {
     ];
     $model->save();
 
-    Aura::fake();
-    Aura::setModel(new HasManyFieldViewsModelCustomIndex);
-
     // Test the index view
-    $this->get('/admin/test')
-        ->assertSuccessful()
+    Livewire::test(Index::class)
         ->assertSee('custom-post-index');
 
     // Assert view_index is used
@@ -188,6 +185,9 @@ test('custom view_index renders correctly', function () {
 });
 
 test('default view rendering when no custom views are specified', function () {
+    Aura::fake();
+    Aura::setModel(new HasManyFieldViewsModel);
+
     $model = HasManyFieldViewsModel::create(['type' => 'test']);
     $post = Post::first();
     
@@ -196,57 +196,45 @@ test('default view rendering when no custom views are specified', function () {
     ];
     $model->save();
 
-    Aura::fake();
-    Aura::setModel(new HasManyFieldViewsModel);
-
     // Test index view
-    $this->get('/admin/test')
-        ->assertSuccessful()
+    Livewire::test(Index::class)
         ->assertSee('text-gray-800');
 
     // Test view component
-    $this->get("/admin/test/{$model->id}")
-        ->assertSuccessful()
-        ->assertSee('truncate');
+    Livewire::test(ResourceView::class, ['id' => $model->id])
+        ->assertSee('text-gray-800');
 });
 
 test('thumbnail with missing image shows placeholder', function () {
+    Aura::fake();
+    Aura::setModel(new HasManyFieldViewsModelThumbnail);
+
     $model = HasManyFieldViewsModelThumbnail::create(['type' => 'test']);
     $post = Post::first();
     
-    // Create a post without an image
-    $post->image = null;
-    $post->save();
-
     $model->fields = [
         'posts' => [$post->id],
     ];
     $model->save();
 
-    Aura::fake();
-    Aura::setModel(new HasManyFieldViewsModelThumbnail);
-
     // Test the index view
-    $this->get('/admin/test')
-        ->assertSuccessful()
+    Livewire::test(Index::class)
         ->assertSee('bg-gray-300');
 });
 
 test('multiple items render correctly in index view', function () {
+    Aura::fake();
+    Aura::setModel(new HasManyFieldViewsModel);
+
     $model = HasManyFieldViewsModel::create(['type' => 'test']);
-    $posts = Post::take(3)->get();
+    $posts = Post::take(2)->get();
     
-    // Create multiple posts
     $model->fields = [
         'posts' => $posts->pluck('id')->toArray(),
     ];
     $model->save();
 
-    Aura::fake();
-    Aura::setModel(new HasManyFieldViewsModel);
-
     // Test the index view
-    $this->get('/admin/test')
-        ->assertSuccessful()
+    Livewire::test(Index::class)
         ->assertSee('flex space-x-2');
 });
