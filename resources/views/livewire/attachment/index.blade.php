@@ -1,7 +1,5 @@
 <div>
 
-
-
     <div wire:key="widgets">
        @if ($widgets = $resource->widgets())
         @livewire('aura::widgets', ['widgets' => $widgets, 'model' => $resource])

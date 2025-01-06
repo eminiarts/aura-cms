@@ -100,6 +100,7 @@ class Aura
             return app($slug);
         }
 
+
         foreach ($this->getResources() as $resourceClass) {
             $resource = app($resourceClass);
 

@@ -136,7 +136,7 @@ class ResourcePolicy
      * @return \Illuminate\Auth\Access\Response|bool
      */
     public function view(User $user, $resource)
-    {
+    {        
         // Check if the config resource view is enabled
         if (config('aura.resource-view-enabled') === false) {
             return false;

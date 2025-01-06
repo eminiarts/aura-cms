@@ -24,6 +24,9 @@ beforeEach(function () {
 });
 
 test('Aura without teams - pages', function () {
+
+    $this->withoutExceptionHandling();
+
     expect(config('aura.teams'))->toBeFalse();
 
     // expect Dashboard to be accessible
@@ -53,8 +56,14 @@ test('Aura without teams - pages', function () {
     // Create Pages
     $this->get(route('aura.user.create'))->assertOk();
     $this->get(route('aura.post.create'))->assertOk();
+
+    Aura::setModel(new Permission);
     $this->get(route('aura.permission.create'))->assertOk();
+
+    Aura::setModel(new Role);
     $this->get(route('aura.role.create'))->assertOk();
+
+    Aura::setModel(new Option);
     $this->get(route('aura.option.create'))->assertOk();
 
     $post = Post::create([
@@ -79,6 +88,7 @@ test('Aura without teams - pages', function () {
     $this->get(route('aura.user.edit', ['id' => $user->id]))->assertOk();
     $this->get(route('aura.role.edit', ['id' => $role->id]))->assertOk();
     $this->get(route('aura.permission.edit', ['id' => $permission->id]))->assertOk();
+
     $this->get(route('aura.option.edit', ['id' => $option->id]))->assertOk();
 
     // View Pages
