@@ -12,7 +12,41 @@ beforeEach(function () {
     $this->actingAs($this->user = createSuperAdmin());
 });
 
-test('team can be created', function () {
+test('team can not be created by default', function () {
+    // Teams
+    $teams = $this->user->getTeams();
+
+    // Expect 1 team
+    expect($teams->count())->toBe(1);
+
+    expect(Role::count())->toBe(1);
+
+    $component = livewire(Create::class, ['slug' => 'team'])
+        ->set('form.fields.name', 'Test Team')
+        ->set('form.fields.description', 'Test Description')
+        ->call('save')
+        ->assertHasNoErrors();
+
+    $this->user->refresh();
+
+    $team = $this->user->fresh()->currentTeam;
+
+    // User Teams Count
+    expect($this->user->fresh()->teams()->count())->toBe(2);
+
+    // Cache('user.'.$this->id.'.teams') Count
+    expect($this->user->getTeams()->count())->toBe(2);
+
+    expect($team->name)->toBe('Test Team');
+
+    expect($team->description)->toBe('Test Description');
+})->throws(\Exception::class);
+
+test('team can be created as a global admin', function () {
+
+    Gate::define('AuraGlobalAdmin', function (User $user) {
+        return true;        
+    });
     // Teams
     $teams = $this->user->getTeams();
 
