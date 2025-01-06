@@ -3,9 +3,9 @@
 
 
     <div wire:key="widgets">
-        @if($widgets = $resource->getWidgets())
-        <x-aura::widgets :widgets="$widgets" />
-        @endif
+       @if ($widgets = $resource->widgets())
+        @livewire('aura::widgets', ['widgets' => $widgets, 'model' => $resource])
+    @endif
     </div>
 
     <div wire:key="attachment-media-uploader">
