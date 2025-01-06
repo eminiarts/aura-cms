@@ -111,7 +111,7 @@ test('displays selected genre in advanced select when api option is enabled', fu
         // ->assertSeeHtml('Comedy')
         ->assertDontSee('advanced-select-view-selected')
 
-        ->set('form.fields.genre', [[$genre1->id]])
+        ->set('form.fields.genre', [$genre1->id])
 
         ->assertSee('advanced-select-view-selected')
 
@@ -125,7 +125,6 @@ test('displays selected genre in advanced select when api option is enabled', fu
     $model = MovieModel::first();
 
     $this->assertEquals('The Matrix', $model->title);
-    // dd($model->genre);
     $this->assertCount(1, $model->genre);
     $this->assertEquals($genre1->id, $model->genre[0]->id);
 
