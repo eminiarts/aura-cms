@@ -1,6 +1,6 @@
     <?php
 
-    use Aura\Base\Facades\Aura;
+use Aura\Base\Facades\Aura;
 use Aura\Base\Livewire\Resource\Create;
 use Aura\Base\Livewire\Resource\View;
 use Aura\Base\Resource;
@@ -28,6 +28,7 @@ class NewGenreModel extends Resource
 
     public static string $type = 'Genre';
 
+
     public static function getFields()
     {
         return [
@@ -49,6 +50,8 @@ class NewGenreModel extends Resource
                 'resource' => 'NewMovieModel',
                 'slug' => 'movies',
                 'create' => true,
+                'reverse' => true,
+                'reverse_slug' => 'genre',
             ],
         ];
     }
@@ -66,6 +69,7 @@ class NewMovieModel extends Resource
     public static ?string $slug = 'movie';
 
     public static string $type = 'Movie';
+
 
     public static function getFields()
     {
@@ -134,7 +138,7 @@ test('displays attached movies on view genre page', function () {
 
     $movie1 = NewMovieModel::create([
         'title' => 'Matrix',
-        'genre' => [[$genre1->id]],
+        'genre' => [$genre1->id],
     ]);
 
     // Aura::fake();

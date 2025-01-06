@@ -35,9 +35,10 @@ class HasManyCustomTableModel extends Resource
         return [
             [
                 'name' => 'Posts',
-                'slug' => 'posts-hasmany',
+                'slug' => 'posters',
                 'type' => 'Aura\\Base\\Fields\\HasMany',
                 'resource' => Post::class,
+                 'reverse' => false,
             ],
 
             [
@@ -45,6 +46,7 @@ class HasManyCustomTableModel extends Resource
                 'slug' => 'posts',
                 'type' => 'Aura\\Base\\Fields\\AdvancedSelect',
                 'resource' => Post::class,
+                'reverse' => true,
             ],
         ];
     }
@@ -63,6 +65,10 @@ test('search in hasMany does not lose query scope', function () {
     $instance = HasManyCustomTableModel::create([
         'posts' => $ids
     ]);
+
+    ray(DB::table('post_relations')->get());
+
+    ray($instance->posters);
 
     expect($instance->posts()->count())->toBe(10);
 

@@ -94,25 +94,6 @@ class HasMany extends Field
             return $query;
         }
 
-        // Only include Flow-related checks if the classes exist
-        if (class_exists('Aura\Flows\Resources\Flow')) {
-            if ($model instanceof \Aura\Flows\Resources\Flow) {
-                return $query->where('flow_id', $model->id);
-            }
-        }
-
-        if (class_exists('Aura\Flows\Resources\Operation')) {
-            if ($model instanceof \Aura\Flows\Resources\Operation) {
-                return $query->where('operation_id', $model->id);
-            }
-        }
-
-        if (class_exists('Aura\Flows\Resources\FlowLog')) {
-            if ($model instanceof \Aura\Flows\Resources\FlowLog) {
-                return $query->where('flow_log_id', $model->id);
-            }
-        }
-
         return $query->where('user_id', $model->id);
     }
 
@@ -123,12 +104,14 @@ class HasMany extends Field
         }
 
         if ($field['reverse'] ?? false) {
+
+            // dd('hier', $field);
             return $model
-                ->morphedByMany($field['resource'], 'related', 'post_relations', 'resource_id', 'related_id')
+                ->morphedByMany($field['resource'], 'resource', 'post_relations', 'related_id', 'resource_id')
                 ->withTimestamps()
                 ->withPivot('resource_type', 'slug')
                 ->wherePivot('resource_type', $field['resource'])
-                ->wherePivot('slug', $field['slug']);
+                ->wherePivot('slug', $field['reverse_slug']);
         }
 
         return $model
