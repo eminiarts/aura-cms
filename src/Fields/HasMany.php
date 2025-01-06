@@ -103,9 +103,9 @@ class HasMany extends Field
             return $model->hasMany($field['resource'], $field['column']);
         }
 
+        // You can define a reverse relationship
+        // Define reverse and reverse_slug
         if ($field['reverse'] ?? false) {
-
-            // dd('hier', $field);
             return $model
                 ->morphedByMany($field['resource'], 'resource', 'post_relations', 'related_id', 'resource_id')
                 ->withTimestamps()
