@@ -245,8 +245,7 @@ class Team extends Resource
             }
         });
 
-        static::creating(function ($team) {
-        });
+        static::creating(function ($team) {});
 
         static::created(function ($team) {
 
@@ -318,7 +317,6 @@ class Team extends Resource
             return redirect()->route('aura.dashboard');
         });
 
-     
     }
 
     /**

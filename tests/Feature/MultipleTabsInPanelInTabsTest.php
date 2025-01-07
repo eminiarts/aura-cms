@@ -110,7 +110,6 @@ test('panel 2 is nested in tab 2 of panel 1', function () {
 
     $fields = $model->getGroupedFields();
 
-
     $this->assertCount(1, $fields);
     $this->assertEquals($fields[0]['name'], 'Aura\Base\Fields\Tabs');
     $this->assertCount(2, $fields[0]['fields']);

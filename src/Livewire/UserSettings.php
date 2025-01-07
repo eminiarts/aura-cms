@@ -5,7 +5,6 @@ namespace Aura\Base\Livewire;
 use Aura\Base\Models\Option;
 use Aura\Base\Traits\InputFields;
 use Illuminate\Support\Arr;
-use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Str;
 use Livewire\Component;
 
@@ -105,7 +104,6 @@ class UserSettings extends Component
 
         return $this->notify(__('Successfully updated'));
 
-    
     }
 
     // Select Attachment

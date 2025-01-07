@@ -27,7 +27,7 @@ class Status extends Field
                 'name' => 'Options',
                 'type' => 'Aura\\Base\\Fields\\Repeater',
                 'validation' => '',
-                'slug' => 'options',         
+                'slug' => 'options',
             ],
             [
                 'name' => 'Key',

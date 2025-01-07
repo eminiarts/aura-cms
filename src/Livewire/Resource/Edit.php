@@ -80,7 +80,6 @@ class Edit extends Component
         // Array instead of Eloquent Model
         $this->form = $this->model->attributesToArray();
 
-
         // foreach fields, call the hydration method on the field
         $this->initializeModelFields();
 
@@ -136,9 +135,7 @@ class Edit extends Component
         $this->dispatch('refreshComponent');
     }
 
-    public function updatedPost($value, $array)
-    {
-    }
+    public function updatedPost($value, $array) {}
 
     protected function callComponentMethod($method, $params)
     {

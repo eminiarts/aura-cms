@@ -221,7 +221,6 @@ class Table extends Component
             })->toArray();
         }
 
-
         return $headers;
     }
 

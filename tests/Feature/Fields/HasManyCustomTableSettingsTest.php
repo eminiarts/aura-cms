@@ -6,7 +6,6 @@ use Aura\Base\Facades\Aura;
 use Aura\Base\Livewire\Resource\Create;
 use Aura\Base\Resource;
 use Aura\Base\Tests\Resources\Post;
-use Illuminate\Support\Facades\DB;
 use Livewire\Livewire;
 
 // Before each test, create a Superadmin and login
