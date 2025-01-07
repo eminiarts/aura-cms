@@ -56,7 +56,6 @@ class Profile extends Component
 
     public function dehydrate()
     {
-        ray('DEHYDRATE - model type: '.get_class($this->model))->orange();
     }
 
     /**

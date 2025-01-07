@@ -16,7 +16,6 @@ class Index extends Component
 
     public function mount()
     {
-        ray('mount');
         // Get the slug from the current route
         $routeName = request()->route()->getName();
         $this->slug = explode('.', $routeName)[1] ?? null;

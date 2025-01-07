@@ -353,7 +353,9 @@ test('a admin can access users', function () {
 
     // Attach to User
     $user = \Aura\Base\Resources\User::find(1);
-    $user->roles()->sync([$role->id], false, ['team_id' => $team->id]);
+    // $user->roles()->sync([$role->id], false, ['team_id' => $team->id]);
+
+    $user->update(['roles' => [$role->id]]);
 
     // Assert role was synced
     $this->assertDatabaseHas('user_role', [
@@ -364,7 +366,7 @@ test('a admin can access users', function () {
     // Refresh user model
     $user = $user->fresh();
 
-    dd($user->roles->toArray());        
+    Aura::setModel(new User);
 
     // Assert User has Admin Role
     $this->assertTrue($user->roles->contains('slug', 'admin'));
