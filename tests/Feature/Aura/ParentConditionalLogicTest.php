@@ -290,7 +290,7 @@ test('role condition as a Super Admin', function () {
     // Create a super admin role
     $superAdminRole = Role::create([
         'name' => 'Super Admin',
-        'slug' => 'super_admin',
+        'slug' => 'super',
         'description' => 'Super Admin can perform everything.',
         'super_admin' => true,
         'permissions' => [],
