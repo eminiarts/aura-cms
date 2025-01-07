@@ -175,34 +175,17 @@ test('super admin can get all fields', function () {
     $this->user->update(['roles' => [$role->id]]);
     $this->user->refresh();
 
-    $model = new UserRoleConditionalIndexFieldsModel;
-
-    Aura::fake();
-    Aura::setModel($model);
-
-    $post = UserRoleConditionalIndexFieldsModel::create(['type' => 'page']);
-
-    // Save meta values
-    $post->saveMeta('text1', 'Text 1');
-    $post->saveMeta('text2', 'Text 2');
-    $post->saveMeta('text3', 'Text 3');
-
-    $post = $post->fresh();
-    $post->clearFieldsAttributeCache();
-
-    // Get the fields collection
-    $fields = collect($post->fields)->pluck('value', 'slug')->toArray();
+    // Test getHeaders()
+    $headers = (new UserRoleConditionalIndexFieldsModel)->getHeaders();
 
     // Assert field count (all fields should be visible)
-    expect($fields)->toHaveCount(3);
+    expect($headers)->toHaveCount(4);
 
-    // Verify specific fields
-    expect($fields)->toHaveKey('text1');
-    expect($fields)->toHaveKey('text2');
-    expect($fields)->toHaveKey('text3');
-    expect($fields['text1'])->toBe('Text 1');
-    expect($fields['text2'])->toBe('Text 2');
-    expect($fields['text3'])->toBe('Text 3');
+    // Verify specific fields are present
+    expect($headers)->toHaveKey('text1');
+    expect($headers)->toHaveKey('text2');
+    expect($headers)->toHaveKey('text3');
+    expect($headers)->toHaveKey('id');
 });
 
 test('admin can get all fields except text1', function () {
@@ -220,33 +203,17 @@ test('admin can get all fields except text1', function () {
     $this->user->update(['roles' => [$role->id]]);
     $this->user->refresh();
 
-    $model = new UserRoleConditionalIndexFieldsModel;
-
-    Aura::fake();
-    Aura::setModel($model);
-
-    $post = UserRoleConditionalIndexFieldsModel::create(['type' => 'page']);
-
-    // Save meta values
-    $post->saveMeta('text1', 'Text 1');
-    $post->saveMeta('text2', 'Text 2');
-    $post->saveMeta('text3', 'Text 3');
-
-    $post = $post->fresh();
-    $post->clearFieldsAttributeCache();
-
-    // Get the fields collection
-    $fields = collect($post->fields)->pluck('value', 'slug')->toArray();
+    // Test getHeaders()
+    $headers = (new UserRoleConditionalIndexFieldsModel)->getHeaders();
 
     // Assert field count (text2 and text3 should be visible)
-    expect($fields)->toHaveCount(2);
+    expect($headers)->toHaveCount(3);
 
     // Verify specific fields
-    expect($fields)->not->toHaveKey('text1');
-    expect($fields)->toHaveKey('text2');
-    expect($fields)->toHaveKey('text3');
-    expect($fields['text2'])->toBe('Text 2');
-    expect($fields['text3'])->toBe('Text 3');
+    expect($headers)->not->toHaveKey('text1');
+    expect($headers)->toHaveKey('text2');
+    expect($headers)->toHaveKey('text3');
+    expect($headers)->toHaveKey('id');
 });
 
 test('user can get all fields except text1 and text2', function () {
@@ -264,30 +231,15 @@ test('user can get all fields except text1 and text2', function () {
     $this->user->update(['roles' => [$role->id]]);
     $this->user->refresh();
 
-    $model = new UserRoleConditionalIndexFieldsModel;
-
-    Aura::fake();
-    Aura::setModel($model);
-
-    $post = UserRoleConditionalIndexFieldsModel::create(['type' => 'page']);
-
-    // Save meta values
-    $post->saveMeta('text1', 'Text 1');
-    $post->saveMeta('text2', 'Text 2');
-    $post->saveMeta('text3', 'Text 3');
-
-    $post = $post->fresh();
-    $post->clearFieldsAttributeCache();
-
-    // Get the fields collection
-    $fields = collect($post->fields)->pluck('value', 'slug')->toArray();
+    // Test getHeaders()
+    $headers = (new UserRoleConditionalIndexFieldsModel)->getHeaders();
 
     // Assert field count (only text3 should be visible)
-    expect($fields)->toHaveCount(1);
+    expect($headers)->toHaveCount(2);
 
     // Verify specific fields
-    expect($fields)->not->toHaveKey('text1');
-    expect($fields)->not->toHaveKey('text2');
-    expect($fields)->toHaveKey('text3');
-    expect($fields['text3'])->toBe('Text 3');
+    expect($headers)->not->toHaveKey('text1');
+    expect($headers)->not->toHaveKey('text2');
+    expect($headers)->toHaveKey('text3');
+    expect($headers)->toHaveKey('id');
 });
