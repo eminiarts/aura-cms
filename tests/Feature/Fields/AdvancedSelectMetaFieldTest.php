@@ -83,9 +83,6 @@ test('AdvancedSelect Meta Field Test', function () {
     // get the datemodel from db
     $model = AdvancedSelectFieldMetaModel::orderBy('id', 'desc')->first();
 
-    // Dump and die the post_relation table
-    // dd(DB::table('post_relations')->get());
-
     expect($model->fields['advancedselect'])->toBeArray();
     expect($model->advancedselect)->toHaveCount(1);
     expect($model->fields['advancedselect'])->toContain($users[0]->id);
@@ -103,8 +100,6 @@ test('advancedselect field gets displayed correctly on edit view', function () {
 
     $post = AdvancedSelectFieldMetaModel::first();
 
-    // expect($post->advancedselect)->toBeArray();
-    // dd($post->advancedselect->pluck('id'));
     expect($post->advancedselect)->toHaveCount(1);
     expect($post->fields['advancedselect'])->toBeArray();
     expect($post->advancedselect->pluck('id'))->toContain($id);

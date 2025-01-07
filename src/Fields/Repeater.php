@@ -20,7 +20,6 @@ class Repeater extends Field
     public function get($class, $value, $field = null)
     {
         // $fields = $this->getFields();
-        // dd($field, $value, $fields);
         if (is_array($value)) {
             return $value;
         }
@@ -73,7 +72,6 @@ class Repeater extends Field
 
         $new = collect();
 
-        // dd($values, $fields, $field, $slug);
         if (! $values) {
             return $fields;
         }

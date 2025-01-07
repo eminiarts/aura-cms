@@ -55,22 +55,7 @@ trait SaveMetaFields
                     }
 
                     if (method_exists($class, 'set')) {
-                        // ray($post->password)->red();
-
-                        //    ray('calling set', $key, $value, $field['type'])->red();
-                        // $value = $class->set($post, $field, $value);
                         $value = $class->set($post, $field, $value);
-
-                        // if($post instanceof \Aura\Base\Resources\User && $key === 'password' && empty($value)) {
-                        //     ray($key, $value,$post->attributes)->blue();
-                        //     // dd($post);
-                        //     ray('continue')->red();
-                        //     continue;
-                        // }
-
-                        // Check if the field has a saving method
-
-                        // dd($post);
                     }
 
                     if (method_exists($class, 'saving')) {
@@ -142,11 +127,6 @@ trait SaveMetaFields
 
                     $field = $post->fieldBySlug($key);
                     $class = $post->fieldClassBySlug((string) $key);
-
-                    // if (isset($field['set']) && $field['set'] instanceof \Closure) {
-                    //     // dd('here');
-                    //     $value = call_user_func($field['set'], $post, $field, $value);
-                    // }
 
                     if (method_exists($class, 'saved')) {
                         $value = $class->saved($post, $field, $value);

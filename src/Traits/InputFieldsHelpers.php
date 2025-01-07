@@ -95,7 +95,6 @@ trait InputFieldsHelpers
 
     public function getFieldValue($key)
     {
-        // dd('test', $key, $this->fieldBySlug($key), $this->meta->$key);
         return $this->fieldClassBySlug($key)->get($this->fieldBySlug($key), $this->meta->$key);
     }
 
@@ -132,7 +131,6 @@ trait InputFieldsHelpers
 
     public function mappedFieldBySlug($slug)
     {
-        // dd($this->mappedFields(), $this->newFields);
         return $this->mappedFields()->firstWhere('slug', $slug);
     }
 

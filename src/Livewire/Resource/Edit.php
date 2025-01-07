@@ -81,7 +81,6 @@ class Edit extends Component
         // Array instead of Eloquent Model
         $this->form = $this->model->attributesToArray();
 
-        // dd($this->model->attributesToArray());
 
         // foreach fields, call the hydration method on the field
         $this->initializeModelFields();
@@ -122,7 +121,6 @@ class Edit extends Component
         $this->validate();
 
         //
-        // // dd('saving', $this->form, $this->model);
         //  ray('saving', $this->form['fields']);
 
         // unset($this->form['fields']['group']);
@@ -149,7 +147,6 @@ class Edit extends Component
 
     public function updatedPost($value, $array)
     {
-        // dd('updatedPostFields', $value, $array, $this->form);
     }
 
     protected function callComponentMethod($method, $params)

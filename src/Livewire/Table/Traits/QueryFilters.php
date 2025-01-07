@@ -213,16 +213,12 @@ trait QueryFilters
     protected function applyStandardMetaFilter(Builder $query, array $filter): void
     {
         if (isset($filter['options']) && isset($filter['options']['resource_type'])) {
-
-            // dd($filter);
-
             $resourceType = $filter['options']['resource_type'];
             $values = (array) $filter['value'];
 
             $slug = $filter['name'];
             $relatedType = get_class($query->getModel());
 
-            // dd($resourceType, $values, $filter, $relatedType);
             if ($filter['operator'] === 'contains') {
                 $query->whereIn('id', function ($subQuery) use ($resourceType, $values, $slug, $relatedType) {
                     $subQuery->select('related_id')

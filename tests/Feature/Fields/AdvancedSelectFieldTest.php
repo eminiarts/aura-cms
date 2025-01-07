@@ -95,8 +95,6 @@ test('advancedselect field gets displayed correctly on edit view', function () {
 
     $post = AdvancedSelectFieldModel::first();
 
-    // expect($post->advancedselect)->toBeArray();
-    // dd($post->advancedselect->toArray());
     expect($post->advancedselect)->toHaveCount(1);
     expect($post->advancedselect->pluck('id'))->toContain($id);
 

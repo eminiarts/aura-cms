@@ -134,9 +134,6 @@ class Table extends Component
             return redirect()->route('aura.'.$this->model()->getSlug().'.edit', ['id' => $data['id']]);
         }
 
-        // if custom
-        // dd($data);
-
         if (method_exists($this->model, $data['action'])) {
             return $this->model()->find($data['id'])->{$data['action']}();
         }
@@ -263,10 +260,6 @@ class Table extends Component
 
     public function mount()
     {
-        // if ($this->parentModel) {
-        //     // dd($this->parentModel);
-        // }
-
         $this->dispatch('tableMounted');
 
         if ($this->selectedFilter) {

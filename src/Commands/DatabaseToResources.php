@@ -15,8 +15,6 @@ class DatabaseToResources extends Command
     {
         $tables = $this->getAllTables();
 
-        // dd($tables);
-
         foreach ($tables as $table) {
             if (in_array($table, ['migrations', 'failed_jobs', 'password_resets', 'settions'])) {
                 continue;

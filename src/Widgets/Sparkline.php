@@ -80,8 +80,6 @@ class Sparkline extends Widget
 
     public function mount()
     {
-        // dd('hier', $this->start, $this->end, $this->model, $this->widget);
-
         if (optional($this->widget)['method']) {
             $this->method = $this->widget['method'];
         }

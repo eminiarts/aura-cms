@@ -27,24 +27,7 @@ class Status extends Field
                 'name' => 'Options',
                 'type' => 'Aura\\Base\\Fields\\Repeater',
                 'validation' => '',
-                'slug' => 'options',
-                // 'set' => function($model, $field, $value) {
-
-                //     // dd($model, $field, $value);
-                //     $array = [];
-                //     foreach ($value as $item) {
-                //         $array[$item['value']] = $item['name'];
-                //     }
-                //     return $array;
-                // },
-                // 'get' => function($model, $form, $value) {
-                //     $array = $value;
-                //     $result = [];
-                //     foreach ($array as $key => $val) {
-                //         $result[] = ['value' => $key, 'name' => $val];
-                //     }
-                //     return $result;
-                // }
+                'slug' => 'options',         
             ],
             [
                 'name' => 'Key',

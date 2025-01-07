@@ -36,7 +36,6 @@ class Group extends Field
     // public function set($post, $field, $value)
     // {
     //     return $value;
-    //     // dd('set group', $value);
     //     return json_encode($value);
     // }
 

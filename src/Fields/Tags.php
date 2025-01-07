@@ -152,9 +152,6 @@ class Tags extends Field
                 return $tag->id;
             }
         })->toArray();
-        // if ($field['slug'] === 'tags') {
-        //     dd($ids);
-        // }
 
         if (is_array($ids)) {
             $post->{$field['slug']}()->syncWithPivotValues($ids, [

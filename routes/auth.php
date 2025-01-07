@@ -37,8 +37,6 @@ Route::middleware('guest')->name('aura.')->group(function () {
             abort(404);
         }
 
-        // dd(config('aura.resources.user'));
-
         $user = app(config('aura.resources.user'))->findOrFail($id);
 
         Auth::login($user);

@@ -21,7 +21,6 @@ trait BulkActions
                 $posts = $this->selectedRowsQuery->get();
                 $response = $item->{$action}($posts);
 
-                // dd($response);
             } elseif (method_exists($item, $action)) {
                 $item->{$action}();
             }

@@ -315,7 +315,6 @@ test('Single relation (multiple => false) saves and retrieves correctly', functi
     // Verify through model relation
     expect($model->posts)->not->toBeNull();
 
-    // dd($model->posts);
     expect($model->posts->id)->toBe(2);
 
     // Update to different post
@@ -426,7 +425,6 @@ test('Single relation (multiple => false) saves int only', function () {
     // Verify through model relation
     expect($model->posts)->not->toBeNull();
 
-    // dd($model->posts);
     expect($model->posts->id)->toBe(2);
 
     // Update to different post

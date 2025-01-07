@@ -104,9 +104,6 @@ test('table filter', function () {
         ],
     ]);
 
-    // $tags = Tag::get();
-    // dd($tags->pluck('title'));
-
     expect($post->isMetaField('meta'))->toBeTrue();
 
     // Visit the Post Index Page
@@ -181,7 +178,6 @@ test('table filter - custom filter - contains', function () {
         return count($rows->items()) === 1 && $rows->items()[0]->id === $post->id;
     });
 
-    // dd('here', $rows->items());
     // Change Filter to "C"
     $component->set('filters.custom.0.filters.0.value', 'C');
     $component->assertViewHas('rows', function ($rows) {
@@ -258,8 +254,6 @@ test('table filter - custom tags filter - contains', function () {
         return count($rows->items()) === 1 && $rows->items()[0]->id === $post->id;
     });
 
-    // dd($tags->pluck('id'), $tags->first()->id, $tags->last()->id);
-
     // Change Filter to "B"
     $component->set('filters.custom.0.filters.0.value', $tags->last()->id);
 
@@ -271,7 +265,6 @@ test('table filter - custom tags filter - contains', function () {
         'title' => 'Tag 7',
     ]);
 
-    // dd('here', $rows->items());
     // Change Filter to "C"
     $component->set('filters.custom.0.filters.0.value', $tag7->id);
     $component->assertViewHas('rows', function ($rows) {
@@ -460,10 +453,6 @@ test('table filter - custom filter - starts_with', function () {
     // expect($component->rowsQuery->getBindings()[1])->toBe('C%');
 
     // Inspect SQL inspect bindings
-    // dd($component->rowsQuery->toSql(), $component->rowsQuery->getBindings());
-    // dd($component->rowsQuery->toSql());
-
-    // dd($component->filters);
 });
 
 test('table filter - custom filter - ends_with', function () {

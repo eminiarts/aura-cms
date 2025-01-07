@@ -17,7 +17,6 @@ class MetaCollection extends Collection
      */
     public function __get($key)
     {
-        // dd('hier', in_array($key, static::$proxies));
         if (in_array($key, static::$proxies)) {
             return parent::__get($key);
         }

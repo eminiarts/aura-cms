@@ -73,7 +73,6 @@ class EditResourceField extends Component
 
         $this->model = Aura::findResourceBySlug($params['model']);
 
-        // dd( $params['field'] );
         $this->field = $params['field'];
 
         // Check if field is an input field
@@ -104,7 +103,6 @@ class EditResourceField extends Component
 
     public function getGroupedFieldsProperty()
     {
-        // dd('test', $this->field, app($this->field['type'])->getGroupedFields());
         return app($this->field['type'])->getGroupedFields();
     }
 
@@ -215,7 +213,6 @@ class EditResourceField extends Component
             return;
         }
 
-        // dd(app($this->field['type'])->inputFields());
         $fields = app($this->field['type'])->inputFields()->pluck('slug');
 
         // fields are not set on $this->form['fields'] set it to false

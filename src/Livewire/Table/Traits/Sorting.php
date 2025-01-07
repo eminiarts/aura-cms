@@ -67,8 +67,6 @@ trait Sorting
             if ($this->model->isTaxonomyField($field)) {
                 $resourceType = $this->model->fieldBySlug($field)['resource'];
 
-                // dd($resourceType);
-
                 $query->leftJoin('post_relations as pr', function ($join) use ($resourceType) {
                     $join->on('posts.id', '=', 'pr.related_id')
                         ->where('pr.related_type', '=', $this->model->getMorphClass())

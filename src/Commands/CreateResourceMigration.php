@@ -114,8 +114,6 @@ class CreateResourceMigration extends Command
 
         $schema = $this->generateSchema($combined);
 
-        // dd($schema);
-
         if ($this->migrationExists($migrationName)) {
             // $this->error("Migration '{$migrationName}' already exists.");
             // return 1;

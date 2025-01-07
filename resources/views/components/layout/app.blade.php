@@ -12,9 +12,7 @@
 
     @php
         $settings = app('aura')::getOption('settings');
-        // dd($settings);
         $appSettings = app('aura')::options();
-        // dd($settings, $appSettings);
     @endphp
 
     <title>@yield('title') • {{ $appSettings['app_name'] ?? 'Aura CMS' }}</title>

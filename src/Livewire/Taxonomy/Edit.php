@@ -36,7 +36,6 @@ class Edit extends Component
         // Array instead of Eloquent Model
         $this->resource = $this->model->toArray();
 
-        // dd($this->resource);
         $this->form['fields'] = $this->model->toArray();
     }
 

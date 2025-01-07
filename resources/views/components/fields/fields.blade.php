@@ -1,7 +1,5 @@
 @aware(['field', 'model', 'form', 'mode'])
 
-{{-- @dd($mode) --}}
-
 <div class="flex flex-wrap items-start -mx-2 w-full" wire:key="tab-field-{{ md5(json_encode($field)) }}">
     @if(optional($field)['fields'])
         @foreach($field['fields'] as $key => $field)

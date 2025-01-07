@@ -35,8 +35,6 @@ class CustomizeComponent extends Command
             scroll: 10
         );
 
-        // dd($resourceClass, $resources);
-
         $resourceName = $resources[$resourceClass];
 
         $this->createCustomComponent($componentType, $resourceClass, $resourceName);

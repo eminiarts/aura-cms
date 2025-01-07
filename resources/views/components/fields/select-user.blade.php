@@ -1,25 +1,6 @@
 
 @php
-
-dd($field['field']->values($field['model']), $field);
-
-// Maybe set a custom display field for BelongsTo fields, eg. email instead of Title
-// $displayField = $field['field']->displayField ?? 'title';
-
 $values = $field['field']->values($field['model']);
-
-// Paginate the results
-
-// For Users
-// $values = $field['field']->attributes['values']()->map(function($user) {
-//   return [
-//     'id' => $user->id,
-//     'name' => $user->name,
-//     'email' => $user->email,
-//     'avatar' => 'https://i.pravatar.cc/300'
-//   ];
-// })->toArray();
-
 @endphp
 
 <x-aura::fields.wrapper :field="$field">

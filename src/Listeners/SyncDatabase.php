@@ -152,7 +152,6 @@ class SyncDatabase
         // if (!empty($fieldsReordered)) {
         //     // You can handle reordering in the way your application requires
         //     // This could be updating an order column, metadata, or another mechanism
-        //     dd('Reordered Fields:', $fieldsReordered);
         // }
     }
 

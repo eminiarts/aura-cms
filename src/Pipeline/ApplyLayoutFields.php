@@ -42,8 +42,6 @@ class ApplyLayoutFields implements Pipe
 
         $fields = $fields->values();
 
-        // dd('hier', $fields);
-
         foreach ($fields as $key => $field) {
             if ($field['field_type'] == 'layout') {
                 $layouts[] = $field;

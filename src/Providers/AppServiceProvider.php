@@ -55,7 +55,6 @@ class AppServiceProvider extends ServiceProvider
 
         // Validator::extend('json', function ($attribute, $value, $parameters, $validator) {
         //     json_decode($value);
-        //     dd('here');
         //     return json_last_error() === JSON_ERROR_NONE;
         // });
 

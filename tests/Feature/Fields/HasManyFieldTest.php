@@ -92,15 +92,6 @@ test('HasMany query Meta Fields with posts table', function () {
     $sql = $query->toSql();
     $bindings = $query->getBindings();
 
-    // Dump the SQL and bindings for debugging
-    dump([
-        'sql' => $sql,
-        'bindings' => $bindings,
-        'model_id' => $model->id,
-        'model_type' => get_class($model),
-        'post_relations' => DB::table('post_relations')->get(),
-    ]);
-
     expect($model->posts()->count())->toBe(3);
     expect($model->posts()->first())->toBeInstanceOf(Post::class);
 });

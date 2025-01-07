@@ -53,7 +53,6 @@
                             @endforeach
                         </x-aura::navigation.dropdown>
                     @else
-                        {{-- @dd($resource) --}}
                         @if(isset($resource['resource']))
                             @can('viewAny', app($resource['resource']))
                                 <x-aura::navigation.item :route="$resource['route']" :strict="false" :tooltip="__($resource['name'])" :compact="$this->compact" :badge="$resource['badge'] ?? null" :badgeColor="$resource['badgeColor'] ?? null">

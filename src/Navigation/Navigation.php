@@ -9,7 +9,6 @@ class Navigation
     public static function add(array $items, ?callable $authCallback = null): void
     {
         if ($authCallback && ! $authCallback()) {
-            // dd($authCallback());
             return;
         }
 

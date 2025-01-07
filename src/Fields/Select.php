@@ -38,7 +38,6 @@ class Select extends Field
                 'slug' => 'options',
                 // 'set' => function($model, $field, $value) {
 
-                //     // dd($model, $field, $value);
                 //     $array = [];
                 //     foreach ($value as $item) {
                 //         $array[$item['value']] = $item['name'];

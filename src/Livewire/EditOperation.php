@@ -21,17 +21,7 @@ class EditOperation extends Component
     {
         $this->model = Operation::find($params['model']);
 
-        // dd($this->model->validationRules());
-
         $this->form['fields'] = $this->model->fields;
-
-        // watch open property and trigger function on change
-        // $this->watch('open', 'validateBeforeClosing');
-
-        // dd($this->form['fields']);
-
-        // Merge fields from type with fields from model
-        // $this->form['fields'] = array_merge($this->form['fields'], $this->model->type->fields);
 
         $this->open = true;
     }
@@ -75,18 +65,10 @@ class EditOperation extends Component
 
     public function save()
     {
-        // dd($this->rules(), $this->resource);
         // Validate
-
         $this->validate();
 
-        // dd($this->resource, $this->model);
         $this->model->update($this->form['fields']);
-
-        // emit event to parent with slug and value
-        // $this->dispatch('saveField', ['slug' => $this->resource['key'], 'value' => $this->form['fields']]);
-
-        // emit to parent, that operation has been updated
 
         $this->open = false;
 
@@ -103,14 +85,8 @@ class EditOperation extends Component
         $this->dispatch('updatedOperation');
     }
 
-    // public function updatingOpen($value)
-    // {
-    //     dd('updatingOpen', $value);
-    // }
-
     public function validateBeforeClosing()
     {
-        // dd('validateBeforeClosing', $value);
         $this->validate();
 
         $this->open = false;

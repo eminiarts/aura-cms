@@ -20,10 +20,6 @@ class BelongsTo extends Field
 
     // public function get($class, $model, $field)
     // {
-    //     // ray($field, $model);
-    //     ray()->backtrace();
-    //     dd($model, $field);
-
     //     $relationshipQuery = $this->relationship($model, $field);
 
     //     return $relationshipQuery->get();
@@ -88,8 +84,6 @@ class BelongsTo extends Field
         // $results = app($request->model)->searchIn($searchableFields, $request->search)->take(20)->get();
 
         return collect($results)->unique('id')->values()->toArray();
-
-        // dd($searchableFields, $request->model, $request->search);
 
         return app($request->model)->searchIn($searchableFields, $request->search)->take(20)->get()->map(function ($item) {
             return [

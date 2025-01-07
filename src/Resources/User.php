@@ -193,8 +193,6 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
         // get the attachment from the meta
         $attachments = Attachment::find($meta);
 
-        // dd(count($attachments));
-
         if ($attachments && count($attachments) > 0) {
             $attachment = $attachments->first();
 

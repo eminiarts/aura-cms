@@ -60,8 +60,6 @@ test('fields get grouped when field group is true', function () {
 
     $fields = $model->getFieldsWithIds();
 
-    // dd($fields);
-
     $panel2 = $fields->firstWhere('slug', 'panel-2');
 
     expect($panel2)->toBeArray();

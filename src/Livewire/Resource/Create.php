@@ -125,11 +125,7 @@ class Create extends Component
 
     public function save()
     {
-        // dd($this->model->toArray(), $this->rules(), $this->model->validationRules());
-
         $this->validate();
-
-        // dd('save', $this->form);
 
         if ($this->model->usesCustomTable()) {
 

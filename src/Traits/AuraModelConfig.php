@@ -459,7 +459,6 @@ trait AuraModelConfig
 
     public function scopeWhereInMeta($query, $field, $values)
     {
-        // dd($query, $field, $values);
         if ($values instanceof \Illuminate\Support\Collection) {
             $values = $values->toArray();
         }

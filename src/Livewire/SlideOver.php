@@ -11,13 +11,11 @@ class SlideOver extends Component
     public function activate($id, $params)
     {
         $this->mount($id, $params);
-        // dd('activated', $id, $params);
     }
 
     public function mount($id = null, $params = null)
     {
         if ($id) {
-            // dd('mounted', $id, $params);
         }
     }
 

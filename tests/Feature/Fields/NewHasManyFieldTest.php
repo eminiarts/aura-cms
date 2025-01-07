@@ -111,13 +111,9 @@ test('movies can be attached to genres', function () {
     // assert in db has post with type DateModel
     $this->assertDatabaseHas('posts', ['type' => 'Movie']);
 
-    // dd($movie1->toArray(), $movie1->title);
-
     $this->assertEquals('Matrix', $movie1->title);
     $this->assertCount(1, $movie1->genre);
     $this->assertEquals($genre1->id, $movie1->genre[0]->id);
-
-    // dd($movie1->genre->toArray());
 
     $this->assertCount(1, $movie1->genre);
 });

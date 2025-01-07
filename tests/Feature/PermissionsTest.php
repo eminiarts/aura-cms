@@ -38,8 +38,6 @@ test('a super admin can perform any action', function () {
 
     $user->update(['roles' => [$r->id]]);
 
-    // dd(auth()->user()->can('viewAny', $user));
-
     // Assert User can do everything with users
     expect($this->user->can('viewAny', $user))->toBeTrue();
     expect($this->user->can('view', $user))->toBeTrue();
@@ -234,8 +232,6 @@ test('a admin can access all pages', function () {
 
     // Access Index Page
     $response = $this->actingAs($user)->get(route('aura.'.$post->getSlug().'.index'));
-
-    // dd($response);
 
     // Assert Response
     $response->assertStatus(200);

@@ -105,15 +105,7 @@ class UserSettings extends Component
 
         return $this->notify(__('Successfully updated'));
 
-        // dd('hier')
-
-        // $this->resource->save();
-
-        // Artisan::call('make:resource', [
-        //     'name' => $this->form['fields']['name'],
-        // ]);
-
-        // return $this->notify('Created successfully.');
+    
     }
 
     // Select Attachment
@@ -121,8 +113,6 @@ class UserSettings extends Component
     {
         $this->form['fields'][$data['slug']] = $data['value'];
 
-        // dd($this->form['fields'][$data['slug']], $data['value']);
-        // dd($this->resource);
         $this->save();
     }
 }

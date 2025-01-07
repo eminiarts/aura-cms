@@ -25,6 +25,12 @@ class TestCase extends Orchestra
 
         $this->withoutVite();
 
+        // Ensure proper Livewire file upload handling
+        config()->set('livewire.temporary_file_upload.directory', 'tmp-for-tests');
+        
+        // Ensure unique database for parallel testing
+        config()->set('database.connections.testing.database', 'testing_' . env('TEST_TOKEN', gethostname()));
+
         Factory::guessFactoryNamesUsing(
             fn (string $modelName) => 'Aura\\Base\\Database\\Factories\\'.class_basename($modelName).'Factory'
         );
