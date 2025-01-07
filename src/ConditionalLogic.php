@@ -168,6 +168,11 @@ class ConditionalLogic
     {
         $user = Auth::user();
 
+        // Super admins should have access to all role-based fields
+        if ($user->isSuperAdmin()) {
+            return true;
+        }
+
         if ($condition['operator'] === '==' && $condition['value'] === 'super_admin') {
             return $user->isSuperAdmin();
         }
