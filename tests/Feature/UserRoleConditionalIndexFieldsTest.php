@@ -1,21 +1,20 @@
 <?php
 
-use Aura\Base\Facades\Aura;
 use Aura\Base\Resource;
 use Aura\Base\Resources\Role;
-use Aura\Base\Resources\User;
 use Aura\Base\Resources\Team;
+use Aura\Base\Resources\User;
 
 beforeEach(function () {
     config()->set('aura.teams', true);
     $this->actingAs($this->user = User::factory()->create());
-    
+
     // Create a team for the user
     $team = Team::create([
         'name' => 'Test Team',
-        'user_id' => $this->user->id
+        'user_id' => $this->user->id,
     ]);
-    
+
     // Update user's current team
     $this->user->update(['current_team_id' => $team->id]);
     $this->user->refresh();
@@ -72,18 +71,17 @@ class UserRoleConditionalIndexFieldsModel extends Resource
             ],
         ];
     }
-   
 }
 
 test('super admin can view all headers', function () {
     $role = Role::create([
-        'name' => 'Super Admin', 
-        'slug' => 'super_admin', 
-        'description' => 'Super Admin has can perform everything.', 
-        'super_admin' => true, 
+        'name' => 'Super Admin',
+        'slug' => 'super_admin',
+        'description' => 'Super Admin has can perform everything.',
+        'super_admin' => true,
         'permissions' => [],
         'user_id' => $this->user->id,
-        'team_id' => $this->user->current_team_id
+        'team_id' => $this->user->current_team_id,
     ]);
 
     // Attach role to User
@@ -106,13 +104,13 @@ test('admin can view his headers', function () {
 
     // Assert Admin sees only Text 2 and ID
     $role = Role::create([
-        'name' => 'Admin', 
-        'slug' => 'admin', 
-        'description' => 'Admin has can perform everything.', 
-        'super_admin' => false, 
+        'name' => 'Admin',
+        'slug' => 'admin',
+        'description' => 'Admin has can perform everything.',
+        'super_admin' => false,
         'permissions' => [],
         'user_id' => $this->user->id,
-        'team_id' => $this->user->current_team_id
+        'team_id' => $this->user->current_team_id,
     ]);
 
     // Attach role to User
@@ -134,13 +132,13 @@ test('user can view his headers', function () {
 
     // Assert Moderator sees only Text 3 and ID
     $role = Role::create([
-        'name' => 'Moderator', 
-        'slug' => 'moderator', 
-        'description' => 'Moderator has can perform everything.', 
-        'super_admin' => false, 
+        'name' => 'Moderator',
+        'slug' => 'moderator',
+        'description' => 'Moderator has can perform everything.',
+        'super_admin' => false,
         'permissions' => [],
         'user_id' => $this->user->id,
-        'team_id' => $this->user->current_team_id
+        'team_id' => $this->user->current_team_id,
     ]);
 
     // Attach role to User
@@ -162,13 +160,13 @@ test('user can view his headers', function () {
 
 test('super admin can get all fields', function () {
     $role = Role::create([
-        'name' => 'Super Admin', 
-        'slug' => 'super_admin', 
-        'description' => 'Super Admin has can perform everything.', 
-        'super_admin' => true, 
+        'name' => 'Super Admin',
+        'slug' => 'super_admin',
+        'description' => 'Super Admin has can perform everything.',
+        'super_admin' => true,
         'permissions' => [],
         'user_id' => $this->user->id,
-        'team_id' => $this->user->current_team_id
+        'team_id' => $this->user->current_team_id,
     ]);
 
     // Attach role to User
@@ -190,13 +188,13 @@ test('super admin can get all fields', function () {
 
 test('admin can get all fields except text1', function () {
     $role = Role::create([
-        'name' => 'Admin', 
-        'slug' => 'admin', 
-        'description' => 'Admin has can perform everything.', 
-        'super_admin' => false, 
+        'name' => 'Admin',
+        'slug' => 'admin',
+        'description' => 'Admin has can perform everything.',
+        'super_admin' => false,
         'permissions' => [],
         'user_id' => $this->user->id,
-        'team_id' => $this->user->current_team_id
+        'team_id' => $this->user->current_team_id,
     ]);
 
     // Attach role to User
@@ -218,13 +216,13 @@ test('admin can get all fields except text1', function () {
 
 test('user can get all fields except text1 and text2', function () {
     $role = Role::create([
-        'name' => 'User', 
-        'slug' => 'user', 
-        'description' => 'Simple User', 
-        'super_admin' => false, 
+        'name' => 'User',
+        'slug' => 'user',
+        'description' => 'Simple User',
+        'super_admin' => false,
         'permissions' => [],
         'user_id' => $this->user->id,
-        'team_id' => $this->user->current_team_id
+        'team_id' => $this->user->current_team_id,
     ]);
 
     // Attach role to User
