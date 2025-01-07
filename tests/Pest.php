@@ -4,9 +4,10 @@ use Aura\Base\Resources\Role;
 use Aura\Base\Resources\Team;
 use Aura\Base\Resources\User;
 use Aura\Base\Tests\Resources\Post;
-use Illuminate\Foundation\Testing\DatabaseMigrations;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Foundation\Testing\DatabaseMigrations;
+use Illuminate\Foundation\Testing\DatabaseTruncation;
 
 uses(Aura\Base\Tests\TestCase::class)->in(__DIR__);
 
@@ -16,9 +17,9 @@ uses()->group('table')->in('Feature/Table');
 uses()->group('resource')->in('Feature/Resource');
 
 uses(RefreshDatabase::class)->in('Feature');
+// uses(DatabaseTruncation::class)->in('Feature');
 
 // uses(\Illuminate\Foundation\Testing\RefreshDatabase::class);
-uses(DatabaseMigrations::class)->in('DatabaseMigrations');
 
 // uses(\Illuminate\Foundation\Testing\LazilyRefreshDatabase::class)->in('Feature');
 
