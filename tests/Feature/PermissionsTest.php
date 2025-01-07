@@ -1,12 +1,13 @@
 <?php
 
+use Livewire\Livewire;
 use Aura\Base\Facades\Aura;
-use Aura\Base\Livewire\Resource\Edit;
 use Aura\Base\Resources\Role;
+use Aura\Base\Resources\Team;
 use Aura\Base\Resources\User;
 use Aura\Base\Tests\Resources\Post;
+use Aura\Base\Livewire\Resource\Edit;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Livewire\Livewire;
 
 uses(RefreshDatabase::class);
 
@@ -327,7 +328,11 @@ test('scoped posts', function () {
 });
 
 test('a admin can access users', function () {
-    $role = Role::create(['name' => 'Admin', 'slug' => 'admin', 'description' => ' Admin has can perform almost everything.', 'super_admin' => false, 'permissions' => [
+    $team = Team::factory()->create();
+    
+    $role = Role::create(['name' => 'Admin', 'slug' => 'admin', 'description' => ' Admin has can perform almost everything.', 'super_admin' => false,
+    'team_id' => $team->id,
+    'permissions' => [
         'viewAny-user' => true,
         'view-user' => true,
         'create-user' => true,
@@ -339,26 +344,27 @@ test('a admin can access users', function () {
     ]]);
 
     // Create Post
-    $post = User::factory()->create();
+    $post = User::factory()->create(['current_team_id' => $team->id]);
 
     // assert there is a role in the db
     $this->assertDatabaseHas('users', ['id' => $post->id]);
     $this->assertDatabaseHas('roles', ['slug' => 'admin']);
 
-    $r = Role::first();
 
     // Attach to User
     $user = \Aura\Base\Resources\User::find(1);
-    $user->roles()->sync([$r->id]);
+    $user->roles()->sync([$role->id], false, ['team_id' => $team->id]);
 
     // Assert role was synced
     $this->assertDatabaseHas('user_role', [
         'user_id' => $user->id,
-        'role_id' => $r->id,
+        'role_id' => $role->id,
     ]);
 
     // Refresh user model
     $user = $user->fresh();
+
+    dd($user->roles->toArray());        
 
     // Assert User has Admin Role
     $this->assertTrue($user->roles->contains('slug', 'admin'));
