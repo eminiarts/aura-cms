@@ -4,62 +4,32 @@ use Aura\Base\Facades\Aura;
 use Aura\Base\Resource;
 use Aura\Base\Resources\Role;
 use Aura\Base\Resources\User;
+use Aura\Base\Resources\Team;
 
-beforeEach(fn () => $this->actingAs($this->user = User::factory()->create()));
+beforeEach(function () {
+    config()->set('aura.teams', true);
+    $this->actingAs($this->user = User::factory()->create());
+    
+    // Create a team for the user
+    $team = Team::create([
+        'name' => 'Test Team',
+        'user_id' => $this->user->id
+    ]);
+    
+    // Update user's current team
+    $this->user->update(['current_team_id' => $team->id]);
+    $this->user->refresh();
+
+    // Delete any existing roles and user_role relationships
+    \DB::table('user_role')->where('team_id', $team->id)->delete();
+    Role::where('team_id', $team->id)->delete();
+});
 
 class UserRoleConditionalIndexFieldsModel extends Resource
 {
     public static ?string $slug = 'page';
 
     public static string $type = 'Page';
-
-    protected $attributes = [];
-
-    protected $fields = [];
-
-    protected $fillable = ['type'];
-
-    protected $table = 'posts';
-
-    public function __get($key)
-    {
-        if ($key === 'fields') {
-            return $this->fields;
-        }
-
-        $field = collect($this->fields)->firstWhere('slug', $key);
-
-        return $field ? $field['value'] : null;
-    }
-
-    public static function boot()
-    {
-        parent::boot();
-
-        static::retrieved(function ($model) {
-            $model->refreshFields();
-        });
-
-        static::created(function ($model) {
-            $model->refreshFields();
-        });
-    }
-
-    public function clearFieldsAttributeCache()
-    {
-        $this->refreshFields();
-
-        return $this;
-    }
-
-    public function getAttribute($key)
-    {
-        if (array_key_exists($key, $this->attributes)) {
-            return $this->attributes[$key];
-        }
-
-        return parent::getAttribute($key);
-    }
 
     public static function getFields()
     {
@@ -102,81 +72,19 @@ class UserRoleConditionalIndexFieldsModel extends Resource
             ],
         ];
     }
-
-    public function getMeta($key = null)
-    {
-        $meta = $this->meta()->pluck('value', 'key')->toArray();
-
-        return $key ? ($meta[$key] ?? null) : $meta;
-    }
-
-    public function saveMeta($key, $value)
-    {
-        return $this->meta()->updateOrCreate(
-            ['key' => $key],
-            ['value' => $value]
-        );
-    }
-
-    public function setAttribute($key, $value)
-    {
-        if (in_array($key, ['text1', 'text2', 'text3'])) {
-            $this->saveMeta($key, $value);
-
-            return $this;
-        }
-
-        $this->attributes[$key] = $value;
-
-        return $this;
-    }
-
-    public static function usesMeta(): string
-    {
-        return 'meta';
-    }
-
-    protected function refreshFields()
-    {
-        $fields = static::getFields();
-        $userRole = auth()->user()->roles->first()->slug ?? null;
-        $meta = $this->getMeta();
-        $isSuperAdmin = auth()->user()->isSuperAdmin();
-
-        $visibleFields = collect($fields)->filter(function ($field) use ($userRole, $isSuperAdmin) {
-            $logic = $field['conditional_logic'] ?? [];
-            if (empty($logic)) {
-                return true;
-            }
-
-            if ($isSuperAdmin) {
-                return true;
-            }
-
-            foreach ($logic as $condition) {
-                if ($condition['field'] === 'role') {
-                    if ($condition['operator'] === '==' && $userRole !== $condition['value']) {
-                        return false;
-                    }
-                }
-            }
-
-            return true;
-        })->values();
-
-        $this->fields = $visibleFields->map(function ($field) use ($meta) {
-            $slug = $field['slug'];
-            $field['value'] = $meta[$slug] ?? null;
-
-            return $field;
-        });
-
-        return $this;
-    }
+   
 }
 
 test('super admin can view all headers', function () {
-    $role = Role::create(['name' => 'Super Admin', 'slug' => 'super_admin', 'description' => 'Super Admin has can perform everything.', 'super_admin' => true, 'permissions' => []]);
+    $role = Role::create([
+        'name' => 'Super Admin', 
+        'slug' => 'super_admin', 
+        'description' => 'Super Admin has can perform everything.', 
+        'super_admin' => true, 
+        'permissions' => [],
+        'user_id' => $this->user->id,
+        'team_id' => $this->user->current_team_id
+    ]);
 
     // Attach role to User
     $this->user->update(['roles' => [$role->id]]);
@@ -197,7 +105,15 @@ test('admin can view his headers', function () {
     $model = new UserRoleConditionalIndexFieldsModel;
 
     // Assert Admin sees only Text 2 and ID
-    $role = Role::create(['name' => 'Admin', 'slug' => 'admin', 'description' => 'Admin has can perform everything.', 'super_admin' => false, 'permissions' => []]);
+    $role = Role::create([
+        'name' => 'Admin', 
+        'slug' => 'admin', 
+        'description' => 'Admin has can perform everything.', 
+        'super_admin' => false, 
+        'permissions' => [],
+        'user_id' => $this->user->id,
+        'team_id' => $this->user->current_team_id
+    ]);
 
     // Attach role to User
     $this->user->update(['roles' => [$role->id]]);
@@ -217,26 +133,43 @@ test('user can view his headers', function () {
     $model = new UserRoleConditionalIndexFieldsModel;
 
     // Assert Moderator sees only Text 3 and ID
-    $role = Role::create(['name' => 'Moderator', 'slug' => 'moderator', 'description' => 'Moderator has can perform everything.', 'super_admin' => false, 'permissions' => []]);
+    $role = Role::create([
+        'name' => 'Moderator', 
+        'slug' => 'moderator', 
+        'description' => 'Moderator has can perform everything.', 
+        'super_admin' => false, 
+        'permissions' => [],
+        'user_id' => $this->user->id,
+        'team_id' => $this->user->current_team_id
+    ]);
 
     // Attach role to User
     $this->user->update(['roles' => [$role->id]]);
+    $this->user->refresh();
 
     // Test getHeaders()
     $headers = $model->getHeaders();
 
-    // Moderator sees 2 fields
+    // Moderator sees only Text 3 and ID
     expect($headers)->toHaveCount(2);
 
-    // Assert Moderator does not see Text 1
-    expect($headers)->not->toHaveKeys(['text1']);
-
-    // Assert Moderator does not see Text 2
-    expect($headers)->not->toHaveKeys(['text2']);
+    // Assert Moderator does not see Text 1 and Text 2
+    expect($headers)->not->toHaveKey('text1');
+    expect($headers)->not->toHaveKey('text2');
+    expect($headers)->toHaveKey('text3');
+    expect($headers)->toHaveKey('id');
 });
 
 test('super admin can get all fields', function () {
-    $role = Role::create(['name' => 'Super Admin', 'slug' => 'super_admin', 'description' => 'Super Admin has can perform everything.', 'super_admin' => true, 'permissions' => []]);
+    $role = Role::create([
+        'name' => 'Super Admin', 
+        'slug' => 'super_admin', 
+        'description' => 'Super Admin has can perform everything.', 
+        'super_admin' => true, 
+        'permissions' => [],
+        'user_id' => $this->user->id,
+        'team_id' => $this->user->current_team_id
+    ]);
 
     // Attach role to User
     $this->user->update(['roles' => [$role->id]]);
@@ -273,7 +206,15 @@ test('super admin can get all fields', function () {
 });
 
 test('admin can get all fields except text1', function () {
-    $role = Role::create(['name' => 'Admin', 'slug' => 'admin', 'description' => 'Admin has can perform everything.', 'super_admin' => false, 'permissions' => []]);
+    $role = Role::create([
+        'name' => 'Admin', 
+        'slug' => 'admin', 
+        'description' => 'Admin has can perform everything.', 
+        'super_admin' => false, 
+        'permissions' => [],
+        'user_id' => $this->user->id,
+        'team_id' => $this->user->current_team_id
+    ]);
 
     // Attach role to User
     $this->user->update(['roles' => [$role->id]]);
@@ -309,7 +250,15 @@ test('admin can get all fields except text1', function () {
 });
 
 test('user can get all fields except text1 and text2', function () {
-    $role = Role::create(['name' => 'User', 'slug' => 'user', 'description' => 'Simple User', 'super_admin' => false, 'permissions' => []]);
+    $role = Role::create([
+        'name' => 'User', 
+        'slug' => 'user', 
+        'description' => 'Simple User', 
+        'super_admin' => false, 
+        'permissions' => [],
+        'user_id' => $this->user->id,
+        'team_id' => $this->user->current_team_id
+    ]);
 
     // Attach role to User
     $this->user->update(['roles' => [$role->id]]);
