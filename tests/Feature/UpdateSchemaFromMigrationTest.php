@@ -30,15 +30,16 @@ beforeEach(function () {
         '--custom' => true,
     ]);
 
-    app('aura')::registerResources(['App\Aura\Resources\Project']);
+    // Register the Project resource
+    $projectClass = 'App\Aura\Resources\Project';
+    app('aura')::registerResources([$projectClass]);
 
+    // Clear cache and require the file
     Artisan::call('cache:clear');
-
     require_once app_path('Aura/Resources/Project.php');
 });
 
 afterEach(function () {
-
     if (File::exists(app_path('Aura/Resources/Project.php'))) {
         File::delete(app_path('Aura/Resources/Project.php'));
     }
@@ -50,7 +51,6 @@ afterEach(function () {
     }
 
     Aura::clear();
-
 });
 
 it('creates a migration when fields are added', function () {

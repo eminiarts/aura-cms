@@ -65,8 +65,6 @@ class TransformTableToResource extends Command
 
 namespace App\Aura\Resources;
 
-use Aura\Base\Models\Post;
-
 class {$resourceName} extends Resource
 {
     public static string \$type = '{$resourceName}';
