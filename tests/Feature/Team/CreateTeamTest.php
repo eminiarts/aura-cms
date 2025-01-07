@@ -45,7 +45,7 @@ test('team can not be created by default', function () {
 test('team can be created as a global admin', function () {
 
     Gate::define('AuraGlobalAdmin', function (User $user) {
-        return true;        
+        return true;
     });
     // Teams
     $teams = $this->user->getTeams();

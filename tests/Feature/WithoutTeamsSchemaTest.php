@@ -6,12 +6,9 @@ use Aura\Base\Livewire\Settings;
 use Aura\Base\Resources\Option;
 use Aura\Base\Resources\Role;
 use Aura\Base\Resources\User;
-use Aura\Base\Tests\TestCase;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Livewire\Livewire;
-
 
 beforeAll(function () {
     putenv('AURA_TEAMS=false');
@@ -73,7 +70,7 @@ test('Aura without teams - options table', function () {
 // Additional test for SettingsWithoutTeamsTest
 test('Settings Component can be rendered', function () {
     config(['aura.features.settings' => true]);
-    
+
     $this->withoutExceptionHandling();
 
     expect(config('aura.features.settings'))->toBeTrue();
@@ -85,7 +82,7 @@ test('Settings Component can be rendered', function () {
 
 test('Default Team Settings are created', function () {
     config(['aura.features.settings' => true]);
-    
+
     // Default Team Settings
     Livewire::test(Settings::class)
         ->assertSee('Settings')
@@ -110,7 +107,7 @@ test('Default Team Settings are created', function () {
 
 test('Settings can be saved', function () {
     config(['aura.features.settings' => true]);
-    
+
     // Default Team Settings
     Livewire::test(Settings::class)
         ->set('form.fields.darkmode-type', 'light')

@@ -2,18 +2,18 @@
 
 namespace Tests\Feature\Livewire;
 
-use Mockery;
-use Livewire\Livewire;
-use Aura\Base\Resource;
 use Aura\Base\Facades\Aura;
-use Aura\Base\Resources\Role;
-use Illuminate\Support\Facades\DB;
-use Aura\Base\Tests\Resources\Post;
-use function Pest\Laravel\postJson;
 use Aura\Base\Fields\AdvancedSelect;
-use Aura\Base\Livewire\Resource\Edit;
-
 use Aura\Base\Livewire\Resource\Create;
+use Aura\Base\Livewire\Resource\Edit;
+use Aura\Base\Resource;
+use Aura\Base\Resources\Role;
+use Aura\Base\Tests\Resources\Post;
+use Illuminate\Support\Facades\DB;
+use Livewire\Livewire;
+use Mockery;
+
+use function Pest\Laravel\postJson;
 
 // Before each test, create a Superadmin and login
 beforeEach(function () {

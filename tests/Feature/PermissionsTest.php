@@ -1,13 +1,13 @@
 <?php
 
-use Livewire\Livewire;
 use Aura\Base\Facades\Aura;
+use Aura\Base\Livewire\Resource\Edit;
 use Aura\Base\Resources\Role;
 use Aura\Base\Resources\Team;
 use Aura\Base\Resources\User;
 use Aura\Base\Tests\Resources\Post;
-use Aura\Base\Livewire\Resource\Edit;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Livewire\Livewire;
 
 uses(RefreshDatabase::class);
 
@@ -329,19 +329,19 @@ test('scoped posts', function () {
 
 test('a admin can access users', function () {
     $team = Team::factory()->create();
-    
+
     $role = Role::create(['name' => 'Admin', 'slug' => 'admin', 'description' => ' Admin has can perform almost everything.', 'super_admin' => false,
-    'team_id' => $team->id,
-    'permissions' => [
-        'viewAny-user' => true,
-        'view-user' => true,
-        'create-user' => true,
-        'update-user' => true,
-        'restore-user' => true,
-        'delete-user' => true,
-        'scope-user' => false,
-        'forceDelete-user' => false,
-    ]]);
+        'team_id' => $team->id,
+        'permissions' => [
+            'viewAny-user' => true,
+            'view-user' => true,
+            'create-user' => true,
+            'update-user' => true,
+            'restore-user' => true,
+            'delete-user' => true,
+            'scope-user' => false,
+            'forceDelete-user' => false,
+        ]]);
 
     // Create Post
     $post = User::factory()->create(['current_team_id' => $team->id]);
@@ -349,7 +349,6 @@ test('a admin can access users', function () {
     // assert there is a role in the db
     $this->assertDatabaseHas('users', ['id' => $post->id]);
     $this->assertDatabaseHas('roles', ['slug' => 'admin']);
-
 
     // Attach to User
     $user = \Aura\Base\Resources\User::find(1);

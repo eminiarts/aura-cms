@@ -2,8 +2,6 @@
 
 namespace Aura\Base\Fields;
 
-use Aura\Flows\Resources\Flow;
-
 class HasMany extends Field
 {
     public $edit = 'aura::fields.has-many';

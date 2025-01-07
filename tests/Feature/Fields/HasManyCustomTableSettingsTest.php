@@ -2,14 +2,12 @@
 
 namespace Tests\Feature\Livewire;
 
-use Livewire\Livewire;
-use Aura\Base\Resource;
 use Aura\Base\Facades\Aura;
-use Illuminate\Support\Facades\DB;
-use Aura\Base\Tests\Resources\Post;
-use Illuminate\Support\Facades\Schema;
 use Aura\Base\Livewire\Resource\Create;
-use Illuminate\Database\Schema\Blueprint;
+use Aura\Base\Resource;
+use Aura\Base\Tests\Resources\Post;
+use Illuminate\Support\Facades\DB;
+use Livewire\Livewire;
 
 // Before each test, create a Superadmin and login
 beforeEach(function () {
@@ -25,8 +23,9 @@ beforeEach(function () {
 
 class HasManyCustomTableModel extends Resource
 {
-    public static string $type = 'HasManyCustomTableModel';
     public static ?string $slug = 'has-many-model';
+
+    public static string $type = 'HasManyCustomTableModel';
 
     protected $fillable = ['type'];
 
@@ -38,7 +37,7 @@ class HasManyCustomTableModel extends Resource
                 'slug' => 'posters',
                 'type' => 'Aura\\Base\\Fields\\HasMany',
                 'resource' => Post::class,
-                 'reverse' => false,
+                'reverse' => false,
             ],
 
             [
@@ -63,7 +62,7 @@ test('search in hasMany does not lose query scope', function () {
 
     // Create a model instance
     $instance = HasManyCustomTableModel::create([
-        'posts' => $ids
+        'posts' => $ids,
     ]);
 
     ray(DB::table('post_relations')->get());
@@ -100,8 +99,8 @@ test('search in hasMany does not lose query scope', function () {
     $tableComponent->set('search', 'Test');
 
     // Assert that we only see 5 posts (the ones with 'Test' in the title)
-    $tableComponent->assertViewHas('rows', function ($rows) use ($testPosts) {
-        return count($rows->items()) === 5 && 
+    $tableComponent->assertViewHas('rows', function ($rows) {
+        return count($rows->items()) === 5 &&
             collect($rows->items())->every(fn ($post) => str_contains($post->title, 'Test'));
     });
 });

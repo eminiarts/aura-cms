@@ -54,9 +54,7 @@ class Profile extends Component
         $this->confirmingUserDeletion = true;
     }
 
-    public function dehydrate()
-    {
-    }
+    public function dehydrate() {}
 
     /**
      * Delete the current user.

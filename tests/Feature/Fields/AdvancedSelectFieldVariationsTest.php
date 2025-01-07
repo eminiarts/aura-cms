@@ -89,7 +89,6 @@ class HasManyFieldOptionsModel5 extends Resource
 
     public static string $type = 'HasManyModel';
 
-
     public static function getFields()
     {
         return [
@@ -598,9 +597,9 @@ test('reverse polymorphic relation saves and retrieves correctly', function () {
 
     // Check relations were saved correctly
     $relations = DB::table('post_relations')
-         ->where('related_id', $model->id)
-         ->where('related_type', HasManyFieldOptionsModel6::class)
-         ->where('slug', 'posts')
+        ->where('related_id', $model->id)
+        ->where('related_type', HasManyFieldOptionsModel6::class)
+        ->where('slug', 'posts')
         ->orderBy('order')
         ->get();
 
@@ -608,7 +607,6 @@ test('reverse polymorphic relation saves and retrieves correctly', function () {
 
     expect($relations->pluck('resource_id')->toArray())->toBe([1, 2, 3]);
     expect($relations->pluck('resource_type')->unique()->first())->toBe(Post::class);
-
 
     // Check order is preserved
     expect($relations->pluck('order')->toArray())->toBe([1, 2, 3]);
@@ -701,7 +699,6 @@ test('reverse with polymorphic_relation = false should be ignored', function () 
     $meta = $model->meta()->where('key', 'posts')->first();
     expect(json_decode($meta->value))->toBe([]);
 });
-
 
 test('return_type = id should return ids instead of objects', function () {
     $model = HasManyFieldOptionsModel8::create(['type' => 'test']);

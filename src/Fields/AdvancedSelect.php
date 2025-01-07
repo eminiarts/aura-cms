@@ -298,6 +298,7 @@ class AdvancedSelect extends Field
         if (optional($field)['polymorphic_relation'] === false) {
             $value = is_array($ids) ? json_encode($ids) : $ids;
             $post->meta()->updateOrCreate(['key' => $field['slug']], ['value' => $value ?? null]);
+
             return;
         }
 
@@ -329,12 +330,12 @@ class AdvancedSelect extends Field
         }
 
         $relation = $post->{$field['slug']}();
-        
+
         // Clear existing relations for this field
         $relation->wherePivot('slug', $field['slug'])->detach();
-        
+
         // Attach new relations
-        if (!empty($pivotData)) {
+        if (! empty($pivotData)) {
             $relation->attach($pivotData);
         }
     }
