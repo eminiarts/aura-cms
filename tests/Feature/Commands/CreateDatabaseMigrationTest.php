@@ -16,6 +16,9 @@ beforeEach(function () {
 
     $this->actingAs($this->user);
 
+    // Cache clear
+    Artisan::call('cache:clear');
+
     Artisan::call('aura:resource', [
         'name' => 'Project',
         '--custom' => true,
