@@ -75,8 +75,6 @@ test('create model with nested fields', function () {
         'settings.option_3' => '3',
     ]);
 
-    // dd($model->toArray());
-
     $meta = DB::table('meta')->get();
 
     $this->assertDatabaseMissing('meta', [

@@ -91,9 +91,6 @@ test('2FA routes exist when 2FA feature is enabled', function () {
 //     config(['aura.auth.2fa' => false]);
 
 //     $response = $this->get(route('aura.two-factor.login'));
-
-//     dd($response);
-
 // });
 
 test('2FA login works', function () {

@@ -118,8 +118,6 @@ test('create model with nested fields', function () {
         'settings.option_3' => '3',
     ]);
 
-    // dd($model->toArray());
-
     expect($model->settings['option_1'])->toBe('1');
     expect($model->settings['option_2'])->toBe('2');
     expect($model->settings['option_3'])->toBe('3');
@@ -146,8 +144,6 @@ test('create model with nested fields without JSON Parent', function () {
         'settings.option_2' => '2',
         'settings.option_3' => '3',
     ]);
-
-    // dd($model->toArray());
 
     expect($model->settings)->toBeNull();
 

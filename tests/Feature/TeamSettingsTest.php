@@ -71,8 +71,6 @@ test('Team Settings can be saved2', function () {
     $firstTeam = $teams->first();
     $secondTeam = $teams->last();
 
-    // dd(auth()->user()->current_team_id); // 3
-
     // Default Team Settings
     Livewire::test(Settings::class)
         ->set('form.fields.darkmode-type', 'light')

@@ -99,8 +99,6 @@ test('actions with label and icon are displayed correctly', function () {
     // expect to see "delete" and "createMissingPermissions" actions
     expect($component->actions)->toHaveCount(2);
 
-    // dd('he',  $model::$slug);
-
     // visit edit page
     $this->get(route('aura.'.$model::$slug.'.edit', [$model->id]))->assertOk();
 });

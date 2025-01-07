@@ -14,8 +14,6 @@ use Aura\Base\Fields\AdvancedSelect;
 //     $field = new AdvancedSelect($model);
 //     $options = $field->get('id', 'title');
 
-//     dd($options);
-
 //     expect($options)->toBeArray();
 //     expect($options)->toContain([
 //         'value' => 1,

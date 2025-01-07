@@ -27,15 +27,10 @@ it('updates the user profile', function () {
         ->set('form.fields.name', 'Updated Name')
         ->set('form.fields.email', 'updated@example.com')
         ->set('form.fields.password', null)
-    // ->set('form.fields.password', null)
-    // ->set('form.fields.password_confirmation', null)
         ->call('save')
         ->assertHasNoErrors();
 
-    // dd('hier');
     $user = auth()->user()->fresh();
-
-    // dd($user);
 
     expect($user->name)->toBe('Updated Name');
     expect($user->email)->toBe('updated@example.com');

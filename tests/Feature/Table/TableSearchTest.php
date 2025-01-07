@@ -92,22 +92,13 @@ test('search table title', function () {
     // Visit the Post Index Page
     $component = Livewire::test(Table::class, ['query' => null, 'model' => $post]);
 
-    // Apply Tag 1 filter, set $filters['taxonomy']['tag'] to [$tag1->id]
-    // $component->set('filters.taxonomy.tags', [$tag1->id]);
-
-    // $component->rows should have 1 item
     $component->assertViewHas('rows', function ($rows) {
         return count($rows->items()) === 2;
     });
 
     $component->set('search', 'Test Post 1');
 
-    // $component->call('updatedSearch', 'Test Post 1');
-
-    // dd($component->search);
-
     $component->assertViewHas('rows', function ($rows) {
-        // dd(count($rows->items()));
         return count($rows->items()) === 1;
     });
 

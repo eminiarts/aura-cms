@@ -89,7 +89,6 @@ test('save defined fields', function () {
     //     $this->assertEquals($savedModel->text1, 'Test 1');
     //     $this->assertEquals($savedModel->text2, 'Test 2');
     // } catch (\Throwable $th) {
-    //     dd($th);
     // }
 });
 

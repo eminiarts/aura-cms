@@ -122,8 +122,6 @@ test('create settings', function () {
 
     expect($component->settings)->toHaveKey('create', true);
 
-    // dd($component->html());
-
     $component->assertSeeHtml('href="'.url('/admin/post/create').'"');
 
     // Disable create
