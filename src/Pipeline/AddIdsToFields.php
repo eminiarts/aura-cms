@@ -8,10 +8,6 @@ class AddIdsToFields implements Pipe
 {
     public function handle($fields, Closure $next)
     {
-        if (request()->url() != 'http://aura-demo.test') {
-            //  ray('before:', $fields->toJson())->green()->once();
-        }
-
         $parentStack = [];
         $globalTabs = null;
         $lastGlobalTab = null;
@@ -165,8 +161,6 @@ class AddIdsToFields implements Pipe
         });
 
         if (request()->url() != 'http://aura-demo.test') {
-            //  ray('after:', $processedFields->toJson())->blue()->once();
-            //  ray('after:', $processedFields->toArray())->blue()->once();
         }
 
         return $next($processedFields);

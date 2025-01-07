@@ -100,11 +100,7 @@ class MultipleTabsInPanelInTabsTestModelWithAnotherPanel extends Resource
 test('multiple tabs in panels in tabs are possible', function () {
     $model = new MultipleTabsInPanelInTabsTestModelWithAnotherPanel;
 
-    ray()->clearScreen();
-
     $fields = $model->getGroupedFields();
-
-    ray($fields)->red()->once();
 
     $this->assertCount(1, $fields);
     $this->assertEquals($fields[0]['name'], 'Aura\Base\Fields\Tabs');

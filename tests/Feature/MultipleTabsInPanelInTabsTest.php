@@ -101,12 +101,7 @@ class MultipleTabsInPanelInTabsTestModel extends Resource
 test('panel 2 is nested in tab 2 of panel 1', function () {
     $model = new MultipleTabsInPanelInTabsTestModel;
 
-    ray()->clearScreen();
-
     $fields = $model->getFieldsWithIds();
-
-    ray($fields)->red()->once();
-
     $panel2 = $fields->where('slug', 'panel2')->first();
 
     expect($panel2)->toBeArray();
@@ -115,7 +110,6 @@ test('panel 2 is nested in tab 2 of panel 1', function () {
 
     $fields = $model->getGroupedFields();
 
-    ray($fields)->red()->once();
 
     $this->assertCount(1, $fields);
     $this->assertEquals($fields[0]['name'], 'Aura\Base\Fields\Tabs');

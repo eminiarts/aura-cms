@@ -62,9 +62,6 @@ class Resource extends Model
 
     public function __call($method, $parameters)
     {
-        if ($method == 'actors') {
-            ray('call', $method)->red();
-        }
         if ($this->getFieldSlugs()->contains($method)) {
 
             $fieldClass = $this->fieldClassBySlug($method);
@@ -127,7 +124,6 @@ class Resource extends Model
     //     }
 
     //     if ($this->getFieldSlugs()->contains($key)) {
-    //         ray('contains', $key);
     //         $fieldClass = $this->fieldClassBySlug($key);
     //         if ($fieldClass->isRelation()) {
     //             $field = $this->fieldBySlug($key);

@@ -299,8 +299,6 @@ class AuraServiceProvider extends PackageServiceProvider
         //     'Aura\Base\Resources\User' => 'Aura\Base\Resources\User',
         // ]);
 
-        // ray('relation');
-
         $this
             ->bootGate()
             ->bootLivewireComponents();

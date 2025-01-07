@@ -35,7 +35,6 @@ class MediaUploader extends Component
 
     public function mount()
     {
-        // ray('mount media uploader', $this->model, $this->field, $this->selected);
         $this->model = app($this->namespace);
     }
 

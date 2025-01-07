@@ -75,8 +75,6 @@ test('Password Field Test', function () {
     // get the datemodel from db
     $model = PasswordFieldModel::orderBy('id', 'desc')->first();
 
-    // ray($model->password, $model->fields);
-
     // $this->assertEquals($model->fields['password'], null);
     $this->assertTrue(Hash::check('123456789', $model->fields['password']));
 

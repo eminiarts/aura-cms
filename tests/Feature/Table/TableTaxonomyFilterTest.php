@@ -87,7 +87,6 @@ test('table filter - taxonomy filter', function () {
     ]);
 
     $posts = DB::table('posts')->get();
-    ray($posts);
 
     // expect 2 posts to be created
     expect(TableTaxonomyFilterModel::count())->toBe(2);
@@ -102,7 +101,6 @@ test('table filter - taxonomy filter', function () {
 
     $relations = DB::table('post_relations')->get();
     $posts = TableTaxonomyFilterModel::get();
-    ray($relations, $posts);
 
     // Apply Tag 1 filter
     $component->set('filters.custom', [[
@@ -118,8 +116,6 @@ test('table filter - taxonomy filter', function () {
 
     // Should have 1 item
     $component->assertViewHas('rows', function ($rows) use ($post) {
-        ray($rows->items());
-
         return count($rows->items()) === 1 && $rows->items()[0]->id === $post->id;
     });
 

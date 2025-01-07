@@ -16,7 +16,6 @@ beforeEach(function () {
     // For testing purposes, you can use the following approach:
 
     //   $this->app->beforeBootstrapping(AuraServiceProvider::class, function () {
-    //       ray('before bootstrapping aura service provider')->green();
     //   });
 
 });

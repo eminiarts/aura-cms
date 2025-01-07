@@ -48,12 +48,7 @@ class TabsAfterRepeaterModel extends Resource
 test('tab is not grouped in repeater', function () {
     $model = new TabsAfterRepeaterModel;
 
-    ray()->clearScreen();
-
     $fields = $model->getGroupedFields();
-
-    // ray(json_encode($fields))->red();
-    // ray($fields)->red();
 
     $this->assertCount(1, $fields);
     $this->assertEquals($fields[0]['name'], 'Aura\Base\Fields\Tabs');

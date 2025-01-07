@@ -89,8 +89,6 @@
 
         @php
             unset($field['field']);
-
-            // ray($field, $selected);
         @endphp
 
         <livewire:aura::media-uploader

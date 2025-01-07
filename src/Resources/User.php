@@ -111,8 +111,6 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
 
     public function cachedRoles(): mixed
     {
-        // ray('roles', $this->roles, DB::table('user_meta')->get(), DB::table('post_relations')->get())->blue();
-
         return $this->roles;
 
         return Cache::remember($this->getCacheKeyForRoles(), now()->addMinutes(60), function () {
@@ -494,8 +492,6 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
     public function hasAnyRole(array $roles): bool
     {
         $cachedRoles = $this->cachedRoles()->pluck('slug');
-
-        // ray($cachedRoles, $roles)->red();
 
         if (! $cachedRoles) {
             return false;

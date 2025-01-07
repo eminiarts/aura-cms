@@ -79,11 +79,7 @@ class ApplyWrappersModel extends Resource
 test('fields get grouped when field group is true', function () {
     $model = new ApplyWrappersModel;
 
-    ray()->clearScreen();
-
     $fields = $model->getGroupedFields();
-
-    ray($fields)->red()->once();
 
     expect($fields)->toHaveCount(1); // Because of the wrapper
 
@@ -182,11 +178,7 @@ test('fields get wrapped when field wrapper is set', function () {
 
     $model = new ApplyWrappersModel2;
 
-    ray()->clearScreen();
-
     $fields = $model->getGroupedFields();
-
-    ray($fields)->red()->once();
 
     expect($fields)->toHaveCount(1); // Because of the wrapper
 

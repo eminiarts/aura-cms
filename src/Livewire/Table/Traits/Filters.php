@@ -244,7 +244,6 @@ trait Filters
      */
     public function updatedSelectedFilter($filter)
     {
-        ray('updatedSelectedFilter', $filter);
         $this->clearFiltersCache();
 
         // Reset filters first

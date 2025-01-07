@@ -68,7 +68,6 @@ class MediaManager extends Component
     public function selectAttachment($ids)
     {
         if (! $this->initialSelectionDone) {
-            ray('selectAttachment', $ids);
             $this->selected = $ids;
             $this->initialSelectionDone = true;
         }
@@ -94,7 +93,6 @@ class MediaManager extends Component
     public function updateField($field)
     {
         if ($field['slug'] == $this->fieldSlug) {
-            ray('updated', $this->selected);
             $this->selected = $field['value'];
             $this->dispatch('selectedRows', $this->selected);
         }

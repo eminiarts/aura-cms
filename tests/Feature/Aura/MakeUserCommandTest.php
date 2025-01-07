@@ -56,8 +56,6 @@ it('user roles can be set via update', function () {
 
     $this->user->refresh();
 
-    // ray($this->user->roles, $role->toArray());
-
     expect($this->user->roles->count())->toBe(1);
     expect($this->user->roles->first()->super_admin)->toBe(true);
     expect($this->user->current_team_id)->toBe(Team::first()->id);

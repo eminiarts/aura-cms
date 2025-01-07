@@ -12,10 +12,7 @@ trait SaveMetaFields
 
         static::saving(function ($post) {
 
-            // ray('SaveMetaFields', $post->attributes)->red();
-
             if ($post instanceof \Aura\Base\Resources\User) {
-                // ray('saving user', $post->attributes)->red();
             }
 
             if (isset($post->attributes['fields'])) {
@@ -66,13 +63,10 @@ trait SaveMetaFields
                             $post = $modifiedPost;
                         }
 
-                        // ray('After saving method', $post->attributes, $modifiedPost->attributes)->purple();
                     }
 
                     // Check if further processing should be skipped
                     if (method_exists($class, 'shouldSkip') && $class->shouldSkip($post, $field)) {
-                        // ray('skipping')->red();
-                        // ray($post->attributes)->green();
                         continue;
                     }
 
@@ -103,8 +97,6 @@ trait SaveMetaFields
                 unset($post->attributes['fields']);
 
                 $post->clearFieldsAttributeCache();
-
-                //  ray('SaveMetaFields end', $post->attributes, $post->metaFields)->red();
             }
 
         });
@@ -113,8 +105,6 @@ trait SaveMetaFields
             if (isset($post->metaFields)) {
 
                 foreach ($post->metaFields as $key => $value) {
-
-                    // ray($key, $value)->red();
 
                     // if there is a function set{Slug}Field on the model, use it
                     $method = 'set'.Str::studly($key).'Field';

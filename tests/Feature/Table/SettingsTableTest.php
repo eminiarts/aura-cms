@@ -26,8 +26,6 @@ test('check default table settings', function () {
 
     $component = Livewire::test(Table::class, ['model' => $this->post, 'settings' => $settings]);
 
-    // ray($component->settings);
-
     expect($component->settings)->toHaveKey('per_page', 10);
     expect($component->settings)->toHaveKey('columns');
     expect($component->settings['columns'])->toBeInstanceOf(Illuminate\Support\Collection::class);

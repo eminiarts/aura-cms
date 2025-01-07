@@ -313,8 +313,6 @@ class ResourceEditor extends Component
 
     public function getMappedFieldsProperty()
     {
-        // ray('getMappedFieldsProperty', $this->newFields)->blue();
-
         if ($this->newFields) {
             $this->updateGlobalTabs();
 

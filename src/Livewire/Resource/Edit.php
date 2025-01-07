@@ -51,7 +51,6 @@ class Edit extends Component
     {
         foreach ($this->model->inputFields() as $field) {
 
-            // ray($field)->blue();
             // If the method exists in the field type, call it directly.
             if (method_exists($field['field'], 'hydrate')) {
                 $this->form['fields'][$field['slug']] = $field['field']->hydrate();
@@ -87,8 +86,6 @@ class Edit extends Component
 
         // foreach fields, call the hydration method on the field
 
-        // ray('mount', $this->form, $this->model);
-
         // Set on model instead of here
         // if $this->form['terms']['tag'] is not set, set it to null
     }
@@ -117,13 +114,7 @@ class Edit extends Component
 
     public function save()
     {
-        // ray('saving', $this->form);
         $this->validate();
-
-        //
-        //  ray('saving', $this->form['fields']);
-
-        // unset($this->form['fields']['group']);
 
         // unset this post fields group
         if ($this->model->usesCustomTable()) {

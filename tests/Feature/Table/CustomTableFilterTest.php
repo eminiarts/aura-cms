@@ -276,8 +276,6 @@ test('table filter - custom column on table - starts_with', function () {
 
     // $component->call('getRows');
 
-    // ray($queries);
-
     // Inspect sql
     // Skip Test for now
     // expect($component->rowsQuery->toSql())->toContain('select * from "custom_projects" where "status" like ? and "custom_projects"."team_id" = ? order by "custom_projects"."id" desc');

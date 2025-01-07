@@ -1,5 +1,4 @@
 @php
-// ray($field);
 @endphp
 
 <x-aura::fields.wrapper :field="$field">

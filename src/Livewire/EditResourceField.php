@@ -49,8 +49,6 @@ class EditResourceField extends Component
                 'conditional_logic' => '',
             ];
 
-            ray('newFieldIndex', $params['id'], $params['children'])->blue();
-
             $this->newFieldIndex = $params['id'] + $params['children'];
 
             $this->model = Aura::findResourceBySlug($params['model']);
@@ -181,8 +179,6 @@ class EditResourceField extends Component
         $this->validate();
 
         if ($this->mode == 'create') {
-            // ray('saveNewField', $this->form['fields'], $this->newFieldIndex, $this->newFieldSlug)->blue();
-            ray('saveNewField', $this->form['fields'], $this->newFieldIndex)->blue();
             $this->dispatch('saveNewField', $this->form['fields'], $this->newFieldIndex);
         } else {
             // emit event to parent with slug and value
@@ -198,7 +194,6 @@ class EditResourceField extends Component
     public function updated($property)
     {
         // $property: The name of the current property that was updated
-        // ray('updated', $property)->orange();
 
         if ($property === 'form.fields.type') {
             // $this->username = strtolower($this->username);

@@ -190,8 +190,6 @@ test('custom view_index renders correctly', function () {
     ];
     $model->save();
 
-    ray('here', $model);
-
     Aura::fake();
     Aura::setModel(new HasManyFieldViewsModelCustomIndex);
 

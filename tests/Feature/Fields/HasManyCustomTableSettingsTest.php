@@ -65,10 +65,6 @@ test('search in hasMany does not lose query scope', function () {
         'posts' => $ids,
     ]);
 
-    ray(DB::table('post_relations')->get());
-
-    ray($instance->posters);
-
     expect($instance->posts()->count())->toBe(10);
 
     // Get the field configuration from the model

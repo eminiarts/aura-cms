@@ -20,8 +20,6 @@ class Roles extends AdvancedSelect
 
     // public function get($class, $value, $field = null)
     // {
-    //      ray('get roles........', $class, $value, $field)->blue();
-
     //      return $value;
     // }
 

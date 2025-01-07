@@ -99,7 +99,6 @@ class AdvancedSelect extends Field
                 return [$value];
             }
             if ($value instanceof \Illuminate\Database\Eloquent\Model) {
-                // ray($value)->green();
                 return [$value->id];
             }
             if ($value instanceof \Illuminate\Support\Collection) {

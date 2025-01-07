@@ -147,7 +147,6 @@ test('displays attached movies on view genre page', function () {
 
     $component = Livewire::test(View::class, ['slug' => 'NewGenreModel', 'id' => $genre1->id]);
 
-    ray($component->html());
     $component
         ->assertSee('View Genre')
         ->assertSee('movies')

@@ -186,10 +186,6 @@ test('complex fields are possible and working correctly', function () {
 
     $fields = $model->getGroupedFields();
 
-    ray($fields);
-
-    // ray(json_encode($fields));
-
     $this->assertCount(1, $fields);
     $this->assertEquals($fields[0]['name'], 'Panel');
     $this->assertCount(1, $fields[0]['fields']);

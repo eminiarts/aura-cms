@@ -221,7 +221,6 @@ class Table extends Component
             })->toArray();
         }
 
-        // ray('headers', $sort);
 
         return $headers;
     }
@@ -234,8 +233,6 @@ class Table extends Component
     #[Computed]
     public function model()
     {
-        // ray('hier', $this->model);
-
         return $this->model;
     }
 
@@ -416,7 +413,6 @@ class Table extends Component
     {
         // Save the columns for the current user.
         if ($this->columns) {
-            // ray('Save the columns for the current user', $this->columns);
             auth()->user()->updateOption('columns.'.$this->model()->getType(), $this->columns);
         }
     }
@@ -428,9 +424,6 @@ class Table extends Component
      */
     public function updatedSelected()
     {
-        // ray('table updatedSelected', $this->selected);
-        // return;
-
         $this->selectAll = false;
         $this->selectPage = false;
 

@@ -183,10 +183,7 @@
     }">
         @include($this->settings['views']['header'])
 
-        {{-- @dump(json_encode($this->filters)) --}}
-
         @php
-            // ray($this->filters);
         @endphp
 
         <div class="mt-4">

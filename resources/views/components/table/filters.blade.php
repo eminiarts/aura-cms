@@ -1,7 +1,6 @@
 <div>
 
     @php
-        // ray($this->filters)
     @endphp
     @once
     @push('scripts')

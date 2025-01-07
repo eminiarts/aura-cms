@@ -18,7 +18,6 @@
         $filterIndex = $modelParts[4] ?? 0;
 
         $selectedValues = $field['field']->selectedValues($field['resource'], $this->filters['custom'][$filterGroup]['filters'][$filterIndex]['value'], $field);
-        ray($selectedValues);
     }
 
 @endphp

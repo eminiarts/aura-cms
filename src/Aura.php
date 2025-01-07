@@ -217,8 +217,6 @@ class Aura
                     $settings = [];
                 }
 
-                // ray($settings);
-
                 return $settings;
 
             });
@@ -265,10 +263,7 @@ class Aura
     public function injectView(string $name): Htmlable
     {
         if (isset($this->injectViews[$name])) {
-            // ray($name, $this->injectViews[$name]);
         }
-
-        // ray($name);
 
         $hooks = array_map(
             fn (callable $hook): string => (string) app()->call($hook),
@@ -356,8 +351,6 @@ class Aura
     public function registerInjectView(string $name, Closure $callback): void
     {
         $this->injectViews[$name][] = $callback;
-
-        // ray($this->injectViews);
     }
 
     public function registerResources(array $resources): void

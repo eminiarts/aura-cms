@@ -23,12 +23,10 @@ class Password extends Field
 
     public function saving($post, $field, $value)
     {
-        // ray('...saving field', $post)->red();
         $key = $field['slug'];
 
         // If value is empty (null or empty string), prevent password update entirely
         if (empty($value)) {
-            // ray('...empty value')->red();
             // For User model, remove password from all possible locations
             if ($post instanceof \App\Models\User || $post instanceof \Aura\Base\Resources\User) {
                 // Remove password from attributes if it exists
@@ -46,7 +44,6 @@ class Password extends Field
                 // Force the model to forget the password attribute
                 // $post->syncOriginal();
 
-                // ray('Password removed from attributes', $post->attributes)->red();
                 return $post;
             }
         }

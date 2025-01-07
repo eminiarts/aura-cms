@@ -513,8 +513,6 @@ trait AuraModelConfig
      */
     public function scopeWhereMetaContains($query, $key, $value)
     {
-        // ray($query, $key, $value)->red();
-
         return $query->whereHas('meta', function ($query) use ($key, $value) {
             $value = is_numeric($value) ? (int) $value : $value;
             $query->where('key', $key)

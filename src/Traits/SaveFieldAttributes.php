@@ -16,22 +16,17 @@ trait SaveFieldAttributes
     {
         static::saving(function ($post) {
 
-            // ray('SaveFieldAttributes', $post->attributes, $post)->blue();
-
             if (! optional($post->attributes)['fields']) {
                 $post->attributes['fields'] = [];
             }
 
             collect($post->inputFieldsSlugs())->each(function ($slug) use ($post) {
 
-                // ray($slug, array_key_exists( $slug, $post->attributes))->blue();
-
                 if (array_key_exists($slug, $post->attributes)) {
 
                     $class = $post->fieldClassBySlug($slug);
 
                     if ($slug == 'password') {
-                        // ray('Password Field', $class)->red();
                     }
 
                     // Do not continue if the Field is not found
@@ -46,8 +41,6 @@ trait SaveFieldAttributes
                         // if (empty($post->attributes[$slug])) {
                         //     unset($post->attributes[$slug]);
                         // }
-
-                        // ray('password', $post->attributes[$slug])->purple();
 
                         // Check if the password field is dirty (i.e., has been modified)
                         // if (! $post->isDirty($slug)) {
@@ -89,7 +82,6 @@ trait SaveFieldAttributes
                     return;
                 }
 
-                // ray($post->usesCustomTable(), $post->usesCustomMeta());
                 // Dont unset Field if it is uses customTable
                 if ($post->usesCustomTable() && ! $post->usesMeta()) {
                     return;
@@ -101,8 +93,6 @@ trait SaveFieldAttributes
                 // Unset fields from the attributes
                 unset($post->attributes[$slug]);
             });
-
-            // ray('saving', $post)->green();
 
         });
     }

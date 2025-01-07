@@ -86,11 +86,7 @@ class MultipleTabsWithPanelsExcludeModel extends Resource
 test('panel is underneath tabs, exclude level 2', function () {
     $model = new MultipleTabsWithPanelsExcludeModel;
 
-    ray()->clearScreen();
-
     $fields = $model->getGroupedFields();
-
-    ray($fields)->red()->once();
 
     $this->assertCount(1, $fields);
 

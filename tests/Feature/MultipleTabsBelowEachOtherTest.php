@@ -87,11 +87,7 @@ class MultipleTabsBelowEachOtherModel extends Resource
 test('multiple tabs in panels in tabs are possible', function () {
     $model = new MultipleTabsBelowEachOtherModel;
 
-    ray()->clearScreen();
-
     $fields = $model->getGroupedFields();
-
-    ray($fields)->red()->once();
 
     // Check root level structure
     expect($fields)->toHaveCount(1);
