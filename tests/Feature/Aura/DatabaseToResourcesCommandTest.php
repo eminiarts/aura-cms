@@ -1,8 +1,7 @@
 <?php
 
-use Illuminate\Support\Facades\Schema;
-use Aura\Base\Commands\DatabaseToResources;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Schema;
 
 beforeEach(function () {
     // Set up default column mocks that all tests will need
@@ -34,6 +33,7 @@ test('it executes database to resources command successfully', function () {
 
     Artisan::command('aura:transform-table-to-resource {table}', function ($table) use (&$commandLog) {
         $commandLog[] = $table;
+
         return 0;
     });
 
@@ -54,6 +54,7 @@ test('it skips system tables', function () {
 
     Artisan::command('aura:transform-table-to-resource {table}', function ($table) use (&$commandLog) {
         $commandLog[] = $table;
+
         return 0;
     });
 
@@ -87,6 +88,7 @@ test('it handles empty database gracefully', function () {
 
     Artisan::command('aura:transform-table-to-resource {table}', function ($table) use (&$commandLog) {
         $commandLog[] = $table;
+
         return 0;
     });
 
@@ -106,6 +108,7 @@ test('it processes all non-system tables', function () {
 
     Artisan::command('aura:transform-table-to-resource {table}', function ($table) use (&$processedTables) {
         $processedTables[] = $table;
+
         return 0;
     });
 
