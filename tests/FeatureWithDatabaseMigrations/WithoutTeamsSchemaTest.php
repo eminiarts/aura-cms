@@ -10,10 +10,9 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Livewire\Livewire;
 
-
 // Before each test, create a Superadmin and login
 beforeEach(function () {
-     
+
     $this->markTestSkipped('Skipped for now');
     // Set teams to false for this test
     config(['aura.teams' => false]);
@@ -42,12 +41,10 @@ beforeEach(function () {
     $this->actingAs($user);
 });
 
-
 afterEach(function () {
     // Restore original config value
     config(['aura.teams' => true]);
 });
-
 
 test('Aura without teams', function () {
     expect(config('aura.teams'))->toBeFalse();
