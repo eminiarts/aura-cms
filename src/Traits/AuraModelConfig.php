@@ -4,7 +4,6 @@ namespace Aura\Base\Traits;
 
 use Aura\Base\ConditionalLogic;
 use Aura\Base\Models\Meta;
-use Aura\Base\Resources\Team;
 use Illuminate\Support\Str;
 
 trait AuraModelConfig
