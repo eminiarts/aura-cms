@@ -546,7 +546,7 @@ trait AuraModelConfig
 
     public function team()
     {
-        return $this->belongsTo(Team::class);
+        return $this->belongsTo(config('aura.resources.team'));
     }
 
     public function title()
