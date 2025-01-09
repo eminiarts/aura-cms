@@ -30,14 +30,15 @@ class TestCase extends Orchestra
         $this->withoutVite();
 
         // Manually swap or bind the upload class in your container so it never hits S3.
-    app()->singleton(\Livewire\Features\SupportFileUploads\GenerateSignedUploadUrl::class, function () {
-        return new class extends \Livewire\Features\SupportFileUploads\GenerateSignedUploadUrl {
-            public function forS3($file, $visibility = '')
+        app()->singleton(\Livewire\Features\SupportFileUploads\GenerateSignedUploadUrl::class, function () {
+            return new class extends \Livewire\Features\SupportFileUploads\GenerateSignedUploadUrl
             {
-                return [];
-            }
-        };
-    });
+                public function forS3($file, $visibility = '')
+                {
+                    return [];
+                }
+            };
+        });
 
         // Add this before the Factory setup
         config()->set('app.env', 'testing');
@@ -81,8 +82,6 @@ class TestCase extends Orchestra
         $app['config']->set('livewire.temporary_file_upload.disk', 'local');
         $app['config']->set('livewire.temporary_file_upload.middleware', null);
     }
-
-   
 
     // protected function tearDown(): void
     // {
