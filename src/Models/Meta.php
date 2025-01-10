@@ -6,6 +6,13 @@ use Aura\Base\Collection\MetaCollection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
+/**
+ * @property int $id
+ * @property string $key
+ * @property mixed $value
+ * @property string $metable_type
+ * @property int $metable_id
+ */
 class Meta extends Model
 {
     use HasFactory;

@@ -2,13 +2,21 @@
 
 namespace Aura\Base\Database\Factories;
 
+use Aura\Base\Models\Meta;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\Meta>
+ * @extends Factory<Meta>
  */
 class MetaFactory extends Factory
 {
+    /**
+     * The name of the factory's corresponding model.
+     *
+     * @var class-string<Meta>
+     */
+    protected $model = Meta::class;
+
     /**
      * Define the model's default state.
      *

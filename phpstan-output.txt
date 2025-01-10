@@ -1,0 +1,1250 @@
+ ------ ------------------------------------------------------------------------------------------------------- 
+  Line   database/factories/TeamFactory.php                                                                     
+ ------ ------------------------------------------------------------------------------------------------------- 
+  15     PHPDoc type string of property Aura\Base\Database\Factories\TeamFactory::$model is not covariant with  
+         PHPDoc type class-string<Illuminate\Database\Eloquent\Model> of overridden property                    
+         Illuminate\Database\Eloquent\Factories\Factory<Illuminate\Database\Eloquent\Model>::$model.            
+         💡 You can fix 3rd party PHPDoc types with stub files:                                                 
+         💡 https://phpstan.org/user-guide/stub-files                                                           
+                                                                                                                
+ ------ ------------------------------------------------------------------------------------------------------- 
+
+ ------ ----------------------------------------------------------------------------------- 
+  Line   database/factories/UserFactory.php                                                 
+ ------ ----------------------------------------------------------------------------------- 
+  68     Method Aura\Base\Database\Factories\UserFactory::withPersonalTeam() should return  
+         $this(Aura\Base\Database\Factories\UserFactory) but returns                        
+         static(Aura\Base\Database\Factories\UserFactory).                                  
+  71     Method Aura\Base\Database\Factories\UserFactory::withPersonalTeam() should return  
+         $this(Aura\Base\Database\Factories\UserFactory) but returns                        
+         static(Aura\Base\Database\Factories\UserFactory).                                  
+  74     Access to protected property Aura\Base\Resources\User::$name.                      
+ ------ ----------------------------------------------------------------------------------- 
+
+ ------ -------------------------------------------------------------------------------------------------- 
+  Line   src/Aura.php                                                                                      
+ ------ -------------------------------------------------------------------------------------------------- 
+  122    Access to an undefined property Illuminate\Support\Stringable::$title.                            
+         💡 Learn more: https://phpstan.org/blog/solving-phpstan-access-to-undefined-property              
+  155    PHPDoc tag @param references unknown parameter: $resources                                        
+  160    Method Aura\Base\Aura::getAppResources() should return static(Aura\Base\Aura) but returns array.  
+  207    Access to an undefined property Illuminate\Foundation\Auth\User::$current_team_id.                
+         💡 Learn more: https://phpstan.org/blog/solving-phpstan-access-to-undefined-property              
+  208    Access to an undefined property Illuminate\Foundation\Auth\User::$currentTeam.                    
+         💡 Learn more: https://phpstan.org/blog/solving-phpstan-access-to-undefined-property              
+  230    Access to an undefined property Aura\Base\Resources\Option::$value.                               
+         💡 Learn more: https://phpstan.org/blog/solving-phpstan-access-to-undefined-property              
+  248    Access to an undefined property                                                                   
+         Aura\Base\Resources\Attachment|Illuminate\Database\Eloquent\Collection<int,                       
+         Aura\Base\Resources\Attachment>::$url.                                                            
+         💡 Learn more: https://phpstan.org/blog/solving-phpstan-access-to-undefined-property              
+  280    Access to an undefined property Illuminate\Foundation\Auth\User::$current_team_id.                
+         💡 Learn more: https://phpstan.org/blog/solving-phpstan-access-to-undefined-property              
+  426    Access to an undefined property Illuminate\Foundation\Auth\User::$currentTeam.                    
+         💡 Learn more: https://phpstan.org/blog/solving-phpstan-access-to-undefined-property              
+  446    Unsafe usage of new static().                                                                     
+         💡 See: https://phpstan.org/blog/solving-phpstan-error-unsafe-usage-of-new-static                 
+ ------ -------------------------------------------------------------------------------------------------- 
+
+ ------ ------------------------------------------------------------------------------ 
+  Line   src/AuraServiceProvider.php                                                   
+ ------ ------------------------------------------------------------------------------ 
+  137    Class Aura\Base\Livewire\CreateFlow not found.                                
+         💡 Learn more at https://phpstan.org/user-guide/discovering-symbols           
+  261    Call to an undefined method Illuminate\Foundation\Auth\User::isSuperAdmin().  
+ ------ ------------------------------------------------------------------------------ 
+
+ ------ -------------------------------------------------------------------------------------- 
+  Line   src/Collection/MetaCollection.php                                                     
+ ------ -------------------------------------------------------------------------------------- 
+  26     Access to an undefined property Illuminate\Database\Eloquent\Model::$key.             
+         💡 Learn more: https://phpstan.org/blog/solving-phpstan-access-to-undefined-property  
+  29     Access to an undefined property Illuminate\Database\Eloquent\Model::$value.           
+         💡 Learn more: https://phpstan.org/blog/solving-phpstan-access-to-undefined-property  
+ ------ -------------------------------------------------------------------------------------- 
+
+ ------ ------------------------------------------------------------ 
+  Line   src/Commands/CreateResourceMigration.php                    
+ ------ ------------------------------------------------------------ 
+  45     Cannot call method getPluralName() on class-string|object.  
+  88     Cannot call method inputFields() on class-string|object.    
+ ------ ------------------------------------------------------------ 
+
+ ------ ----------------------------------------------------------------------------------------- 
+  Line   src/Commands/DatabaseToResources.php                                                     
+ ------ ----------------------------------------------------------------------------------------- 
+  31     Call to an undefined method Illuminate\Database\Connection::getDoctrineSchemaManager().  
+ ------ ----------------------------------------------------------------------------------------- 
+
+ ------ -------------------------------------------------------------------------------------- 
+  Line   src/Commands/Installation.php                                                         
+ ------ -------------------------------------------------------------------------------------- 
+  46     Access to an undefined property Aura\Base\Resources\User::$current_team_id.           
+         💡 Learn more: https://phpstan.org/blog/solving-phpstan-access-to-undefined-property  
+ ------ -------------------------------------------------------------------------------------- 
+
+ ------ -------------------------------------------------------------------------------------- 
+  Line   src/Commands/MakeUser.php                                                             
+ ------ -------------------------------------------------------------------------------------- 
+  46     Access to an undefined property Aura\Base\Resources\User::$current_team_id.           
+         💡 Learn more: https://phpstan.org/blog/solving-phpstan-access-to-undefined-property  
+ ------ -------------------------------------------------------------------------------------- 
+
+ ------ ------------------------------------------------------------------------------ 
+  Line   src/ConditionalLogic.php                                                      
+ ------ ------------------------------------------------------------------------------ 
+  115    Call to an undefined method Illuminate\Foundation\Auth\User::hasRole().       
+  116    Call to an undefined method Illuminate\Foundation\Auth\User::hasRole().       
+  158    Call to an undefined method ArrayAccess::toArray().                           
+  171    Call to an undefined method Illuminate\Foundation\Auth\User::isSuperAdmin().  
+  176    Call to an undefined method Illuminate\Foundation\Auth\User::isSuperAdmin().  
+ ------ ------------------------------------------------------------------------------ 
+
+ ------ --------------------------------------------------------------------------------------------------- 
+  Line   src/Facades/Aura.php                                                                               
+ ------ --------------------------------------------------------------------------------------------------- 
+  22     Method Aura\Base\Facades\Aura::fake() should return Illuminate\Support\Testing\Fakes\MailFake but  
+         returns Aura\Base\AuraFake.                                                                        
+ ------ --------------------------------------------------------------------------------------------------- 
+
+ ------ -------------------------------------------------------------------------------------- 
+  Line   src/Fields/AdvancedSelect.php                                                         
+ ------ -------------------------------------------------------------------------------------- 
+  102    Access to an undefined property Illuminate\Database\Eloquent\Model::$id.              
+         💡 Learn more: https://phpstan.org/blog/solving-phpstan-access-to-undefined-property  
+  110    Access to an undefined property Illuminate\Database\Eloquent\Model::$id.              
+         💡 Learn more: https://phpstan.org/blog/solving-phpstan-access-to-undefined-property  
+ ------ -------------------------------------------------------------------------------------- 
+
+ ------ ----------------------------------------------------------------------------------- 
+  Line   src/Fields/Field.php                                                               
+ ------ ----------------------------------------------------------------------------------- 
+  124    Unsafe usage of new static().                                                      
+         💡 See: https://phpstan.org/blog/solving-phpstan-error-unsafe-usage-of-new-static  
+ ------ ----------------------------------------------------------------------------------- 
+
+ ------ --------------------------------------------------------------------- 
+  Line   src/Fields/Password.php                                              
+ ------ --------------------------------------------------------------------- 
+  31     Class App\Models\User not found.                                     
+         💡 Learn more at https://phpstan.org/user-guide/discovering-symbols  
+  33     Access to property $attributes on an unknown class App\Models\User.  
+         💡 Learn more at https://phpstan.org/user-guide/discovering-symbols  
+  34     Access to property $attributes on an unknown class App\Models\User.  
+         💡 Learn more at https://phpstan.org/user-guide/discovering-symbols  
+  34     Access to property $attributes on an unknown class App\Models\User.  
+         💡 Learn more at https://phpstan.org/user-guide/discovering-symbols  
+  37     Access to property $attributes on an unknown class App\Models\User.  
+         💡 Learn more at https://phpstan.org/user-guide/discovering-symbols  
+  38     Access to property $attributes on an unknown class App\Models\User.  
+         💡 Learn more at https://phpstan.org/user-guide/discovering-symbols  
+  38     Access to property $attributes on an unknown class App\Models\User.  
+         💡 Learn more at https://phpstan.org/user-guide/discovering-symbols  
+  42     Call to method offsetUnset() on an unknown class App\Models\User.    
+         💡 Learn more at https://phpstan.org/user-guide/discovering-symbols  
+ ------ --------------------------------------------------------------------- 
+
+ ------ -------------------------------------------------------------------------------------- 
+  Line   src/Fields/Roles.php                                                                  
+ ------ -------------------------------------------------------------------------------------- 
+  84     Access to an undefined property Illuminate\Foundation\Auth\User::$current_team_id.    
+         💡 Learn more: https://phpstan.org/blog/solving-phpstan-access-to-undefined-property  
+ ------ -------------------------------------------------------------------------------------- 
+
+ ------ ------------------------------------------------------------------------------------------------------- 
+  Line   src/Http/Controllers/Auth/AuthenticatedSessionController.php                                           
+ ------ ------------------------------------------------------------------------------------------------------- 
+  44     PHPDoc tag @param for parameter $request with type App\Http\Requests\Auth\LoginRequest is not subtype  
+         of native type Aura\Base\Http\Requests\Auth\LoginRequest.                                              
+  44     Parameter $request of method Aura\Base\Http\Controllers\Auth\AuthenticatedSessionController::store()   
+         has invalid type App\Http\Requests\Auth\LoginRequest.                                                  
+ ------ ------------------------------------------------------------------------------------------------------- 
+
+ ------ -------------------------------------------------------------------------------------- 
+  Line   src/Http/Controllers/Auth/ConfirmablePasswordController.php                           
+ ------ -------------------------------------------------------------------------------------- 
+  30     Access to an undefined property Illuminate\Foundation\Auth\User::$email.              
+         💡 Learn more: https://phpstan.org/blog/solving-phpstan-access-to-undefined-property  
+ ------ -------------------------------------------------------------------------------------- 
+
+ ------ ------------------------------------------------------------------------------------------------------- 
+  Line   src/Http/Controllers/Auth/TeamInvitationController.php                                                 
+ ------ ------------------------------------------------------------------------------------------------------- 
+  27     Class Laravel\Jetstream\Contracts\AddsTeamMembers not found.                                           
+         💡 Learn more at https://phpstan.org/user-guide/discovering-symbols                                    
+  28     Access to an undefined property Aura\Base\Resources\Team::$owner.                                      
+         💡 Learn more: https://phpstan.org/blog/solving-phpstan-access-to-undefined-property                   
+  36     Call to an undefined method Illuminate\Http\RedirectResponse|Illuminate\Routing\Redirector::banner().  
+  37     Access to protected property Aura\Base\Resources\Team::$name.                                          
+  49     Call to static method teamInvitationModel() on an unknown class Laravel\Jetstream\Jetstream.           
+         💡 Learn more at https://phpstan.org/user-guide/discovering-symbols                                    
+ ------ ------------------------------------------------------------------------------------------------------- 
+
+ ------ ------------------------------------------------------------------------------------------------------- 
+  Line   src/Http/Controllers/MetaController.php                                                                
+ ------ ------------------------------------------------------------------------------------------------------- 
+  51     Method Aura\Base\Http\Controllers\MetaController::index() should return Illuminate\Http\Response but   
+         return statement is missing.                                                                           
+  62     Method Aura\Base\Http\Controllers\MetaController::show() should return Illuminate\Http\Response but    
+         return statement is missing.                                                                           
+  73     Method Aura\Base\Http\Controllers\MetaController::store() should return Illuminate\Http\Response but   
+         return statement is missing.                                                                           
+  85     Method Aura\Base\Http\Controllers\MetaController::update() should return Illuminate\Http\Response but  
+         return statement is missing.                                                                           
+ ------ ------------------------------------------------------------------------------------------------------- 
+
+ ------ --------------------------------------------------------------------------------------------------------- 
+  Line   src/Http/Controllers/OptionController.php                                                                
+ ------ --------------------------------------------------------------------------------------------------------- 
+  75     Method Aura\Base\Http\Controllers\OptionController::store() should return Illuminate\Http\Response but   
+         returns Illuminate\Http\JsonResponse.                                                                    
+  88     Method Aura\Base\Http\Controllers\OptionController::update() should return Illuminate\Http\Response but  
+         returns Illuminate\Http\JsonResponse.                                                                    
+ ------ --------------------------------------------------------------------------------------------------------- 
+
+ ------ ------------------------------------------------------------------------------------------------------- 
+  Line   src/Http/Controllers/PostController.php                                                                
+ ------ ------------------------------------------------------------------------------------------------------- 
+  27     Parameter $post of method Aura\Base\Http\Controllers\PostController::destroy() has invalid type        
+         Aura\Base\Models\Post.                                                                                 
+  27     Parameter $post of method Aura\Base\Http\Controllers\PostController::destroy() has invalid type        
+         Aura\Base\Models\Post.                                                                                 
+  29     Call to method delete() on an unknown class Aura\Base\Models\Post.                                     
+         💡 Learn more at https://phpstan.org/user-guide/discovering-symbols                                    
+  39     Parameter $post of method Aura\Base\Http\Controllers\PostController::edit() has invalid type           
+         Aura\Base\Models\Post.                                                                                 
+  39     Parameter $post of method Aura\Base\Http\Controllers\PostController::edit() has invalid type           
+         Aura\Base\Models\Post.                                                                                 
+  51     Call to static method paginate() on an unknown class Aura\Base\Models\Post.                            
+         💡 Learn more at https://phpstan.org/user-guide/discovering-symbols                                    
+  61     Parameter $post of method Aura\Base\Http\Controllers\PostController::show() has invalid type           
+         Aura\Base\Models\Post.                                                                                 
+  61     Parameter $post of method Aura\Base\Http\Controllers\PostController::show() has invalid type           
+         Aura\Base\Models\Post.                                                                                 
+  74     Call to static method create() on an unknown class Aura\Base\Models\Post.                              
+         💡 Learn more at https://phpstan.org/user-guide/discovering-symbols                                    
+  75     Method Aura\Base\Http\Controllers\PostController::store() should return Illuminate\Http\Response but   
+         returns Illuminate\Http\JsonResponse.                                                                  
+  85     Parameter $post of method Aura\Base\Http\Controllers\PostController::update() has invalid type         
+         Aura\Base\Models\Post.                                                                                 
+  85     Parameter $post of method Aura\Base\Http\Controllers\PostController::update() has invalid type         
+         Aura\Base\Models\Post.                                                                                 
+  87     Call to method update() on an unknown class Aura\Base\Models\Post.                                     
+         💡 Learn more at https://phpstan.org/user-guide/discovering-symbols                                    
+  88     Method Aura\Base\Http\Controllers\PostController::update() should return Illuminate\Http\Response but  
+         returns Illuminate\Http\JsonResponse.                                                                  
+ ------ ------------------------------------------------------------------------------------------------------- 
+
+ ------ ------------------------------------------------------------------------------------------------------ 
+  Line   src/Http/Controllers/ProfileController.php                                                            
+ ------ ------------------------------------------------------------------------------------------------------ 
+  53     PHPDoc tag @param for parameter $request with type App\Http\Requests\ProfileUpdateRequest is not      
+         subtype of native type Aura\Base\Http\Requests\ProfileUpdateRequest.                                  
+  53     Parameter $request of method Aura\Base\Http\Controllers\ProfileController::update() has invalid type  
+         App\Http\Requests\ProfileUpdateRequest.                                                               
+  58     Access to an undefined property Illuminate\Foundation\Auth\User::$email_verified_at.                  
+         💡 Learn more: https://phpstan.org/blog/solving-phpstan-access-to-undefined-property                  
+ ------ ------------------------------------------------------------------------------------------------------ 
+
+ ------ ---------------------------------------------------------------------------- 
+  Line   src/Http/Controllers/SwitchTeamController.php                               
+ ------ ---------------------------------------------------------------------------- 
+  19     Call to an undefined method Illuminate\Foundation\Auth\User::switchTeam().  
+ ------ ---------------------------------------------------------------------------- 
+
+ ------ ----------------------------------------------------------------------- 
+  Line   src/Http/Kernel.php                                                    
+ ------ ----------------------------------------------------------------------- 
+  18     Class App\Http\Middleware\TrustProxies not found.                      
+         💡 Learn more at https://phpstan.org/user-guide/discovering-symbols    
+  19     Class Fruitcake\Cors\HandleCors not found.                             
+         💡 Learn more at https://phpstan.org/user-guide/discovering-symbols    
+  20     Class App\Http\Middleware\PreventRequestsDuringMaintenance not found.  
+         💡 Learn more at https://phpstan.org/user-guide/discovering-symbols    
+  22     Class App\Http\Middleware\TrimStrings not found.                       
+         💡 Learn more at https://phpstan.org/user-guide/discovering-symbols    
+  33     Class App\Http\Middleware\EncryptCookies not found.                    
+         💡 Learn more at https://phpstan.org/user-guide/discovering-symbols    
+  37     Class App\Http\Middleware\VerifyCsrfToken not found.                   
+         💡 Learn more at https://phpstan.org/user-guide/discovering-symbols    
+  56     Class App\Http\Middleware\Authenticate not found.                      
+         💡 Learn more at https://phpstan.org/user-guide/discovering-symbols    
+  60     Class App\Http\Middleware\RedirectIfAuthenticated not found.           
+         💡 Learn more at https://phpstan.org/user-guide/discovering-symbols    
+ ------ ----------------------------------------------------------------------- 
+
+ ------ -------------------------------------------------------------------------------------- 
+  Line   src/Jobs/GenerateAllResourcePermissions.php                                           
+ ------ -------------------------------------------------------------------------------------- 
+  23     Access to an undefined property Illuminate\Foundation\Auth\User::$current_team_id.    
+         💡 Learn more: https://phpstan.org/blog/solving-phpstan-access-to-undefined-property  
+  68     Access to protected property $slug of class Aura\Base\Resource.                       
+ ------ -------------------------------------------------------------------------------------- 
+
+ ------ ---------------------------------------------------------------------------------- 
+  Line   src/Jobs/GenerateResourcePermissions.php                                          
+ ------ ---------------------------------------------------------------------------------- 
+  25     Property Aura\Base\Jobs\GenerateResourcePermissions::$resource has unknown class  
+         Aura\Base\Resources\resource as its type.                                         
+         💡 Learn more at https://phpstan.org/user-guide/discovering-symbols               
+ ------ ---------------------------------------------------------------------------------- 
+
+ ------ ------------------------------------------------------------------------------------ 
+  Line   src/Livewire/BookmarkPage.php                                                       
+ ------ ------------------------------------------------------------------------------------ 
+  19     Call to an undefined method Illuminate\Foundation\Auth\User::getOptionBookmarks().  
+  31     Call to an undefined method Illuminate\Foundation\Auth\User::getOptionBookmarks().  
+  42     Call to an undefined method Illuminate\Foundation\Auth\User::getOptionBookmarks().  
+  55     Call to an undefined method Illuminate\Foundation\Auth\User::updateOption().        
+ ------ ------------------------------------------------------------------------------------ 
+
+ ------ ------------------------------------------------------------------------------ 
+  Line   src/Livewire/CreateResource.php                                               
+ ------ ------------------------------------------------------------------------------ 
+  49     Call to an undefined method Illuminate\Foundation\Auth\User::isSuperAdmin().  
+  66     Call to an undefined method Illuminate\Foundation\Auth\User::isSuperAdmin().  
+  79     Call to an undefined method Aura\Base\Livewire\CreateResource::notify().      
+ ------ ------------------------------------------------------------------------------ 
+
+ ------ -------------------------------------------------------------------------------------- 
+  Line   src/Livewire/EditOperation.php                                                        
+ ------ -------------------------------------------------------------------------------------- 
+  22     Call to static method find() on an unknown class Aura\Flows\Resources\Operation.      
+         💡 Learn more at https://phpstan.org/user-guide/discovering-symbols                   
+  24     Access to an undefined property Aura\Base\Livewire\EditOperation::$form.              
+         💡 Learn more: https://phpstan.org/blog/solving-phpstan-access-to-undefined-property  
+  31     Call to static method find() on an unknown class Aura\Flows\Resources\Operation.      
+         💡 Learn more at https://phpstan.org/user-guide/discovering-symbols                   
+  71     Access to an undefined property Aura\Base\Livewire\EditOperation::$form.              
+         💡 Learn more: https://phpstan.org/blog/solving-phpstan-access-to-undefined-property  
+  77     Call to an undefined method Aura\Base\Livewire\EditOperation::notify().               
+  83     Access to an undefined property Aura\Base\Livewire\EditOperation::$form.              
+         💡 Learn more: https://phpstan.org/blog/solving-phpstan-access-to-undefined-property  
+ ------ -------------------------------------------------------------------------------------- 
+
+ ------ -------------------------------------------------------------------------------------- 
+  Line   src/Livewire/GlobalSearch.php                                                         
+ ------ -------------------------------------------------------------------------------------- 
+  84     Access to an undefined property object::$id.                                          
+         💡 Learn more: https://phpstan.org/blog/solving-phpstan-access-to-undefined-property  
+  109    Call to an undefined method Illuminate\Foundation\Auth\User::getOptionBookmarks().    
+  118    Call to an undefined method Illuminate\Foundation\Auth\User::getOptionBookmarks().    
+ ------ -------------------------------------------------------------------------------------- 
+
+ ------ -------------------------------------------------------------------------------------- 
+  Line   src/Livewire/InviteUser.php                                                           
+ ------ -------------------------------------------------------------------------------------- 
+  73     Access to an undefined property Illuminate\Foundation\Auth\User::$currentTeam.        
+         💡 Learn more: https://phpstan.org/blog/solving-phpstan-access-to-undefined-property  
+  92     Access to an undefined property Illuminate\Foundation\Auth\User::$currentTeam.        
+         💡 Learn more: https://phpstan.org/blog/solving-phpstan-access-to-undefined-property  
+  103    Call to an undefined method Aura\Base\Livewire\InviteUser::notify().                  
+ ------ -------------------------------------------------------------------------------------- 
+
+ ------ ----------------------------------------------------------------------------------------- 
+  Line   src/Livewire/Navigation.php                                                              
+ ------ ----------------------------------------------------------------------------------------- 
+  17     Method Aura\Base\Livewire\Navigation::compact() should return string but returns bool.   
+  40     Call to an undefined method Illuminate\Foundation\Auth\User::getOptionSidebar().         
+  41     Call to an undefined method Illuminate\Foundation\Auth\User::getOptionSidebar().         
+  48     Access to an undefined property Aura\Base\Livewire\Navigation::$sidebarToggled.          
+         💡 Learn more: https://phpstan.org/blog/solving-phpstan-access-to-undefined-property     
+  48     Call to an undefined method Illuminate\Foundation\Auth\User::getOptionSidebarToggled().  
+  51     Access to an undefined property Aura\Base\Livewire\Navigation::$sidebarType.             
+         💡 Learn more: https://phpstan.org/blog/solving-phpstan-access-to-undefined-property     
+  78     Call to an undefined method Illuminate\Foundation\Auth\User::getOptionSidebarToggled().  
+  95     Call to an undefined method Illuminate\Foundation\Auth\User::updateOption().             
+  100    Access to an undefined property Aura\Base\Livewire\Navigation::$sidebarToggled.          
+         💡 Learn more: https://phpstan.org/blog/solving-phpstan-access-to-undefined-property     
+  100    Access to an undefined property Aura\Base\Livewire\Navigation::$sidebarToggled.          
+         💡 Learn more: https://phpstan.org/blog/solving-phpstan-access-to-undefined-property     
+  102    Call to an undefined method Illuminate\Foundation\Auth\User::updateOption().             
+ ------ ----------------------------------------------------------------------------------------- 
+
+ ------ ---------------------------------------------------------------------------------------- 
+  Line   src/Livewire/Notifications.php                                                          
+ ------ ---------------------------------------------------------------------------------------- 
+  75     Access to an undefined property Illuminate\Foundation\Auth\User::$readNotifications.    
+         💡 Learn more: https://phpstan.org/blog/solving-phpstan-access-to-undefined-property    
+  84     Access to an undefined property Illuminate\Foundation\Auth\User::$unreadNotifications.  
+         💡 Learn more: https://phpstan.org/blog/solving-phpstan-access-to-undefined-property    
+  89     Call to an undefined method Illuminate\Foundation\Auth\User::unreadNotifications().     
+ ------ ---------------------------------------------------------------------------------------- 
+
+ ------ ------------------------------------------------------------------------------------------- 
+  Line   src/Livewire/PluginsPage.php                                                               
+ ------ ------------------------------------------------------------------------------------------- 
+  80     Instantiated class Spatie\Packagist\PackagistUrlGenerator not found.                       
+         💡 Learn more at https://phpstan.org/user-guide/discovering-symbols                        
+  82     Instantiated class Spatie\Packagist\PackagistClient not found.                             
+         💡 Learn more at https://phpstan.org/user-guide/discovering-symbols                        
+  84     Call to method getPackageMetadata() on an unknown class Spatie\Packagist\PackagistClient.  
+         💡 Learn more at https://phpstan.org/user-guide/discovering-symbols                        
+  146    Call to an undefined method Aura\Base\Livewire\PluginsPage::notify().                      
+ ------ ------------------------------------------------------------------------------------------- 
+
+ ------ ------------------------------------------------------------------- 
+  Line   src/Livewire/Profile.php                                           
+ ------ ------------------------------------------------------------------- 
+  176    Call to an undefined method Aura\Base\Livewire\Profile::notify().  
+ ------ ------------------------------------------------------------------- 
+
+ ------ ---------------------------------------------------------------------- 
+  Line   src/Livewire/Resource/Create.php                                      
+ ------ ---------------------------------------------------------------------- 
+  44     Call to an undefined static method Livewire\Component::callMethod().  
+  73     Call to an undefined static method Livewire\Component::callMethod().  
+ ------ ---------------------------------------------------------------------- 
+
+ ------ ------------------------------------------------------------------------- 
+  Line   src/Livewire/Resource/Edit.php                                           
+ ------ ------------------------------------------------------------------------- 
+  125    Call to an undefined method Aura\Base\Livewire\Resource\Edit::notify().  
+  144    Class Aura\Base\Livewire\Resource\Closure not found.                     
+         💡 Learn more at https://phpstan.org/user-guide/discovering-symbols      
+  149    Class Aura\Base\Livewire\Resource\Closure not found.                     
+         💡 Learn more at https://phpstan.org/user-guide/discovering-symbols      
+  152    Call to an undefined static method Livewire\Component::callMethod().     
+ ------ ------------------------------------------------------------------------- 
+
+ ------ -------------------------------------------------------------------------------------- 
+  Line   src/Livewire/ResourceEditor.php                                                       
+ ------ -------------------------------------------------------------------------------------- 
+  176    Call to an undefined method Aura\Base\Livewire\ResourceEditor::notify().              
+  372    Access to an undefined property Aura\Base\Livewire\ResourceEditor::$mappedFields.     
+         💡 Learn more: https://phpstan.org/blog/solving-phpstan-access-to-undefined-property  
+  372    Access to an undefined property Aura\Base\Livewire\ResourceEditor::$mappedFields.     
+         💡 Learn more: https://phpstan.org/blog/solving-phpstan-access-to-undefined-property  
+  372    Access to an undefined property Aura\Base\Livewire\ResourceEditor::$mappedFields.     
+         💡 Learn more: https://phpstan.org/blog/solving-phpstan-access-to-undefined-property  
+  372    Access to an undefined property Aura\Base\Livewire\ResourceEditor::$mappedFields.     
+         💡 Learn more: https://phpstan.org/blog/solving-phpstan-access-to-undefined-property  
+  376    Access to an undefined property Aura\Base\Livewire\ResourceEditor::$mappedFields.     
+         💡 Learn more: https://phpstan.org/blog/solving-phpstan-access-to-undefined-property  
+  556    Call to an undefined method Aura\Base\Livewire\ResourceEditor::notify().              
+ ------ -------------------------------------------------------------------------------------- 
+
+ ------ -------------------------------------------------------------------------------------- 
+  Line   src/Livewire/Settings.php                                                             
+ ------ -------------------------------------------------------------------------------------- 
+  489    Call to an undefined method Illuminate\Foundation\Auth\User::isSuperAdmin().          
+  502    Access to an undefined property Illuminate\Foundation\Auth\User::$current_team_id.    
+         💡 Learn more: https://phpstan.org/blog/solving-phpstan-access-to-undefined-property  
+  514    Access to an undefined property Aura\Base\Resources\Option::$value.                   
+         💡 Learn more: https://phpstan.org/blog/solving-phpstan-access-to-undefined-property  
+  546    Call to an undefined method Aura\Base\Livewire\Settings::notify().                    
+ ------ -------------------------------------------------------------------------------------- 
+
+ ------ ----------------------------------------------------------------------------------------------------- 
+  Line   src/Livewire/Table/Table.php                                                                         
+ ------ ----------------------------------------------------------------------------------------------------- 
+  170    Call to an undefined method Illuminate\Database\Eloquent\Model::getType().                           
+  171    Access to an undefined property Illuminate\Database\Eloquent\Model::$id.                             
+         💡 Learn more: https://phpstan.org/blog/solving-phpstan-access-to-undefined-property                 
+  224    Call to an undefined method Illuminate\Foundation\Auth\User::getOption().                            
+  255    Call to an undefined method Illuminate\Foundation\Auth\User::getOption().                            
+  269    Access to an undefined property Aura\Base\Livewire\Table\Table::$userFilters.                        
+         💡 Learn more: https://phpstan.org/blog/solving-phpstan-access-to-undefined-property                 
+  270    Access to an undefined property Aura\Base\Livewire\Table\Table::$userFilters.                        
+         💡 Learn more: https://phpstan.org/blog/solving-phpstan-access-to-undefined-property                 
+  275    Call to an undefined method Illuminate\Foundation\Auth\User::getOptionColumns().                     
+  276    Call to an undefined method Illuminate\Foundation\Auth\User::getOptionColumns().                     
+  287    Access to an undefined property Aura\Base\Livewire\Table\Table::$selectedRowsQuery.                  
+         💡 Learn more: https://phpstan.org/blog/solving-phpstan-access-to-undefined-property                 
+  313    Access to an undefined property Aura\Base\Livewire\Table\Table::$rowIds.                             
+         💡 Learn more: https://phpstan.org/blog/solving-phpstan-access-to-undefined-property                 
+  328    Method Aura\Base\Livewire\Table\Table::reorder() with return type void returns mixed but should not  
+         return anything.                                                                                     
+  346    Call to an undefined method Illuminate\Foundation\Auth\User::updateOption().                         
+  382    Offset 'slug' does not exist on string.                                                              
+  406    Call to an undefined method Aura\Base\Livewire\Table\Table::notify().                                
+  408    Call to an undefined method Aura\Base\Livewire\Table\Table::notify().                                
+  422    Call to an undefined method Illuminate\Foundation\Auth\User::updateOption().                         
+  437    Offset 'max' does not exist on string.                                                               
+  441    Call to an undefined method Aura\Base\Livewire\Table\Table::notify().                                
+  456    Offset 'type' does not exist on non-falsy-string.                                                    
+  457    Offset 'type' does not exist on non-falsy-string.                                                    
+ ------ ----------------------------------------------------------------------------------------------------- 
+
+ ------ ------------------------------------------------------------------------------------------------ 
+  Line   src/Livewire/Table/Traits/BulkActions.php (in context of class Aura\Base\Livewire\Table\Table)  
+ ------ ------------------------------------------------------------------------------------------------ 
+  17     Access to an undefined property Aura\Base\Livewire\Table\Table::$selectedRowsQuery.             
+         💡 Learn more: https://phpstan.org/blog/solving-phpstan-access-to-undefined-property            
+  21     Access to an undefined property Aura\Base\Livewire\Table\Table::$selectedRowsQuery.             
+         💡 Learn more: https://phpstan.org/blog/solving-phpstan-access-to-undefined-property            
+  32     Call to an undefined method Aura\Base\Livewire\Table\Table::notify().                           
+  38     Access to an undefined property Aura\Base\Livewire\Table\Table::$selectedRowsQuery.             
+         💡 Learn more: https://phpstan.org/blog/solving-phpstan-access-to-undefined-property            
+  49     Call to an undefined method Aura\Base\Livewire\Table\Table::notify().                           
+ ------ ------------------------------------------------------------------------------------------------ 
+
+ ------ -------------------------------------------------------------------------------------------- 
+  Line   src/Livewire/Table/Traits/Filters.php (in context of class Aura\Base\Livewire\Table\Table)  
+ ------ -------------------------------------------------------------------------------------------- 
+  46     Cannot call method keys() on array.                                                         
+  69     Call to an undefined method Illuminate\Foundation\Auth\User::clearCachedOption().           
+  71     Access to an undefined property Illuminate\Foundation\Auth\User::$currentTeam.              
+         💡 Learn more: https://phpstan.org/blog/solving-phpstan-access-to-undefined-property        
+  81     PHPDoc tag @param references unknown parameter: $filter                                     
+  92     Call to an undefined method Illuminate\Foundation\Auth\User::deleteOption().                
+  95     Access to an undefined property Illuminate\Foundation\Auth\User::$currentTeam.              
+         💡 Learn more: https://phpstan.org/blog/solving-phpstan-access-to-undefined-property        
+  101    Call to an undefined method Aura\Base\Livewire\Table\Table::notify().                       
+  112    Access to an undefined property Aura\Base\Livewire\Table\Table::$fields.                    
+         💡 Learn more: https://phpstan.org/blog/solving-phpstan-access-to-undefined-property        
+  129    Access to an undefined property Aura\Base\Livewire\Table\Table::$fields.                    
+         💡 Learn more: https://phpstan.org/blog/solving-phpstan-access-to-undefined-property        
+  210    Access to an undefined property Illuminate\Foundation\Auth\User::$currentTeam.              
+         💡 Learn more: https://phpstan.org/blog/solving-phpstan-access-to-undefined-property        
+  214    Call to an undefined method Illuminate\Foundation\Auth\User::updateOption().                
+  219    Call to an undefined method Aura\Base\Livewire\Table\Table::notify().                       
+  254    Access to an undefined property Aura\Base\Livewire\Table\Table::$userFilters.               
+         💡 Learn more: https://phpstan.org/blog/solving-phpstan-access-to-undefined-property        
+  274    Call to an undefined method Illuminate\Foundation\Auth\User::getOption().                   
+  278    Access to an undefined property Illuminate\Foundation\Auth\User::$currentTeam.              
+         💡 Learn more: https://phpstan.org/blog/solving-phpstan-access-to-undefined-property        
+  304    Cannot call method keys() on array.                                                         
+ ------ -------------------------------------------------------------------------------------------- 
+
+ ------ ------------------------------------------------------------------------------------------- 
+  Line   src/Livewire/Table/Traits/Kanban.php (in context of class Aura\Base\Livewire\Table\Table)  
+ ------ ------------------------------------------------------------------------------------------- 
+  102    Call to an undefined method Illuminate\Foundation\Auth\User::getOption().                  
+  110    Call to an undefined method Illuminate\Foundation\Auth\User::updateOption().               
+ ------ ------------------------------------------------------------------------------------------- 
+
+ ------ --------------------------------------------------------------------------------------------------- 
+  Line   src/Livewire/Table/Traits/Select.php (in context of class Aura\Base\Livewire\Table\Table)          
+ ------ --------------------------------------------------------------------------------------------------- 
+  104    Method Aura\Base\Livewire\Table\Table::updatedSelectPage() with return type void returns null but  
+         should not return anything.                                                                        
+  104    Result of method Aura\Base\Livewire\Table\Table::selectPageRows() (void) is used.                  
+ ------ --------------------------------------------------------------------------------------------------- 
+
+ ------ --------------------------------------------------------------------------------------------- 
+  Line   src/Livewire/Table/Traits/Settings.php (in context of class Aura\Base\Livewire\Table\Table)  
+ ------ --------------------------------------------------------------------------------------------- 
+  12     Array has 2 duplicate keys with value 'search' ('search', 'search').                         
+ ------ --------------------------------------------------------------------------------------------- 
+
+ ------ ----------------------------------------------------------------------------------------------- 
+  Line   src/Livewire/Table/Traits/SwitchView.php (in context of class Aura\Base\Livewire\Table\Table)  
+ ------ ----------------------------------------------------------------------------------------------- 
+  11     Call to an undefined method Illuminate\Foundation\Auth\User::getOption().                      
+  26     Call to an undefined method Illuminate\Foundation\Auth\User::updateOption().                   
+ ------ ----------------------------------------------------------------------------------------------- 
+
+ ------ -------------------------------------------------------------------------------------- 
+  Line   src/Livewire/Taxonomy/Create.php                                                      
+ ------ -------------------------------------------------------------------------------------- 
+  27     Call to an undefined static method Aura\Base\Facades\Aura::findTaxonomyBySlug().      
+  54     Access to an undefined property Aura\Base\Livewire\Taxonomy\Create::$form.            
+         💡 Learn more: https://phpstan.org/blog/solving-phpstan-access-to-undefined-property  
+  60     Call to an undefined method Aura\Base\Livewire\Taxonomy\Create::notify().             
+ ------ -------------------------------------------------------------------------------------- 
+
+ ------ -------------------------------------------------------------------------------------- 
+  Line   src/Livewire/Taxonomy/Edit.php                                                        
+ ------ -------------------------------------------------------------------------------------- 
+  26     Access to an undefined property Aura\Base\Livewire\Taxonomy\Edit::$model.             
+         💡 Learn more: https://phpstan.org/blog/solving-phpstan-access-to-undefined-property  
+  32     Access to an undefined property Aura\Base\Livewire\Taxonomy\Edit::$model.             
+         💡 Learn more: https://phpstan.org/blog/solving-phpstan-access-to-undefined-property  
+  32     Call to an undefined static method Aura\Base\Facades\Aura::findTaxonomyBySlug().      
+  37     Access to an undefined property Aura\Base\Livewire\Taxonomy\Edit::$resource.          
+         💡 Learn more: https://phpstan.org/blog/solving-phpstan-access-to-undefined-property  
+  39     Access to an undefined property Aura\Base\Livewire\Taxonomy\Edit::$form.              
+         💡 Learn more: https://phpstan.org/blog/solving-phpstan-access-to-undefined-property  
+  51     Access to an undefined property Aura\Base\Livewire\Taxonomy\Edit::$model.             
+         💡 Learn more: https://phpstan.org/blog/solving-phpstan-access-to-undefined-property  
+  60     Access to an undefined property Aura\Base\Livewire\Taxonomy\Edit::$form.              
+         💡 Learn more: https://phpstan.org/blog/solving-phpstan-access-to-undefined-property  
+  62     Access to an undefined property Aura\Base\Livewire\Taxonomy\Edit::$model.             
+         💡 Learn more: https://phpstan.org/blog/solving-phpstan-access-to-undefined-property  
+  64     Call to an undefined method Aura\Base\Livewire\Taxonomy\Edit::notify().               
+ ------ -------------------------------------------------------------------------------------- 
+
+ ------ ---------------------------------------------------------------------------------- 
+  Line   src/Livewire/Taxonomy/Index.php                                                   
+ ------ ---------------------------------------------------------------------------------- 
+  17     Call to an undefined static method Aura\Base\Facades\Aura::findTaxonomyBySlug().  
+ ------ ---------------------------------------------------------------------------------- 
+
+ ------ -------------------------------------------------------------------------------------- 
+  Line   src/Livewire/Taxonomy/View.php                                                        
+ ------ -------------------------------------------------------------------------------------- 
+  34     Access to an undefined property Aura\Base\Livewire\Taxonomy\View::$form.              
+         💡 Learn more: https://phpstan.org/blog/solving-phpstan-access-to-undefined-property  
+  41     Call to an undefined static method Aura\Base\Facades\Aura::findTaxonomyBySlug().      
+ ------ -------------------------------------------------------------------------------------- 
+
+ ------ -------------------------------------------------------------------------------------- 
+  Line   src/Livewire/TwoFactorAuthenticationForm.php                                          
+ ------ -------------------------------------------------------------------------------------- 
+  64     Access to an undefined property Aura\Base\Resources\User::$two_factor_confirmed_at.   
+         💡 Learn more: https://phpstan.org/blog/solving-phpstan-access-to-undefined-property  
+ ------ -------------------------------------------------------------------------------------- 
+
+ ------ ------------------------------------------------------------------------------------- 
+  Line   src/Livewire/UserSettings.php                                                        
+ ------ ------------------------------------------------------------------------------------- 
+  63     Call to static method firstOrCreate() on an unknown class Aura\Base\Models\Option.   
+         💡 Learn more at https://phpstan.org/user-guide/discovering-symbols                  
+  101    Call to static method updateOrCreate() on an unknown class Aura\Base\Models\Option.  
+         💡 Learn more at https://phpstan.org/user-guide/discovering-symbols                  
+  105    Call to an undefined method Aura\Base\Livewire\UserSettings::notify().               
+ ------ ------------------------------------------------------------------------------------- 
+
+ ------ -------------------------------------------------------------------------------------------------------- 
+  Line   src/Mail/TeamInvitation.php                                                                             
+ ------ -------------------------------------------------------------------------------------------------------- 
+  22     Property Aura\Base\Mail\TeamInvitation::$invitation has unknown class Laravel\Jetstream\TeamInvitation  
+         as its type.                                                                                            
+         💡 Learn more at https://phpstan.org/user-guide/discovering-symbols                                     
+  30     PHPDoc tag @param for parameter $invitation with type Laravel\Jetstream\TeamInvitation is not subtype   
+         of native type Aura\Base\Resources\TeamInvitation.                                                      
+  30     Parameter $invitation of method Aura\Base\Mail\TeamInvitation::__construct() has invalid type           
+         Laravel\Jetstream\TeamInvitation.                                                                       
+  32     Property Aura\Base\Mail\TeamInvitation::$invitation (Laravel\Jetstream\TeamInvitation) does not accept  
+         Aura\Base\Resources\TeamInvitation.                                                                     
+  44     Access to property $team on an unknown class Laravel\Jetstream\TeamInvitation.                          
+         💡 Learn more at https://phpstan.org/user-guide/discovering-symbols                                     
+  47     Access to property $email on an unknown class Laravel\Jetstream\TeamInvitation.                         
+         💡 Learn more at https://phpstan.org/user-guide/discovering-symbols                                     
+  50     Access to property $team on an unknown class Laravel\Jetstream\TeamInvitation.                          
+         💡 Learn more at https://phpstan.org/user-guide/discovering-symbols                                     
+ ------ -------------------------------------------------------------------------------------------------------- 
+
+ ------ ---------------------------------------------------------------------------------------------------- 
+  Line   src/Models/Meta.php                                                                                 
+ ------ ---------------------------------------------------------------------------------------------------- 
+  47     Return type (Aura\Base\Collection\MetaCollection) of method Aura\Base\Models\Meta::newCollection()  
+         should be compatible with return type (Illuminate\Database\Eloquent\Collection<(int|string),        
+         static(Illuminate\Database\Eloquent\Model)>) of method                                              
+         Illuminate\Database\Eloquent\Model::newCollection()                                                 
+ ------ ---------------------------------------------------------------------------------------------------- 
+
+ ------ ----------------------------------------------------------------------------------- 
+  Line   src/Models/Scopes/ScopedScope.php                                                  
+ ------ ----------------------------------------------------------------------------------- 
+  19     Method Aura\Base\Models\Scopes\ScopedScope::apply() with return type void returns  
+         Illuminate\Database\Eloquent\Builder but should not return anything.               
+  22     Method Aura\Base\Models\Scopes\ScopedScope::apply() with return type void returns  
+         Illuminate\Database\Eloquent\Builder but should not return anything.               
+  27     Method Aura\Base\Models\Scopes\ScopedScope::apply() with return type void returns  
+         Illuminate\Database\Eloquent\Builder but should not return anything.               
+  35     Method Aura\Base\Models\Scopes\ScopedScope::apply() with return type void returns  
+         Illuminate\Database\Eloquent\Builder but should not return anything.               
+ ------ ----------------------------------------------------------------------------------- 
+
+ ------ ------------------------------------------------------------------------------------- 
+  Line   src/Models/Scopes/TaxonomyScope.php                                                  
+ ------ ------------------------------------------------------------------------------------- 
+  18     Call to an undefined static method Illuminate\Database\Eloquent\Model::getType().    
+  19     Call to an undefined static method Illuminate\Database\Eloquent\Model::getType().    
+  19     Method Aura\Base\Models\Scopes\TaxonomyScope::apply() with return type void returns  
+         Illuminate\Database\Eloquent\Builder but should not return anything.                 
+  22     Method Aura\Base\Models\Scopes\TaxonomyScope::apply() with return type void returns  
+         Illuminate\Database\Eloquent\Builder but should not return anything.                 
+ ------ ------------------------------------------------------------------------------------- 
+
+ ------ --------------------------------------------------------------------------------- 
+  Line   src/Models/Scopes/TeamScope.php                                                  
+ ------ --------------------------------------------------------------------------------- 
+  21     Method Aura\Base\Models\Scopes\TeamScope::apply() with return type void returns  
+         Illuminate\Database\Eloquent\Builder but should not return anything.             
+  26     Method Aura\Base\Models\Scopes\TeamScope::apply() with return type void returns  
+         Illuminate\Database\Eloquent\Builder but should not return anything.             
+  33     Method Aura\Base\Models\Scopes\TeamScope::apply() with return type void returns  
+         Illuminate\Database\Eloquent\Builder but should not return anything.             
+  41     Method Aura\Base\Models\Scopes\TeamScope::apply() with return type void returns  
+         Illuminate\Database\Eloquent\Builder but should not return anything.             
+  47     Method Aura\Base\Models\Scopes\TeamScope::apply() with return type void returns  
+         Illuminate\Database\Eloquent\Builder but should not return anything.             
+  53     Method Aura\Base\Models\Scopes\TeamScope::apply() with return type void returns  
+         Illuminate\Database\Eloquent\Builder but should not return anything.             
+  60     Method Aura\Base\Models\Scopes\TeamScope::apply() with return type void returns  
+         Illuminate\Database\Eloquent\Builder but should not return anything.             
+  65     Method Aura\Base\Models\Scopes\TeamScope::apply() with return type void returns  
+         Illuminate\Database\Eloquent\Builder but should not return anything.             
+  68     Method Aura\Base\Models\Scopes\TeamScope::apply() with return type void returns  
+         Illuminate\Database\Eloquent\Builder but should not return anything.             
+ ------ --------------------------------------------------------------------------------- 
+
+ ------ ----------------------------------------------------------------------------------- 
+  Line   src/Models/Scopes/TypeScope.php                                                    
+ ------ ----------------------------------------------------------------------------------- 
+  18     Call to an undefined static method Illuminate\Database\Eloquent\Model::getType().  
+  18     Method Aura\Base\Models\Scopes\TypeScope::apply() with return type void returns    
+         Illuminate\Database\Eloquent\Builder but should not return anything.               
+ ------ ----------------------------------------------------------------------------------- 
+
+ ------ ---------------------------------------------------------------- 
+  Line   src/Pipeline/ApplyGroupedInputs.php                             
+ ------ ---------------------------------------------------------------- 
+  15     Anonymous function has an unused use $groupedFields.            
+  27     Binary operation "+" between string and 1 results in an error.  
+  36     Binary operation "+" between string and 1 results in an error.  
+  44     Binary operation "+" between string and 1 results in an error.  
+ ------ ---------------------------------------------------------------- 
+
+ ------ -------------------------------------------------------------------------------------- 
+  Line   src/Pipeline/TransformSlugs.php                                                       
+ ------ -------------------------------------------------------------------------------------- 
+  21     Access to an undefined property object::$slug.                                        
+         💡 Learn more: https://phpstan.org/blog/solving-phpstan-access-to-undefined-property  
+ ------ -------------------------------------------------------------------------------------- 
+
+ ------ -------------------------------------------------------------------------------------------------------- 
+  Line   src/Policies/MetaPolicy.php                                                                             
+ ------ -------------------------------------------------------------------------------------------------------- 
+  20     Method Aura\Base\Policies\MetaPolicy::create() should return bool|Illuminate\Auth\Access\Response but   
+         return statement is missing.                                                                            
+  29     PHPDoc tag @param for parameter $meta with type App\Models\Meta is not subtype of native type           
+         Aura\Base\Models\Meta.                                                                                  
+  29     Parameter $meta of method Aura\Base\Policies\MetaPolicy::delete() has invalid type App\Models\Meta.     
+  31     Method Aura\Base\Policies\MetaPolicy::delete() should return bool|Illuminate\Auth\Access\Response but   
+         return statement is missing.                                                                            
+  40     PHPDoc tag @param for parameter $meta with type App\Models\Meta is not subtype of native type           
+         Aura\Base\Models\Meta.                                                                                  
+  40     Parameter $meta of method Aura\Base\Policies\MetaPolicy::forceDelete() has invalid type                 
+         App\Models\Meta.                                                                                        
+  42     Method Aura\Base\Policies\MetaPolicy::forceDelete() should return bool|Illuminate\Auth\Access\Response  
+         but return statement is missing.                                                                        
+  51     PHPDoc tag @param for parameter $meta with type App\Models\Meta is not subtype of native type           
+         Aura\Base\Models\Meta.                                                                                  
+  51     Parameter $meta of method Aura\Base\Policies\MetaPolicy::restore() has invalid type App\Models\Meta.    
+  53     Method Aura\Base\Policies\MetaPolicy::restore() should return bool|Illuminate\Auth\Access\Response but  
+         return statement is missing.                                                                            
+  62     PHPDoc tag @param for parameter $meta with type App\Models\Meta is not subtype of native type           
+         Aura\Base\Models\Meta.                                                                                  
+  62     Parameter $meta of method Aura\Base\Policies\MetaPolicy::update() has invalid type App\Models\Meta.     
+  64     Method Aura\Base\Policies\MetaPolicy::update() should return bool|Illuminate\Auth\Access\Response but   
+         return statement is missing.                                                                            
+  73     PHPDoc tag @param for parameter $meta with type App\Models\Meta is not subtype of native type           
+         Aura\Base\Models\Meta.                                                                                  
+  73     Parameter $meta of method Aura\Base\Policies\MetaPolicy::view() has invalid type App\Models\Meta.       
+  75     Method Aura\Base\Policies\MetaPolicy::view() should return bool|Illuminate\Auth\Access\Response but     
+         return statement is missing.                                                                            
+  85     Method Aura\Base\Policies\MetaPolicy::viewAny() should return bool|Illuminate\Auth\Access\Response but  
+         return statement is missing.                                                                            
+ ------ -------------------------------------------------------------------------------------------------------- 
+
+ ------ ------------------------------------------------------------------------------------------------- 
+  Line   src/Policies/ResourcePolicy.php                                                                  
+ ------ ------------------------------------------------------------------------------------------------- 
+  41     Parameter $resource of method Aura\Base\Policies\ResourcePolicy::delete() has invalid type       
+         App\Models\Post.                                                                                 
+  49     Access to property $user_id on an unknown class App\Models\Post.                                 
+         💡 Learn more at https://phpstan.org/user-guide/discovering-symbols                              
+  69     Parameter $resource of method Aura\Base\Policies\ResourcePolicy::forceDelete() has invalid type  
+         App\Models\Post.                                                                                 
+  88     Parameter $resource of method Aura\Base\Policies\ResourcePolicy::restore() has invalid type      
+         App\Models\Post.                                                                                 
+  106    Parameter $resource of method Aura\Base\Policies\ResourcePolicy::update() has invalid type       
+         App\Models\Post.                                                                                 
+  108    Access to static property $editEnabled on an unknown class App\Models\Post.                      
+         💡 Learn more at https://phpstan.org/user-guide/discovering-symbols                              
+  118    Access to property $user_id on an unknown class App\Models\Post.                                 
+         💡 Learn more at https://phpstan.org/user-guide/discovering-symbols                              
+  138    Parameter $resource of method Aura\Base\Policies\ResourcePolicy::view() has invalid type         
+         App\Models\Post.                                                                                 
+  146    Access to static property $viewEnabled on an unknown class App\Models\Post.                      
+         💡 Learn more at https://phpstan.org/user-guide/discovering-symbols                              
+  157    Access to property $user_id on an unknown class App\Models\Post.                                 
+         💡 Learn more at https://phpstan.org/user-guide/discovering-symbols                              
+ ------ ------------------------------------------------------------------------------------------------- 
+
+ ------ --------------------------------------------------------------------------------------------------------- 
+  Line   src/Policies/TaxonomyPolicy.php                                                                          
+ ------ --------------------------------------------------------------------------------------------------------- 
+  20     Method Aura\Base\Policies\TaxonomyPolicy::create() should return bool|Illuminate\Auth\Access\Response    
+         but return statement is missing.                                                                         
+  28     Parameter $taxonomy of method Aura\Base\Policies\TaxonomyPolicy::delete() has invalid type               
+         Aura\Base\Models\Taxonomy.                                                                               
+  30     Method Aura\Base\Policies\TaxonomyPolicy::delete() should return bool|Illuminate\Auth\Access\Response    
+         but return statement is missing.                                                                         
+  38     Parameter $taxonomy of method Aura\Base\Policies\TaxonomyPolicy::forceDelete() has invalid type          
+         Aura\Base\Models\Taxonomy.                                                                               
+  40     Method Aura\Base\Policies\TaxonomyPolicy::forceDelete() should return                                    
+         bool|Illuminate\Auth\Access\Response but return statement is missing.                                    
+  48     Parameter $taxonomy of method Aura\Base\Policies\TaxonomyPolicy::restore() has invalid type              
+         Aura\Base\Models\Taxonomy.                                                                               
+  50     Method Aura\Base\Policies\TaxonomyPolicy::restore() should return bool|Illuminate\Auth\Access\Response   
+         but return statement is missing.                                                                         
+  58     Parameter $taxonomy of method Aura\Base\Policies\TaxonomyPolicy::update() has invalid type               
+         Aura\Base\Models\Taxonomy.                                                                               
+  60     Method Aura\Base\Policies\TaxonomyPolicy::update() should return bool|Illuminate\Auth\Access\Response    
+         but return statement is missing.                                                                         
+  68     Parameter $taxonomy of method Aura\Base\Policies\TaxonomyPolicy::view() has invalid type                 
+         Aura\Base\Models\Taxonomy.                                                                               
+  70     Method Aura\Base\Policies\TaxonomyPolicy::view() should return bool|Illuminate\Auth\Access\Response but  
+         return statement is missing.                                                                             
+  80     Method Aura\Base\Policies\TaxonomyPolicy::viewAny() should return bool|Illuminate\Auth\Access\Response   
+         but return statement is missing.                                                                         
+ ------ --------------------------------------------------------------------------------------------------------- 
+
+ ------ ------------------------------------------------------------------------------ 
+  Line   src/Providers/AppServiceProvider.php                                          
+ ------ ------------------------------------------------------------------------------ 
+  40     Call to an undefined method Illuminate\Foundation\Auth\User::isSuperAdmin().  
+  51     Call to an undefined method Illuminate\Foundation\Auth\User::isSuperAdmin().  
+ ------ ------------------------------------------------------------------------------ 
+
+ ------ ------------------------------------------------- 
+  Line   src/Providers/RouteServiceProvider.php           
+ ------ ------------------------------------------------- 
+  36     PHPDoc tag @var above a method has no effect.    
+  36     PHPDoc tag @var does not specify variable name.  
+ ------ ------------------------------------------------- 
+
+ ------ -------------------------------------------------------------------------------------- 
+  Line   src/Resource.php                                                                      
+ ------ -------------------------------------------------------------------------------------- 
+  188    Access to an undefined property Aura\Base\Resource::$resource_excerpt.                
+         💡 Learn more: https://phpstan.org/blog/solving-phpstan-access-to-undefined-property  
+  188    Call to an undefined method Aura\Base\Resource::stripShortcodes().                    
+  278    Access to an undefined property Aura\Base\Resource::$meta.                            
+         💡 Learn more: https://phpstan.org/blog/solving-phpstan-access-to-undefined-property  
+ ------ -------------------------------------------------------------------------------------- 
+
+ ------ -------------------------------------------------------------------------------------- 
+  Line   src/Resources/Attachment.php                                                          
+ ------ -------------------------------------------------------------------------------------- 
+  77     Access to an undefined property Aura\Base\Resources\Attachment::$url.                 
+         💡 Learn more: https://phpstan.org/blog/solving-phpstan-access-to-undefined-property  
+  82     Access to an undefined property Aura\Base\Resources\Attachment::$url.                 
+         💡 Learn more: https://phpstan.org/blog/solving-phpstan-access-to-undefined-property  
+  232    Access to an undefined property Aura\Base\Resources\Attachment::$size.                
+         💡 Learn more: https://phpstan.org/blog/solving-phpstan-access-to-undefined-property  
+  276    Access to an undefined property Aura\Base\Resources\Attachment::$mime_type.           
+         💡 Learn more: https://phpstan.org/blog/solving-phpstan-access-to-undefined-property  
+  276    Access to an undefined property Aura\Base\Resources\Attachment::$mime_type.           
+         💡 Learn more: https://phpstan.org/blog/solving-phpstan-access-to-undefined-property  
+  314    Access to an undefined property Aura\Base\Resources\Attachment::$mime_type.           
+         💡 Learn more: https://phpstan.org/blog/solving-phpstan-access-to-undefined-property  
+  320    Access to an undefined property Aura\Base\Resources\Attachment::$url.                 
+         💡 Learn more: https://phpstan.org/blog/solving-phpstan-access-to-undefined-property  
+  329    Access to an undefined property Aura\Base\Resources\Attachment::$url.                 
+         💡 Learn more: https://phpstan.org/blog/solving-phpstan-access-to-undefined-property  
+  378    Access to an undefined property Aura\Base\Resources\Attachment::$url.                 
+         💡 Learn more: https://phpstan.org/blog/solving-phpstan-access-to-undefined-property  
+  386    Access to an undefined property Aura\Base\Resources\Attachment::$thumbnail_url.       
+         💡 Learn more: https://phpstan.org/blog/solving-phpstan-access-to-undefined-property  
+ ------ -------------------------------------------------------------------------------------- 
+
+ ------ -------------------------------------------------------------------------------------- 
+  Line   src/Resources/Option.php                                                              
+ ------ -------------------------------------------------------------------------------------- 
+  84     Access to an undefined property Illuminate\Foundation\Auth\User::$current_team_id.    
+         💡 Learn more: https://phpstan.org/blog/solving-phpstan-access-to-undefined-property  
+ ------ -------------------------------------------------------------------------------------- 
+
+ ------ -------------------------------------------------------------------------------------- 
+  Line   src/Resources/Team.php                                                                
+ ------ -------------------------------------------------------------------------------------- 
+  176    Access to an undefined property Aura\Base\Resources\Option::$value.                   
+         💡 Learn more: https://phpstan.org/blog/solving-phpstan-access-to-undefined-property  
+  183    Access to an undefined property Aura\Base\Resources\Option::$value.                   
+         💡 Learn more: https://phpstan.org/blog/solving-phpstan-access-to-undefined-property  
+  256    Access to an undefined property Illuminate\Foundation\Auth\User::$current_team_id.    
+         💡 Learn more: https://phpstan.org/blog/solving-phpstan-access-to-undefined-property  
+  297    Access to an undefined property Aura\Base\Resources\User::$current_team_id.           
+         💡 Learn more: https://phpstan.org/blog/solving-phpstan-access-to-undefined-property  
+ ------ -------------------------------------------------------------------------------------- 
+
+ ------ -------------------------------------------------------------------------------------------------------- 
+  Line   src/Resources/User.php                                                                                  
+ ------ -------------------------------------------------------------------------------------------------------- 
+  60     PHPDoc type array of property Aura\Base\Resources\User::$casts is not covariant with PHPDoc type        
+         array<string, string> of overridden property Illuminate\Database\Eloquent\Model::$casts.                
+         💡 You can fix 3rd party PHPDoc types with stub files:                                                  
+         💡 https://phpstan.org/user-guide/stub-files                                                            
+                                                                                                                 
+  72     PHPDoc type array<string> of property Aura\Base\Resources\User::$fillable is not covariant with PHPDoc  
+         type array<int, string> of overridden property Aura\Base\Resource::$fillable.                           
+         💡 You can fix 3rd party PHPDoc types with stub files:                                                  
+         💡 https://phpstan.org/user-guide/stub-files                                                            
+                                                                                                                 
+  83     PHPDoc type array of property Aura\Base\Resources\User::$hidden is not covariant with PHPDoc type       
+         array<int, string> of overridden property Aura\Base\Resource::$hidden.                                  
+         💡 You can fix 3rd party PHPDoc types with stub files:                                                  
+         💡 https://phpstan.org/user-guide/stub-files                                                            
+                                                                                                                 
+  122    Access to an undefined property Aura\Base\Resources\User::$resource.                                    
+         💡 Learn more: https://phpstan.org/blog/solving-phpstan-access-to-undefined-property                    
+  127    Access to an undefined property Aura\Base\Resources\User::$resource.                                    
+         💡 Learn more: https://phpstan.org/blog/solving-phpstan-access-to-undefined-property                    
+  155    Method Aura\Base\Resources\User::currentTeam() should return                                            
+         Illuminate\Database\Eloquent\Relations\BelongsTo but empty return statement found.                      
+  158    Access to an undefined property Aura\Base\Resources\User::$current_team_id.                             
+         💡 Learn more: https://phpstan.org/blog/solving-phpstan-access-to-undefined-property                    
+  482    Relation 'meta' is not found in Aura\Base\Resources\Team model.                                         
+  592    Access to an undefined property Illuminate\Foundation\Auth\User::$current_team_id.                      
+         💡 Learn more: https://phpstan.org/blog/solving-phpstan-access-to-undefined-property                    
+  615    Access to an undefined property Illuminate\Database\Eloquent\Model::$id.                                
+         💡 Learn more: https://phpstan.org/blog/solving-phpstan-access-to-undefined-property                    
+  746    Access to an undefined property Aura\Base\Resources\User::$current_team_id.                             
+         💡 Learn more: https://phpstan.org/blog/solving-phpstan-access-to-undefined-property                    
+  781    Access to an undefined property Aura\Base\Resources\User::$current_team_id.                             
+         💡 Learn more: https://phpstan.org/blog/solving-phpstan-access-to-undefined-property                    
+ ------ -------------------------------------------------------------------------------------------------------- 
+
+ ------ -------------------------------------------------------------------------------------------------------- 
+  Line   src/Services/ThumbnailGenerator.php                                                                     
+ ------ -------------------------------------------------------------------------------------------------------- 
+  110    Method Illuminate\Filesystem\FilesystemAdapter::makeDirectory() invoked with 3 parameters, 1 required.  
+ ------ -------------------------------------------------------------------------------------------------------- 
+
+ ------ -------------------------------------------------------------------------------------- 
+  Line   src/Traits/AuraModelConfig.php (in context of class Aura\Base\BaseResource)           
+ ------ -------------------------------------------------------------------------------------- 
+  104    Access to an undefined property Aura\Base\BaseResource::$fields.                      
+         💡 Learn more: https://phpstan.org/blog/solving-phpstan-access-to-undefined-property  
+  105    Access to an undefined property Aura\Base\BaseResource::$fields.                      
+         💡 Learn more: https://phpstan.org/blog/solving-phpstan-access-to-undefined-property  
+  584    PHPDoc tag @param references unknown parameter: $key                                  
+  584    PHPDoc tag @return with type mixed is not subtype of native type bool.                
+  591    Method Aura\Base\BaseResource::usesMeta() should return string but returns bool.      
+ ------ -------------------------------------------------------------------------------------- 
+
+ ------ ------------------------------------------------------------------------------ 
+  Line   src/Traits/AuraModelConfig.php (in context of class Aura\Base\Resource)       
+ ------ ------------------------------------------------------------------------------ 
+  584    PHPDoc tag @param references unknown parameter: $key                          
+  584    PHPDoc tag @return with type mixed is not subtype of native type bool.        
+  591    Method Aura\Base\Resource::usesMeta() should return string but returns bool.  
+ ------ ------------------------------------------------------------------------------ 
+
+ ------ -------------------------------------------------------------------------------------------------------- 
+  Line   src/Traits/ConfirmsPasswords.php (in context of class Aura\Base\Livewire\TwoFactorAuthenticationForm)   
+ ------ -------------------------------------------------------------------------------------------------------- 
+  65     Method Aura\Base\Livewire\TwoFactorAuthenticationForm::startConfirmingPassword() with return type void  
+         returns mixed but should not return anything.                                                           
+ ------ -------------------------------------------------------------------------------------------------------- 
+
+ ------ ---------------------------------------------------------------------------------- 
+  Line   src/Traits/HasActions.php (in context of class Aura\Base\Livewire\Resource\Edit)  
+ ------ ---------------------------------------------------------------------------------- 
+  44     Call to an undefined method Aura\Base\Livewire\Resource\Edit::notify().           
+ ------ ---------------------------------------------------------------------------------- 
+
+ ------ ---------------------------------------------------------------------------------- 
+  Line   src/Traits/HasActions.php (in context of class Aura\Base\Livewire\Resource\View)  
+ ------ ---------------------------------------------------------------------------------- 
+  44     Call to an undefined method Aura\Base\Livewire\Resource\View::notify().           
+ ------ ---------------------------------------------------------------------------------- 
+
+ ------ -------------------------------------------------------------------------------------- 
+  Line   src/Traits/HasActions.php (in context of class Aura\Base\Livewire\Taxonomy\Edit)      
+ ------ -------------------------------------------------------------------------------------- 
+  34     Access to an undefined property Aura\Base\Livewire\Taxonomy\Edit::$model.             
+         💡 Learn more: https://phpstan.org/blog/solving-phpstan-access-to-undefined-property  
+  35     Access to an undefined property Aura\Base\Livewire\Taxonomy\Edit::$model.             
+         💡 Learn more: https://phpstan.org/blog/solving-phpstan-access-to-undefined-property  
+  38     Access to an undefined property Aura\Base\Livewire\Taxonomy\Edit::$model.             
+         💡 Learn more: https://phpstan.org/blog/solving-phpstan-access-to-undefined-property  
+  44     Call to an undefined method Aura\Base\Livewire\Taxonomy\Edit::notify().               
+ ------ -------------------------------------------------------------------------------------- 
+
+ ------ ---------------------------------------------------------------------------------- 
+  Line   src/Traits/HasActions.php (in context of class Aura\Base\Livewire\Taxonomy\View)  
+ ------ ---------------------------------------------------------------------------------- 
+  44     Call to an undefined method Aura\Base\Livewire\Taxonomy\View::notify().           
+ ------ ---------------------------------------------------------------------------------- 
+
+ ------ -------------------------------------------------------------------------------------- 
+  Line   src/Traits/InitialPostFields.php (in context of class Aura\Base\Resource)             
+ ------ -------------------------------------------------------------------------------------- 
+  29     Access to an undefined property Illuminate\Foundation\Auth\User::$current_team_id.    
+         💡 Learn more: https://phpstan.org/blog/solving-phpstan-access-to-undefined-property  
+ ------ -------------------------------------------------------------------------------------- 
+
+ ------ -------------------------------------------------------------------------------------- 
+  Line   src/Traits/InputFields.php (in context of class Aura\Base\BaseResource)               
+ ------ -------------------------------------------------------------------------------------- 
+  68     Access to an undefined property Aura\Base\BaseResource::$meta.                        
+         💡 Learn more: https://phpstan.org/blog/solving-phpstan-access-to-undefined-property  
+  331    Call to an undefined method Aura\Base\BaseResource::getMeta().                        
+ ------ -------------------------------------------------------------------------------------- 
+
+ ------ -------------------------------------------------------------------------------------- 
+  Line   src/Traits/InputFields.php (in context of class Aura\Base\Fields\Field)               
+ ------ -------------------------------------------------------------------------------------- 
+  67     Call to an undefined method Aura\Base\Fields\Field::usesCustomTable().                
+  68     Access to an undefined property Aura\Base\Fields\Field::$meta.                        
+         💡 Learn more: https://phpstan.org/blog/solving-phpstan-access-to-undefined-property  
+  331    Call to an undefined method Aura\Base\Fields\Field::getMeta().                        
+ ------ -------------------------------------------------------------------------------------- 
+
+ ------ -------------------------------------------------------------------------------------- 
+  Line   src/Traits/InputFields.php (in context of class Aura\Base\Livewire\CreateResource)    
+ ------ -------------------------------------------------------------------------------------- 
+  67     Call to an undefined method Aura\Base\Livewire\CreateResource::usesCustomTable().     
+  67     Call to an undefined method Aura\Base\Livewire\CreateResource::usesCustomTable().     
+  68     Access to an undefined property Aura\Base\Livewire\CreateResource::$meta.             
+         💡 Learn more: https://phpstan.org/blog/solving-phpstan-access-to-undefined-property  
+  68     Access to an undefined property Aura\Base\Livewire\CreateResource::$meta.             
+         💡 Learn more: https://phpstan.org/blog/solving-phpstan-access-to-undefined-property  
+  331    Call to an undefined method Aura\Base\Livewire\CreateResource::getMeta().             
+  331    Call to an undefined method Aura\Base\Livewire\CreateResource::getMeta().             
+ ------ -------------------------------------------------------------------------------------- 
+
+ ------ -------------------------------------------------------------------------------------- 
+  Line   src/Traits/InputFields.php (in context of class Aura\Base\Livewire\InviteUser)        
+ ------ -------------------------------------------------------------------------------------- 
+  67     Call to an undefined method Aura\Base\Livewire\InviteUser::usesCustomTable().         
+  68     Access to an undefined property Aura\Base\Livewire\InviteUser::$meta.                 
+         💡 Learn more: https://phpstan.org/blog/solving-phpstan-access-to-undefined-property  
+  331    Call to an undefined method Aura\Base\Livewire\InviteUser::getMeta().                 
+ ------ -------------------------------------------------------------------------------------- 
+
+ ------ -------------------------------------------------------------------------------------- 
+  Line   src/Traits/InputFields.php (in context of class Aura\Base\Livewire\Notifications)     
+ ------ -------------------------------------------------------------------------------------- 
+  67     Call to an undefined method Aura\Base\Livewire\Notifications::usesCustomTable().      
+  68     Access to an undefined property Aura\Base\Livewire\Notifications::$meta.              
+         💡 Learn more: https://phpstan.org/blog/solving-phpstan-access-to-undefined-property  
+  331    Call to an undefined method Aura\Base\Livewire\Notifications::getMeta().              
+ ------ -------------------------------------------------------------------------------------- 
+
+ ------ -------------------------------------------------------------------------------------- 
+  Line   src/Traits/InputFields.php (in context of class Aura\Base\Livewire\Profile)           
+ ------ -------------------------------------------------------------------------------------- 
+  67     Call to an undefined method Aura\Base\Livewire\Profile::usesCustomTable().            
+  68     Access to an undefined property Aura\Base\Livewire\Profile::$meta.                    
+         💡 Learn more: https://phpstan.org/blog/solving-phpstan-access-to-undefined-property  
+  331    Call to an undefined method Aura\Base\Livewire\Profile::getMeta().                    
+ ------ -------------------------------------------------------------------------------------- 
+
+ ------ -------------------------------------------------------------------------------------- 
+  Line   src/Traits/InputFields.php (in context of class Aura\Base\Livewire\Settings)          
+ ------ -------------------------------------------------------------------------------------- 
+  67     Call to an undefined method Aura\Base\Livewire\Settings::usesCustomTable().           
+  68     Access to an undefined property Aura\Base\Livewire\Settings::$meta.                   
+         💡 Learn more: https://phpstan.org/blog/solving-phpstan-access-to-undefined-property  
+  331    Call to an undefined method Aura\Base\Livewire\Settings::getMeta().                   
+ ------ -------------------------------------------------------------------------------------- 
+
+ ------ -------------------------------------------------------------------------------------- 
+  Line   src/Traits/InputFields.php (in context of class Aura\Base\Livewire\UserSettings)      
+ ------ -------------------------------------------------------------------------------------- 
+  67     Call to an undefined method Aura\Base\Livewire\UserSettings::usesCustomTable().       
+  68     Access to an undefined property Aura\Base\Livewire\UserSettings::$meta.               
+         💡 Learn more: https://phpstan.org/blog/solving-phpstan-access-to-undefined-property  
+  331    Call to an undefined method Aura\Base\Livewire\UserSettings::getMeta().               
+ ------ -------------------------------------------------------------------------------------- 
+
+ ------ -------------------------------------------------------------------------------------- 
+  Line   src/Traits/InputFields.php (in context of class Aura\Base\Resource)                   
+ ------ -------------------------------------------------------------------------------------- 
+  68     Access to an undefined property Aura\Base\Resource::$meta.                            
+         💡 Learn more: https://phpstan.org/blog/solving-phpstan-access-to-undefined-property  
+ ------ -------------------------------------------------------------------------------------- 
+
+ ------ -------------------------------------------------------------------------------------- 
+  Line   src/Traits/InputFieldsHelpers.php (in context of class Aura\Base\BaseResource)        
+ ------ -------------------------------------------------------------------------------------- 
+  98     Access to an undefined property Aura\Base\BaseResource::$meta.                        
+         💡 Learn more: https://phpstan.org/blog/solving-phpstan-access-to-undefined-property  
+ ------ -------------------------------------------------------------------------------------- 
+
+ ------ -------------------------------------------------------------------------------------- 
+  Line   src/Traits/InputFieldsHelpers.php (in context of class Aura\Base\Fields\Field)        
+ ------ -------------------------------------------------------------------------------------- 
+  98     Access to an undefined property Aura\Base\Fields\Field::$meta.                        
+         💡 Learn more: https://phpstan.org/blog/solving-phpstan-access-to-undefined-property  
+ ------ -------------------------------------------------------------------------------------- 
+
+ ------ ------------------------------------------------------------------------------------------- 
+  Line   src/Traits/InputFieldsHelpers.php (in context of class Aura\Base\Livewire\CreateResource)  
+ ------ ------------------------------------------------------------------------------------------- 
+  98     Access to an undefined property Aura\Base\Livewire\CreateResource::$meta.                  
+         💡 Learn more: https://phpstan.org/blog/solving-phpstan-access-to-undefined-property       
+  98     Access to an undefined property Aura\Base\Livewire\CreateResource::$meta.                  
+         💡 Learn more: https://phpstan.org/blog/solving-phpstan-access-to-undefined-property       
+ ------ ------------------------------------------------------------------------------------------- 
+
+ ------ --------------------------------------------------------------------------------------- 
+  Line   src/Traits/InputFieldsHelpers.php (in context of class Aura\Base\Livewire\InviteUser)  
+ ------ --------------------------------------------------------------------------------------- 
+  98     Access to an undefined property Aura\Base\Livewire\InviteUser::$meta.                  
+         💡 Learn more: https://phpstan.org/blog/solving-phpstan-access-to-undefined-property   
+ ------ --------------------------------------------------------------------------------------- 
+
+ ------ ------------------------------------------------------------------------------------------ 
+  Line   src/Traits/InputFieldsHelpers.php (in context of class Aura\Base\Livewire\Notifications)  
+ ------ ------------------------------------------------------------------------------------------ 
+  98     Access to an undefined property Aura\Base\Livewire\Notifications::$meta.                  
+         💡 Learn more: https://phpstan.org/blog/solving-phpstan-access-to-undefined-property      
+ ------ ------------------------------------------------------------------------------------------ 
+
+ ------ -------------------------------------------------------------------------------------- 
+  Line   src/Traits/InputFieldsHelpers.php (in context of class Aura\Base\Livewire\Profile)    
+ ------ -------------------------------------------------------------------------------------- 
+  98     Access to an undefined property Aura\Base\Livewire\Profile::$meta.                    
+         💡 Learn more: https://phpstan.org/blog/solving-phpstan-access-to-undefined-property  
+ ------ -------------------------------------------------------------------------------------- 
+
+ ------ -------------------------------------------------------------------------------------- 
+  Line   src/Traits/InputFieldsHelpers.php (in context of class Aura\Base\Livewire\Settings)   
+ ------ -------------------------------------------------------------------------------------- 
+  98     Access to an undefined property Aura\Base\Livewire\Settings::$meta.                   
+         💡 Learn more: https://phpstan.org/blog/solving-phpstan-access-to-undefined-property  
+ ------ -------------------------------------------------------------------------------------- 
+
+ ------ ----------------------------------------------------------------------------------------- 
+  Line   src/Traits/InputFieldsHelpers.php (in context of class Aura\Base\Livewire\UserSettings)  
+ ------ ----------------------------------------------------------------------------------------- 
+  98     Access to an undefined property Aura\Base\Livewire\UserSettings::$meta.                  
+         💡 Learn more: https://phpstan.org/blog/solving-phpstan-access-to-undefined-property     
+ ------ ----------------------------------------------------------------------------------------- 
+
+ ------ -------------------------------------------------------------------------------------- 
+  Line   src/Traits/InputFieldsHelpers.php (in context of class Aura\Base\Resource)            
+ ------ -------------------------------------------------------------------------------------- 
+  98     Access to an undefined property Aura\Base\Resource::$meta.                            
+         💡 Learn more: https://phpstan.org/blog/solving-phpstan-access-to-undefined-property  
+ ------ -------------------------------------------------------------------------------------- 
+
+ ------ ------------------------------------------------------------------------------------------- 
+  Line   src/Traits/InteractsWithFields.php (in context of class Aura\Base\Livewire\Taxonomy\Edit)  
+ ------ ------------------------------------------------------------------------------------------- 
+  9      Access to an undefined property Aura\Base\Livewire\Taxonomy\Edit::$model.                  
+         💡 Learn more: https://phpstan.org/blog/solving-phpstan-access-to-undefined-property       
+  14     Access to an undefined property Aura\Base\Livewire\Taxonomy\Edit::$model.                  
+         💡 Learn more: https://phpstan.org/blog/solving-phpstan-access-to-undefined-property       
+  19     Access to an undefined property Aura\Base\Livewire\Taxonomy\Edit::$model.                  
+         💡 Learn more: https://phpstan.org/blog/solving-phpstan-access-to-undefined-property       
+  21     Access to an undefined property Aura\Base\Livewire\Taxonomy\Edit::$model.                  
+         💡 Learn more: https://phpstan.org/blog/solving-phpstan-access-to-undefined-property       
+  26     Access to an undefined property Aura\Base\Livewire\Taxonomy\Edit::$model.                  
+         💡 Learn more: https://phpstan.org/blog/solving-phpstan-access-to-undefined-property       
+  33     Access to an undefined property Aura\Base\Livewire\Taxonomy\Edit::$model.                  
+         💡 Learn more: https://phpstan.org/blog/solving-phpstan-access-to-undefined-property       
+ ------ ------------------------------------------------------------------------------------------- 
+
+ ------ -------------------------------------------------------------------------------------- 
+  Line   src/Traits/RepeaterFields.php (in context of class Aura\Base\Livewire\EditOperation)  
+ ------ -------------------------------------------------------------------------------------- 
+  11     Access to an undefined property Aura\Base\Livewire\EditOperation::$form.              
+         💡 Learn more: https://phpstan.org/blog/solving-phpstan-access-to-undefined-property  
+  12     Access to an undefined property Aura\Base\Livewire\EditOperation::$form.              
+         💡 Learn more: https://phpstan.org/blog/solving-phpstan-access-to-undefined-property  
+  15     Access to an undefined property Aura\Base\Livewire\EditOperation::$form.              
+         💡 Learn more: https://phpstan.org/blog/solving-phpstan-access-to-undefined-property  
+  25     Access to an undefined property Aura\Base\Livewire\EditOperation::$form.              
+         💡 Learn more: https://phpstan.org/blog/solving-phpstan-access-to-undefined-property  
+  30     Access to an undefined property Aura\Base\Livewire\EditOperation::$form.              
+         💡 Learn more: https://phpstan.org/blog/solving-phpstan-access-to-undefined-property  
+  40     Access to an undefined property Aura\Base\Livewire\EditOperation::$form.              
+         💡 Learn more: https://phpstan.org/blog/solving-phpstan-access-to-undefined-property  
+  49     Access to an undefined property Aura\Base\Livewire\EditOperation::$form.              
+         💡 Learn more: https://phpstan.org/blog/solving-phpstan-access-to-undefined-property  
+  55     Access to an undefined property Aura\Base\Livewire\EditOperation::$form.              
+         💡 Learn more: https://phpstan.org/blog/solving-phpstan-access-to-undefined-property  
+  60     Access to an undefined property Aura\Base\Livewire\EditOperation::$form.              
+         💡 Learn more: https://phpstan.org/blog/solving-phpstan-access-to-undefined-property  
+ ------ -------------------------------------------------------------------------------------- 
+
+ ------ -------------------------------------------------------------------------------------- 
+  Line   src/Traits/RepeaterFields.php (in context of class Aura\Base\Livewire\Taxonomy\View)  
+ ------ -------------------------------------------------------------------------------------- 
+  11     Access to an undefined property Aura\Base\Livewire\Taxonomy\View::$form.              
+         💡 Learn more: https://phpstan.org/blog/solving-phpstan-access-to-undefined-property  
+  12     Access to an undefined property Aura\Base\Livewire\Taxonomy\View::$form.              
+         💡 Learn more: https://phpstan.org/blog/solving-phpstan-access-to-undefined-property  
+  15     Access to an undefined property Aura\Base\Livewire\Taxonomy\View::$form.              
+         💡 Learn more: https://phpstan.org/blog/solving-phpstan-access-to-undefined-property  
+  25     Access to an undefined property Aura\Base\Livewire\Taxonomy\View::$form.              
+         💡 Learn more: https://phpstan.org/blog/solving-phpstan-access-to-undefined-property  
+  30     Access to an undefined property Aura\Base\Livewire\Taxonomy\View::$form.              
+         💡 Learn more: https://phpstan.org/blog/solving-phpstan-access-to-undefined-property  
+  40     Access to an undefined property Aura\Base\Livewire\Taxonomy\View::$form.              
+         💡 Learn more: https://phpstan.org/blog/solving-phpstan-access-to-undefined-property  
+  49     Access to an undefined property Aura\Base\Livewire\Taxonomy\View::$form.              
+         💡 Learn more: https://phpstan.org/blog/solving-phpstan-access-to-undefined-property  
+  55     Access to an undefined property Aura\Base\Livewire\Taxonomy\View::$form.              
+         💡 Learn more: https://phpstan.org/blog/solving-phpstan-access-to-undefined-property  
+  60     Access to an undefined property Aura\Base\Livewire\Taxonomy\View::$form.              
+         💡 Learn more: https://phpstan.org/blog/solving-phpstan-access-to-undefined-property  
+ ------ -------------------------------------------------------------------------------------- 
+
+ ------ -------------------------------------------------------------------------------------- 
+  Line   src/Traits/SaveFields.php (in context of class Aura\Base\Livewire\EditResourceField)  
+ ------ -------------------------------------------------------------------------------------- 
+  64     Call to an undefined method Aura\Base\Livewire\EditResourceField::notify().           
+  68     Call to an undefined method Aura\Base\Livewire\EditResourceField::notify().           
+  73     Access to an undefined property Aura\Base\Livewire\EditResourceField::$mappedFields.  
+         💡 Learn more: https://phpstan.org/blog/solving-phpstan-access-to-undefined-property  
+  77     Call to an undefined method Aura\Base\Livewire\EditResourceField::notify().           
+ ------ -------------------------------------------------------------------------------------- 
+
+ ------ -------------------------------------------------------------------------------------- 
+  Line   src/Traits/SaveFields.php (in context of class Aura\Base\Livewire\ResourceEditor)     
+ ------ -------------------------------------------------------------------------------------- 
+  64     Call to an undefined method Aura\Base\Livewire\ResourceEditor::notify().              
+  68     Call to an undefined method Aura\Base\Livewire\ResourceEditor::notify().              
+  73     Access to an undefined property Aura\Base\Livewire\ResourceEditor::$mappedFields.     
+         💡 Learn more: https://phpstan.org/blog/solving-phpstan-access-to-undefined-property  
+  77     Call to an undefined method Aura\Base\Livewire\ResourceEditor::notify().              
+ ------ -------------------------------------------------------------------------------------- 
+
+ ------ ------------------------------------------------------------------------ 
+  Line   src/Traits/SaveMetaFields.php (in context of class Aura\Base\Resource)  
+ ------ ------------------------------------------------------------------------ 
+  21     Call to an undefined method object::usesCustomTable().                  
+  21     Call to an undefined method object::usesMeta().                         
+ ------ ------------------------------------------------------------------------ 
+
+ ------ --------------------------------------------------------------------------------------------- 
+  Line   src/Traits/WithLivewireHelpers.php (in context of class Aura\Base\Livewire\Resource\Create)  
+ ------ --------------------------------------------------------------------------------------------- 
+  28     Call to an undefined method Aura\Base\Livewire\Resource\Create::dispatchBrowserEvent().      
+ ------ --------------------------------------------------------------------------------------------- 
+
+ ------ -------------------------------------------------------------------------------------- 
+  Line   src/Widgets/Donut.php                                                                 
+ ------ -------------------------------------------------------------------------------------- 
+  68     Access to an undefined property Aura\Base\Widgets\Donut::$cacheDuration.              
+         💡 Learn more: https://phpstan.org/blog/solving-phpstan-access-to-undefined-property  
+  68     Access to an undefined property Aura\Base\Widgets\Donut::$cacheKey.                   
+         💡 Learn more: https://phpstan.org/blog/solving-phpstan-access-to-undefined-property  
+ ------ -------------------------------------------------------------------------------------- 
+
+ ------ -------------------------------------------------------------------------------------- 
+  Line   src/Widgets/Pie.php                                                                   
+ ------ -------------------------------------------------------------------------------------- 
+  67     Access to an undefined property Aura\Base\Widgets\Pie::$cacheDuration.                
+         💡 Learn more: https://phpstan.org/blog/solving-phpstan-access-to-undefined-property  
+  67     Access to an undefined property Aura\Base\Widgets\Pie::$cacheKey.                     
+         💡 Learn more: https://phpstan.org/blog/solving-phpstan-access-to-undefined-property  
+ ------ -------------------------------------------------------------------------------------- 
+
+ ------ -------------------------------------------------------------------------------------- 
+  Line   src/Widgets/ValueWidget.php                                                           
+ ------ -------------------------------------------------------------------------------------- 
+  65     Access to an undefined property Aura\Base\Widgets\ValueWidget::$cacheDuration.        
+         💡 Learn more: https://phpstan.org/blog/solving-phpstan-access-to-undefined-property  
+  65     Access to an undefined property Aura\Base\Widgets\ValueWidget::$cacheKey.             
+         💡 Learn more: https://phpstan.org/blog/solving-phpstan-access-to-undefined-property  
+ ------ -------------------------------------------------------------------------------------- 
+
+ ------ -------------------------------------------------------------------------------------- 
+  Line   src/Widgets/Widget.php                                                                
+ ------ -------------------------------------------------------------------------------------- 
+  31     Access to an undefined property Aura\Base\Widgets\Widget::$end.                       
+         💡 Learn more: https://phpstan.org/blog/solving-phpstan-access-to-undefined-property  
+  31     Access to an undefined property Aura\Base\Widgets\Widget::$start.                     
+         💡 Learn more: https://phpstan.org/blog/solving-phpstan-access-to-undefined-property  
+  31     Access to an undefined property Aura\Base\Widgets\Widget::$widget.                    
+         💡 Learn more: https://phpstan.org/blog/solving-phpstan-access-to-undefined-property  
+  31     Access to an undefined property Illuminate\Foundation\Auth\User::$current_team_id.    
+         💡 Learn more: https://phpstan.org/blog/solving-phpstan-access-to-undefined-property  
+  42     Access to an undefined property Aura\Base\Widgets\Widget::$cacheKey.                  
+         💡 Learn more: https://phpstan.org/blog/solving-phpstan-access-to-undefined-property  
+ ------ -------------------------------------------------------------------------------------- 
+
+ [ERROR] Found 412 errors                                                                                         
+

@@ -6,10 +6,15 @@ use Aura\Base\Resources\Option;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\Option>
+ * @extends Factory<Option>
  */
 class OptionFactory extends Factory
 {
+    /**
+     * The name of the factory's corresponding model.
+     *
+     * @var class-string<Option>
+     */
     protected $model = Option::class;
 
     /**

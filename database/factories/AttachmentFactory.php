@@ -6,14 +6,14 @@ use Aura\Base\Resources\Attachment;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\Aura\Base\Resources\Post>
+ * @extends Factory<Attachment>
  */
 class AttachmentFactory extends Factory
 {
     /**
      * The name of the factory's corresponding model.
      *
-     * @var string
+     * @var class-string<Attachment>
      */
     protected $model = Attachment::class;
 

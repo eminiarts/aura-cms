@@ -4,6 +4,12 @@ namespace Aura\Base\Resources;
 
 use Aura\Base\Resource;
 
+/**
+ * @property int $id
+ * @property string $email
+ * @property string $role
+ * @property int $team_id
+ */
 class TeamInvitation extends Resource
 {
     public static $createEnabled = false;
