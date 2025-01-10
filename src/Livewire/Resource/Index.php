@@ -17,7 +17,7 @@ class Index extends Component
     /**
      * Mount the component.
      *
-     * @param string|null $slug The resource slug
+     * @param  string|null  $slug  The resource slug
      */
     public function mount($slug = null)
     {

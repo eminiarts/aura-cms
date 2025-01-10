@@ -2,11 +2,18 @@
 
 namespace Aura\Base\Widgets;
 
-use Livewire\Component;
 use Illuminate\Support\Facades\Auth;
+use Livewire\Component;
 
 class Widget extends Component
 {
+    /**
+     * The end date/time for the widget data.
+     *
+     * @var string|null
+     */
+    public $end;
+
     /**
      * Whether the widget is cached.
      *
@@ -27,13 +34,6 @@ class Widget extends Component
      * @var string|null
      */
     public $start;
-
-    /**
-     * The end date/time for the widget data.
-     *
-     * @var string|null
-     */
-    public $end;
 
     /**
      * The widget configuration.
@@ -70,7 +70,8 @@ class Widget extends Component
         /** @var \Aura\Base\Resources\User $user */
         $user = Auth::user();
         $teamId = $user->current_team_id ?? 0;
-        return md5($teamId . $this->widget['slug'] . $this->start . $this->end);
+
+        return md5($teamId.$this->widget['slug'].$this->start.$this->end);
     }
 
     public function loadWidget()

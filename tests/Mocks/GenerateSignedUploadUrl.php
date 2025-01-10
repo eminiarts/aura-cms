@@ -6,13 +6,13 @@ use Livewire\Features\SupportFileUploads\GenerateSignedUploadUrl as BaseGenerate
 
 class GenerateSignedUploadUrl extends BaseGenerateSignedUploadUrl
 {
-    public function forS3($file, $visibility = '')
-    {
-        return [];
-    }
-
     public function forLocal()
     {
         return 'http://localhost/test-upload-url';
+    }
+
+    public function forS3($file, $visibility = '')
+    {
+        return [];
     }
 }

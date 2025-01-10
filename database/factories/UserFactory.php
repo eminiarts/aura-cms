@@ -59,8 +59,6 @@ class UserFactory extends Factory
 
     /**
      * Indicate that the user should have a personal team.
-     *
-     * @return static
      */
     public function withPersonalTeam(): static
     {
@@ -72,9 +70,9 @@ class UserFactory extends Factory
             Team::factory()
                 ->state(function (array $attributes, User $user) {
                     return [
-                        'name' => $user->name.'\'s Team', 
+                        'name' => $user->name.'\'s Team',
                         'user_id' => $user->id,
-                        'personal_team' => true
+                        'personal_team' => true,
                     ];
                 }),
             'ownedTeams'

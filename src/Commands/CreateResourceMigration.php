@@ -31,14 +31,16 @@ class CreateResourceMigration extends Command
 
         if (! class_exists($resourceClass)) {
             $this->error("Resource class '{$resourceClass}' not found.");
+
             return 1;
         }
 
-        /** @var Resource $resource */
+        /** @var resource $resource */
         $resource = app($resourceClass);
 
         if (! method_exists($resource, 'getFields')) {
             $this->error("Method 'getFields' not found in the '{$resourceClass}' class.");
+
             return 1;
         }
 
@@ -96,6 +98,7 @@ class CreateResourceMigration extends Command
 
         if ($migrationFile === null) {
             $this->error("Unable to find migration file '{$migrationName}'.");
+
             return 1;
         }
 

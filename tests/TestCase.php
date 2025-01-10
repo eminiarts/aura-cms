@@ -31,10 +31,18 @@ class TestCase extends Orchestra
         $this->withoutVite();
 
         // Mock the file upload functionality
-        $this->app->bind('Facades\Livewire\Features\SupportFileUploads\GenerateSignedUploadUrl', function() {
-            return new class extends \Livewire\Features\SupportFileUploads\GenerateSignedUploadUrl {
-                public function forS3($file, $visibility = '') { return []; }
-                public function forLocal() { return 'http://localhost/test-upload-url'; }
+        $this->app->bind('Facades\Livewire\Features\SupportFileUploads\GenerateSignedUploadUrl', function () {
+            return new class extends \Livewire\Features\SupportFileUploads\GenerateSignedUploadUrl
+            {
+                public function forS3($file, $visibility = '')
+                {
+                    return [];
+                }
+
+                public function forLocal()
+                {
+                    return 'http://localhost/test-upload-url';
+                }
             };
         });
 
