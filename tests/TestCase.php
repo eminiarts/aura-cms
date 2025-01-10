@@ -2,25 +2,31 @@
 
 namespace Aura\Base\Tests;
 
-use Aura\Base\AuraServiceProvider;
-use Aura\Base\Providers\AuthServiceProvider;
-use Illuminate\Database\Eloquent\Factories\Factory;
-use Illuminate\Foundation\Testing\Concerns\InteractsWithViews;
-use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
-use Intervention\Image\ImageServiceProvider;
-use Lab404\Impersonate\ImpersonateServiceProvider;
-use Laravel\Fortify\FortifyServiceProvider;
-use Livewire\LivewireServiceProvider;
-use LivewireUI\Modal\LivewireModalServiceProvider;
-use Orchestra\Testbench\Concerns\WithWorkbench;
-use Orchestra\Testbench\TestCase as Orchestra;
 use ReflectionObject;
+use Aura\Base\AuraServiceProvider;
+use Livewire\LivewireServiceProvider;
 use Spatie\LaravelRay\RayServiceProvider;
+use Laravel\Fortify\FortifyServiceProvider;
+use Aura\Base\Providers\AuthServiceProvider;
+use Intervention\Image\ImageServiceProvider;
+use Livewire\Features\SupportTesting\Testable;
+use Orchestra\Testbench\TestCase as Orchestra;
+use Orchestra\Testbench\Concerns\WithWorkbench;
+use Lab404\Impersonate\ImpersonateServiceProvider;
+use LivewireUI\Modal\LivewireModalServiceProvider;
+use Illuminate\Database\Eloquent\Factories\Factory;
+use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
+use Illuminate\Foundation\Testing\Concerns\InteractsWithViews;
+use Livewire\Features\SupportFileUploads\GenerateSignedUploadUrl;
+use Facades\Livewire\Features\SupportFileUploads\GenerateSignedUploadUrl as GenerateSignedUploadUrlFacade;
+
+
 
 class TestCase extends Orchestra
 {
     use InteractsWithViews;
     use LazilyRefreshDatabase;
+
     // use WithWorkbench;
 
     protected function setUp(): void
@@ -28,6 +34,30 @@ class TestCase extends Orchestra
         parent::setUp();
 
         $this->withoutVite();
+
+        // If the facade class doesn't exist, define + alias it
+        if (! class_exists('Facades\\Livewire\\Features\\SupportFileUploads\\GenerateSignedUploadUrl')) {
+            // Alias it so “Facades\Livewire\Features\SupportFileUploads\GenerateSignedUploadUrl” points here
+            class_alias(
+                FakeGenerateSignedUploadUrlFacade::class,
+                'Facades\\Livewire\\Features\\SupportFileUploads\\GenerateSignedUploadUrl'
+            );
+        }
+
+        // Don't actually generate S3 signedUrls during testing.
+        GenerateSignedUploadUrlFacade::swap(new class extends GenerateSignedUploadUrl {
+            public function forS3($file, $visibility = '') { return []; }
+        });
+
+        // Bind a fake instance that returns null (or []) from forS3()
+        app()->singleton('fake-livewire-generate-signed-url', function () {
+            return new class {
+                public function forS3($file, $visibility = '')
+                {
+                    return null; // or return [];
+                }
+            };
+        });
 
         // Manually swap or bind the upload class in your container so it never hits S3.
         app()->singleton(\Livewire\Features\SupportFileUploads\GenerateSignedUploadUrl::class, function () {
