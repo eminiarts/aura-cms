@@ -17,6 +17,13 @@ class Edit extends Component
 
     public $inModal = false;
 
+    /**
+     * The model instance.
+     *
+     * @var \Illuminate\Database\Eloquent\Model
+     */
+    public $model;
+
     public $slug;
 
     public $taxonomy;

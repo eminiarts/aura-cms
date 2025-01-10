@@ -13,6 +13,9 @@ use Illuminate\Support\Traits\Macroable;
 use Livewire\Component;
 use Livewire\WithFileUploads;
 
+/**
+ * @method void notify(string $message, string $type = 'success')
+ */
 class Edit extends Component
 {
     use AuthorizesRequests;

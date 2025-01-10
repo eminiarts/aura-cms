@@ -9,6 +9,9 @@ use Aura\Base\Traits\RepeaterFields;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Livewire\Component;
 
+/**
+ * @method void notify(string $message, string $type = 'success')
+ */
 class View extends Component
 {
     use AuthorizesRequests;

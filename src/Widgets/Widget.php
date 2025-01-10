@@ -6,9 +6,47 @@ use Livewire\Component;
 
 class Widget extends Component
 {
+    /**
+     * Whether the widget is cached.
+     *
+     * @var bool
+     */
     public $isCached = false;
 
+    /**
+     * Whether the widget is loaded.
+     *
+     * @var bool
+     */
     public $loaded = false;
+
+    /**
+     * The start date/time for the widget data.
+     *
+     * @var string|null
+     */
+    public $start;
+
+    /**
+     * The end date/time for the widget data.
+     *
+     * @var string|null
+     */
+    public $end;
+
+    /**
+     * The widget configuration.
+     *
+     * @var array
+     */
+    public $widget;
+
+    /**
+     * The cache key for the widget.
+     *
+     * @var string|null
+     */
+    protected $cacheKey;
 
     public function format($value)
     {
