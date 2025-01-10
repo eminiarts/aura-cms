@@ -11,12 +11,13 @@ use Illuminate\Support\Facades\Schema;
 // Before each test, create a Superadmin and login
 beforeEach(function () {
 
-    $this->markTestSkipped('Skipped for now');
     // Set teams to false for this test
     config(['aura.teams' => false]);
 
-    // Drop all tables and run our migration
-    Schema::dropAllTables();
+    // Create a fresh database schema
+    $this->artisan('migrate:fresh');
+    
+    // Run our specific migration
     $migration = require __DIR__.'/../../database/migrations/create_aura_tables.php.stub';
     $migration->up();
 
