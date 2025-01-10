@@ -60,9 +60,9 @@ class UserFactory extends Factory
     /**
      * Indicate that the user should have a personal team.
      *
-     * @return $this
+     * @return static
      */
-    public function withPersonalTeam()
+    public function withPersonalTeam(): static
     {
         if (! config('aura.teams')) {
             return $this->state([]);
@@ -71,7 +71,11 @@ class UserFactory extends Factory
         return $this->has(
             Team::factory()
                 ->state(function (array $attributes, User $user) {
-                    return ['name' => $user->name.'\'s Team', 'user_id' => $user->id];
+                    return [
+                        'name' => $user->name.'\'s Team', 
+                        'user_id' => $user->id,
+                        'personal_team' => true
+                    ];
                 }),
             'ownedTeams'
         );

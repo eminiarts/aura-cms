@@ -6,6 +6,7 @@ use Aura\Base\Resources\Role;
 use Aura\Base\Resources\Team;
 use Aura\Base\Resources\User;
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
 use function Laravel\Prompts\password;
@@ -26,6 +27,7 @@ class MakeUser extends Command
         $email = $this->option('email') ?? text('What is your email?');
         $password = $this->option('password') ?? password('What is your password?');
 
+        /** @var User $user */
         $user = User::create([
             'name' => $name,
             'email' => $email,
@@ -42,12 +44,12 @@ class MakeUser extends Command
                 'updated_at' => now(),
             ]);
 
+            /** @var Team $team */
             $team = Team::first();
-            $user->current_team_id = $team->id;
-            $user->save();
+            $user->forceFill(['current_team_id' => $team->id])->save();
         }
 
-        auth()->loginUsingId($user->id);
+        Auth::loginUsingId($user->id);
 
         $roleData = [
             'name' => 'Super Admin',
@@ -56,13 +58,13 @@ class MakeUser extends Command
             'super_admin' => true,
             'permissions' => [],
             'user_id' => $user->id,
-            'team_id' => $team->id ?? null,
         ];
 
-        if (config('aura.teams')) {
+        if (config('aura.teams') && isset($team)) {
             $roleData['team_id'] = $team->id;
         }
 
+        /** @var Role $role */
         $role = Role::create($roleData);
 
         $user->update(['roles' => [$role->id]]);

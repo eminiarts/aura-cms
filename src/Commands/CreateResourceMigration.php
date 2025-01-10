@@ -2,6 +2,7 @@
 
 namespace Aura\Base\Commands;
 
+use Aura\Base\Resource;
 use Illuminate\Console\Command;
 use Illuminate\Filesystem\Filesystem;
 use Illuminate\Support\Facades\Artisan;
@@ -30,19 +31,18 @@ class CreateResourceMigration extends Command
 
         if (! class_exists($resourceClass)) {
             $this->error("Resource class '{$resourceClass}' not found.");
-
             return 1;
         }
 
+        /** @var Resource $resource */
         $resource = app($resourceClass);
 
         if (! method_exists($resource, 'getFields')) {
             $this->error("Method 'getFields' not found in the '{$resourceClass}' class.");
-
             return 1;
         }
 
-        $tableName = Str::lower($resource->getPluralName());
+        $tableName = Str::plural(Str::lower(class_basename($resourceClass)));
 
         $migrationName = "create_{$tableName}_table";
 
@@ -52,40 +52,9 @@ class CreateResourceMigration extends Command
                 'type' => 'Aura\\Base\\Fields\\ID',
                 'slug' => 'id',
             ],
-            // [
-            //     'name' => 'Title',
-            //     'type' => 'Aura\\Base\\Fields\\Text',
-            //     'slug' => 'title',
-            // ],
-            // [
-            //     'name' => 'Slug',
-            //     'type' => 'Aura\\Base\\Fields\\Text',
-            //     'slug' => 'slug',
-            // ],
-            // [
-            //     'name' => 'Content',
-            //     'type' => 'Aura\\Base\\Fields\\Textarea',
-            //     'slug' => 'content',
-            // ],
-            // [
-            //     'name' => 'Status',
-            //     'type' => 'Aura\\Base\\Fields\\Text',
-            //     'slug' => 'status',
-            // ],
-            // [
-            //     'name' => 'Parent ID',
-            //     'type' => 'Aura\\Base\\Fields\\ID',
-            //     'slug' => 'parent_id',
-            // ],
-            // [
-            //     'name' => 'Order',
-            //     'type' => 'Aura\\Base\\Fields\\Number',
-            //     'slug' => 'order',
-            // ],
-
         ]);
 
-        $fields = $resource->inputFields();
+        $fields = method_exists($resource, 'inputFields') ? $resource->inputFields() : [];
 
         $combined = $baseFields->merge($fields)->merge(collect([
             [
@@ -115,8 +84,6 @@ class CreateResourceMigration extends Command
         $schema = $this->generateSchema($combined);
 
         if ($this->migrationExists($migrationName)) {
-            // $this->error("Migration '{$migrationName}' already exists.");
-            // return 1;
             $migrationFile = $this->getMigrationPath($migrationName);
         } else {
             Artisan::call('make:migration', [
@@ -129,7 +96,6 @@ class CreateResourceMigration extends Command
 
         if ($migrationFile === null) {
             $this->error("Unable to find migration file '{$migrationName}'.");
-
             return 1;
         }
 
