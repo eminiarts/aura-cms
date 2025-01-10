@@ -30,31 +30,9 @@ class TestCase extends Orchestra
 
         $this->withoutVite();
 
-        // Create a mock class for file uploads
-        $mockUploader = new class {
-            public function forLocal() { return 'http://localhost/test-upload-url'; }
-            public function forS3($file, $visibility = '') { return []; }
-        };
-
-        // Bind the concrete class
-        $this->app->bind(
-            \Livewire\Features\SupportFileUploads\GenerateSignedUploadUrl::class,
-            fn() => $mockUploader
-        );
-
-        // Bind the facade
-        $this->app->bind(
-            'Livewire\Features\SupportFileUploads\GenerateSignedUploadUrl',
-            fn() => $mockUploader
-        );
-
         // Add this before the Factory setup
         config()->set('app.env', 'testing');
         config()->set('filesystems.default', 'local');
-
-        // Disable file upload URL signing for tests
-        config()->set('livewire.temporary_file_upload.middleware', null);
-        config()->set('livewire.temporary_file_upload.upload_url', null);
 
         Factory::guessFactoryNamesUsing(
             fn (string $modelName) => 'Aura\\Base\\Database\\Factories\\'.class_basename($modelName).'Factory'
@@ -68,11 +46,6 @@ class TestCase extends Orchestra
         // Add these lines
         config()->set('app.env', 'testing');
         config()->set('livewire.temporary_file_upload.disk', 'local');
-
-        // Disable Livewire file upload URL signing
-        $app['config']->set('livewire.temporary_file_upload.disk', 'local');
-        $app['config']->set('livewire.temporary_file_upload.middleware', null);
-        $app['config']->set('livewire.temporary_file_upload.upload_url', null);
 
         // load the aura config
         // config()->set('aura', require __DIR__.'/../config/aura.php');
@@ -107,14 +80,20 @@ class TestCase extends Orchestra
 
     protected function getPackageProviders($app)
     {
+        // Disable file uploads in Livewire before loading the provider
+        $app['config']->set('livewire.temporary_file_upload.directory', null);
+        $app['config']->set('livewire.temporary_file_upload.middleware', null);
+        $app['config']->set('livewire.temporary_file_upload.upload_url', null);
+        $app['config']->set('livewire.temporary_file_upload.rules', null);
+
         return [
             LivewireServiceProvider::class,
-            ImpersonateServiceProvider::class,
             LivewireModalServiceProvider::class,
-            ImageServiceProvider::class,
             FortifyServiceProvider::class,
             AuthServiceProvider::class,
             AuraServiceProvider::class,
+            ImageServiceProvider::class,
+            ImpersonateServiceProvider::class,
             RayServiceProvider::class,
         ];
     }
