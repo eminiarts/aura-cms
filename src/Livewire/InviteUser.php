@@ -40,7 +40,7 @@ class InviteUser extends Component
                 'type' => 'Aura\\Base\\Fields\\Select',
                 'validation' => 'required',
                 'slug' => 'role',
-                'options' => Role::get()->pluck('title', 'id')->toArray(),
+                'options' => Role::get()->pluck('name', 'id')->toArray(),
                 'style' => [
                     'width' => '50',
                 ],
