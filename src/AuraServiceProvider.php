@@ -23,7 +23,6 @@ use Aura\Base\Commands\UpdateSchemaFromMigration;
 use Aura\Base\Facades\Aura;
 use Aura\Base\Livewire\Attachment\Index as AttachmentIndex;
 use Aura\Base\Livewire\BookmarkPage;
-use Aura\Base\Livewire\CreateFlow;
 use Aura\Base\Livewire\CreateResource;
 use Aura\Base\Livewire\Dashboard;
 use Aura\Base\Livewire\EditOperation;
@@ -132,11 +131,6 @@ class AuraServiceProvider extends PackageServiceProvider
 
         Livewire::component('aura::profile', app(config('aura.components.profile')));
         Livewire::component('aura::modals', Modals::class);
-
-        // Flows
-        Livewire::component('aura::create-flow', CreateFlow::class);
-        Livewire::component('aura::edit-operation', EditOperation::class);
-
         Livewire::component('aura::plugins-page', PluginsPage::class);
 
         // Widgets
