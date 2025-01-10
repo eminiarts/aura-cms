@@ -16,7 +16,7 @@ beforeEach(function () {
 
     // Create a fresh database schema
     $this->artisan('migrate:fresh');
-    
+
     // Run our specific migration
     $migration = require __DIR__.'/../../database/migrations/create_aura_tables.php.stub';
     $migration->up();

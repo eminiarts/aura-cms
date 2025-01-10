@@ -17,7 +17,7 @@ beforeEach(function () {
 
     // Drop all tables and run our migration
     $this->artisan('migrate:fresh');
-    
+
     $migration = require __DIR__.'/../../database/migrations/create_aura_tables.php.stub';
     $migration->up();
 
