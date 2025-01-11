@@ -53,6 +53,26 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
 
     protected $appends = ['fields'];
 
+    // public static $showActionsAsButtons = true;
+
+    public function actions()
+    {
+        return [
+            'delete' => [
+                'label' => 'Delete',
+                'icon-view' => 'aura::components.actions.trash',
+                'class' => 'hover:text-red-700 text-red-500 font-bold',
+            ],
+            'impersonate' => [
+                'label' => 'Impersonate',
+                'icon-view' => 'aura::components.actions.impersonate',
+                'conditional_logic' => function () {
+                    return auth()->user()->isAuraGlobalAdmin();
+                },
+            ],
+        ];
+    }
+
     /**
      * The attributes that should be cast.
      *

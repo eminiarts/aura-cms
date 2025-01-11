@@ -21,6 +21,11 @@ class Team extends Resource
             'icon-view' => 'aura::components.actions.trash',
             'class' => 'hover:text-red-700 text-red-500 font-bold',
         ],
+        'impersonate' => [
+            'label' => 'Impersonate',
+            'icon-view' => 'aura::components.actions.impersonate',
+            'class' => 'hover:text-red-700 text-red-500 font-bold',
+        ],
     ];
 
     public static $customTable = true;

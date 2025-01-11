@@ -10,18 +10,6 @@
 
         @include('aura::livewire.resource.actions')
 
-        {{-- If the $model is an instance of User Resource, add a button to impersonate the user --}}
-        @if ($model instanceof Aura\Base\Resources\User )
-            @canBeImpersonated($model, $guard = null)
-            <x-aura::button.transparent :href="route('impersonate', $model->id)">
-                <x-slot:icon>
-                    <x-aura::icon class="w-5 h-5 mr-2" icon="user-impersonate"/>
-                </x-slot:icon>
-                {{ __('Impersonate') }}
-            </x-aura::button.transparent>
-            @endCanBeImpersonated
-        @endif
-
         @can('view', $model)
             @if(Route::has('aura.' . $model->getSlug() . '.view'))
                 <a href="{{ route('aura.' . $model->getSlug() . '.view', $model->id) }}" class="text-gray-500 hover:text-gray-700">

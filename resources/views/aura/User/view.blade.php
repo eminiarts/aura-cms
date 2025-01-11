@@ -1,3 +1,0 @@
-    <div>
-    custom view
-</div>
