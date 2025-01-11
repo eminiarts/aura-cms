@@ -118,6 +118,9 @@ class Team extends Resource
                 'resource' => 'Aura\\Base\\Resources\\User',
                 'validation' => '',
                 'conditional_logic' => [],
+                'relation' => function ($query, $model) {
+                    return $query;
+                },
                 'on_index' => false,
                 'on_forms' => true,
                 'on_view' => true,
