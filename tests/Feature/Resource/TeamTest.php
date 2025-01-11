@@ -5,6 +5,7 @@ use Aura\Base\Resources\Role;
 use Aura\Base\Resources\Team;
 use Aura\Base\Resources\User;
 use Illuminate\Support\Facades\DB;
+
 use function Pest\Livewire\livewire;
 
 beforeEach(function () {
@@ -55,7 +56,6 @@ test('Team create also creates a super_admin Role', function () {
     expect($role->name)->toEqual('Super Admin');
     expect($role->super_admin)->toBeTrue();
 });
-
 
 test('team users are displayed in the resource view', function () {
 
