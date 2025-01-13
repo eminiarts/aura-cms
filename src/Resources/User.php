@@ -53,26 +53,6 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
 
     protected $appends = ['fields'];
 
-    // public static $showActionsAsButtons = true;
-
-    public function actions()
-    {
-        return [
-            'delete' => [
-                'label' => 'Delete',
-                'icon-view' => 'aura::components.actions.trash',
-                'class' => 'hover:text-red-700 text-red-500 font-bold',
-            ],
-            'impersonate' => [
-                'label' => 'Impersonate',
-                'icon-view' => 'aura::components.actions.impersonate',
-                'conditional_logic' => function () {
-                    return auth()->user()->isAuraGlobalAdmin();
-                },
-            ],
-        ];
-    }
-
     /**
      * The attributes that should be cast.
      *
@@ -111,6 +91,26 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
     protected static array $searchable = ['name', 'email'];
 
     protected $table = 'users';
+
+    // public static $showActionsAsButtons = true;
+
+    public function actions()
+    {
+        return [
+            'delete' => [
+                'label' => 'Delete',
+                'icon-view' => 'aura::components.actions.trash',
+                'class' => 'hover:text-red-700 text-red-500 font-bold',
+            ],
+            'impersonate' => [
+                'label' => 'Impersonate',
+                'icon-view' => 'aura::components.actions.impersonate',
+                'conditional_logic' => function () {
+                    return auth()->user()->isAuraGlobalAdmin();
+                },
+            ],
+        ];
+    }
 
     /**
      * Determine if the user belongs to the given team.
@@ -378,11 +378,6 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
         }
 
         return $initials;
-    }
-
-    public function getMorphClass(): string
-    {
-        return "Aura\Base\Resources\User";
     }
 
     public function getOption($option)

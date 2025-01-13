@@ -2,12 +2,10 @@
 
 namespace Aura\Base\Commands;
 
-use Aura\Base\Resources\Role;
 use Aura\Base\Resources\Team;
 use Aura\Base\Resources\User;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
 
 use function Laravel\Prompts\password;
 use function Laravel\Prompts\text;

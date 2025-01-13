@@ -54,7 +54,7 @@ class Edit extends Component
     {
         ray('edit hydrate');
         if ($this->model && isset($this->model->id)) {
-            //$this->model = Auth::user();
+            // $this->model = Auth::user();
             ray($this->model);
         }
     }

@@ -94,13 +94,6 @@ class Profile extends Component
         });
     }
 
-    public function hydrate()
-    {
-        if ($this->model && isset($this->model->id)) {
-            $this->model = Auth::user();
-        }
-    }
-
     // public function getUserProperty()
     // {
     //     return app(config('aura.resources.user'))::find(auth()->id());
