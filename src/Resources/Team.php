@@ -16,7 +16,7 @@ class Team extends Resource
     use SoftDeletes;
 
     public array $actions = [
-        'delete' => [
+        'deleteAction' => [
             'label' => 'Delete',
             'icon-view' => 'aura::components.actions.trash',
             'class' => 'hover:text-red-700 text-red-500 font-bold',
@@ -49,6 +49,13 @@ class Team extends Resource
 
         Cache::forget($option);
     }
+
+    public function deleteAction(){
+        $this->delete();
+
+        return redirect()->to($this->indexUrl());
+    }
+
 
     public function customPermissions()
     {

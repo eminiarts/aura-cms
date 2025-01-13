@@ -131,10 +131,10 @@
                                     @include($options['icon-view'])
                                     @endif
                                 </div>
-                                <strong class="font-normal">{{ $options['label'] ?? '' }}
+                                <strong class="font-normal">{{ __($options['label'] ?? '') }}
                                     @if(optional($options)['description'])
                                     <span
-                                        class="inline-block text-sm font-normal leading-tight text-gray-500">{{ $options['description'] ?? '' }}</span>
+                                        class="inline-block text-sm font-normal leading-tight text-gray-500">{{ __(($options['description'] ?? '')) }}</span>
                                     @endif
                                 </strong>
                             </div>
