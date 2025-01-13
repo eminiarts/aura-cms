@@ -492,6 +492,11 @@ class Post extends Resource
         ];
     }
 
+    public function actions()
+    {
+        return $this->actions;
+    }
+
     public function indexTableSettings()
     {
         return [
