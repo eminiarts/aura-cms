@@ -21,11 +21,6 @@ class Team extends Resource
             'icon-view' => 'aura::components.actions.trash',
             'class' => 'hover:text-red-700 text-red-500 font-bold',
         ],
-        'impersonate' => [
-            'label' => 'Impersonate',
-            'icon-view' => 'aura::components.actions.impersonate',
-            'class' => 'hover:text-red-700 text-red-500 font-bold',
-        ],
     ];
 
     public static $customTable = true;
@@ -122,6 +117,7 @@ class Team extends Resource
                 'type' => 'Aura\\Base\\Fields\\HasMany',
                 'resource' => 'Aura\\Base\\Resources\\User',
                 'validation' => '',
+                'foreign_key' => 'team_id',
                 'conditional_logic' => [],
                 'relation' => function ($query, $model) {
                     return $query;

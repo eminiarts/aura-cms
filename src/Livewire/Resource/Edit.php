@@ -50,6 +50,15 @@ class Edit extends Component
         'saveBeforeAction',
     ];
 
+    public function hydrate()
+    {
+        ray('edit hydrate');
+        if ($this->model && isset($this->model->id)) {
+            //$this->model = Auth::user();
+            ray($this->model);
+        }
+    }
+
     public function initializeModelFields()
     {
         foreach ($this->model->inputFields() as $field) {
@@ -76,6 +85,8 @@ class Edit extends Component
         $this->slug = explode('.', $routeName)[1] ?? null;
 
         $this->model = Aura::findResourceBySlug($this->slug)->find($id);
+
+        ray($this->model);
 
         // Authorize
         $this->authorize('update', $this->model);

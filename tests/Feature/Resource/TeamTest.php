@@ -26,6 +26,9 @@ test('check Team Fields', function () {
 
     expect($fields->firstWhere('slug', 'name'))->not->toBeNull();
     expect($fields->firstWhere('slug', 'description'))->not->toBeNull();
+    
+    expect($fields->firstWhere('slug', 'users'))->not->toBeNull();
+    expect($fields->firstWhere('slug', 'users')['foreign_key'])->toBe('team_id');
 });
 
 test('Team uses SoftDeletes', function () {

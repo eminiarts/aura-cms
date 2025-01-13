@@ -36,38 +36,17 @@ class MakeUser extends Command
             ],
         ]);
 
-        if (config('aura.teams')) {
-            DB::table('teams')->insert([
-                'name' => $name,
-                'user_id' => $user->id,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ]);
-
-            /** @var Team $team */
-            $team = Team::first();
-            $user->forceFill(['current_team_id' => $team->id])->save();
-        }
-
         Auth::loginUsingId($user->id);
 
-        $roleData = [
-            'name' => 'Super Admin',
-            'slug' => 'super_admin',
-            'description' => 'Super Admin can perform everything.',
-            'super_admin' => true,
-            'permissions' => [],
-            'user_id' => $user->id,
-        ];
+        if (config('aura.teams')) {
+            /** @var Team $team */
+            $team = app(config('aura.resources.team'))->create([
+                'name' => $name,
+                'user_id' => $user->id,
+            ]);
 
-        if (config('aura.teams') && isset($team)) {
-            $roleData['team_id'] = $team->id;
+            $user->forceFill(['current_team_id' => $team->id])->save();
         }
-
-        /** @var Role $role */
-        $role = Role::create($roleData);
-
-        $user->update(['roles' => [$role->id]]);
 
         $this->info('User created successfully.');
 

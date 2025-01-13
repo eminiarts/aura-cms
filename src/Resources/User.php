@@ -330,8 +330,7 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
                 'validation' => '',
                 'wrapper' => '',
                 'on_index' => false,
-                'on_forms' => true,
-
+                'on_forms' => false,
                 'conditional_logic' => function ($model, $post) {
                     return config('aura.teams');
                 },

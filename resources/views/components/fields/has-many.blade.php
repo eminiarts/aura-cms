@@ -10,6 +10,7 @@
                 'header_after' => false,
                 'settings' => false,
                 'search' => false,
+                'selectable' => false,
             ];
 
             if(optional($field)['foreign_key']) {
