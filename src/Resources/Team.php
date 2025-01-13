@@ -35,24 +35,8 @@ class Team extends Resource
 
     protected static bool $title = false;
 
-    public function clearCachedOption($option)
+    public function actions()
     {
-        $option = 'team.'.$this->id.'.'.$option;
-
-        Cache::forget($option);
-    }
-
-    public function deleteAction(){
-        if (!auth()->user()->can('delete', $this)) {
-            abort(403, 'You are not authorized to delete this team.');
-        }
-
-        $this->delete();
-
-        return redirect()->to($this->indexUrl());
-    }
-
-    public function actions() {
         return [
             'deleteAction' => [
                 'label' => 'Delete',
@@ -65,12 +49,29 @@ class Team extends Resource
         ];
     }
 
+    public function clearCachedOption($option)
+    {
+        $option = 'team.'.$this->id.'.'.$option;
+
+        Cache::forget($option);
+    }
 
     public function customPermissions()
     {
         return [
             'invite-users' => 'Invite users to team',
         ];
+    }
+
+    public function deleteAction()
+    {
+        if (! auth()->user()->can('delete', $this)) {
+            abort(403, 'You are not authorized to delete this team.');
+        }
+
+        $this->delete();
+
+        return redirect()->to($this->indexUrl());
     }
 
     public function deleteOption($option)

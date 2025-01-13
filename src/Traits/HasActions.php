@@ -37,7 +37,7 @@ trait HasActions
 
         // Get the action configuration
         $actions = $this->model->actions();
-        if (isset($actions[$action]['conditional_logic']) && !$actions[$action]['conditional_logic']()) {
+        if (isset($actions[$action]['conditional_logic']) && ! $actions[$action]['conditional_logic']()) {
             abort(403, 'You are not authorized to perform this action.');
         }
 

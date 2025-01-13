@@ -94,11 +94,6 @@ trait AuraModelConfig
         return route('aura.'.$this->getSlug().'.create');
     }
 
-    public function indexUrl()
-    {
-        return route('aura.'.$this->getSlug().'.index');
-    }
-
     public function createView()
     {
         return 'aura::livewire.resource.create';
@@ -294,6 +289,11 @@ trait AuraModelConfig
     public function indexTableSettings()
     {
         return [];
+    }
+
+    public function indexUrl()
+    {
+        return route('aura.'.$this->getSlug().'.index');
     }
 
     public function indexView()

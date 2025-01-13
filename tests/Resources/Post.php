@@ -80,6 +80,11 @@ class Post extends Resource
         'content',
     ];
 
+    public function actions()
+    {
+        return $this->actions;
+    }
+
     public function callFlow($flowId)
     {
         $flow = Flow::find($flowId);
@@ -490,11 +495,6 @@ class Post extends Resource
                 'conditional_logic' => [],
             ],
         ];
-    }
-
-    public function actions()
-    {
-        return $this->actions;
     }
 
     public function indexTableSettings()

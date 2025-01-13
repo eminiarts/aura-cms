@@ -1,14 +1,14 @@
 <?php
 
 use Aura\Base\Facades\Aura;
+use Aura\Base\Livewire\Resource\Create;
+use Aura\Base\Livewire\Resource\Edit;
 use Aura\Base\Resources\Role;
 use Aura\Base\Resources\Team;
 use Aura\Base\Resources\User;
+use Illuminate\Support\Facades\Gate;
 
 use function Pest\Livewire\livewire;
-use Illuminate\Support\Facades\Gate;
-use Aura\Base\Livewire\Resource\Edit;
-use Aura\Base\Livewire\Resource\Create;
 
 // Before each test, create a Superadmin and login
 beforeEach(function () {
@@ -44,7 +44,6 @@ test('team can be deleted as a global admin', function () {
     expect(Team::count())->toBe(0);
 });
 
-
 test('team can not be deleted as a global admin', function () {
     Gate::define('AuraGlobalAdmin', function (User $user) {
         return false;
@@ -70,6 +69,6 @@ test('team can not be deleted as a global admin', function () {
     $team->refresh();
 
     expect($team->deleted_at)->toBeNull();
-    
+
     expect(Team::count())->toBe(1);
 });
