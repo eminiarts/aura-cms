@@ -15,14 +15,6 @@ class Team extends Resource
 {
     use SoftDeletes;
 
-    public array $actions = [
-        'deleteAction' => [
-            'label' => 'Delete',
-            'icon-view' => 'aura::components.actions.trash',
-            'class' => 'hover:text-red-700 text-red-500 font-bold',
-        ],
-    ];
-
     public static $customTable = true;
 
     public static $globalSearch = false;
@@ -51,9 +43,25 @@ class Team extends Resource
     }
 
     public function deleteAction(){
+        // app(config('aura.resources.user'))->user()->authorize('delete', $this);
+        auth()->user()->authorize('delete', $this);
+
         $this->delete();
 
         return redirect()->to($this->indexUrl());
+    }
+
+    public function actions() {
+        return [
+            'deleteAction' => [
+                'label' => 'Delete',
+                'icon-view' => 'aura::components.actions.trash',
+                'class' => 'hover:text-red-700 text-red-500 font-bold',
+                'conditional_logic' => function () {
+                    return auth()->user()->isAuraGlobalAdmin();
+                },
+            ],
+        ];
     }
 
 

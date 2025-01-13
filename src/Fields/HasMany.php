@@ -105,10 +105,11 @@ class HasMany extends Field
         // Define reverse and reverse_slug
         if ($field['reverse'] ?? false) {
             return $model
-                ->morphedByMany($field['resource'], 'resource', 'post_relations', 'related_id', 'resource_id')
+                ->morphedByMany($field['resource'], 'related', 'post_relations', 'resource_id', 'related_id')
                 ->withTimestamps()
-                ->withPivot('resource_type', 'slug')
+                ->withPivot('resource_type', 'related_type', 'slug')
                 ->wherePivot('resource_type', $field['resource'])
+                ->wherePivot('related_type', get_class($model))
                 ->wherePivot('slug', $field['reverse_slug']);
         }
 
