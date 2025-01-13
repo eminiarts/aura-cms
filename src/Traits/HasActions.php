@@ -35,12 +35,22 @@ trait HasActions
             $this->authorize('update', $this->model);
         }
 
-        $response = $this->model->{$action}();
-
-        if ($response instanceof \Illuminate\Http\RedirectResponse) {
-            return $response; // Perform the redirect.
+        // Get the action configuration
+        $actions = $this->model->actions();
+        if (isset($actions[$action]['conditional_logic']) && !$actions[$action]['conditional_logic']()) {
+            abort(403, 'You are not authorized to perform this action.');
         }
 
-        $this->notify(__('Successfully ran: :action', ['action' => __($action)]));
+        try {
+            $response = $this->model->{$action}();
+
+            if ($response instanceof \Illuminate\Http\RedirectResponse) {
+                return $response; // Perform the redirect.
+            }
+
+            $this->notify(__('Successfully ran: :action', ['action' => __($action)]));
+        } catch (\Illuminate\Auth\Access\AuthorizationException $e) {
+            abort(403, $e->getMessage());
+        }
     }
 }

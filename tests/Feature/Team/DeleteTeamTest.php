@@ -65,7 +65,7 @@ test('team can not be deleted as a global admin', function () {
 
     $component = livewire(Edit::class, ['id' => $team->id])
         ->call('singleAction', 'deleteAction')
-        ->assertHasNoErrors();
+        ->assertForbidden();
 
     $team->refresh();
 

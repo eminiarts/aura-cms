@@ -43,8 +43,9 @@ class Team extends Resource
     }
 
     public function deleteAction(){
-        // app(config('aura.resources.user'))->user()->authorize('delete', $this);
-        auth()->user()->authorize('delete', $this);
+        if (!auth()->user()->can('delete', $this)) {
+            abort(403, 'You are not authorized to delete this team.');
+        }
 
         $this->delete();
 
