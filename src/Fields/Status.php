@@ -24,6 +24,24 @@ class Status extends Field
             ],
 
             [
+                'name' => 'Default Value',
+                'type' => 'Aura\\Base\\Fields\\Text',
+                'validation' => '',
+                'instructions' => 'Default value on create',
+                'exclude_from_nesting' => true,
+                'slug' => 'default',
+            ],
+
+            [
+                'name' => 'Allow Multiple',
+                'type' => 'Aura\\Base\\Fields\\Boolean',
+                'validation' => '',
+                'exclude_from_nesting' => true,
+                'slug' => 'allow_multiple',
+                'instructions' => 'Allow multiple selections?',
+            ],
+
+            [
                 'name' => 'Options',
                 'type' => 'Aura\\Base\\Fields\\Repeater',
                 'validation' => '',
@@ -110,23 +128,7 @@ class Status extends Field
                 ],
             ],
 
-            [
-                'name' => 'Default Value',
-                'type' => 'Aura\\Base\\Fields\\Text',
-                'validation' => '',
-                'instructions' => 'Default value on create',
-                'exclude_from_nesting' => true,
-                'slug' => 'default',
-            ],
-
-            [
-                'name' => 'Allow Multiple',
-                'type' => 'Aura\\Base\\Fields\\Boolean',
-                'validation' => '',
-                'exclude_from_nesting' => true,
-                'slug' => 'allow_multiple',
-                'instructions' => 'Allow multiple selections?',
-            ],
+            
 
         ]);
     }

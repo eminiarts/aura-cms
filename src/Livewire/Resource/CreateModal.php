@@ -2,9 +2,8 @@
 
 namespace Aura\Base\Livewire\Resource;
 
-use LivewireUI\Modal\ModalComponent;
 
-class CreateModal extends ModalComponent
+class CreateModal extends Create
 {
     public $params;
 
