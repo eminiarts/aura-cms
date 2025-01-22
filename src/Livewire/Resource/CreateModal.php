@@ -2,7 +2,6 @@
 
 namespace Aura\Base\Livewire\Resource;
 
-
 class CreateModal extends Create
 {
     public $params;

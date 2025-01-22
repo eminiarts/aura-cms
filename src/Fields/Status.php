@@ -128,8 +128,6 @@ class Status extends Field
                 ],
             ],
 
-            
-
         ]);
     }
 
