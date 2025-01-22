@@ -140,6 +140,10 @@ class InstallConfigCommand extends Command
             $this->info('Pint formatting completed.');
         }
 
+        // Cache clear
+        $this->info('Clearing cache...');
+        $this->call('cache:clear');
+
         return self::SUCCESS;
     }
 
