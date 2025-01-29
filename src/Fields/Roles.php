@@ -81,7 +81,7 @@ class Roles extends AdvancedSelect
         // Add new roles
         foreach ($rolesToAdd as $roleId) {
             if (config('aura.teams')) {
-                $currentTeamId = $post->current_team_id ?? auth()->user()->current_team_id;
+                $currentTeamId = $post->current_team_id ?? optional(auth()->user())->current_team_id;
 
                 $post->roles()->attach($roleId, ['team_id' => $currentTeamId]);
             } else {
