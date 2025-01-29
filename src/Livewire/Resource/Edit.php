@@ -65,7 +65,7 @@ class Edit extends Component
 
             // If the method exists in the field type, call it directly.
             if (method_exists($field['field'], 'hydrate')) {
-                $this->form['fields'][$field['slug']] = $field['field']->hydrate();
+                $this->form['fields'][$field['slug']] = $field['field']->hydrate($this->form['fields'][$field['slug']], $field);
             }
 
             if ($field['field']->on_forms === false) {
