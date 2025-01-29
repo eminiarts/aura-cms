@@ -1,3 +1,9 @@
+@php
+// Temporary fix for checkbox field
+if (is_null($this->form['fields'][$field['slug']])) {
+    $this->form['fields'][$field['slug']] = [];
+}
+@endphp
 <x-aura::fields.wrapper :field="$field">
 
     @foreach($field['options'] as $key => $option)
