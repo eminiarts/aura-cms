@@ -140,12 +140,12 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
 
     public function canBeImpersonated()
     {
-        return ! $this->resource->isSuperAdmin();
+        return ! $this->resource->isAuraGlobalAdmin();
     }
 
     public function canImpersonate()
     {
-        return $this->resource->isSuperAdmin();
+        return $this->resource->isAuraGlobalAdmin();
     }
 
     public function clearCachedOption($option)
