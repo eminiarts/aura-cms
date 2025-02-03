@@ -52,10 +52,10 @@ class Edit extends Component
 
     public function hydrate()
     {
-        ray('edit hydrate');
+        // ray('edit hydrate');
         if ($this->model && isset($this->model->id)) {
             // $this->model = Auth::user();
-            ray($this->model);
+            // ray($this->model);
         }
     }
 
@@ -86,7 +86,7 @@ class Edit extends Component
 
         $this->model = Aura::findResourceBySlug($this->slug)->find($id);
 
-        ray($this->model);
+        // ray($this->model);
 
         // Authorize
         $this->authorize('update', $this->model);
@@ -149,7 +149,9 @@ class Edit extends Component
         $this->dispatch('refreshComponent');
     }
 
-    public function updatedPost($value, $array) {}
+    public function updatedPost($value, $array)
+    {
+    }
 
     protected function callComponentMethod($method, $params)
     {
