@@ -444,7 +444,7 @@ class Aura
     {
         static::$userModel = $model;
 
-        return new static();
+        return new static;
     }
 
     public function varexport($expression, $return = false)

@@ -49,7 +49,6 @@ class Create extends Component
         // Get the corresponding field instance based on the slug.
         $field = $this->model->fieldBySlug($slug);
 
-
         // Forward the call to the field's method.
         if ($field) {
 

@@ -149,9 +149,7 @@ class Edit extends Component
         $this->dispatch('refreshComponent');
     }
 
-    public function updatedPost($value, $array)
-    {
-    }
+    public function updatedPost($value, $array) {}
 
     protected function callComponentMethod($method, $params)
     {

@@ -112,11 +112,6 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
         ];
     }
 
-    public function impersonateAction()
-    {
-        $this->impersonate($this);
-    }
-
     /**
      * Determine if the user belongs to the given team.
      *
@@ -603,6 +598,11 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
         }
 
         return false;
+    }
+
+    public function impersonateAction()
+    {
+        $this->impersonate($this);
     }
 
     public function indexQuery($query)
