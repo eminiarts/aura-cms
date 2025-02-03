@@ -144,7 +144,9 @@ class Table extends Component
         return $this->query()->pluck('id')->all();
     }
 
-    public function boot() {}
+    public function boot()
+    {
+    }
 
     /**
      * Get the create link.
@@ -481,8 +483,6 @@ class Table extends Component
      */
     protected function rows()
     {
-        ray('rows', $this->rowsQuery());
-
         return $this->rowsQuery()->paginate($this->perPage);
     }
 }
