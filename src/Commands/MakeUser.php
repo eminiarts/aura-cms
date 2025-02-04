@@ -2,6 +2,7 @@
 
 namespace Aura\Base\Commands;
 
+use Aura\Base\Resources\Role;
 use Aura\Base\Resources\Team;
 use Aura\Base\Resources\User;
 use Illuminate\Console\Command;
@@ -44,6 +45,18 @@ class MakeUser extends Command
             ]);
 
             $user->forceFill(['current_team_id' => $team->id])->save();
+        } else {
+            // Create a Super Admin role without team association
+            $role = Role::create([
+                'name' => 'Super Admin',
+                'slug' => 'super_admin',
+                'description' => 'Super Admin has can perform everything.',
+                'super_admin' => true,
+                'permissions' => [],
+            ]);
+
+            // Attach the user to the role
+            $user->update(['roles' => [$role->id]]);
         }
 
         $this->info('User created successfully.');

@@ -3,11 +3,13 @@
 use Aura\Base\Resources\Role;
 use Aura\Base\Resources\Team;
 use Aura\Base\Resources\User;
+use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 
 // beforeEach(fn () => $this->actingAs($this->user = User::factory()->create()));
 
-it('can create a user with all required fields', function () {
+it('can create a user with all required fields when teams are enabled', function () {
+    Config::set('aura.teams', true);
     $this->artisan('aura:user')
         ->expectsQuestion('What is your name?', 'John Doe')
         ->expectsQuestion('What is your email?', 'johndoe@example.com')
@@ -37,6 +39,8 @@ it('can create a user with all required fields', function () {
     expect($role->first()->super_admin)->toBe(true);
 });
 
+
+
 it('user roles can be set via update', function () {
     $this->user = createSuperAdmin();
 
@@ -61,3 +65,4 @@ it('user roles can be set via update', function () {
     expect($this->user->current_team_id)->toBe(Team::first()->id);
     expect($this->user->roles->first()->name)->toBe('New Role');
 });
+
