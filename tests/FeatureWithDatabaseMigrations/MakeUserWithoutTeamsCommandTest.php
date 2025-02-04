@@ -1,10 +1,8 @@
 <?php
 
 use Aura\Base\Resources\Role;
-use Aura\Base\Resources\Team;
 use Aura\Base\Resources\User;
 use Illuminate\Support\Facades\Config;
-use Illuminate\Support\Facades\DB;
 
 // Before each test, create a Superadmin and login
 beforeEach(function () {
@@ -21,7 +19,7 @@ beforeEach(function () {
 
 it('can create a user with role when teams are disabled', function () {
     Config::set('aura.teams', false);
-    
+
     $this->artisan('aura:user')
         ->expectsQuestion('What is your name?', 'John Doe')
         ->expectsQuestion('What is your email?', 'johndoe@example.com')
@@ -34,7 +32,7 @@ it('can create a user with role when teams are disabled', function () {
     ]);
 
     $user = User::where('email', 'johndoe@example.com')->first();
-    
+
     expect($user->roles->count())->toBe(1);
 
     $role = Role::get();
@@ -42,5 +40,3 @@ it('can create a user with role when teams are disabled', function () {
     expect($role->first()->super_admin)->toBe(true);
     expect($role->first()->team_id)->toBeNull();
 });
-
-

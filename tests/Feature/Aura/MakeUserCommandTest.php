@@ -39,8 +39,6 @@ it('can create a user with all required fields when teams are enabled', function
     expect($role->first()->super_admin)->toBe(true);
 });
 
-
-
 it('user roles can be set via update', function () {
     $this->user = createSuperAdmin();
 
@@ -65,4 +63,3 @@ it('user roles can be set via update', function () {
     expect($this->user->current_team_id)->toBe(Team::first()->id);
     expect($this->user->roles->first()->name)->toBe('New Role');
 });
-
