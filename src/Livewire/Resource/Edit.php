@@ -64,7 +64,8 @@ class Edit extends Component
         foreach ($this->model->inputFields() as $field) {
 
             // If the method exists in the field type, call it directly.
-            if (method_exists($field['field'], 'hydrate')) {
+            if (method_exists($field['field'], 'hydrate') && isset($this->form['fields'][$field['slug']])) {
+                // dd('hier');
                 $this->form['fields'][$field['slug']] = $field['field']->hydrate($this->form['fields'][$field['slug']], $field);
             }
 
