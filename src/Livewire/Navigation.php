@@ -12,15 +12,24 @@ class Navigation extends Component
     public $toggledGroups = [];
 
     #[Computed]
+    public function settings()
+    {
+        if (config('aura.teams')) {
+            return app('aura')::getOption('settings');
+        }
+        return app('aura')::getOption('settings');
+    }
+
+    #[Computed]
     public function compact(): string
     {
-        return ($this->settings['sidebar-size'] ?? null) === 'compact';
+        return $this->settings['sidebar-size'] ?? config('aura.theme.sidebar-size');
     }
 
     #[Computed]
     public function darkmodeType(): string
     {
-        return $this->settings['darkmode-type'] ?? 'auto';
+        return $this->settings['darkmode-type'] ?? config('aura.theme.darkmode-type');
     }
 
     public function getIconClass($sidebarType)
@@ -56,20 +65,11 @@ class Navigation extends Component
         return view('aura::livewire.navigation');
     }
 
-    #[Computed]
-    public function settings()
-    {
-        if (config('aura.teams')) {
-            return app('aura')::getOption('settings');
-        }
-
-        return app('aura')::getOption('settings');
-    }
 
     #[Computed]
     public function sidebarDarkmodeType(): string
     {
-        return $this->settings['sidebar-darkmode-type'] ?? 'dark';
+        return $this->settings['sidebar-darkmode-type'] ?? config('aura.theme.sidebar-darkmode-type');
     }
 
     #[Computed]
@@ -81,7 +81,7 @@ class Navigation extends Component
     #[Computed]
     public function sidebarType(): string
     {
-        return $this->settings['sidebar-type'] ?? 'primary';
+        return $this->settings['sidebar-type'] ?? config('aura.theme.sidebar-type');
     }
 
     public function toggleGroup($group)
