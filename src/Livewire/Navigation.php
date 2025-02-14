@@ -12,15 +12,6 @@ class Navigation extends Component
     public $toggledGroups = [];
 
     #[Computed]
-    public function settings()
-    {
-        if (config('aura.teams')) {
-            return app('aura')::getOption('settings');
-        }
-        return app('aura')::getOption('settings');
-    }
-
-    #[Computed]
     public function compact(): string
     {
         return $this->settings['sidebar-size'] ?? config('aura.theme.sidebar-size');
@@ -65,6 +56,15 @@ class Navigation extends Component
         return view('aura::livewire.navigation');
     }
 
+    #[Computed]
+    public function settings()
+    {
+        if (config('aura.teams')) {
+            return app('aura')::getOption('settings');
+        }
+
+        return app('aura')::getOption('settings');
+    }
 
     #[Computed]
     public function sidebarDarkmodeType(): string
