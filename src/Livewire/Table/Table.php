@@ -443,10 +443,12 @@ class Table extends Component
             ->orderBy($this->model()->getTable().'.id', 'desc');
 
         if (method_exists($this->model, 'indexQuery')) {
+            // ray('indexQuery');
             $query = $this->model->indexQuery($query, $this);
         }
 
         if ($this->field && method_exists(app($this->field['type']), 'queryFor')) {
+            // ray('queryFor');
             $query = app($this->field['type'])->queryFor($query, $this);
         }
 

@@ -95,7 +95,6 @@ class Aura
 
     public function findResourceBySlug($slug)
     {
-        ray('Resource resolution', $slug)->red();
         // First check direct class match
         if (in_array($slug, $this->getResources())) {
             return app($slug);
@@ -106,11 +105,6 @@ class Aura
 
             // Check for static $slug property
             if (isset($resource::$slug) && $resource::$slug === $slug) {
-
-                ray('Resource resolution', [
-                    'slug' => $slug,
-                    'resolved_class' => get_class($resource),
-                ])->red();
 
                 return $resource;
             }

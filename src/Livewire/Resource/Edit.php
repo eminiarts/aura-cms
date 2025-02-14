@@ -52,10 +52,10 @@ class Edit extends Component
 
     public function hydrate()
     {
-        ray('edit hydrate');
+        // ray('edit hydrate');
         if ($this->model && isset($this->model->id)) {
             // $this->model = Auth::user();
-            ray($this->model);
+            // ray($this->model);
         }
     }
 
@@ -64,7 +64,8 @@ class Edit extends Component
         foreach ($this->model->inputFields() as $field) {
 
             // If the method exists in the field type, call it directly.
-            if (method_exists($field['field'], 'hydrate')) {
+            if (method_exists($field['field'], 'hydrate') && isset($this->form['fields'][$field['slug']])) {
+                // dd('hier');
                 $this->form['fields'][$field['slug']] = $field['field']->hydrate($this->form['fields'][$field['slug']], $field);
             }
 
@@ -86,7 +87,7 @@ class Edit extends Component
 
         $this->model = Aura::findResourceBySlug($this->slug)->find($id);
 
-        ray($this->model);
+        // ray($this->model);
 
         // Authorize
         $this->authorize('update', $this->model);

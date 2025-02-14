@@ -37,6 +37,7 @@ class Create extends Component
 
     public function callMethod($method, $params = [], $captureReturnValueCallback = null)
     {
+        // dd($method, $params, $captureReturnValueCallback);
         // If the method exists in this component, call it directly.
         if (method_exists($this, $method) || ! optional($params)[0]) {
             return parent::callMethod($method, $params, $captureReturnValueCallback);

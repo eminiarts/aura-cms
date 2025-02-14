@@ -102,7 +102,7 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
                 'icon-view' => 'aura::components.actions.trash',
                 'class' => 'hover:text-red-700 text-red-500 font-bold',
             ],
-            'impersonate' => [
+            'impersonateAction' => [
                 'label' => 'Impersonate',
                 'icon-view' => 'aura::components.actions.impersonate',
                 'conditional_logic' => function () {
@@ -140,12 +140,12 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
 
     public function canBeImpersonated()
     {
-        return ! $this->resource->isSuperAdmin();
+        return ! $this->resource->isAuraGlobalAdmin();
     }
 
     public function canImpersonate()
     {
-        return $this->resource->isSuperAdmin();
+        return $this->resource->isAuraGlobalAdmin();
     }
 
     public function clearCachedOption($option)
@@ -598,6 +598,11 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
         }
 
         return false;
+    }
+
+    public function impersonateAction()
+    {
+        $this->impersonate($this);
     }
 
     public function indexQuery($query)

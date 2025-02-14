@@ -77,7 +77,7 @@ class Datetime extends Field
                 'name' => 'Max Date',
 
                 'type' => 'Aura\\Base\\Fields\\Number',
-                'validation' => 'numeric|min:0|max:365',
+                'validation' => '',
                 'slug' => 'maxDate',
                 'default' => false,
                 'instructions' => 'Number of days from today to the maximum selectable date.',

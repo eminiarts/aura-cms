@@ -3,11 +3,13 @@
 use Aura\Base\Resources\Role;
 use Aura\Base\Resources\Team;
 use Aura\Base\Resources\User;
+use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 
 // beforeEach(fn () => $this->actingAs($this->user = User::factory()->create()));
 
-it('can create a user with all required fields', function () {
+it('can create a user with all required fields when teams are enabled', function () {
+    Config::set('aura.teams', true);
     $this->artisan('aura:user')
         ->expectsQuestion('What is your name?', 'John Doe')
         ->expectsQuestion('What is your email?', 'johndoe@example.com')
