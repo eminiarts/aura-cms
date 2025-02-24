@@ -16,7 +16,6 @@ class TeamScope implements Scope
      */
     public function apply(Builder $builder, Model $model)
     {
-
         if (config('aura.teams') === false) {
             return $builder;
         }
@@ -26,45 +25,26 @@ class TeamScope implements Scope
             return $builder;
         }
 
-        $userClass = app(config('aura.resources.user'));
-
-        // Prevent infinite loop by not applying scope to User model
-        if ($model instanceof $userClass) {
-            return $builder;
-        }
-
-        // If the Model is a Team Resource, don't apply the scope
-        $teamClass = app(config('aura.resources.team'));
-
-        if (auth()->user() && $model instanceof $teamClass) {
-            // For Now
-            return $builder;
-            // return $builder->whereId(auth()->user()->current_team_id);
-        }
-
-        // Temporary Fix
-        if ($model->getTable() == 'users') {
-            return $builder;
-        }
-        // Get user without triggering scopes
         $user = auth()->user();
-
-        if (! $user) {
+        if (!$user) {
             return $builder;
         }
 
-        // Get the current_team_id directly from the user attributes to avoid scope
         $currentTeamId = $user->getAttribute('current_team_id');
-
-        if ($model->getTable() == 'posts') {
-            return $builder->where($model->getTable().'.team_id', $currentTeamId);
+        
+        // For User model, filter by role team_id
+        if ($model->getTable() === 'users') {
+            return $builder->whereHas('roles', function ($query) use ($currentTeamId) {
+                $query->where('roles.team_id', $currentTeamId);
+            });
         }
 
-        // Temporary Fix
-        if ($model->getTable() == 'teams') {
+        // For Team model, don't apply scope
+        if ($model->getTable() === 'teams') {
             return $builder;
         }
 
+        // For all other models
         return $builder->where($model->getTable().'.team_id', $currentTeamId);
     }
 }
