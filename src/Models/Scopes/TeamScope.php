@@ -18,9 +18,9 @@ class TeamScope implements Scope
     public function apply(Builder $builder, Model $model)
     {
         // Don't apply scope in console
-        if (app()->runningInConsole()) {
-            return $builder;
-        }
+        // if (app()->runningInConsole()) {
+        //     return $builder;
+        // }
 
         // Get current user
         $user = Auth::user();
