@@ -24,7 +24,7 @@ class TeamScope implements Scope
 
         // Get current user
         $user = Auth::user();
-        if (!$user) {
+        if (! $user) {
             return $builder;
         }
 
@@ -35,27 +35,27 @@ class TeamScope implements Scope
                 // In this case, users can see themselves only by default
                 return $builder->where('id', $user->id);
             }
-            
+
             // With teams enabled, filter by team_id in user_role
             $currentTeamId = $user->current_team_id;
-            if (!$currentTeamId) {
+            if (! $currentTeamId) {
                 return $builder;
             }
-            
+
             // Filter users by their team roles
             return $builder->whereHas('roles', function ($query) use ($currentTeamId) {
                 $query->where('user_role.team_id', $currentTeamId);
             });
         }
-        
+
         // For teams disabled, no additional filtering needed for other models
         if (config('aura.teams') === false) {
             return $builder;
         }
-        
+
         // Get current team ID for team-enabled filtering
         $currentTeamId = $user->current_team_id;
-        if (!$currentTeamId) {
+        if (! $currentTeamId) {
             return $builder;
         }
 

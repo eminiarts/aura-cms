@@ -16,8 +16,8 @@ test('superadmin can get all users for his team', function () {
 
     User::factory()->count(10)->create([
         'roles' => [
-            $role->id
-        ]
+            $role->id,
+        ],
     ]);
 
     $users = User::all();
@@ -31,23 +31,22 @@ test('user can not get all users for other teams', function () {
     // logout
     auth()->logout();
 
-
     $otherUser = User::factory()->create();
 
     $this->actingAs($otherUser);
 
     $team = Team::factory()->create();
 
-    $users =User::factory()->count(2)->create([
-        'current_team_id' => $team->id
+    $users = User::factory()->count(2)->create([
+        'current_team_id' => $team->id,
     ]);
 
-    ray($users->toArray()); 
+    ray($users->toArray());
 
     $this->actingAs($this->user);
     $users = User::all();
 
-    ray($users->toArray())->red(); 
+    ray($users->toArray())->red();
 
     $this->assertCount(1, $users);
 });
