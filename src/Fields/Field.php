@@ -45,6 +45,11 @@ abstract class Field implements Wireable
 
     public function display($field, $value, $model)
     {
+
+        if (optional($field)['display_view']) {
+            return view($field['display_view'], ['row' => $model, 'field' => $field, 'value' => $value])->render();
+        }
+
         if ($this->index) {
             $componentName = $this->index;
             // If the component name starts with 'aura::', remove it
@@ -68,9 +73,7 @@ abstract class Field implements Wireable
             );
         }
 
-        if (optional($field)['display_view']) {
-            return view($field['display_view'], ['row' => $model, 'field' => $field, 'value' => $value])->render();
-        }
+       
 
         return $value;
     }
