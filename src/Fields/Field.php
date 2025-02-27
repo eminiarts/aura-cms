@@ -73,8 +73,6 @@ abstract class Field implements Wireable
             );
         }
 
-       
-
         return $value;
     }
 

@@ -84,7 +84,7 @@ class Edit extends Component
         // Get the slug from the current route
         $routeName = request()->route()->getName();
 
-        if(!$this->slug) {
+        if (! $this->slug) {
             $this->slug = explode('.', $routeName)[1] ?? null;
         }
 

@@ -18,11 +18,11 @@ class EditModal extends Edit
             $this->resource = $resource;
             $this->type = $type;
             $this->slug = $type;
-            
+
             $this->model = Aura::findResourceBySlug($this->slug)->find($resource);
 
             // dd($this->model);
-            
+
             if ($this->model) {
                 $this->authorize('update', $this->model);
                 $this->form = $this->model->attributesToArray();
@@ -31,7 +31,7 @@ class EditModal extends Edit
 
             ray('here', $this->model);
         } else {
-            //parent::mount($id);
+            // parent::mount($id);
         }
     }
 
