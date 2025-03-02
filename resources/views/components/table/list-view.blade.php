@@ -1,6 +1,6 @@
 <div class="flex flex-col mt-2" wire:key="table-index">
     <div
-        class="min-w-full overflow-hidden overflow-x-auto align-middle border border-gray-400/30 sm:rounded-lg dark:border-gray-700">
+        class="min-w-full overflow-x-auto align-middle border border-gray-400/30 sm:rounded-lg dark:border-gray-700">
 
         <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
             @include($this->settings['views']['table_header'])
