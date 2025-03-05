@@ -15,7 +15,7 @@ class ResourcePolicy
      *
      * @return \Illuminate\Auth\Access\Response|bool
      */
-    public function create(User $user, $resource)
+    public function create($user, $resource)
     {
         if ($resource::$createEnabled === false) {
             return false;
@@ -38,7 +38,7 @@ class ResourcePolicy
      * @param  \App\Models\Post  $resource
      * @return \Illuminate\Auth\Access\Response|bool
      */
-    public function delete(User $user, $resource)
+    public function delete($user, $resource)
     {
         if ($user->isSuperAdmin()) {
             return true;
@@ -66,7 +66,7 @@ class ResourcePolicy
      * @param  \App\Models\Post  $resource
      * @return \Illuminate\Auth\Access\Response|bool
      */
-    public function forceDelete(User $user, $resource)
+    public function forceDelete($user, $resource)
     {
         if ($user->isSuperAdmin()) {
             return true;
@@ -103,7 +103,7 @@ class ResourcePolicy
      * @param  \App\Models\Post  $resource
      * @return \Illuminate\Auth\Access\Response|bool
      */
-    public function update(User $user, $resource)
+    public function update($user, $resource)
     {
         if ($resource::$editEnabled === false) {
             return false;
@@ -135,7 +135,7 @@ class ResourcePolicy
      * @param  \App\Models\Post  $resource
      * @return \Illuminate\Auth\Access\Response|bool
      */
-    public function view(User $user, $resource)
+    public function view($user, $resource)
     {
         // Check if the config resource view is enabled
         if (config('aura.resource-view-enabled') === false) {
@@ -173,7 +173,7 @@ class ResourcePolicy
      *
      * @return \Illuminate\Auth\Access\Response|bool
      */
-    public function viewAny(User $user, $resource)
+    public function viewAny($user, $resource)
     {
         if ($resource::$indexViewEnabled === false) {
             return false;
