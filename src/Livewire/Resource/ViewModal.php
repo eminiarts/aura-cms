@@ -15,23 +15,21 @@ class ViewModal extends View
         if ($resource && $type) {
             $this->resource = $resource;
             $this->type = $type;
-            $this->slug = $type; // Set the slug from the type
+            $this->slug = $type;
 
-            // Get the model directly instead of calling parent::mount
             $this->model = Aura::findResourceBySlug($this->slug)->find($resource);
 
-            // Continue with the rest of the initialization
+            // dd($this->model);
+
             if ($this->model) {
                 $this->authorize('view', $this->model);
                 $this->form = $this->model->attributesToArray();
-
-                // Initialize terms if needed like in the parent class
-                $this->form['terms'] = $this->model->terms;
-                $this->form['terms']['tag'] = $this->form['terms']['tag'] ?? null;
-                $this->form['terms']['category'] = $this->form['terms']['category'] ?? null;
+                $this->initializeModelFields();
             }
+
+            ray('here', $this->model);
         } else {
-            parent::mount($id);
+            // parent::mount($id);
         }
     }
 
