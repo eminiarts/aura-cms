@@ -47,7 +47,10 @@ class View extends Component
     {
         // Get the slug from the current route
         $routeName = request()->route()->getName();
-        $this->slug = explode('.', $routeName)[1] ?? null;
+
+        if (! $this->slug) {
+            $this->slug = explode('.', $routeName)[1] ?? null;
+        }
 
         $this->model = Aura::findResourceBySlug($this->slug)->find($id);
 
@@ -57,9 +60,9 @@ class View extends Component
         // Array instead of Eloquent Model
         $this->form = $this->model->attributesToArray();
 
-        $this->form['terms'] = $this->model->terms;
-        $this->form['terms']['tag'] = $this->form['terms']['tag'] ?? null;
-        $this->form['terms']['category'] = $this->form['terms']['category'] ?? null;
+        // $this->form['terms'] = $this->model->terms;
+        // $this->form['terms']['tag'] = $this->form['terms']['tag'] ?? null;
+        // $this->form['terms']['category'] = $this->form['terms']['category'] ?? null;
     }
 
     public function reload()
