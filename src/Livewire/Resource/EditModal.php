@@ -3,7 +3,6 @@
 namespace Aura\Base\Livewire\Resource;
 
 use Aura\Base\Facades\Aura;
-use Aura\Base\Livewire\Resource\Edit;
 
 class EditModal extends Edit
 {
