@@ -2,7 +2,7 @@
     @can('view', $row)
         @if(isset($this->settings['view_in_modal']) && $this->settings['view_in_modal'])
             <x-aura::tippy text="{{ __('View') }}" position="top" class="text-sm text-gray-400 bg-white">
-                <x-aura::button.transparent href="#" wire:click.prevent="$dispatch('openModal', { component: 'aura::resource-view-modal', arguments: { 'resource': {{ $row->id }}, 'type': '{{ $row->getType() }}' }, modalAttributes: {'slideOver': true }})" size="xs">
+                <x-aura::button.transparent wire:click.prevent="$dispatch('openModal', { component: 'aura::resource-view-modal', arguments: { 'resource': {{ $row->id }}, 'type': '{{ $row->getType() }}' }, modalAttributes: {'slideOver': true }})" size="xs">
                     <x-aura::icon icon="view" size="xs" />
                     <span class="sr-only">{{ __('View') }}</span>
                 </x-aura::button.transparent>
