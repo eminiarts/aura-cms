@@ -60,6 +60,19 @@ x-data="{
                     closeOnSelect: false
                 }
             });
+            
+            // Prevent clicks in the dropdown from propagating and closing the dialog
+            tagify.on('dropdown:show dropdown:updated', () => {
+                const dropdown = tagify.DOM.dropdown;
+                if (dropdown) {
+                    dropdown.addEventListener('mousedown', (e) => {
+                        e.stopPropagation();
+                    });
+                    dropdown.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                    });
+                }
+            });
 
             this.$refs.tags.addEventListener('change', (e) => {
                 // Update the value to be an array of selected tag values
