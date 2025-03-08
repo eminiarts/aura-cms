@@ -3,6 +3,7 @@
 namespace Aura\Base\Livewire\Resource;
 
 use Aura\Base\Facades\Aura;
+use Aura\Base\Livewire\Resource\Edit;
 
 class EditModal extends Edit
 {
@@ -12,7 +13,7 @@ class EditModal extends Edit
 
     public function mount($id = null, $resource = null, $type = null)
     {
-        ray('mount', $id, $resource, $type);
+        // ray('mount editmodal', $id, $resource, $type)->red();
 
         if ($resource && $type) {
             $this->resource = $resource;
@@ -29,7 +30,7 @@ class EditModal extends Edit
                 $this->initializeModelFields();
             }
 
-            ray('here', $this->model);
+            // ray('here', $this->model);
         } else {
             // parent::mount($id);
         }
