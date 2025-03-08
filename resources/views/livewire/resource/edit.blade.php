@@ -56,7 +56,7 @@
                     {{ __('Cancel') }}
                 </x-aura::button.transparent>
             </x-aura::dialog.close>
-            <x-aura::button wire:click="save" wire:loading.attr="disabled">
+            <x-aura::button onclick="Livewire.dispatchTo('aura::resource-edit', 'saveModel')" wire:loading.attr="disabled">
                 <div wire:loading.delay wire:target="save">
                     <x-aura::icon.loading />
                 </div>
