@@ -27,13 +27,13 @@
                     </div>
 
                     <!-- Panel -->
-                    <div class="flex flex-col p-8 h-full">
+                    <div class="flex flex-col p-8 h-full" x-on:click.stop="">
                         {{ $slot }}
                     </div>
 
                     <!-- Footer -->
                     @if($footer ?? false)
-                    <div class="flex justify-end p-4 space-x-2 bg-gray-100">
+                    <div class="flex justify-end p-4 space-x-2 bg-gray-100" x-on:click.stop="">
                         {{ $footer }}
                     </div>
                     @endif
