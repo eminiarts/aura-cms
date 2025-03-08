@@ -161,7 +161,20 @@ class Aura
             return [];
         }
 
-        return $this->getAppFiles($path, $filter = 'Resource', $namespace = config('aura-settings.paths.resources.namespace'));
+        $resources = $this->getAppFiles($path, $filter = 'Resource', $namespace = config('aura-settings.paths.resources.namespace'));
+        
+        // Filter resources to only include classes that extend Aura\Base\Resource
+        return collect($resources)
+            ->filter(function ($resourceClass) {
+                if (!class_exists($resourceClass)) {
+                    return false;
+                }
+                
+                $reflection = new \ReflectionClass($resourceClass);
+                return $reflection->isSubclassOf('Aura\\Base\\Resource');
+            })
+            ->values()
+            ->toArray();
     }
 
     public function getAppWidgets()
