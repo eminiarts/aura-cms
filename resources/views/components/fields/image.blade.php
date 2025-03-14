@@ -88,7 +88,7 @@
             @endif
         </div>
 
-        {{-- @dump('field', $field, $selected, app('Aura\Base\Resources\Attachment'), get_class($this->model), $field['slug']) --}}
+        {{-- @dump('field',  $field['slug']) --}}
 
         <livewire:aura::media-uploader
             :table="false"
