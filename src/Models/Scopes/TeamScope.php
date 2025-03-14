@@ -53,6 +53,7 @@ class TeamScope implements Scope
                 }
 
                 self::$applying = false;
+
                 return;  // Early return is important.
             }
 
@@ -61,18 +62,21 @@ class TeamScope implements Scope
             // For teams disabled, no additional filtering needed for other models
             if (config('aura.teams') === false) {
                 self::$applying = false;
+
                 return;
             }
 
             // For team-enabled filtering
             if (! $currentTeamId) {
                 self::$applying = false;
+
                 return;
             }
 
             // For Team model, don't apply team scope
             if ($model->getTable() === 'teams') {
                 self::$applying = false;
+
                 return;
             }
 
@@ -80,6 +84,7 @@ class TeamScope implements Scope
             $builder->where($model->getTable().'.team_id', $currentTeamId);
 
             self::$applying = false;
+
             return;
 
         } catch (\Exception $e) {
