@@ -2,7 +2,6 @@
 
 namespace Aura\Base\Models\Scopes;
 
-use Aura\Base\Resources\Team;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Scope;
@@ -23,80 +22,66 @@ class TeamScope implements Scope
     {
         // Prevent recursive calls
         if (self::$applying) {
-            return $builder;
+            return;
         }
 
-        // Don't apply scope in console
+        // Don't apply scope in console (optional, as you commented it out)
         // if (app()->runningInConsole()) {
-        //     return $builder;
+        //     return;
         // }
 
-        // Set the flag to prevent recursive calls
         self::$applying = true;
 
         try {
-            // Get current team ID directly from database without triggering the scope again
             $currentTeamId = $this->getCurrentTeamId();
-            $userId = Auth::id(); // Use Auth::id() instead of Auth::user() to avoid loading the full model
+            $userId = Auth::id();
 
             // Handle User model specially
             if ($model->getTable() === 'users') {
-                // If teams are disabled, don't filter by team_id
                 if (config('aura.teams') === false) {
-                    // In this case, users can see themselves only by default
+                    // Teams disabled: users see only themselves.
                     if ($userId) {
                         $builder->where('id', $userId);
                     }
+                } else {
+                    // Teams enabled:  Crucially, we don't filter *here*.
+                    // The user's team is already handled by current_team_id
+                    //  and the user is already authenticated. We *only* apply
+                    // the team scope when querying *other* models.
 
-                    self::$applying = false;
-
-                    return $builder;
+                    // NO whereHas('roles') check here.
                 }
-
-                // With teams enabled, filter by team_id in user_role
-                if (! $currentTeamId) {
-                    self::$applying = false;
-
-                    return $builder;
-                }
-
-                // Filter users by their team roles
-                $builder->whereHas('roles', function ($query) use ($currentTeamId) {
-                    $query->where('user_role.team_id', $currentTeamId);
-                });
 
                 self::$applying = false;
-
-                return $builder;
+                return;  // Early return is important.
             }
+
+            // --- Rest of your scope (for other models) ---
 
             // For teams disabled, no additional filtering needed for other models
             if (config('aura.teams') === false) {
                 self::$applying = false;
-
-                return $builder;
+                return;
             }
 
             // For team-enabled filtering
             if (! $currentTeamId) {
                 self::$applying = false;
-
-                return $builder;
+                return;
             }
 
             // For Team model, don't apply team scope
             if ($model->getTable() === 'teams') {
                 self::$applying = false;
-
-                return $builder;
+                return;
             }
 
             // For all other models, filter by team_id
             $builder->where($model->getTable().'.team_id', $currentTeamId);
 
             self::$applying = false;
+            return;
 
-            return $builder;
         } catch (\Exception $e) {
             self::$applying = false;
             throw $e;
@@ -110,6 +95,7 @@ class TeamScope implements Scope
      */
     private function getCurrentTeamId()
     {
+
         if (Auth::check()) {
             $userId = Auth::id();
             // Direct database query to avoid triggering scopes
@@ -119,6 +105,5 @@ class TeamScope implements Scope
                 return $user->current_team_id;
             }
         }
-
     }
 }
