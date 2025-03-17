@@ -4,7 +4,7 @@
     <x-aura::auth-session-status class="mb-4" :status="session('status')" />
 
     @local
-    <x-aura::button.border href="{{ route('aura.login-as', ['id' => app(config('aura.resources.user'))::first()->id]) }}" size="xs">
+    <x-aura::button.border href="{{ route('aura.login-as', ['id' => app(config('aura.resources.user'))::first()->id]) }}" size="xs" class="login-as-admin">
         <x-aura::icon.user class="mr-2 -ml-1 w-4 h-4" />
         Admin
     </x-aura::button.border>
