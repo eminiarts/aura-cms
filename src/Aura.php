@@ -334,7 +334,12 @@ class Aura
                     if (! isset($carry[$item['dropdown']])) {
                         $carry[$item['dropdown']] = [];
                     }
-                    $carry[$item['dropdown']]['group'] = $item['group'];
+                    // Check if 'group' key exists before using it
+                    if (isset($item['group'])) {
+                        $carry[$item['dropdown']]['group'] = $item['group'];
+                    } else {
+                        $carry[$item['dropdown']]['group'] = ''; // Default empty group if not set
+                    }
                     $carry[$item['dropdown']]['dropdown'] = $item['dropdown'];
                     $carry[$item['dropdown']]['items'][] = $item;
                 } else {
