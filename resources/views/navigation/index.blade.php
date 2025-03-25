@@ -1,4 +1,8 @@
 <div>
+@php
+   ray( app('aura')::navigation());
+@endphp
+
     @foreach (app('aura')::navigation() as $group => $resources)
         @if ($group !== '')
             <div wire:key="toggle-{{ $group }}" wire:click="toggleGroup('{{ $group }}')"
@@ -23,7 +27,7 @@
 
                                     @includeIf($iconView, ['class' => 'w-6 h-6'])
 
-                                    @if (!View::exists($iconView))
+                                    @if (!View::exists($iconView) && isset($resource['items'][0]['icon']))
                                         {!! $resource['items'][0]['icon'] !!}
                                     @endif
                                 </div>
@@ -33,51 +37,57 @@
                             <x-slot:mobile>
 
                                 @foreach($resource['items'] as $r)
-                                    <x-aura::navigation.item-dropdown :route="'aura.' . $r['slug'] . '.index'" :id="$r['slug']" :strict="false" :compact="$this->compact">
+                                    <x-aura::navigation.item-dropdown :route="'aura.' . (isset($r['slug']) ? $r['slug'] : '') . '.index'" :id="isset($r['slug']) ? $r['slug'] : ''" :strict="false" :compact="$this->compact">
                                         <div class="aura-sidebar-icon">
-                                            {!! $r['icon'] !!}
+                                            @if(isset($r['icon']))
+                                                {!! $r['icon'] !!}
+                                            @endif
                                         </div>
-                                        <div>{{ __($r['name']) }}</div>
+                                        <div>{{ __(isset($r['name']) ? $r['name'] : '') }}</div>
                                     </x-aura::navigation.item-dropdown>
                                 @endforeach
 
                             </x-slot:mobile>
 
                             @foreach ($resource['items'] as $r)
-                                <x-aura::navigation.item :route="$r['route']" :strict="false" :compact="$this->compact">
+                                <x-aura::navigation.item :route="isset($r['route']) ? $r['route'] : '#'" :strict="false" :compact="$this->compact">
                                     <div class="aura-sidebar-icon">
-                                        {!! $r['icon'] !!}
+                                        @if(isset($r['icon']))
+                                            {!! $r['icon'] !!}
+                                        @endif
                                     </div>
-                                    <div class="hide-collapsed">{{ __($r['name']) }}</div>
+                                    <div class="hide-collapsed">{{ __(isset($r['name']) ? $r['name'] : '') }}</div>
                                 </x-aura::navigation.item>
                             @endforeach
                         </x-aura::navigation.dropdown>
                     @else
                         @if(isset($resource['resource']))
                             @can('viewAny', app($resource['resource']))
-                                <x-aura::navigation.item :route="$resource['route']" :strict="false" :tooltip="__($resource['name'])" :compact="$this->compact" :badge="$resource['badge'] ?? null" :badgeColor="$resource['badgeColor'] ?? null">
+                                <x-aura::navigation.item :route="isset($resource['route']) ? $resource['route'] : '#'" :strict="false" :tooltip="__(isset($resource['name']) ? $resource['name'] : '')" :compact="$this->compact" :badge="$resource['badge'] ?? null" :badgeColor="$resource['badgeColor'] ?? null">
                                     <div class="aura-sidebar-icon">
-                                        {!! $resource['icon'] !!}
+                                        @if(isset($resource['icon']))
+                                            {!! $resource['icon'] !!}
+                                        @endif
                                     </div>
-                                    <div class="hide-collapsed">{{ __($resource['name']) }}</div>
+                                    <div class="hide-collapsed">{{ __(isset($resource['name']) ? $resource['name'] : '') }}</div>
                                 </x-aura::navigation.item>
                             @endcan
                         @else
 
-                            <x-aura::navigation.item :route="$resource['route']" :strict="false" :tooltip="__($resource['name'])" :compact="$this->compact" :badge="$resource['badge'] ?? null" :badgeColor="$resource['badgeColor'] ?? null" :onclick="$resource['onclick'] ?? ''"
+                            <x-aura::navigation.item :route="isset($resource['route']) ? $resource['route'] : '#'" :strict="false" :tooltip="__(isset($resource['name']) ? $resource['name'] : '')" :compact="$this->compact" :badge="$resource['badge'] ?? null" :badgeColor="$resource['badgeColor'] ?? null" :onclick="$resource['onclick'] ?? ''"
 
                             >
-                                @if($resource['icon'] !== '')
+                                @if(isset($resource['icon']) && $resource['icon'] !== '')
                                     <div class="aura-sidebar-icon">
                                         {!! Blade::render($resource['icon']) !!}
                                     </div>
-                                    <div class="hide-collapsed">{{ __($resource['name']) }}</div>
+                                    <div class="hide-collapsed">{{ __(isset($resource['name']) ? $resource['name'] : '') }}</div>
                                 @else
                                     <div>
                                         <div class="hidden w-6 text-xl text-center show-collapsed aura-sidebar-icon">
-                                            {{ strtoupper(substr($resource['name'], 0, 1)) }}
+                                            {{ isset($resource['name']) ? strtoupper(substr($resource['name'], 0, 1)) : '' }}
                                         </div>
-                                        <div class="hide-collapsed">{{ __($resource['name']) }}</div>
+                                        <div class="hide-collapsed">{{ __(isset($resource['name']) ? $resource['name'] : '') }}</div>
                                     </div>
                                 @endif
 
