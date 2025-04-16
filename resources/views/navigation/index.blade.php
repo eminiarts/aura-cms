@@ -1,6 +1,6 @@
 <div>
 @php
-   ray( app('aura')::navigation());
+   
 @endphp
 
     @foreach (app('aura')::navigation() as $group => $resources)
