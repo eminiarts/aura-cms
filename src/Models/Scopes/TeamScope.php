@@ -102,7 +102,7 @@ class TeamScope implements Scope
     private function getCurrentTeamId()
     {
         if (! Auth::check()) {
-            return null;
+            return;
         }
 
         $userId = Auth::id();
