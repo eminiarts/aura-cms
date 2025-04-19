@@ -50,7 +50,7 @@
     </div>
 
     @if ($inModal)
-    <div class="flex justify-end space-x-2 p-4 border-t">
+    <div class="flex justify-end space-x-2 mt-4">
         <x-aura::dialog.close>
             <x-aura::button.transparent>
                 {{ __('Cancel') }}
