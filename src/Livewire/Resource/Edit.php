@@ -175,4 +175,41 @@ class Edit extends Component
 
         return $result;
     }
+
+    public function callMethod($method, $params = [], $captureReturnValueCallback = null)
+    {
+        // dd($method, $params, $captureReturnValueCallback);
+        // If the method exists in this component, call it directly.
+        if (method_exists($this, $method) || ! optional($params)[0]) {
+            return parent::callMethod($method, $params, $captureReturnValueCallback);
+        }
+
+        // Assuming the first parameter is always the slug to identify the field.
+        $slug = $params[0];
+
+        // Get the corresponding field instance based on the slug.
+        $field = $this->model->fieldBySlug($slug);
+
+        // Forward the call to the field's method.
+        if ($field) {
+
+            $fieldTypeInstance = app($field['type']);
+
+            // If the method exists in the field type, call it directly.
+            if (method_exists($fieldTypeInstance, $method)) {
+                $post = call_user_func_array([$fieldTypeInstance, $method], array_merge([$this->model, $this->form], $params));
+
+                // If the field type method returns a post, update the post.
+                if ($post) {
+                    $this->form = $post;
+                }
+
+                // Make sure to return here, otherwise the parent callMethod will be called.
+                return;
+            }
+        }
+
+        // Run parent callMethod
+        return parent::callMethod($method, $params, $captureReturnValueCallback);
+    }
 }
