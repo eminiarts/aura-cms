@@ -124,9 +124,16 @@ class Edit extends Component
 
     public function rules()
     {
-        return collect($this->model->validationRules())->mapWithKeys(function ($rule, $key) {
+        $rules = collect($this->model->validationRules())->mapWithKeys(function ($rule, $key) {
             return ["form.fields.$key" => $rule];
         })->toArray();
+
+        // Modify rules if the model implements it
+        if (method_exists($this->model, 'modifyValidationRules')) {
+            $rules = $this->model->modifyValidationRules($rules, $this->form, $this);
+        }
+
+        return $rules;
     }
 
     public function save()

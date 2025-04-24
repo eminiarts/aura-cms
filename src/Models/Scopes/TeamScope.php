@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Scope;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 
 class TeamScope implements Scope
@@ -100,15 +101,18 @@ class TeamScope implements Scope
      */
     private function getCurrentTeamId()
     {
-
-        if (Auth::check()) {
-            $userId = Auth::id();
-            // Direct database query to avoid triggering scopes
-            $user = DB::table('users')->where('id', $userId)->first();
-
-            if ($user && isset($user->current_team_id)) {
-                return $user->current_team_id;
-            }
+        if (! Auth::check()) {
+            return;
         }
+
+        $userId = Auth::id();
+        $cacheKey = "user_{$userId}_current_team_id";
+
+        // Cache the result indefinitely. Invalidation should happen when the user's team changes.
+        return Cache::rememberForever($cacheKey, function () use ($userId) {
+            // Direct database query to avoid triggering scopes
+            // Use value() for slightly better performance if only one column is needed
+            return DB::table('users')->where('id', $userId)->value('current_team_id');
+        });
     }
 }

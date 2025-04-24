@@ -50,18 +50,18 @@
     </div>
 
     @if ($inModal)
-        <x-slot:footer>
-            <x-aura::dialog.close>
-                <x-aura::button.transparent>
-                    {{ __('Cancel') }}
-                </x-aura::button.transparent>
-            </x-aura::dialog.close>
-            <x-aura::button onclick="Livewire.dispatchTo('aura::resource-edit', 'saveModel')" wire:loading.attr="disabled">
-                <div wire:loading.delay wire:target="save">
-                    <x-aura::icon.loading />
-                </div>
-                {{ __('Save') }}
-            </x-aura::button>
-        </x-slot>
-    @endif
+    <div class="flex justify-end space-x-2 mt-4">
+        <x-aura::dialog.close>
+            <x-aura::button.transparent>
+                {{ __('Cancel') }}
+            </x-aura::button.transparent>
+        </x-aura::dialog.close>
+        <x-aura::button onclick="Livewire.dispatchTo('aura::resource-edit', 'saveModel')" wire:loading.attr="disabled">
+            <div wire:loading.delay wire:target="save">
+                <x-aura::icon.loading />
+            </div>
+            {{ __('Save') }}
+        </x-aura::button>
+    </div>
+@endif
 </div>

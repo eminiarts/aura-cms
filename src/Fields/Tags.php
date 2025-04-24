@@ -139,6 +139,8 @@ class Tags extends Field
             $value = json_decode($value, true);
         }
 
+        ray('saved', $value)->green();
+
         $ids = collect($value)->map(function ($tagName) use ($field) {
 
             if (is_int($tagName)) {
