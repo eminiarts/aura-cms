@@ -17,7 +17,5 @@
     @endforelse
 
     @php
-        ray('modals');
-        ray($modals);
     @endphp
 </div>
