@@ -83,6 +83,12 @@ class TransferFromPostsToCustomTable extends Command
                 $newRecord[$meta->key] = $meta->value;
             }
 
+            // Post
+            // if post has fillable app($resourceClass), then combine from $post, add to $newRecord
+            if (method_exists($resourceInstance, 'fillable')) {
+                $newRecord = array_merge($newRecord, (array) $post);
+            }
+
             // Create new record using the resource
             app($resourceClass)->create($newRecord);
 
