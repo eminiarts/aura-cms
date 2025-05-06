@@ -180,13 +180,7 @@ class Resource extends Model
         return $this->bulkActions;
     }
 
-    /**
-     * @return string
-     */
-    public function getExcerptAttribute()
-    {
-        return $this->stripShortcodes($this->resource_excerpt);
-    }
+ 
 
     public function getFieldsAttribute()
     {
