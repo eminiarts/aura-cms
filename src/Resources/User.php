@@ -702,6 +702,8 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
             ->withTimestamps();
     }
 
+    
+
     // public function setRolesField($value)
     // {
     //     // Save the roles

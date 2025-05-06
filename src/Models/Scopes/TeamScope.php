@@ -39,18 +39,12 @@ class TeamScope implements Scope
 
             // Handle User model specially
             if ($model->getTable() === 'users') {
-                if (config('aura.teams') === false) {
-                    // Teams disabled: users see only themselves.
-                    if ($userId) {
-                        $builder->where('id', $userId);
-                    }
-                } else {
-                    // Teams enabled:  Crucially, we don't filter *here*.
-                    // The user's team is already handled by current_team_id
-                    //  and the user is already authenticated. We *only* apply
-                    // the team scope when querying *other* models.
-
-                    // NO whereHas('roles') check here.
+               
+                // Scope for current team only
+                if($currentTeamId){
+                    $builder->whereHas('teams', function ($query) use ($currentTeamId) {
+                        $query->where('teams.id', $currentTeamId);
+                    });
                 }
 
                 self::$applying = false;
