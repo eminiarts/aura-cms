@@ -180,8 +180,6 @@ class Resource extends Model
         return $this->bulkActions;
     }
 
- 
-
     public function getFieldsAttribute()
     {
         if (! isset($this->fieldsAttributeCache) || $this->fieldsAttributeCache === null) {

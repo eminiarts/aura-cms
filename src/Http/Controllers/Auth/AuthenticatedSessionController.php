@@ -2,11 +2,11 @@
 
 namespace Aura\Base\Http\Controllers\Auth;
 
-use Illuminate\Http\Request;
 use Aura\Base\Events\LoggedIn;
-use Illuminate\Support\Facades\Auth;
 use Aura\Base\Http\Controllers\Controller;
 use Aura\Base\Http\Requests\Auth\LoginRequest;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class AuthenticatedSessionController extends Controller
 {
