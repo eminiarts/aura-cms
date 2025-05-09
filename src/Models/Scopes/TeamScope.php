@@ -39,9 +39,9 @@ class TeamScope implements Scope
 
             // Handle User model specially
             if ($model->getTable() === 'users') {
-               
+
                 // Scope for current team only
-                if($currentTeamId){
+                if ($currentTeamId) {
                     $builder->whereHas('teams', function ($query) use ($currentTeamId) {
                         $query->where('teams.id', $currentTeamId);
                     });
