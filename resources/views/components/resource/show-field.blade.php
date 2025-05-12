@@ -50,7 +50,6 @@
               style="width: {{ optional(optional($f)['style'])['width'] ?? '100' }}%;"
               id="field_{{ optional($f)['_id'] }}"
               class="px-4 reorder-item draggable-item resource-field-{{ optional($f)['slug'] }}-wrapper"
-              wire:key="pt-field-{{ $f['_id'] }}"
             >
               @include('aura::components.resource.show-field', ['field' => $f, 'slug' => $slug])
             </div>

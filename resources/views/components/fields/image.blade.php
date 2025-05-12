@@ -48,7 +48,7 @@
                     })
                 }
                 }" x-ref="container" data-slug="{{ $field['slug'] }}"
-                     class="flex flex-wrap px-0 mt-0 draggable-container" wire:key="edit-image-{{ $field['slug'] }}">
+                     class="flex flex-wrap px-0 mt-0 draggable-container">
                     @foreach($files as $file)
                         <div class="mr-2 mb-1 w-32 draggable-item" wire:key="{{ $field['slug'] }}_file_{{ $file->id }}"
                              id="{{ $field['slug'] }}_file_{{ $file->id }}">
@@ -98,7 +98,6 @@
             :model="app('Aura\Base\Resources\Attachment')"
             :for="get_class($this->model)"
             :disabled="$field['disabled'] ?? false"
-            wire:key="media-uploader-{{ $field['slug'] }}"
         />
 
     </x-aura::fields.wrapper>

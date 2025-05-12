@@ -98,7 +98,7 @@
             :button="true"
             :model="app('Aura\Base\Resources\Attachment')"
             :for="get_class($this->model)"
-            wire:key="media-uploader-{{ $field['slug'] }}"
+                
         />
     </x-aura::fields.wrapper>
 </div>

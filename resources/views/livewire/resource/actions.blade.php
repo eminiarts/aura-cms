@@ -1,4 +1,4 @@
-<div wire:key="resource-actions" class="flex flex-wrap gap-2">
+<div class="flex flex-wrap gap-2">
 @if($this->model->allowedToPerformActions() || auth()->user()->can('update', $this->model))
 @if(count($this->actions))
     @if($this->model::$showActionsAsButtons)
