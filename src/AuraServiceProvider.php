@@ -115,33 +115,33 @@ class AuraServiceProvider extends PackageServiceProvider
         Livewire::component('aura::resource-view-modal', app(ViewModal::class));
         Livewire::component('aura::resource-view', app(View::class));
         Livewire::component('aura::table', app(Table::class));
-        Livewire::component('aura::navigation', Navigation::class);
-        Livewire::component('aura::global-search', GlobalSearch::class);
-        Livewire::component('aura::bookmark-page', BookmarkPage::class);
-        Livewire::component('aura::dashboard', Dashboard::class);
-        Livewire::component('aura::notifications', Notifications::class);
-        Livewire::component('aura::edit-resource-field', EditResourceField::class);
-        Livewire::component('aura::media-manager', MediaManager::class);
+        Livewire::component('aura::navigation', app(Navigation::class));
+        Livewire::component('aura::global-search', app(GlobalSearch::class));
+        Livewire::component('aura::bookmark-page', app(BookmarkPage::class));
+        Livewire::component('aura::dashboard', app(Dashboard::class));
+        Livewire::component('aura::notifications', app(Notifications::class));
+        Livewire::component('aura::edit-resource-field', app(EditResourceField::class));
+        Livewire::component('aura::media-manager', app(MediaManager::class));
         Livewire::component('aura::media-uploader', app(MediaUploader::class));
-        Livewire::component('aura::attachment-index', AttachmentIndex::class);
-        Livewire::component('aura::user-two-factor-authentication-form', TwoFactorAuthenticationForm::class);
-        Livewire::component('aura::create-resource', CreateResource::class);
-        Livewire::component('aura::resource-editor', ResourceEditor::class);
+        Livewire::component('aura::attachment-index', app(AttachmentIndex::class));
+        Livewire::component('aura::user-two-factor-authentication-form', app(TwoFactorAuthenticationForm::class));
+        Livewire::component('aura::create-resource', app(CreateResource::class));
+        Livewire::component('aura::resource-editor', app(ResourceEditor::class));
         Livewire::component('aura::settings', app(config('aura.components.settings')));
-        Livewire::component('aura::invite-user', InviteUser::class);
+        Livewire::component('aura::invite-user', app(InviteUser::class));
 
         Livewire::component('aura::profile', app(config('aura.components.profile')));
-        Livewire::component('aura::modals', Modals::class);
-        Livewire::component('aura::plugins-page', PluginsPage::class);
+        Livewire::component('aura::modals', app(Modals::class));
+        Livewire::component('aura::plugins-page', app(PluginsPage::class));
 
         // Widgets
-        Livewire::component('aura::widgets', Widgets::class);
-        Livewire::component('aura::widgets.value-widget', ValueWidget::class);
-        Livewire::component('aura::widgets.sparkline-area', SparklineArea::class);
-        Livewire::component('aura::widgets.sparkline-bar', SparklineBar::class);
-        Livewire::component('aura::widgets.donut', Donut::class);
-        Livewire::component('aura::widgets.pie', Pie::class);
-        Livewire::component('aura::widgets.bar', Bar::class);
+        Livewire::component('aura::widgets', app(Widgets::class));
+        Livewire::component('aura::widgets.value-widget', app(ValueWidget::class));
+        Livewire::component('aura::widgets.sparkline-area', app(SparklineArea::class));
+        Livewire::component('aura::widgets.sparkline-bar', app(SparklineBar::class));
+        Livewire::component('aura::widgets.donut', app(Donut::class));
+        Livewire::component('aura::widgets.pie', app(Pie::class));
+        Livewire::component('aura::widgets.bar', app(Bar::class));
 
         return $this;
     }
