@@ -2,14 +2,14 @@
 
 namespace Aura\Base\Livewire\Resource;
 
-use Livewire\Component;
-use Aura\Base\Models\Post;
 use Aura\Base\Facades\Aura;
-use Livewire\WithFileUploads;
+use Aura\Base\Models\Post;
+use Aura\Base\Traits\InteractsWithFields;
 use Aura\Base\Traits\MediaFields;
 use Aura\Base\Traits\RepeaterFields;
-use Aura\Base\Traits\InteractsWithFields;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
+use Livewire\Component;
+use Livewire\WithFileUploads;
 
 class Create extends Component
 {
@@ -116,7 +116,7 @@ class Create extends Component
 
     public function render()
     {
-        
+
         return view($this->model->createView())->layout('aura::components.layout.app');
     }
 
