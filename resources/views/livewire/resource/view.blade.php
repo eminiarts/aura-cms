@@ -1,5 +1,5 @@
 <div wire:key="resource-view-{{ $model->id }}">
-    @section('title', __('View '. $model->singularName()))
+    @section('title', __('View :resource', ['resource' => __($model->singularName())]))
 
 
     @if(!$inModal)

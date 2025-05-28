@@ -15,7 +15,7 @@
     @if(optional($field)['placeholder'])
     <option  value="">{{ optional($field)['placeholder'] }}</option>
     @else
-    <option  value="">Select {{ optional($field)['name'] }}...</option>
+    <option  value="">{{ __('Select :field', ['field' => __(optional($field)['name'])]) }}...</option>
     @endif
 
       @php

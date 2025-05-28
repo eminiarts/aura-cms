@@ -1,5 +1,5 @@
 <div autocomplete="off">
-    @section('title', __('Edit ' . $model->singularName()))
+    @section('title', __('Edit :resource', ['resource' => __($model->singularName())]))
 
     {{ app('aura')::injectView('post_edit_breadcrumbs_before') }}
 

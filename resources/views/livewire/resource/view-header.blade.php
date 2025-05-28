@@ -2,7 +2,7 @@
     <div>
         @yield('view-header')
         <h1 class="text-2xl font-semibold">
-            {{ __('View ' . $model->singularName()) }}
+            {{ __('View :resource', ['resource' => __($model->singularName())]) }}
         </h1>
     </div>
 

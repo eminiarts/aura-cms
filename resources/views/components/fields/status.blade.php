@@ -6,7 +6,7 @@
                 <span x-show="selected" x-text="selected ? $refs.listbox.querySelector(`[data-value='${selected}']`).textContent : ''" 
                       :class="selected ? $refs.listbox.querySelector(`[data-value='${selected}']`).getAttribute('data-color') : ''"
                       class="text-xs font-medium me-2 px-2.5 py-0.5 rounded"></span>
-                <span x-show="!selected" class="text-gray-500">Select {{ $field['name'] }}...</span>
+                <span x-show="!selected" class="text-gray-500">{{ __('Select :field...', ['field' => __($field['name'])]) }}</span>
             </span>
             <span class="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
                 <svg class="h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
