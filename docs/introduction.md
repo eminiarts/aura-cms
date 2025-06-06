@@ -39,17 +39,176 @@ Aura CMS is a powerful content management system that brings together the best o
 
 ---
 
+<a name="why-choose-aura-cms"></a>
+## Why Choose Aura CMS?
+
+### For Laravel Developers
+
+```php
+// This is how simple it is to create a resource
+namespace App\Aura\Resources;
+
+use Aura\Base\Resource;
+use Aura\Base\Fields\{ID, Text, Wysiwyg, BelongsTo, Date, Boolean};
+
+class Article extends Resource
+{
+    public static string $model = \App\Models\Post::class;
+    
+    public function fields()
+    {
+        return [
+            ID::make('ID'),
+            Text::make('Title')->rules('required|max:255'),
+            Wysiwyg::make('Content')->rules('required'),
+            BelongsTo::make('Author')->resource('User'),
+            Date::make('Published At')->rules('required'),
+            Boolean::make('Featured')->default(false),
+        ];
+    }
+}
+```
+
+That's it! You now have a fully functional article management system with:
+- ✅ CRUD interface with real-time validation
+- ✅ Rich text editing
+- ✅ User relationship management
+- ✅ Automatic form generation
+- ✅ Permission handling
+- ✅ API endpoints (optional)
+
+### Key Advantages
+
+1. **No Learning Curve**: If you know Laravel, you know Aura CMS
+2. **Full Control**: Unlike WordPress or other PHP CMS platforms, you have complete control
+3. **Modern Stack**: Built on Laravel 10+, Livewire 3, and Tailwind CSS 3
+4. **Performance**: Optimized queries, lazy loading, and smart caching
+5. **Extensible**: Every component can be extended or replaced
+
+---
+
+<a name="core-architecture"></a>
+## Core Architecture
+
+Aura CMS follows a modular, service-oriented architecture that will feel familiar to Laravel developers:
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                        Aura CMS Core                         │
+├─────────────────────┬───────────────────┬──────────────────┤
+│   Resource System   │   Field System    │  Livewire Layer  │
+├─────────────────────┼───────────────────┼──────────────────┤
+│  • BaseResource     │  • 40+ Field Types│  • Table         │
+│  • Resource Model   │  • Field Pipeline │  • Forms         │
+│  • Meta Storage     │  • Conditionals   │  • Modals        │
+│  • Custom Tables    │  • Validation     │  • Real-time     │
+├─────────────────────┴───────────────────┴──────────────────┤
+│                    Laravel Foundation                        │
+│         (Eloquent, Routes, Middleware, Events)              │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### Core Components
+
+1. **Resource System**: Content types that extend Eloquent models
+2. **Field System**: Reusable, configurable field components
+3. **Pipeline Processing**: Fields are processed through a series of transformations
+4. **Livewire Integration**: Real-time UI without writing JavaScript
+5. **Permission Layer**: Role-based access control at every level
+
+---
+
+<a name="tall-stack-integration"></a>
+## TALL Stack Integration
+
+Aura CMS is built from the ground up on the TALL stack, not retrofitted:
+
+### Tailwind CSS
+- Beautiful, responsive admin interface
+- Dark mode support out of the box
+- Customizable theme system
+- Utility-first approach throughout
+
+### Alpine.js
+- Lightweight interactivity for UI components
+- Seamless integration with Livewire
+- No build step required for custom interactions
+
+### Laravel
+- Full power of Laravel's ecosystem
+- Eloquent ORM with enhancements
+- Queue support for heavy operations
+- Event-driven architecture
+
+### Livewire
+- Real-time form validation
+- Instant search and filtering
+- Dynamic field conditions
+- No page refreshes for CRUD operations
+
+> **Pro Tip**: Every Livewire component in Aura CMS can be extended or replaced with your own implementation
+
+---
+
 <a name="key-features"></a>
 ## Key Features
 
-- **Open Source and Free**: Released under the MIT license, Aura CMS is free to use, modify, and distribute.
-- **Laravel Foundation**: Built on Laravel, Aura CMS inherits all the strengths of one of the most popular PHP frameworks.
-- **Modular Architecture**: Easily extend functionality with plugins and modules tailored to your project's needs.
-- **User Management**: Robust authentication and authorization with support for roles, permissions, and teams.
-- **Media Management**: Efficiently handle media files using the built-in Media Manager.
-- **Custom Fields and Resources**: Define custom resources and fields to suit your application's requirements.
-- **Developer Tools**: Automate tasks with custom Artisan commands specific to Aura CMS.
-- **Aura Pro**: Access premium plugins and features to enhance your CMS capabilities.
+### 🚀 Resource System
+- **Dynamic Resources**: Define content types with PHP classes
+- **Visual Resource Editor**: Create resources through the UI
+- **Flexible Storage**: Use shared `posts` table or custom tables
+- **Meta Fields**: Store unlimited custom data without migrations
+- **Soft Deletes**: Built-in trash functionality
+- **Revisions**: Track changes over time (with plugin)
+
+### 🎨 Field Types (40+)
+- **Basic**: Text, Textarea, Number, Email, Password, Hidden
+- **Selections**: Select, Radio, Checkbox, Boolean, Advanced Select
+- **Dates**: Date, Time, DateTime with timezone support
+- **Rich Content**: Wysiwyg, Markdown, Code Editor
+- **Media**: Image, File with drag-and-drop upload
+- **Relationships**: BelongsTo, HasMany, BelongsToMany
+- **Advanced**: Repeater, Group, JSON, Tags, Slug
+- **Layout**: Tabs, Panels, Heading, Divider
+
+### 👥 Team Management (Optional)
+```php
+// Team-scoped resources out of the box
+class Project extends Resource
+{
+    use TeamScoped;
+    
+    public static string $model = Project::class;
+}
+```
+
+### 🔐 Permission System
+- Role-based access control (RBAC)
+- Resource-level permissions
+- Field-level permissions
+- Custom permission logic
+- Team-based isolation
+
+### 📸 Media Manager
+- Drag-and-drop uploads
+- Image optimization
+- S3/cloud storage support
+- Automatic thumbnails
+- Media library with search
+
+### 🔍 Global Search
+- Keyboard shortcuts (⇧⌘K)
+- Search across all resources
+- Recent items tracking
+- Bookmarkable pages
+- Smart suggestions
+
+### 🎯 Developer Experience
+- Artisan commands for everything
+- Comprehensive test helpers
+- IDE autocompletion
+- Detailed error messages
+- Debug toolbar integration
 
 ---
 
