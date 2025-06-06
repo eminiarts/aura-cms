@@ -270,28 +270,111 @@ rules:
   - "Import necessary Alpine.js plugins or custom components in `app.js`."
 
 # -------------------------------------------------------------------
+# Aura CMS Commands
+# -------------------------------------------------------------------
+aura_commands:
+  - "aura:install - Install Aura CMS with interactive setup"
+  - "aura:resource {name} - Create a new resource"
+  - "aura:field {name} - Create a new custom field type"
+  - "aura:plugin {name} - Create a new plugin"
+  - "aura:user - Create a new admin user"
+  - "aura:permission - Generate permissions for resources"
+  - "aura:publish - Publish Aura assets and views"
+  - "aura:migrate-meta - Migrate post meta to new structure"
+  - "aura:customize {component} - Customize a component"
+  - "aura:database-to-resources - Generate resources from database tables"
+
+# -------------------------------------------------------------------
 # Testing Execution
 # -------------------------------------------------------------------
 testing_instructions: >
-  Use PestPHP for running tests.
-  - To run all tests: `php artisan test` or `./vendor/bin/pest`
-  - To run a specific file: `php artisan test tests/Feature/MyFeatureTest.php` or `./vendor/bin/pest tests/Feature/MyFeatureTest.php`
-  - To run a specific test method (Pest uses test descriptions): `./vendor/bin/pest --filter "it ensures users can register"`
-  - Always run tests in the CLI environment.
-  - Ensure all tests pass before considering a feature complete.
+  Aura CMS uses PestPHP for testing with specific test helpers:
+  - Run all tests: `composer test` or `./vendor/bin/pest`
+  - Run without teams: `./vendor/bin/pest -c phpunit-without-teams.xml`
+  - Run with coverage: `XDEBUG_MODE=coverage ./vendor/bin/pest --coverage --min=80`
+  - Test specific feature: `./vendor/bin/pest tests/Feature/Aura/`
+  - Use Aura test helpers for resources and fields
+  - Test with team context when multi-tenancy is enabled
+  - Mock media uploads using Aura's test utilities
 
 # -------------------------------------------------------------------
-# Run the application
+# Development Workflow
 # -------------------------------------------------------------------
-- "Use `php artisan serve` to run the application."
+workflow:
+  - "1. Create resource: `php artisan aura:resource Post`"
+  - "2. Define fields in the resource class"
+  - "3. Run migrations: `php artisan migrate`"
+  - "4. Set up permissions: `php artisan aura:permission`"
+  - "5. Customize views if needed"
+  - "6. Write tests for the resource"
+  - "7. Use Resource Editor for visual configuration"
+
+# -------------------------------------------------------------------
+# Aura CMS Best Practices
+# -------------------------------------------------------------------
+best_practices:
+  - "Start with the posts table, migrate to custom tables when needed"
+  - "Use meta fields for flexible, non-indexed data"
+  - "Leverage conditional logic for dynamic forms"
+  - "Group related fields using Panel and Tab fields"
+  - "Use the visual Resource Editor for rapid prototyping"
+  - "Implement proper team scoping from the beginning"
+  - "Cache field definitions in production"
+  - "Use Aura's built-in components before creating custom ones"
+  - "Follow Aura's plugin structure for extensions"
+  - "Test resources with different permission levels"
+
+# -------------------------------------------------------------------
+# Common Patterns
+# -------------------------------------------------------------------
+patterns:
+  resource_with_meta: |
+    class Article extends Resource
+    {
+        public static string $model = Post::class;
+        
+        public function fields()
+        {
+            return [
+                ID::make('ID'),
+                Text::make('Title')->rules('required'),
+                Wysiwyg::make('Content'),
+                Text::make('Author')->meta(),
+                Date::make('Published At')->meta(),
+                Select::make('Category')->options([
+                    'news' => 'News',
+                    'blog' => 'Blog',
+                ])->meta(),
+            ];
+        }
+    }
+  
+  custom_table_resource: |
+    class Product extends Resource
+    {
+        public static string $model = Product::class;
+        public static bool $customTable = true;
+        
+        public function fields()
+        {
+            return [
+                ID::make('ID'),
+                Text::make('Name')->rules('required'),
+                Number::make('Price')->rules('required|numeric|min:0'),
+                Boolean::make('Active')->default(true),
+                BelongsTo::make('Category'),
+                HasMany::make('Reviews'),
+            ];
+        }
+    }
 
 # -------------------------------------------------------------------
 # Final Notes
 # -------------------------------------------------------------------
 notes: >
-  Strive to generate code that effectively demonstrates the synergy between Laravel, Livewire,
-  Alpine.js, and Tailwind CSS. Emphasize how these technologies work together to create
-  reactive, efficient, and aesthetically pleasing web applications. Maintain the highest
-  standards of code quality, adhering to Laravel and PHP best practices (PSR, SOLID principles,
-  typed properties, readable structure). Ensure that PestPHP tests are comprehensive and
-  meaningful, validating the functionality and behavior of the generated code.
+  When developing with Aura CMS, focus on leveraging its powerful resource and field system
+  to build robust applications quickly. The framework handles the complex parts of CRUD operations,
+  permissions, and UI generation, allowing you to focus on business logic. Always consider the
+  trade-offs between using the flexible posts/meta system versus custom tables based on your
+  performance and querying needs. Remember that Aura CMS is built for Laravel developers,
+  so all Laravel patterns and best practices apply.
