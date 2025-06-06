@@ -12,7 +12,7 @@
 
         @can('view', $model)
             @if(Route::has('aura.' . $model->getSlug() . '.view'))
-                <a href="{{ route('aura.' . $model->getSlug() . '.view', $model->id) }}" class="text-gray-500 hover:text-gray-700">
+                <a href="{{ $model->viewUrl() }}" class="text-gray-500 hover:text-gray-700">
                     <x-aura::button.transparent>
                         {{-- <x-aura::icon.view class="w-5 h-5 mr-2"/> --}}
                         {{ __('View') }}
