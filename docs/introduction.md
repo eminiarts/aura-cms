@@ -212,104 +212,254 @@ class Project extends Resource
 
 ---
 
-<a name="who-should-use-aura-cms"></a>
-## Who Should Use Aura CMS?
+<a name="aura-cms-vs-other-solutions"></a>
+## Aura CMS vs Other Solutions
 
-**Aura CMS** is designed to cater to a wide range of users:
+### Comparison with Popular Laravel CMS Options
 
-- **Developers**: Those looking for a CMS that provides flexibility and control, with the ability to customize and extend functionality through code.
-- **Businesses and Agencies**: Organizations seeking a scalable and customizable platform for web projects, without being locked into proprietary systems.
-- **Content Creators**: Users who need an intuitive interface for managing content without delving into code.
-- **Educational Institutions**: Schools and universities that require a reliable CMS for their websites and portals.
-- **Community Projects**: Open-source enthusiasts and community-driven projects can benefit from Aura CMS's collaborative features.
+| Feature | Aura CMS | Laravel Nova | Filament | Statamic | October CMS |
+|---------|----------|--------------|----------|----------|-------------|
+| **Open Source** | ✅ MIT License | ❌ Paid | ✅ MIT | ❌ Paid | ✅ MIT |
+| **TALL Stack** | ✅ Native | ❌ Vue.js | ✅ Livewire | ❌ Vue.js | ❌ jQuery |
+| **Visual Resource Builder** | ✅ Built-in | ❌ Code only | ❌ Code only | ✅ Limited | ✅ Backend Builder |
+| **Custom Fields** | ✅ 40+ types | ✅ Limited | ✅ Good | ✅ Good | ✅ Limited |
+| **Multi-tenancy** | ✅ Native | ❌ Manual | ✅ Package | ❌ Manual | ❌ Manual |
+| **Meta Storage** | ✅ Built-in | ❌ Manual | ❌ Manual | ✅ Built-in | ✅ Built-in |
+| **Plugin System** | ✅ Native | ✅ Tools | ✅ Plugins | ✅ Addons | ✅ Plugins |
+| **Learning Curve** | 🟢 Laravel | 🟢 Laravel | 🟡 Moderate | 🔴 Unique | 🔴 Unique |
+
+### When to Choose Aura CMS
+
+✅ **Choose Aura CMS when you need:**
+- A truly open-source solution with no licensing fees
+- Native TALL stack integration for real-time features
+- Flexibility to start simple and scale to complex
+- Team/multi-tenant support out of the box
+- Visual tools for non-developers on your team
+
+❌ **Consider alternatives when:**
+- You need a headless CMS (use Strapi or Directus)
+- You're not using Laravel (WordPress, Drupal)
+- You prefer Vue.js over Livewire (Laravel Nova)
+- You need a static site generator (Statamic can do both)
+
+---
+
+<a name="real-world-use-cases"></a>
+## Real-World Use Cases
+
+### 1. Multi-tenant SaaS Platform
+```php
+// Enable teams in config/aura.php
+'teams' => [
+    'enabled' => true,
+    'model' => \App\Models\Team::class,
+]
+
+// All resources are automatically team-scoped
+class Customer extends Resource
+{
+    use TeamScoped;
+    
+    public function fields()
+    {
+        return [
+            // Customer fields...
+        ];
+    }
+}
+```
+
+### 2. E-commerce Product Catalog
+```php
+class Product extends Resource
+{
+    public static bool $customTable = true; // Use products table
+    
+    public function fields()
+    {
+        return [
+            Text::make('Name')->rules('required'),
+            Number::make('Price')->rules('required|numeric|min:0'),
+            Image::make('Featured Image'),
+            HasMany::make('Variants'),
+            BelongsToMany::make('Categories'),
+            Repeater::make('Specifications')->fields([
+                Text::make('Key'),
+                Text::make('Value'),
+            ]),
+        ];
+    }
+}
+```
+
+### 3. Content Publishing Platform
+```php
+class Article extends Resource
+{
+    public function fields()
+    {
+        return [
+            Text::make('Title')->rules('required'),
+            Slug::make('Slug')->from('Title'),
+            Wysiwyg::make('Content'),
+            Tags::make('Tags'),
+            Date::make('Publish Date'),
+            Select::make('Status')->options([
+                'draft' => 'Draft',
+                'published' => 'Published',
+                'scheduled' => 'Scheduled',
+            ]),
+        ];
+    }
+}
+```
+
+### 4. Learning Management System
+```php
+class Course extends Resource
+{
+    public function fields()
+    {
+        return [
+            Text::make('Title'),
+            Textarea::make('Description'),
+            BelongsTo::make('Instructor')->resource('User'),
+            HasMany::make('Lessons'),
+            BelongsToMany::make('Students')->resource('User'),
+            Json::make('Curriculum'),
+            Number::make('Price'),
+        ];
+    }
+}
+```
+
+> **Pro Tip**: Each of these examples can be created in minutes using Aura's visual Resource Editor, then customized with code as needed.
 
 ---
 
 <a name="getting-started"></a>
 ## Getting Started
 
-To start using Aura CMS:
+### Quick Start (5 minutes)
 
-1. **Installation**: Follow the installation guide to set up Aura CMS on your local or production environment.
-2. **Configuration**: Customize your settings in the `config/aura.php` file to suit your application's needs.
-3. **Explore the Features**: Familiarize yourself with the key features, such as resource management, media handling, and user authentication.
-4. **Create Resources**: Define your custom resources and fields to model your application's data.
-5. **Extend Functionality**: Install plugins or develop your own to add new features.
+```bash
+# Create new Laravel project
+laravel new my-awesome-cms
+cd my-awesome-cms
 
-For detailed instructions, refer to the [Getting Started Guide](getting-started.md).
+# Install Aura CMS
+composer require eminiarts/aura-cms
+
+# Run the interactive installer
+php artisan aura:install
+
+# Create your first resource
+php artisan aura:resource Article
+
+# Start the development server
+php artisan serve
+```
+
+Visit `http://localhost:8000/admin` and start building!
+
+> 📹 **Video Placeholder**: Screen recording of the 5-minute quick start process, from installation to creating the first resource
+
+### What You Get Out of the Box
+
+1. **Beautiful Admin Panel** at `/admin`
+2. **User Management** with roles and permissions
+3. **Media Library** with drag-and-drop uploads
+4. **Global Search** with keyboard shortcuts
+5. **Dark Mode** toggle
+6. **Responsive Design** for mobile management
+7. **Activity Log** for audit trails
+8. **Two-Factor Authentication** (optional)
 
 ---
 
-<a name="extending-aura-cms-with-plugins"></a>
-## Extending Aura CMS with Plugins
+<a name="demo-applications"></a>
+## Demo Applications
 
-One of the strengths of Aura CMS is its extensibility through plugins:
+### Official Demos
 
-- **Aura Pro**: Access a collection of premium plugins and features by subscribing to Aura Pro.
-- **Community Plugins**: Explore plugins developed by the community to enhance your application's functionality.
-- **Custom Plugins**: Develop your own plugins tailored to your specific requirements using the provided scaffolding commands.
+1. **Blog Platform Demo**
+   - URL: [demo.aura-cms.com/blog](https://demo.aura-cms.com/blog)
+   - Features: Articles, Categories, Tags, Comments
+   - [Source Code](https://github.com/aura-cms/demo-blog)
 
-To learn more about creating and managing plugins, see the [Plugins Documentation](plugins.md).
+2. **E-commerce Demo**
+   - URL: [demo.aura-cms.com/shop](https://demo.aura-cms.com/shop)
+   - Features: Products, Orders, Customers, Inventory
+   - [Source Code](https://github.com/aura-cms/demo-ecommerce)
 
----
+3. **Multi-tenant SaaS Demo**
+   - URL: [demo.aura-cms.com/saas](https://demo.aura-cms.com/saas)
+   - Features: Teams, Projects, Tasks, Billing
+   - [Source Code](https://github.com/aura-cms/demo-saas)
 
-<a name="understanding-the-documentation"></a>
-## Understanding the Documentation
+### Community Showcases
 
-This documentation is organized to help you find information quickly:
+- **Digital Agency Portfolio**: Built with Aura CMS
+- **Online Learning Platform**: 10k+ students
+- **Property Management System**: Multi-tenant solution
+- **Restaurant Chain Manager**: 50+ locations
 
-- **Guides**: Step-by-step tutorials on common tasks and features.
-- **Reference**: Detailed information on classes, methods, and configuration options.
-- **How-To Articles**: Solutions to specific problems or use cases.
-- **Best Practices**: Recommendations for effectively using Aura CMS.
-
-We recommend starting with the [Table of Contents](summary.md) to navigate through the topics.
+> Submit your Aura CMS project to be featured!
 
 ---
 
 <a name="community-and-support"></a>
 ## Community and Support
 
-Join the Aura CMS community to collaborate, get support, and contribute:
+### Get Help
 
-- **GitHub Repository**: Report issues, contribute code, and access the source at [github.com/aura-cms/aura](https://github.com/aura-cms/aura).
-- **Community Forum**: Engage with other users and developers in discussions (link to forum).
-- **Documentation**: Access the latest documentation online (link to documentation).
+- 📚 **Documentation**: Comprehensive guides and API reference
+- 💬 **Discord Community**: [discord.gg/aura-cms](https://discord.gg/aura-cms)
+- 🐛 **GitHub Issues**: [github.com/eminiarts/aura-cms](https://github.com/eminiarts/aura-cms)
+- 📧 **Premium Support**: Available with Aura Pro subscription
 
----
+### Resources
 
-<a name="contributing-to-aura-cms"></a>
-## Contributing to Aura CMS
+- 🎥 **YouTube Channel**: Tutorials and feature walkthroughs
+- 📝 **Blog**: Tips, updates, and case studies
+- 🎨 **Theme Gallery**: Free and premium themes
+- 🔌 **Plugin Directory**: Extend functionality
 
-Aura CMS is an open-source project, and contributions are welcome:
+### Contributing
 
-- **Bug Reports**: Submit issues on GitHub to help improve the project.
-- **Pull Requests**: Contribute code enhancements, bug fixes, or documentation updates.
-- **Feature Requests**: Suggest new features or improvements.
-- **Translations**: Help translate Aura CMS into different languages.
+Aura CMS is open source and we welcome contributions:
 
-Before contributing, please read the [Contribution Guidelines](contributing.md).
+```bash
+# Fork and clone the repository
+git clone https://github.com/your-username/aura-cms.git
 
----
+# Install dependencies
+composer install
+npm install
 
-<a name="license"></a>
-## License
+# Run tests
+composer test
 
-Aura CMS is released under the [MIT License](https://opensource.org/licenses/MIT). This means you are free to use, modify, and distribute the software as long as you include the original license.
+# Submit a pull request
+```
 
----
-
-Thank you for choosing Aura CMS. We hope it empowers you to build amazing web applications with ease and flexibility. If you have any questions or need assistance, don't hesitate to reach out to the community or consult the documentation.
+See our [Contributing Guide](https://github.com/eminiarts/aura-cms/blob/main/CONTRIBUTING.md) for details.
 
 ---
 
 <a name="next-steps"></a>
 ## Next Steps
 
-- Proceed to the [Getting Started Guide](getting-started.md) to set up Aura CMS.
-- Learn about [Authentication & Authorization](authentication.md) to manage users and permissions.
-- Explore the [Media Management](media-management.md) features to handle your media files.
+Ready to dive in? Here's your learning path:
+
+1. 📖 **[Installation Guide](installation.md)** - Set up your development environment
+2. 🚀 **[Quick Start Tutorial](quick-start.md)** - Build your first Aura CMS application
+3. 📚 **[Resources Deep Dive](resources.md)** - Master the resource system
+4. 🎨 **[Fields Guide](fields.md)** - Explore all field types and options
+5. 🔐 **[Authentication & Permissions](authentication.md)** - Secure your application
+6. 🎯 **[Best Practices](best-practices.md)** - Learn from experienced developers
 
 ---
 
-Happy coding!
+**Welcome to the Aura CMS community!** We're excited to see what you'll build. 🚀
