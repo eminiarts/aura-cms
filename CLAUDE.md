@@ -1,69 +1,82 @@
-# Aura CMS - Laravel TALL Stack CMS
+# Aura CMS - Modern Laravel CMS on TALL Stack
 
 ## Project Description
 
-Aura CMS is a modern, feature-rich content management system built with Laravel and the TALL stack. It provides a comprehensive set of tools for managing and publishing content.
+Aura CMS is a powerful, flexible content management system built on the TALL stack (Tailwind CSS, Alpine.js, Laravel, and Livewire). It combines the best practices of modern Laravel development with an intuitive admin interface, making it perfect for developers who want to build custom applications quickly without sacrificing flexibility.
 
-### 1. Web Application (Laravel - TALL Stack)
-The primary web interface built with Laravel and the TALL stack provides comprehensive meeting management capabilities:
-- **Backend**: Laravel PHP 8.1+ with robust API endpoints
-- **Frontend**: Tailwind CSS, Alpine.js, and Livewire for reactive UI
-- **Database**: PostgreSQL for reliable data persistence
-- **Authentication**: Laravel Sanctum for secure API authentication
-- **AI Integration**: OpenAI Whisper for transcription and GPT for analysis
+### Core Architecture
+- **Resource System**: Similar to WordPress post types but supercharged with Laravel's Eloquent
+- **Dynamic Fields**: 40+ customizable field types for building complex content structures
+- **Visual Resource Editor**: Build resources and fields visually through the UI
+- **Flexible Storage**: Start with posts table, migrate to custom tables when ready
+- **Multi-tenancy**: Built-in team management support (optional)
+- **Plugin System**: Extend functionality with custom plugins
 
+### Technology Stack
+- **Backend**: Laravel 10+ with PHP 8.1+ (strict typing, modern features)
+- **Frontend**: Livewire 3 for reactive UI components
+- **Styling**: Tailwind CSS with JIT compilation
+- **JavaScript**: Alpine.js for lightweight interactivity
+- **Database**: MySQL/PostgreSQL with Eloquent ORM
+- **Testing**: PestPHP for comprehensive test coverage
+- **Authentication**: Laravel Fortify with optional teams
+- **Media**: Built-in media library with image optimization
+- **Search**: Global search with keyboard shortcuts (⇧⌘K)
 
 ## Development Stack
 
 ### Backend (Laravel)
 - PHP 8.1+ with strict typing and modern features
-- Laravel framework with SOLID principles
-- PostgreSQL database
-- Queue system for background processing
+- Laravel 10+ framework with SOLID principles
+- MySQL/PostgreSQL database support
+- Queue system for background jobs (media processing)
+- Event-driven architecture for extensibility
 - Comprehensive testing with PestPHP
 
-### Frontend Web (TALL Stack)
-- Tailwind CSS for utility-first styling
-- Alpine.js for lightweight JavaScript interactivity
-- Livewire 3 for dynamic server-side rendering
-- Laravel Blade for templating
+### Frontend (TALL Stack)
+- Tailwind CSS 3+ for utility-first styling
+- Alpine.js 3+ for DOM manipulation
+- Livewire 3 for server-side reactivity
+- Laravel Blade components for reusable UI
+- Vite for asset bundling
 
 ---
 
-# .codex_rules_tall_pest
-name: "TALL Stack & PestPHP Specialist"
+# .codex_rules_aura_cms
+name: "Aura CMS Development Specialist"
 description: >
-  You are a specialist in developing applications using the TALL stack (Tailwind CSS, Alpine.js, Livewire, Laravel)
-  and writing tests with PestPHP. Your primary goal is to generate complete, high-quality,
-  and well-tested code according to the provided specifications and adhering to the guidelines below.
-  You should emphasize best practices for each technology in the stack.
+  You are a specialist in developing with Aura CMS, a modern Laravel-based content management system
+  built on the TALL stack. Your primary goal is to generate complete, high-quality, and well-tested
+  code for Aura CMS resources, fields, plugins, and customizations while adhering to the framework's
+  conventions and best practices.
 
 # -------------------------------------------------------------------
 # Project Instructions
 # -------------------------------------------------------------------
 instructions:
-  - "Always refer to the project specification and these guidelines before generating code."
-  - "Produce comprehensive and fully functional code for each requested feature or component."
-  - "Ensure that all generated Laravel code is testable and provide corresponding PestPHP tests."
-  - "Prioritize clarity, maintainability, and adherence to the TALL stack's conventions."
-  - "When creating components (Livewire or Blade), ensure they are self-contained and reusable where appropriate."
-  - "Generate code that is secure and performant by default."
-  - "Consider mobile app integration when building API endpoints and ensure proper API responses."
+  - "Always refer to the Aura CMS architecture and conventions before generating code."
+  - "Produce comprehensive and fully functional code for resources, fields, and plugins."
+  - "Ensure all code follows Laravel and Aura CMS best practices."
+  - "Prioritize clarity, maintainability, and adherence to the TALL stack conventions."
+  - "When creating resources, use the appropriate traits and base classes."
+  - "Generate secure code that handles permissions and team scoping properly."
+  - "Consider performance implications, especially for large datasets."
+  - "Provide PestPHP tests for all new functionality."
 
 # -------------------------------------------------------------------
 # Project Overview
 # -------------------------------------------------------------------
 overview: >
-  This project utilizes the TALL stack for building modern web applications with a companion React Native mobile app.
-  The core technologies are:
-   • Laravel (latest stable version) on PHP 8.1+
-   • Livewire for dynamic frontend components.
-   • Alpine.js for client-side interactivity.
-   • Tailwind CSS for utility-first styling.
-   • PestPHP for testing (feature and unit tests).
-   • PostgreSQL as the primary database.
-   • React Native with Expo for the mobile application.
-   • Laravel Sanctum for API authentication across platforms.
+  Aura CMS is a comprehensive content management system that provides:
+   • Resource System: Enhanced Eloquent models with built-in CMS features
+   • Field System: 40+ field types with conditional logic and validation
+   • Visual Resource Editor: UI-based resource and field configuration
+   • Team Management: Optional multi-tenancy with team-based permissions
+   • Media Management: Built-in media library with optimization
+   • Plugin Architecture: Extensible system for custom functionality
+   • Theme System: Customizable UI with dark mode support
+   • Global Search: Quick navigation with keyboard shortcuts
+   • Role-Based Access Control: Comprehensive permissions system
 
 
 # -------------------------------------------------------------------
