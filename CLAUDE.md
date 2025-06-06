@@ -178,23 +178,23 @@ rules:
   - "Avoid N+1 query problems by using eager loading (e.g., `with()`, `load()`)."
 
   # -------------------------------------------------
-  # Livewire Rules
+  # Aura CMS Livewire Component Rules
   # -------------------------------------------------
-  - "Create Livewire components for dynamic and interactive UI elements."
-  - "Livewire components should be placed in `app/Http/Livewire` (or `app/Livewire` in newer Laravel versions) and their views in `resources/views/livewire`."
-  - "Keep Livewire components focused on a single responsibility."
-  - "Use public properties for data binding. Initialize them in the `mount()` method or as class properties."
-  - "Use Livewire's lifecycle hooks (`mount`, `boot`, `hydrate`, `updating`, `updated`, etc.) appropriately."
-  - "Validate incoming data within Livewire components using the `$this->validate()` method with rules defined in the component or a Form Request."
-  - "Use `wire:model` for two-way data binding. Use `.defer` for performance optimization where immediate updates are not needed."
-  - "Use `wire:click`, `wire:submit`, `wire:keydown`, etc., for handling user interactions."
-  - "Emit events (`$this->emit()`) to communicate between Livewire components or with Alpine.js. Listen for events using `protected $listeners` or `@this.on()` in Alpine."
-  - "Use `wire:loading` to provide visual feedback during network requests."
-  - "When redirecting from a Livewire component, use `return redirect()->route('routeName');`."
-  - "For complex state management within a component, consider using protected methods or custom logic."
-  - "When rendering lists, always use `wire:key` with a unique value for each item."
-  - "Avoid complex JavaScript manipulation within Livewire components; prefer Alpine.js for such tasks."
-  - "Optimize Livewire components by minimizing data transferred between server and client. Only include necessary public properties."
+  - "Extend Aura's base Livewire components when appropriate (e.g., `Table\Table` for listings)."
+  - "Use Aura's built-in traits: `WithLivewireHelpers`, `InteractsWithTable`, `InteractsWithFields`."
+  - "Follow Aura's naming convention: place in `src/Livewire/` for core, `app/Http/Livewire/` for custom."
+  - "Use Aura's modal and slide-over system for forms and dialogs."
+  - "Implement proper team scoping in queries when teams are enabled."
+  - "Use Aura's notification system: `$this->notify()` for user feedback."
+  - "Leverage Aura's table component features: sorting, filtering, bulk actions."
+  - "Use field validation through Aura's field system rather than manual validation."
+  - "Emit Aura-specific events: 'saved', 'deleted', 'updated' for resource operations."
+  - "Use Aura's permission checks: `$this->authorize()` with resource policies."
+  - "Implement breadcrumbs using Aura's breadcrumb system."
+  - "Use Aura's global search integration for searchable components."
+  - "Follow Aura's modal patterns: CreateModal, EditModal, ViewModal."
+  - "Use wire:model with Aura field components for proper data binding."
+  - "Leverage Aura's confirmation dialogs for destructive actions."
 
   # -------------------------------------------------
   # Alpine.js Rules
@@ -246,15 +246,20 @@ rules:
   - "Follow the 'Arrange, Act, Assert' (AAA) pattern in your tests."
 
   # -------------------------------------------------
-  # Blade Templates & Components
+  # Aura CMS Blade Components & Views
   # -------------------------------------------------
-  - "Use Blade templating for views."
-  - "Utilize Blade layouts (`@extends`, `@section`, `@yield`) for consistent page structure."
-  - "Create reusable UI elements as Blade components (class-based or anonymous) and place them in `resources/views/components`."
-  - "Pass data to Blade components explicitly via attributes."
-  - "Use slots for flexible content injection into Blade components."
-  - "Escape output using `{{ $variable }}` by default to prevent XSS attacks. Use `{!! $variable !!}` only when HTML output is intended and sanitized."
-  - "Keep Blade templates clean and readable. Avoid complex PHP logic directly in templates; move it to controllers, Livewire components, or view composers."
+  - "Use Aura's component library: `<x-aura::button>`, `<x-aura::input>`, `<x-aura::card>`, etc."
+  - "Extend Aura's layout: `<x-aura::layout.app>` for authenticated pages."
+  - "Use Aura's field components for forms: `<x-aura::fields.text>`, `<x-aura::fields.select>`, etc."
+  - "Leverage Aura's dialog components: `<x-aura::dialog>`, `<x-aura::dialog.panel>`."
+  - "Use Aura's table components for data display: `<x-aura::table>`, `<x-aura::table.row>`."
+  - "Apply Aura's icon system: `<x-aura::icon name='icon-name' />`."
+  - "Use Aura's navigation components for menus and breadcrumbs."
+  - "Follow Aura's view naming convention: `aura.resource-name.action`."
+  - "Place custom field views in `resources/views/fields/`."
+  - "Use Aura's notification component for flash messages."
+  - "Leverage Aura's permission directives: `@can()`, `@cannot()`."
+  - "Use Aura's theme variables for consistent styling."
 
   # -------------------------------------------------
   # Asset Bundling
