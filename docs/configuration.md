@@ -803,89 +803,274 @@ class RevenueWidget extends Widget
 
 ---
 
-<a name="modifying-configuration"></a>
-## Modifying Configuration
-
-Aura CMS provides multiple ways to modify its configuration to suit your development workflow and project requirements.
-
-<a name="using-the-install-config-command"></a>
-### Using the Install Config Command
-
-You can modify Aura CMS's configuration using the built-in Artisan command:
-
-```bash
-php artisan aura:install-config
-```
-
-This command will guide you through a series of prompts to update various configuration settings, including:
-
-- Enabling or disabling teams.
-- Modifying default features.
-- Allowing or disallowing user registration.
-- Customizing the default theme.
-
-*Figure 14: Running the Install Config Command*
-
-![Figure 14: Running the Install Config Command](placeholder-image.png)
-
-<a name="manually-editing-configuration-files"></a>
-### Manually Editing Configuration Files
-
-For more granular control, you can directly edit the `config/aura.php` and `aura-settings.php` files.
-
-**Example: Enabling Two-Factor Authentication**
-
-```php
-'auth' => [
-    '2fa' => true,
-],
-```
-
-*Figure 15: Manually Editing Configuration Files*
-
-![Figure 15: Manually Editing Configuration Files](placeholder-image.png)
-
----
-
 <a name="environment-variables"></a>
 ## Environment Variables
 
-Aura CMS utilizes environment variables to manage certain configuration options. These variables are defined in your `.env` file and can override the default settings in `config/aura.php`.
+Aura CMS supports environment-specific configuration through `.env` files:
 
-**Common Environment Variables:**
+### Core Variables
 
-- **AURA_PATH**: Sets the admin panel path.
-- **AURA_DOMAIN**: Restricts Aura CMS to a specific domain.
-- **AURA_TEAMS**: Enables or disables team functionality.
-- **AURA_REGISTRATION**: Allows or disallows user registration.
+```env
+# Admin Panel Access
+AURA_PATH=admin                    # URL path for admin panel
+AURA_DOMAIN=admin.mydomain.com     # Restrict to specific domain
 
-**Example: Setting Environment Variables**
+# Features
+AURA_TEAMS=true                    # Enable/disable teams
+AURA_REGISTRATION=false            # Public registration
 
-```dotenv
-AURA_PATH=dashboard
-AURA_DOMAIN=admin.yourdomain.com
-AURA_TEAMS=false
-AURA_REGISTRATION=true
+# Application
+APP_NAME="My Aura CMS"
+APP_ENV=production
+APP_DEBUG=false
+APP_URL=https://mydomain.com
+
+# Database
+DB_CONNECTION=mysql
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_DATABASE=aura_cms
+DB_USERNAME=root
+DB_PASSWORD=secret
+
+# Cache & Session
+CACHE_DRIVER=redis
+SESSION_DRIVER=redis
+QUEUE_CONNECTION=redis
+
+# Storage
+FILESYSTEM_DISK=s3
+AWS_ACCESS_KEY_ID=
+AWS_SECRET_ACCESS_KEY=
+AWS_DEFAULT_REGION=us-east-1
+AWS_BUCKET=my-bucket
 ```
 
-*Figure 16: Setting Environment Variables*
+### Environment-Specific Configs
 
-![Figure 16: Setting Environment Variables](placeholder-image.png)
+```php
+// config/aura.php
+'features' => [
+    'resource_editor' => env('APP_DEBUG', false),
+    'debug_bar' => env('APP_DEBUG', false),
+],
+
+'media' => [
+    'disk' => env('MEDIA_DISK', 'public'),
+    'max_file_size' => env('MEDIA_MAX_SIZE', 10000),
+],
+```
+
+> **Pro Tip**: Use different `.env` files for each environment:
+> - `.env.local` - Local development
+> - `.env.staging` - Staging server
+> - `.env.production` - Production server
 
 ---
 
-<a name="references"></a>
-## References
+<a name="performance-optimization"></a>
+## Performance Optimization
 
-- [Laravel Configuration Documentation](https://laravel.com/docs/configuration)
-- [Livewire Documentation](https://laravel-livewire.com/docs)
-- [Tailwind CSS Documentation](https://tailwindcss.com/docs)
-- [Alpine.js Documentation](https://alpinejs.dev/)
+### Configuration Caching
 
-*Video 1: Understanding Aura CMS Configuration*
+```bash
+# Cache all configuration (production)
+php artisan config:cache
+php artisan route:cache
+php artisan view:cache
 
-![Video 1: Understanding Aura CMS Configuration](placeholder-video.mp4)
+# Clear caches (after changes)
+php artisan config:clear
+php artisan route:clear
+php artisan view:clear
+```
+
+### Optimized Settings
+
+```php
+// Production optimizations
+'features' => [
+    'resource_editor' => false,      // Disable visual editor
+    'last_visited_pages' => false,   // Reduce DB queries
+],
+
+'media' => [
+    'quality' => 75,                 // Balance quality/size
+    'generate_thumbnails' => true,   // Use queue worker
+],
+
+// Use Redis for better performance
+'cache' => ['driver' => 'redis'],
+'session' => ['driver' => 'redis'],
+'queue' => ['default' => 'redis'],
+```
 
 ---
 
-For further assistance or to report issues with the configuration, please refer to our [Support](support.md) section.
+<a name="common-configuration-scenarios"></a>
+## Common Configuration Scenarios
+
+### 1. Blog Platform
+
+```php
+// config/aura.php
+'teams' => false,                    // Single author
+'features' => [
+    'global_search' => true,
+    'resource_editor' => false,
+    'create_teams' => false,
+],
+'auth' => [
+    'registration' => false,         // No public authors
+    'user_invitations' => false,
+],
+```
+
+### 2. SaaS Application
+
+```php
+'teams' => true,                     // Multi-tenant
+'features' => [
+    'notifications' => true,
+    'custom_tables_for_resources' => true,
+],
+'auth' => [
+    'registration' => true,          // Self-service
+    '2fa' => true,                   // Security
+    'create_teams' => true,
+],
+```
+
+### 3. Enterprise CMS
+
+```php
+'domain' => 'cms.company.com',       // Dedicated domain
+'teams' => true,                     // Departments
+'features' => [
+    'resource_editor' => false,      // IT controlled
+    'plugins' => false,              // No custom code
+],
+'auth' => [
+    'registration' => false,         // IT provisioned
+    'user_invitations' => true,      // Controlled access
+    '2fa' => true,                   // Required
+],
+```
+
+### 4. Development Agency
+
+```php
+'teams' => true,                     // Per client
+'features' => [
+    'resource_editor' => true,       // Rapid development
+    'custom_tables_for_resources' => true,
+],
+'theme' => [
+    'color-palette' => 'brand',      // Agency branding
+],
+```
+
+---
+
+<a name="configuration-best-practices"></a>
+## Configuration Best Practices
+
+### 1. Use Environment Variables
+
+```php
+// ✅ Good
+'path' => env('AURA_PATH', 'admin'),
+
+// ❌ Bad
+'path' => 'admin',  // Hard-coded
+```
+
+### 2. Document Custom Settings
+
+```php
+// config/aura.php
+
+/*
+|--------------------------------------------------------------------------
+| Custom Widget Configuration
+|--------------------------------------------------------------------------
+|
+| These settings control our custom dashboard widgets.
+| Updated: 2024-01-15 by John Doe
+|
+*/
+'custom_widgets' => [
+    'sales_dashboard' => true,
+    'analytics_panel' => env('ENABLE_ANALYTICS', false),
+],
+```
+
+### 3. Group Related Settings
+
+```php
+// Group by feature
+'ecommerce' => [
+    'enable_cart' => true,
+    'enable_checkout' => true,
+    'payment_providers' => ['stripe', 'paypal'],
+],
+```
+
+### 4. Version Control Considerations
+
+```gitignore
+# .gitignore
+.env
+.env.backup
+config/aura-local.php  # Local overrides
+```
+
+---
+
+<a name="configuration-troubleshooting"></a>
+## Troubleshooting
+
+### Configuration Not Taking Effect
+
+```bash
+# Clear all caches
+php artisan config:clear
+php artisan cache:clear
+php artisan view:clear
+php artisan route:clear
+
+# Rebuild caches
+php artisan config:cache
+```
+
+### Finding Configuration Issues
+
+```bash
+# Dump current configuration
+php artisan config:show aura
+
+# Test specific values
+php artisan tinker
+>>> config('aura.teams')
+>>> config('aura.features.global_search')
+```
+
+### Common Issues
+
+1. **Changes not reflected**: Clear config cache
+2. **ENV not working**: Check `.env` file exists and is readable
+3. **Routes not found**: Check `path` and `domain` settings
+4. **Features missing**: Verify feature flags are enabled
+5. **Theme not changing**: Clear view cache
+
+> **Need Help?** 
+> - Check our [FAQ](troubleshooting.md)
+> - Visit the [Community Forum](https://forum.aura-cms.com)
+> - Report issues on [GitHub](https://github.com/eminiarts/aura-cms)
+
+---
+
+**Next Steps:**
+- 📚 [Create your first Resource](resources.md)
+- 🎨 [Customize the theme](themes.md)
+- 🔌 [Develop a plugin](plugins.md)
