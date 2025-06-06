@@ -185,8 +185,8 @@ class Project extends Resource
     }
 }
 
-<a name="components"></a>
-### Components
+<a name="component-customization"></a>
+### Component Customization
 
 ```php
 'components' => [
@@ -196,25 +196,45 @@ class Project extends Resource
 ],
 ```
 
-- **Description**: Customizes the Livewire components used by Aura CMS.
-- **Customization**: Override default components by specifying your custom component classes.
-
-**Example:**
+Replace core Livewire components with your own implementations:
 
 ```php
+// Custom Dashboard Example
+namespace App\Http\Livewire;
+
+use Aura\Base\Livewire\Dashboard as BaseDashboard;
+
+class CustomDashboard extends BaseDashboard
+{
+    public function render()
+    {
+        // Add custom metrics
+        $metrics = [
+            'total_revenue' => Order::sum('total'),
+            'new_customers' => User::whereDate('created_at', today())->count(),
+            'pending_orders' => Order::where('status', 'pending')->count(),
+        ];
+        
+        return view('livewire.custom-dashboard', [
+            'metrics' => $metrics
+        ])->layout('aura::components.layout.app');
+    }
+}
+
+// Register in config/aura.php
 'components' => [
     'dashboard' => App\Http\Livewire\CustomDashboard::class,
-    'profile' => App\Http\Livewire\CustomProfile::class,
-    'settings' => App\Http\Livewire\CustomSettings::class,
 ],
 ```
 
-*Figure 4: Customizing Livewire Components*
+**Common Component Customizations:**
+- Dashboard with custom widgets
+- Profile with additional fields
+- Settings with company-specific options
+- Custom navigation components
 
-![Figure 4: Customizing Livewire Components](placeholder-image.png)
-
-<a name="resources"></a>
-### Resources
+<a name="resource-management"></a>
+### Resource Management
 
 ```php
 'resources' => [
@@ -223,167 +243,229 @@ class Project extends Resource
     'team-invitation' => Aura\Base\Resources\TeamInvitation::class,
     'role' => Aura\Base\Resources\Role::class,
     'permission' => Aura\Base\Resources\Permission::class,
-    'post' => Aura\Base\Resources\Post::class,
     'option' => Aura\Base\Resources\Option::class,
     'attachment' => Aura\Base\Resources\Attachment::class,
-    'category' => Aura\Base\Resources\Category::class,
-    'tag' => Aura\Base\Resources\Tag::class,
 ],
 ```
 
-- **Description**: Defines the resources that Aura CMS manages.
-- **Customization**: Add, remove, or override resource classes to extend or modify functionality.
-
-**Example: Adding a Custom Resource**
+Customize or extend built-in resources:
 
 ```php
+// Override built-in User resource
+namespace App\Aura\Resources;
+
+use Aura\Base\Resources\User as BaseUser;
+use Aura\Base\Fields\Text;
+use Aura\Base\Fields\Select;
+
+class User extends BaseUser
+{
+    public function fields()
+    {
+        return array_merge(parent::fields(), [
+            Text::make('Department'),
+            Select::make('Office Location')->options([
+                'nyc' => 'New York',
+                'lon' => 'London',
+                'tok' => 'Tokyo',
+            ]),
+        ]);
+    }
+}
+
+// Register in config
 'resources' => [
-    // Existing resources...
-    'project' => App\Aura\Resources\Project::class,
+    'user' => App\Aura\Resources\User::class,
+    // ... other resources
 ],
 ```
 
-*Figure 5: Adding a Custom Resource*
+**Pro Tip**: Resources are auto-discovered from `app/Aura/Resources/`, but you can override them here for custom implementations.
 
-![Figure 5: Adding a Custom Resource](placeholder-image.png)
-
-<a name="theme"></a>
-### Theme
+<a name="theme-configuration"></a>
+### Theme Configuration
 
 ```php
 'theme' => [
     'color-palette' => 'aura',
     'gray-color-palette' => 'slate',
     'darkmode-type' => 'auto',
-
     'sidebar-size' => 'standard',
     'sidebar-type' => 'primary',
     'sidebar-darkmode-type' => 'dark',
-
     'login-bg' => false,
     'login-bg-darkmode' => false,
-
     'app-favicon' => false,
     'app-favicon-darkmode' => false,
 ],
 ```
 
-- **Description**: Customizes the visual aspects of Aura CMS, including color palettes, sidebar styles, and dark mode settings.
-- **Options**:
-  - **color-palette**: Defines the primary color scheme.
-  - **gray-color-palette**: Defines the grayscale palette.
-  - **darkmode-type**: Sets the behavior of dark mode (`auto`, `light`, `dark`).
-  - **sidebar-size**: Determines the size of the sidebar (`standard`, `compact`).
-  - **sidebar-type**: Sets the sidebar color type (`primary`, `light`, `dark`).
-  - **sidebar-darkmode-type**: Sets the sidebar style in dark mode.
-  - **login-bg**: Enables or disables a background image on the login page.
-  - **login-bg-darkmode**: Enables or disables a background image on the login page in dark mode.
-  - **app-favicon**: Sets a custom favicon for the application.
-  - **app-favicon-darkmode**: Sets a custom favicon for dark mode.
+#### Available Color Palettes
 
-**Example: Changing the Color Palette**
+| Primary Colors | Gray Palettes | Description |
+|----------------|---------------|-------------|
+| `aura` (default) | `slate` | Aura's signature purple |
+| `red`, `orange`, `amber` | `gray` | Warm tones |
+| `yellow`, `lime`, `green` | `zinc` | Nature inspired |
+| `emerald`, `teal`, `cyan` | `neutral` | Cool tones |
+| `sky`, `blue`, `indigo` | `stone` | Professional |
+| `violet`, `purple`, `fuchsia` | `purple-slate` | Creative |
+| `pink`, `rose` | `blue` | Soft tones |
+
+#### Theme Examples
 
 ```php
+// Corporate Blue Theme
 'theme' => [
     'color-palette' => 'blue',
-    'gray-color-palette' => 'gray',
-    'darkmode-type' => 'dark',
-
-    'sidebar-size' => 'compact',
+    'gray-color-palette' => 'slate',
+    'darkmode-type' => 'auto',
     'sidebar-type' => 'dark',
-    'sidebar-darkmode-type' => 'dark',
+],
 
-    'login-bg' => true,
-    'login-bg-darkmode' => true,
+// Creative Agency Theme
+'theme' => [
+    'color-palette' => 'purple',
+    'gray-color-palette' => 'zinc',
+    'darkmode-type' => 'dark',
+    'sidebar-type' => 'primary',
+    'sidebar-size' => 'compact',
+],
 
-    'app-favicon' => 'favicon-light.png',
-    'app-favicon-darkmode' => 'favicon-dark.png',
+// Minimal Light Theme
+'theme' => [
+    'color-palette' => 'gray',
+    'gray-color-palette' => 'neutral',
+    'darkmode-type' => 'light',
+    'sidebar-type' => 'light',
 ],
 ```
 
-*Figure 6: Customizing the Theme*
+#### Custom Branding
 
-![Figure 6: Customizing the Theme](placeholder-image.png)
+```php
+// Custom login backgrounds
+'login-bg' => 'images/login-bg-light.jpg',
+'login-bg-darkmode' => 'images/login-bg-dark.jpg',
 
-<a name="views"></a>
-### Views
+// Custom favicons
+'app-favicon' => 'favicons/light.ico',
+'app-favicon-darkmode' => 'favicons/dark.ico',
+```
+
+> **Pro Tip**: Test different color combinations in real-time using the Settings page in the admin panel
+
+<a name="view-customization"></a>
+### View Customization
 
 ```php
 'views' => [
-    'layout' => 'aura::layouts.app',
-    'login-layout' => 'aura::layout.login',
+    'layout' => 'aura::components.layout.app',
+    'login-layout' => 'aura::components.layout.login',
     'dashboard' => 'aura::dashboard',
     'index' => 'aura::index',
     'view' => 'aura::view',
     'create' => 'aura::create',
     'edit' => 'aura::edit',
     'navigation' => 'aura::components.navigation',
-    'logo' => 'aura::application-logo',
+    'logo' => 'aura::components.application-logo',
 ],
 ```
 
-- **Description**: Specifies the Blade view templates used by Aura CMS.
-- **Customization**: Override default views by pointing to your custom Blade templates.
-
-**Example: Overriding the Dashboard View**
+Override any view to customize the UI:
 
 ```php
+// Custom views example
 'views' => [
-    'dashboard' => 'custom.dashboard',
+    // Use custom layout
+    'layout' => 'layouts.admin',
+    
+    // Custom dashboard
+    'dashboard' => 'admin.dashboard',
+    
+    // Custom logo component
+    'logo' => 'components.company-logo',
+    
+    // Custom navigation
+    'navigation' => 'components.custom-nav',
 ],
 ```
 
-*Figure 7: Overriding the Dashboard View*
+**Creating Custom Views:**
 
-![Figure 7: Overriding the Dashboard View](placeholder-image.png)
+```blade
+{{-- resources/views/admin/dashboard.blade.php --}}
+@extends('aura::components.layout.app')
 
-<a name="features"></a>
-### Features
+@section('content')
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+    {{-- Custom dashboard content --}}
+    <x-aura::card>
+        <h3>Welcome {{ auth()->user()->name }}</h3>
+        {{-- Your custom metrics --}}
+    </x-aura::card>
+</div>
+@endsection
+```
 
+<a name="feature-toggles"></a>
+### Feature Toggles
+
+```php
+'features' => [
+    'global_search' => true,              // ⇧⌘K quick search
+    'bookmarks' => true,                  // Save favorite pages
+    'last_visited_pages' => true,         // Recent pages tracking
+    'notifications' => true,              // In-app notifications
+    'plugins' => true,                    // Plugin system
+    'settings' => true,                   // Settings page
+    'profile' => true,                    // User profile page
+    'create_resource' => true,            // Resource creation UI
+    'resource_view' => true,              // Resource viewing
+    'resource_edit' => true,              // Resource editing
+    'resource_editor' => config('app.env') == 'local',  // Visual editor
+    'custom_tables_for_resources' => false,  // Storage strategy
+],
+```
+
+#### Feature Scenarios
+
+**Minimal Setup (Content Viewers)**
 ```php
 'features' => [
     'global_search' => true,
     'bookmarks' => true,
-    'last_visited_pages' => true,
-    'notifications' => true,
-    'plugins' => true,
-    'settings' => true,
-    'profile' => true,
-    'create_resource' => true,
-    'resource_view' => true,
-    'resource_edit' => true,
-    'resource_editor' => config('app.env') == 'local' ? true : false,
-    'custom_tables_for_resources' => false, // default = false
+    'create_resource' => false,
+    'resource_edit' => false,
+    'resource_editor' => false,
+    'settings' => false,
 ],
 ```
 
-- **Description**: Toggles various features within Aura CMS.
-- **Options**:
-  - **global_search**: Enables the global search functionality.
-  - **bookmarks**: Allows users to bookmark pages.
-  - **last_visited_pages**: Tracks and displays the last visited pages.
-  - **notifications**: Enables in-app notifications.
-  - **plugins**: Allows the use of plugins to extend functionality.
-  - **settings**: Provides access to settings within the CMS.
-  - **profile**: Enables user profile management.
-  - **create_resource**: Allows creation of new resources.
-  - **resource_view**: Enables viewing of resources.
-  - **resource_edit**: Allows editing of resources.
-  - **resource_editor**: Enables the resource editor (typically enabled in local environments).
-  - **custom_tables_for_resources**: Switches between using the default `posts` and `meta` tables or custom tables for resources.
-
-**Example: Disabling Global Search and Enabling Custom Tables**
-
+**Developer Mode (All Features)**
 ```php
 'features' => [
-    'global_search' => false,
+    'global_search' => true,
+    'resource_editor' => true,  // Visual resource builder
+    'plugins' => true,
     'custom_tables_for_resources' => true,
+    // ... all other features enabled
 ],
 ```
 
-*Figure 8: Configuring Features*
+**SaaS Application**
+```php
+'features' => [
+    'notifications' => true,
+    'bookmarks' => true,
+    'settings' => false,  // Use custom settings
+    'plugins' => false,   // Controlled features only
+],
+```
 
-![Figure 8: Configuring Features](placeholder-image.png)
+> **Important**: The `custom_tables_for_resources` feature changes how data is stored:
+> - `false`: Uses shared `posts` and `meta` tables (default)
+> - `true`: Each resource gets its own database table
 
 <a name="auth"></a>
 ### Auth
