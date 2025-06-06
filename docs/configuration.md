@@ -467,8 +467,8 @@ Override any view to customize the UI:
 > - `false`: Uses shared `posts` and `meta` tables (default)
 > - `true`: Each resource gets its own database table
 
-<a name="auth"></a>
-### Auth
+<a name="authentication-settings"></a>
+### Authentication Settings
 
 ```php
 'auth' => [
@@ -480,26 +480,58 @@ Override any view to customize the UI:
 ],
 ```
 
-- **Description**: Manages authentication-related settings.
-- **Options**:
-  - **registration**: Allows or disallows user registration.
-  - **redirect**: Sets the redirect URL after login.
-  - **2fa**: Enables two-factor authentication.
-  - **user_invitations**: Allows inviting users to the CMS.
-  - **create_teams**: Enables team creation functionality.
+Configure authentication behavior for different scenarios:
 
-**Example: Disabling User Registration and Enabling Two-Factor Authentication**
+#### Public Registration
 
 ```php
+// Open registration (SaaS, community sites)
+'auth' => [
+    'registration' => true,
+    'user_invitations' => true,
+    'create_teams' => true,
+],
+
+// Closed system (internal tools, client projects)
 'auth' => [
     'registration' => false,
-    '2fa' => true,
+    'user_invitations' => true,  // Admin can invite
+    'create_teams' => false,
 ],
 ```
 
-*Figure 9: Configuring Authentication Settings*
+#### Security Settings
 
-![Figure 9: Configuring Authentication Settings](placeholder-image.png)
+```php
+// High security environment
+'auth' => [
+    '2fa' => true,              // Require 2FA
+    'registration' => false,     // No public registration
+    'redirect' => '/admin/dashboard',
+],
+
+// Development environment
+'auth' => [
+    '2fa' => false,             // Optional 2FA
+    'registration' => true,      // Easy testing
+],
+```
+
+#### Custom Redirects
+
+```php
+'redirect' => '/admin',              // Default
+'redirect' => '/admin/dashboard',    // Straight to dashboard
+'redirect' => '/admin/projects',     // Project-focused app
+'redirect' => '/',                   // Frontend integration
+```
+
+> **Pro Tip**: Use environment variables for registration control:
+> ```env
+> # .env
+> AURA_REGISTRATION=false  # Production
+> AURA_REGISTRATION=true   # Development
+> ```
 
 <a name="media"></a>
 ### Media
