@@ -1,31 +1,23 @@
 # Introduction to Aura CMS
 
-<div class="aspect-w-16 aspect-h-9">
-    <iframe
-        class="w-full rounded-lg"
-        src="https://www.youtube.com/embed/Or-SZo1BtpQ"
-        title="Introduction to Aura CMS"
-        frameborder="0"
-        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-        allowfullscreen>
-    </iframe>
-</div>
+> 📹 **Video Placeholder**: A comprehensive walkthrough of Aura CMS, showcasing the admin interface, resource creation, field management, and live editing capabilities using the TALL stack
 
-Welcome to the documentation for **Aura CMS**, an open-source Content Management System built on the powerful Laravel framework. Aura CMS is designed to simplify web development by providing a flexible, modular, and developer-friendly platform. Whether you're a seasoned developer, a business owner, or a content creator, Aura CMS offers the tools and features you need to build and manage dynamic web applications efficiently.
+Welcome to **Aura CMS** – a modern, developer-first content management system built on the TALL stack (Tailwind CSS, Alpine.js, Laravel, and Livewire). Unlike traditional CMS platforms, Aura CMS is designed specifically for Laravel developers who want the power of a custom application with the convenience of a full-featured CMS.
 
 ---
 
 ## Table of Contents
 
 - [What is Aura CMS?](#what-is-aura-cms)
+- [Why Choose Aura CMS?](#why-choose-aura-cms)
+- [Core Architecture](#core-architecture)
+- [TALL Stack Integration](#tall-stack-integration)
 - [Key Features](#key-features)
-- [Who Should Use Aura CMS?](#who-should-use-aura-cms)
+- [Aura CMS vs Other Solutions](#aura-cms-vs-other-solutions)
+- [Real-World Use Cases](#real-world-use-cases)
 - [Getting Started](#getting-started)
-- [Extending Aura CMS with Plugins](#extending-aura-cms-with-plugins)
-- [Understanding the Documentation](#understanding-the-documentation)
+- [Demo Applications](#demo-applications)
 - [Community and Support](#community-and-support)
-- [Contributing to Aura CMS](#contributing-to-aura-cms)
-- [License](#license)
 - [Next Steps](#next-steps)
 
 ---
@@ -33,12 +25,17 @@ Welcome to the documentation for **Aura CMS**, an open-source Content Management
 <a name="what-is-aura-cms"></a>
 ## What is Aura CMS?
 
+Aura CMS is a powerful content management system that brings together the best of modern Laravel development practices with an intuitive, reactive interface powered by Livewire. It's not just another CMS – it's a complete application framework that happens to include CMS functionality.
 
-![Aura CMS Theme Settings](/images/theme-settings.png)
+### The Aura Philosophy
 
-**Aura CMS** is an open-source Content Management System that leverages the robustness of Laravel to provide a powerful platform for web development. It combines the flexibility of a framework with the convenience of a CMS, allowing developers to create custom solutions without reinventing the wheel.
+1. **Developer First**: Built by Laravel developers, for Laravel developers
+2. **No Black Boxes**: Every component is transparent and extendable
+3. **Progressive Enhancement**: Start simple, scale to complex
+4. **Real-time by Default**: Powered by Livewire for instant reactivity
+5. **Convention with Configuration**: Sensible defaults, infinite customization
 
-Aura CMS is built with modern web development practices in mind, offering features like modular architecture, customizable resources, and a comprehensive set of commands to automate routine tasks. Its design philosophy emphasizes ease of use, scalability, and extensibility.
+> 📹 **Video Placeholder**: Quick 2-minute demo showing the creation of a blog resource with custom fields, setting up relationships, and publishing content – all without writing code
 
 ---
 
