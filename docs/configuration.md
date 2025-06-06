@@ -1,130 +1,189 @@
 # Configuration
 
-Aura CMS offers a flexible and customizable configuration system that allows you to tailor the CMS to fit your project's specific needs. This guide provides an in-depth overview of the configuration options available in Aura CMS, helping both beginner and senior developers understand and modify the settings effectively.
+> 📹 **Video Placeholder**: Deep dive into Aura CMS configuration, showing real-time changes to themes, features, and settings with live preview
+
+Aura CMS provides a powerful configuration system that lets you customize every aspect of your CMS. This comprehensive guide covers all configuration options, best practices, and real-world examples to help you tailor Aura CMS to your exact needs.
 
 ## Table of Contents
 
 - [Configuration Overview](#configuration-overview)
-- [Configuration Files](#configuration-files)
-  - [config/aura.php](#configauraphp)
-  - [aura-settings.php](#aura-settingsphp)
-- [config/aura.php Configuration](#configauraphp-configuration)
-  - [Path](#path)
-  - [Domain](#domain)
-  - [Teams](#teams)
-  - [Components](#components)
-  - [Resources](#resources)
-  - [Theme](#theme)
-  - [Views](#views)
-  - [Features](#features)
-  - [Auth](#auth)
-  - [Media](#media)
-- [aura-settings.php Configuration](#aura-settingsphp-configuration)
-  - [Paths](#paths)
-  - [Widgets](#widgets)
-  - [Middleware](#middleware)
-- [Modifying Configuration](#modifying-configuration)
-  - [Using the Install Config Command](#using-the-install-config-command)
-  - [Manually Editing Configuration Files](#manually-editing-configuration-files)
+- [Quick Configuration](#quick-configuration)
+- [Main Configuration (aura.php)](#main-configuration)
+  - [Core Settings](#core-settings)
+  - [Teams & Multi-tenancy](#teams-multi-tenancy)
+  - [Component Customization](#component-customization)
+  - [Resource Management](#resource-management)
+  - [Theme Configuration](#theme-configuration)
+  - [View Customization](#view-customization)
+  - [Feature Toggles](#feature-toggles)
+  - [Authentication Settings](#authentication-settings)
+  - [Media Configuration](#media-configuration)
+- [Settings Configuration (aura-settings.php)](#settings-configuration)
+  - [Resource & Field Paths](#resource-field-paths)
+  - [Widget Configuration](#widget-configuration)
+  - [Middleware Stacks](#middleware-stacks)
 - [Environment Variables](#environment-variables)
-- [References](#references)
+- [Performance Optimization](#performance-optimization)
+- [Common Configuration Scenarios](#common-configuration-scenarios)
+- [Configuration Best Practices](#configuration-best-practices)
+- [Troubleshooting](#configuration-troubleshooting)
 
 ---
 
 <a name="configuration-overview"></a>
 ## Configuration Overview
 
-Aura CMS's configuration is primarily managed through two files:
+Aura CMS uses a layered configuration approach:
 
-1. [`config/aura.php`](#configauraphp)
-2. [`aura-settings.php`](#aura-settingsphp)
+```
+┌─────────────────────────────────────────────────────────────┐
+│                     Environment (.env)                       │
+│                  Runtime Configuration                       │
+├─────────────────────────────────────────────────────────────┤
+│                    config/aura.php                          │
+│                 Main Configuration File                      │
+├─────────────────────────────────────────────────────────────┤
+│                config/aura-settings.php                      │
+│              Advanced Settings & Paths                       │
+├─────────────────────────────────────────────────────────────┤
+│                    Laravel Fortify                          │
+│              Authentication Configuration                    │
+└─────────────────────────────────────────────────────────────┘
+```
 
-These files allow you to customize various aspects of the CMS, including routing, theming, resources, authentication, and media management. Understanding and properly configuring these files is crucial for optimizing Aura CMS to meet your project's requirements.
+### Configuration Files
 
----
+| File | Purpose | When to Edit |
+|------|---------|--------------|
+| `config/aura.php` | Main configuration | Always - core settings |
+| `config/aura-settings.php` | Advanced paths & middleware | Custom installations |
+| `config/fortify.php` | Authentication settings | Auth customization |
+| `.env` | Environment-specific values | Per environment |
 
-<a name="configuration-files"></a>
-## Configuration Files
+> **Pro Tip**: Use environment variables for values that change between environments (local, staging, production)
 
-<a name="configauraphp"></a>
-### config/aura.php
+<a name="quick-configuration"></a>
+## Quick Configuration
 
-This is the main configuration file for Aura CMS. It contains settings that define the core behavior of the CMS, including routing paths, theming options, resource definitions, and more.
+Use the interactive configuration command to modify settings without editing files:
 
-<a name="aura-settingsphp"></a>
-### aura-settings.php
+```bash
+# Modify configuration interactively
+php artisan aura:install-config
 
-This file manages additional settings related to resource paths, widgets, and middleware. It allows for further customization of how Aura CMS handles resources and integrates with your Laravel application.
+# This allows you to:
+# - Enable/disable teams
+# - Toggle features
+# - Configure theme
+# - Set authentication options
+```
 
----
+> 📹 **Video Placeholder**: Using the interactive configuration command to customize Aura CMS settings
 
-<a name="configauraphp-configuration"></a>
-## config/aura.php Configuration
+<a name="main-configuration"></a>
+## Main Configuration (aura.php)
 
-The `config/aura.php` file is the heart of Aura CMS's configuration. Below is a breakdown of each configuration section and its options.
+The `config/aura.php` file controls all core functionality. Let's explore each section:
 
-<a name="path"></a>
-### Path
+<a name="core-settings"></a>
+### Core Settings
+
+#### Path Configuration
 
 ```php
 'path' => env('AURA_PATH', 'admin'),
 ```
 
-- **Description**: Defines the base URL path where Aura CMS's admin panel is accessible.
-- **Default**: `admin`
-- **Customization**: Change this value to avoid routing conflicts or to suit your project's structure.
-
-**Example:**
+Controls where your admin panel is accessible:
 
 ```php
-'path' => env('AURA_PATH', 'dashboard'),
+// Examples
+'path' => 'admin',        // yourdomain.com/admin
+'path' => 'dashboard',    // yourdomain.com/dashboard
+'path' => 'cms',         // yourdomain.com/cms
+'path' => 'backend',     // yourdomain.com/backend
 ```
 
-*Figure 1: Changing the Admin Path*
+> **Common Pitfall**: Ensure your chosen path doesn't conflict with existing routes
 
-![Figure 1: Changing the Admin Path](placeholder-image.png)
-
-<a name="domain"></a>
-### Domain
+#### Domain Configuration
 
 ```php
 'domain' => env('AURA_DOMAIN'),
 ```
 
-- **Description**: Specifies the domain where Aura CMS should be active.
-- **Default**: `null` (active on all domains)
-- **Customization**: Set this to a specific domain if you want Aura CMS to operate only on that domain.
-
-**Example:**
+Restrict Aura CMS to specific domains:
 
 ```php
-'domain' => env('AURA_DOMAIN', 'admin.yourdomain.com'),
+// Single domain
+'domain' => 'admin.yourdomain.com',
+
+// Environment-based
+'domain' => env('AURA_DOMAIN', 'admin.localhost'),
+
+// Null for all domains (default)
+'domain' => null,
 ```
 
-*Figure 2: Setting a Specific Domain for Aura CMS*
+**Use Cases:**
+- Separate admin subdomain: `admin.yourdomain.com`
+- Multi-site installations
+- Development/staging isolation
 
-![Figure 2: Setting a Specific Domain](placeholder-image.png)
-
-<a name="teams"></a>
-### Teams
+<a name="teams-multi-tenancy"></a>
+### Teams & Multi-tenancy
 
 ```php
 'teams' => env('AURA_TEAMS', true),
 ```
 
-- **Description**: Enables or disables multi-tenancy (teams) within Aura CMS.
-- **Default**: `true`
-- **Customization**: Set to `false` to disable team functionality. Remember to rerun migrations with `php artisan migrate:fresh` if you disable teams.
-
-**Example:**
+Teams enable powerful multi-tenant functionality:
 
 ```php
-'teams' => env('AURA_TEAMS', false),
+// Enable teams (default)
+'teams' => true,  // Multi-tenant application
+
+// Disable teams
+'teams' => false, // Single-tenant application
 ```
 
-*Figure 3: Disabling Teams*
+**When to Use Teams:**
+- SaaS applications with customer isolation
+- Agency managing multiple clients
+- Enterprise with department separation
+- Multi-site content management
 
-![Figure 3: Disabling Teams](placeholder-image.png)
+**When to Disable Teams:**
+- Personal blogs or portfolios
+- Single company websites
+- Simple applications
+
+> **Important**: Changing teams setting after installation requires database migration:
+> ```bash
+> php artisan migrate:fresh --seed
+> ```
+
+**Team Features When Enabled:**
+- Automatic data isolation per team
+- Team member management
+- Team-based permissions
+- Team switching UI
+- Invitation system
+
+```php
+// Example: Team-scoped Resource
+namespace App\Aura\Resources;
+
+use Aura\Base\Resource;
+use Aura\Base\Models\Scopes\TeamScope;
+
+class Project extends Resource
+{
+    public static function booted()
+    {
+        static::addGlobalScope(new TeamScope);
+    }
+}
 
 <a name="components"></a>
 ### Components
