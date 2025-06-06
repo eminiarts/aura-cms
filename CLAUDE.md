@@ -80,15 +80,82 @@ overview: >
 
 
 # -------------------------------------------------------------------
-# Project Structure
+# Aura CMS Project Structure
 # -------------------------------------------------------------------
 structure:
- ...
+  app/:
+    - Aura/Resources/: "Built-in Aura resources"
+    - Http/:
+      - Livewire/: "Livewire components for UI"
+      - Controllers/: "HTTP controllers"
+    - Models/: "Eloquent models"
+    - Resources/: "Custom application resources"
+    - Fields/: "Custom field types"
+    - Plugins/: "Custom plugins"
+  
+  src/:
+    - Fields/: "Core field type implementations"
+    - Resources/: "Built-in resources (User, Team, etc.)"
+    - Livewire/: "Core Livewire components"
+    - Traits/: "Reusable traits for resources and fields"
+    - Pipeline/: "Field processing pipelines"
+    - Commands/: "Artisan commands"
+    - Events/: "Event classes"
+    - Listeners/: "Event listeners"
+    - Services/: "Service classes"
+    - Facades/: "Aura and DynamicFunctions facades"
+  
+  resources/:
+    - views/:
+      - aura/: "Aura-specific views"
+      - components/: "Blade components"
+      - fields/: "Field view templates"
+      - livewire/: "Livewire component views"
+    - js/: "JavaScript assets"
+    - css/: "CSS assets"
+  
+  database/:
+    - migrations/: "Database migrations"
+    - factories/: "Model factories"
+    - seeders/: "Database seeders"
+  
+  tests/:
+    - Feature/: "Feature tests"
+    - Unit/: "Unit tests"
+    - Resources/: "Test resources"
 
 # -------------------------------------------------------------------
 # Rules
 # -------------------------------------------------------------------
 rules:
+  # -------------------------------------------------
+  # Aura CMS Resource Development Rules
+  # -------------------------------------------------
+  - "All resources must extend `Aura\Base\Resource` class."
+  - "Use the `$model` property to specify the Eloquent model class."
+  - "Define fields in the `fields()` method returning an array of Field instances."
+  - "Use appropriate traits: `HasFields`, `InteractsWithFields`, `SaveFields`."
+  - "Implement `indexFields()`, `createFields()`, `editFields()`, and `viewFields()` for context-specific field display."
+  - "Use `$customTable = true` for resources with custom database tables."
+  - "Apply team scoping with `TeamScope` when multi-tenancy is enabled."
+  - "Implement proper authorization using `can()` checks on fields."
+  - "Use meta fields for flexible data storage when appropriate."
+  - "Follow naming conventions: Resource classes should be singular (e.g., `Post`, not `Posts`)."
+
+  # -------------------------------------------------
+  # Aura CMS Field Development Rules
+  # -------------------------------------------------
+  - "All custom fields must extend `Aura\Base\Fields\Field` class."
+  - "Define view templates: `$edit`, `$view`, `$index` properties."
+  - "Implement validation rules in the field definition."
+  - "Use conditional logic with `displayIf()` and `hideIf()` methods."
+  - "Apply proper attribute casting with `$cast` property."
+  - "Define database column type with `$tableColumnType`."
+  - "Use field wrappers for consistent styling."
+  - "Implement `get()` and `set()` methods for custom data handling."
+  - "Support meta storage with `$meta = true` when needed."
+  - "Use appropriate field types: Text, Select, Boolean, Date, Relationship fields, etc."
+  
   # -------------------------------------------------
   # General & Laravel Rules
   # -------------------------------------------------
