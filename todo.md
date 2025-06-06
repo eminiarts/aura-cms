@@ -117,13 +117,13 @@ For easy reference when assigning work:
 - [x] Create starter templates repository
 
 #### Phase 1.4: Resources Documentation
-- [ ] Document all Resource class properties and methods
-- [ ] Add advanced Resource examples (e-commerce, CRM)
-- [ ] Explain Resource lifecycle and events
-- [ ] Document query scopes and filters
-- [ ] Add Resource inheritance patterns
-- [ ] Include performance considerations
-- [ ] Document soft deletes and versioning
+- [x] Document all Resource class properties and methods
+- [x] Add advanced Resource examples (e-commerce, CRM)
+- [x] Explain Resource lifecycle and events
+- [x] Document query scopes and filters
+- [x] Add Resource inheritance patterns
+- [x] Include performance considerations
+- [x] Document soft deletes and versioning
 
 #### Phase 1.5: Fields System Complete Guide
 - [ ] Document all 40+ field types with examples
