@@ -1,140 +1,414 @@
 # Installation
 
-Aura CMS is a Laravel-based Content Management System that leverages the power of the TALL stack (Tailwind CSS, Alpine.js, Laravel, Livewire). This guide will walk you through the installation process to get Aura CMS up and running in your Laravel application.
+> 📹 **Video Placeholder**: Complete walkthrough of Aura CMS installation from creating a new Laravel project to accessing the admin panel for the first time
+
+Aura CMS transforms your Laravel application into a powerful content management system with just a few commands. This guide covers multiple installation methods, troubleshooting common issues, and deployment best practices.
+
+## Table of Contents
+
+- [Requirements](#requirements)
+- [Quick Installation](#quick-installation)
+- [Detailed Installation Steps](#detailed-installation-steps)
+- [Docker Installation](#docker-installation)
+- [Configuration During Installation](#configuration-during-installation)
+- [Post-Installation Setup](#post-installation-setup)
+- [Troubleshooting](#troubleshooting)
+- [Deployment](#deployment)
+- [Next Steps](#next-steps)
 
 <a name="requirements"></a>
 ## Requirements
 
-Before you begin, ensure your environment meets the following requirements:
+### System Requirements
 
-- **Laravel**: `>= 11.x`
-- **PHP**: `>= 8.2`
-- **Composer**: Installed globally
-- **Database**: MySQL, PostgreSQL, SQLite, or SQL Server
-- **Node.js and NPM**: For asset compilation (optional but recommended)
+| Component | Version | Notes |
+|-----------|---------|-------|
+| **PHP** | >= 8.2 | With extensions: BCMath, Ctype, JSON, Mbstring, OpenSSL, PDO, Tokenizer, XML |
+| **Laravel** | >= 11.x | Fresh or existing installation |
+| **Composer** | >= 2.0 | Latest version recommended |
+| **Database** | MySQL 8.0+, PostgreSQL 12+, SQLite 3.8.8+, SQL Server 2017+ | MySQL/PostgreSQL recommended for production |
+| **Node.js** | >= 18.x | For asset compilation (optional but recommended) |
+| **NPM/Yarn** | Latest | For frontend dependencies |
 
-<a name="installation-steps"></a>
-## Installation Steps
-
-<a name="install-laravel"></a>
-### 1. Install Laravel (If Not Already Installed)
-
-If you don't have a Laravel application set up, create a new one:
+### PHP Extensions
 
 ```bash
-laravel new aura-app # or composer create-project laravel/laravel aura-app
-cd aura-app
+# Check required PHP extensions
+php -m | grep -E 'bcmath|ctype|json|mbstring|openssl|pdo|tokenizer|xml|gd|imagick'
 ```
 
-<a name="require-aura-cms-via-composer"></a>
-### 2. Require Aura CMS via Composer
+> **Pro Tip**: For image processing, install either GD or ImageMagick PHP extension. ImageMagick provides better quality for image manipulation.
 
-Add Aura CMS to your Laravel project using Composer:
+<a name="quick-installation"></a>
+## Quick Installation
+
+For experienced Laravel developers, here's the fastest way to get started:
 
 ```bash
+# Create new Laravel project
+laravel new my-aura-project
+cd my-aura-project
+
+# Configure database in .env
+# DB_CONNECTION=mysql
+# DB_DATABASE=my_aura_db
+# DB_USERNAME=root
+# DB_PASSWORD=
+
+# Install Aura CMS
 composer require eminiarts/aura-cms
+
+# Run interactive installer
+php artisan aura:install
+
+# Start development server
+php artisan serve
+
+# Visit http://localhost:8000/admin
 ```
 
-<a name="run-aura-install-command"></a>
-### 3. Run the Aura Install Command
+> 📹 **Video Placeholder**: 60-second speed run of Aura CMS installation
 
-Execute the installation command to set up Aura CMS:
+<a name="detailed-installation-steps"></a>
+## Detailed Installation Steps
+
+### Step 1: Prepare Your Laravel Application
+
+#### Option A: Fresh Laravel Installation
 
 ```bash
-php artisan aura:install
+# Using Laravel installer
+laravel new my-aura-project
+cd my-aura-project
+
+# Or using Composer
+composer create-project laravel/laravel my-aura-project
+cd my-aura-project
 ```
 
-This command will:
+#### Option B: Existing Laravel Application
 
-- Publish configuration files.
-- Publish assets.
-- Publish and run migrations.
-- Extend the User model.
-- Allow you to modify the Aura configuration.
-- Allow you to create an admin user.
+Ensure your existing application meets the requirements:
 
-<a name="installation-prompts"></a>
-#### Installation Prompts
+```bash
+# Check Laravel version
+php artisan --version  # Should be >= 11.x
 
-During the installation, you will be prompted with several questions:
+# Update dependencies
+composer update
 
-1. **Modify Aura Configuration?**
-   - **Yes**: You'll be able to customize settings like enabling teams, adjusting features, allowing user registration, and theme customization.
-   - **No**: Default settings will be used.
+# Clear caches
+php artisan cache:clear
+php artisan config:clear
+php artisan route:clear
+```
 
-2. **Run Migrations?**
+> **Common Pitfall**: If you have existing authentication scaffolding (like Laravel Breeze or Jetstream), remove it first as Aura CMS provides its own authentication system.
 
-   - **Yes**: The necessary database tables will be created immediately.
-   - **No**: You can run migrations later with `php artisan migrate`.
+### Step 2: Configure Database
 
-3. **Create a User?**
-
-   - **Yes**: You'll create an admin user for logging into the CMS.
-   - **No**: You can create a user later with `php artisan aura:user`.
-
-<a name="configure-your-database"></a>
-### 4. Configure Your Database
-
-Ensure your `.env` file has the correct database credentials:
+Create your database and update `.env`:
 
 ```dotenv
 DB_CONNECTION=mysql
 DB_HOST=127.0.0.1
 DB_PORT=3306
-DB_DATABASE=your_database
-DB_USERNAME=your_username
+DB_DATABASE=aura_cms
+DB_USERNAME=root
 DB_PASSWORD=your_password
+
+# For better performance with Aura CMS
+DB_CHARSET=utf8mb4
+DB_COLLATION=utf8mb4_unicode_ci
 ```
 
-<a name="run-database-migrations"></a>
-### 5. Run Database Migrations (If You Didn't During Installation)
-
-If you chose not to run migrations during installation, run them now:
+Test database connection:
 
 ```bash
-php artisan migrate
+php artisan db:show
 ```
 
-<a name="extend-the-user-model"></a>
-### 6. Extend the User Model
-
-Update your `User` model to extend Aura's base user model:
-
-```php
-<?php
-// app/Models/User.php
-
-namespace App\Models;
-
-use Aura\Base\Models\User as AuraUser;
-
-class User extends AuraUser
-{
-    // You can add custom methods or properties here
-}
-```
-
-<a name="create-an-admin-user"></a>
-### 7. Create an Admin User (If You Didn't During Installation)
-
-If you didn't create a user during the installation, you can create one now:
+### Step 3: Install Aura CMS Package
 
 ```bash
-php artisan aura:user
+# Install via Composer
+composer require eminiarts/aura-cms
+
+# If you encounter memory issues
+COMPOSER_MEMORY_LIMIT=-1 composer require eminiarts/aura-cms
 ```
 
-Follow the prompts to set up the admin user's name, email, and password.
+### Step 4: Run the Interactive Installer
 
-<a name="access-the-aura-cms-admin-panel"></a>
-### 8. Access the Aura CMS Admin Panel
+The installer guides you through the entire setup:
 
-Open your web browser and navigate to:
-
-```
-http://localhost:8000/admin
+```bash
+php artisan aura:install
 ```
 
-Log in using the admin credentials you created earlier.
+You'll see output like this:
+
+```
+ ┌─────────────────────────────────────────────────────────────┐
+ │                  Welcome to Aura CMS Setup                   │
+ └─────────────────────────────────────────────────────────────┘
+
+ Publishing configuration files...
+ Publishing assets...
+ Publishing migrations...
+
+ ┌ Aura Configuration ─────────────────────────────────────────┐
+ │ Do you want to modify the Aura configuration? (yes/no)     │
+ └─────────────────────────────────────────────────────────────┘
+ > 
+```
+
+#### Installation Options Explained
+
+1. **Extend User Model** (Automatic)
+   - The installer automatically updates your User model
+   - Adds necessary traits and relationships
+
+2. **Modify Configuration** (Recommended: Yes)
+   - **Teams**: Enable multi-tenancy support
+   - **Features**: Toggle individual features
+   - **Registration**: Allow public user registration
+   - **Theme**: Customize colors and appearance
+
+3. **Run Migrations** (Recommended: Yes)
+   - Creates all necessary database tables
+   - Includes users, teams, posts, meta, media tables
+
+4. **Create Admin User** (Recommended: Yes)
+   - Sets up your first super admin account
+   - You'll need this to access the admin panel
+
+### Step 5: Verify Installation
+
+After installation, verify everything is working:
+
+```bash
+# Check installed routes
+php artisan route:list --name=aura
+
+# Verify configuration
+php artisan config:show aura
+
+# Test the application
+php artisan serve
+```
+
+Visit `http://localhost:8000/admin` and log in with your admin credentials.
+
+<a name="docker-installation"></a>
+## Docker Installation
+
+Aura CMS works perfectly with Docker. Here's a complete Docker setup:
+
+### Docker Compose Configuration
+
+Create `docker-compose.yml`:
+
+```yaml
+version: '3.8'
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: aura-cms
+    container_name: aura-cms-app
+    restart: unless-stopped
+    working_dir: /var/www
+    volumes:
+      - ./:/var/www
+      - ./docker/php/local.ini:/usr/local/etc/php/conf.d/local.ini
+    networks:
+      - aura-network
+
+  webserver:
+    image: nginx:alpine
+    container_name: aura-cms-webserver
+    restart: unless-stopped
+    ports:
+      - "8080:80"
+    volumes:
+      - ./:/var/www
+      - ./docker/nginx/conf.d:/etc/nginx/conf.d
+    networks:
+      - aura-network
+
+  db:
+    image: mysql:8.0
+    container_name: aura-cms-db
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: ${DB_DATABASE}
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+      MYSQL_USER: ${DB_USERNAME}
+    ports:
+      - "3307:3306"
+    volumes:
+      - dbdata:/var/lib/mysql
+      - ./docker/mysql/my.cnf:/etc/mysql/my.cnf
+    networks:
+      - aura-network
+
+  redis:
+    image: redis:alpine
+    container_name: aura-cms-redis
+    restart: unless-stopped
+    ports:
+      - "6380:6379"
+    networks:
+      - aura-network
+
+networks:
+  aura-network:
+    driver: bridge
+
+volumes:
+  dbdata:
+    driver: local
+```
+
+### Dockerfile
+
+Create `Dockerfile`:
+
+```dockerfile
+FROM php:8.2-fpm
+
+# Install dependencies
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    libpng-dev \
+    libjpeg62-turbo-dev \
+    libfreetype6-dev \
+    libwebp-dev \
+    locales \
+    zip \
+    jpegoptim optipng pngquant gifsicle \
+    vim \
+    unzip \
+    git \
+    curl \
+    libzip-dev \
+    libonig-dev \
+    libxml2-dev
+
+# Clear cache
+RUN apt-get clean && rm -rf /var/lib/apt/lists/*
+
+# Install PHP extensions
+RUN docker-php-ext-install pdo_mysql mbstring zip exif pcntl bcmath
+RUN docker-php-ext-configure gd --with-freetype --with-jpeg --with-webp
+RUN docker-php-ext-install gd
+
+# Install Composer
+COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
+
+# Set working directory
+WORKDIR /var/www
+
+# Copy application
+COPY . /var/www
+
+# Install dependencies
+RUN composer install --optimize-autoloader --no-dev
+
+# Set permissions
+RUN chown -R www-data:www-data /var/www/storage /var/www/bootstrap/cache
+
+USER www-data
+
+EXPOSE 9000
+CMD ["php-fpm"]
+```
+
+### Docker Installation Steps
+
+```bash
+# Clone or create your project
+git clone your-project.git aura-cms-docker
+cd aura-cms-docker
+
+# Copy environment file
+cp .env.example .env
+
+# Update .env for Docker
+# DB_HOST=db
+# REDIS_HOST=redis
+
+# Build and start containers
+docker-compose up -d --build
+
+# Install Aura CMS in container
+docker-compose exec app composer require eminiarts/aura-cms
+docker-compose exec app php artisan aura:install
+
+# Access at http://localhost:8080/admin
+```
+
+> **Pro Tip**: Use Docker volumes for persistent storage of uploads and ensure proper permissions for the `storage` and `bootstrap/cache` directories.
+
+<a name="configuration-during-installation"></a>
+## Configuration During Installation
+
+The interactive installer allows you to configure Aura CMS during installation:
+
+### Teams Configuration
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│ Do you want to use teams? (yes/no) [yes]:                  │
+└─────────────────────────────────────────────────────────────┘
+```
+
+- **Yes**: Enables multi-tenant functionality
+- **No**: Single-tenant application
+
+> **Important**: Changing teams setting later requires fresh migration
+
+### Features Configuration
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│ Do you want to modify the default features? (yes/no) [no]: │
+└─────────────────────────────────────────────────────────────┘
+```
+
+If yes, you can toggle:
+- Global Search (⇧⌘K)
+- Bookmarks
+- Recent Pages
+- Notifications
+- Settings Page
+- Resource Editor
+- And more...
+
+### Theme Configuration
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│ Select value for 'color-palette':                           │
+│ > aura                                                      │
+│   blue                                                      │
+│   green                                                     │
+│   red                                                       │
+│   purple                                                    │
+│   ...                                                       │
+└─────────────────────────────────────────────────────────────┘
+```
+
+Choose from 20+ color palettes and configure:
+- Primary color scheme
+- Gray palette
+- Dark mode behavior
+- Sidebar style
+- Login page background
 
 <a name="publishing-configuration-files"></a>
 ## Additional Configuration
