@@ -1,0 +1,635 @@
+# Configuration
+
+Aura CMS offers a flexible and customizable configuration system that allows you to tailor the CMS to fit your project's specific needs. This guide provides an in-depth overview of the configuration options available in Aura CMS, helping both beginner and senior developers understand and modify the settings effectively.
+
+## Table of Contents
+
+- [Configuration Overview](#configuration-overview)
+- [Configuration Files](#configuration-files)
+  - [config/aura.php](#configauraphp)
+  - [aura-settings.php](#aura-settingsphp)
+- [config/aura.php Configuration](#configauraphp-configuration)
+  - [Path](#path)
+  - [Domain](#domain)
+  - [Teams](#teams)
+  - [Components](#components)
+  - [Resources](#resources)
+  - [Theme](#theme)
+  - [Views](#views)
+  - [Features](#features)
+  - [Auth](#auth)
+  - [Media](#media)
+- [aura-settings.php Configuration](#aura-settingsphp-configuration)
+  - [Paths](#paths)
+  - [Widgets](#widgets)
+  - [Middleware](#middleware)
+- [Modifying Configuration](#modifying-configuration)
+  - [Using the Install Config Command](#using-the-install-config-command)
+  - [Manually Editing Configuration Files](#manually-editing-configuration-files)
+- [Environment Variables](#environment-variables)
+- [References](#references)
+
+---
+
+<a name="configuration-overview"></a>
+## Configuration Overview
+
+Aura CMS's configuration is primarily managed through two files:
+
+1. [`config/aura.php`](#configauraphp)
+2. [`aura-settings.php`](#aura-settingsphp)
+
+These files allow you to customize various aspects of the CMS, including routing, theming, resources, authentication, and media management. Understanding and properly configuring these files is crucial for optimizing Aura CMS to meet your project's requirements.
+
+---
+
+<a name="configuration-files"></a>
+## Configuration Files
+
+<a name="configauraphp"></a>
+### config/aura.php
+
+This is the main configuration file for Aura CMS. It contains settings that define the core behavior of the CMS, including routing paths, theming options, resource definitions, and more.
+
+<a name="aura-settingsphp"></a>
+### aura-settings.php
+
+This file manages additional settings related to resource paths, widgets, and middleware. It allows for further customization of how Aura CMS handles resources and integrates with your Laravel application.
+
+---
+
+<a name="configauraphp-configuration"></a>
+## config/aura.php Configuration
+
+The `config/aura.php` file is the heart of Aura CMS's configuration. Below is a breakdown of each configuration section and its options.
+
+<a name="path"></a>
+### Path
+
+```php
+'path' => env('AURA_PATH', 'admin'),
+```
+
+- **Description**: Defines the base URL path where Aura CMS's admin panel is accessible.
+- **Default**: `admin`
+- **Customization**: Change this value to avoid routing conflicts or to suit your project's structure.
+
+**Example:**
+
+```php
+'path' => env('AURA_PATH', 'dashboard'),
+```
+
+*Figure 1: Changing the Admin Path*
+
+![Figure 1: Changing the Admin Path](placeholder-image.png)
+
+<a name="domain"></a>
+### Domain
+
+```php
+'domain' => env('AURA_DOMAIN'),
+```
+
+- **Description**: Specifies the domain where Aura CMS should be active.
+- **Default**: `null` (active on all domains)
+- **Customization**: Set this to a specific domain if you want Aura CMS to operate only on that domain.
+
+**Example:**
+
+```php
+'domain' => env('AURA_DOMAIN', 'admin.yourdomain.com'),
+```
+
+*Figure 2: Setting a Specific Domain for Aura CMS*
+
+![Figure 2: Setting a Specific Domain](placeholder-image.png)
+
+<a name="teams"></a>
+### Teams
+
+```php
+'teams' => env('AURA_TEAMS', true),
+```
+
+- **Description**: Enables or disables multi-tenancy (teams) within Aura CMS.
+- **Default**: `true`
+- **Customization**: Set to `false` to disable team functionality. Remember to rerun migrations with `php artisan migrate:fresh` if you disable teams.
+
+**Example:**
+
+```php
+'teams' => env('AURA_TEAMS', false),
+```
+
+*Figure 3: Disabling Teams*
+
+![Figure 3: Disabling Teams](placeholder-image.png)
+
+<a name="components"></a>
+### Components
+
+```php
+'components' => [
+    'dashboard' => Aura\Base\Livewire\Dashboard::class,
+    'profile' => Aura\Base\Livewire\Profile::class,
+    'settings' => Aura\Base\Livewire\Settings::class,
+],
+```
+
+- **Description**: Customizes the Livewire components used by Aura CMS.
+- **Customization**: Override default components by specifying your custom component classes.
+
+**Example:**
+
+```php
+'components' => [
+    'dashboard' => App\Http\Livewire\CustomDashboard::class,
+    'profile' => App\Http\Livewire\CustomProfile::class,
+    'settings' => App\Http\Livewire\CustomSettings::class,
+],
+```
+
+*Figure 4: Customizing Livewire Components*
+
+![Figure 4: Customizing Livewire Components](placeholder-image.png)
+
+<a name="resources"></a>
+### Resources
+
+```php
+'resources' => [
+    'user' => Aura\Base\Resources\User::class,
+    'team' => Aura\Base\Resources\Team::class,
+    'team-invitation' => Aura\Base\Resources\TeamInvitation::class,
+    'role' => Aura\Base\Resources\Role::class,
+    'permission' => Aura\Base\Resources\Permission::class,
+    'post' => Aura\Base\Resources\Post::class,
+    'option' => Aura\Base\Resources\Option::class,
+    'attachment' => Aura\Base\Resources\Attachment::class,
+    'category' => Aura\Base\Resources\Category::class,
+    'tag' => Aura\Base\Resources\Tag::class,
+],
+```
+
+- **Description**: Defines the resources that Aura CMS manages.
+- **Customization**: Add, remove, or override resource classes to extend or modify functionality.
+
+**Example: Adding a Custom Resource**
+
+```php
+'resources' => [
+    // Existing resources...
+    'project' => App\Aura\Resources\Project::class,
+],
+```
+
+*Figure 5: Adding a Custom Resource*
+
+![Figure 5: Adding a Custom Resource](placeholder-image.png)
+
+<a name="theme"></a>
+### Theme
+
+```php
+'theme' => [
+    'color-palette' => 'aura',
+    'gray-color-palette' => 'slate',
+    'darkmode-type' => 'auto',
+
+    'sidebar-size' => 'standard',
+    'sidebar-type' => 'primary',
+    'sidebar-darkmode-type' => 'dark',
+
+    'login-bg' => false,
+    'login-bg-darkmode' => false,
+
+    'app-favicon' => false,
+    'app-favicon-darkmode' => false,
+],
+```
+
+- **Description**: Customizes the visual aspects of Aura CMS, including color palettes, sidebar styles, and dark mode settings.
+- **Options**:
+  - **color-palette**: Defines the primary color scheme.
+  - **gray-color-palette**: Defines the grayscale palette.
+  - **darkmode-type**: Sets the behavior of dark mode (`auto`, `light`, `dark`).
+  - **sidebar-size**: Determines the size of the sidebar (`standard`, `compact`).
+  - **sidebar-type**: Sets the sidebar color type (`primary`, `light`, `dark`).
+  - **sidebar-darkmode-type**: Sets the sidebar style in dark mode.
+  - **login-bg**: Enables or disables a background image on the login page.
+  - **login-bg-darkmode**: Enables or disables a background image on the login page in dark mode.
+  - **app-favicon**: Sets a custom favicon for the application.
+  - **app-favicon-darkmode**: Sets a custom favicon for dark mode.
+
+**Example: Changing the Color Palette**
+
+```php
+'theme' => [
+    'color-palette' => 'blue',
+    'gray-color-palette' => 'gray',
+    'darkmode-type' => 'dark',
+
+    'sidebar-size' => 'compact',
+    'sidebar-type' => 'dark',
+    'sidebar-darkmode-type' => 'dark',
+
+    'login-bg' => true,
+    'login-bg-darkmode' => true,
+
+    'app-favicon' => 'favicon-light.png',
+    'app-favicon-darkmode' => 'favicon-dark.png',
+],
+```
+
+*Figure 6: Customizing the Theme*
+
+![Figure 6: Customizing the Theme](placeholder-image.png)
+
+<a name="views"></a>
+### Views
+
+```php
+'views' => [
+    'layout' => 'aura::layouts.app',
+    'login-layout' => 'aura::layout.login',
+    'dashboard' => 'aura::dashboard',
+    'index' => 'aura::index',
+    'view' => 'aura::view',
+    'create' => 'aura::create',
+    'edit' => 'aura::edit',
+    'navigation' => 'aura::components.navigation',
+    'logo' => 'aura::application-logo',
+],
+```
+
+- **Description**: Specifies the Blade view templates used by Aura CMS.
+- **Customization**: Override default views by pointing to your custom Blade templates.
+
+**Example: Overriding the Dashboard View**
+
+```php
+'views' => [
+    'dashboard' => 'custom.dashboard',
+],
+```
+
+*Figure 7: Overriding the Dashboard View*
+
+![Figure 7: Overriding the Dashboard View](placeholder-image.png)
+
+<a name="features"></a>
+### Features
+
+```php
+'features' => [
+    'global_search' => true,
+    'bookmarks' => true,
+    'last_visited_pages' => true,
+    'notifications' => true,
+    'plugins' => true,
+    'settings' => true,
+    'profile' => true,
+    'create_resource' => true,
+    'resource_view' => true,
+    'resource_edit' => true,
+    'resource_editor' => config('app.env') == 'local' ? true : false,
+    'custom_tables_for_resources' => false, // default = false
+],
+```
+
+- **Description**: Toggles various features within Aura CMS.
+- **Options**:
+  - **global_search**: Enables the global search functionality.
+  - **bookmarks**: Allows users to bookmark pages.
+  - **last_visited_pages**: Tracks and displays the last visited pages.
+  - **notifications**: Enables in-app notifications.
+  - **plugins**: Allows the use of plugins to extend functionality.
+  - **settings**: Provides access to settings within the CMS.
+  - **profile**: Enables user profile management.
+  - **create_resource**: Allows creation of new resources.
+  - **resource_view**: Enables viewing of resources.
+  - **resource_edit**: Allows editing of resources.
+  - **resource_editor**: Enables the resource editor (typically enabled in local environments).
+  - **custom_tables_for_resources**: Switches between using the default `posts` and `meta` tables or custom tables for resources.
+
+**Example: Disabling Global Search and Enabling Custom Tables**
+
+```php
+'features' => [
+    'global_search' => false,
+    'custom_tables_for_resources' => true,
+],
+```
+
+*Figure 8: Configuring Features*
+
+![Figure 8: Configuring Features](placeholder-image.png)
+
+<a name="auth"></a>
+### Auth
+
+```php
+'auth' => [
+    'registration' => env('AURA_REGISTRATION', true),
+    'redirect' => '/admin',
+    '2fa' => true,
+    'user_invitations' => true,
+    'create_teams' => true,
+],
+```
+
+- **Description**: Manages authentication-related settings.
+- **Options**:
+  - **registration**: Allows or disallows user registration.
+  - **redirect**: Sets the redirect URL after login.
+  - **2fa**: Enables two-factor authentication.
+  - **user_invitations**: Allows inviting users to the CMS.
+  - **create_teams**: Enables team creation functionality.
+
+**Example: Disabling User Registration and Enabling Two-Factor Authentication**
+
+```php
+'auth' => [
+    'registration' => false,
+    '2fa' => true,
+],
+```
+
+*Figure 9: Configuring Authentication Settings*
+
+![Figure 9: Configuring Authentication Settings](placeholder-image.png)
+
+<a name="media"></a>
+### Media
+
+```php
+'media' => [
+    'disk' => 'public',
+    'path' => 'media',
+    'quality' => 80,
+    'restrict_to_dimensions' => true,
+
+    'max_file_size' => 10000,
+
+    'generate_thumbnails' => true,
+    'dimensions' => [
+        [
+            'name' => 'xs',
+            'width' => 200,
+        ],
+        [
+            'name' => 'sm',
+            'width' => 600,
+        ],
+        [
+            'name' => 'md',
+            'width' => 1200,
+        ],
+        [
+            'name' => 'lg',
+            'width' => 2000,
+        ],
+        [
+            'name' => 'thumbnail',
+            'width' => 600,
+            'height' => 600,
+        ],
+    ],
+],
+```
+
+- **Description**: Configures media handling, including storage disk, file paths, image quality, and thumbnail generation.
+- **Options**:
+  - **disk**: Specifies the storage disk (as defined in `config/filesystems.php`).
+  - **path**: Defines the directory where media files are stored.
+  - **quality**: Sets the image quality (percentage).
+  - **restrict_to_dimensions**: Limits uploaded images to specified dimensions.
+  - **max_file_size**: Maximum allowed file size in kilobytes.
+  - **generate_thumbnails**: Enables or disables automatic thumbnail generation.
+  - **dimensions**: Defines the different thumbnail sizes.
+
+**Example: Changing the Media Disk and Disabling Thumbnail Generation**
+
+```php
+'media' => [
+    'disk' => 's3',
+    'generate_thumbnails' => false,
+],
+```
+
+*Figure 10: Configuring Media Settings*
+
+![Figure 10: Configuring Media Settings](placeholder-image.png)
+
+---
+
+<a name="aura-settingsphp-configuration"></a>
+## aura-settings.php Configuration
+
+The `aura-settings.php` file provides additional configuration options related to resource paths, widgets, and middleware. This allows for further customization and organization of your Aura CMS setup.
+
+<a name="paths"></a>
+### Paths
+
+```php
+'paths' => [
+    'resources' => [
+        'namespace' => 'App\\Aura\\Resources',
+        'path' => app_path('Aura/Resources'),
+        'register' => [],
+    ],
+
+    'fields' => [
+        'namespace' => 'App\\Aura\\Fields',
+        'path' => app_path('Aura/Fields'),
+        'register' => [],
+    ],
+],
+```
+
+- **Description**: Defines the namespaces and directories for resources and fields.
+- **Options**:
+  - **namespace**: The PHP namespace for the resources or fields.
+  - **path**: The filesystem path where resources or fields are located.
+  - **register**: An array to manually register additional resources or fields.
+
+**Example: Changing the Resources Path**
+
+```php
+'paths' => [
+    'resources' => [
+        'namespace' => 'App\\Custom\\Resources',
+        'path' => app_path('Custom/Resources'),
+        'register' => [],
+    ],
+],
+```
+
+*Figure 11: Configuring Resource Paths*
+
+![Figure 11: Configuring Resource Paths](placeholder-image.png)
+
+<a name="widgets"></a>
+### Widgets
+
+```php
+'widgets' => [
+    'namespace' => 'App\\Aura\\Widgets',
+    'path' => app_path('Aura/Widgets'),
+    'register' => [],
+],
+```
+
+- **Description**: Specifies the namespace and path for dashboard widgets.
+- **Customization**: Override the default widgets by specifying custom namespaces and paths.
+
+**Example: Adding a Custom Widget Directory**
+
+```php
+'widgets' => [
+    'namespace' => 'App\\Custom\\Widgets',
+    'path' => app_path('Custom/Widgets'),
+    'register' => [],
+],
+```
+
+*Figure 12: Configuring Widgets*
+
+![Figure 12: Configuring Widgets](placeholder-image.png)
+
+<a name="middleware"></a>
+### Middleware
+
+```php
+'middleware' => [
+    'aura-admin' => [
+        'web',
+        'auth',
+    ],
+
+    'aura-guest' => [
+        'web',
+    ],
+
+    'aura-base' => [
+        \App\Http\Middleware\EncryptCookies::class,
+        \Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse::class,
+        \Illuminate\Session\Middleware\StartSession::class,
+        \Illuminate\View\Middleware\ShareErrorsFromSession::class,
+        \App\Http\Middleware\VerifyCsrfToken::class,
+        \Illuminate\Routing\Middleware\SubstituteBindings::class,
+    ],
+],
+```
+
+- **Description**: Defines middleware stacks for different Aura CMS routes.
+- **Options**:
+  - **aura-admin**: Middleware applied to admin routes.
+  - **aura-guest**: Middleware applied to guest routes.
+  - **aura-base**: Base middleware applied to all Aura CMS requests.
+
+**Example: Adding a Custom Middleware to Aura Admin Routes**
+
+```php
+'middleware' => [
+    'aura-admin' => [
+        'web',
+        'auth',
+        'custom.middleware',
+    ],
+],
+```
+
+*Figure 13: Configuring Middleware*
+
+![Figure 13: Configuring Middleware](placeholder-image.png)
+
+---
+
+<a name="modifying-configuration"></a>
+## Modifying Configuration
+
+Aura CMS provides multiple ways to modify its configuration to suit your development workflow and project requirements.
+
+<a name="using-the-install-config-command"></a>
+### Using the Install Config Command
+
+You can modify Aura CMS's configuration using the built-in Artisan command:
+
+```bash
+php artisan aura:install-config
+```
+
+This command will guide you through a series of prompts to update various configuration settings, including:
+
+- Enabling or disabling teams.
+- Modifying default features.
+- Allowing or disallowing user registration.
+- Customizing the default theme.
+
+*Figure 14: Running the Install Config Command*
+
+![Figure 14: Running the Install Config Command](placeholder-image.png)
+
+<a name="manually-editing-configuration-files"></a>
+### Manually Editing Configuration Files
+
+For more granular control, you can directly edit the `config/aura.php` and `aura-settings.php` files.
+
+**Example: Enabling Two-Factor Authentication**
+
+```php
+'auth' => [
+    '2fa' => true,
+],
+```
+
+*Figure 15: Manually Editing Configuration Files*
+
+![Figure 15: Manually Editing Configuration Files](placeholder-image.png)
+
+---
+
+<a name="environment-variables"></a>
+## Environment Variables
+
+Aura CMS utilizes environment variables to manage certain configuration options. These variables are defined in your `.env` file and can override the default settings in `config/aura.php`.
+
+**Common Environment Variables:**
+
+- **AURA_PATH**: Sets the admin panel path.
+- **AURA_DOMAIN**: Restricts Aura CMS to a specific domain.
+- **AURA_TEAMS**: Enables or disables team functionality.
+- **AURA_REGISTRATION**: Allows or disallows user registration.
+
+**Example: Setting Environment Variables**
+
+```dotenv
+AURA_PATH=dashboard
+AURA_DOMAIN=admin.yourdomain.com
+AURA_TEAMS=false
+AURA_REGISTRATION=true
+```
+
+*Figure 16: Setting Environment Variables*
+
+![Figure 16: Setting Environment Variables](placeholder-image.png)
+
+---
+
+<a name="references"></a>
+## References
+
+- [Laravel Configuration Documentation](https://laravel.com/docs/configuration)
+- [Livewire Documentation](https://laravel-livewire.com/docs)
+- [Tailwind CSS Documentation](https://tailwindcss.com/docs)
+- [Alpine.js Documentation](https://alpinejs.dev/)
+
+*Video 1: Understanding Aura CMS Configuration*
+
+![Video 1: Understanding Aura CMS Configuration](placeholder-video.mp4)
+
+---
+
+For further assistance or to report issues with the configuration, please refer to our [Support](support.md) section.
