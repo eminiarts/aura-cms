@@ -533,118 +533,169 @@ Configure authentication behavior for different scenarios:
 > AURA_REGISTRATION=true   # Development
 > ```
 
-<a name="media"></a>
-### Media
+<a name="media-configuration"></a>
+### Media Configuration
 
 ```php
 'media' => [
-    'disk' => 'public',
-    'path' => 'media',
-    'quality' => 80,
-    'restrict_to_dimensions' => true,
-
-    'max_file_size' => 10000,
-
-    'generate_thumbnails' => true,
+    'disk' => 'public',                  // Storage disk
+    'path' => 'media',                   // Upload directory
+    'quality' => 80,                     // JPEG quality (1-100)
+    'restrict_to_dimensions' => true,    // Enforce max dimensions
+    'max_file_size' => 10000,           // KB (10MB default)
+    'generate_thumbnails' => true,       // Auto-generate sizes
     'dimensions' => [
-        [
-            'name' => 'xs',
-            'width' => 200,
-        ],
-        [
-            'name' => 'sm',
-            'width' => 600,
-        ],
-        [
-            'name' => 'md',
-            'width' => 1200,
-        ],
-        [
-            'name' => 'lg',
-            'width' => 2000,
-        ],
-        [
-            'name' => 'thumbnail',
-            'width' => 600,
-            'height' => 600,
-        ],
+        ['name' => 'xs', 'width' => 200],
+        ['name' => 'sm', 'width' => 600],
+        ['name' => 'md', 'width' => 1200],
+        ['name' => 'lg', 'width' => 2000],
+        ['name' => 'thumbnail', 'width' => 600, 'height' => 600],
     ],
 ],
 ```
 
-- **Description**: Configures media handling, including storage disk, file paths, image quality, and thumbnail generation.
-- **Options**:
-  - **disk**: Specifies the storage disk (as defined in `config/filesystems.php`).
-  - **path**: Defines the directory where media files are stored.
-  - **quality**: Sets the image quality (percentage).
-  - **restrict_to_dimensions**: Limits uploaded images to specified dimensions.
-  - **max_file_size**: Maximum allowed file size in kilobytes.
-  - **generate_thumbnails**: Enables or disables automatic thumbnail generation.
-  - **dimensions**: Defines the different thumbnail sizes.
+#### Storage Configurations
 
-**Example: Changing the Media Disk and Disabling Thumbnail Generation**
-
+**Local Storage (Default)**
 ```php
 'media' => [
-    'disk' => 's3',
-    'generate_thumbnails' => false,
+    'disk' => 'public',
+    'path' => 'media',
 ],
 ```
 
-*Figure 10: Configuring Media Settings*
+**Amazon S3**
+```php
+'media' => [
+    'disk' => 's3',
+    'path' => 'aura-cms/media',
+    'quality' => 85,  // Balance quality/size
+],
 
-![Figure 10: Configuring Media Settings](placeholder-image.png)
+// In .env
+AWS_ACCESS_KEY_ID=your-key
+AWS_SECRET_ACCESS_KEY=your-secret
+AWS_DEFAULT_REGION=us-east-1
+AWS_BUCKET=your-bucket
+```
+
+**DigitalOcean Spaces**
+```php
+'media' => [
+    'disk' => 'spaces',
+    'path' => 'uploads',
+],
+```
+
+#### Custom Thumbnail Sizes
+
+```php
+// E-commerce focused
+'dimensions' => [
+    ['name' => 'thumb', 'width' => 150, 'height' => 150],
+    ['name' => 'product', 'width' => 800, 'height' => 800],
+    ['name' => 'zoom', 'width' => 1600, 'height' => 1600],
+    ['name' => 'mobile', 'width' => 400],
+    ['name' => 'desktop', 'width' => 1920],
+],
+
+// Blog focused
+'dimensions' => [
+    ['name' => 'card', 'width' => 400, 'height' => 300],
+    ['name' => 'hero', 'width' => 1920, 'height' => 600],
+    ['name' => 'social', 'width' => 1200, 'height' => 630],
+],
+```
+
+#### Performance Optimization
+
+```php
+// High-traffic site
+'media' => [
+    'disk' => 's3',
+    'quality' => 75,              // Lower quality for speed
+    'max_file_size' => 5000,      // 5MB limit
+    'generate_thumbnails' => true,
+    'restrict_to_dimensions' => [
+        'max_width' => 3000,
+        'max_height' => 3000,
+    ],
+],
+```
+
+> **Pro Tip**: Use queues for thumbnail generation on large files:
+> ```env
+> QUEUE_CONNECTION=redis
+> ```
 
 ---
 
-<a name="aura-settingsphp-configuration"></a>
-## aura-settings.php Configuration
+<a name="settings-configuration"></a>
+## Settings Configuration (aura-settings.php)
 
-The `aura-settings.php` file provides additional configuration options related to resource paths, widgets, and middleware. This allows for further customization and organization of your Aura CMS setup.
+The `config/aura-settings.php` file handles advanced configuration for paths, auto-discovery, and middleware.
 
-<a name="paths"></a>
-### Paths
+<a name="resource-field-paths"></a>
+### Resource & Field Paths
 
 ```php
 'paths' => [
     'resources' => [
         'namespace' => 'App\\Aura\\Resources',
         'path' => app_path('Aura/Resources'),
-        'register' => [],
+        'register' => [],  // Additional resources
     ],
-
     'fields' => [
         'namespace' => 'App\\Aura\\Fields',
         'path' => app_path('Aura/Fields'),
-        'register' => [],
+        'register' => [],  // Additional fields
     ],
 ],
 ```
 
-- **Description**: Defines the namespaces and directories for resources and fields.
-- **Options**:
-  - **namespace**: The PHP namespace for the resources or fields.
-  - **path**: The filesystem path where resources or fields are located.
-  - **register**: An array to manually register additional resources or fields.
-
-**Example: Changing the Resources Path**
+#### Custom Organization
 
 ```php
+// Domain-driven structure
 'paths' => [
     'resources' => [
-        'namespace' => 'App\\Custom\\Resources',
-        'path' => app_path('Custom/Resources'),
-        'register' => [],
+        'namespace' => 'Domain\\Resources',
+        'path' => base_path('domain/Resources'),
+        'register' => [
+            // Manually register if needed
+            Domain\Blog\Resources\Article::class,
+            Domain\Shop\Resources\Product::class,
+        ],
+    ],
+],
+
+// Module-based structure
+'paths' => [
+    'resources' => [
+        'namespace' => 'Modules\\Aura\\Resources',
+        'path' => base_path('modules/aura/Resources'),
     ],
 ],
 ```
 
-*Figure 11: Configuring Resource Paths*
+#### Multiple Paths (Advanced)
 
-![Figure 11: Configuring Resource Paths](placeholder-image.png)
+```php
+// Register resources from multiple locations
+'resources' => [
+    'register' => [
+        // Core resources
+        ...glob(app_path('Aura/Resources/*.php')),
+        // Module resources
+        ...glob(base_path('modules/*/Resources/*.php')),
+        // Package resources
+        Vendor\Package\Resources\CustomResource::class,
+    ],
+],
+```
 
-<a name="widgets"></a>
-### Widgets
+<a name="widget-configuration"></a>
+### Widget Configuration
 
 ```php
 'widgets' => [
@@ -654,38 +705,54 @@ The `aura-settings.php` file provides additional configuration options related t
 ],
 ```
 
-- **Description**: Specifies the namespace and path for dashboard widgets.
-- **Customization**: Override the default widgets by specifying custom namespaces and paths.
-
-**Example: Adding a Custom Widget Directory**
+Widgets are auto-discovered from the configured path:
 
 ```php
+// app/Aura/Widgets/RevenueWidget.php
+namespace App\Aura\Widgets;
+
+use Aura\Base\Widgets\Widget;
+
+class RevenueWidget extends Widget
+{
+    public string $component = 'revenue-chart';
+    public string $title = 'Monthly Revenue';
+    public string $description = 'Revenue trends';
+    public array $size = ['width' => 6, 'height' => 4];
+    
+    public function data(): array
+    {
+        return [
+            'revenue' => Order::byMonth()->sum('total'),
+        ];
+    }
+}
+```
+
+**Manual Widget Registration:**
+```php
 'widgets' => [
-    'namespace' => 'App\\Custom\\Widgets',
-    'path' => app_path('Custom/Widgets'),
-    'register' => [],
+    'register' => [
+        App\Analytics\Widgets\UserGrowth::class,
+        App\Sales\Widgets\TopProducts::class,
+        Package\Widgets\ExternalWidget::class,
+    ],
 ],
 ```
 
-*Figure 12: Configuring Widgets*
-
-![Figure 12: Configuring Widgets](placeholder-image.png)
-
-<a name="middleware"></a>
-### Middleware
+<a name="middleware-stacks"></a>
+### Middleware Stacks
 
 ```php
 'middleware' => [
-    'aura-admin' => [
+    'aura-admin' => [         // Authenticated admin routes
         'web',
         'auth',
     ],
-
-    'aura-guest' => [
+    'aura-guest' => [         // Public routes (login, register)
         'web',
     ],
-
-    'aura-base' => [
+    'aura-base' => [          // Base stack for all routes
         \App\Http\Middleware\EncryptCookies::class,
         \Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse::class,
         \Illuminate\Session\Middleware\StartSession::class,
@@ -696,27 +763,43 @@ The `aura-settings.php` file provides additional configuration options related t
 ],
 ```
 
-- **Description**: Defines middleware stacks for different Aura CMS routes.
-- **Options**:
-  - **aura-admin**: Middleware applied to admin routes.
-  - **aura-guest**: Middleware applied to guest routes.
-  - **aura-base**: Base middleware applied to all Aura CMS requests.
+#### Custom Middleware Examples
 
-**Example: Adding a Custom Middleware to Aura Admin Routes**
-
+**Adding Security Headers:**
 ```php
 'middleware' => [
     'aura-admin' => [
         'web',
         'auth',
-        'custom.middleware',
+        App\Http\Middleware\SecurityHeaders::class,
+        App\Http\Middleware\LogActivity::class,
     ],
 ],
 ```
 
-*Figure 13: Configuring Middleware*
+**API Integration:**
+```php
+'middleware' => [
+    'aura-api' => [           // Custom API stack
+        'api',
+        'auth:sanctum',
+        'throttle:api',
+        App\Http\Middleware\ValidateApiKey::class,
+    ],
+],
+```
 
-![Figure 13: Configuring Middleware](placeholder-image.png)
+**Subscription Checking:**
+```php
+'middleware' => [
+    'aura-admin' => [
+        'web',
+        'auth',
+        App\Http\Middleware\EnsureSubscriptionActive::class,
+        App\Http\Middleware\CheckUserPermissions::class,
+    ],
+],
+```
 
 ---
 
