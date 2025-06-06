@@ -410,74 +410,358 @@ Choose from 20+ color palettes and configure:
 - Sidebar style
 - Login page background
 
-<a name="publishing-configuration-files"></a>
-## Additional Configuration
+<a name="post-installation-setup"></a>
+## Post-Installation Setup
 
-<a name="publishing-configuration-files"></a>
-### Publishing Configuration Files (Optional)
+### Essential Configuration
 
-If you need to publish the configuration files manually, run:
+After installation, optimize your setup for production:
 
-```bash
-php artisan vendor:publish --provider="Aura\Base\AuraServiceProvider"
-```
-
-This will publish the `aura.php` configuration file to your `config` directory.
-
-<a name="modifying-the-aura-configuration"></a>
-### Modifying the Aura Configuration (Optional)
-
-You can modify the Aura configuration at any time by running:
+#### 1. Storage Permissions
 
 ```bash
-php artisan aura:install-config
+# Set proper permissions
+chmod -R 775 storage bootstrap/cache
+chown -R www-data:www-data storage bootstrap/cache
+
+# Create storage link for public access
+php artisan storage:link
 ```
 
-This command allows you to:
+#### 2. Queue Configuration
 
-- Enable or disable teams (multi-tenancy).
-- Modify default features.
-- Allow or disallow user registration.
-- Customize the default theme.
+Aura CMS uses queues for:
+- Image processing and thumbnail generation
+- Email notifications
+- Bulk operations
 
-<a name="configuration-options"></a>
-#### Configuration Options
-
-- **Teams**: Enable or disable multi-tenancy support.
-- **Features**: Toggle features like global search, bookmarks, notifications, and more.
-- **Registration**: Allow or disallow user registration (`AURA_REGISTRATION` in `.env`).
-- **Theme Customization**: Choose color palettes, sidebar styles, and dark mode settings.
-
-<a name="environment-variables"></a>
-### Environment Variables
-
-Some settings may require updates to your `.env` file, such as enabling user registration:
+Configure your queue driver in `.env`:
 
 ```dotenv
-AURA_REGISTRATION=true
+QUEUE_CONNECTION=redis  # or database, sqs, etc.
+
+# For Redis
+REDIS_HOST=127.0.0.1
+REDIS_PASSWORD=null
+REDIS_PORT=6379
+
+# Start queue worker
+php artisan queue:work --queue=default,thumbnails
 ```
 
-<a name="notes"></a>
-## Notes
+#### 3. Media Storage
 
-- **Livewire Components**: To use the Aura layout in your Livewire components, extend `aura::components.layout.app`:
+Configure media storage for production:
 
-  ```php
-  public function render()
-  {
-      return view('livewire.my-component')->layout('aura::components.layout.app');
-  }
-  ```
+```dotenv
+# For S3/Cloud Storage
+FILESYSTEM_DISK=s3
+AWS_ACCESS_KEY_ID=your-key
+AWS_SECRET_ACCESS_KEY=your-secret
+AWS_DEFAULT_REGION=us-east-1
+AWS_BUCKET=your-bucket
 
-- **Multi-Tenancy**: Teams are enabled by default. To disable, set `'teams' => false` in `config/aura.php` or choose "No" when prompted during configuration.
+# Update config/aura.php
+'media' => [
+    'disk' => env('FILESYSTEM_DISK', 'public'),
+    'path' => 'media',
+]
+```
+
+#### 4. Cache Configuration
+
+```bash
+# Cache configuration for production
+php artisan config:cache
+php artisan route:cache
+php artisan view:cache
+php artisan icons:cache  # If using Blade Icons
+
+# Clear all caches when needed
+php artisan aura:clear-cache
+```
+
+#### 5. Email Configuration
+
+```dotenv
+MAIL_MAILER=smtp
+MAIL_HOST=smtp.mailtrap.io
+MAIL_PORT=2525
+MAIL_USERNAME=null
+MAIL_PASSWORD=null
+MAIL_ENCRYPTION=null
+MAIL_FROM_ADDRESS="hello@example.com"
+MAIL_FROM_NAME="${APP_NAME}"
+```
+
+### Security Hardening
+
+#### 1. Environment File
+
+```bash
+# Ensure .env is not accessible
+chmod 600 .env
+
+# Generate application key if not set
+php artisan key:generate
+```
+
+#### 2. HTTPS Configuration
+
+```nginx
+# Nginx configuration for HTTPS
+server {
+    listen 443 ssl http2;
+    server_name yourdomain.com;
+    
+    ssl_certificate /path/to/certificate.crt;
+    ssl_certificate_key /path/to/private.key;
+    
+    # Force HTTPS in Laravel
+    # Add to AppServiceProvider boot method
+    if (config('app.env') === 'production') {
+        URL::forceScheme('https');
+    }
+}
+```
+
+#### 3. Security Headers
+
+Add to your web server configuration:
+
+```nginx
+add_header X-Frame-Options "SAMEORIGIN";
+add_header X-Content-Type-Options "nosniff";
+add_header X-XSS-Protection "1; mode=block";
+add_header Referrer-Policy "strict-origin-when-cross-origin";
+```
+
+<a name="troubleshooting"></a>
+## Troubleshooting
+
+### Common Installation Issues
+
+#### 1. Composer Memory Limit
+
+```bash
+# Error: Allowed memory size exhausted
+COMPOSER_MEMORY_LIMIT=-1 composer require eminiarts/aura-cms
+```
+
+#### 2. Permission Denied Errors
+
+```bash
+# Fix storage permissions
+sudo chown -R $USER:www-data storage bootstrap/cache
+sudo chmod -R 775 storage bootstrap/cache
+```
+
+#### 3. Migration Errors
+
+```bash
+# Error: Table already exists
+php artisan migrate:fresh --seed
+
+# Error: Foreign key constraint fails
+# Ensure you're using InnoDB engine for MySQL
+DB_ENGINE=InnoDB
+```
+
+#### 4. Missing PHP Extensions
+
+```bash
+# Check missing extensions
+php -m | grep -E 'bcmath|gd|imagick'
+
+# Install missing extensions (Ubuntu/Debian)
+sudo apt-get install php8.2-bcmath php8.2-gd php8.2-imagick
+
+# Install missing extensions (macOS with Homebrew)
+brew install php@8.2-gd php@8.2-imagick
+```
+
+#### 5. Assets Not Loading
+
+```bash
+# Republish assets
+php artisan vendor:publish --tag=aura-assets --force
+
+# Clear view cache
+php artisan view:clear
+
+# Check symbolic link
+php artisan storage:link
+```
+
+#### 6. Login Issues
+
+```bash
+# Clear all caches
+php artisan cache:clear
+php artisan config:clear
+php artisan route:clear
+
+# Regenerate key
+php artisan key:generate
+
+# Check session configuration
+# Ensure SESSION_DOMAIN matches your domain
+SESSION_DOMAIN=.yourdomain.com
+```
+
+### Database-Specific Issues
+
+#### MySQL 8.0 Authentication
+
+```sql
+-- If you get authentication errors with MySQL 8
+ALTER USER 'username'@'localhost' IDENTIFIED WITH mysql_native_password BY 'password';
+FLUSH PRIVILEGES;
+```
+
+#### PostgreSQL Configuration
+
+```dotenv
+DB_CONNECTION=pgsql
+DB_HOST=127.0.0.1
+DB_PORT=5432
+DB_DATABASE=aura_cms
+DB_USERNAME=postgres
+DB_PASSWORD=password
+DB_SCHEMA=public
+```
+
+### Performance Optimization
+
+#### 1. Enable OPcache
+
+```ini
+; php.ini
+opcache.enable=1
+opcache.memory_consumption=256
+opcache.max_accelerated_files=20000
+opcache.validate_timestamps=0
+```
+
+#### 2. Redis Configuration
+
+```bash
+# Install Redis PHP extension
+pecl install redis
+
+# Configure Laravel for Redis sessions and cache
+SESSION_DRIVER=redis
+CACHE_DRIVER=redis
+```
+
+#### 3. Database Indexing
+
+```bash
+# Run Aura's optimization command
+php artisan aura:optimize
+
+# This creates indexes for:
+# - Meta table lookups
+# - Resource type queries
+# - Team scoping
+```
+
+<a name="deployment"></a>
+## Deployment
+
+### Production Deployment Checklist
+
+#### Pre-deployment
+
+- [ ] Set `APP_ENV=production` and `APP_DEBUG=false`
+- [ ] Configure production database
+- [ ] Set up Redis/cache backend
+- [ ] Configure queue workers
+- [ ] Set up SSL certificates
+- [ ] Configure backups
+
+#### Deployment Steps
+
+```bash
+# 1. Upload code to server
+git pull origin main
+
+# 2. Install dependencies (no dev)
+composer install --optimize-autoloader --no-dev
+
+# 3. Run migrations
+php artisan migrate --force
+
+# 4. Cache everything
+php artisan config:cache
+php artisan route:cache
+php artisan view:cache
+
+# 5. Restart services
+php artisan queue:restart
+sudo service php8.2-fpm restart
+sudo service nginx restart
+```
+
+#### Popular Hosting Platforms
+
+**Laravel Forge**
+- Automated deployments
+- Queue worker management
+- SSL certificates
+- Database backups
+
+**Digital Ocean App Platform**
+```yaml
+# app.yaml
+name: aura-cms
+services:
+- name: web
+  environment_slug: php
+  github:
+    branch: main
+    deploy_on_push: true
+  build_command: composer install --optimize-autoloader --no-dev
+  run_command: php artisan serve --host=0.0.0.0 --port=8080
+```
+
+**Heroku**
+```json
+// composer.json
+"scripts": {
+    "post-install-cmd": [
+        "php artisan aura:publish --force"
+    ]
+}
+```
+
+### Monitoring
+
+Set up monitoring for:
+- Application errors (Sentry, Bugsnag)
+- Performance metrics (New Relic, Datadog)
+- Uptime monitoring (Pingdom, UptimeRobot)
+- Log aggregation (Papertrail, Loggly)
 
 <a name="next-steps"></a>
 ## Next Steps
 
-Now that Aura CMS is installed, you can start building your application by:
+Congratulations! Aura CMS is now installed. Here's what to do next:
 
-- [Configuring Aura](configuration.md)
-- [Understanding Resources](resources.md)
-- [Customizing Themes and Views](theme-customization.md)
+1. 📖 **[Configuration Guide](configuration.md)** - Deep dive into all configuration options
+2. 🚀 **[Quick Start Tutorial](quick-start.md)** - Build your first Aura application
+3. 📚 **[Understanding Resources](resources.md)** - Learn the core concepts
+4. 🎨 **[Customizing Appearance](themes.md)** - Make it yours
+
+### Additional Resources
+
+- **Community Forum**: Get help and share experiences
+- **GitHub Issues**: Report bugs or request features
+- **YouTube Channel**: Video tutorials and tips
+- **Discord Server**: Real-time community support
+
+> **Need Help?** Check our [Troubleshooting Guide](#troubleshooting) or visit the community forum for assistance.
 
 ---
+
+**Happy building with Aura CMS!** 🚀
