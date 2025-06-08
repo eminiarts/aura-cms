@@ -1,919 +1,751 @@
-# Livewire Components Reference
+# Livewire Components
 
-Aura CMS is built on Laravel Livewire, providing dynamic, reactive components without writing JavaScript. This comprehensive guide covers all Livewire components, their customization, and how to build your own.
+Aura CMS leverages Livewire 3 to create dynamic, reactive user interfaces without writing JavaScript. This guide covers all built-in Livewire components, how to use them, customize them, and create your own.
 
 ## Table of Contents
 
-- [Overview](#overview)
-- [Component Architecture](#component-architecture)
-- [Core Components](#core-components)
-- [Resource Components](#resource-components)
-- [Table Component](#table-component)
-- [Form Components](#form-components)
-- [Media Components](#media-components)
-- [UI Components](#ui-components)
-- [Component Communication](#component-communication)
-- [Creating Custom Components](#creating-custom-components)
-- [Real-time Features](#real-time-features)
-- [Performance Optimization](#performance-optimization)
-- [Testing Components](#testing-components)
-- [Best Practices](#best-practices)
+1. [Introduction](#introduction)
+2. [Core Components](#core-components)
+3. [Resource Components](#resource-components)
+4. [Table Component](#table-component)
+5. [Media Components](#media-components)
+6. [Modal & Overlay System](#modal--overlay-system)
+7. [Form Components](#form-components)
+8. [Navigation & UI Components](#navigation--ui-components)
+9. [Component Communication](#component-communication)
+10. [Creating Custom Components](#creating-custom-components)
+11. [Performance Optimization](#performance-optimization)
+12. [Testing Components](#testing-components)
+13. [Best Practices](#best-practices)
 
-## Overview
+## Introduction
 
-Aura CMS leverages Livewire to create a seamless, SPA-like experience while maintaining the simplicity of server-side rendering. Components are reactive, performant, and deeply integrated with the Resource system.
+Aura CMS's Livewire components provide a complete set of UI building blocks that handle complex interactions server-side while maintaining a reactive, SPA-like experience.
 
 ### Key Features
-- **Zero JavaScript Required**: Build interactive UIs with PHP
-- **Reactive Properties**: Automatic DOM updates on property changes
-- **Event System**: Component-to-component communication
-- **File Uploads**: Built-in support for direct uploads
-- **Validation**: Real-time validation with Laravel rules
-- **Authorization**: Integrated policy checks
-- **Testing**: First-class testing support
 
-> 📹 **Video Placeholder**: [Overview of Aura CMS Livewire components showing reactivity and interactions]
+- **Server-side Reactivity**: All logic runs on the server, keeping your frontend simple
+- **Automatic DOM Diffing**: Only changed parts of the UI update
+- **Built-in Validation**: Laravel validation rules work seamlessly
+- **Real-time Updates**: Components can communicate via events
+- **Team-aware**: All components respect team context when enabled
+- **Permission Integration**: Authorization checks are built-in
 
-## Component Architecture
-
-### Base Component Structure
+### Component Architecture
 
 ```php
-namespace Aura\Base\Livewire;
+namespace App\Http\Livewire;
 
+use Aura\Base\Traits\WithLivewireHelpers;
 use Livewire\Component;
 
-class ExampleComponent extends Component
+class MyComponent extends Component
 {
-    // Public properties are reactive
-    public $search = '';
-    public $filters = [];
+    use WithLivewireHelpers; // Aura's helper methods
     
-    // Protected properties for internal state
-    protected $queryString = ['search'];
+    public $property;
     
-    // Lifecycle hooks
-    public function mount($param = null)
+    public function mount($parameter)
     {
-        // Initialize component
+        // Initialization logic
     }
     
     public function render()
     {
-        return view('aura::livewire.example-component');
+        return view('livewire.my-component');
     }
 }
-```
-
-### Component Traits
-
-Aura uses traits to share common functionality:
-
-```php
-use Aura\Base\Traits\InteractsWithFields;
-use Aura\Base\Traits\MediaFields;
-use Aura\Base\Traits\WithLivewireHelpers;
-
-class ResourceForm extends Component
-{
-    use InteractsWithFields;
-    use MediaFields;
-    use WithLivewireHelpers;
-}
-```
-
-### Component Registration
-
-Components are auto-discovered by Livewire. Custom namespace registration:
-
-```php
-// In service provider
-Livewire::component('custom-component', CustomComponent::class);
 ```
 
 ## Core Components
 
 ### Dashboard Component
 
-The main dashboard entry point:
+The main dashboard that users see after login.
 
 ```php
-// src/Livewire/Dashboard.php
-class Dashboard extends Component
-{
-    public function render()
-    {
-        $widgets = $this->getWidgets();
-        
-        return view('aura::livewire.dashboard', [
-            'widgets' => $widgets
-        ])->layout('aura::components.layout.app');
-    }
-}
+use Aura\Base\Livewire\Dashboard;
+
+// In your view
+@livewire('aura::dashboard')
 ```
 
-Usage in views:
-```blade
-<livewire:dashboard />
+**Features:**
+- Widget display
+- Quick actions
+- Recent activity
+- Customizable layout
+
+**Customization:**
+```php
+// Extend the dashboard
+class CustomDashboard extends Dashboard
+{
+    public function getWidgets()
+    {
+        return [
+            new ValueWidget('Total Users', User::count()),
+            new SparklineWidget('Sales', $this->getSalesData()),
+        ];
+    }
+}
 ```
 
 ### Global Search
 
-Provides instant search across all resources:
+Provides instant search across all resources with keyboard shortcut (⇧⌘K).
 
 ```php
-// src/Livewire/GlobalSearch.php
-class GlobalSearch extends Component
+@livewire('aura::global-search')
+```
+
+**Configuration:**
+```php
+// In your Resource
+public static function searchable(): array
 {
-    public $search = '';
-    
-    public function getSearchResultsProperty()
-    {
-        if (!$this->search) {
-            return [];
-        }
-        
-        $resources = Aura::getResources();
-        $results = collect();
-        
-        foreach ($resources as $resource) {
-            // Search logic
-        }
-        
-        return $results->groupBy('type');
-    }
+    return ['title', 'content', 'author'];
+}
+
+public static function getGlobalSearch(): bool
+{
+    return true; // Include in global search
 }
 ```
 
-Features:
-- Real-time search as you type
-- Groups results by resource type
-- Searches meta fields
-- Respects permissions
-- Keyboard navigation support
+**Usage in Blade:**
+```html
+<div x-data="{ open: false }" 
+     @keydown.window.cmd.shift.k="open = true"
+     @keydown.window.escape="open = false">
+    <div x-show="open">
+        @livewire('aura::global-search')
+    </div>
+</div>
+```
 
 ### Navigation Component
 
-Dynamic navigation based on user permissions:
+Dynamic navigation that responds to permissions and team context.
 
 ```php
-class Navigation extends Component
+@livewire('aura::navigation')
+```
+
+**Customizing Navigation:**
+```php
+// In AuraServiceProvider
+use Aura\Base\Facades\Aura;
+
+public function boot()
 {
-    public $navigation;
-    
-    public function mount()
-    {
-        $this->navigation = Aura::navigation()
-            ->filter(fn($item) => Gate::allows($item->gate));
-    }
+    Aura::navigation(function ($items) {
+        $items->add('Custom Page', '/custom', 'icon-name')
+              ->after('Dashboard');
+        
+        $items->group('Admin', function ($group) {
+            $group->add('Settings', '/settings');
+            $group->add('Users', '/users');
+        })->requirePermission('admin.access');
+    });
 }
 ```
 
-### Notifications
-
-Real-time notification management:
-
-```php
-class Notifications extends Component
-{
-    public $tab = 'unread';
-    
-    public function markAllAsRead()
-    {
-        auth()->user()->unreadNotifications->markAsRead();
-        $this->notify('All notifications marked as read');
-    }
-    
-    public function render()
-    {
-        return view('aura::livewire.notifications', [
-            'unread' => auth()->user()->unreadNotifications,
-            'read' => auth()->user()->readNotifications
-        ]);
-    }
-}
-```
 
 ## Resource Components
 
-### Create Component
+### Resource Index
 
-Handles resource creation with field validation:
+Lists resources in table, grid, or kanban view.
 
 ```php
-// src/Livewire/Resource/Create.php
-class Create extends Component
+@livewire('aura::resource.index', ['slug' => 'posts'])
+```
+
+**Features:**
+- Multiple view modes (table, grid, kanban)
+- Sorting and filtering
+- Bulk actions
+- Search
+- Pagination
+
+**Customization:**
+```php
+class PostIndex extends \Aura\Base\Livewire\Resource\Index
 {
-    use InteractsWithFields;
-    
-    public $form;
-    public $model;
-    
-    public function mount($slug)
+    public function query()
     {
-        $this->model = Aura::findResourceBySlug($slug);
-        $this->authorize('create', $this->model);
-        
-        $this->form = $this->model->toArray();
-        $this->initializeFieldsWithDefaults();
+        return parent::query()
+            ->where('status', 'published')
+            ->with('author');
     }
     
+    public function bulkActions()
+    {
+        return [
+            'publish' => 'Publish Selected',
+            'archive' => 'Archive Selected',
+        ];
+    }
+}
+```
+
+### Resource Create/Edit
+
+Form components for creating and editing resources.
+
+```php
+// Create new resource
+@livewire('aura::resource.create', ['slug' => 'posts'])
+
+// Edit existing resource
+@livewire('aura::resource.edit', ['slug' => 'posts', 'id' => $post->id])
+```
+
+**Field Handling:**
+```php
+class PostCreate extends \Aura\Base\Livewire\Resource\Create
+{
     public function save()
     {
+        // Custom save logic
         $this->validate();
         
-        $model = $this->model->create($this->form['fields']);
+        // Pre-save hook
+        $this->form['published_at'] = now();
         
-        $this->notify('Successfully created.');
-        
-        return redirect()->route("aura.{$this->slug}.edit", $model->id);
-    }
-}
-```
-
-### Edit Component
-
-Resource editing with live validation:
-
-```php
-class Edit extends Component
-{
-    public $form;
-    public $post;
-    
-    public function mount($slug, $id)
-    {
-        $this->post = $this->model::find($id);
-        $this->authorize('update', $this->post);
-        
-        $this->form = $this->post->toArray();
-    }
-    
-    public function updated($propertyName)
-    {
-        $this->validateOnly($propertyName);
-    }
-    
-    public function save()
-    {
-        $this->validate();
-        $this->post->update($this->form['fields']);
-        $this->notify('Successfully updated.');
-    }
-}
-```
-
-### Index Component
-
-Lists resources with table component:
-
-```php
-class Index extends Component
-{
-    public function render()
-    {
-        return view('aura::livewire.resource.index', [
-            'resource' => $this->model
-        ])->layout('aura::components.layout.app');
-    }
-}
-```
-
-### View Component
-
-Display single resource:
-
-```php
-class View extends Component
-{
-    public $post;
-    
-    public function mount($slug, $id)
-    {
-        $this->post = $this->model::with($this->model->with())->find($id);
-        $this->authorize('view', $this->post);
-    }
-}
-```
-
-### Modal Variants
-
-Each resource component has a modal variant:
-
-```php
-class CreateModal extends Create
-{
-    public $inModal = true;
-    
-    public function save()
-    {
-        // Parent save logic
         parent::save();
         
-        // Modal-specific behavior
-        $this->dispatch('closeModal');
-        $this->dispatch('refreshTable');
+        // Post-save hook
+        event(new PostCreated($this->model));
     }
 }
+```
+
+### Resource View
+
+Display resource in read-only mode.
+
+```php
+@livewire('aura::resource.view', ['slug' => 'posts', 'id' => $post->id])
 ```
 
 ## Table Component
 
-The most complex component with multiple traits:
-
-### Architecture
-
-```php
-// src/Livewire/Table/Table.php
-class Table extends Component
-{
-    use BulkActions;
-    use Filters;
-    use Kanban;
-    use PerPagePagination;
-    use QueryFilters;
-    use Search;
-    use Settings;
-    use Sorting;
-    use SwitchView;
-}
-```
+The most powerful component in Aura CMS, providing advanced data display and manipulation.
 
 ### Basic Usage
 
-```blade
-<livewire:table :resource="$resource" />
+```php
+use Aura\Base\Livewire\Table\Table;
+
+@livewire('aura::table', [
+    'model' => Post::class,
+    'columns' => ['title', 'author', 'created_at'],
+])
 ```
 
 ### Advanced Configuration
 
 ```php
-// In your resource
-public function table()
+class PostTable extends Table
 {
-    return [
-        'columns' => $this->indexFields(),
-        'filters' => $this->filters(),
-        'bulkActions' => $this->bulkActions(),
-        'defaultSort' => '-created_at',
-        'defaultPerPage' => 25,
-        'views' => ['table', 'grid', 'kanban'],
-    ];
+    public function columns()
+    {
+        return [
+            'title' => [
+                'label' => 'Post Title',
+                'sortable' => true,
+                'searchable' => true,
+            ],
+            'author.name' => [
+                'label' => 'Author',
+                'sortable' => true,
+            ],
+            'status' => [
+                'label' => 'Status',
+                'component' => 'status-badge',
+            ],
+            'actions' => [
+                'label' => '',
+                'component' => 'table-actions',
+            ],
+        ];
+    }
+    
+    public function filters()
+    {
+        return [
+            'status' => [
+                'type' => 'select',
+                'options' => ['draft', 'published', 'archived'],
+            ],
+            'created_at' => [
+                'type' => 'date-range',
+            ],
+        ];
+    }
+    
+    public function bulkActions()
+    {
+        return [
+            'delete' => [
+                'label' => 'Delete Selected',
+                'confirm' => 'Are you sure?',
+                'action' => 'deleteSelected',
+            ],
+        ];
+    }
 }
 ```
 
 ### Table Traits
 
-#### BulkActions Trait
+The table component uses modular traits for functionality:
+
 ```php
-trait BulkActions
+use BulkActions;    // Bulk operations on rows
+use Filters;       // Advanced filtering
+use Kanban;        // Kanban board view
+use Search;        // Search functionality
+use Select;        // Row selection
+use Settings;      // User preferences
+use Sorting;       // Column sorting
+use SwitchView;    // Toggle views
+```
+
+
+## Media Components
+
+### Media Manager
+
+Full-featured media library interface.
+
+```php
+@livewire('aura::media-manager')
+```
+
+**Integration Example:**
+```php
+<div x-data="{ showMediaManager: false }">
+    <button @click="showMediaManager = true">Select Image</button>
+    
+    <div x-show="showMediaManager">
+        @livewire('aura::media-manager', [
+            'mode' => 'picker',
+            'accept' => 'image/*',
+            'multiple' => false,
+        ])
+    </div>
+</div>
+
+@script
+<script>
+    $wire.on('media-selected', (media) => {
+        // Handle selected media
+        console.log('Selected:', media);
+    });
+</script>
+@endscript
+```
+
+### Media Uploader
+
+Drag-and-drop file upload component.
+
+```php
+@livewire('aura::media-uploader', [
+    'field' => 'featured_image',
+    'accept' => 'image/*',
+    'maxSize' => 5, // MB
+])
+```
+
+**Handling Uploads:**
+```php
+class ProductForm extends Component
 {
-    public $selectedRows = [];
-    public $selectAll = false;
+    use WithFileUploads;
     
-    public function toggleSelectAll()
+    public $images = [];
+    
+    public function updatedImages()
     {
-        if ($this->selectAll) {
-            $this->selectedRows = $this->rows->pluck('id')->toArray();
-        } else {
-            $this->selectedRows = [];
+        $this->validate([
+            'images.*' => 'image|max:5120', // 5MB max
+        ]);
+        
+        foreach ($this->images as $image) {
+            $path = $image->store('products', 'public');
+            
+            Attachment::create([
+                'path' => $path,
+                'type' => 'product-image',
+                'attachable_type' => Product::class,
+                'attachable_id' => $this->product->id,
+            ]);
         }
-    }
-    
-    public function bulkDelete()
-    {
-        $this->authorize('delete', $this->model);
         
-        $this->model::whereIn('id', $this->selectedRows)->delete();
-        
-        $this->selectedRows = [];
-        $this->notify('Successfully deleted.');
+        $this->notify('Images uploaded successfully!');
     }
 }
 ```
 
-#### Filters Trait
+### Image Upload
+
+Specialized component for single image uploads with preview.
+
 ```php
-trait Filters
+@livewire('aura::image-upload', [
+    'model' => $user,
+    'field' => 'avatar',
+    'disk' => 'public',
+])
+```
+
+## Modal & Overlay System
+
+### Modal Component
+
+Base modal system for dialogs and forms.
+
+```php
+// Trigger modal
+<button wire:click="$dispatch('openModal', { component: 'user-form', arguments: { userId: {{ $user->id }} } })">
+    Edit User
+</button>
+
+// Modal component
+class UserForm extends Component implements ModalInterface
 {
-    public $filters = [
-        'status' => '',
-        'category' => null,
-        'date_from' => '',
-        'date_to' => '',
-    ];
+    public $user;
     
-    public function applyFilters($query)
+    public function mount($userId = null)
     {
-        return $query
-            ->when($this->filters['status'], fn($q, $status) => 
-                $q->where('status', $status)
-            )
-            ->when($this->filters['category'], fn($q, $category) => 
-                $q->where('category_id', $category)
-            );
+        $this->user = $userId ? User::find($userId) : new User;
+    }
+    
+    public function save()
+    {
+        $this->validate();
+        $this->user->save();
+        
+        $this->closeModal();
+        $this->dispatch('user-saved');
     }
 }
 ```
 
-#### Search Trait
+### Slide-Over Panel
+
+Side panel for forms and details.
+
 ```php
-trait Search
+@livewire('aura::slide-over', [
+    'component' => 'resource-details',
+    'params' => ['id' => $resource->id],
+])
+```
+
+**Creating Slide-Over Components:**
+```php
+class ResourceDetails extends Component
 {
-    public $search = '';
+    public $resource;
     
-    protected $queryString = ['search'];
-    
-    public function updatedSearch()
+    public function mount($id)
     {
-        $this->resetPage();
+        $this->resource = Resource::findOrFail($id);
     }
     
-    public function applySearch($query)
+    public function render()
     {
-        if (!$this->search) {
-            return $query;
-        }
-        
-        $searchableFields = $this->model->getSearchableFields();
-        
-        return $query->where(function ($q) use ($searchableFields) {
-            foreach ($searchableFields as $field) {
-                $q->orWhere($field->slug, 'like', "%{$this->search}%");
-            }
-        });
+        return view('livewire.resource-details')
+            ->layout('aura::components.slide-over');
     }
 }
 ```
 
 ## Form Components
 
-### ResourceForm
+### Resource Form
 
-Base form handling for all resources:
+Base form handling for resources.
 
 ```php
-// src/Livewire/Forms/ResourceForm.php
-class ResourceForm extends Form
+use Aura\Base\Livewire\Forms\ResourceForm;
+
+class PostForm extends ResourceForm
 {
-    public $fields = [];
-    
-    public function setPost($post)
+    public function rules()
     {
-        $this->fields = $post->fields;
+        return [
+            'form.fields.title' => 'required|min:3',
+            'form.fields.content' => 'required',
+            'form.fields.published_at' => 'nullable|date',
+        ];
     }
     
-    public function store()
+    public function save()
     {
         $this->validate();
         
-        return $this->model->create($this->all());
-    }
-    
-    public function update($post)
-    {
-        $this->validate();
-        
-        $post->update($this->all());
-    }
-}
-```
-
-### Field Interactions
-
-Dynamic field updates:
-
-```php
-// In component
-public function updateField($slug, $value)
-{
-    $this->form['fields'][$slug] = $value;
-    
-    // Trigger dependent field updates
-    $this->dispatch('fieldUpdated', [
-        'slug' => $slug,
-        'value' => $value
-    ]);
-}
-
-// Listen for field updates
-protected $listeners = ['fieldUpdated' => 'handleFieldUpdate'];
-
-public function handleFieldUpdate($data)
-{
-    // React to field changes
-}
-```
-
-## Media Components
-
-### MediaManager
-
-Central media selection interface:
-
-```php
-class MediaManager extends Component
-{
-    public $selected = [];
-    public $multiple = false;
-    public $field;
-    
-    public function selectMedia($mediaId)
-    {
-        if ($this->multiple) {
-            $this->selected[] = $mediaId;
-        } else {
-            $this->selected = [$mediaId];
+        // Custom logic before save
+        if ($this->form['fields']['status'] === 'published' && !$this->form['fields']['published_at']) {
+            $this->form['fields']['published_at'] = now();
         }
         
-        $this->dispatch('mediaSelected', [
-            'field' => $this->field,
-            'media' => $this->selected
-        ]);
+        parent::save();
     }
 }
 ```
 
-### MediaUploader
+### Field Components
 
-Handle file uploads:
+Each field type has its own Livewire handling:
 
 ```php
-class MediaUploader extends Component
-{
-    use WithFileUploads;
-    
-    public $files = [];
-    
-    public function updatedFiles()
-    {
-        foreach ($this->files as $file) {
-            $attachment = Attachment::create([
-                'name' => $file->getClientOriginalName(),
-                'path' => $file->store('media'),
-                'mime_type' => $file->getMimeType(),
-                'size' => $file->getSize(),
-            ]);
-            
-            $this->dispatch('fileUploaded', $attachment);
-        }
-    }
-}
+// Text field with real-time validation
+<div>
+    <x-aura::input.text 
+        wire:model.live="form.fields.title"
+        wire:key="field-title"
+        label="Title"
+        :error="$errors->first('form.fields.title')"
+    />
+</div>
+
+// Select field with dynamic options
+<div>
+    <x-aura::input.select
+        wire:model="form.fields.category_id"
+        wire:change="updateSubcategories"
+        :options="$categories"
+        label="Category"
+    />
+</div>
 ```
 
-### ImageUpload
+## Navigation & UI Components
 
-Specialized image handling:
+### Bookmarks
+
+Allow users to bookmark frequently accessed pages.
 
 ```php
-class ImageUpload extends Component
-{
-    public $image;
-    public $preview;
-    
-    public function updatedImage()
-    {
-        $this->validate([
-            'image' => 'image|max:2048'
-        ]);
-        
-        $this->preview = $this->image->temporaryUrl();
-    }
-}
+@livewire('aura::bookmark-page', [
+    'title' => 'Product List',
+    'url' => request()->url(),
+])
 ```
 
-## UI Components
+### Notifications
 
-### Modal System
+Real-time notification center.
 
 ```php
-class Modal extends Component
+@livewire('aura::notifications')
+
+// Send notification from any component
+$this->notify('Task completed successfully!', 'success');
+$this->notify('Error processing request', 'error');
+```
+
+**Custom Notifications:**
+```php
+use Aura\Base\Notifications\CustomNotification;
+
+class OrderShipped extends CustomNotification
 {
-    public $show = false;
-    public $component;
-    public $params = [];
-    
-    protected $listeners = ['openModal'];
-    
-    public function openModal($component, $params = [])
+    public function via($notifiable)
     {
-        $this->component = $component;
-        $this->params = $params;
-        $this->show = true;
+        return ['database', 'broadcast'];
     }
     
-    public function closeModal()
+    public function toArray($notifiable)
     {
-        $this->show = false;
-        $this->component = null;
-        $this->params = [];
+        return [
+            'title' => 'Order Shipped',
+            'message' => "Order #{$this->order->id} has been shipped",
+            'action' => route('orders.view', $this->order),
+        ];
     }
 }
 ```
 
-Usage:
-```blade
-<!-- Trigger modal -->
-<button wire:click="$dispatch('openModal', { 
-    component: 'resource.create-modal',
-    params: { slug: 'products' }
-})">
-    Create Product
-</button>
+### Settings
 
-<!-- Modal container -->
-<livewire:modal />
-```
-
-### SlideOver Panel
+System-wide settings management.
 
 ```php
-class SlideOver extends Component
-{
-    public $open = false;
-    public $component;
-    
-    protected $listeners = ['openSlideOver', 'closeSlideOver'];
-    
-    public function openSlideOver($component, $params = [])
-    {
-        $this->component = $component;
-        $this->open = true;
-    }
-}
-```
-
-### BookmarkPage
-
-User page bookmarking:
-
-```php
-class BookmarkPage extends Component
-{
-    public $url;
-    public $bookmarked = false;
-    
-    public function mount()
-    {
-        $this->url = request()->url();
-        $this->bookmarked = auth()->user()
-            ->bookmarks()
-            ->where('url', $this->url)
-            ->exists();
-    }
-    
-    public function toggle()
-    {
-        if ($this->bookmarked) {
-            auth()->user()->bookmarks()
-                ->where('url', $this->url)
-                ->delete();
-        } else {
-            auth()->user()->bookmarks()->create([
-                'url' => $this->url,
-                'title' => $this->getPageTitle(),
-            ]);
-        }
-        
-        $this->bookmarked = !$this->bookmarked;
-    }
-}
+@livewire('aura::settings', [
+    'group' => 'general', // general, email, api, etc.
+])
 ```
 
 ## Component Communication
 
-### Events & Listeners
+### Events
+
+Components communicate through Livewire events:
 
 ```php
-// Dispatching events
-$this->dispatch('userCreated', ['userId' => $user->id]);
+// Dispatch event from component
+$this->dispatch('resource-saved', id: $resource->id);
 
-// Global event
-$this->dispatch('notify', [
-    'type' => 'success',
-    'message' => 'User created successfully'
-]);
+// Listen in another component
+protected $listeners = ['resource-saved' => 'handleResourceSaved'];
 
-// To specific component
-$this->dispatch('refreshTable')->to('table');
+public function handleResourceSaved($id)
+{
+    $this->resource = Resource::find($id);
+    $this->refreshData();
+}
+```
 
-// Self-dispatching
+### Direct Component Calls
+
+```php
+// Call method on another component
+$this->dispatch('refreshComponent')->to('resource-table');
+
+// Self-referencing
 $this->dispatch('$refresh');
 ```
 
-### Listening to Events
+### JavaScript Integration
 
-```php
-class UserList extends Component
-{
-    protected $listeners = [
-        'userCreated' => 'refreshList',
-        'userDeleted' => '$refresh', // Magic refresh
-        'echo:users,UserUpdated' => 'handleUserUpdate' // Laravel Echo
-    ];
-    
-    public function refreshList($data)
-    {
-        // Handle the event
-    }
-}
-```
-
-### Parent-Child Communication
-
-```php
-// Parent component
-class ParentForm extends Component
-{
-    public function handleChildUpdate($field, $value)
-    {
-        $this->form[$field] = $value;
-    }
-}
-
-// Child component
-class FieldComponent extends Component
-{
-    public function updateValue($value)
-    {
-        $this->dispatch('fieldUpdated', [
-            'field' => $this->field,
-            'value' => $value
-        ])->up(); // Dispatch to parent
-    }
-}
+```blade
+@script
+<script>
+    // Listen for Livewire events in Alpine
+    Alpine.data('resourceManager', () => ({
+        resources: [],
+        
+        init() {
+            Livewire.on('resource-updated', (data) => {
+                this.refreshResources();
+            });
+        },
+        
+        refreshResources() {
+            // Update UI
+        }
+    }));
+</script>
+@endscript
 ```
 
 ## Creating Custom Components
 
-### Basic Component
+### Basic Structure
 
 ```bash
 php artisan make:livewire CustomComponent
 ```
 
-Creates:
-- `app/Livewire/CustomComponent.php`
-- `resources/views/livewire/custom-component.blade.php`
-
-### Component with Traits
-
 ```php
-namespace App\Livewire;
+namespace App\Http\Livewire;
 
-use Aura\Base\Traits\InteractsWithFields;
+use Aura\Base\Traits\WithLivewireHelpers;
 use Livewire\Component;
 
-class CustomResourceForm extends Component
+class CustomComponent extends Component
 {
-    use InteractsWithFields;
+    use WithLivewireHelpers;
     
-    public $resource;
-    public $form = [];
+    public $data = [];
     
-    public function mount($resourceSlug)
+    protected $rules = [
+        'data.name' => 'required|string',
+        'data.email' => 'required|email',
+    ];
+    
+    public function mount($parameters = [])
     {
-        $this->resource = Aura::findResourceBySlug($resourceSlug);
-        $this->initializeFields();
+        $this->data = $parameters;
     }
     
     public function save()
     {
-        $this->validate($this->resource->validationRules());
+        $this->validate();
         
-        $model = $this->resource->create($this->form);
+        // Save logic
         
-        $this->notify('Created successfully!');
-        
-        return redirect()->route('custom.success');
+        $this->notify('Saved successfully!');
     }
     
     public function render()
     {
-        return view('livewire.custom-resource-form');
+        return view('livewire.custom-component');
     }
 }
 ```
 
-### Component View
+### Extending Aura Components
 
-```blade
-<div>
-    <form wire:submit="save">
-        @foreach($resource->getFields() as $field)
-            <x-dynamic-component 
-                :component="$field->editComponent()"
-                :field="$field"
-                :form="$form"
-                wire:model="form.fields.{{ $field->slug }}"
-            />
-        @endforeach
+```php
+use Aura\Base\Livewire\Table\Table;
+
+class CustomTable extends Table
+{
+    protected function query()
+    {
+        return parent::query()
+            ->where('custom_field', true);
+    }
+    
+    public function columns()
+    {
+        $columns = parent::columns();
         
-        <button type="submit">Save</button>
-    </form>
-</div>
-```
-
-### Integrating with Aura
-
-Register in resource:
-
-```php
-class Product extends Resource
-{
-    public function indexComponent()
-    {
-        return CustomProductList::class;
-    }
-    
-    public function createComponent()
-    {
-        return CustomProductForm::class;
+        // Add custom column
+        $columns['custom_field'] = [
+            'label' => 'Custom',
+            'sortable' => true,
+            'component' => 'custom-cell',
+        ];
+        
+        return $columns;
     }
 }
 ```
 
-## Real-time Features
+### Component Traits
 
-### Live Validation
+Create reusable functionality with traits:
 
 ```php
-class LiveForm extends Component
+trait WithExport
 {
-    public $email = '';
-    
-    protected $rules = [
-        'email' => 'required|email|unique:users'
-    ];
-    
-    public function updated($propertyName)
+    public function exportCsv()
     {
-        $this->validateOnly($propertyName);
+        $data = $this->getData();
+        
+        return response()->streamDownload(function () use ($data) {
+            $handle = fopen('php://output', 'w');
+            
+            // Add headers
+            fputcsv($handle, array_keys($data[0]));
+            
+            // Add data
+            foreach ($data as $row) {
+                fputcsv($handle, $row);
+            }
+            
+            fclose($handle);
+        }, 'export.csv');
     }
 }
 ```
 
-View:
-```blade
-<input wire:model.live="email" type="email">
-@error('email') <span class="error">{{ $message }}</span> @enderror
-```
 
-### Polling
-
-```php
-class Dashboard extends Component
-{
-    public function render()
-    {
-        return view('livewire.dashboard', [
-            'stats' => $this->getStats()
-        ]);
-    }
-}
-```
-
-View:
-```blade
-<div wire:poll.5s>
-    <!-- Refreshes every 5 seconds -->
-    {{ $stats }}
-</div>
-```
+## Performance Optimization
 
 ### Lazy Loading
 
 ```php
 class HeavyComponent extends Component
-{
-    public $data;
-    
-    public function mount()
-    {
-        // Heavy computation
-        sleep(2);
-        $this->data = $this->fetchData();
-    }
-}
-```
-
-View:
-```blade
-<div wire:init="loadData">
-    <div wire:loading>
-        Loading...
-    </div>
-    
-    <div wire:loading.remove>
-        {{ $data }}
-    </div>
-</div>
-```
-
-### Deferred Loading
-
-```php
-class DeferredComponent extends Component
 {
     public $readyToLoad = false;
     
@@ -922,119 +754,100 @@ class DeferredComponent extends Component
         $this->readyToLoad = true;
     }
     
-    public function getData()
-    {
-        if (!$this->readyToLoad) {
-            return [];
-        }
-        
-        return ExpensiveModel::all();
-    }
-}
-```
-
-## Performance Optimization
-
-### 1. Computed Properties
-
-Cache expensive operations:
-
-```php
-use Livewire\Attributes\Computed;
-
-class ProductList extends Component
-{
-    #[Computed]
-    public function products()
-    {
-        return Product::with(['category', 'tags'])
-            ->filter($this->filters)
-            ->paginate($this->perPage);
-    }
-    
-    #[Computed(cache: true)]
-    public function categories()
-    {
-        return Category::pluck('name', 'id');
-    }
-}
-```
-
-### 2. Lazy Loading
-
-```blade
-<div>
-    @if($readyToLoad)
-        @foreach($this->products as $product)
-            <!-- Product list -->
-        @endforeach
-    @else
-        <div wire:init="loadProducts">
-            Loading products...
-        </div>
-    @endif
-</div>
-```
-
-### 3. Debouncing
-
-```blade
-<!-- Debounce search input -->
-<input wire:model.live.debounce.300ms="search" type="search">
-
-<!-- Debounce method calls -->
-<button wire:click.debounce.500ms="save">Save</button>
-```
-
-### 4. Pagination
-
-```php
-use Livewire\WithPagination;
-
-class ProductTable extends Component
-{
-    use WithPagination;
-    
     public function render()
     {
-        return view('livewire.product-table', [
-            'products' => Product::paginate(20)
+        return view('livewire.heavy-component', [
+            'data' => $this->readyToLoad 
+                ? $this->getExpensiveData() 
+                : [],
         ]);
     }
 }
 ```
 
-### 5. Wire:key
+In your view:
+```blade
+<div wire:init="loadData">
+    @if($readyToLoad)
+        <!-- Heavy content -->
+    @else
+        <x-aura::loading />
+    @endif
+</div>
+```
+
+### Pagination
+
+```php
+use Livewire\WithPagination;
+
+class ResourceList extends Component
+{
+    use WithPagination;
+    
+    public function render()
+    {
+        return view('livewire.resource-list', [
+            'resources' => Resource::paginate(10),
+        ]);
+    }
+}
+```
+
+### Debouncing
 
 ```blade
-@foreach($items as $item)
-    <div wire:key="item-{{ $item->id }}">
-        <!-- Helps Livewire track DOM elements -->
-    </div>
-@endforeach
+<!-- Debounce search input -->
+<input wire:model.live.debounce.500ms="search" type="search">
+
+<!-- Lazy update on blur -->
+<input wire:model.blur="email" type="email">
+```
+
+### Computed Properties
+
+```php
+use Livewire\Attributes\Computed;
+
+class StatsComponent extends Component
+{
+    #[Computed]
+    public function totalUsers()
+    {
+        return Cache::remember('total_users', 3600, function () {
+            return User::count();
+        });
+    }
+    
+    public function render()
+    {
+        return view('livewire.stats', [
+            'total' => $this->totalUsers,
+        ]);
+    }
+}
 ```
 
 ## Testing Components
 
-### Basic Test
+### Basic Component Testing
 
 ```php
 use Livewire\Livewire;
 
-test('can create product', function () {
-    $this->actingAs($user = User::factory()->create());
+test('can create resource', function () {
+    $user = User::factory()->create();
     
-    Livewire::test(Create::class, ['slug' => 'products'])
-        ->set('form.fields.name', 'Test Product')
-        ->set('form.fields.price', 99.99)
+    Livewire::actingAs($user)
+        ->test(Create::class, ['slug' => 'posts'])
+        ->assertSee('Create Post')
+        ->set('form.fields.title', 'Test Post')
+        ->set('form.fields.content', 'Test content')
         ->call('save')
         ->assertHasNoErrors()
-        ->assertRedirect('/products/1/edit');
+        ->assertRedirect(route('aura.posts.index'));
     
-    $this->assertDatabaseHas('products', [
-        'name' => 'Test Product',
-        'price' => 99.99
-    ]);
+    expect(Post::where('title', 'Test Post')->exists())->toBeTrue();
 });
 ```
 
@@ -1042,10 +855,12 @@ test('can create product', function () {
 
 ```php
 test('validates required fields', function () {
-    Livewire::test(Create::class, ['slug' => 'products'])
+    Livewire::test(Create::class, ['slug' => 'posts'])
         ->call('save')
-        ->assertHasErrors(['form.fields.name' => 'required'])
-        ->assertHasErrors(['form.fields.price' => 'required']);
+        ->assertHasErrors(['form.fields.title' => 'required'])
+        ->set('form.fields.title', 'ab') // Too short
+        ->call('save')
+        ->assertHasErrors(['form.fields.title' => 'min']);
 });
 ```
 
@@ -1053,175 +868,190 @@ test('validates required fields', function () {
 
 ```php
 test('dispatches event on save', function () {
-    Livewire::test(CreateModal::class, ['slug' => 'products'])
-        ->set('form.fields.name', 'Test')
+    Livewire::test(Create::class, ['slug' => 'posts'])
+        ->set('form.fields.title', 'Test')
         ->call('save')
-        ->assertDispatched('productCreated')
-        ->assertDispatched('closeModal');
+        ->assertDispatched('resource-saved');
 });
 ```
 
-### Testing Authorization
+### Testing Component Communication
 
 ```php
-test('unauthorized users cannot access', function () {
-    $user = User::factory()->create();
+test('components communicate via events', function () {
+    $component1 = Livewire::test(Component1::class);
+    $component2 = Livewire::test(Component2::class);
     
-    Livewire::actingAs($user)
-        ->test(Settings::class)
-        ->assertForbidden();
-});
-```
-
-### Testing File Uploads
-
-```php
-use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
-
-test('can upload image', function () {
-    Storage::fake('media');
+    $component1->call('triggerEvent')
+        ->assertDispatched('custom-event');
     
-    $file = TemporaryUploadedFile::fake()->image('product.jpg');
-    
-    Livewire::test(MediaUploader::class)
-        ->set('files', [$file])
-        ->assertDispatched('fileUploaded');
-    
-    Storage::disk('media')->assertExists('product.jpg');
+    $component2->dispatch('custom-event', ['data' => 'test'])
+        ->assertSet('receivedData', 'test');
 });
 ```
 
 ## Best Practices
 
-### 1. Component Organization
+### 1. Use Computed Properties
 
 ```php
-// Keep components focused
-class ProductList extends Component // Good
-class ProductListEditDeleteSearchFilter extends Component // Bad
-
-// Use traits for shared functionality
-trait WithProductFilters
+// Bad - Runs query on every render
+public function render()
 {
-    public $categoryFilter;
-    public $priceRange;
-}
-```
-
-### 2. State Management
-
-```php
-// Use form objects for complex forms
-class ProductForm extends Form
-{
-    public $name;
-    public $price;
-    public $category_id;
-    
-    protected $rules = [
-        'name' => 'required|min:3',
-        'price' => 'required|numeric|min:0',
-        'category_id' => 'required|exists:categories,id'
-    ];
-}
-```
-
-### 3. Security
-
-```php
-// Always authorize actions
-public function delete($id)
-{
-    $product = Product::findOrFail($id);
-    
-    $this->authorize('delete', $product);
-    
-    $product->delete();
-}
-
-// Validate all input
-public function updateStatus($status)
-{
-    $this->validate([
-        'status' => ['required', Rule::in(['active', 'inactive'])]
+    return view('livewire.users', [
+        'users' => User::with('posts')->get(),
     ]);
 }
+
+// Good - Caches result
+#[Computed]
+public function users()
+{
+    return User::with('posts')->get();
+}
 ```
 
-### 4. Performance
+### 2. Validate Early
 
 ```php
-// Use computed properties
-#[Computed]
-public function filteredProducts()
-{
-    return $this->products->filter(/* ... */);
-}
+// Real-time validation
+protected $rules = [
+    'email' => 'required|email',
+];
 
-// Avoid N+1 queries
+public function updated($propertyName)
+{
+    $this->validateOnly($propertyName);
+}
+```
+
+### 3. Use Wire Keys
+
+```blade
+<!-- Prevent DOM diffing issues -->
+@foreach($items as $item)
+    <div wire:key="item-{{ $item->id }}">
+        @livewire('item-component', ['item' => $item], key($item->id))
+    </div>
+@endforeach
+```
+
+### 4. Optimize Queries
+
+```php
+// Eager load relationships
 public function mount()
 {
-    $this->products = Product::with(['category', 'tags'])->get();
+    $this->posts = Post::with(['author', 'category', 'tags'])->get();
 }
 ```
 
-### 5. User Experience
+### 5. Handle Loading States
 
-```php
-// Provide loading states
-public function save()
-{
-    $this->validate();
-    
-    // Show loading indicator
-    $this->dispatch('saving');
-    
-    // Perform save
-    $this->product->save();
-    
-    // Show success message
-    $this->notify('Saved successfully!');
-}
-```
-
-View:
 ```blade
-<div wire:loading wire:target="save">
-    Saving...
-</div>
+<button wire:click="save" wire:loading.attr="disabled">
+    <span wire:loading.remove>Save</span>
+    <span wire:loading>Saving...</span>
+</button>
 ```
 
-### 6. Error Handling
+### 6. Security First
 
 ```php
-public function process()
+public function deleteResource($id)
 {
-    try {
-        $this->processData();
-        $this->notify('Success!');
-    } catch (\Exception $e) {
-        $this->notify('Error: ' . $e->getMessage(), 'error');
-        Log::error('Processing failed', [
-            'error' => $e->getMessage(),
-            'user' => auth()->id()
-        ]);
-    }
+    $resource = Resource::findOrFail($id);
+    
+    // Always authorize
+    $this->authorize('delete', $resource);
+    
+    $resource->delete();
 }
 ```
 
-> 📹 **Video Placeholder**: [Building custom Livewire components in Aura CMS - from basic to advanced]
+### 7. Use Aura Helpers
 
-### Pro Tips
+```php
+// Notifications
+$this->notify('Success!', 'success');
 
-1. **Use Alpine.js**: Combine with Alpine for client-side interactions
-2. **Optimize Queries**: Use eager loading and query scopes
-3. **Cache Computed Properties**: For expensive calculations
-4. **Debounce User Input**: Prevent excessive server requests
-5. **Test Everything**: Livewire has excellent testing support
-6. **Use Wire:key**: For dynamic lists to maintain state
-7. **Batch Updates**: Group multiple property updates
-8. **Profile Performance**: Use Laravel Debugbar
-9. **Handle Errors Gracefully**: Always provide user feedback
-10. **Document Components**: Add PHPDoc blocks for clarity
+// Refresh components
+$this->dispatch('$refresh')->to('resource-table');
 
-The Livewire component system in Aura CMS provides a powerful foundation for building reactive, modern admin interfaces while keeping the development experience simple and Laravel-centric.
+// Close modals
+$this->closeModal();
+```
+
+## Pro Tips
+
+**1. Custom Validation Messages**
+```php
+protected $messages = [
+    'form.fields.email.required' => 'We need your email address.',
+    'form.fields.email.email' => 'That doesn\'t look like a valid email.',
+];
+```
+
+**2. Dynamic Components**
+```blade
+@livewire($componentName, $componentParams)
+```
+
+**3. Lifecycle Hooks**
+```php
+public function booted()
+{
+    // Runs after component is fully booted
+}
+
+public function updated($property)
+{
+    // Runs after any property is updated
+}
+
+public function updatedFormFieldsTitle($value)
+{
+    // Runs when specific nested property updates
+    $this->form['fields']['slug'] = Str::slug($value);
+}
+```
+
+**4. File Downloads**
+```php
+public function downloadReport()
+{
+    return response()->download(
+        storage_path('reports/monthly.pdf'),
+        'monthly-report.pdf'
+    );
+}
+```
+
+**5. Temporary URLs**
+```php
+public function getDownloadUrl()
+{
+    return Storage::temporaryUrl(
+        'reports/confidential.pdf',
+        now()->addMinutes(5)
+    );
+}
+```
+
+> 📹 **Video Placeholder**: [Show creating a custom Livewire component from scratch, including traits, events, and testing]
+
+## Common Pitfalls
+
+1. **Forgetting wire:key** - Always use wire:key in loops
+2. **Not validating in mount()** - Validate initial data too
+3. **Overusing computed properties** - They run on every request
+4. **Not handling loading states** - Users need feedback
+5. **Ignoring authorization** - Always check permissions
+6. **Not using eager loading** - Causes N+1 queries
+7. **Storing sensitive data in public properties** - Use private/protected
+
+## Conclusion
+
+Aura CMS's Livewire components provide a powerful foundation for building dynamic applications. By understanding these components and following best practices, you can create responsive, secure, and maintainable interfaces that delight your users.
+
+For more advanced topics, see the [API Reference](api-reference.md) and [Performance Optimization](performance.md) guides.
