@@ -5,13 +5,13 @@
     <x-aura::breadcrumbs>
         <x-aura::breadcrumbs.li :href="route('aura.dashboard')" title="" icon="dashboard" iconClass="text-gray-500 w-6 h-6 mr-0" />
         <x-aura::breadcrumbs.li :href="route('aura.' . $model->getSlug() . '.index')" :title="__($model->getPluralName())" />
-        <x-aura::breadcrumbs.li title="{{ __('Create ' . $model->singularName()) }}" />
+        <x-aura::breadcrumbs.li title="{{ __('Create :resource', ['resource' => __($model->singularName())]) }}" />
     </x-aura::breadcrumbs>
     @endif
 
     <div class="flex items-center justify-between {{ $inModal ? 'mb-8' : 'my-8'}}">
         <div>
-            <h1 class="text-2xl font-semibold">{{ __('Create ' . $model->singularName()) }}</h1>
+            <h1 class="text-2xl font-semibold">{{ __('Create :resource', ['resource' => __($model->singularName())]) }}</h1>
         </div>
 
         <div class="save-resource">
