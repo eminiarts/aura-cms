@@ -103,6 +103,9 @@ php artisan aura:database-to-resources      # Generate resources from database t
 ## Development Guidelines
 
 ### Creating Resources
+
+Resources must extend `Aura\Base\Resource` and define their model and fields:
+
 ```php
 class Article extends Resource
 {
@@ -124,26 +127,88 @@ class Article extends Resource
 }
 ```
 
-### Key Traits to Use
-- `HasFields` - For resources with fields
-- `InteractsWithFields` - Field manipulation
-- `SaveFields` - Field persistence
-- `TeamScope` - Multi-tenancy support
+For custom database tables:
+```php
+class Product extends Resource
+{
+    public static string $model = Product::class;
+    public static bool $customTable = true;
+    
+    public function fields()
+    {
+        return [
+            ID::make('ID'),
+            Text::make('Name')->rules('required'),
+            Number::make('Price')->rules('required|numeric|min:0'),
+            Boolean::make('Active')->default(true),
+            BelongsTo::make('Category'),
+            HasMany::make('Reviews'),
+        ];
+    }
+}
+```
 
-### Livewire Components
-- Extend Aura base components when possible
-- Use Aura traits: `WithLivewireHelpers`, `InteractsWithTable`
+### Key Development Rules
+
+**Resource Development:**
+- All resources must extend `Aura\Base\Resource`
+- Use `$model` property to specify the Eloquent model
+- Define fields in `fields()` method returning array of Field instances
+- Use traits: `HasFields`, `InteractsWithFields`, `SaveFields`
+- Implement context-specific field methods: `indexFields()`, `createFields()`, `editFields()`, `viewFields()`
+- Apply `TeamScope` trait when multi-tenancy is enabled
+- Follow naming convention: singular (e.g., `Post`, not `Posts`)
+
+**Field Development:**
+- Custom fields must extend `Aura\Base\Fields\Field`
+- Define view templates: `$edit`, `$view`, `$index` properties
+- Use conditional logic with `displayIf()` and `hideIf()`
+- Support meta storage with `$meta = true` for flexible data
+- Implement `get()` and `set()` methods for custom data handling
+
+**Livewire Components:**
+- Extend Aura base components (e.g., `Table\Table` for listings)
+- Use Aura traits: `WithLivewireHelpers`, `InteractsWithTable`, `InteractsWithFields`
+- Place in `src/Livewire/` for core, `app/Http/Livewire/` for custom
+- Use Aura's modal and slide-over system for forms
 - Emit Aura events: 'saved', 'deleted', 'updated'
-- Use Aura's notification system: `$this->notify()`
+- Use `$this->notify()` for user feedback
+- Use `$this->authorize()` with resource policies
+
+**Blade Components:**
+- Use Aura's component library: `<x-aura::button>`, `<x-aura::input>`, `<x-aura::card>`
+- Extend layout: `<x-aura::layout.app>` for authenticated pages
+- Use field components: `<x-aura::fields.text>`, `<x-aura::fields.select>`
+- Follow view naming: `aura.resource-name.action`
+
+### Development Workflow
+
+1. Create resource: `php artisan aura:resource Post`
+2. Define fields in the resource class
+3. Run migrations: `php artisan migrate`
+4. Set up permissions: `php artisan aura:permission`
+5. Customize views if needed
+6. Write tests for the resource
+7. Use Resource Editor for visual configuration
 
 ### Testing Approach
 - Use PestPHP with Aura test helpers
 - Test with team context when multi-tenancy enabled
 - Mock media uploads using Aura utilities
 - Aim for 80% minimum coverage
+- Use descriptive test names: `it ensures users can register`
+- Test validation with valid and invalid data
+- Use model factories for test data
 
-### Performance Considerations
-- Start with posts/meta table, migrate to custom when needed
-- Use eager loading for relationships
+### Best Practices
+- Start with posts table, migrate to custom tables when needed
+- Use meta fields for flexible, non-indexed data
+- Leverage conditional logic for dynamic forms
+- Group related fields using Panel and Tab fields
+- Implement proper team scoping from the beginning
 - Cache field definitions in production
-- Optimize media on upload
+- Use Aura's built-in components before creating custom ones
+- Test resources with different permission levels
+- Use eager loading to avoid N+1 queries
+- Follow PSR-12 coding standards
+- Use strict types in all PHP files
