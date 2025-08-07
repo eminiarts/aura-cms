@@ -8,8 +8,6 @@ use Ray\Ray;
 
 class Modals extends Component
 {
-    public $activeModals = [];
-
     public $modals = [];
 
     protected $listeners = ['openModal', 'closeModal'];
@@ -18,12 +16,8 @@ class Modals extends Component
     {
         if ($id) {
             unset($this->modals[$id]);
-            $this->activeModals = array_values(array_filter($this->activeModals, function ($modalId) use ($id) {
-                return $modalId !== $id;
-            }));
         } else {
             $this->modals = [];
-            $this->activeModals = [];
         }
     }
 
@@ -46,8 +40,8 @@ class Modals extends Component
                 'modalClasses' => method_exists($componentClass, 'modalClasses') ? $componentClass::modalClasses() : 'max-w-4xl',
                 'slideOver' => false,
             ], $modalAttributes),
+            'active' => true,
         ];
-        $this->activeModals[$id] = true;
     }
 
     public function render()
