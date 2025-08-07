@@ -1,6 +1,7 @@
 <div class="">
     @section('title', __('Create ' . $model->singularName()))
 
+
     @if(!$inModal)
     <x-aura::breadcrumbs>
         <x-aura::breadcrumbs.li :href="route('aura.dashboard')" title="" icon="dashboard" iconClass="text-gray-500 w-6 h-6 mr-0" />
@@ -14,6 +15,7 @@
             <h1 class="text-2xl font-semibold">{{ __('Create :resource', ['resource' => __($model->singularName())]) }}</h1>
         </div>
 
+        @if(!$inModal)
         <div class="save-resource">
             @if($showSaveButton)
             <x-aura::button size="lg" wire:click="save">
@@ -24,6 +26,7 @@
             </x-aura::button>
             @endif
         </div>
+        @endif
     </div>
 
     @if($model::usesTitle())
@@ -56,4 +59,20 @@
             </div>
         </div> --}}
     </div>
+
+    @if ($inModal)
+        <div class="flex justify-end space-x-2 mt-4">
+            <x-aura::dialog.close>
+                <x-aura::button.transparent>
+                    {{ __('Cancel') }}
+                </x-aura::button.transparent>
+            </x-aura::dialog.close>
+            <x-aura::button wire:click="save" wire:loading.attr="disabled">
+                <div wire:loading.delay wire:target="save">
+                    <x-aura::icon.loading />
+                </div>
+                {{ __('Save') }}
+            </x-aura::button>
+        </div>
+    @endif
 </div>
