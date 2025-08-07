@@ -40,7 +40,9 @@
     <div class="grid gap-6 aura-edit-post-container sm:grid-cols-3">
         <div class="col-span-1 sm:col-span-3">
 
+            @if(!$inModal)
             <x-aura::validation-errors />
+            @endif
 
             <div class="flex flex-wrap items-start -mx-2">
            @foreach($this->createFields as $key => $field)
