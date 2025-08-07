@@ -75,7 +75,7 @@ class Option extends Resource
     protected static function booted()
     {
         if (config('aura.teams')) {
-            static::addGlobalScope(new TeamScope);
+            static::addGlobalScope(app(TeamScope::class));
         }
 
         static::saving(function ($option) {

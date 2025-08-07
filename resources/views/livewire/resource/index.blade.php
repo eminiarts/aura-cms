@@ -24,11 +24,13 @@
     </div>
 
     {{ app('aura')::injectView('widgets_before') }}
+
     @if ($widgets = $resource->widgets())
         @livewire('aura::widgets', ['widgets' => $widgets, 'model' => $resource])
     @endif
 
     {{ app('aura')::injectView('widgets_after') }}
+
 
     <livewire:aura::table :model="$resource" :settings="$resource->indexTableSettings()" />
 </div>

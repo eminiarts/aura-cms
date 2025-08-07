@@ -85,8 +85,15 @@ class Create extends Component
 
         $this->model = Aura::findResourceBySlug($this->slug);
 
-        // Authorize
-        $this->authorize('create', $this->model);
+        ray($this->model)->red();
+
+        // Authorize - only if we have a model
+        if ($this->model) {
+            $this->authorize('create', $this->model);
+        } else {
+            // If no model found, we can't proceed
+            return;
+        }
 
         // Array instead of Eloquent Model
         $this->form = $this->model->toArray();

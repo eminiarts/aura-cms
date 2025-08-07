@@ -4,11 +4,15 @@ namespace Aura\Base\Livewire\Resource;
 
 class CreateModal extends Create
 {
-    public $params;
+    public function mount($slug = null, $params = [])
+    {
+        $this->inModal = true;
+        $this->params = $params;
+        
+        ray('CreateModal mount called with:', ['slug' => $slug, 'params' => $params])->orange();
 
-    public $resource;
-
-    public $type;
+        parent::mount($slug);
+    }
 
     public static function modalMaxWidth(): string
     {
@@ -17,6 +21,6 @@ class CreateModal extends Create
 
     public function render()
     {
-        return view('aura::livewire.resource.create-modal');
+        return view($this->model->createView());
     }
 }

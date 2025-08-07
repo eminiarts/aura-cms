@@ -379,12 +379,12 @@ class Resource extends Model
     protected static function booted()
     {
         if (! static::$customTable) {
-            static::addGlobalScope(new TypeScope);
+            static::addGlobalScope(app(TypeScope::class));
         }
 
         static::addGlobalScope(app(TeamScope::class));
 
-        static::addGlobalScope(new ScopedScope);
+        static::addGlobalScope(app(ScopedScope::class));
 
         static::creating(function ($model) {});
 
