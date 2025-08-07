@@ -40,8 +40,8 @@ class TeamScope implements Scope
             // Handle User model specially
             if ($model->getTable() === 'users') {
 
-                // Scope for current team only
-                if ($currentTeamId) {
+                // Only apply team scoping if teams are enabled
+                if (config('aura.teams') && $currentTeamId) {
                     $builder->whereHas('teams', function ($query) use ($currentTeamId) {
                         $query->where('teams.id', $currentTeamId);
                     });

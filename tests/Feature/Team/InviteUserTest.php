@@ -261,7 +261,6 @@ test('email and role are required in the invite user component', function () {
         ]);
 
     // Attach the user to the team
-    $user = User::find($user->id);
     $user->update(['fields' => ['roles' => [Role::first()->id]]]);
 
     // $role->users()->sync([$user->id => ['resource_type' => Role::class]]);

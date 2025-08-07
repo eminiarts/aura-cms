@@ -34,7 +34,7 @@ test('a super admin can perform any action', function () {
     $this->assertEquals('Super Admin', $r->name);
 
     // Attach to User
-    $user = \Aura\Base\Resources\User::find(1);
+    $user = $this->user;
 
     $user->update(['roles' => [$r->id]]);
 
@@ -80,7 +80,7 @@ test('a admin can perform assigned actions', function () {
     $this->assertEquals('Admin', $r->name);
 
     // Attach to User
-    $user = \Aura\Base\Resources\User::find(1);
+    $user = $this->user;
     $user->update(['roles' => [$r->id]]);
     $user->refresh();
 
@@ -126,7 +126,7 @@ test('a moderator can only view posts but not edit them', function () {
     $this->assertEquals('Moderator', $r->name);
 
     // Attach to User
-    $user = \Aura\Base\Resources\User::find(1);
+    $user = $this->user;
     $user->update(['roles' => [$r->id]]);
     $user->refresh();
 
@@ -171,7 +171,7 @@ test('a moderator can access index page', function () {
     $this->assertEquals('Moderator', $r->name);
 
     // Attach to User
-    $user = \Aura\Base\Resources\User::find(1);
+    $user = $this->user;
     $user->update(['roles' => [$r->id]]);
 
     $user->refresh();
@@ -225,7 +225,7 @@ test('a admin can access all pages', function () {
     $this->assertEquals('Admin', $r->name);
 
     // Attach to User
-    $user = \Aura\Base\Resources\User::find(1);
+    $user = $this->user;
     $user->update(['roles' => [$r->id]]);
 
     $user->refresh();
@@ -281,7 +281,7 @@ test('scoped posts', function () {
     // Attach to User
     $this->user->update(['roles' => [$r->id]]);
 
-    $user = \Aura\Base\Resources\User::find(1);
+    $user = $this->user;
 
     $user2->update(['roles' => [$r->id]]);
 
@@ -347,7 +347,7 @@ test('a admin can access users', function () {
     $this->assertDatabaseHas('roles', ['slug' => 'admin']);
 
     // Attach to User
-    $user = \Aura\Base\Resources\User::find(1);
+    $user = $this->user;
     // $user->roles()->sync([$role->id], false, ['team_id' => $team->id]);
 
     $user->update(['roles' => [$role->id]]);
