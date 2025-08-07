@@ -161,7 +161,7 @@ class Create extends Component
             $this->dispatch('closeModal');
             $this->dispatch('refreshTable');
 
-            if ($this->params['for']) {
+            if (optional($this->params)['for']) {
                 $this->dispatch('resourceCreated', ['for' => $this->params['for'], 'resource' => $model, 'title' => $model->title()]);
             }
         } else {
