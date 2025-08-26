@@ -119,6 +119,24 @@ class Create extends Component
                 }
             }
         }
+
+        // Process modal params (for modal usage) - similar to URL parameters
+        if (isset($this->params) && is_array($this->params)) {
+            foreach ($this->params as $key => $value) {
+                // Check if this parameter corresponds to a form field
+                if (array_key_exists($key, $this->form['fields'])) {
+                    // If the value is already an array, use it directly
+                    if (is_array($value)) {
+                        $this->form['fields'][$key] = array_map(function ($v) {
+                            return is_numeric($v) ? (int) $v : $v;
+                        }, $value);
+                    } else {
+                        // If it's a single value, convert to integer if numeric
+                        $this->form['fields'][$key] = is_numeric($value) ? (int) $value : $value;
+                    }
+                }
+            }
+        }
     }
 
     public function render()
