@@ -47,6 +47,30 @@ function createSuperAdmin()
     // Create Team
     $team = Team::factory()->create();
 
+    // Set current_team_id of the user
+    $user->update(['current_team_id' => $team->id]);
+
+    // Create or find Super Admin role for the team
+    $role = Role::firstOrCreate([
+        'team_id' => $team->id,
+        'slug' => 'super_admin',
+    ], [
+        'type' => 'Role',
+        'title' => 'Super Admin',
+        'name' => 'Super Admin',
+        'description' => 'Super Admin can perform everything.',
+        'super_admin' => true,
+        'permissions' => [],
+        'user_id' => $user->id,
+    ]);
+
+    // Associate the role with the user using the proper relationship
+    if (config('aura.teams')) {
+        $user->roles()->syncWithPivotValues([$role->id], ['team_id' => $team->id]);
+    } else {
+        $user->roles()->sync([$role->id]);
+    }
+
     $user->refresh();
 
     return $user;

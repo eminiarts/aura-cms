@@ -498,8 +498,9 @@ class Settings extends Component
         ];
 
         if (config('aura.teams')) {
+            $teamId = auth()->user()->currentTeam ? auth()->user()->currentTeam->id : auth()->user()->current_team_id;
             $this->model = Option::firstOrCreate([
-                'name' => 'team.'.auth()->user()->current_team_id.'.settings',
+                'name' => 'team.'.$teamId.'.settings',
             ], [
                 'value' => $valueString,
             ]);
@@ -539,7 +540,9 @@ class Settings extends Component
 
     public function save()
     {
-        app('aura')::updateOption('settings', $this->form['fields']);
+        $this->model->update([
+            'value' => $this->form['fields']
+        ]);
 
         Cache::clear();
 

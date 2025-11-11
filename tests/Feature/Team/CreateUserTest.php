@@ -80,30 +80,53 @@ test('user cannot be created with mismatched passwords', function () {
 });
 
 test('user can be deleted', function () {
+    // Get initial count - use withoutGlobalScopes to get true count
+    $initialCount = User::withoutGlobalScopes()->count();
+    
     // Create a user to be deleted
-    $user = User::create([
+    $user = User::factory()->create([
         'name' => 'User to Delete',
         'email' => 'delete@example.com',
         'password' => Hash::make('password'),
     ]);
+    
+    // Attach user to current team if teams are enabled
+    if (config('aura.teams') && $this->user->currentTeam) {
+        // Get a role to attach with the team
+        $role = Role::where('team_id', $this->user->currentTeam->id)->first() 
+            ?? Role::factory()->create(['team_id' => $this->user->currentTeam->id]);
+        
+        $user->teams()->attach($this->user->currentTeam->id, ['role_id' => $role->id]);
+        $user->update(['current_team_id' => $this->user->currentTeam->id]);
+    }
 
-    $initialCount = User::count();
+    // Verify user was created
+    expect(User::withoutGlobalScopes()->count())->toBe($initialCount + 1);
 
     // Delete the user
     $user->delete();
 
     // Assert user was deleted
-    expect(User::count())->toBe($initialCount - 1);
-    expect(User::where('email', 'delete@example.com')->first())->toBeNull();
+    expect(User::withoutGlobalScopes()->count())->toBe($initialCount);
+    expect(User::withoutGlobalScopes()->where('email', 'delete@example.com')->first())->toBeNull();
 });
 
 test('user can be edited without changing password', function () {
-    // Create a test user
-    $user = User::create([
+    // Create a test user using factory
+    $user = User::factory()->create([
         'name' => 'Original Name',
         'email' => 'original@example.com',
-        'password' => 'OriginalPass123!',
+        'password' => Hash::make('OriginalPass123!'),
     ]);
+
+    // Attach user to current team if teams are enabled
+    if (config('aura.teams') && $this->user->currentTeam) {
+        $role = Role::where('team_id', $this->user->currentTeam->id)->first() 
+            ?? Role::factory()->create(['team_id' => $this->user->currentTeam->id]);
+        
+        $user->teams()->attach($this->user->currentTeam->id, ['role_id' => $role->id]);
+        $user->update(['current_team_id' => $this->user->currentTeam->id]);
+    }
 
     $originalPassword = $user->password;
 
@@ -112,8 +135,8 @@ test('user can be edited without changing password', function () {
 
     $this->withoutExceptionHandling();
 
-    // Edit user without setting password
-    livewire(Edit::class, ['id' => $user->id])
+    // Edit user without setting password - need to specify slug
+    livewire(Edit::class, ['slug' => 'user', 'id' => $user->id])
         ->set('form.fields.name', 'Updated Name')
         ->set('form.fields.email', 'updated@example.com')
         ->call('save')
@@ -129,20 +152,21 @@ test('user can be edited without changing password', function () {
 });
 
 test('user password can be changed when explicitly set', function () {
-    // Create a test user
-    $user = User::create([
-        'name' => 'Password Test',
-        'email' => 'password@example.com',
-        'password' => 'CurrentPass123!',
-        'current_team_id' => Team::first()->id,
-    ]);
+    // Test editing our own password (the authenticated user)
+    $user = $this->user;
+    
+    // Set a known password for the test user
+    $user->update(['password' => Hash::make('CurrentPass123!')]);
 
     Aura::fake();
     Aura::setModel($user);
 
-    // Change user password
-    livewire(Edit::class, ['id' => $user->id])
+    // Change user password - need slug and password fields  
+    // Since we're editing our own password, we need current_password
+    livewire(Edit::class, ['slug' => 'user', 'id' => $user->id])
+        ->set('form.fields.current_password', 'CurrentPass123!')
         ->set('form.fields.password', 'NewPass123!qerqw')
+        ->set('form.fields.password_confirmation', 'NewPass123!qerqw')
         ->call('save')
         ->assertHasNoErrors();
 

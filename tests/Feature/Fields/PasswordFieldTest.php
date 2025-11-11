@@ -174,26 +174,31 @@ test('password field gets not overwritten if saved as empty string', function ()
 
 test('user password field gets not overwritten if saved as empty string', function () {
 
-    $user = User::factory()->create([
+    // Use the already authenticated super admin user to test password field behavior
+    $model = $this->user;
+    
+    // Update password to a known value
+    $model->update([
         'password' => Hash::make('password'),
     ]);
-
-    $model = $user;
 
     Aura::fake();
     Aura::setModel($model);
 
     // If we call the edit view, the password field should be empty
-    $component = Livewire::test(Edit::class, ['slug' => 'User', 'id' => $model->id])
+    $component = Livewire::test(Edit::class, ['slug' => 'user', 'id' => $model->id])
+        ->assertSuccessful()
+        // User resource uses tabs, check for the Password tab
         ->assertSee('Password')
+        // Click on Password tab if it exists
         ->assertSeeHtml('type="password"')
         // assert that the password field is empty
         ->assertSet('form.fields.password', '')
         ->call('save')
         ->assertHasNoErrors(['form.fields.password']);
 
-    $user = $user->refresh();
+    $model = $model->fresh();
 
-    // Assert Password is still 123456789
-    $this->assertTrue(Hash::check('password', $user->password));
+    // Assert Password is still 'password'
+    $this->assertTrue(Hash::check('password', $model->password));
 });

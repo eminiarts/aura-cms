@@ -95,8 +95,27 @@ class Create extends Component
             return;
         }
 
-        // Array instead of Eloquent Model
-        $this->form = $this->model->toArray();
+        // Initialize form structure based on resource type
+        if ($this->model->usesCustomTable()) {
+            // For custom table resources, only fields are needed
+            $this->form = [
+                'fields' => []
+            ];
+        } else {
+            // For posts table resources, initialize with full post structure
+            $this->form = [
+                'title' => null,
+                'content' => null,
+                'status' => null,
+                'slug' => null,
+                'user_id' => auth()->id(),
+                'parent_id' => null,
+                'order' => null,
+                'team_id' => config('aura.teams') && auth()->user() ? auth()->user()->current_team_id : null,
+                'type' => $this->model::$type ?? null,
+                'fields' => []
+            ];
+        }
 
         // Initialize the post fields with defaults
         $this->initializeFieldsWithDefaults();

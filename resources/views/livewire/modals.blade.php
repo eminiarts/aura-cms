@@ -1,16 +1,6 @@
 <div>
-
-      @php
-        ray('modals')->blue();
-    @endphp
-
     @forelse($modals as $id => $modal)
-
-    @php
-        ray($modals)->blue();
-    @endphp
         <x-aura::dialog wire:model="modals.{{ $id }}.active">
-
             @if ($modal['modalAttributes']['slideOver'])
                 <x-aura::dialog.slideover wire:key="slideover-{{ $id }}">
                     {{-- @dump($activeModals) --}}
@@ -24,7 +14,4 @@
         </x-aura::dialog>
     @empty
     @endforelse
-
-    @php
-    @endphp
 </div>

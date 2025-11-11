@@ -23,7 +23,7 @@ class TagsRelationFieldModel extends Resource
                 'slug' => 'users',
                 'type' => 'Aura\\Base\\Fields\\Tags',
                 'resource' => 'Aura\\Base\\Resources\\User',
-                'create' => false,
+                'create' => true,
                 'validation' => '',
                 'conditional_logic' => [],
                 'on_index' => false,
@@ -38,7 +38,7 @@ test('TagsRelationFieldModel - Saving Tags', function () {
 
     $users = User::factory()->count(3)->create();
 
-    $model = TagsRelationFieldModel::create(['users' => $users->pluck('id')]);
+    $model = TagsRelationFieldModel::create(['users' => $users->pluck('id')->toArray()]);
 
     expect($model->users)->toHaveCount(3);
 

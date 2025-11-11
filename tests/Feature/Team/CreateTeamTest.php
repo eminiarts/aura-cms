@@ -4,6 +4,7 @@ use Aura\Base\Livewire\Resource\Create;
 use Aura\Base\Resources\Role;
 use Aura\Base\Resources\Team;
 use Aura\Base\Resources\User;
+use Illuminate\Support\Facades\Gate;
 
 use function Pest\Livewire\livewire;
 

@@ -1,7 +1,11 @@
 @php
-// Temporary fix for checkbox field
-if (is_null($this->form['fields'][$field['slug']])) {
-    $this->form['fields'][$field['slug']] = [];
+// Initialize checkbox field value if null
+$formData = (isset($this) && isset($this->form)) ? $this->form : ($form ?? []);
+if (is_null(data_get($formData, "fields.{$field['slug']}"))) {
+    if (isset($this) && isset($this->form)) {
+        $this->form['fields'][$field['slug']] = [];
+    }
+    // Note: For standalone components, we can't modify the form data
 }
 @endphp
 <x-aura::fields.wrapper :field="$field">

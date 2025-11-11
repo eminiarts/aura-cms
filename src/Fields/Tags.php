@@ -155,11 +155,18 @@ class Tags extends Field
             }
         })->toArray();
 
-        if (is_array($ids)) {
-            $post->{$field['slug']}()->syncWithPivotValues($ids, [
-                'resource_type' => $field['resource'],
-                'slug' => $field['slug'],
-            ]);
+        if (is_array($ids) && count($ids) > 0) {
+            // Prepare pivot data for each ID
+            $pivotData = [];
+            foreach ($ids as $index => $id) {
+                $pivotData[$id] = [
+                    'resource_type' => $field['resource'],
+                    'slug' => $field['slug'],
+                    'order' => $index + 1,
+                ];
+            }
+            
+            $post->{$field['slug']}()->sync($pivotData);
         } else {
             $post->{$field['slug']}()->sync([]);
         }

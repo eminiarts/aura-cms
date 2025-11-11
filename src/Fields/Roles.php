@@ -26,7 +26,7 @@ class Roles extends AdvancedSelect
     public function relationship($model, $field)
     {
         if (config('aura.teams')) {
-            return $model->roles()->where('team_id', $model->current_team_id);
+            return $model->roles()->where('roles.team_id', $model->current_team_id);
         }
 
         return $model->roles();
