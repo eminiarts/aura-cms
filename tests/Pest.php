@@ -18,6 +18,14 @@ uses()->group('resource')->in('Feature/Resource');
 uses(RefreshDatabase::class)->in('Feature');
 uses(DatabaseMigrations::class)->in('FeatureWithDatabaseMigrations');
 
+// Reset Aura facade after each test to prevent pollution
+uses()->afterEach(function () {
+    // Reset the Aura facade to its original state by rebinding the service
+    app()->forgetInstance(\Aura\Base\Aura::class);
+    app()->singleton(\Aura\Base\Aura::class);
+    \Aura\Base\Facades\Aura::clearResolvedInstances();
+})->in('Feature', 'FeatureWithDatabaseMigrations');
+
 // uses(\Illuminate\Foundation\Testing\RefreshDatabase::class);
 
 // uses(\Illuminate\Foundation\Testing\LazilyRefreshDatabase::class)->in('Feature');
@@ -50,19 +58,37 @@ function createSuperAdmin()
     // Set current_team_id of the user
     $user->update(['current_team_id' => $team->id]);
 
-    // Create or find Super Admin role for the team
-    $role = Role::firstOrCreate([
-        'team_id' => $team->id,
-        'slug' => 'super_admin',
-    ], [
-        'type' => 'Role',
-        'title' => 'Super Admin',
-        'name' => 'Super Admin',
-        'description' => 'Super Admin can perform everything.',
-        'super_admin' => true,
-        'permissions' => [],
-        'user_id' => $user->id,
-    ]);
+    // Clear the cache for the user's current_team_id to ensure TeamScope uses the updated value
+    \Illuminate\Support\Facades\Cache::forget("user_{$user->id}_current_team_id");
+
+    // Create or find Super Admin role for the team with race condition handling
+    // Use withoutGlobalScope to bypass TeamScope and avoid cache issues
+    $role = Role::withoutGlobalScope(\Aura\Base\Models\Scopes\TeamScope::class)
+        ->where('team_id', $team->id)
+        ->where('slug', 'super_admin')
+        ->first();
+
+    if (! $role) {
+        try {
+            $role = Role::create([
+                'team_id' => $team->id,
+                'slug' => 'super_admin',
+                'type' => 'Role',
+                'title' => 'Super Admin',
+                'name' => 'Super Admin',
+                'description' => 'Super Admin can perform everything.',
+                'super_admin' => true,
+                'permissions' => [],
+                'user_id' => $user->id,
+            ]);
+        } catch (\Illuminate\Database\UniqueConstraintViolationException $e) {
+            // Handle race condition: another process created the role, just fetch it
+            $role = Role::withoutGlobalScope(\Aura\Base\Models\Scopes\TeamScope::class)
+                ->where('team_id', $team->id)
+                ->where('slug', 'super_admin')
+                ->first();
+        }
+    }
 
     // Associate the role with the user using the proper relationship
     if (config('aura.teams')) {
@@ -103,7 +129,8 @@ function createSuperAdminWithoutTeam()
         'user_id' => $user->id,
     ]);
 
-    $user->update(['roles' => [$role->id]]);
+    // Attach the role to the user using the relationship
+    $user->roles()->sync([$role->id]);
 
     $user->refresh();
 
@@ -189,7 +216,13 @@ function createAdmin()
         'scope-TeamInvitation' => false,
     ]]);
 
-    $user->update(['roles' => [$role->id]]);
+    // Associate the role with the user using the proper relationship
+    if (config('aura.teams')) {
+        $user->roles()->syncWithPivotValues([$role->id], ['team_id' => $team->id]);
+    } else {
+        $user->roles()->sync([$role->id]);
+    }
+
     $user->refresh();
 
     return $user;

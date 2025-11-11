@@ -20,6 +20,9 @@ test('resource folder in app gets loaded correctly', function () {
     // assert app/Aura/Resources/TestResource.php exists
     $this->assertTrue(File::exists(app_path('Aura/Resources/TestResource.php')));
 
+    // Require the file to load the class into PHP
+    require_once app_path('Aura/Resources/TestResource.php');
+
     expect(Aura::getAppResources())->toContain('App\\Aura\\Resources\\TestResource');
 
     // delete app/Aura/Resources/TestResource.php

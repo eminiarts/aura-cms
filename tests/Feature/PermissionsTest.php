@@ -377,7 +377,10 @@ test('a admin can access users', function () {
     // Assert Response
     $response->assertStatus(200);
 
-    $newUser = User::factory()->create();
+    $newUser = User::factory()->create(['current_team_id' => $team->id]);
+
+    // Associate the new user with the team through a role
+    $newUser->teams()->attach($team->id, ['role_id' => $role->id]);
 
     // Can Access Edit Page
     $response = $this->actingAs($user)->get(route('aura.user.edit', ['id' => $newUser->id]));

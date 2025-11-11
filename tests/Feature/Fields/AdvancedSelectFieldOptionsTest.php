@@ -10,7 +10,7 @@ beforeEach(function () {
     $this->actingAs($this->user = createSuperAdmin());
 
     Aura::fake();
-    Aura::setModel(new GenreModel);
+    Aura::registerResources([GenreModel::class, MovieModel::class]);
     Aura::registerRoutes('genre');
     Aura::registerRoutes('movie');
     Aura::clear();
@@ -94,10 +94,10 @@ test('displays selected genre in advanced select when api option is enabled', fu
         'thumbnail' => ['2'],
     ]);
 
-    $model = new MovieModel;
+    // Set MovieModel as the active model for this test
+    Aura::setModel(new MovieModel);
 
     $component = Livewire::test(Create::class, ['slug' => 'movie'])
-        ->call('setModel', $model)
         ->assertSee('Create Movie')
         ->assertSee('Genre')
         ->set('form.fields.title', 'The Matrix')

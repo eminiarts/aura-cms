@@ -36,7 +36,13 @@ class TagsRelationFieldModel extends Resource
 
 test('TagsRelationFieldModel - Saving Tags', function () {
 
-    $users = User::factory()->count(3)->create();
+    $currentTeam = $this->user->currentTeam;
+
+    $users = User::factory()->count(3)->create()->each(function ($user) use ($currentTeam) {
+        if (config('aura.teams')) {
+            $user->teams()->attach($currentTeam->id, ['role_id' => $this->user->roles->first()->id]);
+        }
+    });
 
     $model = TagsRelationFieldModel::create(['users' => $users->pluck('id')->toArray()]);
 

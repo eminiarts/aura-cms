@@ -85,8 +85,6 @@ class Create extends Component
 
         $this->model = Aura::findResourceBySlug($this->slug);
 
-        ray($this->model)->red();
-
         // Authorize - only if we have a model
         if ($this->model) {
             $this->authorize('create', $this->model);
@@ -220,6 +218,13 @@ class Create extends Component
 
             if ($field['type'] == "Aura\Base\Fields\Boolean" && ! isset($field['default'])) {
                 $this->form['fields'][$slug] = false;
+
+                continue;
+            }
+
+            // Initialize Tags field with empty array if no default is set
+            if ($field['type'] == "Aura\Base\Fields\Tags" && ! isset($field['default'])) {
+                $this->form['fields'][$slug] = [];
 
                 continue;
             }

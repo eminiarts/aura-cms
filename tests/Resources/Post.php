@@ -521,7 +521,10 @@ class Post extends Resource
 
     public function title()
     {
-        return optional($this)->title." (Post #{$this->id})";
+        if (isset($this->id)) {
+            return optional($this)->title." (Post #{$this->id})";
+        }
+        return optional($this)->title ?? '';
     }
 
     /**

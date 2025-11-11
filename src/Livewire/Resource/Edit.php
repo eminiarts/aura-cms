@@ -116,12 +116,13 @@ class Edit extends Component
         }
     }
 
-    public function mount($id)
+    public function mount($id, $slug = null)
     {
-        // Get the slug from the current route
-        $routeName = request()->route()->getName();
-
-        if (! $this->slug) {
+        // Use provided slug or get from current route
+        if ($slug) {
+            $this->slug = $slug;
+        } elseif (! $this->slug) {
+            $routeName = request()->route()->getName();
             $this->slug = explode('.', $routeName)[1] ?? null;
         }
 

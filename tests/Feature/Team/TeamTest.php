@@ -54,7 +54,8 @@ test('Team create also creates a super_admin Role', function () {
     $team->save();
 
     // Force refresh the model state to ensure we see the latest data
-    $role = Role::where('slug', 'super_admin')->where('team_id', $team->id)->first();
+    // Use withoutGlobalScopes() because the TeamScope will filter by current_team_id
+    $role = Role::withoutGlobalScopes()->where('slug', 'super_admin')->where('team_id', $team->id)->first();
 
     expect($role)->not->toBeNull();
     expect($role->name)->toEqual('Super Admin');
