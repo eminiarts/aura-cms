@@ -165,7 +165,7 @@ class Tags extends Field
                     'order' => $index + 1,
                 ];
             }
-            
+
             $post->{$field['slug']}()->sync($pivotData);
         } else {
             $post->{$field['slug']}()->sync([]);

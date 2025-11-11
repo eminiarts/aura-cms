@@ -176,7 +176,7 @@ test('user password field gets not overwritten if saved as empty string', functi
 
     // Use the already authenticated super admin user to test password field behavior
     $model = $this->user;
-    
+
     // Update password to a known value
     $model->update([
         'password' => Hash::make('password'),

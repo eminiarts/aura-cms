@@ -82,20 +82,20 @@ test('user cannot be created with mismatched passwords', function () {
 test('user can be deleted', function () {
     // Get initial count - use withoutGlobalScopes to get true count
     $initialCount = User::withoutGlobalScopes()->count();
-    
+
     // Create a user to be deleted
     $user = User::factory()->create([
         'name' => 'User to Delete',
         'email' => 'delete@example.com',
         'password' => Hash::make('password'),
     ]);
-    
+
     // Attach user to current team if teams are enabled
     if (config('aura.teams') && $this->user->currentTeam) {
         // Get a role to attach with the team
-        $role = Role::where('team_id', $this->user->currentTeam->id)->first() 
+        $role = Role::where('team_id', $this->user->currentTeam->id)->first()
             ?? Role::factory()->create(['team_id' => $this->user->currentTeam->id]);
-        
+
         $user->teams()->attach($this->user->currentTeam->id, ['role_id' => $role->id]);
         $user->update(['current_team_id' => $this->user->currentTeam->id]);
     }
@@ -121,9 +121,9 @@ test('user can be edited without changing password', function () {
 
     // Attach user to current team if teams are enabled
     if (config('aura.teams') && $this->user->currentTeam) {
-        $role = Role::where('team_id', $this->user->currentTeam->id)->first() 
+        $role = Role::where('team_id', $this->user->currentTeam->id)->first()
             ?? Role::factory()->create(['team_id' => $this->user->currentTeam->id]);
-        
+
         $user->teams()->attach($this->user->currentTeam->id, ['role_id' => $role->id]);
         $user->update(['current_team_id' => $this->user->currentTeam->id]);
     }
@@ -154,14 +154,14 @@ test('user can be edited without changing password', function () {
 test('user password can be changed when explicitly set', function () {
     // Test editing our own password (the authenticated user)
     $user = $this->user;
-    
+
     // Set a known password for the test user
     $user->update(['password' => Hash::make('CurrentPass123!')]);
 
     Aura::fake();
     Aura::setModel($user);
 
-    // Change user password - need slug and password fields  
+    // Change user password - need slug and password fields
     // Since we're editing our own password, we need current_password
     livewire(Edit::class, ['slug' => 'user', 'id' => $user->id])
         ->set('form.fields.current_password', 'CurrentPass123!')

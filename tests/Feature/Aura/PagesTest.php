@@ -32,7 +32,6 @@ test('Check user authorization', function () {
     expect(auth()->user()->isSuperAdmin())->toBeTrue();
 });
 
-
 // Test Aura Pages
 test('Check Aura Pages (with Teams)', function ($routeName) {
     expect(config('aura.teams'))->toBeTrue();
@@ -56,13 +55,13 @@ test('Check Post Edit and View Pages', function ($postType) {
     // $post = createPost($postType); // Assumes a helper method to create a post
 
     $post = Aura::findResourceBySlug($postType)->factory()->create();
-    
+
     // For user resources, ensure the created user is in the same team as current user
     if ($postType === 'user') {
         $currentUser = auth()->user();
         $currentUserRole = $currentUser->roles->first();
         $post->update(['current_team_id' => $currentUser->current_team_id]);
-        
+
         // Associate the user with the team through the role
         $post->roles()->syncWithPivotValues([$currentUserRole->id], ['team_id' => $currentUser->current_team_id]);
     }

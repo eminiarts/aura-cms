@@ -524,6 +524,7 @@ class Post extends Resource
         if (isset($this->id)) {
             return optional($this)->title." (Post #{$this->id})";
         }
+
         return optional($this)->title ?? '';
     }
 

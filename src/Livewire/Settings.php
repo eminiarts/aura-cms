@@ -541,7 +541,7 @@ class Settings extends Component
     public function save()
     {
         $this->model->update([
-            'value' => $this->form['fields']
+            'value' => $this->form['fields'],
         ]);
 
         Cache::clear();

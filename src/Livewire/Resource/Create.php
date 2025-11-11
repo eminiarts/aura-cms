@@ -97,7 +97,7 @@ class Create extends Component
         if ($this->model->usesCustomTable()) {
             // For custom table resources, only fields are needed
             $this->form = [
-                'fields' => []
+                'fields' => [],
             ];
         } else {
             // For posts table resources, initialize with full post structure
@@ -111,7 +111,7 @@ class Create extends Component
                 'order' => null,
                 'team_id' => config('aura.teams') && auth()->user() ? auth()->user()->current_team_id : null,
                 'type' => $this->model::$type ?? null,
-                'fields' => []
+                'fields' => [],
             ];
         }
 
