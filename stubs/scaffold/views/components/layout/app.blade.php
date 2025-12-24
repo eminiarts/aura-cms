@@ -86,7 +86,7 @@
 <livewire:aura::notifications/>
 @endif
 
-@livewire('wire-elements-modal')
+@livewire('aura::modals')
 
 @stack('scripts')
 

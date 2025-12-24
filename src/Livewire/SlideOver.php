@@ -2,12 +2,12 @@
 
 namespace Aura\Base\Livewire;
 
+use Livewire\Attributes\On;
 use Livewire\Component;
 
 class SlideOver extends Component
 {
-    protected $listeners = ['slideOverOpened' => 'activate'];
-
+    #[On('slideOverOpened')]
     public function activate($id, $params)
     {
         $this->mount($id, $params);

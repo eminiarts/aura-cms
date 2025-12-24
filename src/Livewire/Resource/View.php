@@ -7,6 +7,7 @@ use Aura\Base\Traits\HasActions;
 use Aura\Base\Traits\InteractsWithFields;
 use Aura\Base\Traits\RepeaterFields;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
+use Livewire\Attributes\On;
 use Livewire\Component;
 
 /**
@@ -30,13 +31,6 @@ class View extends Component
     public $slug;
 
     public $tax;
-
-    // Listen for selectedAttachment
-    protected $listeners = [
-        'updateField' => 'updateField',
-        'refreshComponent' => '$refresh',
-        'reload',
-    ];
 
     public function getField($slug)
     {
@@ -66,6 +60,13 @@ class View extends Component
         // $this->form['terms']['category'] = $this->form['terms']['category'] ?? null;
     }
 
+    #[On('refreshComponent')]
+    public function refreshComponent()
+    {
+        // Livewire will handle $refresh automatically
+    }
+
+    #[On('reload')]
     public function reload()
     {
         $this->model = $this->model->fresh();
@@ -88,5 +89,11 @@ class View extends Component
         // }
         return view($this->model->viewView())->layout('aura::components.layout.app');
 
+    }
+
+    #[On('updateField')]
+    public function updateField($field, $value)
+    {
+        // Implementation is in InteractsWithFields trait
     }
 }

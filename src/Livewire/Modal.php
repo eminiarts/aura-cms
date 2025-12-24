@@ -2,6 +2,7 @@
 
 namespace Aura\Base\Livewire;
 
+use Livewire\Attributes\On;
 use Livewire\Component;
 
 class Modal extends Component
@@ -10,8 +11,7 @@ class Modal extends Component
 
     public $params;
 
-    protected $listeners = ['modalOpened' => 'activate'];
-
+    #[On('modalOpened')]
     public function activate($id, $params)
     {
         $this->mount($id, $params);

@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\Redirect;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rules\Password;
+use Livewire\Attributes\On;
 use Livewire\Component;
 
 class Profile extends Component
@@ -33,9 +34,6 @@ class Profile extends Component
      * @var string
      */
     public $password = '';
-
-    // Listen for selectedAttachment
-    protected $listeners = ['updateField' => 'updateField'];
 
     public function checkAuthorization()
     {
@@ -169,6 +167,7 @@ class Profile extends Component
         return $this->notify(__('Successfully updated'));
     }
 
+    #[On('updateField')]
     public function updateField($data)
     {
         $this->form['fields'][$data['slug']] = $data['value'];

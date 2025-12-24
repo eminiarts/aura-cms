@@ -116,7 +116,7 @@
 
             {{-- console.log(this.items, this.value); --}}
 
-            Livewire.on('resourceCreated', data => {
+            $wire.on('resourceCreated', data => {
                 this.items.push({ id: data.form.id, title: data.title });
                 this.toggleItem({ id: data.form.id, title: data.title });
             })

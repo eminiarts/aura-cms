@@ -1,6 +1,6 @@
 @props(['key' => 'slideover'])
 <div x-data="{ open: @entangle('open'), key: '{{ $key }}', init() {
-    Livewire.on('openSlideOver', (data) => {
+    $wire.on('openSlideOver', (data) => {
         {{-- console.log('open slide over', data); --}}
 
         if(data.component == this.key) {

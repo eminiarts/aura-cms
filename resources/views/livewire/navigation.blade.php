@@ -222,7 +222,7 @@
                             @if(config('aura.features.notifications'))
                                 <div class="ml-2">
                                     <x-aura::tippy text="{{ __('Notifications') }}">
-                                        <x-aura::button.primary @click="Livewire.emit('openSlideOver', 'notifications')"
+                                        <x-aura::button.primary @click="$wire.dispatch('openSlideOver', 'notifications')"
                                                                 class="my-2 w-full" size="xs">
                                             <x-aura::icon icon="notifications" size="xs"/>
                                         </x-aura::button.primary>

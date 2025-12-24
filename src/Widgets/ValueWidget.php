@@ -4,6 +4,7 @@ namespace Aura\Base\Widgets;
 
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
+use Livewire\Attributes\On;
 
 class ValueWidget extends Widget
 {
@@ -16,8 +17,6 @@ class ValueWidget extends Widget
     public $start;
 
     public $widget;
-
-    protected $listeners = ['dateFilterUpdated' => 'updateDateRange'];
 
     public function getValue($start, $end)
     {
@@ -88,6 +87,7 @@ class ValueWidget extends Widget
         return view('aura::components.widgets.value');
     }
 
+    #[On('dateFilterUpdated')]
     public function updateDateRange($start, $end)
     {
         $this->start = $start;

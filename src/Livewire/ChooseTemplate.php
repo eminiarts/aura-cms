@@ -2,9 +2,9 @@
 
 namespace Aura\Base\Livewire;
 
-use LivewireUI\Modal\ModalComponent;
+use Livewire\Component;
 
-class ChooseTemplate extends ModalComponent
+class ChooseTemplate extends Component
 {
     public function render()
     {

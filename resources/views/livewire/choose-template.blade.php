@@ -4,7 +4,7 @@
             <h2 class="text-lg font-semibold">Start with a Template</h2>
             <span class="text-sm text-gray-500">Flexible Templates to get you started</span>
         </div>
-        <button onclick="Livewire.emit('closeModal', 'choose-template')">
+        <button onclick="$wire.dispatch('closeModal', 'choose-template')">
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="25" fill="none">
                 <path stroke="#000" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m18 6.5-12 12m0-12 12 12"/>
             </svg>

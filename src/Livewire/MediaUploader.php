@@ -3,6 +3,7 @@
 namespace Aura\Base\Livewire;
 
 use Aura\Base\Resources\Attachment;
+use Livewire\Attributes\On;
 use Livewire\Component;
 use Livewire\WithFileUploads;
 
@@ -30,9 +31,6 @@ class MediaUploader extends Component
 
     public $upload = false;
 
-    // listener selectedMediaUpdated
-    protected $listeners = ['selectedMediaUpdated' => 'selectedMediaUpdated'];
-
     public function mount()
     {
         $this->model = app($this->namespace);
@@ -43,6 +41,7 @@ class MediaUploader extends Component
         return view('aura::livewire.media-uploader');
     }
 
+    #[On('selectedMediaUpdated')]
     public function selectedMediaUpdated($data)
     {
         if ($this->field && ($this->field['slug'] == $data['slug'])) {

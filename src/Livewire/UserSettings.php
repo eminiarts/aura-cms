@@ -6,6 +6,7 @@ use Aura\Base\Models\Option;
 use Aura\Base\Traits\InputFields;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Str;
+use Livewire\Attributes\On;
 use Livewire\Component;
 
 class UserSettings extends Component
@@ -17,9 +18,6 @@ class UserSettings extends Component
     ];
 
     public $model;
-
-    // Listen for selectedAttachment
-    protected $listeners = ['updateField' => 'updateField'];
 
     public static function getFields()
     {
@@ -106,7 +104,7 @@ class UserSettings extends Component
 
     }
 
-    // Select Attachment
+    #[On('updateField')]
     public function updateField($data)
     {
         $this->form['fields'][$data['slug']] = $data['value'];

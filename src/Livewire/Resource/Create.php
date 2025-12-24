@@ -8,6 +8,7 @@ use Aura\Base\Traits\InteractsWithFields;
 use Aura\Base\Traits\MediaFields;
 use Aura\Base\Traits\RepeaterFields;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
+use Livewire\Attributes\On;
 use Livewire\Component;
 use Livewire\WithFileUploads;
 
@@ -34,8 +35,6 @@ class Create extends Component
     public $slug;
 
     public $tax;
-
-    protected $listeners = ['updateField' => 'updateField'];
 
     public function callMethod($method, $params = [], $captureReturnValueCallback = null)
     {
@@ -207,6 +206,12 @@ class Create extends Component
     public function setModel($model)
     {
         $this->model = $model;
+    }
+
+    #[On('updateField')]
+    public function updateField($field, $value)
+    {
+        // Implementation is in InteractsWithFields trait
     }
 
     protected function initializeFieldsWithDefaults()

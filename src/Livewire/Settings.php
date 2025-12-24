@@ -20,9 +20,6 @@ class Settings extends Component
 
     public $model;
 
-    // Listen for selectedAttachment
-    protected $listeners = ['updateField' => 'updateField'];
-
     public static function getFields()
     {
         return [

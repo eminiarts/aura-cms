@@ -7,11 +7,9 @@ use Aura\Base\Providers\AuthServiceProvider;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Foundation\Testing\Concerns\InteractsWithViews;
 use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
-use Intervention\Image\ImageServiceProvider;
 use Lab404\Impersonate\ImpersonateServiceProvider;
 use Laravel\Fortify\FortifyServiceProvider;
 use Livewire\LivewireServiceProvider;
-use LivewireUI\Modal\LivewireModalServiceProvider;
 use Orchestra\Testbench\Concerns\WithWorkbench;
 use Orchestra\Testbench\TestCase as Orchestra;
 use ReflectionObject;
@@ -91,11 +89,9 @@ class TestCase extends Orchestra
 
         return [
             LivewireServiceProvider::class,
-            LivewireModalServiceProvider::class,
             FortifyServiceProvider::class,
             AuthServiceProvider::class,
             AuraServiceProvider::class,
-            ImageServiceProvider::class,
             ImpersonateServiceProvider::class,
             RayServiceProvider::class,
         ];

@@ -6,6 +6,7 @@ use Aura\Base\Facades\Aura;
 use Aura\Base\Traits\RepeaterFields;
 use Aura\Base\Traits\SaveFields;
 use Illuminate\Support\Arr;
+use Livewire\Attributes\On;
 use Livewire\Component;
 
 class EditResourceField extends Component
@@ -30,9 +31,6 @@ class EditResourceField extends Component
     public $open = false;
 
     public $reservedWords = ['id', 'type'];
-
-    // listener for newFields
-    protected $listeners = ['newFields' => 'newFields'];
 
     public function activate($params)
     {
@@ -104,6 +102,7 @@ class EditResourceField extends Component
         return app($this->field['type'])->getGroupedFields();
     }
 
+    #[On('newFields')]
     public function newFields($fields)
     {
         $field = collect($fields)->firstWhere('slug', $this->field['slug']);

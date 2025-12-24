@@ -10,6 +10,7 @@ use Aura\Base\Traits\MediaFields;
 use Aura\Base\Traits\RepeaterFields;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Support\Traits\Macroable;
+use Livewire\Attributes\On;
 use Livewire\Component;
 use Livewire\WithFileUploads;
 
@@ -40,15 +41,6 @@ class Edit extends Component
     public $tab;
 
     public $tax;
-
-    // Listen for selectedAttachment
-    protected $listeners = [
-        'updateField' => 'updateField',
-        'saveModel' => 'save',
-        'refreshComponent' => '$refresh',
-        'reload',
-        'saveBeforeAction',
-    ];
 
     public function callMethod($method, $params = [], $captureReturnValueCallback = null)
     {
@@ -143,6 +135,13 @@ class Edit extends Component
         // if $this->form['terms']['tag'] is not set, set it to null
     }
 
+    #[On('refreshComponent')]
+    public function refreshComponent()
+    {
+        // Livewire will handle $refresh automatically
+    }
+
+    #[On('reload')]
     public function reload()
     {
         $this->model = $this->model->fresh();
@@ -172,6 +171,7 @@ class Edit extends Component
         return $rules;
     }
 
+    #[On('saveModel')]
     public function save()
     {
 
@@ -200,7 +200,19 @@ class Edit extends Component
         $this->dispatch('refreshComponent');
     }
 
+    #[On('saveBeforeAction')]
+    public function saveBeforeAction()
+    {
+        // Implementation is in HasActions trait
+    }
+
     public function updatedPost($value, $array) {}
+
+    #[On('updateField')]
+    public function updateField($field, $value)
+    {
+        // Implementation is in InteractsWithFields trait
+    }
 
     protected function callComponentMethod($method, $params)
     {

@@ -3,6 +3,7 @@
 namespace Aura\Base\Traits;
 
 use Illuminate\Support\Str;
+use Livewire\Attributes\On;
 
 trait MediaFields
 {
@@ -44,6 +45,7 @@ trait MediaFields
         ]);
     }
 
+    #[On('updateField')]
     public function updateField($data)
     {
         $this->form['fields'][$data['slug']] = $data['value'];

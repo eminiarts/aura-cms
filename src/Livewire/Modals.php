@@ -2,6 +2,7 @@
 
 namespace Aura\Base\Livewire;
 
+use Livewire\Attributes\On;
 use Livewire\Component;
 use Livewire\Mechanisms\ComponentRegistry;
 use Ray\Ray;
@@ -10,8 +11,7 @@ class Modals extends Component
 {
     public $modals = [];
 
-    protected $listeners = ['openModal', 'closeModal'];
-
+    #[On('closeModal')]
     public function closeModal($id = null): void
     {
         if ($id) {
@@ -26,6 +26,7 @@ class Modals extends Component
         // Initialization logic if needed
     }
 
+    #[On('openModal')]
     public function openModal($component, $arguments = [], $modalAttributes = []): void
     {
         $id = md5($component.serialize($arguments));

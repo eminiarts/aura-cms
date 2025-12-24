@@ -8,6 +8,7 @@ use Aura\Base\Traits\SaveFields;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Str;
+use Livewire\Attributes\On;
 use Livewire\Component;
 
 class ResourceEditor extends Component
@@ -33,15 +34,6 @@ class ResourceEditor extends Component
     public $resource = [];
 
     public $slug;
-
-    protected $listeners = [
-        'refreshComponent' => '$refresh',
-        'finishedSavingFields' => '$refresh',
-        'savedField' => 'updateFields',
-        'saveField',
-        'deleteField',
-        'saveNewField',
-    ];
 
     public function addConditionalLogicRule($key, $group)
     {
@@ -178,6 +170,7 @@ class ResourceEditor extends Component
         return redirect()->route('aura.dashboard');
     }
 
+    #[On('deleteField')]
     public function deleteField($data)
     {
         $fields = collect($this->fieldsArray);
@@ -401,7 +394,8 @@ class ResourceEditor extends Component
         $this->dispatch('openSlideOver', component: 'edit-field', parameters: ['fieldSlug' => $fieldSlug, 'field' => $field, 'model' => $slug]);
     }
 
-    // Add this method to handle the refresh
+    #[On('refreshComponent')]
+    #[On('finishedSavingFields')]
     public function refreshResourceEditor()
     {
         $this->fieldsArray = $this->model->getFieldsWithIds()->toArray();
@@ -499,6 +493,7 @@ class ResourceEditor extends Component
         $this->saveProps($this->resource);
     }
 
+    #[On('saveField')]
     public function saveField($data)
     {
         $fields = collect($this->fieldsArray);
@@ -526,6 +521,7 @@ class ResourceEditor extends Component
         $this->dispatch('finishedSavingFields');
     }
 
+    #[On('saveNewField')]
     public function saveNewField($field, $index)
     {
         array_splice($this->fieldsArray, $index, 0, [$field]);
@@ -556,6 +552,7 @@ class ResourceEditor extends Component
         $this->notify('Successfully ran: '.$action);
     }
 
+    #[On('savedField')]
     public function updateFields($fields)
     {
         $this->newFields = $this->model->mapToGroupedFields($fields);

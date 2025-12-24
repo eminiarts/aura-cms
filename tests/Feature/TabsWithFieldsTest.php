@@ -337,7 +337,7 @@ class TabsWithFieldsModel extends Resource
             [
                 'name' => '2FA',
                 'type' => 'Aura\\Base\\Fields\\LivewireComponent',
-                'component' => 'aura::user-two-factor-authentication-form',
+                'component' => 'aura::two-factor-authentication-form',
                 'validation' => '',
                 'conditional_logic' => [],
                 'slug' => '2fa',

@@ -18,11 +18,11 @@
     @endif
 
     init() {
-        Livewire.on('selectedRows', (updatedSelected) => {
+        $wire.on('selectedRows', (updatedSelected) => {
             this.selected = updatedSelected[0];
         });
 
-        Livewire.on('rowIdsUpdated', (ids) => {
+        $wire.on('rowIdsUpdated', (ids) => {
             this.rows = ids[0];
             this.selectPage = false;
         });
@@ -164,7 +164,7 @@
         },
         init() {
 
-            Livewire.dispatch('tableMounted')
+            $wire.dispatch('tableMounted')
 
             const sortable = new window.Sortable(document.querySelectorAll('.sortable-wrapper'), {
                 draggable: '.sortable',

@@ -16,6 +16,7 @@ use Aura\Base\Livewire\Table\Traits\SwitchView;
 use Aura\Base\Resource;
 use Aura\Base\Resources\User;
 use Livewire\Attributes\Computed;
+use Livewire\Attributes\On;
 use Livewire\Component;
 
 /**
@@ -107,19 +108,6 @@ class Table extends Component
      * @var array
      */
     public $settings;
-
-    /**
-     * List of events listened to by the component.
-     *
-     * @var array
-     */
-    protected $listeners = [
-        'refreshTable' => '$refresh',
-        'selectedRows' => '$refresh',
-        'selectRowsRange' => 'selectRowsRange',
-        'refreshTableSelected' => 'refreshTableSelected',
-        'selectFieldRows',
-    ];
 
     protected $queryString = ['selectedFilter'];
 
@@ -288,6 +276,13 @@ class Table extends Component
         unset($this->rows);
     }
 
+    #[On('refreshTable')]
+    public function refreshTable()
+    {
+        // Refresh the component
+    }
+
+    #[On('refreshTableSelected')]
     public function refreshTableSelected()
     {
         $this->selected = [];
@@ -370,6 +365,13 @@ class Table extends Component
         return $query;
     }
 
+    #[On('selectedRows')]
+    public function selectedRows()
+    {
+        // Refresh the component
+    }
+
+    #[On('selectFieldRows')]
     public function selectFieldRows($value, $slug)
     {
         if ($slug == $this->field['slug']) {
@@ -388,6 +390,12 @@ class Table extends Component
     {
         $this->selected = $id;
         $this->lastClickedRow = $id;
+    }
+
+    #[On('selectRowsRange')]
+    public function selectRowsRange()
+    {
+        // Handle select rows range event
     }
 
     public function updateCardStatus($cardId, $newStatus)

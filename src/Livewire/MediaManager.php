@@ -22,13 +22,6 @@ class MediaManager extends Component
 
     public $selected = [];
 
-    // Listen for select Attachment
-    protected $listeners = [
-        'selectedRows' => 'selectAttachment',
-        'tableMounted',
-        'updateField' => 'updateField',
-    ];
-
     public static function modalClasses(): string
     {
         return 'max-w-7xl';
