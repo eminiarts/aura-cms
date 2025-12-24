@@ -9,6 +9,7 @@ Resources are the heart of Aura CMS, transforming Laravel's Eloquent models into
 - [Introduction](#introduction)
 - [Creating Resources](#creating-resources)
 - [Resource Properties](#resource-properties)
+- [Resource Traits](#resource-traits)
 - [Resource Methods](#resource-methods)
 - [Fields Management](#fields-management)
 - [Data Storage Strategies](#data-storage-strategies)
@@ -148,51 +149,60 @@ class Article extends Resource
 class Product extends Resource
 {
     // === IDENTIFICATION ===
-    public static string $type = 'Product';              // Resource type identifier
-    public static ?string $slug = 'products';            // URL slug
+    public static string $type = 'Product';              // Resource type identifier (required)
+    public static ?string $slug = 'products';            // URL slug (defaults to slugified $name)
     
     // === DISPLAY ===
-    public static ?string $name = 'Product';             // Display name (singular)
-    public static ?string $pluralName = 'Products';      // Display name (plural)
-    public static ?string $singularName = 'Product';     // Explicit singular name
-    public static ?string $icon = '<svg>...</svg>';      // Navigation icon
+    public static ?string $name = 'Product';             // Display name
+    public static ?string $pluralName = 'Products';      // Plural display name (auto-generated)
+    public static ?string $singularName = 'Product';     // Singular display name (auto-generated)
+    protected static ?string $icon = '<svg>...</svg>';   // Navigation icon (SVG string)
     
     // === NAVIGATION ===
-    protected static ?string $group = 'Commerce';        // Navigation group
-    protected static ?int $sort = 10;                    // Sort order (lower = higher)
-    public static bool $showInNavigation = true;         // Show in sidebar
-    protected static ?string $dropdown = null;           // Dropdown menu label
+    protected static ?string $group = 'Resources';       // Navigation group (default: 'Resources')
+    protected static ?int $sort = 100;                   // Sort order (lower = higher priority)
+    protected static bool $showInNavigation = true;      // Show in sidebar navigation
+    protected static $dropdown = false;                  // Dropdown menu grouping (false or string)
     
     // === FEATURES ===
-    public static bool $globalSearch = true;             // Enable global search
-    public static array $searchable = ['title', 'sku']; // Searchable fields
-    public static bool $createEnabled = true;            // Allow creation
-    public static bool $editEnabled = true;              // Allow editing
-    public static bool $viewEnabled = true;              // Allow viewing
-    public static bool $deleteEnabled = true;            // Allow deletion
+    public static $globalSearch = true;                  // Enable global search
+    protected static array $searchable = ['title'];      // Fields to include in search
+    public static $createEnabled = true;                 // Allow creation
+    public static $editEnabled = true;                   // Allow editing
+    public static $viewEnabled = true;                   // Allow viewing
     public static bool $indexViewEnabled = true;         // Show index page
     
     // === DATA STORAGE ===
-    public static bool $customTable = false;             // Use custom table
-    public static bool $usesMeta = true;                 // Use meta storage
-    public static bool $taxonomy = false;                // Is taxonomy resource
-    public static bool $title = true;                    // Has title field
+    public static $customTable = false;                  // Use custom table (not posts)
+    public static bool $usesMeta = true;                 // Store fields in meta table
+    public static $taxonomy = false;                     // Is taxonomy/category resource
+    protected static bool $title = false;                // Uses title field in posts table
     
     // === UI CONFIGURATION ===
-    public static bool $showActionsAsButtons = false;    // Action display style
-    public static bool $contextMenu = true;              // Enable context menu
+    public static $showActionsAsButtons = false;         // Show actions as buttons vs dropdown
+    public static $contextMenu = true;                   // Enable right-click context menu
     
-    // === TABLE CONFIGURATION ===
+    // === INSTANCE PROPERTIES ===
+    public array $actions = [];                          // Available row actions
+    public array $bulkActions = [];                      // Bulk actions for table
+    public array $metaFields = [];                       // Meta fields to save
+    public array $taxonomyFields = [];                   // Taxonomy fields to save
+    public array $widgetSettings = [                      // Widget date range options
+        'default' => '30d',
+        'options' => ['1d', '7d', '30d', '60d', '90d', '180d', '365d', 'all', 'ytd', 'mtd', 'wtd'],
+    ];
+    protected $baseFillable = [];                        // Original fillable before merge
+    
+    // === ELOQUENT PROPERTIES ===
     protected $table = 'products';                       // Custom table name
-    protected $fillable = ['name', 'sku', 'price'];    // Mass assignable
+    protected $fillable = ['name', 'sku', 'price'];     // Mass assignable fields
     protected $casts = [                                 // Attribute casting
         'price' => 'decimal:2',
         'features' => 'array',
-        'published' => 'boolean',
     ];
-    protected $hidden = ['internal_notes'];              // Hidden attributes
-    protected $appends = ['formatted_price'];            // Appended attributes
-    protected $with = ['category', 'brand'];             // Eager load relations
+    protected $hidden = ['internal_notes'];              // Hidden from JSON
+    protected $appends = ['fields'];                     // Appended attributes (fields is default)
+    protected $with = ['meta'];                          // Eager load (meta added when usesMeta)
 }
 ```
 
@@ -203,22 +213,82 @@ Resources also support dynamic configuration through methods:
 ```php
 class Product extends Resource
 {
-    // Dynamic icon based on status
-    public static function getIcon()
+    // Dynamic icon based on context
+    public function getIcon()
     {
-        if (auth()->user()->can('manage products')) {
-            return '<svg class="text-green-500">...</svg>';
-        }
-        return '<svg>...</svg>';
+        return '<svg class="w-5 h-5" viewBox="0 0 18 18">...</svg>';
     }
     
     // Conditional navigation display
-    public static function shouldShowInNavigation(): bool
+    public static function getShowInNavigation(): bool
     {
         return auth()->user()->hasRole(['admin', 'editor']);
     }
+    
+    // Dynamic dropdown grouping
+    public static function getDropdown()
+    {
+        return 'Commerce'; // Groups this resource under "Commerce" dropdown
+    }
 }
 ```
+
+## Resource Traits
+
+Resources use several traits that provide core functionality. Understanding these is key to extending behavior:
+
+```php
+class Resource extends Model
+{
+    // Core Aura traits
+    use AuraModelConfig;      // Properties, navigation, meta, scopes
+    use InitialPostFields;    // Auto-sets user_id, team_id, type on create
+    use InputFields;          // Field processing pipeline
+    use InteractsWithTable;   // Table/grid/kanban configuration
+    use SaveFieldAttributes;  // Moves field values to fields array
+    use SaveMetaFields;       // Persists meta fields after save
+    
+    // Laravel traits
+    use HasFactory;
+    use HasTimestamps;
+}
+```
+
+### Trait: AuraModelConfig
+
+Provides all static properties and core methods for resources:
+
+- Navigation methods: `navigation()`, `getIcon()`, `indexUrl()`, `createUrl()`, `editUrl()`, `viewUrl()`
+- Display methods: `pluralName()`, `singularName()`, `title()`, `display()`, `displayFieldValue()`
+- Meta queries: `scopeWhereMeta()`, `scopeOrWhereMeta()`, `scopeWhereInMeta()`, `scopeWhereMetaContains()`, `scopeWhereNotInMeta()`
+- Type checking: `isMetaField()`, `isTableField()`, `isTaxonomyField()`, `isAppResource()`, `isVendorResource()`
+
+### Trait: InteractsWithTable
+
+Controls table display settings:
+
+```php
+class Product extends Resource
+{
+    public function defaultPerPage() { return 10; }           // Items per page
+    public function defaultTableSort() { return 'id'; }       // Default sort column
+    public function defaultTableSortDirection() { return 'desc'; } // Sort direction
+    public function defaultTableView() { return 'list'; }     // 'list', 'grid', or 'kanban'
+    public function showTableSettings() { return true; }      // Show settings button
+    public function tableView() { return 'aura::components.table.list-view'; }
+    public function tableGridView() { return false; }         // Custom grid view
+    public function tableKanbanView() { return false; }       // Custom kanban view
+    public function kanbanQuery($query) { return false; }     // Kanban query modifier
+}
+```
+
+### Trait: SaveMetaFields
+
+Handles the meta field persistence lifecycle:
+
+1. On `saving`: processes field values, calls `set()` methods on field classes
+2. On `saved`: persists meta fields to the `meta` table via `updateOrCreate`
+3. Fires `metaSaved` event after meta persistence
 
 ## Resource Methods
 
@@ -228,41 +298,127 @@ class Product extends Resource
 class Article extends Resource
 {
     // === FIELD MANAGEMENT ===
-    public static function getFields() { }              // Define fields
-    public function fieldBySlug($slug) { }              // Get field by slug
+    public static function getFields() { }              // Define resource fields (override this)
+    public function fieldBySlug($slug) { }              // Get field definition by slug
     public function fieldClassBySlug($slug) { }         // Get field class instance
-    public function fieldsCollection() { }              // Fields as collection
-    public function inputFields() { }                   // Get input fields
-    public function indexFields() { }                   // Get table fields
-    public function viewFields() { }                    // Get view fields
-    public function createFields() { }                  // Get create form fields
-    public function editFields() { }                    // Get edit form fields
+    public function fieldsCollection() { }              // All fields as collection
+    public function mappedFields() { }                  // Fields with field class instances
+    public function inputFields() { }                   // Only input-type fields
+    public function indexFields() { }                   // Fields for table display
+    public function viewFields() { }                    // Fields for view page
+    public function createFields() { }                  // Fields for create form
+    public function editFields() { }                    // Fields for edit form
+    public function getFieldSlugs() { }                 // All field slugs as collection
+    public function inputFieldsSlugs() { }              // Input field slugs as array
+    public function getGroupedFields() { }              // Fields processed into tree
+    public function getFieldsBeforeTree() { }           // Flat fields with IDs
+    public function getSearchableFields() { }           // Fields marked searchable
     
     // === DATA ACCESS ===
-    public function getMeta($key = null) { }            // Get meta values
+    public function getMeta($key = null) { }            // Get meta value(s)
+    public function getFieldsAttribute() { }            // Virtual 'fields' attribute
+    public function getFieldsWithoutConditionalLogic() { } // All field values
     public function display($key) { }                   // Display formatted value
-    public function displayFieldValue($key, $value) { } // Format field value
-    public function getFieldValue($key) { }             // Get raw value
+    public function displayFieldValue($key, $value) { } // Format specific field
+    public function getFieldValue($key) { }             // Get raw field value
     
     // === URLS ===
     public function indexUrl() { }                      // Index page URL
     public function createUrl() { }                     // Create page URL
     public function editUrl() { }                       // Edit page URL
     public function viewUrl() { }                       // View page URL
+    public function getIndexRoute() { }                 // Named route for index
+    
+    // === VIEWS ===
+    public function indexView() { }                     // Livewire view for index
+    public function createView() { }                    // Livewire view for create
+    public function editView() { }                      // Livewire view for edit
+    public function viewView() { }                      // Livewire view for show
+    public function editHeaderView() { }                // Edit page header partial
+    public function viewHeaderView() { }                // View page header partial
+    public function tableComponentView() { }            // Table component view
+    public function rowView() { }                       // Table row view
     
     // === DISPLAY ===
-    public static function title() { }                  // Resource title
-    public static function pluralName() { }             // Plural name
-    public static function singularName() { }           // Singular name
-    public static function getBadge() { }               // Navigation badge
-    public static function getBadgeColor() { }          // Badge color
+    public function title() { }                         // Display title for instance
+    public function pluralName() { }                    // Plural resource name
+    public function singularName() { }                  // Singular resource name
+    public function icon() { }                          // Icon (alias for getIcon)
+    public function getIcon() { }                       // SVG icon string
+    public function getBadge() { }                      // Navigation badge count
+    public function getBadgeColor() { }                 // Badge color class
+    public function navigation() { }                    // Full navigation config array
     
-    // === PERMISSIONS ===
-    public static function actions() { }                // Define actions
-    public static function getActions() { }             // Get available actions
-    public static function getBulkActions() { }         // Get bulk actions
-    public function allowedToPerformAction($action) { } // Check permission
+    // === PERMISSIONS & ACTIONS ===
+    public function actions() { }                       // Define row actions (override)
+    public function getActions() { }                    // Get available actions
+    public function getBulkActions() { }                // Get bulk actions
+    public function allowedToPerformActions() { }       // Check if actions allowed
+    
+    // === TYPE CHECKING ===
+    public static function usesCustomTable() { }        // Uses custom table?
+    public static function usesMeta() { }               // Uses meta storage?
+    public static function usesTitle() { }              // Uses title field?
+    public function isTaxonomy() { }                    // Is taxonomy resource?
+    public function isMetaField($key) { }               // Field stored in meta?
+    public function isTableField($key) { }              // Field stored in table?
+    public function isTaxonomyField($key) { }           // Is taxonomy relation?
+    public function isRelation($key) { }                // Is Eloquent relation?
+    public function isBaseFillable($key) { }            // In base fillable array?
+    public function isAppResource() { }                 // Defined in app namespace?
+    public function isVendorResource() { }              // Defined in vendor?
+    
+    // === RELATIONSHIPS ===
+    public function meta() { }                          // MorphMany to Meta model
+    public function user() { }                          // BelongsTo user
+    public function team() { }                          // BelongsTo team
+    public function parent() { }                        // BelongsTo parent (self)
+    public function children() { }                      // HasMany children (self)
+    public function revision() { }                      // HasMany revisions
+    public function attachment() { }                    // HasMany attachments
+    
+    // === CONFIGURATION ===
+    public function getHeaders() { }                    // Table headers config
+    public function getColumns() { }                    // Available columns
+    public function getDefaultColumns() { }             // Default visible columns
+    public function getTableHeaders() { }               // Filtered table headers
+    public function indexTableSettings() { }            // Custom table settings
+    public function getBaseFillable() { }               // Original fillable array
+    public static function getWidgets() { }             // Dashboard widgets
+    public function widgets() { }                       // Processed widgets
 }
+```
+
+### Magic Methods
+
+Resources override `__get` and `__call` to provide dynamic access to field values and relationships:
+
+```php
+// __get behavior (accessing $article->featured)
+1. Try parent Eloquent __get
+2. If field slug exists and is a relation field, resolve relationship
+3. If key exists in $this->fields array, return that value
+4. Return null
+
+// __call behavior (calling $article->author())
+1. If method name matches a field slug that is a relation
+2. Return the relationship query builder
+3. Otherwise, pass to parent __call
+```
+
+**Practical Examples**
+
+```php
+$article = Article::find(1);
+
+// These are equivalent for accessing field values:
+$article->featured;              // Via __get magic
+$article->fields['featured'];    // Via fields accessor
+$article->getMeta('featured');   // Explicit meta access (for meta fields)
+
+// Relation fields work like Eloquent relations:
+$article->categories;            // Returns collection (via __get)
+$article->categories();          // Returns relationship builder (via __call)
 ```
 
 ### Implementing Custom Methods
@@ -295,11 +451,25 @@ class Article extends Resource
         return true;
     }
     
-    // Computed properties
+    // Computed properties (Eloquent accessor)
     public function getReadingTimeAttribute(): int
     {
         $words = str_word_count(strip_tags($this->content));
-        return ceil($words / 200); // Average reading speed
+        return ceil($words / 200);
+    }
+    
+    // Custom field getter (called during field processing)
+    public function getFeaturedField($value)
+    {
+        return $value ? 'Yes' : 'No';
+    }
+    
+    // Custom field setter (called during save)
+    public function setSlugField($value)
+    {
+        // Custom processing
+        $this->attributes['slug'] = Str::slug($value);
+        return $this;
     }
 }
 ```
@@ -512,12 +682,65 @@ class Product extends Resource
 
 ## Relationships
 
-### Standard Eloquent Relationships
+### Built-in Relationships
+
+Every Resource inherits these relationships from the base class:
+
+```php
+class Resource extends Model
+{
+    // Meta storage - polymorphic relationship
+    public function meta()
+    {
+        return $this->morphMany(Meta::class, 'metable');
+    }
+    
+    // Owner of the resource
+    public function user()
+    {
+        return $this->belongsTo(config('aura.resources.user'));
+    }
+    
+    // Team (when multi-tenancy enabled)
+    public function team()
+    {
+        return $this->belongsTo(config('aura.resources.team'));
+    }
+    
+    // Self-referential parent
+    public function parent()
+    {
+        return $this->belongsTo(get_class($this), 'parent_id');
+    }
+    
+    // Self-referential children
+    public function children()
+    {
+        return $this->hasMany(get_class($this), 'parent_id');
+    }
+    
+    // Revisions (for versioning)
+    public function revision()
+    {
+        return $this->hasMany(self::class, 'parent_id')
+            ->where('post_type', 'revision');
+    }
+    
+    // Attachments
+    public function attachment()
+    {
+        return $this->hasMany(self::class, 'post_parent')
+            ->where('post_type', 'attachment');
+    }
+}
+```
+
+### Custom Eloquent Relationships
 
 ```php
 class Article extends Resource
 {
-    // BelongsTo
+    // Custom BelongsTo
     public function author()
     {
         return $this->belongsTo(User::class, 'user_id');
@@ -636,26 +859,42 @@ $byAuthor = Article::byAuthor($userId)->get();
 
 ### Meta Field Queries
 
+Resources provide query scopes for meta fields (from `AuraModelConfig` trait):
+
 ```php
-// Query by meta field
-$featured = Article::whereMeta('featured', '=', true)->get();
+// Basic meta query (2 arguments: key, value)
+$featured = Article::whereMeta('featured', true)->get();
+
+// With operator (3 arguments: key, operator, value)
+$highPriority = Article::whereMeta('priority', '>', 5)->get();
 
 // Multiple meta conditions
 $special = Article::whereMeta('featured', true)
     ->whereMeta('priority', '>', 5)
     ->get();
 
-// Meta field with JSON
-$tagged = Article::whereMetaContains('tags', 'laravel')->get();
+// Array of conditions
+$filtered = Article::whereMeta([
+    'featured' => true,
+    'status' => 'active',
+])->get();
 
 // OR conditions
 $highlighted = Article::whereMeta('featured', true)
     ->orWhereMeta('spotlight', true)
     ->get();
 
-// IN queries
+// IN queries - match any value in array
 $selected = Article::whereInMeta('category', ['news', 'updates'])->get();
+
+// NOT IN queries - exclude values
+$excluded = Article::whereNotInMeta('status', ['draft', 'archived'])->get();
+
+// JSON contains - search within JSON meta values
+$tagged = Article::whereMetaContains('tags', 'laravel')->get();
 ```
+
+**Note**: Meta queries use `whereHas` internally, which may impact performance on large datasets. Consider using custom tables for frequently queried fields.
 
 ### Complex Queries
 
@@ -692,19 +931,46 @@ class ArticleRepository
 
 ### Global Scopes
 
-Resources automatically apply these scopes:
+Resources automatically apply these scopes (defined in `Resource::booted()`):
 
 ```php
-// TypeScope - filters by resource type
-Article::withoutGlobalScope(TypeScope::class)->get(); // All posts
+use Aura\Base\Models\Scopes\TypeScope;
+use Aura\Base\Models\Scopes\TeamScope;
+use Aura\Base\Models\Scopes\ScopedScope;
 
-// TeamScope - multi-tenancy
+// TypeScope - filters by resource type (only for non-custom tables)
+// Applied when $customTable = false, filters posts by type column
+Article::withoutGlobalScope(TypeScope::class)->get(); // All post types
+
+// TeamScope - multi-tenancy filtering
+// Filters by team_id when config('aura.teams') is true
 Article::withoutGlobalScope(TeamScope::class)->get(); // All teams
 
 // ScopedScope - user-based filtering
+// Can restrict resources to owner based on configuration
 Article::withoutGlobalScope(ScopedScope::class)->get(); // All users
+```
 
-// Custom global scope
+**Removing Multiple Scopes**
+
+```php
+// Remove all global scopes
+Article::withoutGlobalScopes()->get();
+
+// Remove specific scopes
+Article::withoutGlobalScopes([
+    TypeScope::class,
+    TeamScope::class,
+])->get();
+```
+
+**Custom Global Scopes**
+
+```php
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Scope;
+
 class PublishedScope implements Scope
 {
     public function apply(Builder $builder, Model $model)
@@ -716,7 +982,7 @@ class PublishedScope implements Scope
 // In your resource
 protected static function booted()
 {
-    parent::booted();
+    parent::booted(); // Important: call parent first!
     static::addGlobalScope(new PublishedScope);
 }
 ```
@@ -835,25 +1101,30 @@ class Article extends Resource
 ```php
 class Article extends Resource
 {
-    // Table defaults
-    public static function defaultPerPage(): int
+    // Table defaults (instance methods, not static)
+    public function defaultPerPage(): int
     {
-        return 25;
+        return 10; // Default is 10
     }
     
-    public static function defaultTableSort(): string
+    public function defaultTableSort(): string
     {
-        return 'published_at';
+        return 'id'; // Default sort column
     }
     
-    public static function defaultTableSortDirection(): string
+    public function defaultTableSortDirection(): string
     {
-        return 'desc';
+        return 'desc'; // 'asc' or 'desc'
     }
     
-    public static function defaultTableView(): string
+    public function defaultTableView(): string
     {
-        return 'table'; // 'table', 'grid', 'kanban'
+        return 'list'; // 'list', 'grid', or custom view
+    }
+    
+    public function showTableSettings(): bool
+    {
+        return true; // Show/hide table settings button
     }
 }
 ```
@@ -1255,16 +1526,55 @@ class Article extends Resource
 
 ### Field Value Processing
 
+Understanding how field values flow through the system is essential for customization:
+
+```
+SAVING FLOW:
+1. Form input received (Livewire component)
+2. Field validation (Laravel rules + custom)
+3. SaveFieldAttributes trait (saving event):
+   - Collects field values into $attributes['fields'] array
+   - Removes non-base-fillable fields from $attributes
+4. SaveMetaFields trait (saving event):
+   - Processes each field through field class set() method
+   - Calls saving() on field classes
+   - Stores in $metaFields for later persistence
+5. Eloquent saves to database (table fields)
+6. SaveMetaFields trait (saved event):
+   - Persists $metaFields to meta table
+   - Calls saved() on field classes
+   - Fires 'metaSaved' model event
+
+READING FLOW:
+1. Model loaded with meta relationship eager loaded
+2. getFieldsAttribute() accessor called
+3. getFieldsWithoutConditionalLogic() builds values:
+   - Merges table attributes + meta values
+   - Calls get() on field classes
+4. Conditional logic filters visible fields
+5. Result cached in $fieldsAttributeCache
+```
+
+**The `fields` Attribute**
+
+Every resource has a computed `fields` attribute that combines table and meta values:
+
 ```php
-// Field values go through this process:
-1. Input from form
-2. Field validation (Laravel rules)
-3. Field transformation (slugs, dates, etc.)
-4. Conditional logic evaluation
-5. SaveFieldAttributes trait processing
-6. Database storage (table or meta)
-7. SaveFields event dispatched
-8. Post-save hooks
+// Access field values
+$article = Article::find(1);
+
+// All field values (filtered by conditional logic)
+$article->fields;              // Collection
+
+// Specific field value
+$article->fields['featured'];  // Via fields array
+$article->featured;            // Via __get magic method
+
+// Raw value without conditional logic
+$article->getFieldsWithoutConditionalLogic();
+
+// Clear fields cache after updates
+$article->clearFieldsAttributeCache();
 ```
 
 ## Performance Optimization

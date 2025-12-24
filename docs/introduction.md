@@ -16,7 +16,7 @@ Welcome to **Aura CMS** – a modern, developer-first content management system 
 - [Aura CMS vs Other Solutions](#aura-cms-vs-other-solutions)
 - [Real-World Use Cases](#real-world-use-cases)
 - [Getting Started](#getting-started)
-- [Demo Applications](#demo-applications)
+- [Built-in Resources](#built-in-resources)
 - [Community and Support](#community-and-support)
 - [Next Steps](#next-steps)
 
@@ -49,21 +49,19 @@ Aura CMS is a powerful content management system that brings together the best o
 namespace App\Aura\Resources;
 
 use Aura\Base\Resource;
-use Aura\Base\Fields\{ID, Text, Wysiwyg, BelongsTo, Date, Boolean};
 
 class Article extends Resource
 {
-    public static string $model = \App\Models\Post::class;
+    public static string $type = 'Article';
     
-    public function fields()
+    public static function getFields(): array
     {
         return [
-            ID::make('ID'),
-            Text::make('Title')->rules('required|max:255'),
-            Wysiwyg::make('Content')->rules('required'),
-            BelongsTo::make('Author')->resource('User'),
-            Date::make('Published At')->rules('required'),
-            Boolean::make('Featured')->default(false),
+            ['type' => 'Aura\\Base\\Fields\\Text', 'name' => 'Title', 'slug' => 'title', 'validation' => 'required|max:255'],
+            ['type' => 'Aura\\Base\\Fields\\Wysiwyg', 'name' => 'Content', 'slug' => 'content', 'validation' => 'required'],
+            ['type' => 'Aura\\Base\\Fields\\BelongsTo', 'name' => 'Author', 'slug' => 'author_id', 'resource' => 'Aura\\Base\\Resources\\User'],
+            ['type' => 'Aura\\Base\\Fields\\Date', 'name' => 'Published At', 'slug' => 'published_at'],
+            ['type' => 'Aura\\Base\\Fields\\Boolean', 'name' => 'Featured', 'slug' => 'featured', 'default' => false],
         ];
     }
 }
@@ -81,7 +79,7 @@ That's it! You now have a fully functional article management system with:
 
 1. **No Learning Curve**: If you know Laravel, you know Aura CMS
 2. **Full Control**: Unlike WordPress or other PHP CMS platforms, you have complete control
-3. **Modern Stack**: Built on Laravel 10+, Livewire 3, and Tailwind CSS 3
+3. **Modern Stack**: Built on Laravel 10, 11, or 12, Livewire 3, and Tailwind CSS
 4. **Performance**: Optimized queries, lazy loading, and smart caching
 5. **Extensible**: Every component can be extended or replaced
 
@@ -98,7 +96,7 @@ Aura CMS follows a modular, service-oriented architecture that will feel familia
 ├─────────────────────┬───────────────────┬──────────────────┤
 │   Resource System   │   Field System    │  Livewire Layer  │
 ├─────────────────────┼───────────────────┼──────────────────┤
-│  • BaseResource     │  • 40+ Field Types│  • Table         │
+│  • BaseResource     │  • 42 Field Types │  • Table         │
 │  • Resource Model   │  • Field Pipeline │  • Forms         │
 │  • Meta Storage     │  • Conditionals   │  • Modals        │
 │  • Custom Tables    │  • Validation     │  • Real-time     │
@@ -161,24 +159,26 @@ Aura CMS is built from the ground up on the TALL stack, not retrofitted:
 - **Soft Deletes**: Built-in trash functionality
 - **Revisions**: Track changes over time (with plugin)
 
-### 🎨 Field Types (40+)
-- **Basic**: Text, Textarea, Number, Email, Password, Hidden
-- **Selections**: Select, Radio, Checkbox, Boolean, Advanced Select
-- **Dates**: Date, Time, DateTime with timezone support
-- **Rich Content**: Wysiwyg, Markdown, Code Editor
+### 🎨 Field Types (42)
+- **Basic**: Text, Textarea, Number, Email, Password, Hidden, Phone, Color
+- **Selections**: Select, Radio, Checkbox, Boolean, AdvancedSelect, Status
+- **Dates**: Date, Time, Datetime
+- **Rich Content**: Wysiwyg, Code, Embed
 - **Media**: Image, File with drag-and-drop upload
-- **Relationships**: BelongsTo, HasMany, BelongsToMany
-- **Advanced**: Repeater, Group, JSON, Tags, Slug
-- **Layout**: Tabs, Panels, Heading, Divider
+- **Relationships**: BelongsTo, HasMany, HasOne, BelongsToMany, Tags, Roles
+- **Advanced**: Repeater, Group, Json, Slug, Permissions
+- **Layout**: Tabs, Tab, Panel, Heading, HorizontalLine
+- **Display**: View, ViewValue, LivewireComponent, ID
 
 ### 👥 Team Management (Optional)
 ```php
-// Team-scoped resources out of the box
+// Team-scoped resources are automatic when teams are enabled
+// Resources are automatically filtered by current team
 class Project extends Resource
 {
-    use TeamScoped;
+    public static string $type = 'Project';
     
-    public static string $model = Project::class;
+    // Team scoping is handled automatically via TeamScope
 }
 ```
 
@@ -222,7 +222,7 @@ class Project extends Resource
 | **Open Source** | ✅ MIT License | ❌ Paid | ✅ MIT | ❌ Paid | ✅ MIT |
 | **TALL Stack** | ✅ Native | ❌ Vue.js | ✅ Livewire | ❌ Vue.js | ❌ jQuery |
 | **Visual Resource Builder** | ✅ Built-in | ❌ Code only | ❌ Code only | ✅ Limited | ✅ Backend Builder |
-| **Custom Fields** | ✅ 40+ types | ✅ Limited | ✅ Good | ✅ Good | ✅ Limited |
+| **Custom Fields** | ✅ 42 types | ✅ Limited | ✅ Good | ✅ Good | ✅ Limited |
 | **Multi-tenancy** | ✅ Native | ❌ Manual | ✅ Package | ❌ Manual | ❌ Manual |
 | **Meta Storage** | ✅ Built-in | ❌ Manual | ❌ Manual | ✅ Built-in | ✅ Built-in |
 | **Plugin System** | ✅ Native | ✅ Tools | ✅ Plugins | ✅ Addons | ✅ Plugins |
@@ -251,20 +251,19 @@ class Project extends Resource
 ### 1. Multi-tenant SaaS Platform
 ```php
 // Enable teams in config/aura.php
-'teams' => [
-    'enabled' => true,
-    'model' => \App\Models\Team::class,
-]
+'teams' => true,
 
-// All resources are automatically team-scoped
+// All resources are automatically team-scoped when teams are enabled
 class Customer extends Resource
 {
-    use TeamScoped;
+    public static string $type = 'Customer';
     
-    public function fields()
+    public static function getFields(): array
     {
         return [
-            // Customer fields...
+            ['type' => 'Aura\\Base\\Fields\\Text', 'name' => 'Name', 'slug' => 'name', 'validation' => 'required'],
+            ['type' => 'Aura\\Base\\Fields\\Email', 'name' => 'Email', 'slug' => 'email'],
+            ['type' => 'Aura\\Base\\Fields\\Phone', 'name' => 'Phone', 'slug' => 'phone'],
         ];
     }
 }
@@ -274,20 +273,21 @@ class Customer extends Resource
 ```php
 class Product extends Resource
 {
-    public static bool $customTable = true; // Use products table
+    public static string $type = 'Product';
+    public static ?string $customTable = 'products'; // Use custom products table
     
-    public function fields()
+    public static function getFields(): array
     {
         return [
-            Text::make('Name')->rules('required'),
-            Number::make('Price')->rules('required|numeric|min:0'),
-            Image::make('Featured Image'),
-            HasMany::make('Variants'),
-            BelongsToMany::make('Categories'),
-            Repeater::make('Specifications')->fields([
-                Text::make('Key'),
-                Text::make('Value'),
-            ]),
+            ['type' => 'Aura\\Base\\Fields\\Text', 'name' => 'Name', 'slug' => 'name', 'validation' => 'required'],
+            ['type' => 'Aura\\Base\\Fields\\Number', 'name' => 'Price', 'slug' => 'price', 'validation' => 'required|numeric|min:0'],
+            ['type' => 'Aura\\Base\\Fields\\Image', 'name' => 'Featured Image', 'slug' => 'featured_image'],
+            ['type' => 'Aura\\Base\\Fields\\HasMany', 'name' => 'Variants', 'slug' => 'variants', 'resource' => 'App\\Aura\\Resources\\Variant'],
+            ['type' => 'Aura\\Base\\Fields\\BelongsToMany', 'name' => 'Categories', 'slug' => 'categories', 'resource' => 'App\\Aura\\Resources\\Category'],
+            ['type' => 'Aura\\Base\\Fields\\Repeater', 'name' => 'Specifications', 'slug' => 'specifications', 'fields' => [
+                ['type' => 'Aura\\Base\\Fields\\Text', 'name' => 'Key', 'slug' => 'key'],
+                ['type' => 'Aura\\Base\\Fields\\Text', 'name' => 'Value', 'slug' => 'value'],
+            ]],
         ];
     }
 }
@@ -297,19 +297,21 @@ class Product extends Resource
 ```php
 class Article extends Resource
 {
-    public function fields()
+    public static string $type = 'Article';
+    
+    public static function getFields(): array
     {
         return [
-            Text::make('Title')->rules('required'),
-            Slug::make('Slug')->from('Title'),
-            Wysiwyg::make('Content'),
-            Tags::make('Tags'),
-            Date::make('Publish Date'),
-            Select::make('Status')->options([
-                'draft' => 'Draft',
-                'published' => 'Published',
-                'scheduled' => 'Scheduled',
-            ]),
+            ['type' => 'Aura\\Base\\Fields\\Text', 'name' => 'Title', 'slug' => 'title', 'validation' => 'required'],
+            ['type' => 'Aura\\Base\\Fields\\Slug', 'name' => 'Slug', 'slug' => 'slug', 'based_on' => 'title'],
+            ['type' => 'Aura\\Base\\Fields\\Wysiwyg', 'name' => 'Content', 'slug' => 'content'],
+            ['type' => 'Aura\\Base\\Fields\\Tags', 'name' => 'Tags', 'slug' => 'tags'],
+            ['type' => 'Aura\\Base\\Fields\\Date', 'name' => 'Publish Date', 'slug' => 'publish_date'],
+            ['type' => 'Aura\\Base\\Fields\\Select', 'name' => 'Status', 'slug' => 'status', 'options' => [
+                ['key' => 'draft', 'value' => 'Draft'],
+                ['key' => 'published', 'value' => 'Published'],
+                ['key' => 'scheduled', 'value' => 'Scheduled'],
+            ]],
         ];
     }
 }
@@ -319,16 +321,18 @@ class Article extends Resource
 ```php
 class Course extends Resource
 {
-    public function fields()
+    public static string $type = 'Course';
+    
+    public static function getFields(): array
     {
         return [
-            Text::make('Title'),
-            Textarea::make('Description'),
-            BelongsTo::make('Instructor')->resource('User'),
-            HasMany::make('Lessons'),
-            BelongsToMany::make('Students')->resource('User'),
-            Json::make('Curriculum'),
-            Number::make('Price'),
+            ['type' => 'Aura\\Base\\Fields\\Text', 'name' => 'Title', 'slug' => 'title'],
+            ['type' => 'Aura\\Base\\Fields\\Textarea', 'name' => 'Description', 'slug' => 'description'],
+            ['type' => 'Aura\\Base\\Fields\\BelongsTo', 'name' => 'Instructor', 'slug' => 'instructor_id', 'resource' => 'Aura\\Base\\Resources\\User'],
+            ['type' => 'Aura\\Base\\Fields\\HasMany', 'name' => 'Lessons', 'slug' => 'lessons', 'resource' => 'App\\Aura\\Resources\\Lesson'],
+            ['type' => 'Aura\\Base\\Fields\\BelongsToMany', 'name' => 'Students', 'slug' => 'students', 'resource' => 'Aura\\Base\\Resources\\User'],
+            ['type' => 'Aura\\Base\\Fields\\Json', 'name' => 'Curriculum', 'slug' => 'curriculum'],
+            ['type' => 'Aura\\Base\\Fields\\Number', 'name' => 'Price', 'slug' => 'price'],
         ];
     }
 }
@@ -378,34 +382,23 @@ Visit `http://localhost:8000/admin` and start building!
 
 ---
 
-<a name="demo-applications"></a>
-## Demo Applications
+<a name="built-in-resources"></a>
+## Built-in Resources
 
-### Official Demos
+Aura CMS comes with several pre-built resources to get you started quickly:
 
-1. **Blog Platform Demo**
-   - URL: [demo.aura-cms.com/blog](https://demo.aura-cms.com/blog)
-   - Features: Articles, Categories, Tags, Comments
-   - [Source Code](https://github.com/aura-cms/demo-blog)
+| Resource | Description |
+|----------|-------------|
+| **User** | User management with authentication |
+| **Team** | Multi-tenant team management |
+| **Role** | Role-based access control |
+| **Permission** | Granular permission system |
+| **Attachment** | Media and file management |
+| **Tag** | Content tagging system |
+| **Option** | System-wide settings storage |
+| **TeamInvitation** | Team invitation workflow |
 
-2. **E-commerce Demo**
-   - URL: [demo.aura-cms.com/shop](https://demo.aura-cms.com/shop)
-   - Features: Products, Orders, Customers, Inventory
-   - [Source Code](https://github.com/aura-cms/demo-ecommerce)
-
-3. **Multi-tenant SaaS Demo**
-   - URL: [demo.aura-cms.com/saas](https://demo.aura-cms.com/saas)
-   - Features: Teams, Projects, Tasks, Billing
-   - [Source Code](https://github.com/aura-cms/demo-saas)
-
-### Community Showcases
-
-- **Digital Agency Portfolio**: Built with Aura CMS
-- **Online Learning Platform**: 10k+ students
-- **Property Management System**: Multi-tenant solution
-- **Restaurant Chain Manager**: 50+ locations
-
-> Submit your Aura CMS project to be featured!
+All built-in resources can be extended or customized to fit your needs.
 
 ---
 

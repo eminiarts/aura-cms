@@ -50,16 +50,16 @@ The Table component (`Aura\Base\Livewire\Table\Table`) uses a modular trait-base
 ```php
 class Table extends Component
 {
-    use BulkActions;      // Handles bulk operations on selected rows
-    use Filters;          // Complex filtering system
-    use Kanban;          // Kanban board functionality
-    use PerPagePagination; // Custom pagination handling
-    use QueryFilters;     // Query building for filters
-    use Search;          // Search functionality
-    use Select;          // Row selection logic
-    use Settings;        // Table configuration
-    use Sorting;         // Column sorting
-    use SwitchView;      // View mode switching
+    use BulkActions;       // Handles bulk operations on selected rows
+    use Filters;           // Complex filtering system with save/load
+    use Kanban;            // Kanban board functionality
+    use PerPagePagination; // Custom pagination handling with session persistence
+    use QueryFilters;      // Query building for filters (table/meta fields)
+    use Search;            // Search functionality with meta field support
+    use Select;            // Row selection logic (single, page, all)
+    use Settings;          // Table configuration and defaults
+    use Sorting;           // Multi-column sorting with custom sort methods
+    use SwitchView;        // View mode switching with user preference persistence
 }
 ```
 
@@ -72,16 +72,20 @@ class Table extends Component
 | `$settings` | array | Table behavior settings |
 | `$currentView` | string | Active view mode (list/grid/kanban) |
 | `$selected` | array | Currently selected row IDs |
-| `$filters` | array | Active filter configuration |
+| `$selectPage` | bool | Whether all rows on current page are selected |
+| `$selectAll` | bool | Whether all rows across pages are selected |
+| `$filters` | array | Active filter configuration with `custom` key |
+| `$selectedFilter` | string | Currently selected saved filter slug |
 | `$search` | string | Current search query |
-| `$sortField` | string | Active sort column |
-| `$sortDirection` | string | Sort direction (asc/desc) |
+| `$sorts` | array | Active sort columns with directions (multi-column) |
+| `$perPage` | int | Items per page |
+| `$loaded` | bool | Whether table has been loaded (for lazy loading) |
 
 ## Basic Usage
 
 ### Resource Configuration
 
-Configure your resource for optimal table display:
+Configure your resource for optimal table display using the `InteractsWithTable` trait (included in `Resource`):
 
 ```php
 <?php
@@ -92,48 +96,72 @@ use Aura\Base\Resource;
 
 class Article extends Resource
 {
-    // Define default table view
+    public static string $type = 'Article';
+    protected static ?string $slug = 'article';
+    
+    // Define default table view mode
     public function defaultTableView()
     {
         return 'list'; // 'list', 'grid', or 'kanban'
     }
     
-    // Set default items per page
+    // Set default items per page (default: 10)
     public function defaultPerPage()
     {
-        return 25;
+        return 10;
     }
     
-    // Define default sorting
+    // Define default sort column (default: 'id')
     public function defaultTableSort()
     {
         return 'published_at';
     }
     
+    // Define default sort direction (default: 'desc')
     public function defaultTableSortDirection()
     {
         return 'desc';
     }
     
-    // Configure table headers
-    public function getTableHeaders()
+    // Show/hide table settings dropdown (default: true)
+    public function showTableSettings()
     {
-        return [
-            'title' => ['label' => 'Title', 'sortable' => true],
-            'status' => ['label' => 'Status', 'sortable' => true],
-            'author_name' => ['label' => 'Author', 'sortable' => false],
-            'published_at' => ['label' => 'Published', 'sortable' => true],
-            'views_count' => ['label' => 'Views', 'sortable' => true],
-        ];
+        return true;
     }
     
-    // Define searchable fields
-    public function getSearchableFields()
+    // Define fields - table headers are auto-generated from fields with on_index
+    public static function getFields()
     {
-        return collect(['title', 'content', 'author_name']);
+        return [
+            [
+                'type' => 'Aura\\Base\\Fields\\Text',
+                'name' => 'Title',
+                'slug' => 'title',
+                'on_index' => true,  // Show in table
+                'searchable' => true,
+            ],
+            [
+                'type' => 'Aura\\Base\\Fields\\Select',
+                'name' => 'Status',
+                'slug' => 'status',
+                'on_index' => true,
+                'options' => [
+                    ['key' => 'draft', 'value' => 'Draft'],
+                    ['key' => 'published', 'value' => 'Published'],
+                ],
+            ],
+            [
+                'type' => 'Aura\\Base\\Fields\\Date',
+                'name' => 'Published At',
+                'slug' => 'published_at',
+                'on_index' => true,
+            ],
+        ];
     }
 }
 ```
+
+> **Note**: Table headers are automatically generated from your fields where `on_index` is `true` (default). The `getTableHeaders()` method in `InputFieldsTable` trait handles this automatically.
 
 ### Blade Implementation
 
@@ -174,10 +202,10 @@ The Table component offers three distinct view modes, each optimized for differe
 The traditional table layout with sortable columns, ideal for data-heavy displays.
 
 ```php
-// In your resource
+// In your resource (from InteractsWithTable trait)
 public function tableView()
 {
-    return 'aura::components.table.list'; // Default view
+    return 'aura::components.table.list-view'; // Default view
 }
 
 // Custom list view
@@ -201,17 +229,14 @@ public function tableView()
 Card-based layout perfect for visual content and media-rich resources.
 
 ```php
+// Enable grid view by returning a view path (returns false by default)
 public function tableGridView()
 {
     return 'aura::components.table.grid';
 }
-
-// Configure grid columns
-public function gridColumns()
-{
-    return 3; // Number of columns (responsive)
-}
 ```
+
+> **Note**: By default, `tableGridView()` returns `false`, disabling the grid view. Return a view path to enable it.
 
 **Features:**
 - Visual card layout
@@ -227,26 +252,41 @@ public function gridColumns()
 Drag-and-drop board interface for workflow management.
 
 ```php
+// Enable kanban view by returning a view path (returns false by default)
 public function tableKanbanView()
 {
-    return 'aura::components.table.kanban';
+    return 'aura::components.table.kanban-view';
 }
 
-// Configure Kanban settings
-public function kanbanStatusField()
+// Customize the kanban query (optional)
+public function kanbanQuery($query)
 {
-    return 'status'; // Field to group by
+    // Return false to use default query, or modify and return $query
+    return $query->orderBy('order', 'asc');
 }
 
-public function kanbanStatuses()
+// Optional: Set custom pagination for kanban
+public function kanbanPagination()
 {
-    return [
-        'todo' => ['label' => 'To Do', 'color' => 'gray'],
-        'in_progress' => ['label' => 'In Progress', 'color' => 'blue'],
-        'review' => ['label' => 'Review', 'color' => 'yellow'],
-        'done' => ['label' => 'Done', 'color' => 'green'],
-    ];
+    return 50; // Items per column
 }
+```
+
+The Kanban view automatically uses the `status` field's options to create columns. Each option should have `key`, `value`, and `color` properties:
+
+```php
+// In your getFields() method
+[
+    'type' => 'Aura\\Base\\Fields\\Select',
+    'name' => 'Status',
+    'slug' => 'status',
+    'options' => [
+        ['key' => 'todo', 'value' => 'To Do', 'color' => 'gray'],
+        ['key' => 'in_progress', 'value' => 'In Progress', 'color' => 'blue'],
+        ['key' => 'review', 'value' => 'Review', 'color' => 'yellow'],
+        ['key' => 'done', 'value' => 'Done', 'color' => 'green'],
+    ],
+]
 ```
 
 **Features:**
@@ -260,16 +300,19 @@ public function kanbanStatuses()
 
 ### Switching Views
 
-Users can switch between views using the view selector:
+Users can switch between views using the view selector. The available views depend on what methods return valid view paths:
 
 ```php
-// Allow specific views
-public function allowedTableViews()
-{
-    return ['list', 'grid']; // Exclude 'kanban'
-}
+// Views are enabled by returning a view path:
+public function tableView()        { return 'aura::components.table.list-view'; } // Always enabled
+public function tableGridView()    { return false; } // Disabled by default
+public function tableKanbanView()  { return false; } // Disabled by default
 
-}
+// User view preferences are stored automatically
+// Key: 'table_view.{ResourceType}'
+```
+
+The `SwitchView` trait handles view switching and persists user preferences automatically.
 ```
 
 ## Configuration Options
@@ -278,92 +321,132 @@ The Table component offers extensive configuration through settings array:
 
 ### Complete Settings Reference
 
+The `Settings` trait defines all available configuration options:
+
 ```php
 $settings = [
     // Display settings
-    'per_page' => 25,                    // Items per page
-    'default_view' => 'list',            // Default view mode
-    'header' => true,                    // Show table header
-    'create_url' => null,                // Custom create URL
+    'per_page' => 10,                    // Items per page (default from resource)
+    'default_view' => 'list',            // Default view mode (from resource)
+    'header' => true,                    // Show table header section
+    'title' => true,                     // Show table title
+    'create_url' => null,                // Custom create URL (null uses default)
+    'create' => true,                    // Show create button
     
     // Feature toggles
     'search' => true,                    // Enable search
     'filters' => true,                   // Enable filtering
+    'global_filters' => true,            // Enable global/team filters
     'selectable' => true,                // Enable row selection
     'bulk_actions' => true,              // Enable bulk actions
     'actions' => true,                   // Enable row actions
     'settings' => true,                  // Enable settings dropdown
     'sort_columns' => true,              // Enable column reordering
     
+    // Modal options
+    'edit_in_modal' => false,            // Open edit in modal
+    'create_in_modal' => false,          // Open create in modal
+    'view_in_modal' => false,            // Open view in modal
+    
     // Column configuration
-    'columns' => [],                     // Column definitions
-    'columns_user_key' => 'columns.posts', // User preference key
-    'columns_global_key' => null,        // Global settings key
+    'columns' => [],                     // Column definitions (from getTableHeaders)
+    'columns_user_key' => 'columns.{Type}', // User preference key
+    'columns_global_key' => false,       // Global settings key (false = disabled)
+    
+    // Header/footer slots
+    'header_before' => true,             // Show header_before slot
+    'header_after' => true,              // Show header_after slot
+    'table_before' => true,              // Show table_before slot
+    'table_after' => true,               // Show table_after slot
     
     // View customization
     'views' => [
         'table' => 'aura::components.table.index',
-        'list' => 'aura::components.table.list',
-        'grid' => 'aura::components.table.grid',
-        'kanban' => 'aura::components.table.kanban',
+        'list' => 'aura::components.table.list-view',   // From tableView()
+        'grid' => false,                                 // From tableGridView()
+        'kanban' => false,                               // From tableKanbanView()
         'header' => 'aura::components.table.header',
+        'row' => 'aura::components.table.row',          // From rowView()
         'filter' => 'aura::components.table.filter',
         'bulk_actions' => 'aura::components.table.bulk-actions',
+        'table_header' => 'aura::components.table.table-header',
+        'table_footer' => 'aura::components.table.footer',
+        'filter_tabs' => 'aura::components.table.filter-tabs',
     ],
 ];
 ```
 
 ### Resource Method Configuration
 
-Configure defaults in your resource class:
+Configure defaults in your resource class using methods from `InteractsWithTable` trait:
 
 ```php
 class Article extends Resource
 {
-    // Table display settings
-    public function defaultTableView(): string
+    // Default view mode: 'list', 'grid', or 'kanban'
+    public function defaultTableView()
     {
         return 'list';
     }
     
-    public function defaultPerPage(): int
+    // Default items per page
+    public function defaultPerPage()
     {
-        return 25;
+        return 10;
     }
     
-    public function maxPerPage(): int
+    // Default sort column
+    public function defaultTableSort()
     {
-        return 100;
+        return 'id';
     }
     
-    public function perPageOptions(): array
+    // Default sort direction
+    public function defaultTableSortDirection()
     {
-        return [10, 25, 50, 100];
+        return 'desc';
     }
     
-    // Feature visibility
-    public function showTableSearch(): bool
+    // Show/hide settings dropdown
+    public function showTableSettings()
     {
         return true;
     }
     
-    public function showTableFilters(): bool
+    // Custom table view
+    public function tableView()
     {
-        return true;
+        return 'aura::components.table.list-view';
     }
     
-    public function showTableSettings(): bool
+    // Enable grid view (return false to disable)
+    public function tableGridView()
     {
-        return auth()->user()->can('manage-table-settings');
+        return false;
     }
     
-    // Selection limits
-    public function maxTableSelection(): ?int
+    // Enable kanban view (return false to disable)
+    public function tableKanbanView()
     {
-        return 100; // null for unlimited
+        return false;
+    }
+    
+    // Custom row view
+    public function rowView()
+    {
+        return 'aura::components.table.row';
+    }
+    
+    // Customize table settings via indexTableSettings()
+    public function indexTableSettings()
+    {
+        return [
+            'per_page' => 25,
+            'selectable' => true,
+            'bulk_actions' => true,
+        ];
     }
 }
-
 ```
 
 ## Search Functionality
@@ -372,21 +455,38 @@ The Table component includes powerful search capabilities that work across regul
 
 ### Basic Search Configuration
 
+Mark fields as searchable in your field definitions:
+
 ```php
 class Article extends Resource
 {
-    public function getSearchableFields()
+    public static function getFields()
     {
-        return collect([
-            'title',          // Regular field
-            'content',        // Regular field
-            'author_name',    // Related field
-            'tags',          // Meta field
-            'seo_keywords',  // Meta field
-        ]);
+        return [
+            [
+                'type' => 'Aura\\Base\\Fields\\Text',
+                'name' => 'Title',
+                'slug' => 'title',
+                'searchable' => true,  // Enable search for this field
+            ],
+            [
+                'type' => 'Aura\\Base\\Fields\\Textarea',
+                'name' => 'Content',
+                'slug' => 'content',
+                'searchable' => true,
+            ],
+            [
+                'type' => 'Aura\\Base\\Fields\\Text',
+                'name' => 'SEO Keywords',
+                'slug' => 'seo_keywords',
+                'searchable' => true,  // Works for meta fields too
+            ],
+        ];
     }
 }
 ```
+
+The `getSearchableFields()` method in `Resource` automatically collects fields with `searchable => true`.
 
 ### Custom Search Logic
 
@@ -416,11 +516,11 @@ public function modifySearch($query, $search)
 
 ### Search Features
 
-- **Debounced Input**: 300ms delay prevents excessive queries
-- **Meta Field Support**: Automatically searches in meta fields
-- **Relationship Search**: Search through related models
-- **Highlighted Results**: Optional search term highlighting
-- **Search Persistence**: Search terms persist during session
+- **Debounced Input**: Prevents excessive queries during typing
+- **Meta Field Support**: Automatically searches in meta fields using `whereExists` subquery
+- **Custom Search Logic**: Override with `modifySearch($query, $search)` method
+- **Relationship Search**: Use `modifySearch()` to add relationship searches
+- **Automatic Reset**: Search resets pagination to page 1
 
 ## Filtering System
 
@@ -428,96 +528,141 @@ The filtering system allows building complex queries with a visual interface.
 
 ### Filter Configuration
 
-Each field type provides its own filter operators:
+Each field type provides its own filter operators via `filterOptions()`. The `QueryFilters` trait handles applying these filters to both regular table fields and meta fields.
+
+**Available Filter Operators** (from `QueryFilters` trait):
 
 ```php
-// Text field filters
-public function filterOptions()
-{
-    return [
-        'contains' => 'Contains',
-        'not_contains' => 'Does not contain',
-        'equals' => 'Equals',
-        'not_equals' => 'Does not equal',
-        'starts_with' => 'Starts with',
-        'ends_with' => 'Ends with',
-        'is_empty' => 'Is empty',
-        'is_not_empty' => 'Is not empty',
-    ];
-}
+// Text/String operators
+'contains'         => 'LIKE %value%'
+'does_not_contain' => 'NOT LIKE %value%'
+'starts_with'      => 'LIKE value%'
+'ends_with'        => 'LIKE %value'
+'is' / 'equals'    => '= value'
+'is_not' / 'not_equals' => '!= value'
+'is_empty'         => 'NULL OR empty string'
+'is_not_empty'     => 'NOT NULL AND not empty'
 
-// Number field filters
-public function filterOptions()
-{
-    return [
-        'equals' => 'Equals',
-        'not_equals' => 'Not equals',
-        'greater_than' => 'Greater than',
-        'less_than' => 'Less than',
-        'greater_or_equal' => 'Greater or equal',
-        'less_or_equal' => 'Less or equal',
-        'between' => 'Between',
-        'is_empty' => 'Is empty',
-        'is_not_empty' => 'Is not empty',
-    ];
-}
+// Number operators
+'greater_than'           => '> value'
+'less_than'              => '< value'
+'greater_than_or_equal'  => '>= value'
+'less_than_or_equal'     => '<= value'
+'in'                     => 'IN (values)'
+'not_in'                 => 'NOT IN (values)'
+
+// Pattern operators
+'like'      => 'LIKE value' (raw pattern)
+'not_like'  => 'NOT LIKE value'
+'regex'     => 'REGEXP value'
+'not_regex' => 'NOT REGEXP value'
+
+// Date operators
+'date_is'           => 'DATE = value'
+'date_is_not'       => 'DATE != value'
+'date_before'       => 'DATE < value'
+'date_after'        => 'DATE > value'
+'date_on_or_before' => 'DATE <= value'
+'date_on_or_after'  => 'DATE >= value'
+'date_is_empty'     => 'NULL OR empty'
+'date_is_not_empty' => 'NOT NULL AND not empty'
 ```
 
 ### Custom Filters
 
-Users can create custom filters with:
-
-1. **Simple Filters**: Single condition
-2. **Filter Groups**: Multiple conditions with AND/OR logic
-3. **Nested Groups**: Complex nested logic
+The `Filters` trait provides methods for building and managing custom filters:
 
 ```php
-// Example filter structure
+// Filter structure stored in $filters property
 $filters = [
     'custom' => [
+        // Filter groups - each group contains filters
         [
-            'name' => 'status',
-            'operator' => 'equals',
-            'value' => 'published',
-            'main_operator' => 'and',
-        ],
-        [
-            'filters' => [ // Filter group
+            'filters' => [
+                [
+                    'name' => 'status',           // Field slug
+                    'operator' => 'equals',       // Filter operator
+                    'value' => 'published',       // Filter value
+                    'main_operator' => 'and',     // AND/OR with next filter
+                    'options' => [],              // Field-specific options
+                ],
                 [
                     'name' => 'views_count',
                     'operator' => 'greater_than',
                     'value' => 1000,
-                ],
-                [
-                    'name' => 'comments_count',
-                    'operator' => 'greater_than',
-                    'value' => 10,
+                    'main_operator' => 'or',
                 ],
             ],
-            'main_operator' => 'or',
+            'operator' => 'and',  // Group operator (AND/OR with other groups)
         ],
     ],
 ];
 ```
 
-### Saved Filters
-
-Filters can be saved for reuse:
+**Available Methods:**
 
 ```php
-// Save filter for user
-auth()->user()->updateOption('posts.filters.popular', [
-    'name' => 'Popular Posts',
-    'icon' => 'star',
-    'custom' => [...], // Filter configuration
-]);
+// Add a new filter to current group
+$this->addFilter();
 
-// Save filter for team
-auth()->user()->currentTeam->updateOption('posts.filters.draft', [
-    'name' => 'Team Drafts',
-    'global' => true,
-    'custom' => [...],
-]);
+// Add a new filter group
+$this->addFilterGroup();
+
+// Add a sub-filter within a group
+$this->addSubFilter($groupKey);
+
+// Remove a single filter
+$this->removeCustomFilter($index);
+
+// Remove a filter within a group
+$this->removeFilter($groupKey, $filterKey);
+
+// Remove entire filter group
+$this->removeFilterGroup($groupKey);
+
+// Reset all filters
+$this->resetFilter();
+```
+
+### Saved Filters
+
+Filters can be saved for reuse via the `saveFilter()` method:
+
+```php
+// Filter save structure
+$this->filter = [
+    'name' => 'Popular Posts',      // Required: filter name
+    'public' => false,              // Whether publicly visible
+    'global' => false,              // Save for team (true) or user (false)
+    'icon' => 'star',               // Optional icon
+];
+
+// Save filter - calls saveFilter() method
+// User filters: stored in '{ResourceType}.filters.{slug}'
+// Team filters: stored in team's options (when global = true)
+
+// Saved filter structure includes:
+[
+    'name' => 'Popular Posts',
+    'slug' => 'popular-posts',      // Auto-generated from name
+    'public' => false,
+    'global' => false,
+    'type' => 'user',               // or 'team'
+    'custom' => [...],              // Filter configuration
+]
+```
+
+**Accessing Saved Filters:**
+
+```php
+// Get all user and team filters (via userFilters computed property)
+$filters = $this->userFilters;
+
+// Select a saved filter
+$this->selectedFilter = 'popular-posts';
+
+// Delete a saved filter
+$this->deleteFilter('popular-posts');
 ```
 
 ### Filter Groups
@@ -537,145 +682,150 @@ AND (
 
 ## Sorting & Ordering
 
-The Table component supports multi-column sorting with custom sort methods.
+The Table component supports multi-column sorting with custom sort methods via the `Sorting` trait.
 
 ### Basic Sorting
 
 ```php
 class Article extends Resource
 {
-    // Default sort configuration
-    public function defaultTableSort(): string
+    // Default sort configuration (from InteractsWithTable trait)
+    public function defaultTableSort()
     {
-        return 'published_at';
+        return 'published_at'; // Default: 'id'
     }
     
-    public function defaultTableSortDirection(): string
+    public function defaultTableSortDirection()
     {
-        return 'desc'; // 'asc' or 'desc'
-    }
-    
-    // Define sortable columns
-    public function getTableHeaders()
-    {
-        return [
-            'title' => ['label' => 'Title', 'sortable' => true],
-            'status' => ['label' => 'Status', 'sortable' => true],
-            'published_at' => ['label' => 'Date', 'sortable' => true],
-            'author.name' => ['label' => 'Author', 'sortable' => false],
-        ];
+        return 'desc'; // Default: 'desc'
     }
 }
 ```
+
+**How Sorting Works:**
+
+The `$sorts` property stores active sorts as an associative array:
+
+```php
+// Single column sort
+$this->sorts = ['published_at' => 'desc'];
+
+// Multi-column sort (when user clicks multiple columns)
+$this->sorts = ['status' => 'asc', 'published_at' => 'desc'];
+```
+
+Clicking a column header cycles through: `asc` -> `desc` -> removed (default sort)
 
 ### Custom Sort Methods
 
-Create custom sorting logic for complex scenarios:
-
-```php
-// Sort by popularity (views + comments)
-public function sort_popularity($query, $direction)
-{
-    return $query->withCount(['views', 'comments'])
-        ->orderByRaw('(views_count + comments_count) ' . $direction);
-}
-
-// Sort by author name (relationship)
-public function sort_author($query, $direction)
-{
-    return $query->join('users', 'posts.user_id', '=', 'users.id')
-        ->orderBy('users.name', $direction)
-        ->select('posts.*');
-}
-
-// Sort by meta field
-public function sort_priority($query, $direction)
-{
-    return $query->leftJoin('meta', function($join) {
-            $join->on('posts.id', '=', 'meta.metable_id')
-                 ->where('meta.metable_type', '=', Post::class)
-                 ->where('meta.key', '=', 'priority');
-        })
-        ->orderBy('meta.value', $direction)
-        ->select('posts.*');
-}
-```
-
-### Secondary Sorting
-
-```php
-public function applySorting($query)
-{
-    // Primary sort
-    $query = $query->orderBy($this->sortField, $this->sortDirection);
-    
-    // Always add secondary sort for consistency
-    $query = $query->orderBy('id', 'desc');
-    
-    return $query;
-}
-```
-
-## Selection & Bulk Actions
-
-The Table component provides sophisticated selection handling and bulk operations.
-
-### Selection Features
-
-- **Single Selection**: Click checkbox or row (configurable)
-- **Range Selection**: Shift+Click for selecting ranges
-- **Select All on Page**: Checkbox in header
-- **Select All Across Pages**: Option when all visible rows selected
-- **Maximum Selection Limit**: Prevent selecting too many items
-
-### Bulk Actions Configuration
+Create custom sorting logic by defining `sort_{fieldname}` methods in your resource:
 
 ```php
 class Article extends Resource
 {
-    public function getBulkActions()
+    // Custom sort method: sort_popularity
+    // Called when user sorts by 'popularity' column
+    public function sort_popularity($query, $direction)
+    {
+        return $query->withCount(['views', 'comments'])
+            ->orderByRaw('(views_count + comments_count) ' . $direction);
+    }
+
+    // Sort by author name (relationship)
+    public function sort_author($query, $direction)
+    {
+        return $query->join('users', 'posts.user_id', '=', 'users.id')
+            ->orderBy('users.name', $direction)
+            ->select('posts.*');
+    }
+}
+```
+
+### Automatic Meta Field Sorting
+
+The `Sorting` trait automatically handles sorting for meta fields:
+
+```php
+// For meta fields, the trait automatically:
+// 1. Joins the meta table
+// 2. Filters by key
+// 3. Casts value appropriately (DECIMAL for numbers, CHAR for text)
+
+// For taxonomy fields (Tags), it:
+// 1. Joins post_relations table
+// 2. Orders by MIN(resource_id)
+```
+
+### Default Sort Fallback
+
+When no sorts are active, the default sort is applied:
+
+```php
+// Applied automatically when $this->sorts is empty
+$query->orderBy(
+    $this->model->getTable().'.'.$this->model->defaultTableSort(),
+    $this->model->defaultTableSortDirection()
+);
+```
+
+## Selection & Bulk Actions
+
+The Table component provides sophisticated selection handling and bulk operations via the `Select` and `BulkActions` traits.
+
+### Selection Features
+
+The `Select` trait manages row selection:
+
+- **`$selected`**: Array of selected row IDs
+- **`$selectPage`**: Boolean - all rows on current page selected
+- **`$selectAll`**: Boolean - all rows across all pages selected
+
+**Selection Methods:**
+
+```php
+// Select all rows on current page
+$this->selectPageRows();
+
+// Select all rows across pages
+$this->selectAll();
+
+// Get query for selected rows
+$this->selectedRowsQuery; // Computed property
+```
+
+### Bulk Actions Configuration
+
+Define bulk actions in your resource using the `$bulkActions` property or `bulkActions()` method:
+
+```php
+class Article extends Resource
+{
+    // Simple array format
+    public array $bulkActions = [
+        'delete' => 'Delete Selected',
+        'publish' => 'Publish Selected',
+        'archive' => 'Archive Selected',
+    ];
+    
+    // Or method format for dynamic actions
+    public function bulkActions()
     {
         return [
-            // Simple action
             'delete' => 'Delete Selected',
-            
-            // Action with modal
-            'publish' => [
-                'label' => 'Publish',
-                'modal' => 'publish-modal',
-                'confirm' => 'Publish selected articles?',
-            ],
-            
-            // Action on collection
-            'export' => [
-                'label' => 'Export to CSV',
-                'method' => 'collection',
-            ],
-            
-            // Conditional action
-            'archive' => [
-                'label' => 'Archive',
-                'show' => fn() => auth()->user()->can('archive-articles'),
-            ],
-            
-            // Action with custom handler
-            'assign_category' => [
-                'label' => 'Assign Category',
-                'modal' => 'assign-category-modal',
-                'data' => ['categories' => Category::all()],
-            ],
+            'publish' => 'Publish Selected',
+            'export' => 'Export to CSV',
         ];
     }
     
     // Handle bulk action on each item
+    // Method is called on each selected model
     public function publish()
     {
         $this->update(['status' => 'published', 'published_at' => now()]);
-        
-        event(new ArticlePublished($this));
     }
     
     // Handle bulk action on collection
+    // Method receives array of IDs
     public function export($ids)
     {
         $articles = static::whereIn('id', $ids)->get();
@@ -688,42 +838,57 @@ class Article extends Resource
 }
 ```
 
-### Selection Limits
+**Bulk Action Methods in Table Component:**
 
 ```php
-// In your resource
-public function maxTableSelection(): ?int
-{
-    return 100; // Maximum items that can be selected
-}
+// Execute action on each selected row
+$this->bulkAction('publish');
 
-// For relationship fields
-$field = [
-    'type' => 'HasMany',
-    'max' => 5, // Maximum selections
-];
+// Execute action on collection (for exports, etc.)
+$this->bulkCollectionAction('export');
+
+// Open a modal for bulk action
+$this->openBulkActionModal('assign_category', ['modal' => 'assign-category-modal']);
 ```
 
-### JavaScript Selection Logic
+**Special Action Prefixes:**
 
-```javascript
-// The table uses Alpine.js for selection handling
-x-data="{
-    selected: @entangle('selected'),
-    selectPage: false,
-    selectAll: @entangle('selectAll'),
-    
-    toggleRow(event, id) {
-        if (event.shiftKey && this.lastSelectedId !== null) {
-            // Range selection logic
-            this.selectRange(this.lastSelectedId, id);
-        } else {
-            // Toggle single selection
-            this.toggleSingle(id);
-        }
-        this.lastSelectedId = id;
-    }
-}"
+- `callFlow.{flowId}` - Triggers a Flow on selected items
+- `multiple{Action}` - Passes entire collection to method
+
+### Selection Limits
+
+When used with relationship fields, selection can be limited:
+
+```php
+// For relationship field tables
+$field = [
+    'type' => 'Aura\\Base\\Fields\\HasMany',
+    'slug' => 'comments',
+    'max' => 5, // Maximum selections
+];
+
+// The Table component enforces this in updatedSelected():
+if (optional($this->field)['max'] && count($this->selected) > $this->field['max']) {
+    $this->selected = array_slice($this->selected, 0, $this->field['max']);
+    $this->notify('You can only select '.$this->field['max'].' items.', 'error');
+}
+```
+
+### Selection Events
+
+The Table component dispatches events for selection changes:
+
+```php
+// Dispatched when selection changes
+$this->dispatch('selectedRows', $this->selected);
+
+// Dispatched when row IDs are updated
+$this->dispatch('rowIdsUpdated', $rowIds);
+
+// Listen for external selection updates
+#[On('selectFieldRows')]
+public function selectFieldRows($value, $slug) { ... }
 ```
 ## Column Management
 
@@ -731,114 +896,143 @@ The Table component provides drag-and-drop column management with persistent pre
 
 ### Column Configuration
 
+Table headers are automatically generated from your fields via `InputFieldsTable` trait:
+
 ```php
 class Article extends Resource
 {
-    public function getTableHeaders()
+    public static function getFields()
     {
         return [
-            'title' => [
-                'label' => 'Title',
-                'sortable' => true,
-                'searchable' => true,
-                'visible' => true,
-                'width' => '40%',
+            [
+                'type' => 'Aura\\Base\\Fields\\Text',
+                'name' => 'Title',           // Used as column header
+                'slug' => 'title',           // Used as column key
+                'on_index' => true,          // Show in table (default: true)
             ],
-            'status' => [
-                'label' => 'Status',
-                'sortable' => true,
-                'component' => 'status-badge', // Custom component
+            [
+                'type' => 'Aura\\Base\\Fields\\Select',
+                'name' => 'Status',
+                'slug' => 'status',
+                'on_index' => true,
             ],
-            'author.name' => [
-                'label' => 'Author',
-                'sortable' => false,
-                'relationship' => true,
+            [
+                'type' => 'Aura\\Base\\Fields\\Date',
+                'name' => 'Published At',
+                'slug' => 'published_at',
+                'on_index' => true,
             ],
-            'published_at' => [
-                'label' => 'Published',
-                'sortable' => true,
-                'format' => 'date:M d, Y',
-            ],
-            'actions' => [
-                'label' => '',
-                'sortable' => false,
-                'exportable' => false,
+            [
+                'type' => 'Aura\\Base\\Fields\\Textarea',
+                'name' => 'Content',
+                'slug' => 'content',
+                'on_index' => false,  // Hidden from table
             ],
         ];
-    }
-    
-    // Default visible columns
-    public function getDefaultColumns()
-    {
-        return ['title', 'status', 'author.name', 'published_at'];
     }
 }
 ```
 
+**Methods from `InputFieldsTable` trait:**
+
+```php
+// Get table headers as Collection: ['slug' => 'Name']
+$this->getTableHeaders();
+
+// Get columns array: ['slug' => 'Name', ...]
+$this->getColumns();
+
+// Get default columns: ['slug' => true, ...]
+$this->getDefaultColumns();
+
+// Check if field should show on index
+$this->isFieldOnIndex($slug);
+```
+
 ### Column Features
 
-- **Drag & Drop Reordering**: Click and drag column headers
-- **Show/Hide Columns**: Toggle visibility from settings menu
-- **Persistent Preferences**: Column order and visibility saved per user
-- **Team Preferences**: Optional team-wide column settings
-- **Column Width**: Configurable column widths
+- **Drag & Drop Reordering**: Reorder columns via settings
+- **Show/Hide Columns**: Toggle visibility via `$columns` property
+- **Persistent Preferences**: Column order saved per user
+- **Global Preferences**: Optional team-wide column settings
 
 ### Column Preferences
 
 ```php
-// User preferences stored as
-auth()->user()->updateOption('columns.articles', [
-    'title' => ['visible' => true, 'order' => 0],
-    'status' => ['visible' => true, 'order' => 1],
-    'author.name' => ['visible' => false, 'order' => 2],
+// User column preferences stored in:
+// Key: 'columns.{ResourceType}'
+auth()->user()->updateOption('columns.Article', [
+    'title' => true,
+    'status' => true,
+    'published_at' => false,  // Hidden
 ]);
 
-// Global preferences (admin-defined)
+// User column sort order stored in:
+// Key: 'columns_sort.{ResourceType}'
+auth()->user()->updateOption('columns_sort.Article', ['status', 'title', 'published_at']);
+
+// Global column settings (when columns_global_key is set)
 Aura::updateOption('columns.articles.global', [
-    'title' => ['visible' => true, 'locked' => true],
-    'status' => ['visible' => true, 'locked' => false],
+    'title' => true,
+    'status' => true,
 ]);
+```
+
+**Reordering Columns:**
+
+```php
+// Called when user reorders columns
+$this->reorder(['status', 'title', 'published_at']);
+
+// Saves to user options or global options depending on settings
 ```
 
 ## Pagination
 
-Advanced pagination with configurable options and persistence.
+The `PerPagePagination` trait provides pagination with session persistence.
 
 ### Pagination Configuration
 
 ```php
 class Article extends Resource
 {
-    public function defaultPerPage(): int
+    // Default items per page (default: 10)
+    public function defaultPerPage()
     {
         return 25;
     }
-    
-    public function perPageOptions(): array
-    {
-        return [10, 25, 50, 100, 250];
-    }
-    
-    public function maxPerPage(): int
-    {
-        return 250; // Prevent performance issues
-    }
-    
-    // For infinite scroll
-    public function supportsPagination(): bool
-    {
-        return true; // Set false for infinite scroll
-    }
 }
+```
+
+**Pagination Properties:**
+
+```php
+// Current items per page
+public $perPage = 10;
+
+// Uses Livewire's WithPagination trait
+use WithPagination;
 ```
 
 ### Pagination Features
 
 - **Dynamic Per-Page**: Users can change items per page
-- **Persistent Settings**: Per-page preference saved per resource
-- **Smart Loading**: Only loads visible items
-- **Page Information**: Shows "1-25 of 248 results"
-- **Keyboard Navigation**: Use arrow keys to navigate pages
+- **Session Persistence**: Per-page preference saved in session (`perPage` key)
+- **Settings Override**: Can be overridden via `$settings['per_page']`
+- **Livewire Integration**: Uses standard Livewire pagination
+
+**How Per-Page is Determined (priority order):**
+
+1. Session value (`session('perPage')`)
+2. Settings value (`$settings['per_page']`)
+3. Resource default (`$model->defaultPerPage()`)
+
+```php
+// Change items per page
+$this->perPage = 50;
+
+// Automatically saved to session via updatedPerPage()
+```
 
 ## User Preferences
 
@@ -846,30 +1040,34 @@ The Table component automatically saves user preferences for a personalized expe
 
 ### Saved Preferences
 
-| Preference | Scope | Storage Key |
-|------------|-------|-------------|
-| View Mode | Resource | `table_view.{resource}` |
-| Columns | Resource | `columns.{resource}` |
-| Per Page | Resource | `per_page.{resource}` |
-| Sort Field | Resource | `sort.{resource}.field` |
-| Sort Direction | Resource | `sort.{resource}.direction` |
-| Filters | Resource | `{resource}.filters.*` |
+| Preference | Storage Key | Saved By |
+|------------|-------------|----------|
+| View Mode | `table_view.{ResourceType}` | SwitchView trait |
+| Columns Visibility | `columns.{ResourceType}` | Table component |
+| Columns Order | `columns_sort.{ResourceType}` | Table component |
+| Per Page | Session: `perPage` | PerPagePagination trait |
+| User Filters | `{ResourceType}.filters.{slug}` | Filters trait |
+| Team Filters | Team option: `{ResourceType}.filters.{slug}` | Filters trait |
+| Kanban Statuses | `kanban_statuses.{ResourceType}` | Kanban trait |
 
 ### Managing Preferences
 
 ```php
 // Get user preference
-$viewMode = auth()->user()->getOption('table_view.articles', 'list');
+$viewMode = auth()->user()->getOption('table_view.Article', 'list');
 
 // Set user preference
-auth()->user()->updateOption('table_view.articles', 'grid');
+auth()->user()->updateOption('table_view.Article', 'grid');
 
-// Clear preferences
-auth()->user()->deleteOption('columns.articles');
+// Delete preference
+auth()->user()->deleteOption('columns.Article');
 
-// Clear all table preferences
-auth()->user()->clearCachedOption('table_view.*');
-auth()->user()->clearCachedOption('columns.*');
+// Clear cached options (for filters)
+auth()->user()->clearCachedOption('Article.filters.*');
+
+// Team preferences (for global filters)
+auth()->user()->currentTeam->getOption('Article.filters.*');
+auth()->user()->currentTeam->updateOption('Article.filters.published', [...]);
 ```
 
 ## Performance Optimization
@@ -881,62 +1079,59 @@ The Table component is optimized for large datasets.
 ```php
 class Article extends Resource
 {
-    // Eager load relationships
+    // Customize the index query
+    // This is called in Table::query() method
     public function indexQuery($query, $table)
     {
         return $query->with(['author', 'category', 'tags'])
             ->withCount(['comments', 'views']);
     }
-    
-    // Optimize meta loading
-    public function eagerLoadMeta(): bool
-    {
-        return true; // Loads all meta in one query
-    }
-    
-    // Limit query scope
-    public function scopeForTable($query)
-    {
-        // Only load necessary data
-        return $query->select('id', 'title', 'status', 'user_id', 'published_at');
-    }
 }
+```
+
+**Automatic Optimizations:**
+
+```php
+// Meta is automatically eager loaded when usesMeta() is true
+if ($this->model->usesMeta()) {
+    $query = $query->with(['meta']);
+}
+
+// Default ordering is applied
+$query->orderBy($this->model->getTable().'.id', 'desc');
 ```
 
 ### Lazy Loading
 
 ```php
-// Table loads on demand
+// Table supports lazy loading via $loaded property
 <div wire:init="loadTable">
     <livewire:aura::table :model="Article::class" />
 </div>
 
-// In resource
-public function lazyLoadTable(): bool
+// In Table component
+public $loaded = false;
+
+public function loadTable()
 {
-    return true; // Defer loading until visible
+    $this->loaded = true;
 }
 ```
 
-### Caching Strategies
+### Query Flow
 
-```php
-// Cache expensive operations
-public function getCachedFilterOptions($field)
-{
-    return Cache::remember(
-        "filter_options.{$this->getType()}.{$field}", 
-        3600, 
-        fn() => $this->getFilterOptions($field)
-    );
-}
+The table query is built in this order:
 
-// Cache query results
-public function cacheTableQuery(): bool
-{
-    return true; // Caches results for 60 seconds
-}
-```
+1. **Base Query**: `$this->model->query()`
+2. **Index Query**: `$this->model->indexQuery($query, $this)` (if exists)
+3. **Field Query**: `$field->queryFor($query, $this)` (for relationship tables)
+4. **Dynamic Query**: `$this->query` string executed via DynamicFunctions
+5. **Kanban Query**: `$this->applyKanbanQuery($query)` (if kanban view)
+6. **Meta Eager Load**: `$query->with(['meta'])` (if usesMeta)
+7. **Custom Filters**: `$this->applyCustomFilter($query)`
+8. **Search**: `$this->applySearch($query)`
+9. **Sorting**: `$this->applySorting($query)`
+10. **Pagination**: `$query->paginate($this->perPage)`
 
 ## Advanced Customization
 
@@ -1232,7 +1427,7 @@ class Article extends Resource
 
 ### Table Component Extension
 
-Create a custom table component:
+Create a custom table component by extending the base Table class:
 
 ```php
 <?php
@@ -1247,16 +1442,17 @@ class ArticlesTable extends Table
     public $showStats = true;
     public $dateRange = '30';
     
-    // Override default settings
+    // Override mount to customize initial settings
     public function mount()
     {
+        // Call parent mount first (handles settings, pagination, view, kanban)
         parent::mount();
         
+        // Then customize
         $this->settings['per_page'] = 50;
-        $this->settings['default_view'] = 'grid';
     }
     
-    // Add custom query modifications
+    // Override query() to add custom modifications
     protected function query()
     {
         $query = parent::query();
@@ -1271,13 +1467,15 @@ class ArticlesTable extends Table
         return $query;
     }
     
-    // Custom computed properties
-    public function getStatsProperty()
+    // Add custom computed properties
+    #[Computed]
+    public function stats()
     {
+        $baseQuery = $this->model->query();
         return [
-            'total' => $this->query()->count(),
-            'published' => $this->query()->published()->count(),
-            'draft' => $this->query()->draft()->count(),
+            'total' => $baseQuery->count(),
+            'published' => $baseQuery->clone()->where('status', 'published')->count(),
+            'draft' => $baseQuery->clone()->where('status', 'draft')->count(),
         ];
     }
     
@@ -1285,11 +1483,30 @@ class ArticlesTable extends Table
     public function render()
     {
         return view('livewire.tables.articles-table', [
+            'parent' => $this->parent,
             'rows' => $this->rows(),
+            'rowIds' => $this->rowIds,
             'stats' => $this->stats,
         ]);
     }
 }
+```
+
+**Key Methods to Override:**
+
+```php
+// Query building
+protected function query()      // Base query with scopes
+protected function rows()       // Final paginated results
+public function rowsQuery()     // Query with filters, search, sorting
+
+// Lifecycle
+public function mount()         // Component initialization
+public function render()        // View rendering
+
+// Actions
+public function action($data)   // Handle row actions
+public function bulkAction($action) // Handle bulk actions
 ```
 
 ## Real-world Examples
@@ -1398,37 +1615,71 @@ Aura::resources([
     Article::class,
 ]);
 
-// Verify permissions
-public function canViewAny()
+// Ensure tableComponentView returns correct view
+public function tableComponentView()
 {
-    return true; // or your logic
+    return 'aura::livewire.table'; // Default
 }
 ```
 
 **Filters not working:**
 ```php
 // Ensure field slug matches filter name
-public function getFields()
+public static function getFields()
 {
     return [
         [
-            'slug' => 'status', // Must match filter
-            'type' => 'Select',
+            'slug' => 'status', // Must match filter field name
+            'type' => 'Aura\\Base\\Fields\\Select',
+            'on_index' => true,
             // ...
         ]
     ];
+}
+
+// Check if field uses meta or table storage
+// Meta fields use whereHas('meta', ...) queries
+// Table fields use direct where() queries
+```
+
+**Search not finding results:**
+```php
+// Ensure fields are marked as searchable
+[
+    'slug' => 'title',
+    'type' => 'Aura\\Base\\Fields\\Text',
+    'searchable' => true,  // Required for search
+]
+
+// Or use custom search logic
+public function modifySearch($query, $search)
+{
+    return $query->where('title', 'like', "%{$search}%");
+}
+```
+
+**Sorting not working on meta fields:**
+```php
+// Meta field sorting requires the field to be recognized
+// Check if isMetaField() returns true for your field
+$this->model->isMetaField('your_field'); // Should return true
+
+// Custom sort for complex scenarios
+public function sort_your_field($query, $direction)
+{
+    return $query->orderBy('your_field', $direction);
 }
 ```
 
 **Performance issues:**
 ```php
-// Use query optimization
-public function indexQuery($query)
+// Use indexQuery for eager loading
+public function indexQuery($query, $table)
 {
     return $query
-        ->select('id', 'title', 'status', 'user_id') // Only needed columns
-        ->with(['author:id,name']) // Specific relation fields
-        ->withCount(['comments', 'views']); // Count instead of loading
+        ->select(['id', 'title', 'status', 'user_id', 'created_at'])
+        ->with(['author:id,name'])
+        ->withCount(['comments']);
 }
 ```
 
@@ -1437,33 +1688,80 @@ public function indexQuery($query)
 ```php
 // Enable query logging
 DB::enableQueryLog();
-$table = Livewire::test(Table::class, ['model' => Article::class]);
+
+// Test table component
+Livewire::test(Table::class, ['model' => Article::class])
+    ->set('search', 'test')
+    ->assertSee('Expected Result');
+
 dd(DB::getQueryLog());
 
-// Debug current state
-public function updatedSearch()
-{
-    logger('Search query', [
-        'search' => $this->search,
-        'filters' => $this->filters,
-        'selected' => $this->selected,
-    ]);
-}
+// Debug filter application (note: ray() calls exist in QueryFilters)
+// Check the applyFilterGroup method for ray() debugging
+
+// Inspect current table state
+ray([
+    'search' => $this->search,
+    'filters' => $this->filters,
+    'sorts' => $this->sorts,
+    'selected' => $this->selected,
+    'perPage' => $this->perPage,
+]);
+```
+
+### Events Reference
+
+```php
+// Table dispatches these events:
+'tableMounted'       // After mount()
+'refreshTable'       // Triggers table refresh
+'refreshTableSelected' // Clears selection
+'selectedRows'       // When selection changes
+'rowIdsUpdated'      // When row IDs change
+'selectFieldRows'    // External selection update
+'selectRowsRange'    // Range selection
 ```
 
 ## Summary
 
-The Table component is a powerful, flexible system that handles:
+The Table component is a powerful, flexible system built with these traits:
 
-- **Multiple view modes** with seamless switching
-- **Advanced filtering** with save/share capabilities  
-- **Smart selection** with bulk operations
-- **Performance optimization** for large datasets
-- **Complete customization** while maintaining functionality
-- **User preferences** for personalized experience
+| Trait | Purpose |
+|-------|---------|
+| `BulkActions` | Handle bulk operations on selected rows |
+| `Filters` | Complex filtering with save/share capabilities |
+| `Kanban` | Kanban board view with drag-and-drop |
+| `PerPagePagination` | Pagination with session persistence |
+| `QueryFilters` | Apply filters to table/meta fields |
+| `Search` | Search with meta field support |
+| `Select` | Row selection (single, page, all) |
+| `Settings` | Table configuration and defaults |
+| `Sorting` | Multi-column sorting with custom methods |
+| `SwitchView` | View mode switching with preferences |
 
-Whether you're building a simple content list or a complex data management interface, the Table component provides the tools and flexibility you need.
+**Key Features:**
 
-> 📹 **Video Placeholder**: Building a custom table view with advanced filtering and bulk actions
+- **Multiple view modes**: List, Grid, Kanban with seamless switching
+- **Advanced filtering**: AND/OR logic, save filters for user/team
+- **Smart selection**: Single, page, all with bulk operations
+- **Multi-column sorting**: With custom sort methods for relationships/meta
+- **Automatic meta support**: Search, filter, sort meta fields
+- **User preferences**: View mode, columns, filters persisted
+
+**Resource Configuration Methods:**
+
+```php
+defaultPerPage()           // Default: 10
+defaultTableSort()         // Default: 'id'
+defaultTableSortDirection() // Default: 'desc'
+defaultTableView()         // Default: 'list'
+tableView()                // Default: 'aura::components.table.list-view'
+tableGridView()            // Default: false (disabled)
+tableKanbanView()          // Default: false (disabled)
+showTableSettings()        // Default: true
+indexQuery($query, $table) // Customize base query
+modifySearch($query, $search) // Custom search logic
+sort_{field}($query, $direction) // Custom sort methods
+```
 
 For more information on resources that work with tables, see the [Resources Documentation](resources.md).

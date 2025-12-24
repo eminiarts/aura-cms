@@ -5,18 +5,20 @@ This guide helps you resolve common issues with Aura CMS, provides debugging tec
 ## Table of Contents
 
 1. [Common Issues](#common-issues)
-2. [Installation Problems](#installation-problems)
-3. [Database Issues](#database-issues)
-4. [Authentication & Permissions](#authentication--permissions)
-5. [Resource & Field Errors](#resource--field-errors)
-6. [Livewire Component Issues](#livewire-component-issues)
-7. [Media & File Upload Problems](#media--file-upload-problems)
-8. [Performance Issues](#performance-issues)
-9. [Debugging Guide](#debugging-guide)
-10. [Error Messages Reference](#error-messages-reference)
-11. [Upgrade Procedures](#upgrade-procedures)
-12. [Migration Troubleshooting](#migration-troubleshooting)
-13. [Frequently Asked Questions](#frequently-asked-questions)
+2. [Common Gotchas](#common-gotchas)
+3. [Installation Problems](#installation-problems)
+4. [Database Issues](#database-issues)
+5. [Authentication & Permissions](#authentication--permissions)
+6. [Resource & Field Errors](#resource--field-errors)
+7. [Livewire Component Issues](#livewire-component-issues)
+8. [Media & File Upload Problems](#media--file-upload-problems)
+9. [Performance Issues](#performance-issues)
+10. [Testing Issues](#testing-issues)
+11. [Debugging Guide](#debugging-guide)
+12. [Error Messages Reference](#error-messages-reference)
+13. [Upgrade Procedures](#upgrade-procedures)
+14. [Migration Troubleshooting](#migration-troubleshooting)
+15. [Frequently Asked Questions](#frequently-asked-questions)
 
 ## Common Issues
 
@@ -49,7 +51,7 @@ php artisan view:clear
 
 **Solutions:**
 ```bash
-# Check PHP version (8.1+ required)
+# Check PHP version (8.2+ required)
 php -v
 
 # Check required extensions
@@ -79,6 +81,95 @@ php artisan storage:link
 
 # Check Vite configuration
 npm run dev # For development
+```
+
+## Common Gotchas
+
+These are important architectural patterns in Aura CMS that can cause unexpected behavior if not understood:
+
+### 1. Team Scope Filtering
+
+Most models in Aura CMS use `TeamScope` which automatically filters records by the user's current team. This can cause records to appear "missing" when they exist in the database.
+
+**Problem:** Records exist in database but queries return empty results
+
+**Solution:**
+```php
+use Aura\Base\Models\Scopes\TeamScope;
+
+// Bypass TeamScope when you need all records
+$allRecords = YourResource::withoutGlobalScope(TeamScope::class)->get();
+
+// Or for specific queries
+$record = YourResource::withoutGlobalScope(TeamScope::class)
+    ->where('id', $id)
+    ->first();
+```
+
+**Important:** When changing a user's team, you must clear the cached team ID:
+```php
+use Illuminate\Support\Facades\Cache;
+
+// After updating user's team
+$user->update(['current_team_id' => $newTeamId]);
+
+// Clear the TeamScope cache
+Cache::forget("user_{$user->id}_current_team_id");
+```
+
+### 2. Type Column for Single-Table Inheritance
+
+The `posts` table uses a `type` column for single-table inheritance. Resources sharing the posts table are differentiated by this column.
+
+**Problem:** Queries return wrong resource types or unexpected records
+
+**Solution:**
+```php
+// The TypeScope automatically filters by type
+// If you need to query across types:
+use Aura\Base\Models\Scopes\TypeScope;
+
+$allPosts = Post::withoutGlobalScope(TypeScope::class)->get();
+```
+
+### 3. Meta Fields Storage
+
+Resources can store field data in a separate `meta` table instead of directly in columns. Use the `usesMeta()` method to check.
+
+**Problem:** Field values not saving or returning null
+
+**Solution:**
+```php
+// Check if resource uses meta storage
+if ($resource->usesMeta()) {
+    // Values are stored in meta table, not the main table
+    // Access via the model's meta relationship
+}
+
+// For custom meta table, define it in your model:
+class Product extends Model
+{
+    protected $metaTable = 'product_meta';
+}
+```
+
+### 4. Resource Editor Environment Restriction
+
+The Resource Editor is automatically disabled outside of local environments for security.
+
+**Configuration in `config/aura.php`:**
+```php
+'features' => [
+    'resource_editor' => config('app.env') == 'local' ? true : false,
+],
+```
+
+**Problem:** Resource Editor not visible in staging/production
+
+**Solution:** This is intentional. To enable in other environments (not recommended for production):
+```php
+// In config/aura.php
+'resource_editor' => env('AURA_RESOURCE_EDITOR', false),
 ```
 
 ## Installation Problems
@@ -626,6 +717,94 @@ foreach (Product::cursor() as $product) {
 }
 ```
 
+## Testing Issues
+
+### Aura Facade Pollution Between Tests
+
+**Problem:** Tests pass individually but fail when run together
+
+The Aura facade maintains state that can leak between tests, causing unexpected failures.
+
+**Solution:**
+```php
+// In tests/Pest.php or your test setup
+uses()->afterEach(function () {
+    // Reset the Aura facade to its original state
+    app()->forgetInstance(\Aura\Base\Aura::class);
+    app()->singleton(\Aura\Base\Aura::class);
+    \Aura\Base\Facades\Aura::clearResolvedInstances();
+})->in('Feature');
+```
+
+### TeamScope Cache Issues in Tests
+
+**Problem:** User's team changes don't reflect in queries during tests
+
+**Solution:**
+```php
+// After updating user's team, clear the cache
+$user->update(['current_team_id' => $team->id]);
+\Illuminate\Support\Facades\Cache::forget("user_{$user->id}_current_team_id");
+```
+
+### Records Not Found Due to Global Scopes
+
+**Problem:** Records exist but `find()` or `first()` returns null in tests
+
+**Solution:**
+```php
+use Aura\Base\Models\Scopes\TeamScope;
+use Aura\Base\Models\Scopes\TypeScope;
+
+// Bypass scopes when needed
+$record = YourResource::withoutGlobalScope(TeamScope::class)
+    ->withoutGlobalScope(TypeScope::class)
+    ->where('id', $id)
+    ->first();
+```
+
+### Running Tests Without Teams Feature
+
+If you need to test without the teams feature:
+
+```bash
+# Use the dedicated phpunit config
+vendor/bin/pest -c phpunit-without-teams.xml
+```
+
+### Test Helper Functions
+
+Aura CMS provides helper functions in `tests/Pest.php`:
+
+```php
+// Create a super admin user with team
+$user = createSuperAdmin();
+
+// Create a super admin without team context
+$user = createSuperAdminWithoutTeam();
+
+// Create an admin with limited permissions
+$user = createAdmin();
+
+// Create a test post
+$post = createPost(['title' => 'Test']);
+```
+
+### Livewire Component Testing
+
+```php
+use function Pest\Livewire\livewire;
+
+test('component works correctly', function () {
+    $this->actingAs(createSuperAdmin());
+    
+    livewire(YourComponent::class)
+        ->set('form.fields.name', 'Test')
+        ->call('save')
+        ->assertHasNoErrors();
+});
+```
+
 ## Debugging Guide
 
 ### Enable Debug Mode
@@ -707,13 +886,21 @@ public function dehydrate()
 
 | Error Message | Cause | Solution |
 |--------------|-------|----------|
+| "Aura CMS assets are not published" | Assets not published after install | Run `php artisan aura:publish` |
 | "You need to define a custom meta table for this model" | Using meta fields without meta table | Define `$metaTable` property in model |
 | "Only App resources can be edited" | Trying to edit vendor resources | Copy resource to app/Aura/Resources |
-| "The 'resource' key is not set" | Tags field missing resource config | Add 'resource' => TagResource::class |
-| "Function getFields() not found" | Malformed resource class | Ensure getFields() method exists and returns array |
+| "The 'resource' key is not set or is empty" | Tags field missing resource config | Add `'resource' => TagResource::class` to field config |
+| "Function getFields() not found" | Malformed resource class | Ensure `getFields()` method exists and returns array |
 | "Call to undefined method" | Missing trait in model | Add required traits (HasFields, HasMeta, etc.) |
 | "Target class does not exist" | Incorrect namespace | Check class namespace and autoloading |
 | "Undefined array key" | Missing field configuration | Ensure all required field keys are present |
+| "Unknown field type" | Invalid field type class | Verify field type class exists (e.g., `Aura\Base\Fields\Text`) |
+| "Requested thumbnail dimensions are not allowed" | Invalid thumbnail size | Check `config/aura.php` media dimensions |
+| "Original image not found" | Missing source image for thumbnail | Verify image exists at the specified path |
+| "Unable to find migration file" | Migration file not found | Check migration name and ensure file exists |
+| "Width is not defined for thumbnail size" | Thumbnail config missing width | Add `width` key to thumbnail dimension config |
+| "Invalid filter name" | Non-existent filter in table | Check filter slug matches field slug |
+| "Invalid filter type" | Unsupported filter type | Use supported filter types for the field |
 
 ## Upgrade Procedures
 
@@ -858,7 +1045,7 @@ class CustomUser extends \Aura\Base\Resources\User
 ```
 
 **Q: Can I disable the Resource Editor in production?**
-A: The Resource Editor is automatically disabled in production. You can control it with `AURA_RESOURCE_EDITOR=false`.
+A: The Resource Editor is automatically disabled in non-local environments (see [Common Gotchas](#4-resource-editor-environment-restriction)). You can control it with `AURA_RESOURCE_EDITOR=false`.
 
 ### Performance Questions
 

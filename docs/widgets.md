@@ -20,12 +20,14 @@ Aura CMS provides a powerful widget system for creating interactive dashboards a
 
 The widget system provides:
 - **Real-time Visualizations**: Live data updates with Livewire
-- **Multiple Chart Types**: Value, bar, pie, donut, sparklines
-- **Date Range Filtering**: Flexible time period selection
-- **Automatic Caching**: Performance optimization
-- **Responsive Design**: Mobile-friendly layouts
-- **Conditional Display**: Show/hide based on logic
-- **Custom Widgets**: Extend base classes
+- **Multiple Chart Types**: Value, Bar, Pie, Donut, Sparkline (Area/Bar)
+- **Date Range Filtering**: Flexible time period selection (day, week, month, quarter, year, custom)
+- **Automatic Caching**: Performance optimization with team-aware cache keys
+- **Responsive Design**: Mobile-friendly layouts with configurable widths
+- **Lazy Loading**: Widgets load on-demand with loading skeletons
+- **Meta Field Support**: Automatic handling of meta table joins
+- **Goal Tracking**: Progress bars for target-based metrics
+- **Custom Widgets**: Extend base classes for custom functionality
 
 > 📹 **Video Placeholder**: [Overview of the widget system showing different widget types, date filtering, and real-time updates]
 
@@ -36,15 +38,16 @@ The widget system provides:
 ```
 Widget System
 ├── Base Widget Class (Livewire Component)
+│   └── src/Widgets/Widget.php
 ├── Widget Implementations
-│   ├── ValueWidget (Metrics)
-│   ├── Bar (Bar Charts)
+│   ├── ValueWidget (Single Metrics) - src/Widgets/ValueWidget.php
+│   ├── Bar (Bar Charts) - extends Sparkline
 │   ├── Pie (Pie Charts)
 │   ├── Donut (Donut Charts)
-│   ├── Sparkline (Line Trends)
-│   ├── SparklineBar (Bar Trends)
-│   └── SparklineArea (Area Trends)
-├── Widget Container (Date Management)
+│   ├── Sparkline (Area Trends) - base for trend charts
+│   ├── SparklineBar (Bar Trends) - extends Sparkline
+│   └── SparklineArea (Area Trends) - extends Sparkline
+├── Widgets Container (Date Filtering) - src/Widgets/Widgets.php
 └── Dashboard Component
 
 ```
@@ -54,26 +57,25 @@ Widget System
 ```php
 namespace Aura\Base\Widgets;
 
+use Illuminate\Support\Facades\Auth;
 use Livewire\Component;
-use Illuminate\Support\Facades\Cache;
 
-abstract class Widget extends Component
+class Widget extends Component
 {
-    public $widget;
-    public $model;
-    public $start;
-    public $end;
-    public $loading = true;
+    public $widget;           // Widget configuration array
+    public $start;            // Start date for filtering
+    public $end;              // End date for filtering
+    public $loaded = false;   // Whether widget data is loaded
+    public $isCached = false; // Whether widget data is cached
     
-    protected $listeners = ['dateFilterUpdated' => 'updateDateRange'];
+    protected $cacheKey;
     
     public function getCacheKeyProperty()
     {
-        $team = config('aura.teams') ? 
-            auth()->user()->current_team_id : 'no-team';
-            
-        return $team . '-' . $this->widget['slug'] . '-' . 
-               $this->start . '-' . $this->end;
+        $user = Auth::user();
+        $teamId = $user->current_team_id ?? 0;
+        
+        return md5($teamId . $this->widget['slug'] . $this->start . $this->end);
     }
     
     public function getCacheDurationProperty()
@@ -83,12 +85,94 @@ abstract class Widget extends Component
     
     public function format($value)
     {
-        if (is_numeric($value)) {
-            return number_format($value, 2);
+        $formatted = number_format($value, 2, '.', "'");
+        
+        // Remove trailing .00
+        if (substr($formatted, -3) === '.00') {
+            $formatted = substr($formatted, 0, -3);
         }
-        return $value;
+        
+        return $formatted;
+    }
+    
+    public function loadWidget()
+    {
+        $this->loaded = true;
+    }
+    
+    public function mount()
+    {
+        // Check if the widget is cached
+        if (cache()->has($this->cacheKey)) {
+            $this->isCached = true;
+            $this->loaded = true;
+        }
     }
 }
+```
+
+### Widgets Container (Date Filter Management)
+
+The `Widgets` component manages date range filtering for all widgets:
+
+```php
+namespace Aura\Base\Widgets;
+
+use Illuminate\Support\Carbon;
+use Livewire\Component;
+
+class Widgets extends Component
+{
+    public $widgets;
+    public $model;
+    public $selected = '30d';
+    public $start;
+    public $end;
+    
+    public function mount($widgets, $model)
+    {
+        $this->widgets = $widgets;
+        $this->model = $model;
+        $this->selected = $this->model->widgetSettings['default'] ?? 'all';
+        $this->updatedSelected();
+    }
+    
+    public function updatedSelected()
+    {
+        // Updates start/end dates and dispatches 'dateFilterUpdated' event
+        $this->dispatch('dateFilterUpdated', $this->start, $this->end);
+    }
+}
+```
+
+**Available Date Range Options:**
+
+| Key | Description |
+|-----|-------------|
+| `1d`, `7d`, `30d`, `60d`, `90d`, `180d`, `365d` | Last N days |
+| `all` | All time (no date filter) |
+| `ytd` | Year to Date |
+| `qtd` | Quarter to Date |
+| `mtd` | Month to Date |
+| `wtd` | Week to Date |
+| `last-year` | Previous full year |
+| `last-quarter` | Previous full quarter |
+| `last-month` | Previous full month |
+| `last-week` | Previous full week |
+| `custom` | Custom date range |
+
+Configure default date range in your resource:
+
+```php
+public array $widgetSettings = [
+    'default' => '30d',  // Default selection
+    'options' => [
+        '7d' => '7 Days',
+        '30d' => '30 Days',
+        'mtd' => 'Month to Date',
+        // ... customize available options
+    ],
+];
 ```
 
 ## Built-in Widgets
@@ -113,39 +197,47 @@ Displays a single metric with comparison to previous period:
 - Percentage change calculation
 - Previous period comparison
 - Number formatting
+- Goal tracking with progress bar
+
+**Additional Options:**
+
+```php
+[
+    'type' => \Aura\Base\Widgets\ValueWidget::class,
+    'name' => 'Sales Target',
+    'slug' => 'sales-target',
+    'column' => 'amount',
+    'method' => 'sum',
+    'goal' => 10000,           // Show progress toward goal
+    'previous' => false,       // Hide previous period comparison
+    'queryScope' => 'active',  // Apply model scope
+    'style' => ['width' => 25],
+]
+```
+
+When `goal` is set, the widget displays a progress bar showing percentage toward the goal instead of the period comparison.
 
 ### Bar Chart
 
-Visualizes data in vertical bars:
+Visualizes data in vertical bars over time. Extends the Sparkline widget:
 
 ```php
 [
     'type' => \Aura\Base\Widgets\Bar::class,
-    'name' => 'Monthly Sales',
-    'slug' => 'monthly-sales',
+    'name' => 'Daily Orders',
+    'slug' => 'daily-orders',
     'column' => 'created_at',
-    'method' => 'count',
-    'group_by' => 'month',
+    'method' => 'count',  // count, sum, avg, min, max
+    'previous' => true,   // Show previous period comparison
     'style' => ['width' => 50],
 ]
 ```
 
-**Configuration:**
-```javascript
-// Chart options
-{
-    chart: {
-        type: 'bar',
-        height: 350,
-        toolbar: { show: false }
-    },
-    colors: ['#3B82F6'],
-    dataLabels: { enabled: false },
-    xaxis: {
-        categories: ['Jan', 'Feb', 'Mar', ...]
-    }
-}
-```
+**Features:**
+- Groups data by date automatically
+- Shows current vs previous period comparison
+- Uses ApexCharts for rendering
+- Supports meta fields via left join
 
 ### Pie Chart
 
@@ -183,15 +275,26 @@ Similar to pie with hollow center:
 
 ### Sparkline Charts
 
-Compact trend visualizations:
+Compact trend visualizations showing data grouped by date:
 
 ```php
-// Line sparkline
+// Area sparkline (default Sparkline behavior)
 [
     'type' => \Aura\Base\Widgets\Sparkline::class,
     'name' => 'Daily Visitors',
     'slug' => 'daily-visitors',
     'column' => 'visits',
+    'method' => 'count',  // count, sum, avg, min, max
+    'style' => ['width' => 25],
+]
+
+// Explicit area sparkline
+[
+    'type' => \Aura\Base\Widgets\SparklineArea::class,
+    'name' => 'Revenue Trend',
+    'slug' => 'revenue-trend',
+    'column' => 'amount',
+    'method' => 'sum',
     'style' => ['width' => 25],
 ]
 
@@ -204,17 +307,18 @@ Compact trend visualizations:
     'method' => 'count',
     'style' => ['width' => 25],
 ]
-
-// Area sparkline
-[
-    'type' => \Aura\Base\Widgets\SparklineArea::class,
-    'name' => 'Revenue Trend',
-    'slug' => 'revenue-trend',
-    'column' => 'amount',
-    'method' => 'sum',
-    'style' => ['width' => 25],
-]
 ```
+
+**Sparkline Inheritance:**
+- `Sparkline` - Base class, renders as area chart
+- `SparklineArea` - Extends Sparkline, renders as area chart
+- `SparklineBar` - Extends Sparkline, renders as bar chart
+- `Bar` - Extends Sparkline, renders as full bar chart with axes
+
+All sparkline widgets automatically:
+- Group data by `DATE(created_at)`
+- Fill missing dates with zero values
+- Show current and previous period comparison
 
 > 📹 **Video Placeholder**: [Demonstration of each widget type with real data and configuration options]
 
@@ -349,14 +453,20 @@ Dashboard view:
 
 ### Basic Custom Widget
 
+Custom widgets extend the base `Widget` class and implement the date filter listener:
+
 ```php
 namespace App\Widgets;
 
 use Aura\Base\Widgets\Widget;
 use App\Models\Order;
+use Illuminate\Support\Carbon;
+use Livewire\Attributes\On;
 
 class RevenueWidget extends Widget
 {
+    public $model;
+    
     public function getValue($start, $end)
     {
         return Order::whereBetween('created_at', [$start, $end])
@@ -364,90 +474,102 @@ class RevenueWidget extends Widget
             ->sum('total');
     }
     
-    public function getChartDataProperty()
+    public function getValuesProperty()
     {
-        $data = Order::selectRaw('DATE(created_at) as date, SUM(total) as revenue')
-            ->whereBetween('created_at', [$this->start, $this->end])
-            ->where('status', 'completed')
-            ->groupBy('date')
-            ->orderBy('date')
-            ->get();
+        $currentStart = $this->start instanceof Carbon 
+            ? $this->start 
+            : Carbon::parse($this->start);
+        $currentEnd = $this->end instanceof Carbon 
+            ? $this->end 
+            : Carbon::parse($this->end);
             
-        return [
-            'labels' => $data->pluck('date')->map(fn($date) => 
-                Carbon::parse($date)->format('M d')
-            ),
-            'values' => $data->pluck('revenue'),
-        ];
+        // Calculate previous period
+        $duration = $currentStart->diffInDays($currentEnd);
+        $previousStart = $currentStart->copy()->subDays($duration);
+        $previousEnd = $currentStart;
+        
+        return cache()->remember(
+            $this->cacheKey, 
+            $this->cacheDuration, 
+            function () use ($currentStart, $currentEnd, $previousStart, $previousEnd) {
+                $current = $this->getValue($currentStart, $currentEnd);
+                $previous = $this->getValue($previousStart, $previousEnd);
+                $change = ($previous != 0) 
+                    ? (($current - $previous) / $previous) * 100 
+                    : 0;
+                    
+                return [
+                    'current' => $this->format($current),
+                    'previous' => $this->format($previous),
+                    'change' => $this->format($change),
+                ];
+            }
+        );
     }
     
     public function render()
     {
-        return view('widgets.revenue', [
-            'total' => $this->getValue($this->start, $this->end),
-            'chartData' => $this->chartData,
-        ]);
+        return view('widgets.revenue');
+    }
+    
+    #[On('dateFilterUpdated')]
+    public function updateDateRange($start, $end)
+    {
+        $this->start = $start;
+        $this->end = $end;
     }
 }
 ```
 
-Widget view:
+Widget view with lazy loading support:
 
 ```blade
 {{-- resources/views/widgets/revenue.blade.php --}}
-<div class="bg-white rounded-lg shadow">
-    <div class="p-6">
-        <h3 class="text-lg font-semibold text-gray-900">{{ $widget['name'] }}</h3>
-        
-        <div class="mt-4">
-            <p class="text-3xl font-bold text-green-600">
-                ${{ number_format($total, 2) }}
-            </p>
+<div class="aura-card" @if (!$isCached) wire:init="loadWidget" @endif>
+    @if($loaded)
+    <div class="p-2">
+        <div class="flex justify-between items-baseline mb-4">
+            <span class="text-sm font-semibold">{{ $widget['name'] }}</span>
         </div>
         
-        <div class="mt-6" wire:ignore>
-            <div id="revenue-chart-{{ $widget['slug'] }}"></div>
+        <div class="flex justify-between items-baseline mt-1 mb-2">
+            <div class="flex items-baseline text-4xl font-medium">
+                ${{ $this->values['current'] }}
+            </div>
+            
+            @if($this->values['change'] >= 0)
+            <div class="inline-flex items-baseline px-2.5 py-0.5 text-sm font-medium text-green-800 bg-green-100 rounded-full">
+                {{ $this->values['change'] }}%
+            </div>
+            @else
+            <div class="inline-flex items-baseline px-2.5 py-0.5 text-sm font-medium text-red-800 bg-red-100 rounded-full">
+                {{ $this->values['change'] }}%
+            </div>
+            @endif
+        </div>
+        
+        <div>
+            <span class="text-sm font-medium text-gray-500">
+                from ${{ $this->values['previous'] }}
+            </span>
         </div>
     </div>
+    @else
+    {{-- Loading skeleton --}}
+    <div class="p-2 animate-pulse">
+        <div class="w-1/4 h-4 bg-gray-200 rounded mb-4"></div>
+        <div class="w-16 h-6 bg-gray-200 rounded mb-4"></div>
+        <div class="w-16 h-4 bg-gray-200 rounded"></div>
+    </div>
+    @endif
 </div>
-
-@push('scripts')
-<script>
-document.addEventListener('DOMContentLoaded', function () {
-    const options = {
-        series: [{
-            name: 'Revenue',
-            data: @json($chartData['values'])
-        }],
-        chart: {
-            type: 'area',
-            height: 200,
-            sparkline: { enabled: true }
-        },
-        stroke: { curve: 'smooth', width: 2 },
-        fill: { 
-            type: 'gradient',
-            gradient: { opacityFrom: 0.5, opacityTo: 0 }
-        },
-        colors: ['#10B981']
-    };
-    
-    const chart = new ApexCharts(
-        document.querySelector("#revenue-chart-{{ $widget['slug'] }}"), 
-        options
-    );
-    chart.render();
-    
-    // Update on Livewire refresh
-    Livewire.on('widgetUpdated', () => {
-        chart.updateSeries([{
-            data: @json($chartData['values'])
-        }]);
-    });
-});
-</script>
-@endpush
 ```
+
+**Key View Features:**
+- Use `wire:init="loadWidget"` for lazy loading (skip if cached)
+- Check `$loaded` to show content vs skeleton
+- Access computed values via `$this->values`
+- Use `aura-card` class for consistent styling
 
 ### Advanced Widget with Filters
 
@@ -510,6 +632,8 @@ class ProductPerformance extends Widget
 
 ### Resource Widget Registration
 
+Define widgets in your resource's `getWidgets()` method:
+
 ```php
 namespace App\Aura\Resources;
 
@@ -517,7 +641,20 @@ use Aura\Base\Resource;
 
 class Product extends Resource
 {
-    public static function getWidgets()
+    // Configure default date filter and available options
+    public array $widgetSettings = [
+        'default' => '30d',
+        'options' => [
+            '7d' => '7 Days',
+            '30d' => '30 Days',
+            '90d' => '90 Days',
+            'mtd' => 'Month to Date',
+            'ytd' => 'Year to Date',
+            'all' => 'All Time',
+        ],
+    ];
+    
+    public static function getWidgets(): array
     {
         return [
             [
@@ -536,20 +673,31 @@ class Product extends Resource
                 'column' => 'price',
                 'method' => 'avg',
                 'style' => ['width' => 25],
-                'format' => 'currency',
+            ],
+            [
+                'type' => \Aura\Base\Widgets\ValueWidget::class,
+                'name' => 'Sales Target',
+                'slug' => 'sales-target',
+                'column' => 'total',
+                'method' => 'sum',
+                'goal' => 50000,  // Shows progress bar
+                'style' => ['width' => 25],
             ],
             [
                 'type' => \Aura\Base\Widgets\Bar::class,
-                'name' => 'Products by Category',
-                'slug' => 'products-by-category',
-                'group_by' => 'category_id',
+                'name' => 'Products Over Time',
+                'slug' => 'products-over-time',
+                'column' => 'created_at',
+                'method' => 'count',
                 'style' => ['width' => 50],
             ],
             [
-                'type' => \App\Widgets\ProductPerformance::class,
-                'name' => 'Top Performing Products',
-                'slug' => 'top-products',
-                'style' => ['width' => 100],
+                'type' => \Aura\Base\Widgets\SparklineArea::class,
+                'name' => 'Daily Trend',
+                'slug' => 'daily-trend',
+                'column' => 'created_at',
+                'method' => 'count',
+                'style' => ['width' => 25],
             ],
         ];
     }
@@ -560,25 +708,35 @@ class Product extends Resource
 
 ```php
 [
-    'type' => Widget::class,           // Widget class
+    // Required
+    'type' => Widget::class,           // Widget class (fully qualified)
     'name' => 'Widget Title',          // Display name
-    'slug' => 'unique-slug',           // Unique identifier
+    'slug' => 'unique-slug',           // Unique identifier (used for cache key)
+    
+    // Data Configuration
     'column' => 'database_column',     // Column to aggregate
-    'method' => 'count',               // Aggregation method
-    'group_by' => 'category_id',       // Grouping column
-    'taxonomy' => 'categories',        // For taxonomy widgets
-    'queryScope' => 'published',       // Model scope
-    'format' => 'currency',            // Value formatting
+    'method' => 'count',               // Aggregation: count, sum, avg, min, max
+    'queryScope' => 'published',       // Model scope to apply
+    
+    // ValueWidget Specific
+    'goal' => 10000,                   // Target value (shows progress bar)
+    'previous' => true,                // Show previous period (default: true)
+    
+    // Pie/Donut Specific
+    'taxonomy' => 'categories',        // For taxonomy distribution
+    
+    // Caching
     'cache' => [
-        'duration' => 60,              // Minutes
-        'tags' => ['products'],        // Cache tags
+        'duration' => 60,              // Cache duration in minutes
     ],
+    
+    // Styling
     'style' => [
-        'width' => 50,                 // Width percentage
-        'height' => 300,               // Fixed height
-        'class' => 'custom-widget',    // CSS classes
+        'width' => 50,                 // Width as percentage (25, 33, 50, 100)
     ],
-    'conditional_logic' => [           // Display conditions
+    
+    // Conditional Display
+    'conditional_logic' => [
         [
             'field' => 'user.role',
             'operator' => '==',
@@ -587,6 +745,18 @@ class Product extends Resource
     ],
 ]
 ```
+
+**Widget Type Quick Reference:**
+
+| Widget Class | Purpose | Key Options |
+|--------------|---------|-------------|
+| `ValueWidget` | Single metric | `column`, `method`, `goal`, `previous`, `queryScope` |
+| `Bar` | Bar chart over time | `column`, `method`, `previous` |
+| `Sparkline` | Area trend | `column`, `method` |
+| `SparklineArea` | Area trend | `column`, `method` |
+| `SparklineBar` | Bar trend | `column`, `method` |
+| `Pie` | Distribution | `column`, `taxonomy` |
+| `Donut` | Distribution | `column`, `taxonomy` |
 
 ### Conditional Display
 
@@ -624,27 +794,40 @@ public static function getWidgets()
 
 ### Database Queries
 
+The widget system automatically handles meta fields stored in the `meta` table:
+
 ```php
 public function getValue($start, $end)
 {
-    // Basic aggregation
-    return $this->model->whereBetween('created_at', [$start, $end])
-        ->sum('amount');
+    $column = optional($this->widget)['column'];
     
-    // With joins
-    return $this->model->query()
-        ->join('categories', 'products.category_id', '=', 'categories.id')
-        ->whereBetween('products.created_at', [$start, $end])
-        ->where('categories.active', true)
-        ->sum('products.price');
+    $query = $this->model->query()
+        ->where('created_at', '>=', $start)
+        ->where('created_at', '<', $end);
     
-    // Meta fields
-    return $this->model->query()
-        ->whereHas('meta', function ($query) {
-            $query->where('key', 'views')
-                ->where('value', '>', 100);
-        })
-        ->count();
+    // Apply query scope if defined
+    if (optional($this->widget)['queryScope']) {
+        $query->{$this->widget['queryScope']}();
+    }
+    
+    // Meta fields are automatically joined
+    if ($column && $this->model->isMetaField($column)) {
+        $query->select('posts.*', DB::raw("CAST(meta.value as SIGNED) as $column"))
+            ->leftJoin('meta', function ($join) use ($column) {
+                $join->on('posts.id', '=', 'meta.metable_id')
+                    ->where('meta.key', '=', $column)
+                    ->where('meta.metable_type', '=', get_class($this->model));
+            });
+    }
+    
+    // Aggregation based on method
+    return match ($this->method) {
+        'avg' => $query->avg($column),
+        'sum' => $query->sum($column),
+        'min' => $query->min($column),
+        'max' => $query->max($column),
+        default => $query->count(),
+    };
 }
 ```
 
@@ -965,12 +1148,12 @@ public function getComplexMetric()
 ### 2. User Experience
 
 ```php
-// Loading states
+// Loading states (use $loaded property from base Widget class)
 public function render()
 {
     return view('widgets.custom', [
-        'loading' => $this->loading,
-        'data' => $this->loading ? [] : $this->getData(),
+        'loaded' => $this->loaded,
+        'data' => $this->loaded ? $this->getData() : [],
     ]);
 }
 

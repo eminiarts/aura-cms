@@ -184,6 +184,7 @@ class Project extends Resource
         static::addGlobalScope(new TeamScope);
     }
 }
+```
 
 <a name="component-customization"></a>
 ### Component Customization
@@ -360,15 +361,15 @@ class User extends BaseUser
 
 ```php
 'views' => [
-    'layout' => 'aura::components.layout.app',
-    'login-layout' => 'aura::components.layout.login',
+    'layout' => 'aura::layouts.app',
+    'login-layout' => 'aura::layout.login',
     'dashboard' => 'aura::dashboard',
     'index' => 'aura::index',
     'view' => 'aura::view',
     'create' => 'aura::create',
     'edit' => 'aura::edit',
     'navigation' => 'aura::components.navigation',
-    'logo' => 'aura::components.application-logo',
+    'logo' => 'aura::application-logo',
 ],
 ```
 
@@ -753,11 +754,11 @@ class RevenueWidget extends Widget
         'web',
     ],
     'aura-base' => [          // Base stack for all routes
-        \App\Http\Middleware\EncryptCookies::class,
+        \Aura\Base\Http\Middleware\EncryptCookies::class,
         \Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse::class,
         \Illuminate\Session\Middleware\StartSession::class,
         \Illuminate\View\Middleware\ShareErrorsFromSession::class,
-        \App\Http\Middleware\VerifyCsrfToken::class,
+        \Aura\Base\Http\Middleware\VerifyCsrfToken::class,
         \Illuminate\Routing\Middleware\SubstituteBindings::class,
     ],
 ],

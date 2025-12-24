@@ -57,31 +57,51 @@ Aura CMS provides two PHPUnit configurations:
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
 <phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:noNamespaceSchemaLocation="vendor/phpunit/phpunit/phpunit.xsd"
+         xsi:noNamespaceSchemaLocation="https://schema.phpunit.de/10.1/phpunit.xsd"
+         backupGlobals="false"
          bootstrap="vendor/autoload.php"
          colors="true"
+         processIsolation="false"
+         stopOnFailure="false"
+         executionOrder="default"
+         failOnWarning="true"
+         failOnRisky="true"
+         failOnEmptyTestSuite="true"
+         beStrictAboutOutputDuringTests="true"
+         cacheDirectory=".phpunit.cache"
 >
     <testsuites>
-        <testsuite name="Aura CMS Test Suite">
+        <testsuite name="Eminiarts Test Suite">
             <directory>tests</directory>
         </testsuite>
     </testsuites>
     <php>
+        <env name="APP_KEY" value="base64:2fl+Ktvkfl+Fuz4Qp/A75G2RTiWVA/ZoKZvp6fiiM10="/>
         <env name="APP_ENV" value="testing"/>
+        <env name="BCRYPT_ROUNDS" value="4"/>
+        <env name="CACHE_DRIVER" value="array"/>
         <env name="DB_CONNECTION" value="sqlite"/>
         <env name="DB_DATABASE" value=":memory:"/>
-        <env name="CACHE_DRIVER" value="array"/>
-        <env name="SESSION_DRIVER" value="array"/>
+        <env name="MAIL_MAILER" value="array"/>
         <env name="QUEUE_CONNECTION" value="sync"/>
+        <env name="SESSION_DRIVER" value="array"/>
+        <env name="TELESCOPE_ENABLED" value="false"/>
     </php>
+    <source>
+        <include>
+            <directory suffix=".php">./src</directory>
+        </include>
+    </source>
 </phpunit>
 ```
 
 **Without Teams Configuration** (`phpunit-without-teams.xml`):
+
+Same as standard configuration with one additional environment variable:
 ```xml
 <php>
+    <!-- All standard environment variables plus: -->
     <env name="AURA_TEAMS" value="false"/>
-    <!-- Other configurations same as standard -->
 </php>
 ```
 
@@ -90,63 +110,180 @@ Aura CMS provides two PHPUnit configurations:
 Configure Pest in `tests/Pest.php`:
 
 ```php
+use Aura\Base\Resources\Role;
+use Aura\Base\Resources\Team;
+use Aura\Base\Resources\User;
+use Aura\Base\Tests\Resources\Post;
+use Illuminate\Foundation\Testing\DatabaseMigrations;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+
 uses(Aura\Base\Tests\TestCase::class)->in(__DIR__);
 
 // Define test groups
 uses()->group('fields')->in('Feature/Fields');
-uses()->group('resource')->in('Feature/Resource');
+uses()->group('flows')->in('Feature/Flows');
 uses()->group('table')->in('Feature/Table');
+uses()->group('resource')->in('Feature/Resource');
+
+// Apply database traits
+uses(RefreshDatabase::class)->in('Feature');
+uses(DatabaseMigrations::class)->in('FeatureWithDatabaseMigrations');
+
+// Reset Aura facade after each test to prevent pollution
+uses()->afterEach(function () {
+    app()->forgetInstance(\Aura\Base\Aura::class);
+    app()->singleton(\Aura\Base\Aura::class);
+    \Aura\Base\Facades\Aura::clearResolvedInstances();
+})->in('Feature', 'FeatureWithDatabaseMigrations');
 
 // Global test helpers
 function createSuperAdmin()
 {
     $user = User::factory()->create();
     auth()->login($user);
-    
-    if (config('aura.teams')) {
-        $team = Team::factory()->create();
-        $user->teams()->attach($team);
-        $user->switchTeam($team);
+
+    // Create Team
+    $team = Team::factory()->create();
+    $user->update(['current_team_id' => $team->id]);
+
+    // Clear cache to ensure TeamScope uses updated value
+    \Illuminate\Support\Facades\Cache::forget("user_{$user->id}_current_team_id");
+
+    // Create or find Super Admin role with race condition handling
+    $role = Role::withoutGlobalScope(\Aura\Base\Models\Scopes\TeamScope::class)
+        ->where('team_id', $team->id)
+        ->where('slug', 'super_admin')
+        ->first();
+
+    if (! $role) {
+        $role = Role::create([
+            'team_id' => $team->id,
+            'slug' => 'super_admin',
+            'type' => 'Role',
+            'title' => 'Super Admin',
+            'name' => 'Super Admin',
+            'super_admin' => true,
+            'permissions' => [],
+            'user_id' => $user->id,
+        ]);
     }
-    
+
+    // Associate role with user
+    if (config('aura.teams')) {
+        $user->roles()->syncWithPivotValues([$role->id], ['team_id' => $team->id]);
+    } else {
+        $user->roles()->sync([$role->id]);
+    }
+
+    $user->refresh();
+    return $user;
+}
+
+function createSuperAdminWithoutTeam()
+{
+    $user = User::factory()->create();
+    auth()->login($user);
+
+    $role = Role::create([
+        'type' => 'Role',
+        'title' => 'Super Admin',
+        'slug' => 'super_admin',
+        'name' => 'Super Admin',
+        'super_admin' => true,
+        'permissions' => [],
+        'user_id' => $user->id,
+    ]);
+
+    $user->roles()->sync([$role->id]);
+    $user->refresh();
+
+    return $user;
+}
+
+function createAdmin()
+{
+    $user = User::factory()->create();
+
+    if (! $team = Team::first()) {
+        $team = Team::factory()->create();
+    }
+
+    $user->update(['current_team_id' => $team->id]);
+
+    $role = Role::create([
+        'team_id' => $team->id,
+        'type' => 'Role',
+        'title' => 'Admin',
+        'slug' => 'admin',
+        'name' => 'Admin',
+        'super_admin' => false,
+        'permissions' => [
+            'view-attachment' => true,
+            'viewAny-attachment' => true,
+            'create-attachment' => true,
+            // ... more permissions
+        ],
+    ]);
+
+    if (config('aura.teams')) {
+        $user->roles()->syncWithPivotValues([$role->id], ['team_id' => $team->id]);
+    } else {
+        $user->roles()->sync([$role->id]);
+    }
+
+    $user->refresh();
     return $user;
 }
 
 function createPost(array $attributes = []): Post
 {
-    return Post::factory()->create(array_merge([
-        'type' => 'Post',
-        'title' => fake()->sentence(),
-        'user_id' => auth()->id() ?? 1,
-        'team_id' => auth()->user()?->currentTeam?->id ?? 1,
-    ], $attributes));
+    return Post::factory()->create($attributes);
 }
 ```
+
+### Helper Function Summary
+
+| Function | Description |
+|----------|-------------|
+| `createSuperAdmin()` | Creates a super admin user with team and full permissions |
+| `createSuperAdminWithoutTeam()` | Creates a super admin without team context |
+| `createAdmin()` | Creates an admin user with limited, configurable permissions |
+| `createPost()` | Creates a test post using the factory |
 
 ### Running Tests
 
 ```bash
-# Run all tests
+# Run all tests (parallel, no coverage)
 composer test
-./vendor/bin/pest
+# or
+vendor/bin/pest --parallel
 
 # Run specific test file
-./vendor/bin/pest tests/Feature/ResourceTest.php
+vendor/bin/pest tests/Feature/Fields/TextFieldTest.php
+
+# Run specific test by name
+vendor/bin/pest --filter "Text Field - Default Value set"
 
 # Run specific test group
-./vendor/bin/pest --group=fields
+vendor/bin/pest --group=fields
+vendor/bin/pest --group=flows
+vendor/bin/pest --group=table
+vendor/bin/pest --group=resource
 
-# Run with coverage
-XDEBUG_MODE=coverage ./vendor/bin/pest --coverage --min=80
+# Run with coverage (requires Xdebug)
+XDEBUG_MODE=coverage vendor/bin/pest --coverage --min=80
 
-# Run without teams
-./vendor/bin/pest -c phpunit-without-teams.xml
+# Run without teams feature
+vendor/bin/pest -c phpunit-without-teams.xml
 
-# Run in parallel
-./vendor/bin/pest --parallel
+# Run in parallel (default with composer test)
+vendor/bin/pest --parallel
 
 # Stop on first failure
-./vendor/bin/pest --bail
+vendor/bin/pest --bail
+
+# Profile slow tests
+vendor/bin/pest --profile
 ```
 
 ## Testing Architecture
@@ -155,79 +292,130 @@ XDEBUG_MODE=coverage ./vendor/bin/pest --coverage --min=80
 
 ```
 tests/
-├── Feature/                 # Integration tests
-│   ├── Aura/               # Core functionality
-│   ├── Auth/               # Authentication
-│   ├── Commands/           # Artisan commands
-│   ├── Fields/             # Field types
-│   ├── Livewire/           # Components
-│   ├── Media/              # File handling
-│   ├── Permissions/        # Authorization
-│   ├── Resource/           # Resources
-│   └── Table/              # Table component
-├── Unit/                   # Isolated unit tests
-├── Browser/                # Dusk tests (optional)
-├── TestCase.php           # Base test class
-└── Pest.php               # Pest configuration
+├── Feature/                          # Integration tests
+│   ├── Aura/                         # Core functionality tests
+│   ├── Auth/                         # Authentication tests
+│   ├── Commands/                     # Artisan command tests
+│   ├── Fields/                       # Field type tests
+│   ├── Media/                        # File handling tests
+│   ├── Policies/                     # Policy tests
+│   ├── Resource/                     # Resource tests
+│   ├── Table/                        # Table component tests
+│   ├── Team/                         # Team management tests
+│   └── Widgets/                      # Widget tests
+├── FeatureWithDatabaseMigrations/   # Tests requiring full migrations
+├── Mocks/                            # Mock classes for testing
+├── Resources/                        # Test resource classes
+├── Unit/                             # Isolated unit tests
+│   └── Fields/                       # Field unit tests
+├── Factories/                        # Test factories
+├── TestCase.php                      # Base test class
+└── Pest.php                          # Pest configuration
 ```
 
 ### Base Test Class
 
-Create a base test class that extends Aura's TestCase:
+Aura CMS provides a base test class in `tests/TestCase.php`:
 
 ```php
-namespace Tests;
+namespace Aura\Base\Tests;
 
-use Aura\Base\Tests\TestCase as BaseTestCase;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Aura\Base\AuraServiceProvider;
+use Illuminate\Database\Eloquent\Factories\Factory;
+use Illuminate\Foundation\Testing\Concerns\InteractsWithViews;
+use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
+use Orchestra\Testbench\TestCase as Orchestra;
 
-abstract class TestCase extends BaseTestCase
+class TestCase extends Orchestra
 {
-    use RefreshDatabase;
-    
+    use InteractsWithViews;
+    use LazilyRefreshDatabase;
+
     protected function setUp(): void
     {
         parent::setUp();
-        
-        // Additional setup
+
         $this->withoutVite();
-        
-        // Create default super admin
-        $this->actingAs(createSuperAdmin());
+
+        config()->set('app.env', 'testing');
+        config()->set('filesystems.default', 'local');
+
+        Factory::guessFactoryNamesUsing(
+            fn (string $modelName) => 'Aura\\Base\\Database\\Factories\\'.class_basename($modelName).'Factory'
+        );
+    }
+
+    public function getEnvironmentSetUp($app)
+    {
+        config()->set('database.default', 'testing');
+        config()->set('app.env', 'testing');
+        config()->set('livewire.temporary_file_upload.disk', 'local');
+
+        // Run Aura migrations
+        $migration = require __DIR__.'/../database/migrations/create_aura_tables.php.stub';
+        $migration->up();
+    }
+
+    protected function getPackageProviders($app)
+    {
+        return [
+            \Livewire\LivewireServiceProvider::class,
+            \Laravel\Fortify\FortifyServiceProvider::class,
+            \Aura\Base\Providers\AuthServiceProvider::class,
+            AuraServiceProvider::class,
+            \Lab404\Impersonate\ImpersonateServiceProvider::class,
+        ];
     }
 }
 ```
+
+**Key features:**
+- Uses `LazilyRefreshDatabase` for optimized test performance
+- Uses `InteractsWithViews` for Blade component testing
+- Automatically configures factories with Aura's namespace
+- Disables Vite during tests
+- Runs Aura's migrations automatically
 
 ## Writing Tests
 
 ### Basic Test Structure
 
 ```php
-describe('Product Resource', function () {
-    beforeEach(function () {
-        $this->user = createSuperAdmin();
-        $this->actingAs($this->user);
-    });
-    
-    test('can create a product', function () {
-        $response = $this->post(route('aura.products.store'), [
-            'name' => 'Test Product',
-            'price' => 99.99,
-            'status' => 'active',
-        ]);
-        
-        $response->assertRedirect();
-        
-        expect(Product::where('name', 'Test Product')->exists())->toBeTrue();
-    });
-    
-    it('validates required fields', function () {
-        $response = $this->post(route('aura.products.store'), []);
-        
-        $response->assertSessionHasErrors(['name', 'price']);
-    });
+<?php
+
+use Aura\Base\Livewire\Resource\Create;
+use Aura\Base\Facades\Aura;
+use function Pest\Livewire\livewire;
+
+// Before each test, create a Superadmin and login
+beforeEach(function () {
+    $this->actingAs($this->user = createSuperAdmin());
+});
+
+test('can create a product', function () {
+    Aura::fake();
+    Aura::setModel(new ProductResource);
+
+    livewire(Create::class, ['slug' => 'products'])
+        ->set('form.fields.name', 'Test Product')
+        ->set('form.fields.price', 99.99)
+        ->call('save')
+        ->assertHasNoErrors();
+
+    expect(Product::where('name', 'Test Product')->exists())->toBeTrue();
+});
+
+test('validates required fields', function () {
+    Aura::fake();
+    Aura::setModel(new ProductResource);
+
+    livewire(Create::class, ['slug' => 'products'])
+        ->call('save')
+        ->assertHasErrors(['form.fields.name' => 'required']);
 });
 ```
+
+**Note:** Aura CMS tests typically use Livewire component testing with `Pest\Livewire\livewire()` helper rather than HTTP route testing. The `Aura::fake()` method is used to isolate tests from global resource registration.
 
 ### Using Expectations
 
@@ -475,14 +663,23 @@ test('custom color picker field', function () {
 
 ### Basic Component Testing
 
+Aura CMS uses `Pest\Livewire\livewire()` helper for cleaner syntax:
+
 ```php
+use function Pest\Livewire\livewire;
+
+// For Livewire facade style (also supported):
 use Livewire\Livewire;
 
 test('dashboard component loads', function () {
-    Livewire::test(Dashboard::class)
+    // Using Pest helper (preferred)
+    livewire(Dashboard::class)
         ->assertOk()
-        ->assertSee('Welcome to Aura CMS')
-        ->assertSeeLivewire('aura::widgets.stats');
+        ->assertSee('Welcome to Aura CMS');
+
+    // Using Livewire facade (alternative)
+    Livewire::test(Dashboard::class)
+        ->assertOk();
 });
 ```
 
@@ -824,49 +1021,57 @@ test('resource command with options', function () {
 
 ### GitHub Actions Configuration
 
-Create `.github/workflows/tests.yml`:
+Aura CMS uses the following workflow in `.github/workflows/run-tests.yml`:
 
 ```yaml
-name: Tests
+name: run-tests
 
 on:
   push:
-    branches: [main, develop]
+    branches: [main]
   pull_request:
     branches: [main]
 
 jobs:
   test:
-    runs-on: ubuntu-latest
-    
+    runs-on: ${{ matrix.os }}
     strategy:
+      fail-fast: true
       matrix:
-        php: [8.1, 8.2, 8.3]
-        laravel: [10.*, 11.*]
-        
+        os: [ubuntu-latest]
+        php: [8.2]
+        stability: [prefer-stable]
+
+    name: P${{ matrix.php }} - ${{ matrix.stability }} - ${{ matrix.os }}
+
     steps:
-      - uses: actions/checkout@v3
-      
+      - name: Checkout code
+        uses: actions/checkout@v4
+
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
           php-version: ${{ matrix.php }}
-          extensions: dom, curl, libxml, mbstring, zip, pcntl, pdo, sqlite, pdo_sqlite
-          coverage: xdebug
-          
+          extensions: dom, curl, libxml, mbstring, zip, pcntl, pdo, sqlite, pdo_sqlite, bcmath, soap, intl, gd, exif, iconv, imagick, fileinfo
+          coverage: none
+
+      - name: Setup problem matchers
+        run: |
+          echo "::add-matcher::${{ runner.tool_cache }}/php.json"
+          echo "::add-matcher::${{ runner.tool_cache }}/phpunit.json"
+
       - name: Install dependencies
         run: |
-          composer require "laravel/framework:${{ matrix.laravel }}" --no-interaction --no-update
-          composer update --prefer-dist --no-interaction
-          
+          composer require "laravel/framework:11.*" "orchestra/testbench:^9.0" --no-interaction --no-update
+          composer update --${{ matrix.stability }} --prefer-dist --no-interaction
+
       - name: Execute tests
-        run: vendor/bin/pest --coverage --min=80
-        
-      - name: Upload coverage
-        uses: codecov/codecov-action@v3
-        with:
-          file: ./coverage.xml
+        run: vendor/bin/pest
 ```
+
+Additional CI workflows available:
+- `phpstan.yml` - Static analysis with PHPStan
+- `fix-php-code-style-issues.yml` - Code formatting with Pint (auto-commits fixes)
 
 ### GitLab CI Configuration
 
@@ -1159,6 +1364,30 @@ expect($product)->toBeActiveResource();
 
 > 📹 **Video Placeholder**: [Complete walkthrough of setting up and running tests in Aura CMS, including CI/CD integration]
 
+## Common Gotchas
+
+When testing Aura CMS applications, be aware of these common issues:
+
+1. **Team Scope**: Most models use `TeamScope`. Use `withoutGlobalScope()` to bypass in tests:
+   ```php
+   Role::withoutGlobalScope(\Aura\Base\Models\Scopes\TeamScope::class)
+       ->where('team_id', $team->id)
+       ->first();
+   ```
+
+2. **Aura Facade Reset**: Tests reset the Aura facade after each test to prevent pollution. This is handled automatically by the `afterEach` hook in `Pest.php`.
+
+3. **Meta Fields**: Resources can store fields in a `meta` table. Check `usesMeta()` when testing field storage.
+
+4. **Type Column**: The `posts` table uses a `type` column for single-table inheritance. Be aware of this when testing resources.
+
+5. **Cache Clearing**: When testing user role changes, clear the team cache:
+   ```php
+   \Illuminate\Support\Facades\Cache::forget("user_{$user->id}_current_team_id");
+   ```
+
+6. **Race Conditions**: The `createSuperAdmin()` helper handles role creation race conditions - use it as a reference pattern.
+
 ## Pro Tips
 
 1. **Use Parallel Testing**: Run tests in parallel for faster execution with `--parallel`
@@ -1171,6 +1400,7 @@ expect($product)->toBeActiveResource();
 8. **Database Transactions**: Tests automatically rollback, keeping DB clean
 9. **HTTP Testing**: Use Laravel's HTTP client for external API testing
 10. **Browser Testing**: Add Dusk for E2E testing when needed
+11. **Use Aura::fake()**: Isolate resource registration in tests with `Aura::fake()`
 
 ## Common Testing Patterns
 

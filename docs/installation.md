@@ -14,6 +14,7 @@ Aura CMS transforms your Laravel application into a powerful content management 
 - [Post-Installation Setup](#post-installation-setup)
 - [Troubleshooting](#troubleshooting)
 - [Deployment](#deployment)
+- [Available Artisan Commands](#available-commands)
 - [Next Steps](#next-steps)
 
 <a name="requirements"></a>
@@ -24,7 +25,7 @@ Aura CMS transforms your Laravel application into a powerful content management 
 | Component | Version | Notes |
 |-----------|---------|-------|
 | **PHP** | >= 8.2 | With extensions: BCMath, Ctype, JSON, Mbstring, OpenSSL, PDO, Tokenizer, XML |
-| **Laravel** | >= 11.x | Fresh or existing installation |
+| **Laravel** | 10.x, 11.x, or 12.x | Fresh or existing installation |
 | **Composer** | >= 2.0 | Latest version recommended |
 | **Database** | MySQL 8.0+, PostgreSQL 12+, SQLite 3.8.8+, SQL Server 2017+ | MySQL/PostgreSQL recommended for production |
 | **Node.js** | >= 18.x | For asset compilation (optional but recommended) |
@@ -37,7 +38,7 @@ Aura CMS transforms your Laravel application into a powerful content management 
 php -m | grep -E 'bcmath|ctype|json|mbstring|openssl|pdo|tokenizer|xml|gd|imagick'
 ```
 
-> **Pro Tip**: For image processing, install either GD or ImageMagick PHP extension. ImageMagick provides better quality for image manipulation.
+> **Pro Tip**: Aura CMS uses the `intervention/image` package (v2.7 or v3.0) for image processing. Install either the GD or ImageMagick PHP extension. ImageMagick provides better quality for image manipulation.
 
 <a name="quick-installation"></a>
 ## Quick Installation
@@ -92,7 +93,7 @@ Ensure your existing application meets the requirements:
 
 ```bash
 # Check Laravel version
-php artisan --version  # Should be >= 11.x
+php artisan --version  # Should be 10.x, 11.x, or 12.x
 
 # Update dependencies
 composer update
@@ -149,39 +150,53 @@ php artisan aura:install
 You'll see output like this:
 
 ```
- ┌─────────────────────────────────────────────────────────────┐
- │                  Welcome to Aura CMS Setup                   │
- └─────────────────────────────────────────────────────────────┘
+Hello, thank you for installing Aura!
 
- Publishing configuration files...
- Publishing assets...
- Publishing migrations...
+Publishing config file...
+Publishing assets...
+Publishing migrations...
+Copying Service Provider...
 
- ┌ Aura Configuration ─────────────────────────────────────────┐
- │ Do you want to modify the Aura configuration? (yes/no)     │
- └─────────────────────────────────────────────────────────────┘
- > 
+Do you want to extend the User model with AuraUser? (yes/no) [yes]:
+> yes
+
+User model successfully extended with AuraUser.
+
+Do you want to modify the aura configuration? (yes/no) [yes]:
+> yes
+
+Do you want to use teams? (yes/no) [yes]:
+> 
 ```
 
 #### Installation Options Explained
 
-1. **Extend User Model** (Automatic)
-   - The installer automatically updates your User model
-   - Adds necessary traits and relationships
+The installer performs the following steps in order:
 
-2. **Modify Configuration** (Recommended: Yes)
+1. **Publish Files** (Automatic)
+   - Publishes configuration files (`config/aura.php`, `config/aura-settings.php`)
+   - Publishes assets to `public/vendor/aura`
+   - Publishes migrations
+   - Copies and registers the Aura service provider
+
+2. **Extend User Model** (Prompted)
+   - The installer asks if you want to extend your `App\Models\User` model with `AuraUser`
+   - This adds necessary traits and relationships for Aura CMS functionality
+
+3. **Modify Configuration** (Prompted)
    - **Teams**: Enable multi-tenancy support
-   - **Features**: Toggle individual features
+   - **Features**: Toggle individual features (global search, bookmarks, notifications, etc.)
    - **Registration**: Allow public user registration
    - **Theme**: Customize colors and appearance
 
-3. **Run Migrations** (Recommended: Yes)
+4. **Run Migrations** (Prompted)
    - Creates all necessary database tables
-   - Includes users, teams, posts, meta, media tables
+   - Includes: users, posts, meta, post_relations, roles, permissions, options, teams (if enabled), team_invitations, notifications, jobs, job_batches, failed_jobs
 
-4. **Create Admin User** (Recommended: Yes)
-   - Sets up your first super admin account
-   - You'll need this to access the admin panel
+5. **Create Admin User** (Prompted)
+   - Runs `php artisan aura:user` to set up your first super admin account
+   - Creates a team (if teams enabled) and assigns the Super Admin role
+   - You'll need this account to access the admin panel
 
 ### Step 5: Verify Installation
 
@@ -359,56 +374,77 @@ docker-compose exec app php artisan aura:install
 
 The interactive installer allows you to configure Aura CMS during installation:
 
+### Published Configuration Files
+
+The installer publishes two configuration files:
+
+1. **`config/aura.php`** - Main configuration
+   - Admin path and domain
+   - Teams setting
+   - Theme settings
+   - Feature toggles
+   - Authentication options
+   - Media settings
+
+2. **`config/aura-settings.php`** - Application settings
+   - Resource paths and namespaces (`App\Aura\Resources`)
+   - Field paths and namespaces (`App\Aura\Fields`)
+   - Widget registration
+   - Middleware configuration
+
 ### Teams Configuration
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│ Do you want to use teams? (yes/no) [yes]:                  │
-└─────────────────────────────────────────────────────────────┘
+Do you want to use teams? (yes/no) [yes]:
 ```
 
-- **Yes**: Enables multi-tenant functionality
-- **No**: Single-tenant application
+- **Yes**: Enables multi-tenant functionality with team-based data isolation
+- **No**: Single-tenant application without team scoping
 
-> **Important**: Changing teams setting later requires fresh migration
+> **Important**: Changing the teams setting later requires running `php artisan migrate:fresh` to rebuild the database schema
 
 ### Features Configuration
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│ Do you want to modify the default features? (yes/no) [no]: │
-└─────────────────────────────────────────────────────────────┘
+Do you want to modify the default features? (yes/no) [no]:
 ```
 
 If yes, you can toggle:
-- Global Search (⇧⌘K)
-- Bookmarks
-- Recent Pages
-- Notifications
-- Settings Page
-- Resource Editor
-- And more...
+- **global_search**: Quick navigation with keyboard shortcut (⇧⌘K)
+- **bookmarks**: Save frequently accessed pages
+- **last_visited_pages**: Track recent pages
+- **notifications**: Enable notification system
+- **plugins**: Enable plugin system
+- **settings**: Enable settings page
+- **profile**: Enable user profile page
+- **create_resource**: Allow creating new resources
+- **resource_view**: Enable resource view pages
+- **resource_edit**: Enable resource editing
+- **resource_editor**: Visual resource editor (enabled by default only in local environment)
+- **custom_tables_for_resources**: Use custom tables instead of posts/meta tables (advanced)
 
 ### Theme Configuration
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│ Select value for 'color-palette':                           │
-│ > aura                                                      │
-│   blue                                                      │
-│   green                                                     │
-│   red                                                       │
-│   purple                                                    │
-│   ...                                                       │
-└─────────────────────────────────────────────────────────────┘
+Do you want to modify the default theme? (yes/no) [no]:
 ```
 
-Choose from 20+ color palettes and configure:
-- Primary color scheme
-- Gray palette
-- Dark mode behavior
-- Sidebar style
-- Login page background
+If yes, you can customize:
+
+**Color Palette** (`color-palette`):
+- Options: `aura`, `red`, `orange`, `amber`, `yellow`, `lime`, `green`, `emerald`, `teal`, `cyan`, `sky`, `blue`, `indigo`, `violet`, `purple`, `fuchsia`, `pink`, `rose`, `mountain-meadow`, `sandal`, `slate`, `gray`, `zinc`, `neutral`, `stone`
+
+**Gray Color Palette** (`gray-color-palette`):
+- Options: `slate`, `purple-slate`, `gray`, `zinc`, `neutral`, `stone`, `blue`, `smaragd`, `dark-slate`, `blackout`
+
+**Dark Mode** (`darkmode-type`):
+- Options: `auto`, `light`, `dark`
+
+**Sidebar Size** (`sidebar-size`):
+- Options: `standard`, `compact`
+
+**Sidebar Type** (`sidebar-type`):
+- Options: `primary`, `light`, `dark`
 
 <a name="post-installation-setup"></a>
 ## Post-Installation Setup
@@ -478,7 +514,10 @@ php artisan view:cache
 php artisan icons:cache  # If using Blade Icons
 
 # Clear all caches when needed
-php artisan aura:clear-cache
+php artisan cache:clear
+php artisan config:clear
+php artisan route:clear
+php artisan view:clear
 ```
 
 #### 5. Email Configuration
@@ -583,7 +622,10 @@ brew install php@8.2-gd php@8.2-imagick
 #### 5. Assets Not Loading
 
 ```bash
-# Republish assets
+# Republish assets using Aura's publish command
+php artisan aura:publish
+
+# Or manually republish
 php artisan vendor:publish --tag=aura-assets --force
 
 # Clear view cache
@@ -656,15 +698,13 @@ CACHE_DRIVER=redis
 
 #### 3. Database Indexing
 
-```bash
-# Run Aura's optimization command
-php artisan aura:optimize
+Aura CMS migrations automatically create optimized indexes for:
+- Meta table lookups (composite index on `metable_id`, `key`, `value`)
+- Resource type queries (index on `type`, `status`, `created_at`)
+- Team scoping (composite index on `team_id`, `type` when teams enabled)
+- Role and permission slug lookups
 
-# This creates indexes for:
-# - Meta table lookups
-# - Resource type queries
-# - Team scoping
-```
+No additional commands are needed - indexes are created during migration.
 
 <a name="deployment"></a>
 ## Deployment
@@ -730,7 +770,7 @@ services:
 // composer.json
 "scripts": {
     "post-install-cmd": [
-        "php artisan aura:publish --force"
+        "php artisan aura:publish"
     ]
 }
 ```
@@ -742,6 +782,45 @@ Set up monitoring for:
 - Performance metrics (New Relic, Datadog)
 - Uptime monitoring (Pingdom, UptimeRobot)
 - Log aggregation (Papertrail, Loggly)
+
+<a name="available-commands"></a>
+## Available Artisan Commands
+
+Aura CMS provides several artisan commands for development and maintenance:
+
+### Installation & Setup
+| Command | Description |
+|---------|-------------|
+| `php artisan aura:install` | Run the interactive installer |
+| `php artisan aura:install-config` | Configure Aura settings interactively |
+| `php artisan aura:extend-user-model` | Extend User model with AuraUser |
+| `php artisan aura:user` | Create a new super admin user |
+| `php artisan aura:publish` | Republish all Aura assets |
+
+### Resource Development
+| Command | Description |
+|---------|-------------|
+| `php artisan aura:resource` | Create a new Aura resource |
+| `php artisan aura:field` | Create a new custom field type |
+| `php artisan aura:plugin` | Create a new Aura plugin |
+| `php artisan aura:resource-migration` | Create migration for a resource |
+| `php artisan aura:resource-permissions` | Generate permissions for a resource |
+| `php artisan aura:resource-factory` | Create a factory for a resource |
+
+### Data Migration
+| Command | Description |
+|---------|-------------|
+| `php artisan aura:migrate-to-custom-table` | Migrate data from posts table to custom table |
+| `php artisan aura:transfer-to-custom-table` | Transfer resource data to custom table |
+| `php artisan aura:migrate-postmeta-to-meta` | Migrate post meta to meta table |
+
+### Utilities
+| Command | Description |
+|---------|-------------|
+| `php artisan aura:customize-component` | Customize a Livewire component |
+| `php artisan aura:database-to-resources` | Generate resources from database tables |
+| `php artisan aura:table-to-resource` | Transform a database table into a resource |
+| `php artisan aura:layout` | Generate Aura layout files |
 
 <a name="next-steps"></a>
 ## Next Steps

@@ -110,16 +110,18 @@ if (config('aura.teams')) {
 
 ### Role Properties
 
+The Role resource is stored in a dedicated `roles` table with the following properties:
+
 | Property | Type | Description | Example |
 |----------|------|-------------|---------|
 | `name` | string | Display name | "Content Editor" |
-| `slug` | string | Unique identifier | "content-editor" |
-| `description` | text | Role description | "Manages blog content" |
-| `permissions` | json | Permission array | `['create-post' => true]` |
-| `super_admin` | boolean | Bypass all checks | `false` |
-| `team_id` | integer | Team association | `1` |
-| `color` | string | UI color | "blue" |
-| `icon` | string | Role icon | "edit" |
+| `slug` | string | Unique identifier (auto-generated from name) | "content-editor" |
+| `description` | text | Role description (optional) | "Manages blog content" |
+| `permissions` | json | Permission array with boolean values | `['create-post' => true]` |
+| `super_admin` | boolean | Bypass all permission checks | `false` |
+| `team_id` | integer | Team association (when teams enabled) | `1` |
+
+**Note:** The `permissions` field is cast as an array and stores permission slugs as keys with boolean values. When `super_admin` is `true`, the permissions field is hidden in the UI since super admins bypass all checks.
 
 ### Built-in Roles
 
@@ -186,16 +188,27 @@ $user->roles()
 
 ### Permission Structure
 
-Permissions follow a consistent naming convention:
+Permissions are stored in the `permissions` table and follow a consistent naming convention:
 
 ```
-{action}-{resource}
+{action}-{resource-slug}
 ```
 
 Examples:
 - `create-post`
 - `viewAny-user`
 - `delete-product`
+- `scope-article`
+
+#### Permission Fields
+
+| Field | Type | Description | Example |
+|-------|------|-------------|---------|
+| `name` | string | Human-readable name | "Create Posts" |
+| `slug` | string | Unique identifier | "create-post" |
+| `description` | text | Optional description | "Allows creating new posts" |
+| `group` | string | Grouping for UI display | "Posts" |
+| `team_id` | integer | Team association (when teams enabled) | `1` |
 
 ### Resource Permissions
 
@@ -216,40 +229,48 @@ Each resource automatically gets these permissions:
 
 #### Adding Custom Permissions
 
-```php
-class Article extends Resource
-{
-    // Define custom permissions
-    public static function customPermissions(): array
-    {
-        return [
-            'publish-article' => 'Publish articles',
-            'feature-article' => 'Feature articles on homepage',
-            'moderate-article-comments' => 'Moderate article comments',
-        ];
-    }
-}
+Custom permissions can be added by creating Permission records directly. Roles store permissions as a JSON array, so you can include any permission slug in your role definitions:
 
-// In role creation
+```php
+use Aura\Base\Resources\Permission;
+
+// Create custom permissions in the database
+Permission::create([
+    'name' => 'Publish Articles',
+    'slug' => 'publish-article',
+    'group' => 'Articles',
+]);
+
+Permission::create([
+    'name' => 'Feature Articles',
+    'slug' => 'feature-article',
+    'group' => 'Articles',
+]);
+
+// In role creation, include both standard and custom permissions
 $editorRole = Role::create([
     'name' => 'Editor',
+    'slug' => 'editor',
     'permissions' => [
-        // Standard permissions
+        // Standard permissions (auto-generated)
         'create-article' => true,
         'update-article' => true,
         
         // Custom permissions
         'publish-article' => true,
         'feature-article' => false,
-        'moderate-article-comments' => true,
     ],
 ]);
 ```
 
-#### Checking Custom Permissions
+#### Checking Permissions
+
+The User model provides two methods for checking permissions:
+
+**`hasPermission($permission)`** - Check by permission slug string:
 
 ```php
-// In controllers
+// Check a specific permission by its slug
 if ($user->hasPermission('publish-article')) {
     $article->publish();
 }
@@ -258,12 +279,59 @@ if ($user->hasPermission('publish-article')) {
 @if(auth()->user()->hasPermission('feature-article'))
     <button>Feature on Homepage</button>
 @endif
+```
 
-// In policies
-public function publish(User $user, Article $article)
+**`hasPermissionTo($ability, $resource)`** - Check resource-based permission:
+
+```php
+// Check permission for a resource (used by policies)
+if ($user->hasPermissionTo('create', Post::class)) {
+    // Can create posts
+}
+
+if ($user->hasPermissionTo('update', $post)) {
+    // Can update this specific post
+}
+```
+
+**How permission checking works:**
+
+```php
+// From User resource - both methods iterate through user's roles
+public function hasPermission($permission)
 {
-    return $user->hasPermission('publish-article') || 
-           $user->id === $article->user_id;
+    $roles = $this->cachedRoles();
+
+    foreach ($roles as $role) {
+        // Super admin bypasses all checks
+        if ($role->super_admin) {
+            return true;
+        }
+
+        $permissions = $role->fields['permissions'];
+        
+        foreach ($permissions as $p => $value) {
+            if ($p == $permission && $value == true) {
+                return true;
+            }
+        }
+    }
+
+    return false;
+}
+```
+
+**Role-based checks:**
+
+```php
+// Check if user has a specific role
+if ($user->hasRole('editor')) {
+    // User has the editor role
+}
+
+// Check if user has any of the given roles
+if ($user->hasAnyRole(['editor', 'admin', 'moderator'])) {
+    // User has at least one of these roles
 }
 ```
 
@@ -273,29 +341,35 @@ public function publish(User $user, Article $article)
 
 ```bash
 # Generate permissions for all resources
-php artisan aura:generate-permissions
-
-# Generate for specific resource
-php artisan aura:generate-permissions --resource=Article
+php artisan aura:create-resource-permissions
 ```
 
-#### Manual Generation
+#### Via Role Action
+
+In the Roles resource, there's a built-in action called "Create Missing Permissions" that generates all missing permissions for registered resources.
+
+#### Programmatic Generation
 
 ```php
 use Aura\Base\Jobs\GenerateResourcePermissions;
+use Aura\Base\Jobs\GenerateAllResourcePermissions;
 
-// Generate permissions for a resource
+// Generate permissions for a single resource
 GenerateResourcePermissions::dispatch(Article::class);
 
-// In service provider
-public function boot()
-{
-    // Auto-generate on resource registration
-    Aura::afterRegisteringResource(function ($resource) {
-        GenerateResourcePermissions::dispatch($resource);
-    });
-}
+// Generate permissions for ALL registered resources
+GenerateAllResourcePermissions::dispatch();
 ```
+
+The generated permissions for each resource include:
+- `view-{slug}` - View single resource
+- `viewAny-{slug}` - List all resources
+- `create-{slug}` - Create new resource
+- `update-{slug}` - Edit existing resource
+- `restore-{slug}` - Restore deleted resource
+- `delete-{slug}` - Soft delete resource
+- `forceDelete-{slug}` - Permanently delete
+- `scope-{slug}` - Limit to own resources
 
 ## Authorization
 
@@ -305,50 +379,89 @@ Aura CMS uses Laravel's authorization system with enhanced resource policies:
 
 #### Resource Policy
 
+The `ResourcePolicy` handles authorization for all resources. Here's the actual implementation pattern:
+
 ```php
 namespace Aura\Base\Policies;
 
+use Illuminate\Auth\Access\HandlesAuthorization;
+
 class ResourcePolicy
 {
+    use HandlesAuthorization;
+
     public function viewAny($user, $resource)
     {
-        // Check if viewing is disabled
+        // Check if index view is disabled at resource level
         if ($resource::$indexViewEnabled === false) {
             return false;
         }
-        
+
         // Super admin bypass
         if ($user->isSuperAdmin()) {
             return true;
         }
-        
+
         // Check permission
-        return $user->hasPermissionTo('viewAny', $resource);
+        if ($user->hasPermissionTo('viewAny', $resource)) {
+            return true;
+        }
+
+        return false;
     }
-    
+
+    public function view($user, $resource)
+    {
+        // Check config-level setting
+        if (config('aura.resource-view-enabled') === false) {
+            return false;
+        }
+
+        // Check resource-level setting
+        if ($resource::$viewEnabled === false) {
+            return false;
+        }
+
+        if ($user->isSuperAdmin()) {
+            return true;
+        }
+
+        // Scoped: user can only view their own resources
+        if ($user->hasPermissionTo('scope', $resource) && 
+            $user->hasPermissionTo('view', $resource)) {
+            return $resource->user_id == $user->id;
+        }
+
+        return $user->hasPermissionTo('view', $resource);
+    }
+
     public function update($user, $resource)
     {
-        // Check if editing is disabled
         if ($resource::$editEnabled === false) {
             return false;
         }
-        
-        // Super admin bypass
+
         if ($user->isSuperAdmin()) {
             return true;
         }
-        
-        // Scoped permission check
+
+        // Scoped: user can only update their own resources
         if ($user->hasPermissionTo('scope', $resource) && 
             $user->hasPermissionTo('update', $resource)) {
-            return $resource->user_id === $user->id;
+            return $resource->user_id == $user->id;
         }
-        
-        // Standard permission check
+
         return $user->hasPermissionTo('update', $resource);
     }
 }
 ```
+
+**Key Policy Methods:**
+- `viewAny` - Checks `$indexViewEnabled` static property
+- `view` - Checks both config and `$viewEnabled` static property  
+- `create` - Checks `$createEnabled` static property
+- `update` - Checks `$editEnabled` static property
+- `delete`, `restore`, `forceDelete` - Standard permission checks with scope support
 
 #### Custom Gates
 
@@ -424,8 +537,8 @@ class ArticleController extends Controller
     <button>Publish</button>
 @endif
 
-{{-- Multiple permissions --}}
-@if(auth()->user()->hasAnyPermission(['edit-article', 'delete-article']))
+{{-- Check role instead of multiple permissions --}}
+@if(auth()->user()->hasAnyRole(['editor', 'admin']))
     <div class="actions">...</div>
 @endif
 ```
@@ -458,107 +571,210 @@ class ArticleForm extends Component
 
 ### Scoped Resources
 
-Limit users to their own resources:
+The `scope` permission limits users to only see and manage their **own** resources (where `user_id` matches the authenticated user).
+
+#### How Scoping Works
+
+Aura CMS automatically applies the `ScopedScope` global scope to all resources. When a user has the `scope-{resource}` permission, queries are automatically filtered:
 
 ```php
-// Grant scoped permission
-$role = Role::create([
-    'name' => 'Author',
-    'permissions' => [
-        'viewAny-post' => true,
-        'create-post' => true,
-        'update-post' => true,
-        'delete-post' => true,
-        'scope-post' => true, // KEY: Limits to own posts
-    ],
-]);
-
-// In queries
-public function index()
+// From src/Models/Scopes/ScopedScope.php
+class ScopedScope implements Scope
 {
-    $query = Post::query();
-    
-    // Apply scope if user has scoped permission
-    if (auth()->user()->hasPermission('scope-post') && 
-        !auth()->user()->isSuperAdmin()) {
-        $query->where('user_id', auth()->id());
+    public function apply(Builder $builder, Model $model)
+    {
+        // Super admins see everything
+        if (auth()->user()->isSuperAdmin()) {
+            return $builder;
+        }
+
+        // If user has scope permission, filter by user_id
+        if (auth()->user()->hasPermissionTo('scope', $model)) {
+            $builder->where($model->getTable().'.user_id', auth()->user()->id);
+        }
+
+        return $builder;
     }
-    
-    return $query->paginate();
 }
 ```
 
+#### Setting Up Scoped Permissions
+
+```php
+use Aura\Base\Resources\Role;
+
+// Create a role with scoped access
+$authorRole = Role::create([
+    'name' => 'Author',
+    'slug' => 'author',
+    'permissions' => [
+        'viewAny-post' => true,  // Can access post list
+        'view-post' => true,      // Can view posts
+        'create-post' => true,    // Can create posts
+        'update-post' => true,    // Can update posts
+        'delete-post' => true,    // Can delete posts
+        'scope-post' => true,     // KEY: Only see/edit OWN posts
+    ],
+]);
+```
+
+#### Scoping in Policies
+
+The `ResourcePolicy` also respects scope permissions for individual actions:
+
+```php
+// From ResourcePolicy - update method
+public function update($user, $resource)
+{
+    if ($user->isSuperAdmin()) {
+        return true;
+    }
+
+    // Scoped: check if user owns the resource
+    if ($user->hasPermissionTo('scope', $resource) && 
+        $user->hasPermissionTo('update', $resource)) {
+        // Can only update if user_id matches
+        return $resource->user_id == $user->id;
+    }
+
+    return $user->hasPermissionTo('update', $resource);
+}
+```
+
+#### Example Behavior
+
+| User Role | Has `scope-post` | Query Result |
+|-----------|------------------|--------------|
+| Super Admin | N/A | Sees ALL posts |
+| Editor | `false` | Sees ALL posts |
+| Author | `true` | Sees ONLY own posts |
+
+**Note:** Resources must have a `user_id` column for scoping to work. The `ScopedScope` skips Role and User resources to prevent recursion issues.
+
 ## Super Admin & Global Admin
+
+Aura CMS has two distinct concepts for elevated privileges: **Super Admin** (role-based) and **Global Admin** (gate-based).
 
 ### Super Admin Role
 
-Super Admin is a role-level flag that bypasses all permission checks:
+Super Admin is a `super_admin` flag on the Role model that bypasses **all** permission checks:
 
 ```php
+use Aura\Base\Resources\Role;
+
 // Create super admin role
 $superAdmin = Role::create([
     'name' => 'Super Admin',
     'slug' => 'super-admin',
     'super_admin' => true,
-    'permissions' => [], // Permissions ignored for super admin
+    'permissions' => [], // Permissions are ignored when super_admin is true
 ]);
 
-// Check if user is super admin
+// Assign to user
+$user->roles()->attach($superAdmin->id);
+
+// Check if user has any super admin role
 if ($user->isSuperAdmin()) {
-    // User has unlimited access
+    // User has unlimited access - all permission checks return true
+}
+```
+
+**How `isSuperAdmin()` works:**
+
+```php
+// From User resource (src/Resources/User.php)
+public function isSuperAdmin(): bool
+{
+    $roles = $this->cachedRoles();
+
+    if (!$roles) {
+        return false;
+    }
+
+    foreach ($roles as $role) {
+        if ($role->super_admin) {
+            return true;
+        }
+    }
+
+    return false;
 }
 ```
 
 #### Super Admin Capabilities
 
-- Bypass all permission checks
-- Access all resources regardless of scope
+- Bypass **all** permission checks in policies
+- Access all resources regardless of `scope` permission
+- Not affected by `ScopedScope` query restrictions
 - Perform any action in the system
-- Cannot be restricted by policies
+- See all resources across all scopes
 
 ### Global Admin (Aura Admin)
 
-Global Admin is defined via Laravel Gates for system-wide administration:
+Global Admin is defined via a Laravel Gate called `AuraGlobalAdmin`. This is for system-level administration that goes beyond normal permissions:
 
 ```php
-// Define in AppServiceProvider
-Gate::define('AuraGlobalAdmin', function (User $user) {
-    // Option 1: Email-based
+// Define in your AppServiceProvider boot() method
+use Illuminate\Support\Facades\Gate;
+
+Gate::define('AuraGlobalAdmin', function ($user) {
+    // Option 1: By email whitelist
     return in_array($user->email, [
         'admin@example.com',
         'superadmin@example.com',
     ]);
     
-    // Option 2: Role-based
+    // Option 2: By role
     return $user->hasRole('global-admin');
     
-    // Option 3: Custom logic
-    return $user->id === 1 || $user->is_founder;
+    // Option 3: By super admin status
+    return $user->isSuperAdmin();
+    
+    // Option 4: Custom logic
+    return $user->id === 1;
 });
+```
 
-// Check if user is global admin
+**Check Global Admin status:**
+
+```php
+// The User model provides this method
 if ($user->isAuraGlobalAdmin()) {
-    // User can manage system settings
+    // User can access global admin features
+}
+
+// Implementation uses Gate::allows()
+public function isAuraGlobalAdmin(): bool
+{
+    return Gate::allows('AuraGlobalAdmin');
 }
 ```
 
 #### Global Admin Capabilities
 
-- Manage all teams (even if not a member)
-- Create teams beyond limits
-- Impersonate any user
-- Access system settings
-- View all resources across teams
+- **Impersonate** any user (except other Global Admins)
+- Access system-wide settings
+- Manage resources in **all teams** (cross-team access)
+- Perform admin actions not tied to specific permissions
 
 ### Comparison
 
 | Feature | Super Admin | Global Admin |
-|---------|-------------|---------------|
-| Bypass permissions | ✓ | ✗ |
-| Manage all teams | ✓ | ✓ |
-| System settings | ✓ | ✓ |
-| Defined by | Role flag | Gate |
-| Team-scoped | ✗ | ✗ |
+|---------|-------------|--------------|
+| Bypass all permissions | ✓ | ✗ |
+| Bypass scope restrictions | ✓ | ✗ |
+| Impersonate users | Requires Global Admin | ✓ |
+| Access all teams | ✓ | ✓ |
+| Defined by | `super_admin` flag on Role | `AuraGlobalAdmin` Gate |
+| Checked via | `$user->isSuperAdmin()` | `$user->isAuraGlobalAdmin()` |
+
+**Typical Setup:** Most installations make Super Admins also Global Admins:
+
+```php
+Gate::define('AuraGlobalAdmin', function ($user) {
+    return $user->isSuperAdmin();
+});
+```
 
 ## Team-Based Permissions
 
@@ -850,39 +1066,78 @@ dd([
 ```php
 // Check role assignment
 $user = User::find(1);
+
+// Get all roles for the user
+$roles = $user->roles;
+
+// Get roles for current team (when teams enabled)
+$teamRoles = $user->roles()
+    ->wherePivot('team_id', $user->current_team_id)
+    ->get();
+
+// Check specific permission
+$hasPermission = $user->hasPermission('create-post');
+
+// Check if super admin
+$isSuperAdmin = $user->isSuperAdmin();
+
 dd([
-    'roles' => $user->roles,
-    'team_roles' => $user->roles()->wherePivot('team_id', $user->current_team_id)->get(),
-    'all_permissions' => $user->getAllPermissions(),
+    'roles' => $roles->pluck('slug'),
+    'team_roles' => $teamRoles->pluck('slug'),
+    'is_super_admin' => $isSuperAdmin,
+    'has_permission' => $hasPermission,
 ]);
 ```
 
 ### Policy Not Called
 
+Aura CMS uses `ResourcePolicy` for all resources by default. If you need a custom policy:
+
 ```php
-// Ensure policy is registered
-// In AuthServiceProvider
+// Option 1: Register in AuthServiceProvider
 protected $policies = [
-    Article::class => ArticlePolicy::class,
+    \App\Aura\Resources\Article::class => \App\Policies\ArticlePolicy::class,
 ];
 
-// Or use auto-discovery
-public function boot()
+// Option 2: Create a policy that extends ResourcePolicy
+namespace App\Policies;
+
+use Aura\Base\Policies\ResourcePolicy;
+
+class ArticlePolicy extends ResourcePolicy
 {
-    Gate::guessPolicyNamesUsing(function ($modelClass) {
-        return 'App\\Policies\\' . class_basename($modelClass) . 'Policy';
-    });
+    // Override specific methods as needed
+    public function publish($user, $article)
+    {
+        if ($user->isSuperAdmin()) {
+            return true;
+        }
+        
+        return $user->hasPermission('publish-article');
+    }
 }
 ```
+
+**Common issues:**
+- Make sure the resource class matches what's registered in the policy
+- Check that `ResourcePolicy` is being used (Aura registers it automatically)
+- Verify the user is authenticated when making authorization checks
 
 ### Team Permission Issues
 
 ```php
 // Verify team context
+$user = auth()->user();
+
 dd([
-    'current_team' => auth()->user()->current_team_id,
-    'team_roles' => auth()->user()->currentTeamRoles(),
-    'belongs_to_team' => auth()->user()->belongsToTeam($team),
+    'current_team_id' => $user->current_team_id,
+    'current_team' => $user->currentTeam,
+    'all_teams' => $user->teams->pluck('name', 'id'),
+    'roles_for_current_team' => $user->roles()
+        ->wherePivot('team_id', $user->current_team_id)
+        ->get()
+        ->pluck('slug'),
+    'belongs_to_team' => $user->belongsToTeam($team),
 ]);
 ```
 

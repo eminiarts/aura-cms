@@ -13,6 +13,7 @@ Aura CMS provides a comprehensive theming system that gives you complete control
 - [Custom Themes](#custom-themes)
 - [CSS Variables](#css-variables)
 - [Tailwind Integration](#tailwind-integration)
+- [Login Page Customization](#login-page-customization)
 - [Team-Specific Themes](#team-specific-themes)
 - [Advanced Customization](#advanced-customization)
 - [Theme Development](#theme-development)
@@ -20,12 +21,13 @@ Aura CMS provides a comprehensive theming system that gives you complete control
 ## Overview
 
 The Aura theme system provides:
-- **29+ Primary Color Palettes**: Pre-designed color schemes
-- **14 Gray Palettes**: Neutral color options
+- **35+ Primary Color Palettes**: Pre-designed color schemes
+- **15 Gray Palettes**: Neutral color options
 - **Dark Mode Support**: Auto, light, or dark modes
 - **Sidebar Customization**: Independent sidebar theming
 - **Custom Colors**: Create your own color schemes
 - **Per-Team Themes**: Different themes for different teams
+- **Login Page Customization**: Custom backgrounds and favicons
 - **Live Preview**: Real-time theme updates
 
 > 📹 **Video Placeholder**: [Overview of Aura's theme system showing color palette selection, dark mode switching, and live preview functionality]
@@ -61,23 +63,31 @@ Set default theme options in `config/aura.php`:
 ```php
 return [
     'theme' => [
-        // Dark mode: auto, light, dark
-        'darkmode-type' => 'auto',
-        
         // Primary color palette
         'color-palette' => 'aura',
         
         // Gray color palette
         'gray-color-palette' => 'slate',
         
-        // Sidebar theme: primary, light, dark
-        'sidebar-type' => 'primary',
+        // Dark mode: auto, light, dark
+        'darkmode-type' => 'auto',
         
         // Sidebar size: standard, compact
         'sidebar-size' => 'standard',
         
+        // Sidebar theme: primary, light, dark
+        'sidebar-type' => 'primary',
+        
         // Dark mode sidebar theme
-        'sidebar-darkmode-type' => 'primary',
+        'sidebar-darkmode-type' => 'dark',
+        
+        // Login page background image (path or false)
+        'login-bg' => false,
+        'login-bg-darkmode' => false,
+        
+        // Application favicon (path or false)
+        'app-favicon' => false,
+        'app-favicon-darkmode' => false,
     ],
 ];
 ```
@@ -114,54 +124,80 @@ $isDark = $darkMode === 'dark' ||
 
 ### Primary Color Palettes
 
-Aura includes 29 professionally designed primary color palettes:
+Aura includes 35+ professionally designed primary color palettes:
 
-| Palette | Description | Primary Color |
-|---------|-------------|---------------|
-| `aura` | Default Aura blue | #3B82F6 |
-| `red` | Vibrant red | #EF4444 |
-| `orange` | Warm orange | #F97316 |
-| `amber` | Golden amber | #F59E0B |
-| `yellow` | Bright yellow | #EAB308 |
-| `lime` | Fresh lime | #84CC16 |
-| `forest-green` | Deep forest | #22863A |
-| `green` | Classic green | #10B981 |
-| `emerald` | Rich emerald | #059669 |
-| `mountain-meadow` | Natural meadow | #0E9F6E |
-| `teal` | Ocean teal | #14B8A6 |
-| `cyan` | Bright cyan | #06B6D4 |
-| `sky` | Light sky blue | #0EA5E9 |
-| `blue` | Classic blue | #3B82F6 |
-| `indigo` | Deep indigo | #6366F1 |
-| `violet` | Rich violet | #8B5CF6 |
-| `purple` | Royal purple | #A855F7 |
-| `fuchsia` | Vibrant fuchsia | #D946EF |
-| `pink` | Soft pink | #EC4899 |
-| `rose` | Romantic rose | #F43F5E |
+| Palette | Description | Use Case |
+|---------|-------------|----------|
+| `aura` | Default Aura blue | Professional, corporate |
+| `red` | Vibrant red | Alerts, urgency |
+| `orange` | Warm orange | Energy, creativity |
+| `amber` | Golden amber | Warmth, attention |
+| `yellow` | Bright yellow | Optimism, clarity |
+| `lime` | Fresh lime | Growth, freshness |
+| `forest-green` | Deep forest green | Nature, stability |
+| `green` | Classic green | Success, growth |
+| `emerald` | Rich emerald | Luxury, balance |
+| `mountain-meadow` | Natural meadow teal | Fresh, organic |
+| `teal` | Ocean teal | Calm, sophisticated |
+| `ocean-breeze` | Soft ocean blue | Tranquil, refreshing |
+| `cyan` | Bright cyan | Modern, tech |
+| `sky` | Light sky blue | Open, friendly |
+| `blue` | Classic blue | Trust, reliability |
+| `indigo` | Deep indigo | Wisdom, depth |
+| `violet` | Rich violet | Creativity, luxury |
+| `purple` | Royal purple | Premium, imaginative |
+| `fuchsia` | Vibrant fuchsia | Bold, playful |
+| `pink` | Soft pink | Gentle, caring |
+| `rose` | Romantic rose | Elegant, passionate |
 
-Additional palettes:
-- `cerulean`, `celestial-blue`, `picton-blue`, `united-nations`, `resolution-blue`, `comet`, `midnight`, `mulled-wine`
+**Neutral/Earth Tone Palettes:**
+
+| Palette | Description |
+|---------|-------------|
+| `sandal` | Warm sandy beige |
+| `desert-sand` | Earthy desert tones |
+| `salmon` | Soft coral salmon |
+| `autumn-rust` | Rich autumn rust |
+
+**Monochrome/Gray-Based Primary Palettes:**
+
+| Palette | Description |
+|---------|-------------|
+| `slate` | Cool blue-gray |
+| `dark-slate` | Deeper blue-gray |
+| `blackout` | High contrast near-black |
+| `obsidian` | Deep volcanic black |
+| `amethyst` | Purple-tinted gray |
+| `opal` | Soft blue-tinted gray |
+| `gray` | Pure neutral gray |
+| `zinc` | Industrial cool gray |
+| `neutral` | Perfect neutral |
+| `stone` | Warm stone gray |
+| `sandstone` | Earthy warm neutral |
+| `rose-quartz` | Pink-tinted gray |
+| `olive` | Green-tinted gray |
+| `smaragd` | Emerald-tinted gray |
 
 ### Gray Color Palettes
 
-14 neutral color palettes for UI elements:
+15 neutral color palettes for UI backgrounds and text:
 
 | Palette | Description | Style |
 |---------|-------------|-------|
-| `slate` | Classic slate | Cool gray |
-| `dark-slate` | Darker slate | Deep cool gray |
-| `blackout` | High contrast | Near black |
-| `obsidian` | Deep obsidian | Rich black |
+| `slate` | Classic slate (default) | Cool blue-gray |
+| `dark-slate` | Deeper slate | Deep cool gray |
+| `blackout` | High contrast | Near black darks |
+| `obsidian` | Deep obsidian | Rich volcanic black |
 | `amethyst` | Purple-tinted | Warm purple gray |
-| `opal` | Soft opal | Light neutral |
+| `opal` | Soft opal | Light blue-tinted |
 | `gray` | Pure gray | True neutral |
-| `zinc` | Industrial | Cool industrial |
-| `neutral` | Balanced | Perfect neutral |
-| `stone` | Warm stone | Warm gray |
-| `sandstone` | Natural | Earthy neutral |
+| `zinc` | Industrial zinc | Cool industrial |
+| `neutral` | Balanced neutral | Perfect neutral |
+| `stone` | Warm stone | Warm earthy gray |
+| `sandstone` | Natural sandstone | Earthy warm neutral |
 | `rose-quartz` | Pink-tinted | Warm pink gray |
-| `olive` | Green-tinted | Organic gray |
-| `smaragd` | Emerald-tinted | Cool green gray |
+| `olive` | Green-tinted | Organic olive gray |
+| `smaragd` | Emerald-tinted | Cool emerald gray |
 
 ### Color Shades
 
@@ -204,9 +240,10 @@ $shades = [
 ### Implementation
 
 Dark mode is implemented using:
-- CSS `.dark` class on HTML element
-- Tailwind's dark mode utilities
+- CSS `.dark` class on HTML element (using Tailwind's `selector` strategy)
+- Tailwind's dark mode utilities (`dark:` prefix)
 - CSS variables that adapt to theme
+- System preference detection for `auto` mode
 
 ```html
 <!-- Automatic dark mode classes -->
@@ -214,6 +251,8 @@ Dark mode is implemented using:
     <!-- Content adapts to theme -->
 </div>
 ```
+
+When `darkmode-type` is set to `auto`, the system detects the user's OS preference using `window.matchMedia('(prefers-color-scheme: dark)')`.
 
 ### JavaScript Detection
 
@@ -268,6 +307,8 @@ window.addEventListener('theme-changed', (event) => {
 
 ### Sidebar CSS Variables
 
+Each color palette defines its own sidebar variables. The default values are:
+
 ```css
 :root {
     /* Background colors */
@@ -276,17 +317,21 @@ window.addEventListener('theme-changed', (event) => {
     --sidebar-bg-dropdown: var(--primary-700);
     
     /* Text colors */
-    --sidebar-text: var(--primary-100);
-    --sidebar-text-hover: var(--primary-50);
+    --sidebar-text: var(--primary-400);
     
     /* Icon colors */
     --sidebar-icon: var(--primary-300);
-    --sidebar-icon-hover: var(--primary-100);
-    --sidebar-icon-active: var(--primary-50);
-    
-    /* Borders and dividers */
-    --sidebar-border: var(--primary-500);
-    --sidebar-divider: var(--primary-500);
+    --sidebar-icon-hover: var(--primary-200);
+}
+```
+
+Color palettes can override these defaults. For example, the `aura` palette uses:
+
+```css
+:root {
+    --sidebar-bg: var(--primary-700);
+    --sidebar-bg-hover: var(--primary-600);
+    --sidebar-bg-dropdown: var(--primary-800);
 }
 ```
 
@@ -407,22 +452,47 @@ Aura generates CSS variables for all color shades:
 
 ### Tailwind Configuration
 
+Aura uses a custom function to support opacity modifiers with CSS variables:
+
 ```javascript
 // tailwind.config.js
+function withOpacityValue(variable) {
+    return ({ opacityValue }) => {
+        if (opacityValue === undefined) {
+            return `rgb(var(${variable}))`
+        }
+        return `rgb(var(${variable}) / ${opacityValue})`
+    }
+}
+
 module.exports = {
+    darkMode: 'selector',
+    
     theme: {
         extend: {
             colors: {
-                primary: {
-                    25: 'rgb(var(--primary-25) / <alpha-value>)',
-                    50: 'rgb(var(--primary-50) / <alpha-value>)',
-                    100: 'rgb(var(--primary-100) / <alpha-value>)',
-                    // ... all shades
+                // Sidebar colors from CSS variables
+                sidebar: {
+                    'bg': withOpacityValue('--sidebar-bg'),
+                    'bg-hover': withOpacityValue('--sidebar-bg-hover'),
+                    'bg-dropdown': withOpacityValue('--sidebar-bg-dropdown'),
+                    'icon': withOpacityValue('--sidebar-icon'),
+                    'icon-hover': withOpacityValue('--sidebar-icon-hover'),
+                    'text': withOpacityValue('--sidebar-text'),
                 },
+                // Primary colors (shades 25-900)
+                primary: {
+                    '25': withOpacityValue('--primary-25'),
+                    '50': withOpacityValue('--primary-50'),
+                    '100': withOpacityValue('--primary-100'),
+                    // ... through 900
+                },
+                // Gray colors (shades 25-900)
                 gray: {
-                    25: 'rgb(var(--gray-25) / <alpha-value>)',
-                    50: 'rgb(var(--gray-50) / <alpha-value>)',
-                    // ... all shades
+                    '25': withOpacityValue('--gray-25'),
+                    '50': withOpacityValue('--gray-50'),
+                    '100': withOpacityValue('--gray-100'),
+                    // ... through 900
                 },
             },
         },
@@ -447,6 +517,38 @@ module.exports = {
 <div class="bg-primary-500/20 border-primary-500/50">
     Semi-transparent elements
 </div>
+```
+
+## Login Page Customization
+
+Customize the login page appearance with custom backgrounds and favicons:
+
+### Login Background
+
+```php
+// config/aura.php
+'theme' => [
+    // Custom background image for login page
+    'login-bg' => '/path/to/background.jpg',
+    
+    // Different background for dark mode
+    'login-bg-darkmode' => '/path/to/dark-background.jpg',
+],
+```
+
+Set to `false` to use the default gradient background.
+
+### Application Favicon
+
+```php
+// config/aura.php
+'theme' => [
+    // Custom favicon
+    'app-favicon' => '/path/to/favicon.ico',
+    
+    // Different favicon for dark mode (optional)
+    'app-favicon-darkmode' => '/path/to/dark-favicon.ico',
+],
 ```
 
 ## Team-Specific Themes

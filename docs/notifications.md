@@ -1,52 +1,183 @@
 # Notifications in Aura CMS
 
-Aura CMS provides a comprehensive notification system that enables real-time user feedback, system alerts, and communication between users. Built on Laravel's notification system and enhanced with Livewire for real-time updates, it offers both in-app and external notification channels.
+Aura CMS provides two notification systems: **toast notifications** for instant user feedback and a **notification center** for persistent database notifications. These are built on Laravel's notification system and enhanced with Livewire and Alpine.js.
 
 ## Table of Contents
 
 - [Overview](#overview)
-- [Notification Types](#notification-types)
-- [Creating Notifications](#creating-notifications)
-- [Notification Channels](#notification-channels)
-- [Real-time Notifications](#real-time-notifications)
-- [UI Components](#ui-components)
-- [Email Templates](#email-templates)
-- [User Preferences](#user-preferences)
-- [Advanced Features](#advanced-features)
+- [Toast Notifications](#toast-notifications)
+- [Notification Center](#notification-center)
+- [Configuration](#configuration)
+- [Creating Custom Notifications](#creating-custom-notifications)
+- [Team Invitations](#team-invitations)
 - [Best Practices](#best-practices)
 
 ## Overview
 
-The notification system in Aura CMS consists of:
-- **System Notifications**: Automatic alerts for system events
-- **Custom Notifications**: User-defined notifications for specific actions
-- **Multi-channel Support**: Database, email, Slack, SMS, and more
-- **Real-time Updates**: Live notifications using Livewire
-- **Notification Center**: Centralized UI for managing notifications
+Aura CMS includes two types of notifications:
 
-## Notification Types
+1. **Toast Notifications**: Temporary popup messages that appear in the top-right corner and auto-dismiss after 3 seconds. Used for instant feedback like "Saved successfully" or "Error occurred".
 
-### System Notifications
+2. **Notification Center**: A slide-over panel accessible from the navigation that displays persistent database notifications with read/unread status.
 
-Aura CMS automatically sends notifications for:
+## Toast Notifications
+
+Toast notifications provide instant feedback to users. They're implemented using Alpine.js and are triggered via Livewire events.
+
+### Using Toast Notifications in Livewire Components
+
+Livewire components that use the `WithLivewireHelpers` trait have access to the `notify()` method:
 
 ```php
-// Resource created
-$user->notify(new ResourceCreated($resource));
+namespace App\Livewire;
 
-// User invited to team
-$user->notify(new TeamInvitation($team));
+use Livewire\Component;
+use Aura\Base\Traits\WithLivewireHelpers;
 
-// Permission changed
-$user->notify(new PermissionUpdated($permission));
+class MyComponent extends Component
+{
+    use WithLivewireHelpers;
 
-// Media uploaded
-$user->notify(new MediaUploaded($media));
+    public function save()
+    {
+        // Save logic...
+        
+        // Show success notification
+        $this->notify('Successfully saved!');
+        
+        // Show error notification
+        $this->notify('Something went wrong.', 'error');
+    }
+}
 ```
 
-### Custom Notifications
+### Notification Types
 
-Create custom notifications for your application:
+The `notify()` method accepts two parameters:
+
+```php
+public function notify($message, $type = 'success')
+```
+
+| Type | Description | Icon |
+|------|-------------|------|
+| `success` | Success messages (default) | Green checkmark |
+| `error` | Error messages | Red warning triangle |
+
+### How It Works
+
+The `notify()` method dispatches a browser event:
+
+```php
+$this->dispatchBrowserEvent('notify', [
+    'message' => $message,
+    'type' => $type,
+]);
+```
+
+The `<x-aura::notification>` component listens for this event and displays the toast:
+
+```blade
+{{-- Automatically included in the main layout --}}
+<x-aura::notification/>
+```
+
+### Toast Features
+
+- **Auto-dismiss**: Toasts disappear after 3 seconds
+- **Pause on hover**: Timer pauses when you hover over the notification
+- **Progress indicator**: Visual progress bar shows remaining time
+- **Manual dismiss**: Click the X button to dismiss immediately
+- **Stacking**: Multiple notifications stack vertically
+
+### Triggering Toasts from JavaScript
+
+You can also trigger toast notifications directly from JavaScript/Alpine.js:
+
+```javascript
+// Dispatch the notify event
+window.dispatchEvent(new CustomEvent('notify', {
+    detail: {
+        message: 'Operation completed!',
+        type: 'success'
+    }
+}));
+```
+
+## Notification Center
+
+The notification center displays persistent database notifications using Laravel's built-in notification system.
+
+### Accessing the Notification Center
+
+When enabled, a bell icon appears in the sidebar navigation. Clicking it opens a slide-over panel with two tabs:
+
+- **Unread**: New notifications that haven't been read
+- **Read**: Previously viewed notifications
+
+### The Notifications Component
+
+The notification center is powered by the `Aura\Base\Livewire\Notifications` component:
+
+```php
+// Registered as: aura::notifications
+Livewire::component('aura::notifications', Notifications::class);
+```
+
+Key features:
+- Displays unread and read notifications in separate tabs
+- Shows notification icon based on resource type
+- Links to the related resource
+- "Mark all as read" functionality
+
+### Notification Data Structure
+
+For notifications to display correctly in the notification center, they should include:
+
+```php
+public function toDatabase($notifiable)
+{
+    return [
+        'type' => 'App\\Resources\\Post',  // Resource class for icon
+        'id' => $this->resource->id,        // Resource ID for linking
+        'message' => 'Your post was published',
+    ];
+}
+```
+
+### Marking Notifications as Read
+
+Users can mark all notifications as read with one click:
+
+```php
+// In Notifications.php
+public function markAllAsRead()
+{
+    auth()->user()->unreadNotifications()->update(['read_at' => now()]);
+}
+```
+
+## Configuration
+
+Enable or disable the notification center in `config/aura.php`:
+
+```php
+'features' => [
+    'notifications' => true,  // Enable/disable notification center
+    // ... other features
+],
+```
+
+When disabled:
+- The bell icon is hidden from the navigation
+- The notifications slide-over component is not loaded
+- Toast notifications still work (they're always enabled)
+
+## Creating Custom Notifications
+
+### Using Laravel Notifications
+
+Aura CMS users have the `Notifiable` trait, so you can use Laravel's notification system:
 
 ```php
 namespace App\Notifications;
@@ -78,772 +209,184 @@ class ArticlePublished extends Notification implements ShouldQueue
             ->subject('Your article has been published!')
             ->line('Congratulations! Your article "' . $this->article->title . '" is now live.')
             ->action('View Article', url('/articles/' . $this->article->slug))
-            ->line('Thank you for contributing to our platform!');
+            ->line('Thank you for contributing!');
     }
 
-    public function toArray($notifiable)
+    public function toDatabase($notifiable)
     {
         return [
-            'type' => 'article_published',
-            'article_id' => $this->article->id,
-            'title' => $this->article->title,
-            'message' => 'Your article has been published',
-            'action_url' => '/admin/articles/' . $this->article->id,
+            'type' => get_class($this->article),
+            'id' => $this->article->id,
+            'message' => 'Your article "' . $this->article->title . '" was published',
         ];
     }
 }
 ```
 
-## Creating Notifications
+### Sending Notifications
 
-### Using Artisan Command
+```php
+use App\Notifications\ArticlePublished;
+
+// Send to a single user
+$user->notify(new ArticlePublished($article));
+
+// Send to multiple users
+Notification::send($users, new ArticlePublished($article));
+```
+
+### Creating Notifications via Artisan
 
 ```bash
 php artisan make:notification OrderShipped
 ```
 
-### Notification Structure
+## Team Invitations
+
+Aura CMS includes a built-in team invitation email (`Aura\Base\Mail\TeamInvitation`):
 
 ```php
-namespace App\Notifications;
+use Aura\Base\Mail\TeamInvitation;
+use Illuminate\Support\Facades\Mail;
 
-use Aura\Base\Notifications\AuraNotification;
-use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldQueue;
+Mail::to($email)->send(new TeamInvitation($invitation));
+```
 
-class OrderShipped extends AuraNotification implements ShouldQueue
+The invitation email:
+- Uses a markdown template (`aura::emails.team-invitation`)
+- Includes a signed URL for secure registration/acceptance
+- Handles both new users and existing users
+
+## Best Practices
+
+### 1. Use Appropriate Notification Types
+
+```php
+// For instant feedback (form saves, quick actions)
+$this->notify('Settings saved!');
+
+// For errors that need attention
+$this->notify('Failed to save. Please try again.', 'error');
+
+// For persistent notifications the user needs to see later
+$user->notify(new ImportantSystemNotification($data));
+```
+
+### 2. Keep Toast Messages Concise
+
+Toast messages should be short and clear since they auto-dismiss:
+
+```php
+// Good
+$this->notify('Saved successfully!');
+
+// Too long - user may not read it in time
+$this->notify('Your changes have been saved successfully to the database and all related records have been updated.');
+```
+
+### 3. Queue Heavy Notifications
+
+For notifications that send emails or perform complex operations:
+
+```php
+class HeavyNotification extends Notification implements ShouldQueue
 {
     use Queueable;
 
-    protected $order;
-
-    public function __construct($order)
-    {
-        $this->order = $order;
-    }
-
-    public function via($notifiable)
-    {
-        // Define channels based on user preferences
-        $channels = ['database'];
-        
-        if ($notifiable->notification_preferences['email'] ?? true) {
-            $channels[] = 'mail';
-        }
-        
-        if ($notifiable->notification_preferences['slack'] ?? false) {
-            $channels[] = 'slack';
-        }
-        
-        return $channels;
-    }
-
-    public function toDatabase($notifiable)
-    {
-        return [
-            'type' => 'order_shipped',
-            'icon' => 'truck',
-            'color' => 'success',
-            'title' => 'Order Shipped',
-            'message' => "Order #{$this->order->number} has been shipped",
-            'action_text' => 'Track Order',
-            'action_url' => route('orders.track', $this->order),
-            'data' => [
-                'order_id' => $this->order->id,
-                'tracking_number' => $this->order->tracking_number,
-            ]
-        ];
-    }
-
-    public function toMail($notifiable)
-    {
-        return (new AuraMailMessage)
-            ->subject('Your Order Has Been Shipped!')
-            ->greeting("Hello {$notifiable->name}!")
-            ->line("Good news! Your order #{$this->order->number} has been shipped.")
-            ->line("Tracking Number: {$this->order->tracking_number}")
-            ->action('Track Your Order', route('orders.track', $this->order))
-            ->line('Expected delivery: ' . $this->order->expected_delivery->format('M d, Y'))
-            ->salutation('Thanks for shopping with us!');
-    }
+    public $queue = 'notifications';
+    public $tries = 3;
 }
 ```
 
-## Notification Channels
+### 4. Include Action Links in Database Notifications
 
-### Database Channel
-
-Store notifications in the database for in-app display:
+Always provide a way for users to navigate to the relevant resource:
 
 ```php
 public function toDatabase($notifiable)
 {
     return [
-        'type' => 'resource_updated',
-        'icon' => 'edit',
-        'color' => 'info',
-        'title' => 'Resource Updated',
-        'message' => "{$this->resource->name} has been updated",
-        'action_text' => 'View Changes',
-        'action_url' => route('aura.resources.show', $this->resource),
-        'data' => [
-            'resource_id' => $this->resource->id,
-            'changes' => $this->resource->getChanges(),
-        ]
+        'type' => get_class($this->resource),
+        'id' => $this->resource->id,  // Used to generate edit link
+        'message' => 'Notification message here',
     ];
 }
 ```
 
-### Email Channel
-
-Send notifications via email:
+### 5. Test Notifications
 
 ```php
-public function toMail($notifiable)
+use Illuminate\Support\Facades\Notification;
+
+public function test_user_receives_notification()
 {
-    return (new MailMessage)
-        ->subject('Important Update')
-        ->view('emails.notification', [
-            'user' => $notifiable,
-            'content' => $this->content,
-        ])
-        ->attach(storage_path('app/reports/monthly.pdf'));
-}
-```
+    Notification::fake();
 
-### Slack Channel
+    $user = User::factory()->create();
+    $article = Article::factory()->create();
 
-Send notifications to Slack:
+    $article->publish();
 
-```php
-public function toSlack($notifiable)
-{
-    return (new SlackMessage)
-        ->from('Aura CMS')
-        ->to('#general')
-        ->content('New user registration!')
-        ->attachment(function ($attachment) use ($notifiable) {
-            $attachment->title('User Details')
-                ->fields([
-                    'Name' => $notifiable->name,
-                    'Email' => $notifiable->email,
-                    'Registered' => $notifiable->created_at->diffForHumans(),
-                ]);
-        });
-}
-```
-
-### SMS Channel (via Nexmo/Twilio)
-
-```php
-public function toNexmo($notifiable)
-{
-    return (new NexmoMessage)
-        ->content('Your verification code is: ' . $this->code)
-        ->from('AURA');
-}
-```
-
-## Real-time Notifications
-
-### Livewire Component
-
-Aura CMS includes a real-time notification component:
-
-```php
-namespace App\Http\Livewire;
-
-use Livewire\Component;
-use Aura\Base\Traits\InteractsWithNotifications;
-
-class NotificationBell extends Component
-{
-    use InteractsWithNotifications;
-
-    public $unreadCount = 0;
-    public $notifications = [];
-    public $showDropdown = false;
-
-    protected $listeners = [
-        'notificationReceived' => 'refreshNotifications',
-        'echo:notifications,.NewNotification' => 'handleNewNotification',
-    ];
-
-    public function mount()
-    {
-        $this->refreshNotifications();
-    }
-
-    public function refreshNotifications()
-    {
-        $this->unreadCount = auth()->user()->unreadNotifications()->count();
-        $this->notifications = auth()->user()
-            ->notifications()
-            ->latest()
-            ->take(5)
-            ->get();
-    }
-
-    public function markAsRead($notificationId)
-    {
-        $notification = auth()->user()
-            ->notifications()
-            ->find($notificationId);
-            
-        if ($notification) {
-            $notification->markAsRead();
-            $this->refreshNotifications();
-            
-            if ($notification->data['action_url'] ?? false) {
-                return redirect($notification->data['action_url']);
-            }
+    Notification::assertSentTo(
+        $user,
+        ArticlePublished::class,
+        function ($notification) use ($article) {
+            return $notification->article->id === $article->id;
         }
-    }
-
-    public function markAllAsRead()
-    {
-        auth()->user()->unreadNotifications->markAsRead();
-        $this->refreshNotifications();
-    }
-
-    public function render()
-    {
-        return view('livewire.notification-bell');
-    }
-}
-```
-
-### Broadcasting Notifications
-
-For real-time updates using Laravel Echo:
-
-```php
-// In your notification class
-public function toBroadcast($notifiable)
-{
-    return new BroadcastMessage([
-        'type' => 'notification',
-        'icon' => 'bell',
-        'title' => $this->title,
-        'message' => $this->message,
-        'timestamp' => now()->toIso8601String(),
-    ]);
-}
-```
-
-## UI Components
-
-### Notification Bell
-
-```blade
-{{-- resources/views/livewire/notification-bell.blade.php --}}
-<div class="relative" x-data="{ open: false }">
-    <button @click="open = !open" class="relative p-2 text-gray-600 hover:text-gray-900">
-        <x-aura::icon.notifications />
-        @if($unreadCount > 0)
-            <span class="absolute top-0 right-0 block h-2 w-2 rounded-full bg-red-500"></span>
-        @endif
-    </button>
-
-    <div x-show="open" 
-         @click.away="open = false"
-         x-transition
-         class="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-lg overflow-hidden z-50">
-        
-        <div class="p-4 bg-gray-50 border-b">
-            <div class="flex justify-between items-center">
-                <h3 class="text-lg font-semibold">Notifications</h3>
-                @if($unreadCount > 0)
-                    <button wire:click="markAllAsRead" class="text-sm text-blue-600 hover:text-blue-800">
-                        Mark all as read
-                    </button>
-                @endif
-            </div>
-        </div>
-
-        <div class="max-h-96 overflow-y-auto">
-            @forelse($notifications as $notification)
-                <div wire:click="markAsRead('{{ $notification->id }}')" 
-                     class="p-4 hover:bg-gray-50 cursor-pointer border-b {{ $notification->read_at ? 'opacity-60' : '' }}">
-                    <div class="flex items-start">
-                        <div class="flex-shrink-0">
-                            <x-aura::icon :name="$notification->data['icon'] ?? 'bell'" 
-                                         class="w-5 h-5 text-{{ $notification->data['color'] ?? 'gray' }}-500" />
-                        </div>
-                        <div class="ml-3 flex-1">
-                            <p class="text-sm font-medium text-gray-900">
-                                {{ $notification->data['title'] ?? 'Notification' }}
-                            </p>
-                            <p class="text-sm text-gray-500">
-                                {{ $notification->data['message'] ?? '' }}
-                            </p>
-                            <p class="text-xs text-gray-400 mt-1">
-                                {{ $notification->created_at->diffForHumans() }}
-                            </p>
-                        </div>
-                    </div>
-                </div>
-            @empty
-                <div class="p-8 text-center text-gray-500">
-                    <x-aura::icon.empty class="w-12 h-12 mx-auto mb-2" />
-                    <p>No notifications</p>
-                </div>
-            @endforelse
-        </div>
-
-        <div class="p-4 bg-gray-50 border-t">
-            <a href="{{ route('aura.notifications.index') }}" 
-               class="block text-center text-sm text-blue-600 hover:text-blue-800">
-                View all notifications
-            </a>
-        </div>
-    </div>
-</div>
-```
-
-### Toast Notifications
-
-Show temporary notifications:
-
-```javascript
-// In Alpine.js component
-Alpine.store('notifications', {
-    items: [],
-    
-    add(notification) {
-        const id = Date.now();
-        this.items.push({
-            id,
-            ...notification
-        });
-        
-        setTimeout(() => {
-            this.remove(id);
-        }, 5000);
-    },
-    
-    remove(id) {
-        this.items = this.items.filter(item => item.id !== id);
-    }
-});
-
-// Usage
-Alpine.store('notifications').add({
-    type: 'success',
-    title: 'Success!',
-    message: 'Your changes have been saved.'
-});
-```
-
-## Email Templates
-
-### Custom Email Template
-
-```blade
-{{-- resources/views/emails/notification.blade.php --}}
-@component('mail::message')
-# {{ $notification->data['title'] }}
-
-{{ $notification->data['message'] }}
-
-@if($notification->data['action_url'] ?? false)
-@component('mail::button', ['url' => $notification->data['action_url']])
-{{ $notification->data['action_text'] ?? 'View Details' }}
-@endcomponent
-@endif
-
-@if($notification->data['additional_info'] ?? false)
-@component('mail::panel')
-{{ $notification->data['additional_info'] }}
-@endcomponent
-@endif
-
-Thanks,<br>
-{{ config('app.name') }}
-@endcomponent
-```
-
-### Customizing Email Notifications
-
-```php
-public function toMail($notifiable)
-{
-    return (new MailMessage)
-        ->theme('aura')
-        ->subject($this->subject)
-        ->markdown('emails.custom-notification', [
-            'user' => $notifiable,
-            'data' => $this->data,
-        ])
-        ->withSwiftMessage(function ($message) {
-            $message->getHeaders()
-                ->addTextHeader('X-Mailgun-Tag', 'notification')
-                ->addTextHeader('X-Mailgun-Track', 'yes');
-        });
-}
-```
-
-## User Preferences
-
-### Managing Notification Preferences
-
-```php
-// Migration for user preferences
-Schema::table('users', function (Blueprint $table) {
-    $table->json('notification_preferences')->nullable();
-});
-
-// User model
-class User extends Authenticatable
-{
-    protected $casts = [
-        'notification_preferences' => 'array',
-    ];
-
-    public function getNotificationPreference($channel, $type = null)
-    {
-        $preferences = $this->notification_preferences ?? [];
-        
-        if ($type) {
-            return $preferences[$channel][$type] ?? true;
-        }
-        
-        return $preferences[$channel] ?? true;
-    }
-
-    public function setNotificationPreference($channel, $value, $type = null)
-    {
-        $preferences = $this->notification_preferences ?? [];
-        
-        if ($type) {
-            $preferences[$channel][$type] = $value;
-        } else {
-            $preferences[$channel] = $value;
-        }
-        
-        $this->notification_preferences = $preferences;
-        $this->save();
-    }
-}
-```
-
-### Preference UI Component
-
-```php
-// Livewire component for managing preferences
-class NotificationPreferences extends Component
-{
-    public $emailNotifications = true;
-    public $browserNotifications = false;
-    public $slackNotifications = false;
-    public $notificationTypes = [];
-
-    public function mount()
-    {
-        $user = auth()->user();
-        $preferences = $user->notification_preferences ?? [];
-        
-        $this->emailNotifications = $preferences['email'] ?? true;
-        $this->browserNotifications = $preferences['browser'] ?? false;
-        $this->slackNotifications = $preferences['slack'] ?? false;
-        
-        $this->notificationTypes = [
-            'resource_created' => $preferences['types']['resource_created'] ?? true,
-            'resource_updated' => $preferences['types']['resource_updated'] ?? true,
-            'comment_added' => $preferences['types']['comment_added'] ?? true,
-            'mention' => $preferences['types']['mention'] ?? true,
-        ];
-    }
-
-    public function save()
-    {
-        auth()->user()->update([
-            'notification_preferences' => [
-                'email' => $this->emailNotifications,
-                'browser' => $this->browserNotifications,
-                'slack' => $this->slackNotifications,
-                'types' => $this->notificationTypes,
-            ]
-        ]);
-
-        $this->notify('Notification preferences updated!');
-    }
-
-    public function render()
-    {
-        return view('livewire.notification-preferences');
-    }
-}
-```
-
-## Advanced Features
-
-### Notification Groups
-
-Group related notifications:
-
-```php
-class NotificationGroup
-{
-    public static function groupSimilar($notifications)
-    {
-        return $notifications->groupBy(function ($notification) {
-            return $notification->data['type'] . '_' . 
-                   Carbon::parse($notification->created_at)->format('Y-m-d');
-        })->map(function ($group) {
-            if ($group->count() > 3) {
-                return [
-                    'type' => 'grouped',
-                    'count' => $group->count(),
-                    'latest' => $group->first(),
-                    'items' => $group->take(3),
-                ];
-            }
-            return $group;
-        });
-    }
-}
-```
-
-### Scheduled Notifications
-
-Send notifications at specific times:
-
-```php
-// Schedule a notification for later
-$user->notify((new InvoiceReminder($invoice))->delay(now()->addDays(3)));
-
-// Or use a custom scheduled notification
-class WeeklyDigest extends Notification implements ShouldQueue
-{
-    public function via($notifiable)
-    {
-        return $notifiable->wants_weekly_digest ? ['mail'] : [];
-    }
-
-    public function toMail($notifiable)
-    {
-        $activities = $this->getWeeklyActivities($notifiable);
-        
-        return (new MailMessage)
-            ->subject('Your Weekly Digest')
-            ->markdown('emails.weekly-digest', [
-                'user' => $notifiable,
-                'activities' => $activities,
-            ]);
-    }
-}
-
-// In Kernel.php
-$schedule->job(new SendWeeklyDigests)->weekly()->mondays()->at('09:00');
-```
-
-### Notification Actions
-
-Handle notification actions:
-
-```php
-class ApprovalNotification extends Notification
-{
-    public function toDatabase($notifiable)
-    {
-        return [
-            'type' => 'approval_required',
-            'title' => 'Approval Required',
-            'message' => 'A new article requires your approval',
-            'actions' => [
-                [
-                    'text' => 'Approve',
-                    'url' => route('articles.approve', $this->article),
-                    'method' => 'POST',
-                    'color' => 'success',
-                ],
-                [
-                    'text' => 'Reject',
-                    'url' => route('articles.reject', $this->article),
-                    'method' => 'POST',
-                    'color' => 'danger',
-                ],
-            ],
-        ];
-    }
-}
-```
-
-### Custom Notification Channels
-
-Create custom channels:
-
-```php
-namespace App\Channels;
-
-use Illuminate\Notifications\Notification;
-
-class WebhookChannel
-{
-    public function send($notifiable, Notification $notification)
-    {
-        $data = $notification->toWebhook($notifiable);
-        
-        Http::post($notifiable->webhook_url, [
-            'type' => 'notification',
-            'data' => $data,
-            'timestamp' => now()->toIso8601String(),
-        ]);
-    }
-}
-
-// Register in service provider
-public function boot()
-{
-    Notification::extend('webhook', function ($app) {
-        return new WebhookChannel();
-    });
-}
-```
-
-## Best Practices
-
-### 1. Use Queues for Heavy Operations
-
-```php
-class DataExportCompleted extends Notification implements ShouldQueue
-{
-    use Queueable;
-
-    // Specify queue
-    public $queue = 'notifications';
-    
-    // Set tries
-    public $tries = 3;
-    
-    // Set timeout
-    public $timeout = 30;
-}
-```
-
-### 2. Implement Rate Limiting
-
-```php
-class NotificationRateLimiter
-{
-    public static function shouldSend($user, $type)
-    {
-        $key = "notification:{$user->id}:{$type}";
-        $limit = config("notifications.rate_limits.{$type}", 10);
-        
-        if (Cache::get($key, 0) >= $limit) {
-            return false;
-        }
-        
-        Cache::increment($key);
-        Cache::expire($key, 3600); // 1 hour
-        
-        return true;
-    }
-}
-```
-
-### 3. Clean Up Old Notifications
-
-```php
-// Command to clean old notifications
-class CleanOldNotifications extends Command
-{
-    protected $signature = 'notifications:clean {--days=30}';
-    
-    public function handle()
-    {
-        $days = $this->option('days');
-        
-        DB::table('notifications')
-            ->where('created_at', '<', now()->subDays($days))
-            ->where('read_at', '!=', null)
-            ->delete();
-            
-        $this->info("Deleted read notifications older than {$days} days.");
-    }
-}
-
-// Schedule in Kernel
-$schedule->command('notifications:clean')->daily();
-```
-
-### 4. Test Notifications
-
-```php
-class NotificationTest extends TestCase
-{
-    public function test_user_receives_article_published_notification()
-    {
-        Notification::fake();
-        
-        $user = User::factory()->create();
-        $article = Article::factory()->create(['author_id' => $user->id]);
-        
-        $article->publish();
-        
-        Notification::assertSentTo(
-            $user,
-            ArticlePublished::class,
-            function ($notification, $channels) use ($article) {
-                return $notification->article->id === $article->id &&
-                       in_array('mail', $channels) &&
-                       in_array('database', $channels);
-            }
-        );
-    }
-}
-```
-
-### 5. Localization
-
-```php
-public function toMail($notifiable)
-{
-    return (new MailMessage)
-        ->subject(__('notifications.order_shipped.subject'))
-        ->line(__('notifications.order_shipped.line1', [
-            'order' => $this->order->number
-        ]))
-        ->action(__('notifications.order_shipped.action'), $url)
-        ->line(__('notifications.order_shipped.line2'));
+    );
 }
 ```
 
 ## Troubleshooting
 
-### Common Issues
+### Toast Notifications Not Showing
 
-1. **Notifications not sending**
-   - Check queue workers are running
-   - Verify notification channels are configured
-   - Check user notification preferences
+1. Ensure the component is included in your layout:
+   ```blade
+   <x-aura::notification/>
+   ```
 
-2. **Real-time updates not working**
-   - Ensure broadcasting is configured
-   - Check WebSocket connection
-   - Verify Echo is properly initialized
+2. Check that Alpine.js is loaded properly
 
-3. **Email notifications failing**
-   - Check mail configuration
-   - Verify email templates exist
-   - Check mail queue for errors
+3. Verify the event is being dispatched:
+   ```php
+   $this->dispatchBrowserEvent('notify', [...]);
+   ```
 
-### Debug Commands
+### Notification Center Not Visible
 
-```bash
-# Test notification sending
-php artisan tinker
->>> $user = User::first();
->>> $user->notify(new TestNotification());
+1. Check the feature is enabled:
+   ```php
+   // config/aura.php
+   'features' => [
+       'notifications' => true,
+   ],
+   ```
 
-# Process notification queue
-php artisan queue:work --queue=notifications
+2. Ensure the component is loaded:
+   ```blade
+   @if(config('aura.features.notifications'))
+       <livewire:aura::notifications/>
+   @endif
+   ```
 
-# Clear notification cache
-php artisan cache:clear
-```
+### Database Notifications Not Appearing
+
+1. Ensure the notifications table exists:
+   ```bash
+   php artisan notifications:table
+   php artisan migrate
+   ```
+
+2. Verify the User model uses the Notifiable trait:
+   ```php
+   use Illuminate\Notifications\Notifiable;
+   
+   class User extends Authenticatable
+   {
+       use Notifiable;
+   }
+   ```
 
 ---
 

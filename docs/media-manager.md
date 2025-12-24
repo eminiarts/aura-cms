@@ -37,27 +37,30 @@ The Media Manager consists of several key components:
 
 ```php
 // Core Components
-Aura\Base\Livewire\MediaManager      // Media selection modal
-Aura\Base\Livewire\MediaUploader     // Upload functionality
-Aura\Base\Resources\Attachment       // Media resource model
-Aura\Base\Services\ThumbnailGenerator // Image processing
-Aura\Base\Jobs\GenerateImageThumbnail // Background processing
+Aura\Base\Resources\Attachment           // Media resource model
+Aura\Base\Livewire\MediaManager          // Media selection modal
+Aura\Base\Livewire\MediaUploader         // Upload functionality  
+Aura\Base\Livewire\Attachment\Index      // Attachment list view
+Aura\Base\Services\ThumbnailGenerator    // Image processing service
+Aura\Base\Jobs\GenerateImageThumbnail    // Background thumbnail job
 ```
 
 ### Storage Architecture
 
 ```
 storage/app/public/
-├── media/                # Original uploaded files
+├── media/                       # Original uploaded files
 │   ├── image1.jpg
 │   ├── document.pdf
 │   └── video.mp4
-└── thumbnails/          # Generated thumbnails
+└── thumbnails/                  # Generated thumbnails
     └── media/
-        ├── 200_auto_image1.jpg      # Width-only resize
-        ├── 600_auto_image1.jpg      # Medium size
-        └── 600_600_image1.jpg       # Fixed dimensions
+        ├── 200_auto_image1.jpg  # Width-only resize (aspect ratio preserved)
+        ├── 600_auto_image1.jpg  # Medium width (aspect ratio preserved)
+        └── 600_600_image1.jpg   # Fixed dimensions (cropped to fit)
 ```
+
+The thumbnail filename format is `{width}_auto_{filename}` for width-only resizing or `{width}_{height}_{filename}` for fixed dimensions.
 
 ### Database Schema
 
@@ -87,14 +90,17 @@ Configure media settings in `config/aura.php`:
 
 ```php
 'media' => [
+    // Storage configuration
+    'disk' => 'public',        // Laravel filesystem disk
+    'path' => 'media',         // Upload directory within disk
+    
     // File upload limits
     'max_file_size' => 10000,  // KB (10MB)
-    'max_files' => 20,         // Maximum files per upload
     
     // Image processing
     'generate_thumbnails' => true,
     'quality' => 80,           // JPEG quality (1-100)
-    'restrict_to_dimensions' => true, // Only allow configured sizes
+    'restrict_to_dimensions' => true, // Only allow configured thumbnail sizes
     
     // Thumbnail dimensions
     'dimensions' => [
@@ -106,6 +112,8 @@ Configure media settings in `config/aura.php`:
     ],
 ],
 ```
+
+> **Note**: The `max_files` limit is configured per-field using the `max_files` option on Image or File fields, not globally.
 
 ### Storage Configuration
 
@@ -217,16 +225,20 @@ $galleryImages = Attachment::whereIn('id', $post->gallery)->get();
 
 ### Upload Component
 
-The MediaUploader component handles file uploads:
+The `MediaUploader` Livewire component handles file uploads:
 
 ```php
-// In Livewire component
+// In Blade template
 @livewire('aura::media-uploader', [
-    'field' => $field,
-    'model' => $model,
-    'selected' => $selected,
+    'field' => $field,           // Field definition array
+    'for' => $fieldSlug,         // Field identifier
+    'selected' => $selectedIds,  // Currently selected attachment IDs
+    'button' => false,           // Show as button vs dropzone
+    'table' => true,             // Show table of uploads
 ])
 ```
+
+The component uses Livewire's `WithFileUploads` trait and stores files to the `media` folder on the `public` disk.
 
 ### Upload Process
 
@@ -239,10 +251,13 @@ The MediaUploader component handles file uploads:
 ### Upload Validation
 
 ```php
-// MediaUploader.php validation
+// MediaUploader.php validation (Livewire file upload limit)
 $this->validate([
-    'media.*' => 'required|max:102400', // 100MB max
+    'media.*' => 'required|max:102400', // 100MB max per file
 ]);
+
+// The config max_file_size (in KB) is for reference/UI display
+// Actual server limits are controlled by php.ini settings
 
 // Custom validation in resource
 public function rules()
@@ -260,7 +275,7 @@ public function rules()
 
 ### Attachment Resource
 
-The Attachment resource provides comprehensive file management:
+The Attachment resource (`Aura\Base\Resources\Attachment`) provides comprehensive file management. It uses the standard `posts` table with `type = 'Attachment'`.
 
 ```php
 use Aura\Base\Resources\Attachment;
@@ -272,67 +287,78 @@ $pdfs = Attachment::where('mime_type', 'application/pdf')->get();
 // File information
 $attachment = Attachment::find($id);
 echo $attachment->name;                    // Original filename
-echo $attachment->readable_filesize;       // "2.5 MB"
-echo $attachment->readable_mime_type;      // "JPEG"
-echo $attachment->path();                  // Full URL
+echo $attachment->readable_filesize;       // "2.5 MB", "150 KB"
+echo $attachment->readable_mime_type;      // "JPEG", "PDF", "MP4"
+echo $attachment->path();                  // Full asset URL
 echo $attachment->thumbnail('md');         // Medium thumbnail URL
+echo $attachment->filePath();              // Absolute server path
+echo $attachment->filePath('md');          // Absolute path to sized version
+
+// Check file type
+if ($attachment->isImage()) {
+    // Handle image-specific logic
+}
 ```
 
 ### File Operations
 
 ```php
-// Delete file and thumbnails
-$attachment->delete();  // Triggers cleanup
+// Delete file record (use deleteAttachment action for full cleanup)
+$attachment->delete();
 
-// Bulk operations
+// Bulk delete
 Attachment::whereIn('id', $ids)->delete();
 
 // Update metadata
 $attachment->update([
     'name' => 'new-name.jpg',
-    'fields' => array_merge($attachment->fields, [
-        'alt_text' => 'Description',
-        'caption' => 'Photo caption',
-    ]),
 ]);
+
+// Access computed attributes
+echo $attachment->readable_filesize;  // "2.5 MB"
+echo $attachment->readable_mime_type; // "JPEG", "PDF", "MP4", etc.
+echo $attachment->isImage();          // true/false
 ```
 
-### Custom Metadata
+### Attachment Fields
 
-Store additional information with attachments:
+The Attachment resource stores standard file metadata in the `fields` JSON column:
 
 ```php
-// When creating
-$attachment = Attachment::create([
-    'name' => $file->getClientOriginalName(),
-    'url' => $path,
-    'size' => $file->getSize(),
-    'mime_type' => $file->getMimeType(),
-    'fields' => [
-        'uploaded_by' => auth()->id(),
-        'category' => 'product-images',
-        'tags' => ['hero', 'featured'],
-    ],
-]);
+// Standard fields stored automatically
+[
+    'name' => 'image.jpg',        // Original filename
+    'url' => 'media/image.jpg',   // Storage path
+    'size' => 245678,             // File size in bytes
+    'mime_type' => 'image/jpeg',  // MIME type
+    'thumbnail_url' => '...',     // Generated thumbnail path
+]
 
-// Querying by metadata
-$productImages = Attachment::where('fields->category', 'product-images')->get();
+// Access via model
+$attachment->name;       // From fields
+$attachment->url;        // From fields
+$attachment->size;       // From fields
+$attachment->mime_type;  // From fields
 ```
+
+The Attachment resource also stores `title` at the model level (used for display).
 
 ## Image Processing
 
 ### Automatic Thumbnail Generation
 
-Thumbnails are generated automatically via queued jobs:
+Thumbnails are generated automatically via queued jobs when an image is saved:
 
 ```php
-// Triggered automatically on save
-Attachment::saved(function (Attachment $attachment) {
+// Triggered automatically on save (in Attachment::booted())
+static::saved(function (Attachment $attachment) {
     if ($attachment->isImage()) {
         GenerateImageThumbnail::dispatch($attachment);
     }
 });
 ```
+
+The job reads settings from `Aura::option('media')` which allows runtime configuration via the admin settings panel. If `generate_thumbnails` is disabled, no thumbnails are created.
 
 ### Manual Thumbnail Generation
 
@@ -341,65 +367,84 @@ use Aura\Base\Services\ThumbnailGenerator;
 
 $generator = app(ThumbnailGenerator::class);
 
-// Generate specific size
-$path = $generator->generate('media/image.jpg', 800, 600);
+// Generate specific size (cropped to fit)
+$thumbnailPath = $generator->generate('media/image.jpg', 800, 600);
+// Returns: 'thumbnails/media/800_600_image.jpg'
 
-// Width-only (maintains aspect ratio)
-$path = $generator->generate('media/image.jpg', 1200);
+// Width-only (maintains aspect ratio, no upscaling)
+$thumbnailPath = $generator->generate('media/image.jpg', 1200);
+// Returns: 'thumbnails/media/1200_auto_image.jpg'
 ```
+
+> **Note**: If `restrict_to_dimensions` is enabled in config, only dimensions defined in `dimensions` array are allowed. Requesting other dimensions will throw a `NotFoundHttpException`.
 
 ### Image URL Generation
 
 ```php
-// Using thumbnail method
-$attachment->thumbnail('sm');      // Predefined size
-$attachment->thumbnail('lg');      // Large size
+// Using thumbnail method with predefined sizes
+$attachment->thumbnail('xs');   // 200px width
+$attachment->thumbnail('sm');   // 600px width (default)
+$attachment->thumbnail('md');   // 1200px width
+$attachment->thumbnail('lg');   // 2000px width
+$attachment->thumbnail('thumbnail'); // 600x600 cropped
 
-// Using route for custom dimensions
+// Get original file URL
+$attachment->path();            // Full URL to original
+
+// Get file path with specific size
+$attachment->path('md');        // URL if thumbnail exists
+
+// Using route for on-demand generation
 route('aura.image', [
     'path' => $attachment->url,
     'width' => 800,
-    'height' => 400,
+    'height' => 400, // Optional
 ]);
 ```
 
+> **Note**: For non-image files, `thumbnail()` returns the original file path.
+
 ### Image Processing Features
 
-- **Smart Resizing**: Maintains aspect ratio by default
-- **No Upscaling**: Never enlarges images beyond original
-- **Format Optimization**: Converts to JPEG with configurable quality
-- **Cache Headers**: Proper caching for performance
+- **Smart Resizing**: Maintains aspect ratio when only width is specified
+- **No Upscaling**: Returns original path if requested size exceeds original dimensions
+- **Format Optimization**: Converts to JPEG with configurable quality (set via `media.quality`)
+- **Cached Thumbnails**: Existing thumbnails are returned without regeneration
+- **Dimension Restrictions**: Optional security feature to only allow configured sizes
 
 ## Media Selection
 
 ### Media Manager Modal
 
-The MediaManager component provides a selection interface:
+The `MediaManager` Livewire component provides a selection interface:
 
 ```php
-// Open media manager
+// Open media manager modal
 $this->dispatch('openModal', 
     component: 'aura::media-manager',
     arguments: [
-        'model' => $this->model,
-        'slug' => 'gallery',
-        'selected' => $this->selected,
+        'model' => get_class($this->model), // Resource class name
+        'slug' => 'gallery',                 // Field slug
+        'selected' => $this->selected,       // Currently selected IDs
         'modalAttributes' => [
             'multiple' => true,
             'maxFiles' => 10,
         ],
     ]
 );
+
+// Listen for selection
+// The component dispatches 'updateField' with selected IDs
+// and 'media-manager-selected' when complete
 ```
 
 ### Selection Features
 
-- **Grid/List Views**: Toggle between display modes
-- **Search**: Find files by name
-- **Filtering**: By type, date, size
-- **Sorting**: Name, date, size
-- **Multi-select**: Checkbox selection
-- **Preview**: Image thumbnails, file icons
+- **Grid View**: Default display mode showing thumbnails
+- **Pagination**: 25 items per page
+- **Multi-select**: Select multiple attachments
+- **Preview**: Image thumbnails for visual files
+- **Integration**: Syncs selection with parent form via Livewire events
 
 > 📹 **Video Placeholder**: [Media Manager modal interface showing selection process, search, filtering, and multi-select functionality]
 
@@ -410,22 +455,24 @@ $this->dispatch('openModal',
 ```php
 use Aura\Base\Resources\Attachment;
 
-// Import from URL
+// Import from URL (downloads and stores the file)
 $attachment = Attachment::import(
     'https://example.com/image.jpg',
-    'products' // optional folder
+    'attachments' // folder within public disk (default: 'attachments')
 );
+// File is stored at: storage/app/public/attachments/{unique_id}.jpg
 
 // Import from uploaded file
 $file = $request->file('upload');
 $attachment = Attachment::create([
     'name' => $file->getClientOriginalName(),
+    'title' => $file->getClientOriginalName(),
     'url' => $file->store('media', 'public'),
     'size' => $file->getSize(),
     'mime_type' => $file->getMimeType(),
 ]);
 
-// Bulk import
+// Bulk import from URLs
 $urls = [
     'https://example.com/image1.jpg',
     'https://example.com/image2.jpg',

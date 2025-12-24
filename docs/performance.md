@@ -1,6 +1,6 @@
 # Performance Optimization
 
-Aura CMS is built with performance in mind, offering numerous optimization strategies and techniques to ensure your applications run efficiently at scale. This guide covers caching strategies, database optimization, asset management, and monitoring tools.
+Aura CMS is built with performance in mind, utilizing multi-layered caching, optimized database queries, and background job processing. This guide covers the actual caching strategies, database optimization, and performance patterns used in Aura CMS.
 
 ## Table of Contents
 
@@ -14,78 +14,204 @@ Aura CMS is built with performance in mind, offering numerous optimization strat
 8. [Media Optimization](#media-optimization)
 9. [Server Configuration](#server-configuration)
 10. [Monitoring & Profiling](#monitoring--profiling)
-11. [Performance Testing](#performance-testing)
-12. [Best Practices](#best-practices)
+11. [Best Practices](#best-practices)
 
 ## Introduction
 
 Performance optimization in Aura CMS involves multiple layers:
 
-- **Application Level**: Caching, query optimization, lazy loading
-- **Database Level**: Indexes, query optimization, connection pooling
-- **Frontend Level**: Asset optimization, lazy loading, CDN usage
-- **Server Level**: PHP OPcache, Redis/Memcached, HTTP/2
-
-### Performance Goals
-
-- Page load times under 200ms
-- Database queries under 50ms
-- Asset delivery under 100ms
-- Concurrent user support: 1000+ active users
-- Memory usage under 128MB per request
+- **Application Level**: Multi-layered caching (Laravel Cache, static arrays, instance properties), eager loading, field caching
+- **Database Level**: Optimized indexes for team-scoped queries, meta table joins
+- **Background Processing**: Queued jobs for thumbnail generation and permission creation
+- **Frontend Level**: Asset optimization with Vite, lazy loading
 
 ## Caching Strategies
 
-### Application Caching
+Aura CMS implements a multi-layered caching strategy combining Laravel's Cache facade, static arrays, and instance properties for optimal performance.
 
-Aura CMS provides multiple caching layers:
+### Options Caching
 
-#### Options Caching
-
-Options are automatically cached for 1 hour:
+Options are automatically cached for 1 hour with team-scoped cache keys:
 
 ```php
-// Automatic caching in Aura::getOption()
+// Automatic caching in Aura::getOption() - src/Aura.php
 public function getOption($name)
 {
-    $cacheKey = $this->getCacheKey('aura.' . $name);
-    
-    return Cache::remember($cacheKey, 3600, function () use ($name) {
-        return Option::where('name', $name)->first()?->value;
+    // Team-scoped cache key when teams are enabled
+    if (config('aura.teams') && optional(optional(auth()->user())->resource)->currentTeam) {
+        return Cache::remember(
+            auth()->user()->current_team_id . '.aura.' . $name,
+            now()->addHour(),
+            function () use ($name) {
+                return auth()->user()->currentTeam->getOption($name);
+            }
+        );
+    }
+
+    // Global cache key when teams are disabled
+    return Cache::remember('aura.' . $name, now()->addHour(), function () use ($name) {
+        $option = Option::where('name', $name)->first();
+        return $option ? json_decode($option->value, true) : [];
     });
 }
 
-// Clear option cache when updated
-public function setOption($name, $value)
+// Update option (cache is NOT automatically cleared - clear manually if needed)
+public function updateOption($key, $value)
 {
-    Option::updateOrCreate(['name' => $name], ['value' => $value]);
-    Cache::forget($this->getCacheKey('aura.' . $name));
+    if (config('aura.teams')) {
+        auth()->user()->currentTeam->updateOption($key, $value);
+    } else {
+        Option::withoutGlobalScopes([app(TeamScope::class)])
+            ->updateOrCreate(['name' => $key], ['value' => $value]);
+    }
 }
 ```
 
-#### Navigation Caching
+### Navigation Caching
 
-Navigation is cached per user and team:
+Navigation is automatically cached per user and team for 1 hour:
 
 ```php
-// In your AppServiceProvider
-public function boot()
+// Automatic caching in Aura::navigation() - src/Aura.php
+public function navigation()
 {
-    // Cache navigation for 1 hour
-    Aura::cacheNavigation(3600);
-    
-    // Or implement custom caching
-    Aura::navigationUsing(function () {
-        $cacheKey = 'nav-' . auth()->id() . '-' . auth()->user()->current_team_id;
+    return Cache::remember(
+        'user-' . auth()->id() . '-' . auth()->user()->current_team_id . '-navigation',
+        3600,
+        function () {
+            // Filters resources by permission and builds navigation structure
+            $resources = collect($this->getResources())
+                ->filter(fn ($resource) => auth()->user()->can('viewAny', app($resource)))
+                ->map(fn ($r) => app($r)->navigation())
+                ->filter(fn ($r) => $r['showInNavigation'] ?? true)
+                ->sortBy('sort');
+            
+            return collect($resources)->groupBy('group');
+        }
+    );
+}
+```
+
+### Field Caching
+
+Aura CMS uses multiple static caches to avoid recomputing field definitions:
+
+```php
+// Static array caching in InputFieldsHelpers trait - src/Traits/InputFieldsHelpers.php
+trait InputFieldsHelpers
+{
+    protected static $fieldClassesBySlug = [];
+    protected static $fieldsBySlug = [];
+    protected static $fieldsCollectionCache = [];
+    protected static $inputFieldSlugs = [];
+    protected static $mappedFields = [];
+
+    public function fieldsCollection()
+    {
+        $class = get_class($this);
         
-        return Cache::remember($cacheKey, 3600, function () {
-            return Aura::buildNavigation();
-        });
+        if (isset(self::$fieldsCollectionCache[$class])) {
+            return self::$fieldsCollectionCache[$class];
+        }
+        
+        self::$fieldsCollectionCache[$class] = collect($this->getFields());
+        return self::$fieldsCollectionCache[$class];
+    }
+
+    public function fieldBySlug($slug)
+    {
+        $key = get_class($this) . '-' . $slug;
+        
+        if (isset(self::$fieldsBySlug[$key])) {
+            return self::$fieldsBySlug[$key];
+        }
+        
+        $result = $this->fieldsCollection()->firstWhere('slug', $slug);
+        self::$fieldsBySlug[$key] = $result;
+        
+        return $result;
+    }
+}
+```
+
+### Instance Property Caching
+
+Resources cache processed fields per instance:
+
+```php
+// In Resource.php - src/Resource.php
+public $fieldsAttributeCache;
+
+public function getFieldsAttribute()
+{
+    if (!isset($this->fieldsAttributeCache) || $this->fieldsAttributeCache === null) {
+        $this->fieldsAttributeCache = collect($this->getFieldsWithoutConditionalLogic())
+            ->filter(fn ($value, $key) => $this->shouldDisplayField($key));
+    }
+    
+    return $this->fieldsAttributeCache;
+}
+
+// Clear cache when model is saved
+public function clearFieldsAttributeCache()
+{
+    $this->fieldsAttributeCache = null;
+    
+    if ($this->usesMeta()) {
+        $this->load('meta');
+    }
+}
+```
+
+### Team Scope Caching
+
+The current team ID is cached indefinitely to avoid repeated database queries:
+
+```php
+// In TeamScope.php - src/Models/Scopes/TeamScope.php
+private function getCurrentTeamId()
+{
+    if (!Auth::check()) {
+        return null;
+    }
+
+    $userId = Auth::id();
+    $cacheKey = "user_{$userId}_current_team_id";
+
+    return Cache::rememberForever($cacheKey, function () use ($userId) {
+        return DB::table('users')->where('id', $userId)->value('current_team_id');
     });
 }
 ```
 
-#### Resource Caching
+### User Data Caching
+
+User-specific data is cached for 1 hour:
+
+```php
+// In User.php - src/Resources/User.php
+public function getCacheKeyForRoles()
+{
+    return auth()->user()->current_team_id . '.user.' . $this->id . '.roles';
+}
+
+public function getRolesAttribute()
+{
+    return Cache::remember($this->getCacheKeyForRoles(), now()->addMinutes(60), function () {
+        return $this->roles()->get();
+    });
+}
+
+// Cache bookmarks, sidebar state, columns, etc.
+public function getBookmarks()
+{
+    return Cache::remember('user.' . $this->id . '.bookmarks', now()->addHour(), function () {
+        return $this->getUserOption('bookmarks') ?? [];
+    });
+}
+```
+
+### Resource Caching Example
 
 Cache expensive resource operations:
 
@@ -98,125 +224,120 @@ class ProductResource extends Resource
             return Category::pluck('name', 'id')->toArray();
         });
     }
-    
-    public function getStatsProperty()
+}
+```
+
+### Table Row Caching
+
+The `CachedRows` trait provides optional caching for table data:
+
+```php
+// In CachedRows trait - src/Livewire/Table/Traits/CachedRows.php
+trait CachedRows
+{
+    protected $useCache = false;
+
+    public function useCachedRows()
     {
-        return Cache::remember('product-stats-' . $this->id, 300, function () {
-            return [
-                'views' => $this->views()->count(),
-                'sales' => $this->orders()->sum('quantity'),
-                'revenue' => $this->orders()->sum('total'),
-            ];
-        });
+        $this->useCache = true;
+    }
+
+    protected function cache(callable $callback)
+    {
+        $cacheKey = $this->id;
+
+        if ($this->useCache && cache()->has($cacheKey)) {
+            return cache()->get($cacheKey);
+        }
+
+        $result = $callback();
+        cache()->put($cacheKey, $result);
+
+        return $result;
     }
 }
 ```
 
-### View Caching
+### Clearing All Cache
 
-Cache rendered views for static content:
+Use the Aura facade to clear all caches:
 
 ```php
-// Cache entire pages
-Route::middleware('cache.headers:public;max_age=3600')->group(function () {
-    Route::get('/about', AboutController::class);
-    Route::get('/terms', TermsController::class);
-});
+// Clear all cache and routes
+Aura::clear();
 
-// Cache view fragments
-@cache('product-sidebar', 3600)
-    <x-product-categories :categories="$categories" />
-    <x-popular-products :limit="10" />
-@endcache
+// Clear only conditional logic cache
+Aura::clearConditionsCache();
 ```
 
-### Query Result Caching
+### Recommended Cache Configuration
 
-Cache database query results:
-
-```php
-// Simple query caching
-$popularProducts = Cache::remember('popular-products', 3600, function () {
-    return Product::with(['category', 'images'])
-        ->where('status', 'active')
-        ->orderBy('sales_count', 'desc')
-        ->limit(10)
-        ->get();
-});
-
-// Tagged caching for easy invalidation
-$products = Cache::tags(['products', 'inventory'])->remember('all-products', 3600, function () {
-    return Product::with('category')->get();
-});
-
-// Clear tagged cache
-Cache::tags(['products'])->flush();
-```
-
-### Cache Configuration
-
-Configure caching in `config/cache.php`:
+For production, use Redis for better performance:
 
 ```php
-'default' => env('CACHE_DRIVER', 'redis'),
+// .env
+CACHE_DRIVER=redis
 
+// config/cache.php
 'stores' => [
     'redis' => [
         'driver' => 'redis',
         'connection' => 'cache',
         'lock_connection' => 'default',
     ],
-    
-    'array' => [
-        'driver' => 'array',
-        'serialize' => false,
-    ],
-],
-
-// Redis configuration for better performance
-'redis' => [
-    'client' => env('REDIS_CLIENT', 'predis'),
-    'default' => [
-        'host' => env('REDIS_HOST', '127.0.0.1'),
-        'password' => env('REDIS_PASSWORD'),
-        'port' => env('REDIS_PORT', 6379),
-        'database' => env('REDIS_DB', 0),
-        'pool' => [
-            'min_connections' => 1,
-            'max_connections' => 10,
-            'max_idle_time' => 60,
-        ],
-    ],
 ],
 ```
 
 ## Database Optimization
 
-### Indexes
+### Built-in Indexes
 
-Aura CMS includes optimized indexes out of the box:
+Aura CMS includes optimized indexes out of the box in the migration stub (`database/migrations/create_aura_tables.php.stub`):
 
 ```php
-// Composite indexes for efficient queries
+// Posts table indexes (team-aware)
 Schema::create('posts', function (Blueprint $table) {
-    // ... columns
+    $table->id();
+    $table->text('title')->nullable();
+    $table->longText('content')->nullable();
+    $table->string('type', 20);
+    $table->string('status', 20)->default('publish')->nullable();
+    $table->string('slug')->index()->nullable();
+    $table->foreignId('user_id')->nullable()->index();
+    $table->foreignId('parent_id')->nullable()->index();
     
-    // Team-based queries
-    $table->index(['team_id', 'type']);
-    
-    // Status and sorting
-    $table->index(['type', 'status', 'created_at', 'id']);
-    
-    // Slug lookups
-    $table->unique(['team_id', 'type', 'slug']);
+    if (config('aura.teams')) {
+        $table->foreignId('team_id')->nullable();
+        $table->index(['team_id', 'type']); // Team-scoped type queries
+    } else {
+        $table->index(['type', 'status', 'created_at', 'id']); // Non-team queries
+    }
 });
 
-// Meta table indexes
+// Meta table indexes - optimized for key-value lookups
 Schema::create('meta', function (Blueprint $table) {
-    // ... columns
+    $table->id();
+    $table->morphs('metable');
+    $table->string('key')->nullable()->index();
+    $table->longText('value')->nullable();
     
-    // Efficient meta lookups
     $table->index(['metable_type', 'metable_id', 'key']);
+});
+
+// MySQL-specific index for meta value searches
+if (config('database.default') === 'mysql') {
+    DB::statement('CREATE INDEX idx_meta_metable_id_key_value ON meta (metable_id, `key`, value(255));');
+}
+
+// Post relations table
+Schema::create('post_relations', function (Blueprint $table) {
+    $table->morphs('resource');
+    $table->morphs('related');
+    $table->integer('order')->nullable();
+    $table->string('slug')->nullable();
+    
+    $table->index(['resource_id', 'related_id', 'related_type']);
+    $table->index('slug');
 });
 ```
 
@@ -241,44 +362,24 @@ public function up()
 }
 ```
 
-### Database Connection Pooling
-
-Configure connection pooling:
-
-```php
-// config/database.php
-'mysql' => [
-    'driver' => 'mysql',
-    'host' => env('DB_HOST', '127.0.0.1'),
-    'port' => env('DB_PORT', '3306'),
-    'database' => env('DB_DATABASE', 'forge'),
-    'username' => env('DB_USERNAME', 'forge'),
-    'password' => env('DB_PASSWORD', ''),
-    'charset' => 'utf8mb4',
-    'collation' => 'utf8mb4_unicode_ci',
-    'prefix' => '',
-    'prefix_indexes' => true,
-    'strict' => true,
-    'engine' => null,
-    'options' => extension_loaded('pdo_mysql') ? array_filter([
-        PDO::MYSQL_ATTR_SSL_CA => env('MYSQL_ATTR_SSL_CA'),
-        PDO::ATTR_PERSISTENT => true, // Enable persistent connections
-        PDO::ATTR_EMULATE_PREPARES => false, // Use real prepared statements
-    ]) : [],
-],
-```
-
 ### Migration to Custom Tables
 
 For better performance with large datasets, migrate from posts/meta to custom tables:
 
 ```bash
-# Generate migration for custom table
-php artisan aura:resource Product --custom-table
+# Create a new resource with custom table support
+php artisan aura:resource Product --custom
 
-# Migrate existing data
-php artisan aura:migrate-to-custom products
+# Migrate existing resource from posts table to custom table
+php artisan aura:migrate-from-posts-to-custom-table
 ```
+
+This interactive command will:
+1. Ask which resource to migrate
+2. Generate the migration file
+3. Modify the resource class to set `$customTable = true`
+4. Optionally run the migration
+5. Optionally transfer existing data
 
 Custom table benefits:
 - Direct column access (no JSON parsing)
@@ -286,91 +387,115 @@ Custom table benefits:
 - Improved query performance
 - Type-safe columns
 
+### Resource Configuration for Custom Tables
+
+```php
+class Product extends Resource
+{
+    // Enable custom table mode
+    public static $customTable = true;
+    
+    // Specify table name
+    protected $table = 'products';
+    
+    // Disable meta storage (optional)
+    public static bool $usesMeta = false;
+}
+```
+
 ## Query Optimization
 
 ### Eager Loading
 
-Prevent N+1 queries with eager loading:
+Aura CMS automatically eager loads the `meta` relationship when `usesMeta()` returns true:
 
 ```php
-// In your Resource
+// In Resource.php constructor - src/Resource.php
+public function __construct(array $attributes = [])
+{
+    parent::__construct($attributes);
+    
+    if ($this->usesMeta()) {
+        $this->with[] = 'meta';  // Automatically eager load meta
+    }
+}
+```
+
+Use the `indexQuery` method to add custom eager loading for table views:
+
+```php
+// In your Resource class
 public function indexQuery($query)
 {
     return $query->with(['category', 'tags', 'author']);
 }
-
-// Or define default eager loading
-protected $with = ['category', 'meta'];
-
-// Conditional eager loading
-public function scopeWithAll($query)
-{
-    return $query->with(['category', 'tags', 'images', 'reviews']);
-}
 ```
 
-### Query Scoping
-
-Limit data retrieval with scopes:
+The Table component automatically calls `indexQuery` if it exists:
 
 ```php
-// Resource-specific scopes
-public function scopeActive($query)
-{
-    return $query->where('status', 'active');
+// In Table.php - src/Livewire/Table/Table.php
+if (method_exists($this->model, 'indexQuery')) {
+    $query = $this->model->indexQuery($query, $this);
 }
-
-public function scopeForTable($query)
-{
-    return $query->select(['id', 'name', 'price', 'status', 'created_at']);
-}
-
-// Usage
-$products = Product::active()->forTable()->paginate(20);
 ```
 
-### Chunking Large Datasets
+### Meta Field Query Scopes
 
-Process large datasets efficiently:
+Aura CMS provides optimized scopes for querying meta fields (in `AuraModelConfig` trait):
+
+```php
+// Simple meta field query
+$posts = Post::whereMeta('color', 'blue')->get();
+
+// With operator
+$posts = Post::whereMeta('price', '>', 100)->get();
+
+// Multiple conditions (AND)
+$posts = Post::whereMeta(['color' => 'blue', 'size' => 'large'])->get();
+
+// OR conditions
+$posts = Post::orWhereMeta('color', 'red')->get();
+
+// IN query
+$posts = Post::whereInMeta('status', ['active', 'pending'])->get();
+
+// NOT IN query
+$posts = Post::whereNotInMeta('status', ['archived', 'deleted'])->get();
+
+// JSON contains (for array meta values)
+$posts = Post::whereMetaContains('tags', 'featured')->get();
+```
+
+### Join Optimization for Sorting
+
+The table component uses efficient left joins for sorting on meta fields:
+
+```php
+// In Sorting trait - src/Livewire/Table/Traits/Sorting.php
+$query->leftJoin('meta', function ($join) use ($field) {
+    $join->on('posts.id', '=', 'meta.metable_id')
+         ->where('meta.metable_type', '=', $this->model->getMorphClass())
+         ->where('meta.key', '=', $field);
+});
+```
+
+### Chunking and Cursors
+
+For large datasets, use Laravel's built-in chunking:
 
 ```php
 // Process in chunks to avoid memory issues
 Product::chunk(100, function ($products) {
     foreach ($products as $product) {
-        // Process each product
         ProcessProduct::dispatch($product);
     }
 });
 
-// Or use cursor for even better memory efficiency
+// Or use cursor for streaming results
 foreach (Product::cursor() as $product) {
-    // Process one at a time
+    // Process one at a time - minimal memory usage
 }
-```
-
-### Raw Queries for Complex Operations
-
-Use raw queries when necessary:
-
-```php
-// Complex aggregation
-$stats = DB::select("
-    SELECT 
-        DATE(created_at) as date,
-        COUNT(*) as total_orders,
-        SUM(total) as revenue,
-        AVG(total) as avg_order_value
-    FROM orders
-    WHERE created_at >= ?
-    GROUP BY DATE(created_at)
-", [now()->subDays(30)]);
-
-// Bulk updates
-DB::update("
-    UPDATE products 
-    SET status = 'inactive' 
-    WHERE last_sold_at < ? AND stock = 0
-", [now()->subMonths(6)]);
 ```
 
 ## Asset Optimization
@@ -490,14 +615,85 @@ ASSET_URL=https://cdn.yourdomain.com
 
 ## Queue Configuration
 
-### Queue Driver Selection
+Aura CMS uses Laravel's queue system for background processing of thumbnails and permissions.
 
-Choose the right queue driver:
+### Built-in Queue Jobs
+
+Aura CMS includes three queue jobs (in `src/Jobs/`):
+
+**1. GenerateImageThumbnail** - Generates multiple thumbnail sizes for uploaded images:
 
 ```php
-// .env for production
+// src/Jobs/GenerateImageThumbnail.php
+class GenerateImageThumbnail implements ShouldQueue
+{
+    use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
+
+    public function handle(ThumbnailGenerator $thumbnailGenerator)
+    {
+        $settings = Aura::option('media');
+        
+        if (!$settings || !($settings['generate_thumbnails'] ?? false)) {
+            return;
+        }
+
+        foreach ($settings['dimensions'] as $thumbnail) {
+            $thumbnailGenerator->generate(
+                $this->attachment->fields['url'],
+                $thumbnail['width'],
+                $thumbnail['height'] ?? null
+            );
+        }
+    }
+}
+```
+
+**2. GenerateResourcePermissions** - Creates CRUD permissions for a resource:
+
+```php
+// src/Jobs/GenerateResourcePermissions.php
+class GenerateResourcePermissions implements ShouldQueue
+{
+    use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
+
+    public function handle()
+    {
+        $r = app($this->resource);
+        
+        // Creates: view, viewAny, create, update, restore, delete, forceDelete, scope
+        Permission::firstOrCreate(
+            ['slug' => 'view-' . $r::$slug],
+            ['name' => 'View ' . $r->pluralName(), 'group' => $r->pluralName()]
+        );
+        // ... other permissions
+    }
+}
+```
+
+**3. GenerateAllResourcePermissions** - Generates permissions for all resources (synchronous):
+
+```php
+// src/Jobs/GenerateAllResourcePermissions.php - runs synchronously
+class GenerateAllResourcePermissions
+{
+    public function handle()
+    {
+        DB::transaction(function () use ($resources) {
+            foreach ($resources as $resource) {
+                $this->generatePermissionsForResource(app($resource));
+            }
+        });
+    }
+}
+```
+
+### Queue Configuration
+
+For production, use Redis:
+
+```php
+// .env
 QUEUE_CONNECTION=redis
-REDIS_QUEUE=default
 
 // config/queue.php
 'redis' => [
@@ -506,60 +702,25 @@ REDIS_QUEUE=default
     'queue' => env('REDIS_QUEUE', 'default'),
     'retry_after' => 90,
     'block_for' => null,
-    'after_commit' => false,
 ],
 ```
 
-### Job Optimization
-
-Optimize job processing:
-
-```php
-// Dispatch jobs efficiently
-class ProcessProductImport implements ShouldQueue
-{
-    use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
-    
-    public $timeout = 3600; // 1 hour for large imports
-    public $tries = 3;
-    public $backoff = [60, 300, 900]; // Exponential backoff
-    
-    public function handle()
-    {
-        // Process in chunks
-        $this->importFile->chunkById(100, function ($records) {
-            foreach ($records as $record) {
-                ProcessSingleProduct::dispatch($record)->onQueue('imports');
-            }
-        });
-    }
-    
-    public function failed(Throwable $exception)
-    {
-        // Notify user of failure
-        $this->user->notify(new ImportFailedNotification($exception));
-    }
-}
-```
-
-### Queue Workers
-
-Configure queue workers:
+### Running Queue Workers
 
 ```bash
-# Supervisor configuration
+# Development
+php artisan queue:work
+
+# Production with Supervisor
 [program:aura-worker]
 process_name=%(program_name)s_%(process_num)02d
 command=php /path/to/artisan queue:work redis --sleep=3 --tries=3 --max-time=3600
 autostart=true
 autorestart=true
-stopasgroup=true
-killasgroup=true
 user=www-data
 numprocs=4
 redirect_stderr=true
 stdout_logfile=/path/to/logs/worker.log
-stopwaitsecs=3600
 ```
 
 ## Livewire Performance
@@ -672,62 +833,83 @@ Debounce user input:
 
 ## Media Optimization
 
-### Image Processing
+### Image Processing Configuration
 
-Configure image optimization:
+Configure image optimization in `config/aura.php`:
 
 ```php
-// config/aura.php
+// Actual configuration in config/aura.php
 'media' => [
-    'quality' => 80, // JPEG quality
-    'format' => 'webp', // Modern format
+    'disk' => 'public',           // Storage disk to use
+    'path' => 'media',            // Upload path
+    'quality' => 80,              // JPEG quality (1-100)
+    'restrict_to_dimensions' => true,  // Only allow configured sizes
+    'max_file_size' => 10000,     // Max file size in KB
+    'generate_thumbnails' => true, // Enable thumbnail generation
     'dimensions' => [
-        ['name' => 'thumbnail', 'width' => 150, 'height' => 150],
-        ['name' => 'small', 'width' => 300],
-        ['name' => 'medium', 'width' => 600],
-        ['name' => 'large', 'width' => 1200],
+        ['name' => 'xs', 'width' => 200],
+        ['name' => 'sm', 'width' => 600],
+        ['name' => 'md', 'width' => 1200],
+        ['name' => 'lg', 'width' => 2000],
+        ['name' => 'thumbnail', 'width' => 600, 'height' => 600],
     ],
-    'lazy_loading' => true,
-    'responsive' => true,
 ],
 ```
 
-### Lazy Loading Images
+### Thumbnail Generator
 
-Implement lazy loading:
+The `ThumbnailGenerator` service creates optimized thumbnails on-demand:
 
-```blade
-<img 
-    src="{{ $product->image->url('thumbnail') }}"
-    data-src="{{ $product->image->url('large') }}"
-    loading="lazy"
-    class="lazyload"
-    alt="{{ $product->name }}"
->
+```php
+// src/Services/ThumbnailGenerator.php
+class ThumbnailGenerator
+{
+    public function generate(string $path, int $width, ?int $height = null): string
+    {
+        $quality = Config::get('aura.media.quality', 80) / 100;
+        
+        // Validate dimensions if restricted
+        if (Config::get('aura.media.restrict_to_dimensions', true)) {
+            // Only allow configured dimension combinations
+        }
+        
+        // Skip if thumbnail already exists (caching)
+        if (Storage::disk('public')->exists($thumbnailPath)) {
+            return $thumbnailPath;
+        }
+        
+        // Don't upscale images
+        if ($width > $originalWidth) {
+            return $path;
+        }
+        
+        // Generate and save thumbnail
+        $image->resize($width, null, fn ($constraint) => $constraint->aspectRatio());
+        $image->encode('jpg', $quality * 100);
+        Storage::disk('public')->put($thumbnailPath, (string) $image);
+        
+        return $thumbnailPath;
+    }
+}
+```
 
-<!-- With responsive images -->
-<picture>
-    <source 
-        type="image/webp"
-        srcset="{{ $image->url('small') }} 300w,
-                {{ $image->url('medium') }} 600w,
-                {{ $image->url('large') }} 1200w"
-        sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-    >
-    <img 
-        src="{{ $image->url('medium') }}"
-        loading="lazy"
-        alt="{{ $alt }}"
-    >
-</picture>
+### Thumbnail Naming Convention
+
+Thumbnails are stored in a `thumbnails/` subdirectory with predictable names:
+
+```
+Original: media/images/photo.jpg
+Thumbnails:
+  - thumbnails/media/images/600_auto_photo.jpg  (width only)
+  - thumbnails/media/images/600_600_photo.jpg   (width + height)
 ```
 
 ### Storage Optimization
 
-Optimize file storage:
+For production, consider using S3 or another cloud storage:
 
 ```php
-// Use S3 for better performance
+// config/filesystems.php
 'disks' => [
     's3' => [
         'driver' => 's3',
@@ -735,13 +917,16 @@ Optimize file storage:
         'secret' => env('AWS_SECRET_ACCESS_KEY'),
         'region' => env('AWS_DEFAULT_REGION'),
         'bucket' => env('AWS_BUCKET'),
-        'url' => env('AWS_URL'),
-        'endpoint' => env('AWS_ENDPOINT'),
-        'use_path_style_endpoint' => env('AWS_USE_PATH_STYLE_ENDPOINT', false),
         'options' => [
             'CacheControl' => 'max-age=31536000, public',
         ],
     ],
+],
+
+// Then update config/aura.php
+'media' => [
+    'disk' => 's3',
+    // ...
 ],
 ```
 
@@ -955,192 +1140,135 @@ if (extension_loaded('newrelic')) {
 });
 ```
 
-## Performance Testing
-
-### Load Testing
-
-Test application performance:
-
-```php
-// tests/Performance/LoadTest.php
-test('homepage loads under 200ms', function () {
-    $times = [];
-    
-    for ($i = 0; $i < 10; $i++) {
-        $start = microtime(true);
-        $response = $this->get('/');
-        $times[] = microtime(true) - $start;
-    }
-    
-    $average = array_sum($times) / count($times);
-    
-    expect($average)->toBeLessThan(0.2); // 200ms
-});
-
-test('handles concurrent users', function () {
-    $responses = collect(range(1, 100))->map(function () {
-        return Http::async()->get(config('app.url'));
-    });
-    
-    $results = Http::pool(fn ($pool) => $responses);
-    
-    $successRate = collect($results)
-        ->filter(fn ($response) => $response->ok())
-        ->count() / 100;
-    
-    expect($successRate)->toBeGreaterThan(0.95); // 95% success rate
-});
-```
-
-### Database Performance Testing
-
-```php
-test('product query performs well with large dataset', function () {
-    // Seed large dataset
-    Product::factory()->count(10000)->create();
-    
-    $start = microtime(true);
-    
-    $products = Product::with(['category', 'tags'])
-        ->where('status', 'active')
-        ->orderBy('created_at', 'desc')
-        ->paginate(20);
-    
-    $duration = microtime(true) - $start;
-    
-    expect($duration)->toBeLessThan(0.1); // 100ms
-    expect(count(DB::getQueryLog()))->toBeLessThan(5); // Avoid N+1
-});
-```
-
 ## Best Practices
 
-### 1. Cache Everything
+### 1. Use Aura's Built-in Caching
+
+Aura CMS caches automatically. Leverage it:
 
 ```php
-// Cache expensive operations
-public function getExpensiveData()
+// Options are cached automatically - just use them
+$settings = Aura::getOption('media');
+
+// Navigation is cached per user/team
+$nav = Aura::navigation();
+
+// Clear all caches when needed
+Aura::clear();
+```
+
+### 2. Implement indexQuery for Eager Loading
+
+```php
+// In your Resource class
+class Product extends Resource
 {
-    return Cache::remember('expensive-data', 3600, function () {
-        return $this->calculateExpensiveData();
-    });
-}
-
-// Use tagged cache for related data
-Cache::tags(['products', 'inventory'])->remember('key', 3600, $callback);
-```
-
-### 2. Optimize Queries
-
-```php
-// Bad - N+1 query
-$posts = Post::all();
-foreach ($posts as $post) {
-    echo $post->author->name; // Extra query per post
-}
-
-// Good - Eager loading
-$posts = Post::with('author')->get();
-foreach ($posts as $post) {
-    echo $post->author->name; // No extra queries
+    public function indexQuery($query)
+    {
+        return $query->with(['category', 'tags', 'images']);
+    }
 }
 ```
 
-### 3. Use Indexes Wisely
+### 3. Use Meta Query Scopes
 
 ```php
-// Add indexes for commonly queried columns
-Schema::table('products', function (Blueprint $table) {
-    $table->index(['category_id', 'status', 'created_at']);
-});
+// Use optimized scopes instead of raw queries
+$products = Product::whereMeta('status', 'active')
+    ->whereInMeta('category', [1, 2, 3])
+    ->get();
 ```
 
-### 4. Implement Pagination
+### 4. Migrate to Custom Tables for Large Datasets
 
-```php
-// Always paginate large datasets
-$products = Product::paginate(20); // Not ->get() or ->all()
+```bash
+# When posts/meta table gets too large
+php artisan aura:migrate-from-posts-to-custom-table
 ```
 
 ### 5. Queue Heavy Operations
 
 ```php
-// Don't process in request
+// Thumbnails are automatically queued
+// For custom jobs:
 ProcessLargeImport::dispatch($file)->onQueue('imports');
 ```
 
-### 6. Monitor Performance
+### 6. Enable Thumbnail Restrictions
 
 ```php
-// Add monitoring to critical paths
-$timer = app('performance.timer');
-$timer->start('checkout-process');
-
-// ... checkout logic ...
-
-$timer->stop('checkout-process');
+// config/aura.php - prevent arbitrary dimension attacks
+'media' => [
+    'restrict_to_dimensions' => true,
+    'dimensions' => [
+        ['name' => 'sm', 'width' => 600],
+        ['name' => 'md', 'width' => 1200],
+    ],
+],
 ```
 
-### 7. Optimize Assets
+### 7. Optimize Autoloader
 
-```javascript
-// Lazy load components
-const HeavyComponent = () => import('./HeavyComponent.vue');
-
-// Use image optimization
-import imagemin from 'imagemin';
+```bash
+# Production optimization
+composer dump-autoload -o
+php artisan config:cache
+php artisan route:cache
+php artisan view:cache
 ```
 
-### 8. Database Connection Pooling
+### 8. Use Redis for Cache and Queues
+
+```env
+CACHE_DRIVER=redis
+QUEUE_CONNECTION=redis
+SESSION_DRIVER=redis
+```
+
+### 9. Monitor Slow Queries
 
 ```php
-// Use persistent connections
-'options' => [
-    PDO::ATTR_PERSISTENT => true,
-];
-```
-
-### 9. Use CDN
-
-```nginx
-# Serve static assets from CDN
-location ~* \.(css|js|jpg|jpeg|png|gif|ico|woff|woff2)$ {
-    return 301 https://cdn.example.com$request_uri;
+// In AppServiceProvider
+public function boot()
+{
+    if (config('app.debug')) {
+        DB::listen(function ($query) {
+            if ($query->time > 100) {
+                Log::warning('Slow query', [
+                    'sql' => $query->sql,
+                    'time' => $query->time,
+                ]);
+            }
+        });
+    }
 }
 ```
 
-### 10. Profile Regularly
+### 10. Clear Cache Strategically
 
-```bash
-# Use Blackfire or XHProf
-blackfire run php artisan tinker
+```php
+// Clear specific caches, not everything
+Cache::forget('user.' . $user->id . '.roles');
+Cache::forget($user->current_team_id . '.aura.settings');
+
+// Or clear all when needed
+Aura::clear();
 ```
-
-> 📹 **Video Placeholder**: [Performance profiling walkthrough showing how to identify and fix bottlenecks in Aura CMS]
-
-## Pro Tips
-
-1. **Use Read Replicas**: Distribute read queries to replica databases
-2. **Implement HTTP/2**: Enable server push for critical assets
-3. **Use Object Cache**: Cache Eloquent models in Redis
-4. **Optimize Autoloader**: Use `composer dump-autoload -o`
-5. **Enable Query Cache**: MySQL query cache for repeated queries
-6. **Use Job Batching**: Process multiple jobs efficiently
-7. **Implement ETags**: For efficient HTTP caching
-8. **Use Compression**: Enable Gzip/Brotli for all text assets
-9. **Optimize Images**: Use WebP format with fallbacks
-10. **Monitor Everything**: Set up alerts for performance degradation
 
 ## Conclusion
 
-Performance optimization is an ongoing process. Start with the basics:
+Aura CMS includes many performance optimizations out of the box:
 
-1. Enable caching (Redis recommended)
-2. Add database indexes
-3. Implement eager loading
-4. Use queues for heavy tasks
-5. Monitor and profile regularly
+1. **Multi-layered caching** - Options, navigation, fields, and user data are cached automatically
+2. **Optimized indexes** - Team-scoped queries and meta lookups are indexed
+3. **Eager loading** - Meta relationships are loaded automatically
+4. **Background jobs** - Thumbnails and permissions are processed asynchronously
+5. **Query scopes** - Efficient meta field querying with dedicated scopes
 
-Remember that premature optimization is the root of all evil. Measure first, optimize second, and always test the impact of your changes.
+For production:
+- Use Redis for caching and queues
+- Enable Laravel's built-in caching (`config:cache`, `route:cache`)
+- Consider custom tables for high-volume resources
+- Monitor slow queries and optimize as needed
 
-For additional performance resources, see [Laravel Performance](https://laravel.com/docs/performance) and [Livewire Performance](https://livewire.laravel.com/docs/performance).
+For additional performance resources, see [Laravel Performance](https://laravel.com/docs/optimization) and [Livewire Performance](https://livewire.laravel.com/docs/performance).

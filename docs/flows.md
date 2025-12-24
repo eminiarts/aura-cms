@@ -1,12 +1,13 @@
-# Flows in Aura CMS (Coming Soon)
+# Flows in Aura CMS (Planned Feature)
 
-> =§ **Note**: The Flows feature is currently under development and will be available in a future release of Aura CMS. This documentation provides a preview of the planned functionality.
+> **Note**: The Flows feature is planned for a future release of Aura CMS and is not yet implemented. This documentation provides a preview of the planned functionality and serves as a design specification.
 
-Flows in Aura CMS will provide a powerful workflow automation system that allows you to create visual, event-driven automations for your content and business processes. Think of it as Zapier or n8n built directly into your CMS.
+Flows will provide a powerful workflow automation system that allows you to create visual, event-driven automations for your content and business processes. Think of it as Zapier or n8n built directly into your CMS.
 
 ## Table of Contents
 
 - [Overview](#overview)
+- [Current Status](#current-status)
 - [Core Concepts](#core-concepts)
 - [Flow Builder](#flow-builder)
 - [Triggers](#triggers)
@@ -16,6 +17,8 @@ Flows in Aura CMS will provide a powerful workflow automation system that allows
 - [Examples](#examples)
 - [Advanced Features](#advanced-features)
 - [Best Practices](#best-practices)
+- [Planned Features](#planned-features)
+- [Integration Points](#integration-points)
 
 ## Overview
 
@@ -26,39 +29,66 @@ Flows will enable you to:
 - **Integrate with external services** via webhooks and APIs
 - **Schedule automated processes** with cron-like precision
 
+## Current Status
+
+The Flows feature is in the **design phase**. The codebase contains:
+
+- **Infrastructure hooks** in the BulkActions trait for calling flows via `callFlow.{flowId}`
+- **Placeholder code** in Resource classes for manual flow triggers
+- **Test group configuration** for future flow tests
+
+The core Flow models, resources, Livewire components, and database migrations have not yet been implemented.
+
 ## Core Concepts
 
 ### What is a Flow?
 
-A Flow is a visual representation of an automated workflow consisting of:
+A Flow will be a visual representation of an automated workflow consisting of:
 - **Trigger**: What starts the flow
 - **Actions**: What the flow does
 - **Conditions**: Logic that controls the flow path
 - **Variables**: Data that passes through the flow
 
-### Flow Components
+### Planned Flow Model
 
 ```php
-namespace Aura\Flows;
+namespace Aura\Base\Resources;
 
-class Flow extends Model
+use Aura\Base\Resource;
+
+class Flow extends Resource
 {
-    protected $fillable = [
-        'name',
-        'description',
-        'trigger',
-        'actions',
-        'status', // draft, active, paused
-        'team_id',
-        'last_run_at',
-        'run_count',
-    ];
+    public static string $type = 'Flow';
     
-    protected $casts = [
-        'trigger' => 'array',
-        'actions' => 'array',
-        'last_run_at' => 'datetime',
-    ];
+    protected static ?string $slug = 'flow';
+
+    public static function getFields(): array
+    {
+        return [
+            [
+                'type' => 'Aura\\Base\\Fields\\Text',
+                'name' => 'Name',
+                'slug' => 'name',
+                'validation' => 'required|max:255',
+            ],
+            [
+                'type' => 'Aura\\Base\\Fields\\Textarea',
+                'name' => 'Description',
+                'slug' => 'description',
+            ],
+            [
+                'type' => 'Aura\\Base\\Fields\\Select',
+                'name' => 'Status',
+                'slug' => 'status',
+                'options' => [
+                    ['key' => 'draft', 'value' => 'Draft'],
+                    ['key' => 'active', 'value' => 'Active'],
+                    ['key' => 'paused', 'value' => 'Paused'],
+                ],
+            ],
+            // trigger and actions stored as JSON in meta
+        ];
+    }
 }
 ```
 
@@ -298,22 +328,24 @@ Allow users to manually trigger flows:
 ]
 ```
 
-### Custom Actions
+### Custom Actions (Planned)
 
-Register custom actions:
+When implemented, you'll be able to register custom actions:
 
 ```php
 namespace App\Flows\Actions;
 
-use Aura\Flows\Actions\Action;
+use Aura\Base\Flows\Actions\Action;
 
 class SendSmsAction extends Action
 {
-    public $type = 'send_sms';
-    public $name = 'Send SMS';
-    public $description = 'Send an SMS message via Twilio';
+    public string $type = 'send_sms';
     
-    public function fields()
+    public string $name = 'Send SMS';
+    
+    public string $description = 'Send an SMS message via Twilio';
+    
+    public function fields(): array
     {
         return [
             [
@@ -331,7 +363,7 @@ class SendSmsAction extends Action
         ];
     }
     
-    public function execute($context, $config)
+    public function execute(array $context, array $config): array
     {
         $to = $this->parseValue($config['to'], $context);
         $message = $this->parseValue($config['message'], $context);
@@ -342,14 +374,14 @@ class SendSmsAction extends Action
             config('services.twilio.token')
         );
         
-        $twilio->messages->create($to, [
+        $result = $twilio->messages->create($to, [
             'from' => config('services.twilio.from'),
             'body' => $message
         ]);
         
         return [
             'success' => true,
-            'message_sid' => $message->sid
+            'message_sid' => $result->sid
         ];
     }
 }
@@ -789,9 +821,9 @@ Flow::create([
 ]
 ```
 
-## Future Enhancements
+## Planned Features
 
-The Flows feature is actively being developed. Planned enhancements include:
+The Flows feature is planned with the following capabilities:
 
 1. **Visual Flow Designer**: Drag-and-drop interface for building flows
 2. **Flow Templates**: Pre-built flows for common use cases
@@ -802,8 +834,50 @@ The Flows feature is actively being developed. Planned enhancements include:
 7. **Version Control**: Track changes and rollback flows
 8. **Collaborative Editing**: Multiple users can work on flows together
 
+## Integration Points
+
+The codebase already contains infrastructure for Flows integration:
+
+### Bulk Actions Support
+
+Resources can trigger flows on selected items via bulk actions:
+
+```php
+// In your Resource class
+public function getBulkActions(): array
+{
+    return [
+        'callFlow.1' => 'Run Approval Workflow',
+        'callFlow.2' => 'Send Notifications',
+    ];
+}
+```
+
+The `BulkActions` trait in `src/Livewire/Table/Traits/BulkActions.php` handles the `callFlow.{flowId}` pattern.
+
+### Manual Flow Triggers
+
+Resources can define manual flow triggers that appear as action buttons:
+
+```php
+// Planned implementation
+public function callFlow(int $flowId): void
+{
+    $flow = Flow::find($flowId);
+    $operation = $flow->operation;
+
+    $flowLog = $flow->logs()->create([
+        'post_id' => $this->id,
+        'status' => 'running',
+        'started_at' => now(),
+    ]);
+
+    $operation->run($this, $flowLog->id);
+}
+```
+
 ---
 
-> =Å **Expected Release**: Q2 2024
+> **Status**: This feature is in the design phase. Check the [GitHub repository](https://github.com/eminiarts/aura-cms) for updates on development progress.
 > 
-> Join our [Discord community](https://discord.gg/aura-cms) to stay updated on the Flows feature development and provide feedback on the planned functionality.
+> Want to contribute? The design specification above outlines the planned architecture. Community contributions are welcome!

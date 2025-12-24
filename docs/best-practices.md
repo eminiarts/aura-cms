@@ -16,6 +16,8 @@ This guide covers coding standards, design patterns, security best practices, an
 10. [Testing Practices](#testing-practices)
 11. [Scalability Patterns](#scalability-patterns)
 12. [Common Patterns](#common-patterns)
+13. [Common Gotchas](#common-gotchas)
+14. [Pro Tips](#pro-tips)
 
 ## Coding Standards
 
@@ -26,55 +28,83 @@ Aura CMS follows Laravel's coding standards with PSR-12 compliance:
 ```php
 <?php
 
-declare(strict_types=1);
-
 namespace App\Aura\Resources;
 
 use Aura\Base\Resource;
-use Illuminate\Support\Str;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class Product extends Resource
 {
-    // Class constants first
+    // 1. Use traits first
+    use HasFactory;
+    
+    // 2. Public constants
     public const STATUS_ACTIVE = 'active';
     public const STATUS_INACTIVE = 'inactive';
     
-    // Public properties
-    public static string $model = \App\Models\Product::class;
+    // 3. Protected/private constants (alphabetically within group)
+    protected const CACHE_TTL = 3600;
     
-    // Protected properties
-    protected static bool $searchable = true;
+    // 4. Public properties (static, then instance)
+    public static $customTable = true;
     
-    // Private properties
+    public static ?string $slug = 'product';
+    
+    public static string $type = 'Product';
+    
+    // 5. Protected properties
+    protected static ?string $group = 'Shop';
+    
+    protected static array $searchable = ['name', 'description'];
+    
+    protected $fillable = ['name', 'price', 'status'];
+    
+    protected $table = 'products';
+    
+    // 6. Private properties
     private array $cache = [];
     
-    // Constructor
+    // 7. Constructor
     public function __construct(array $attributes = [])
     {
         parent::__construct($attributes);
     }
     
-    // Public methods (alphabetically)
-    public function getFields(): array
+    // 8. Magic methods (__get, __set, __call, etc.)
+    
+    // 9. Public methods (alphabetically sorted by Pint)
+    public static function getFields(): array
     {
         return [
-            // Field definitions
+            // Field definitions using array syntax
         ];
     }
     
-    // Protected methods
+    public function getIcon()
+    {
+        return '<svg>...</svg>';
+    }
+    
+    public function title()
+    {
+        return $this->name ?? '';
+    }
+    
+    // 10. Protected methods (alphabetically)
     protected function calculatePrice(): float
     {
         return $this->base_price * (1 + $this->tax_rate);
     }
     
-    // Private methods
+    // 11. Private methods (alphabetically)
     private function clearCache(): void
     {
         $this->cache = [];
     }
 }
 ```
+
+> **Note**: Pint automatically sorts methods alphabetically within each visibility group. Run `composer format` to apply formatting.
 
 ### Laravel Pint Configuration
 
@@ -83,18 +113,27 @@ Aura CMS uses Laravel Pint for code formatting:
 ```json
 {
     "preset": "laravel",
+    "exclude": ["build"],
     "rules": {
         "simplified_null_return": true,
         "ordered_class_elements": {
             "order": [
                 "use_trait",
                 "constant_public",
+                "constant_protected",
+                "constant_private",
                 "property_public",
+                "property_protected",
+                "property_private",
                 "construct",
+                "destruct",
+                "magic",
+                "phpunit",
                 "method_public",
                 "method_protected",
                 "method_private"
-            ]
+            ],
+            "sort_algorithm": "alpha"
         }
     }
 }
@@ -388,98 +427,147 @@ $product = app(Pipeline::class)
 
 ### Resource Structure
 
-Follow this structure for resources:
+Follow this structure for resources. Aura CMS uses array-based field definitions with fully qualified class names:
 
 ```php
 namespace App\Aura\Resources;
 
 use Aura\Base\Resource;
-use Aura\Base\Fields\{Text, Number, Select, Boolean, HasMany};
 
 class Product extends Resource
 {
-    public static string $model = \App\Models\Product::class;
+    // Use traits first (enforced by Pint)
     
-    public static ?string $icon = 'shopping-cart';
+    // Public static properties
+    public static ?string $slug = 'product';
     
-    public static bool $searchable = true;
+    public static ?int $sort = 10;
+    
+    public static string $type = 'Product';
+    
+    // Protected static properties
+    protected static ?string $group = 'Shop';
+    
+    protected static array $searchable = ['name', 'description', 'sku'];
+    
+    // Protected properties
+    protected $hidden = ['password'];
     
     public static function getFields(): array
     {
         return [
-            Text::make('Name')
-                ->rules('required|min:3|max:255')
-                ->searchable()
-                ->sortable(),
-                
-            Number::make('Price')
-                ->rules('required|numeric|min:0')
-                ->step(0.01)
-                ->prefix('$')
-                ->sortable(),
-                
-            Select::make('Status')
-                ->options([
+            [
+                'type' => 'Aura\\Base\\Fields\\Tab',
+                'name' => 'Details',
+                'slug' => 'tab-details',
+                'global' => true,
+            ],
+            [
+                'type' => 'Aura\\Base\\Fields\\Panel',
+                'name' => 'Product Info',
+                'slug' => 'product-info',
+                'style' => [
+                    'width' => '70',
+                ],
+            ],
+            [
+                'type' => 'Aura\\Base\\Fields\\Text',
+                'name' => 'Name',
+                'slug' => 'name',
+                'validation' => 'required|min:3|max:255',
+                'on_index' => true,
+                'on_forms' => true,
+                'on_view' => true,
+                'searchable' => true,
+            ],
+            [
+                'type' => 'Aura\\Base\\Fields\\Number',
+                'name' => 'Price',
+                'slug' => 'price',
+                'validation' => 'required|numeric|min:0',
+                'on_index' => true,
+                'on_forms' => true,
+                'on_view' => true,
+            ],
+            [
+                'type' => 'Aura\\Base\\Fields\\Select',
+                'name' => 'Status',
+                'slug' => 'status',
+                'options' => [
                     'draft' => 'Draft',
                     'active' => 'Active',
                     'inactive' => 'Inactive',
-                ])
-                ->default('draft')
-                ->rules('required|in:draft,active,inactive'),
-                
-            Boolean::make('Featured')
-                ->default(false)
-                ->help('Featured products appear on homepage'),
-                
-            HasMany::make('Reviews', 'reviews', Review::class),
-        ];
-    }
-    
-    public static function indexQuery($query)
-    {
-        return $query->with(['category', 'tags'])
-            ->withCount('reviews')
-            ->withAvg('reviews', 'rating');
-    }
-    
-    public static function searchableFields(): array
-    {
-        return ['name', 'description', 'sku'];
-    }
-    
-    public static function filters(): array
-    {
-        return [
-            'status' => [
-                'label' => 'Status',
-                'type' => 'select',
-                'options' => static::getStatusOptions(),
+                ],
+                'validation' => 'required|in:draft,active,inactive',
+                'on_index' => true,
+                'on_forms' => true,
+                'on_view' => true,
             ],
-            'featured' => [
-                'label' => 'Featured Only',
-                'type' => 'boolean',
+            [
+                'type' => 'Aura\\Base\\Fields\\Panel',
+                'name' => 'Sidebar',
+                'slug' => 'sidebar',
+                'style' => [
+                    'width' => '30',
+                ],
             ],
-            'price_range' => [
-                'label' => 'Price Range',
-                'type' => 'range',
-                'min' => 0,
-                'max' => 1000,
+            [
+                'type' => 'Aura\\Base\\Fields\\Tags',
+                'name' => 'Tags',
+                'slug' => 'tags',
+                'resource' => 'Aura\\Base\\Resources\\Tag',
+                'create' => true,
+                'validation' => '',
+                'on_index' => true,
+                'on_forms' => true,
+                'on_view' => true,
+            ],
+            [
+                'type' => 'Aura\\Base\\Fields\\BelongsTo',
+                'name' => 'Category',
+                'slug' => 'category_id',
+                'resource' => 'App\\Aura\\Resources\\Category',
+                'validation' => '',
+                'on_index' => true,
+                'on_forms' => true,
+                'on_view' => true,
             ],
         ];
+    }
+    
+    public function indexQuery($query)
+    {
+        return $query->with(['category', 'tags']);
+    }
+    
+    public function getIcon()
+    {
+        return '<svg>...</svg>';
+    }
+    
+    public function title()
+    {
+        return $this->name ?? '';
     }
 }
 ```
 
 ### Custom Table Resources
 
-For better performance with large datasets:
+For better performance with large datasets, use custom tables instead of the shared `posts` table with meta:
 
 ```php
 class Product extends Resource
 {
-    public static string $model = \App\Models\Product::class;
+    // Enable custom table mode
+    public static $customTable = true;
     
-    public static bool $customTable = true;
+    // Optionally disable meta fields if all data is in columns
+    public static bool $usesMeta = false;
+    
+    public static ?string $slug = 'product';
+    
+    public static string $type = 'Product';
     
     protected $table = 'products';
     
@@ -493,13 +581,35 @@ class Product extends Resource
         'category_id',
         'stock',
         'sku',
+        'team_id',
+        'user_id',
     ];
     
-    // No need for meta fields
+    protected $casts = [
+        'price' => 'decimal:2',
+        'featured' => 'boolean',
+    ];
+    
+    // Fields map directly to database columns
     public static function getFields(): array
     {
         return [
-            // Fields map directly to columns
+            [
+                'type' => 'Aura\\Base\\Fields\\Text',
+                'name' => 'Name',
+                'slug' => 'name',
+                'validation' => 'required|max:255',
+                'on_index' => true,
+                'searchable' => true,
+            ],
+            [
+                'type' => 'Aura\\Base\\Fields\\Number',
+                'name' => 'Price',
+                'slug' => 'price',
+                'validation' => 'required|numeric|min:0',
+                'on_index' => true,
+            ],
+            // ... more fields
         ];
     }
 }
@@ -627,7 +737,7 @@ class ColorPicker extends Field
 ### Component Best Practices
 
 ```php
-namespace App\Http\Livewire;
+namespace Aura\Base\Livewire;
 
 use Aura\Base\Traits\WithLivewireHelpers;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
@@ -1285,57 +1395,121 @@ class AuraCustomizationServiceProvider extends ServiceProvider
 
 ### Test Organization
 
+Aura CMS uses Pest for testing with helper functions defined in `tests/Pest.php`:
+
 ```php
-describe('Product Management', function () {
-    beforeEach(function () {
-        $this->user = User::factory()->create();
-        $this->actingAs($this->user);
-    });
+<?php
+
+use Aura\Base\Livewire\CreateResource;
+use Aura\Base\Resources\User;
+
+use function Pest\Livewire\livewire;
+
+// Before each test, create a Superadmin and login
+beforeEach(function () {
+    $this->actingAs($this->user = createSuperAdmin());
+});
+
+test('only superadmins can access this component', function () {
+    livewire(CreateResource::class)
+        ->assertOk();
+});
+
+test('user without role can not access component', function () {
+    // Create User without super admin role
+    $user = User::factory()->create();
     
-    describe('Creation', function () {
-        test('can create product with valid data', function () {
-            $data = Product::factory()->raw();
-            
-            $response = $this->post(route('products.store'), $data);
-            
-            $response->assertRedirect();
-            expect(Product::where('name', $data['name'])->exists())->toBeTrue();
-        });
-        
-        test('validates required fields', function () {
-            $response = $this->post(route('products.store'), []);
-            
-            $response->assertSessionHasErrors(['name', 'price']);
-        });
-    });
+    $this->actingAs($user);
     
-    describe('Permissions', function () {
-        test('non-admin cannot create products', function () {
-            $user = User::factory()->create(['role' => 'customer']);
-            $this->actingAs($user);
-            
-            $response = $this->post(route('products.store'), Product::factory()->raw());
-            
-            $response->assertForbidden();
-        });
-    });
+    livewire(CreateResource::class)
+        ->assertForbidden();
+});
+
+test('validation works correctly', function () {
+    livewire(CreateResource::class)
+        ->call('save')
+        ->assertHasErrors(['form.fields.name' => 'required']);
+});
+
+test('can save with valid data', function () {
+    livewire(CreateResource::class)
+        ->set('form.fields.name', 'Test')
+        ->call('save')
+        ->assertHasNoErrors();
 });
 ```
 
-### Component Testing
+### Test Helper Functions
+
+These helpers are defined in `tests/Pest.php`:
 
 ```php
-test('product table filters work correctly', function () {
-    Product::factory()->count(3)->create(['status' => 'active']);
-    Product::factory()->count(2)->create(['status' => 'inactive']);
-    
-    Livewire::test(ProductTable::class)
-        ->assertSee('5 products')
-        ->set('filters.status', 'active')
-        ->assertSee('3 products')
-        ->set('search', 'nonexistent')
-        ->assertSee('No products found');
+// Creates a super admin user with team (for teams-enabled tests)
+$user = createSuperAdmin();
+
+// Creates a super admin without team context
+$user = createSuperAdminWithoutTeam();
+
+// Creates an admin user with limited permissions
+$user = createAdmin();
+
+// Creates a test post
+$post = createPost(['title' => 'Test Post']);
+```
+
+### Livewire Component Testing
+
+Use the `livewire()` function from Pest Livewire:
+
+```php
+use function Pest\Livewire\livewire;
+
+test('component renders correctly', function () {
+    livewire(ProductTable::class)
+        ->assertOk()
+        ->assertSee('Products');
 });
+
+test('can set properties and call methods', function () {
+    livewire(EditResource::class, ['slug' => 'post', 'id' => 1])
+        ->set('form.fields.title', 'Updated Title')
+        ->call('save')
+        ->assertHasNoErrors();
+});
+
+test('filters work correctly', function () {
+    livewire(Table::class, ['slug' => 'post'])
+        ->set('search', 'test')
+        ->assertSet('search', 'test');
+});
+```
+
+### Database Testing
+
+- Feature tests automatically use `RefreshDatabase` trait
+- Tests in `FeatureWithDatabaseMigrations/` use `DatabaseMigrations`
+- Use factories for creating test data
+
+```php
+test('can create user with factory', function () {
+    $user = User::factory()->create([
+        'name' => 'Test User',
+        'email' => 'test@example.com',
+    ]);
+    
+    expect($user->name)->toBe('Test User');
+});
+```
+
+### Test Groups
+
+Run tests by group using Pest:
+
+```bash
+vendor/bin/pest --group=fields
+vendor/bin/pest --group=flows
+vendor/bin/pest --group=table
+vendor/bin/pest --group=resource
 ```
 
 ## Scalability Patterns
@@ -1408,23 +1582,45 @@ class InventoryService
 // Create a settings resource
 class Settings extends Resource
 {
+    public static $customTable = true;
+    
+    public static ?string $slug = 'settings';
+    
+    public static string $type = 'Settings';
+    
+    protected $table = 'settings';
+    
     public static function getFields(): array
     {
         return [
-            Text::make('Site Name')
-                ->rules('required|max:255'),
-                
-            Textarea::make('Site Description')
-                ->rules('max:500'),
-                
-            Image::make('Logo'),
-            
-            Select::make('Timezone')
-                ->options(timezone_identifiers_list())
-                ->default('UTC'),
-                
-            Boolean::make('Maintenance Mode')
-                ->help('Enable to show maintenance page to visitors'),
+            [
+                'type' => 'Aura\\Base\\Fields\\Text',
+                'name' => 'Site Name',
+                'slug' => 'site_name',
+                'validation' => 'required|max:255',
+            ],
+            [
+                'type' => 'Aura\\Base\\Fields\\Textarea',
+                'name' => 'Site Description',
+                'slug' => 'site_description',
+                'validation' => 'max:500',
+            ],
+            [
+                'type' => 'Aura\\Base\\Fields\\Image',
+                'name' => 'Logo',
+                'slug' => 'logo',
+            ],
+            [
+                'type' => 'Aura\\Base\\Fields\\Select',
+                'name' => 'Timezone',
+                'slug' => 'timezone',
+                'options' => timezone_identifiers_list(),
+            ],
+            [
+                'type' => 'Aura\\Base\\Fields\\Toggle',
+                'name' => 'Maintenance Mode',
+                'slug' => 'maintenance_mode',
+            ],
         ];
     }
     
@@ -1488,9 +1684,39 @@ class Product extends Model
 
 > 📹 **Video Placeholder**: [Best practices walkthrough showing real-world implementation of these patterns in an Aura CMS application]
 
+## Common Gotchas
+
+Be aware of these common issues when developing with Aura CMS:
+
+1. **Team Scope**: Most models use `TeamScope` global scope. Use `withoutGlobalScope()` to bypass in tests:
+   ```php
+   $role = Role::withoutGlobalScope(\Aura\Base\Models\Scopes\TeamScope::class)
+       ->where('slug', 'super_admin')
+       ->first();
+   ```
+
+2. **Aura Facade Reset**: Tests automatically reset the Aura facade after each test to prevent pollution. This is configured in `tests/Pest.php`.
+
+3. **Meta Fields**: Resources can store fields in a `meta` table. Check `usesMeta()` to determine storage method:
+   ```php
+   if ($this->usesMeta()) {
+       // Fields stored in meta table
+   }
+   ```
+
+4. **Type Column**: The `posts` table uses a `type` column for single-table inheritance. Custom table resources should set `$customTable = true`.
+
+5. **Field Type Strings**: Always use fully qualified class names with escaped backslashes in field definitions:
+   ```php
+   'type' => 'Aura\\Base\\Fields\\Text',  // Correct
+   'type' => 'Aura\Base\Fields\Text',     // Wrong - will fail
+   ```
+
+6. **Static Analysis**: PHPStan is configured at level 3. Run `composer analyse` before committing.
+
 ## Pro Tips
 
-1. **Use Type Declarations**: Always use strict types and return type declarations
+1. **Use Type Declarations**: Always use type hints for parameters and return types
 2. **Leverage Laravel Features**: Use Laravel's built-in features before creating custom solutions
 3. **Keep It Simple**: Don't over-engineer; start simple and refactor as needed
 4. **Document Complex Logic**: Add comments for non-obvious code
@@ -1499,7 +1725,7 @@ class Product extends Model
 7. **Write Tests First**: TDD helps design better APIs
 8. **Use Value Objects**: For complex data structures
 9. **Implement Caching Early**: But make it configurable
-10. **Monitor Performance**: Use tools like Telescope and New Relic
+10. **Monitor Performance**: Use tools like Telescope and Debugbar
 
 ## Conclusion
 

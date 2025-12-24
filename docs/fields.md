@@ -1,8 +1,8 @@
 # Fields Reference
 
-> 📹 **Video Placeholder**: Complete overview of all 40+ Aura CMS field types with live demonstrations
+> 📹 **Video Placeholder**: Complete overview of all 42 Aura CMS field types with live demonstrations
 
-Fields are the building blocks of Aura CMS, transforming your resources into powerful, feature-rich forms and interfaces. With over 40 field types available out of the box, you can handle any data requirement from simple text inputs to complex relationships and media management.
+Fields are the building blocks of Aura CMS, transforming your resources into powerful, feature-rich forms and interfaces. With 42 field types available out of the box, you can handle any data requirement from simple text inputs to complex relationships and media management.
 
 ## Table of Contents
 
@@ -18,7 +18,6 @@ Fields are the building blocks of Aura CMS, transforming your resources into pow
   - [Phone](#phone)
   - [Password](#password)
   - [Slug](#slug)
-- [Date & Time Fields](#date--time-fields)
   - [Date](#date)
   - [Datetime](#datetime)
   - [Time](#time)
@@ -31,22 +30,17 @@ Fields are the building blocks of Aura CMS, transforming your resources into pow
 - [Media Fields](#media-fields)
   - [Image](#image)
   - [File](#file)
-- [Rich Content Fields](#rich-content-fields)
-  - [Wysiwyg](#wysiwyg)
+- [JS Fields](#js-fields)
+  - [AdvancedSelect](#advancedselect)
+  - [Color](#color)
   - [Code](#code)
-  - [Embed](#embed)
-  - [Json](#json)
+  - [Wysiwyg](#wysiwyg)
 - [Relationship Fields](#relationship-fields)
   - [BelongsTo](#belongsto)
   - [HasMany](#hasmany)
   - [HasOne](#hasone)
   - [BelongsToMany](#belongstomany)
   - [Tags](#tags)
-- [Advanced Fields](#advanced-fields)
-  - [AdvancedSelect](#advancedselect)
-  - [Color](#color)
-  - [Permissions](#permissions)
-  - [Roles](#roles)
 - [Structure Fields](#structure-fields)
   - [Group](#group)
   - [Repeater](#repeater)
@@ -62,6 +56,10 @@ Fields are the building blocks of Aura CMS, transforming your resources into pow
 - [Special Fields](#special-fields)
   - [ID](#id)
   - [Hidden](#hidden)
+  - [Embed](#embed)
+  - [Json](#json)
+  - [Permissions](#permissions)
+  - [Roles](#roles)
 - [Field Comparison Table](#field-comparison-table)
 - [Custom Fields](#custom-fields)
 - [Best Practices](#best-practices)
@@ -179,18 +177,16 @@ All fields share these common configuration options:
 
 ## Field Categories
 
-Aura CMS organizes fields into logical categories:
+Aura CMS organizes fields into logical categories based on their `$optionGroup` property:
 
-1. **Input Fields** - Basic data entry (Text, Number, Email, etc.)
-2. **Date & Time Fields** - Temporal data (Date, Datetime, Time)
-3. **Choice Fields** - Selection from options (Select, Radio, Checkbox, etc.)
-4. **Media Fields** - File handling (Image, File)
-5. **Rich Content Fields** - Advanced content (Wysiwyg, Code, Json)
-6. **Relationship Fields** - Model relationships (BelongsTo, HasMany, etc.)
-7. **Advanced Fields** - Complex functionality (AdvancedSelect, Tags, etc.)
-8. **Structure Fields** - Form organization (Group, Repeater, Panel, Tab)
-9. **Layout Fields** - Visual elements (Heading, HorizontalLine)
-10. **Special Fields** - Utility fields (ID, Hidden, View)
+1. **Input Fields** - Basic data entry (Text, Textarea, Number, Email, Phone, Password, Slug, Date, Datetime, Time)
+2. **Choice Fields** - Selection from options (Boolean, Select, Radio, Checkbox, Status)
+3. **Media Fields** - File handling (Image, File)
+4. **JS Fields** - Interactive JavaScript-powered fields (AdvancedSelect, Color, Code, Wysiwyg)
+5. **Relationship Fields** - Model relationships (BelongsTo, HasMany, HasOne, BelongsToMany)
+6. **Structure Fields** - Form organization (Group, Repeater, Panel, Tab, Tabs)
+7. **Layout Fields** - Visual elements (Heading, HorizontalLine, View, ViewValue, LivewireComponent)
+8. **Special Fields** - Utility fields (ID, Hidden, Tags, Embed, Json, Permissions, Roles)
 
 ## Input Fields
 
@@ -235,16 +231,16 @@ Multi-line text input for longer content.
     'type' => 'Aura\\Base\\Fields\\Textarea',
     'validation' => 'required|string|min:10|max:500',
     'placeholder' => 'Enter description...',
-    'rows' => 5,
-    'max_length' => 500,
-    'live' => true,
+    'default' => '',              // Default value on create
+    'rows' => 3,                  // Number of visible rows (default: 3, min: 1)
+    'max_length' => 500,          // Maximum character count
 ]
 ```
 
 **Features:**
 - Adjustable rows
-- Character counter
-- Auto-resize option
+- Character counter with max_length
+- Default value support
 - Preserves line breaks
 
 **Database:** `text` column type
@@ -260,28 +256,25 @@ Numeric input with validation and formatting.
     'type' => 'Aura\\Base\\Fields\\Number',
     'validation' => 'required|numeric|min:0|max:99999',
     'placeholder' => '0.00',
-    'prefix' => '$',
-    'suffix' => 'USD',
-    'step' => 0.01,
-    'min' => 0,
-    'max' => 99999,
+    'default' => '',              // Default value on create
+    'prefix' => '$',              // Display prefix
+    'suffix' => 'USD',            // Display suffix
 ]
 ```
 
 **Features:**
 - Number validation
-- Min/max constraints
-- Step increments
 - Prefix/suffix display
-- Casts to integer/float
+- Casts to integer via `value()` method
+- Default value support
 
 **Database:** `integer` column type
 
 **Filter Options:**
-- equals / not equals
-- greater than / less than
-- greater than or equal / less than or equal
-- is empty / is not empty
+- equals / not_equals
+- greater_than / less_than
+- greater_than_or_equal / less_than_or_equal
+- is_empty / is_not_empty
 
 ### Email
 
@@ -359,25 +352,23 @@ Auto-generated URL-friendly slugs.
     'name' => 'Slug',
     'slug' => 'slug',
     'type' => 'Aura\\Base\\Fields\\Slug',
-    'validation' => 'required|unique:posts,slug',
-    'based_on' => 'title',
-    'custom' => false,
-    'disabled' => false,
+    'validation' => 'required|regex:/^[a-zA-Z0-9][a-zA-Z0-9_-]*$/|not_regex:/^[0-9]+$/',
+    'based_on' => 'title',      // Required: field to generate slug from
+    'custom' => true,           // Allow custom slug input
+    'disabled' => true,         // Show as disabled/readonly
     'placeholder' => 'auto-generated-slug',
+    'default' => '',
 ]
 ```
 
 **Features:**
-- Auto-generation from field
-- Manual override option
+- Auto-generation from specified field (`based_on`)
+- Manual override option when `custom` is enabled
 - Uniqueness validation
 - Real-time preview
+- Disabled state support
 
 **Database:** `string` column type
-
-## Date & Time Fields
-
-Specialized fields for temporal data.
 
 ### Date
 
@@ -389,28 +380,28 @@ Date picker with calendar interface.
     'slug' => 'published_date',
     'type' => 'Aura\\Base\\Fields\\Date',
     'validation' => 'required|date|after:today',
-    'format' => 'Y-m-d',
-    'display_format' => 'd.m.Y',
-    'enable_input' => true,
-    'maxDate' => '+1 year',
-    'weekStartsOn' => 1,
+    'format' => 'd.m.Y',              // Storage format (default: d.m.Y)
+    'display_format' => 'd.m.Y',      // Display format (default: d.m.Y)
+    'enable_input' => true,           // Allow manual input (default: true)
+    'maxDate' => 30,                  // Days from today to max date (0-365)
+    'weekStartsOn' => 1,              // 0=Sunday to 6=Saturday (default: 1=Monday)
 ]
 ```
 
 **Features:**
 - Calendar picker
-- Multiple date formats
-- Min/max date constraints
+- Configurable storage and display formats (PHP date format)
+- Max date constraint in days from today
 - Week start customization
 - Manual input option
 
 **Database:** `date` column type
 
 **Filter Options:**
-- date is / is not
-- date before / after
-- date on or before / after
-- date is empty / is not empty
+- date_is / date_is_not
+- date_before / date_after
+- date_on_or_before / date_on_or_after
+- date_is_empty / date_is_not_empty
 
 ### Datetime
 
@@ -422,28 +413,29 @@ Combined date and time picker.
     'slug' => 'event_start',
     'type' => 'Aura\\Base\\Fields\\Datetime',
     'validation' => 'required|date',
-    'format' => 'Y-m-d H:i:s',
-    'display_format' => 'd.m.Y H:i',
-    'enable_input' => true,
-    'minTime' => '09:00',
-    'maxTime' => '18:00',
-    'weekStartsOn' => 1,
+    'format' => 'd.m.Y H:i',          // Storage format (default: d.m.Y H:i)
+    'display_format' => 'd.m.Y H:i',  // Display format (default: d.m.Y H:i)
+    'enable_input' => true,           // Allow manual input (default: true)
+    'maxDate' => 30,                  // Days from today to max date
+    'minTime' => '09:00',             // Minimum selectable time
+    'maxTime' => '18:00',             // Maximum selectable time
+    'weekStartsOn' => 1,              // 0=Sunday to 6=Saturday (default: 1=Monday)
 ]
 ```
 
 **Features:**
 - Combined date/time picker
-- Time constraints
-- Timezone handling
-- Multiple formats
+- Time constraints (minTime, maxTime)
+- Configurable storage and display formats
+- Week start customization
 
 **Database:** `timestamp` column type
 
 **Filter Options:**
-- is / is not
+- is / is_not
 - before / after
-- on or before / after
-- is empty / is not empty
+- on_or_before / on_or_after
+- is_empty / is_not_empty
 
 ### Time
 
@@ -455,20 +447,20 @@ Time-only picker.
     'slug' => 'opening_time',
     'type' => 'Aura\\Base\\Fields\\Time',
     'validation' => 'required',
-    'format' => 'H:i:s',
-    'display_format' => 'H:i',
-    'enable_input' => true,
-    'enable_seconds' => false,
-    'minTime' => '09:00',
-    'maxTime' => '17:00',
+    'format' => 'H:i',                // Storage format (default: H:i)
+    'display_format' => 'H:i',        // Display format (default: H:i)
+    'enable_input' => true,           // Allow manual input (default: true)
+    'enable_seconds' => false,        // Show seconds picker (default: false)
+    'minTime' => '09:00',             // Minimum selectable time
+    'maxTime' => '17:00',             // Maximum selectable time
 ]
 ```
 
 **Features:**
 - Time picker interface
-- Optional seconds
-- Time constraints
-- 12/24 hour format
+- Optional seconds support
+- Time constraints (minTime, maxTime)
+- Manual input option
 
 **Database:** `string` column type
 
@@ -492,13 +484,13 @@ Toggle switch for true/false values.
 
 **Features:**
 - Toggle switch UI
-- Casts to boolean
+- Casts to boolean automatically via `get()` and `set()` methods
 - Default value support
 - Livewire integration
 
-**Database:** `string` column type (stores 'true'/'false')
+**Database:** `string` column type (stores boolean values)
 
-**Display:** ✓ for true, ✗ for false
+**Display:** Check icon (✓) for true, X icon (✗) for false
 
 ### Select
 
@@ -511,26 +503,33 @@ Dropdown selection from options.
     'type' => 'Aura\\Base\\Fields\\Select',
     'validation' => 'required|in:news,blog,tutorial',
     'options' => [
-        'news' => 'News',
-        'blog' => 'Blog Post',
-        'tutorial' => 'Tutorial',
+        ['key' => 'news', 'value' => 'News'],
+        ['key' => 'blog', 'value' => 'Blog Post'],
+        ['key' => 'tutorial', 'value' => 'Tutorial'],
     ],
-    'default' => 'blog',
-    'placeholder' => 'Select category...',
+    'default' => 'blog',              // Default value on create
+    'allow_multiple' => false,        // Allow multiple selections
 ]
 ```
 
+**Dynamic Options:** Define a method on your model:
+```php
+public function getCategoryOptions()
+{
+    return ['option1' => 'Label 1', 'option2' => 'Label 2'];
+}
+```
+
 **Features:**
-- Static or dynamic options
-- Placeholder support
-- Multiple selection
-- Option groups
+- Static or dynamic options via model method
+- Multiple selection support with `allow_multiple`
+- Options defined as repeater (key/value pairs)
 
 **Database:** `string` column type
 
 **Filter Options:**
-- is / is not
-- is empty / is not empty
+- is / is_not
+- is_empty / is_not_empty
 
 ### Radio
 
@@ -596,21 +595,26 @@ Specialized select with color-coded options.
     'slug' => 'status',
     'type' => 'Aura\\Base\\Fields\\Status',
     'validation' => 'required',
+    'default' => 'draft',             // Default value on create
+    'allow_multiple' => false,        // Allow multiple selections
     'options' => [
-        'draft' => ['label' => 'Draft', 'color' => 'gray'],
-        'review' => ['label' => 'In Review', 'color' => 'yellow'],
-        'published' => ['label' => 'Published', 'color' => 'green'],
-        'archived' => ['label' => 'Archived', 'color' => 'red'],
+        ['key' => 'draft', 'value' => 'Draft', 'color' => 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'],
+        ['key' => 'review', 'value' => 'In Review', 'color' => 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300'],
+        ['key' => 'published', 'value' => 'Published', 'color' => 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300'],
     ],
-    'default' => 'draft',
 ]
 ```
 
+**Available Colors:**
+- Blue, Green, Red, Yellow, Indigo, Purple, Pink, Gray, Orange, Teal
+
+Each color includes dark mode variants automatically.
+
 **Features:**
-- Color-coded badges
-- Predefined colors (blue, green, red, yellow, indigo, purple, pink, gray, orange, teal)
+- Color-coded badge display on index and view
 - Custom status workflows
-- Visual distinction
+- Multiple selection support
+- Dynamic options via model method
 
 **Database:** `string` column type
 
@@ -620,7 +624,7 @@ Fields for handling file uploads and media.
 
 ### Image
 
-Image upload with preview and management.
+Image upload with preview and management. Part of the **Media Fields** category.
 
 ```php
 [
@@ -628,22 +632,22 @@ Image upload with preview and management.
     'slug' => 'featured_image',
     'type' => 'Aura\\Base\\Fields\\Image',
     'validation' => 'required|image|max:2048',
-    'use_media_manager' => true,
-    'min_files' => 1,
-    'max_files' => 5,
-    'allowed_file_types' => ['image/jpeg', 'image/png', 'image/webp'],
+    'use_media_manager' => true,      // Enable media manager integration
+    'min_files' => 1,                 // Minimum number of files
+    'max_files' => 5,                 // Maximum number of files
+    'allowed_file_types' => 'jpg, png, gif',  // Comma-separated list of extensions
 ]
 ```
 
 **Features:**
 - Media manager integration
-- Drag & drop upload
-- Image preview
-- Multiple images
-- Thumbnail generation
-- Format validation
+- Image preview with thumbnails
+- Multiple image support
+- Min/max file constraints
+- File type restrictions (comma-separated extensions)
+- Stores as JSON array
 
-**Database:** `string` column type (JSON for multiple)
+**Database:** `string` column type (JSON array of attachment IDs)
 
 ### File
 
@@ -675,37 +679,70 @@ General file upload field.
 
 **Database:** `string` column type (JSON for multiple)
 
-## Rich Content Fields
+## JS Fields
 
-Advanced fields for complex content.
+Interactive JavaScript-powered fields with enhanced UI components.
 
-### Wysiwyg
+### AdvancedSelect
 
-Rich text editor with formatting tools.
+Enhanced select with search and AJAX. Part of the **JS Fields** category.
 
 ```php
 [
-    'name' => 'Content',
-    'slug' => 'content',
-    'type' => 'Aura\\Base\\Fields\\Wysiwyg',
-    'validation' => 'required|min:100',
-    'toolbar' => ['bold', 'italic', 'link', 'bullist', 'numlist'],
-    'height' => 400,
+    'name' => 'Products',
+    'slug' => 'products',
+    'type' => 'Aura\\Base\\Fields\\AdvancedSelect',
+    'validation' => 'required|array',
+    'resource' => 'App\\Resources\\Product',
+    'multiple' => true,                     // Allow multiple selections (default: true)
+    'create' => true,                       // Allow creating new items
+    'return_type' => 'id',                  // 'id' or 'object'
+    'polymorphic_relation' => true,         // Use polymorphic relations (default: true)
+    'thumbnail' => 'image',                 // Field slug for thumbnail display
+    'view_selected' => 'custom.selected',   // Custom view for selected items
+    'view_select' => 'custom.select',       // Custom view for dropdown items
+    'view_view' => 'custom.view',           // Custom view for display mode
+    'view_index' => 'custom.index',         // Custom view for table display
 ]
 ```
 
 **Features:**
-- Rich text editing (Quill.js)
-- Customizable toolbar
-- Media embedding
-- HTML output
-- Link management
+- AJAX search/loading with 5 results limit
+- Create new items inline
+- Multiple or single selection
+- Polymorphic relationship support
+- Custom display views for selected items and dropdown
+- Stores as JSON when multiple
 
-**Database:** `text` column type
+**Database:** `string` column type (JSON)
+
+### Color
+
+Color picker with multiple formats. Part of the **JS Fields** category.
+
+```php
+[
+    'name' => 'Brand Color',
+    'slug' => 'brand_color',
+    'type' => 'Aura\\Base\\Fields\\Color',
+    'validation' => 'required',
+    'format' => 'hex',      // Options: hex, rgb, hsl, hsv, cmyk
+    'native' => false,      // Use native browser color picker
+    'default' => '#3B82F6',
+]
+```
+
+**Features:**
+- Visual color picker (JS-powered)
+- Multiple format support (Hex, RGB, HSL, HSV, CMYK)
+- Native browser picker option
+- Custom color picker when native is disabled
+
+**Database:** `string` column type
 
 ### Code
 
-Syntax-highlighted code editor.
+Syntax-highlighted code editor. Part of the **JS Fields** category.
 
 ```php
 [
@@ -713,27 +750,71 @@ Syntax-highlighted code editor.
     'slug' => 'custom_css',
     'type' => 'Aura\\Base\\Fields\\Code',
     'validation' => 'nullable',
-    'language' => 'css',
-    'theme' => 'monokai',
-    'line_numbers' => true,
-    'min_height' => '200px',
+    'language' => 'css',          // Required: html, css, javascript, php, json, yaml, markdown
+    'line_numbers' => true,       // Show line numbers
+    'min_height' => 200,          // Minimum height in pixels (min: 100)
 ]
 ```
 
 **Features:**
-- Syntax highlighting (Monaco editor)
-- Multiple language support
-- Line numbers
-- Theme selection
-- Auto-formatting
+- Syntax highlighting
+- Line numbers toggle
+- Configurable minimum height
+- JSON pretty-printing on get
 
 **Supported Languages:**
 - HTML, CSS, JavaScript, PHP
 - JSON, YAML, Markdown
-- SQL, Python, Ruby, Java
-- And many more...
+
+**Database:** `string` column type
+
+### Wysiwyg
+
+Rich text editor with formatting tools. Part of the **JS Fields** category.
+
+```php
+[
+    'name' => 'Content',
+    'slug' => 'content',
+    'type' => 'Aura\\Base\\Fields\\Wysiwyg',
+    'validation' => 'required|min:100',
+]
+```
+
+**Features:**
+- Rich text editing
+- HTML output
+- Standard formatting tools
 
 **Database:** `text` column type
+
+### Code
+
+Syntax-highlighted code editor. Part of the **JS Fields** category.
+
+```php
+[
+    'name' => 'Custom CSS',
+    'slug' => 'custom_css',
+    'type' => 'Aura\\Base\\Fields\\Code',
+    'validation' => 'nullable',
+    'language' => 'css',          // Required: html, css, javascript, php, json, yaml, markdown
+    'line_numbers' => true,       // Show line numbers
+    'min_height' => 200,          // Minimum height in pixels (min: 100)
+]
+```
+
+**Features:**
+- Syntax highlighting
+- Line numbers toggle
+- Configurable minimum height
+- JSON pretty-printing on get
+
+**Supported Languages:**
+- HTML, CSS, JavaScript, PHP
+- JSON, YAML, Markdown
+
+**Database:** `string` column type
 
 ### Embed
 
@@ -793,18 +874,15 @@ Many-to-one relationship selector.
     'slug' => 'user_id',
     'type' => 'Aura\\Base\\Fields\\BelongsTo',
     'validation' => 'required|exists:users,id',
-    'resource' => 'Aura\\Base\\Resources\\User',
-    'display_field' => 'name',
-    'searchable' => true,
+    'resource' => 'Aura\\Base\\Resources\\User',  // Required: Related resource class
 ]
 ```
 
 **Features:**
-- AJAX search
-- Relationship management
-- Meta field support
-- Custom display
-- Eager loading
+- AJAX search with searchable fields
+- Displays linked resource title on index
+- Meta field support (searches through meta table)
+- Custom table support with optimized queries
 
 **Database:** `bigInteger` column type
 
@@ -817,21 +895,21 @@ One-to-many relationship display.
     'name' => 'Comments',
     'slug' => 'comments',
     'type' => 'Aura\\Base\\Fields\\HasMany',
-    'resource' => 'App\\Resources\\Comment',
-    'foreign_key' => 'post_id',
-    'display_field' => 'content',
-    'sortable' => true,
+    'resource' => 'App\\Resources\\Comment',  // Required: Related resource class
+    'foreign_key' => 'post_id',               // Foreign key for create links
+    'column' => 'post_id',                    // Column for direct hasMany relation
+    'reverse' => false,                       // Use reverse relationship
+    'reverse_slug' => 'field_slug',           // Slug for reverse relationship
 ]
 ```
 
 **Features:**
-- Related items display
-- Inline management
-- Sorting support
-- Pagination
-- Add/remove items
+- Related items display as table
+- Support for polymorphic relations via `post_relations`
+- Reverse relationship support
+- Embedded table component for related resources
 
-**Type:** `relation` (not stored in database)
+**Type:** `relation` (not stored in database, uses relationship queries)
 
 ### HasOne
 
@@ -881,7 +959,7 @@ Many-to-many relationship manager.
 
 ### Tags
 
-Specialized tagging system.
+Specialized tagging system with taxonomy support.
 
 ```php
 [
@@ -889,122 +967,23 @@ Specialized tagging system.
     'slug' => 'tags',
     'type' => 'Aura\\Base\\Fields\\Tags',
     'validation' => 'nullable|array',
-    'resource' => 'App\\Resources\\Tag',
-    'create' => true,
-    'max_tags' => 10,
+    'resource' => 'App\\Resources\\Tag',  // Required: Tag resource class
+    'create' => true,                     // Allow creating new tags (default: false)
+    'max_tags' => 10,                     // Maximum number of tags
 ]
 ```
 
 **Features:**
-- Tag creation on-the-fly
-- Auto-complete
-- Tag management
-- Morphable relationships
-- Badge display
+- Tag creation on-the-fly when `create` is enabled
+- Auto-complete from existing tags
+- Morphable relationships via `post_relations` table
+- Badge display with primary color
+- Ordered tags via pivot `order` column
 
-**Database:** Uses polymorphic relationship
+**Database:** Uses polymorphic relationship (`morphToMany` via `post_relations` table)
 
-## Advanced Fields
-
-Complex fields with advanced functionality.
-
-### AdvancedSelect
-
-Enhanced select with search and AJAX.
-
-```php
-[
-    'name' => 'Products',
-    'slug' => 'products',
-    'type' => 'Aura\\Base\\Fields\\AdvancedSelect',
-    'validation' => 'required|array',
-    'resource' => 'App\\Resources\\Product',
-    'multiple' => true,
-    'searchable' => true,
-    'create' => true,
-    'min_items' => 1,
-    'max_items' => 5,
-    'return_type' => 'id', // or 'object'
-    'polymorphic_relation' => false,
-]
-```
-
-**Features:**
-- AJAX search/loading
-- Create new items
-- Multiple selection
-- Polymorphic support
-- Custom display
-- Min/max constraints
-
-**Database:** `string` column type (JSON)
-
-### Color
-
-Color picker with multiple formats.
-
-```php
-[
-    'name' => 'Brand Color',
-    'slug' => 'brand_color',
-    'type' => 'Aura\\Base\\Fields\\Color',
-    'validation' => 'required',
-    'format' => 'hex', // hex, rgb, hsl, hsv, cmyk
-    'native' => false,
-    'default' => '#3B82F6',
-]
-```
-
-**Features:**
-- Visual color picker
-- Multiple format support
-- Native browser picker option
-- Preset colors
-- Alpha channel support
-
-**Database:** `string` column type
-
-### Permissions
-
-Permission management field.
-
-```php
-[
-    'name' => 'Permissions',
-    'slug' => 'permissions',
-    'type' => 'Aura\\Base\\Fields\\Permissions',
-    'resource' => 'App\\Resources\\Permission',
-]
-```
-
-**Features:**
-- Permission grid
-- Group by resource
-- Select all/none
-- Role integration
-
-**Database:** JSON encoded permissions
-
-### Roles
-
-Role assignment with team support.
-
-```php
-[
-    'name' => 'Roles',
-    'slug' => 'roles',
-    'type' => 'Aura\\Base\\Fields\\Roles',
-    'validation' => 'required|array',
-]
-```
-
-**Features:**
-- Team-aware roles
-- Multiple role assignment
-- Permission inheritance
-- Advanced select UI
-
-**Extends:** AdvancedSelect field
+**Filter Options:**
+- contains / does_not_contain
 
 ## Structure Fields
 
@@ -1012,7 +991,7 @@ Fields for organizing form layout.
 
 ### Group
 
-Groups fields without repetition.
+Groups fields without repetition. Part of the **Structure Fields** category.
 
 ```php
 [
@@ -1035,15 +1014,14 @@ Groups fields without repetition.
 ```
 
 **Features:**
-- Visual grouping
-- No data storage
-- Collapsible sections
-- Nested fields
-- Border options
+- Visual grouping with `$group = true`
+- No data storage (groups child fields only)
+- Nested fields support
+- Type: `group`
 
 ### Repeater
 
-Repeatable field groups.
+Repeatable field groups. Part of the **Structure Fields** category.
 
 ```php
 [
@@ -1051,8 +1029,8 @@ Repeatable field groups.
     'slug' => 'faq',
     'type' => 'Aura\\Base\\Fields\\Repeater',
     'validation' => 'array|min:1',
-    'min' => 1,
-    'max' => 10,
+    'min' => 0,               // Minimum entries (default: 0)
+    'max' => 10,              // Maximum entries (default: 0 = unlimited)
     'fields' => [
         [
             'name' => 'Question',
@@ -1069,24 +1047,23 @@ Repeatable field groups.
 ```
 
 **Features:**
-- Add/remove items
-- Reorder items
-- Min/max constraints
-- Nested field support
-- JSON storage
+- Add/remove items dynamically
+- Min/max entry constraints
+- Nested field support with automatic slug prefixing
+- JSON storage with automatic encoding/decoding
+- Groups child fields (`$group = true`)
 
-**Database:** JSON encoded array
+**Database:** JSON encoded array (`string` column type)
 
 ### Panel
 
-Collapsible content panel.
+Collapsible content panel. Part of the **Structure Fields** category.
 
 ```php
 [
     'name' => 'Advanced Settings',
     'slug' => 'advanced',
     'type' => 'Aura\\Base\\Fields\\Panel',
-    'collapsed' => true,
     'fields' => [
         // Panel fields
     ],
@@ -1094,15 +1071,14 @@ Collapsible content panel.
 ```
 
 **Features:**
-- Collapsible UI
-- Default state
-- Visual separation
-- Cannot nest panels
-- Icon support
+- Groups child fields (`$group = true`)
+- Same-level grouping enabled (`$sameLevelGrouping = true`)
+- Cannot nest panels inside other panels
+- Type: `panel`
 
 ### Tab
 
-Individual tab within Tabs container.
+Individual tab within Tabs container. Part of the **Structure Fields** category.
 
 ```php
 [
@@ -1118,14 +1094,13 @@ Individual tab within Tabs container.
 **Features:**
 - Tab navigation
 - Active state
-- Icon support
 - Conditional display
 
 **Must be wrapped in Tabs field**
 
 ### Tabs
 
-Container for tab fields.
+Container for tab fields. Part of the **Structure Fields** category.
 
 ```php
 [
@@ -1157,42 +1132,37 @@ Non-data fields for visual organization.
 
 ### Heading
 
-Section heading display.
+Section heading display. Part of the **Layout Fields** category.
 
 ```php
 [
     'name' => 'User Settings',
     'type' => 'Aura\\Base\\Fields\\Heading',
-    'level' => 2, // h1-h6
-    'icon' => 'settings',
 ]
 ```
 
 **Features:**
 - Visual hierarchy
 - No data storage
-- Icon support
-- Custom styling
+- No additional configuration needed
 
 ### HorizontalLine
 
-Visual separator line.
+Visual separator line. Part of the **Layout Fields** category.
 
 ```php
 [
     'type' => 'Aura\\Base\\Fields\\HorizontalLine',
-    'margin' => 'my-4',
 ]
 ```
 
 **Features:**
 - Visual separation
-- Custom margins
 - No configuration needed
 
 ### View
 
-Custom view rendering.
+Custom view rendering. Part of the **Layout Fields** category.
 
 ```php
 [
@@ -1210,7 +1180,7 @@ Custom view rendering.
 
 ### ViewValue
 
-Display-only field value.
+Display-only field value. Part of the **Layout Fields** category.
 
 ```php
 [
@@ -1227,7 +1197,7 @@ Display-only field value.
 
 ### LivewireComponent
 
-Embed Livewire component.
+Embed Livewire component. Part of the **Layout Fields** category.
 
 ```php
 [
@@ -1285,21 +1255,132 @@ Hidden form input.
 - Stores value
 - Default support
 
+### Embed
+
+External content embedding.
+
+```php
+[
+    'name' => 'Video',
+    'slug' => 'video_embed',
+    'type' => 'Aura\\Base\\Fields\\Embed',
+    'validation' => 'required|url',
+]
+```
+
+**Features:**
+- URL input
+- Preview display
+- Responsive embeds
+
+**Database:** `string` column type
+
+### Json
+
+JSON data editor.
+
+```php
+[
+    'name' => 'Settings',
+    'slug' => 'settings',
+    'type' => 'Aura\\Base\\Fields\\Json',
+    'validation' => 'nullable|json',
+    'default' => '{}',
+]
+```
+
+**Features:**
+- JSON validation
+- Pretty formatting
+- Array/object support
+
+**Database:** `text` column type
+
+### Permissions
+
+Permission management field.
+
+```php
+[
+    'name' => 'Permissions',
+    'slug' => 'permissions',
+    'type' => 'Aura\\Base\\Fields\\Permissions',
+    'resource' => 'App\\Resources\\Permission',
+]
+```
+
+**Features:**
+- Permission grid
+- Group by resource
+- Select all/none
+- Role integration
+
+**Database:** JSON encoded permissions
+
+### Roles
+
+Role assignment with team support.
+
+```php
+[
+    'name' => 'Roles',
+    'slug' => 'roles',
+    'type' => 'Aura\\Base\\Fields\\Roles',
+    'validation' => 'required|array',
+]
+```
+
+**Features:**
+- Team-aware roles
+- Multiple role assignment
+- Permission inheritance
+- Advanced select UI
+
+**Extends:** AdvancedSelect field
+
 ## Field Comparison Table
 
-| Field Type | Input | Storage | Validation | Search | Filter | Relationship |
-|------------|-------|---------|------------|--------|--------|--------------|
-| Text | ✓ | string | ✓ | ✓ | ✓ | - |
-| Textarea | ✓ | text | ✓ | ✓ | ✓ | - |
-| Number | ✓ | integer | ✓ | ✓ | ✓ | - |
-| Email | ✓ | string | ✓ | ✓ | ✓ | - |
-| Boolean | ✓ | string | ✓ | - | ✓ | - |
-| Select | ✓ | string | ✓ | - | ✓ | - |
-| Image | ✓ | string/json | ✓ | - | - | - |
-| BelongsTo | ✓ | bigInteger | ✓ | ✓ | ✓ | ✓ |
-| HasMany | - | - | - | - | - | ✓ |
-| Repeater | ✓ | json | ✓ | - | - | - |
-| Tab | - | - | - | - | - | - |
+| Field Type | Input | Storage | $type | $group | Filter |
+|------------|-------|---------|-------|--------|--------|
+| Text | ✓ | string | input | - | ✓ |
+| Textarea | ✓ | text | input | - | ✓ |
+| Number | ✓ | integer | input | - | ✓ |
+| Email | ✓ | string | input | - | ✓ |
+| Date | ✓ | date | input | - | ✓ |
+| Datetime | ✓ | timestamp | input | - | ✓ |
+| Time | ✓ | string | input | - | - |
+| Boolean | ✓ | string | input | - | - |
+| Select | ✓ | string | input | - | ✓ |
+| Radio | ✓ | string | input | - | - |
+| Checkbox | ✓ | string | input | - | - |
+| Status | ✓ | string | input | - | - |
+| Image | ✓ | string (JSON) | input | - | - |
+| File | ✓ | string (JSON) | input | - | - |
+| AdvancedSelect | ✓ | string (JSON) | input | - | ✓ |
+| Color | ✓ | string | input | - | - |
+| Code | ✓ | string | input | - | - |
+| Wysiwyg | ✓ | text | input | - | - |
+| BelongsTo | ✓ | bigInteger | input | - | - |
+| HasMany | - | - | relation | - | - |
+| HasOne | ✓ | - | input | - | - |
+| BelongsToMany | - | - | relation | - | - |
+| Tags | ✓ | - | input | - | ✓ |
+| Group | - | - | group | ✓ | - |
+| Repeater | ✓ | string (JSON) | input | ✓ | - |
+| Panel | - | - | panel | ✓ | - |
+| Tab | - | - | input | ✓ | - |
+| Tabs | - | - | input | ✓ | - |
+| Heading | - | - | input | - | - |
+| HorizontalLine | - | - | input | - | - |
+| View | - | - | input | - | - |
+| ViewValue | - | - | input | - | - |
+| LivewireComponent | - | - | input | - | - |
+| ID | - | bigIncrements | input | - | - |
+| Hidden | ✓ | string | input | - | - |
+| Embed | ✓ | string | input | - | - |
+| Json | ✓ | text | input | - | - |
+| Permissions | ✓ | string (JSON) | input | - | - |
+| Roles | ✓ | - | input | - | - |
 
 ## Custom Fields
 
@@ -1574,7 +1655,7 @@ public function display($model, $field)
 
 Aura CMS provides a comprehensive field system that handles virtually any data requirement:
 
-- **40+ field types** out of the box
+- **42 field types** out of the box
 - **Consistent API** across all fields
 - **Built-in validation** with Laravel rules
 - **Conditional logic** for dynamic forms
@@ -1582,6 +1663,19 @@ Aura CMS provides a comprehensive field system that handles virtually any data r
 - **Media management** integration
 - **Livewire support** for reactivity
 - **Extensible architecture** for custom fields
+
+### Complete Field List
+
+| Category | Fields |
+|----------|--------|
+| **Input Fields** | Text, Textarea, Number, Email, Phone, Password, Slug, Date, Datetime, Time |
+| **Choice Fields** | Boolean, Select, Radio, Checkbox, Status |
+| **Media Fields** | Image, File |
+| **JS Fields** | AdvancedSelect, Color, Code, Wysiwyg |
+| **Relationship Fields** | BelongsTo, HasMany, HasOne, BelongsToMany |
+| **Structure Fields** | Group, Repeater, Panel, Tab, Tabs |
+| **Layout Fields** | Heading, HorizontalLine, View, ViewValue, LivewireComponent |
+| **Special Fields** | ID, Hidden, Tags, Embed, Json, Permissions, Roles |
 
 Whether you're building a simple blog or a complex enterprise application, Aura's field system provides the flexibility and power you need while maintaining a clean, intuitive API.
 

@@ -60,10 +60,14 @@ composer require eminiarts/aura-cms
 php artisan aura:install
 ```
 
-During installation, choose:
-- ✅ Teams: No (for simplicity)
-- ✅ Run migrations: Yes
-- ✅ Create admin user: Yes
+The installer will guide you through several options:
+
+1. **Modify aura configuration?** - Recommended for first-time setup
+   - Teams: Choose whether to enable multi-tenancy
+   - Features: Enable/disable global search, bookmarks, notifications, etc.
+   - Theme: Customize colors, sidebar style, and dark mode
+2. **Run migrations?** - Yes (creates required database tables)
+3. **Create a user?** - Yes (creates your admin account)
 
 ### Step 3: Start the Development Server
 
@@ -93,29 +97,23 @@ This creates `app/Aura/Resources/Category.php`. Let's customize it:
 namespace App\Aura\Resources;
 
 use Aura\Base\Resource;
-use Aura\Base\Fields\ID;
-use Aura\Base\Fields\Text;
-use Aura\Base\Fields\Slug;
-use Aura\Base\Fields\Textarea;
-use Aura\Base\Fields\Color;
 
 class Category extends Resource
 {
     public static string $type = 'Category';
+
     public static ?string $slug = 'categories';
-    public static ?string $icon = '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12.75V12A2.25 2.25 0 014.5 9.75h15A2.25 2.25 0 0121.75 12v.75m-8.69-6.44l-2.12-2.12a1.5 1.5 0 00-1.061-.44H4.5A2.25 2.25 0 002.25 6v12a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9a2.25 2.25 0 00-2.25-2.25h-5.379a1.5 1.5 0 01-1.06-.44z" /></svg>';
-    
+
     protected static ?string $group = 'Blog';
-    
+
+    public function getIcon()
+    {
+        return '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12.75V12A2.25 2.25 0 014.5 9.75h15A2.25 2.25 0 0121.75 12v.75m-8.69-6.44l-2.12-2.12a1.5 1.5 0 00-1.061-.44H4.5A2.25 2.25 0 002.25 6v12a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9a2.25 2.25 0 00-2.25-2.25h-5.379a1.5 1.5 0 01-1.06-.44z" /></svg>';
+    }
+
     public static function getFields()
     {
         return [
-            [
-                'name' => 'ID',
-                'slug' => 'id',
-                'type' => 'Aura\\Base\\Fields\\ID',
-                'on_index' => true,
-            ],
             [
                 'name' => 'Name',
                 'slug' => 'name',
@@ -130,7 +128,7 @@ class Category extends Resource
                 'name' => 'Slug',
                 'slug' => 'slug',
                 'type' => 'Aura\\Base\\Fields\\Slug',
-                'validation' => 'required|unique:posts,slug',
+                'validation' => 'required',
                 'on_forms' => true,
                 'on_view' => true,
                 'from' => 'name',
@@ -177,20 +175,19 @@ use Aura\Base\Resource;
 class Tag extends Resource
 {
     public static string $type = 'Tag';
+
     public static ?string $slug = 'tags';
-    public static ?string $icon = '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9.568 3H5.25A2.25 2.25 0 003 5.25v4.318c0 .597.237 1.17.659 1.591l9.581 9.581c.699.699 1.78.872 2.607.33a18.095 18.095 0 005.223-5.223c.542-.827.369-1.908-.33-2.607L11.16 3.66A2.25 2.25 0 009.568 3z" /><path stroke-linecap="round" stroke-linejoin="round" d="M6 6h.008v.008H6V6z" /></svg>';
-    
+
     protected static ?string $group = 'Blog';
-    
+
+    public function getIcon()
+    {
+        return '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9.568 3H5.25A2.25 2.25 0 003 5.25v4.318c0 .597.237 1.17.659 1.591l9.581 9.581c.699.699 1.78.872 2.607.33a18.095 18.095 0 005.223-5.223c.542-.827.369-1.908-.33-2.607L11.16 3.66A2.25 2.25 0 009.568 3z" /><path stroke-linecap="round" stroke-linejoin="round" d="M6 6h.008v.008H6V6z" /></svg>';
+    }
+
     public static function getFields()
     {
         return [
-            [
-                'name' => 'ID',
-                'slug' => 'id',
-                'type' => 'Aura\\Base\\Fields\\ID',
-                'on_index' => true,
-            ],
             [
                 'name' => 'Name',
                 'slug' => 'name',
@@ -205,7 +202,7 @@ class Tag extends Resource
                 'name' => 'Slug',
                 'slug' => 'slug',
                 'type' => 'Aura\\Base\\Fields\\Slug',
-                'validation' => 'required|unique:posts,slug',
+                'validation' => 'required',
                 'on_forms' => true,
                 'on_view' => true,
                 'from' => 'name',
@@ -231,28 +228,21 @@ This is where Aura CMS shines. Customize `app/Aura/Resources/Article.php`:
 namespace App\Aura\Resources;
 
 use Aura\Base\Resource;
-use Aura\Base\Fields\ID;
-use Aura\Base\Fields\Text;
-use Aura\Base\Fields\Slug;
-use Aura\Base\Fields\Wysiwyg;
-use Aura\Base\Fields\Image;
-use Aura\Base\Fields\BelongsTo;
-use Aura\Base\Fields\Tags;
-use Aura\Base\Fields\Status;
-use Aura\Base\Fields\Datetime;
-use Aura\Base\Fields\Textarea;
-use Aura\Base\Fields\Panel;
-use Aura\Base\Fields\Tabs;
-use Aura\Base\Fields\Tab;
 
 class Article extends Resource
 {
     public static string $type = 'Article';
+
     public static ?string $slug = 'articles';
-    public static ?string $icon = '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" /></svg>';
-    
-    protected static ?string $group = 'Blog';
+
     public static $globalSearch = true;
+
+    protected static ?string $group = 'Blog';
+
+    public function getIcon()
+    {
+        return '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" /></svg>';
+    }
     
     public static function getFields()
     {
@@ -385,7 +375,7 @@ class Article extends Resource
                                 'on_index' => true,
                                 'on_forms' => true,
                                 'on_view' => true,
-                                'resource' => 'User',
+                                'resource' => 'Aura\\Base\\Resources\\User',
                                 'display_field' => 'name',
                                 'default' => 'auth.user.id',
                                 'style' => [
@@ -416,10 +406,10 @@ class Article extends Resource
                                 'name' => 'Category',
                                 'slug' => 'category_id',
                                 'type' => 'Aura\\Base\\Fields\\BelongsTo',
-                                'validation' => 'required|exists:posts,id',
+                                'validation' => 'nullable|exists:posts,id',
                                 'on_forms' => true,
                                 'on_view' => true,
-                                'resource' => 'Category',
+                                'resource' => 'App\\Aura\\Resources\\Category',
                                 'display_field' => 'name',
                                 'conditional_logic' => [
                                     [
@@ -436,7 +426,7 @@ class Article extends Resource
                                 'validation' => 'nullable',
                                 'on_forms' => true,
                                 'on_view' => true,
-                                'resource' => 'Tag',
+                                'resource' => 'App\\Aura\\Resources\\Tag',
                                 'create_new' => true,
                             ],
                         ],
@@ -446,20 +436,8 @@ class Article extends Resource
         ];
     }
     
-    // Define custom actions
-    public static array $actions = [
-        'publish' => [
-            'label' => 'Publish',
-            'icon' => '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>',
-            'class' => 'text-green-600 hover:text-green-700',
-            'confirm' => true,
-            'confirm-title' => 'Publish this article?',
-            'confirm-message' => 'This will make the article visible to the public.',
-        ],
-    ];
-    
     // Define bulk actions
-    public static array $bulkActions = [
+    public array $bulkActions = [
         'publish' => 'Publish Selected',
         'archive' => 'Archive Selected',
         'delete' => 'Delete Selected',
@@ -548,26 +526,21 @@ public static function getWidgets(): array
             'width' => '25',
             'method' => 'count',
             'cache' => 300,
-            'permission' => 'view Article',
         ],
         [
             'name' => 'Published Articles',
             'slug' => 'published_articles',
             'type' => 'Aura\\Base\\Widgets\\ValueWidget',
             'width' => '25',
-            'method' => 'query',
-            'query' => function($query) {
-                return $query->where('status', 'published')->count();
-            },
+            'method' => 'count',
+            'queryScope' => 'published', // Uses a scope on your model
             'cache' => 300,
         ],
         [
             'name' => 'Articles by Category',
             'slug' => 'articles_by_category',
-            'type' => 'Aura\\Base\\Widgets\\PieWidget',
+            'type' => 'Aura\\Base\\Widgets\\Pie',
             'width' => '50',
-            'method' => 'groupCount',
-            'group_by' => 'category_id',
             'cache' => 600,
         ],
     ];
@@ -646,26 +619,31 @@ $writerRole->givePermissionTo([
 ]);
 ```
 
-### 3. API Access
+### 3. Querying Resources
 
-Aura automatically creates API endpoints:
+Access your resources using Eloquent:
 
-```bash
-# List articles
-GET /api/articles
+```php
+use App\Models\Post;
 
-# Get single article
-GET /api/articles/{id}
+// Get all published articles
+$articles = Post::where('type', 'Article')
+    ->where('status', 'published')
+    ->with(['meta'])
+    ->latest('published_at')
+    ->get();
 
-# Create article (requires auth)
-POST /api/articles
+// Get a single article by slug
+$article = Post::where('type', 'Article')
+    ->where('slug', 'my-article')
+    ->firstOrFail();
 
-# Update article
-PUT /api/articles/{id}
-
-# Delete article
-DELETE /api/articles/{id}
+// Access field values
+echo $article->title;
+echo $article->fields['content'];
 ```
+
+> **Note**: Aura stores resources in the `posts` table with a `type` column for single-table inheritance. Custom meta fields are stored in the `meta` table.
 
 ### 4. Custom Filters
 
@@ -688,7 +666,7 @@ public static function filters(): array
         'category_id' => [
             'label' => 'Category',
             'type' => 'select',
-            'options' => Category::pluck('name', 'id')->prepend('All Categories', ''),
+            'options' => \App\Aura\Resources\Category::pluck('name', 'id')->prepend('All Categories', ''),
         ],
         'date_range' => [
             'label' => 'Date Range',
@@ -786,9 +764,13 @@ Route::get('/feed', function () {
 
 ### 3. Comments System
 
-Add a comments field to articles:
+Create a Comment resource and add a relationship field to articles:
 
 ```php
+// First, create the Comment resource
+// php artisan aura:resource Comment
+
+// Then add a HasMany field to your Article resource
 [
     'name' => 'Comments',
     'slug' => 'comments',
@@ -796,20 +778,7 @@ Add a comments field to articles:
     'validation' => 'nullable',
     'on_forms' => true,
     'on_view' => true,
-    'resource' => 'Comment',
-    'foreign_key' => 'article_id',
-    'fields' => [
-        [
-            'name' => 'Author',
-            'slug' => 'author_name',
-            'type' => 'Aura\\Base\\Fields\\Text',
-        ],
-        [
-            'name' => 'Comment',
-            'slug' => 'content',
-            'type' => 'Aura\\Base\\Fields\\Textarea',
-        ],
-    ],
+    'resource' => 'App\\Aura\\Resources\\Comment',
 ],
 ```
 
@@ -817,11 +786,20 @@ Add a comments field to articles:
 
 ### 1. Eager Loading
 
-Always eager load relationships:
+Eager load relationships in your queries:
 
 ```php
-// In your resource
-public static array $with = ['author', 'category', 'tags'];
+// In your controller or query
+$articles = Post::where('type', 'Article')
+    ->with(['meta', 'user'])
+    ->get();
+
+// Or define default eager loads in the resource constructor
+public function __construct(array $attributes = [])
+{
+    parent::__construct($attributes);
+    $this->with = array_merge($this->with, ['user']);
+}
 ```
 
 ### 2. Caching
@@ -852,21 +830,26 @@ Schema::table('posts', function (Blueprint $table) {
 ### Common Issues
 
 1. **Fields not showing**: Check `on_forms`, `on_index`, `on_view` settings
-2. **Validation errors**: Use `php artisan aura:validate Article` to check
-3. **Missing relationships**: Ensure related resources exist
+2. **Validation errors**: Check your field `validation` rules
+3. **Missing relationships**: Ensure related resources exist and use fully qualified class names
 4. **Permissions issues**: Check role permissions in database
 
 ### Debug Commands
 
 ```bash
-# Validate resource configuration
-php artisan aura:validate Article
+# Clear Laravel caches
+php artisan cache:clear
+php artisan config:clear
+php artisan view:clear
 
-# Clear all caches
-php artisan aura:clear-cache
+# Generate resource permissions
+php artisan aura:create-resource-permissions
 
-# Regenerate permissions
-php artisan aura:permissions
+# Create a new resource
+php artisan aura:resource MyResource
+
+# Create a custom field
+php artisan aura:field MyCustomField
 ```
 
 ## Next Steps

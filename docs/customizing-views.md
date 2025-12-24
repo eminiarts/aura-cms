@@ -14,6 +14,7 @@ Aura CMS provides a flexible view system built on Laravel's Blade templating eng
 - [Blade Components](#blade-components)
 - [Livewire Components](#livewire-components)
 - [Layout Customization](#layout-customization)
+- [Resource Templates](#resource-templates)
 - [Advanced Techniques](#advanced-techniques)
 - [Best Practices](#best-practices)
 
@@ -31,27 +32,63 @@ Aura's view system provides:
 
 ## View Architecture
 
-### Directory Structure
+### Package View Structure
+
+Aura CMS views are organized within the package at `vendor/eminiarts/aura-cms/resources/views/`:
 
 ```
 resources/views/
-├── vendor/aura/              # Published Aura views
 ├── livewire/                 # Livewire component views
 │   ├── resource/
-│   │   ├── index.blade.php
-│   │   ├── create.blade.php
-│   │   ├── edit.blade.php
-│   │   └── view.blade.php
-│   └── table/
-│       └── table.blade.php
+│   │   ├── index.blade.php       # Resource listing page
+│   │   ├── create.blade.php      # Create form
+│   │   ├── create-modal.blade.php
+│   │   ├── edit.blade.php        # Edit form
+│   │   ├── edit-modal.blade.php
+│   │   ├── edit-header.blade.php # Edit page header
+│   │   ├── view.blade.php        # Detail view
+│   │   ├── view-modal.blade.php
+│   │   ├── view-header.blade.php # Detail page header
+│   │   └── actions.blade.php     # Resource actions
+│   ├── table.blade.php           # Main table component
+│   ├── dashboard.blade.php
+│   └── ...
 ├── components/               # Blade components
-│   ├── fields/
-│   ├── layout/
-│   └── table/
-└── custom/                   # Your custom views
-    ├── resources/
-    ├── fields/
-    └── components/
+│   ├── table/
+│   │   ├── index.blade.php       # Table wrapper
+│   │   ├── list-view.blade.php   # List/table view
+│   │   ├── kanban-view.blade.php # Kanban board view
+│   │   ├── row.blade.php         # Table row
+│   │   ├── cell.blade.php        # Table cell
+│   │   ├── header.blade.php      # Table header
+│   │   ├── footer.blade.php      # Table footer
+│   │   ├── filter.blade.php      # Filter component
+│   │   └── bulk-actions.blade.php
+│   └── ...
+├── auth/                     # Authentication views
+├── navigation/               # Navigation components
+└── aura/                     # Resource-specific views
+    ├── User/header.blade.php
+    └── Attachment/header.blade.php
+```
+
+### Your Application's View Structure
+
+When customizing views, create them in your application:
+
+```
+resources/views/
+├── vendor/aura/              # Published Aura views (optional)
+├── aura/                     # Your Aura customizations
+│   ├── resources/            # Resource-specific views
+│   │   └── products/
+│   │       ├── index.blade.php
+│   │       ├── create.blade.php
+│   │       ├── edit.blade.php
+│   │       └── view.blade.php
+│   ├── fields/               # Field customizations
+│   └── components/           # Override components
+└── livewire/                 # Livewire component views
 ```
 
 ### View Resolution Order
@@ -76,36 +113,48 @@ class Product extends Resource
     // Index page (listing)
     public function indexView()
     {
-        return 'custom.products.index';
+        return 'aura.resources.products.index';
     }
     
     // Create form
     public function createView()
     {
-        return 'custom.products.create';
+        return 'aura.resources.products.create';
     }
     
     // Edit form
     public function editView()
     {
-        return 'custom.products.edit';
+        return 'aura.resources.products.edit';
     }
     
     // Detail view
     public function viewView()
     {
-        return 'custom.products.view';
+        return 'aura.resources.products.view';
     }
     
-    // Headers for edit/view pages
+    // Header views for edit and detail pages
     public function editHeaderView()
     {
-        return 'custom.products.edit-header';
+        return 'aura.resources.products.edit-header';
     }
     
     public function viewHeaderView()
     {
-        return 'custom.products.view-header';
+        return 'aura.resources.products.view-header';
+    }
+    
+    // Table row view for listings
+    public function rowView()
+    {
+        return 'aura.resources.products.row';
+    }
+    
+    // Table component view
+    public function tableComponentView()
+    {
+        return 'aura::livewire.table';
     }
 }
 ```
@@ -113,27 +162,42 @@ class Product extends Resource
 ### Custom Index View
 
 ```blade
-{{-- resources/views/custom/products/index.blade.php --}}
+{{-- resources/views/aura/resources/products/index.blade.php --}}
 <div>
+    @section('title', __($resource->getPluralName()))
+
+    {{-- Injection point for content before index --}}
+    {{ app('aura')::injectView('index_before') }}
+
+    {{-- Breadcrumbs --}}
+    <div class="flex justify-between items-start">
+        <x-aura::breadcrumbs>
+            <x-aura::breadcrumbs.li :href="route('aura.dashboard')" title="" icon="dashboard" />
+            <x-aura::breadcrumbs.li :title="__($resource->getPluralName())" />
+        </x-aura::breadcrumbs>
+    </div>
+
+    {{-- Custom header --}}
     <header class="mb-6">
         <h1 class="text-2xl font-bold">{{ __('Products Catalog') }}</h1>
         <p class="text-gray-600">{{ __('Manage your product inventory') }}</p>
     </header>
     
-    {{-- Custom filters --}}
-    <div class="mb-4">
-        @include('custom.products.filters')
-    </div>
+    {{-- Widgets injection point --}}
+    {{ app('aura')::injectView('widgets_before') }}
     
-    {{-- Table component with custom settings --}}
-    @livewire('aura::table', [
-        'resource' => $resource,
-        'filters' => $filters,
-    ])
+    @if ($widgets = $resource->widgets())
+        @livewire('aura::widgets', ['widgets' => $widgets, 'model' => $resource])
+    @endif
+    
+    {{ app('aura')::injectView('widgets_after') }}
+    
+    {{-- Table component with settings from resource --}}
+    <livewire:aura::table :model="$resource" :settings="$resource->indexTableSettings()" />
     
     {{-- Custom footer --}}
     <footer class="mt-6">
-        @include('custom.products.footer')
+        @include('aura.resources.products.partials.footer')
     </footer>
 </div>
 ```
@@ -141,7 +205,7 @@ class Product extends Resource
 ### Custom Create/Edit View
 
 ```blade
-{{-- resources/views/custom/products/edit.blade.php --}}
+{{-- resources/views/aura/resources/products/edit.blade.php --}}
 <div class="max-w-4xl mx-auto">
     {{-- Custom header --}}
     <div class="mb-6 bg-white rounded-lg shadow p-6">
@@ -202,7 +266,7 @@ class Product extends Resource
 ### Custom Detail View
 
 ```blade
-{{-- resources/views/custom/products/view.blade.php --}}
+{{-- resources/views/aura/resources/products/view.blade.php --}}
 <div class="max-w-6xl mx-auto">
     {{-- Product header --}}
     <div class="bg-white rounded-lg shadow-lg overflow-hidden">
@@ -281,29 +345,113 @@ class Product extends Resource
 
 ## Table Views
 
-### Table Configuration
+### Table Configuration Methods
+
+Configure table behavior by overriding these methods in your resource:
 
 ```php
-public function tableSettings()
+class Product extends Resource
 {
-    return [
-        'default_view' => 'grid',      // Default display mode
-        'available_views' => ['table', 'grid', 'kanban'],
-        'per_page_options' => [12, 24, 48, 96],
-        'default_sort' => 'created_at',
-        'default_sort_direction' => 'desc',
-    ];
+    // Default number of items per page
+    public function defaultPerPage()
+    {
+        return 25; // Default is 10
+    }
+    
+    // Default sort column
+    public function defaultTableSort()
+    {
+        return 'created_at'; // Default is 'id'
+    }
+    
+    // Default sort direction
+    public function defaultTableSortDirection()
+    {
+        return 'desc'; // 'asc' or 'desc'
+    }
+    
+    // Default view mode: 'list', 'grid', or 'kanban'
+    public function defaultTableView()
+    {
+        return 'grid'; // Default is 'list'
+    }
+    
+    // Show/hide table settings button
+    public function showTableSettings()
+    {
+        return true;
+    }
 }
+```
 
-public function tableViews()
+### Custom Table Views
+
+Override specific table view components:
+
+```php
+class Product extends Resource
+{
+    // Main list/table view
+    public function tableView()
+    {
+        return 'aura.resources.products.table.list';
+    }
+    
+    // Grid view (set to blade view path or false to disable)
+    public function tableGridView()
+    {
+        return 'aura.resources.products.table.grid';
+    }
+    
+    // Kanban view (set to blade view path or false to disable)
+    public function tableKanbanView()
+    {
+        return 'aura.resources.products.table.kanban';
+    }
+    
+    // Table row view
+    public function rowView()
+    {
+        return 'aura.resources.products.table.row';
+    }
+    
+    // Table component wrapper
+    public function tableComponentView()
+    {
+        return 'aura::livewire.table';
+    }
+}
+```
+
+### Index Table Settings
+
+For more granular control, use `indexTableSettings()`:
+
+```php
+public function indexTableSettings()
 {
     return [
-        'table' => 'custom.products.table.table',
-        'grid' => 'custom.products.table.grid',
-        'kanban' => 'custom.products.table.kanban',
-        'row' => 'custom.products.table.row',
-        'cell' => 'custom.products.table.cell',
-        'empty' => 'custom.products.table.empty',
+        'per_page' => 25,
+        'search' => true,
+        'filters' => true,
+        'selectable' => true,
+        'create' => true,
+        'actions' => true,
+        'bulk_actions' => true,
+        'header' => true,
+        'edit_in_modal' => false,
+        'create_in_modal' => false,
+        'view_in_modal' => false,
+        'views' => [
+            'table' => 'aura::components.table.index',
+            'list' => 'aura.resources.products.table.list',
+            'grid' => 'aura.resources.products.table.grid',
+            'kanban' => 'aura.resources.products.table.kanban',
+            'filter' => 'aura::components.table.filter',
+            'header' => 'aura::components.table.header',
+            'row' => 'aura.resources.products.table.row',
+            'bulk_actions' => 'aura::components.table.bulk-actions',
+        ],
     ];
 }
 ```
@@ -311,7 +459,7 @@ public function tableViews()
 ### Custom Grid View
 
 ```blade
-{{-- resources/views/custom/products/table/grid.blade.php --}}
+{{-- resources/views/aura/resources/products/table/grid.blade.php --}}
 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
     @forelse($rows as $row)
         <div class="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-xl transition-shadow">
@@ -363,7 +511,7 @@ public function tableViews()
         </div>
     @empty
         <div class="col-span-full">
-            @include('custom.products.table.empty')
+            @include('aura.resources.products.table.empty')
         </div>
     @endforelse
 </div>
@@ -372,7 +520,7 @@ public function tableViews()
 ### Custom Table Row
 
 ```blade
-{{-- resources/views/custom/products/table/row.blade.php --}}
+{{-- resources/views/aura/resources/products/table/row.blade.php --}}
 <tr class="hover:bg-gray-50 transition-colors">
     {{-- Checkbox --}}
     <td class="px-6 py-4 whitespace-nowrap">
@@ -464,7 +612,7 @@ class PriceField extends Field
 ### Field View Template
 
 ```blade
-{{-- resources/views/custom/fields/price-view.blade.php --}}
+{{-- resources/views/aura/fields/price-view.blade.php --}}
 <div class="price-display">
     <span class="currency">$</span>
     <span class="amount">{{ number_format($value, 2) }}</span>
@@ -483,7 +631,7 @@ class PriceField extends Field
 ### Field Edit Template
 
 ```blade
-{{-- resources/views/custom/fields/price-edit.blade.php --}}
+{{-- resources/views/aura/fields/price-edit.blade.php --}}
 <div class="price-input" x-data="priceField(@entangle($field['slug']))">
     <label class="block text-sm font-medium text-gray-700 mb-1">
         {{ $field['name'] }}
@@ -532,24 +680,44 @@ function priceField(value) {
 
 ### Method 1: Override in Resource
 
+Override individual view methods in your resource class:
+
 ```php
 class Product extends Resource
 {
-    // Override all view methods
-    public function views()
-    {
-        return [
-            'index' => 'custom.products.index',
-            'create' => 'custom.products.create',
-            'edit' => 'custom.products.edit',
-            'view' => 'custom.products.view',
-        ];
-    }
-    
-    // Or override individually
+    // Override the index/listing view
     public function indexView()
     {
-        return 'custom.products.index';
+        return 'aura.resources.products.index';
+    }
+    
+    // Override the create form view
+    public function createView()
+    {
+        return 'aura.resources.products.create';
+    }
+    
+    // Override the edit form view
+    public function editView()
+    {
+        return 'aura.resources.products.edit';
+    }
+    
+    // Override the detail/show view
+    public function viewView()
+    {
+        return 'aura.resources.products.view';
+    }
+    
+    // Override header views
+    public function editHeaderView()
+    {
+        return 'aura.resources.products.edit-header';
+    }
+    
+    public function viewHeaderView()
+    {
+        return 'aura.resources.products.view-header';
     }
 }
 ```
@@ -557,12 +725,20 @@ class Product extends Resource
 ### Method 2: Publish Views
 
 ```bash
-# Publish all Aura views
+# Publish all Aura views to resources/views/vendor/aura/
 php artisan vendor:publish --tag=aura-views
 
-# Publish specific views
+# Force overwrite existing published views
 php artisan vendor:publish --tag=aura-views --force
+
+# Publish Aura assets (CSS, JS, images)
+php artisan vendor:publish --tag=aura-assets
+
+# Or use the convenience command to publish assets
+php artisan aura:publish
 ```
+
+Published views are placed in `resources/views/vendor/aura/` and will automatically override the package views.
 
 ### Method 3: View Composer
 
@@ -597,81 +773,87 @@ class Field extends BaseField
 
 ### Understanding Injection Points
 
-View injection allows adding content without modifying core files:
+View injection allows adding content at specific points without modifying core files. Aura uses `app('aura')::injectView()` to render content at injection points.
 
-```php
-use Aura\Base\Facades\Aura;
+### Using Injection Points in Views
 
-// Register in service provider
-public function boot()
-{
-    // Inject into specific resource views
-    Aura::registerInjectView('products.index.before', function () {
-        return view('custom.products.alerts');
-    });
-    
-    // Inject into all resources
-    Aura::registerInjectView('resource.edit.before', function ($resource) {
-        if ($resource->requiresApproval()) {
-            return view('custom.approval-notice');
-        }
-    });
-}
+In Blade templates, injection points are rendered like this:
+
+```blade
+{{-- Example from the index view --}}
+{{ app('aura')::injectView('index_before') }}
+
+{{-- Widgets injection points --}}
+{{ app('aura')::injectView('widgets_before') }}
+@if ($widgets = $resource->widgets())
+    @livewire('aura::widgets', ['widgets' => $widgets, 'model' => $resource])
+@endif
+{{ app('aura')::injectView('widgets_after') }}
 ```
 
 ### Available Injection Points
 
+Common injection points used in Aura views:
+
 ```php
-// Resource views
-'{resource}.index.before'
-'{resource}.index.after'
-'{resource}.create.before'
-'{resource}.create.after'
-'{resource}.edit.before'
-'{resource}.edit.after'
-'{resource}.view.before'
-'{resource}.view.after'
+// Index/listing page
+'index_before'
+'index_after'
+'widgets_before'
+'widgets_after'
 
-// Form sections
-'{resource}.form.before'
-'{resource}.form.after'
-'{resource}.form.{panel}.before'
-'{resource}.form.{panel}.after'
+// Create/edit forms
+'create_before'
+'create_after'
+'edit_before'
+'edit_after'
 
-// Table views
-'{resource}.table.before'
-'{resource}.table.after'
-'{resource}.table.filters.before'
-'{resource}.table.filters.after'
+// Detail view
+'view_before'
+'view_after'
 ```
 
 ### Creating Custom Injection Points
 
+In your custom views, add injection points:
+
 ```blade
 {{-- In your custom view --}}
 <div class="custom-section">
-    {{ Aura::injectView('custom.section.before') }}
+    {{ app('aura')::injectView('custom.section.before') }}
     
     <div class="content">
         {{-- Your content --}}
     </div>
     
-    {{ Aura::injectView('custom.section.after') }}
+    {{ app('aura')::injectView('custom.section.after') }}
 </div>
 ```
 
-### Conditional Injection
+### Registering Content for Injection Points
+
+Register content for injection points in a service provider:
 
 ```php
-Aura::registerInjectView('products.edit.form.before', function ($model) {
-    if ($model->status === 'draft') {
-        return '<div class="alert alert-warning">This product is in draft mode</div>';
+use Aura\Base\Facades\Aura;
+
+class AppServiceProvider extends ServiceProvider
+{
+    public function boot()
+    {
+        // Register a view for an injection point
+        app('aura')::registerInjectView('index_before', function () {
+            return view('custom.products.alerts');
+        });
+        
+        // Register with conditional logic
+        app('aura')::registerInjectView('edit_before', function () {
+            if (request()->route('slug') === 'product') {
+                return view('custom.products.edit-notice');
+            }
+        });
     }
-    
-    if ($model->stock < 10) {
-        return view('custom.products.low-stock-warning', ['product' => $model]);
-    }
-});
+}
 ```
 
 > 📹 **Video Placeholder**: [Using the view injection system to add custom content and functionality]
@@ -776,6 +958,43 @@ class ProductCard extends Component
 ```
 
 ## Livewire Components
+
+### Configuring Core Components
+
+Aura's main Livewire components can be replaced via `config/aura.php`:
+
+```php
+// config/aura.php
+return [
+    'components' => [
+        // Replace the dashboard component
+        'dashboard' => App\Livewire\CustomDashboard::class,
+        
+        // Replace the profile component
+        'profile' => App\Livewire\CustomProfile::class,
+        
+        // Replace the settings component
+        'settings' => App\Livewire\CustomSettings::class,
+    ],
+];
+```
+
+### Registered Livewire Components
+
+Aura registers these Livewire components that you can reference:
+
+| Component | Tag | Description |
+|-----------|-----|-------------|
+| `aura::resource-index` | `<livewire:aura::resource-index />` | Resource listing page |
+| `aura::resource-create` | `<livewire:aura::resource-create />` | Create form |
+| `aura::resource-edit` | `<livewire:aura::resource-edit />` | Edit form |
+| `aura::resource-view` | `<livewire:aura::resource-view />` | Detail view |
+| `aura::table` | `<livewire:aura::table />` | Table component |
+| `aura::navigation` | `<livewire:aura::navigation />` | Navigation menu |
+| `aura::global-search` | `<livewire:aura::global-search />` | Global search |
+| `aura::media-manager` | `<livewire:aura::media-manager />` | Media library |
+| `aura::widgets` | `<livewire:aura::widgets />` | Dashboard widgets |
+| `aura::modals` | `<livewire:aura::modals />` | Modal container |
 
 ### Extending Aura Components
 
@@ -968,15 +1187,34 @@ class ProductEdit extends BaseEdit
 
 ### Using Custom Layout
 
+Configure the layout in `config/aura.php`:
+
 ```php
 // In config/aura.php
 return [
     'views' => [
+        // Main application layout
         'layout' => 'layouts.custom-app',
+        
+        // Login page layout
+        'login-layout' => 'layouts.login',
+        
+        // Dashboard view
+        'dashboard' => 'custom.dashboard',
+        
+        // Navigation component
+        'navigation' => 'custom.navigation',
+        
+        // Application logo
+        'logo' => 'custom.logo',
     ],
 ];
+```
 
-// Or in specific components
+You can also customize layouts in Livewire components:
+
+```php
+// In specific Livewire components
 class ProductIndex extends Component
 {
     public function render()
@@ -985,6 +1223,70 @@ class ProductIndex extends Component
             ->layout('layouts.custom-app');
     }
 }
+```
+
+## Resource Templates
+
+Aura CMS includes predefined field layout templates to help you quickly structure your resource forms. These templates are located in `src/Templates/`.
+
+### Available Templates
+
+| Template | Description |
+|----------|-------------|
+| `Plain` | Simple flat layout without grouping |
+| `Tabs` | Fields organized in tab groups |
+| `PanelWithTabs` | Panel container with tabbed content |
+| `PanelWithSidebar` | Panel with a sidebar layout |
+| `TabsWithPanels` | Tabs containing panel groups |
+
+### Using Templates
+
+When creating a resource with the Resource Editor or programmatically, you can choose a template:
+
+```php
+use Aura\Base\Templates\PanelWithTabs;
+
+class Product extends Resource
+{
+    public static function getFields()
+    {
+        // Start with a template structure
+        return (new PanelWithTabs)->getFields();
+    }
+}
+```
+
+### Template Structure Example
+
+Here's what the `PanelWithTabs` template provides:
+
+```php
+// PanelWithTabs template structure
+[
+    [
+        'name' => 'Panel 1',
+        'type' => 'Aura\\Base\\Fields\\Panel',
+        'slug' => 'panel-1',
+    ],
+    [
+        'name' => 'Tab 1',
+        'type' => 'Aura\\Base\\Fields\\Tab',
+        'slug' => 'tab-1',
+    ],
+    [
+        'name' => 'Text 1',
+        'type' => 'Aura\\Base\\Fields\\Text',
+        'on_index' => true,
+        'slug' => 'text-1',
+        'style' => ['width' => '100'],
+    ],
+    [
+        'name' => 'Tab 2',
+        'type' => 'Aura\\Base\\Fields\\Tab',
+        'slug' => 'tab-2',
+    ],
+    // ... more fields
+]
 ```
 
 ## Advanced Techniques
@@ -1098,31 +1400,49 @@ public function boot()
 
 ```
 resources/views/
-├── aura/                    # Aura customizations
-│   ├── resources/           # Resource-specific views
-│   ├── fields/              # Field customizations
-│   └── components/          # Override components
-├── livewire/                # Livewire components
-├── components/              # Blade components
-├── layouts/                 # Layout files
-└── partials/                # Reusable partials
+├── aura/                         # Aura customizations
+│   ├── resources/                # Resource-specific views
+│   │   └── products/
+│   │       ├── index.blade.php
+│   │       ├── create.blade.php
+│   │       ├── edit.blade.php
+│   │       ├── view.blade.php
+│   │       └── table/
+│   │           ├── row.blade.php
+│   │           └── grid.blade.php
+│   ├── fields/                   # Field view customizations
+│   └── components/               # Override Aura components
+├── vendor/aura/                  # Published Aura views (optional)
+├── livewire/                     # Livewire components
+├── components/                   # Blade components
+├── layouts/                      # Layout files
+└── partials/                     # Reusable partials
 ```
 
 ### 2. Naming Conventions
 
 ```php
-// Resources: {resource}.{action}
-'products.index'
-'products.create'
-'products.edit'
+// Resource views: aura.resources.{resource}.{action}
+'aura.resources.products.index'
+'aura.resources.products.create'
+'aura.resources.products.edit'
+'aura.resources.products.view'
+
+// Table views: aura.resources.{resource}.table.{view}
+'aura.resources.products.table.row'
+'aura.resources.products.table.grid'
+
+// Field views: aura.fields.{field-name}
+'aura.fields.price-view'
+'aura.fields.price-edit'
 
 // Components: descriptive names
 'components.product-card'
 'components.price-display'
 
-// Partials: _prefix
-'partials._sidebar'
-'partials._header'
+// Partials: nested under resource
+'aura.resources.products.partials.sidebar'
+'aura.resources.products.partials.header'
 ```
 
 ### 3. Performance

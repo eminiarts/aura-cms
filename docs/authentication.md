@@ -14,6 +14,7 @@ Aura CMS provides a comprehensive authentication system built on Laravel Fortify
 - [Two-Factor Authentication](#two-factor-authentication)
 - [Email Verification](#email-verification)
 - [Team Authentication](#team-authentication)
+- [Middleware](#middleware)
 - [Session Management](#session-management)
 - [API Authentication](#api-authentication)
 - [Customization](#customization)
@@ -94,25 +95,26 @@ Authentication behavior is controlled through `config/aura.php`:
 return [
     'auth' => [
         // Registration settings
-        'registration' => env('AURA_REGISTRATION', true),
-        'registration_teams' => true,  // Create team on registration
-        'require_email_verification' => true,
+        'registration' => env('AURA_REGISTRATION', true),  // Enable/disable public registration
         
         // Authentication behavior
-        'redirect' => '/admin',  // Post-login redirect
-        'logout_redirect' => '/',  // Post-logout redirect
-        'password_timeout' => 10800,  // Password confirmation timeout (seconds)
+        'redirect' => '/admin',  // Post-login redirect path
         
         // Security features
         '2fa' => true,  // Enable two-factor authentication
-        '2fa_required' => false,  // Force 2FA for all users
-        'session_lifetime' => 120,  // Session lifetime in minutes
         
         // Team features
         'user_invitations' => true,  // Enable team invitations
-        'create_teams' => true,  // Allow users to create teams
-        'max_teams_per_user' => null,  // Limit teams per user
+        'create_teams' => true,  // Allow users to create new teams
     ],
+];
+```
+
+Teams are enabled separately via the `teams` config option:
+
+```php
+return [
+    'teams' => env('AURA_TEAMS', true),  // Enable multi-tenancy
 ];
 ```
 
@@ -121,59 +123,41 @@ return [
 ```env
 # Authentication
 AURA_REGISTRATION=true
-AURA_REQUIRE_EMAIL_VERIFICATION=true
-AURA_2FA_REQUIRED=false
+AURA_TEAMS=true
 
-# Session
+# Session (standard Laravel config)
 SESSION_LIFETIME=120
 SESSION_SECURE_COOKIE=true
 
-# Password
+# Password Reset
 PASSWORD_RESET_EXPIRE=60
 ```
 
 ### Fortify Configuration
 
-Aura CMS uses Laravel Fortify with custom configuration:
+Aura CMS uses Laravel Fortify with custom configuration. Note that Aura provides its own authentication routes and views, so Fortify's view registration is disabled:
 
 ```php
 // config/fortify.php
 return [
     'guard' => 'web',
     'middleware' => ['web'],
-    'auth_middleware' => 'auth',
     'passwords' => 'users',
     'username' => 'email',
     'email' => 'email',
-    'views' => true,  // Aura provides views
-    'home' => '/admin',
+    'views' => false,  // Aura provides its own auth routes/views
+    'home' => '/home',
     'prefix' => '',
     'domain' => null,
-    'lowercase_usernames' => false,
+    'lowercase_usernames' => true,  // Emails are lowercased before saving
     'limiters' => [
         'login' => 'login',
         'two-factor' => 'two-factor',
     ],
-    'paths' => [
-        'login' => 'login',
-        'logout' => 'logout',
-        'register' => 'register',
-        'password' => [
-            'request' => 'forgot-password',
-            'reset' => 'reset-password',
-            'email' => 'forgot-password',
-            'update' => 'user/password',
-        ],
-        'verification' => [
-            'notice' => 'email/verify',
-            'verify' => 'email/verify/{id}/{hash}',
-            'send' => 'email/verification-notification',
-        ],
-    ],
     'features' => [
         Features::registration(),
         Features::resetPasswords(),
-        Features::emailVerification(),
+        // Features::emailVerification(),  // Enable if needed
         Features::updateProfileInformation(),
         Features::updatePasswords(),
         Features::twoFactorAuthentication([
@@ -184,6 +168,14 @@ return [
 ];
 ```
 
+Aura CMS defines its own authentication routes in `routes/auth.php`, which provides:
+- Login/logout (`/login`, `/logout`)
+- Registration (`/register`) - when enabled
+- Password reset (`/forgot-password`, `/reset-password/{token}`)
+- Email verification (`/email/verify`, `/email/verify/{id}/{hash}`)
+- Two-factor authentication (`/two-factor-challenge`, `/user/two-factor-authentication`)
+- Team invitations (`/team-invitations/{invitation}`)
+
 ## Registration & Login
 
 ### User Registration
@@ -192,17 +184,19 @@ return [
 
 ```php
 // Enable registration in config/aura.php
-'registration' => true,
+'auth' => [
+    'registration' => true,  // Allow public registration
+],
 
-// Registration creates a team by default
-'registration_teams' => true,
+// With teams enabled, registration automatically creates a team
+'teams' => true,
 ```
 
 #### Registration Process
 
 1. **User fills registration form**
    ```blade
-   <form method="POST" action="{{ route('aura.register') }}">
+   <form method="POST" action="{{ route('aura.register.post') }}">
        @csrf
        <x-aura::input.text name="name" required />
        <x-aura::input.email name="email" required />
@@ -210,37 +204,46 @@ return [
        <x-aura::input.password name="password_confirmation" required />
        
        @if(config('aura.teams'))
-           <x-aura::input.text name="team_name" label="Organization Name" />
+           <x-aura::input.text name="team" label="Organization Name" />
        @endif
    </form>
    ```
 
 2. **User account created**
    ```php
-   // In RegistrationController
-   $user = User::create([
+   // In RegisteredUserController
+   // With teams enabled:
+   $user = app(config('aura.resources.user'))::create([
        'name' => $request->name,
        'email' => $request->email,
        'password' => Hash::make($request->password),
    ]);
+
+   $team = app(config('aura.resources.team'))::create([
+       'name' => $request->team,
+       'user_id' => $user->id,
+   ]);
+
+   $user->current_team_id = $team->id;
+   $user->save();
    
-   // Create team if enabled
-   if (config('aura.teams')) {
-       $team = $user->ownedTeams()->create([
-           'name' => $request->team_name,
-           'personal_team' => true,
-       ]);
-       
-       $user->current_team_id = $team->id;
-       $user->save();
-   }
+   // Without teams:
+   $user = app(config('aura.resources.user'))::create([
+       'name' => $request->name,
+       'email' => $request->email,
+       'password' => Hash::make($request->password),
+   ]);
    ```
 
 3. **Default role assignment**
    ```php
-   // Automatically assign default role
-   $defaultRole = Role::where('slug', 'member')->first();
-   $user->roles()->attach($defaultRole);
+   // With teams: assigns first role from the team
+   $role = $team->roles->first();
+   $user->update(['roles' => [$role->id]]);
+   
+   // Without teams: assigns 'user' role
+   $role = Role::where('slug', 'user')->firstOrFail();
+   $user->update(['roles' => [$role->id]]);
    ```
 
 4. **Email verification sent** (if enabled)
@@ -293,21 +296,39 @@ class CreateNewUser implements CreatesNewUsers
 #### Standard Login
 
 ```php
-// Login route
-Route::get('/login', [AuthController::class, 'showLogin'])
+// Login routes (defined in routes/auth.php)
+Route::get('login', [AuthenticatedSessionController::class, 'create'])
     ->name('aura.login');
 
-Route::post('/login', [AuthController::class, 'login']);
+Route::post('login', [AuthenticatedSessionController::class, 'store']);
 ```
 
 #### Login Features
 
-- **Rate Limiting**: Prevents brute force attacks
+- **Rate Limiting**: Prevents brute force attacks (5 attempts per email+IP combination)
   ```php
-  // After 5 failed attempts, lockout for 1 minute
-  RateLimiter::for('login', function (Request $request) {
-      return Limit::perMinute(5)->by($request->email.$request->ip());
-  });
+  // In LoginRequest class
+  public function ensureIsNotRateLimited()
+  {
+      if (! RateLimiter::tooManyAttempts($this->throttleKey(), 5)) {
+          return;
+      }
+
+      event(new Lockout($this));
+      
+      $seconds = RateLimiter::availableIn($this->throttleKey());
+      throw ValidationException::withMessages([
+          'email' => trans('auth.throttle', [
+              'seconds' => $seconds,
+              'minutes' => ceil($seconds / 60),
+          ]),
+      ]);
+  }
+  
+  public function throttleKey()
+  {
+      return Str::transliterate(Str::lower($this->input('email')).'|'.$this->ip());
+  }
   ```
 
 - **Remember Me**: Long-lived authentication
@@ -351,31 +372,36 @@ Fortify::authenticateUsing(function (Request $request) {
 
 #### Post-Login Actions
 
+Aura CMS fires a `LoggedIn` event after successful authentication:
+
 ```php
-class LoginController
+use Aura\Base\Events\LoggedIn;
+
+// In AuthenticatedSessionController::store()
+event(new LoggedIn($request->user()));
+
+// Listen to the event in your EventServiceProvider
+protected $listen = [
+    \Aura\Base\Events\LoggedIn::class => [
+        \App\Listeners\LogSuccessfulLogin::class,
+        \App\Listeners\UpdateLastLoginTimestamp::class,
+    ],
+];
+
+// Example listener
+class UpdateLastLoginTimestamp
 {
-    protected function authenticated(Request $request, $user)
+    public function handle(LoggedIn $event)
     {
-        // Log user activity
-        activity()
-            ->causedBy($user)
-            ->log('User logged in');
-        
-        // Update last login
-        $user->update([
+        $event->user->update([
             'last_login_at' => now(),
-            'last_login_ip' => $request->ip(),
+            'last_login_ip' => request()->ip(),
         ]);
-        
-        // Redirect based on role
-        if ($user->hasRole('admin')) {
-            return redirect()->route('admin.dashboard');
-        }
-        
-        return redirect()->route('dashboard');
     }
 }
 ```
+
+The post-login redirect is configured via `config('aura.auth.redirect')`, defaulting to `/admin`.
 
 ## Password Management
 
@@ -459,37 +485,47 @@ Route::post('/admin/settings', function () {
 ### 2FA Configuration
 
 ```php
-// Enable 2FA globally
-'2fa' => true,
-
-// Require 2FA for all users
-'2fa_required' => false,
-
-// Require 2FA for specific roles
-public function boot()
-{
-    Gate::define('require-2fa', function ($user) {
-        return $user->hasRole(['admin', 'manager']);
-    });
-}
+// Enable 2FA in config/aura.php
+'auth' => [
+    '2fa' => true,  // Enable two-factor authentication feature
+],
 ```
 
+### 2FA Routes
+
+When 2FA is enabled, these routes are available:
+
+| Route | Method | Name | Description |
+|-------|--------|------|-------------|
+| `/two-factor-challenge` | GET | `aura.two-factor.login` | 2FA challenge page |
+| `/two-factor-challenge` | POST | - | Verify 2FA code |
+| `/user/two-factor-authentication` | POST | `aura.two-factor.enable` | Enable 2FA |
+| `/user/two-factor-authentication` | DELETE | `aura.two-factor.disable` | Disable 2FA |
+| `/user/confirmed-two-factor-authentication` | POST | `aura.two-factor.confirm` | Confirm 2FA setup |
+| `/user/two-factor-qr-code` | GET | `aura.two-factor.qr-code` | Get QR code |
+| `/user/two-factor-secret-key` | GET | `aura.two-factor.secret-key` | Get secret key |
+| `/user/two-factor-recovery-codes` | GET/POST | `aura.two-factor.recovery-codes` | View/regenerate codes |
+
+All 2FA management routes require `auth:web` and `password.confirm` middleware.
+
 ### Enabling 2FA
+
+Aura CMS provides a `TwoFactorAuthenticationForm` Livewire component (based on Laravel Jetstream) for managing 2FA.
 
 #### User-Initiated Setup
 
 ```php
-// In profile component
-public function enableTwoFactorAuthentication()
+// In TwoFactorAuthenticationForm component
+use Laravel\Fortify\Actions\EnableTwoFactorAuthentication;
+
+public function enableTwoFactorAuthentication(EnableTwoFactorAuthentication $enable)
 {
-    $this->user->forceFill([
-        'two_factor_secret' => encrypt(app(TwoFactorAuthenticationProvider::class)->generateSecretKey()),
-        'two_factor_recovery_codes' => encrypt(json_encode(Collection::times(8, function () {
-            return RecoveryCode::generate();
-        })->all())),
-    ])->save();
+    $this->ensurePasswordIsConfirmed();  // Requires password confirmation
     
-    $this->showQrCode = true;
+    $enable($this->user);  // Uses Fortify action
+    
+    $this->showingQrCode = true;
+    $this->showingConfirmation = true;
 }
 ```
 
@@ -580,19 +616,21 @@ Fortify::twoFactorChallengeView(function () {
 ### Recovery Codes
 
 ```php
+use Laravel\Fortify\Actions\GenerateNewRecoveryCodes;
+
 // Generate new recovery codes
-public function regenerateRecoveryCodes()
+public function regenerateRecoveryCodes(GenerateNewRecoveryCodes $generate)
 {
-    $this->user->forceFill([
-        'two_factor_recovery_codes' => encrypt(json_encode(
-            Collection::times(8, fn () => RecoveryCode::generate())->all()
-        )),
-    ])->save();
-    
-    $this->showRecoveryCodes = true;
+    if (Features::optionEnabled(Features::twoFactorAuthentication(), 'confirmPassword')) {
+        $this->ensurePasswordIsConfirmed();
+    }
+
+    $generate($this->user);
+
+    $this->showingRecoveryCodes = true;
 }
 
-// Display recovery codes
+// Display recovery codes in Blade
 @foreach (json_decode(decrypt($user->two_factor_recovery_codes), true) as $code)
     <div class="font-mono text-sm">{{ $code }}</div>
 @endforeach
@@ -630,18 +668,16 @@ Route::middleware(['auth', 'ensure-2fa'])->group(function () {
 
 ### Configuration
 
-```php
-// Enable email verification
-'require_email_verification' => true,
+Email verification is controlled through Laravel Fortify's features. By default, it's commented out in Aura CMS:
 
-// Or conditionally
-public function boot()
-{
-    Fortify::verifyEmailUsing(function ($user) {
-        return $user->hasRole('premium');
-    });
-}
+```php
+// In config/fortify.php - uncomment to enable
+'features' => [
+    // Features::emailVerification(),
+],
 ```
+
+To enable email verification, uncomment the line above. Users will then need to verify their email before accessing protected routes.
 
 ### Verification Process
 
@@ -734,117 +770,147 @@ public function register(Request $request)
 
 ### Team Invitations
 
+Aura CMS provides an `InviteUser` Livewire component for sending team invitations.
+
 #### Sending Invitations
 
 ```php
-// In team settings
-public function inviteTeamMember()
+// In InviteUser Livewire component
+use Aura\Base\Mail\TeamInvitation;
+
+public function save()
 {
-    $this->validate([
-        'email' => ['required', 'email'],
-        'role' => ['required', Rule::in(['admin', 'editor', 'member'])],
+    $this->validate();  // Validates email and role
+
+    $team = auth()->user()->currentTeam;
+
+    $this->authorize('invite-users', $team);  // Check permission
+
+    $invitation = $team->teamInvitations()->create([
+        'email' => $this->form['fields']['email'],
+        'role' => $this->form['fields']['role'],
     ]);
-    
-    $invitation = $this->team->teamInvitations()->create([
-        'email' => $this->email,
-        'role' => $this->role,
-        'expires_at' => now()->addDays(7),
-    ]);
-    
-    Mail::to($this->email)->send(new TeamInvitationMail($invitation));
+
+    Mail::to($email)->send(new TeamInvitation($invitation));
 }
 ```
 
 #### Invitation Email
 
 ```php
-// Custom invitation email
-class TeamInvitationMail extends Mailable
-{
-    public function build()
-    {
-        $acceptUrl = URL::signedRoute('team-invitations.accept', [
-            'invitation' => $this->invitation,
-        ]);
-        
-        return $this->subject("You're invited to join {$this->invitation->team->name}")
-            ->markdown('emails.team-invitation', [
-                'acceptUrl' => $acceptUrl,
-                'team' => $this->invitation->team,
-            ]);
-    }
-}
+use Aura\Base\Mail\TeamInvitation;
+
+// The TeamInvitation mailable sends an email with a signed URL
+// that allows the invitee to join the team
 ```
 
 #### Accepting Invitations
 
+Invitations can be accepted via two routes:
+
+**For existing users:**
 ```php
-// Routes
-Route::get('/invitations/{invitation}/accept', [TeamInvitationController::class, 'show'])
+// Route defined in routes/auth.php
+Route::get('/team-invitations/{invitation}', [TeamInvitationController::class, 'accept'])
     ->middleware(['signed'])
-    ->name('team-invitations.accept');
+    ->name('aura.team-invitations.accept');
+```
 
-Route::post('/invitations/{invitation}/accept', [TeamInvitationController::class, 'accept'])
-    ->middleware(['signed', 'auth']);
+**For new users (registration with invitation):**
+```php
+// Routes for invited users who need to register
+Route::get('register/{team}/{teamInvitation}', [InvitationRegisterUserController::class, 'create'])
+    ->name('aura.invitation.register')
+    ->middleware(['signed']);
 
-// Controller
-public function accept(TeamInvitation $invitation)
-{
-    // Validate invitation
-    abort_unless($invitation->email === auth()->user()->email, 403);
-    abort_if($invitation->hasExpired(), 403);
-    
-    // Add user to team
-    $invitation->team->users()->attach(auth()->user(), [
-        'role' => $invitation->role,
-    ]);
-    
-    // Clean up
-    $invitation->delete();
-    
-    // Switch to new team
-    auth()->user()->switchTeam($invitation->team);
-    
-    return redirect()->route('dashboard')
-        ->with('success', "You've joined {$invitation->team->name}!");
-}
+Route::post('register/{team}/{teamInvitation}', [InvitationRegisterUserController::class, 'store'])
+    ->middleware(['signed'])
+    ->name('aura.invitation.register.post');
 ```
 
 ### Team Switching
 
-```php
-// Switch team
-public function switchTeam(Team $team)
-{
-    abort_unless(auth()->user()->belongsToTeam($team), 403);
-    
-    auth()->user()->update([
-        'current_team_id' => $team->id,
-    ]);
-    
-    return redirect()->route('dashboard');
-}
+Team switching is handled via a dedicated controller:
 
-// Team switcher component
-<x-aura::dropdown>
-    <x-slot name="trigger">
-        {{ auth()->user()->currentTeam->name }}
-    </x-slot>
-    
-    @foreach(auth()->user()->allTeams() as $team)
-        <x-aura::dropdown.item 
-            :href="route('teams.switch', $team)"
-            :active="$team->id === auth()->user()->current_team_id">
-            {{ $team->name }}
-        </x-aura::dropdown.item>
-    @endforeach
-    
-    <x-aura::dropdown.divider />
-    
-    <x-aura::dropdown.item :href="route('teams.create')">
-        Create New Team
-    </x-aura::dropdown.item>
-</x-aura::dropdown>
+```php
+// Route defined in routes/auth.php
+Route::put('/current-team', [SwitchTeamController::class, 'update'])
+    ->name('aura.current-team.update');
+
+// Switch team via form
+<form method="POST" action="{{ route('aura.current-team.update') }}">
+    @csrf
+    @method('PUT')
+    <input type="hidden" name="team_id" value="{{ $team->id }}">
+    <button type="submit">Switch to {{ $team->name }}</button>
+</form>
+```
+
+## Middleware
+
+Aura CMS provides several authentication middleware classes in `Aura\Base\Http\Middleware`:
+
+### Authenticate
+
+Redirects unauthenticated users to the login page:
+
+```php
+namespace Aura\Base\Http\Middleware;
+
+use Illuminate\Auth\Middleware\Authenticate as Middleware;
+
+class Authenticate extends Middleware
+{
+    protected function redirectTo($request)
+    {
+        if (! $request->expectsJson()) {
+            return route('login');
+        }
+    }
+}
+```
+
+### RedirectIfAuthenticated
+
+Redirects authenticated users away from guest-only pages (login, register):
+
+```php
+namespace Aura\Base\Http\Middleware;
+
+class RedirectIfAuthenticated
+{
+    public function handle(Request $request, Closure $next, ...$guards)
+    {
+        foreach ($guards as $guard) {
+            if (Auth::guard($guard)->check()) {
+                return redirect(config('aura.auth.redirect'));
+            }
+        }
+
+        return $next($request);
+    }
+}
+```
+
+### Using Middleware
+
+Apply middleware to routes:
+
+```php
+// Require authentication
+Route::middleware('auth')->group(function () {
+    Route::get('/dashboard', [DashboardController::class, 'index']);
+});
+
+// Guest only (redirects if authenticated)
+Route::middleware('guest')->group(function () {
+    Route::get('/login', [AuthController::class, 'showLogin']);
+});
+
+// Email verification required
+Route::middleware(['auth', 'verified'])->group(function () {
+    Route::get('/settings', [SettingsController::class, 'index']);
+});
 ```
 
 ## Session Management
@@ -864,36 +930,24 @@ return [
 
 ### Browser Sessions
 
-Manage active sessions across devices:
+The Profile component includes session management functionality:
 
 ```php
-// Get all sessions
-public function sessions()
-{
-    return collect(
-        DB::table('sessions')
-            ->where('user_id', auth()->id())
-            ->orderBy('last_activity', 'desc')
-            ->get()
-    )->map(function ($session) {
-        return (object) [
-            'agent' => $session->user_agent,
-            'ip_address' => $session->ip_address,
-            'is_current' => $session->id === request()->session()->getId(),
-            'last_active' => Carbon::createFromTimestamp($session->last_activity),
-        ];
-    });
-}
+// In Aura\Base\Livewire\Profile
 
-// Logout other devices
 public function logoutOtherBrowserSessions()
 {
-    DB::table('sessions')
-        ->where('user_id', auth()->id())
-        ->where('id', '!=', request()->session()->getId())
-        ->delete();
+    if (request()->hasSession() && Schema::hasTable('sessions')) {
+        DB::connection(config('session.connection'))
+            ->table(config('session.table', 'sessions'))
+            ->where('user_id', Auth::user()->getAuthIdentifier())
+            ->where('id', '!=', request()->session()->getId())
+            ->delete();
+    }
 }
 ```
+
+This method is automatically called when a user changes their password, ensuring other devices are logged out for security.
 
 ## API Authentication
 
@@ -935,15 +989,18 @@ Route::middleware('auth:sanctum')->group(function () {
 
 ### Custom Views
 
-Publish and customize authentication views:
+Authentication views can be customized by publishing them or by configuring the view paths in `config/aura.php`:
 
-```bash
-php artisan vendor:publish --tag=aura-auth-views
+```php
+'views' => [
+    'login-layout' => 'aura::layout.login',  // Layout for auth pages
+    // ... other view configurations
+],
 ```
 
-Views structure:
+The default authentication views are located in the package at:
 ```
-resources/views/vendor/aura/auth/
+resources/views/auth/
 ├── login.blade.php
 ├── register.blade.php
 ├── verify-email.blade.php
@@ -952,6 +1009,8 @@ resources/views/vendor/aura/auth/
 ├── confirm-password.blade.php
 └── two-factor-challenge.blade.php
 ```
+
+To customize, create your own views in your application's `resources/views/vendor/aura/auth/` directory.
 
 ### Custom Authentication Logic
 
@@ -1129,6 +1188,29 @@ MAIL_FROM_ADDRESS=noreply@example.com
 // Test mail
 php artisan tinker
 >>> Mail::raw('Test', fn($m) => $m->to('test@example.com'));
+```
+
+### Development Login
+
+In local development environments with `.test` domains, Aura provides a quick login feature:
+
+```php
+// Route: /login-as/{id}
+// Only available in local environment with .test domains
+Route::get('/login-as/{id}', function ($id) {
+    if (! app()->environment('local')) {
+        abort(404);
+    }
+    
+    if (! Str::endsWith(request()->getHost(), '.test')) {
+        abort(404);
+    }
+    
+    $user = app(config('aura.resources.user'))->findOrFail($id);
+    Auth::login($user);
+    
+    return redirect()->route('aura.dashboard');
+})->name('aura.login-as');
 ```
 
 ### Debug Authentication

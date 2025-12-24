@@ -1,1173 +1,752 @@
 # API Reference
 
-Aura CMS provides a comprehensive API system that allows you to interact with resources programmatically. Built on Laravel's API infrastructure with Sanctum authentication, the API enables you to build headless applications, mobile apps, and third-party integrations.
+This document covers the PHP API for interacting with Aura CMS programmatically. It includes the Aura Facade, Resource class methods, and utility classes that power the CMS.
 
 ## Table of Contents
 
-- [Overview](#overview)
-- [Authentication](#authentication)
-- [API Architecture](#api-architecture)
-- [RESTful Resources](#restful-resources)
-- [Field APIs](#field-apis)
-- [Media API](#media-api)
-- [Search API](#search-api)
-- [Webhooks](#webhooks)
-- [Rate Limiting](#rate-limiting)
-- [Error Handling](#error-handling)
-- [API Versioning](#api-versioning)
-- [GraphQL Support](#graphql-support)
-- [Best Practices](#best-practices)
+- [Aura Facade](#aura-facade)
+- [Resource Class](#resource-class)
+- [DynamicFunctions](#dynamicfunctions)
+- [ConditionalLogic](#conditionallogic)
+- [Building Custom REST APIs](#building-custom-rest-apis)
 
-## Overview
+## Aura Facade
 
-The Aura CMS API provides:
-- **RESTful Endpoints**: Standard CRUD operations for all resources
-- **Authentication**: Token-based auth with Laravel Sanctum
-- **Resource Transformation**: Consistent JSON responses
-- **Field Support**: All field types work via API
-- **Media Handling**: Upload and manage files
-- **Search**: Global and resource-specific search
-- **Filtering**: Advanced query capabilities
-- **Pagination**: Efficient data loading
-- **Rate Limiting**: Protection against abuse
+The `Aura` facade (`Aura\Base\Facades\Aura`) provides access to core CMS functionality. It proxies to the `Aura\Base\Aura` class.
 
-> 📹 **Video Placeholder**: [Overview of Aura CMS API showing authentication, requests, and responses]
-
-## Authentication
-
-### Sanctum Setup
-
-Enable API authentication in your application:
+### Resource Management
 
 ```php
-// config/aura.php
-'api' => [
-    'enabled' => true,
-    'prefix' => 'api',
-    'version' => 'v1',
-    'rate_limit' => 60,
-],
+use Aura\Base\Facades\Aura;
 
-// Enable Sanctum middleware in app/Http/Kernel.php
-'api' => [
-    \Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful::class,
-    'throttle:api',
-    \Illuminate\Routing\Middleware\SubstituteBindings::class,
-],
+// Get all registered resources
+$resources = Aura::getResources();
+// Returns: ['App\Aura\Resources\Post', 'App\Aura\Resources\Page', ...]
+
+// Register resources programmatically
+Aura::registerResources([
+    \App\Aura\Resources\Product::class,
+    \App\Aura\Resources\Category::class,
+]);
+
+// Find a resource by its slug
+$resource = Aura::findResourceBySlug('post');
+// Returns: App\Aura\Resources\Post instance
+
+// Get app-defined resources (from configured path)
+$appResources = Aura::getAppResources();
 ```
 
-### API Token Authentication
+### Field Management
 
 ```php
-// Generate API token
-$token = $user->createToken('api-token')->plainTextToken;
+// Get all registered field types
+$fields = Aura::getFields();
+// Returns: ['Aura\Base\Fields\Text', 'Aura\Base\Fields\Number', ...]
 
-// Use token in requests
-curl -H "Authorization: Bearer {token}" \
-     https://your-app.com/api/v1/resources
+// Get fields organized by group
+$fieldGroups = Aura::getFieldsWithGroups();
+// Returns: ['Fields' => ['Text' => 'Aura\Base\Fields\Text', ...], 'Relations' => [...]]
+
+// Register custom field types
+Aura::registerFields([
+    \App\Fields\CustomField::class,
+]);
+
+// Get app-defined fields
+$appFields = Aura::getAppFields();
 ```
 
-### Login Endpoint
+### Widget Management
 
 ```php
-// routes/api.php
-Route::post('/login', function (Request $request) {
-    $request->validate([
-        'email' => 'required|email',
-        'password' => 'required',
-    ]);
+// Get all registered widgets
+$widgets = Aura::getWidgets();
 
-    if (!Auth::attempt($request->only('email', 'password'))) {
-        return response()->json([
-            'message' => 'Invalid credentials'
-        ], 401);
-    }
+// Register custom widgets
+Aura::registerWidgets([
+    \App\Widgets\SalesChart::class,
+    \App\Widgets\RecentOrders::class,
+]);
 
-    $user = User::where('email', $request->email)->first();
-    
-    return response()->json([
-        'user' => $user,
-        'token' => $user->createToken('api')->plainTextToken,
-    ]);
+// Get app-defined widgets
+$appWidgets = Aura::getAppWidgets();
+```
+
+### Options & Settings
+
+```php
+// Get an option value (cached, team-aware)
+$settings = Aura::getOption('site-settings');
+// Returns decoded JSON or array
+
+// Update an option
+Aura::updateOption('site-settings', ['logo' => 'path/to/logo.png']);
+
+// Get a specific config value from aura.php
+$value = Aura::option('features.teams');
+
+// Get all aura config options
+$allOptions = Aura::options();
+// Returns: config('aura')
+```
+
+### Navigation
+
+```php
+// Get the navigation structure (cached per user/team)
+$navigation = Aura::navigation();
+// Returns grouped navigation items based on user permissions
+```
+
+### Route Registration
+
+```php
+// Register CRUD routes for a resource
+Aura::registerRoutes('products');
+// Creates: /admin/products, /admin/products/create, /admin/products/{id}, /admin/products/{id}/edit
+
+// Clear route caches
+Aura::clearRoutes();
+
+// Clear all caches
+Aura::clear();
+```
+
+### View Injection
+
+```php
+// Register a view injection hook
+Aura::registerInjectView('dashboard.sidebar', function () {
+    return view('my-sidebar-widget');
 });
+
+// Render injected views (in Blade templates)
+{!! Aura::injectView('dashboard.sidebar') !!}
+
+// Get all registered injection points
+$injections = Aura::getInjectViews();
 ```
 
-### Logout Endpoint
+### Asset Management
 
 ```php
-Route::post('/logout', function (Request $request) {
-    $request->user()->currentAccessToken()->delete();
-    
-    return response()->json([
-        'message' => 'Logged out successfully'
-    ]);
-})->middleware('auth:sanctum');
+// Get compiled scripts view
+{!! Aura::scripts() !!}
+
+// Get compiled styles view  
+{!! Aura::styles() !!}
+
+// Vite integration for development
+{!! Aura::viteScripts() !!}
+{!! Aura::viteStyles() !!}
+
+// Check if published assets are current
+if (!Aura::assetsAreCurrent()) {
+    // Assets need republishing
+}
 ```
 
-### SPA Authentication
-
-For single-page applications:
-
-```javascript
-// First, get CSRF cookie
-await axios.get('/sanctum/csrf-cookie');
-
-// Then login
-const response = await axios.post('/login', {
-    email: 'user@example.com',
-    password: 'password'
-});
-
-// Subsequent requests are authenticated
-const resources = await axios.get('/api/v1/products');
-```
-
-## API Architecture
-
-### Route Structure
+### User Model Configuration
 
 ```php
-// routes/api.php
-use Aura\Base\Http\Controllers\Api\ResourceController;
+// Get the configured user model class
+$userModel = Aura::userModel();
+// Returns: 'Aura\Base\Resources\User' (default)
 
-Route::prefix('v1')->middleware('auth:sanctum')->group(function () {
-    // Dynamic resource routes
-    foreach (Aura::getResources() as $resource) {
-        $slug = app($resource)->getSlug();
-        
-        Route::apiResource($slug, ResourceController::class)
-            ->parameters([$slug => 'model']);
-    }
-    
-    // Additional routes
-    Route::get('search', [SearchController::class, 'index']);
-    Route::post('media/upload', [MediaController::class, 'store']);
-});
+// Set a custom user model
+Aura::useUserModel(\App\Models\CustomUser::class);
 ```
 
-### Resource Controller
+### Templates
 
 ```php
-namespace Aura\Base\Http\Controllers\Api;
+// Get all registered templates
+$templates = Aura::templates();
 
-use Aura\Base\Http\Controllers\Controller;
-use Aura\Base\Http\Resources\ResourceResource;
-use Illuminate\Http\Request;
+// Find a template by slug
+$template = Aura::findTemplateBySlug('panel-with-sidebar');
+```
 
-class ResourceController extends Controller
+### Utilities
+
+```php
+// Check conditional logic for a field
+$shouldShow = Aura::checkCondition($model, $field, $post);
+
+// Clear conditional logic cache
+Aura::clearConditionsCache();
+
+// Get attachment path by ID
+$path = Aura::getPath($attachmentId);
+
+// Export array as PHP code
+$code = Aura::varexport($array, true);
+```
+
+## Resource Class
+
+The `Aura\Base\Resource` class is the base for all Aura resources. It extends Eloquent Model and provides extensive functionality.
+
+### Static Properties
+
+```php
+class Post extends Resource
 {
-    protected $resource;
+    // Resource type identifier
+    public static string $type = 'Post';
     
-    public function __construct(Request $request)
-    {
-        $this->resource = $this->resolveResource($request);
-    }
+    // URL slug for routes
+    protected static ?string $slug = 'post';
     
+    // Display names
+    public static $singularName = 'Post';
+    public static $pluralName = 'Posts';
+    
+    // Navigation group
+    protected static ?string $group = 'Content';
+    
+    // Sort order in navigation
+    protected static ?int $sort = 10;
+    
+    // Feature flags
+    public static $createEnabled = true;
+    public static $editEnabled = true;
+    public static $viewEnabled = true;
+    public static bool $indexViewEnabled = true;
+    public static $contextMenu = true;
+    public static $globalSearch = true;
+    protected static bool $showInNavigation = true;
+    
+    // Table configuration
+    public static $customTable = false;  // Use posts table with type column
+    public static bool $usesMeta = true; // Store extra fields in meta table
+    protected static bool $title = false; // Has title column
+    
+    // Dropdown grouping in navigation
+    protected static $dropdown = false;
+    
+    // Taxonomy resource
+    public static $taxonomy = false;
+    
+    // Show actions as buttons instead of dropdown
+    public static $showActionsAsButtons = false;
+}
+```
+
+### Defining Fields
+
+```php
+public static function getFields(): array
+{
+    return [
+        [
+            'type' => 'Aura\\Base\\Fields\\Text',
+            'name' => 'Title',
+            'slug' => 'title',
+            'validation' => 'required|max:255',
+            'on_index' => true,
+            'searchable' => true,
+        ],
+        [
+            'type' => 'Aura\\Base\\Fields\\Textarea',
+            'name' => 'Content',
+            'slug' => 'content',
+            'on_index' => false,
+        ],
+        [
+            'type' => 'Aura\\Base\\Fields\\BelongsTo',
+            'name' => 'Category',
+            'slug' => 'category_id',
+            'resource' => 'App\\Aura\\Resources\\Category',
+        ],
+    ];
+}
+```
+
+### Field Methods
+
+```php
+$resource = new Post();
+
+// Get all input field slugs
+$slugs = $resource->inputFieldsSlugs();
+// Returns: ['title', 'content', 'category_id', ...]
+
+// Get a field definition by slug
+$field = $resource->fieldBySlug('title');
+// Returns: ['type' => 'Aura\Base\Fields\Text', 'name' => 'Title', ...]
+
+// Get the field class instance
+$fieldClass = $resource->fieldClassBySlug('title');
+// Returns: Aura\Base\Fields\Text instance
+
+// Get all input fields as collection
+$fields = $resource->inputFields();
+
+// Get fields for different contexts
+$createFields = $resource->createFields();  // Filtered for create form
+$editFields = $resource->editFields();      // Filtered for edit form
+$viewFields = $resource->viewFields();      // Filtered for view page
+$indexFields = $resource->indexFields();    // Fields shown in table
+
+// Get fields with IDs assigned
+$fieldsWithIds = $resource->getFieldsWithIds();
+
+// Get grouped/nested fields structure
+$grouped = $resource->getGroupedFields();
+
+// Check if field should display based on conditional logic
+$shouldShow = $resource->shouldDisplayField($field);
+
+// Display a field value (applies field transformations)
+$displayValue = $resource->display('title');
+$displayValue = $resource->displayFieldValue('status', 'active');
+
+// Get searchable fields
+$searchable = $resource->getSearchableFields();
+
+// Get validation rules for all fields
+$rules = $resource->validationRules();
+// Returns: ['title' => 'required|max:255', 'status' => 'required', ...]
+
+// Get validation rules prefixed for Livewire forms
+$formRules = $resource->resourceFieldValidationRules();
+// Returns: ['form.fields.title' => 'required|max:255', ...]
+```
+
+### Meta Fields
+
+```php
+// Check if resource uses meta table
+$usesMeta = Post::usesMeta();
+
+// Check if using custom table
+$customTable = Post::usesCustomTable();
+
+// Get meta values
+$meta = $post->getMeta();           // All meta as collection
+$value = $post->getMeta('custom');  // Specific meta key
+
+// Check if a field is stored in meta
+$isMeta = $post->isMetaField('custom_field');
+
+// Check if field is in main table
+$isTable = $post->isTableField('title');
+
+// Query by meta values
+Post::whereMeta('status', 'published')->get();
+Post::whereMeta('views', '>', 100)->get();
+Post::whereMeta(['status' => 'published', 'featured' => true])->get();
+
+Post::orWhereMeta('status', 'draft')->get();
+Post::whereInMeta('category', [1, 2, 3])->get();
+Post::whereNotInMeta('category', [4, 5])->get();
+Post::whereMetaContains('tags', 'featured')->get(); // JSON contains
+```
+
+### URL Methods
+
+```php
+$post = Post::find(1);
+
+// Get various URLs
+$indexUrl = $post->indexUrl();    // /admin/post
+$createUrl = $post->createUrl();  // /admin/post/create
+$editUrl = $post->editUrl();      // /admin/post/1/edit
+$viewUrl = $post->viewUrl();      // /admin/post/1
+
+// Get index route
+$route = $post->getIndexRoute();
+```
+
+### View Methods
+
+```php
+// Get view paths for customization
+$post->indexView();       // 'aura::livewire.resource.index'
+$post->createView();      // 'aura::livewire.resource.create'
+$post->editView();        // 'aura::livewire.resource.edit'
+$post->viewView();        // 'aura::livewire.resource.view'
+
+// Header views
+$post->editHeaderView();  // 'aura::livewire.resource.edit-header'
+$post->viewHeaderView();  // 'aura::livewire.resource.view-header'
+
+// Table views
+$post->tableView();           // 'aura::components.table.list-view'
+$post->rowView();             // 'aura::components.table.row'
+$post->tableComponentView();  // 'aura::livewire.table'
+```
+
+### Actions & Bulk Actions
+
+```php
+// Define actions on resource
+public array $actions = [
+    'publish' => 'Publish',
+    'archive' => 'Archive',
+];
+
+// Or as a method for dynamic actions
+public function actions(): array
+{
+    return [
+        'publish' => 'Publish',
+    ];
+}
+
+// Define bulk actions
+public array $bulkActions = [
+    'delete' => 'Delete Selected',
+    'export' => 'Export',
+];
+
+// Get configured actions
+$actions = $post->getActions();
+$bulkActions = $post->getBulkActions();
+```
+
+### Table Configuration
+
+```php
+// Default table settings
+public function defaultPerPage(): int
+{
+    return 10;
+}
+
+public function defaultTableSort(): string
+{
+    return 'id';
+}
+
+public function defaultTableSortDirection(): string
+{
+    return 'desc';
+}
+
+public function defaultTableView(): string
+{
+    return 'list';  // 'list', 'grid', 'kanban'
+}
+
+// Enable different view modes
+public function tableGridView(): bool
+{
+    return true;
+}
+
+public function tableKanbanView(): bool
+{
+    return false;
+}
+
+public function kanbanQuery($query)
+{
+    return false; // Return query for kanban grouping
+}
+
+public function showTableSettings(): bool
+{
+    return true;
+}
+
+// Get table headers
+$headers = $post->getHeaders();
+```
+
+### Navigation Configuration
+
+```php
+// Get navigation data for this resource
+$nav = $post->navigation();
+// Returns: [
+//     'icon' => '<svg>...</svg>',
+//     'resource' => 'App\Aura\Resources\Post',
+//     'type' => 'Post',
+//     'name' => 'Posts',
+//     'slug' => 'post',
+//     'sort' => 10,
+//     'group' => 'Content',
+//     'route' => '/admin/post',
+//     'dropdown' => false,
+//     'showInNavigation' => true,
+//     'badge' => null,
+//     'badgeColor' => null,
+// ]
+
+// Custom icon
+public function getIcon(): string
+{
+    return '<svg>...</svg>';
+}
+
+// Badge for navigation item
+public function getBadge()
+{
+    return Post::count();
+}
+
+public function getBadgeColor()
+{
+    return 'red';
+}
+```
+
+### Widgets
+
+```php
+// Define widgets for resource dashboard
+public static function getWidgets(): array
+{
+    return [
+        [
+            'type' => 'Aura\\Base\\Widgets\\ValueWidget',
+            'name' => 'Total Posts',
+            // widget configuration...
+        ],
+    ];
+}
+
+// Widget time range settings
+public array $widgetSettings = [
+    'default' => '30d',
+    'options' => [
+        '7d' => '7 Days',
+        '30d' => '30 Days',
+        // ...
+    ],
+];
+
+// Get widgets
+$widgets = $post->widgets();
+```
+
+### Relationships
+
+```php
+// Built-in relationships
+$user = $post->user();      // BelongsTo user
+$team = $post->team();      // BelongsTo team
+$parent = $post->parent();  // BelongsTo parent (self-referential)
+$children = $post->children(); // HasMany children
+$meta = $post->meta();      // MorphMany meta records
+
+// Dynamic relationships from fields are auto-generated
+$category = $post->category; // From BelongsTo field
+$tags = $post->tags;         // From Tags/HasMany field
+```
+
+### Accessors
+
+```php
+// Get all field values (with conditional logic applied)
+$fields = $post->fields;
+// Returns collection of field slug => value pairs
+
+// Get field values without conditional logic filtering
+$allFields = $post->getFieldsWithoutConditionalLogic();
+
+// Access field values directly
+$title = $post->title;
+$category = $post->category;
+
+// Title generation
+$displayTitle = $post->title(); // "Post (#1)"
+
+// Get singular/plural names
+$singular = $post->singularName(); // "Post"  
+$plural = $post->pluralName();     // "Posts"
+```
+
+### Utility Methods
+
+```php
+// Check resource type
+$isApp = $post->isAppResource();      // Starts with 'App\'
+$isVendor = $post->isVendorResource(); // Package resource
+
+// Check field types
+$isTaxonomy = $post->isTaxonomy();
+$isTaxonomyField = $post->isTaxonomyField('tags');
+$isNumberField = $post->isNumberField('price');
+
+// Clear cached field values
+$post->clearFieldsAttributeCache();
+
+// Get base fillable columns
+$baseFillable = $post->getBaseFillable();
+$isBaseFillable = $post->isBaseFillable('title');
+```
+
+## DynamicFunctions
+
+The `DynamicFunctions` class allows registering and calling closures dynamically, used primarily for conditional logic.
+
+```php
+use Aura\Base\Facades\DynamicFunctions;
+
+// Register a closure, returns a hash
+$hash = DynamicFunctions::add(function () {
+    return auth()->user()->isAdmin();
+});
+
+// Call the registered closure by hash
+$result = DynamicFunctions::call($hash);
+```
+
+## ConditionalLogic
+
+The `ConditionalLogic` class handles field visibility based on conditions.
+
+```php
+use Aura\Base\ConditionalLogic;
+
+// Check if a field should be displayed
+$shouldShow = ConditionalLogic::shouldDisplayField($model, $field, $formData);
+
+// Check if field is visible to a specific user (role-based)
+$isVisible = ConditionalLogic::fieldIsVisibleTo($field, $user);
+
+// Clear the conditions cache
+ConditionalLogic::clearConditionsCache();
+```
+
+## Building Custom REST APIs
+
+Aura CMS provides the foundation for building your own REST APIs using Laravel's standard patterns.
+
+### Basic API Controller
+
+```php
+namespace App\Http\Controllers\Api;
+
+use App\Aura\Resources\Post;
+use Illuminate\Http\Request;
+use Illuminate\Routing\Controller;
+
+class PostController extends Controller
+{
     public function index(Request $request)
     {
-        $this->authorize('viewAny', $this->resource);
-        
-        $query = $this->resource->query();
-        
-        // Apply filters
-        $query = $this->applyFilters($query, $request);
-        
-        // Apply sorting
-        $query = $this->applySorting($query, $request);
+        $query = Post::query();
         
         // Apply search
         if ($request->has('search')) {
-            $query = $this->applySearch($query, $request->search);
+            $searchable = (new Post)->getSearchableFields();
+            $query->where(function ($q) use ($request, $searchable) {
+                foreach ($searchable as $field) {
+                    $q->orWhere($field['slug'], 'like', '%' . $request->search . '%');
+                }
+            });
         }
         
-        $perPage = $request->get('per_page', 15);
-        $results = $query->paginate($perPage);
+        // Apply filters using meta
+        if ($request->has('status')) {
+            $query->whereMeta('status', $request->status);
+        }
         
-        return ResourceResource::collection($results);
+        return $query->paginate($request->get('per_page', 15));
     }
     
-    public function show($model)
+    public function show(Post $post)
     {
-        $this->authorize('view', $model);
-        
-        return new ResourceResource($model->load($this->resource->getApiIncludes()));
+        return response()->json([
+            'data' => $post->fields,
+        ]);
     }
     
     public function store(Request $request)
     {
-        $this->authorize('create', $this->resource);
+        $post = new Post();
+        $rules = $post->validationRules();
         
-        $validated = $request->validate($this->resource->getApiRules());
+        $validated = $request->validate($rules);
         
-        $model = $this->resource->create($validated);
+        $post = Post::create($validated);
         
-        return new ResourceResource($model);
+        return response()->json(['data' => $post], 201);
     }
     
-    public function update(Request $request, $model)
+    public function update(Request $request, Post $post)
     {
-        $this->authorize('update', $model);
+        $rules = $post->validationRules();
+        $validated = $request->validate($rules);
         
-        $validated = $request->validate($this->resource->getApiRules($model));
+        $post->update($validated);
         
-        $model->update($validated);
-        
-        return new ResourceResource($model);
+        return response()->json(['data' => $post]);
     }
     
-    public function destroy($model)
+    public function destroy(Post $post)
     {
-        $this->authorize('delete', $model);
+        $post->delete();
         
-        $model->delete();
-        
-        return response()->json([
-            'message' => 'Resource deleted successfully'
-        ]);
+        return response()->json(['message' => 'Deleted successfully']);
     }
 }
 ```
 
-### Resource Transformation
-
-```php
-namespace Aura\Base\Http\Resources;
-
-use Illuminate\Http\Resources\Json\JsonResource;
-
-class ResourceResource extends JsonResource
-{
-    public function toArray($request)
-    {
-        $resource = app($this->resource->type);
-        $fields = collect($resource->getFields());
-        
-        $data = [
-            'id' => $this->id,
-            'type' => $this->type,
-            'slug' => $this->slug,
-        ];
-        
-        // Transform fields
-        foreach ($fields as $field) {
-            $fieldClass = app($field['type']);
-            $value = $this->{$field['slug']};
-            
-            $data[$field['slug']] = $fieldClass->transformForApi($value, $this);
-        }
-        
-        // Add timestamps
-        $data['created_at'] = $this->created_at;
-        $data['updated_at'] = $this->updated_at;
-        
-        // Add relationships if requested
-        if ($request->has('include')) {
-            $includes = explode(',', $request->include);
-            foreach ($includes as $include) {
-                if ($this->relationLoaded($include)) {
-                    $data[$include] = $this->$include;
-                }
-            }
-        }
-        
-        return $data;
-    }
-}
-```
-
-## RESTful Resources
-
-### Standard Endpoints
-
-All resources follow RESTful conventions:
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/v1/{resource}` | List resources |
-| GET | `/api/v1/{resource}/{id}` | Get single resource |
-| POST | `/api/v1/{resource}` | Create resource |
-| PUT/PATCH | `/api/v1/{resource}/{id}` | Update resource |
-| DELETE | `/api/v1/{resource}/{id}` | Delete resource |
-
-### List Resources
-
-```bash
-GET /api/v1/products
-```
-
-Query parameters:
-- `page`: Page number (default: 1)
-- `per_page`: Items per page (default: 15)
-- `sort`: Sort field (e.g., `name`, `-created_at`)
-- `filter[field]`: Filter by field value
-- `search`: Search query
-- `include`: Include relationships
-
-Example request:
-```bash
-curl -H "Authorization: Bearer {token}" \
-  "https://app.com/api/v1/products?page=1&per_page=20&sort=-created_at&filter[status]=active&include=category,tags"
-```
-
-Response:
-```json
-{
-  "data": [
-    {
-      "id": 1,
-      "type": "Product",
-      "slug": "product-name",
-      "name": "Product Name",
-      "price": 99.99,
-      "status": "active",
-      "category": {
-        "id": 1,
-        "name": "Electronics"
-      },
-      "tags": [
-        {"id": 1, "name": "Featured"},
-        {"id": 2, "name": "Sale"}
-      ],
-      "created_at": "2024-01-01T00:00:00Z",
-      "updated_at": "2024-01-01T00:00:00Z"
-    }
-  ],
-  "meta": {
-    "current_page": 1,
-    "from": 1,
-    "last_page": 5,
-    "per_page": 20,
-    "to": 20,
-    "total": 100
-  },
-  "links": {
-    "first": "https://app.com/api/v1/products?page=1",
-    "last": "https://app.com/api/v1/products?page=5",
-    "prev": null,
-    "next": "https://app.com/api/v1/products?page=2"
-  }
-}
-```
-
-### Get Single Resource
-
-```bash
-GET /api/v1/products/1
-```
-
-Response:
-```json
-{
-  "data": {
-    "id": 1,
-    "type": "Product",
-    "slug": "product-name",
-    "name": "Product Name",
-    "description": "Product description",
-    "price": 99.99,
-    "stock": 50,
-    "images": [
-      {
-        "id": 1,
-        "url": "https://app.com/storage/media/product1.jpg",
-        "thumbnail": "https://app.com/storage/thumbnails/product1.jpg"
-      }
-    ],
-    "created_at": "2024-01-01T00:00:00Z",
-    "updated_at": "2024-01-01T00:00:00Z"
-  }
-}
-```
-
-### Create Resource
-
-```bash
-POST /api/v1/products
-Content-Type: application/json
-
-{
-  "name": "New Product",
-  "price": 149.99,
-  "description": "Product description",
-  "category_id": 1,
-  "status": "active"
-}
-```
-
-Response:
-```json
-{
-  "data": {
-    "id": 2,
-    "type": "Product",
-    "slug": "new-product",
-    "name": "New Product",
-    "price": 149.99,
-    "created_at": "2024-01-02T00:00:00Z",
-    "updated_at": "2024-01-02T00:00:00Z"
-  }
-}
-```
-
-### Update Resource
-
-```bash
-PUT /api/v1/products/1
-Content-Type: application/json
-
-{
-  "name": "Updated Product",
-  "price": 129.99
-}
-```
-
-### Delete Resource
-
-```bash
-DELETE /api/v1/products/1
-```
-
-Response:
-```json
-{
-  "message": "Resource deleted successfully"
-}
-```
-
-### Bulk Operations
-
-```bash
-POST /api/v1/products/bulk
-Content-Type: application/json
-
-{
-  "action": "delete",
-  "ids": [1, 2, 3]
-}
-```
-
-## Field APIs
-
-### Field Value Endpoint
-
-Get field values for dynamic fields:
-
-```bash
-POST /api/v1/fields/values
-Content-Type: application/json
-
-{
-  "field": "Aura\\Base\\Fields\\AdvancedSelect",
-  "model": "App\\Models\\Product",
-  "slug": "category_id",
-  "search": "Electronics"
-}
-```
-
-Response:
-```json
-{
-  "data": [
-    {"id": 1, "text": "Electronics"},
-    {"id": 2, "text": "Electronic Accessories"}
-  ]
-}
-```
-
-### Field Validation
-
-```bash
-POST /api/v1/fields/validate
-Content-Type: application/json
-
-{
-  "field": "email",
-  "value": "user@example.com",
-  "rules": "required|email|unique:users"
-}
-```
-
-### Field Configuration
-
-```bash
-GET /api/v1/resources/products/fields
-```
-
-Response:
-```json
-{
-  "data": [
-    {
-      "name": "Name",
-      "slug": "name",
-      "type": "text",
-      "validation": "required|max:255",
-      "searchable": true,
-      "on_index": true
-    },
-    {
-      "name": "Price",
-      "slug": "price",
-      "type": "number",
-      "validation": "required|numeric|min:0",
-      "prefix": "$"
-    }
-  ]
-}
-```
-
-## Media API
-
-### Upload Files
-
-```bash
-POST /api/v1/media/upload
-Content-Type: multipart/form-data
-
-file: (binary)
-name: "product-image.jpg"
-folder: "products"
-```
-
-Response:
-```json
-{
-  "data": {
-    "id": 123,
-    "name": "product-image.jpg",
-    "url": "https://app.com/storage/media/products/product-image.jpg",
-    "mime_type": "image/jpeg",
-    "size": 245678,
-    "thumbnails": {
-      "xs": "https://app.com/storage/thumbnails/xs/product-image.jpg",
-      "sm": "https://app.com/storage/thumbnails/sm/product-image.jpg",
-      "md": "https://app.com/storage/thumbnails/md/product-image.jpg",
-      "lg": "https://app.com/storage/thumbnails/lg/product-image.jpg"
-    }
-  }
-}
-```
-
-### Get Media
-
-```bash
-GET /api/v1/media/123
-```
-
-### Delete Media
-
-```bash
-DELETE /api/v1/media/123
-```
-
-### Bulk Upload
-
-```bash
-POST /api/v1/media/bulk-upload
-Content-Type: multipart/form-data
-
-files[]: (binary)
-files[]: (binary)
-folder: "gallery"
-```
-
-## Search API
-
-### Global Search
-
-```bash
-GET /api/v1/search?q=product&limit=10
-```
-
-Response:
-```json
-{
-  "data": [
-    {
-      "type": "Product",
-      "id": 1,
-      "title": "Product Name",
-      "subtitle": "Electronics",
-      "url": "/products/1",
-      "highlight": "Matching <mark>product</mark> description"
-    }
-  ],
-  "meta": {
-    "total": 25,
-    "query": "product"
-  }
-}
-```
-
-### Resource Search
-
-```bash
-GET /api/v1/products/search?q=laptop&fields=name,description
-```
-
-### Advanced Search
-
-```bash
-POST /api/v1/search/advanced
-Content-Type: application/json
-
-{
-  "query": "laptop",
-  "resources": ["products", "posts"],
-  "filters": {
-    "created_after": "2024-01-01",
-    "status": "active"
-  },
-  "limit": 20
-}
-```
-
-## Webhooks
-
-### Webhook Configuration
-
-```php
-// config/aura.php
-'webhooks' => [
-    'enabled' => true,
-    'events' => [
-        'resource.created',
-        'resource.updated',
-        'resource.deleted',
-        'media.uploaded',
-    ],
-],
-```
-
-### Register Webhook
-
-```bash
-POST /api/v1/webhooks
-Content-Type: application/json
-
-{
-  "url": "https://your-app.com/webhook",
-  "events": ["resource.created", "resource.updated"],
-  "secret": "your-webhook-secret"
-}
-```
-
-### Webhook Payload
-
-```json
-{
-  "event": "resource.created",
-  "timestamp": "2024-01-01T00:00:00Z",
-  "data": {
-    "resource": "products",
-    "id": 123,
-    "attributes": {
-      "name": "New Product",
-      "price": 99.99
-    }
-  },
-  "signature": "sha256=..."
-}
-```
-
-### Verify Webhook Signature
-
-```php
-$payload = file_get_contents('php://input');
-$signature = $_SERVER['HTTP_X_WEBHOOK_SIGNATURE'];
-
-$expected = 'sha256=' . hash_hmac('sha256', $payload, $secret);
-
-if (!hash_equals($expected, $signature)) {
-    throw new UnauthorizedException('Invalid signature');
-}
-```
-
-## Rate Limiting
-
-### Configuration
-
-```php
-// app/Http/Kernel.php
-'api' => [
-    'throttle:api',
-    // or custom limits
-    'throttle:60,1', // 60 requests per minute
-],
-
-// Custom rate limits
-RateLimiter::for('api', function (Request $request) {
-    return Limit::perMinute(60)->by($request->user()?->id ?: $request->ip());
-});
-
-// Different limits for different endpoints
-RateLimiter::for('uploads', function (Request $request) {
-    return Limit::perMinute(10)->by($request->user()->id);
-});
-```
-
-### Rate Limit Headers
-
-```
-X-RateLimit-Limit: 60
-X-RateLimit-Remaining: 59
-X-RateLimit-Reset: 1640995200
-```
-
-### Handling Rate Limits
-
-```javascript
-axios.interceptors.response.use(
-  response => response,
-  error => {
-    if (error.response?.status === 429) {
-      const retryAfter = error.response.headers['retry-after'];
-      console.log(`Rate limited. Retry after ${retryAfter} seconds`);
-    }
-    return Promise.reject(error);
-  }
-);
-```
-
-## Error Handling
-
-### Standard Error Response
-
-```json
-{
-  "message": "The given data was invalid.",
-  "errors": {
-    "name": [
-      "The name field is required."
-    ],
-    "email": [
-      "The email has already been taken."
-    ]
-  }
-}
-```
-
-### HTTP Status Codes
-
-| Status | Description |
-|--------|-------------|
-| 200 | Success |
-| 201 | Created |
-| 204 | No Content |
-| 400 | Bad Request |
-| 401 | Unauthorized |
-| 403 | Forbidden |
-| 404 | Not Found |
-| 422 | Validation Error |
-| 429 | Too Many Requests |
-| 500 | Server Error |
-
-### Custom Error Handler
-
-```php
-// app/Exceptions/Handler.php
-public function render($request, Throwable $exception)
-{
-    if ($request->is('api/*')) {
-        if ($exception instanceof ValidationException) {
-            return response()->json([
-                'message' => 'Validation failed',
-                'errors' => $exception->errors(),
-            ], 422);
-        }
-        
-        if ($exception instanceof ModelNotFoundException) {
-            return response()->json([
-                'message' => 'Resource not found',
-            ], 404);
-        }
-        
-        if ($exception instanceof AuthorizationException) {
-            return response()->json([
-                'message' => 'Unauthorized action',
-            ], 403);
-        }
-    }
-    
-    return parent::render($request, $exception);
-}
-```
-
-## API Versioning
-
-### URL Versioning
+### API Routes
 
 ```php
 // routes/api.php
-Route::prefix('v1')->group(function () {
-    // Version 1 routes
-});
+use App\Http\Controllers\Api\PostController;
+use Illuminate\Support\Facades\Route;
 
-Route::prefix('v2')->group(function () {
-    // Version 2 routes with breaking changes
-});
-```
-
-### Header Versioning
-
-```php
-Route::middleware('api.version:v1')->group(function () {
-    // Routes for version 1
-});
-
-// Middleware
-class ApiVersion
-{
-    public function handle($request, Closure $next, $version)
-    {
-        if ($request->header('API-Version') !== $version) {
-            return response()->json([
-                'message' => 'Invalid API version'
-            ], 400);
-        }
-        
-        return $next($request);
-    }
-}
-```
-
-### Resource Versioning
-
-```php
-namespace App\Http\Resources\V1;
-
-class ProductResource extends JsonResource
-{
-    public function toArray($request)
-    {
-        return [
-            'id' => $this->id,
-            'name' => $this->name,
-            'price' => $this->price,
-        ];
-    }
-}
-
-namespace App\Http\Resources\V2;
-
-class ProductResource extends JsonResource
-{
-    public function toArray($request)
-    {
-        return [
-            'id' => $this->id,
-            'title' => $this->name, // Changed field name
-            'pricing' => [
-                'amount' => $this->price,
-                'currency' => 'USD',
-            ],
-        ];
-    }
-}
-```
-
-## GraphQL Support
-
-### Setup GraphQL
-
-```bash
-composer require nuwave/lighthouse
-php artisan vendor:publish --tag=lighthouse-schema
-```
-
-### Schema Definition
-
-```graphql
-# graphql/schema.graphql
-type Query {
-    products(
-        first: Int!
-        page: Int
-        where: ProductWhereConditions @whereConditions
-        orderBy: [ProductOrderBy!] @orderBy
-    ): ProductPaginator! @paginate
-
-    product(id: ID! @eq): Product @find
-}
-
-type Mutation {
-    createProduct(input: CreateProductInput! @spread): Product! @create
-    updateProduct(id: ID!, input: UpdateProductInput! @spread): Product! @update
-    deleteProduct(id: ID!): Product! @delete
-}
-
-type Product {
-    id: ID!
-    name: String!
-    price: Float!
-    description: String
-    category: Category @belongsTo
-    tags: [Tag!] @belongsToMany
-    created_at: DateTime!
-    updated_at: DateTime!
-}
-
-input CreateProductInput {
-    name: String!
-    price: Float!
-    description: String
-    category_id: ID
-}
-
-input UpdateProductInput {
-    name: String
-    price: Float
-    description: String
-    category_id: ID
-}
-```
-
-### GraphQL Queries
-
-```graphql
-# Get products
-query GetProducts {
-    products(first: 10, page: 1) {
-        data {
-            id
-            name
-            price
-            category {
-                name
-            }
-        }
-        paginatorInfo {
-            currentPage
-            lastPage
-            total
-        }
-    }
-}
-
-# Create product
-mutation CreateProduct {
-    createProduct(input: {
-        name: "New Product"
-        price: 99.99
-        category_id: 1
-    }) {
-        id
-        name
-        price
-    }
-}
-```
-
-### GraphQL Client
-
-```javascript
-import { ApolloClient, InMemoryCache, gql } from '@apollo/client';
-
-const client = new ApolloClient({
-    uri: 'https://app.com/graphql',
-    cache: new InMemoryCache(),
-    headers: {
-        authorization: `Bearer ${token}`,
-    },
-});
-
-// Query
-const { data } = await client.query({
-    query: gql`
-        query GetProduct($id: ID!) {
-            product(id: $id) {
-                id
-                name
-                price
-            }
-        }
-    `,
-    variables: { id: 1 },
-});
-```
-
-## Best Practices
-
-### 1. API Design
-
-```php
-// Use consistent naming
-/api/v1/products        // Plural for collections
-/api/v1/products/1      // Singular for items
-
-// Use proper HTTP methods
-GET     // Read
-POST    // Create
-PUT     // Full update
-PATCH   // Partial update
-DELETE  // Delete
-
-// Return appropriate status codes
-return response()->json($data, 201);        // Created
-return response()->json(null, 204);         // No content
-return response()->json($errors, 422);      // Validation error
-```
-
-### 2. Security
-
-```php
-// Always authenticate API routes
 Route::middleware('auth:sanctum')->group(function () {
-    // API routes
-});
-
-// Validate all input
-$validated = $request->validate([
-    'name' => 'required|string|max:255',
-    'email' => 'required|email|unique:users',
-]);
-
-// Use policies for authorization
-$this->authorize('update', $product);
-
-// Sanitize output
-return response()->json([
-    'content' => strip_tags($content),
-]);
-
-// Rate limit sensitive endpoints
-Route::middleware('throttle:10,1')->group(function () {
-    Route::post('/password/reset', ...);
+    Route::apiResource('posts', PostController::class);
 });
 ```
 
-### 3. Performance
+### Using Resource API Transformers
 
 ```php
-// Use eager loading
-$products = Product::with(['category', 'tags'])->get();
+namespace App\Http\Resources;
 
-// Implement caching
-return Cache::remember('products', 3600, function () {
-    return Product::all();
-});
+use Illuminate\Http\Resources\Json\JsonResource;
 
-// Use pagination
-$products = Product::paginate(20);
-
-// Select only needed fields
-$products = Product::select(['id', 'name', 'price'])->get();
-
-// Use database indexes
-Schema::table('products', function ($table) {
-    $table->index(['status', 'created_at']);
-});
-```
-
-### 4. Documentation
-
-```php
-/**
- * @OA\Get(
- *     path="/api/v1/products",
- *     summary="Get list of products",
- *     tags={"Products"},
- *     @OA\Parameter(
- *         name="page",
- *         in="query",
- *         description="Page number",
- *         required=false,
- *         @OA\Schema(type="integer")
- *     ),
- *     @OA\Response(
- *         response=200,
- *         description="Success",
- *         @OA\JsonContent(ref="#/components/schemas/ProductCollection")
- *     )
- * )
- */
-```
-
-### 5. Testing
-
-```php
-public function test_can_list_products()
+class PostResource extends JsonResource
 {
-    $user = User::factory()->create();
-    $products = Product::factory()->count(5)->create();
-    
-    $response = $this->actingAs($user, 'sanctum')
-        ->getJson('/api/v1/products');
-    
-    $response->assertOk()
-        ->assertJsonCount(5, 'data')
-        ->assertJsonStructure([
-            'data' => [
-                '*' => ['id', 'name', 'price']
-            ],
-            'meta' => ['current_page', 'total']
-        ]);
+    public function toArray($request): array
+    {
+        return [
+            'id' => $this->id,
+            'type' => $this->getType(),
+            'fields' => $this->fields,
+            'created_at' => $this->created_at,
+            'updated_at' => $this->updated_at,
+        ];
+    }
 }
 ```
 
-### 6. SDK Development
+### Dynamic Resource API
 
-```javascript
-// JavaScript SDK
-class AuraSDK {
-    constructor(apiKey, baseUrl = 'https://app.com/api/v1') {
-        this.apiKey = apiKey;
-        this.baseUrl = baseUrl;
+```php
+use Aura\Base\Facades\Aura;
+
+Route::get('/api/resources', function () {
+    return collect(Aura::getResources())->map(function ($class) {
+        $resource = app($class);
+        return [
+            'type' => $resource->getType(),
+            'slug' => $resource->getSlug(),
+            'fields' => $resource::getFields(),
+        ];
+    });
+});
+
+Route::get('/api/{resource}', function (string $resource) {
+    $resourceInstance = Aura::findResourceBySlug($resource);
+    
+    if (!$resourceInstance) {
+        abort(404, 'Resource not found');
     }
     
-    async request(endpoint, options = {}) {
-        const response = await fetch(`${this.baseUrl}${endpoint}`, {
-            ...options,
-            headers: {
-                'Authorization': `Bearer ${this.apiKey}`,
-                'Content-Type': 'application/json',
-                ...options.headers,
-            },
-        });
-        
-        if (!response.ok) {
-            throw new Error(`API Error: ${response.statusText}`);
-        }
-        
-        return response.json();
-    }
-    
-    // Resource methods
-    products = {
-        list: (params) => this.request('/products', { params }),
-        get: (id) => this.request(`/products/${id}`),
-        create: (data) => this.request('/products', {
-            method: 'POST',
-            body: JSON.stringify(data),
-        }),
-        update: (id, data) => this.request(`/products/${id}`, {
-            method: 'PUT',
-            body: JSON.stringify(data),
-        }),
-        delete: (id) => this.request(`/products/${id}`, {
-            method: 'DELETE',
-        }),
-    };
-}
-
-// Usage
-const aura = new AuraSDK('your-api-key');
-const products = await aura.products.list({ page: 1 });
+    return $resourceInstance::paginate(15);
+});
 ```
 
-> 📹 **Video Placeholder**: [Building applications with the Aura CMS API - authentication, requests, and best practices]
-
-### Pro Tips
-
-1. **Version from Start**: Always version your API from v1
-2. **Use Standards**: Follow REST/GraphQL conventions
-3. **Document Everything**: Use OpenAPI/Swagger
-4. **Test Thoroughly**: Automated tests for all endpoints
-5. **Monitor Usage**: Track API metrics and errors
-6. **Provide SDKs**: Make integration easier
-7. **Secure by Default**: Require authentication
-8. **Cache Wisely**: Balance freshness and performance
-9. **Handle Errors Gracefully**: Consistent error format
-10. **Deprecate Carefully**: Give users time to migrate
-
-The API system provides a robust foundation for building modern applications that integrate with Aura CMS, whether you're building mobile apps, SPAs, or third-party integrations.
+The Aura CMS PHP API provides a powerful foundation for building content management systems, custom admin panels, and integrating with external services.

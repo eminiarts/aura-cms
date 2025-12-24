@@ -5,18 +5,25 @@ Aura CMS leverages Livewire 3 to create dynamic, reactive user interfaces withou
 ## Table of Contents
 
 1. [Introduction](#introduction)
-2. [Core Components](#core-components)
-3. [Resource Components](#resource-components)
-4. [Table Component](#table-component)
-5. [Media Components](#media-components)
-6. [Modal & Overlay System](#modal--overlay-system)
-7. [Form Components](#form-components)
-8. [Navigation & UI Components](#navigation--ui-components)
-9. [Component Communication](#component-communication)
-10. [Creating Custom Components](#creating-custom-components)
-11. [Performance Optimization](#performance-optimization)
-12. [Testing Components](#testing-components)
-13. [Best Practices](#best-practices)
+2. [Component Registration](#component-registration)
+3. [Core Components](#core-components)
+4. [Resource Components](#resource-components)
+5. [Table Component](#table-component)
+6. [Media Components](#media-components)
+7. [Modal & Overlay System](#modal--overlay-system)
+8. [Form Components](#form-components)
+9. [Navigation & UI Components](#navigation--ui-components)
+10. [Resource Editor Components](#resource-editor-components)
+11. [Team Components](#team-components)
+12. [Authentication Components](#authentication-components)
+13. [Plugin Management](#plugin-management)
+14. [Widget Components](#widget-components)
+15. [Component Communication](#component-communication)
+16. [Creating Custom Components](#creating-custom-components)
+17. [Performance Optimization](#performance-optimization)
+18. [Testing Components](#testing-components)
+19. [Best Practices](#best-practices)
+20. [Component Quick Reference](#component-quick-reference)
 
 ## Introduction
 
@@ -57,11 +64,34 @@ class MyComponent extends Component
 }
 ```
 
+## Component Registration
+
+All Aura CMS Livewire components are registered with the `aura::` prefix. The component names use **kebab-case** (hyphens, not dots). Here's how components are registered in `AuraServiceProvider`:
+
+```php
+// Resource components
+Livewire::component('aura::resource-index', Index::class);
+Livewire::component('aura::resource-create', Create::class);
+Livewire::component('aura::resource-edit', Edit::class);
+Livewire::component('aura::resource-view', View::class);
+
+// Modal variants
+Livewire::component('aura::resource-create-modal', CreateModal::class);
+Livewire::component('aura::resource-edit-modal', EditModal::class);
+Livewire::component('aura::resource-view-modal', ViewModal::class);
+
+// Core components
+Livewire::component('aura::dashboard', Dashboard::class);
+Livewire::component('aura::navigation', Navigation::class);
+Livewire::component('aura::global-search', GlobalSearch::class);
+Livewire::component('aura::table', Table::class);
+```
+
 ## Core Components
 
 ### Dashboard Component
 
-The main dashboard that users see after login.
+The main dashboard that users see after login. The component class is configurable via `config/aura.php`.
 
 ```php
 use Aura\Base\Livewire\Dashboard;
@@ -72,28 +102,36 @@ use Aura\Base\Livewire\Dashboard;
 
 **Features:**
 - Widget display
-- Quick actions
-- Recent activity
-- Customizable layout
+- Customizable layout via config
 
 **Customization:**
+
+You can customize the dashboard by creating your own component and updating the config:
+
 ```php
-// Extend the dashboard
+// config/aura.php
+'components' => [
+    'dashboard' => \App\Livewire\CustomDashboard::class,
+],
+```
+
+```php
+// app/Livewire/CustomDashboard.php
+use Aura\Base\Livewire\Dashboard;
+
 class CustomDashboard extends Dashboard
 {
-    public function getWidgets()
+    public function render()
     {
-        return [
-            new ValueWidget('Total Users', User::count()),
-            new SparklineWidget('Sales', $this->getSalesData()),
-        ];
+        return view('livewire.custom-dashboard')
+            ->layout('aura::components.layout.app');
     }
 }
 ```
 
 ### Global Search
 
-Provides instant search across all resources with keyboard shortcut (⇧⌘K).
+Provides instant search across all resources with keyboard shortcut (⇧⌘K). The component is enabled via `config('aura.features.global_search')`.
 
 ```php
 @livewire('aura::global-search')
@@ -102,16 +140,25 @@ Provides instant search across all resources with keyboard shortcut (⇧⌘K).
 **Configuration:**
 ```php
 // In your Resource
-public static function searchable(): array
-{
-    return ['title', 'content', 'author'];
-}
-
 public static function getGlobalSearch(): bool
 {
-    return true; // Include in global search
+    return true; // Include in global search (default: true)
+}
+
+// Define searchable fields
+public function getSearchableFields()
+{
+    return collect($this->inputFields())
+        ->filter(fn($field) => $field['searchable'] ?? false);
 }
 ```
+
+**Features:**
+- Searches across all resources where `getGlobalSearch()` returns `true`
+- Searches in user names and emails
+- Displays bookmarked pages for quick access
+- Results are grouped by resource type
+- Limited to 15 results for performance
 
 **Usage in Blade:**
 ```html
@@ -156,79 +203,108 @@ public function boot()
 
 ### Resource Index
 
-Lists resources in table, grid, or kanban view.
+Lists resources with the Table component. Uses the `AuthorizesRequests` trait for permission checks.
 
 ```php
-@livewire('aura::resource.index', ['slug' => 'posts'])
+@livewire('aura::resource-index', ['slug' => 'posts'])
 ```
 
 **Features:**
-- Multiple view modes (table, grid, kanban)
-- Sorting and filtering
-- Bulk actions
-- Search
-- Pagination
+- Automatic authorization via `viewAny` policy
+- Respects `$indexViewEnabled` static property on resources
+- Customizable views via `indexView()` method on resource
+
+**Key Properties:**
+- `$slug` - The resource slug
+- `$resource` - The resource instance
+
+### Resource Create
+
+Form component for creating new resources. Includes traits for field handling, media uploads, and repeater fields.
+
+```php
+@livewire('aura::resource-create', ['slug' => 'posts'])
+```
+
+**Traits Used:**
+- `AuthorizesRequests` - Permission checks
+- `InteractsWithFields` - Field interaction handling
+- `MediaFields` - Media field support
+- `RepeaterFields` - Repeater field support
+- `WithFileUploads` - File upload support
+
+**Key Properties:**
+- `$form` - Form data array with `fields` key
+- `$model` - The resource model
+- `$slug` - Resource slug
+- `$inModal` - Whether rendered in modal
+- `$showSaveButton` - Control save button visibility
 
 **Customization:**
 ```php
-class PostIndex extends \Aura\Base\Livewire\Resource\Index
-{
-    public function query()
-    {
-        return parent::query()
-            ->where('status', 'published')
-            ->with('author');
-    }
-    
-    public function bulkActions()
-    {
-        return [
-            'publish' => 'Publish Selected',
-            'archive' => 'Archive Selected',
-        ];
-    }
-}
-```
+use Aura\Base\Livewire\Resource\Create;
 
-### Resource Create/Edit
-
-Form components for creating and editing resources.
-
-```php
-// Create new resource
-@livewire('aura::resource.create', ['slug' => 'posts'])
-
-// Edit existing resource
-@livewire('aura::resource.edit', ['slug' => 'posts', 'id' => $post->id])
-```
-
-**Field Handling:**
-```php
-class PostCreate extends \Aura\Base\Livewire\Resource\Create
+class PostCreate extends Create
 {
     public function save()
     {
-        // Custom save logic
         $this->validate();
         
         // Pre-save hook
-        $this->form['published_at'] = now();
+        $this->form['fields']['published_at'] = now();
         
         parent::save();
-        
-        // Post-save hook
-        event(new PostCreated($this->model));
     }
 }
 ```
+
+### Resource Edit
+
+Form component for editing existing resources.
+
+```php
+@livewire('aura::resource-edit', ['slug' => 'posts', 'id' => $post->id])
+```
+
+**Additional Traits:**
+- `HasActions` - Resource action support
+
+**Key Methods:**
+- `save()` - Validates and updates the resource
+- `reload()` - Refreshes the model from database
+
+**Events Listened:**
+- `saveModel` - Triggers save
+- `refreshComponent` - Refreshes component
+- `reload` - Reloads model data
 
 ### Resource View
 
 Display resource in read-only mode.
 
 ```php
-@livewire('aura::resource.view', ['slug' => 'posts', 'id' => $post->id])
+@livewire('aura::resource-view', ['slug' => 'posts', 'id' => $post->id])
 ```
+
+**Key Properties:**
+- `$mode` = 'view' - Indicates view mode
+
+### Modal Variants
+
+All resource components have modal variants for use in popups:
+
+```php
+// Create in modal
+@livewire('aura::resource-create-modal', ['slug' => 'posts', 'params' => [...]])
+
+// Edit in modal
+@livewire('aura::resource-edit-modal', ['slug' => 'posts', 'id' => $id])
+
+// View in modal
+@livewire('aura::resource-view-modal', ['slug' => 'posts', 'id' => $id])
+```
+
+Modal variants extend their parent components and set `$inModal = true`.
 
 ## Table Component
 
@@ -240,63 +316,36 @@ The most powerful component in Aura CMS, providing advanced data display and man
 use Aura\Base\Livewire\Table\Table;
 
 @livewire('aura::table', [
-    'model' => Post::class,
-    'columns' => ['title', 'author', 'created_at'],
+    'model' => $model,
+    'settings' => [...],
 ])
 ```
 
-### Advanced Configuration
+### Key Properties
 
 ```php
-class PostTable extends Table
-{
-    public function columns()
-    {
-        return [
-            'title' => [
-                'label' => 'Post Title',
-                'sortable' => true,
-                'searchable' => true,
-            ],
-            'author.name' => [
-                'label' => 'Author',
-                'sortable' => true,
-            ],
-            'status' => [
-                'label' => 'Status',
-                'component' => 'status-badge',
-            ],
-            'actions' => [
-                'label' => '',
-                'component' => 'table-actions',
-            ],
-        ];
-    }
-    
-    public function filters()
-    {
-        return [
-            'status' => [
-                'type' => 'select',
-                'options' => ['draft', 'published', 'archived'],
-            ],
-            'created_at' => [
-                'type' => 'date-range',
-            ],
-        ];
-    }
-    
-    public function bulkActions()
-    {
-        return [
-            'delete' => [
-                'label' => 'Delete Selected',
-                'confirm' => 'Are you sure?',
-                'action' => 'deleteSelected',
-            ],
-        ];
-    }
-}
+public $columns = [];      // Table columns
+public $model;             // Resource model
+public $parent;            // Parent model (for relations)
+public $field;             // Field configuration
+public $settings;          // Table settings
+public $loaded = false;    // Lazy loading state
+```
+
+### Key Methods
+
+```php
+// Get table rows with pagination
+protected function rows()
+
+// Build the query with filters, search, sorting
+public function rowsQuery()
+
+// Execute actions on rows
+public function action($data)
+
+// Reorder columns
+public function reorder($slugs)
 ```
 
 ### Table Traits
@@ -304,14 +353,49 @@ class PostTable extends Table
 The table component uses modular traits for functionality:
 
 ```php
-use BulkActions;    // Bulk operations on rows
-use Filters;       // Advanced filtering
-use Kanban;        // Kanban board view
-use Search;        // Search functionality
-use Select;        // Row selection
-use Settings;      // User preferences
-use Sorting;       // Column sorting
-use SwitchView;    // Toggle views
+use BulkActions;          // Bulk operations on rows
+use Filters;              // Advanced filtering
+use Kanban;               // Kanban board view
+use Search;               // Search functionality
+use Select;               // Row selection
+use Settings;             // User preferences (column visibility, saved views)
+use Sorting;              // Column sorting
+use SwitchView;           // Toggle between table/grid/kanban views
+use PerPagePagination;    // Items per page control
+use QueryFilters;         // Custom query filters
+use CachedRows;           // Row caching for performance
+```
+
+### Events
+
+The table dispatches and listens to these events:
+
+```php
+// Dispatched
+$this->dispatch('tableMounted');
+$this->dispatch('rowIdsUpdated', $rowIds);
+
+// Listened
+#[On('refreshTable')]
+#[On('refreshTableSelected')]
+#[On('selectedRows')]
+#[On('selectFieldRows')]
+#[On('selectRowsRange')]
+```
+
+### Customizing the Table
+
+```php
+use Aura\Base\Livewire\Table\Table;
+
+class CustomTable extends Table
+{
+    protected function query()
+    {
+        return parent::query()
+            ->where('status', 'published');
+    }
+}
 ```
 
 
@@ -319,149 +403,183 @@ use SwitchView;    // Toggle views
 
 ### Media Manager
 
-Full-featured media library interface.
+Modal-based media library interface for selecting attachments.
 
 ```php
-@livewire('aura::media-manager')
+@livewire('aura::media-manager', [
+    'slug' => 'field-slug',
+    'selected' => [1, 2, 3],  // Pre-selected attachment IDs
+    'model' => $resourceClass,
+    'modalAttributes' => [...],
+])
 ```
 
-**Integration Example:**
+**Key Properties:**
+- `$selected` - Array of selected attachment IDs
+- `$fieldSlug` - The field this manager is for
+- `$field` - Field configuration
+
+**Events:**
+```php
+// Dispatched when selection is confirmed
+$this->dispatch('updateField', [
+    'slug' => $this->fieldSlug,
+    'value' => $this->selected,
+]);
+$this->dispatch('media-manager-selected');
+$this->dispatch('closeModal');
+
+// Listened
+#[On('selectedRows')]
+#[On('tableMounted')]
+#[On('updateField')]
+```
+
+**Usage Example:**
 ```php
 <div x-data="{ showMediaManager: false }">
     <button @click="showMediaManager = true">Select Image</button>
     
     <div x-show="showMediaManager">
         @livewire('aura::media-manager', [
-            'mode' => 'picker',
-            'accept' => 'image/*',
-            'multiple' => false,
+            'slug' => 'featured_image',
+            'selected' => $selectedIds,
+            'model' => \App\Resources\Post::class,
         ])
     </div>
 </div>
-
-@script
-<script>
-    $wire.on('media-selected', (media) => {
-        // Handle selected media
-        console.log('Selected:', media);
-    });
-</script>
-@endscript
 ```
 
 ### Media Uploader
 
-Drag-and-drop file upload component.
+Drag-and-drop file upload component with automatic attachment creation.
 
 ```php
 @livewire('aura::media-uploader', [
-    'field' => 'featured_image',
-    'accept' => 'image/*',
-    'maxSize' => 5, // MB
+    'field' => $fieldConfig,
+    'selected' => $selectedIds,
+    'button' => false,      // Show upload button
+    'table' => true,        // Show table of uploads
+    'disabled' => false,    // Disable uploads
 ])
 ```
 
-**Handling Uploads:**
+**Key Features:**
+- Uses `WithFileUploads` trait
+- Automatic attachment creation in database
+- Dispatches `updateField` and `refreshTable` events
+- Max file size: 100MB
+
+**How It Works:**
 ```php
-class ProductForm extends Component
+public function updatedMedia()
 {
-    use WithFileUploads;
-    
-    public $images = [];
-    
-    public function updatedImages()
-    {
-        $this->validate([
-            'images.*' => 'image|max:5120', // 5MB max
+    $this->validate([
+        'media.*' => 'required|max:102400', // 100MB Max
+    ]);
+
+    foreach ($this->media as $media) {
+        $url = $media->store('media', 'public');
+        
+        $attachment = Attachment::create([
+            'url' => $url,
+            'name' => $media->getClientOriginalName(),
+            'title' => $media->getClientOriginalName(),
+            'size' => $media->getSize(),
+            'mime_type' => $media->getMimeType(),
         ]);
-        
-        foreach ($this->images as $image) {
-            $path = $image->store('products', 'public');
-            
-            Attachment::create([
-                'path' => $path,
-                'type' => 'product-image',
-                'attachable_type' => Product::class,
-                'attachable_id' => $this->product->id,
-            ]);
-        }
-        
-        $this->notify('Images uploaded successfully!');
     }
+    
+    $this->dispatch('updateField', [...]);
+    $this->dispatch('refreshTable');
 }
 ```
 
-### Image Upload
+### Attachment Index
 
-Specialized component for single image uploads with preview.
+Lists all attachments with table functionality.
 
 ```php
-@livewire('aura::image-upload', [
-    'model' => $user,
-    'field' => 'avatar',
-    'disk' => 'public',
-])
+@livewire('aura::attachment-index')
 ```
 
 ## Modal & Overlay System
 
-### Modal Component
+### Modals Component
 
-Base modal system for dialogs and forms.
+The main modals container that handles opening and closing modals.
 
 ```php
-// Trigger modal
-<button wire:click="$dispatch('openModal', { component: 'user-form', arguments: { userId: {{ $user->id }} } })">
+@livewire('aura::modals')
+```
+
+### Modal Component
+
+Individual modal component for dialogs.
+
+```php
+// The Modal component
+use Aura\Base\Livewire\Modal;
+
+class Modal extends Component
+{
+    public $id;
+    public $params;
+    
+    #[On('modalOpened')]
+    public function activate($id, $params)
+    {
+        $this->mount($id, $params);
+    }
+}
+```
+
+**Opening Modals:**
+```php
+// From a Livewire component
+$this->dispatch('openModal', 'component-name', ['param' => 'value']);
+
+// From Blade
+<button wire:click="$dispatch('openModal', 'user-form', { userId: {{ $user->id }} })">
     Edit User
 </button>
+```
 
-// Modal component
-class UserForm extends Component implements ModalInterface
+**Modal Components can define their size:**
+```php
+class CreateResource extends Component
 {
-    public $user;
-    
-    public function mount($userId = null)
+    public static function modalClasses(): string
     {
-        $this->user = $userId ? User::find($userId) : new User;
-    }
-    
-    public function save()
-    {
-        $this->validate();
-        $this->user->save();
-        
-        $this->closeModal();
-        $this->dispatch('user-saved');
+        return 'max-w-xl';  // or 'max-w-7xl' for full width
     }
 }
 ```
 
 ### Slide-Over Panel
 
-Side panel for forms and details.
+Side panel for forms and details, activated via events.
 
 ```php
-@livewire('aura::slide-over', [
-    'component' => 'resource-details',
-    'params' => ['id' => $resource->id],
-])
+@livewire('aura::slide-over')
 ```
 
-**Creating Slide-Over Components:**
+**Opening a Slide-Over:**
 ```php
-class ResourceDetails extends Component
+$this->dispatch('openSlideOver', 
+    component: 'edit-field', 
+    parameters: ['fieldSlug' => $slug, 'model' => $model]
+);
+```
+
+**The SlideOver Component:**
+```php
+class SlideOver extends Component
 {
-    public $resource;
-    
-    public function mount($id)
+    #[On('slideOverOpened')]
+    public function activate($id, $params)
     {
-        $this->resource = Resource::findOrFail($id);
-    }
-    
-    public function render()
-    {
-        return view('livewire.resource-details')
-            ->layout('aura::components.slide-over');
+        $this->mount($id, $params);
     }
 }
 ```
@@ -470,42 +588,29 @@ class ResourceDetails extends Component
 
 ### Resource Form
 
-Base form handling for resources.
-
-```php
-use Aura\Base\Livewire\Forms\ResourceForm;
-
-class PostForm extends ResourceForm
-{
-    public function rules()
-    {
-        return [
-            'form.fields.title' => 'required|min:3',
-            'form.fields.content' => 'required',
-            'form.fields.published_at' => 'nullable|date',
-        ];
-    }
-    
-    public function save()
-    {
-        $this->validate();
-        
-        // Custom logic before save
-        if ($this->form['fields']['status'] === 'published' && !$this->form['fields']['published_at']) {
-            $this->form['fields']['published_at'] = now();
-        }
-        
-        parent::save();
-    }
-}
-```
+The `ResourceForm` class in `Aura\Base\Livewire\Forms\ResourceForm` provides form object functionality.
 
 ### Field Components
 
-Each field type has its own Livewire handling:
+Each field type has its own Livewire handling. Fields communicate via the `updateField` event:
 
 ```php
-// Text field with real-time validation
+// Listening for field updates
+#[On('updateField')]
+public function updateField($field, $value)
+{
+    // Handle field update
+}
+
+// Dispatching field updates
+$this->dispatch('updateField', [
+    'slug' => $fieldSlug,
+    'value' => $newValue,
+]);
+```
+
+**Text field with real-time validation:**
+```html
 <div>
     <x-aura::input.text 
         wire:model.live="form.fields.title"
@@ -514,8 +619,10 @@ Each field type has its own Livewire handling:
         :error="$errors->first('form.fields.title')"
     />
 </div>
+```
 
-// Select field with dynamic options
+**Select field with dynamic options:**
+```html
 <div>
     <x-aura::input.select
         wire:model="form.fields.category_id"
@@ -528,59 +635,274 @@ Each field type has its own Livewire handling:
 
 ## Navigation & UI Components
 
+### Navigation
+
+Dynamic sidebar navigation that responds to theme settings and user preferences.
+
+```php
+@livewire('aura::navigation')
+```
+
+**Key Features:**
+- Collapsible sidebar groups
+- Persists toggle state per user
+- Respects theme settings (compact, dark mode, sidebar type)
+
+**Computed Properties:**
+```php
+#[Computed]
+public function compact(): string;        // Sidebar size
+#[Computed]
+public function sidebarType(): string;    // primary/light/dark
+#[Computed]
+public function darkmodeType(): string;   // auto/light/dark
+#[Computed]
+public function sidebarToggled();         // Toggle state
+```
+
 ### Bookmarks
 
 Allow users to bookmark frequently accessed pages.
 
 ```php
 @livewire('aura::bookmark-page', [
-    'title' => 'Product List',
-    'url' => request()->url(),
+    'site' => [
+        'title' => 'Product List',
+        'url' => request()->url(),
+    ],
 ])
+```
+
+**Key Methods:**
+```php
+public function toggleBookmark();           // Add/remove bookmark
+public function getIsBookmarkedProperty(); // Check if bookmarked
 ```
 
 ### Notifications
 
-Real-time notification center.
+Notification center with tabbed view (unread/read).
 
 ```php
 @livewire('aura::notifications')
+```
 
-// Send notification from any component
+**Features:**
+- Displays unread and read notifications in tabs
+- Mark all as read functionality
+- Uses Laravel's notification system
+
+**Key Properties:**
+```php
+public function getUnreadNotificationsProperty();  // Unread notifications
+public function getNotificationsProperty();        // Read notifications
+```
+
+**Sending Notifications:**
+```php
+// The notify() macro is added to all Livewire components
 $this->notify('Task completed successfully!', 'success');
 $this->notify('Error processing request', 'error');
 ```
 
-**Custom Notifications:**
-```php
-use Aura\Base\Notifications\CustomNotification;
-
-class OrderShipped extends CustomNotification
-{
-    public function via($notifiable)
-    {
-        return ['database', 'broadcast'];
-    }
-    
-    public function toArray($notifiable)
-    {
-        return [
-            'title' => 'Order Shipped',
-            'message' => "Order #{$this->order->id} has been shipped",
-            'action' => route('orders.view', $this->order),
-        ];
-    }
-}
-```
-
 ### Settings
 
-System-wide settings management.
+System-wide settings management (super admin only).
 
 ```php
-@livewire('aura::settings', [
-    'group' => 'general', // general, email, api, etc.
-])
+@livewire('aura::settings')
+```
+
+**Features:**
+- Logo configuration (light/dark mode)
+- Sidebar settings (size, type, colors)
+- Theme color palette selection
+- Custom color configuration
+- Team-aware settings storage
+
+**Available Settings:**
+- `logo` / `logo-darkmode` - Logo images
+- `sidebar-size` - standard/compact
+- `sidebar-type` - primary/light/dark
+- `darkmode-type` - auto/light/dark
+- `color-palette` - Theme color (aura, red, blue, etc.)
+- `gray-color-palette` - Gray scale colors
+
+### User Settings
+
+User-specific settings component.
+
+```php
+@livewire('aura::user-settings')
+```
+
+## Resource Editor Components
+
+### Resource Editor
+
+Visual editor for building resource fields. Only available for app resources (not vendor).
+
+```php
+@livewire('aura::resource-editor', ['slug' => 'post'])
+```
+
+**Features:**
+- Drag and drop field reordering
+- Add/edit/delete fields
+- Tab management
+- Template support
+- Migration generation
+
+**Key Properties:**
+```php
+public $fields = [];         // Current fields
+public $fieldsArray = [];    // Flat fields array
+public $globalTabs = [];     // Global tab configuration
+public $hasGlobalTabs = false;
+public $model;               // Resource model
+public $slug;                // Resource slug
+```
+
+**Key Methods:**
+```php
+public function addField($id, $slug, $type, $children, $model);
+public function addNewTab();
+public function deleteField($data);
+public function duplicateField($id, $slug, $model);
+public function reorder($ids);
+public function save();
+public function generateMigration();  // Generate database migration
+```
+
+**Events:**
+```php
+#[On('deleteField')]
+#[On('saveField')]
+#[On('saveNewField')]
+#[On('savedField')]
+#[On('refreshComponent')]
+#[On('finishedSavingFields')]
+```
+
+### Edit Resource Field
+
+Slide-over component for editing individual field properties.
+
+```php
+// Opened via event
+$this->dispatch('openSlideOver', 
+    component: 'edit-field', 
+    parameters: ['fieldSlug' => $slug, 'field' => $field, 'model' => $model]
+);
+```
+
+**Features:**
+- Field type selection
+- Validation rules
+- Conditional logic
+- Display options (on_index, on_forms, on_view)
+- Field-specific settings
+
+### Create Resource
+
+Modal for creating new resources (super admin only, non-production).
+
+```php
+@livewire('aura::create-resource')
+```
+
+**Features:**
+- Creates new resource class file
+- Runs `aura:resource` artisan command
+- Redirects to resource editor
+
+### Choose Template
+
+Template selection component for resource editor.
+
+```php
+@livewire('aura::choose-template')
+```
+
+## Team Components
+
+### Invite User
+
+Modal for inviting users to a team.
+
+```php
+@livewire('aura::invite-user')
+```
+
+**Features:**
+- Email and role selection
+- Sends invitation email
+- Validates unique email per team
+
+## Authentication Components
+
+### Profile
+
+User profile management component.
+
+```php
+@livewire('aura::profile')
+```
+
+**Features:**
+- Edit profile fields
+- Change password
+- Logout other browser sessions
+- Delete account
+
+**Key Methods:**
+```php
+public function save();
+public function deleteUser(Request $request);
+public function logoutOtherBrowserSessions();
+```
+
+### Two Factor Authentication Form
+
+Manage 2FA settings (requires Laravel Fortify).
+
+```php
+@livewire('aura::two-factor-authentication-form')
+```
+
+**Features:**
+- Enable/disable 2FA
+- Display QR code for setup
+- Show recovery codes
+- Regenerate recovery codes
+
+## Plugin Management
+
+### Plugins Page
+
+View and manage installed Composer packages.
+
+```php
+@livewire('aura::plugins-page')
+```
+
+**Features:**
+- List installed packages with versions
+- Check for updates via Packagist
+- Update individual packages
+
+## Widget Components
+
+Aura CMS includes several widget components for dashboards:
+
+```php
+@livewire('aura::widgets')                    // Widget container
+@livewire('aura::widgets.value-widget')       // Simple value display
+@livewire('aura::widgets.sparkline-area')     // Area sparkline chart
+@livewire('aura::widgets.sparkline-bar')      // Bar sparkline chart
+@livewire('aura::widgets.donut')              // Donut chart
+@livewire('aura::widgets.pie')                // Pie chart
+@livewire('aura::widgets.bar')                // Bar chart
 ```
 
 ## Component Communication
@@ -645,25 +967,19 @@ php artisan make:livewire CustomComponent
 ```
 
 ```php
-namespace App\Http\Livewire;
+namespace App\Livewire;
 
-use Aura\Base\Traits\WithLivewireHelpers;
 use Livewire\Component;
 
 class CustomComponent extends Component
 {
-    use WithLivewireHelpers;
-    
-    public $data = [];
-    
-    protected $rules = [
-        'data.name' => 'required|string',
-        'data.email' => 'required|email',
+    public $form = [
+        'fields' => [],
     ];
     
     public function mount($parameters = [])
     {
-        $this->data = $parameters;
+        // Initialization
     }
     
     public function save()
@@ -672,12 +988,43 @@ class CustomComponent extends Component
         
         // Save logic
         
+        // notify() is available on all Livewire components
         $this->notify('Saved successfully!');
     }
     
     public function render()
     {
         return view('livewire.custom-component');
+    }
+}
+```
+
+### Using Aura Traits
+
+Aura provides several traits for common functionality:
+
+```php
+use Aura\Base\Traits\InputFields;      // Field handling
+use Aura\Base\Traits\MediaFields;      // Media field support
+use Aura\Base\Traits\RepeaterFields;   // Repeater field support
+use Aura\Base\Traits\InteractsWithFields; // Field interaction
+use Aura\Base\Traits\HasActions;       // Resource actions
+
+class CustomComponent extends Component
+{
+    use InputFields;
+    use MediaFields;
+    
+    public static function getFields()
+    {
+        return [
+            [
+                'type' => 'Aura\\Base\\Fields\\Text',
+                'name' => 'Title',
+                'slug' => 'title',
+                'validation' => 'required',
+            ],
+        ];
     }
 }
 ```
@@ -692,52 +1039,42 @@ class CustomTable extends Table
     protected function query()
     {
         return parent::query()
-            ->where('custom_field', true);
-    }
-    
-    public function columns()
-    {
-        $columns = parent::columns();
-        
-        // Add custom column
-        $columns['custom_field'] = [
-            'label' => 'Custom',
-            'sortable' => true,
-            'component' => 'custom-cell',
-        ];
-        
-        return $columns;
+            ->where('status', 'active');
     }
 }
 ```
-
-### Component Traits
-
-Create reusable functionality with traits:
 
 ```php
-trait WithExport
+use Aura\Base\Livewire\Resource\Create;
+
+class CustomCreate extends Create
 {
-    public function exportCsv()
+    public function save()
     {
-        $data = $this->getData();
+        // Pre-save logic
+        $this->form['fields']['created_by'] = auth()->id();
         
-        return response()->streamDownload(function () use ($data) {
-            $handle = fopen('php://output', 'w');
-            
-            // Add headers
-            fputcsv($handle, array_keys($data[0]));
-            
-            // Add data
-            foreach ($data as $row) {
-                fputcsv($handle, $row);
-            }
-            
-            fclose($handle);
-        }, 'export.csv');
+        parent::save();
+        
+        // Post-save logic
     }
 }
 ```
+
+### Configurable Components
+
+Dashboard, Settings, and Profile components are configurable via `config/aura.php`:
+
+```php
+// config/aura.php
+'components' => [
+    'dashboard' => \Aura\Base\Livewire\Dashboard::class,
+    'settings' => \Aura\Base\Livewire\Settings::class,
+    'profile' => \Aura\Base\Livewire\Profile::class,
+],
+```
+
+Replace with your own classes to customize behavior.
 
 
 ## Performance Optimization
@@ -830,37 +1167,38 @@ class StatsComponent extends Component
 
 ## Testing Components
 
+Aura CMS uses Pest for testing. The `tests/Pest.php` file provides helper functions.
+
 ### Basic Component Testing
 
 ```php
-use Livewire\Livewire;
+use Aura\Base\Livewire\Resource\Create;
+use function Pest\Livewire\livewire;
+
+beforeEach(function () {
+    $this->actingAs($this->user = createSuperAdmin());
+});
 
 test('can create resource', function () {
-    $user = User::factory()->create();
-    
-    Livewire::actingAs($user)
-        ->test(Create::class, ['slug' => 'posts'])
-        ->assertSee('Create Post')
+    livewire(Create::class, ['slug' => 'post'])
         ->set('form.fields.title', 'Test Post')
-        ->set('form.fields.content', 'Test content')
         ->call('save')
-        ->assertHasNoErrors()
-        ->assertRedirect(route('aura.posts.index'));
-    
-    expect(Post::where('title', 'Test Post')->exists())->toBeTrue();
+        ->assertHasNoErrors();
 });
 ```
 
 ### Testing Validation
 
 ```php
+use Aura\Base\Livewire\Resource\Create;
+use function Pest\Livewire\livewire;
+
 test('validates required fields', function () {
-    Livewire::test(Create::class, ['slug' => 'posts'])
+    $this->actingAs(createSuperAdmin());
+    
+    livewire(Create::class, ['slug' => 'post'])
         ->call('save')
-        ->assertHasErrors(['form.fields.title' => 'required'])
-        ->set('form.fields.title', 'ab') // Too short
-        ->call('save')
-        ->assertHasErrors(['form.fields.title' => 'min']);
+        ->assertHasErrors(['form.fields.title']);
 });
 ```
 
@@ -868,26 +1206,43 @@ test('validates required fields', function () {
 
 ```php
 test('dispatches event on save', function () {
-    Livewire::test(Create::class, ['slug' => 'posts'])
+    $this->actingAs(createSuperAdmin());
+    
+    livewire(Create::class, ['slug' => 'post'])
         ->set('form.fields.title', 'Test')
         ->call('save')
-        ->assertDispatched('resource-saved');
+        ->assertDispatched('closeModal');
 });
 ```
 
-### Testing Component Communication
+### Testing Table Component
 
 ```php
-test('components communicate via events', function () {
-    $component1 = Livewire::test(Component1::class);
-    $component2 = Livewire::test(Component2::class);
+use Aura\Base\Livewire\Table\Table;
+use function Pest\Livewire\livewire;
+
+test('table displays resources', function () {
+    $this->actingAs(createSuperAdmin());
     
-    $component1->call('triggerEvent')
-        ->assertDispatched('custom-event');
+    $resource = Aura::findResourceBySlug('post');
     
-    $component2->dispatch('custom-event', ['data' => 'test'])
-        ->assertSet('receivedData', 'test');
+    livewire(Table::class, [
+        'model' => $resource,
+        'settings' => $resource->indexTableSettings(),
+    ])
+        ->assertSuccessful();
 });
+```
+
+### Helper Functions
+
+Available in `tests/Pest.php`:
+
+```php
+createSuperAdmin();           // Creates super admin with team
+createSuperAdminWithoutTeam(); // Super admin without team
+createAdmin();                // Admin with limited permissions
+createPost();                 // Creates a test post
 ```
 
 ## Best Practices
@@ -972,14 +1327,16 @@ public function deleteResource($id)
 ### 7. Use Aura Helpers
 
 ```php
-// Notifications
+// Notifications (available on all Livewire components via macro)
 $this->notify('Success!', 'success');
+$this->notify('Error occurred', 'error');
 
 // Refresh components
-$this->dispatch('$refresh')->to('resource-table');
+$this->dispatch('refreshTable');
+$this->dispatch('refreshComponent');
 
 // Close modals
-$this->closeModal();
+$this->dispatch('closeModal');
 ```
 
 ## Pro Tips
@@ -1038,20 +1395,40 @@ public function getDownloadUrl()
 }
 ```
 
-> 📹 **Video Placeholder**: [Show creating a custom Livewire component from scratch, including traits, events, and testing]
-
 ## Common Pitfalls
 
 1. **Forgetting wire:key** - Always use wire:key in loops
 2. **Not validating in mount()** - Validate initial data too
 3. **Overusing computed properties** - They run on every request
 4. **Not handling loading states** - Users need feedback
-5. **Ignoring authorization** - Always check permissions
+5. **Ignoring authorization** - Always check permissions with `$this->authorize()`
 6. **Not using eager loading** - Causes N+1 queries
 7. **Storing sensitive data in public properties** - Use private/protected
+8. **Using wrong component names** - Remember: `aura::resource-index` not `aura::resource.index`
+
+## Component Quick Reference
+
+| Component | Name | Description |
+|-----------|------|-------------|
+| Dashboard | `aura::dashboard` | Main dashboard |
+| Navigation | `aura::navigation` | Sidebar navigation |
+| Global Search | `aura::global-search` | Search across resources |
+| Table | `aura::table` | Data table with filters |
+| Resource Index | `aura::resource-index` | Resource listing |
+| Resource Create | `aura::resource-create` | Create resource form |
+| Resource Edit | `aura::resource-edit` | Edit resource form |
+| Resource View | `aura::resource-view` | View resource details |
+| Media Manager | `aura::media-manager` | Media selection modal |
+| Media Uploader | `aura::media-uploader` | File upload |
+| Settings | `aura::settings` | System settings |
+| Profile | `aura::profile` | User profile |
+| Notifications | `aura::notifications` | Notification center |
+| Bookmarks | `aura::bookmark-page` | Page bookmarking |
+| Resource Editor | `aura::resource-editor` | Visual field editor |
+| Modals | `aura::modals` | Modal container |
 
 ## Conclusion
 
-Aura CMS's Livewire components provide a powerful foundation for building dynamic applications. By understanding these components and following best practices, you can create responsive, secure, and maintainable interfaces that delight your users.
+Aura CMS's Livewire components provide a powerful foundation for building dynamic applications. By understanding these components and following best practices, you can create responsive, secure, and maintainable interfaces.
 
 For more advanced topics, see the [API Reference](api-reference.md) and [Performance Optimization](performance.md) guides.
