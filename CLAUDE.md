@@ -4,211 +4,137 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Aura CMS is a modern, flexible content management system built on the TALL stack (Tailwind CSS, Alpine.js, Laravel, and Livewire). It provides a powerful admin interface and resource management system for building custom applications quickly without sacrificing flexibility.
+Aura CMS is a Laravel package built on the **TALL stack** (Tailwind CSS, Alpine.js, Laravel, Livewire). It provides a content management system with a dynamic resource/field system, team management, and role-based access control.
 
-### Core Features
-- **Resource System**: Enhanced Eloquent models with built-in CMS features
-- **Field System**: 40+ customizable field types with conditional logic and validation
-- **Visual Resource Editor**: UI-based resource and field configuration
-- **Team Management**: Optional multi-tenancy with team-based permissions
-- **Media Management**: Built-in media library with optimization
-- **Plugin Architecture**: Extensible system for custom functionality
+**Namespace**: `Aura\Base`
+**PHP Version**: 8.2+
+**Laravel**: 10.x, 11.x, 12.x
 
 ## Development Commands
 
-### Frontend Development
+### Testing (Pest)
 ```bash
-npm run dev         # Development server with hot reload
-npm run build       # Production build
-npm run build:lib   # Build library mode
-npm run watch       # Watch for changes and rebuild
-```
-
-### Testing
-```bash
-composer test                                      # Run all tests
-vendor/bin/pest                                   # Run tests directly
-vendor/bin/pest -c phpunit-without-teams.xml      # Run tests without teams
-XDEBUG_MODE=coverage vendor/bin/pest --coverage --min=80  # Run with coverage
-vendor/bin/pest tests/Feature/Aura/               # Test specific feature
+composer test                                    # Run all tests (parallel)
+vendor/bin/pest --filter "test name"             # Run single test by name
+vendor/bin/pest tests/Feature/Fields/            # Run tests in directory
+vendor/bin/pest --group=fields                   # Run test group (fields, flows, table, resource)
+vendor/bin/pest -c phpunit-without-teams.xml     # Run without teams feature
+XDEBUG_MODE=coverage vendor/bin/pest --coverage  # Run with coverage
 ```
 
 ### Code Quality
 ```bash
-composer analyse    # Run static analysis with PHPStan
-composer format     # Format code with Laravel Pint
+composer analyse    # PHPStan (level 3)
+composer format     # Laravel Pint
 ```
 
-### Aura CMS Commands
+### Frontend Assets
 ```bash
-php artisan aura:install                    # Install Aura CMS with interactive setup
-php artisan aura:resource {name}            # Create a new resource
-php artisan aura:field {name}               # Create a new custom field type
-php artisan aura:plugin {name}              # Create a new plugin
-php artisan aura:user                       # Create a new admin user
-php artisan aura:permission                 # Generate permissions for resources
-php artisan aura:publish                    # Publish Aura assets and views
-php artisan aura:customize {component}      # Customize a component
-php artisan aura:database-to-resources      # Generate resources from database tables
+npm run dev         # Development build
+npm run build       # Production build
 ```
 
-## High-Level Architecture
+### Aura Commands
+```bash
+php artisan aura:resource {name}     # Create resource
+php artisan aura:field {name}        # Create custom field
+php artisan aura:plugin {name}       # Create plugin
+php artisan aura:permission          # Generate permissions
+```
+
+## Architecture
 
 ### Directory Structure
+```
+src/
+  Fields/           # Field types (Text, Select, BelongsTo, etc.)
+  Livewire/         # Livewire components
+  Resources/        # Built-in resources (User, Team, Role, Attachment)
+  Traits/           # Reusable traits
+  Policies/         # Authorization policies
+tests/
+  Feature/          # Uses RefreshDatabase
+  FeatureWithDatabaseMigrations/  # Uses DatabaseMigrations
+  Resources/        # Test resource classes
+  Pest.php          # Test helpers
+```
 
-**Package Core** (`src/`):
-- `Fields/` - 40+ field type implementations (Text, Select, Media, Relationship fields, etc.)
-- `Resources/` - Built-in resources (User, Team, Role, Option, Permission)
-- `Livewire/` - Core Livewire components (Table, Forms, Modals, Global Search)
-- `Traits/` - Reusable traits for resources and fields
-- `Pipeline/` - Field processing pipelines for data transformation
-- `Services/` - Core services (ResourceManager, FieldManager, MediaOptimizer)
+### Resource System
 
-**Application Code** (`app/`):
-- `Aura/Resources/` - Custom application resources
-- Custom resources extend `Aura\Base\Resource`
-- Uses flexible posts/meta system or custom tables
-
-**Frontend** (`resources/`):
-- Blade components with Aura component library
-- Alpine.js for lightweight interactivity
-- Tailwind CSS with custom theme system
-- Field-specific view templates
-
-### Key Architectural Patterns
-
-1. **Resource System**
-   - Resources are enhanced Eloquent models with CMS features
-   - Can use shared posts table with meta fields or custom tables
-   - Automatic CRUD generation with permission handling
-   - Built-in team scoping for multi-tenancy
-
-2. **Field System**
-   - Fields define data structure and UI representation
-   - Support for validation, conditional logic, and custom storage
-   - Meta fields for flexible data without schema changes
-   - Pipeline system for field data processing
-
-3. **Component Architecture**
-   - Extends Laravel Livewire for reactive components
-   - Base Table component for consistent data listings
-   - Modal and slide-over system for forms
-   - Global search integration with keyboard shortcuts
-
-4. **Permission System**
-   - Resource-based permissions (view, create, edit, delete)
-   - Team-scoped permissions when teams enabled
-   - Role-based access control with Spatie permissions
-
-## Development Guidelines
-
-### Creating Resources
-
-Resources must extend `Aura\Base\Resource` and define their model and fields:
+Resources extend `Aura\Base\Resource` and define fields via `getFields()`:
 
 ```php
-class Article extends Resource
+class Post extends Resource
 {
-    public static string $model = Post::class;
-    
-    public function fields()
+    public static string $type = 'Post';
+    protected static ?string $slug = 'post';
+
+    public static function getFields(): array
     {
         return [
-            ID::make('ID'),
-            Text::make('Title')->rules('required'),
-            Wysiwyg::make('Content'),
-            Select::make('Category')->options([
-                'news' => 'News',
-                'blog' => 'Blog',
-            ])->meta(),
-            Date::make('Published At')->meta(),
+            [
+                'type' => 'Aura\\Base\\Fields\\Text',
+                'name' => 'Title',
+                'slug' => 'title',
+                'validation' => 'required|max:255',
+            ],
         ];
     }
 }
 ```
 
-For custom database tables:
+Resources can use either the shared `posts` table with meta fields, or custom tables via `public static bool $customTable = true`.
+
+### Key Scopes
+- **TeamScope**: Scopes queries to current team (bypassed with `withoutGlobalScope(TeamScope::class)`)
+- **TypeScope**: Filters by `type` column for single-table inheritance
+- **ScopedScope**: User-scoped filtering
+
+## Testing Patterns
+
+### Test Helpers (from `tests/Pest.php`)
+- `createSuperAdmin()` - Creates authenticated super admin with team
+- `createSuperAdminWithoutTeam()` - Super admin without team context
+- `createAdmin()` - Limited permissions admin
+- `createPost()` - Test post factory
+
+### Livewire Testing
 ```php
-class Product extends Resource
-{
-    public static string $model = Product::class;
-    public static bool $customTable = true;
-    
-    public function fields()
-    {
-        return [
-            ID::make('ID'),
-            Text::make('Name')->rules('required'),
-            Number::make('Price')->rules('required|numeric|min:0'),
-            Boolean::make('Active')->default(true),
-            BelongsTo::make('Category'),
-            HasMany::make('Reviews'),
-        ];
-    }
-}
+use function Pest\Livewire\livewire;
+
+beforeEach(fn () => $this->actingAs($this->user = createSuperAdmin()));
+
+test('creates resource', function () {
+    livewire(CreateResource::class)
+        ->set('form.fields.name', 'Test')
+        ->call('save')
+        ->assertHasNoErrors();
+});
 ```
 
-### Key Development Rules
+### Important Test Notes
+- Aura facade is reset after each test to prevent pollution
+- Use `withoutGlobalScope(TeamScope::class)` when querying across teams in tests
 
-**Resource Development:**
-- All resources must extend `Aura\Base\Resource`
-- Use `$model` property to specify the Eloquent model
-- Define fields in `fields()` method returning array of Field instances
-- Use traits: `HasFields`, `InteractsWithFields`, `SaveFields`
-- Implement context-specific field methods: `indexFields()`, `createFields()`, `editFields()`, `viewFields()`
-- Apply `TeamScope` trait when multi-tenancy is enabled
-- Follow naming convention: singular (e.g., `Post`, not `Posts`)
+## Code Style
 
-**Field Development:**
-- Custom fields must extend `Aura\Base\Fields\Field`
-- Define view templates: `$edit`, `$view`, `$index` properties
-- Use conditional logic with `displayIf()` and `hideIf()`
-- Support meta storage with `$meta = true` for flexible data
-- Implement `get()` and `set()` methods for custom data handling
+Uses Laravel Pint with `ordered_class_elements` rule - methods sorted alphabetically within groups:
+1. Traits, constants, properties
+2. Constructor/destructor
+3. Magic methods
+4. Public methods, protected methods, private methods
 
-**Livewire Components:**
-- Extend Aura base components (e.g., `Table\Table` for listings)
-- Use Aura traits: `WithLivewireHelpers`, `InteractsWithTable`, `InteractsWithFields`
-- Place in `src/Livewire/` for core, `app/Http/Livewire/` for custom
-- Use Aura's modal and slide-over system for forms
-- Emit Aura events: 'saved', 'deleted', 'updated'
-- Use `$this->notify()` for user feedback
-- Use `$this->authorize()` with resource policies
+### Naming Conventions
+| Type | Convention | Example |
+|------|------------|---------|
+| Classes | PascalCase | `TextFieldTest` |
+| Methods | camelCase | `getFields()` |
+| Database columns | snake_case | `current_team_id` |
+| Config keys | kebab-case | `aura-settings.php` |
+| Blade views | kebab-case | `view-value.blade.php` |
 
-**Blade Components:**
-- Use Aura's component library: `<x-aura::button>`, `<x-aura::input>`, `<x-aura::card>`
-- Extend layout: `<x-aura::layout.app>` for authenticated pages
-- Use field components: `<x-aura::fields.text>`, `<x-aura::fields.select>`
-- Follow view naming: `aura.resource-name.action`
+## Key Configuration
 
-### Development Workflow
-
-1. Create resource: `php artisan aura:resource Post`
-2. Define fields in the resource class
-3. Run migrations: `php artisan migrate`
-4. Set up permissions: `php artisan aura:permission`
-5. Customize views if needed
-6. Write tests for the resource
-7. Use Resource Editor for visual configuration
-
-### Testing Approach
-- Use PestPHP with Aura test helpers
-- Test with team context when multi-tenancy enabled
-- Mock media uploads using Aura utilities
-- Aim for 80% minimum coverage
-- Use descriptive test names: `it ensures users can register`
-- Test validation with valid and invalid data
-- Use model factories for test data
-
-### Best Practices
-- Start with posts table, migrate to custom tables when needed
-- Use meta fields for flexible, non-indexed data
-- Leverage conditional logic for dynamic forms
-- Group related fields using Panel and Tab fields
-- Implement proper team scoping from the beginning
-- Cache field definitions in production
-- Use Aura's built-in components before creating custom ones
-- Test resources with different permission levels
-- Use eager loading to avoid N+1 queries
-- Follow PSR-12 coding standards
-- Use strict types in all PHP files
+- `config/aura.php` - Main package config (teams, features, theme)
+- Teams enabled by default via `AURA_TEAMS` env var
+- Resources stored in `posts` table by default; set `$customTable = true` for dedicated tables
