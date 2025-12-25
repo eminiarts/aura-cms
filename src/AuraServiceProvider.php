@@ -25,7 +25,6 @@ use Aura\Base\Livewire\Attachment\Index as AttachmentIndex;
 use Aura\Base\Livewire\BookmarkPage;
 use Aura\Base\Livewire\ChooseTemplate;
 use Aura\Base\Livewire\CreateResource;
-use Aura\Base\Livewire\Dashboard;
 use Aura\Base\Livewire\EditResourceField;
 use Aura\Base\Livewire\GlobalSearch;
 use Aura\Base\Livewire\InviteUser;
