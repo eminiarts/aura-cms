@@ -107,50 +107,97 @@ class AuraServiceProvider extends PackageServiceProvider
 
     public function bootLivewireComponents()
     {
-        // Register all Aura components with Livewire
-        // Resource components
-        Livewire::component('aura::resource-index', Index::class);
-        Livewire::component('aura::resource-create', Create::class);
-        Livewire::component('aura::resource-create-modal', CreateModal::class);
-        Livewire::component('aura::resource-edit', Edit::class);
-        Livewire::component('aura::resource-edit-modal', EditModal::class);
-        Livewire::component('aura::resource-view-modal', ViewModal::class);
-        Livewire::component('aura::resource-view', View::class);
+        // Component name to class mapping for Livewire 4.x compatibility
+        $componentMap = [
+            // Resource components (aura:: prefixed names)
+            'aura::resource-index' => Index::class,
+            'aura::resource-create' => Create::class,
+            'aura::resource-create-modal' => CreateModal::class,
+            'aura::resource-edit' => Edit::class,
+            'aura::resource-edit-modal' => EditModal::class,
+            'aura::resource-view-modal' => ViewModal::class,
+            'aura::resource-view' => View::class,
 
-        // Table component
-        Livewire::component('aura::table', Table::class);
+            // Resource components (dot-notation names for full-page components)
+            'aura.base.livewire.resource' => Index::class,
+            'aura.base.livewire.resource.index' => Index::class,
+            'aura.base.livewire.resource.create' => Create::class,
+            'aura.base.livewire.resource.create-modal' => CreateModal::class,
+            'aura.base.livewire.resource.edit' => Edit::class,
+            'aura.base.livewire.resource.edit-modal' => EditModal::class,
+            'aura.base.livewire.resource.view-modal' => ViewModal::class,
+            'aura.base.livewire.resource.view' => View::class,
 
-        // Attachment component
-        Livewire::component('aura::attachment-index', AttachmentIndex::class);
+            // Table component
+            'aura::table' => Table::class,
+            'aura.base.livewire.table.table' => Table::class,
 
-        // Top-level Livewire components
-        Livewire::component('aura::navigation', Navigation::class);
-        Livewire::component('aura::global-search', GlobalSearch::class);
-        Livewire::component('aura::bookmark-page', BookmarkPage::class);
-        Livewire::component('aura::notifications', Notifications::class);
-        Livewire::component('aura::edit-resource-field', EditResourceField::class);
-        Livewire::component('aura::media-manager', MediaManager::class);
-        Livewire::component('aura::media-uploader', MediaUploader::class);
-        Livewire::component('aura::create-resource', CreateResource::class);
-        Livewire::component('aura::resource-editor', ResourceEditor::class);
-        Livewire::component('aura::invite-user', InviteUser::class);
-        Livewire::component('aura::modals', Modals::class);
-        Livewire::component('aura::plugins-page', PluginsPage::class);
-        Livewire::component('aura::choose-template', ChooseTemplate::class);
+            // Attachment component
+            'aura::attachment-index' => AttachmentIndex::class,
+            'aura.base.livewire.attachment' => AttachmentIndex::class,
+            'aura.base.livewire.attachment.index' => AttachmentIndex::class,
 
-        // Configurable components (from config)
-        Livewire::component('aura::settings', config('aura.components.settings'));
-        Livewire::component('aura::profile', config('aura.components.profile'));
-        Livewire::component('aura::dashboard', config('aura.components.dashboard'));
+            // Top-level Livewire components
+            'aura::navigation' => Navigation::class,
+            'aura::global-search' => GlobalSearch::class,
+            'aura::bookmark-page' => BookmarkPage::class,
+            'aura::notifications' => Notifications::class,
+            'aura::edit-resource-field' => EditResourceField::class,
+            'aura::media-manager' => MediaManager::class,
+            'aura::media-uploader' => MediaUploader::class,
+            'aura::create-resource' => CreateResource::class,
+            'aura::resource-editor' => ResourceEditor::class,
+            'aura::invite-user' => InviteUser::class,
+            'aura::modals' => Modals::class,
+            'aura::plugins-page' => PluginsPage::class,
+            'aura::choose-template' => ChooseTemplate::class,
 
-        // Widgets
-        Livewire::component('aura::widgets', Widgets::class);
-        Livewire::component('aura::widgets.value-widget', ValueWidget::class);
-        Livewire::component('aura::widgets.sparkline-area', SparklineArea::class);
-        Livewire::component('aura::widgets.sparkline-bar', SparklineBar::class);
-        Livewire::component('aura::widgets.donut', Donut::class);
-        Livewire::component('aura::widgets.pie', Pie::class);
-        Livewire::component('aura::widgets.bar', Bar::class);
+            // Top-level components (dot-notation for full-page)
+            'aura.base.livewire.dashboard' => config('aura.components.dashboard'),
+            'aura.base.livewire.navigation' => Navigation::class,
+            'aura.base.livewire.global-search' => GlobalSearch::class,
+            'aura.base.livewire.bookmark-page' => BookmarkPage::class,
+            'aura.base.livewire.notifications' => Notifications::class,
+            'aura.base.livewire.edit-resource-field' => EditResourceField::class,
+            'aura.base.livewire.media-manager' => MediaManager::class,
+            'aura.base.livewire.media-uploader' => MediaUploader::class,
+            'aura.base.livewire.create-resource' => CreateResource::class,
+            'aura.base.livewire.resource-editor' => ResourceEditor::class,
+            'aura.base.livewire.invite-user' => InviteUser::class,
+            'aura.base.livewire.modals' => Modals::class,
+            'aura.base.livewire.plugins-page' => PluginsPage::class,
+            'aura.base.livewire.choose-template' => ChooseTemplate::class,
+            'aura.base.livewire.settings' => config('aura.components.settings'),
+            'aura.base.livewire.profile' => config('aura.components.profile'),
+
+            // Configurable components (from config)
+            'aura::settings' => config('aura.components.settings'),
+            'aura::profile' => config('aura.components.profile'),
+            'aura::dashboard' => config('aura.components.dashboard'),
+
+            // Widgets
+            'aura::widgets' => Widgets::class,
+            'aura::widgets.value-widget' => ValueWidget::class,
+            'aura::widgets.sparkline-area' => SparklineArea::class,
+            'aura::widgets.sparkline-bar' => SparklineBar::class,
+            'aura::widgets.donut' => Donut::class,
+            'aura::widgets.pie' => Pie::class,
+            'aura::widgets.bar' => Bar::class,
+
+            // Widgets (dot-notation)
+            'aura.base.widgets.widgets' => Widgets::class,
+            'aura.base.widgets.value-widget' => ValueWidget::class,
+            'aura.base.widgets.sparkline-area' => SparklineArea::class,
+            'aura.base.widgets.sparkline-bar' => SparklineBar::class,
+            'aura.base.widgets.donut' => Donut::class,
+            'aura.base.widgets.pie' => Pie::class,
+            'aura.base.widgets.bar' => Bar::class,
+        ];
+
+        // Register component resolver for Livewire 4.x compatibility
+        Livewire::resolveMissingComponent(function ($name) use ($componentMap) {
+            return $componentMap[$name] ?? null;
+        });
 
         return $this;
     }
