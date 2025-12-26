@@ -221,6 +221,16 @@ class Create extends Component
         foreach ($fields as $field) {
             $slug = $field['slug'] ?? null;
 
+            if (! $slug) {
+                continue;
+            }
+
+            // First, ensure all fields are initialized (even if to null)
+            // This allows params/query parameters to be applied to any field
+            if (! isset($this->form['fields'][$slug])) {
+                $this->form['fields'][$slug] = null;
+            }
+
             if ($field['type'] == "Aura\Base\Fields\Boolean" && ! isset($field['default'])) {
                 $this->form['fields'][$slug] = false;
 
@@ -234,7 +244,7 @@ class Create extends Component
                 continue;
             }
 
-            if ($slug && ! isset($this->form['fields'][$slug]) && isset($field['default'])) {
+            if (isset($field['default'])) {
 
                 if ($field['type'] == "Aura\Base\Fields\Checkbox" && isset($field['options']) && is_array($field['options']) && ! is_array($field['default'])) {
                     $field['default'] = [$field['default']];
