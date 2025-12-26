@@ -43,6 +43,7 @@ use Aura\Base\Livewire\Resource\View;
 use Aura\Base\Livewire\Resource\ViewModal;
 use Aura\Base\Livewire\ResourceEditor;
 use Aura\Base\Livewire\Table\Table;
+use Aura\Base\Livewire\TwoFactorAuthenticationForm;
 use Aura\Base\Navigation\Navigation as AuraNavigation;
 use Aura\Base\Policies\ResourcePolicy;
 use Aura\Base\Policies\TeamPolicy;
@@ -150,6 +151,7 @@ class AuraServiceProvider extends PackageServiceProvider
             'aura::modals' => Modals::class,
             'aura::plugins-page' => PluginsPage::class,
             'aura::choose-template' => ChooseTemplate::class,
+            'aura::user-two-factor-authentication-form' => TwoFactorAuthenticationForm::class,
 
             // Top-level components (dot-notation for full-page)
             'aura.base.livewire.dashboard' => config('aura.components.dashboard'),
@@ -166,6 +168,7 @@ class AuraServiceProvider extends PackageServiceProvider
             'aura.base.livewire.modals' => Modals::class,
             'aura.base.livewire.plugins-page' => PluginsPage::class,
             'aura.base.livewire.choose-template' => ChooseTemplate::class,
+            'aura.base.livewire.two-factor-authentication-form' => TwoFactorAuthenticationForm::class,
             'aura.base.livewire.settings' => config('aura.components.settings'),
             'aura.base.livewire.profile' => config('aura.components.profile'),
 
