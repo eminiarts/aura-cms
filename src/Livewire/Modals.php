@@ -31,12 +31,18 @@ class Modals extends Component
 
         $componentClass = app('livewire.finder')->resolveClassComponentClassName($component);
 
+        // Determine modal classes - only check method_exists if we have a valid class
+        $modalClasses = 'max-w-4xl';
+        if ($componentClass !== null && method_exists($componentClass, 'modalClasses')) {
+            $modalClasses = $componentClass::modalClasses();
+        }
+
         $this->modals[$id] = [
             'name' => $component,
             'arguments' => $arguments,
             'modalAttributes' => array_merge([
                 'persistent' => false,
-                'modalClasses' => method_exists($componentClass, 'modalClasses') ? $componentClass::modalClasses() : 'max-w-4xl',
+                'modalClasses' => $modalClasses,
                 'slideOver' => false,
             ], $modalAttributes),
             'active' => true,
