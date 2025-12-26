@@ -4,8 +4,6 @@ namespace Aura\Base\Livewire;
 
 use Livewire\Attributes\On;
 use Livewire\Component;
-use Livewire\Mechanisms\ComponentRegistry;
-use Ray\Ray;
 
 class Modals extends Component
 {
@@ -31,7 +29,7 @@ class Modals extends Component
     {
         $id = md5($component.serialize($arguments));
 
-        $componentClass = app(ComponentRegistry::class)->getClass($component);
+        $componentClass = app('livewire.finder')->resolveClassComponentClassName($component);
 
         $this->modals[$id] = [
             'name' => $component,
