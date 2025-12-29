@@ -78,7 +78,7 @@ test('accepts multiple safe file types', function () {
     foreach ($safeExtensions as $ext) {
         Storage::fake('public');
 
-        $mimeType = match($ext) {
+        $mimeType = match ($ext) {
             'jpg', 'jpeg' => 'image/jpeg',
             'png' => 'image/png',
             'gif' => 'image/gif',

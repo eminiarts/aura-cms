@@ -69,6 +69,7 @@ class MediaUploader extends Component
 
             if (in_array($extension, $blockedExtensions)) {
                 unset($this->media[$key]);
+
                 continue;
             }
 
