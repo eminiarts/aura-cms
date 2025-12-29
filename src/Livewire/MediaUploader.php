@@ -52,12 +52,26 @@ class MediaUploader extends Component
     public function updatedMedia()
     {
         $this->validate([
-            'media.*' => 'required|max:102400', // 100MB Max, for now
+            'media.*' => [
+                'required',
+                'max:102400', // 100MB Max
+                'mimes:jpg,jpeg,png,gif,webp,svg,pdf,doc,docx,xls,xlsx,ppt,pptx,txt,csv,zip,mp4,mov,avi,mp3,wav',
+                'not_in:php,phtml,php3,php4,php5,phar,sh,exe,bat,cmd,com,scr,vbs,js,jar',
+            ],
         ]);
 
         $attachments = [];
 
         foreach ($this->media as $key => $media) {
+            // Additional security check: verify file extension
+            $extension = strtolower($media->getClientOriginalExtension());
+            $blockedExtensions = ['php', 'phtml', 'php3', 'php4', 'php5', 'phar', 'sh', 'exe', 'bat', 'cmd', 'com', 'scr', 'vbs', 'js', 'jar'];
+
+            if (in_array($extension, $blockedExtensions)) {
+                unset($this->media[$key]);
+                continue;
+            }
+
             $url = $media->store('media', 'public');
 
             $attachments[] = app(config('aura.resources.attachment'))::create([
