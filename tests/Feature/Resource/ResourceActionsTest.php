@@ -138,11 +138,6 @@ class ResourceActionsTestModelWithConditionalLogic extends Resource
 
     public static string $type = 'Page';
 
-    public static function getFields()
-    {
-        return [];
-    }
-
     public function actions()
     {
         return [
@@ -155,6 +150,11 @@ class ResourceActionsTestModelWithConditionalLogic extends Resource
                 'conditional_logic' => fn () => false,
             ],
         ];
+    }
+
+    public static function getFields()
+    {
+        return [];
     }
 }
 
