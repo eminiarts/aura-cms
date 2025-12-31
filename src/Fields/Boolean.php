@@ -8,6 +8,8 @@ class Boolean extends Field
 
     public $optionGroup = 'Choice Fields';
 
+    public $tableColumnType = 'boolean';
+
     public $view = 'aura::fields.view-value';
 
     public function display($field, $value, $model)

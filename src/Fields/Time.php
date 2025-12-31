@@ -10,6 +10,8 @@ class Time extends Field
 
     public $optionGroup = 'Input Fields';
 
+    public $tableColumnType = 'time';
+
     public function get($class, $value, $field = null)
     {
         return $value;

@@ -8,6 +8,8 @@ class Checkbox extends Field
 
     public $optionGroup = 'Choice Fields';
 
+    public $tableColumnType = 'json';
+
     // public $view = 'components.fields.checkbox';
 
     public function get($class, $value, $field = null)
