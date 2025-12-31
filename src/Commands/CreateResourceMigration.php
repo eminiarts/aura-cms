@@ -7,7 +7,6 @@ use Illuminate\Console\Command;
 use Illuminate\Filesystem\Filesystem;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Process;
-use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 use Symfony\Component\Process\ExecutableFinder;
 
@@ -16,6 +15,16 @@ class CreateResourceMigration extends Command
     protected $description = 'Create a migration based on the fields of a resource';
 
     protected $files;
+
+    /**
+     * Relationship fields that use pivot tables instead of columns
+     */
+    protected $relationshipFieldTypes = [
+        'Aura\\Base\\Fields\\HasMany',
+        'Aura\\Base\\Fields\\HasOne',
+        'Aura\\Base\\Fields\\BelongsToMany',
+        'Aura\\Base\\Fields\\Tags',
+    ];
 
     protected $signature = 'aura:create-resource-migration {resource} {--soft-deletes} {--no-timestamps}';
 
@@ -32,16 +41,6 @@ class CreateResourceMigration extends Command
         'Aura\\Base\\Fields\\View',
         'Aura\\Base\\Fields\\ViewValue',
         'Aura\\Base\\Fields\\LivewireComponent',
-    ];
-
-    /**
-     * Relationship fields that use pivot tables instead of columns
-     */
-    protected $relationshipFieldTypes = [
-        'Aura\\Base\\Fields\\HasMany',
-        'Aura\\Base\\Fields\\HasOne',
-        'Aura\\Base\\Fields\\BelongsToMany',
-        'Aura\\Base\\Fields\\Tags',
     ];
 
     public function __construct(Filesystem $files)
@@ -261,7 +260,6 @@ class CreateResourceMigration extends Command
             }
         }
 
-        return null;
     }
 
     protected function migrationExists($name)

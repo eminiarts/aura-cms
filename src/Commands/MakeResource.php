@@ -29,6 +29,23 @@ class MakeResource extends GeneratorCommand
     protected $type = 'Resource';
 
     /**
+     * Execute the console command.
+     *
+     * @return bool|null
+     */
+    public function handle()
+    {
+        $result = parent::handle();
+
+        // Generate migration for custom table resources (unless --no-migration flag is set)
+        if ($this->shouldUseCustomTable() && ! $this->option('no-migration')) {
+            $this->generateMigration();
+        }
+
+        return $result;
+    }
+
+    /**
      * Generate a migration for the resource.
      *
      * @return void
@@ -72,23 +89,6 @@ class MakeResource extends GeneratorCommand
         }
 
         return __DIR__.'/Stubs/make-resource.stub';
-    }
-
-    /**
-     * Execute the console command.
-     *
-     * @return bool|null
-     */
-    public function handle()
-    {
-        $result = parent::handle();
-
-        // Generate migration for custom table resources (unless --no-migration flag is set)
-        if ($this->shouldUseCustomTable() && ! $this->option('no-migration')) {
-            $this->generateMigration();
-        }
-
-        return $result;
     }
 
     /**
