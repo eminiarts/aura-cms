@@ -208,12 +208,6 @@ class Edit extends Component
 
     public function updatedPost($value, $array) {}
 
-    #[On('updateField')]
-    public function updateField($field, $value)
-    {
-        // Implementation is in InteractsWithFields trait
-    }
-
     protected function callComponentMethod($method, $params)
     {
         $callbacks = array_filter(
