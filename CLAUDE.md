@@ -36,7 +36,17 @@ npm run build       # Production build
 
 ### Aura Commands
 ```bash
-php artisan aura:resource {name}     # Create resource
+# Resource creation
+php artisan aura:resource {name}                    # Create resource (uses config default)
+php artisan aura:resource {name} --custom           # Force dedicated table
+php artisan aura:resource {name} --dynamic          # Force posts/meta (EAV)
+php artisan aura:resource {name} --no-migration     # Skip migration generation
+
+# Generate migration from existing resource fields
+php artisan aura:create-resource-migration {class}  # e.g., App\Aura\Resources\Article
+php artisan aura:create-resource-migration {class} --soft-deletes
+
+# Other commands
 php artisan aura:field {name}        # Create custom field
 php artisan aura:plugin {name}       # Create plugin
 php artisan aura:permission          # Generate permissions
@@ -83,7 +93,60 @@ class Post extends Resource
 }
 ```
 
-Resources can use either the shared `posts` table with meta fields, or custom tables via `public static bool $customTable = true`.
+### Database Storage Patterns
+
+Aura CMS supports two storage patterns:
+
+**1. Dedicated Tables** - Default (Recommended)
+```php
+// Uses dedicated table with typed columns
+class Article extends Resource
+{
+    public static $customTable = true;     // default
+    public static bool $usesMeta = false;  // default
+    protected $table = 'articles';
+}
+```
+- Better performance: Direct column access
+- Best for: Stable schemas, large datasets, production apps
+- Trade-off: Requires migrations for field changes
+
+**2. Posts/Meta (EAV Pattern)** - Legacy/Dynamic
+```php
+// Uses shared posts table + meta table for field values
+class Article extends Resource
+{
+    public static $customTable = false;
+    public static bool $usesMeta = true;
+}
+```
+- Flexible: Add fields without migrations
+- Best for: Dynamic content, plugins, small datasets
+- Trade-off: Slower queries at scale
+- Use `AURA_CUSTOM_TABLES=false` for backwards compatibility
+
+Control default behavior via `config/aura.php`:
+```php
+'features' => [
+    'custom_tables_for_resources' => env('AURA_CUSTOM_TABLES', true),
+]
+```
+
+### Field Type to Column Mapping
+
+When using `aura:create-resource-migration`, fields map to these column types:
+
+| Field Type | Column Type |
+|------------|-------------|
+| Text, Email, Slug, Phone | string |
+| Textarea, Wysiwyg, Code | text |
+| Number | integer |
+| Boolean | boolean |
+| Date | date |
+| Datetime | timestamp |
+| Time | time |
+| Image, File, Repeater, Json, Checkbox | json |
+| BelongsTo | bigInteger (with index) |
 
 ### Key Scopes
 - **TeamScope**: Scopes queries to current team (bypassed with `withoutGlobalScope(TeamScope::class)`)
@@ -137,4 +200,4 @@ Uses Laravel Pint with `ordered_class_elements` rule - methods sorted alphabetic
 
 - `config/aura.php` - Main package config (teams, features, theme)
 - Teams enabled by default via `AURA_TEAMS` env var
-- Resources stored in `posts` table by default; set `$customTable = true` for dedicated tables
+- Database storage: Dedicated tables by default; set `AURA_CUSTOM_TABLES=false` for legacy posts/meta

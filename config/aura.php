@@ -139,10 +139,32 @@ return [
         'resource_view' => true,
         'resource_edit' => true,
         'resource_editor' => config('app.env') == 'local' ? true : false,
-        'custom_tables_for_resources' => false, // default = false
-        // By default, resources are using the posts and meta table.
-        // If you want to use custom tables by default, you can set this to true.
 
+        /*
+        |----------------------------------------------------------------------
+        | Custom Tables for Resources (Database Storage Strategy)
+        |----------------------------------------------------------------------
+        |
+        | This setting controls the default database storage pattern for new
+        | resources created with `php artisan aura:resource`.
+        |
+        | true (default): Use dedicated tables for each resource
+        |   - Better query performance and data integrity
+        |   - Requires migrations for each resource
+        |   - Recommended for production applications
+        |
+        | false: Use shared posts/meta tables (WordPress-style EAV)
+        |   - More flexible, fields can be added without migrations
+        |   - Better for dynamic content types and plugins
+        |   - May have performance implications at scale (>100k records)
+        |   - Set AURA_CUSTOM_TABLES=false for backwards compatibility
+        |
+        | You can override this per-resource with the command flags:
+        |   php artisan aura:resource Article --custom    # Force dedicated table
+        |   php artisan aura:resource Article --dynamic   # Force posts/meta
+        |
+        */
+        'custom_tables_for_resources' => env('AURA_CUSTOM_TABLES', true),
     ],
 
     /*
