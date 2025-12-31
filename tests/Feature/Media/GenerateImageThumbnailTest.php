@@ -148,3 +148,93 @@ it('restricts thumbnail generation to configured dimensions when restriction is 
     // Should return 404 as the dimension is not allowed
     $response->assertStatus(404);
 });
+
+it('returns cached thumbnail when it already exists', function () {
+    // Create a test image
+    $img = Image::canvas(2000, 2000, '#ff0000');
+    $imageStream = (string) $img->encode('jpg');
+
+    Storage::disk('public')->makeDirectory('media', 0755, true);
+    Storage::disk('public')->put('media/cached.jpg', $imageStream);
+
+    $attachment = Attachment::create([
+        'name' => 'Test Image',
+        'url' => 'media/cached.jpg',
+        'mime_type' => 'image/jpeg',
+        'size' => strlen($imageStream),
+    ]);
+
+    // Pre-create the thumbnail to simulate cache
+    $thumbnailPath = 'thumbnails/media/200_auto_cached.jpg';
+    Storage::disk('public')->makeDirectory('thumbnails/media', 0755, true);
+    Storage::disk('public')->put($thumbnailPath, $imageStream);
+
+    // Request the same dimension - should return cached thumbnail
+    $response = $this->get(route('aura.image', [
+        'path' => $attachment->url,
+        'width' => 200,
+    ]));
+
+    $response->assertStatus(200);
+
+    // Thumbnail should still exist
+    expect(Storage::disk('public')->exists($thumbnailPath))->toBeTrue();
+});
+
+it('generates thumbnail with both width and height specified', function () {
+    // Create a test image
+    $img = Image::canvas(2000, 1500, '#00ff00');
+    $imageStream = (string) $img->encode('jpg');
+
+    Storage::disk('public')->makeDirectory('media', 0755, true);
+    Storage::disk('public')->put('media/landscape.jpg', $imageStream);
+
+    $attachment = Attachment::create([
+        'name' => 'Landscape Image',
+        'url' => 'media/landscape.jpg',
+        'mime_type' => 'image/jpeg',
+        'size' => strlen($imageStream),
+    ]);
+
+    // Request with both width and height (from config: 800x600)
+    $response = $this->get(route('aura.image', [
+        'path' => $attachment->url,
+        'width' => 800,
+        'height' => 600,
+    ]));
+
+    $response->assertStatus(200);
+
+    // Check if thumbnail was created with both dimensions
+    $thumbnailPath = 'thumbnails/media/800_600_landscape.jpg';
+    expect(Storage::disk('public')->exists($thumbnailPath))->toBeTrue();
+});
+
+it('handles small images with both dimensions specified that are larger than original', function () {
+    // Create a small test image
+    $img = Image::canvas(50, 50, '#0000ff');
+    $imageStream = (string) $img->encode('jpg');
+
+    Storage::disk('public')->makeDirectory('media', 0755, true);
+    Storage::disk('public')->put('media/tiny.jpg', $imageStream);
+
+    $attachment = Attachment::create([
+        'name' => 'Tiny Image',
+        'url' => 'media/tiny.jpg',
+        'mime_type' => 'image/jpeg',
+        'size' => strlen($imageStream),
+    ]);
+
+    // Request with both width and height that are larger than original
+    $response = $this->get(route('aura.image', [
+        'path' => $attachment->url,
+        'width' => 800,
+        'height' => 600,
+    ]));
+
+    $response->assertStatus(200);
+
+    // A scaled thumbnail should be created (not upscaled beyond original)
+    $thumbnailPath = 'thumbnails/media/800_600_tiny.jpg';
+    expect(Storage::disk('public')->exists($thumbnailPath))->toBeTrue();
+});

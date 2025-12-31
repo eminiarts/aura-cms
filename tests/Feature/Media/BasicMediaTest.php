@@ -1,5 +1,6 @@
 <?php
 
+use Aura\Base\Livewire\Attachment\Index as AttachmentIndex;
 use Aura\Base\Livewire\MediaUploader;
 use Aura\Base\Livewire\Table\Table;
 use Aura\Base\Resources\Attachment;
@@ -36,14 +37,15 @@ test('media page can be rendered', function () {
     $response = $this->get(route('aura.attachment.index'));
 
     // Visit the Attachment Index Page
+    // Use class references for Livewire 3.x compatibility with assertSeeLivewire
     $response
         ->assertOk()
     // Custom Index Page
-        ->assertSeeLivewire('aura::attachment-index')
+        ->assertSeeLivewire(AttachmentIndex::class)
     // Media Uploader
-        ->assertSeeLivewire('aura::media-uploader')
+        ->assertSeeLivewire(MediaUploader::class)
     // Media Grid View
-        ->assertSeeLivewire('aura::table');
+        ->assertSeeLivewire(Table::class);
 });
 
 test('media uploader', function () {

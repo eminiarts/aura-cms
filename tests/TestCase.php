@@ -7,6 +7,7 @@ use Aura\Base\Providers\AuthServiceProvider;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Foundation\Testing\Concerns\InteractsWithViews;
 use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
+use Intervention\Image\ImageServiceProvider;
 use Lab404\Impersonate\ImpersonateServiceProvider;
 use Laravel\Fortify\FortifyServiceProvider;
 use Livewire\LivewireServiceProvider;
@@ -94,6 +95,7 @@ class TestCase extends Orchestra
             AuraServiceProvider::class,
             ImpersonateServiceProvider::class,
             RayServiceProvider::class,
+            ImageServiceProvider::class,
         ];
     }
 }

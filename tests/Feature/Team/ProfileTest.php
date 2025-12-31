@@ -54,7 +54,8 @@ it('deletes the user account', function () {
 
     $request = $this->get(route('aura.profile'));
 
-    $this->get(route('aura.profile'))->assertSeeLivewire('aura::profile');
+    // Use class reference for Livewire 3.x compatibility with assertSeeLivewire
+    $this->get(route('aura.profile'))->assertSeeLivewire(Profile::class);
 
     Livewire::actingAs($this->user)->test(Profile::class)
         ->set('password', 'password')

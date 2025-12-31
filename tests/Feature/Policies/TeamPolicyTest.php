@@ -22,6 +22,11 @@ beforeEach(function () {
     $this->teamOwner = User::factory()->create();
     $this->auraGlobalAdmin = User::factory()->create(['email' => 'bajram@eminiarts.ch']);
 
+    // Store original static property values for cleanup
+    $this->originalCreateEnabled = Team::$createEnabled;
+    $this->originalEditEnabled = Team::$editEnabled;
+    $this->originalIndexViewEnabled = Team::$indexViewEnabled;
+
     // Create owner role with all permissions
     $ownerRole = Role::create([
         'team_id' => $this->team->id,
@@ -57,6 +62,13 @@ beforeEach(function () {
     $this->team->users()->syncWithPivotValues($this->teamOwner->id, [
         'role_id' => $ownerRole->id,
     ]);
+});
+
+afterEach(function () {
+    // Reset static properties to their original values to prevent test pollution
+    Team::$createEnabled = $this->originalCreateEnabled ?? true;
+    Team::$editEnabled = $this->originalEditEnabled ?? true;
+    Team::$indexViewEnabled = $this->originalIndexViewEnabled ?? true;
 });
 
 test('super admin can add team members', function () {

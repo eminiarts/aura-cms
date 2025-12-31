@@ -151,6 +151,7 @@ class AuraServiceProvider extends PackageServiceProvider
             'aura::modals' => Modals::class,
             'aura::plugins-page' => PluginsPage::class,
             'aura::choose-template' => ChooseTemplate::class,
+            'aura::two-factor-authentication-form' => TwoFactorAuthenticationForm::class,
             'aura::user-two-factor-authentication-form' => TwoFactorAuthenticationForm::class,
 
             // Top-level components (dot-notation for full-page)

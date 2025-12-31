@@ -1,6 +1,7 @@
 <?php
 
 use Aura\Base\Facades\Aura;
+use Aura\Base\Livewire\Resource\Index;
 use Aura\Base\Livewire\Table\Table;
 use Aura\Base\Tests\Resources\Post;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -25,9 +26,10 @@ test('table can be paginated', function () {
     expect(Post::count())->toBe(21);
 
     // Visit the Post Index Page
+    // Use class references for Livewire 3.x compatibility with assertSeeLivewire
     $this->get(route('aura.post.index'))
-        ->assertSeeLivewire('aura::resource-index')
-        ->assertSeeLivewire('aura::table');
+        ->assertSeeLivewire(Index::class)
+        ->assertSeeLivewire(Table::class);
 
     $eleven = Post::skip(10)->first();
 

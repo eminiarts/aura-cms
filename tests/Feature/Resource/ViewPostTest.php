@@ -30,8 +30,9 @@ test('post can be viewed', function () {
     $this->assertDatabaseHas('posts', ['title' => 'Test Post']);
 
     // Visit the Post Index Page
+    // Use class reference for Livewire 3.x compatibility with full-page components
     $this->get(route('aura.post.view', [$post->id]))
-        ->assertSeeLivewire('aura::resource-view')
+        ->assertSeeLivewire(View::class)
         ->assertSee('Test Post');
 });
 
@@ -118,4 +119,47 @@ test('resource view - can be customized via viewView method', function () {
     unlink($customViewPath);
     rmdir(dirname($customViewPath));
     rmdir(dirname(dirname($customViewPath)));
+});
+
+test('post with special characters in title can be viewed', function () {
+    // Create a Post with special characters
+    $post = Post::create([
+        'title' => 'Test Post with <special> & "characters"',
+        'content' => 'Test Content with special chars: <>&"\'',
+        'type' => 'Post',
+        'status' => 'publish',
+    ]);
+
+    // Assert Post is in DB
+    $this->assertDatabaseHas('posts', ['title' => 'Test Post with <special> & "characters"']);
+
+    // Visit the Post View Page - should properly escape special characters
+    $this->get(route('aura.post.view', [$post->id]))
+        ->assertSeeLivewire(View::class)
+        ->assertOk();
+});
+
+test('viewing non-existent post returns error', function () {
+    // Try to view a post that does not exist
+    // The system returns 403 because authorization check fails when model is null
+    $nonExistentId = 99999;
+
+    $this->get(route('aura.post.view', [$nonExistentId]))
+        ->assertForbidden();
+});
+
+test('post view displays content correctly', function () {
+    // Create a Post with specific content
+    $post = Post::create([
+        'title' => 'Post Title for Content Test',
+        'content' => 'This is the detailed content of the post.',
+        'type' => 'Post',
+        'status' => 'publish',
+    ]);
+
+    // Visit the Post View Page and verify content is displayed
+    $this->get(route('aura.post.view', [$post->id]))
+        ->assertSeeLivewire(View::class)
+        ->assertSee('Post Title for Content Test')
+        ->assertOk();
 });

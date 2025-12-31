@@ -73,7 +73,7 @@ it('resource editor is accessible', function () {
 
     $this->get(route('aura.resource.editor', ['slug' => 'Project']))
         ->assertStatus(200)
-        ->assertSeeLivewire('aura::resource-editor');
+        ->assertSeeLivewire(\Aura\Base\Livewire\ResourceEditor::class);
 });
 
 it('saveFields listens for ModifyDatabaseMigration', function () {

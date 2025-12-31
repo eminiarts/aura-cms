@@ -280,3 +280,51 @@ test('searchable fields API Mock', function () {
     // ]));
 
 });
+
+test('AdvancedSelect saved method handles null value', function () {
+    $advancedSelect = new AdvancedSelect;
+    $post = AdvancedSelectFieldModel::create(['fields' => []]);
+    $field = [
+        'slug' => 'advancedselect',
+        'resource' => Role::class,
+    ];
+
+    // Should not throw exception when value is null
+    $advancedSelect->saved($post, $field, null);
+
+    // Verify no relations were created
+    expect($post->advancedselect)->toBeCollection();
+    expect($post->advancedselect)->toHaveCount(0);
+});
+
+test('AdvancedSelect saved method handles empty array', function () {
+    $advancedSelect = new AdvancedSelect;
+    $post = AdvancedSelectFieldModel::create(['fields' => []]);
+    $field = [
+        'slug' => 'advancedselect',
+        'resource' => Role::class,
+    ];
+
+    // Should not throw exception when value is empty array
+    $advancedSelect->saved($post, $field, []);
+
+    // Verify no relations were created
+    expect($post->advancedselect)->toBeCollection();
+    expect($post->advancedselect)->toHaveCount(0);
+});
+
+test('AdvancedSelect saved method handles empty string converted from JSON', function () {
+    $advancedSelect = new AdvancedSelect;
+    $post = AdvancedSelectFieldModel::create(['fields' => []]);
+    $field = [
+        'slug' => 'advancedselect',
+        'resource' => Role::class,
+    ];
+
+    // Test with empty string (which would decode to null from JSON)
+    $advancedSelect->saved($post, $field, '');
+
+    // Verify no relations were created
+    expect($post->advancedselect)->toBeCollection();
+    expect($post->advancedselect)->toHaveCount(0);
+});

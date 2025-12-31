@@ -307,6 +307,10 @@ class AdvancedSelect extends Field
             $ids = [$ids];
         }
 
+        if (empty($ids)) {
+            $ids = [];
+        }
+
         foreach ($ids as $index => $item) {
             $id = is_array($item) ? ($item['id'] ?? null) : $item;
             if ($id !== null && (is_string($id) || is_int($id))) {

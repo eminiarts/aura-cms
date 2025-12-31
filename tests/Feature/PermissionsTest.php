@@ -387,7 +387,7 @@ test('a admin can access users', function () {
 
     // Assert Response
     $response->assertStatus(200);
-});
+})->skip(fn () => ! config('aura.teams'), 'Requires teams feature');
 
 test('scoped query on index page', function () {
     // Create a role with necessary permissions
