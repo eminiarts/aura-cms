@@ -97,26 +97,13 @@ class Post extends Resource
 
 Aura CMS supports two storage patterns:
 
-**1. Posts/Meta (EAV Pattern)** - Default
-```php
-// Uses shared posts table + meta table for field values
-class Article extends Resource
-{
-    public static $customTable = false;    // default
-    public static bool $usesMeta = true;   // default
-}
-```
-- Flexible: Add fields without migrations
-- Best for: Dynamic content, plugins, small datasets
-- Trade-off: Slower queries at scale
-
-**2. Dedicated Tables** - Recommended for production
+**1. Dedicated Tables** - Default (Recommended)
 ```php
 // Uses dedicated table with typed columns
 class Article extends Resource
 {
-    public static $customTable = true;
-    public static bool $usesMeta = false;
+    public static $customTable = true;     // default
+    public static bool $usesMeta = false;  // default
     protected $table = 'articles';
 }
 ```
@@ -124,10 +111,24 @@ class Article extends Resource
 - Best for: Stable schemas, large datasets, production apps
 - Trade-off: Requires migrations for field changes
 
+**2. Posts/Meta (EAV Pattern)** - Legacy/Dynamic
+```php
+// Uses shared posts table + meta table for field values
+class Article extends Resource
+{
+    public static $customTable = false;
+    public static bool $usesMeta = true;
+}
+```
+- Flexible: Add fields without migrations
+- Best for: Dynamic content, plugins, small datasets
+- Trade-off: Slower queries at scale
+- Use `AURA_CUSTOM_TABLES=false` for backwards compatibility
+
 Control default behavior via `config/aura.php`:
 ```php
 'features' => [
-    'custom_tables_for_resources' => env('AURA_CUSTOM_TABLES', false),
+    'custom_tables_for_resources' => env('AURA_CUSTOM_TABLES', true),
 ]
 ```
 
@@ -199,4 +200,4 @@ Uses Laravel Pint with `ordered_class_elements` rule - methods sorted alphabetic
 
 - `config/aura.php` - Main package config (teams, features, theme)
 - Teams enabled by default via `AURA_TEAMS` env var
-- Database storage: `AURA_CUSTOM_TABLES` env var (false = posts/meta, true = dedicated tables)
+- Database storage: Dedicated tables by default; set `AURA_CUSTOM_TABLES=false` for legacy posts/meta
