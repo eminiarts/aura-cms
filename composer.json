@@ -24,9 +24,9 @@
     "require": {
         "php": "^8.2",
         "doctrine/dbal": "^3.6|^4.0",
-        "intervention/image": "^2.7|^3.0",
-        "laravel/fortify": "^1.20",
+        "intervention/image": "^3.11",
         "lab404/laravel-impersonate": "^1.7.5",
+        "laravel/fortify": "^1.20",
         "laravel/prompts": "^0.3",
         "laravel/sanctum": "^4.0",
         "livewire/livewire": "^3.6",
