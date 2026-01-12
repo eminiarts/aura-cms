@@ -48,17 +48,7 @@ trait MediaFields
     #[On('updateField')]
     public function updateField($data)
     {
-        logger()->info('MediaFields::updateField() received', [
-            'data' => $data,
-            'component' => get_class($this),
-        ]);
-
         $this->form['fields'][$data['slug']] = $data['value'];
-
-        logger()->info('MediaFields::updateField() updated form', [
-            'slug' => $data['slug'],
-            'value' => $data['value'],
-        ]);
 
         $this->dispatch('fieldUpdated', [
             'slug' => $data['slug'],

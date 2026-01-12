@@ -52,25 +52,15 @@ class MediaManager extends Component
             ->values()
             ->toArray();
 
-        $slug = $this->fieldSlug;
-
-        // Log for debugging
-        logger()->info('MediaManager::select()', [
-            'slug' => $slug,
-            'selected' => $selected,
-        ]);
-
         // Dispatch the updateField event globally to ALL Livewire components
-        // In Livewire 3, dispatch() without ->to() broadcasts to all listening components
         $this->dispatch('updateField', [
-            'slug' => $slug,
+            'slug' => $this->fieldSlug,
             'value' => $selected,
         ]);
 
         // NOTE: Do NOT dispatch closeModal here!
         // The modal must be closed from Alpine AFTER this Livewire call completes
-        // Otherwise the component is destroyed while events are still being processed,
-        // causing "Component not found" errors
+        // Otherwise the component is destroyed while events are still being processed
     }
 
     #[On('selectedRows')]
