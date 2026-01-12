@@ -43,25 +43,42 @@ class MediaManager extends Component
         ]);
     }
 
-    public function select()
+    public function select($selectedValues = null)
     {
-        // Emit update Field
-        $this->dispatch('updateField', [
-            'slug' => $this->fieldSlug,
-            'value' => $this->selected,
+        // Use passed values from Alpine if available (more reliable than entangle sync)
+        // Ensure we have an array of strings for consistency
+        $selected = collect($selectedValues ?? $this->selected)
+            ->map(fn ($id) => (string) $id)
+            ->values()
+            ->toArray();
+
+        $slug = $this->fieldSlug;
+
+        // Log for debugging
+        logger()->info('MediaManager::select()', [
+            'slug' => $slug,
+            'selected' => $selected,
         ]);
 
-        $this->dispatch('media-manager-selected');
+        // Dispatch the updateField event globally to ALL Livewire components
+        // In Livewire 3, dispatch() without ->to() broadcasts to all listening components
+        $this->dispatch('updateField', [
+            'slug' => $slug,
+            'value' => $selected,
+        ]);
 
-        // Close Modal
-        $this->dispatch('closeModal');
+        // NOTE: Do NOT dispatch closeModal here!
+        // The modal must be closed from Alpine AFTER this Livewire call completes
+        // Otherwise the component is destroyed while events are still being processed,
+        // causing "Component not found" errors
     }
 
     #[On('selectedRows')]
     public function selectAttachment($ids)
     {
+        // Only sync initial selection, not ongoing changes to prevent circular updates
         if (! $this->initialSelectionDone) {
-            $this->selected = $ids;
+            $this->selected = collect($ids)->map(fn ($id) => (string) $id)->values()->toArray();
             $this->initialSelectionDone = true;
         }
     }
@@ -69,25 +86,23 @@ class MediaManager extends Component
     #[On('tableMounted')]
     public function tableMounted()
     {
+        // Sync initial selection to the table when it mounts
         if ($this->selected && ! $this->initialSelectionDone) {
-            $this->dispatch('selectedRows', $this->selected);
+            $this->dispatch('selectedRows', collect($this->selected)->map(fn ($id) => (string) $id)->values()->toArray());
             $this->initialSelectionDone = true;
         }
     }
 
-    public function updated($name, $value)
-    {
-        if ($name === 'selected') {
-            $this->dispatch('selectedRows', $this->selected);
-        }
-    }
+    // Removed updated() method to prevent circular updates
+    // The entangle directive handles syncing automatically
 
     #[On('updateField')]
     public function updateField($field)
     {
+        // Only update if this is our field
         if ($field['slug'] == $this->fieldSlug) {
-            $this->selected = $field['value'];
-            $this->dispatch('selectedRows', $this->selected);
+            $this->selected = collect($field['value'])->map(fn ($id) => (string) $id)->values()->toArray();
+            // Don't dispatch selectedRows here to prevent circular updates
         }
     }
 }

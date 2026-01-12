@@ -65,7 +65,10 @@ class GenerateImageThumbnail implements ShouldQueue
         ]);
 
         // Generate thumbnails for each configured size
-        foreach ($settings['dimensions'] as $thumbnail) {
+        // Support both 'dimensions' and 'thumbnails' keys for backwards compatibility
+        $dimensions = $settings['dimensions'] ?? $settings['thumbnails'] ?? [];
+
+        foreach ($dimensions as $thumbnail) {
             try {
                 logger()->info('Generating thumbnail', [
                     'relativePath' => $relativePath,

@@ -1,6 +1,6 @@
 <div class="" x-data="{
-
     selected: @entangle('selected'),
+    _updatingFromEvent: false,
 
     saveModel() {
         // Save Model when Media Manager is closed
@@ -8,14 +8,20 @@
     },
 
     changeSelected(event) {
-        {{-- if (this.selected == event.detail.selected) {
+        // Only update if values are actually different to prevent circular updates
+        const newSelected = event.detail.selected || [];
+        const currentSelected = this.selected || [];
+
+        // Compare arrays - if they're the same, don't update
+        if (JSON.stringify([...newSelected].sort()) === JSON.stringify([...currentSelected].sort())) {
             return;
-        } --}}
+        }
 
-        this.selected = event.detail.selected
-
-        {{-- console.log($wire); --}}
-         {{-- $wire.$dispatch('saveModel') --}}
+        this._updatingFromEvent = true;
+        this.selected = [...newSelected];
+        this.$nextTick(() => {
+            this._updatingFromEvent = false;
+        });
     },
 
 }" @selection-changed="changeSelected($event)" @media-manager-selected="saveModel()">
@@ -29,7 +35,7 @@
         <x-aura::button class="ml-4" x-on:click="$dialog.close()">
             {{ __('Close') }}
         </x-aura::button>
-        <x-aura::button.primary class="ml-4" wire:click="select">
+        <x-aura::button.primary class="ml-4" x-on:click="$wire.select([...selected]).then(() => { setTimeout(() => $dialog.close(), 100) })">
             {{ __('Select') }}
         </x-aura::button.primary>
     </div>

@@ -10,10 +10,24 @@
     oldSelected: null,
     field: @js($field),
     maxFilesReached: false,
+    _updatingFromSelectedRows: false,
 
     init() {
         Livewire.on('selectedRows', (updatedSelected) => {
-            this.selected = updatedSelected[0];
+            // Only update if values are actually different to prevent circular updates
+            const newSelected = updatedSelected[0] || [];
+            const currentSelected = this.selected || [];
+
+            // Compare arrays - if they're the same, don't update
+            if (JSON.stringify(newSelected.sort()) === JSON.stringify([...currentSelected].sort())) {
+                return;
+            }
+
+            this._updatingFromSelectedRows = true;
+            this.selected = [...newSelected];
+            this.$nextTick(() => {
+                this._updatingFromSelectedRows = false;
+            });
         });
 
         Livewire.on('rowIdsUpdated', (ids) => {
@@ -29,7 +43,10 @@
             if (this.field && this.field.max_files) {
                 this.maxFilesReached = value.length >= this.field.max_files;
             }
-            this.$dispatch('selection-changed', { selected: value, slug: this.field ? this.field.slug : null });
+            // Only dispatch selection-changed if NOT from selectedRows to prevent circular updates
+            if (!this._updatingFromSelectedRows) {
+                this.$dispatch('selection-changed', { selected: value, slug: this.field ? this.field.slug : null });
+            }
         });
 
         this.$watch('rows', (rows) => {
@@ -44,78 +61,65 @@
     },
 
     toggleRow(event, id) {
-        console.log('toggleRow called with:', { event, id });
-        console.log('Current state:', { rows: this.rows, selected: this.selected, lastSelectedId: this.lastSelectedId });
-
         if (!this.rows || !Array.isArray(this.rows)) {
             console.warn('this.rows is not an array, exiting toggleRow');
             return;
         }
 
-        this.$nextTick(() => {
-            console.log('Inside $nextTick');
+        // Use reassignment instead of mutation for proper reactivity with entangle
+        const idStr = String(id);
 
-            if (this.field && this.field.max_files === 1) {
-                console.log('Single file selection mode');
-                if (this.selected.includes(id.toString())) {
-                    console.log('Deselecting single item');
-                    this.selected = [];
-                } else {
-                    console.log('Selecting single item');
-                    this.selected = [id.toString()];
-                }
-            } else if (event.shiftKey && this.lastSelectedId !== null) {
-                console.log('Shift key pressed, last selected id:', this.lastSelectedId);
-                const lastIndex = this.rows.indexOf(this.lastSelectedId);
-                const currentIndex = this.rows.indexOf(id);
-                console.log('Indexes:', { lastIndex, currentIndex });
-
-                if (lastIndex === -1 || currentIndex === -1) {
-                    console.warn('Invalid indexes, exiting shift selection');
-                    return;
-                }
-
-                const start = Math.min(lastIndex, currentIndex);
-                const end = Math.max(lastIndex, currentIndex);
-                const rowsToToggle = this.rows.slice(start, end + 1);
-                console.log('Rows to toggle:', rowsToToggle);
-
-                const isLastSelected = this.selected.includes(this.lastSelectedId.toString());
-                console.log('Is last selected:', isLastSelected);
-
-                if (isLastSelected) {
-                    console.log('Adding rows to selection');
-                    const newSelection = [...new Set([...this.selected, ...rowsToToggle.map(String)])];
-                    if (this.field && this.field.max_files) {
-                        console.log('Applying max files limit:', this.field.max_files);
-                        this.selected = newSelection.slice(0, this.field.max_files);
-                    } else {
-                        this.selected = newSelection;
-                    }
-                } else {
-                    console.log('Removing rows from selection');
-                    this.selected = this.selected.filter(row => !rowsToToggle.includes(parseInt(row)));
-                }
+        if (this.field && this.field.max_files === 1) {
+            // Single file selection mode
+            if (this.selected.includes(idStr)) {
+                this.selected = [];
             } else {
-                console.log('Single click selection');
-                const index = this.selected.indexOf(id.toString());
-                console.log('Index:', index, this.selected, id.toString());
-                if (index === -1) {
-                    if (!this.field || !this.field.max_files || this.selected.length < this.field.max_files) {
-                        console.log('Adding item to selection');
-                        this.selected.push(id.toString());
-                    } else {
-                        console.warn('Max files limit reached, cannot add more');
-                    }
-                } else {
-                    console.log('Removing item from selection');
-                    this.selected.splice(index, 1);
-                }
+                this.selected = [idStr];
+            }
+        } else if (event.shiftKey && this.lastSelectedId !== null) {
+            // Shift-click range selection
+            const lastIndex = this.rows.indexOf(this.lastSelectedId);
+            const currentIndex = this.rows.indexOf(id);
+
+            if (lastIndex === -1 || currentIndex === -1) {
+                console.warn('Invalid indexes, exiting shift selection');
+                return;
             }
 
-            this.lastSelectedId = id;
-            console.log('Updated state:', { selected: this.selected, lastSelectedId: this.lastSelectedId });
-        });
+            const start = Math.min(lastIndex, currentIndex);
+            const end = Math.max(lastIndex, currentIndex);
+            const rowsToToggle = this.rows.slice(start, end + 1).map(String);
+
+            const isLastSelected = this.selected.includes(String(this.lastSelectedId));
+
+            if (isLastSelected) {
+                // Adding rows - use reassignment
+                let newSelection = [...new Set([...this.selected, ...rowsToToggle])];
+                if (this.field && this.field.max_files) {
+                    newSelection = newSelection.slice(0, this.field.max_files);
+                }
+                this.selected = newSelection;
+            } else {
+                // Removing rows - use reassignment
+                this.selected = this.selected.filter(row => !rowsToToggle.includes(String(row)));
+            }
+        } else {
+            // Single click selection - use reassignment instead of push/splice
+            const index = this.selected.indexOf(idStr);
+            if (index === -1) {
+                if (!this.field || !this.field.max_files || this.selected.length < this.field.max_files) {
+                    // Use spread to create new array instead of push
+                    this.selected = [...this.selected, idStr];
+                } else {
+                    console.warn('Max files limit reached, cannot add more');
+                }
+            } else {
+                // Use filter to create new array instead of splice
+                this.selected = this.selected.filter((_, i) => i !== index);
+            }
+        }
+
+        this.lastSelectedId = id;
     },
 
     selectCurrentPage() {
