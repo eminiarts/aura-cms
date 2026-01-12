@@ -88,11 +88,11 @@ class MediaManager extends Component
     // The entangle directive handles syncing automatically
 
     #[On('updateField')]
-    public function updateField($field)
+    public function updateField($data)
     {
         // Only update if this is our field
-        if ($field['slug'] == $this->fieldSlug) {
-            $this->selected = collect($field['value'])->map(fn ($id) => (string) $id)->values()->toArray();
+        if ($data['slug'] == $this->fieldSlug) {
+            $this->selected = collect($data['value'])->map(fn ($id) => (string) $id)->values()->toArray();
             // Don't dispatch selectedRows here to prevent circular updates
         }
     }
