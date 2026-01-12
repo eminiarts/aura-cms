@@ -53,7 +53,8 @@ class MediaManager extends Component
             ->toArray();
 
         // Dispatch the updateField event globally to ALL Livewire components
-        $this->dispatch('updateField', [
+        // Use named parameter 'data' to match the listener's signature: updateField($data)
+        $this->dispatch('updateField', data: [
             'slug' => $this->fieldSlug,
             'value' => $selected,
         ]);

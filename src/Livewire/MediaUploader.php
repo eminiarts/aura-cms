@@ -88,8 +88,8 @@ class MediaUploader extends Component
         }
 
         if ($this->field) {
-            // Emit update Field
-            $this->dispatch('updateField', [
+            // Emit update Field - use named parameter 'data' to match listener signature
+            $this->dispatch('updateField', data: [
                 'slug' => $this->field['slug'],
                 // merge the new attachments with the old ones
                 'value' => optional($this)->selected ? array_merge($this->selected, collect($attachments)->pluck('id')->toArray()) : collect($attachments)->pluck('id')->toArray(),
