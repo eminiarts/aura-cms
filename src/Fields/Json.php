@@ -6,6 +6,8 @@ class Json extends Field
 {
     public $edit = 'aura::fields.json';
 
+    public $tableColumnType = 'json';
+
     public $view = 'aura::fields.view-value';
 
     public function display($field, $value, $model)

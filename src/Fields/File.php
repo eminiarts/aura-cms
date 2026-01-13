@@ -8,6 +8,8 @@ class File extends Field
 
     public $optionGroup = 'Media Fields';
 
+    public $tableColumnType = 'json';
+
     public $view = 'aura::fields.view-value';
 
     public function get($class, $value, $field = null)
