@@ -7,7 +7,6 @@ use Aura\Base\Providers\AuthServiceProvider;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Foundation\Testing\Concerns\InteractsWithViews;
 use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
-use Intervention\Image\ImageServiceProvider;
 use Lab404\Impersonate\ImpersonateServiceProvider;
 use Laravel\Fortify\FortifyServiceProvider;
 use Livewire\LivewireServiceProvider;
@@ -80,6 +79,24 @@ class TestCase extends Orchestra
 
     // }
 
+    /**
+     * Get the Intervention Image service provider class.
+     *
+     * Intervention Image v3 moved the Laravel service provider to a separate class.
+     * - v2: Intervention\Image\ImageServiceProvider
+     * - v3: Intervention\Image\Laravel\ServiceProvider
+     */
+    protected function getImageServiceProvider(): string
+    {
+        // v3 service provider location
+        if (class_exists(\Intervention\Image\Laravel\ServiceProvider::class)) {
+            return \Intervention\Image\Laravel\ServiceProvider::class;
+        }
+
+        // v2 fallback
+        return \Intervention\Image\ImageServiceProvider::class;
+    }
+
     protected function getPackageProviders($app)
     {
         // Disable file uploads in Livewire before loading the provider
@@ -95,7 +112,7 @@ class TestCase extends Orchestra
             AuraServiceProvider::class,
             ImpersonateServiceProvider::class,
             RayServiceProvider::class,
-            ImageServiceProvider::class,
+            $this->getImageServiceProvider(),
         ];
     }
 }
