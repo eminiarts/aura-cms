@@ -408,9 +408,16 @@ test('scoped query on index page', function () {
     $user->update(['roles' => [$role->id]]);
     $this->actingAs($user);
 
-    // Create posts
-    $userPosts = Post::factory()->count(3)->create(['user_id' => $user->id]);
-    $otherPosts = Post::factory()->count(2)->create();
+    // Create posts with explicit unique titles to avoid flaky tests from Faker
+    $userPosts = collect([
+        Post::factory()->create(['user_id' => $user->id, 'title' => 'UserPost-Alpha-123']),
+        Post::factory()->create(['user_id' => $user->id, 'title' => 'UserPost-Beta-456']),
+        Post::factory()->create(['user_id' => $user->id, 'title' => 'UserPost-Gamma-789']),
+    ]);
+    $otherPosts = collect([
+        Post::factory()->create(['title' => 'OtherPost-Delta-111']),
+        Post::factory()->create(['title' => 'OtherPost-Epsilon-222']),
+    ]);
 
     // Make the request
     $response = $this->get(route('aura.post.index'));

@@ -24,7 +24,7 @@
     "require": {
         "php": "^8.2",
         "doctrine/dbal": "^3.6|^4.0",
-        "intervention/image": "^2.7|^3.0",
+        "intervention/image": "^2.7",
         "laravel/fortify": "^1.20",
         "lab404/laravel-impersonate": "^1.7.5",
         "laravel/prompts": "^0.3",
@@ -41,7 +41,7 @@
         "orchestra/testbench": "^9.0|^10.0",
         "pestphp/pest": "^3.0|^4.0",
         "pestphp/pest-plugin-laravel": "^3.0|^4.0",
-        "pestphp/pest-plugin-livewire": "^4.0",
+        "pestphp/pest-plugin-livewire": "^3.0|^4.0",
         "phpstan/extension-installer": "^1.1",
         "phpstan/phpstan-deprecation-rules": "^1.0|^2.0",
         "spatie/laravel-ray": "^1.32",
