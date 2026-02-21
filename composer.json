@@ -29,7 +29,7 @@
         "lab404/laravel-impersonate": "^1.7.5",
         "laravel/prompts": "^0.3",
         "laravel/sanctum": "^4.0",
-        "livewire/livewire": "^3.6",
+        "livewire/livewire": "^3.6|^4.0",
         "spatie/laravel-package-tools": "^1.16"
     },
     "require-dev": {
