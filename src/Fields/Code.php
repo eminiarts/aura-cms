@@ -8,6 +8,8 @@ class Code extends Field
 
     public $optionGroup = 'JS Fields';
 
+    public $tableColumnType = 'text';
+
     // public $view = 'components.fields.code';
 
     public function get($class, $value, $field = null)

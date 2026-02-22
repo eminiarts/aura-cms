@@ -7,7 +7,6 @@ use Illuminate\Console\Command;
 use Illuminate\Filesystem\Filesystem;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Process;
-use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 use Symfony\Component\Process\ExecutableFinder;
 
@@ -17,7 +16,32 @@ class CreateResourceMigration extends Command
 
     protected $files;
 
-    protected $signature = 'aura:create-resource-migration {resource}';
+    /**
+     * Relationship fields that use pivot tables instead of columns
+     */
+    protected $relationshipFieldTypes = [
+        'Aura\\Base\\Fields\\HasMany',
+        'Aura\\Base\\Fields\\HasOne',
+        'Aura\\Base\\Fields\\BelongsToMany',
+        'Aura\\Base\\Fields\\Tags',
+    ];
+
+    protected $signature = 'aura:create-resource-migration {resource} {--soft-deletes} {--no-timestamps}';
+
+    /**
+     * Fields that should not generate columns (structural/display only)
+     */
+    protected $skipFieldTypes = [
+        'Aura\\Base\\Fields\\Tab',
+        'Aura\\Base\\Fields\\Tabs',
+        'Aura\\Base\\Fields\\Panel',
+        'Aura\\Base\\Fields\\Group',
+        'Aura\\Base\\Fields\\Heading',
+        'Aura\\Base\\Fields\\HorizontalLine',
+        'Aura\\Base\\Fields\\View',
+        'Aura\\Base\\Fields\\ViewValue',
+        'Aura\\Base\\Fields\\LivewireComponent',
+    ];
 
     public function __construct(Filesystem $files)
     {
@@ -44,49 +68,35 @@ class CreateResourceMigration extends Command
             return 1;
         }
 
-        $tableName = Str::plural(Str::lower(class_basename($resourceClass)));
+        $tableName = Str::plural(Str::snake(class_basename($resourceClass)));
 
         $migrationName = "create_{$tableName}_table";
 
-        $baseFields = collect([
-            [
-                'name' => 'ID',
-                'type' => 'Aura\\Base\\Fields\\ID',
-                'slug' => 'id',
-            ],
-        ]);
-
+        // Get input fields from resource
         $fields = method_exists($resource, 'inputFields') ? $resource->inputFields() : [];
 
-        $combined = $baseFields->merge($fields)->merge(collect([
-            [
-                'name' => 'User Id',
-                'type' => 'Aura\\Base\\Fields\\BelongsTo',
-                'slug' => 'user_id',
-            ],
-            [
-                'name' => 'Team Id',
-                'type' => 'Aura\\Base\\Fields\\BelongsTo',
-                'slug' => 'team_id',
-            ],
-            [
-                'name' => 'created_at',
-                'type' => 'Aura\\Base\\Fields\\DateTime',
-                'slug' => 'created_at',
-            ],
-            [
-                'name' => 'updated_at',
-                'type' => 'Aura\\Base\\Fields\\DateTime',
-                'slug' => 'updated_at',
-            ],
-        ]));
+        // Filter out structural and relationship fields
+        $columnFields = collect($fields)->filter(function ($field) {
+            $type = $field['type'] ?? null;
 
-        $combined = $combined->unique('slug');
+            // Skip structural fields
+            if (in_array($type, $this->skipFieldTypes)) {
+                return false;
+            }
 
-        $schema = $this->generateSchema($combined);
+            // Skip relationship fields that use pivot tables
+            if (in_array($type, $this->relationshipFieldTypes)) {
+                return false;
+            }
+
+            return true;
+        });
+
+        $schema = $this->generateSchema($columnFields, $tableName);
 
         if ($this->migrationExists($migrationName)) {
             $migrationFile = $this->getMigrationPath($migrationName);
+            $this->warn("Migration '{$migrationName}' already exists. Updating...");
         } else {
             Artisan::call('make:migration', [
                 'name' => $migrationName,
@@ -112,43 +122,131 @@ class CreateResourceMigration extends Command
         // Down method
         $down = "Schema::dropIfExists('{$tableName}');";
         $pattern = '/(public function down\(\): void[\s\S]*?{)[\s\S]*?Schema::table\(.*?function \(Blueprint \$table\) \{[\s\S]*?\/\/[\s\S]*?\}\);[\s\S]*?\}/';
-        $replacement = '${1}'.PHP_EOL.'    '.$down.PHP_EOL.'}';
+        $replacement = '${1}'.PHP_EOL.'        '.$down.PHP_EOL.'    }';
         $replacedContent2 = preg_replace($pattern, $replacement, $replacedContent);
 
         $this->files->put($migrationFile, $replacedContent2);
 
         $this->info("Migration '{$migrationName}' created successfully.");
+        $this->newLine();
+        $this->table(['Field', 'Column Type'], $this->getFieldSummary($columnFields));
 
         // Run "pint" on the migration file
         $this->runPint($migrationFile);
+
+        return 0;
     }
 
     protected function generateColumn($field)
     {
-        $fieldInstance = app($field['type']);
-        $columnType = $fieldInstance->tableColumnType;
+        try {
+            $fieldInstance = app($field['type']);
+        } catch (\Exception $e) {
+            $this->warn("Could not instantiate field type '{$field['type']}' for '{$field['slug']}'. Skipping.");
 
-        $column = "\$table->{$columnType}('{$field['slug']}')";
+            return '';
+        }
 
-        if ($fieldInstance->tableNullable) {
+        $columnType = $fieldInstance->tableColumnType ?? 'string';
+        $slug = $field['slug'];
+
+        // Handle special column types
+        if ($columnType === 'bigIncrements') {
+            return "\$table->id();\n";
+        }
+
+        $column = "\$table->{$columnType}('{$slug}')";
+
+        // Add nullable unless explicitly set to false
+        if ($fieldInstance->tableNullable ?? true) {
             $column .= '->nullable()';
         }
 
-        return $column.";\n";
+        // Add index for BelongsTo (foreign key) fields
+        if ($field['type'] === 'Aura\\Base\\Fields\\BelongsTo') {
+            $column .= '->index()';
+        }
+
+        return $column.";\n            ";
     }
 
-    protected function generateSchema($fields)
+    protected function generateSchema($fields, $tableName)
     {
-        $schema = '';
+        $schema = "\n            ";
+        $schema .= "\$table->id();\n            ";
 
-        // Maybe custom Schema instead of Fields?
-        // $schema .= "$table->id();\n";
+        $indexes = [];
 
         foreach ($fields as $field) {
-            $schema .= $this->generateColumn($field);
+            // Skip if it's an ID field (already added)
+            if (($field['slug'] ?? '') === 'id') {
+                continue;
+            }
+
+            $column = $this->generateColumn($field);
+            if ($column) {
+                $schema .= $column;
+            }
+        }
+
+        // Add user_id
+        $schema .= "\$table->foreignId('user_id')->nullable()->index();\n            ";
+
+        // Add team_id if teams are enabled
+        if (config('aura.teams', true)) {
+            $schema .= "\$table->foreignId('team_id')->nullable()->index();\n            ";
+        }
+
+        // Add timestamps unless disabled
+        if (! $this->option('no-timestamps')) {
+            $schema .= "\$table->timestamps();\n            ";
+        }
+
+        // Add soft deletes if requested
+        if ($this->option('soft-deletes')) {
+            $schema .= "\$table->softDeletes();\n            ";
+        }
+
+        // Add composite index for team + type queries if teams enabled
+        if (config('aura.teams', true)) {
+            $schema .= "\n            // Indexes for common queries\n            ";
+            $schema .= "\$table->index(['team_id', 'created_at']);\n        ";
         }
 
         return $schema;
+    }
+
+    protected function getFieldSummary($fields)
+    {
+        $summary = [];
+
+        foreach ($fields as $field) {
+            if (($field['slug'] ?? '') === 'id') {
+                continue;
+            }
+
+            try {
+                $fieldInstance = app($field['type']);
+                $columnType = $fieldInstance->tableColumnType ?? 'string';
+                $summary[] = [$field['slug'], $columnType];
+            } catch (\Exception $e) {
+                $summary[] = [$field['slug'], 'skipped'];
+            }
+        }
+
+        $summary[] = ['user_id', 'foreignId'];
+        if (config('aura.teams', true)) {
+            $summary[] = ['team_id', 'foreignId'];
+        }
+        if (! $this->option('no-timestamps')) {
+            $summary[] = ['created_at', 'timestamp'];
+            $summary[] = ['updated_at', 'timestamp'];
+        }
+        if ($this->option('soft-deletes')) {
+            $summary[] = ['deleted_at', 'timestamp'];
+        }
+
+        return $summary;
     }
 
     protected function getMigrationPath($name)
@@ -161,6 +259,7 @@ class CreateResourceMigration extends Command
                 return $file;
             }
         }
+
     }
 
     protected function migrationExists($name)
@@ -179,13 +278,14 @@ class CreateResourceMigration extends Command
 
     protected function runPint($migrationFile)
     {
+        // Disabled for now
         return;
+
         $command = [
             (new ExecutableFinder)->find('php', 'php', [
                 '/usr/local/bin',
                 '/opt/homebrew/bin',
             ]),
-
             'vendor/bin/pint', $migrationFile,
         ];
 
