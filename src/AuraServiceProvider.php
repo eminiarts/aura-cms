@@ -28,6 +28,10 @@ use Aura\Base\Livewire\CreateResource;
 use Aura\Base\Livewire\EditResourceField;
 use Aura\Base\Livewire\GlobalSearch;
 use Aura\Base\Livewire\InviteUser;
+use Aura\Base\Livewire\Teams\CreateTeamForm;
+use Aura\Base\Livewire\Teams\DeleteTeamForm;
+use Aura\Base\Livewire\Teams\TeamMemberManager;
+use Aura\Base\Livewire\Teams\UpdateTeamNameForm;
 use Aura\Base\Livewire\MediaManager;
 use Aura\Base\Livewire\MediaUploader;
 use Aura\Base\Livewire\Modals;
@@ -148,6 +152,10 @@ class AuraServiceProvider extends PackageServiceProvider
             'aura::create-resource' => CreateResource::class,
             'aura::resource-editor' => ResourceEditor::class,
             'aura::invite-user' => InviteUser::class,
+            'teams.update-team-name-form' => UpdateTeamNameForm::class,
+            'teams.create-team-form' => CreateTeamForm::class,
+            'teams.team-member-manager' => TeamMemberManager::class,
+            'teams.delete-team-form' => DeleteTeamForm::class,
             'aura::modals' => Modals::class,
             'aura::plugins-page' => PluginsPage::class,
             'aura::choose-template' => ChooseTemplate::class,
