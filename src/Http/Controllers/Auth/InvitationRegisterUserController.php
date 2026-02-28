@@ -53,6 +53,9 @@ class InvitationRegisterUserController extends Controller
             'fields' => ['roles' => [$teamInvitation->role]],
         ]);
 
+        // Attach the user to the team with the assigned role via the pivot table
+        $user->roles()->syncWithPivotValues([$teamInvitation->role], ['team_id' => $team->id]);
+
         // Delete the invitation
         $teamInvitation->delete();
 

@@ -7,8 +7,6 @@ use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\Gate;
-use Laravel\Jetstream\Contracts\AddsTeamMembers;
-use Laravel\Jetstream\Jetstream;
 
 class TeamInvitationController extends Controller
 {
@@ -20,21 +18,24 @@ class TeamInvitationController extends Controller
      */
     public function accept(Request $request, $invitationId)
     {
-        $model = new TeamInvitation;
+        $invitation = TeamInvitation::whereKey($invitationId)->firstOrFail();
 
-        $invitation = $model::whereKey($invitationId)->firstOrFail();
+        $user = $request->user();
 
-        app(AddsTeamMembers::class)->add(
-            $invitation->team->owner,
-            $invitation->team,
-            $invitation->email,
-            $invitation->role
-        );
+        abort_unless($user && $user->email === $invitation->email, 403, 'This invitation is not for you.');
+
+        $team = $invitation->team;
+
+        // Attach user to the team with the correct role
+        $user->roles()->syncWithPivotValues([$invitation->role], ['team_id' => $team->id]);
+
+        // Set the user's current team
+        $user->update(['current_team_id' => $team->id]);
 
         $invitation->delete();
 
-        return redirect(config('fortify.home'))->banner(
-            __('Great! You have accepted the invitation to join the :team team.', ['team' => $invitation->team->name]),
+        return redirect(config('aura.auth.redirect'))->with('success',
+            __('Great! You have accepted the invitation to join the :team team.', ['team' => $team->name]),
         );
     }
 
@@ -46,9 +47,7 @@ class TeamInvitationController extends Controller
      */
     public function destroy(Request $request, $invitationId)
     {
-        $model = Jetstream::teamInvitationModel();
-
-        $invitation = $model::whereKey($invitationId)->firstOrFail();
+        $invitation = TeamInvitation::whereKey($invitationId)->firstOrFail();
 
         if (! Gate::forUser($request->user())->check('removeTeamMember', $invitation->team)) {
             throw new AuthorizationException;
