@@ -7,7 +7,7 @@ use Aura\Base\Providers\AuthServiceProvider;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Foundation\Testing\Concerns\InteractsWithViews;
 use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
-use Intervention\Image\ImageServiceProvider;
+use Intervention\Image\Laravel\ServiceProvider as ImageServiceProvider;
 use Lab404\Impersonate\ImpersonateServiceProvider;
 use Laravel\Fortify\FortifyServiceProvider;
 use Livewire\LivewireServiceProvider;

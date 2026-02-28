@@ -39,6 +39,10 @@ class TeamPolicy
             return false;
         }
 
+        if (! config('aura.auth.create_teams', true)) {
+            return false;
+        }
+
         if ($user->isAuraGlobalAdmin()) {
             return true;
         }
