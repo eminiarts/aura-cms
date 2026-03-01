@@ -1,5 +1,5 @@
 <div class="p-6">
-    <form wire:submit="save">
+    <form wire:submit.prevent="save">
         <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">{{ __('Invite User') }}</h2>
 
         <div class="flex flex-wrap">
@@ -13,7 +13,7 @@
         </div>
 
         <div class="flex justify-end gap-3 mt-4">
-            <x-aura::button.transparent type="button" x-on:click="$dispatch('close-invite-modal')">
+            <x-aura::button.transparent type="button" wire:click="$parent.closeInviteModal">
                 {{ __('Cancel') }}
             </x-aura::button.transparent>
 

@@ -342,3 +342,25 @@ test('invited user has only the assigned role and can only access their team', f
     expect($invitedUser->hasRole('user'))->toBeTrue();
     expect($invitedUser->hasRole('super_admin'))->toBeFalse();
 });
+
+test('modal stays open on validation error - closeInviteModal not dispatched', function () {
+    Livewire::test(InviteUser::class)
+        ->set('form.fields.email', '')
+        ->set('form.fields.role', '')
+        ->call('save')
+        ->assertHasErrors(['form.fields.email', 'form.fields.role'])
+        ->assertNotDispatched('closeModal')
+        ->assertNotDispatched('closeInviteModal');
+});
+
+test('modal closes on successful save - closeInviteModal dispatched', function () {
+    $role = Role::first();
+
+    Livewire::test(InviteUser::class)
+        ->set('form.fields.email', 'newuser@test.ch')
+        ->set('form.fields.role', $role->id)
+        ->call('save')
+        ->assertHasNoErrors()
+        ->assertDispatched('closeModal')
+        ->assertDispatched('closeInviteModal');
+});
