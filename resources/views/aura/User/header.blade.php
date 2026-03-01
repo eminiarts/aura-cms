@@ -49,16 +49,13 @@
 </div>
 
 @if(config('aura.auth.user_invitations'))
-    {{-- Simple inline modal - no x-dialog, no x-teleport --}}
-    <div x-data="{ open: @entangle('showInviteUserModal') }" x-on:keydown.escape.window="open = false" x-on:close-invite-modal.window="open = false">
-        {{-- Backdrop overlay --}}
-        <div x-show="open" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" x-transition:leave="transition ease-in duration-150" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0" x-on:click="open = false" class="fixed inset-0 bg-gray-900/50 dark:bg-gray-900/70" style="z-index: 99;" x-cloak></div>
+    {{-- Backdrop --}}
+    <div class="{{ $this->showInviteUserModal ? 'fixed inset-0' : 'hidden' }}" style="z-index: 99; background: rgba(17,24,39,0.5);" wire:click="$toggle('showInviteUserModal')"></div>
 
-        {{-- Modal panel --}}
-        <div x-show="open" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 scale-95" x-transition:enter-end="opacity-100 scale-100" x-transition:leave="transition ease-in duration-150" x-transition:leave-start="opacity-100 scale-100" x-transition:leave-end="opacity-0 scale-95" class="fixed inset-0 flex items-center justify-center p-4" style="z-index: 100;" x-cloak>
-            <div class="bg-white dark:bg-gray-800 rounded-xl shadow-xl w-full max-w-lg" x-on:click.stop>
-                @livewire('aura::invite-user')
-            </div>
+    {{-- Modal - always rendered, toggled via CSS class --}}
+    <div class="{{ $this->showInviteUserModal ? 'fixed inset-0 flex items-center justify-center p-4' : 'hidden' }}" style="z-index: 100;">
+        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-xl w-full max-w-lg" wire:click.stop>
+            @livewire('aura::invite-user')
         </div>
     </div>
 @endif
