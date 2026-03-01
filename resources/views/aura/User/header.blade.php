@@ -15,7 +15,7 @@
     <div>
         <div>
             @if(config('aura.auth.user_invitations'))
-                <x-aura::button.light wire:click.prevent="$dispatch('openModal', { component: 'aura::invite-user'})">
+                <x-aura::button.light wire:click.prevent="$toggle('showInviteUserModal')">
                     <x-slot:icon>
                         <x-aura::icon icon="plus" />
                         </x-slot>
@@ -47,3 +47,11 @@
         </div>
     </div>
 </div>
+
+@if(config('aura.auth.user_invitations'))
+    <x-aura::dialog wire:model="showInviteUserModal">
+        <x-aura::dialog.panel>
+            @livewire('aura::invite-user')
+        </x-aura::dialog.panel>
+    </x-aura::dialog>
+@endif

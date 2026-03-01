@@ -103,6 +103,7 @@ class InviteUser extends Component
         $this->notify('Erfolgreich eingeladen.');
 
         $this->dispatch('closeModal');
+        $this->dispatch('closeInviteModal');
         $this->dispatch('refreshTable');
     }
 }
