@@ -364,3 +364,13 @@ test('modal closes on successful save - closeInviteModal dispatched', function (
         ->assertDispatched('closeModal')
         ->assertDispatched('closeInviteModal');
 });
+
+test('validation error messages use friendly field names', function () {
+    Livewire::test(InviteUser::class)
+        ->set('form.fields.email', '')
+        ->set('form.fields.role', '')
+        ->call('save')
+        ->assertHasErrors(['form.fields.email', 'form.fields.role'])
+        ->assertSee('The email field is required.')
+        ->assertSee('The role field is required.');
+});
