@@ -2,16 +2,17 @@
     @forelse($modals as $id => $modal)
         @if($modal['active'])
             {{-- Overlay --}}
-            <div class="fixed inset-0 bg-black/25 z-[50]" wire:click="closeModal('{{ $id }}')"></div>
+            <div class="fixed inset-0 w-screen h-screen bg-black/25" style="z-index: 99;" wire:click="closeModal('{{ $id }}')"></div>
 
             {{-- Modal Panel --}}
-            <div class="fixed inset-0 overflow-y-auto z-[51] flex items-center justify-center p-4"
+            <div class="fixed inset-0 w-screen h-screen overflow-y-auto flex items-end sm:items-center justify-center p-0 sm:p-4 pt-[30%] sm:pt-0"
+                 style="z-index: 100;"
                  wire:key="modal-{{ $id }}">
-                <div class="relative w-full bg-white rounded-xl shadow-lg dark:bg-gray-800 {{ $modal['modalAttributes']['modalClasses'] ?? 'max-w-4xl' }}"
+                <div class="relative w-full bg-white rounded-t-xl sm:rounded-b-xl shadow-lg dark:bg-gray-800 {{ $modal['modalAttributes']['modalClasses'] ?? 'max-w-4xl' }}"
                      wire:click.stop="">
 
                     {{-- Close Button --}}
-                    <div class="absolute top-0 right-0 pt-4 pr-4 z-[3]">
+                    <div class="absolute top-0 right-0 pt-4 pr-4" style="z-index: 3;">
                         <button type="button" wire:click="closeModal('{{ $id }}')"
                             class="inline-flex text-gray-500 dark:text-gray-200 bg-transparent hover:bg-gray-50 dark:hover:bg-gray-700 px-4 py-2.5 text-sm font-semibold rounded-lg">
                             <span class="sr-only">Close modal</span>
@@ -30,4 +31,10 @@
         @endif
     @empty
     @endforelse
+
+    @if(collect($modals)->where('active', true)->count() > 0)
+        <style>
+            .aura-sidebar-bg, .aura-navigation > .relative { visibility: hidden !important; }
+        </style>
+    @endif
 </div>
