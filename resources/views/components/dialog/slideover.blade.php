@@ -1,20 +1,34 @@
-<template x-teleport="body">
-    <div x-on:click.stop="console.log('stop here')">
-    <div x-dialog x-model="dialogOpen" style="display: none" class="overflow-y-auto fixed inset-0 z-10 text-left sm:pt-0" >
+<div x-on:click.stop="">
+    <div x-show="dialogOpen" style="display: none"
+        class="overflow-y-auto fixed inset-0 z-[50] text-left sm:pt-0"
+        x-transition:enter="transition ease-out duration-300"
+        x-transition:enter-start="opacity-0"
+        x-transition:enter-end="opacity-100"
+        x-transition:leave="transition ease-in duration-300"
+        x-transition:leave-start="opacity-100"
+        x-transition:leave-end="opacity-0"
+        x-on:keydown.escape.window="dialogOpen = false"
+        role="dialog"
+        aria-modal="true">
         <!-- Overlay -->
-        <div x-dialog:overlay x-transition:enter.opacity class="fixed inset-0 bg-black/25"></div>
+        <div x-on:click="dialogOpen = false" class="fixed inset-0 bg-black/25"></div>
 
         <!-- Panel -->
-        <div x-on:click="$dialog.close()" class="fixed inset-y-0 right-0 p-0 w-full max-w-lg">
-            <div x-on:click.stop="" x-dialog:panel x-transition:enter="transition ease-out duration-300"
-                x-transition:enter-start="translate-x-full" x-transition:enter-end="translate-x-0"
-                x-transition:leave="transition ease-in duration-300" x-transition:leave-start="translate-x-0"
-                x-transition:leave-end="translate-x-full" class="w-full h-full" x-on:click.outside="$dialog.close()">
+        <div x-on:click="dialogOpen = false" class="fixed inset-y-0 right-0 p-0 w-full max-w-lg">
+            <div x-on:click.stop=""
+                x-show="dialogOpen"
+                x-transition:enter="transition ease-out duration-300"
+                x-transition:enter-start="translate-x-full"
+                x-transition:enter-end="translate-x-0"
+                x-transition:leave="transition ease-in duration-300"
+                x-transition:leave-start="translate-x-0"
+                x-transition:leave-end="translate-x-full"
+                class="w-full h-full">
                 <div class="flex overflow-y-auto flex-col justify-between h-full bg-white shadow-lg">
 
                     <!-- Close Button -->
                     <div class="absolute top-0 right-0 pt-4 pr-4 z-[3]">
-                        <div x-on:click="$dialog.close()"
+                        <div x-on:click="dialogOpen = false"
                             class="p-2 text-gray-600 bg-gray-50 rounded-lg cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2">
                             <span class="sr-only">Close modal</span>
                             <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 20 20"
@@ -41,5 +55,4 @@
             </div>
         </div>
     </div>
-    </div>
-</template>
+</div>
