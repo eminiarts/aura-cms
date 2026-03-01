@@ -1,5 +1,7 @@
+@props(['open' => false])
+
 <div
-    x-data="{ dialogOpen: false }"
+    x-data="{ dialogOpen: @js($open) }"
     x-modelable="dialogOpen"
     {{ $attributes }}
     tabindex="-1"

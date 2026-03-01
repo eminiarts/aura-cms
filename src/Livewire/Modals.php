@@ -26,8 +26,15 @@ class Modals extends Component
     }
 
     #[On('openModal')]
-    public function openModal($component, $arguments = [], $modalAttributes = []): void
+    public function openModal($component = null, $arguments = [], $modalAttributes = []): void
     {
+        // Handle Livewire 3 dispatch format where all params come as a single array
+        if (is_array($component) && isset($component['component'])) {
+            $modalAttributes = $component['modalAttributes'] ?? [];
+            $arguments = $component['arguments'] ?? [];
+            $component = $component['component'];
+        }
+
         $id = md5($component.serialize($arguments));
 
         // Resolve component class - handle both namespaced and non-namespaced components
@@ -58,8 +65,6 @@ class Modals extends Component
 
     public function render()
     {
-        // ray($this->modals)->blue(); // This will show the contents of $modals in Ray
-
         return view('aura::livewire.modals');
     }
 }
