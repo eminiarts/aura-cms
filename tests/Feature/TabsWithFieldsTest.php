@@ -2,7 +2,7 @@
 
 use Aura\Base\Resource;
 
-class TabsWithFieldsModel extends Resource
+class TabsWithFieldsTestModel extends Resource
 {
     public static ?string $slug = 'page';
 
@@ -104,14 +104,14 @@ class TabsWithFieldsModel extends Resource
                 ],
             ],
             [
-                'name' => 'E-Mail für Rechnung',
+                'name' => 'E-Mail fuer Rechnung',
                 'type' => 'Aura\\Base\\Fields\\Text',
                 'slug' => 'invoice_email',
                 'on_index' => false,
                 'style' => [
                     'width' => '100',
                 ],
-                'instructions' => 'E-Mail für Rechnung. Falls keine angegeben wird, wird die E-Mail des Users verwendet.',
+                'instructions' => 'E-Mail fuer Rechnung.',
             ],
             [
                 'name' => 'Name',
@@ -181,7 +181,7 @@ class TabsWithFieldsModel extends Resource
 
             [
                 'type' => 'Aura\\Base\\Fields\\Tab',
-                'name' => 'Öffentliches Profil',
+                'name' => 'Oeffentliches Profil',
                 'slug' => 'tab-profile',
                 'global' => true,
             ],
@@ -196,13 +196,13 @@ class TabsWithFieldsModel extends Resource
             ],
 
             [
-                'name' => 'Profil öffentlich',
+                'name' => 'Profil oeffentlich',
                 'type' => 'Aura\\Base\\Fields\\Boolean',
                 'validation' => '',
                 'conditional_logic' => [],
                 'on_index' => false,
                 'slug' => 'public_profile',
-                'instructions' => 'Dürfen andere Member dein Profil sehen?',
+                'instructions' => 'Duerfen andere Member dein Profil sehen?',
             ],
 
             [
@@ -217,7 +217,7 @@ class TabsWithFieldsModel extends Resource
             ],
             [
                 'name' => 'Art des Accounts',
-                'placeholder' => 'Art des Accountes auswählen...',
+                'placeholder' => 'Art des Accountes auswaehlen...',
                 'type' => 'Aura\\Base\\Fields\\Select',
                 'validation' => '',
 
@@ -358,30 +358,79 @@ class TabsWithFieldsModel extends Resource
                 ],
             ],
             [
-                'name' => '2FA',
+                'name' => 'Delete View',
                 'type' => 'Aura\\Base\\Fields\\View',
                 'view' => 'aura::profile.delete-user-form',
                 'validation' => '',
                 'conditional_logic' => [],
-                'slug' => '2fa',
+                'slug' => 'delete-view',
             ],
 
         ];
     }
 }
 
-test('fields get grouped when field group is true', function () {
-    $model = new TabsWithFieldsModel;
-
+test('complex form fields are grouped into single Tabs wrapper', function () {
+    $model = new TabsWithFieldsTestModel;
     $fields = $model->getGroupedFields();
 
-    expect($fields)->toBeArray();
+    expect($fields)->toBeArray()
+        ->and($fields)->toHaveCount(1)
+        ->and($fields[0]['name'])->toBe('Aura\Base\Fields\Tabs');
+});
 
-    $this->assertCount(1, $fields);
-    $this->assertEquals($fields[0]['name'], 'Aura\Base\Fields\Tabs');
-    $this->assertCount(4, $fields[0]['fields']);
-    $this->assertEquals($fields[0]['fields'][0]['name'], 'User details');
-    $this->assertEquals($fields[0]['fields'][1]['name'], 'Öffentliches Profil');
-    $this->assertEquals($fields[0]['fields'][0]['fields'][0]['name'], 'Personal Infos');
+test('complex form has correct number of tabs', function () {
+    $model = new TabsWithFieldsTestModel;
+    $fields = $model->getGroupedFields();
 
+    expect($fields[0]['fields'])->toHaveCount(4);
+});
+
+test('tabs have correct names in order', function () {
+    $model = new TabsWithFieldsTestModel;
+    $fields = $model->getGroupedFields();
+
+    expect($fields[0]['fields'][0]['name'])->toBe('User details')
+        ->and($fields[0]['fields'][1]['name'])->toBe('Oeffentliches Profil')
+        ->and($fields[0]['fields'][2]['name'])->toBe('2FA')
+        ->and($fields[0]['fields'][3]['name'])->toBe('Delete');
+});
+
+test('first tab contains panel with nested fields', function () {
+    $model = new TabsWithFieldsTestModel;
+    $fields = $model->getGroupedFields();
+
+    $userDetailsTab = $fields[0]['fields'][0];
+    $firstPanel = $userDetailsTab['fields'][0];
+
+    expect($firstPanel['name'])->toBe('Personal Infos')
+        ->and($firstPanel['type'])->toBe('Aura\Base\Fields\Panel');
+});
+
+test('panels contain text fields', function () {
+    $model = new TabsWithFieldsTestModel;
+    $fields = $model->getGroupedFields();
+
+    $userDetailsTab = $fields[0]['fields'][0];
+    $personalInfosPanel = $userDetailsTab['fields'][0];
+
+    // Check that there are fields inside the panel
+    expect($personalInfosPanel['fields'])->toBeArray()
+        ->and($personalInfosPanel['fields'])->not->toBeEmpty();
+
+    // Find the name field
+    $nameField = collect($personalInfosPanel['fields'])->firstWhere('slug', 'name');
+    expect($nameField)->not->toBeNull()
+        ->and($nameField['name'])->toBe('Name*')
+        ->and($nameField['type'])->toBe('Aura\Base\Fields\Text');
+});
+
+test('global tabs are properly identified', function () {
+    $model = new TabsWithFieldsTestModel;
+    $fields = $model->getGroupedFields();
+
+    // Each tab should have been set as global
+    foreach ($fields[0]['fields'] as $tab) {
+        expect($tab['type'])->toBe('Aura\Base\Fields\Tab');
+    }
 });

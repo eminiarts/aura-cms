@@ -163,3 +163,52 @@ test('post view displays content correctly', function () {
         ->assertSee('Post Title for Content Test')
         ->assertOk();
 });
+
+test('post view livewire component has model property', function () {
+    $post = Post::create([
+        'title' => 'Test Post Model',
+        'content' => 'Test Content',
+        'type' => 'Post',
+        'status' => 'publish',
+    ]);
+
+    Aura::fake();
+    Aura::setModel(new Post);
+
+    $component = livewire('aura::resource-view', [$post->id]);
+
+    expect($component->model)->toBeInstanceOf(Post::class);
+    expect($component->model->id)->toBe($post->id);
+    expect($component->model->title)->toBe('Test Post Model');
+});
+
+test('post has correct resource slug', function () {
+    $post = Post::create([
+        'title' => 'Test Post Slug',
+        'type' => 'Post',
+        'status' => 'publish',
+    ]);
+
+    expect(Post::getSlug())->toBe('post');
+    expect($post->getSlug())->toBe('post');
+});
+
+test('post view returns correct view url', function () {
+    $post = Post::create([
+        'title' => 'Test Post URL',
+        'type' => 'Post',
+        'status' => 'publish',
+    ]);
+
+    expect($post->viewUrl())->toBe(route('aura.post.view', ['id' => $post->id]));
+});
+
+test('post view returns correct edit url', function () {
+    $post = Post::create([
+        'title' => 'Test Post Edit URL',
+        'type' => 'Post',
+        'status' => 'publish',
+    ]);
+
+    expect($post->editUrl())->toBe(route('aura.post.edit', ['id' => $post->id]));
+});

@@ -174,11 +174,7 @@ class Edit extends Component
     #[On('saveModel')]
     public function save()
     {
-
-        ray($this->form);
         $this->validate();
-
-        ray($this->form);
 
         // unset this post fields group
         if ($this->model->usesCustomTable()) {

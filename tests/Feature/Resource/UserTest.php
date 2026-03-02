@@ -8,16 +8,16 @@ beforeEach(function () {
 });
 
 it('has a searchable name', function () {
-    $role = User::first();
+    $user = User::first();
 
-    expect($role->getSearchableFields())->toHaveCount(2);
-    expect($role->getSearchableFields()->pluck('slug')->toArray())->toMatchArray(['name', 'email']);
+    expect($user->getSearchableFields())->toHaveCount(2);
+    expect($user->getSearchableFields()->pluck('slug')->toArray())->toMatchArray(['name', 'email']);
 });
 
 test('check User Fields', function () {
-    $slug = new User;
+    $user = new User;
 
-    $fields = collect($slug->getFields());
+    $fields = collect($user->getFields());
 
     expect($fields->firstWhere('slug', 'avatar'))->not->toBeNull();
     expect($fields->firstWhere('slug', 'name'))->not->toBeNull();
@@ -38,7 +38,6 @@ test('User isSuperAdmin() false', function () {
 });
 
 test('User roles()', function () {
-
     $role = Role::first();
 
     expect($this->user->roles->pluck('id')->toArray())->toBe([$role->id]);
@@ -57,4 +56,69 @@ test('User hasPermission()', function () {
 
 test('User hasPermissionTo()', function () {
     expect($this->user->hasPermissionTo('test', Role::first()))->toBeTrue();
+});
+
+test('user uses custom table', function () {
+    $user = new User;
+
+    expect($user->usesCustomTable())->toBeTrue();
+    expect($user->getTable())->toBe('users');
+});
+
+test('user uses meta for additional fields', function () {
+    // User resource uses meta for additional dynamic fields
+    expect(User::$usesMeta)->toBeTrue();
+});
+
+test('user has correct type and slug', function () {
+    expect(User::getType())->toBe('User');
+    expect(User::getSlug())->toBe('user');
+});
+
+test('user can be created with factory', function () {
+    $user = User::factory()->create([
+        'name' => 'Test User',
+        'email' => 'testuser@example.com',
+    ]);
+
+    expect($user->name)->toBe('Test User');
+    expect($user->email)->toBe('testuser@example.com');
+
+    $this->assertDatabaseHas('users', [
+        'name' => 'Test User',
+        'email' => 'testuser@example.com',
+    ]);
+});
+
+test('user can be updated', function () {
+    $user = User::factory()->create([
+        'name' => 'Original Name',
+    ]);
+
+    $user->update([
+        'name' => 'Updated Name',
+    ]);
+
+    $user->refresh();
+
+    expect($user->name)->toBe('Updated Name');
+});
+
+test('user title method returns name', function () {
+    expect($this->user->title())->toContain($this->user->name);
+});
+
+test('user has actions defined', function () {
+    $user = new User;
+
+    $actions = $user->actions();
+    expect($actions)->toBeArray();
+});
+
+test('user can have team relationship', function () {
+    expect($this->user->currentTeam)->not->toBeNull();
+});
+
+test('user has current_team_id attribute', function () {
+    expect($this->user->current_team_id)->not->toBeNull();
 });

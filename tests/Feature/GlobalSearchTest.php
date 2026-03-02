@@ -5,7 +5,6 @@ use Aura\Base\Livewire\GlobalSearch;
 use Aura\Base\Resource;
 use Livewire\Livewire;
 
-// Before each test, create a Superadmin and login
 beforeEach(function () {
     Aura::fake();
     Aura::registerResources([
@@ -16,7 +15,6 @@ beforeEach(function () {
     $this->actingAs($this->user = createSuperAdmin());
 });
 
-// Create Resource for this test
 class GlobalSearchModel extends Resource
 {
     public static $singularName = 'SearchPost';
@@ -57,9 +55,7 @@ class GlobalSearchModel extends Resource
     }
 }
 
-test('global search can find models by title', function () {
-
-    // Create test models
+test('can find models by title', function () {
     $posts = collect([
         GlobalSearchModel::create([
             'title' => 'First Test Post',
@@ -88,80 +84,66 @@ test('global search can find models by title', function () {
         ]),
     ]);
 
-    // Test global search component
     Livewire::test(GlobalSearch::class)
         ->set('search', 'Special')
         ->assertSee('Third Special Post')
         ->assertDontSee('First Test Post')
         ->assertDontSee('Second Test Post');
 
-    // Test searching by content
     Livewire::test(GlobalSearch::class)
         ->set('search', 'Unique content')
         ->assertSee('Fifth Unique Post');
 
-    // Test partial matches
     Livewire::test(GlobalSearch::class)
         ->set('search', 'Test')
         ->assertSee('First Test Post')
         ->assertSee('Second Test Post');
 });
 
-test('global search respects searchable field configuration', function () {
-
+test('respects searchable field configuration', function () {
     $post = GlobalSearchModel::create([
         'title' => 'Searchable Title',
         'content2' => 'Searchable Content',
         'description' => 'Unsearchable Description',
     ]);
 
-    // Should find by title
     Livewire::test(GlobalSearch::class)
         ->set('search', 'Searchable Title')
         ->assertSee('Searchable Title');
 
-    // Should find by content
     Livewire::test(GlobalSearch::class)
         ->set('search', 'Searchable Content')
         ->assertSee('Searchable Title');
 
-    // Should not find by description
     Livewire::test(GlobalSearch::class)
         ->set('search', 'Unsearchable Description')
         ->assertDontSee('Searchable Title');
 });
 
-test('global search can be disabled via config', function () {
-
-    // Create a test model
+test('can be disabled via config', function () {
     $post = GlobalSearchModel::create([
         'title' => 'Test Post',
         'content2' => 'Test Content',
         'description' => 'Test Description',
     ]);
 
-    // First verify search works with feature enabled
     config(['aura.features.global_search' => true]);
 
     $this->get(route('aura.dashboard'))
         ->assertOk()
         ->assertSee('global-search');
 
-    // Now disable global search
     config(['aura.features.global_search' => false]);
 
     $this->get(route('aura.dashboard'))
         ->assertOk()
         ->assertDontSee('global-search');
 
-    // Verify the component doesn't work when disabled
     Livewire::test(GlobalSearch::class)
         ->assertStatus(403);
 });
 
-test('global search returns empty when no matches found', function () {
-
-    // Create some test models
+test('returns empty when no matches found', function () {
     $posts = collect([
         GlobalSearchModel::create([
             'title' => 'First Post',
@@ -175,7 +157,6 @@ test('global search returns empty when no matches found', function () {
         ]),
     ]);
 
-    // Search for non-existent term
     Livewire::test(GlobalSearch::class)
         ->set('search', 'NonExistentTerm')
         ->assertSee('No results')

@@ -26,7 +26,6 @@ class MultipleTabsWithPanelsExcludeModel extends Resource
                 'name' => 'Tab 1 in Panel',
                 'type' => 'Aura\\Base\\Fields\\Tab',
                 'slug' => 'tab1-1',
-                // 'wrap' => true,
             ],
             [
                 'name' => 'Text 1',
@@ -83,32 +82,60 @@ class MultipleTabsWithPanelsExcludeModel extends Resource
     }
 }
 
-test('panel is underneath tabs, exclude level 2', function () {
+test('root structure has single Tabs wrapper', function () {
     $model = new MultipleTabsWithPanelsExcludeModel;
-
     $fields = $model->getGroupedFields();
 
-    $this->assertCount(1, $fields);
+    expect($fields)->toHaveCount(1)
+        ->and($fields[0]['name'])->toBe('Aura\Base\Fields\Tabs');
+});
 
-    expect($fields[0]['name'])->toBe('Aura\Base\Fields\Tabs');
-    expect($fields[0]['fields'][0]['name'])->toBe('Tab 1');
+test('Tab 1 contains Panel 1 as child', function () {
+    $model = new MultipleTabsWithPanelsExcludeModel;
+    $fields = $model->getGroupedFields();
 
-    // Check Panel 1
-    expect($fields[0]['fields'][0]['fields'][0]['name'])->toBe('Panel 1');
-    expect($fields[0]['fields'][0]['fields'][0]['_id'])->toBe(3);
-    expect($fields[0]['fields'][0]['fields'][0]['_parent_id'])->toBe(2);
+    $tab1 = $fields[0]['fields'][0];
 
-    // Check Panel 2 - should be at same level as Panel 1's tabs due to exclude_level=2
-    $panel2 = $fields[0]['fields'][0]['fields'][0]['fields'][1];
-    expect($panel2['name'])->toBe('Panel 2');
-    expect($panel2['_id'])->toBe(9);
-    expect($panel2['_parent_id'])->toBe(3); // Should be child of Panel 1
-    expect($panel2['exclude_level'])->toBe(3);
+    expect($tab1['name'])->toBe('Tab 1')
+        ->and($tab1['fields'][0]['name'])->toBe('Panel 1')
+        ->and($tab1['fields'][0]['_id'])->toBe(3)
+        ->and($tab1['fields'][0]['_parent_id'])->toBe(2);
+});
 
-    // Verify Panel 2's tabs structure
-    expect($panel2['fields'][0]['name'])->toBe('Aura\Base\Fields\Tabs');
-    expect($panel2['fields'][0]['fields'])->toHaveCount(2);
-    expect($panel2['fields'][0]['fields'][0]['name'])->toBe('Tab 1 in Panel2');
-    expect($panel2['fields'][0]['fields'][1]['name'])->toBe('Tab 2 in Panel2');
+test('Panel 2 has exclude_level 3 and is nested inside Panel 1', function () {
+    $model = new MultipleTabsWithPanelsExcludeModel;
+    $fields = $model->getGroupedFields();
 
+    $panel1 = $fields[0]['fields'][0]['fields'][0];
+    $panel2 = $panel1['fields'][1];
+
+    expect($panel2['name'])->toBe('Panel 2')
+        ->and($panel2['_id'])->toBe(9)
+        ->and($panel2['_parent_id'])->toBe(3)
+        ->and($panel2['exclude_level'])->toBe(3);
+});
+
+test('Panel 2 contains Tabs wrapper with two tabs', function () {
+    $model = new MultipleTabsWithPanelsExcludeModel;
+    $fields = $model->getGroupedFields();
+
+    $panel1 = $fields[0]['fields'][0]['fields'][0];
+    $panel2 = $panel1['fields'][1];
+
+    expect($panel2['fields'][0]['name'])->toBe('Aura\Base\Fields\Tabs')
+        ->and($panel2['fields'][0]['fields'])->toHaveCount(2)
+        ->and($panel2['fields'][0]['fields'][0]['name'])->toBe('Tab 1 in Panel2')
+        ->and($panel2['fields'][0]['fields'][1]['name'])->toBe('Tab 2 in Panel2');
+});
+
+test('Panel 2 tabs contain correct text fields', function () {
+    $model = new MultipleTabsWithPanelsExcludeModel;
+    $fields = $model->getGroupedFields();
+
+    $panel1 = $fields[0]['fields'][0]['fields'][0];
+    $panel2 = $panel1['fields'][1];
+    $panel2Tabs = $panel2['fields'][0];
+
+    expect($panel2Tabs['fields'][0]['fields'][0]['slug'])->toBe('text3')
+        ->and($panel2Tabs['fields'][1]['fields'][0]['slug'])->toBe('text4');
 });

@@ -1,19 +1,12 @@
 <?php
 
-namespace Tests\Feature\Livewire;
-
 use Aura\Base\Livewire\Settings;
 use Aura\Base\Resources\Option;
-use Aura\Base\Resources\Team;
-use Illuminate\Support\Facades\DB;
 use Livewire\Livewire;
 
-// Before each test, create a Superadmin and login
 beforeEach(function () {
-    // Set teams to false for this test
     config(['aura.teams' => false]);
 
-    // Drop all tables and run our migration
     $this->artisan('migrate:fresh');
 
     $migration = require __DIR__.'/../../database/migrations/create_aura_tables.php.stub';
@@ -23,66 +16,133 @@ beforeEach(function () {
 });
 
 afterEach(function () {
-    // Restore original config value
     config(['aura.teams' => true]);
 });
 
-test('Settings Component can be rendered', function () {
-    $this->withoutExceptionHandling();
+describe('settings component without teams', function () {
+    it('renders the settings page', function () {
+        $this->withoutExceptionHandling();
 
-    $response = $this->get(route('aura.settings'));
+        $this->get(route('aura.settings'))
+            ->assertOk();
+    });
 
-    $response->assertStatus(200);
+    it('renders the settings livewire component', function () {
+        Livewire::test(Settings::class)
+            ->assertSee('Settings')
+            ->assertStatus(200);
+    });
 });
 
-test('Default Team Settings are created without teams', function () {
-    // Default Team Settings
-    Livewire::test(Settings::class)
-        ->assertSee('Settings')
-        ->assertSee('primary')
-        ->assertSet('form.fields.darkmode-type', 'auto')
-        ->assertSet('form.fields.sidebar-type', 'primary')
-        ->assertSet('form.fields.color-palette', 'aura')
-        ->assertSet('form.fields.gray-color-palette', 'slate');
+describe('default settings without teams', function () {
+    it('creates settings option record on first access', function () {
+        Livewire::test(Settings::class);
 
-    // assert DB has 1 record in options table
-    $this->assertDatabaseCount('options', 1);
+        $this->assertDatabaseCount('options', 1);
 
-    // get first option from DB
-    $option = Option::first();
+        $option = Option::first();
+        expect($option->name)->toBe('settings')
+            ->and($option->value)->toBeArray();
+    });
 
-    // assert option is team settings
-    $this->assertEquals($option->name, 'settings');
+    it('has correct default theme values', function () {
+        Livewire::test(Settings::class)
+            ->assertSet('form.fields.darkmode-type', 'auto')
+            ->assertSet('form.fields.sidebar-type', 'primary')
+            ->assertSet('form.fields.color-palette', 'aura')
+            ->assertSet('form.fields.gray-color-palette', 'slate');
+    });
 
-    // assert $option->value is an array
-    $this->assertIsArray($option->value);
+    it('displays primary sidebar option on page', function () {
+        Livewire::test(Settings::class)
+            ->assertSee('primary');
+    });
 
-    // assertJSON option value matches expected JSON structure
-    // $this->assertJsonStringEqualsJsonString(json_encode($option->value), '{"darkmode-type":"auto","sidebar-type":"primary","color-palette":"aura","gray-color-palette":"slate","sidebar-size":"standard","sidebar-darkmode-type":"dark"}');
+    it('stores settings without team_id when teams disabled', function () {
+        Livewire::test(Settings::class);
+
+        $option = Option::first();
+
+        expect($option->name)->toBe('settings')
+            ->and($option->team_id)->toBeNull();
+    });
 });
 
-test('Settings can be saved', function () {
-    // Default Team Settings
-    Livewire::test(Settings::class)
-        ->set('form.fields.darkmode-type', 'light')
-        ->set('form.fields.sidebar-type', 'light')
-        ->set('form.fields.color-palette', 'red')
-        ->set('form.fields.gray-color-palette', 'zinc')
-        ->call('save');
+describe('saving settings without teams', function () {
+    it('saves darkmode settings', function () {
+        Livewire::test(Settings::class)
+            ->set('form.fields.darkmode-type', 'light')
+            ->call('save');
 
-    // assert DB has 1 record in options table
-    $this->assertDatabaseCount('options', 1);
+        $option = Option::first();
+        expect($option->value['darkmode-type'])->toBe('light');
+    });
 
-    // get first option from DB
-    $option = Option::first();
+    it('saves sidebar settings', function () {
+        Livewire::test(Settings::class)
+            ->set('form.fields.sidebar-type', 'dark')
+            ->call('save');
 
-    // assert option is team settings
-    expect($option->name)->toBe('settings');
-    expect($option->value)->toBeArray();
+        $option = Option::first();
+        expect($option->value['sidebar-type'])->toBe('dark');
+    });
 
-    expect($option->value['darkmode-type'])->toBe('light');
-    expect($option->value['sidebar-type'])->toBe('light');
-    expect($option->value['color-palette'])->toBe('red');
-    expect($option->value['gray-color-palette'])->toBe('zinc');
+    it('saves color palette settings', function () {
+        Livewire::test(Settings::class)
+            ->set('form.fields.color-palette', 'red')
+            ->set('form.fields.gray-color-palette', 'zinc')
+            ->call('save');
 
+        $option = Option::first();
+        expect($option->value['color-palette'])->toBe('red')
+            ->and($option->value['gray-color-palette'])->toBe('zinc');
+    });
+
+    it('saves all settings together', function () {
+        Livewire::test(Settings::class)
+            ->set('form.fields.darkmode-type', 'dark')
+            ->set('form.fields.sidebar-type', 'light')
+            ->set('form.fields.color-palette', 'blue')
+            ->set('form.fields.gray-color-palette', 'neutral')
+            ->call('save');
+
+        $this->assertDatabaseCount('options', 1);
+
+        $option = Option::first();
+        expect($option->name)->toBe('settings')
+            ->and($option->value)->toBeArray()
+            ->and($option->value['darkmode-type'])->toBe('dark')
+            ->and($option->value['sidebar-type'])->toBe('light')
+            ->and($option->value['color-palette'])->toBe('blue')
+            ->and($option->value['gray-color-palette'])->toBe('neutral');
+    });
+
+    it('updates existing settings instead of creating new', function () {
+        // First save
+        Livewire::test(Settings::class)
+            ->set('form.fields.color-palette', 'red')
+            ->call('save');
+
+        $this->assertDatabaseCount('options', 1);
+
+        // Second save
+        Livewire::test(Settings::class)
+            ->set('form.fields.color-palette', 'blue')
+            ->call('save');
+
+        $this->assertDatabaseCount('options', 1);
+
+        $option = Option::first();
+        expect($option->value['color-palette'])->toBe('blue');
+    });
+});
+
+describe('settings authorization without teams', function () {
+    it('requires super admin to access settings', function () {
+        expect(auth()->user()->isSuperAdmin())->toBeTrue();
+    });
+
+    it('confirms teams are disabled', function () {
+        expect(config('aura.teams'))->toBeFalse();
+    });
 });

@@ -3,16 +3,11 @@
 use Aura\Base\Facades\Aura;
 use Aura\Base\Livewire\Table\Table;
 use Aura\Base\Resource;
-use Aura\Base\Tests\Resources\Post;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
-use Livewire\Livewire;
 
-uses(RefreshDatabase::class);
+use function Pest\Livewire\livewire;
 
-// Before each test, create a Superadmin and login
 beforeEach(function () {
-
     $model = new TableSelectRowsModel;
 
     Aura::fake();
@@ -38,7 +33,6 @@ beforeEach(function () {
     }
 });
 
-// Create Resource for this test
 class TableSelectRowsModel extends Resource
 {
     public static $singularName = 'Post';
@@ -74,121 +68,122 @@ class TableSelectRowsModel extends Resource
     }
 }
 
-test('table filter - select rows', function () {
-    // 50 Posts in DB
-    expect(TableSelectRowsModel::count())->toBe(50);
+describe('row selection', function () {
+    test('table initializes with empty selection', function () {
+        expect(TableSelectRowsModel::count())->toBe(50);
 
-    $post = TableSelectRowsModel::first();
+        $post = TableSelectRowsModel::first();
 
-    // Visit the Post Index Page
-    $component = Livewire::test(Table::class, ['query' => null, 'model' => $post]);
+        $component = livewire(Table::class, ['query' => null, 'model' => $post]);
 
-    // expect $selected to be an empty array
-    expect($component->selected)->toBe([]);
-
-    // We should be on Page 1
-    expect($component->paginators['page'])->toBe(1);
-
-    $ids = TableSelectRowsModel::take(2)->pluck('id')->toArray();
-
-    // Select first 2 rows
-    $component->set('selected', $ids);
-
-    // expect $selected to be an array with 2 items
-    $component->assertViewHas('selected', function ($selected) {
-        return count($selected) === 2;
+        expect($component->selected)->toBe([]);
+        expect($component->paginators['page'])->toBe(1);
     });
 
-    // Select first 5 rows
-    $component->set('selected', TableSelectRowsModel::take(5)->pluck('id')->toArray());
+    test('can select specific rows', function () {
+        $post = TableSelectRowsModel::first();
+        $component = livewire(Table::class, ['query' => null, 'model' => $post]);
 
-    // expect $selected to be an array with 5 items
-    $component->assertViewHas('selected', function ($selected) {
-        return count($selected) === 5;
+        $ids = TableSelectRowsModel::take(2)->pluck('id')->toArray();
+        $component->set('selected', $ids);
+
+        $component->assertViewHas('selected', fn ($selected) => count($selected) === 2);
+
+        // Select more rows
+        $component->set('selected', TableSelectRowsModel::take(5)->pluck('id')->toArray());
+        $component->assertViewHas('selected', fn ($selected) => count($selected) === 5);
     });
 
-    // Change to Page 2
-    $component->call('setPage', 2);
+    test('selection persists across page navigation', function () {
+        $post = TableSelectRowsModel::first();
+        $component = livewire(Table::class, ['query' => null, 'model' => $post]);
 
-    // $selected should have 5 items
-    expect($component->selected)->toHaveCount(5);
+        expect($component->paginators['page'])->toBe(1);
 
-    // Go back to page 1
-    $component->call('setPage', 1);
+        // Select 5 rows
+        $component->set('selected', TableSelectRowsModel::take(5)->pluck('id')->toArray());
+        expect($component->selected)->toHaveCount(5);
 
-    // $selected should have 5 items
-    expect($component->selected)->toHaveCount(5);
+        // Navigate to page 2
+        $component->call('setPage', 2);
+        expect($component->selected)->toHaveCount(5);
+
+        // Go back to page 1
+        $component->call('setPage', 1);
+        expect($component->selected)->toHaveCount(5);
+    });
 });
 
-test('table select rows - reset selectPage', function () {
-    $post = TableSelectRowsModel::first();
+describe('page selection', function () {
+    test('selecting current page adds only page items', function () {
+        $post = TableSelectRowsModel::first();
+        $component = livewire(Table::class, ['query' => null, 'model' => $post]);
 
-    // Visit the Post Index Page
-    $component = Livewire::test(Table::class, ['query' => null, 'model' => $post]);
+        expect($component->selected)->toBe([]);
+        expect($component->paginators['page'])->toBe(1);
 
-    // expect $selected to be an empty array
-    expect($component->selected)->toBe([]);
+        // Simulate selecting all rows on current page (default 10 per page)
+        $currentPageIds = TableSelectRowsModel::query()
+            ->take(10)
+            ->pluck('id')
+            ->toArray();
 
-    // We should be on Page 1
-    expect($component->paginators['page'])->toBe(1);
+        $component->set('selected', $currentPageIds);
 
-    // Instead of setting selectPage directly, we'll simulate selecting all rows on the current page
-    // by setting the selected IDs for the current page
-    $currentPageIds = TableSelectRowsModel::query()
-        ->take(10)  // Default pagination is 10
-        ->pluck('id')
-        ->toArray();
+        expect($component->selected)->toHaveCount(10);
 
-    $component->set('selected', $currentPageIds);
+        // Navigate to page 2
+        $component->call('setPage', 2);
 
-    // expect $selected to be an array with 10 items
-    expect($component->selected)->toHaveCount(10);
+        // Selection should persist
+        expect($component->selected)->toHaveCount(10);
+    });
 
-    // go to page 2
-    $component->call('setPage', 2);
+    test('can select items from multiple pages', function () {
+        $post = TableSelectRowsModel::first();
+        $component = livewire(Table::class, ['query' => null, 'model' => $post]);
 
-    // expect $selected to still have 10 items from the first page
-    expect($component->selected)->toHaveCount(10);
+        expect($component->selected)->toBe([]);
+        expect($component->paginators['page'])->toBe(1);
+
+        // Select all on page 1
+        $currentPageIds = TableSelectRowsModel::query()
+            ->take(10)
+            ->pluck('id')
+            ->toArray();
+
+        $component->set('selected', $currentPageIds);
+        expect($component->selected)->toHaveCount(10);
+
+        // Navigate to page 2
+        $component->call('setPage', 2);
+        expect($component->selected)->toHaveCount(10);
+
+        // Select all on page 2 as well
+        $page2Ids = TableSelectRowsModel::query()
+            ->skip(10)
+            ->take(10)
+            ->pluck('id')
+            ->toArray();
+
+        $component->set('selected', array_merge($currentPageIds, $page2Ids));
+
+        // Total should be 20 (10 from each page)
+        expect($component->selected)->toHaveCount(20);
+    });
 });
 
-test('table select rows - keep selected when another page is selected', function () {
-    $post = TableSelectRowsModel::first();
+describe('selection state', function () {
+    test('can clear selection', function () {
+        $post = TableSelectRowsModel::first();
+        $component = livewire(Table::class, ['query' => null, 'model' => $post]);
 
-    // Visit the Post Index Page
-    $component = Livewire::test(Table::class, ['query' => null, 'model' => $post]);
+        // Select some rows
+        $component->set('selected', TableSelectRowsModel::take(5)->pluck('id')->toArray());
+        expect($component->selected)->toHaveCount(5);
 
-    // expect $selected to be an empty array
-    expect($component->selected)->toBe([]);
-
-    // We should be on Page 1
-    expect($component->paginators['page'])->toBe(1);
-
-    // Select all rows on the current page
-    $currentPageIds = TableSelectRowsModel::query()
-        ->take(10)
-        ->pluck('id')
-        ->toArray();
-
-    $component->set('selected', $currentPageIds);
-
-    // expect $selected to be an array with 10 items
-    expect($component->selected)->toHaveCount(10);
-
-    // go to page 2
-    $component->call('setPage', 2);
-
-    // expect $selected to still have 10 items from the first page
-    expect($component->selected)->toHaveCount(10);
-
-    // Select all rows on page 2
-    $page2Ids = TableSelectRowsModel::query()
-        ->skip(10)
-        ->take(10)
-        ->pluck('id')
-        ->toArray();
-
-    $component->set('selected', array_merge($currentPageIds, $page2Ids));
-
-    // expect $selected to now have 20 items (10 from each page)
-    expect($component->selected)->toHaveCount(20);
+        // Clear selection
+        $component->set('selected', []);
+        expect($component->selected)->toBe([]);
+    });
 });

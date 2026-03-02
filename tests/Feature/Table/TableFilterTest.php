@@ -3,14 +3,10 @@
 use Aura\Base\Facades\Aura;
 use Aura\Base\Livewire\Table\Table;
 use Aura\Base\Resource;
-use Aura\Base\Tests\Resources\Post;
 use Aura\Base\Tests\Resources\Tag;
-use Illuminate\Foundation\Testing\RefreshDatabase;
-use Livewire\Livewire;
 
-uses(RefreshDatabase::class);
+use function Pest\Livewire\livewire;
 
-// Before each test, create a Superadmin and login
 beforeEach(function () {
     $this->actingAs($this->user = createSuperAdmin());
 
@@ -80,732 +76,449 @@ class TableFilterModel extends Resource
     }
 }
 
-test('table filter', function () {
-    // Create a Posts
-    $post = TableFilterModel::create([
-        'title' => 'Test Post',
-        'content' => 'Test Content A',
-        'type' => 'Post',
-        'status' => 'publish',
-        'meta' => 'B',
-        'tags' => [
-            'Tag 1', 'Tag 2', 'Tag 3',
-        ],
-    ]);
+describe('filter initialization', function () {
+    test('table initializes with empty custom filter array', function () {
+        $post = TableFilterModel::create([
+            'title' => 'Test Post',
+            'content' => 'Test Content A',
+            'type' => 'Post',
+            'status' => 'publish',
+            'meta' => 'B',
+            'tags' => ['Tag 1', 'Tag 2', 'Tag 3'],
+        ]);
 
-    $post2 = TableFilterModel::create([
-        'title' => 'Test Post 2',
-        'content' => 'Test Content B',
-        'type' => 'Post',
-        'status' => 'publish',
-        'meta' => 'A',
-        'tags' => [
-            'Tag 3', 'Tag 4', 'Tag 5',
-        ],
-    ]);
+        expect($post->isMetaField('meta'))->toBeTrue();
 
-    expect($post->isMetaField('meta'))->toBeTrue();
+        $component = livewire(Table::class, ['query' => null, 'model' => $post])
+            ->assertSet('settings.default_view', $post->defaultTableView())
+            ->assertSet('perPage', $post->defaultPerPage())
+            ->assertSet('columns', $post->getDefaultColumns());
 
-    // Visit the Post Index Page
-    $component = Livewire::test(Table::class, ['query' => null, 'model' => $post])
-        ->assertSet('settings.default_view', $post->defaultTableView())
-        ->assertSet('perPage', $post->defaultPerPage())
-        ->assertSet('columns', $post->getDefaultColumns());
-
-    // Filters should be "taxonomy" => array:2 [ "Tag" => [] ] "custom" => [] ]
-    expect($component->filters)->toBeArray();
-    expect($component->filters)->toHaveCount(1);
-    expect($component->filters)->toHaveKey('custom');
-
-});
-
-test('table filter - custom filter - contains', function () {
-    // Create a Posts
-    $post = TableFilterModel::create([
-        'title' => 'Test Post',
-        'content' => 'Test Content A',
-        'type' => 'Post',
-        'status' => 'publish',
-        'meta' => 'B',
-        'tags' => [
-            'Tag 1', 'Tag 2', 'Tag 3',
-        ],
-    ]);
-
-    $post2 = TableFilterModel::create([
-        'title' => 'Test Post 2',
-        'content' => 'Test Content B',
-        'type' => 'Post',
-        'status' => 'publish',
-        'meta' => 'A',
-        'tags' => [
-            'Tag 3', 'Tag 4', 'Tag 5',
-        ],
-    ]);
-
-    // Visit the Post Index Page
-    $component = Livewire::test(Table::class, ['query' => null, 'model' => $post]);
-
-    // set custom filter to "A"
-    $component->call('addFilterGroup');
-
-    // $component->filter['custom'] should have 1 item
-    expect($component->filters['custom'])->toHaveCount(1);
-
-    expect($component->filters['custom'][0]['filters'])->toHaveCount(1);
-    // expect the first item to have the keys: 'name', 'value', 'operator'
-    expect($component->filters['custom'][0]['filters'][0])->toHaveKeys(['name', 'value', 'operator']);
-
-    // expect the first item name to be "meta"
-    expect($component->filters['custom'][0]['filters'][0]['name'])->toBe('meta');
-
-    // expect the first item operator to be "contains"
-    expect($component->filters['custom'][0]['filters'][0]['operator'])->toBe('contains');
-
-    // On the component, set $filter['custom'][0]['value'] to "A"
-    $component->set('filters.custom.0.filters.0.value', 'A');
-
-    // expect the first item value to be "A"
-    expect($component->filters['custom'][0]['filters'][0]['value'])->toBe('A');
-
-    $component->assertViewHas('rows', function ($rows) use ($post2) {
-        return count($rows->items()) === 1 && $rows->items()[0]->id === $post2->id;
-    });
-
-    // Change Filter to "B"
-    $component->set('filters.custom.0.filters.0.value', 'B');
-    $component->assertViewHas('rows', function ($rows) use ($post) {
-        return count($rows->items()) === 1 && $rows->items()[0]->id === $post->id;
-    });
-
-    // Change Filter to "C"
-    $component->set('filters.custom.0.filters.0.value', 'C');
-    $component->assertViewHas('rows', function ($rows) {
-        return count($rows->items()) === 0;
-    });
-
-    // expect($component->rowsQuery->toSql())->toContain('select * from "posts" where exists (select * from "post_meta" where "posts"."id" = "post_meta"."post_id" and "key" = ? and "value" like ?');
-
-    // // First Binding should be meta
-    // expect($component->rowsQuery->getBindings()[0])->toBe('meta');
-
-    // // Second Binding should be "C%"
-    // expect($component->rowsQuery->getBindings()[1])->toBe('%C%');
-});
-
-test('table filter - custom tags filter - contains', function () {
-    // Create a Posts
-    $post = TableFilterModel::create([
-        'title' => 'Test Post',
-        'content' => 'Test Content A',
-        'type' => 'Post',
-        'status' => 'publish',
-        'meta' => 'B',
-        'tags' => [
-            'Tag 1', 'Tag 2', 'Tag 3',
-        ],
-    ]);
-
-    $post2 = TableFilterModel::create([
-        'title' => 'Test Post 2',
-        'content' => 'Test Content B',
-        'type' => 'Post',
-        'status' => 'publish',
-        'meta' => 'A',
-        'tags' => [
-            'Tag 3', 'Tag 4', 'Tag 5',
-        ],
-        'other_tags' => [2],
-    ]);
-
-    $post3 = TableFilterModel::create([
-        'title' => 'Test Post 3',
-        'content' => 'Test Content C',
-        'type' => 'Post',
-        'status' => 'publish',
-        'meta' => 'C',
-        'other_tags' => [3],
-    ]);
-
-    $tags = Tag::get();
-
-    // Visit the Post Index Page
-    $component = Livewire::test(Table::class, ['query' => null, 'model' => $post]);
-
-    // set custom filter to "A"
-    $component->call('addFilterGroup');
-
-    // $component->filter['custom'] should have 1 item
-    expect($component->filters['custom'])->toHaveCount(1);
-
-    expect($component->filters['custom'][0]['filters'])->toHaveCount(1);
-    // expect the first item to have the keys: 'name', 'value', 'operator'
-    expect($component->filters['custom'][0]['filters'][0])->toHaveKeys(['name', 'value', 'operator']);
-
-    // On the component, set $filter['custom'][0]['value'] to "A"
-    $component->set('filters.custom.0.filters.0.name', 'tags');
-    $component->set('filters.custom.0.filters.0.value', $tags->first()->id);
-
-    expect($component->filters['custom'][0]['filters'][0]['name'])->toBe('tags');
-    expect($component->filters['custom'][0]['filters'][0]['operator'])->toBe('contains');
-    expect($component->filters['custom'][0]['filters'][0]['value'])->toBe($tags->first()->id);
-
-    $component->assertViewHas('rows', function ($rows) use ($post) {
-        return count($rows->items()) === 1 && $rows->items()[0]->id === $post->id;
-    });
-
-    // Change Filter to "B"
-    $component->set('filters.custom.0.filters.0.value', $tags->last()->id);
-
-    $component->assertViewHas('rows', function ($rows) use ($post2) {
-        return count($rows->items()) === 1 && $rows->items()[0]->id === $post2->id;
-    });
-
-    $tag7 = Tag::create([
-        'title' => 'Tag 7',
-    ]);
-
-    // Change Filter to "C"
-    $component->set('filters.custom.0.filters.0.value', $tag7->id);
-    $component->assertViewHas('rows', function ($rows) {
-        return count($rows->items()) === 0;
-    });
-
-    // remove tags filter and expect all posts to be returned
-    $component->set('filters.custom.0.filters.0.value', null);
-    $component->assertViewHas('rows', function ($rows) {
-        return count($rows->items()) === 3;
-    });
-
-    // expect other_tags filter to be added
-    $component->call('addFilterGroup');
-    $component->set('filters.custom.1.filters.0.name', 'other_tags');
-    $component->set('filters.custom.1.filters.0.value', $tags->first()->id);
-    expect($component->filters['custom'][1]['filters'][0]['name'])->toBe('other_tags');
-
-    $component->assertViewHas('rows', function ($rows) {
-        return count($rows->items()) === 1;
-    });
-
-    // expect post2 to be returned
-    $component->assertViewHas('rows', function ($rows) use ($post2) {
-        return count($rows->items()) === 1 && $rows->items()[0]->id === $post2->id;
+        expect($component->filters)
+            ->toBeArray()
+            ->toHaveCount(1)
+            ->toHaveKey('custom');
     });
 });
 
-test('table filter - custom filter - does_not_contain', function () {
-    $post = TableFilterModel::create([
-        'title' => 'Test Post',
-        'content' => 'Test Content A',
-        'type' => 'Post',
-        'status' => 'publish',
-        'meta' => 'B',
-        'tags' => [
-            'Tag 1', 'Tag 2', 'Tag 3',
-        ],
-    ]);
+describe('contains operator', function () {
+    beforeEach(function () {
+        $this->post = TableFilterModel::create([
+            'title' => 'Test Post',
+            'content' => 'Test Content A',
+            'type' => 'Post',
+            'status' => 'publish',
+            'meta' => 'B',
+            'tags' => ['Tag 1', 'Tag 2', 'Tag 3'],
+        ]);
 
-    $post2 = TableFilterModel::create([
-        'title' => 'Test Post 2',
-        'content' => 'Test Content B',
-        'type' => 'Post',
-        'status' => 'publish',
-        'meta' => 'A',
-        'tags' => [
-            'Tag 3', 'Tag 4', 'Tag 5',
-        ],
-    ]);
-
-    $component = Livewire::test(Table::class, ['query' => null, 'model' => $post]);
-
-    $component->call('addFilterGroup');
-
-    expect($component->filters['custom'])->toHaveCount(1);
-
-    expect($component->filters['custom'][0]['filters'])->toHaveCount(1);
-
-    expect($component->filters['custom'][0]['filters'][0])->toHaveKeys(['name', 'value', 'operator']);
-
-    expect($component->filters['custom'][0]['filters'][0]['name'])->toBe('meta');
-
-    $component->set('filters.custom.0.filters.0.operator', 'does_not_contain');
-
-    expect($component->filters['custom'][0]['filters'][0]['operator'])->toBe('does_not_contain');
-
-    $component->set('filters.custom.0.filters.0.value', 'A');
-
-    expect($component->filters['custom'][0]['filters'][0]['value'])->toBe('A');
-
-    $component->assertViewHas('rows', function ($rows) use ($post) {
-        return count($rows->items()) === 1 && $rows->items()[0]->id === $post->id;
+        $this->post2 = TableFilterModel::create([
+            'title' => 'Test Post 2',
+            'content' => 'Test Content B',
+            'type' => 'Post',
+            'status' => 'publish',
+            'meta' => 'A',
+            'tags' => ['Tag 3', 'Tag 4', 'Tag 5'],
+        ]);
     });
 
-    $component->set('filters.custom.0.filters.0.value', 'B');
+    test('filter by meta field with contains operator', function () {
+        $component = livewire(Table::class, ['query' => null, 'model' => $this->post]);
 
-    $component->assertViewHas('rows', function ($rows) use ($post2) {
-        return count($rows->items()) === 1 && $rows->items()[0]->id === $post2->id;
+        $component->call('addFilterGroup');
+
+        expect($component->filters['custom'])->toHaveCount(1);
+        expect($component->filters['custom'][0]['filters'])->toHaveCount(1);
+        expect($component->filters['custom'][0]['filters'][0])
+            ->toHaveKeys(['name', 'value', 'operator'])
+            ->and($component->filters['custom'][0]['filters'][0]['name'])->toBe('meta')
+            ->and($component->filters['custom'][0]['filters'][0]['operator'])->toBe('contains');
+
+        // Filter for 'A' - should show post2
+        $component->set('filters.custom.0.filters.0.value', 'A');
+        expect($component->filters['custom'][0]['filters'][0]['value'])->toBe('A');
+
+        $component->assertViewHas('rows', fn ($rows) => count($rows->items()) === 1 && $rows->items()[0]->id === $this->post2->id);
+
+        // Filter for 'B' - should show post1
+        $component->set('filters.custom.0.filters.0.value', 'B');
+        $component->assertViewHas('rows', fn ($rows) => count($rows->items()) === 1 && $rows->items()[0]->id === $this->post->id);
+
+        // Filter for 'C' - should show no results
+        $component->set('filters.custom.0.filters.0.value', 'C');
+        $component->assertViewHas('rows', fn ($rows) => count($rows->items()) === 0);
     });
 
-    $component->set('filters.custom.0.filters.0.value', 'C');
+    test('filter by tags with contains operator', function () {
+        $post2OtherTags = TableFilterModel::create([
+            'title' => 'Test Post 3',
+            'content' => 'Test Content C',
+            'type' => 'Post',
+            'status' => 'publish',
+            'meta' => 'C',
+            'other_tags' => [2],
+        ]);
 
-    $component->assertViewHas('rows', function ($rows) {
-        return count($rows->items()) === 2;
+        $tags = Tag::get();
+
+        $component = livewire(Table::class, ['query' => null, 'model' => $this->post]);
+
+        $component->call('addFilterGroup');
+
+        // Set filter for tags
+        $component->set('filters.custom.0.filters.0.name', 'tags');
+        $component->set('filters.custom.0.filters.0.value', $tags->first()->id);
+
+        expect($component->filters['custom'][0]['filters'][0]['name'])->toBe('tags');
+        expect($component->filters['custom'][0]['filters'][0]['operator'])->toBe('contains');
+        expect($component->filters['custom'][0]['filters'][0]['value'])->toBe($tags->first()->id);
+
+        $component->assertViewHas('rows', fn ($rows) => count($rows->items()) === 1 && $rows->items()[0]->id === $this->post->id);
+
+        // Change to last tag
+        $component->set('filters.custom.0.filters.0.value', $tags->last()->id);
+        $component->assertViewHas('rows', fn ($rows) => count($rows->items()) === 1 && $rows->items()[0]->id === $this->post2->id);
+
+        // Create and filter by non-existent tag
+        $tag7 = Tag::create(['title' => 'Tag 7']);
+        $component->set('filters.custom.0.filters.0.value', $tag7->id);
+        $component->assertViewHas('rows', fn ($rows) => count($rows->items()) === 0);
+
+        // Clear filter - should show all posts
+        $component->set('filters.custom.0.filters.0.value', null);
+        $component->assertViewHas('rows', fn ($rows) => count($rows->items()) === 3);
+
+        // Test other_tags filter - lookup the second tag (ID=2) which is assigned to post2OtherTags
+        $component->call('addFilterGroup');
+        $component->set('filters.custom.1.filters.0.name', 'other_tags');
+        $component->set('filters.custom.1.filters.0.value', 2);
+
+        expect($component->filters['custom'][1]['filters'][0]['name'])->toBe('other_tags');
+        $component->assertViewHas('rows', fn ($rows) => count($rows->items()) === 1 && $rows->items()[0]->id === $post2OtherTags->id);
     });
-
-    // expect($component->rowsQuery->toSql())->toContain('select * from "posts" where exists (select * from "post_meta" where "posts"."id" = "post_meta"."post_id" and "key" = ? and "value" not like ?');
-
-    // expect($component->rowsQuery->getBindings()[0])->toBe('meta');
-
-    // expect($component->rowsQuery->getBindings()[1])->toBe('%C%');
 });
 
-test('table filter - custom filter - starts_with', function () {
-    // Create a Posts
-    $post = TableFilterModel::create([
-        'title' => 'Test Post',
-        'content' => 'Test Content A',
-        'type' => 'Post',
-        'status' => 'publish',
-        'meta' => 'B amazing',
-        'tags' => [
-            'Tag 1', 'Tag 2', 'Tag 3',
-        ],
-    ]);
+describe('does_not_contain operator', function () {
+    test('filter by meta field with does_not_contain operator', function () {
+        $post = TableFilterModel::create([
+            'title' => 'Test Post',
+            'content' => 'Test Content A',
+            'type' => 'Post',
+            'status' => 'publish',
+            'meta' => 'B',
+            'tags' => ['Tag 1', 'Tag 2', 'Tag 3'],
+        ]);
 
-    $post2 = TableFilterModel::create([
-        'title' => 'Test Post 2',
-        'content' => 'Test Content B',
-        'type' => 'Post',
-        'status' => 'publish',
-        'meta' => 'A custom meta',
-        'tags' => [
-            'Tag 3', 'Tag 4', 'Tag 5',
-        ],
-    ]);
+        $post2 = TableFilterModel::create([
+            'title' => 'Test Post 2',
+            'content' => 'Test Content B',
+            'type' => 'Post',
+            'status' => 'publish',
+            'meta' => 'A',
+            'tags' => ['Tag 3', 'Tag 4', 'Tag 5'],
+        ]);
 
-    // Visit the Post Index Page
-    $component = Livewire::test(Table::class, ['query' => null, 'model' => $post]);
+        $component = livewire(Table::class, ['query' => null, 'model' => $post]);
 
-    // set custom filter to "A"
-    $component->call('addFilterGroup');
+        $component->call('addFilterGroup');
 
-    // $component->filter['custom'] should have 1 item
-    expect($component->filters['custom'])->toHaveCount(1);
+        expect($component->filters['custom'])->toHaveCount(1);
+        expect($component->filters['custom'][0]['filters'])->toHaveCount(1);
+        expect($component->filters['custom'][0]['filters'][0])
+            ->toHaveKeys(['name', 'value', 'operator'])
+            ->and($component->filters['custom'][0]['filters'][0]['name'])->toBe('meta');
 
-    expect($component->filters['custom'][0]['filters'])->toHaveCount(1);
+        $component->set('filters.custom.0.filters.0.operator', 'does_not_contain');
+        expect($component->filters['custom'][0]['filters'][0]['operator'])->toBe('does_not_contain');
 
-    // expect the first item to have the keys: 'name', 'value', 'operator'
-    expect($component->filters['custom'][0]['filters'][0])->toHaveKeys(['name', 'value', 'operator']);
+        // Exclude 'A' - should show post1
+        $component->set('filters.custom.0.filters.0.value', 'A');
+        $component->assertViewHas('rows', fn ($rows) => count($rows->items()) === 1 && $rows->items()[0]->id === $post->id);
 
-    // expect the first item name to be "meta"
-    expect($component->filters['custom'][0]['filters'][0]['name'])->toBe('meta');
+        // Exclude 'B' - should show post2
+        $component->set('filters.custom.0.filters.0.value', 'B');
+        $component->assertViewHas('rows', fn ($rows) => count($rows->items()) === 1 && $rows->items()[0]->id === $post2->id);
 
-    // expect the first item operator to be "contains"
-    expect($component->filters['custom'][0]['filters'][0]['operator'])->toBe('contains');
-
-    // Set the operator to "starts_with"
-    $component->set('filters.custom.0.filters.0.operator', 'starts_with');
-
-    // On the component, set $filter['custom'][0]['value'] to "A"
-    $component->set('filters.custom.0.filters.0.value', 'A');
-
-    // expect the first item value to be "A"
-    expect($component->filters['custom'][0]['filters'][0]['value'])->toBe('A');
-
-    // $component should have 1 item for rows
-    $component->assertViewHas('rows', function ($rows) {
-        return count($rows->items()) === 1;
+        // Exclude 'C' - should show both
+        $component->set('filters.custom.0.filters.0.value', 'C');
+        $component->assertViewHas('rows', fn ($rows) => count($rows->items()) === 2);
     });
-
-    // Id of the first item should be $post2->id
-    $component->assertViewHas('rows', function ($rows) use ($post2) {
-        return $rows->items()[0]->id === $post2->id;
-    });
-
-    // Change Filter to "B"
-    $component->set('filters.custom.0.filters.0.value', 'B');
-
-    // $component should have 1 item for rows
-    $component->assertViewHas('rows', function ($rows) {
-        return count($rows->items()) === 1;
-    });
-
-    // Id of the first item should be $post->id
-    $component->assertViewHas('rows', function ($rows) use ($post) {
-        return $rows->items()[0]->id === $post->id;
-    });
-
-    // Change Filter to "C"
-    $component->set('filters.custom.0.filters.0.value', 'C');
-
-    // $component should have 0 items for rows
-    $component->assertViewHas('rows', function ($rows) {
-        return count($rows->items()) === 0;
-    });
-
-    // Expect SQL to contain "select * from "posts" where exists (select * from "post_meta" where "posts"."id" = "post_meta"."post_id" and "key" = ? and "value" like ?"
-    // expect($component->rowsQuery->toSql())->toContain('select * from "posts" where exists (select * from "post_meta" where "posts"."id" = "post_meta"."post_id" and "key" = ? and "value" like ?');
-
-    // // First Binding should be meta
-    // expect($component->rowsQuery->getBindings()[0])->toBe('meta');
-
-    // // Second Binding should be "C%"
-    // expect($component->rowsQuery->getBindings()[1])->toBe('C%');
-
-    // Inspect SQL inspect bindings
 });
 
-test('table filter - custom filter - ends_with', function () {
-    // Create a Posts
-    $post = TableFilterModel::create([
-        'title' => 'Test Post',
-        'content' => 'Test Content A',
-        'type' => 'Post',
-        'status' => 'publish',
-        'meta' => 'B amazing',
-        'tags' => [
-            'Tag 1', 'Tag 2', 'Tag 3',
-        ],
-    ]);
+describe('starts_with operator', function () {
+    test('filter by meta field with starts_with operator', function () {
+        $post = TableFilterModel::create([
+            'title' => 'Test Post',
+            'content' => 'Test Content A',
+            'type' => 'Post',
+            'status' => 'publish',
+            'meta' => 'B amazing',
+            'tags' => ['Tag 1', 'Tag 2', 'Tag 3'],
+        ]);
 
-    $post2 = TableFilterModel::create([
-        'title' => 'Test Post 2',
-        'content' => 'Test Content B',
-        'type' => 'Post',
-        'status' => 'publish',
-        'meta' => 'A custom meta',
-        'tags' => [
-            'Tag 3', 'Tag 4', 'Tag 5',
-        ],
-    ]);
+        $post2 = TableFilterModel::create([
+            'title' => 'Test Post 2',
+            'content' => 'Test Content B',
+            'type' => 'Post',
+            'status' => 'publish',
+            'meta' => 'A custom meta',
+            'tags' => ['Tag 3', 'Tag 4', 'Tag 5'],
+        ]);
 
-    $component = Livewire::test(Table::class, ['query' => null, 'model' => $post]);
+        $component = livewire(Table::class, ['query' => null, 'model' => $post]);
 
-    $component->call('addFilterGroup');
+        $component->call('addFilterGroup');
 
-    expect($component->filters['custom'])->toHaveCount(1);
+        expect($component->filters['custom'])->toHaveCount(1);
+        expect($component->filters['custom'][0]['filters'])->toHaveCount(1);
+        expect($component->filters['custom'][0]['filters'][0])
+            ->toHaveKeys(['name', 'value', 'operator'])
+            ->and($component->filters['custom'][0]['filters'][0]['name'])->toBe('meta')
+            ->and($component->filters['custom'][0]['filters'][0]['operator'])->toBe('contains');
 
-    expect($component->filters['custom'][0]['filters'])->toHaveCount(1);
+        $component->set('filters.custom.0.filters.0.operator', 'starts_with');
+        $component->set('filters.custom.0.filters.0.value', 'A');
 
-    expect($component->filters['custom'][0]['filters'][0])->toHaveKeys(['name', 'value', 'operator']);
+        expect($component->filters['custom'][0]['filters'][0]['value'])->toBe('A');
 
-    expect($component->filters['custom'][0]['filters'][0]['name'])->toBe('meta');
+        // Should find post2 (starts with 'A')
+        $component->assertViewHas('rows', fn ($rows) => count($rows->items()) === 1 && $rows->items()[0]->id === $post2->id);
 
-    expect($component->filters['custom'][0]['filters'][0]['operator'])->toBe('contains');
+        // Filter for 'B' - should find post1
+        $component->set('filters.custom.0.filters.0.value', 'B');
+        $component->assertViewHas('rows', fn ($rows) => count($rows->items()) === 1 && $rows->items()[0]->id === $post->id);
 
-    $component->set('filters.custom.0.filters.0.operator', 'ends_with');
-
-    $component->set('filters.custom.0.filters.0.value', 'meta');
-
-    expect($component->filters['custom'][0]['filters'][0]['value'])->toBe('meta');
-
-    $component->assertViewHas('rows', function ($rows) use ($post2) {
-        return count($rows->items()) === 1 && $rows->items()[0]->id === $post2->id;
+        // Filter for 'C' - no matches
+        $component->set('filters.custom.0.filters.0.value', 'C');
+        $component->assertViewHas('rows', fn ($rows) => count($rows->items()) === 0);
     });
-
-    $component->set('filters.custom.0.filters.0.value', 'amazing');
-
-    $component->assertViewHas('rows', function ($rows) use ($post) {
-        return count($rows->items()) === 1 && $rows->items()[0]->id === $post->id;
-    });
-
-    $component->set('filters.custom.0.filters.0.value', 'C');
-
-    $component->assertViewHas('rows', function ($rows) {
-        return count($rows->items()) === 0;
-    });
-
-    // expect($component->rowsQuery->toSql())->toContain('select * from "posts" where exists (select * from "post_meta" where "posts"."id" = "post_meta"."post_id" and "key" = ? and "value" like ?');
-
-    // expect($component->rowsQuery->getBindings()[0])->toBe('meta');
-    // expect($component->rowsQuery->getBindings()[1])->toBe('%C');
 });
 
-test('table filter - custom filter - is', function () {
-    $post = TableFilterModel::create([
-        'title' => 'Test Post',
-        'content' => 'Test Content A',
-        'type' => 'Post',
-        'status' => 'publish',
-        'meta' => 'B amazing',
-        'tags' => [
-            'Tag 1', 'Tag 2', 'Tag 3',
-        ],
-    ]);
+describe('ends_with operator', function () {
+    test('filter by meta field with ends_with operator', function () {
+        $post = TableFilterModel::create([
+            'title' => 'Test Post',
+            'content' => 'Test Content A',
+            'type' => 'Post',
+            'status' => 'publish',
+            'meta' => 'B amazing',
+            'tags' => ['Tag 1', 'Tag 2', 'Tag 3'],
+        ]);
 
-    $post2 = TableFilterModel::create([
-        'title' => 'Test Post 2',
-        'content' => 'Test Content B',
-        'type' => 'Post',
-        'status' => 'publish',
-        'meta' => 'A custom meta',
-        'tags' => [
-            'Tag 3', 'Tag 4', 'Tag 5',
-        ],
-    ]);
+        $post2 = TableFilterModel::create([
+            'title' => 'Test Post 2',
+            'content' => 'Test Content B',
+            'type' => 'Post',
+            'status' => 'publish',
+            'meta' => 'A custom meta',
+            'tags' => ['Tag 3', 'Tag 4', 'Tag 5'],
+        ]);
 
-    $component = Livewire::test(Table::class, ['query' => null, 'model' => $post]);
+        $component = livewire(Table::class, ['query' => null, 'model' => $post]);
 
-    $component->call('addFilterGroup');
+        $component->call('addFilterGroup');
 
-    expect($component->filters['custom'])->toHaveCount(1);
+        $component->set('filters.custom.0.filters.0.operator', 'ends_with');
+        $component->set('filters.custom.0.filters.0.value', 'meta');
 
-    expect($component->filters['custom'][0]['filters'])->toHaveCount(1);
+        expect($component->filters['custom'][0]['filters'][0]['value'])->toBe('meta');
 
-    expect($component->filters['custom'][0]['filters'][0])->toHaveKeys(['name', 'value', 'operator']);
+        // Should find post2 (ends with 'meta')
+        $component->assertViewHas('rows', fn ($rows) => count($rows->items()) === 1 && $rows->items()[0]->id === $post2->id);
 
-    expect($component->filters['custom'][0]['filters'][0]['name'])->toBe('meta');
+        // Filter for 'amazing' - should find post1
+        $component->set('filters.custom.0.filters.0.value', 'amazing');
+        $component->assertViewHas('rows', fn ($rows) => count($rows->items()) === 1 && $rows->items()[0]->id === $post->id);
 
-    expect($component->filters['custom'][0]['filters'][0]['operator'])->toBe('contains');
-
-    $component->set('filters.custom.0.filters.0.operator', 'is');
-
-    $component->set('filters.custom.0.filters.0.value', 'A custom meta');
-
-    expect($component->filters['custom'][0]['filters'][0]['value'])->toBe('A custom meta');
-
-    $component->assertViewHas('rows', function ($rows) use ($post2) {
-        return count($rows->items()) === 1 && $rows->items()[0]->id === $post2->id;
+        // Filter for 'C' - no matches
+        $component->set('filters.custom.0.filters.0.value', 'C');
+        $component->assertViewHas('rows', fn ($rows) => count($rows->items()) === 0);
     });
-
-    $component->set('filters.custom.0.filters.0.value', 'B amazing');
-
-    $component->assertViewHas('rows', function ($rows) use ($post) {
-        return count($rows->items()) === 1 && $rows->items()[0]->id === $post->id;
-    });
-
-    $component->set('filters.custom.0.filters.0.value', 'A custom');
-
-    $component->assertViewHas('rows', function ($rows) {
-        return count($rows->items()) === 0;
-    });
-
-    // expect($component->rowsQuery->toSql())->toContain('select * from "posts" where exists (select * from "post_meta" where "posts"."id" = "post_meta"."post_id" and "key" = ? and "value" = ?');
-
-    // expect($component->rowsQuery->getBindings()[0])->toBe('meta');
-
-    // expect($component->rowsQuery->getBindings()[1])->toBe('A custom');
 });
 
-test('table filter - custom filter - greater_than', function () {
-    $post = TableFilterModel::create([
-        'title' => 'Test Post',
-        'content' => 'Test Content A',
-        'type' => 'Post',
-        'status' => 'publish',
-        'meta' => '100',
-        'tags' => [
-            'Tag 1', 'Tag 2', 'Tag 3',
-        ],
-    ]);
+describe('is operator', function () {
+    test('filter by meta field with is (exact match) operator', function () {
+        $post = TableFilterModel::create([
+            'title' => 'Test Post',
+            'content' => 'Test Content A',
+            'type' => 'Post',
+            'status' => 'publish',
+            'meta' => 'B amazing',
+            'tags' => ['Tag 1', 'Tag 2', 'Tag 3'],
+        ]);
 
-    $post2 = TableFilterModel::create([
-        'title' => 'Test Post 2',
-        'content' => 'Test Content B',
-        'type' => 'Post',
-        'status' => 'publish',
-        'meta' => '200',
-        'tags' => [
-            'Tag 3', 'Tag 4', 'Tag 5',
-        ],
-    ]);
+        $post2 = TableFilterModel::create([
+            'title' => 'Test Post 2',
+            'content' => 'Test Content B',
+            'type' => 'Post',
+            'status' => 'publish',
+            'meta' => 'A custom meta',
+            'tags' => ['Tag 3', 'Tag 4', 'Tag 5'],
+        ]);
 
-    $component = Livewire::test(Table::class, ['query' => null, 'model' => $post]);
+        $component = livewire(Table::class, ['query' => null, 'model' => $post]);
 
-    $component->call('addFilterGroup');
+        $component->call('addFilterGroup');
 
-    expect($component->filters['custom'])->toHaveCount(1);
+        $component->set('filters.custom.0.filters.0.operator', 'is');
+        $component->set('filters.custom.0.filters.0.value', 'A custom meta');
 
-    expect($component->filters['custom'][0]['filters'])->toHaveCount(1);
+        expect($component->filters['custom'][0]['filters'][0]['value'])->toBe('A custom meta');
 
-    expect($component->filters['custom'][0]['filters'][0])->toHaveKeys(['name', 'value', 'operator']);
+        // Exact match for post2
+        $component->assertViewHas('rows', fn ($rows) => count($rows->items()) === 1 && $rows->items()[0]->id === $post2->id);
 
-    expect($component->filters['custom'][0]['filters'][0]['name'])->toBe('meta');
+        // Exact match for post1
+        $component->set('filters.custom.0.filters.0.value', 'B amazing');
+        $component->assertViewHas('rows', fn ($rows) => count($rows->items()) === 1 && $rows->items()[0]->id === $post->id);
 
-    expect($component->filters['custom'][0]['filters'][0]['operator'])->toBe('contains');
-
-    $component->set('filters.custom.0.filters.0.operator', 'greater_than');
-
-    $component->set('filters.custom.0.filters.0.value', '150');
-
-    expect($component->filters['custom'][0]['filters'][0]['value'])->toBe('150');
-
-    $component->assertViewHas('rows', function ($rows) use ($post2) {
-        return count($rows->items()) === 1 && $rows->items()[0]->id === $post2->id;
+        // Partial match should not work
+        $component->set('filters.custom.0.filters.0.value', 'A custom');
+        $component->assertViewHas('rows', fn ($rows) => count($rows->items()) === 0);
     });
-
-    $component->set('filters.custom.0.filters.0.value', '200');
-
-    $component->assertViewHas('rows', function ($rows) {
-        return count($rows->items()) === 0;
-    });
-
-    // expect($component->rowsQuery->toSql())->toContain('select * from "posts" where exists (select * from "post_meta" where "posts"."id" = "post_meta"."post_id" and "key" = ? and "value" > ?');
-
-    // expect($component->rowsQuery->getBindings()[0])->toBe('meta');
-
-    // expect($component->rowsQuery->getBindings()[1])->toBe('200');
 });
 
-test('table filter - custom filter - less_than', function () {
-    $post = TableFilterModel::create([
-        'title' => 'Test Post',
-        'content' => 'Test Content A',
-        'type' => 'Post',
-        'status' => 'publish',
-        'meta' => '100',
-        'tags' => [
-            'Tag 1', 'Tag 2', 'Tag 3',
-        ],
-    ]);
+describe('comparison operators', function () {
+    test('filter by meta field with greater_than operator', function () {
+        $post = TableFilterModel::create([
+            'title' => 'Test Post',
+            'content' => 'Test Content A',
+            'type' => 'Post',
+            'status' => 'publish',
+            'meta' => '100',
+            'tags' => ['Tag 1', 'Tag 2', 'Tag 3'],
+        ]);
 
-    $post2 = TableFilterModel::create([
-        'title' => 'Test Post 2',
-        'content' => 'Test Content B',
-        'type' => 'Post',
-        'status' => 'publish',
-        'meta' => '200',
-        'tags' => [
-            'Tag 3', 'Tag 4', 'Tag 5',
-        ],
-    ]);
+        $post2 = TableFilterModel::create([
+            'title' => 'Test Post 2',
+            'content' => 'Test Content B',
+            'type' => 'Post',
+            'status' => 'publish',
+            'meta' => '200',
+            'tags' => ['Tag 3', 'Tag 4', 'Tag 5'],
+        ]);
 
-    $component = Livewire::test(Table::class, ['query' => null, 'model' => $post]);
+        $component = livewire(Table::class, ['query' => null, 'model' => $post]);
 
-    $component->call('addFilterGroup');
+        $component->call('addFilterGroup');
 
-    expect($component->filters['custom'])->toHaveCount(1);
+        $component->set('filters.custom.0.filters.0.operator', 'greater_than');
+        $component->set('filters.custom.0.filters.0.value', '150');
 
-    $component->set('filters.custom.0.filters.0.operator', 'less_than');
+        expect($component->filters['custom'][0]['filters'][0]['value'])->toBe('150');
 
-    $component->set('filters.custom.0.filters.0.value', '150');
+        // Only post2 has value > 150
+        $component->assertViewHas('rows', fn ($rows) => count($rows->items()) === 1 && $rows->items()[0]->id === $post2->id);
 
-    expect($component->filters['custom'][0]['filters'][0]['value'])->toBe('150');
-
-    $component->assertViewHas('rows', function ($rows) use ($post) {
-        return count($rows->items()) === 1 && $rows->items()[0]->id === $post->id;
+        // No results > 200
+        $component->set('filters.custom.0.filters.0.value', '200');
+        $component->assertViewHas('rows', fn ($rows) => count($rows->items()) === 0);
     });
 
-    $component->set('filters.custom.0.filters.0.value', '100');
+    test('filter by meta field with less_than operator', function () {
+        $post = TableFilterModel::create([
+            'title' => 'Test Post',
+            'content' => 'Test Content A',
+            'type' => 'Post',
+            'status' => 'publish',
+            'meta' => '100',
+            'tags' => ['Tag 1', 'Tag 2', 'Tag 3'],
+        ]);
 
-    $component->assertViewHas('rows', function ($rows) {
-        return count($rows->items()) === 0;
+        $post2 = TableFilterModel::create([
+            'title' => 'Test Post 2',
+            'content' => 'Test Content B',
+            'type' => 'Post',
+            'status' => 'publish',
+            'meta' => '200',
+            'tags' => ['Tag 3', 'Tag 4', 'Tag 5'],
+        ]);
+
+        $component = livewire(Table::class, ['query' => null, 'model' => $post]);
+
+        $component->call('addFilterGroup');
+
+        $component->set('filters.custom.0.filters.0.operator', 'less_than');
+        $component->set('filters.custom.0.filters.0.value', '150');
+
+        expect($component->filters['custom'][0]['filters'][0]['value'])->toBe('150');
+
+        // Only post1 has value < 150
+        $component->assertViewHas('rows', fn ($rows) => count($rows->items()) === 1 && $rows->items()[0]->id === $post->id);
+
+        // No results < 100
+        $component->set('filters.custom.0.filters.0.value', '100');
+        $component->assertViewHas('rows', fn ($rows) => count($rows->items()) === 0);
     });
-
-    // expect($component->rowsQuery->toSql())->toContain('select * from "posts" where exists (select * from "post_meta" where "posts"."id" = "post_meta"."post_id" and "key" = ? and "value" < ?');
-
-    // expect($component->rowsQuery->getBindings()[0])->toBe('meta');
-
-    // expect($component->rowsQuery->getBindings()[1])->toBe('100');
 });
 
-test('table filter - custom filter - is_empty', function () {
-    $post = TableFilterModel::create([
-        'title' => 'Test Post',
-        'content' => 'Test Content A',
-        'type' => 'Post',
-        'status' => 'publish',
-        'meta' => '',
-        'tags' => [
-            'Tag 1', 'Tag 2', 'Tag 3',
-        ],
-    ]);
+describe('empty operators', function () {
+    test('filter by number field with is_empty operator', function () {
+        $post = TableFilterModel::create([
+            'title' => 'Test Post',
+            'content' => 'Test Content A',
+            'type' => 'Post',
+            'status' => 'publish',
+            'meta' => '',
+            'tags' => ['Tag 1', 'Tag 2', 'Tag 3'],
+        ]);
 
-    $post2 = TableFilterModel::create([
-        'title' => 'Test Post 2',
-        'content' => 'Test Content B',
-        'type' => 'Post',
-        'status' => 'publish',
-        'meta' => '200',
-        'number' => 100,
-        'tags' => [
-            'Tag 3', 'Tag 4', 'Tag 5',
-        ],
-    ]);
+        $post2 = TableFilterModel::create([
+            'title' => 'Test Post 2',
+            'content' => 'Test Content B',
+            'type' => 'Post',
+            'status' => 'publish',
+            'meta' => '200',
+            'number' => 100,
+            'tags' => ['Tag 3', 'Tag 4', 'Tag 5'],
+        ]);
 
-    $component = Livewire::test(Table::class, ['query' => null, 'model' => $post]);
+        $component = livewire(Table::class, ['query' => null, 'model' => $post]);
 
-    $component->call('addFilterGroup');
+        $component->call('addFilterGroup');
 
-    expect($component->filters['custom'])->toHaveCount(1);
+        $component->set('filters.custom.0.filters.0.operator', 'is_empty');
+        $component->set('filters.custom.0.filters.0.name', 'number');
 
-    $component->set('filters.custom.0.filters.0.operator', 'is_empty');
-
-    $component->set('filters.custom.0.filters.0.name', 'number');
-
-    expect($component->filters['custom'][0]['filters'][0]['value'])->toBeNull();
-
-    // expect($component->rows->items())->toHaveCount(1);
-
-    // expect($component->rows->items()[0]->id)->toBe($post->id);
-
-    // To do: Make it work with fields on the table
-    // This does not work atm because we only filter meta fields (for now)
-    // $component->set('filters.custom.0.filters.0.name', 'title');
-    // expect($component->rows->items())->toHaveCount(0);
-
-    // Inspect sql when is_null is finished
-    // expect($component->rowsQuery->toSql())->toContain('select * from "posts" where not exists (select * from "post_meta" where "posts"."id" = "post_meta"."post_id" and "key" = ?');
-
-    // expect($component->rowsQuery->getBindings()[0])->toBe('meta');
-});
-
-test('table filter - custom filter - is_not_empty', function () {
-    $post = TableFilterModel::create([
-        'title' => 'Test Post',
-        'content' => 'Test Content A',
-        'type' => 'Post',
-        'status' => 'publish',
-        'meta' => '',
-        'tags' => [
-            'Tag 1', 'Tag 2', 'Tag 3',
-        ],
-    ]);
-
-    $post2 = TableFilterModel::create([
-        'title' => 'Test Post 2',
-        'content' => 'Test Content B',
-        'type' => 'Post',
-        'status' => 'publish',
-        'meta' => '200',
-        'tags' => [
-            'Tag 3', 'Tag 4', 'Tag 5',
-        ],
-    ]);
-
-    $component = Livewire::test(Table::class, ['query' => null, 'model' => $post]);
-
-    $component->call('addFilterGroup');
-
-    expect($component->filters['custom'])->toHaveCount(1);
-
-    expect($component->filters['custom'][0]['filters'][0])->toHaveKeys(['name', 'value', 'operator']);
-
-    expect($component->filters['custom'][0]['filters'][0]['name'])->toBe('meta');
-
-    expect($component->filters['custom'][0]['filters'][0]['operator'])->toBe('contains');
-
-    $component->set('filters.custom.0.filters.0.operator', 'is_not_empty');
-
-    $component->set('filters.custom.0.filters.0.name', 'meta');
-
-    expect($component->filters['custom'][0]['filters'][0]['value'])->toBeNull();
-    expect($component->filters['custom'][0]['filters'][0]['name'])->toBe('meta');
-
-    $component->assertViewHas('rows', function ($rows) {
-        return count($rows->items()) === 1;
+        expect($component->filters['custom'][0]['filters'][0]['value'])->toBeNull();
     });
 
-    $component->assertViewHas('rows', function ($rows) use ($post2) {
-        return $rows->items()[0]->id === $post2->id;
+    test('filter by meta field with is_not_empty operator', function () {
+        $post = TableFilterModel::create([
+            'title' => 'Test Post',
+            'content' => 'Test Content A',
+            'type' => 'Post',
+            'status' => 'publish',
+            'meta' => '',
+            'tags' => ['Tag 1', 'Tag 2', 'Tag 3'],
+        ]);
+
+        $post2 = TableFilterModel::create([
+            'title' => 'Test Post 2',
+            'content' => 'Test Content B',
+            'type' => 'Post',
+            'status' => 'publish',
+            'meta' => '200',
+            'tags' => ['Tag 3', 'Tag 4', 'Tag 5'],
+        ]);
+
+        $component = livewire(Table::class, ['query' => null, 'model' => $post]);
+
+        $component->call('addFilterGroup');
+
+        $component->set('filters.custom.0.filters.0.operator', 'is_not_empty');
+        $component->set('filters.custom.0.filters.0.name', 'meta');
+
+        expect($component->filters['custom'][0]['filters'][0]['value'])->toBeNull();
+        expect($component->filters['custom'][0]['filters'][0]['name'])->toBe('meta');
+
+        // Only post2 has non-empty meta
+        $component->assertViewHas('rows', fn ($rows) => count($rows->items()) === 1 && $rows->items()[0]->id === $post2->id);
+
+        // Switch to is_empty - should find post1
+        $component->set('filters.custom.0.filters.0.operator', 'is_empty');
+        $component->set('filters.custom.0.filters.0.name', 'meta');
+
+        $component->assertViewHas('rows', fn ($rows) => count($rows->items()) === 1);
     });
-
-    $component->set('filters.custom.0.filters.0.operator', 'is_empty');
-
-    $component->set('filters.custom.0.filters.0.name', 'meta');
-
-    $component->assertViewHas('rows', function ($rows) {
-        return count($rows->items()) === 1;
-    });
-
 });

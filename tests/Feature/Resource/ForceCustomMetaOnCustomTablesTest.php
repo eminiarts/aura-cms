@@ -143,3 +143,55 @@ test('custom Table is using custom meta', function () {
     expect($meta1->value)->toBe('first');
     expect($meta2->value)->toBe('second');
 });
+
+test('custom table meta fields are not in the main table', function () {
+    $resource = ForceCustomMetaOnCustomTablesModel::create([
+        'name' => 'Test',
+        'meta_1' => 'meta value',
+    ]);
+
+    $db = DB::table('custom_projects')->where('id', $resource->id)->first();
+
+    // meta_1 should not be a column in the custom_projects table
+    expect(property_exists($db, 'meta_1'))->toBeFalse();
+});
+
+test('custom table stores fillable fields in table', function () {
+    $resource = new ForceCustomMetaOnCustomTablesModel;
+    $fillable = $resource->getFillable();
+
+    // Fillable should include table columns
+    expect($fillable)->toContain('name');
+    expect($fillable)->toContain('status');
+    expect($fillable)->toContain('enabled');
+    expect($fillable)->toContain('options');
+});
+
+test('custom table meta fields can be accessed via attribute', function () {
+    $resource = ForceCustomMetaOnCustomTablesModel::create([
+        'name' => 'Attribute Test',
+        'meta_1' => 'accessible meta',
+    ]);
+
+    // Meta fields should be accessible as attributes
+    expect($resource->meta_1)->toBe('accessible meta');
+});
+
+test('custom table with meta fields can be queried', function () {
+    ForceCustomMetaOnCustomTablesModel::create([
+        'name' => 'Project A',
+        'status' => 'active',
+        'meta_1' => 'value1',
+    ]);
+
+    ForceCustomMetaOnCustomTablesModel::create([
+        'name' => 'Project B',
+        'status' => 'inactive',
+        'meta_1' => 'value2',
+    ]);
+
+    // Query by table column should work
+    $active = ForceCustomMetaOnCustomTablesModel::where('status', 'active')->get();
+    expect($active)->toHaveCount(1);
+    expect($active->first()->name)->toBe('Project A');
+});

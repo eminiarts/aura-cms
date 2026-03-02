@@ -112,7 +112,6 @@ class ResourceWithCustomTableAndCustomMetaModel extends Resource
 }
 
 test('custom Table - Fields get saved correctly when fillable are set and meta are used', function () {
-
     $resource = ResourceWithCustomTableAndCustomMetaModel::create([
         'name' => 'Test Post 1',
         'status' => 'publish',
@@ -126,17 +125,11 @@ test('custom Table - Fields get saved correctly when fillable are set and meta a
     ]);
 
     expect($resource->usesCustomTable())->toBe(true);
-
     expect($resource->name)->toBe('Test Post 1');
-
     expect($resource->status)->toBe('publish');
-
     expect($resource->enabled)->toBe(true);
-
     expect($resource->meta_1)->toBe('first');
-
     expect($resource->meta_2)->toBe('second');
-
     expect($resource->options)->toBe([
         'option1' => 'Option 1',
         'option2' => 'Option 2',
@@ -166,5 +159,58 @@ test('custom Table - Fields get saved correctly when fillable are set and meta a
 
     expect($meta2)->not->toBeNull();
     expect($meta2->value)->toBe('second');
+});
 
+test('custom table with meta - meta values can be updated', function () {
+    $resource = ResourceWithCustomTableAndCustomMetaModel::create([
+        'name' => 'Test Post',
+        'meta_1' => 'original',
+        'meta_2' => 'original2',
+    ]);
+
+    $resource->update([
+        'meta_1' => 'updated',
+        'meta_2' => 'updated2',
+    ]);
+
+    $resource->refresh();
+
+    expect($resource->meta_1)->toBe('updated');
+    expect($resource->meta_2)->toBe('updated2');
+});
+
+test('custom table with meta - correctly identifies custom meta usage', function () {
+    $resource = new ResourceWithCustomTableAndCustomMetaModel;
+
+    expect($resource::$customMeta)->toBeTrue();
+    expect($resource::$usesMeta)->toBeTrue();
+});
+
+test('custom table with meta - table column fields stored in table', function () {
+    $resource = ResourceWithCustomTableAndCustomMetaModel::create([
+        'name' => 'Column Test',
+        'status' => 'active',
+    ]);
+
+    // Table columns should be in the custom_projects table
+    $this->assertDatabaseHas('custom_projects', [
+        'id' => $resource->id,
+        'name' => 'Column Test',
+        'status' => 'active',
+    ]);
+});
+
+test('custom table with meta - meta stored in meta table', function () {
+    $resource = ResourceWithCustomTableAndCustomMetaModel::create([
+        'name' => 'Meta Test',
+        'meta_1' => 'meta value',
+    ]);
+
+    // Meta should be in the meta table
+    $this->assertDatabaseHas('meta', [
+        'metable_id' => $resource->id,
+        'metable_type' => ResourceWithCustomTableAndCustomMetaModel::class,
+        'key' => 'meta_1',
+        'value' => 'meta value',
+    ]);
 });

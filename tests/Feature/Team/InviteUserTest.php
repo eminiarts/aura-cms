@@ -1,6 +1,5 @@
 <?php
 
-use Aura\Base\Facades\Aura;
 use Aura\Base\Livewire\InviteUser;
 use Aura\Base\Resources\Role;
 use Aura\Base\Resources\Team;
@@ -15,267 +14,266 @@ use function Pest\Livewire\livewire;
 
 uses(RefreshDatabase::class);
 
-// Before each test, create a Superadmin and login
 beforeEach(function () {
-
     $this->withoutExceptionHandling();
-
     $this->actingAs($this->user = createSuperAdmin());
-
-    // config('aura.teams')
     config(['aura.teams' => true]);
 });
 
-test('user can be invited', function () {
+describe('User Invitation Creation', function () {
+    it('can invite a user via Livewire component', function () {
+        $this->withoutExceptionHandling();
 
-    $this->withoutExceptionHandling();
-    // Test InviteUser Livewire Component
-    $component = Livewire::test(InviteUser::class)
-        ->call('save')
-        ->assertHasErrors(['form.fields.email' => 'required'])
-        ->set('form.fields.email', 'test@test.ch')
-        ->call('save')
-        ->assertHasErrors(['form.fields.role' => 'required'])
-        ->set('form.fields.role', 1)
-        ->call('save')
-        ->assertHasNoErrors();
+        Livewire::test(InviteUser::class)
+            ->call('save')
+            ->assertHasErrors(['form.fields.email' => 'required'])
+            ->set('form.fields.email', 'test@test.ch')
+            ->call('save')
+            ->assertHasErrors(['form.fields.role' => 'required'])
+            ->set('form.fields.role', 1)
+            ->call('save')
+            ->assertHasNoErrors();
 
-    // DB should have 1 TeamInvitation
-    $this->assertEquals(1, TeamInvitation::count());
+        $this->assertEquals(1, TeamInvitation::count());
 
-    $invitation = TeamInvitation::first();
+        $invitation = TeamInvitation::first();
+        expect($invitation->email)->toBe('test@test.ch');
+    });
 
-    $invitation->fresh();
+    it('creates invitation with correct role', function () {
+        expect(config('aura.teams'))->toBeTrue();
 
-    // DB should have 1 TeamInvitation with correct email
-    expect($invitation->email)->toBe('test@test.ch');
-});
-
-test('user gets correct role', function () {
-
-    expect(config('aura.teams'))->toBeTrue();
-
-    // Create a new Role
-    $role = Role::create([
-        'name' => 'Test Role',
-        'slug' => 'test_role',
-        'permissions' => [
-            'test_permission' => true,
-        ],
-    ]);
-
-    // Test InviteUser Livewire Component
-    $component = Livewire::test(InviteUser::class)
-        ->call('save')
-        ->assertHasErrors(['form.fields.email' => 'required'])
-        ->set('form.fields.email', 'test@test.ch')
-        ->call('save')
-        ->assertHasErrors(['form.fields.role' => 'required'])
-        ->set('form.fields.role', $role->id)
-        ->call('save')
-        ->assertHasNoErrors();
-
-    // DB should have 1 TeamInvitation
-    $this->assertEquals(1, TeamInvitation::count());
-
-    $invitation = TeamInvitation::first();
-
-    $invitation->fresh();
-
-    // DB should have 1 TeamInvitation with correct email
-    expect($invitation->email)->toBe('test@test.ch');
-
-    // Go to the Registration Page and make sure it works
-    $url = URL::signedRoute('aura.invitation.register', [$invitation->team, $invitation]);
-
-    // Log out
-    $this->app['auth']->logout();
-
-    // As a Guest
-    $this->assertGuest();
-
-    // Visit $url and assert Ok
-    $response = $this->get($url);
-
-    $response->assertOk();
-
-    // Register the user and see if the role is correct
-    $response = $this->post($url, [
-        'name' => 'Test User',
-        'password' => 'password',
-        'password_confirmation' => 'password',
-    ]);
-
-    // Check if the user is created in the database
-    $this->assertDatabaseHas('users', [
-        'name' => 'Test User',
-        'email' => 'test@test.ch',
-    ]);
-
-    // Assert that the user is logged in
-    $this->assertAuthenticated();
-
-    // Assert is on dashboard
-    $response->assertRedirect(config('aura.auth.redirect'));
-
-    // Check if the Team Invitation is deleted
-    $this->assertDatabaseMissing('team_invitations', [
-        'email' => 'test@test.ch',
-    ]);
-
-    // Check if the user has the correct role
-    $user = User::where('email', 'test@test.ch')->first();
-
-    expect($user->hasRole('test_role'))->toBeTrue();
-    expect($user->hasRole('super_admin'))->toBeFalse();
-});
-
-test('Team Invitation can be created', function () {
-    $team = $this->user->currentTeam;
-
-    $invitation = $team->teamInvitations()->create([
-        'email' => 'test@test.ch',
-        'role' => Role::first()->id,
-    ]);
-
-    // DB should have 1 TeamInvitation with correct email
-    expect($invitation->email)->toBe('test@test.ch');
-
-    // expect $invitation->exists to be true
-    expect($invitation->exists)->toBeTrue();
-});
-
-// create a test to see if /register route is available
-test('register route is available', function () {
-
-    $this->withoutExceptionHandling();
-
-    // log the user out
-    $this->app['auth']->logout();
-
-    // assert that the user is logged out
-    $this->assertGuest();
-
-    // Get the register view
-    $this->get(route('aura.register'))->assertOk();
-});
-
-test('user email is prefilled in the registration', function () {
-    $team = $this->user->currentTeam;
-
-    $invitation = $team->teamInvitations()->create([
-        'email' => 'test@test.ch',
-        'role' => Role::first()->id,
-    ]);
-
-    // DB should have 1 TeamInvitation with correct email
-    expect($invitation->email)->toBe('test@test.ch');
-
-    // expect $invitation->exists to be true
-    expect($invitation->exists)->toBeTrue();
-});
-
-test('user can register using an invitation', function () {
-    $team = Team::first();
-
-    $invitation = TeamInvitation::create([
-        'team_id' => $team->id,
-        'email' => 'invite@test.de',
-        'role' => Role::first()->id,
-    ]);
-
-    // Generate the signed URL
-    $url = URL::signedRoute('aura.invitation.register', [$team, $invitation]);
-
-    // Make the request to the signed URL
-    $response = $this->get($url);
-
-    // Should be 302 because is logged in
-    $response->assertStatus(302);
-
-    // log the user out
-    $this->app['auth']->logout();
-
-    // assert that the user is logged out
-    $this->assertGuest();
-
-    // Make the request to the signed URL
-    $response = $this->get($url);
-
-    // Assert that the response is OK and contains the registration view
-    $response->assertOk()->assertViewIs('aura::auth.user_invitation');
-
-    // Assert team name is in the view
-    $response->assertSee($team->name);
-
-    // Assert email is in the view
-    $response->assertSee($invitation->email);
-
-    $user = User::where('email', $invitation->email)->first();
-
-    $this->assertNull($user);
-
-    $response = $this->post($url, [
-        'name' => 'Test User',
-        'password' => 'password',
-        'password_confirmation' => 'password',
-    ]);
-
-    $response->assertRedirect(config('aura.auth.redirect'));
-
-    $user = User::where('email', $invitation->email)->first();
-
-    $this->assertNotNull($user);
-
-    $this->assertTrue(Hash::check('password', $user->password));
-
-    $this->assertEquals($team->id, $user->current_team_id);
-
-    expect($user->roles->first()->id)->toEqual($invitation->role);
-
-    $this->assertDatabaseMissing('team_invitations', ['id' => $invitation->id]);
-});
-
-test('email and role are required in the invite user component', function () {
-    $team = Team::first();
-
-    livewire(InviteUser::class, ['team' => $team])
-        ->set('form.fields.email', '')
-        ->set('form.fields.role', '')
-        ->call('save')
-        ->assertHasErrors([
-            'form.fields.email',
-            'form.fields.role',
+        $role = Role::create([
+            'name' => 'Test Role',
+            'slug' => 'test_role',
+            'permissions' => [
+                'test_permission' => true,
+            ],
         ]);
 
-    $user = User::factory()->create(['email' => 'invited@test.com']);
+        Livewire::test(InviteUser::class)
+            ->set('form.fields.email', 'roletest@test.ch')
+            ->set('form.fields.role', $role->id)
+            ->call('save')
+            ->assertHasNoErrors();
 
-    livewire(InviteUser::class, ['team' => $team])
-        ->set('form', ['fields' => [
-            'email' => 'invited@test.com',
+        $invitation = TeamInvitation::first();
+        expect($invitation->email)->toBe('roletest@test.ch');
+        expect((int) $invitation->role)->toBe($role->id);
+    });
+
+    it('creates team invitation model directly', function () {
+        $team = $this->user->currentTeam;
+
+        $invitation = $team->teamInvitations()->create([
+            'email' => 'direct@test.ch',
             'role' => Role::first()->id,
-        ]])
-        ->call('save')
-        ->assertHasNoErrors([
-            'form.fields.email',
         ]);
 
-    // Attach the user to the team
-    $user->update(['fields' => ['roles' => [Role::first()->id]]]);
+        expect($invitation->email)->toBe('direct@test.ch');
+        expect($invitation->exists)->toBeTrue();
+    });
+});
 
-    // $role->users()->sync([$user->id => ['resource_type' => Role::class]]);
+describe('User Invitation Registration', function () {
+    it('register route is available for guests', function () {
+        $this->withoutExceptionHandling();
 
-    // $user->roles()->sync([Role::first()->id => ['resource_type' => User::class]]);
+        $this->app['auth']->logout();
+        $this->assertGuest();
 
-    // $user->teams()->attach($team->id);
+        $this->get(route('aura.register'))->assertOk();
+    });
 
-    livewire(InviteUser::class, ['team' => $team])
-        ->set('form', ['fields' => [
-            'email' => 'invited@test.com',
+    it('invited user gets correct role after registration', function () {
+        expect(config('aura.teams'))->toBeTrue();
+
+        $role = Role::create([
+            'name' => 'Test Role',
+            'slug' => 'test_role',
+            'permissions' => [
+                'test_permission' => true,
+            ],
+        ]);
+
+        Livewire::test(InviteUser::class)
+            ->set('form.fields.email', 'invitee@test.ch')
+            ->set('form.fields.role', $role->id)
+            ->call('save')
+            ->assertHasNoErrors();
+
+        $invitation = TeamInvitation::first();
+        $url = URL::signedRoute('aura.invitation.register', [$invitation->team, $invitation]);
+
+        $this->app['auth']->logout();
+        $this->assertGuest();
+
+        $this->get($url)->assertOk();
+
+        $response = $this->post($url, [
+            'name' => 'Test User',
+            'password' => 'password',
+            'password_confirmation' => 'password',
+        ]);
+
+        $this->assertDatabaseHas('users', [
+            'name' => 'Test User',
+            'email' => 'invitee@test.ch',
+        ]);
+
+        $this->assertAuthenticated();
+        $response->assertRedirect(config('aura.auth.redirect'));
+
+        $this->assertDatabaseMissing('team_invitations', [
+            'email' => 'invitee@test.ch',
+        ]);
+
+        $user = User::where('email', 'invitee@test.ch')->first();
+
+        expect($user->hasRole('test_role'))->toBeTrue();
+        expect($user->hasRole('super_admin'))->toBeFalse();
+    });
+
+    it('can register using invitation link', function () {
+        $team = Team::first();
+
+        $invitation = TeamInvitation::create([
+            'team_id' => $team->id,
+            'email' => 'invite@test.de',
             'role' => Role::first()->id,
-        ]])
-        ->call('save')
-        ->assertHasErrors([
-            'form.fields.email',
         ]);
+
+        $url = URL::signedRoute('aura.invitation.register', [$team, $invitation]);
+
+        // Logged in user should be redirected
+        $this->get($url)->assertStatus(302);
+
+        $this->app['auth']->logout();
+        $this->assertGuest();
+
+        // Guest should see invitation page
+        $this->get($url)
+            ->assertOk()
+            ->assertViewIs('aura::auth.user_invitation')
+            ->assertSee($team->name)
+            ->assertSee($invitation->email);
+
+        $user = User::where('email', $invitation->email)->first();
+        $this->assertNull($user);
+
+        $response = $this->post($url, [
+            'name' => 'Test User',
+            'password' => 'password',
+            'password_confirmation' => 'password',
+        ]);
+
+        $response->assertRedirect(config('aura.auth.redirect'));
+
+        $user = User::where('email', $invitation->email)->first();
+        $this->assertNotNull($user);
+
+        $this->assertTrue(Hash::check('password', $user->password));
+        $this->assertEquals($team->id, $user->current_team_id);
+
+        expect($user->roles->first()->id)->toEqual($invitation->role);
+
+        $this->assertDatabaseMissing('team_invitations', ['id' => $invitation->id]);
+    });
+});
+
+describe('User Invitation Validation', function () {
+    it('requires email and role fields', function () {
+        $team = Team::first();
+
+        livewire(InviteUser::class, ['team' => $team])
+            ->set('form.fields.email', '')
+            ->set('form.fields.role', '')
+            ->call('save')
+            ->assertHasErrors([
+                'form.fields.email',
+                'form.fields.role',
+            ]);
+    });
+
+    it('can invite new email address', function () {
+        $team = Team::first();
+
+        $user = User::factory()->create(['email' => 'newuser@test.com']);
+
+        livewire(InviteUser::class, ['team' => $team])
+            ->set('form', ['fields' => [
+                'email' => 'newuser@test.com',
+                'role' => Role::first()->id,
+            ]])
+            ->call('save')
+            ->assertHasNoErrors(['form.fields.email']);
+    });
+
+    it('prevents inviting user already in team', function () {
+        $team = Team::first();
+
+        // Create user and add to team
+        $user = User::factory()->create(['email' => 'existing@test.com']);
+        $user->update(['fields' => ['roles' => [Role::first()->id]]]);
+
+        // Try to invite same user again
+        livewire(InviteUser::class, ['team' => $team])
+            ->set('form', ['fields' => [
+                'email' => 'existing@test.com',
+                'role' => Role::first()->id,
+            ]])
+            ->call('save')
+            ->assertHasErrors(['form.fields.email']);
+    });
+});
+
+describe('Invitation Management', function () {
+    it('deletes invitation after user registers', function () {
+        $team = Team::first();
+
+        $invitation = TeamInvitation::create([
+            'team_id' => $team->id,
+            'email' => 'cleanup@test.de',
+            'role' => Role::first()->id,
+        ]);
+
+        expect(TeamInvitation::count())->toBe(1);
+
+        $url = URL::signedRoute('aura.invitation.register', [$team, $invitation]);
+
+        $this->app['auth']->logout();
+
+        $this->post($url, [
+            'name' => 'Cleanup Test',
+            'password' => 'password',
+            'password_confirmation' => 'password',
+        ]);
+
+        expect(TeamInvitation::count())->toBe(0);
+    });
+
+    it('associates registered user with correct team', function () {
+        $team = Team::first();
+
+        $invitation = TeamInvitation::create([
+            'team_id' => $team->id,
+            'email' => 'teamtest@test.de',
+            'role' => Role::first()->id,
+        ]);
+
+        $url = URL::signedRoute('aura.invitation.register', [$team, $invitation]);
+
+        $this->app['auth']->logout();
+
+        $this->post($url, [
+            'name' => 'Team Test User',
+            'password' => 'password',
+            'password_confirmation' => 'password',
+        ]);
+
+        $user = User::where('email', 'teamtest@test.de')->first();
+
+        expect($user->current_team_id)->toBe($team->id);
+        expect($user->belongsToTeam($team))->toBeTrue();
+    });
 });

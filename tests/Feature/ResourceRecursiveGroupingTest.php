@@ -87,23 +87,62 @@ class ModelRecursive extends Resource
     }
 }
 
-test('recursive field function', function () {
+test('root structure has single Tabs wrapper', function () {
     $model = new ModelRecursive;
-
     $fields = $model->getGroupedFields();
 
-    $this->assertCount(1, $fields);
-    $this->assertCount(2, $fields[0]['fields'][0]['fields']);
-    $this->assertEquals($fields[0]['name'], 'Aura\Base\Fields\Tabs');
-    $this->assertEquals($fields[0]['fields'][0]['name'], 'Tab 1');
-    $this->assertEquals($fields[0]['fields'][0]['fields'][0]['name'], 'Panel 1');
-    $this->assertEquals($fields[0]['fields'][0]['fields'][0]['fields'][0]['name'], 'Repeater 1');
-    $this->assertEquals($fields[0]['fields'][0]['fields'][0]['fields'][1]['name'], 'Repeater 2');
-    $this->assertEquals($fields[0]['fields'][0]['fields'][0]['fields'][2]['name'], 'Repeater 3');
-    $this->assertCount(3, $fields[0]['fields'][0]['fields'][0]['fields']);
-    $this->assertCount(0, $fields[0]['fields'][0]['fields'][0]['fields'][0]['fields']);
-    $this->assertEquals($fields[0]['fields'][1]['name'], 'Tab 2');
-    $this->assertEquals('Field in Tab 2', $fields[0]['fields'][1]['fields'][0]['name']);
-    $this->assertEquals('Tab 3', $fields[0]['fields'][2]['name']);
-    $this->assertEquals('Field in Tab 3', $fields[0]['fields'][2]['fields'][0]['name']);
+    expect($fields)->toHaveCount(1)
+        ->and($fields[0]['name'])->toBe('Aura\Base\Fields\Tabs');
+});
+
+test('Tab 1 contains two panels', function () {
+    $model = new ModelRecursive;
+    $fields = $model->getGroupedFields();
+
+    $tab1 = $fields[0]['fields'][0];
+
+    expect($tab1['name'])->toBe('Tab 1')
+        ->and($tab1['fields'])->toHaveCount(2);
+});
+
+test('Panel 1 contains three repeaters', function () {
+    $model = new ModelRecursive;
+    $fields = $model->getGroupedFields();
+
+    $panel1 = $fields[0]['fields'][0]['fields'][0];
+
+    expect($panel1['name'])->toBe('Panel 1')
+        ->and($panel1['fields'][0]['name'])->toBe('Repeater 1')
+        ->and($panel1['fields'][1]['name'])->toBe('Repeater 2')
+        ->and($panel1['fields'][2]['name'])->toBe('Repeater 3')
+        ->and($panel1['fields'])->toHaveCount(3);
+});
+
+test('Repeater 1 has no nested fields', function () {
+    $model = new ModelRecursive;
+    $fields = $model->getGroupedFields();
+
+    $repeater1 = $fields[0]['fields'][0]['fields'][0]['fields'][0];
+
+    expect($repeater1['fields'])->toHaveCount(0);
+});
+
+test('Tab 2 contains text field', function () {
+    $model = new ModelRecursive;
+    $fields = $model->getGroupedFields();
+
+    $tab2 = $fields[0]['fields'][1];
+
+    expect($tab2['name'])->toBe('Tab 2')
+        ->and($tab2['fields'][0]['name'])->toBe('Field in Tab 2');
+});
+
+test('Tab 3 contains text field', function () {
+    $model = new ModelRecursive;
+    $fields = $model->getGroupedFields();
+
+    $tab3 = $fields[0]['fields'][2];
+
+    expect($tab3['name'])->toBe('Tab 3')
+        ->and($tab3['fields'][0]['name'])->toBe('Field in Tab 3');
 });

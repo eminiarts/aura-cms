@@ -45,7 +45,6 @@ class MultipleTabsBelowEachOtherModel extends Resource
                 'validation' => 'numeric',
                 'conditional_logic' => [],
                 'slug' => 'text2',
-                // 'exclude_level' => 3,
             ],
             [
                 'name' => 'Panel 2',
@@ -53,7 +52,6 @@ class MultipleTabsBelowEachOtherModel extends Resource
                 'slug' => 'panel2',
                 'exclude_level' => 3,
                 'same_level_grouping' => false,
-                // 'exclude_level' => 2,
             ],
             [
                 'name' => 'Tab 1 in Panel2',
@@ -84,38 +82,72 @@ class MultipleTabsBelowEachOtherModel extends Resource
     }
 }
 
-test('multiple tabs in panels in tabs are possible', function () {
+test('root structure has single Tabs wrapper', function () {
     $model = new MultipleTabsBelowEachOtherModel;
-
     $fields = $model->getGroupedFields();
 
-    // Check root level structure
-    expect($fields)->toHaveCount(1);
-    expect($fields[0]['name'])->toBe('Aura\Base\Fields\Tabs');
-    expect($fields[0]['fields'])->toHaveCount(1);
+    expect($fields)->toHaveCount(1)
+        ->and($fields[0]['name'])->toBe('Aura\Base\Fields\Tabs')
+        ->and($fields[0]['fields'])->toHaveCount(1);
+});
 
-    // Check Tab 1
-    expect($fields[0]['fields'][0]['name'])->toBe('Tab 1');
-    expect($fields[0]['fields'][0]['_id'])->toBe(2);
-    expect($fields[0]['fields'][0]['_parent_id'])->toBe(1);
+test('Tab 1 is properly nested at root level', function () {
+    $model = new MultipleTabsBelowEachOtherModel;
+    $fields = $model->getGroupedFields();
 
-    // Check Panel 1
+    $tab1 = $fields[0]['fields'][0];
+
+    expect($tab1['name'])->toBe('Tab 1')
+        ->and($tab1['_id'])->toBe(2)
+        ->and($tab1['_parent_id'])->toBe(1);
+});
+
+test('Panel 1 is nested inside Tab 1', function () {
+    $model = new MultipleTabsBelowEachOtherModel;
+    $fields = $model->getGroupedFields();
+
     $panel1 = $fields[0]['fields'][0]['fields'][0];
-    expect($panel1['name'])->toBe('Panel 1');
-    expect($panel1['_id'])->toBe(3);
-    expect($panel1['_parent_id'])->toBe(2);
 
-    // Check Panel 2
+    expect($panel1['name'])->toBe('Panel 1')
+        ->and($panel1['_id'])->toBe(3)
+        ->and($panel1['_parent_id'])->toBe(2);
+});
+
+test('Panel 2 is nested inside Panel 1', function () {
+    $model = new MultipleTabsBelowEachOtherModel;
+    $fields = $model->getGroupedFields();
+
+    $panel1 = $fields[0]['fields'][0]['fields'][0];
     $panel2 = $panel1['fields'][1];
-    expect($panel2['name'])->toBe('Panel 2');
-    expect($panel2['type'])->toBe('Aura\Base\Fields\Panel');
-    expect($panel2['_id'])->toBe(9);
-    expect($panel2['_parent_id'])->toBe(3); // Should be child of Panel 1
-    expect($panel2['exclude_level'])->toBe(3);
 
-    // Check Panel 2's tabs structure
-    expect($panel2['fields'][0]['name'])->toBe('Aura\Base\Fields\Tabs');
-    expect($panel2['fields'][0]['fields'])->toHaveCount(2);
-    expect($panel2['fields'][0]['fields'][0]['name'])->toBe('Tab 1 in Panel2');
-    expect($panel2['fields'][0]['fields'][1]['name'])->toBe('Tab 2 in Panel2');
+    expect($panel2['name'])->toBe('Panel 2')
+        ->and($panel2['type'])->toBe('Aura\Base\Fields\Panel')
+        ->and($panel2['_id'])->toBe(9)
+        ->and($panel2['_parent_id'])->toBe(3)
+        ->and($panel2['exclude_level'])->toBe(3);
+});
+
+test('Panel 2 contains Tabs wrapper with two tabs', function () {
+    $model = new MultipleTabsBelowEachOtherModel;
+    $fields = $model->getGroupedFields();
+
+    $panel1 = $fields[0]['fields'][0]['fields'][0];
+    $panel2 = $panel1['fields'][1];
+
+    expect($panel2['fields'][0]['name'])->toBe('Aura\Base\Fields\Tabs')
+        ->and($panel2['fields'][0]['fields'])->toHaveCount(2)
+        ->and($panel2['fields'][0]['fields'][0]['name'])->toBe('Tab 1 in Panel2')
+        ->and($panel2['fields'][0]['fields'][1]['name'])->toBe('Tab 2 in Panel2');
+});
+
+test('nested tabs in Panel 2 contain correct text fields', function () {
+    $model = new MultipleTabsBelowEachOtherModel;
+    $fields = $model->getGroupedFields();
+
+    $panel1 = $fields[0]['fields'][0]['fields'][0];
+    $panel2 = $panel1['fields'][1];
+    $tabs = $panel2['fields'][0];
+
+    expect($tabs['fields'][0]['fields'][0]['slug'])->toBe('text3')
+        ->and($tabs['fields'][1]['fields'][0]['slug'])->toBe('text4');
 });

@@ -61,8 +61,131 @@ function buildTree(array &$fields, $parentId = 0)
     return $branch;
 }
 
-test('recursive field function', function () {
-    $fields = [
+test('addIds assigns correct IDs to global tabs', function () {
+    $fields = getTestFields();
+    $fields = addIds($fields);
+    $array = $fields->toArray();
+
+    expect($array[0]['name'])->toBe('Global Tab 1')
+        ->and($array[0]['_id'])->toBe(1)
+        ->and($array[0]['_parent_id'])->toBeNull()
+        ->and($array[0]['global'])->toBeTrue();
+});
+
+test('addIds assigns correct parent IDs to panels under global tabs', function () {
+    $fields = getTestFields();
+    $fields = addIds($fields);
+    $array = $fields->toArray();
+
+    expect($array[1]['name'])->toBe('Panel 1')
+        ->and($array[1]['_id'])->toBe(2)
+        ->and($array[1]['_parent_id'])->toBe(1);
+});
+
+test('addIds assigns same parent ID to same-level repeaters', function () {
+    $fields = getTestFields();
+    $fields = addIds($fields);
+    $array = $fields->toArray();
+
+    expect($array[2]['name'])->toBe('Repeater 1')
+        ->and($array[2]['_id'])->toBe(3)
+        ->and($array[2]['_parent_id'])->toBe(2)
+        ->and($array[3]['name'])->toBe('Repeater 2')
+        ->and($array[3]['_id'])->toBe(4)
+        ->and($array[3]['_parent_id'])->toBe(2);
+});
+
+test('addIds handles nested repeaters correctly', function () {
+    $fields = getTestFields();
+    $fields = addIds($fields);
+    $array = $fields->toArray();
+
+    expect($array[4]['name'])->toBe('Repeater 3')
+        ->and($array[4]['_id'])->toBe(5)
+        ->and($array[4]['_parent_id'])->toBe(4)
+        ->and($array[4]['nested'])->toBeTrue();
+});
+
+test('addIds assigns fields inside repeater correct parent ID', function () {
+    $fields = getTestFields();
+    $fields = addIds($fields);
+    $array = $fields->toArray();
+
+    expect($array[5]['name'])->toBe('Field in Repeater 3')
+        ->and($array[5]['_id'])->toBe(6)
+        ->and($array[5]['_parent_id'])->toBe(5);
+});
+
+test('addIds handles second global tab correctly', function () {
+    $fields = getTestFields();
+    $fields = addIds($fields);
+    $array = $fields->toArray();
+
+    expect($array[7]['name'])->toBe('Global Tab 2')
+        ->and($array[7]['_id'])->toBe(8)
+        ->and($array[7]['_parent_id'])->toBeNull()
+        ->and($array[8]['name'])->toBe('Panel 2')
+        ->and($array[8]['_id'])->toBe(9)
+        ->and($array[8]['_parent_id'])->toBe(8);
+});
+
+test('buildTree creates correct tree structure', function () {
+    $fields = getTestFields();
+    $fields = addIds($fields);
+    $array = $fields->toArray();
+    $tree = buildTree($array);
+    $tree = collect($tree)->values();
+
+    expect($tree)->toHaveCount(2);
+});
+
+test('buildTree groups Panel 1 under Global Tab 1', function () {
+    $fields = getTestFields();
+    $fields = addIds($fields);
+    $array = $fields->toArray();
+    $tree = buildTree($array);
+    $tree = collect($tree)->values();
+
+    expect($tree[0]['name'])->toBe('Global Tab 1')
+        ->and($tree[0]['fields'])->toHaveCount(1)
+        ->and($tree[0]['fields'][0]['name'])->toBe('Panel 1');
+});
+
+test('buildTree groups repeaters under Panel 1', function () {
+    $fields = getTestFields();
+    $fields = addIds($fields);
+    $array = $fields->toArray();
+    $tree = buildTree($array);
+    $tree = collect($tree)->values();
+
+    expect($tree[0]['fields'][0]['fields'][0]['name'])->toBe('Repeater 1')
+        ->and($tree[0]['fields'][0]['fields'][1]['name'])->toBe('Repeater 2')
+        ->and($tree[0]['fields'][0]['fields'])->toHaveCount(2);
+});
+
+test('buildTree nests Repeater 3 inside Repeater 2', function () {
+    $fields = getTestFields();
+    $fields = addIds($fields);
+    $array = $fields->toArray();
+    $tree = buildTree($array);
+    $tree = collect($tree)->values();
+
+    expect($tree[0]['fields'][0]['fields'][1]['fields'][0]['name'])->toBe('Repeater 3');
+});
+
+test('buildTree leaves Repeater 1 with empty fields', function () {
+    $fields = getTestFields();
+    $fields = addIds($fields);
+    $array = $fields->toArray();
+    $tree = buildTree($array);
+    $tree = collect($tree)->values();
+
+    expect($tree[0]['fields'][0]['fields'][0]['fields'])->toHaveCount(0);
+});
+
+function getTestFields()
+{
+    return [
         [
             'name' => 'Global Tab 1',
             'type' => 'tab',
@@ -161,49 +284,4 @@ test('recursive field function', function () {
             'group' => false,
         ],
     ];
-
-    $fields = addIds($fields);
-
-    $array = $fields->toArray();
-
-    $this->assertEquals($array[0]['name'], 'Global Tab 1');
-    $this->assertEquals($array[0]['_id'], 1);
-    $this->assertEquals($array[0]['_parent_id'], null);
-    $this->assertEquals($array[0]['global'], true);
-    $this->assertEquals($array[1]['name'], 'Panel 1');
-    $this->assertEquals($array[1]['_id'], 2);
-    $this->assertEquals($array[1]['_parent_id'], 1);
-    $this->assertEquals($array[2]['name'], 'Repeater 1');
-    $this->assertEquals($array[2]['_id'], 3);
-    $this->assertEquals($array[2]['_parent_id'], 2);
-    $this->assertEquals($array[3]['name'], 'Repeater 2');
-    $this->assertEquals($array[3]['_id'], 4);
-    $this->assertEquals($array[3]['_parent_id'], 2);
-    $this->assertEquals($array[4]['name'], 'Repeater 3');
-    $this->assertEquals($array[4]['_id'], 5);
-    $this->assertEquals($array[4]['_parent_id'], 4);
-    $this->assertEquals($array[4]['nested'], true);
-    $this->assertEquals($array[5]['name'], 'Field in Repeater 3');
-    $this->assertEquals($array[5]['_id'], 6);
-    $this->assertEquals($array[5]['_parent_id'], 5);
-    $this->assertEquals($array[7]['name'], 'Global Tab 2');
-    $this->assertEquals($array[7]['_id'], 8);
-    $this->assertEquals($array[7]['_parent_id'], null);
-    $this->assertEquals($array[8]['name'], 'Panel 2');
-    $this->assertEquals($array[8]['_id'], 9);
-    $this->assertEquals($array[8]['_parent_id'], 8);
-
-    $tree = buildTree($array);
-
-    $tree = collect($tree)->values();
-
-    $this->assertCount(2, $tree);
-    $this->assertCount(1, $tree[0]['fields']);
-    $this->assertEquals($tree[0]['name'], 'Global Tab 1');
-    $this->assertEquals($tree[0]['fields'][0]['name'], 'Panel 1');
-    $this->assertEquals($tree[0]['fields'][0]['fields'][0]['name'], 'Repeater 1');
-    $this->assertEquals($tree[0]['fields'][0]['fields'][1]['name'], 'Repeater 2');
-    $this->assertEquals($tree[0]['fields'][0]['fields'][1]['fields'][0]['name'], 'Repeater 3');
-    $this->assertCount(2, $tree[0]['fields'][0]['fields']);
-    $this->assertCount(0, $tree[0]['fields'][0]['fields'][0]['fields']);
-});
+}

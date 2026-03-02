@@ -4,31 +4,60 @@ namespace Tests\Feature\Auth;
 
 use Aura\Base\Resources\User;
 
-test('confirm password screen can be rendered', function () {
-    $user = User::factory()->create();
+describe('Password Confirmation Screen', function () {
+    test('confirmation screen renders for authenticated user', function () {
+        $user = User::factory()->create();
 
-    $response = $this->actingAs($user)->get('/confirm-password');
+        $this->actingAs($user)
+            ->get(route('aura.password.confirm'))
+            ->assertSuccessful()
+            ->assertSee('Password')
+            ->assertSee('Confirm');
+    });
 
-    $response->assertStatus(200);
+    test('guest is redirected from confirmation screen', function () {
+        $this->get(route('aura.password.confirm'))
+            ->assertRedirect();
+    });
 });
 
-test('password can be confirmed', function () {
-    $user = User::factory()->create();
+describe('Password Confirmation', function () {
+    test('password can be confirmed with valid credentials', function () {
+        $user = User::factory()->create();
 
-    $response = $this->actingAs($user)->post('/confirm-password', [
-        'password' => 'password',
-    ]);
+        $this->actingAs($user)
+            ->post(route('aura.password.confirm'), ['password' => 'password'])
+            ->assertRedirect(config('aura.auth.redirect'))
+            ->assertSessionHasNoErrors();
+    });
 
-    $response->assertRedirect();
-    $response->assertSessionHasNoErrors();
-});
+    test('password confirmation sets session flag', function () {
+        $user = User::factory()->create();
 
-test('password is not confirmed with invalid password', function () {
-    $user = User::factory()->create();
+        $this->actingAs($user)
+            ->post(route('aura.password.confirm'), ['password' => 'password']);
 
-    $response = $this->actingAs($user)->post('/confirm-password', [
-        'password' => 'wrong-password',
-    ]);
+        expect(session('auth.password_confirmed_at'))->not->toBeNull();
+    });
 
-    $response->assertSessionHasErrors();
+    test('password confirmation fails with wrong password', function () {
+        $user = User::factory()->create();
+
+        $this->actingAs($user)
+            ->post(route('aura.password.confirm'), ['password' => 'wrong-password'])
+            ->assertSessionHasErrors('password');
+    });
+
+    test('password field is required', function () {
+        $user = User::factory()->create();
+
+        $this->actingAs($user)
+            ->post(route('aura.password.confirm'), [])
+            ->assertSessionHasErrors('password');
+    });
+
+    test('guest cannot confirm password', function () {
+        $this->post(route('aura.password.confirm'), ['password' => 'password'])
+            ->assertRedirect();
+    });
 });

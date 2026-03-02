@@ -100,7 +100,7 @@ class InviteUser extends Component
 
         Mail::to($email)->send(new TeamInvitation($invitation));
 
-        $this->notify('Erfolgreich eingeladen.');
+        $this->notify('Invitation sent successfully.');
 
         $this->dispatch('closeModal');
         $this->dispatch('refreshTable');

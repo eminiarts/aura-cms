@@ -3,12 +3,9 @@
 use Aura\Base\Livewire\Table\Table;
 use Aura\Base\Resources\Role;
 use Aura\Base\Resources\User;
-use Illuminate\Foundation\Testing\RefreshDatabase;
-use Livewire\Livewire;
 
-uses(RefreshDatabase::class);
+use function Pest\Livewire\livewire;
 
-// Before each test, create a Superadmin and login
 beforeEach(function () {
     $this->actingAs($this->user = createSuperAdmin());
 
@@ -25,31 +22,39 @@ beforeEach(function () {
         'email' => 'user2@example.com',
         'roles' => [$role->id],
     ]);
-
-    // Maybe there is a better way to do this
-    // $role->users()->syncWithoutDetaching([$this->user2->id => ['resource_type' => Role::class]]);
-    // $role->users()->syncWithoutDetaching([$this->user3->id => ['resource_type' => Role::class]]);
-
 });
 
-test('search user by email', function () {
-    // Visit the Post Index Page
-    $component = Livewire::test(Table::class, ['model' => $this->user])
-        ->assertSet('search', null);
+describe('user table search', function () {
+    test('search by email shows matching users', function () {
+        $component = livewire(Table::class, ['model' => $this->user])
+            ->assertSet('search', null);
 
-    $component->assertViewHas('rows', function ($rows) {
-        return count($rows->items()) === 3;
+        // Initially shows all 3 users
+        $component->assertViewHas('rows', fn ($rows) => count($rows->items()) === 3);
+
+        $component
+            ->assertSeeHtml('Test User')
+            ->assertSee('Test User 2')
+            ->assertSee('test@example.com')
+            ->assertSee('user2@example.com')
+            ->set('search', 'user2')
+            ->assertSee('user2@example.com')
+            ->assertDontSee('test@example.com');
+
+        expect($component->sorts)->toBe([]);
     });
 
-    $component
-        ->assertSeeHtml('Test User')
-        ->assertSee('Test User 2')
-        ->assertSee('test@example.com')
-        ->assertSee('user2@example.com')
-        ->set('search', 'user2')
-        ->assertSee('user2@example.com')
-        ->assertDontSee('test@example.com');
+    test('search by name shows matching users', function () {
+        $component = livewire(Table::class, ['model' => $this->user]);
 
-    // $component->sorts should be []
-    $this->assertEmpty($component->sorts);
+        $component->set('search', 'Test User');
+        $component->assertViewHas('rows', fn ($rows) => count($rows->items()) >= 1);
+    });
+
+    test('search with no matches returns empty results', function () {
+        $component = livewire(Table::class, ['model' => $this->user]);
+
+        $component->set('search', 'nonexistent@email.com');
+        $component->assertViewHas('rows', fn ($rows) => count($rows->items()) === 0);
+    });
 });

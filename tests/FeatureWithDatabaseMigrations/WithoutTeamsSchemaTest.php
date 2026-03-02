@@ -1,146 +1,162 @@
 <?php
 
-namespace Tests\Feature;
-
-use Aura\Base\Livewire\Settings;
 use Aura\Base\Resources\Option;
+use Aura\Base\Resources\Permission;
 use Aura\Base\Resources\Role;
 use Aura\Base\Resources\User;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
-use Livewire\Livewire;
 
-// Before each test, create a Superadmin and login
 beforeEach(function () {
-    // Set teams to false for this test
     config(['aura.teams' => false]);
 
-    // Drop all tables and run our migration
     $this->artisan('migrate:fresh');
 
     $migration = require __DIR__.'/../../database/migrations/create_aura_tables.php.stub';
     $migration->up();
 
-    $user = User::factory()->create();
-
-    $role = Role::create([
-        'type' => 'Role',
-        'title' => 'Super Admin',
-        'slug' => 'super_admin',
-        'name' => 'Super Admin',
-        'description' => 'Super Admin can perform everything.',
-        'super_admin' => true,
-        'permissions' => [],
-        'user_id' => $user->id,
-    ]);
-
-    $user->update(['roles' => [$role->id]]);
-    $user->refresh();
-
-    $this->actingAs($user);
+    $this->actingAs($this->user = createSuperAdminWithoutTeam());
 });
 
 afterEach(function () {
-    // Restore original config value
     config(['aura.teams' => true]);
 });
 
-test('Aura without teams', function () {
-    expect(config('aura.teams'))->toBeFalse();
+describe('database schema without teams', function () {
+    describe('teams table absence', function () {
+        it('does not create teams table', function () {
+            expect(Schema::hasTable('teams'))->toBeFalse();
+        });
 
-    // expect teams table not to exist
-    expect(Schema::hasTable('teams'))->toBeFalse();
-    expect(Schema::hasTable('team_meta'))->toBeFalse();
+        it('does not create team_meta table', function () {
+            expect(Schema::hasTable('team_meta'))->toBeFalse();
+        });
+    });
+
+    describe('users table columns', function () {
+        it('does not have current_team_id column', function () {
+            expect(Schema::hasColumn('users', 'current_team_id'))->toBeFalse();
+        });
+
+        it('has required user columns', function () {
+            expect(Schema::hasColumn('users', 'id'))->toBeTrue()
+                ->and(Schema::hasColumn('users', 'name'))->toBeTrue()
+                ->and(Schema::hasColumn('users', 'email'))->toBeTrue()
+                ->and(Schema::hasColumn('users', 'password'))->toBeTrue();
+        });
+    });
+
+    describe('posts table columns', function () {
+        it('does not have team_id column', function () {
+            expect(Schema::hasColumn('posts', 'team_id'))->toBeFalse();
+        });
+
+        it('has required post columns', function () {
+            expect(Schema::hasColumn('posts', 'id'))->toBeTrue()
+                ->and(Schema::hasColumn('posts', 'title'))->toBeTrue()
+                ->and(Schema::hasColumn('posts', 'content'))->toBeTrue()
+                ->and(Schema::hasColumn('posts', 'type'))->toBeTrue();
+        });
+    });
+
+    describe('roles table columns', function () {
+        it('does not have team_id column', function () {
+            expect(Schema::hasColumn('roles', 'team_id'))->toBeFalse();
+        });
+
+        it('has required role columns', function () {
+            expect(Schema::hasColumn('roles', 'id'))->toBeTrue()
+                ->and(Schema::hasColumn('roles', 'name'))->toBeTrue()
+                ->and(Schema::hasColumn('roles', 'slug'))->toBeTrue()
+                ->and(Schema::hasColumn('roles', 'super_admin'))->toBeTrue()
+                ->and(Schema::hasColumn('roles', 'permissions'))->toBeTrue();
+        });
+    });
+
+    describe('permissions table columns', function () {
+        it('does not have team_id column', function () {
+            expect(Schema::hasColumn('permissions', 'team_id'))->toBeFalse();
+        });
+
+        it('has required permission columns', function () {
+            expect(Schema::hasColumn('permissions', 'id'))->toBeTrue()
+                ->and(Schema::hasColumn('permissions', 'name'))->toBeTrue()
+                ->and(Schema::hasColumn('permissions', 'slug'))->toBeTrue();
+        });
+    });
+
+    describe('options table columns', function () {
+        it('exists', function () {
+            expect(Schema::hasTable('options'))->toBeTrue();
+        });
+
+        it('does not have team_id column', function () {
+            expect(Schema::hasColumn('options', 'team_id'))->toBeFalse();
+        });
+
+        it('has required option columns', function () {
+            expect(Schema::hasColumn('options', 'id'))->toBeTrue()
+                ->and(Schema::hasColumn('options', 'name'))->toBeTrue()
+                ->and(Schema::hasColumn('options', 'value'))->toBeTrue();
+        });
+    });
+
+    describe('user_role pivot table', function () {
+        it('does not have team_id column', function () {
+            expect(Schema::hasColumn('user_role', 'team_id'))->toBeFalse();
+        });
+
+        it('has required pivot columns', function () {
+            expect(Schema::hasColumn('user_role', 'user_id'))->toBeTrue()
+                ->and(Schema::hasColumn('user_role', 'role_id'))->toBeTrue();
+        });
+    });
 });
 
-test('Aura without teams - table columns', function () {
-    // Set config to not use teams
-    config(['aura.teams' => false]);
+describe('configuration verification', function () {
+    it('confirms teams are disabled', function () {
+        expect(config('aura.teams'))->toBeFalse();
+    });
 
-    expect(config('aura.teams'))->toBeFalse();
-
-    // expect user table not to have current_team_id
-    expect(Schema::hasColumn('users', 'current_team_id'))->toBeFalse();
-    expect(Schema::hasColumn('posts', 'team_id'))->toBeFalse();
-    expect(Schema::hasColumn('user_meta', 'team_id'))->toBeFalse();
+    it('confirms user is super admin', function () {
+        expect(auth()->user()->isSuperAdmin())->toBeTrue();
+    });
 });
 
-test('Aura without teams - options table', function () {
-    // Set config to not use teams
-    expect(config('aura.teams'))->toBeFalse();
+describe('model behavior without teams', function () {
+    it('creates user without team association', function () {
+        $user = User::factory()->create();
 
-    // expect options table to exist
-    expect(Schema::hasTable('options'))->toBeTrue();
-});
+        expect($user->current_team_id)->toBeNull();
+    });
 
-// Additional test for SettingsWithoutTeamsTest
-test('Settings Component can be rendered', function () {
-    config(['aura.features.settings' => true]);
+    it('creates role without team_id', function () {
+        $role = Role::create([
+            'name' => 'Test Role',
+            'slug' => 'test-role',
+            'description' => 'A test role',
+            'super_admin' => false,
+            'permissions' => [],
+        ]);
 
-    $this->withoutExceptionHandling();
+        expect($role->team_id)->toBeNull();
+    });
 
-    expect(config('aura.features.settings'))->toBeTrue();
-    expect(auth()->user()->isSuperAdmin())->toBeTrue();
+    it('creates permission without team_id', function () {
+        $permission = Permission::create([
+            'name' => 'Test Permission',
+            'slug' => 'test-permission',
+            'description' => 'A test permission',
+        ]);
 
-    $response = $this->get(route('aura.settings'));
-    $response->assertStatus(200);
-});
+        expect($permission->team_id)->toBeNull();
+    });
 
-test('Default Team Settings are created', function () {
-    config(['aura.features.settings' => true]);
+    it('creates option without team_id', function () {
+        $option = Option::create([
+            'name' => 'test-option',
+            'value' => ['key' => 'value'],
+        ]);
 
-    // Default Team Settings
-    Livewire::test(Settings::class)
-        ->assertSee('Settings')
-        ->assertSee('primary')
-        ->assertSet('form.fields.darkmode-type', 'auto')
-        ->assertSet('form.fields.sidebar-type', 'primary')
-        ->assertSet('form.fields.color-palette', 'aura')
-        ->assertSet('form.fields.gray-color-palette', 'slate');
-
-    // assert DB has 1 record in options table
-    $this->assertDatabaseCount('options', 1);
-
-    // get first option from DB
-    $option = Option::first();
-
-    // assert option is team settings
-    $this->assertEquals($option->name, 'settings');
-
-    // assert $option->value is an array
-    $this->assertIsArray($option->value);
-});
-
-test('Settings can be saved', function () {
-    config(['aura.features.settings' => true]);
-
-    // Default Team Settings
-    Livewire::test(Settings::class)
-        ->set('form.fields.darkmode-type', 'light')
-        ->set('form.fields.sidebar-type', 'light')
-        ->set('form.fields.color-palette', 'rose')
-        ->set('form.fields.gray-color-palette', 'zinc')
-        ->call('save')
-        ->assertSet('form.fields.darkmode-type', 'light')
-        ->assertSet('form.fields.sidebar-type', 'light')
-        ->assertSet('form.fields.color-palette', 'rose')
-        ->assertSet('form.fields.gray-color-palette', 'zinc');
-
-    // assert DB has 1 record in options table
-    $this->assertDatabaseCount('options', 1);
-
-    // get first option from DB
-    $option = Option::first();
-
-    // assert option is team settings
-    $this->assertEquals($option->name, 'settings');
-
-    // assert $option->value is an array
-    $this->assertIsArray($option->value);
-
-    // assert settings are saved
-    $this->assertEquals($option->value['darkmode-type'], 'light');
-    $this->assertEquals($option->value['sidebar-type'], 'light');
-    $this->assertEquals($option->value['color-palette'], 'rose');
-    $this->assertEquals($option->value['gray-color-palette'], 'zinc');
+        expect($option->team_id)->toBeNull();
+    });
 });

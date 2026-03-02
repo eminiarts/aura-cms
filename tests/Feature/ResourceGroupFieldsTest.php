@@ -124,19 +124,50 @@ class ModelWithGroups extends Resource
     }
 }
 
-test('fields get grouped when field group is true', function () {
+test('root structure has single Tabs wrapper', function () {
     $model = new ModelWithGroups;
-
     $fields = $model->getGroupedFields();
 
-    $this->assertCount(1, $fields);
-    $this->assertCount(2, $fields[0]['fields']);
-    $this->assertEquals($fields[0]['fields'][0]['name'], 'Tab 1');
-    $this->assertEquals($fields[0]['fields'][0]['slug'], 'tab-1');
-    $this->assertCount(2, $fields[0]['fields'][0]['fields']);
-    $this->assertEquals($fields[0]['fields'][0]['fields'][0]['name'], 'Panel 1');
-    $this->assertEquals($fields[0]['fields'][0]['fields'][0]['type'], 'Aura\\Base\\Fields\\Panel');
-    $this->assertEquals($fields[0]['fields'][0]['fields'][1]['type'], 'Aura\\Base\\Fields\\Panel');
-    $this->assertCount(3, $fields[0]['fields'][0]['fields'][0]['fields']);
-    $this->assertCount(1, $fields[0]['fields'][1]['fields'][0]['fields']);
+    expect($fields)->toHaveCount(1);
+});
+
+test('Tabs wrapper contains two tabs', function () {
+    $model = new ModelWithGroups;
+    $fields = $model->getGroupedFields();
+
+    expect($fields[0]['fields'])->toHaveCount(2)
+        ->and($fields[0]['fields'][0]['name'])->toBe('Tab 1')
+        ->and($fields[0]['fields'][0]['slug'])->toBe('tab-1');
+});
+
+test('Tab 1 contains two panels', function () {
+    $model = new ModelWithGroups;
+    $fields = $model->getGroupedFields();
+
+    $tab1 = $fields[0]['fields'][0];
+
+    expect($tab1['fields'])->toHaveCount(2)
+        ->and($tab1['fields'][0]['name'])->toBe('Panel 1')
+        ->and($tab1['fields'][0]['type'])->toBe('Aura\Base\Fields\Panel')
+        ->and($tab1['fields'][1]['name'])->toBe('Panel 2')
+        ->and($tab1['fields'][1]['type'])->toBe('Aura\Base\Fields\Panel');
+});
+
+test('Panel 1 contains correct fields', function () {
+    $model = new ModelWithGroups;
+    $fields = $model->getGroupedFields();
+
+    $panel1 = $fields[0]['fields'][0]['fields'][0];
+
+    expect($panel1['fields'])->toHaveCount(3);
+});
+
+test('Tab 2 contains Panel 3 with one field', function () {
+    $model = new ModelWithGroups;
+    $fields = $model->getGroupedFields();
+
+    $tab2 = $fields[0]['fields'][1];
+    $panel3 = $tab2['fields'][0];
+
+    expect($panel3['fields'])->toHaveCount(1);
 });

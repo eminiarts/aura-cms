@@ -2,6 +2,8 @@
 
 namespace VendorName\Skeleton;
 
+use Aura\Base\Resource;
+
 class Skeleton extends Resource
 {
     public static ?string $slug = 'skeleton';

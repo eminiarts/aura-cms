@@ -76,7 +76,7 @@ class CreateResource extends Component
 
         Artisan::call('cache:clear');
 
-        $this->notify('Erfolgreich Erstellt.');
+        $this->notify('Successfully created.');
 
         $this->dispatch('closeModal');
 

@@ -124,10 +124,9 @@ test('custom Table - Meta is not used for fields', function () {
     ]);
 
     expect($resource->usesCustomTable())->toBe(true);
-
     expect($resource->name)->toBeNull();
 
-    $meta = DB::table('meta')->insert([
+    DB::table('meta')->insert([
         'metable_id' => $resource->id,
         'metable_type' => ResourceWithCustomTableWithoutFillableModel::class,
         'key' => 'name',
@@ -138,7 +137,52 @@ test('custom Table - Meta is not used for fields', function () {
 
     expect($resource->name)->not->toBe('Test Post 1');
     expect($resource->name)->toBeNull();
-
     expect($resource->display('name'))->toBeNull();
+});
 
+test('custom table without fillable - uses guarded instead', function () {
+    $resource = new ResourceWithCustomTableWithoutFillableModel;
+
+    expect($resource->getGuarded())->toBe([]);
+});
+
+test('custom table without fillable - does not use meta', function () {
+    $resource = new ResourceWithCustomTableWithoutFillableModel;
+
+    expect(ResourceWithCustomTableWithoutFillableModel::$usesMeta)->toBeFalse();
+});
+
+test('custom table without fillable - can update fields directly', function () {
+    $resource = ResourceWithCustomTableWithoutFillableModel::create([
+        'name' => 'Original',
+        'status' => 'draft',
+    ]);
+
+    $resource->update([
+        'name' => 'Updated',
+        'status' => 'published',
+    ]);
+
+    $resource->refresh();
+
+    expect($resource->name)->toBe('Updated');
+    expect($resource->status)->toBe('published');
+
+    $this->assertDatabaseHas('custom_projects', [
+        'id' => $resource->id,
+        'name' => 'Updated',
+        'status' => 'published',
+    ]);
+});
+
+test('custom table without fillable - boolean and array casting work', function () {
+    $resource = ResourceWithCustomTableWithoutFillableModel::create([
+        'name' => 'Cast Test',
+        'enabled' => true,
+        'options' => ['a' => 1, 'b' => 2],
+    ]);
+
+    expect($resource->enabled)->toBe(true);
+    expect($resource->options)->toBeArray();
+    expect($resource->options['a'])->toBe(1);
 });

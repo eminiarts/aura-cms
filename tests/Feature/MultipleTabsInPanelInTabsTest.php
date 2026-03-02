@@ -26,7 +26,6 @@ class MultipleTabsInPanelInTabsTestModel extends Resource
                 'name' => 'Tab 1 in Panel',
                 'type' => 'Aura\\Base\\Fields\\Tab',
                 'slug' => 'tab1-1',
-                // 'wrap' => true,
             ],
             [
                 'name' => 'Text 1',
@@ -52,9 +51,6 @@ class MultipleTabsInPanelInTabsTestModel extends Resource
                 'type' => 'Aura\\Base\\Fields\\Panel',
                 'slug' => 'panel2',
                 'same_level_grouping' => false,
-                // 'exclude_level' => 2,
-                // 'nested' => false,
-                // 'exclude_from_nesting' => true,
             ],
             [
                 'name' => 'Tab 1 in Panel2',
@@ -98,27 +94,54 @@ class MultipleTabsInPanelInTabsTestModel extends Resource
     }
 }
 
-test('panel 2 is nested in tab 2 of panel 1', function () {
+test('panel 2 has correct parent ID in fields with IDs', function () {
     $model = new MultipleTabsInPanelInTabsTestModel;
-
     $fields = $model->getFieldsWithIds();
     $panel2 = $fields->where('slug', 'panel2')->first();
 
-    expect($panel2)->toBeArray();
+    expect($panel2)->toBeArray()
+        ->and($panel2['_parent_id'])->toBe(7);
+});
 
-    expect($panel2['_parent_id'])->toBe(7);
-
+test('root structure has single Tabs wrapper with two tabs', function () {
+    $model = new MultipleTabsInPanelInTabsTestModel;
     $fields = $model->getGroupedFields();
 
-    $this->assertCount(1, $fields);
-    $this->assertEquals($fields[0]['name'], 'Aura\Base\Fields\Tabs');
-    $this->assertCount(2, $fields[0]['fields']);
-    $this->assertEquals($fields[0]['fields'][0]['name'], 'Tab 1');
-    $this->assertEquals($fields[0]['fields'][1]['name'], 'Tab 2');
-    $this->assertEquals($fields[0]['fields'][0]['fields'][0]['name'], 'Panel 1');
-    $this->assertEquals($fields[0]['fields'][0]['fields'][0]['fields'][0]['fields'][1]['fields'][1]['name'], 'Panel 2');
-    $this->assertCount(1, $fields[0]['fields'][0]['fields'][0]['fields']);
-    $this->assertCount(2, $fields[0]['fields'][0]['fields'][0]['fields'][0]['fields']);
-    $this->assertEquals($fields[0]['fields'][0]['fields'][0]['fields'][0]['name'], 'Aura\Base\Fields\Tabs');
-    $this->assertEquals($fields[0]['fields'][0]['fields'][0]['fields'][0]['fields'][0]['name'], 'Tab 1 in Panel');
+    expect($fields)->toHaveCount(1)
+        ->and($fields[0]['name'])->toBe('Aura\Base\Fields\Tabs')
+        ->and($fields[0]['fields'])->toHaveCount(2)
+        ->and($fields[0]['fields'][0]['name'])->toBe('Tab 1')
+        ->and($fields[0]['fields'][1]['name'])->toBe('Tab 2');
+});
+
+test('Panel 1 is nested inside Tab 1', function () {
+    $model = new MultipleTabsInPanelInTabsTestModel;
+    $fields = $model->getGroupedFields();
+
+    expect($fields[0]['fields'][0]['fields'][0]['name'])->toBe('Panel 1');
+});
+
+test('Panel 1 contains nested Tabs with two tabs', function () {
+    $model = new MultipleTabsInPanelInTabsTestModel;
+    $fields = $model->getGroupedFields();
+
+    $panel1 = $fields[0]['fields'][0]['fields'][0];
+
+    expect($panel1['fields'])->toHaveCount(1)
+        ->and($panel1['fields'][0]['name'])->toBe('Aura\Base\Fields\Tabs')
+        ->and($panel1['fields'][0]['fields'])->toHaveCount(2)
+        ->and($panel1['fields'][0]['fields'][0]['name'])->toBe('Tab 1 in Panel')
+        ->and($panel1['fields'][0]['fields'][1]['name'])->toBe('Tab 2 in Panel');
+});
+
+test('Panel 2 is nested inside Tab 2 of Panel 1 tabs', function () {
+    $model = new MultipleTabsInPanelInTabsTestModel;
+    $fields = $model->getGroupedFields();
+
+    $panel1 = $fields[0]['fields'][0]['fields'][0];
+    $nestedTabs = $panel1['fields'][0];
+    $tab2InPanel = $nestedTabs['fields'][1];
+
+    expect($tab2InPanel['fields'][1]['name'])->toBe('Panel 2')
+        ->and($tab2InPanel['fields'][1]['type'])->toBe('Aura\Base\Fields\Panel');
 });

@@ -29,7 +29,7 @@ trait BulkActions
         // Clear the selected array
         $this->selected = [];
 
-        $this->notify('Erfolgreich: '.$action);
+        $this->notify('Success: '.$action);
     }
 
     public function bulkCollectionAction($action)
@@ -46,7 +46,7 @@ trait BulkActions
         // reset selected rows
         $this->selected = [];
 
-        $this->notify('Erfolgreich: '.$action);
+        $this->notify('Success: '.$action);
 
         $this->dispatch('refreshTable');
     }

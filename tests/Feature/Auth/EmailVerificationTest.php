@@ -4,53 +4,131 @@ namespace Tests\Feature\Auth;
 
 use Aura\Base\Resources\User;
 use Illuminate\Auth\Events\Verified;
+use Illuminate\Auth\Notifications\VerifyEmail;
 use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\URL;
 
-test('email verification screen can be rendered', function () {
+describe('Email Verification Notice', function () {
+    test('verification notice screen renders for unverified user', function () {
+        $user = User::factory()->unverified()->create();
 
-    $this->withoutExceptionHandling();
+        $this->actingAs($user)
+            ->get(route('aura.verification.notice'))
+            ->assertSuccessful();
+    });
 
-    $user = User::factory()->create([
-        'email_verified_at' => null,
-    ]);
+    test('verified user is redirected from verification notice', function () {
+        $user = User::factory()->create();
 
-    $response = $this->actingAs($user)->get(route('aura.verification.notice'));
-    $response->assertStatus(200);
+        $this->actingAs($user)
+            ->get(route('aura.verification.notice'))
+            ->assertRedirect(config('aura.auth.redirect'));
+    });
+
+    test('guest is redirected from verification notice', function () {
+        $this->get(route('aura.verification.notice'))
+            ->assertRedirect();
+    });
 });
 
-test('email can be verified', function () {
-    $user = User::factory()->create([
-        'email_verified_at' => null,
-    ]);
+describe('Email Verification', function () {
+    test('email can be verified with valid link', function () {
+        Event::fake([Verified::class]);
 
-    Event::fake();
+        $user = User::factory()->unverified()->create();
 
-    $verificationUrl = URL::temporarySignedRoute(
-        'aura.verification.verify',
-        now()->addMinutes(60),
-        ['id' => $user->id, 'hash' => sha1($user->email)]
-    );
+        $verificationUrl = URL::temporarySignedRoute(
+            'aura.verification.verify',
+            now()->addMinutes(60),
+            ['id' => $user->id, 'hash' => sha1($user->email)]
+        );
 
-    $response = $this->actingAs($user)->get($verificationUrl);
+        $this->actingAs($user)
+            ->get($verificationUrl)
+            ->assertRedirect(config('aura.auth.redirect').'?verified=1');
 
-    Event::assertDispatched(Verified::class);
-    expect($user->fresh()->hasVerifiedEmail())->toBeTrue();
-    $response->assertRedirect(config('aura.auth.redirect').'?verified=1');
+        Event::assertDispatched(Verified::class);
+        expect($user->fresh()->hasVerifiedEmail())->toBeTrue();
+    });
+
+    test('email is not verified with invalid hash', function () {
+        $user = User::factory()->unverified()->create();
+
+        $verificationUrl = URL::temporarySignedRoute(
+            'aura.verification.verify',
+            now()->addMinutes(60),
+            ['id' => $user->id, 'hash' => sha1('wrong-email')]
+        );
+
+        $this->actingAs($user)
+            ->get($verificationUrl)
+            ->assertForbidden();
+
+        expect($user->fresh()->hasVerifiedEmail())->toBeFalse();
+    });
+
+    test('email verification is not triggered for already verified user', function () {
+        Event::fake([Verified::class]);
+
+        $user = User::factory()->create();
+
+        $verificationUrl = URL::temporarySignedRoute(
+            'aura.verification.verify',
+            now()->addMinutes(60),
+            ['id' => $user->id, 'hash' => sha1($user->email)]
+        );
+
+        $this->actingAs($user)
+            ->get($verificationUrl)
+            ->assertRedirect(config('aura.auth.redirect').'?verified=1');
+
+        Event::assertNotDispatched(Verified::class);
+    });
+
+    test('email verification requires valid signature', function () {
+        $user = User::factory()->unverified()->create();
+
+        $invalidUrl = route('aura.verification.verify', [
+            'id' => $user->id,
+            'hash' => sha1($user->email),
+        ]);
+
+        $this->actingAs($user)
+            ->get($invalidUrl)
+            ->assertForbidden();
+
+        expect($user->fresh()->hasVerifiedEmail())->toBeFalse();
+    });
 });
 
-test('email is not verified with invalid hash', function () {
-    $user = User::factory()->create([
-        'email_verified_at' => null,
-    ]);
+describe('Email Verification Notification', function () {
+    test('verification notification can be resent', function () {
+        Notification::fake();
 
-    $verificationUrl = URL::temporarySignedRoute(
-        'aura.verification.verify',
-        now()->addMinutes(60),
-        ['id' => $user->id, 'hash' => sha1('wrong-email')]
-    );
+        $user = User::factory()->unverified()->create();
 
-    $this->actingAs($user)->get($verificationUrl);
+        $this->actingAs($user)
+            ->post(route('aura.verification.send'))
+            ->assertSessionHas('status', 'verification-link-sent');
 
-    expect($user->fresh()->hasVerifiedEmail())->toBeFalse();
+        Notification::assertSentTo($user, VerifyEmail::class);
+    });
+
+    test('verified user is redirected when requesting verification email', function () {
+        Notification::fake();
+
+        $user = User::factory()->create();
+
+        $this->actingAs($user)
+            ->post(route('aura.verification.send'))
+            ->assertRedirect(config('aura.auth.redirect'));
+
+        Notification::assertNothingSent();
+    });
+
+    test('guest cannot request verification notification', function () {
+        $this->post(route('aura.verification.send'))
+            ->assertRedirect();
+    });
 });
