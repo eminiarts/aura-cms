@@ -10,14 +10,9 @@ class DeleteTeamForm extends Component
 {
     use AuthorizesRequests;
 
-    public Team $team;
-
     public $confirmTeamName = '';
 
-    public function mount(Team $team)
-    {
-        $this->team = $team;
-    }
+    public Team $team;
 
     public function deleteTeam()
     {
@@ -29,6 +24,7 @@ class DeleteTeamForm extends Component
 
         if ($this->confirmTeamName !== $this->team->name) {
             $this->addError('confirmTeamName', __('The team name does not match.'));
+
             return;
         }
 
@@ -36,7 +32,12 @@ class DeleteTeamForm extends Component
 
         $this->notify(__('Team deleted successfully.'));
 
-        return redirect(config('aura.path') . '/dashboard');
+        return redirect(config('aura.path').'/dashboard');
+    }
+
+    public function mount(Team $team)
+    {
+        $this->team = $team;
     }
 
     public function render()

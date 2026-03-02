@@ -11,13 +11,37 @@ class TeamMemberManager extends Component
 {
     use AuthorizesRequests;
 
-    public Team $team;
-
-    public $showInviteModal = false;
+    public $memberIdToUpdate;
 
     public $roleToUpdate;
 
-    public $memberIdToUpdate;
+    public $showInviteModal = false;
+
+    public Team $team;
+
+    public function cancelInvitation($invitationId)
+    {
+        $this->authorize('removeTeamMember', $this->team);
+
+        $this->team->teamInvitations()->where('id', $invitationId)->delete();
+
+        $this->notify(__('Invitation cancelled.'));
+    }
+
+    public function getInvitationsProperty()
+    {
+        return $this->team->teamInvitations()->get();
+    }
+
+    public function getMembersProperty()
+    {
+        return $this->team->users()->get();
+    }
+
+    public function getRolesProperty()
+    {
+        return Role::where('team_id', $this->team->id)->get();
+    }
 
     public function mount(Team $team)
     {
@@ -37,6 +61,7 @@ class TeamMemberManager extends Component
 
         if ($this->team->user_id === $userId) {
             $this->notify(__('Cannot remove the team owner.'), 'error');
+
             return;
         }
 
@@ -45,46 +70,23 @@ class TeamMemberManager extends Component
         $this->notify(__('Team member removed successfully.'));
     }
 
+    public function render()
+    {
+        return view('aura::teams.team-member-manager');
+    }
+
     public function updateMemberRole($userId, $roleId)
     {
         $this->authorize('updateTeamMember', $this->team);
 
         if ($this->team->user_id === $userId) {
             $this->notify(__('Cannot change the team owner role.'), 'error');
+
             return;
         }
 
         $this->team->users()->updateExistingPivot($userId, ['role_id' => $roleId]);
 
         $this->notify(__('Member role updated successfully.'));
-    }
-
-    public function cancelInvitation($invitationId)
-    {
-        $this->authorize('removeTeamMember', $this->team);
-
-        $this->team->teamInvitations()->where('id', $invitationId)->delete();
-
-        $this->notify(__('Invitation cancelled.'));
-    }
-
-    public function getRolesProperty()
-    {
-        return Role::where('team_id', $this->team->id)->get();
-    }
-
-    public function getMembersProperty()
-    {
-        return $this->team->users()->get();
-    }
-
-    public function getInvitationsProperty()
-    {
-        return $this->team->teamInvitations()->get();
-    }
-
-    public function render()
-    {
-        return view('aura::teams.team-member-manager');
     }
 }

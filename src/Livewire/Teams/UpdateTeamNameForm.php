@@ -10,14 +10,19 @@ class UpdateTeamNameForm extends Component
 {
     use AuthorizesRequests;
 
-    public Team $team;
-
     public $name;
+
+    public Team $team;
 
     public function mount(Team $team)
     {
         $this->team = $team;
         $this->name = $team->name;
+    }
+
+    public function render()
+    {
+        return view('aura::teams.update-team-name-form');
     }
 
     public function updateTeamName()
@@ -31,10 +36,5 @@ class UpdateTeamNameForm extends Component
         $this->team->update(['name' => $this->name]);
 
         $this->notify(__('Team name updated successfully.'));
-    }
-
-    public function render()
-    {
-        return view('aura::teams.update-team-name-form');
     }
 }

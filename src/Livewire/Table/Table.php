@@ -35,8 +35,6 @@ class Table extends Component
     use Sorting;
     use SwitchView;
 
-    public $showInviteUserModal = false;
-
     public $bulkActionsView = 'aura::components.table.bulkActions';
 
     /**
@@ -111,6 +109,8 @@ class Table extends Component
      */
     public $settings;
 
+    public $showInviteUserModal = false;
+
     protected $queryString = ['selectedFilter'];
 
     public function action($data)
@@ -135,6 +135,12 @@ class Table extends Component
     }
 
     public function boot() {}
+
+    #[On('closeInviteModal')]
+    public function closeInviteModal(): void
+    {
+        $this->showInviteUserModal = false;
+    }
 
     /**
      * Get the create link.
@@ -276,12 +282,6 @@ class Table extends Component
     {
         unset($this->rowsQuery);
         unset($this->rows);
-    }
-
-    #[On("closeInviteModal")]
-    public function closeInviteModal(): void
-    {
-        $this->showInviteUserModal = false;
     }
 
     #[On('refreshTable')]

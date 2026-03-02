@@ -85,14 +85,6 @@ class InviteUser extends Component
         return $rules;
     }
 
-    protected function validationAttributes()
-    {
-        return [
-            'form.fields.email' => 'email',
-            'form.fields.role' => 'role',
-        ];
-    }
-
     public function save()
     {
         $this->validate();
@@ -113,5 +105,13 @@ class InviteUser extends Component
         $this->dispatch('closeModal');
         $this->dispatch('closeInviteModal');
         $this->dispatch('refreshTable');
+    }
+
+    protected function validationAttributes()
+    {
+        return [
+            'form.fields.email' => 'email',
+            'form.fields.role' => 'role',
+        ];
     }
 }

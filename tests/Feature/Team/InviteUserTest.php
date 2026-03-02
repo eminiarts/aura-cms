@@ -1,6 +1,5 @@
 <?php
 
-use Aura\Base\Facades\Aura;
 use Aura\Base\Livewire\InviteUser;
 use Aura\Base\Resources\Role;
 use Aura\Base\Resources\Team;
@@ -11,8 +10,6 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\URL;
 use Livewire\Livewire;
-
-
 
 uses(Tests\TestCase::class, RefreshDatabase::class);
 

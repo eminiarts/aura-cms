@@ -29,7 +29,7 @@ class CreateTeamForm extends Component
 
         $this->notify(__('Team created successfully.'));
 
-        return redirect(config('aura.path') . '/Team/' . $team->id . '/edit');
+        return redirect(config('aura.path').'/Team/'.$team->id.'/edit');
     }
 
     public function render()
