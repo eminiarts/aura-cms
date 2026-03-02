@@ -2,7 +2,6 @@
 
 namespace Tests\Feature\Auth;
 
-use Aura\Base\Resources\Role;
 use Aura\Base\Resources\Team;
 use Aura\Base\Resources\User;
 use Illuminate\Auth\Events\Registered;

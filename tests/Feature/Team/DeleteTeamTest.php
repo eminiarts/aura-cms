@@ -160,7 +160,7 @@ describe('Team Delete Side Effects', function () {
         $team = Team::first();
 
         // Check if meta table exists before testing
-        if (!\Illuminate\Support\Facades\Schema::hasTable('postmeta')) {
+        if (! \Illuminate\Support\Facades\Schema::hasTable('postmeta')) {
             $this->markTestSkipped('postmeta table does not exist');
         }
 

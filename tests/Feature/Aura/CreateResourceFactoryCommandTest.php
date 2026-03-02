@@ -1,6 +1,5 @@
 <?php
 
-use Aura\Base\Resource;
 use Aura\Base\Resources\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\File;

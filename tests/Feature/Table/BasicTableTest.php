@@ -4,7 +4,6 @@ use Aura\Base\Facades\Aura;
 use Aura\Base\Livewire\Resource\Index;
 use Aura\Base\Livewire\Table\Table;
 use Aura\Base\Tests\Resources\Post;
-use Livewire\Livewire;
 
 use function Pest\Livewire\livewire;
 

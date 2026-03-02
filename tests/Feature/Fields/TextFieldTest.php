@@ -10,11 +10,11 @@ use Livewire\Livewire;
 
 class TextFieldModel extends Resource
 {
-    public static string $type = 'TextModel';
+    public static $singularName = 'Text Model';
 
     public static ?string $slug = 'textmodel';
 
-    public static $singularName = 'Text Model';
+    public static string $type = 'TextModel';
 
     public static function getFields(): array
     {

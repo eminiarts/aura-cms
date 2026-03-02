@@ -89,7 +89,6 @@ describe('User Creation Validation', function () {
             ->assertHasErrors(['form.fields.email']);
     });
 
-
     it('requires name field', function () {
         $role = Role::first();
 

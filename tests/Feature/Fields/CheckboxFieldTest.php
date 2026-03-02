@@ -43,6 +43,14 @@ class CheckboxFieldModelWithDynamicOptions extends Resource
 
     public static string $type = 'CheckboxDynamicModel';
 
+    public function getColorsOptions(): array
+    {
+        return [
+            ['key' => 'red', 'value' => 'Red'],
+            ['key' => 'blue', 'value' => 'Blue'],
+        ];
+    }
+
     public static function getFields(): array
     {
         return [
@@ -53,14 +61,6 @@ class CheckboxFieldModelWithDynamicOptions extends Resource
                 'conditional_logic' => [],
                 'slug' => 'colors',
             ],
-        ];
-    }
-
-    public function getColorsOptions(): array
-    {
-        return [
-            ['key' => 'red', 'value' => 'Red'],
-            ['key' => 'blue', 'value' => 'Blue'],
         ];
     }
 }

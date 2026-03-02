@@ -1,7 +1,6 @@
 <?php
 
 use Aura\Base\Facades\Aura;
-use Aura\Base\Models\Scopes\TeamScope;
 use Aura\Base\Resources\Role;
 use Aura\Base\Resources\Team;
 use Aura\Base\Resources\User;
@@ -146,7 +145,7 @@ describe('Team Creation Side Effects', function () {
     });
 
     it('clears the user teams cache when team is created', function () {
-        $cacheKey = 'user.' . $this->user->id . '.teams';
+        $cacheKey = 'user.'.$this->user->id.'.teams';
 
         Cache::put($cacheKey, 'test-value');
         expect(Cache::has($cacheKey))->toBeTrue();

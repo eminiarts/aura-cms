@@ -201,7 +201,7 @@ test('job has correct queue properties', function () {
         'size' => 12345,
     ]);
 
-    Queue::assertPushed(GenerateImageThumbnail::class, function ($job) use ($attachment) {
+    Queue::assertPushed(GenerateImageThumbnail::class, function ($job) {
         // Verify the job has the attachment property set correctly
         return $job->attachment instanceof Attachment
             && $job->attachment->url === 'media/test.jpg';

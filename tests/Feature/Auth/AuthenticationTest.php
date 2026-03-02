@@ -6,7 +6,6 @@ use Aura\Base\Events\LoggedIn;
 use Aura\Base\Resources\User;
 use Illuminate\Auth\Events\Lockout;
 use Illuminate\Support\Facades\Event;
-use Illuminate\Support\Facades\RateLimiter;
 
 beforeEach(function () {
     config(['aura.auth.registration' => true]);
