@@ -1,7 +1,5 @@
 import './bootstrap';
 
-import { Livewire, Alpine } from '../../vendor/livewire/livewire/dist/livewire.esm';
-
 import collapse from '@alpinejs/collapse';
 import focus from '@alpinejs/focus';
 import ui from '@alpinejs/ui';
@@ -11,76 +9,81 @@ import modal from './modal.js';
 import { Sortable } from '@shopify/draggable';
 import tippy from 'tippy.js';
 
-window.Alpine = Alpine;
 window.Sortable = Sortable;
 window.tippy = tippy;
 
-Alpine.plugin(collapse);
-Alpine.plugin(focus);
-Alpine.plugin(ui);
-Alpine.plugin(modal);
+// Register Alpine plugins and data via livewire:init event
+// This ensures we use Livewire's own Alpine instance (not a bundled copy)
+document.addEventListener('livewire:init', () => {
+  const Alpine = window.Alpine;
 
-Alpine.data('aura', () => ({
-  loading: false,
-  success: false,
+  Alpine.plugin(collapse);
+  Alpine.plugin(focus);
+  Alpine.plugin(ui);
+  Alpine.plugin(modal);
 
-  error: null,
+  Alpine.data('aura', () => ({
+    loading: false,
+    success: false,
 
-  showSearch: false,
+    error: null,
 
-  rightSidebar: true,
-  showFilters: false,
+    showSearch: false,
 
-  init() {
-  },
+    rightSidebar: true,
+    showFilters: false,
 
-  search() {
-    $dispatch('search');
-  },
-  insetSidebar(event) {
-    var sidebar = event.detail.element;
-    let body = document.querySelector('body');
-    setTimeout(function() {
-      body.style.paddingRight = sidebar.offsetWidth + 'px';
-    }, 10);
-    setTimeout(function() {
-      body.style.paddingRight = sidebar.offsetWidth + 'px';
-    }, 50);
-    setTimeout(function() {
-      body.style.paddingRight = sidebar.offsetWidth + 'px';
-    }, 100);
-    setTimeout(function() {
-      body.style.paddingRight = sidebar.offsetWidth + 'px';
-    }, 250);
-
-  },
-  toggleRightSidebar() {
-    this.rightSidebar = !this.rightSidebar;
-  },
-  closeSearch() {
-    this.showSearch = false;
-  }
-}))
-
-Alpine.store('leftSidebar', {
     init() {
-      // get value from localstorage
-      let storedValue = localStorage.getItem('leftSidebar');
-
-      // if storedValue is null (doesn't exist), set it to 'true'
-      if(storedValue === null) {
-          this.on = true;
-          localStorage.setItem('leftSidebar', this.on);
-      } else {
-          this.on = storedValue === 'true';
-      }
     },
-    on: true,
-    toggle() {
-        this.on = ! this.on
-        localStorage.setItem('leftSidebar', this.on);
+
+    search() {
+      $dispatch('search');
+    },
+    insetSidebar(event) {
+      var sidebar = event.detail.element;
+      let body = document.querySelector('body');
+      setTimeout(function() {
+        body.style.paddingRight = sidebar.offsetWidth + 'px';
+      }, 10);
+      setTimeout(function() {
+        body.style.paddingRight = sidebar.offsetWidth + 'px';
+      }, 50);
+      setTimeout(function() {
+        body.style.paddingRight = sidebar.offsetWidth + 'px';
+      }, 100);
+      setTimeout(function() {
+        body.style.paddingRight = sidebar.offsetWidth + 'px';
+      }, 250);
+
+    },
+    toggleRightSidebar() {
+      this.rightSidebar = !this.rightSidebar;
+    },
+    closeSearch() {
+      this.showSearch = false;
     }
-})
+  }))
+
+  Alpine.store('leftSidebar', {
+      init() {
+        // get value from localstorage
+        let storedValue = localStorage.getItem('leftSidebar');
+
+        // if storedValue is null (doesn't exist), set it to 'true'
+        if(storedValue === null) {
+            this.on = true;
+            localStorage.setItem('leftSidebar', this.on);
+        } else {
+            this.on = storedValue === 'true';
+        }
+      },
+      on: true,
+      toggle() {
+          this.on = ! this.on
+          localStorage.setItem('leftSidebar', this.on);
+      }
+  })
+});
 
 
 function updateVisitedPages(title, url) {
@@ -106,9 +109,6 @@ document.addEventListener('DOMContentLoaded', () => {
   const pageUrl = window.location.href;
   updateVisitedPages(pageTitle, pageUrl);
 });
-
-
-Livewire.start();
 
 
 // after 100ms trigger a window resize event to force the chart to redraw
