@@ -25,9 +25,6 @@ trait WithLivewireHelpers
      */
     public function notify($message, $type = 'success')
     {
-        $this->dispatchBrowserEvent('notify', [
-            'message' => $message,
-            'type' => $type,
-        ]);
+        $this->dispatch('notify', message: $message, type: $type);
     }
 }
