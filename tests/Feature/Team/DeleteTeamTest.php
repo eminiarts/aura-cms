@@ -4,8 +4,11 @@ use Aura\Base\Facades\Aura;
 use Aura\Base\Livewire\Resource\Edit;
 use Aura\Base\Resources\Role;
 use Aura\Base\Resources\Team;
+use Aura\Base\Resources\TeamInvitation;
 use Aura\Base\Resources\User;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Schema;
 
 use function Pest\Livewire\livewire;
 
@@ -151,7 +154,7 @@ describe('Team Delete Side Effects', function () {
             ->assertHasNoErrors();
 
         // Invitations should be deleted with the team
-        expect(\Aura\Base\Resources\TeamInvitation::where('team_id', $team->id)->count())->toBe(0);
+        expect(TeamInvitation::where('team_id', $team->id)->count())->toBe(0);
     });
 
     it('deletes team meta when team is deleted', function () {
@@ -160,7 +163,7 @@ describe('Team Delete Side Effects', function () {
         $team = Team::first();
 
         // Check if meta table exists before testing
-        if (! \Illuminate\Support\Facades\Schema::hasTable('postmeta')) {
+        if (! Schema::hasTable('postmeta')) {
             $this->markTestSkipped('postmeta table does not exist');
         }
 
@@ -172,7 +175,7 @@ describe('Team Delete Side Effects', function () {
             ->assertHasNoErrors();
 
         // Team meta should be deleted
-        expect(\Illuminate\Support\Facades\DB::table('postmeta')
+        expect(DB::table('postmeta')
             ->where('post_id', $team->id)
             ->count())->toBe(0);
     });

@@ -1,5 +1,6 @@
 <?php
 
+use Aura\Base\Resources\Role;
 use Aura\Base\Resources\Team;
 use Aura\Base\Resources\User;
 use Illuminate\Support\Facades\Auth;
@@ -99,7 +100,7 @@ describe('Team Registration with User', function () {
 
         $team = Team::where('name', 'Bob Team')->first();
 
-        $superAdminRole = \Aura\Base\Resources\Role::withoutGlobalScopes()
+        $superAdminRole = Role::withoutGlobalScopes()
             ->where('team_id', $team->id)
             ->where('slug', 'super_admin')
             ->first();

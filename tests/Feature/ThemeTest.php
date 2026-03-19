@@ -19,7 +19,7 @@ test('Team Settings Component can be rendered', function () {
     $role = Role::create(['name' => 'Super Admin', 'slug' => 'super_admin2', 'description' => 'Super Admin has can perform everything.', 'super_admin' => true, 'permissions' => []]);
 
     // Attach to User
-    $user = \Aura\Base\Resources\User::find(1);
+    $user = User::find(1);
 
     $user->update(['roles' => [$role->id]]);
 
@@ -32,7 +32,7 @@ test('Default Team Settings are created', function () {
     $role = Role::create(['name' => 'Super Admin', 'slug' => 'super_admin3', 'description' => 'Super Admin has can perform everything.', 'super_admin' => true, 'permissions' => []]);
 
     // Attach to User
-    $user = \Aura\Base\Resources\User::find(1);
+    $user = User::find(1);
 
     $user->update(['roles' => [$role->id]]);
 
@@ -68,7 +68,7 @@ test('Team Settings can be saved', function () {
     $role = Role::create(['name' => 'Super Admin', 'slug' => 'super_admin5', 'description' => 'Super Admin has can perform everything.', 'super_admin' => true, 'permissions' => []]);
 
     // Attach to User
-    $user = \Aura\Base\Resources\User::find(1);
+    $user = User::find(1);
 
     $user->update(['roles' => [$role->id]]);
 

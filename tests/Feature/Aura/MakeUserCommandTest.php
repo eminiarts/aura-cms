@@ -6,6 +6,7 @@ use Aura\Base\Resources\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 
 uses(RefreshDatabase::class);
 
@@ -84,7 +85,7 @@ describe('with teams enabled', function () {
 
         $user = User::where('email', 'secure@example.com')->first();
 
-        expect(\Illuminate\Support\Facades\Hash::check('mysecretpassword', $user->password))->toBeTrue();
+        expect(Hash::check('mysecretpassword', $user->password))->toBeTrue();
     });
 });
 

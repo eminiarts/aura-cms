@@ -74,7 +74,7 @@ class AuraServiceProvider extends PackageServiceProvider
 {
     protected $commands = [
         // ... other commands ...
-        Commands\AuraLayoutCommand::class,
+        AuraLayoutCommand::class,
     ];
 
     // boot
@@ -367,7 +367,7 @@ class AuraServiceProvider extends PackageServiceProvider
         });
 
         $this->app->singleton('dynamicFunctions', function ($app) {
-            return new \Aura\Base\Facades\DynamicFunctions;
+            return new Facades\DynamicFunctions;
         });
 
         $this->app->singleton('dynamic_functions', function ($app) {

@@ -3,7 +3,9 @@
 namespace Tests\Feature\Fields;
 
 use Aura\Base\Facades\Aura;
+use Aura\Base\Fields\Field;
 use Aura\Base\Fields\Password;
+use Aura\Base\Fields\Text;
 use Aura\Base\Livewire\Resource\Create;
 use Aura\Base\Livewire\Resource\Edit;
 use Aura\Base\Resource;
@@ -63,8 +65,8 @@ describe('Password Field Configuration', function () {
         $fields = $passwordField->getFields();
 
         // Password field adds no additional configuration fields
-        $parentField = new \Aura\Base\Fields\Text;
-        $parentFields = count((new \ReflectionClass(\Aura\Base\Fields\Field::class))->getMethod('getFields')->invoke($passwordField));
+        $parentField = new Text;
+        $parentFields = count((new \ReflectionClass(Field::class))->getMethod('getFields')->invoke($passwordField));
 
         expect(count($fields))->toBe($parentFields);
     });

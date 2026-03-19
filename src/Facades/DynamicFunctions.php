@@ -2,10 +2,11 @@
 
 namespace Aura\Base\Facades;
 
+use Aura\Base\Aura;
 use Illuminate\Support\Facades\Facade;
 
 /**
- * @see \Aura\Base\Aura
+ * @see Aura
  */
 class DynamicFunctions extends Facade
 {

@@ -2,6 +2,8 @@
 
 namespace Aura\Base\Livewire\Table\Traits;
 
+use Symfony\Component\HttpFoundation\StreamedResponse;
+
 /**
  * Trait for bulk actions in Livewire table component
  */
@@ -39,7 +41,7 @@ trait BulkActions
 
         $response = $this->model->{$action}($ids);
 
-        if ($response instanceof \Symfony\Component\HttpFoundation\StreamedResponse) {
+        if ($response instanceof StreamedResponse) {
             return $response;
         }
 

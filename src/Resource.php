@@ -14,6 +14,9 @@ use Aura\Base\Traits\SaveMetaFields;
 use Illuminate\Database\Eloquent\Concerns\HasTimestamps;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Support\Str;
 
 class Resource extends Model
@@ -138,7 +141,7 @@ class Resource extends Model
     // }
 
     /**
-     * @return \Illuminate\Database\Eloquent\Relations\HasMany
+     * @return HasMany
      */
     public function attachment()
     {
@@ -147,7 +150,7 @@ class Resource extends Model
     }
 
     /**
-     * @return \Illuminate\Database\Eloquent\Relations\HasMany
+     * @return HasMany
      */
     public function children()
     {
@@ -323,7 +326,7 @@ class Resource extends Model
 
         foreach ($possibleRelationMethods as $method) {
 
-            if (in_array($method, $modelMethods) && ($this->{$method}() instanceof \Illuminate\Database\Eloquent\Relations\Relation)) {
+            if (in_array($method, $modelMethods) && ($this->{$method}() instanceof Relation)) {
                 return true;
             }
         }
@@ -332,7 +335,7 @@ class Resource extends Model
     }
 
     /**
-     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
+     * @return BelongsTo
      */
     public function parent()
     {
@@ -340,7 +343,7 @@ class Resource extends Model
     }
 
     /**
-     * @return \Illuminate\Database\Eloquent\Relations\HasMany
+     * @return HasMany
      */
     public function revision()
     {

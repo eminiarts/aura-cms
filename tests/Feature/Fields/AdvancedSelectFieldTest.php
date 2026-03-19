@@ -9,6 +9,7 @@ use Aura\Base\Livewire\Resource\Edit;
 use Aura\Base\Resource;
 use Aura\Base\Resources\Role;
 use Aura\Base\Tests\Resources\Post;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Livewire\Livewire;
 use Mockery;
@@ -244,7 +245,7 @@ test('searchable fields API Mock', function () {
 
     $field = new AdvancedSelect;
 
-    $request = new \Illuminate\Http\Request([
+    $request = new Request([
         'model' => Role::class,
         'slug' => 'select',
         'search' => '',
@@ -255,7 +256,7 @@ test('searchable fields API Mock', function () {
 
     expect($result)->toHavecount(1);
 
-    $request = new \Illuminate\Http\Request([
+    $request = new Request([
         'model' => Role::class,
         'slug' => 'select',
         'search' => 'notexists',

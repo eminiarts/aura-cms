@@ -3,6 +3,7 @@
 use Aura\Base\Facades\Aura;
 use Aura\Base\Livewire\Table\Table;
 use Aura\Base\Resource;
+use Faker\Factory;
 use Illuminate\Support\Facades\Cache;
 
 use function Pest\Livewire\livewire;
@@ -17,7 +18,7 @@ beforeEach(function () {
 
     $this->actingAs($this->user = createSuperAdmin());
 
-    $faker = Faker\Factory::create();
+    $faker = Factory::create();
 
     for ($i = 0; $i < 50; $i++) {
         TableSelectRowsModel::create([

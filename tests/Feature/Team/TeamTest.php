@@ -4,6 +4,8 @@ use Aura\Base\Facades\Aura;
 use Aura\Base\Resources\Role;
 use Aura\Base\Resources\Team;
 use Aura\Base\Resources\User;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 
@@ -163,20 +165,20 @@ describe('Team Relationships', function () {
     it('has many roles', function () {
         $team = Team::first();
 
-        expect($team->roles())->toBeInstanceOf(\Illuminate\Database\Eloquent\Relations\HasMany::class);
+        expect($team->roles())->toBeInstanceOf(HasMany::class);
         expect($team->roles->first())->toBeInstanceOf(Role::class);
     });
 
     it('has many team invitations', function () {
         $team = Team::first();
 
-        expect($team->teamInvitations())->toBeInstanceOf(\Illuminate\Database\Eloquent\Relations\HasMany::class);
+        expect($team->teamInvitations())->toBeInstanceOf(HasMany::class);
     });
 
     it('belongs to many users through user_role pivot', function () {
         $team = Team::first();
 
-        expect($team->users())->toBeInstanceOf(\Illuminate\Database\Eloquent\Relations\BelongsToMany::class);
+        expect($team->users())->toBeInstanceOf(BelongsToMany::class);
         expect($team->users->pluck('id')->toArray())->toContain($this->user->id);
     });
 });

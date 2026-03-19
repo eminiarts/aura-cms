@@ -2,6 +2,8 @@
 
 namespace Aura\Base\Livewire\Table\Traits;
 
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Database\Eloquent\Builder;
 use Livewire\WithPagination;
 
 /**
@@ -21,8 +23,8 @@ trait PerPagePagination
     /**
      * Paginate the query.
      *
-     * @param  \Illuminate\Database\Eloquent\Builder  $query
-     * @return \Illuminate\Contracts\Pagination\LengthAwarePaginator
+     * @param  Builder  $query
+     * @return LengthAwarePaginator
      */
     public function applyPagination($query)
     {

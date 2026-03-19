@@ -20,7 +20,7 @@ beforeEach(function () {
     $this->user->refresh();
 
     // Delete any existing roles and user_role relationships
-    \DB::table('user_role')->where('team_id', $team->id)->delete();
+    DB::table('user_role')->where('team_id', $team->id)->delete();
     Role::where('team_id', $team->id)->delete();
 });
 

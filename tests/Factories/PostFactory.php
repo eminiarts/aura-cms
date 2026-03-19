@@ -6,7 +6,7 @@ use Aura\Base\Tests\Resources\Post;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\Aura\Base\Tests\Resources\Post>
+ * @extends Factory<Post>
  */
 class PostFactory extends Factory
 {

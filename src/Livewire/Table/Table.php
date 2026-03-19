@@ -15,6 +15,9 @@ use Aura\Base\Livewire\Table\Traits\Sorting;
 use Aura\Base\Livewire\Table\Traits\SwitchView;
 use Aura\Base\Resource;
 use Aura\Base\Resources\User;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Collection;
+use Illuminate\View\View;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\On;
 use Livewire\Component;
@@ -80,7 +83,7 @@ class Table extends Component
     /**
      * The parent of the table.
      *
-     * @var \Illuminate\Database\Eloquent\Model
+     * @var Model
      */
     public $parent;
 
@@ -291,7 +294,7 @@ class Table extends Component
     /**
      * Render the component view.
      *
-     * @return \Illuminate\View\View
+     * @return View
      */
     public function render()
     {
@@ -319,7 +322,7 @@ class Table extends Component
         // Save the columns for the current user.
         $headers = $this->columns;
 
-        if ($headers instanceof \Illuminate\Support\Collection) {
+        if ($headers instanceof Collection) {
             $headers = $headers->toArray();
         }
 

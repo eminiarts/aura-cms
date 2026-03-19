@@ -12,8 +12,8 @@ beforeEach(function () {
     // Mock Aura::getResources() to return test resources
     Aura::shouldReceive('getResources')
         ->andReturn([
-            \Aura\Base\Resources\User::class,
-            \Aura\Base\Resources\Permission::class,
+            User::class,
+            Permission::class,
         ]);
 });
 

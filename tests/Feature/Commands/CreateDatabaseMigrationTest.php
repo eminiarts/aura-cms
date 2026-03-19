@@ -5,6 +5,7 @@ use Aura\Base\Facades\Aura;
 use Aura\Base\Listeners\CreateDatabaseMigration;
 use Aura\Base\Listeners\ModifyDatabaseMigration;
 use Aura\Base\Livewire\ResourceEditor;
+use Aura\Base\Providers\AppServiceProvider;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\File;
@@ -73,7 +74,7 @@ it('resource editor is accessible', function () {
 
     $this->get(route('aura.resource.editor', ['slug' => 'Project']))
         ->assertStatus(200)
-        ->assertSeeLivewire(\Aura\Base\Livewire\ResourceEditor::class);
+        ->assertSeeLivewire(ResourceEditor::class);
 });
 
 it('saveFields listens for ModifyDatabaseMigration', function () {
@@ -97,7 +98,7 @@ it('saveFields listens for ModifyDatabaseMigration', function () {
         ->assertDispatched('finishedSavingFields');
 
     // Manually re-register the event listeners based on the updated configuration
-    $appServiceProvider = new \Aura\Base\Providers\AppServiceProvider(app());
+    $appServiceProvider = new AppServiceProvider(app());
     $appServiceProvider->boot();
 
     Event::assertDispatched(SaveFields::class);
@@ -116,7 +117,7 @@ it('saveFields listens for CreateDatabaseMigration', function () {
     Event::forget(SaveFields::class);
 
     // Manually re-register the event listeners based on the updated configuration
-    $appServiceProvider = new \Aura\Base\Providers\AppServiceProvider(app());
+    $appServiceProvider = new AppServiceProvider(app());
     $appServiceProvider->boot();
 
     Livewire::test(ResourceEditor::class, ['slug' => 'Project'])
@@ -145,7 +146,7 @@ it('creates a migration when fields are added', function () {
     config(['aura.features.custom_tables_for_resources' => 'single']);
 
     // Manually re-register the event listeners based on the updated configuration
-    $appServiceProvider = new \Aura\Base\Providers\AppServiceProvider(app());
+    $appServiceProvider = new AppServiceProvider(app());
     $appServiceProvider->boot();
 
     Livewire::test(ResourceEditor::class, ['slug' => 'Project'])

@@ -4,6 +4,7 @@ namespace Aura\Base\Http\Controllers\Auth;
 
 use Aura\Base\Resources\TeamInvitation;
 use Illuminate\Auth\Access\AuthorizationException;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\Gate;
@@ -16,7 +17,7 @@ class TeamInvitationController extends Controller
      * Accept a team invitation.
      *
      * @param  int  $invitationId
-     * @return \Illuminate\Http\RedirectResponse
+     * @return RedirectResponse
      */
     public function accept(Request $request, $invitationId)
     {
@@ -42,7 +43,7 @@ class TeamInvitationController extends Controller
      * Cancel the given team invitation.
      *
      * @param  int  $invitationId
-     * @return \Illuminate\Http\RedirectResponse
+     * @return RedirectResponse
      */
     public function destroy(Request $request, $invitationId)
     {

@@ -2,9 +2,11 @@
 
 namespace Aura\Base\Policies;
 
+use App\Models\Post;
 use Aura\Base\Resource;
 use Aura\Base\Resources\User;
 use Illuminate\Auth\Access\HandlesAuthorization;
+use Illuminate\Auth\Access\Response;
 
 class ResourcePolicy
 {
@@ -13,7 +15,7 @@ class ResourcePolicy
     /**
      * Determine whether the user can create models.
      *
-     * @return \Illuminate\Auth\Access\Response|bool
+     * @return Response|bool
      */
     public function create($user, $resource)
     {
@@ -35,8 +37,8 @@ class ResourcePolicy
     /**
      * Determine whether the user can delete the model.
      *
-     * @param  \App\Models\Post  $resource
-     * @return \Illuminate\Auth\Access\Response|bool
+     * @param  Post  $resource
+     * @return Response|bool
      */
     public function delete($user, $resource)
     {
@@ -63,8 +65,8 @@ class ResourcePolicy
     /**
      * Determine whether the user can permanently delete the model.
      *
-     * @param  \App\Models\Post  $resource
-     * @return \Illuminate\Auth\Access\Response|bool
+     * @param  Post  $resource
+     * @return Response|bool
      */
     public function forceDelete($user, $resource)
     {
@@ -82,8 +84,8 @@ class ResourcePolicy
     /**
      * Determine whether the user can restore the model.
      *
-     * @param  \App\Models\Post  $resource
-     * @return \Illuminate\Auth\Access\Response|bool
+     * @param  Post  $resource
+     * @return Response|bool
      */
     public function restore(User $user, $resource)
     {
@@ -100,8 +102,8 @@ class ResourcePolicy
     /**
      * Determine whether the user can update the model.
      *
-     * @param  \App\Models\Post  $resource
-     * @return \Illuminate\Auth\Access\Response|bool
+     * @param  Post  $resource
+     * @return Response|bool
      */
     public function update($user, $resource)
     {
@@ -132,8 +134,8 @@ class ResourcePolicy
     /**
      * Determine whether the user can view the model.
      *
-     * @param  \App\Models\Post  $resource
-     * @return \Illuminate\Auth\Access\Response|bool
+     * @param  Post  $resource
+     * @return Response|bool
      */
     public function view($user, $resource)
     {
@@ -171,7 +173,7 @@ class ResourcePolicy
     /**
      * Determine whether the user can view any models.
      *
-     * @return \Illuminate\Auth\Access\Response|bool
+     * @return Response|bool
      */
     public function viewAny($user, $resource)
     {

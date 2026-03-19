@@ -224,7 +224,7 @@ test('editFields removes closure attributes for serialization safety', function 
         foreach ($items as $item) {
             if (is_array($item)) {
                 foreach ($item as $value) {
-                    if ($value instanceof \Closure) {
+                    if ($value instanceof Closure) {
                         return true;
                     }
                     if (is_array($value) && $hasClosure([$value])) {

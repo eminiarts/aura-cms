@@ -13,6 +13,7 @@ use Illuminate\Contracts\Auth\Authenticatable as AuthenticatableContract;
 use Illuminate\Contracts\Auth\CanResetPassword as CanResetPasswordContract;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Foundation\Auth\Access\Authorizable;
 use Illuminate\Notifications\Notifiable;
@@ -168,7 +169,7 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
     /**
      * Get the current team of the user's context.
      *
-     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
+     * @return BelongsTo
      */
     public function currentTeam()
     {
@@ -676,12 +677,12 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
         if (config('aura.resources.user')) {
             return $this->hasOne(config('aura.resources.user'), 'id', 'id');
         } else {
-            return $this->hasOne(\Aura\Base\Resources\User::class, 'id', 'id');
+            return $this->hasOne(User::class, 'id', 'id');
         }
 
         // Cache the resource so we don't have to query the database every time
         return Cache::remember('user.resource.'.$this->id, now()->addHour(), function () {
-            return \Aura\Base\Resources\User::find($this->id);
+            return User::find($this->id);
         });
     }
 

@@ -1,11 +1,13 @@
 <?php
 
+use Aura\Base\Fields\Text;
 use Aura\Base\Resource;
 use Aura\Base\Traits\InputFields;
 use Aura\Base\Traits\InputFieldsHelpers;
 use Aura\Base\Traits\InputFieldsTable;
 use Aura\Base\Traits\InputFieldsValidation;
 use Aura\Base\Traits\InteractsWithTable;
+use Illuminate\Support\Collection;
 
 class TestInputFieldsClass extends Resource
 {
@@ -106,7 +108,7 @@ describe('InputFieldsHelpers', function () {
 
         $fieldClass = $resource->fieldClassBySlug('title');
 
-        expect($fieldClass)->toBeInstanceOf(\Aura\Base\Fields\Text::class);
+        expect($fieldClass)->toBeInstanceOf(Text::class);
     });
 
     test('fieldClassBySlug returns false for non-existent field', function () {
@@ -122,7 +124,7 @@ describe('InputFieldsHelpers', function () {
 
         $fields = $resource->fieldsCollection();
 
-        expect($fields)->toBeInstanceOf(\Illuminate\Support\Collection::class)
+        expect($fields)->toBeInstanceOf(Collection::class)
             ->and($fields)->toHaveCount(3);
     });
 
@@ -139,7 +141,7 @@ describe('InputFieldsHelpers', function () {
 
         $mapped = $resource->mappedFields();
 
-        expect($mapped)->toBeInstanceOf(\Illuminate\Support\Collection::class)
+        expect($mapped)->toBeInstanceOf(Collection::class)
             ->and($mapped->first())->toHaveKey('field')
             ->and($mapped->first())->toHaveKey('field_type');
     });
@@ -212,7 +214,7 @@ describe('InputFieldsTable', function () {
 
         $headers = $resource->getTableHeaders();
 
-        expect($headers)->toBeInstanceOf(\Illuminate\Support\Collection::class)
+        expect($headers)->toBeInstanceOf(Collection::class)
             ->and($headers->get('title'))->toBe('Title')
             ->and($headers->get('body'))->toBe('Body');
     });

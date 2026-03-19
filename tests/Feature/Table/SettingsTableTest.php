@@ -4,6 +4,7 @@ use Aura\Base\Facades\Aura;
 use Aura\Base\Livewire\Table\Table;
 use Aura\Base\Resources\Option;
 use Aura\Base\Tests\Resources\Post;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\View\ViewException;
 
@@ -48,7 +49,7 @@ describe('default table settings', function () {
             ->toHaveKey('header', true)
             ->toHaveKey('views');
 
-        expect($component->settings['columns'])->toBeInstanceOf(Illuminate\Support\Collection::class);
+        expect($component->settings['columns'])->toBeInstanceOf(Collection::class);
         expect($component->settings['columns'])->toHaveCount($this->post->inputFields()->count() - 1); // -1 for password
 
         $columnsArray = $component->settings['columns']->toArray();

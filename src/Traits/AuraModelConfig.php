@@ -4,6 +4,8 @@ namespace Aura\Base\Traits;
 
 use Aura\Base\ConditionalLogic;
 use Aura\Base\Models\Meta;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 
 trait AuraModelConfig
@@ -463,7 +465,7 @@ trait AuraModelConfig
 
     public function scopeWhereInMeta($query, $field, $values)
     {
-        if ($values instanceof \Illuminate\Support\Collection) {
+        if ($values instanceof Collection) {
             $values = $values->toArray();
         }
         if (! is_array($values)) {
@@ -510,10 +512,10 @@ trait AuraModelConfig
     /**
      * Scope a query to only include models where meta contains a specific value.
      *
-     * @param  \Illuminate\Database\Eloquent\Builder  $query
+     * @param  Builder  $query
      * @param  string  $key
      * @param  mixed  $value
-     * @return \Illuminate\Database\Eloquent\Builder
+     * @return Builder
      */
     public function scopeWhereMetaContains($query, $key, $value)
     {
@@ -526,7 +528,7 @@ trait AuraModelConfig
 
     public function scopeWhereNotInMeta($query, $field, $values)
     {
-        if ($values instanceof \Illuminate\Support\Collection) {
+        if ($values instanceof Collection) {
             $values = $values->toArray();
         }
         if (! is_array($values)) {

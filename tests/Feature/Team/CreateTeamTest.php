@@ -23,7 +23,7 @@ describe('Team Creation Authorization', function () {
             ->set('form.fields.description', 'Test Description')
             ->call('save')
             ->assertHasNoErrors();
-    })->throws(\Exception::class);
+    })->throws(Exception::class);
 
     it('can create team as global admin', function () {
         Gate::define('AuraGlobalAdmin', fn (User $user) => true);

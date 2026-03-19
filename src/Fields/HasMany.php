@@ -2,6 +2,9 @@
 
 namespace Aura\Base\Fields;
 
+use Aura\Base\Resources\Team;
+use Aura\Base\Resources\User;
+
 class HasMany extends Field
 {
     public $edit = 'aura::fields.has-many';
@@ -84,11 +87,11 @@ class HasMany extends Field
             }
         }
 
-        if ($model instanceof \Aura\Base\Resources\User) {
+        if ($model instanceof User) {
             return $query;
         }
 
-        if ($model instanceof \Aura\Base\Resources\Team) {
+        if ($model instanceof Team) {
             return $query;
         }
 

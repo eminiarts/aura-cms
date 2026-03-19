@@ -3,6 +3,8 @@
 use Aura\Base\Resources\Role;
 use Aura\Base\Resources\Team;
 use Aura\Base\Resources\User;
+use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 
 beforeEach(function () {
     $this->actingAs($this->user = createSuperAdmin());
@@ -69,7 +71,7 @@ test('user query can find by id', function () {
 test('users query returns correct type', function () {
     $users = User::all();
 
-    expect($users)->toBeInstanceOf(\Illuminate\Database\Eloquent\Collection::class);
+    expect($users)->toBeInstanceOf(Collection::class);
     $users->each(function ($user) {
         expect($user)->toBeInstanceOf(User::class);
     });
@@ -86,7 +88,7 @@ test('user query can use pagination', function () {
 
 test('user first or fail throws exception for non-existent user', function () {
     expect(fn () => User::where('id', 999999)->firstOrFail())
-        ->toThrow(\Illuminate\Database\Eloquent\ModelNotFoundException::class);
+        ->toThrow(ModelNotFoundException::class);
 });
 
 test('user query can count results', function () {

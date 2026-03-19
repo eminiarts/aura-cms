@@ -2,6 +2,7 @@
 
 namespace Aura\Base\Traits;
 
+use Aura\Base\Resources\User;
 use Illuminate\Support\Str;
 
 trait InitialPostFields
@@ -13,7 +14,7 @@ trait InitialPostFields
                 $post->title = '';
             }
 
-            if ($post instanceof \Aura\Base\Resources\User) {
+            if ($post instanceof User) {
                 return;
             }
 

@@ -2,6 +2,8 @@
 
 namespace Aura\Base\Models\Scopes;
 
+use Aura\Base\Resources\Role;
+use Aura\Base\Resources\User;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Scope;
@@ -15,19 +17,19 @@ class ScopedScope implements Scope
      */
     public function apply(Builder $builder, Model $model)
     {
-        if ($model instanceof \Aura\Base\Resources\Role) {
+        if ($model instanceof Role) {
             return $builder;
         }
-        if ($model instanceof \Aura\Base\Resources\User) {
+        if ($model instanceof User) {
             return $builder;
         }
 
         // Superadmin
-        if (auth()->user() && auth()->user() instanceof \Aura\Base\Resources\User && auth()->user()->isSuperAdmin()) {
+        if (auth()->user() && auth()->user() instanceof User && auth()->user()->isSuperAdmin()) {
             return $builder;
         }
 
-        if (auth()->user() && auth()->user() instanceof \Aura\Base\Resources\User && auth()->user()->hasPermissionTo('scope', $model)) {
+        if (auth()->user() && auth()->user() instanceof User && auth()->user()->hasPermissionTo('scope', $model)) {
             $builder->where($model->getTable().'.user_id', auth()->user()->id);
         }
 

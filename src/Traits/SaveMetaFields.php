@@ -2,7 +2,9 @@
 
 namespace Aura\Base\Traits;
 
+use Aura\Base\Fields\ID;
 use Aura\Base\Models\Meta;
+use Aura\Base\Resources\User;
 use Illuminate\Support\Str;
 
 trait SaveMetaFields
@@ -12,7 +14,7 @@ trait SaveMetaFields
 
         static::saving(function ($post) {
 
-            if ($post instanceof \Aura\Base\Resources\User) {
+            if ($post instanceof User) {
             }
 
             if (isset($post->attributes['fields'])) {
@@ -70,7 +72,7 @@ trait SaveMetaFields
                         continue;
                     }
 
-                    if ($class instanceof \Aura\Base\Fields\ID) {
+                    if ($class instanceof ID) {
                         // $post->attributes[$key] = $value;
 
                         // unset($post->attributes['fields'][$key]);

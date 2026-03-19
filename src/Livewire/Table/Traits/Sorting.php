@@ -2,6 +2,7 @@
 
 namespace Aura\Base\Livewire\Table\Traits;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Str;
 
 /**
@@ -46,8 +47,8 @@ trait Sorting
     /**
      * Apply sorting to the query.
      *
-     * @param  \Illuminate\Database\Eloquent\Builder  $query
-     * @return \Illuminate\Database\Eloquent\Builder
+     * @param  Builder  $query
+     * @return Builder
      */
     protected function applySorting($query)
     {

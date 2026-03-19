@@ -1,5 +1,16 @@
 <?php
 
+use Aura\Base\Livewire\Dashboard;
+use Aura\Base\Livewire\Profile;
+use Aura\Base\Livewire\Settings;
+use Aura\Base\Resources\Attachment;
+use Aura\Base\Resources\Option;
+use Aura\Base\Resources\Permission;
+use Aura\Base\Resources\Role;
+use Aura\Base\Resources\Team;
+use Aura\Base\Resources\TeamInvitation;
+use Aura\Base\Resources\User;
+
 return [
     /*
     |--------------------------------------------------------------------------
@@ -48,9 +59,9 @@ return [
     */
 
     'components' => [
-        'dashboard' => Aura\Base\Livewire\Dashboard::class,
-        'profile' => Aura\Base\Livewire\Profile::class,
-        'settings' => Aura\Base\Livewire\Settings::class,
+        'dashboard' => Dashboard::class,
+        'profile' => Profile::class,
+        'settings' => Settings::class,
     ],
 
     /*
@@ -63,13 +74,13 @@ return [
     */
 
     'resources' => [
-        'user' => Aura\Base\Resources\User::class,
-        'team' => Aura\Base\Resources\Team::class,
-        'team-invitation' => Aura\Base\Resources\TeamInvitation::class,
-        'role' => Aura\Base\Resources\Role::class,
-        'permission' => Aura\Base\Resources\Permission::class,
-        'option' => Aura\Base\Resources\Option::class,
-        'attachment' => Aura\Base\Resources\Attachment::class,
+        'user' => User::class,
+        'team' => Team::class,
+        'team-invitation' => TeamInvitation::class,
+        'role' => Role::class,
+        'permission' => Permission::class,
+        'option' => Option::class,
+        'attachment' => Attachment::class,
     ],
 
     /*

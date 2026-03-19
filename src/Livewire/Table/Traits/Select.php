@@ -2,6 +2,8 @@
 
 namespace Aura\Base\Livewire\Table\Traits;
 
+use Illuminate\Database\Eloquent\Builder;
+
 /**
  * Trait for bulk actions in Livewire table component
  */
@@ -31,7 +33,7 @@ trait Select
     /**
      * Gets a query for selected rows
      *
-     * @return \Illuminate\Database\Eloquent\Builder
+     * @return Builder
      */
     public function getSelectedRowsQueryProperty()
     {

@@ -2,6 +2,9 @@
 
 namespace Aura\Base\Fields;
 
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Collection;
+
 class AdvancedSelect extends Field
 {
     public $edit = 'aura::fields.advanced-select';
@@ -98,16 +101,16 @@ class AdvancedSelect extends Field
             if (is_int($value)) {
                 return [$value];
             }
-            if ($value instanceof \Illuminate\Database\Eloquent\Model) {
+            if ($value instanceof Model) {
                 return [$value->id];
             }
-            if ($value instanceof \Illuminate\Support\Collection) {
+            if ($value instanceof Collection) {
                 if ($value->isEmpty()) {
                     return [];
                 }
                 $first = $value->first();
 
-                return [$first instanceof \Illuminate\Database\Eloquent\Model ? $first->id : $first];
+                return [$first instanceof Model ? $first->id : $first];
             }
 
             return is_numeric($value) ? [(int) $value] : [];

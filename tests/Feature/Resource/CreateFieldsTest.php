@@ -7,6 +7,7 @@ use Aura\Base\Pipeline\ApplyTabs;
 use Aura\Base\Pipeline\FilterCreateFields;
 use Aura\Base\Pipeline\MapFields;
 use Aura\Base\Resource;
+use Illuminate\Support\Collection;
 
 beforeEach(function () {
     $this->actingAs($this->user = createSuperAdmin());
@@ -221,6 +222,6 @@ test('fieldsCollection returns collection of fields', function () {
 
     $fields = $model->fieldsCollection();
 
-    expect($fields)->toBeInstanceOf(\Illuminate\Support\Collection::class);
+    expect($fields)->toBeInstanceOf(Collection::class);
     expect($fields)->not->toBeEmpty();
 });
