@@ -103,8 +103,18 @@ trait AuraModelConfig
 
     public function display($key)
     {
-        if (array_key_exists($key, $this->fields->toArray())) {
-            $value = $this->displayFieldValue($key, $this->fields[$key]);
+        $fields = $this->fields;
+
+        if ($fields instanceof Collection) {
+            $fields = $fields->toArray();
+        }
+
+        if (! is_array($fields)) {
+            $fields = [];
+        }
+
+        if (array_key_exists($key, $fields)) {
+            $value = $this->displayFieldValue($key, $fields[$key]);
 
             // if $value is an array, implode it
             if (is_array($value)) {
