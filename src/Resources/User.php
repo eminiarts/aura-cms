@@ -250,6 +250,7 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
                 'validation' => '',
                 'conditional_logic' => [],
                 'slug' => 'avatar',
+                'on_create' => false,
                 'style' => [
                     'width' => '100',
                 ],
@@ -262,7 +263,7 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
                 'searchable' => true,
                 'slug' => 'name',
                 'style' => [
-                    'width' => '100',
+                    'width' => '50',
                 ],
             ],
             [
@@ -273,7 +274,7 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
                 'searchable' => true,
                 'slug' => 'email',
                 'style' => [
-                    'width' => '100',
+                    'width' => '50',
                 ],
             ],
             [
@@ -281,11 +282,9 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
                 'type' => 'Aura\\Base\\Fields\\Text',
                 'validation' => '',
                 'on_index' => false,
+                'on_forms' => false,
                 'searchable' => false,
                 'slug' => 'current_team_id',
-                'style' => [
-                    'width' => '100',
-                ],
             ],
             [
                 'name' => 'Roles',
@@ -301,6 +300,9 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
                 'on_forms' => true,
                 'on_view' => true,
                 'searchable' => false,
+                'style' => [
+                    'width' => '50',
+                ],
             ],
             [
                 'name' => 'Password',
@@ -313,6 +315,9 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
                 'on_create' => true,
                 'on_index' => false,
                 'on_view' => false,
+                'style' => [
+                    'width' => '50',
+                ],
             ],
             [
                 'type' => 'Aura\\Base\\Fields\\Tab',
