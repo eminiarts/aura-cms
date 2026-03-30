@@ -15,6 +15,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\URL;
 use Livewire\Livewire;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 uses(RefreshDatabase::class);
 
@@ -486,7 +487,7 @@ describe('Signed URL Security', function () {
 
         // Generate signed URL then tamper with it
         $url = URL::signedRoute('aura.invitation.register', [$team, $invitation]);
-        $tamperedUrl = $url . '&extra=param';
+        $tamperedUrl = $url.'&extra=param';
         $response = $this->get($tamperedUrl);
         $response->assertStatus(403);
     });
@@ -516,7 +517,7 @@ describe('User Invitations Config Toggle', function () {
         try {
             $this->get($url);
             $this->fail('Expected 404');
-        } catch (\Symfony\Component\HttpKernel\Exception\NotFoundHttpException $e) {
+        } catch (NotFoundHttpException $e) {
             expect(true)->toBeTrue();
         }
     });
