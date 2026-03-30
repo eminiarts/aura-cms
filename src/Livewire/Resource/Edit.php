@@ -9,6 +9,7 @@ use Aura\Base\Traits\InteractsWithFields;
 use Aura\Base\Traits\MediaFields;
 use Aura\Base\Traits\RepeaterFields;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
+use Illuminate\Validation\Rules\Unique;
 use Illuminate\Support\Traits\Macroable;
 use Livewire\Attributes\On;
 use Livewire\Component;
@@ -168,7 +169,54 @@ class Edit extends Component
             $rules = $this->model->modifyValidationRules($rules, $this->form, $this);
         }
 
-        return $rules;
+        return $this->ignoreCurrentModelInUniqueRules($rules);
+    }
+
+    protected function ignoreCurrentModelInUniqueRules(array $rules): array
+    {
+        if (! $this->model?->exists) {
+            return $rules;
+        }
+
+        return collect($rules)->mapWithKeys(function ($rule, $attribute) {
+            return [$attribute => $this->ignoreCurrentModelInRule($rule, $attribute)];
+        })->all();
+    }
+
+    protected function ignoreCurrentModelInRule($rule, string $attribute)
+    {
+        if (is_string($rule)) {
+            return $this->ignoreCurrentModelInRuleString($rule, $attribute);
+        }
+
+        if (is_array($rule)) {
+            return array_map(function ($nestedRule) use ($attribute) {
+                return $this->ignoreCurrentModelInRule($nestedRule, $attribute);
+            }, $rule);
+        }
+
+        if ($rule instanceof Unique) {
+            return (clone $rule)->ignore($this->model->getKey(), $this->model->getKeyName());
+        }
+
+        return $rule;
+    }
+
+    protected function ignoreCurrentModelInRuleString(string $rule, string $attribute): string
+    {
+        return preg_replace_callback('/(^|\|)(unique:[^|]+)(?=\||$)/', function ($matches) use ($attribute) {
+            $parameters = str_getcsv(substr($matches[2], strlen('unique:')), escape: '\\');
+
+            if (isset($parameters[2]) && $parameters[2] !== '' && strtoupper((string) $parameters[2]) !== 'NULL') {
+                return $matches[0];
+            }
+
+            $parameters[1] = $parameters[1] ?? str($attribute)->afterLast('.')->toString();
+            $parameters[2] = (string) $this->model->getKey();
+            $parameters[3] = $parameters[3] ?? $this->model->getKeyName();
+
+            return $matches[1].'unique:'.implode(',', $parameters);
+        }, $rule) ?? $rule;
     }
 
     #[On('saveModel')]

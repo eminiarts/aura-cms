@@ -20,6 +20,14 @@ describe('Login Screen', function () {
             ->assertSee('Password');
     });
 
+    test('login page renders in local env when no users exist', function () {
+        app()['env'] = 'local';
+
+        $this->get(route('aura.login'))
+            ->assertSuccessful()
+            ->assertSee('Login');
+    });
+
     test('login page shows remember me checkbox', function () {
         $this->get(route('aura.login'))
             ->assertSee('Remember me');

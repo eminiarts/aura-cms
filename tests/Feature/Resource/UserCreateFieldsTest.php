@@ -97,6 +97,40 @@ test('avatar field has on_create set to false', function () {
     expect($avatar['on_create'])->toBeFalse();
 });
 
+test('roles field is visible on index', function () {
+    $fields = collect(User::getFields());
+
+    $roles = $fields->firstWhere('slug', 'roles');
+
+    expect($roles['on_index'])->toBeTrue();
+});
+
+test('roles field displays role names in index', function () {
+    $user = $this->user;
+
+    // The display method should show role names, not IDs
+    $displayed = $user->display('roles');
+
+    expect($displayed)->toContain('Admin');
+});
+
+test('user index headers include roles column', function () {
+    $user = new User;
+
+    $headers = $user->getHeaders();
+
+    expect($headers)->toHaveKey('roles');
+    expect($headers['roles'])->toBe('Role');
+});
+
+test('roles field is single select', function () {
+    $fields = collect(User::getFields());
+
+    $roles = $fields->firstWhere('slug', 'roles');
+
+    expect($roles['multiple'])->toBeFalse();
+});
+
 /**
  * Recursively collect all slugs from a nested field structure.
  */
