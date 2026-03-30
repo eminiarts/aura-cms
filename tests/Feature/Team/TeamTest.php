@@ -86,19 +86,19 @@ describe('Team SoftDeletes', function () {
 });
 
 describe('Team Creation Side Effects', function () {
-    it('creates a super_admin role when team is created', function () {
+    it('creates an admin role when team is created', function () {
         $team = Team::create([
             'name' => 'New Team With Role',
             'user_id' => $this->user->id,
         ]);
 
         $role = Role::withoutGlobalScopes()
-            ->where('slug', 'super_admin')
+            ->where('slug', 'admin')
             ->where('team_id', $team->id)
             ->first();
 
         expect($role)->not->toBeNull();
-        expect($role->name)->toEqual('Super Admin');
+        expect($role->name)->toEqual('Admin');
         expect($role->super_admin)->toBeTrue();
         expect($role->permissions)->toBeArray();
     });
@@ -125,7 +125,7 @@ describe('Team Creation Side Effects', function () {
         expect($this->user->current_team_id)->not->toBe($originalTeamId);
     });
 
-    it('attaches the creator to the team with super_admin role', function () {
+    it('attaches the creator to the team with admin role', function () {
         $team = Team::create([
             'name' => 'Attachment Test Team',
             'user_id' => $this->user->id,
@@ -140,7 +140,7 @@ describe('Team Creation Side Effects', function () {
 
         $role = Role::withoutGlobalScopes()
             ->where('team_id', $team->id)
-            ->where('slug', 'super_admin')
+            ->where('slug', 'admin')
             ->first();
 
         expect($pivotData->role_id)->toBe($role->id);

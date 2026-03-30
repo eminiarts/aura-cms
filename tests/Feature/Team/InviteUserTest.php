@@ -131,7 +131,7 @@ describe('User Invitation Registration', function () {
         $user = User::where('email', 'invitee@test.ch')->first();
 
         expect($user->hasRole('test_role'))->toBeTrue();
-        expect($user->hasRole('super_admin'))->toBeFalse();
+        expect($user->hasRole('admin'))->toBeFalse();
     });
 
     it('can register using invitation link', function () {

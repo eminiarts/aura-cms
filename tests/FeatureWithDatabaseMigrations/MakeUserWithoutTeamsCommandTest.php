@@ -42,7 +42,7 @@ describe('aura:user command without teams', function () {
         expect($role)->not->toBeNull()
             ->and($role->super_admin)->toBe(true)
             ->and($role->team_id)->toBeNull()
-            ->and($role->slug)->toBe('super_admin');
+            ->and($role->slug)->toBe('admin');
     });
 
     it('creates user with command options instead of prompts', function () {
@@ -62,17 +62,17 @@ describe('aura:user command without teams', function () {
             ->and(Hash::check('securepass', $user->password))->toBeTrue();
     });
 
-    it('creates super admin role without team_id', function () {
+    it('creates admin role without team_id', function () {
         $this->artisan('aura:user', [
             '--name' => 'Admin',
             '--email' => 'admin@example.com',
             '--password' => 'password',
         ])->assertExitCode(0);
 
-        $role = Role::where('slug', 'super_admin')->first();
+        $role = Role::where('slug', 'admin')->first();
 
         expect($role)->not->toBeNull()
-            ->and($role->name)->toBe('Super Admin')
+            ->and($role->name)->toBe('Admin')
             ->and($role->super_admin)->toBeTrue()
             ->and($role->permissions)->toBe([]);
 
@@ -109,14 +109,14 @@ describe('aura:user command without teams', function () {
     });
 
     it('enforces unique role slug constraint without teams', function () {
-        // Create first user - this creates a super_admin role
+        // Create first user - this creates an admin role
         $this->artisan('aura:user', [
             '--name' => 'First User',
             '--email' => 'first@example.com',
             '--password' => 'password',
         ])->assertExitCode(0);
 
-        expect(Role::where('slug', 'super_admin')->count())->toBe(1);
+        expect(Role::where('slug', 'admin')->count())->toBe(1);
 
         // The second user creation would fail because of unique slug constraint
         // This documents the current behavior - each aura:user creates a new role

@@ -65,22 +65,22 @@ function createSuperAdmin()
     // Clear the cache for the user's current_team_id to ensure TeamScope uses the updated value
     Cache::forget("user_{$user->id}_current_team_id");
 
-    // Create or find Super Admin role for the team with race condition handling
+    // Create or find Admin role for the team with race condition handling
     // Use withoutGlobalScope to bypass TeamScope and avoid cache issues
     $role = Role::withoutGlobalScope(TeamScope::class)
         ->where('team_id', $team->id)
-        ->where('slug', 'super_admin')
+        ->where('slug', 'admin')
         ->first();
 
     if (! $role) {
         try {
             $role = Role::create([
                 'team_id' => $team->id,
-                'slug' => 'super_admin',
+                'slug' => 'admin',
                 'type' => 'Role',
-                'title' => 'Super Admin',
-                'name' => 'Super Admin',
-                'description' => 'Super Admin can perform everything.',
+                'title' => 'Admin',
+                'name' => 'Admin',
+                'description' => 'Admin can perform everything.',
                 'super_admin' => true,
                 'permissions' => [],
                 'user_id' => $user->id,
@@ -89,7 +89,7 @@ function createSuperAdmin()
             // Handle race condition: another process created the role, just fetch it
             $role = Role::withoutGlobalScope(TeamScope::class)
                 ->where('team_id', $team->id)
-                ->where('slug', 'super_admin')
+                ->where('slug', 'admin')
                 ->first();
         }
     }
@@ -124,10 +124,10 @@ function createSuperAdminWithoutTeam()
 
     $role = Role::create([
         'type' => 'Role',
-        'title' => 'Super Admin',
-        'slug' => 'super_admin',
-        'name' => 'Super Admin',
-        'description' => 'Super Admin can perform everything.',
+        'title' => 'Admin',
+        'slug' => 'admin',
+        'name' => 'Admin',
+        'description' => 'Admin can perform everything.',
         'super_admin' => true,
         'permissions' => [],
         'user_id' => $user->id,
@@ -153,7 +153,7 @@ function createAdmin()
     // Set current_team_id of the user
     $user->update(['current_team_id' => $team->id]);
 
-    $role = Role::create(['team_id' => $team->id, 'type' => 'Role', 'title' => 'Admin', 'slug' => 'admin', 'name' => 'Admin', 'description' => ' Admin has can perform almost everything.', 'super_admin' => false, 'permissions' => [
+    $role = Role::create(['team_id' => $team->id, 'type' => 'Role', 'title' => 'Editor', 'slug' => 'editor', 'name' => 'Editor', 'description' => 'Editor has limited permissions.', 'super_admin' => false, 'permissions' => [
         'view-attachment' => true,
         'viewAny-attachment' => true,
         'create-attachment' => true,

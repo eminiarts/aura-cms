@@ -64,7 +64,7 @@ class TabsWithFieldsTestModel extends Resource
                 'type' => 'Aura\\Base\\Fields\\AdvancedSelect',
                 'validation' => 'required',
                 'conditional_logic' => function () {
-                    return auth()->user()->hasAnyRole(['administrator', 'super_admin']);
+                    return auth()->user()->hasAnyRole(['administrator', 'admin']);
                 },
                 'wrapper' => '',
                 'on_index' => false,
@@ -78,7 +78,7 @@ class TabsWithFieldsTestModel extends Resource
                 'type' => 'Aura\\Base\\Fields\\Boolean',
                 'validation' => '',
                 'conditional_logic' => function () {
-                    return auth()->user()->hasAnyRole(['administrator', 'super_admin']);
+                    return auth()->user()->hasAnyRole(['administrator', 'admin']);
                 },
                 'on_index' => false,
                 'slug' => 'is_member',

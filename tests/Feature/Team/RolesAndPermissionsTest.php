@@ -41,17 +41,17 @@ describe('Permissions Table Structure', function () {
 });
 
 describe('Team Role Creation', function () {
-    it('creates default super admin role when team is created', function () {
+    it('creates default admin role when team is created', function () {
         $team = Team::factory()->create();
 
         $this->assertDatabaseHas('roles', [
             'team_id' => $team->id,
-            'name' => 'Super Admin',
+            'name' => 'Admin',
             'super_admin' => true,
         ]);
     });
 
-    it('super admin role has correct slug', function () {
+    it('admin role has correct slug', function () {
         $team = Team::factory()->create();
 
         $role = Role::withoutGlobalScopes()
@@ -59,10 +59,10 @@ describe('Team Role Creation', function () {
             ->where('super_admin', true)
             ->first();
 
-        expect($role->slug)->toBe('super_admin');
+        expect($role->slug)->toBe('admin');
     });
 
-    it('super admin role has super_admin flag set to true', function () {
+    it('admin role has super_admin flag set to true', function () {
         $team = Team::factory()->create();
 
         $role = Role::withoutGlobalScopes()
@@ -166,7 +166,7 @@ describe('Role Team Association', function () {
         $team1Roles = Role::withoutGlobalScopes()->where('team_id', $team1->id)->count();
         $team2Roles = Role::withoutGlobalScopes()->where('team_id', $team2->id)->count();
 
-        // Each team should have at least one role (super_admin)
+        // Each team should have at least one role (admin)
         expect($team1Roles)->toBeGreaterThanOrEqual(1);
         expect($team2Roles)->toBeGreaterThanOrEqual(1);
     });

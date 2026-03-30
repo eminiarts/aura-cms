@@ -13,7 +13,7 @@ use function Laravel\Prompts\text;
 
 class MakeUser extends Command
 {
-    protected $description = 'Creates an Aura Super Admin.';
+    protected $description = 'Creates an Aura Admin.';
 
     protected $signature = 'aura:user
                             {--name= : The name of the user}
@@ -50,9 +50,9 @@ class MakeUser extends Command
         auth()->loginUsingId($user->id);
 
         $roleData = [
-            'name' => 'Super Admin',
-            'slug' => 'super_admin',
-            'description' => 'Super Admin can perform everything.',
+            'name' => 'Admin',
+            'slug' => 'admin',
+            'description' => 'Admin can perform everything.',
             'super_admin' => true,
             'permissions' => [],
             'user_id' => $user->id,

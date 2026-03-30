@@ -69,7 +69,7 @@ test('created user can log in with the provided password', function () {
 
 test('user created in a team context is assigned to the correct team', function () {
     $team = $this->user->currentTeam;
-    $role = Role::where('team_id', $team->id)->where('slug', 'super_admin')->first();
+    $role = Role::where('team_id', $team->id)->where('slug', 'admin')->first();
 
     Livewire::test(Create::class, ['slug' => 'user'])
         ->set('form.fields.name', 'Team User')
@@ -93,7 +93,7 @@ test('user created in a team context is assigned to the correct team', function 
 
 test('user created with a role can log in and access the correct team', function () {
     $team = $this->user->currentTeam;
-    $role = Role::where('team_id', $team->id)->where('slug', 'super_admin')->first();
+    $role = Role::where('team_id', $team->id)->where('slug', 'admin')->first();
 
     Livewire::test(Create::class, ['slug' => 'user'])
         ->set('form.fields.name', 'Full Flow User')

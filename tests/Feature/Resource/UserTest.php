@@ -44,10 +44,10 @@ test('User roles()', function () {
 });
 
 test('User hasAnyRole()', function () {
-    expect($this->user->hasAnyRole(['test', 'super_admin']))->toBeTrue();
+    expect($this->user->hasAnyRole(['test', 'admin']))->toBeTrue();
     expect($this->user->hasAnyRole(['test']))->toBeFalse();
     expect($this->user->hasRole('test'))->toBeFalse();
-    expect($this->user->hasRole('super_admin'))->toBeTrue();
+    expect($this->user->hasRole('admin'))->toBeTrue();
 });
 
 test('User hasPermission()', function () {

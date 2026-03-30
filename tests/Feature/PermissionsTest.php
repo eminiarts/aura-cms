@@ -20,7 +20,7 @@ beforeEach(function () {
 });
 
 test('a super admin can perform any action', function () {
-    $role = Role::create(['name' => 'Super Admin', 'slug' => 'super_admin', 'description' => 'Super Admin has can perform everything.', 'super_admin' => true, 'permissions' => []]);
+    $role = Role::create(['name' => 'Admin', 'slug' => 'admin', 'description' => 'Admin has can perform everything.', 'super_admin' => true, 'permissions' => []]);
 
     // assert there is a role in the db
     $this->assertDatabaseHas('roles', ['id' => $role->id]);
@@ -30,8 +30,8 @@ test('a super admin can perform any action', function () {
     // assert the role is a super admin
     $this->assertTrue($r->fields['super_admin']);
 
-    // Assert name is Super Admin
-    $this->assertEquals('Super Admin', $r->name);
+    // Assert name is Admin
+    $this->assertEquals('Admin', $r->name);
 
     // Attach to User
     $user = $this->user;
@@ -326,7 +326,7 @@ test('scoped posts', function () {
 test('a admin can access users', function () {
     $team = Team::factory()->create();
 
-    $role = Role::create(['name' => 'Admin', 'slug' => 'admin', 'description' => ' Admin has can perform almost everything.', 'super_admin' => false,
+    $role = Role::create(['name' => 'Team Admin', 'slug' => 'team_admin', 'description' => 'Team Admin has can perform almost everything.', 'super_admin' => false,
         'team_id' => $team->id,
         'permissions' => [
             'viewAny-user' => true,
@@ -344,7 +344,7 @@ test('a admin can access users', function () {
 
     // assert there is a role in the db
     $this->assertDatabaseHas('users', ['id' => $post->id]);
-    $this->assertDatabaseHas('roles', ['slug' => 'admin']);
+    $this->assertDatabaseHas('roles', ['slug' => 'team_admin']);
 
     // Attach to User
     $user = $this->user;
@@ -363,8 +363,8 @@ test('a admin can access users', function () {
 
     Aura::setModel(new User);
 
-    // Assert User has Admin Role
-    $this->assertTrue($user->roles->contains('slug', 'admin'));
+    // Assert User has Team Admin Role
+    $this->assertTrue($user->roles->contains('slug', 'team_admin'));
 
     // Access Index Page
     $response = $this->actingAs($user)->get(route('aura.user.index'));

@@ -80,7 +80,7 @@ describe('Team Registration with User', function () {
         expect($user->ownsTeam($team))->toBeTrue();
     });
 
-    it('creates super_admin role for new team during registration', function () {
+    it('creates admin role for new team during registration', function () {
         config(['aura.auth.registration' => true]);
         config(['aura.teams' => true]);
         config(['aura.auth.redirect' => '/admin']);
@@ -100,16 +100,16 @@ describe('Team Registration with User', function () {
 
         $team = Team::where('name', 'Bob Team')->first();
 
-        $superAdminRole = Role::withoutGlobalScopes()
+        $adminRole = Role::withoutGlobalScopes()
             ->where('team_id', $team->id)
-            ->where('slug', 'super_admin')
+            ->where('slug', 'admin')
             ->first();
 
-        expect($superAdminRole)->not->toBeNull();
-        expect($superAdminRole->super_admin)->toBeTrue();
+        expect($adminRole)->not->toBeNull();
+        expect($adminRole->super_admin)->toBeTrue();
     });
 
-    it('assigns new user super_admin role for their team', function () {
+    it('assigns new user admin role for their team', function () {
         config(['aura.auth.registration' => true]);
         config(['aura.teams' => true]);
         config(['aura.auth.redirect' => '/admin']);

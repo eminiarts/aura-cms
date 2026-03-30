@@ -47,7 +47,7 @@ describe('Team Creation Authorization', function () {
         expect($team->description)->toBe('Test Description');
     });
 
-    it('creates super_admin role when team is created via Livewire', function () {
+    it('creates admin role when team is created via Livewire', function () {
         Gate::define('AuraGlobalAdmin', fn (User $user) => true);
 
         $initialRoleCount = Role::withoutGlobalScopes()->count();
@@ -57,17 +57,17 @@ describe('Team Creation Authorization', function () {
             ->call('save')
             ->assertHasNoErrors();
 
-        // A new super_admin role should be created for the new team
+        // A new admin role should be created for the new team
         expect(Role::withoutGlobalScopes()->count())->toBe($initialRoleCount + 1);
 
         $newTeam = Team::where('name', 'New Team')->first();
-        $superAdminRole = Role::withoutGlobalScopes()
+        $adminRole = Role::withoutGlobalScopes()
             ->where('team_id', $newTeam->id)
-            ->where('slug', 'super_admin')
+            ->where('slug', 'admin')
             ->first();
 
-        expect($superAdminRole)->not->toBeNull();
-        expect($superAdminRole->super_admin)->toBeTrue();
+        expect($adminRole)->not->toBeNull();
+        expect($adminRole->super_admin)->toBeTrue();
     });
 });
 

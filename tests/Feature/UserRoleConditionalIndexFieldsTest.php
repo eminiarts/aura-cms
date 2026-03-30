@@ -75,9 +75,9 @@ class UserRoleConditionalIndexFieldsModel extends Resource
 
 test('super admin can view all headers', function () {
     $role = Role::create([
-        'name' => 'Super Admin',
-        'slug' => 'super_admin',
-        'description' => 'Super Admin has can perform everything.',
+        'name' => 'Admin',
+        'slug' => 'admin',
+        'description' => 'Admin has can perform everything.',
         'super_admin' => true,
         'permissions' => [],
         'user_id' => $this->user->id,
@@ -92,10 +92,10 @@ test('super admin can view all headers', function () {
     // Test getHeaders()
     $headers = $model->getHeaders();
 
-    // Assert SuperAdmin sees all fields
+    // Assert Admin (super_admin flag) sees all fields
     expect($headers)->toHaveCount(4);
 
-    // Super Admin should see Text 1, Text 2, Text 3, and ID
+    // Admin (super_admin flag) should see Text 1, Text 2, Text 3, and ID
     expect($headers)->toHaveKeys(['id', 'text1', 'text2', 'text3']);
 });
 
@@ -160,9 +160,9 @@ test('user can view his headers', function () {
 
 test('super admin can get all fields', function () {
     $role = Role::create([
-        'name' => 'Super Admin',
-        'slug' => 'super_admin',
-        'description' => 'Super Admin has can perform everything.',
+        'name' => 'Admin',
+        'slug' => 'admin',
+        'description' => 'Admin has can perform everything.',
         'super_admin' => true,
         'permissions' => [],
         'user_id' => $this->user->id,
