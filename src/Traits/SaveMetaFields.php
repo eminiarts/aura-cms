@@ -120,6 +120,15 @@ trait SaveMetaFields
                     $field = $post->fieldBySlug($key);
                     $class = $post->fieldClassBySlug((string) $key);
 
+                    // Do not continue if the Field is not found
+                    if (! $class) {
+                        if ($post->usesMeta()) {
+                            $post->meta()->updateOrCreate(['key' => $key], ['value' => $value]);
+                        }
+
+                        continue;
+                    }
+
                     if (method_exists($class, 'saved')) {
                         $value = $class->saved($post, $field, $value);
 
