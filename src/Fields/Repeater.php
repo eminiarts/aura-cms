@@ -10,6 +10,8 @@ class Repeater extends Field
 
     public $optionGroup = 'Structure Fields';
 
+    public $tableColumnType = 'json';
+
     public string $type = 'input';
 
     // public bool $showChildrenOnIndex = false;
