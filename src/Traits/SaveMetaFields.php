@@ -31,14 +31,22 @@ trait SaveMetaFields
 
                     $class = $post->fieldClassBySlug($key);
 
+                    // Allow resources/plugins to consume custom form payloads that are
+                    // not regular Aura fields, e.g. "translations".
+                    $method = 'set'.Str::studly($key).'Field';
+
+                    if (! $class && method_exists($post, $method)) {
+                        $post->{$method}($value);
+
+                        continue;
+                    }
+
                     // Do not continue if the Field is not found
                     if (! $class) {
                         continue;
                     }
 
                     // if there is a function set{Slug}Field on the model, use it
-                    $method = 'set'.Str::studly($key).'Field';
-
                     if (method_exists($post, $method)) {
                         $post->saveMetaField([$key => $value]);
 
