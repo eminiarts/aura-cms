@@ -1,11 +1,13 @@
 name: PHPStan
 
 on:
+  workflow_dispatch:
   push:
     paths:
       - '**.php'
       - 'phpstan.neon.dist'
       - 'phpstan-baseline.neon'
+      - '.github/workflows/phpstan.yml'
   pull_request:
     branches: [main, develop]
 
