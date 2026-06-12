@@ -13,6 +13,7 @@ use Illuminate\Contracts\Auth\Authenticatable as AuthenticatableContract;
 use Illuminate\Contracts\Auth\CanResetPassword as CanResetPasswordContract;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Foundation\Auth\Access\Authorizable;
 use Illuminate\Notifications\Notifiable;
@@ -168,7 +169,7 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
     /**
      * Get the current team of the user's context.
      *
-     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
+     * @return BelongsTo
      */
     public function currentTeam()
     {
@@ -249,6 +250,7 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
                 'validation' => '',
                 'conditional_logic' => [],
                 'slug' => 'avatar',
+                'on_create' => false,
                 'style' => [
                     'width' => '100',
                 ],
@@ -261,7 +263,7 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
                 'searchable' => true,
                 'slug' => 'name',
                 'style' => [
-                    'width' => '100',
+                    'width' => '50',
                 ],
             ],
             [
@@ -272,7 +274,7 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
                 'searchable' => true,
                 'slug' => 'email',
                 'style' => [
-                    'width' => '100',
+                    'width' => '50',
                 ],
             ],
             [
@@ -280,26 +282,27 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
                 'type' => 'Aura\\Base\\Fields\\Text',
                 'validation' => '',
                 'on_index' => false,
+                'on_forms' => false,
                 'searchable' => false,
                 'slug' => 'current_team_id',
-                'style' => [
-                    'width' => '100',
-                ],
             ],
             [
-                'name' => 'Roles',
+                'name' => 'Role',
                 'slug' => 'roles',
                 'resource' => 'Aura\\Base\\Resources\\Role',
                 'type' => 'Aura\\Base\\Fields\\Roles',
-                'multiple' => true,
+                'multiple' => false,
                 'polymorphic_relation' => true,
                 'validation' => '',
                 'conditional_logic' => [],
                 'wrapper' => '',
-                'on_index' => false,
+                'on_index' => true,
                 'on_forms' => true,
                 'on_view' => true,
                 'searchable' => false,
+                'style' => [
+                    'width' => '50',
+                ],
             ],
             [
                 'name' => 'Password',
@@ -312,6 +315,9 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
                 'on_create' => true,
                 'on_index' => false,
                 'on_view' => false,
+                'style' => [
+                    'width' => '50',
+                ],
             ],
             [
                 'type' => 'Aura\\Base\\Fields\\Tab',
@@ -676,12 +682,12 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
         if (config('aura.resources.user')) {
             return $this->hasOne(config('aura.resources.user'), 'id', 'id');
         } else {
-            return $this->hasOne(\Aura\Base\Resources\User::class, 'id', 'id');
+            return $this->hasOne(User::class, 'id', 'id');
         }
 
         // Cache the resource so we don't have to query the database every time
         return Cache::remember('user.resource.'.$this->id, now()->addHour(), function () {
-            return \Aura\Base\Resources\User::find($this->id);
+            return User::find($this->id);
         });
     }
 

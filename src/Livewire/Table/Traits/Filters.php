@@ -4,7 +4,6 @@ namespace Aura\Base\Livewire\Table\Traits;
 
 use Illuminate\Support\Str;
 use Livewire\Attributes\Computed;
-use Livewire\Attributes\Reactive;
 
 /**
  * Trait for handling filters in Livewire Table component.

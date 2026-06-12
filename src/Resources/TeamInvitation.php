@@ -3,6 +3,7 @@
 namespace Aura\Base\Resources;
 
 use Aura\Base\Resource;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /**
  * @property int $id
@@ -64,7 +65,7 @@ class TeamInvitation extends Resource
     /**
      * Get the team that the invitation belongs to.
      *
-     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
+     * @return BelongsTo
      */
     public function team()
     {

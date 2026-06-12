@@ -1,14 +1,18 @@
 <?php
 
+use Aura\Base\Models\Scopes\TeamScope;
 use Aura\Base\Resources\Role;
 use Aura\Base\Resources\Team;
 use Aura\Base\Resources\User;
 use Aura\Base\Tests\Resources\Post;
+use Aura\Base\Tests\TestCase;
+use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Foundation\Testing\DatabaseMigrations;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Cache;
 
-uses(Aura\Base\Tests\TestCase::class)->in(__DIR__);
+uses(TestCase::class)->in(__DIR__);
 
 uses()->group('fields')->in('Feature/Fields');
 uses()->group('flows')->in('Feature/Flows');
@@ -21,9 +25,9 @@ uses(DatabaseMigrations::class)->in('FeatureWithDatabaseMigrations');
 // Reset Aura facade after each test to prevent pollution
 uses()->afterEach(function () {
     // Reset the Aura facade to its original state by rebinding the service
-    app()->forgetInstance(\Aura\Base\Aura::class);
-    app()->singleton(\Aura\Base\Aura::class);
-    \Aura\Base\Facades\Aura::clearResolvedInstances();
+    app()->forgetInstance(Aura\Base\Aura::class);
+    app()->singleton(Aura\Base\Aura::class);
+    Aura\Base\Facades\Aura::clearResolvedInstances();
 })->in('Feature', 'FeatureWithDatabaseMigrations');
 
 // uses(\Illuminate\Foundation\Testing\RefreshDatabase::class);
@@ -59,33 +63,33 @@ function createSuperAdmin()
     $user->update(['current_team_id' => $team->id]);
 
     // Clear the cache for the user's current_team_id to ensure TeamScope uses the updated value
-    \Illuminate\Support\Facades\Cache::forget("user_{$user->id}_current_team_id");
+    Cache::forget("user_{$user->id}_current_team_id");
 
-    // Create or find Super Admin role for the team with race condition handling
+    // Create or find Admin role for the team with race condition handling
     // Use withoutGlobalScope to bypass TeamScope and avoid cache issues
-    $role = Role::withoutGlobalScope(\Aura\Base\Models\Scopes\TeamScope::class)
+    $role = Role::withoutGlobalScope(TeamScope::class)
         ->where('team_id', $team->id)
-        ->where('slug', 'super_admin')
+        ->where('slug', 'admin')
         ->first();
 
     if (! $role) {
         try {
             $role = Role::create([
                 'team_id' => $team->id,
-                'slug' => 'super_admin',
+                'slug' => 'admin',
                 'type' => 'Role',
-                'title' => 'Super Admin',
-                'name' => 'Super Admin',
-                'description' => 'Super Admin can perform everything.',
+                'title' => 'Admin',
+                'name' => 'Admin',
+                'description' => 'Admin can perform everything.',
                 'super_admin' => true,
                 'permissions' => [],
                 'user_id' => $user->id,
             ]);
-        } catch (\Illuminate\Database\UniqueConstraintViolationException $e) {
+        } catch (UniqueConstraintViolationException $e) {
             // Handle race condition: another process created the role, just fetch it
-            $role = Role::withoutGlobalScope(\Aura\Base\Models\Scopes\TeamScope::class)
+            $role = Role::withoutGlobalScope(TeamScope::class)
                 ->where('team_id', $team->id)
-                ->where('slug', 'super_admin')
+                ->where('slug', 'admin')
                 ->first();
         }
     }
@@ -120,10 +124,10 @@ function createSuperAdminWithoutTeam()
 
     $role = Role::create([
         'type' => 'Role',
-        'title' => 'Super Admin',
-        'slug' => 'super_admin',
-        'name' => 'Super Admin',
-        'description' => 'Super Admin can perform everything.',
+        'title' => 'Admin',
+        'slug' => 'admin',
+        'name' => 'Admin',
+        'description' => 'Admin can perform everything.',
         'super_admin' => true,
         'permissions' => [],
         'user_id' => $user->id,
@@ -149,7 +153,7 @@ function createAdmin()
     // Set current_team_id of the user
     $user->update(['current_team_id' => $team->id]);
 
-    $role = Role::create(['team_id' => $team->id, 'type' => 'Role', 'title' => 'Admin', 'slug' => 'admin', 'name' => 'Admin', 'description' => ' Admin has can perform almost everything.', 'super_admin' => false, 'permissions' => [
+    $role = Role::create(['team_id' => $team->id, 'type' => 'Role', 'title' => 'Editor', 'slug' => 'editor', 'name' => 'Editor', 'description' => 'Editor has limited permissions.', 'super_admin' => false, 'permissions' => [
         'view-attachment' => true,
         'viewAny-attachment' => true,
         'create-attachment' => true,

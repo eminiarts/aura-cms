@@ -2,6 +2,7 @@
 
 namespace Aura\Base\Widgets;
 
+use Aura\Base\Resources\User;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Component;
 
@@ -67,7 +68,7 @@ class Widget extends Component
 
     public function getCacheKeyProperty()
     {
-        /** @var \Aura\Base\Resources\User $user */
+        /** @var User $user */
         $user = Auth::user();
         $teamId = $user->current_team_id ?? 0;
 

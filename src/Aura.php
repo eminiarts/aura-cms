@@ -53,7 +53,7 @@ class Aura
      *
      * @return bool
      *
-     * @throws \RuntimeException
+     * @throws RuntimeException
      */
     public static function assetsAreCurrent()
     {

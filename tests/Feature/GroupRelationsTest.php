@@ -47,18 +47,33 @@ class GroupRelationsTestModel extends Resource
     }
 }
 
-test('hasMany - fields should not be grouped', function () {
+test('relation fields are not grouped together', function () {
     $model = new GroupRelationsTestModel;
-
     $fields = $model->getGroupedFields();
 
-    $this->assertCount(2, $fields);
+    expect($fields)->toHaveCount(2);
 });
 
-test('hasMany - field should not be grouped', function () {
+test('HasMany field has group set to false', function () {
     expect((new HasMany)->group)->toBe(false);
 });
 
-test('hasOne - field should not be grouped', function () {
+test('HasOne field has group set to false', function () {
     expect((new HasOne)->group)->toBe(false);
+});
+
+test('HasMany field stays at root level', function () {
+    $model = new GroupRelationsTestModel;
+    $fields = $model->getGroupedFields();
+
+    expect($fields[0]['slug'])->toBe('attachments')
+        ->and($fields[0]['type'])->toBe('Aura\Base\Fields\HasMany');
+});
+
+test('HasOne field stays at root level', function () {
+    $model = new GroupRelationsTestModel;
+    $fields = $model->getGroupedFields();
+
+    expect($fields[1]['slug'])->toBe('pages')
+        ->and($fields[1]['type'])->toBe('Aura\Base\Fields\HasOne');
 });

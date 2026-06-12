@@ -13,7 +13,7 @@ use function Laravel\Prompts\text;
 
 class MakeUser extends Command
 {
-    protected $description = 'Creates an Aura Super Admin.';
+    protected $description = 'Creates an Aura Admin.';
 
     protected $signature = 'aura:user
                             {--name= : The name of the user}
@@ -46,11 +46,11 @@ class MakeUser extends Command
 
             $user->forceFill(['current_team_id' => $team->id])->save();
         } else {
-            // Create a Super Admin role without team association
+            // Create an Admin role without team association
             $role = Role::create([
-                'name' => 'Super Admin',
-                'slug' => 'super_admin',
-                'description' => 'Super Admin has can perform everything.',
+                'name' => 'Admin',
+                'slug' => 'admin',
+                'description' => 'Admin can perform everything.',
                 'super_admin' => true,
                 'permissions' => [],
             ]);

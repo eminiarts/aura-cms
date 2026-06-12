@@ -6,6 +6,7 @@ use Aura\Base\Facades\Aura;
 use Aura\Base\Resource;
 use Aura\Base\Resources\Permission;
 use Aura\Base\Resources\Team;
+use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
@@ -73,7 +74,7 @@ class GenerateAllResourcePermissions
                         'group' => $resource->pluralName(),
                     ]
                 );
-            } catch (\Illuminate\Database\QueryException $e) {
+            } catch (QueryException $e) {
                 // Check if it's a duplicate entry error
                 Log::error($e->getMessage());
             }

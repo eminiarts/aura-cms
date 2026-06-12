@@ -5,6 +5,7 @@ namespace Aura\Base\Resources;
 use Aura\Base\Database\Factories\TeamFactory;
 use Aura\Base\Jobs\GenerateAllResourcePermissions;
 use Aura\Base\Resource;
+use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasManyThrough;
@@ -278,13 +279,13 @@ class Team extends Resource
                 $user->save();
             }
 
-            // Create a Super Admin role for the team
+            // Create an Admin role for the team
             $role = Role::firstOrCreate([
-                'slug' => 'super_admin',
+                'slug' => 'admin',
                 'team_id' => $team->id,
             ], [
-                'name' => 'Super Admin',
-                'description' => 'Super Admin has can perform everything.',
+                'name' => 'Admin',
+                'description' => 'Admin can perform everything.',
                 'super_admin' => true,
                 'permissions' => [],
             ]);
@@ -344,7 +345,7 @@ class Team extends Resource
     /**
      * Create a new factory instance for the model.
      *
-     * @return \Illuminate\Database\Eloquent\Factories\Factory
+     * @return Factory
      */
     protected static function newFactory()
     {

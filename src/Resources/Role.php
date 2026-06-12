@@ -105,10 +105,10 @@ class Role extends Resource
                 'on_view' => true,
             ],
             [
-                'name' => 'Super Admin',
+                'name' => 'Admin',
                 'slug' => 'super_admin',
                 'type' => 'Aura\Base\Fields\Boolean',
-                'instructions' => 'Super Admins have access to all permission and can manage other users.',
+                'instructions' => 'Admins have access to all permissions and can manage other users.',
                 'validation' => '',
                 'conditional_logic' => [],
                 'wrapper' => '',

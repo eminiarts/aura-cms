@@ -50,18 +50,79 @@ class BasicConditionalLogicOnFieldModel extends Resource
     }
 }
 
-test('Field X gets shown when value of Y is true', function () {
-    $model = new BasicConditionalLogicOnFieldModel;
+describe('basic conditional logic', function () {
+    it('shows field when condition is met', function () {
+        $model = new BasicConditionalLogicOnFieldModel;
+        $model->text1 = 'test';
 
-    $model->text1 = 'test';
+        $fields = $model->getFields();
+        $field = collect($fields)->firstWhere('slug', 'text2');
 
-    $fields = $model->getFields();
-    $field = collect($fields)->firstWhere('slug', 'text2');
+        $result = ConditionalLogic::checkCondition($model, $field);
 
-    $result = ConditionalLogic::checkCondition($model, $field);
+        expect($result)->toBeTrue();
+    });
 
-    $condition = $field['conditional_logic'][0];
-    $fieldValue = $model->text1;
+    it('hides field when condition is not met', function () {
+        $model = new BasicConditionalLogicOnFieldModel;
+        $model->text1 = 'different';
 
-    $this->assertTrue($result);
+        $fields = $model->getFields();
+        $field = collect($fields)->firstWhere('slug', 'text2');
+
+        $result = ConditionalLogic::checkCondition($model, $field);
+
+        expect($result)->toBeFalse();
+    });
+
+    it('shows field without conditional logic', function () {
+        $model = new BasicConditionalLogicOnFieldModel;
+
+        $fields = $model->getFields();
+        $field = collect($fields)->firstWhere('slug', 'text1');
+
+        $result = ConditionalLogic::checkCondition($model, $field);
+
+        expect($result)->toBeTrue();
+    });
+});
+
+describe('operators', function () {
+    it('handles equals operator', function () {
+        $condition = ['operator' => '==', 'value' => 'test'];
+        expect(ConditionalLogic::checkFieldCondition($condition, 'test'))->toBeTrue();
+        expect(ConditionalLogic::checkFieldCondition($condition, 'other'))->toBeFalse();
+    });
+
+    it('handles not equals operator', function () {
+        $condition = ['operator' => '!=', 'value' => 'test'];
+        expect(ConditionalLogic::checkFieldCondition($condition, 'other'))->toBeTrue();
+        expect(ConditionalLogic::checkFieldCondition($condition, 'test'))->toBeFalse();
+    });
+
+    it('handles greater than operator', function () {
+        $condition = ['operator' => '>', 'value' => 5];
+        expect(ConditionalLogic::checkFieldCondition($condition, 10))->toBeTrue();
+        expect(ConditionalLogic::checkFieldCondition($condition, 3))->toBeFalse();
+    });
+
+    it('handles less than operator', function () {
+        $condition = ['operator' => '<', 'value' => 5];
+        expect(ConditionalLogic::checkFieldCondition($condition, 3))->toBeTrue();
+        expect(ConditionalLogic::checkFieldCondition($condition, 10))->toBeFalse();
+    });
+
+    it('handles greater than or equals operator', function () {
+        $condition = ['operator' => '>=', 'value' => 5];
+        expect(ConditionalLogic::checkFieldCondition($condition, 5))->toBeTrue();
+        expect(ConditionalLogic::checkFieldCondition($condition, 10))->toBeTrue();
+        expect(ConditionalLogic::checkFieldCondition($condition, 3))->toBeFalse();
+    });
+
+    it('handles less than or equals operator', function () {
+        $condition = ['operator' => '<=', 'value' => 5];
+        expect(ConditionalLogic::checkFieldCondition($condition, 5))->toBeTrue();
+        expect(ConditionalLogic::checkFieldCondition($condition, 3))->toBeTrue();
+        expect(ConditionalLogic::checkFieldCondition($condition, 10))->toBeFalse();
+    });
 });

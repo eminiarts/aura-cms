@@ -53,19 +53,52 @@ class PanelInTabsModel extends Resource
     }
 }
 
-test('fields get grouped when field group is true', function () {
+test('root structure has single Tabs wrapper', function () {
     $model = new PanelInTabsModel;
-
     $fields = $model->getGroupedFields();
 
-    $this->assertCount(1, $fields);
-    $this->assertEquals($fields[0]['name'], 'Aura\Base\Fields\Tabs');
-    $this->assertCount(2, $fields[0]['fields']);
-    $this->assertEquals($fields[0]['fields'][0]['name'], 'Tab 1');
-    $this->assertEquals($fields[0]['fields'][1]['name'], 'Tab 2');
-    $this->assertEquals($fields[0]['fields'][0]['fields'][0]['name'], 'Panel 1');
-    $this->assertCount(1, $fields[0]['fields'][0]['fields'][0]['fields']);
-    $this->assertEquals($fields[0]['fields'][0]['type'], 'Aura\\Base\\Fields\\Tab');
-    $this->assertCount(1, $fields[0]['fields'][0]['fields']);
-    $this->assertCount(1, $fields[0]['fields'][1]['fields']);
+    expect($fields)->toHaveCount(1)
+        ->and($fields[0]['name'])->toBe('Aura\Base\Fields\Tabs');
+});
+
+test('Tabs wrapper contains two tabs', function () {
+    $model = new PanelInTabsModel;
+    $fields = $model->getGroupedFields();
+
+    expect($fields[0]['fields'])->toHaveCount(2)
+        ->and($fields[0]['fields'][0]['name'])->toBe('Tab 1')
+        ->and($fields[0]['fields'][1]['name'])->toBe('Tab 2');
+});
+
+test('first tab contains panel of correct type', function () {
+    $model = new PanelInTabsModel;
+    $fields = $model->getGroupedFields();
+
+    $tab1 = $fields[0]['fields'][0];
+
+    expect($tab1['fields'][0]['name'])->toBe('Panel 1')
+        ->and($tab1['fields'][0]['type'])->toBe('Aura\Base\Fields\Panel');
+});
+
+test('panel in first tab contains text field', function () {
+    $model = new PanelInTabsModel;
+    $fields = $model->getGroupedFields();
+
+    $tab1 = $fields[0]['fields'][0];
+
+    expect($tab1['type'])->toBe('Aura\Base\Fields\Tab')
+        ->and($tab1['fields'])->toHaveCount(1)
+        ->and($tab1['fields'][0]['name'])->toBe('Panel 1')
+        ->and($tab1['fields'][0]['fields'])->toHaveCount(1);
+});
+
+test('second tab contains text field directly', function () {
+    $model = new PanelInTabsModel;
+    $fields = $model->getGroupedFields();
+
+    $tab2 = $fields[0]['fields'][1];
+
+    expect($tab2['name'])->toBe('Tab 2')
+        ->and($tab2['fields'])->toHaveCount(1)
+        ->and($tab2['fields'][0]['slug'])->toBe('text-2-1');
 });

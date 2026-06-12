@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Livewire;
 
+use Aura\Base\Fields\HasMany;
 use Aura\Base\Livewire\Resource\Create;
 use Aura\Base\Resource;
 use Aura\Base\Resources\User;
@@ -60,7 +61,7 @@ test('HasMany Field shown on Edit', function () {
     $editFields = $model->editFields();
 
     $hasHasManyField = collect($editFields)->contains(function ($field) {
-        return isset($field['field']) && $field['field'] instanceof \Aura\Base\Fields\HasMany;
+        return isset($field['field']) && $field['field'] instanceof HasMany;
     });
 
     expect($hasHasManyField)->toBeTrue();

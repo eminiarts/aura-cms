@@ -71,7 +71,6 @@ trait QueryFilters
 
     protected function applyFilterGroup(Builder $query, array $group): void
     {
-        ray($group);
         foreach ($group['filters'] as $filterIndex => $filter) {
             if ($this->isValidFilter($filter)) {
                 if ($filterIndex > 0) {

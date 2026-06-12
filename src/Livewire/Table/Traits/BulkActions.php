@@ -2,6 +2,8 @@
 
 namespace Aura\Base\Livewire\Table\Traits;
 
+use Symfony\Component\HttpFoundation\StreamedResponse;
+
 /**
  * Trait for bulk actions in Livewire table component
  */
@@ -29,7 +31,7 @@ trait BulkActions
         // Clear the selected array
         $this->selected = [];
 
-        $this->notify('Erfolgreich: '.$action);
+        $this->notify('Success: '.$action);
     }
 
     public function bulkCollectionAction($action)
@@ -39,14 +41,14 @@ trait BulkActions
 
         $response = $this->model->{$action}($ids);
 
-        if ($response instanceof \Symfony\Component\HttpFoundation\StreamedResponse) {
+        if ($response instanceof StreamedResponse) {
             return $response;
         }
 
         // reset selected rows
         $this->selected = [];
 
-        $this->notify('Erfolgreich: '.$action);
+        $this->notify('Success: '.$action);
 
         $this->dispatch('refreshTable');
     }

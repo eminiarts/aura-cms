@@ -2,6 +2,9 @@
 
 namespace Aura\Base\Traits;
 
+use Aura\Base\Fields\ID;
+use Aura\Base\Fields\Password;
+
 trait SaveFieldAttributes
 {
     /**
@@ -35,7 +38,7 @@ trait SaveFieldAttributes
                     }
 
                     // Do not set password fields manually, since they would overwrite the hashed password
-                    if ($class instanceof \Aura\Base\Fields\Password) {
+                    if ($class instanceof Password) {
 
                         // If the password is available in the $post->attributes, unset it
                         // if (empty($post->attributes[$slug])) {
@@ -53,7 +56,7 @@ trait SaveFieldAttributes
                         // return;
                     }
 
-                    if ($class instanceof \Aura\Base\Fields\ID) {
+                    if ($class instanceof ID) {
                         return;
                     }
 

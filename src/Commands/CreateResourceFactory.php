@@ -2,6 +2,7 @@
 
 namespace Aura\Base\Commands;
 
+use Aura\Base\Facades\Aura;
 use Illuminate\Console\Command;
 use Illuminate\Filesystem\Filesystem;
 use Illuminate\Support\Facades\Artisan;
@@ -27,7 +28,7 @@ class CreateResourceFactory extends Command
         $resourceClass = $this->argument('resource');
 
         if (! $resourceClass) {
-            $resources = collect(\Aura\Base\Facades\Aura::getResources())->mapWithKeys(function ($resource) {
+            $resources = collect(Aura::getResources())->mapWithKeys(function ($resource) {
                 return [$resource => $resource];
             });
 

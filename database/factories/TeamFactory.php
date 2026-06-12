@@ -4,13 +4,14 @@ namespace Aura\Base\Database\Factories;
 
 use Aura\Base\Resources\Team;
 use Illuminate\Database\Eloquent\Factories\Factory;
+use Illuminate\Database\Eloquent\Model;
 
 class TeamFactory extends Factory
 {
     /**
      * The name of the factory's corresponding model.
      *
-     * @var class-string<\Illuminate\Database\Eloquent\Model>
+     * @var class-string<Model>
      */
     protected $model = Team::class;
 

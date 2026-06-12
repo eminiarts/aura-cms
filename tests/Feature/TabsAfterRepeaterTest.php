@@ -45,15 +45,50 @@ class TabsAfterRepeaterModel extends Resource
     }
 }
 
-test('tab is not grouped in repeater', function () {
+test('tabs container wraps all fields correctly when repeater is present', function () {
     $model = new TabsAfterRepeaterModel;
-
     $fields = $model->getGroupedFields();
 
-    $this->assertCount(1, $fields);
-    $this->assertEquals($fields[0]['name'], 'Aura\Base\Fields\Tabs');
-    $this->assertCount(2, $fields[0]['fields']);
+    expect($fields)->toHaveCount(1)
+        ->and($fields[0]['name'])->toBe('Aura\Base\Fields\Tabs')
+        ->and($fields[0]['fields'])->toHaveCount(2);
+});
 
-    $this->assertEquals($fields[0]['fields'][0]['name'], 'Tab 1');
-    $this->assertEquals($fields[0]['fields'][1]['name'], 'Tab 2');
+test('repeater stays inside first tab not treated as tab boundary', function () {
+    $model = new TabsAfterRepeaterModel;
+    $fields = $model->getGroupedFields();
+
+    $tab1 = $fields[0]['fields'][0];
+
+    expect($tab1['name'])->toBe('Tab 1')
+        ->and($tab1['fields'])->toHaveCount(1);
+
+    // The repeater should be the first (and only) field in tab 1
+    $repeater = $tab1['fields'][0];
+    expect($repeater['type'])->toBe('Aura\Base\Fields\Repeater')
+        ->and($repeater['slug'])->toBe('repeater-1');
+});
+
+test('second tab follows after repeater correctly', function () {
+    $model = new TabsAfterRepeaterModel;
+    $fields = $model->getGroupedFields();
+
+    $tab2 = $fields[0]['fields'][1];
+
+    expect($tab2['name'])->toBe('Tab 2')
+        ->and($tab2['slug'])->toBe('tab2')
+        ->and($tab2['fields'])->toHaveCount(1)
+        ->and($tab2['fields'][0]['slug'])->toBe('text2');
+});
+
+test('repeater field has text nested inside it', function () {
+    $model = new TabsAfterRepeaterModel;
+    $fields = $model->getGroupedFields();
+
+    $tab1 = $fields[0]['fields'][0];
+    $repeater = $tab1['fields'][0];
+
+    expect($repeater['fields'])->toHaveCount(1)
+        ->and($repeater['fields'][0]['slug'])->toBe('text1')
+        ->and($repeater['fields'][0]['type'])->toBe('Aura\Base\Fields\Text');
 });

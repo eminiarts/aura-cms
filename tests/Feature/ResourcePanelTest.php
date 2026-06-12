@@ -58,18 +58,45 @@ class ModelWithPanel extends Resource
     }
 }
 
-test('model get tabs with panels', function () {
+test('model groups fields with tabs containing panels', function () {
     $model = new ModelWithPanel;
-
     $fields = $model->getGroupedFields();
 
-    $this->assertCount(1, $fields);
-    $this->assertEquals($fields[0]['name'], 'Aura\Base\Fields\Tabs');
-    $this->assertEquals($fields[0]['fields'][0]['name'], 'Tab 1');
-    $this->assertEquals($fields[0]['fields'][0]['slug'], 'tab-1');
-    $this->assertCount(2, $fields[0]['fields'][0]['fields']);
-    $this->assertEquals($fields[0]['fields'][0]['fields'][0]['type'], 'Aura\\Base\\Fields\\Panel');
-    $this->assertEquals($fields[0]['fields'][0]['fields'][1]['type'], 'Aura\\Base\\Fields\\Panel');
-    $this->assertCount(1, $fields[0]['fields'][0]['fields'][0]['fields']);
-    $this->assertCount(1, $fields[0]['fields'][0]['fields'][1]['fields']);
+    expect($fields)->toHaveCount(1)
+        ->and($fields[0]['name'])->toBe('Aura\Base\Fields\Tabs');
+});
+
+test('tab contains both panels as children', function () {
+    $model = new ModelWithPanel;
+    $fields = $model->getGroupedFields();
+
+    $tab1 = $fields[0]['fields'][0];
+
+    expect($tab1['name'])->toBe('Tab 1')
+        ->and($tab1['slug'])->toBe('tab-1')
+        ->and($tab1['fields'])->toHaveCount(2);
+});
+
+test('both panels are of Panel type', function () {
+    $model = new ModelWithPanel;
+    $fields = $model->getGroupedFields();
+
+    $tab1Fields = $fields[0]['fields'][0]['fields'];
+
+    expect($tab1Fields[0]['type'])->toBe('Aura\Base\Fields\Panel')
+        ->and($tab1Fields[0]['name'])->toBe('Panel 1')
+        ->and($tab1Fields[1]['type'])->toBe('Aura\Base\Fields\Panel')
+        ->and($tab1Fields[1]['name'])->toBe('Panel 2');
+});
+
+test('each panel contains one text field', function () {
+    $model = new ModelWithPanel;
+    $fields = $model->getGroupedFields();
+
+    $tab1Fields = $fields[0]['fields'][0]['fields'];
+
+    expect($tab1Fields[0]['fields'])->toHaveCount(1)
+        ->and($tab1Fields[0]['fields'][0]['slug'])->toBe('total')
+        ->and($tab1Fields[1]['fields'])->toHaveCount(1)
+        ->and($tab1Fields[1]['fields'][0]['slug'])->toBe('other');
 });

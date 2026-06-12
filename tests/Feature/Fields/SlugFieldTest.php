@@ -1,27 +1,14 @@
 <?php
 
-namespace Tests\Feature\Livewire;
+namespace Tests\Feature\Fields;
 
 use Aura\Base\Facades\Aura;
 use Aura\Base\Fields\Slug;
 use Aura\Base\Livewire\Resource\Create;
 use Aura\Base\Livewire\Resource\Edit;
 use Aura\Base\Resource;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
 
-// Refresh Database on every test
-uses(RefreshDatabase::class);
-
-// Before each test, create a Superadmin and login
-beforeEach(function () {
-    $this->actingAs($this->user = createSuperAdmin());
-
-    Aura::fake();
-    Aura::setModel(new SlugFieldModel);
-});
-
-// Create Resource for this test
 class SlugFieldModel extends Resource
 {
     public static $singularName = 'Slug Model';
@@ -30,7 +17,7 @@ class SlugFieldModel extends Resource
 
     public static string $type = 'SlugModel';
 
-    public static function getFields()
+    public static function getFields(): array
     {
         return [
             [
@@ -52,204 +39,266 @@ class SlugFieldModel extends Resource
     }
 }
 
-test('Slug Field Test', function () {
-    $model = new SlugFieldModel;
-
-    $component = Livewire::test(Create::class, ['slug' => 'slug-model'])
-        ->call('setModel', $model)
-        ->assertSee('Create Slug Model')
-        ->assertSee('Slug for Test')
-        ->assertSeeHtml('type="text"')
-        ->assertSee('Slug')
-        ->call('save')
-        ->assertHasErrors(['form.fields.slug']);
-
-    // Test custom slug
-    $component
-        ->set('form.fields.text', 'Custom Title')
-        ->set('form.fields.slug', 'custom-title')
-        ->call('save')
-        ->assertHasNoErrors(['form.fields.slug']);
-
-    // Assert that the model was saved to the database with the custom slug
-    $this->assertDatabaseHas('posts', ['type' => 'SlugModel', 'slug' => 'custom-title']);
-
-    // Get the saved model
-    $post = SlugFieldModel::first();
-
-    // Assert that $post->fields['slug'] is 'custom-slug'
-    $this->assertEquals('custom-title', $post->fields['slug']);
-
+beforeEach(function () {
+    $this->actingAs($this->user = createSuperAdmin());
     Aura::fake();
-    Aura::setModel($model);
-
-    $this->assertInstanceOf(SlugFieldModel::class, Aura::findResourceBySlug('SlugModel')->find($post->id));
-
-    // If we call the edit view, the password field should be empty
-    $component = Livewire::test(Edit::class, ['slug' => 'SlugModel', 'id' => $post->id])
-        ->set('form.fields.slug', 'toggle-slug')
-        ->call('save')
-        ->assertHasNoErrors(['form.fields.slug']);
-
-    // Get the saved model
-    $post = $post->refresh();
-
-    // Assert that $model->fields['slug'] is 'toggle-slug'
-    $this->assertEquals('toggle-slug', $post->slug);
-
-    // Test validation
-    $component->set('form.fields.slug', 'invalid slug')
-        ->call('save')
-        ->assertHasErrors(['form.fields.slug']);
-
-    // Assert that the model was not saved to the database
-    $this->assertDatabaseMissing('posts', ['type' => 'SlugModel', 'fields' => json_encode(['slug' => 'invalid slug'])]);
+    Aura::setModel(new SlugFieldModel);
 });
 
-test('check Slug Fields', function () {
-    $slug = new Slug;
+describe('Slug Field Configuration', function () {
+    test('has required configuration fields', function () {
+        $slugField = new Slug;
+        $fields = collect($slugField->getFields());
 
-    $fields = collect($slug->getFields());
+        expect($fields->firstWhere('slug', 'based_on'))->not->toBeNull()
+            ->and($fields->firstWhere('slug', 'custom'))->not->toBeNull()
+            ->and($fields->firstWhere('slug', 'disabled'))->not->toBeNull()
+            ->and($fields->firstWhere('slug', 'default'))->not->toBeNull()
+            ->and($fields->firstWhere('slug', 'placeholder'))->not->toBeNull();
+    });
 
-    expect($fields->firstWhere('slug', 'custom'))->not->toBeNull();
-    expect($fields->firstWhere('slug', 'disabled'))->not->toBeNull();
-    expect($fields->firstWhere('slug', 'based_on'))->not->toBeNull();
-    expect($fields->firstWhere('slug', 'based_on')['validation'])->toBe('required');
+    test('has correct option group', function () {
+        $slugField = new Slug;
+
+        expect($slugField->optionGroup)->toBe('Input Fields');
+    });
+
+    test('has correct edit and view properties', function () {
+        $slugField = new Slug;
+
+        expect($slugField->edit)->toBe('aura::fields.slug')
+            ->and($slugField->view)->toBe('aura::fields.view-value');
+    });
+
+    test('based_on field has required validation', function () {
+        $slugField = new Slug;
+        $fields = collect($slugField->getFields());
+
+        $basedOnField = $fields->firstWhere('slug', 'based_on');
+        expect($basedOnField['validation'])->toBe('required');
+    });
+
+    test('disabled field is Boolean type', function () {
+        $slugField = new Slug;
+        $fields = collect($slugField->getFields());
+
+        $disabledField = $fields->firstWhere('slug', 'disabled');
+        expect($disabledField['type'])->toBe('Aura\\Base\\Fields\\Boolean');
+    });
 });
 
-test('Slug Field - Without Custom Checkbox', function () {
+describe('Slug Field Rendering', function () {
+    test('renders in create form', function () {
+        Livewire::test(Create::class, ['slug' => 'slug-model'])
+            ->assertSee('Create Slug Model')
+            ->assertSee('Slug for Test')
+            ->assertSeeHtml('type="text"')
+            ->assertSee('Slug');
+    });
 
-    $field = [
-        'name' => 'Slug for Test',
-        'type' => 'Aura\\Base\\Fields\\Slug',
-        'validation' => 'required|alpha_dash',
-        'conditional_logic' => [],
-        'slug' => 'slug',
-        'based_on' => 'text',
-        'custom' => false,
-    ];
+    test('renders without custom checkbox when custom is false', function () {
+        $field = [
+            'name' => 'Slug for Test',
+            'type' => 'Aura\\Base\\Fields\\Slug',
+            'validation' => 'required|alpha_dash',
+            'conditional_logic' => [],
+            'slug' => 'slug',
+            'based_on' => 'text',
+            'custom' => false,
+        ];
 
-    $fieldClass = app($field['type']);
+        $fieldClass = app($field['type']);
 
-    $view = $this->withViewErrors([])->blade(
-        '<x-dynamic-component :component="$component" :field="$field" />',
-        ['component' => $fieldClass->edit(), 'field' => $field]
-    );
+        $view = $this->withViewErrors([])->blade(
+            '<x-dynamic-component :component="$component" :field="$field" />',
+            ['component' => $fieldClass->edit(), 'field' => $field]
+        );
 
-    $view->assertSee('Slug for Test');
+        $view->assertSee('Slug for Test');
+        expect((string) $view)->not->toContain('<div class="custom-slug')
+            ->and((string) $view)->toContain('custom: true,')
+            ->and((string) $view)->toContain("value: \$wire.entangle('form.fields.slug')");
+    });
 
-    expect((string) $view)->not->toContain('<div class="custom-slug');
-    expect((string) $view)->toContain('custom: true,');
-    expect((string) $view)->toContain('value: $wire.entangle(\'form.fields.slug\')');
+    test('renders with custom checkbox when custom is true', function () {
+        $field = [
+            'name' => 'Slug for Test',
+            'type' => 'Aura\\Base\\Fields\\Slug',
+            'validation' => 'required|alpha_dash',
+            'conditional_logic' => [],
+            'slug' => 'slug',
+            'based_on' => 'text',
+            'custom' => true,
+        ];
 
-    // Set Custom
+        $fieldClass = app($field['type']);
 
-    $field['custom'] = true;
+        $view = $this->withViewErrors([])->blade(
+            '<x-dynamic-component :component="$component" :field="$field" />',
+            ['component' => $fieldClass->edit(), 'field' => $field]
+        );
 
-    $view = $this->withViewErrors([])->blade(
-        '<x-dynamic-component :component="$component" :field="$field" />',
-        ['component' => $fieldClass->edit(), 'field' => $field]
-    );
+        $view->assertSee('Slug for Test');
+        expect((string) $view)->toContain('<div class="flex flex-col custom-slug')
+            ->and((string) $view)->toContain('custom: true,');
+    });
 
-    $view->assertSee('Slug for Test');
+    test('renders disabled input when disabled is true', function () {
+        $field = [
+            'name' => 'Slug for Test',
+            'type' => 'Aura\\Base\\Fields\\Slug',
+            'validation' => 'required|alpha_dash',
+            'conditional_logic' => [],
+            'slug' => 'slug',
+            'based_on' => 'text',
+            'custom' => false,
+            'disabled' => true,
+        ];
 
-    expect((string) $view)->toContain('<div class="flex flex-col custom-slug');
+        $fieldClass = app($field['type']);
 
-    expect((string) $view)->toContain('custom: true,');
+        $view = $this->withViewErrors([])->blade(
+            '<x-dynamic-component :component="$component" :field="$field" />',
+            ['component' => $fieldClass->edit(), 'field' => $field]
+        );
+
+        $view->assertSee('Slug for Test');
+        expect((string) $view)->not->toContain('<div class="custom-slug')
+            ->and((string) $view)->toContain('custom: false,')
+            ->and((string) $view)->toContain('x-bind:disabled="!custom"');
+    });
+
+    test('renders enabled input when disabled is false', function () {
+        $field = [
+            'name' => 'Slug for Test',
+            'type' => 'Aura\\Base\\Fields\\Slug',
+            'validation' => 'required|alpha_dash',
+            'conditional_logic' => [],
+            'slug' => 'slug',
+            'based_on' => 'text',
+            'disabled' => false,
+        ];
+
+        $fieldClass = app($field['type']);
+
+        $view = $this->withViewErrors([])->blade(
+            '<x-dynamic-component :component="$component" :field="$field" />',
+            ['component' => $fieldClass->edit(), 'field' => $field]
+        );
+
+        $view->assertSee('Slug for Test');
+        expect((string) $view)->not->toContain('<div class="custom-slug')
+            ->and((string) $view)->toContain('custom: true,')
+            ->and((string) $view)->toContain('x-bind:disabled="!custom"');
+    });
 });
 
-test('Slug Field - only disabled input - true', function () {
-    $field = [
-        'name' => 'Slug for Test',
-        'type' => 'Aura\\Base\\Fields\\Slug',
-        'validation' => 'required|alpha_dash',
-        'conditional_logic' => [],
-        'slug' => 'slug',
-        'based_on' => 'text',
-        'custom' => false,
-        'disabled' => true,
-    ];
+describe('Slug Field Validation', function () {
+    test('validates required slug', function () {
+        Livewire::test(Create::class, ['slug' => 'slug-model'])
+            ->call('save')
+            ->assertHasErrors(['form.fields.slug']);
+    });
 
-    $fieldClass = app($field['type']);
+    test('validates alpha_dash format', function () {
+        Livewire::test(Create::class, ['slug' => 'slug-model'])
+            ->set('form.fields.text', 'Custom Title')
+            ->set('form.fields.slug', 'invalid slug')
+            ->call('save')
+            ->assertHasErrors(['form.fields.slug']);
+    });
 
-    $view = $this->withViewErrors([])->blade(
-        '<x-dynamic-component :component="$component" :field="$field" />',
-        ['component' => $fieldClass->edit(), 'field' => $field]
-    );
-
-    $view->assertSee('Slug for Test');
-
-    expect((string) $view)->not->toContain('<div class="custom-slug');
-    expect((string) $view)->toContain('custom: false,');
-    expect((string) $view)->toContain('x-bind:disabled="!custom"');
-
+    test('accepts valid slug format', function () {
+        Livewire::test(Create::class, ['slug' => 'slug-model'])
+            ->set('form.fields.text', 'Custom Title')
+            ->set('form.fields.slug', 'custom-title')
+            ->call('save')
+            ->assertHasNoErrors(['form.fields.slug']);
+    });
 });
 
-test('Slug Field - disabled input - false', function () {
-    $field = [
-        'name' => 'Slug for Test',
-        'type' => 'Aura\\Base\\Fields\\Slug',
-        'validation' => 'required|alpha_dash',
-        'conditional_logic' => [],
-        'slug' => 'slug',
-        'based_on' => 'text',
-        'disabled' => false,
-    ];
+describe('Slug Field in Livewire', function () {
+    test('saves slug to database', function () {
+        Livewire::test(Create::class, ['slug' => 'slug-model'])
+            ->set('form.fields.text', 'Custom Title')
+            ->set('form.fields.slug', 'custom-title')
+            ->call('save')
+            ->assertHasNoErrors(['form.fields.slug']);
 
-    $fieldClass = app($field['type']);
+        $this->assertDatabaseHas('posts', ['type' => 'SlugModel', 'slug' => 'custom-title']);
 
-    $view = $this->withViewErrors([])->blade(
-        '<x-dynamic-component :component="$component" :field="$field" />',
-        ['component' => $fieldClass->edit(), 'field' => $field]
-    );
+        $model = SlugFieldModel::first();
+        expect($model->fields['slug'])->toBe('custom-title');
+    });
 
-    $view->assertSee('Slug for Test');
+    test('updates slug on edit', function () {
+        // Create model
+        Livewire::test(Create::class, ['slug' => 'slug-model'])
+            ->set('form.fields.text', 'Custom Title')
+            ->set('form.fields.slug', 'custom-title')
+            ->call('save');
 
-    expect((string) $view)->not->toContain('<div class="custom-slug');
-    expect((string) $view)->toContain('custom: true,');
-    expect((string) $view)->toContain('x-bind:disabled="!custom"');
+        $post = SlugFieldModel::first();
 
+        Aura::fake();
+        Aura::setModel(new SlugFieldModel);
+
+        // Edit and update slug
+        Livewire::test(Edit::class, ['slug' => 'SlugModel', 'id' => $post->id])
+            ->set('form.fields.slug', 'updated-slug')
+            ->call('save')
+            ->assertHasNoErrors(['form.fields.slug']);
+
+        $post = $post->refresh();
+        expect($post->slug)->toBe('updated-slug');
+    });
+
+    test('rejects invalid slug on edit', function () {
+        // Create model
+        Livewire::test(Create::class, ['slug' => 'slug-model'])
+            ->set('form.fields.text', 'Custom Title')
+            ->set('form.fields.slug', 'custom-title')
+            ->call('save');
+
+        $post = SlugFieldModel::first();
+
+        Aura::fake();
+        Aura::setModel(new SlugFieldModel);
+
+        // Edit with invalid slug
+        Livewire::test(Edit::class, ['slug' => 'SlugModel', 'id' => $post->id])
+            ->set('form.fields.slug', 'invalid slug')
+            ->call('save')
+            ->assertHasErrors(['form.fields.slug']);
+
+        // Database should not have invalid slug
+        $this->assertDatabaseMissing('posts', ['type' => 'SlugModel', 'slug' => 'invalid slug']);
+    });
 });
 
-test('Slug Field - custom - false ', function () {
+describe('Slug Field Value Handling', function () {
+    test('get method returns value unchanged', function () {
+        $slugField = new Slug;
 
-    $field = [
-        'name' => 'Slug for Test',
-        'type' => 'Aura\\Base\\Fields\\Slug',
-        'validation' => 'required|alpha_dash',
-        'conditional_logic' => [],
-        'slug' => 'slug',
-        'based_on' => 'text',
-        'custom' => false,
-    ];
+        expect($slugField->get(null, 'my-slug'))->toBe('my-slug')
+            ->and($slugField->get(null, null))->toBeNull();
+    });
 
-    $fieldClass = app($field['type']);
+    test('value method returns value unchanged', function () {
+        $slugField = new Slug;
 
-    $view = $this->withViewErrors([])->blade(
-        '<x-dynamic-component :component="$component" :field="$field" />',
-        ['component' => $fieldClass->edit(), 'field' => $field]
-    );
+        expect($slugField->value('my-slug'))->toBe('my-slug')
+            ->and($slugField->value(''))->toBe('');
+    });
 
-    expect((string) $view)->not->toContain('<div class="custom-slug');
-});
+    test('filterOptions returns correct filters', function () {
+        $slugField = new Slug;
+        $options = $slugField->filterOptions();
 
-test('Slug Field - custom - true', function () {
-    $field = [
-        'name' => 'Slug for Test',
-        'type' => 'Aura\\Base\\Fields\\Slug',
-        'validation' => 'required|alpha_dash',
-        'conditional_logic' => [],
-        'slug' => 'slug',
-        'based_on' => 'text',
-        'custom' => true,
-    ];
-
-    $fieldClass = app($field['type']);
-
-    $view = $this->withViewErrors([])->blade(
-        '<x-dynamic-component :component="$component" :field="$field" />',
-        ['component' => $fieldClass->edit(), 'field' => $field]
-    );
-
-    expect((string) $view)->toContain('<div class="flex flex-col custom-slug');
+        expect($options)->toHaveKey('is')
+            ->and($options)->toHaveKey('is_not')
+            ->and($options)->toHaveKey('contains')
+            ->and($options)->toHaveKey('is_empty')
+            ->and($options)->toHaveKey('is_not_empty');
+    });
 });

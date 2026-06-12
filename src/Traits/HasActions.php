@@ -2,6 +2,9 @@
 
 namespace Aura\Base\Traits;
 
+use Illuminate\Auth\Access\AuthorizationException;
+use Illuminate\Http\RedirectResponse;
+
 trait HasActions
 {
     /**
@@ -44,12 +47,12 @@ trait HasActions
         try {
             $response = $this->model->{$action}();
 
-            if ($response instanceof \Illuminate\Http\RedirectResponse) {
+            if ($response instanceof RedirectResponse) {
                 return $response; // Perform the redirect.
             }
 
             $this->notify(__('Successfully ran: :action', ['action' => __($action)]));
-        } catch (\Illuminate\Auth\Access\AuthorizationException $e) {
+        } catch (AuthorizationException $e) {
             abort(403, $e->getMessage());
         }
     }

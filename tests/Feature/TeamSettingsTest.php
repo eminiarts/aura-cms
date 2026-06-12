@@ -16,10 +16,10 @@ uses(RefreshDatabase::class);
 beforeEach(fn () => $this->actingAs($this->user = createSuperAdmin()));
 
 test('Team Settings Component can be rendered', function () {
-    $role = Role::create(['name' => 'Super Admin', 'slug' => 'super_admin2', 'description' => 'Super Admin has can perform everything.', 'super_admin' => true, 'permissions' => []]);
+    $role = Role::create(['name' => 'Admin', 'slug' => 'admin2', 'description' => 'Admin has can perform everything.', 'super_admin' => true, 'permissions' => []]);
 
     // Attach to User
-    $user = \Aura\Base\Resources\User::find(1);
+    $user = User::find(1);
 
     $user->update(['roles' => [$role->id]]);
 
@@ -29,10 +29,10 @@ test('Team Settings Component can be rendered', function () {
 });
 
 test('Default Team Settings are created', function () {
-    $role = Role::create(['name' => 'Super Admin', 'slug' => 'super_admin2', 'description' => 'Super Admin has can perform everything.', 'super_admin' => true, 'permissions' => []]);
+    $role = Role::create(['name' => 'Admin', 'slug' => 'admin2', 'description' => 'Admin has can perform everything.', 'super_admin' => true, 'permissions' => []]);
 
     // Attach to User
-    $user = \Aura\Base\Resources\User::find(1);
+    $user = User::find(1);
 
     $user->update(['roles' => [$role->id]]);
 

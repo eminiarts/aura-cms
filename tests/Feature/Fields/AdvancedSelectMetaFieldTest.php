@@ -11,6 +11,7 @@ use Aura\Base\Resources\Role;
 use Aura\Base\Resources\User;
 use Aura\Base\Tests\Resources\Post;
 use DB;
+use Illuminate\Http\Request;
 use Livewire\Livewire;
 use Mockery;
 
@@ -249,7 +250,7 @@ test('searchable fields API Mock', function () {
 
     $field = new AdvancedSelect;
 
-    $request = new \Illuminate\Http\Request([
+    $request = new Request([
         'model' => User::class,
         'slug' => 'select',
         'search' => '',
@@ -260,7 +261,7 @@ test('searchable fields API Mock', function () {
 
     expect($result)->toHavecount(1);
 
-    $request = new \Illuminate\Http\Request([
+    $request = new Request([
         'model' => User::class,
         'slug' => 'select',
         'search' => 'notexists',

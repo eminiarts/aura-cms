@@ -2,6 +2,9 @@
 
 namespace Aura\Base\Fields;
 
+use Aura\Base\Resources\Team;
+use Aura\Base\Resources\User;
+
 class BelongsToMany extends Field
 {
     public $edit = 'aura::fields.has-many';
@@ -19,11 +22,11 @@ class BelongsToMany extends Field
         $field = $component->field;
         $model = $component->model;
 
-        if ($model instanceof \Aura\Base\Resources\User) {
+        if ($model instanceof User) {
             return $query->where('user_id', $model->id);
         }
 
-        if ($model instanceof \Aura\Base\Resources\Team) {
+        if ($model instanceof Team) {
             return $query;
         }
 

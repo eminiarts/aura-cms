@@ -37,12 +37,10 @@ class SaveRessourceFieldsTestModel extends Resource
     }
 }
 
-test('save defined fields', function () {
+test('can save defined fields through fields array', function () {
     $this->withoutExceptionHandling();
 
-    $this->assertDatabaseMissing('posts', [
-        'type' => 'Model',
-    ]);
+    $this->assertDatabaseMissing('posts', ['type' => 'Model']);
 
     $model = SaveRessourceFieldsTestModel::create([
         'title' => 'Test',
@@ -52,50 +50,18 @@ test('save defined fields', function () {
         ],
     ]);
 
-    $this->assertDatabaseHas('posts', [
-        'type' => 'Model',
-    ]);
+    $this->assertDatabaseHas('posts', ['type' => 'Model']);
 
     $savedModel = SaveRessourceFieldsTestModel::first();
 
-    $this->assertEquals($model->id, $savedModel->id);
-    $this->assertEquals($savedModel->title, 'Test');
-    $this->assertEquals($savedModel->text1, 'Test 1');
-    $this->assertEquals($savedModel->text2, 'Test 2');
-
-    // try {
-    //     $this->assertDatabaseMissing('posts', [
-    //         'type' => 'Model',
-    //     ]);
-
-    //     $model = SaveRessourceFieldsTestModel::create([
-    //         'title' => 'Test',
-    //         'fields' => [
-    //             'text1' => 'Test 1',
-    //             'text2' => 'Test 2',
-    //         ],
-    //     ]);
-
-    //     $this->assertDatabaseHas('posts', [
-    //         'type' => 'Model',
-    //     ]);
-
-    //     $savedModel = SaveRessourceFieldsTestModel::first();
-
-    //     $savedModel->clearModelCache();
-
-    //     $this->assertEquals($model->id, $savedModel->id);
-    //     $this->assertEquals($savedModel->title, 'Test');
-    //     $this->assertEquals($savedModel->text1, 'Test 1');
-    //     $this->assertEquals($savedModel->text2, 'Test 2');
-    // } catch (\Throwable $th) {
-    // }
+    expect($savedModel->id)->toBe($model->id)
+        ->and($savedModel->title)->toBe('Test')
+        ->and($savedModel->text1)->toBe('Test 1')
+        ->and($savedModel->text2)->toBe('Test 2');
 });
 
-test('can not save fields that are not defined', function () {
-    $this->assertDatabaseMissing('posts', [
-        'type' => 'Model',
-    ]);
+test('undefined fields are not saved', function () {
+    $this->assertDatabaseMissing('posts', ['type' => 'Model']);
 
     $model = SaveRessourceFieldsTestModel::create([
         'title' => 'Test',
@@ -106,30 +72,22 @@ test('can not save fields that are not defined', function () {
         ],
     ]);
 
-    $this->assertDatabaseHas('posts', [
-        'type' => 'Model',
-    ]);
+    $this->assertDatabaseHas('posts', ['type' => 'Model']);
 
     $savedModel = SaveRessourceFieldsTestModel::first();
 
-    $this->assertEquals($model->id, $savedModel->id);
-    $this->assertEquals($savedModel->title, 'Test');
-    $this->assertEquals($savedModel->text1, 'Test 1');
-
-    $this->assertEquals($savedModel->text2, 'Test 2');
-    $this->assertEquals($savedModel->text3, null);
-
-    $this->assertEquals($savedModel->fields['text1'], 'Test 1');
-    $this->assertEquals($savedModel->fields['text2'], 'Test 2');
-
-    // Assert field $savedModel->fields['text3'] is not set
-    $this->assertArrayNotHasKey('text3', $savedModel->fields);
+    expect($savedModel->id)->toBe($model->id)
+        ->and($savedModel->title)->toBe('Test')
+        ->and($savedModel->text1)->toBe('Test 1')
+        ->and($savedModel->text2)->toBe('Test 2')
+        ->and($savedModel->text3)->toBeNull()
+        ->and($savedModel->fields['text1'])->toBe('Test 1')
+        ->and($savedModel->fields['text2'])->toBe('Test 2')
+        ->and($savedModel->fields)->not->toHaveKey('text3');
 });
 
-test('save defined meta fields even if not defined in fields array', function () {
-    $this->assertDatabaseMissing('posts', [
-        'type' => 'Model',
-    ]);
+test('fields passed directly are saved if defined', function () {
+    $this->assertDatabaseMissing('posts', ['type' => 'Model']);
 
     $model = SaveRessourceFieldsTestModel::create([
         'title' => 'New Test',
@@ -139,23 +97,17 @@ test('save defined meta fields even if not defined in fields array', function ()
         'text4' => 'Test 4',
     ]);
 
-    $this->assertDatabaseHas('posts', [
-        'type' => 'Model',
-    ]);
+    $this->assertDatabaseHas('posts', ['type' => 'Model']);
 
     $savedModel = SaveRessourceFieldsTestModel::first();
 
-    $this->assertEquals($model->id, $savedModel->id);
-    $this->assertEquals($savedModel->title, 'New Test');
-    $this->assertEquals($savedModel->text1, 'Test 1');
-
-    $this->assertEquals($savedModel->text2, 'Test 2');
-    $this->assertEquals($savedModel->text3, null);
-
-    $this->assertEquals($savedModel->fields['text1'], 'Test 1');
-    $this->assertEquals($savedModel->fields['text2'], 'Test 2');
-
-    // Assert field $savedModel->fields['text3'] is not set
-    $this->assertArrayNotHasKey('text3', $savedModel->fields);
-    $this->assertArrayNotHasKey('text4', $savedModel->fields);
+    expect($savedModel->id)->toBe($model->id)
+        ->and($savedModel->title)->toBe('New Test')
+        ->and($savedModel->text1)->toBe('Test 1')
+        ->and($savedModel->text2)->toBe('Test 2')
+        ->and($savedModel->text3)->toBeNull()
+        ->and($savedModel->fields['text1'])->toBe('Test 1')
+        ->and($savedModel->fields['text2'])->toBe('Test 2')
+        ->and($savedModel->fields)->not->toHaveKey('text3')
+        ->and($savedModel->fields)->not->toHaveKey('text4');
 });

@@ -331,7 +331,13 @@ test('role condition as a Admin', function () {
         ApplyParentConditionalLogic::class,
     ]);
 
-    $role = Role::create(['name' => 'Super Admin', 'slug' => 'admin', 'name' => 'Super Admin', 'description' => 'Super Admin has can perform everything.', 'admin' => false, 'permissions' => []]);
+    $team = auth()->user()->currentTeam;
+    // Use the existing admin role but override super_admin to false for this test
+    $role = Role::firstOrCreate(
+        ['slug' => 'admin', 'team_id' => $team->id ?? null],
+        ['name' => 'Admin', 'description' => 'Admin role.', 'super_admin' => false, 'permissions' => []]
+    );
+    $role->update(['super_admin' => false]);
 
     // assert there is a role in the db
     $this->assertDatabaseHas('roles', ['id' => $role->id]);

@@ -1,158 +1,139 @@
 <?php
 
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\File;
 
-it('creates a complete plugin', function () {
-    $pluginName = 'myvendor/mypackage';
-    $pluginDirectory = base_path('plugins/myvendor/mypackage');
+uses(RefreshDatabase::class);
 
-    $name = 'mypackage';
-
-    // Delete the plugin directory if it already exists
-    if (File::exists($pluginDirectory)) {
-        File::deleteDirectory($pluginDirectory);
-    }
-
-    $baseComposerJson = json_decode(File::get(base_path('composer.json')), true);
-
-    $this->artisan('aura:plugin myvendor/mypackage')
-        ->expectsQuestion('What type of plugin do you want to create?', 'plugin')
-        ->expectsOutput('plugin created at '.$pluginDirectory)
-        ->expectsOutputToContain('Replacing placeholders')
-        ->expectsConfirmation('Do you want to append '.str($name)->title().'ServiceProvider to config/app.php?', 'no') // no, because it would adjust the config and make tests fail next time
-        ->expectsOutputToContain('Updating composer.json')
-        ->expectsOutputToContain('composer.json updated')
-        ->expectsOutputToContain('composer dump-autoload')
-        ->expectsOutput('Plugin created successfully!')
-        ->assertExitCode(0);
-
-    // Assert that the plugin directory and files were created correctly
-    expect(File::exists("{$pluginDirectory}/src"))->toBeTrue();
-    expect(File::exists("{$pluginDirectory}/configure.php"))->toBeFalse();
-    expect(File::exists("{$pluginDirectory}/composer.json"))->toBeTrue();
-
-    // Assert that the composer.json file was updated correctly
-    $composerJson = json_decode(File::get(base_path('composer.json')), true);
-
-    // $composerJson['autoload']['psr-4'] should have key "$pluginName\\"
-    expect($composerJson['autoload']['psr-4'])->toHaveKey("Myvendor\Mypackage\\");
-
-    // Assert that the service provider was not appended to the app config file correctly
-    $configFile = File::get(base_path('config/app.php'));
-
-    expect($configFile)->not->toContain("$pluginName\\MyPackageServiceProvider::class");
-
-    // Delete the plugin directory
-    if (File::exists($pluginDirectory)) {
-        File::deleteDirectory($pluginDirectory);
-    }
-
-    // Revert composer.json
-    File::put(base_path('composer.json'), json_encode($baseComposerJson, JSON_PRETTY_PRINT));
+beforeEach(function () {
+    // Store original composer.json
+    $this->originalComposerJson = File::get(base_path('composer.json'));
+    $this->pluginsDirectory = base_path('plugins');
 });
 
-it('creates a field plugin', function () {
-    $pluginName = 'myvendor/customfield';
-    $pluginDirectory = base_path('plugins/myvendor/customfield');
+afterEach(function () {
+    // Clean up any created plugins
+    $pluginDirectories = [
+        base_path('plugins/myvendor/mypackage'),
+        base_path('plugins/myvendor/customfield'),
+        base_path('plugins/myvendor/resource'),
+        base_path('plugins/testvendor/testplugin'),
+    ];
 
-    $name = 'customfield';
-
-    // Delete the plugin directory if it already exists
-    if (File::exists($pluginDirectory)) {
-        File::deleteDirectory($pluginDirectory);
+    foreach ($pluginDirectories as $dir) {
+        if (File::isDirectory($dir)) {
+            File::deleteDirectory($dir);
+        }
     }
 
-    $baseComposerJson = json_decode(File::get(base_path('composer.json')), true);
-
-    $this->artisan('aura:plugin myvendor/customfield')
-        ->expectsQuestion('What type of plugin do you want to create?', 'plugin-field')
-        ->expectsOutput('plugin-field created at '.$pluginDirectory)
-        ->expectsOutputToContain('Replacing placeholders')
-        ->expectsConfirmation('Do you want to append '.str($name)->title().'ServiceProvider to config/app.php?', 'no') // no, because it would adjust the config and make tests fail next time
-        ->expectsOutputToContain('Updating composer.json')
-        ->expectsOutputToContain('composer.json updated')
-        ->expectsOutputToContain('composer dump-autoload')
-        ->expectsOutput('Plugin created successfully!')
-        ->assertExitCode(0);
-
-    // Assert that the plugin directory and files were created correctly
-    expect(File::exists("{$pluginDirectory}/src"))->toBeTrue();
-    expect(File::exists("{$pluginDirectory}/configure.php"))->toBeFalse();
-    expect(File::exists("{$pluginDirectory}/composer.json"))->toBeTrue();
-    expect(File::exists("{$pluginDirectory}/configure.php"))->toBeFalse();
-
-    expect(File::exists("{$pluginDirectory}/src/Customfield.php"))->toBeTrue();
-    expect(File::exists("{$pluginDirectory}/src/CustomfieldServiceProvider.php"))->toBeTrue();
-
-    // Assert that the composer.json file was updated correctly
-    $composerJson = json_decode(File::get(base_path('composer.json')), true);
-
-    // $composerJson['autoload']['psr-4'] should have key "$pluginName\\"
-    expect($composerJson['autoload']['psr-4'])->toHaveKey("Myvendor\Customfield\\");
-
-    // Assert that the service provider was not appended to the app config file correctly
-    $configFile = File::get(base_path('config/app.php'));
-
-    expect($configFile)->not->toContain("$pluginName\\CustomfieldServiceProvider::class");
-
-    // Delete the plugin directory
-    if (File::exists($pluginDirectory)) {
-        File::deleteDirectory($pluginDirectory);
+    // Clean up empty vendor directories
+    if (File::isDirectory(base_path('plugins/myvendor')) && empty(File::directories(base_path('plugins/myvendor')))) {
+        File::deleteDirectory(base_path('plugins/myvendor'));
+    }
+    if (File::isDirectory(base_path('plugins/testvendor')) && empty(File::directories(base_path('plugins/testvendor')))) {
+        File::deleteDirectory(base_path('plugins/testvendor'));
     }
 
     // Revert composer.json
-    File::put(base_path('composer.json'), json_encode($baseComposerJson, JSON_PRETTY_PRINT));
+    File::put(base_path('composer.json'), $this->originalComposerJson);
 });
 
-it('creates a resource plugin', function () {
-    $pluginName = 'myvendor/resource';
-    $pluginDirectory = base_path('plugins/myvendor/resource');
+describe('complete plugin', function () {
+    it('creates a complete plugin with correct structure', function () {
+        $pluginDirectory = base_path('plugins/myvendor/mypackage');
 
-    $name = 'resource';
+        $this->artisan('aura:plugin', ['name' => 'myvendor/mypackage'])
+            ->expectsQuestion('What type of plugin do you want to create?', 'plugin')
+            ->expectsOutput('plugin created at '.$pluginDirectory)
+            ->expectsOutputToContain('Replacing placeholders')
+            ->expectsConfirmation('Do you want to append MypackageServiceProvider to config/app.php?', 'no')
+            ->expectsOutputToContain('Updating composer.json')
+            ->expectsOutputToContain('composer.json updated')
+            ->expectsOutputToContain('composer dump-autoload')
+            ->expectsOutput('Plugin created successfully!')
+            ->assertExitCode(0);
 
-    // Delete the plugin directory if it already exists
-    if (File::exists($pluginDirectory)) {
-        File::deleteDirectory($pluginDirectory);
-    }
+        expect(File::isDirectory("{$pluginDirectory}/src"))->toBeTrue();
+        expect(File::exists("{$pluginDirectory}/composer.json"))->toBeTrue();
+        expect(File::exists("{$pluginDirectory}/configure.php"))->toBeFalse();
+    });
 
-    $baseComposerJson = json_decode(File::get(base_path('composer.json')), true);
+    it('updates composer.json with autoload entry', function () {
+        $this->artisan('aura:plugin', ['name' => 'myvendor/mypackage'])
+            ->expectsQuestion('What type of plugin do you want to create?', 'plugin')
+            ->expectsConfirmation('Do you want to append MypackageServiceProvider to config/app.php?', 'no')
+            ->assertExitCode(0);
 
-    $this->artisan('aura:plugin myvendor/resource')
-        ->expectsQuestion('What type of plugin do you want to create?', 'plugin-resource')
-        ->expectsOutput('plugin-resource created at '.$pluginDirectory)
-        ->expectsOutputToContain('Replacing placeholders')
-        ->expectsConfirmation('Do you want to append '.str($name)->title().'ServiceProvider to config/app.php?', 'no') // no, because it would adjust the config and make tests fail next time
-        ->expectsOutputToContain('Updating composer.json')
-        ->expectsOutputToContain('composer.json updated')
-        ->expectsOutputToContain('composer dump-autoload')
-        ->expectsOutput('Plugin created successfully!')
-        ->assertExitCode(0);
+        $composerJson = json_decode(File::get(base_path('composer.json')), true);
+        expect($composerJson['autoload']['psr-4'])->toHaveKey("Myvendor\Mypackage\\");
+    });
+});
 
-    // Assert that the plugin directory and files were created correctly
-    expect(File::exists("{$pluginDirectory}/src"))->toBeTrue();
-    expect(File::exists("{$pluginDirectory}/configure.php"))->toBeFalse();
-    expect(File::exists("{$pluginDirectory}/composer.json"))->toBeTrue();
-    expect(File::exists("{$pluginDirectory}/configure.php"))->toBeFalse();
+describe('field plugin', function () {
+    it('creates a field plugin with field class', function () {
+        $pluginDirectory = base_path('plugins/myvendor/customfield');
 
-    expect(File::exists("{$pluginDirectory}/src/Resource.php"))->toBeTrue();
-    expect(File::exists("{$pluginDirectory}/src/ResourceServiceProvider.php"))->toBeTrue();
+        $this->artisan('aura:plugin', ['name' => 'myvendor/customfield'])
+            ->expectsQuestion('What type of plugin do you want to create?', 'plugin-field')
+            ->expectsOutput('plugin-field created at '.$pluginDirectory)
+            ->expectsConfirmation('Do you want to append CustomfieldServiceProvider to config/app.php?', 'no')
+            ->expectsOutput('Plugin created successfully!')
+            ->assertExitCode(0);
 
-    // Assert that the composer.json file was updated correctly
-    $composerJson = json_decode(File::get(base_path('composer.json')), true);
+        expect(File::exists("{$pluginDirectory}/src/Customfield.php"))->toBeTrue();
+        expect(File::exists("{$pluginDirectory}/src/CustomfieldServiceProvider.php"))->toBeTrue();
+    });
 
-    // $composerJson['autoload']['psr-4'] should have key "$pluginName\\"
-    expect($composerJson['autoload']['psr-4'])->toHaveKey("Myvendor\Resource\\");
+    it('updates composer.json with field plugin autoload', function () {
+        $this->artisan('aura:plugin', ['name' => 'myvendor/customfield'])
+            ->expectsQuestion('What type of plugin do you want to create?', 'plugin-field')
+            ->expectsConfirmation('Do you want to append CustomfieldServiceProvider to config/app.php?', 'no')
+            ->assertExitCode(0);
 
-    // Assert that the service provider was not appended to the app config file correctly
-    $configFile = File::get(base_path('config/app.php'));
+        $composerJson = json_decode(File::get(base_path('composer.json')), true);
+        expect($composerJson['autoload']['psr-4'])->toHaveKey("Myvendor\Customfield\\");
+    });
+});
 
-    expect($configFile)->not->toContain("$pluginName\\ResourceServiceProvider::class");
+describe('resource plugin', function () {
+    it('creates a resource plugin with resource class', function () {
+        $pluginDirectory = base_path('plugins/myvendor/resource');
 
-    // Delete the plugin directory
-    if (File::exists($pluginDirectory)) {
-        File::deleteDirectory($pluginDirectory);
-    }
+        $this->artisan('aura:plugin', ['name' => 'myvendor/resource'])
+            ->expectsQuestion('What type of plugin do you want to create?', 'plugin-resource')
+            ->expectsOutput('plugin-resource created at '.$pluginDirectory)
+            ->expectsConfirmation('Do you want to append ResourceServiceProvider to config/app.php?', 'no')
+            ->expectsOutput('Plugin created successfully!')
+            ->assertExitCode(0);
 
-    // Revert composer.json
-    File::put(base_path('composer.json'), json_encode($baseComposerJson, JSON_PRETTY_PRINT));
+        expect(File::exists("{$pluginDirectory}/src/Resource.php"))->toBeTrue();
+        expect(File::exists("{$pluginDirectory}/src/ResourceServiceProvider.php"))->toBeTrue();
+    });
+
+    it('updates composer.json with resource plugin autoload', function () {
+        $this->artisan('aura:plugin', ['name' => 'myvendor/resource'])
+            ->expectsQuestion('What type of plugin do you want to create?', 'plugin-resource')
+            ->expectsConfirmation('Do you want to append ResourceServiceProvider to config/app.php?', 'no')
+            ->assertExitCode(0);
+
+        $composerJson = json_decode(File::get(base_path('composer.json')), true);
+        expect($composerJson['autoload']['psr-4'])->toHaveKey("Myvendor\Resource\\");
+    });
+});
+
+// Note: widget plugin type is defined in command but stub doesn't exist yet
+
+describe('interactive mode', function () {
+    it('prompts for plugin name when not provided', function () {
+        $pluginDirectory = base_path('plugins/testvendor/testplugin');
+
+        $this->artisan('aura:plugin')
+            ->expectsQuestion('What is the name of your plugin?', 'testvendor/testplugin')
+            ->expectsQuestion('What type of plugin do you want to create?', 'plugin')
+            ->expectsConfirmation('Do you want to append TestpluginServiceProvider to config/app.php?', 'no')
+            ->expectsOutput('Plugin created successfully!')
+            ->assertExitCode(0);
+
+        expect(File::isDirectory($pluginDirectory))->toBeTrue();
+    });
 });

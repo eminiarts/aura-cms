@@ -2,100 +2,159 @@
 
 namespace Tests\Feature\Auth;
 
-use Aura\Base\Resources\Team;
+use Aura\Base\Resources\User;
 use Illuminate\Support\Facades\Route;
 
 beforeEach(function () {
-    // Enable Team Registration
     config(['aura.auth.registration' => true]);
     config(['aura.auth.2fa' => false]);
 });
 
-test('registration can be disabeld', function () {
+describe('Registration Routes', function () {
+    test('registration route returns 404 when disabled', function () {
+        config(['aura.auth.registration' => false]);
 
-    config(['aura.auth.registration' => false]);
+        $this->get(route('aura.register'))
+            ->assertNotFound();
+    });
 
-    $response = $this->get(route('aura.register'));
+    test('registration route is accessible when enabled', function () {
+        $this->get(route('aura.register'))
+            ->assertSuccessful();
+    });
 
-    $response->assertStatus(404);
+    test('register link is hidden on login page when registration disabled', function () {
+        config(['aura.auth.registration' => false]);
+
+        $this->get(route('aura.login'))
+            ->assertDontSee('Register.');
+    });
+
+    test('register link is visible on login page when registration enabled', function () {
+        $this->get(route('aura.login'))
+            ->assertSee('Register.');
+    });
 });
 
-test('register link is not visible on login page when registration is disabled', function () {
-    // Disable registration feature
-    config(['aura.auth.registration' => false]);
+describe('Login Routes', function () {
+    test('login page renders successfully', function () {
+        $this->get(route('aura.login'))
+            ->assertSuccessful();
+    });
 
-    // Visit the login page
-    $response = $this->get(route('aura.login'));
+    test('authenticated user can login with valid credentials', function () {
+        $user = User::factory()->create([
+            'email' => 'test@example.com',
+            'password' => 'password',
+        ]);
 
-    // Assert that the registration link is not visible
-    $response->assertDontSee('Register.');
+        $this->post(route('aura.login'), [
+            'email' => 'test@example.com',
+            'password' => 'password',
+        ])
+            ->assertRedirect(route('aura.dashboard'));
+
+        $this->assertAuthenticated();
+        expect(auth()->id())->toBe($user->id);
+    });
+
+    test('login fails with invalid credentials', function () {
+        User::factory()->create([
+            'email' => 'test@example.com',
+            'password' => 'password',
+        ]);
+
+        $this->post(route('aura.login'), [
+            'email' => 'test@example.com',
+            'password' => 'wrong-password',
+        ])
+            ->assertSessionHasErrors('email');
+
+        $this->assertGuest();
+    });
+
+    test('login fails with non-existent email', function () {
+        $this->post(route('aura.login'), [
+            'email' => 'nonexistent@example.com',
+            'password' => 'password',
+        ])
+            ->assertSessionHasErrors('email');
+
+        $this->assertGuest();
+    });
+
+    test('login requires email field', function () {
+        $this->post(route('aura.login'), [
+            'password' => 'password',
+        ])
+            ->assertSessionHasErrors('email');
+    });
+
+    test('login requires password field', function () {
+        $this->post(route('aura.login'), [
+            'email' => 'test@example.com',
+        ])
+            ->assertSessionHasErrors('password');
+    });
+
+    test('login requires valid email format', function () {
+        $this->post(route('aura.login'), [
+            'email' => 'invalid-email',
+            'password' => 'password',
+        ])
+            ->assertSessionHasErrors('email');
+    });
 });
 
-test('register link is visible on login page when registration is enabled', function () {
-    // Disable registration feature
-    config(['aura.auth.registration' => true]);
+describe('Logout Routes', function () {
+    test('authenticated user can logout via GET', function () {
+        $user = User::factory()->create();
 
-    // Visit the login page
-    $response = $this->get(route('aura.login'));
+        $this->actingAs($user)
+            ->get(route('aura.logout'))
+            ->assertRedirect('/');
 
-    // Assert that the registration link is not visible
-    $response->assertSee('Register.');
+        $this->assertGuest();
+    });
+
+    test('authenticated user can logout via POST', function () {
+        $user = User::factory()->create();
+
+        $this->actingAs($user)
+            ->post(route('aura.logout'))
+            ->assertRedirect('/');
+
+        $this->assertGuest();
+    });
 });
 
-test('login view can be rendered', function () {
-    $response = $this->get(route('aura.login'));
+describe('Two-Factor Authentication Routes', function () {
+    test('2FA routes are registered when feature is enabled', function () {
+        config(['aura.auth.2fa' => true]);
 
-    $response->assertStatus(200);
+        expect(Route::has('aura.two-factor.login'))->toBeTrue()
+            ->and(Route::has('aura.two-factor.enable'))->toBeTrue()
+            ->and(Route::has('aura.two-factor.confirm'))->toBeTrue()
+            ->and(Route::has('aura.two-factor.disable'))->toBeTrue()
+            ->and(Route::has('aura.two-factor.qr-code'))->toBeTrue()
+            ->and(Route::has('aura.two-factor.secret-key'))->toBeTrue()
+            ->and(Route::has('aura.two-factor.recovery-codes'))->toBeTrue();
+    });
+
+    test('2FA login redirects unauthenticated guests', function () {
+        $this->get(route('aura.two-factor.login'))
+            ->assertRedirect();
+    });
 });
 
-test('post login works', function () {
-    // Create a user
-    $user = \Aura\Base\Resources\User::factory()->create([
-        'email' => 'test@example.com',
-        'password' => 'password',
-    ]);
+describe('Password Reset Routes', function () {
+    test('forgot password page is accessible', function () {
+        $this->get(route('aura.password.request'))
+            ->assertSuccessful();
+    });
 
-    // Prepare login credentials
-    $credentials = [
-        'email' => 'test@example.com',
-        'password' => 'password',
-    ];
-
-    // Attempt to login
-    $response = $this->post(route('aura.login'), $credentials);
-
-    // Assert that the login was successful and the user is redirected
-    $response->assertStatus(302);
-    $response->assertRedirect(route('aura.dashboard'));
-
-    // Assert that the user is authenticated
-    $this->assertAuthenticated();
-});
-
-test('2FA routes exist when 2FA feature is enabled', function () {
-    // Enable 2FA feature
-    config(['aura.auth.2fa' => true]);
-
-    // Check if the routes exist
-    $this->assertTrue(Route::has('aura.two-factor.login'));
-    $this->assertTrue(Route::has('aura.two-factor.enable'));
-    $this->assertTrue(Route::has('aura.two-factor.confirm'));
-    $this->assertTrue(Route::has('aura.two-factor.disable'));
-    $this->assertTrue(Route::has('aura.two-factor.qr-code'));
-    $this->assertTrue(Route::has('aura.two-factor.secret-key'));
-    $this->assertTrue(Route::has('aura.two-factor.recovery-codes'));
-});
-
-// test('2FA routes dont exist when 2FA feature is disabled', function () {
-//     // Disable 2FA feature
-//     config(['aura.auth.2fa' => false]);
-
-//     $response = $this->get(route('aura.two-factor.login'));
-// });
-
-test('2FA login works', function () {
-
-    $this->get(route('aura.two-factor.login'))
-        ->assertStatus(302);
-
+    test('reset password page requires valid token', function () {
+        $this->get(route('aura.password.reset', ['token' => 'test-token']))
+            ->assertSuccessful();
+    });
 });

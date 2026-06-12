@@ -14,8 +14,6 @@ class CreateModal extends Create
         $this->inModal = true;
         $this->params = $params;
 
-        ray('CreateModal mount called with:', ['slug' => $slug, 'params' => $params])->orange();
-
         parent::mount($slug);
     }
 

@@ -4,6 +4,7 @@ namespace Aura\Base\Facades;
 
 use Aura\Base\AuraFake;
 use Illuminate\Support\Facades\Facade;
+use Illuminate\Support\Testing\Fakes\MailFake;
 
 /**
  * @see \Aura\Base\Aura
@@ -13,7 +14,7 @@ class Aura extends Facade
     /**
      * Replace the bound instance with a fake.
      *
-     * @return \Illuminate\Support\Testing\Fakes\MailFake
+     * @return MailFake
      */
     public static function fake()
     {

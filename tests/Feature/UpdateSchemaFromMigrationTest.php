@@ -2,6 +2,7 @@
 
 use Aura\Base\Facades\Aura;
 use Aura\Base\Livewire\ResourceEditor;
+use Aura\Base\Providers\AppServiceProvider;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\File;
@@ -59,7 +60,7 @@ it('creates a migration when fields are added', function () {
     config(['aura.features.resource_editor' => true]);
 
     // Manually re-register the event listeners based on the updated configuration
-    $appServiceProvider = new \Aura\Base\Providers\AppServiceProvider(app());
+    $appServiceProvider = new AppServiceProvider(app());
     $appServiceProvider->boot();
 
     // Aura::fake();

@@ -103,13 +103,9 @@ test('custom Table - Fields get saved correctly when fillable are set', function
     ]);
 
     expect($resource->usesCustomTable())->toBe(true);
-
     expect($resource->name)->toBe('Test Post 1');
-
     expect($resource->status)->toBe('publish');
-
     expect($resource->enabled)->toBe(true);
-
     expect($resource->options)->toBe([
         'option1' => 'Option 1',
         'option2' => 'Option 2',
@@ -124,4 +120,98 @@ test('custom Table - Fields get saved correctly when fillable are set', function
         'option1' => 'Option 1',
         'option2' => 'Option 2',
     ]);
+});
+
+test('custom table resource uses correct table name', function () {
+    $resource = new ResourceWithCustomTableModel;
+
+    expect($resource->getTable())->toBe('custom_projects');
+});
+
+test('custom table resource can be updated', function () {
+    $resource = ResourceWithCustomTableModel::create([
+        'name' => 'Original Name',
+        'status' => 'draft',
+    ]);
+
+    $resource->update([
+        'name' => 'Updated Name',
+        'status' => 'publish',
+    ]);
+
+    $resource->refresh();
+
+    expect($resource->name)->toBe('Updated Name');
+    expect($resource->status)->toBe('publish');
+
+    $this->assertDatabaseHas('custom_projects', [
+        'id' => $resource->id,
+        'name' => 'Updated Name',
+        'status' => 'publish',
+    ]);
+});
+
+test('custom table resource can be deleted', function () {
+    $resource = ResourceWithCustomTableModel::create([
+        'name' => 'To Be Deleted',
+        'status' => 'draft',
+    ]);
+
+    $resourceId = $resource->id;
+
+    $resource->delete();
+
+    $this->assertDatabaseMissing('custom_projects', [
+        'id' => $resourceId,
+    ]);
+});
+
+test('custom table resource boolean casting works correctly', function () {
+    $resource = ResourceWithCustomTableModel::create([
+        'name' => 'Boolean Test',
+        'enabled' => true,
+    ]);
+
+    expect($resource->enabled)->toBe(true);
+
+    $resource->update(['enabled' => false]);
+    $resource->refresh();
+
+    expect($resource->enabled)->toBe(false);
+});
+
+test('custom table resource array casting works correctly', function () {
+    $resource = ResourceWithCustomTableModel::create([
+        'name' => 'Array Test',
+        'options' => ['key1' => 'value1', 'key2' => 'value2'],
+    ]);
+
+    expect($resource->options)->toBeArray();
+    expect($resource->options['key1'])->toBe('value1');
+    expect($resource->options['key2'])->toBe('value2');
+});
+
+test('custom table resource can query by attributes', function () {
+    ResourceWithCustomTableModel::create([
+        'name' => 'Project A',
+        'status' => 'active',
+    ]);
+
+    ResourceWithCustomTableModel::create([
+        'name' => 'Project B',
+        'status' => 'inactive',
+    ]);
+
+    $activeProjects = ResourceWithCustomTableModel::where('status', 'active')->get();
+
+    expect($activeProjects)->toHaveCount(1);
+    expect($activeProjects->first()->name)->toBe('Project A');
+});
+
+test('custom table resource has correct type', function () {
+    expect(ResourceWithCustomTableModel::getType())->toBe('Project');
+});
+
+test('custom table resource has correct slug', function () {
+    expect(ResourceWithCustomTableModel::getSlug())->toBe('project');
 });

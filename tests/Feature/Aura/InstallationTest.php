@@ -1,68 +1,33 @@
 <?php
 
-// use Illuminate\Support\Facades\Config;
-// use Illuminate\Support\Facades\File;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Artisan;
 
-// beforeEach(function () {
-//     $configPath = config_path('aura.php');
-//     if (!File::exists($configPath)) {
-//         File::put($configPath, '<?php return ' . var_export([
-//             'teams' => false,
-//             'features' => [
-//                 'feature1' => true,
-//                 'feature2' => false,
-//             ],
-//             'theme' => [
-//                 'color-palette' => 'aura',
-//                 'gray-color-palette' => 'slate',
-//                 'darkmode-type' => 'auto',
-//                 'sidebar-size' => 'standard',
-//                 'sidebar-type' => 'primary',
-//             ],
-//         ], true) . ';');
-//     }
-// });
+uses(RefreshDatabase::class);
 
-// afterEach(function () {
-//     $configPath = config_path('aura.php');
-//     if (File::exists($configPath)) {
-//         File::delete($configPath);
-//     }
-// });
+// Installation tests are commented out because they modify shared configuration
+// which can cause test pollution in parallel execution.
+// These tests should be run in isolation during package development.
 
-// it('can install aura with default configuration', function () {
-//     $this->artisan('aura:install-config')
-//         ->expectsConfirmation('Do you want to use teams?', 'no')
-//         ->expectsConfirmation('Do you want to modify the default features?', 'no')
-//         ->expectsConfirmation('Do you want to allow registration?', 'yes')
-//         ->expectsConfirmation('Do you want to modify the default theme?', 'no')
-//         ->assertSuccessful();
+describe('installation commands', function () {
+    it('aura:install-config command is registered', function () {
+        $commands = Artisan::all();
+        expect(array_key_exists('aura:install-config', $commands))->toBeTrue();
+    });
 
-//     // Verify config was updated
-//     $config = include(config_path('aura.php'));
-//     expect($config['teams'])->toBeFalse();
-// });
+    it('aura:publish command is registered', function () {
+        $commands = Artisan::all();
+        expect(array_key_exists('aura:publish', $commands))->toBeTrue();
+    });
 
-// it('can customize theme configuration', function () {
-//     $this->artisan('aura:install-config')
-//         ->expectsConfirmation('Do you want to use teams?', 'no')
-//         ->expectsConfirmation('Do you want to modify the default features?', 'no')
-//         ->expectsConfirmation('Do you want to allow registration?', 'no')
-//         ->expectsConfirmation('Do you want to modify the default theme?', 'yes')
-//         ->expectsChoice("Select value for 'color-palette':", 'blue', ['aura', 'blue', 'green'])
-//         ->expectsChoice("Select value for 'gray-color-palette':", 'zinc', ['slate', 'zinc', 'stone'])
-//         ->expectsChoice("Select value for 'darkmode-type':", 'dark', ['auto', 'light', 'dark'])
-//         ->expectsChoice("Select value for 'sidebar-size':", 'compact', ['standard', 'compact'])
-//         ->expectsChoice("Select value for 'sidebar-type':", 'dark', ['primary', 'light', 'dark'])
-//         ->assertSuccessful();
+    it('aura:user command is registered', function () {
+        $commands = Artisan::all();
+        expect(array_key_exists('aura:user', $commands))->toBeTrue();
+    });
+});
 
-//     // Verify config was updated
-//     $config = include(config_path('aura.php'));
-//     expect($config['theme'])->toMatchArray([
-//         'color-palette' => 'blue',
-//         'gray-color-palette' => 'zinc',
-//         'darkmode-type' => 'dark',
-//         'sidebar-size' => 'compact',
-//         'sidebar-type' => 'dark',
-//     ]);
-// });
+// Note: Full installation workflow tests require:
+// 1. Isolated test environment
+// 2. Fresh config file creation
+// 3. Database seeding
+// These are typically tested manually or in a dedicated CI job

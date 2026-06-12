@@ -3,6 +3,7 @@
 namespace Aura\Base\Pipeline;
 
 use Closure;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 
 class ApplyWrappers implements Pipe
@@ -58,7 +59,7 @@ class ApplyWrappers implements Pipe
         }
 
         // Return a collection if the input was a collection
-        if ($fields instanceof \Illuminate\Support\Collection) {
+        if ($fields instanceof Collection) {
             $newFields = collect($newFields);
         }
 

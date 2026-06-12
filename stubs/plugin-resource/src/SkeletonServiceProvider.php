@@ -24,6 +24,6 @@ class SkeletonServiceProvider extends PackageServiceProvider
          *
          * More info: https://aura-cms.com/docs/resources
          */
-        Aura::registerResources([\VendorName\Skeleton\Skeleton::class]);
+        Aura::registerResources([Skeleton::class]);
     }
 }

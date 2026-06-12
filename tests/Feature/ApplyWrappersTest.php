@@ -76,52 +76,83 @@ class ApplyWrappersModel extends Resource
     }
 }
 
-test('fields get grouped when field group is true', function () {
+test('custom wrapper wraps fields correctly', function () {
     $model = new ApplyWrappersModel;
-
     $fields = $model->getGroupedFields();
 
-    expect($fields)->toHaveCount(1); // Because of the wrapper
+    expect($fields)->toHaveCount(1)
+        ->and($fields[0]['label'])->toBe('TabPills')
+        ->and($fields[0]['type'])->toBe('TabPills')
+        ->and($fields[0]['slug'])->toBe('tabpills');
+});
+
+test('wrapper has correct structure', function () {
+    $model = new ApplyWrappersModel;
+    $fields = $model->getGroupedFields();
 
     expect($fields[0])->toHaveKeys([
         'label', 'name', 'type', 'slug', 'field', '_id', '_parent_id',
         'conditional_logic', 'fields',
-    ]);
+    ])
+        ->and($fields[0]['_id'])->toBe(1)
+        ->and($fields[0]['_parent_id'])->toBeNull();
+});
 
-    expect($fields[0]['label'])->toBe('TabPills');
-    expect($fields[0]['type'])->toBe('TabPills');
-    expect($fields[0]['slug'])->toBe('tabpills');
-    expect($fields[0]['_id'])->toBe(1);
-    expect($fields[0]['_parent_id'])->toBeNull();
+test('wrapper contains two tabpills', function () {
+    $model = new ApplyWrappersModel;
+    $fields = $model->getGroupedFields();
 
-    // Check the nested fields array
     expect($fields[0]['fields'])->toHaveCount(2);
+});
 
-    // Check first tabpill
-    expect($fields[0]['fields'][0]['label'])->toBe('Tabpill 1');
-    expect($fields[0]['fields'][0]['type'])->toBe('TabPill');
-    expect($fields[0]['fields'][0]['field_type'])->toBe('tab');
-    expect($fields[0]['fields'][0]['_parent_id'])->toBe(1);
-    expect($fields[0]['fields'][0]['fields'])->toHaveCount(1);
+test('first tabpill has correct properties', function () {
+    $model = new ApplyWrappersModel;
+    $fields = $model->getGroupedFields();
 
-    // Check text field inside first tabpill
-    expect($fields[0]['fields'][0]['fields'][0]['label'])->toBe('Text 1');
-    expect($fields[0]['fields'][0]['fields'][0]['type'])->toBe('Aura\\Base\\Fields\\Text');
-    expect($fields[0]['fields'][0]['fields'][0]['field_type'])->toBe('input');
-    expect($fields[0]['fields'][0]['fields'][0]['_parent_id'])->toBe(2);
+    $tabpill1 = $fields[0]['fields'][0];
 
-    // Check second tabpill
-    expect($fields[0]['fields'][1]['label'])->toBe('Tabpill 2');
-    expect($fields[0]['fields'][1]['type'])->toBe('TabPill');
-    expect($fields[0]['fields'][1]['field_type'])->toBe('tab');
-    expect($fields[0]['fields'][1]['_parent_id'])->toBe(1);
-    expect($fields[0]['fields'][1]['fields'])->toHaveCount(1);
+    expect($tabpill1['label'])->toBe('Tabpill 1')
+        ->and($tabpill1['type'])->toBe('TabPill')
+        ->and($tabpill1['field_type'])->toBe('tab')
+        ->and($tabpill1['_parent_id'])->toBe(1)
+        ->and($tabpill1['fields'])->toHaveCount(1);
+});
 
-    // Check text field inside second tabpill
-    expect($fields[0]['fields'][1]['fields'][0]['label'])->toBe('Text 2');
-    expect($fields[0]['fields'][1]['fields'][0]['type'])->toBe('Aura\\Base\\Fields\\Text');
-    expect($fields[0]['fields'][1]['fields'][0]['field_type'])->toBe('input');
-    expect($fields[0]['fields'][1]['fields'][0]['_parent_id'])->toBe(4);
+test('text field inside first tabpill has correct properties', function () {
+    $model = new ApplyWrappersModel;
+    $fields = $model->getGroupedFields();
+
+    $textField = $fields[0]['fields'][0]['fields'][0];
+
+    expect($textField['label'])->toBe('Text 1')
+        ->and($textField['type'])->toBe('Aura\Base\Fields\Text')
+        ->and($textField['field_type'])->toBe('input')
+        ->and($textField['_parent_id'])->toBe(2);
+});
+
+test('second tabpill has correct properties', function () {
+    $model = new ApplyWrappersModel;
+    $fields = $model->getGroupedFields();
+
+    $tabpill2 = $fields[0]['fields'][1];
+
+    expect($tabpill2['label'])->toBe('Tabpill 2')
+        ->and($tabpill2['type'])->toBe('TabPill')
+        ->and($tabpill2['field_type'])->toBe('tab')
+        ->and($tabpill2['_parent_id'])->toBe(1)
+        ->and($tabpill2['fields'])->toHaveCount(1);
+});
+
+test('text field inside second tabpill has correct properties', function () {
+    $model = new ApplyWrappersModel;
+    $fields = $model->getGroupedFields();
+
+    $textField = $fields[0]['fields'][1]['fields'][0];
+
+    expect($textField['label'])->toBe('Text 2')
+        ->and($textField['type'])->toBe('Aura\Base\Fields\Text')
+        ->and($textField['field_type'])->toBe('input')
+        ->and($textField['_parent_id'])->toBe(4);
 });
 
 class ApplyWrappersModel2 extends Resource
@@ -139,7 +170,6 @@ class ApplyWrappersModel2 extends Resource
                 'name' => 'Tabpill 1',
                 'type' => TabPill::class,
                 'slug' => 'tabpill-1',
-                // 'global' => true,
             ],
             [
                 'label' => 'Text 1',
@@ -174,14 +204,16 @@ class ApplyWrappersModel2 extends Resource
     }
 }
 
-test('fields get wrapped when field wrapper is set', function () {
-
+test('wrap true creates new wrapper', function () {
     $model = new ApplyWrappersModel2;
-
     $fields = $model->getGroupedFields();
 
-    expect($fields)->toHaveCount(1); // Because of the wrapper
+    expect($fields)->toHaveCount(1);
+});
 
-    expect($fields[0]['fields'])->toHaveCount(1); // Because of global
+test('tabpill with wrap true is correctly wrapped', function () {
+    $model = new ApplyWrappersModel2;
+    $fields = $model->getGroupedFields();
 
+    expect($fields[0]['fields'])->toHaveCount(1);
 });

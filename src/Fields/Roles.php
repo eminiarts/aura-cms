@@ -4,6 +4,21 @@ namespace Aura\Base\Fields;
 
 class Roles extends AdvancedSelect
 {
+    public function display($field, $value, $model)
+    {
+        if (! $model->exists) {
+            return '';
+        }
+
+        $roles = $this->relationship($model, $field)->get();
+
+        if ($roles->isEmpty()) {
+            return '';
+        }
+
+        return $roles->pluck('name')->implode(', ');
+    }
+
     public function getRelation($model, $field)
     {
         if (! $model->exists) {
@@ -17,11 +32,6 @@ class Roles extends AdvancedSelect
     {
         return true;
     }
-
-    // public function get($class, $value, $field = null)
-    // {
-    //      return $value;
-    // }
 
     public function relationship($model, $field)
     {
@@ -38,7 +48,13 @@ class Roles extends AdvancedSelect
             $value = json_decode($value, true);
         }
 
-        $roleIds = $value;
+        // Normalize single value to array for consistent handling
+        if (! is_array($value)) {
+            $value = $value ? [$value] : [];
+        }
+
+        // Flatten nested arrays (e.g. [[1]] -> [1])
+        $roleIds = collect($value)->flatten()->filter()->values()->all();
 
         if (empty($roleIds)) {
             // Remove all roles for this user in the current team
@@ -88,9 +104,5 @@ class Roles extends AdvancedSelect
                 $post->roles()->attach($roleId);
             }
         }
-
-        // Clear any relevant cache
-        // For example:
-        // Cache::forget('user.'.$post->id.'.roles');
     }
 }

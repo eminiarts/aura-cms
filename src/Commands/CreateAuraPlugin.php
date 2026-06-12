@@ -44,7 +44,6 @@ class CreateAuraPlugin extends Command
                 'plugin' => 'Complete plugin',
                 'plugin-resource' => 'Resource plugin',
                 'plugin-field' => 'Field plugin',
-                'plugin-widget' => 'Widget plugin',
             ],
             default: 'plugin',
         );

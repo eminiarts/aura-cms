@@ -1,13 +1,10 @@
 <?php
 
-// uses()->group('current');
-
-// Before each test, create a Superadmin and login
 beforeEach(function () {
     $this->actingAs($this->user = createSuperAdmin());
 });
 
-test('config features test', function () {
+test('features config has correct default values', function () {
     expect(config('aura.features'))->toMatchArray([
         'global_search' => true,
         'bookmarks' => true,
@@ -24,7 +21,7 @@ test('config features test', function () {
     ]);
 });
 
-test('auth config', function () {
+test('auth config has correct default values', function () {
     expect(config('aura.auth'))->toMatchArray([
         'registration' => env('AURA_REGISTRATION', true),
         'redirect' => '/admin',

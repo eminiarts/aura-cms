@@ -89,7 +89,7 @@
 
 
 @auraScripts
-@livewireScriptConfig
+@livewireScripts
 
 </body>
 </html>

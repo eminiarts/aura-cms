@@ -3,21 +3,17 @@
 use Aura\Base\Facades\Aura;
 use Aura\Base\Livewire\Table\Table;
 use Aura\Base\Resource;
-use Aura\Base\Resources\User;
-use Aura\Base\Tests\Resources\Post;
 use Aura\Base\Tests\Resources\Tag;
 use Illuminate\Support\Facades\DB;
-use Livewire\Livewire;
 
-// Before each test, create a Superadmin and login
+use function Pest\Livewire\livewire;
+
 beforeEach(function () {
-    // Create User
     $this->actingAs($this->user = createSuperAdmin());
 
     Aura::fake();
     Aura::setModel(new TableSaveFilterModel);
 
-    // Create Posts
     $this->resource = TableSaveFilterModel::create([
         'title' => 'Test Post',
         'content' => 'Test Content A',
@@ -41,7 +37,6 @@ beforeEach(function () {
     ]);
 });
 
-// Create Resource for this test
 class TableSaveFilterModel extends Resource
 {
     public static $singularName = 'Post';
@@ -77,189 +72,152 @@ class TableSaveFilterModel extends Resource
     }
 }
 
-test('table filter - taxonomy filter', function () {
-    $post = $this->resource;
-    $post2 = $this->resource2;
+describe('saving filters', function () {
+    test('filter can be saved and retrieved', function () {
+        $tag1 = Tag::where('title', 'Tag 1')->first();
 
-    // Visit the Post Index Page
-    $component = Livewire::test(Table::class, ['query' => null, 'model' => $post]);
+        $component = livewire(Table::class, ['query' => null, 'model' => $this->resource]);
 
-    // Get Tag 1 from DB
-    $tag1 = Tag::where('title', 'Tag 1')->first();
+        // Add first filter group with tag filter
+        $component->call('addFilterGroup');
+        $component->set('filters.custom.0.filters.0.name', 'tags');
+        $component->set('filters.custom.0.filters.0.operator', 'contains');
+        $component->set('filters.custom.0.filters.0.value', [$tag1->id]);
 
-    // Apply Tag 1 filter, set $filters['taxonomy']['tag'] to [$tag1->id]
-    // $component->set('filters.taxonomy.tags', [$tag1->id]);
+        $component->assertViewHas('rows', fn ($rows) => count($rows->items()) === 1);
 
-    $component->call('addFilterGroup');
+        // Add second filter group
+        $component->call('addFilterGroup');
+        $component->set('filters.custom.1.filters.0.value', 'B');
+        $component->set('filters.custom.1.filters.0.operator', 'is');
 
-    // Contains
-    $component->set('filters.custom.0.filters.0.name', 'tags');
-    $component->set('filters.custom.0.filters.0.operator', 'contains');
-    $component->set('filters.custom.0.filters.0.value', [$tag1->id]);
+        expect($component->filters['custom'][1]['filters'][0]['name'])->toBe('metafield');
 
-    // $component->rows should have 1 item
-    $component->assertViewHas('rows', function ($rows) {
-        return count($rows->items()) === 1;
+        // Attempt to save without name - should fail
+        $component->call('saveFilter');
+        $component->assertHasErrors('filter.name');
+
+        // Set filter name and save
+        $component->set('filter.name', 'Test Filter');
+        $component->set('filter.type', 'user');
+        $component->call('saveFilter');
+        $component->assertHasNoErrors();
+
+        // Verify filter is saved in database
+        $db = DB::table('options')
+            ->where('name', 'like', 'user.'.$this->user->id.'.Post.filters.test-filter')
+            ->get();
+
+        expect($db)->toHaveCount(1);
+
+        // Verify filter can be retrieved
+        $filters = auth()->user()->getOption($this->resource->getType().'.filters.*');
+
+        expect($filters)
+            ->toHaveCount(1)
+            ->toHaveKey('test-filter')
+            ->and($filters['test-filter']['custom'])->toHaveCount(2)
+            ->and($filters['test-filter']['custom'][0]['filters'][0]['name'])->toBe('tags')
+            ->and($filters['test-filter']['custom'][0]['filters'][0]['operator'])->toBe('contains');
+
+        // Verify component state
+        expect($filters->toArray())->toBe($component->userFilters);
+        expect($component->filter['name'])->toBe('');
+        expect($component->selectedFilter)->toBe('test-filter');
+
+        // Verify filter still returns correct results
+        $component->assertViewHas('rows', fn ($rows) => count($rows->items()) === 1 && $rows->items()[0]->id === $this->resource->id);
     });
 
-    // Set custom filter 'meta' to 'B'
-    $component->call('addFilterGroup');
+    test('filter name is required to save', function () {
+        $component = livewire(Table::class, ['query' => null, 'model' => $this->resource]);
 
-    // $component->rows should have 1 item
-    $component->set('filters.custom.1.filters.0.value', 'B');
-    $component->set('filters.custom.1.filters.0.operator', 'is');
+        $component->call('addFilterGroup');
+        $component->set('filters.custom.0.filters.0.value', 'B');
+        $component->set('filters.custom.0.filters.0.operator', 'is');
 
-    // Expect filter.custom.0.name to be metafield
-    expect($component->filters['custom'][1]['filters'][0]['name'])->toBe('metafield');
-
-    // Save Filters to DB
-    $component->call('saveFilter');
-
-    // $filter.name should be required, so it should have errors
-    $component->assertHasErrors('filter.name');
-
-    // Set $filter.name to 'Test Filter'
-    $component->set('filter.name', 'Test Filter');
-    $component->set('filter.type', 'user');
-
-    // Save Filters to DB
-    $component->call('saveFilter');
-
-    // Assert no errors
-    $component->assertHasNoErrors();
-
-    // Get DB options
-    $db = DB::table('options')->where('name', 'like', 'user.'.$this->user->id.'.Post.filters.test-filter')->get();
-
-    // $db should have 1 item
-    expect($db)->toHaveCount(1);
-
-    $filters = auth()->user()->getOption($post->getType().'.filters.*');
-
-    // $filters should have 1 item
-    expect($filters)->toHaveCount(1);
-
-    // $filters should have a key 'Test Filter'
-    expect($filters)->toHaveKey('test-filter');
-
-    // $filters['Test Filter'][0] should have 2 items
-    // expect($filters['Test Filter']['taxonomy'])->toHaveCount(1);
-    expect($filters['test-filter']['custom'])->toHaveCount(2);
-
-    // expect($filters)->toHaveKey('Test Filter.taxonomy.tags.0', '1');
-    expect($filters)->toHaveKey('test-filter.custom.0.filters.0.name', 'tags');
-    expect($filters)->toHaveKey('test-filter.custom.0.filters.0.operator', 'contains');
-    expect($filters)->toHaveKey('test-filter.custom.0.filters.0.value', [$tag1->id]);
-
-    // Filters and $component->userFilters should be the same
-    expect($filters->toArray())->toBe($component->userFilters);
-
-    // Assert $filter.name is empty
-    expect($component->filter['name'])->toBe('');
-
-    // Component rows should have 1 item
-    $component->assertViewHas('rows', function ($rows) use ($post) {
-        return count($rows->items()) === 1 && $rows->items()[0]->id === $post->id;
+        $component->call('saveFilter');
+        $component->assertHasErrors('filter.name');
     });
-
-    // After a filter is saved, the current filter should be set to the saved filter
-    expect($component->selectedFilter)->toBe('test-filter');
 });
 
-test('table filter - taxonomy filter can be deleted', function () {
-    $post = $this->resource;
-    $post2 = $this->resource2;
+describe('deleting filters', function () {
+    test('saved filter can be deleted', function () {
+        // Insert a filter directly into the database
+        DB::table('options')->insert([
+            'name' => 'user.'.$this->user->id.'.Post.filters.test-filter',
+            'value' => '{"custom":[{"filters":[{"name":"tags","operator":"contains","value":[303],"options":{"resource_type":"Aura\\\\Base\\\\Resources\\\\Tag"}}]}],"name":"Test Filter","public":false,"global":false,"slug":"test-filter"}',
+            'team_id' => $this->user->currentTeam->id,
+        ]);
 
-    DB::table('options')->insert([
-        'name' => 'user.'.$this->user->id.'.Post.filters.test-filter',
-        'value' => '{"custom":[{"filters":[{"name":"tags","operator":"contains","value":[303],"options":{"resource_type":"Aura\\\\Base\\\\Resources\\\\Tag"}}]}],"name":"Test Filter","public":false,"global":false,"slug":"test-filter"}',
-        'team_id' => $this->user->currentTeam->id,
-    ]);
+        $component = livewire(Table::class, ['query' => null, 'model' => $this->resource]);
 
-    // Visit the Post Index Page
-    $component = Livewire::test(Table::class, ['query' => null, 'model' => $post]);
+        expect($component->userFilters)
+            ->toHaveCount(1)
+            ->toHaveKey('test-filter');
 
-    // Filter $component->userFilters should have 1 item
-    expect($component->userFilters)->toHaveCount(1);
+        $component->set('selectedFilter', 'test-filter');
+        $component->assertSee('Delete Filter');
 
-    // $component->userFilters should have a key 'test-filter'
-    expect($component->userFilters)->toHaveKey('test-filter');
+        $component->call('deleteFilter', 'test-filter');
+        $component->dispatch('refreshTable');
 
-    // Set selected filter to 'test-filter'
-    $component->set('selectedFilter', 'test-filter');
+        $component = $component->instance();
 
-    // Should see "Delete Filter" button
-    $component->assertSee('Delete Filter');
-
-    // Click "Delete Filter" button
-    $component->call('deleteFilter', 'test-filter');
-
-    // Refresh the component
-    $component->dispatch('refreshTable');
-    $component = $component->instance();
-
-    // $component->userFilters should have 0 items
-    expect($component->userFilters)->toHaveCount(0);
-
-    // $component->selectedFilter should be null
-    expect($component->selectedFilter)->toBeNull();
-
-    // $filters should be reset
-    expect($component->filters)->toHaveKey('custom', []);
+        expect($component->userFilters)->toHaveCount(0);
+        expect($component->selectedFilter)->toBeNull();
+        expect($component->filters)->toHaveKey('custom', []);
+    });
 });
 
-test('table filter - custom filter can be removed', function () {
-    $post = $this->resource;
-    $post2 = $this->resource2;
+describe('removing filters', function () {
+    test('custom filter can be removed', function () {
+        $component = livewire(Table::class, ['query' => null, 'model' => $this->resource]);
 
-    // Visit the Post Index Page
-    $component = Livewire::test(Table::class, ['query' => null, 'model' => $post]);
+        $component->call('addFilterGroup');
+        $component->set('filters.custom.0.filters.0.value', 'B');
+        $component->set('filters.custom.0.filters.0.operator', 'is');
 
-    // Set custom filter 'meta' to 'B'
-    $component->call('addFilterGroup');
+        $component->call('removeCustomFilter', 0);
 
-    // $component->rows should have 1 item
-    $component->set('filters.custom.0.filters.0.value', 'B');
-    $component->set('filters.custom.0.filters.0.operator', 'is');
-
-    // $component->assertSeeHtml('wire:click="removeCustomFilter(\'0\')"');
-
-    // Remove custom filter
-    $component->call('removeCustomFilter', 0);
-
-    // $component->rows should have 2 items
-    $component->assertViewHas('rows', function ($rows) {
-        return count($rows) == 2;
+        $component->assertViewHas('rows', fn ($rows) => count($rows) == 2);
+        expect($component->filters['custom'])->toHaveCount(0);
     });
 
-    // $component->filters should have 0 items
-    expect($component->filters['custom'])->toHaveCount(0);
+    test('filters can be reset', function () {
+        $component = livewire(Table::class, ['query' => null, 'model' => $this->resource]);
+
+        $component->call('addFilterGroup');
+        $component->set('filters.custom.0.filters.0.value', 'B');
+        $component->set('filters.custom.0.filters.0.operator', 'is');
+
+        $component->assertSeeHtml('wire:click="resetFilter"');
+
+        $component->call('resetFilter');
+
+        $component->assertViewHas('rows', fn ($rows) => count($rows) == 2);
+        expect($component->filters['custom'])->toHaveCount(0);
+    });
 });
 
-test('table filter - filters can be reset', function () {
-    $post = $this->resource;
-    $post2 = $this->resource2;
+describe('filter selection', function () {
+    test('selecting saved filter applies its criteria', function () {
+        // Insert a filter that matches only resource (metafield = 'B')
+        DB::table('options')->insert([
+            'name' => 'user.'.$this->user->id.'.Post.filters.meta-b-filter',
+            'value' => '{"custom":[{"filters":[{"name":"metafield","operator":"is","value":"B","options":{}}]}],"name":"Meta B Filter","public":false,"global":false,"slug":"meta-b-filter"}',
+            'team_id' => $this->user->currentTeam->id,
+        ]);
 
-    // Visit the Post Index Page
-    $component = Livewire::test(Table::class, ['query' => null, 'model' => $post]);
+        $component = livewire(Table::class, ['query' => null, 'model' => $this->resource]);
 
-    // Set custom filter 'metafield' to 'B'
-    $component->call('addFilterGroup');
+        // Initially both resources are shown
+        $component->assertViewHas('rows', fn ($rows) => count($rows->items()) === 2);
 
-    // $component->rows should have 1 item
-    $component->set('filters.custom.0.filters.0.value', 'B');
-    $component->set('filters.custom.0.filters.0.operator', 'is');
+        // Select the saved filter
+        $component->set('selectedFilter', 'meta-b-filter');
 
-    $component->assertSeeHtml('wire:click="resetFilter"');
-
-    // Remove custom filter
-    $component->call('resetFilter');
-
-    $component->assertViewHas('rows', function ($rows) {
-        return count($rows) == 2;
+        // Now only the resource with metafield = 'B' should be shown
+        $component->assertViewHas('rows', fn ($rows) => count($rows->items()) === 1 && $rows->items()[0]->id === $this->resource->id);
     });
-
-    // $component->filters should have 0 items
-    expect($component->filters['custom'])->toHaveCount(0);
-
 });

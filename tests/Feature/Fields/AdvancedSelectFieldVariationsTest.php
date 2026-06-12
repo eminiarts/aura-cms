@@ -4,6 +4,7 @@ namespace Tests\Feature\Livewire;
 
 use Aura\Base\Resource;
 use Aura\Base\Tests\Resources\Post;
+use Aura\Base\Traits\SaveMetaFields;
 use Illuminate\Support\Facades\DB;
 
 // Before each test, create a Superadmin and login
@@ -85,7 +86,7 @@ class HasManyFieldOptionsModel4 extends Resource
 
 class HasManyFieldOptionsModel5 extends Resource
 {
-    use \Aura\Base\Traits\SaveMetaFields;
+    use SaveMetaFields;
 
     public static string $type = 'HasManyModel';
 

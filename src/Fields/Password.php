@@ -2,6 +2,7 @@
 
 namespace Aura\Base\Fields;
 
+use App\Models\User;
 use Illuminate\Support\Facades\Hash;
 
 class Password extends Field
@@ -28,7 +29,7 @@ class Password extends Field
         // If value is empty (null or empty string), prevent password update entirely
         if (empty($value)) {
             // For User model, remove password from all possible locations
-            if ($post instanceof \App\Models\User || $post instanceof \Aura\Base\Resources\User) {
+            if ($post instanceof User || $post instanceof \Aura\Base\Resources\User) {
                 // Remove password from attributes if it exists
                 if (isset($post->attributes[$key])) {
                     unset($post->attributes[$key]);

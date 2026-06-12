@@ -2,7 +2,9 @@
 
 namespace Aura\Base\Traits;
 
+use Aura\Base\Fields\ID;
 use Aura\Base\Models\Meta;
+use Aura\Base\Resources\User;
 use Illuminate\Support\Str;
 
 trait SaveMetaFields
@@ -12,7 +14,7 @@ trait SaveMetaFields
 
         static::saving(function ($post) {
 
-            if ($post instanceof \Aura\Base\Resources\User) {
+            if ($post instanceof User) {
             }
 
             if (isset($post->attributes['fields'])) {
@@ -29,14 +31,22 @@ trait SaveMetaFields
 
                     $class = $post->fieldClassBySlug($key);
 
+                    // Allow resources/plugins to consume custom form payloads that are
+                    // not regular Aura fields, e.g. "translations".
+                    $method = 'set'.Str::studly($key).'Field';
+
+                    if (! $class && method_exists($post, $method)) {
+                        $post->{$method}($value);
+
+                        continue;
+                    }
+
                     // Do not continue if the Field is not found
                     if (! $class) {
                         continue;
                     }
 
                     // if there is a function set{Slug}Field on the model, use it
-                    $method = 'set'.Str::studly($key).'Field';
-
                     if (method_exists($post, $method)) {
                         $post->saveMetaField([$key => $value]);
 
@@ -70,7 +80,7 @@ trait SaveMetaFields
                         continue;
                     }
 
-                    if ($class instanceof \Aura\Base\Fields\ID) {
+                    if ($class instanceof ID) {
                         // $post->attributes[$key] = $value;
 
                         // unset($post->attributes['fields'][$key]);
@@ -117,6 +127,15 @@ trait SaveMetaFields
 
                     $field = $post->fieldBySlug($key);
                     $class = $post->fieldClassBySlug((string) $key);
+
+                    // Do not continue if the Field is not found
+                    if (! $class) {
+                        if ($post->usesMeta()) {
+                            $post->meta()->updateOrCreate(['key' => $key], ['value' => $value]);
+                        }
+
+                        continue;
+                    }
 
                     if (method_exists($class, 'saved')) {
                         $value = $class->saved($post, $field, $value);

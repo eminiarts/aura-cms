@@ -3,11 +3,15 @@
     <!-- Session Status -->
     <x-aura::auth-session-status class="mb-4" :status="session('status')" />
 
+    @php($localAdmin = app(config('aura.resources.user'))::query()->first())
+
     @local
-    <x-aura::button.border href="{{ route('aura.login-as', ['id' => app(config('aura.resources.user'))::first()->id]) }}" size="xs" class="login-as-admin">
-        <x-aura::icon.user class="mr-2 -ml-1 w-4 h-4" />
-        Admin
-    </x-aura::button.border>
+        @if($localAdmin)
+            <x-aura::button.border href="{{ route('aura.login-as', ['id' => $localAdmin->id]) }}" size="xs" class="login-as-admin">
+                <x-aura::icon.user class="mr-2 -ml-1 w-4 h-4" />
+                Admin
+            </x-aura::button.border>
+        @endif
     @endlocal
 
     <form method="POST" action="">

@@ -3,6 +3,7 @@
 namespace Aura\Base\Http\Controllers;
 
 use Aura\Base\Resources\Team;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 
 class SwitchTeamController extends Controller
@@ -10,7 +11,7 @@ class SwitchTeamController extends Controller
     /**
      * Update the authenticated user's current team.
      *
-     * @return \Illuminate\Http\RedirectResponse
+     * @return RedirectResponse
      */
     public function update(Request $request)
     {

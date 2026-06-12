@@ -1,23 +1,12 @@
 <?php
 
-use Aura\Base\AuraServiceProvider;
 use Aura\Base\Facades\Aura;
 use Aura\Base\Resource;
-use Illuminate\Support\Facades\App;
 
 use function Pest\Livewire\livewire;
 
-// Before each test, create a Superadmin and login
 beforeEach(function () {
     $this->actingAs($this->user = createSuperAdmin());
-
-    // The beforeBootstrapping method is not being called because it's not in the correct place.
-    // Move this code to a service provider or to the bootstrap/app.php file.
-    // For testing purposes, you can use the following approach:
-
-    //   $this->app->beforeBootstrapping(AuraServiceProvider::class, function () {
-    //   });
-
 });
 
 class ResourceActionsTestModel extends Resource
@@ -176,4 +165,68 @@ test('actions with conditional logic are filtered correctly', function () {
     // Only the visible action should be in the actions list
     expect($component->actions)->toHaveCount(1);
     expect(array_keys($component->actions))->toContain('visibleAction');
+});
+
+class ResourceActionsTestModelWithConfirmation extends Resource
+{
+    public array $actions = [
+        'dangerousAction' => [
+            'label' => 'Dangerous Action',
+            'confirm' => true,
+            'confirm-title' => 'Are you sure?',
+            'confirm-content' => 'This action cannot be undone.',
+            'confirm-button' => 'Yes, do it',
+            'confirm-button-class' => 'bg-red-600',
+        ],
+    ];
+
+    public static ?string $slug = 'page';
+
+    public static string $type = 'Page';
+
+    public static function getFields()
+    {
+        return [];
+    }
+}
+
+test('actions with confirmation settings are available', function () {
+    $model = ResourceActionsTestModelWithConfirmation::create([
+        'title' => 'Test Confirmation',
+        'slug' => 'test-confirmation',
+    ]);
+
+    Aura::fake();
+    Aura::setModel($model);
+
+    $component = livewire('aura::resource-edit', [$model->id]);
+
+    $component->assertOk();
+    $component->assertSee('Dangerous Action');
+
+    expect($component->actions)->toHaveCount(1);
+    expect($component->actions['dangerousAction']['confirm'])->toBeTrue();
+    expect($component->actions['dangerousAction']['confirm-title'])->toBe('Are you sure?');
+});
+
+test('resource getActions returns actions array', function () {
+    $model = new ResourceActionsTestModel;
+
+    // getActions() returns the actions property when no actions() method exists
+    expect($model->getActions())->toBeArray();
+    expect($model->getActions())->toHaveCount(2);
+});
+
+test('resource getActions returns actions from method when defined', function () {
+    $model = ResourceActionsTestModelWithConditionalLogic::create([
+        'title' => 'Test Filter',
+        'slug' => 'test-filter',
+    ]);
+
+    // When actions() method is defined, getActions() uses it
+    $actions = $model->getActions();
+
+    expect($actions)->toBeArray();
+    // Actions method returns all actions, conditional logic filtering happens in Livewire component
+    expect($actions)->toHaveCount(2);
 });

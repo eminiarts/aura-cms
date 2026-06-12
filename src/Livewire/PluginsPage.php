@@ -3,6 +3,7 @@
 namespace Aura\Base\Livewire;
 
 use Exception;
+use GuzzleHttp\Client;
 use Livewire\Component;
 use Spatie\Packagist\PackagistClient;
 use Spatie\Packagist\PackagistUrlGenerator;
@@ -76,7 +77,7 @@ class PluginsPage extends Component
         $this->loading[$name] = true;
         // refresh livewire component
         $this->dispatch('refresh');
-        $client = new \GuzzleHttp\Client;
+        $client = new Client;
         $generator = new PackagistUrlGenerator;
 
         $packagist = new PackagistClient($client, $generator);

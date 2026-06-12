@@ -26,7 +26,6 @@ class MultipleTabsInPanelInTabsTestModelWithAnotherPanel extends Resource
                 'name' => 'Tab 1 in Panel',
                 'type' => 'Aura\\Base\\Fields\\Tab',
                 'slug' => 'tab1-1',
-                // 'wrap' => true,
             ],
             [
                 'name' => 'Text 1',
@@ -52,8 +51,6 @@ class MultipleTabsInPanelInTabsTestModelWithAnotherPanel extends Resource
                 'type' => 'Aura\\Base\\Fields\\Panel',
                 'slug' => 'panel2',
                 'exclude_level' => 4,
-                // 'nested' => false,
-                // 'exclude_from_nesting' => true,
             ],
             [
                 'name' => 'Tab 1 in Panel2',
@@ -97,20 +94,59 @@ class MultipleTabsInPanelInTabsTestModelWithAnotherPanel extends Resource
     }
 }
 
-test('multiple tabs in panels in tabs are possible', function () {
+test('root structure has single Tabs wrapper with two global tabs', function () {
     $model = new MultipleTabsInPanelInTabsTestModelWithAnotherPanel;
-
     $fields = $model->getGroupedFields();
 
-    $this->assertCount(1, $fields);
-    $this->assertEquals($fields[0]['name'], 'Aura\Base\Fields\Tabs');
-    $this->assertCount(2, $fields[0]['fields']);
-    $this->assertEquals($fields[0]['fields'][0]['name'], 'Tab 1');
-    $this->assertEquals($fields[0]['fields'][1]['name'], 'Tab 2');
-    $this->assertEquals($fields[0]['fields'][0]['fields'][0]['name'], 'Panel 1');
-    $this->assertEquals($fields[0]['fields'][0]['fields'][1]['name'], 'Panel 2');
-    $this->assertCount(1, $fields[0]['fields'][0]['fields'][0]['fields']);
-    $this->assertCount(2, $fields[0]['fields'][0]['fields'][0]['fields'][0]['fields']);
-    $this->assertEquals($fields[0]['fields'][0]['fields'][0]['fields'][0]['name'], 'Aura\Base\Fields\Tabs');
-    $this->assertEquals($fields[0]['fields'][0]['fields'][0]['fields'][0]['fields'][0]['name'], 'Tab 1 in Panel');
+    expect($fields)->toHaveCount(1)
+        ->and($fields[0]['name'])->toBe('Aura\Base\Fields\Tabs')
+        ->and($fields[0]['fields'])->toHaveCount(2)
+        ->and($fields[0]['fields'][0]['name'])->toBe('Tab 1')
+        ->and($fields[0]['fields'][1]['name'])->toBe('Tab 2');
+});
+
+test('Panel 1 and Panel 2 are at same level in Tab 1', function () {
+    $model = new MultipleTabsInPanelInTabsTestModelWithAnotherPanel;
+    $fields = $model->getGroupedFields();
+
+    $tab1 = $fields[0]['fields'][0];
+
+    expect($tab1['fields'][0]['name'])->toBe('Panel 1')
+        ->and($tab1['fields'][1]['name'])->toBe('Panel 2');
+});
+
+test('Panel 1 contains nested Tabs with two tabs', function () {
+    $model = new MultipleTabsInPanelInTabsTestModelWithAnotherPanel;
+    $fields = $model->getGroupedFields();
+
+    $panel1 = $fields[0]['fields'][0]['fields'][0];
+
+    expect($panel1['fields'])->toHaveCount(1)
+        ->and($panel1['fields'][0]['name'])->toBe('Aura\Base\Fields\Tabs')
+        ->and($panel1['fields'][0]['fields'])->toHaveCount(2)
+        ->and($panel1['fields'][0]['fields'][0]['name'])->toBe('Tab 1 in Panel')
+        ->and($panel1['fields'][0]['fields'][1]['name'])->toBe('Tab 2 in Panel');
+});
+
+test('Panel 2 uses exclude_level 4 to be sibling of Panel 1', function () {
+    $model = new MultipleTabsInPanelInTabsTestModelWithAnotherPanel;
+    $fields = $model->getGroupedFields();
+
+    $panel2 = $fields[0]['fields'][0]['fields'][1];
+
+    expect($panel2['name'])->toBe('Panel 2')
+        ->and($panel2['type'])->toBe('Aura\Base\Fields\Panel')
+        ->and($panel2['exclude_level'])->toBe(4);
+});
+
+test('Panel 2 contains nested Tabs with two tabs', function () {
+    $model = new MultipleTabsInPanelInTabsTestModelWithAnotherPanel;
+    $fields = $model->getGroupedFields();
+
+    $panel2 = $fields[0]['fields'][0]['fields'][1];
+
+    expect($panel2['fields'][0]['name'])->toBe('Aura\Base\Fields\Tabs')
+        ->and($panel2['fields'][0]['fields'])->toHaveCount(2)
+        ->and($panel2['fields'][0]['fields'][0]['name'])->toBe('Tab 1 in Panel2')
+        ->and($panel2['fields'][0]['fields'][1]['name'])->toBe('Tab 2 in Panel2');
 });
