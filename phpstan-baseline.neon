@@ -1,0 +1,1429 @@
+parameters:
+	ignoreErrors:
+		-
+			message: '#^Called ''env'' outside of the config directory which returns null when the config is cached, use ''config''\.$#'
+			identifier: larastan.noEnvCallsOutsideOfConfig
+			count: 5
+			path: config/aura.php
+
+		-
+			message: '#^Return type \(array\) of method Aura\\Base\\Database\\Factories\\AttachmentFactory\:\:definition\(\) should be compatible with return type \(array\<model property of Aura\\Base\\Resources\\Attachment, mixed\>\) of method Illuminate\\Database\\Eloquent\\Factories\\Factory\<Aura\\Base\\Resources\\Attachment\>\:\:definition\(\)$#'
+			identifier: method.childReturnType
+			count: 1
+			path: database/factories/AttachmentFactory.php
+
+		-
+			message: '#^Return type \(array\) of method Aura\\Base\\Database\\Factories\\MetaFactory\:\:definition\(\) should be compatible with return type \(array\<model property of Aura\\Base\\Models\\Meta, mixed\>\) of method Illuminate\\Database\\Eloquent\\Factories\\Factory\<Aura\\Base\\Models\\Meta\>\:\:definition\(\)$#'
+			identifier: method.childReturnType
+			count: 1
+			path: database/factories/MetaFactory.php
+
+		-
+			message: '#^Return type \(array\) of method Aura\\Base\\Database\\Factories\\OptionFactory\:\:definition\(\) should be compatible with return type \(array\<model property of Aura\\Base\\Resources\\Option, mixed\>\) of method Illuminate\\Database\\Eloquent\\Factories\\Factory\<Aura\\Base\\Resources\\Option\>\:\:definition\(\)$#'
+			identifier: method.childReturnType
+			count: 1
+			path: database/factories/OptionFactory.php
+
+		-
+			message: '#^Return type \(array\) of method Aura\\Base\\Database\\Factories\\PermissionFactory\:\:definition\(\) should be compatible with return type \(array\<model property of Aura\\Base\\Resources\\Permission, mixed\>\) of method Illuminate\\Database\\Eloquent\\Factories\\Factory\<Aura\\Base\\Resources\\Permission\>\:\:definition\(\)$#'
+			identifier: method.childReturnType
+			count: 1
+			path: database/factories/PermissionFactory.php
+
+		-
+			message: '#^Return type \(array\) of method Aura\\Base\\Database\\Factories\\RoleFactory\:\:definition\(\) should be compatible with return type \(array\<model property of Aura\\Base\\Resources\\Role, mixed\>\) of method Illuminate\\Database\\Eloquent\\Factories\\Factory\<Aura\\Base\\Resources\\Role\>\:\:definition\(\)$#'
+			identifier: method.childReturnType
+			count: 1
+			path: database/factories/RoleFactory.php
+
+		-
+			message: '#^Return type \(array\) of method Aura\\Base\\Database\\Factories\\TeamFactory\:\:definition\(\) should be compatible with return type \(array\<model property of Illuminate\\Database\\Eloquent\\Model, mixed\>\) of method Illuminate\\Database\\Eloquent\\Factories\\Factory\<Illuminate\\Database\\Eloquent\\Model\>\:\:definition\(\)$#'
+			identifier: method.childReturnType
+			count: 1
+			path: database/factories/TeamFactory.php
+
+		-
+			message: '#^Non\-static access to static property Aura\\Base\\Resource\:\:\$name\.$#'
+			identifier: staticProperty.nonStaticAccess
+			count: 1
+			path: database/factories/UserFactory.php
+
+		-
+			message: '#^Return type \(array\) of method Aura\\Base\\Database\\Factories\\UserFactory\:\:definition\(\) should be compatible with return type \(array\<model property of Illuminate\\Database\\Eloquent\\Model, mixed\>\) of method Illuminate\\Database\\Eloquent\\Factories\\Factory\<Illuminate\\Database\\Eloquent\\Model\>\:\:definition\(\)$#'
+			identifier: method.childReturnType
+			count: 1
+			path: database/factories/UserFactory.php
+
+		-
+			message: '#^Access to an undefined property Aura\\Base\\Resources\\Attachment\|Illuminate\\Database\\Eloquent\\Collection\<int, Aura\\Base\\Resources\\Attachment\>\:\:\$url\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Aura.php
+
+		-
+			message: '#^Access to an undefined property Aura\\Base\\Resources\\Option\:\:\$value\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Aura.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Foundation\\Auth\\User\:\:\$currentTeam\.$#'
+			identifier: property.notFound
+			count: 2
+			path: src/Aura.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Foundation\\Auth\\User\:\:\$current_team_id\.$#'
+			identifier: property.notFound
+			count: 2
+			path: src/Aura.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Support\\Stringable\:\:\$title\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Aura.php
+
+		-
+			message: '#^Method Aura\\Base\\Aura\:\:getAppResources\(\) should return static\(Aura\\Base\\Aura\) but returns array\.$#'
+			identifier: return.type
+			count: 1
+			path: src/Aura.php
+
+		-
+			message: '#^Method Aura\\Base\\Aura\:\:getAppResources\(\) should return static\(Aura\\Base\\Aura\) but returns array\<mixed\>\.$#'
+			identifier: return.type
+			count: 1
+			path: src/Aura.php
+
+		-
+			message: '#^PHPDoc tag @param references unknown parameter\: \$resources$#'
+			identifier: parameter.notFound
+			count: 1
+			path: src/Aura.php
+
+		-
+			message: '#^Unsafe usage of new static\(\)\.$#'
+			identifier: new.static
+			count: 1
+			path: src/Aura.php
+
+		-
+			message: '#^Call to an undefined method Illuminate\\Foundation\\Auth\\User\:\:isSuperAdmin\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: src/AuraServiceProvider.php
+
+		-
+			message: '#^Access to an undefined property Aura\\Base\\BaseResource\:\:\$fields\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/BaseResource.php
+
+		-
+			message: '#^Access to an undefined property Aura\\Base\\BaseResource\:\:\$meta\.$#'
+			identifier: property.notFound
+			count: 2
+			path: src/BaseResource.php
+
+		-
+			message: '#^Call to an undefined method Aura\\Base\\BaseResource\:\:getMeta\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: src/BaseResource.php
+
+		-
+			message: '#^Method Aura\\Base\\BaseResource\:\:usesMeta\(\) should return string but returns bool\.$#'
+			identifier: return.type
+			count: 1
+			path: src/BaseResource.php
+
+		-
+			message: '#^PHPDoc tag @param references unknown parameter\: \$key$#'
+			identifier: parameter.notFound
+			count: 1
+			path: src/BaseResource.php
+
+		-
+			message: '#^PHPDoc tag @return with type mixed is not subtype of native type bool\.$#'
+			identifier: return.phpDocType
+			count: 1
+			path: src/BaseResource.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$key\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Collection/MetaCollection.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$value\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Collection/MetaCollection.php
+
+		-
+			message: '#^Call to an undefined method Illuminate\\Database\\Connection\:\:getDoctrineSchemaManager\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: src/Commands/DatabaseToResources.php
+
+		-
+			message: '#^Access to an undefined property Aura\\Base\\Resources\\User\:\:\$current_team_id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Commands/Installation.php
+
+		-
+			message: '#^Method Aura\\Base\\Commands\\MakeField\:\:handle\(\) should return bool\|null but return statement is missing\.$#'
+			identifier: return.missing
+			count: 1
+			path: src/Commands/MakeField.php
+
+		-
+			message: '#^Call to an undefined method ArrayAccess\:\:toArray\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: src/ConditionalLogic.php
+
+		-
+			message: '#^Call to an undefined method Illuminate\\Foundation\\Auth\\User\:\:hasRole\(\)\.$#'
+			identifier: method.notFound
+			count: 2
+			path: src/ConditionalLogic.php
+
+		-
+			message: '#^Call to an undefined method Illuminate\\Foundation\\Auth\\User\:\:isSuperAdmin\(\)\.$#'
+			identifier: method.notFound
+			count: 2
+			path: src/ConditionalLogic.php
+
+		-
+			message: '#^Method Aura\\Base\\Facades\\Aura\:\:fake\(\) should return Illuminate\\Support\\Testing\\Fakes\\MailFake but returns Aura\\Base\\AuraFake\.$#'
+			identifier: return.type
+			count: 1
+			path: src/Facades/Aura.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 2
+			path: src/Fields/AdvancedSelect.php
+
+		-
+			message: '#^Access to an undefined property Aura\\Base\\Fields\\Field\:\:\$meta\.$#'
+			identifier: property.notFound
+			count: 2
+			path: src/Fields/Field.php
+
+		-
+			message: '#^Call to an undefined method Aura\\Base\\Fields\\Field\:\:getMeta\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: src/Fields/Field.php
+
+		-
+			message: '#^Call to an undefined method Aura\\Base\\Fields\\Field\:\:usesCustomTable\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: src/Fields/Field.php
+
+		-
+			message: '#^Unsafe usage of new static\(\)\.$#'
+			identifier: new.static
+			count: 1
+			path: src/Fields/Field.php
+
+		-
+			message: '#^Access to property \$attributes on an unknown class App\\Models\\User\.$#'
+			identifier: class.notFound
+			count: 6
+			path: src/Fields/Password.php
+
+		-
+			message: '#^Call to method offsetUnset\(\) on an unknown class App\\Models\\User\.$#'
+			identifier: class.notFound
+			count: 1
+			path: src/Fields/Password.php
+
+		-
+			message: '#^Class App\\Models\\User not found\.$#'
+			identifier: class.notFound
+			count: 1
+			path: src/Fields/Password.php
+
+		-
+			message: '#^PHPDoc tag @param for parameter \$request with type App\\Http\\Requests\\Auth\\LoginRequest is not subtype of native type Aura\\Base\\Http\\Requests\\Auth\\LoginRequest\.$#'
+			identifier: parameter.phpDocType
+			count: 1
+			path: src/Http/Controllers/Auth/AuthenticatedSessionController.php
+
+		-
+			message: '#^Parameter \$request of method Aura\\Base\\Http\\Controllers\\Auth\\AuthenticatedSessionController\:\:store\(\) has invalid type App\\Http\\Requests\\Auth\\LoginRequest\.$#'
+			identifier: class.notFound
+			count: 1
+			path: src/Http/Controllers/Auth/AuthenticatedSessionController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Foundation\\Auth\\User\:\:\$email\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Http/Controllers/Auth/ConfirmablePasswordController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 2
+			path: src/Http/Controllers/Auth/TeamInvitationController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$name\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Http/Controllers/Auth/TeamInvitationController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Foundation\\Auth\\User\:\:\$email\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Http/Controllers/Auth/TeamInvitationController.php
+
+		-
+			message: '#^Call to an undefined method Illuminate\\Foundation\\Auth\\User\:\:roles\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: src/Http/Controllers/Auth/TeamInvitationController.php
+
+		-
+			message: '#^Call to an undefined method Illuminate\\Foundation\\Auth\\User\:\:switchTeam\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: src/Http/Controllers/SwitchTeamController.php
+
+		-
+			message: '#^Class App\\Http\\Middleware\\Authenticate not found\.$#'
+			identifier: class.notFound
+			count: 1
+			path: src/Http/Kernel.php
+
+		-
+			message: '#^Class App\\Http\\Middleware\\EncryptCookies not found\.$#'
+			identifier: class.notFound
+			count: 1
+			path: src/Http/Kernel.php
+
+		-
+			message: '#^Class App\\Http\\Middleware\\PreventRequestsDuringMaintenance not found\.$#'
+			identifier: class.notFound
+			count: 1
+			path: src/Http/Kernel.php
+
+		-
+			message: '#^Class App\\Http\\Middleware\\RedirectIfAuthenticated not found\.$#'
+			identifier: class.notFound
+			count: 1
+			path: src/Http/Kernel.php
+
+		-
+			message: '#^Class App\\Http\\Middleware\\TrimStrings not found\.$#'
+			identifier: class.notFound
+			count: 1
+			path: src/Http/Kernel.php
+
+		-
+			message: '#^Class App\\Http\\Middleware\\TrustProxies not found\.$#'
+			identifier: class.notFound
+			count: 1
+			path: src/Http/Kernel.php
+
+		-
+			message: '#^Class App\\Http\\Middleware\\VerifyCsrfToken not found\.$#'
+			identifier: class.notFound
+			count: 1
+			path: src/Http/Kernel.php
+
+		-
+			message: '#^Class Fruitcake\\Cors\\HandleCors not found\.$#'
+			identifier: class.notFound
+			count: 1
+			path: src/Http/Kernel.php
+
+		-
+			message: '#^Method Aura\\Base\\Http\\Middleware\\Authenticate\:\:redirectTo\(\) should return string\|null but return statement is missing\.$#'
+			identifier: return.missing
+			count: 1
+			path: src/Http/Middleware/Authenticate.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Foundation\\Auth\\User\:\:\$current_team_id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Jobs/GenerateAllResourcePermissions.php
+
+		-
+			message: '#^Access to protected property \$slug of class Aura\\Base\\Resource\.$#'
+			identifier: staticProperty.protected
+			count: 1
+			path: src/Jobs/GenerateAllResourcePermissions.php
+
+		-
+			message: '#^Property Aura\\Base\\Jobs\\GenerateResourcePermissions\:\:\$resource has unknown class Aura\\Base\\Resources\\resource as its type\.$#'
+			identifier: class.notFound
+			count: 1
+			path: src/Jobs/GenerateResourcePermissions.php
+
+		-
+			message: '#^Call to an undefined method Illuminate\\Foundation\\Auth\\User\:\:getOptionBookmarks\(\)\.$#'
+			identifier: method.notFound
+			count: 3
+			path: src/Livewire/BookmarkPage.php
+
+		-
+			message: '#^Call to an undefined method Illuminate\\Foundation\\Auth\\User\:\:updateOption\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: src/Livewire/BookmarkPage.php
+
+		-
+			message: '#^Access to an undefined property Aura\\Base\\Livewire\\CreateResource\:\:\$meta\.$#'
+			identifier: property.notFound
+			count: 4
+			path: src/Livewire/CreateResource.php
+
+		-
+			message: '#^Call to an undefined method Aura\\Base\\Livewire\\CreateResource\:\:getMeta\(\)\.$#'
+			identifier: method.notFound
+			count: 2
+			path: src/Livewire/CreateResource.php
+
+		-
+			message: '#^Call to an undefined method Aura\\Base\\Livewire\\CreateResource\:\:notify\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: src/Livewire/CreateResource.php
+
+		-
+			message: '#^Call to an undefined method Aura\\Base\\Livewire\\CreateResource\:\:usesCustomTable\(\)\.$#'
+			identifier: method.notFound
+			count: 2
+			path: src/Livewire/CreateResource.php
+
+		-
+			message: '#^Call to an undefined method Illuminate\\Foundation\\Auth\\User\:\:isSuperAdmin\(\)\.$#'
+			identifier: method.notFound
+			count: 2
+			path: src/Livewire/CreateResource.php
+
+		-
+			message: '#^Access to an undefined property Aura\\Base\\Livewire\\EditResourceField\:\:\$mappedFields\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Livewire/EditResourceField.php
+
+		-
+			message: '#^Call to an undefined method Aura\\Base\\Livewire\\EditResourceField\:\:notify\(\)\.$#'
+			identifier: method.notFound
+			count: 3
+			path: src/Livewire/EditResourceField.php
+
+		-
+			message: '#^Call to an undefined method Illuminate\\Foundation\\Auth\\User\:\:getOptionBookmarks\(\)\.$#'
+			identifier: method.notFound
+			count: 2
+			path: src/Livewire/GlobalSearch.php
+
+		-
+			message: '#^Access to an undefined property Aura\\Base\\Livewire\\InviteUser\:\:\$meta\.$#'
+			identifier: property.notFound
+			count: 2
+			path: src/Livewire/InviteUser.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Foundation\\Auth\\User\:\:\$currentTeam\.$#'
+			identifier: property.notFound
+			count: 2
+			path: src/Livewire/InviteUser.php
+
+		-
+			message: '#^Call to an undefined method Aura\\Base\\Livewire\\InviteUser\:\:getMeta\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: src/Livewire/InviteUser.php
+
+		-
+			message: '#^Call to an undefined method Aura\\Base\\Livewire\\InviteUser\:\:notify\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: src/Livewire/InviteUser.php
+
+		-
+			message: '#^Call to an undefined method Aura\\Base\\Livewire\\InviteUser\:\:usesCustomTable\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: src/Livewire/InviteUser.php
+
+		-
+			message: '#^Access to an undefined property Aura\\Base\\Livewire\\Navigation\:\:\$sidebarToggled\.$#'
+			identifier: property.notFound
+			count: 3
+			path: src/Livewire/Navigation.php
+
+		-
+			message: '#^Access to an undefined property Aura\\Base\\Livewire\\Navigation\:\:\$sidebarType\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Livewire/Navigation.php
+
+		-
+			message: '#^Call to an undefined method Illuminate\\Foundation\\Auth\\User\:\:getOptionSidebar\(\)\.$#'
+			identifier: method.notFound
+			count: 2
+			path: src/Livewire/Navigation.php
+
+		-
+			message: '#^Call to an undefined method Illuminate\\Foundation\\Auth\\User\:\:getOptionSidebarToggled\(\)\.$#'
+			identifier: method.notFound
+			count: 2
+			path: src/Livewire/Navigation.php
+
+		-
+			message: '#^Call to an undefined method Illuminate\\Foundation\\Auth\\User\:\:updateOption\(\)\.$#'
+			identifier: method.notFound
+			count: 2
+			path: src/Livewire/Navigation.php
+
+		-
+			message: '#^Access to an undefined property Aura\\Base\\Livewire\\Notifications\:\:\$meta\.$#'
+			identifier: property.notFound
+			count: 2
+			path: src/Livewire/Notifications.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Foundation\\Auth\\User\:\:\$readNotifications\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Livewire/Notifications.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Foundation\\Auth\\User\:\:\$unreadNotifications\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Livewire/Notifications.php
+
+		-
+			message: '#^Call to an undefined method Aura\\Base\\Livewire\\Notifications\:\:getMeta\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: src/Livewire/Notifications.php
+
+		-
+			message: '#^Call to an undefined method Aura\\Base\\Livewire\\Notifications\:\:usesCustomTable\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: src/Livewire/Notifications.php
+
+		-
+			message: '#^Call to an undefined method Illuminate\\Foundation\\Auth\\User\:\:unreadNotifications\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: src/Livewire/Notifications.php
+
+		-
+			message: '#^Call to an undefined method Aura\\Base\\Livewire\\PluginsPage\:\:notify\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: src/Livewire/PluginsPage.php
+
+		-
+			message: '#^Call to method getPackageMetadata\(\) on an unknown class Spatie\\Packagist\\PackagistClient\.$#'
+			identifier: class.notFound
+			count: 1
+			path: src/Livewire/PluginsPage.php
+
+		-
+			message: '#^Instantiated class Spatie\\Packagist\\PackagistClient not found\.$#'
+			identifier: class.notFound
+			count: 1
+			path: src/Livewire/PluginsPage.php
+
+		-
+			message: '#^Instantiated class Spatie\\Packagist\\PackagistUrlGenerator not found\.$#'
+			identifier: class.notFound
+			count: 1
+			path: src/Livewire/PluginsPage.php
+
+		-
+			message: '#^Access to an undefined property Aura\\Base\\Livewire\\Profile\:\:\$meta\.$#'
+			identifier: property.notFound
+			count: 2
+			path: src/Livewire/Profile.php
+
+		-
+			message: '#^Call to an undefined method Aura\\Base\\Livewire\\Profile\:\:getMeta\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: src/Livewire/Profile.php
+
+		-
+			message: '#^Call to an undefined method Aura\\Base\\Livewire\\Profile\:\:notify\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: src/Livewire/Profile.php
+
+		-
+			message: '#^Call to an undefined method Aura\\Base\\Livewire\\Profile\:\:usesCustomTable\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: src/Livewire/Profile.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Foundation\\Auth\\User\:\:\$current_team_id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Livewire/Resource/Create.php
+
+		-
+			message: '#^Call to an undefined method Aura\\Base\\Livewire\\Resource\\Create\:\:notify\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: src/Livewire/Resource/Create.php
+
+		-
+			message: '#^Call to an undefined static method Livewire\\Component\:\:callMethod\(\)\.$#'
+			identifier: staticMethod.notFound
+			count: 2
+			path: src/Livewire/Resource/Create.php
+
+		-
+			message: '#^Call to an undefined static method Livewire\\Component\:\:callMethod\(\)\.$#'
+			identifier: staticMethod.notFound
+			count: 3
+			path: src/Livewire/Resource/Edit.php
+
+		-
+			message: '#^Class Aura\\Base\\Livewire\\Resource\\Closure not found\.$#'
+			identifier: class.notFound
+			count: 2
+			path: src/Livewire/Resource/Edit.php
+
+		-
+			message: '#^Access to an undefined property Aura\\Base\\Livewire\\ResourceEditor\:\:\$mappedFields\.$#'
+			identifier: property.notFound
+			count: 6
+			path: src/Livewire/ResourceEditor.php
+
+		-
+			message: '#^Call to an undefined method Aura\\Base\\Livewire\\ResourceEditor\:\:notify\(\)\.$#'
+			identifier: method.notFound
+			count: 5
+			path: src/Livewire/ResourceEditor.php
+
+		-
+			message: '#^Access to an undefined property Aura\\Base\\Livewire\\Settings\:\:\$meta\.$#'
+			identifier: property.notFound
+			count: 2
+			path: src/Livewire/Settings.php
+
+		-
+			message: '#^Access to an undefined property Aura\\Base\\Resources\\Option\:\:\$value\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Livewire/Settings.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Foundation\\Auth\\User\:\:\$currentTeam\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Livewire/Settings.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Foundation\\Auth\\User\:\:\$current_team_id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Livewire/Settings.php
+
+		-
+			message: '#^Call to an undefined method Aura\\Base\\Livewire\\Settings\:\:getMeta\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: src/Livewire/Settings.php
+
+		-
+			message: '#^Call to an undefined method Aura\\Base\\Livewire\\Settings\:\:notify\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: src/Livewire/Settings.php
+
+		-
+			message: '#^Call to an undefined method Aura\\Base\\Livewire\\Settings\:\:usesCustomTable\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: src/Livewire/Settings.php
+
+		-
+			message: '#^Call to an undefined method Illuminate\\Foundation\\Auth\\User\:\:isSuperAdmin\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: src/Livewire/Settings.php
+
+		-
+			message: '#^Access to an undefined property Aura\\Base\\Livewire\\Table\\Table\:\:\$fields\.$#'
+			identifier: property.notFound
+			count: 2
+			path: src/Livewire/Table/Table.php
+
+		-
+			message: '#^Access to an undefined property Aura\\Base\\Livewire\\Table\\Table\:\:\$fieldsForFilter\.$#'
+			identifier: property.notFound
+			count: 3
+			path: src/Livewire/Table/Table.php
+
+		-
+			message: '#^Access to an undefined property Aura\\Base\\Livewire\\Table\\Table\:\:\$rowIds\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Livewire/Table/Table.php
+
+		-
+			message: '#^Access to an undefined property Aura\\Base\\Livewire\\Table\\Table\:\:\$selectedRowsQuery\.$#'
+			identifier: property.notFound
+			count: 4
+			path: src/Livewire/Table/Table.php
+
+		-
+			message: '#^Access to an undefined property Aura\\Base\\Livewire\\Table\\Table\:\:\$userFilters\.$#'
+			identifier: property.notFound
+			count: 2
+			path: src/Livewire/Table/Table.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Livewire/Table/Table.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Foundation\\Auth\\User\:\:\$currentTeam\.$#'
+			identifier: property.notFound
+			count: 4
+			path: src/Livewire/Table/Table.php
+
+		-
+			message: '#^Array has 2 duplicate keys with value ''search'' \(''search'', ''search''\)\.$#'
+			identifier: array.duplicateKey
+			count: 1
+			path: src/Livewire/Table/Table.php
+
+		-
+			message: '#^Call to an undefined method Aura\\Base\\Livewire\\Table\\Table\:\:notify\(\)\.$#'
+			identifier: method.notFound
+			count: 7
+			path: src/Livewire/Table/Table.php
+
+		-
+			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Model\:\:getType\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: src/Livewire/Table/Table.php
+
+		-
+			message: '#^Call to an undefined method Illuminate\\Foundation\\Auth\\User\:\:clearCachedOption\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: src/Livewire/Table/Table.php
+
+		-
+			message: '#^Call to an undefined method Illuminate\\Foundation\\Auth\\User\:\:deleteOption\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: src/Livewire/Table/Table.php
+
+		-
+			message: '#^Call to an undefined method Illuminate\\Foundation\\Auth\\User\:\:getOption\(\)\.$#'
+			identifier: method.notFound
+			count: 5
+			path: src/Livewire/Table/Table.php
+
+		-
+			message: '#^Call to an undefined method Illuminate\\Foundation\\Auth\\User\:\:getOptionColumns\(\)\.$#'
+			identifier: method.notFound
+			count: 2
+			path: src/Livewire/Table/Table.php
+
+		-
+			message: '#^Call to an undefined method Illuminate\\Foundation\\Auth\\User\:\:updateOption\(\)\.$#'
+			identifier: method.notFound
+			count: 5
+			path: src/Livewire/Table/Table.php
+
+		-
+			message: '#^Method Aura\\Base\\Livewire\\Table\\Table\:\:reorder\(\) with return type void returns mixed but should not return anything\.$#'
+			identifier: return.void
+			count: 1
+			path: src/Livewire/Table/Table.php
+
+		-
+			message: '#^Method Aura\\Base\\Livewire\\Table\\Table\:\:updatedSelectPage\(\) with return type void returns null but should not return anything\.$#'
+			identifier: return.void
+			count: 1
+			path: src/Livewire/Table/Table.php
+
+		-
+			message: '#^Offset ''global'' does not exist on string\.$#'
+			identifier: offsetAccess.notFound
+			count: 1
+			path: src/Livewire/Table/Table.php
+
+		-
+			message: '#^Offset ''max'' does not exist on string\.$#'
+			identifier: offsetAccess.notFound
+			count: 1
+			path: src/Livewire/Table/Table.php
+
+		-
+			message: '#^Offset ''name'' does not exist on string\.$#'
+			identifier: offsetAccess.notFound
+			count: 1
+			path: src/Livewire/Table/Table.php
+
+		-
+			message: '#^Offset ''slug'' does not exist on string\.$#'
+			identifier: offsetAccess.notFound
+			count: 1
+			path: src/Livewire/Table/Table.php
+
+		-
+			message: '#^Offset ''type'' does not exist on non\-falsy\-string\.$#'
+			identifier: offsetAccess.notFound
+			count: 2
+			path: src/Livewire/Table/Table.php
+
+		-
+			message: '#^PHPDoc tag @param references unknown parameter\: \$filter$#'
+			identifier: parameter.notFound
+			count: 1
+			path: src/Livewire/Table/Table.php
+
+		-
+			message: '#^Property Aura\\Base\\Livewire\\Table\\Table\:\:\$filter \(string\) does not accept default value of type array\<string, string\|false\>\.$#'
+			identifier: property.defaultValue
+			count: 1
+			path: src/Livewire/Table/Table.php
+
+		-
+			message: '#^Result of method Aura\\Base\\Livewire\\Table\\Table\:\:selectPageRows\(\) \(void\) is used\.$#'
+			identifier: method.void
+			count: 1
+			path: src/Livewire/Table/Table.php
+
+		-
+			message: '#^Call to an undefined method Aura\\Base\\Livewire\\Teams\\CreateTeamForm\:\:notify\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: src/Livewire/Teams/CreateTeamForm.php
+
+		-
+			message: '#^Call to an undefined method Illuminate\\Foundation\\Auth\\User\:\:switchTeam\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: src/Livewire/Teams/CreateTeamForm.php
+
+		-
+			message: '#^Call to an undefined method Aura\\Base\\Livewire\\Teams\\DeleteTeamForm\:\:notify\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: src/Livewire/Teams/DeleteTeamForm.php
+
+		-
+			message: '#^Non\-static access to static property Aura\\Base\\Resource\:\:\$name\.$#'
+			identifier: staticProperty.nonStaticAccess
+			count: 1
+			path: src/Livewire/Teams/DeleteTeamForm.php
+
+		-
+			message: '#^Access to an undefined property Aura\\Base\\Resources\\Team\:\:\$user_id\.$#'
+			identifier: property.notFound
+			count: 2
+			path: src/Livewire/Teams/TeamMemberManager.php
+
+		-
+			message: '#^Call to an undefined method Aura\\Base\\Livewire\\Teams\\TeamMemberManager\:\:notify\(\)\.$#'
+			identifier: method.notFound
+			count: 5
+			path: src/Livewire/Teams/TeamMemberManager.php
+
+		-
+			message: '#^Call to an undefined method Aura\\Base\\Livewire\\Teams\\UpdateTeamNameForm\:\:notify\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: src/Livewire/Teams/UpdateTeamNameForm.php
+
+		-
+			message: '#^Non\-static access to static property Aura\\Base\\Resource\:\:\$name\.$#'
+			identifier: staticProperty.nonStaticAccess
+			count: 1
+			path: src/Livewire/Teams/UpdateTeamNameForm.php
+
+		-
+			message: '#^Access to an undefined property Aura\\Base\\Livewire\\TwoFactorAuthenticationForm\:\:\$user\.$#'
+			identifier: property.notFound
+			count: 6
+			path: src/Livewire/TwoFactorAuthenticationForm.php
+
+		-
+			message: '#^Method Aura\\Base\\Livewire\\TwoFactorAuthenticationForm\:\:startConfirmingPassword\(\) with return type void returns mixed but should not return anything\.$#'
+			identifier: return.void
+			count: 1
+			path: src/Livewire/TwoFactorAuthenticationForm.php
+
+		-
+			message: '#^Access to an undefined property Aura\\Base\\Livewire\\UserSettings\:\:\$meta\.$#'
+			identifier: property.notFound
+			count: 2
+			path: src/Livewire/UserSettings.php
+
+		-
+			message: '#^Call to an undefined method Aura\\Base\\Livewire\\UserSettings\:\:getMeta\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: src/Livewire/UserSettings.php
+
+		-
+			message: '#^Call to an undefined method Aura\\Base\\Livewire\\UserSettings\:\:notify\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: src/Livewire/UserSettings.php
+
+		-
+			message: '#^Call to an undefined method Aura\\Base\\Livewire\\UserSettings\:\:usesCustomTable\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: src/Livewire/UserSettings.php
+
+		-
+			message: '#^Call to static method firstOrCreate\(\) on an unknown class Aura\\Base\\Models\\Option\.$#'
+			identifier: class.notFound
+			count: 1
+			path: src/Livewire/UserSettings.php
+
+		-
+			message: '#^Call to static method updateOrCreate\(\) on an unknown class Aura\\Base\\Models\\Option\.$#'
+			identifier: class.notFound
+			count: 1
+			path: src/Livewire/UserSettings.php
+
+		-
+			message: '#^Access to property \$email on an unknown class Laravel\\Jetstream\\TeamInvitation\.$#'
+			identifier: class.notFound
+			count: 1
+			path: src/Mail/TeamInvitation.php
+
+		-
+			message: '#^Access to property \$team on an unknown class Laravel\\Jetstream\\TeamInvitation\.$#'
+			identifier: class.notFound
+			count: 2
+			path: src/Mail/TeamInvitation.php
+
+		-
+			message: '#^PHPDoc tag @param for parameter \$invitation with type Laravel\\Jetstream\\TeamInvitation is not subtype of native type Aura\\Base\\Resources\\TeamInvitation\.$#'
+			identifier: parameter.phpDocType
+			count: 1
+			path: src/Mail/TeamInvitation.php
+
+		-
+			message: '#^Parameter \$invitation of method Aura\\Base\\Mail\\TeamInvitation\:\:__construct\(\) has invalid type Laravel\\Jetstream\\TeamInvitation\.$#'
+			identifier: class.notFound
+			count: 1
+			path: src/Mail/TeamInvitation.php
+
+		-
+			message: '#^Property Aura\\Base\\Mail\\TeamInvitation\:\:\$invitation \(Laravel\\Jetstream\\TeamInvitation\) does not accept Aura\\Base\\Resources\\TeamInvitation\.$#'
+			identifier: assign.propertyType
+			count: 1
+			path: src/Mail/TeamInvitation.php
+
+		-
+			message: '#^Property Aura\\Base\\Mail\\TeamInvitation\:\:\$invitation has unknown class Laravel\\Jetstream\\TeamInvitation as its type\.$#'
+			identifier: class.notFound
+			count: 1
+			path: src/Mail/TeamInvitation.php
+
+		-
+			message: '#^Return type \(Aura\\Base\\Collection\\MetaCollection\) of method Aura\\Base\\Models\\Meta\:\:newCollection\(\) should be compatible with return type \(Illuminate\\Database\\Eloquent\\Collection\<\(int\|string\), static\(Illuminate\\Database\\Eloquent\\Model\)\>\) of method Illuminate\\Database\\Eloquent\\Model\:\:newCollection\(\)$#'
+			identifier: method.childReturnType
+			count: 1
+			path: src/Models/Meta.php
+
+		-
+			message: '#^Method Aura\\Base\\Models\\Scopes\\ScopedScope\:\:apply\(\) with return type void returns Illuminate\\Database\\Eloquent\\Builder\<TModel of Illuminate\\Database\\Eloquent\\Model\> but should not return anything\.$#'
+			identifier: return.void
+			count: 4
+			path: src/Models/Scopes/ScopedScope.php
+
+		-
+			message: '#^Call to an undefined static method TModel of Illuminate\\Database\\Eloquent\\Model\:\:getType\(\)\.$#'
+			identifier: staticMethod.notFound
+			count: 2
+			path: src/Models/Scopes/TaxonomyScope.php
+
+		-
+			message: '#^Method Aura\\Base\\Models\\Scopes\\TaxonomyScope\:\:apply\(\) with return type void returns Illuminate\\Database\\Eloquent\\Builder\<TModel of Illuminate\\Database\\Eloquent\\Model\> but should not return anything\.$#'
+			identifier: return.void
+			count: 2
+			path: src/Models/Scopes/TaxonomyScope.php
+
+		-
+			message: '#^Method Aura\\Base\\Models\\Scopes\\TeamScope\:\:getCurrentTeamId\(\) should return int\|null but empty return statement found\.$#'
+			identifier: return.empty
+			count: 1
+			path: src/Models/Scopes/TeamScope.php
+
+		-
+			message: '#^Call to an undefined static method TModel of Illuminate\\Database\\Eloquent\\Model\:\:getType\(\)\.$#'
+			identifier: staticMethod.notFound
+			count: 1
+			path: src/Models/Scopes/TypeScope.php
+
+		-
+			message: '#^Method Aura\\Base\\Models\\Scopes\\TypeScope\:\:apply\(\) with return type void returns Illuminate\\Database\\Eloquent\\Builder\<TModel of Illuminate\\Database\\Eloquent\\Model\> but should not return anything\.$#'
+			identifier: return.void
+			count: 1
+			path: src/Models/Scopes/TypeScope.php
+
+		-
+			message: '#^Anonymous function has an unused use \$groupedFields\.$#'
+			identifier: closure.unusedUse
+			count: 1
+			path: src/Pipeline/ApplyGroupedInputs.php
+
+		-
+			message: '#^Binary operation "\+" between string and 1 results in an error\.$#'
+			identifier: binaryOp.invalid
+			count: 3
+			path: src/Pipeline/ApplyGroupedInputs.php
+
+		-
+			message: '#^Method Aura\\Base\\Policies\\MetaPolicy\:\:create\(\) should return bool\|Illuminate\\Auth\\Access\\Response but return statement is missing\.$#'
+			identifier: return.missing
+			count: 1
+			path: src/Policies/MetaPolicy.php
+
+		-
+			message: '#^Method Aura\\Base\\Policies\\MetaPolicy\:\:delete\(\) should return bool\|Illuminate\\Auth\\Access\\Response but return statement is missing\.$#'
+			identifier: return.missing
+			count: 1
+			path: src/Policies/MetaPolicy.php
+
+		-
+			message: '#^Method Aura\\Base\\Policies\\MetaPolicy\:\:forceDelete\(\) should return bool\|Illuminate\\Auth\\Access\\Response but return statement is missing\.$#'
+			identifier: return.missing
+			count: 1
+			path: src/Policies/MetaPolicy.php
+
+		-
+			message: '#^Method Aura\\Base\\Policies\\MetaPolicy\:\:restore\(\) should return bool\|Illuminate\\Auth\\Access\\Response but return statement is missing\.$#'
+			identifier: return.missing
+			count: 1
+			path: src/Policies/MetaPolicy.php
+
+		-
+			message: '#^Method Aura\\Base\\Policies\\MetaPolicy\:\:update\(\) should return bool\|Illuminate\\Auth\\Access\\Response but return statement is missing\.$#'
+			identifier: return.missing
+			count: 1
+			path: src/Policies/MetaPolicy.php
+
+		-
+			message: '#^Method Aura\\Base\\Policies\\MetaPolicy\:\:view\(\) should return bool\|Illuminate\\Auth\\Access\\Response but return statement is missing\.$#'
+			identifier: return.missing
+			count: 1
+			path: src/Policies/MetaPolicy.php
+
+		-
+			message: '#^Method Aura\\Base\\Policies\\MetaPolicy\:\:viewAny\(\) should return bool\|Illuminate\\Auth\\Access\\Response but return statement is missing\.$#'
+			identifier: return.missing
+			count: 1
+			path: src/Policies/MetaPolicy.php
+
+		-
+			message: '#^PHPDoc tag @param for parameter \$meta with type App\\Models\\Meta is not subtype of native type Aura\\Base\\Models\\Meta\.$#'
+			identifier: parameter.phpDocType
+			count: 5
+			path: src/Policies/MetaPolicy.php
+
+		-
+			message: '#^Parameter \$meta of method Aura\\Base\\Policies\\MetaPolicy\:\:delete\(\) has invalid type App\\Models\\Meta\.$#'
+			identifier: class.notFound
+			count: 1
+			path: src/Policies/MetaPolicy.php
+
+		-
+			message: '#^Parameter \$meta of method Aura\\Base\\Policies\\MetaPolicy\:\:forceDelete\(\) has invalid type App\\Models\\Meta\.$#'
+			identifier: class.notFound
+			count: 1
+			path: src/Policies/MetaPolicy.php
+
+		-
+			message: '#^Parameter \$meta of method Aura\\Base\\Policies\\MetaPolicy\:\:restore\(\) has invalid type App\\Models\\Meta\.$#'
+			identifier: class.notFound
+			count: 1
+			path: src/Policies/MetaPolicy.php
+
+		-
+			message: '#^Parameter \$meta of method Aura\\Base\\Policies\\MetaPolicy\:\:update\(\) has invalid type App\\Models\\Meta\.$#'
+			identifier: class.notFound
+			count: 1
+			path: src/Policies/MetaPolicy.php
+
+		-
+			message: '#^Parameter \$meta of method Aura\\Base\\Policies\\MetaPolicy\:\:view\(\) has invalid type App\\Models\\Meta\.$#'
+			identifier: class.notFound
+			count: 1
+			path: src/Policies/MetaPolicy.php
+
+		-
+			message: '#^Access to property \$user_id on an unknown class App\\Models\\Post\.$#'
+			identifier: class.notFound
+			count: 3
+			path: src/Policies/ResourcePolicy.php
+
+		-
+			message: '#^Access to static property \$editEnabled on an unknown class App\\Models\\Post\.$#'
+			identifier: class.notFound
+			count: 1
+			path: src/Policies/ResourcePolicy.php
+
+		-
+			message: '#^Access to static property \$viewEnabled on an unknown class App\\Models\\Post\.$#'
+			identifier: class.notFound
+			count: 1
+			path: src/Policies/ResourcePolicy.php
+
+		-
+			message: '#^Parameter \$resource of method Aura\\Base\\Policies\\ResourcePolicy\:\:delete\(\) has invalid type App\\Models\\Post\.$#'
+			identifier: class.notFound
+			count: 1
+			path: src/Policies/ResourcePolicy.php
+
+		-
+			message: '#^Parameter \$resource of method Aura\\Base\\Policies\\ResourcePolicy\:\:forceDelete\(\) has invalid type App\\Models\\Post\.$#'
+			identifier: class.notFound
+			count: 1
+			path: src/Policies/ResourcePolicy.php
+
+		-
+			message: '#^Parameter \$resource of method Aura\\Base\\Policies\\ResourcePolicy\:\:restore\(\) has invalid type App\\Models\\Post\.$#'
+			identifier: class.notFound
+			count: 1
+			path: src/Policies/ResourcePolicy.php
+
+		-
+			message: '#^Parameter \$resource of method Aura\\Base\\Policies\\ResourcePolicy\:\:update\(\) has invalid type App\\Models\\Post\.$#'
+			identifier: class.notFound
+			count: 1
+			path: src/Policies/ResourcePolicy.php
+
+		-
+			message: '#^Parameter \$resource of method Aura\\Base\\Policies\\ResourcePolicy\:\:view\(\) has invalid type App\\Models\\Post\.$#'
+			identifier: class.notFound
+			count: 1
+			path: src/Policies/ResourcePolicy.php
+
+		-
+			message: '#^Method Aura\\Base\\Policies\\TaxonomyPolicy\:\:create\(\) should return bool\|Illuminate\\Auth\\Access\\Response but return statement is missing\.$#'
+			identifier: return.missing
+			count: 1
+			path: src/Policies/TaxonomyPolicy.php
+
+		-
+			message: '#^Method Aura\\Base\\Policies\\TaxonomyPolicy\:\:delete\(\) should return bool\|Illuminate\\Auth\\Access\\Response but return statement is missing\.$#'
+			identifier: return.missing
+			count: 1
+			path: src/Policies/TaxonomyPolicy.php
+
+		-
+			message: '#^Method Aura\\Base\\Policies\\TaxonomyPolicy\:\:forceDelete\(\) should return bool\|Illuminate\\Auth\\Access\\Response but return statement is missing\.$#'
+			identifier: return.missing
+			count: 1
+			path: src/Policies/TaxonomyPolicy.php
+
+		-
+			message: '#^Method Aura\\Base\\Policies\\TaxonomyPolicy\:\:restore\(\) should return bool\|Illuminate\\Auth\\Access\\Response but return statement is missing\.$#'
+			identifier: return.missing
+			count: 1
+			path: src/Policies/TaxonomyPolicy.php
+
+		-
+			message: '#^Method Aura\\Base\\Policies\\TaxonomyPolicy\:\:update\(\) should return bool\|Illuminate\\Auth\\Access\\Response but return statement is missing\.$#'
+			identifier: return.missing
+			count: 1
+			path: src/Policies/TaxonomyPolicy.php
+
+		-
+			message: '#^Method Aura\\Base\\Policies\\TaxonomyPolicy\:\:view\(\) should return bool\|Illuminate\\Auth\\Access\\Response but return statement is missing\.$#'
+			identifier: return.missing
+			count: 1
+			path: src/Policies/TaxonomyPolicy.php
+
+		-
+			message: '#^Method Aura\\Base\\Policies\\TaxonomyPolicy\:\:viewAny\(\) should return bool\|Illuminate\\Auth\\Access\\Response but return statement is missing\.$#'
+			identifier: return.missing
+			count: 1
+			path: src/Policies/TaxonomyPolicy.php
+
+		-
+			message: '#^Parameter \$taxonomy of method Aura\\Base\\Policies\\TaxonomyPolicy\:\:delete\(\) has invalid type Aura\\Base\\Models\\Taxonomy\.$#'
+			identifier: class.notFound
+			count: 1
+			path: src/Policies/TaxonomyPolicy.php
+
+		-
+			message: '#^Parameter \$taxonomy of method Aura\\Base\\Policies\\TaxonomyPolicy\:\:forceDelete\(\) has invalid type Aura\\Base\\Models\\Taxonomy\.$#'
+			identifier: class.notFound
+			count: 1
+			path: src/Policies/TaxonomyPolicy.php
+
+		-
+			message: '#^Parameter \$taxonomy of method Aura\\Base\\Policies\\TaxonomyPolicy\:\:restore\(\) has invalid type Aura\\Base\\Models\\Taxonomy\.$#'
+			identifier: class.notFound
+			count: 1
+			path: src/Policies/TaxonomyPolicy.php
+
+		-
+			message: '#^Parameter \$taxonomy of method Aura\\Base\\Policies\\TaxonomyPolicy\:\:update\(\) has invalid type Aura\\Base\\Models\\Taxonomy\.$#'
+			identifier: class.notFound
+			count: 1
+			path: src/Policies/TaxonomyPolicy.php
+
+		-
+			message: '#^Parameter \$taxonomy of method Aura\\Base\\Policies\\TaxonomyPolicy\:\:view\(\) has invalid type Aura\\Base\\Models\\Taxonomy\.$#'
+			identifier: class.notFound
+			count: 1
+			path: src/Policies/TaxonomyPolicy.php
+
+		-
+			message: '#^Call to an undefined method Illuminate\\Foundation\\Auth\\User\:\:isSuperAdmin\(\)\.$#'
+			identifier: method.notFound
+			count: 2
+			path: src/Providers/AppServiceProvider.php
+
+		-
+			message: '#^PHPDoc tag @var above a method has no effect\.$#'
+			identifier: varTag.misplaced
+			count: 1
+			path: src/Providers/RouteServiceProvider.php
+
+		-
+			message: '#^Access to an undefined property Aura\\Base\\Resource\:\:\$meta\.$#'
+			identifier: property.notFound
+			count: 3
+			path: src/Resource.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Foundation\\Auth\\User\:\:\$current_team_id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Resource.php
+
+		-
+			message: '#^Method Aura\\Base\\Resource\:\:usesMeta\(\) should return string but returns bool\.$#'
+			identifier: return.type
+			count: 1
+			path: src/Resource.php
+
+		-
+			message: '#^PHPDoc tag @param references unknown parameter\: \$key$#'
+			identifier: parameter.notFound
+			count: 1
+			path: src/Resource.php
+
+		-
+			message: '#^PHPDoc tag @return with type mixed is not subtype of native type bool\.$#'
+			identifier: return.phpDocType
+			count: 1
+			path: src/Resource.php
+
+		-
+			message: '#^Access to an undefined property Aura\\Base\\Resources\\Attachment\:\:\$mime_type\.$#'
+			identifier: property.notFound
+			count: 3
+			path: src/Resources/Attachment.php
+
+		-
+			message: '#^Access to an undefined property Aura\\Base\\Resources\\Attachment\:\:\$size\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Resources/Attachment.php
+
+		-
+			message: '#^Access to an undefined property Aura\\Base\\Resources\\Attachment\:\:\$thumbnail_url\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Resources/Attachment.php
+
+		-
+			message: '#^Access to an undefined property Aura\\Base\\Resources\\Attachment\:\:\$url\.$#'
+			identifier: property.notFound
+			count: 5
+			path: src/Resources/Attachment.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Foundation\\Auth\\User\:\:\$current_team_id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Resources/Option.php
+
+		-
+			message: '#^Non\-static access to static property Aura\\Base\\Resource\:\:\$name\.$#'
+			identifier: staticProperty.nonStaticAccess
+			count: 1
+			path: src/Resources/Role.php
+
+		-
+			message: '#^Non\-static access to static property Aura\\Base\\Resource\:\:\$title\.$#'
+			identifier: staticProperty.nonStaticAccess
+			count: 1
+			path: src/Resources/Role.php
+
+		-
+			message: '#^Non\-static access to static property Aura\\Base\\Resource\:\:\$title\.$#'
+			identifier: staticProperty.nonStaticAccess
+			count: 1
+			path: src/Resources/Tag.php
+
+		-
+			message: '#^Access to an undefined property Aura\\Base\\Resources\\Option\:\:\$value\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Resources/Team.php
+
+		-
+			message: '#^Access to an undefined property Aura\\Base\\Resources\\User\:\:\$current_team_id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Resources/Team.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model&object\{pivot\: Illuminate\\Database\\Eloquent\\Relations\\Pivot\}\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Resources/Team.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Foundation\\Auth\\User\:\:\$current_team_id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Resources/Team.php
+
+		-
+			message: '#^Call to an undefined method Illuminate\\Foundation\\Auth\\User\:\:isAuraGlobalAdmin\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: src/Resources/Team.php
+
+		-
+			message: '#^Call to an undefined static method Aura\\Base\\Resources\\Option\:\:whereName\(\)\.$#'
+			identifier: staticMethod.notFound
+			count: 2
+			path: src/Resources/Team.php
+
+		-
+			message: '#^Non\-static access to static property Aura\\Base\\Resource\:\:\$name\.$#'
+			identifier: staticProperty.nonStaticAccess
+			count: 2
+			path: src/Resources/Team.php
+
+		-
+			message: '#^Access to an undefined property Aura\\Base\\Resources\\Option\:\:\$value\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Resources/User.php
+
+		-
+			message: '#^Access to an undefined property Aura\\Base\\Resources\\User\:\:\$current_team_id\.$#'
+			identifier: property.notFound
+			count: 3
+			path: src/Resources/User.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model&object\{pivot\: Illuminate\\Database\\Eloquent\\Relations\\Pivot\}\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Resources/User.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 2
+			path: src/Resources/User.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Foundation\\Auth\\User\:\:\$current_team_id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Resources/User.php
+
+		-
+			message: '#^Call to an undefined method Illuminate\\Foundation\\Auth\\User\:\:isAuraGlobalAdmin\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: src/Resources/User.php
+
+		-
+			message: '#^Call to an undefined static method Aura\\Base\\Resources\\Option\:\:whereName\(\)\.$#'
+			identifier: staticMethod.notFound
+			count: 6
+			path: src/Resources/User.php
+
+		-
+			message: '#^Method Aura\\Base\\Resources\\User\:\:currentTeam\(\) should return Illuminate\\Database\\Eloquent\\Relations\\BelongsTo but empty return statement found\.$#'
+			identifier: return.empty
+			count: 1
+			path: src/Resources/User.php
+
+		-
+			message: '#^Non\-static access to static property Aura\\Base\\Resource\:\:\$name\.$#'
+			identifier: staticProperty.nonStaticAccess
+			count: 3
+			path: src/Resources/User.php
+
+		-
+			message: '#^PHPDoc type array of property Aura\\Base\\Resources\\User\:\:\$casts is not covariant with PHPDoc type array\<string, string\> of overridden property Illuminate\\Database\\Eloquent\\Model\:\:\$casts\.$#'
+			identifier: property.phpDocType
+			count: 1
+			path: src/Resources/User.php
+
+		-
+			message: '#^PHPDoc type array of property Aura\\Base\\Resources\\User\:\:\$hidden is not covariant with PHPDoc type list\<string\> of overridden property Aura\\Base\\Resource\:\:\$hidden\.$#'
+			identifier: property.phpDocType
+			count: 1
+			path: src/Resources/User.php
+
+		-
+			message: '#^PHPDoc type array\<string\> of property Aura\\Base\\Resources\\User\:\:\$fillable is not covariant with PHPDoc type list\<string\> of overridden property Aura\\Base\\Resource\:\:\$fillable\.$#'
+			identifier: property.phpDocType
+			count: 1
+			path: src/Resources/User.php
+
+		-
+			message: '#^Method Illuminate\\Filesystem\\FilesystemAdapter\:\:makeDirectory\(\) invoked with 3 parameters, 1 required\.$#'
+			identifier: arguments.count
+			count: 1
+			path: src/Services/ThumbnailGenerator.php
+
+		-
+			message: '#^Access to an undefined property Aura\\Base\\Widgets\\Donut\:\:\$cacheDuration\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Widgets/Donut.php
+
+		-
+			message: '#^Access to an undefined property Aura\\Base\\Widgets\\Pie\:\:\$cacheDuration\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Widgets/Pie.php
+
+		-
+			message: '#^Access to an undefined property Aura\\Base\\Widgets\\ValueWidget\:\:\$cacheDuration\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Widgets/ValueWidget.php

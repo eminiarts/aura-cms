@@ -5,6 +5,9 @@ on:
     paths:
       - '**.php'
       - 'phpstan.neon.dist'
+      - 'phpstan-baseline.neon'
+  pull_request:
+    branches: [main, develop]
 
 jobs:
   phpstan:
@@ -16,11 +19,13 @@ jobs:
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
-          php-version: '8.1'
+          php-version: '8.2'
           coverage: none
 
       - name: Install composer dependencies
         uses: ramsey/composer-install@v3
 
+      # The committed phpstan-baseline.neon absorbs pre-existing errors,
+      # so a non-zero exit here means NEW errors were introduced (PROC-05).
       - name: Run PHPStan
         run: ./vendor/bin/phpstan --error-format=github

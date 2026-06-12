@@ -10,7 +10,10 @@ parameters:
     tmpDir: build/phpstan
     checkOctaneCompatibility: true
     checkModelProperties: true
+    # The baseline absorbs the current errors so CI fails only on NEW ones.
+    # Baselined ignore patterns may stop matching as code changes; don't fail on that.
+    reportUnmatchedIgnoredErrors: false
     ignoreErrors:
-        - 
+        -
             identifier: 'missingType.iterableValue'
 

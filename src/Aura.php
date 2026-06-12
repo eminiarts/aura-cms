@@ -397,6 +397,19 @@ class Aura
         $this->widgets = array_merge($this->widgets, $widgets);
     }
 
+    /**
+     * Reset mutable static state to its defaults.
+     *
+     * The test suite rebinds the Aura singleton after every test, which clears
+     * instance state ($resources, $fields, …). Static state such as $userModel
+     * survives that rebind, so it is reset explicitly here to prevent a test
+     * that swaps the user model from leaking into later tests in the same worker.
+     */
+    public static function reset(): void
+    {
+        static::$userModel = User::class;
+    }
+
     public function scripts()
     {
         return view('aura::components.layout.scripts');

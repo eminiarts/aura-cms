@@ -24,7 +24,9 @@ uses(DatabaseMigrations::class)->in('FeatureWithDatabaseMigrations');
 
 // Reset Aura facade after each test to prevent pollution
 uses()->afterEach(function () {
-    // Reset the Aura facade to its original state by rebinding the service
+    // Reset the Aura facade to its original state by rebinding the service.
+    // Rebinding clears instance state; reset() also clears mutable static state.
+    Aura\Base\Aura::reset();
     app()->forgetInstance(Aura\Base\Aura::class);
     app()->singleton(Aura\Base\Aura::class);
     Aura\Base\Facades\Aura::clearResolvedInstances();
