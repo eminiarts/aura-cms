@@ -8,12 +8,16 @@ on:
 
 jobs:
   test:
+    # PHP 8.3, not 8.2: the test harness needs pest-plugin-livewire v4
+    # (PHP ^8.3), which is what pulls in Livewire 4 — the stack local
+    # development runs and PR-5 commits to. On 8.2 the resolver falls back
+    # to Livewire 3 and the suite hits the LW-01..04 version mismatches.
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: true
       matrix:
         os: [ubuntu-latest]
-        php: [8.2]
+        php: [8.3]
         stability: [prefer-stable]
 
     name: P${{ matrix.php }} - ${{ matrix.stability }} - ${{ matrix.os }}
@@ -48,7 +52,7 @@ jobs:
   test-parallel:
     runs-on: ubuntu-latest
 
-    name: parallel - P8.2 - prefer-stable
+    name: parallel - P8.3 - prefer-stable
 
     steps:
       - name: Checkout code
@@ -57,7 +61,7 @@ jobs:
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
-          php-version: 8.2
+          php-version: 8.3
           extensions: dom, curl, libxml, mbstring, zip, pcntl, pdo, sqlite, pdo_sqlite, bcmath, soap, intl, gd, exif, iconv, imagick, fileinfo
           coverage: none
 
@@ -110,4 +114,4 @@ jobs:
           composer update --prefer-stable --prefer-dist --no-interaction
 
       - name: Show resolved versions
-        run: composer show laravel/framework orchestra/testbench livewire/livewire
+        run: composer show --direct | grep -E "laravel/framework|orchestra/testbench|livewire/livewire"

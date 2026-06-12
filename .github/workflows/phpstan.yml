@@ -18,10 +18,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # PHP 8.3 so the resolver picks Livewire 4 (via pest-plugin-livewire v4),
+      # matching local development and the committed baseline. On 8.2 it
+      # resolves Livewire 3 and analysis fails on Livewire-4-only APIs.
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
-          php-version: '8.2'
+          php-version: '8.3'
           coverage: none
 
       - name: Install composer dependencies
