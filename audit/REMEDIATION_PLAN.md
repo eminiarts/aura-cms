@@ -55,17 +55,17 @@ PR-1 is the gate for **both** tracks. Until CI runs the parallel suite and a fre
 ## PR-1 — Make CI trustworthy  `PROC-01..05`
 - **Branch:** `fix/ci-trust`
 - **Goal:** CI green must mean the suite actually passes the way developers run it, on a fresh install.
-- **Changes:**
-  1. Add a **parallel test job** mirroring `composer test` (`pest --parallel`) to `run-tests.yml`, alongside the serial run.
-  2. Add a **fresh-install job**: clean `composer install` on the matrix (PHP 8.2/8.3 × Laravel 10/11/12) — would have caught `PROC-02` (the months-long unsatisfiable `composer.json` on `main`).
-  3. Fix the parallel-flakiness root: generated migrations were written into the **shared** testbench skeleton `database/migrations`, which every worker's `RefreshDatabase` scans — so one worker required a file another was mid-create/delete on (`FileNotFoundException`). Fix: isolate the database path **per ParaTest worker** via `TEST_TOKEN` in `tests/TestCase.php`.
+- **Changes (as landed):**
+  1. Add a **parallel test job** mirroring `composer test` (`pest --parallel`) to `run-tests.yml`, alongside the serial run; workflows also trigger on `develop` (remediation PRs target it — previously CI didn't run on them at all).
+  2. Add a **fresh-install job**: clean dependency resolve on the matrix (PHP 8.2/8.3 × Laravel **11/12**) — would have caught `PROC-02`. *Deviation from plan: Laravel 10 dropped from the matrix because `laravel/sanctum ^4.0` in `require` makes a Laravel 10 install unsatisfiable today; the `^10.0` in require-dev is dead. Decide in PR-10: drop the L10 claim or fix constraints.*
+  3. Fix the parallel-flakiness root. The migrations-path fix from the draft plan turned out to be one instance of a wider class: workers shared the whole testbench skeleton and also raced on `app/Aura/Resources` (generator-test cleanup vs. every boot's `Aura::getAppResources()` Finder scan → random `DirectoryNotFoundException`), published assets, compiled Blade views, `routes/`, and the skeleton `composer.json`. Landed fix: each ParaTest worker boots from its **own throwaway copy of the skeleton** (`TestCase::applicationBasePath()` keyed by `UNIQUE_TEST_TOKEN`). Narrower `useAppPath()`/`usePublicPath()` overrides break `Application::getNamespace()`. Serial runs keep the shared skeleton.
   4. Add explicit `Aura::reset()` for mutable static state (`$userModel`) and call it in `tests/Pest.php` afterEach (the rebind already clears instance state).
-  5. Gate **dependabot auto-merge** on required status checks (`PROC-04`).
-  6. PHPStan (`PROC-05`): commit a baseline of the current 361 errors so CI fails on **new** errors; flip the workflow to fail on non-baseline findings. Burning down the baseline is later, per-area.
-- **Tests/validation:** the new CI jobs; locally, `pest --parallel` green across ≥3 consecutive runs (remaining failures are only the out-of-scope deterministic ones owned by PR-5/PR-6).
+  5. Gate **dependabot auto-merge** on required status checks (`PROC-04`): branch protection on `main` now requires the serial test check (none existed — auto-merge was unconditional). After PR-1 merges, also require the new parallel check.
+  6. PHPStan (`PROC-05`): commit a baseline of the current errors so CI fails on **new** errors; workflow bumped to PHP 8.2 (8.1 couldn't resolve deps, so the job was permanently red/ignored) and runs on PRs. Burning down the baseline is later, per-area.
+- **Tests/validation:** 8 consecutive `pest --parallel` full-suite runs with only the 3 known deterministic failures owned by PR-5/PR-6.
 - **Risk:** medium (CI config + test-support); no production runtime paths touched.
 - **Depends on:** PR-0.
-- **State:** 🚧 in progress (flakiness fix + baseline validated locally; CI YAML + dependabot gate remaining).
+- **State:** ✅ open as PR #23.
 
 ---
 
@@ -82,7 +82,7 @@ PR-1 is the gate for **both** tracks. Until CI runs the parallel suite and a fre
 ## PR-6 — Auth-model clarity + cross-team isolation suite  `PROC-06, PROC-08, PROC-09`
 - **Branch:** `test/team-isolation-and-authz`
 - **Goal:** define what "super admin" vs "global admin" means, then prove tenant isolation with tests.
-- **Changes:** reconcile `ResourcePolicy::isSuperAdmin()` vs `TeamPolicy`'s `AuraGlobalAdmin` gate; rename/clarify `createSuperAdmin()` (add `createGlobalAdmin()` if needed); fix the failing `CreateTeamTest` to assert the now-correct model.
+- **Changes:** reconcile `ResourcePolicy::isSuperAdmin()` vs `TeamPolicy`'s `AuraGlobalAdmin` gate; rename/clarify `createSuperAdmin()` (add `createGlobalAdmin()` if needed); fix the failing `CreateTeamTest` to assert the now-correct model. Also in scope (found during PR-1): `createSuperAdmin()` creates a Team unconditionally, so the `phpunit-without-teams.xml` suite fails on `MakeResourceCommandTest` with "no such table: teams" — pre-existing on `develop`, same helper confusion.
 - **Tests:** dedicated `TeamScopeTest` — users/posts/roles in team A invisible from team B across query, search, table, API. This suite is also the regression net for security **PR-3** (tenant cache) and **PR-4** (authorization).
 - **Risk:** low-medium (may surface more authz gaps — good; feed any into the security track).
 - **Depends on:** PR-1. Cross-references security PR-3/PR-4.
@@ -126,7 +126,7 @@ Tracked in `FINDINGS.md §6` for the maintainer: bus factor, monetization, publi
 | PR | Branch | Findings | State |
 |----|--------|----------|-------|
 | PR-0 | `audit/remediation` | docs | ✅ PR #22 open |
-| PR-1 | `fix/ci-trust` | PROC-01..05 | 🚧 in progress |
+| PR-1 | `fix/ci-trust` | PROC-01..05 | ✅ PR #23 open |
 | PR-5 | `fix/livewire-4` | LW-01..04 | not started |
 | PR-6 | `test/team-isolation-and-authz` | PROC-06,08,09 | not started |
 | PR-9 | `perf/eav-search-and-writes` | PERF-01..07 | not started |
