@@ -43,8 +43,11 @@ jobs:
           composer require "laravel/framework:11.*" "orchestra/testbench:^9.0" --no-interaction --no-update
           composer update --${{ matrix.stability }} --prefer-dist --no-interaction
 
+      # --no-coverage: phpunit.xml.dist configures coverage reports, and
+      # pest aborts (exit 1, zero tests) when they're requested without a
+      # coverage driver. setup-php installs none (coverage: none).
       - name: Execute tests
-        run: vendor/bin/pest
+        run: vendor/bin/pest --no-coverage
 
   # Mirrors how developers actually run the suite (`composer test`).
   # A serial-only CI run hides parallel-specific failures such as shared
