@@ -148,30 +148,33 @@ class Team extends Resource
                     'class' => '!p-4',
                 ],
             ],
-            // [
-            //     'name' => 'Invitations',
-            //     'slug' => 'tab-Invitations',
-            //     'type' => 'Aura\\Base\\Fields\\Tab',
-            //     'global' => true,
-            //     'validation' => '',
-            //     'conditional_logic' => [],
-            //     'on_create' => false,
-            // ],
-            // [
-            //     'name' => 'Invitations',
-            //     'slug' => 'Invitations',
-            //     'type' => 'Aura\\Base\\Fields\\HasMany',
-            //     'resource' => 'Aura\\Base\\Resources\\TeamInvitation',
-            //     'validation' => '',
-            //     'conditional_logic' => [],
-            //     'on_index' => false,
-            //     'on_forms' => true,
-            //     'on_view' => true,
-            //     'style' => [
-            //         'width' => '100',
-            //         'class' => '!p-4',
-            //     ],
-            // ],
+            [
+                'name' => 'Invitations',
+                'slug' => 'tab-invitations',
+                'type' => 'Aura\\Base\\Fields\\Tab',
+                'global' => true,
+                'validation' => '',
+                'conditional_logic' => [],
+                'on_create' => false,
+            ],
+            [
+                'name' => 'Invitations',
+                'slug' => 'invitations',
+                'type' => 'Aura\\Base\\Fields\\HasMany',
+                'resource' => 'Aura\\Base\\Resources\\TeamInvitation',
+                'validation' => '',
+                'conditional_logic' => [],
+                'relation' => function ($query, $model) {
+                    return $query->withoutGlobalScopes()->where('team_id', $model->id);
+                },
+                'on_index' => false,
+                'on_forms' => true,
+                'on_view' => true,
+                'style' => [
+                    'width' => '100',
+                    'class' => '!p-4',
+                ],
+            ],
         ];
     }
 

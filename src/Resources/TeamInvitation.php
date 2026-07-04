@@ -25,7 +25,7 @@ class TeamInvitation extends Resource
 
     protected static bool $showInNavigation = true;
 
-    public static function getFields()
+    public static function getFields(): array
     {
         return [
             [
@@ -44,7 +44,7 @@ class TeamInvitation extends Resource
                 'slug' => 'role',
                 'type' => 'Aura\\Base\\Fields\\Text',
                 'validation' => 'required',
-                'on_index' => false,
+                'on_index' => true,
                 'style' => [
                     'width' => '100',
                 ],
@@ -52,22 +52,25 @@ class TeamInvitation extends Resource
         ];
     }
 
-    public function getIcon()
+    public function getIcon(): string
     {
         return view('aura::components.icon.team-invitation')->render();
     }
 
-    public function singularName()
+    public static function getShowInNavigation(): bool
+    {
+        return config('aura.teams') && static::$showInNavigation;
+    }
+
+    public function singularName(): string
     {
         return 'Team Invitation';
     }
 
     /**
      * Get the team that the invitation belongs to.
-     *
-     * @return BelongsTo
      */
-    public function team()
+    public function team(): BelongsTo
     {
         return $this->belongsTo(Team::class);
     }

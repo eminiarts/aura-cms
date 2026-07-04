@@ -7,6 +7,10 @@ use Aura\Base\Resources\User;
 use Illuminate\Support\Facades\Gate;
 
 beforeEach(function () {
+    if (! config('aura.teams')) {
+        $this->markTestSkipped('Team policy tests require teams enabled.');
+    }
+
     // Define the AuraGlobalAdmin gate in the test
     Gate::define('AuraGlobalAdmin', function (User $user) {
         return in_array($user->email, [

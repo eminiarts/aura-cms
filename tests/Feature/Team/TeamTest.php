@@ -12,6 +12,10 @@ use Illuminate\Support\Facades\DB;
 use function Pest\Livewire\livewire;
 
 beforeEach(function () {
+    if (! config('aura.teams')) {
+        $this->markTestSkipped('Team tests require teams enabled.');
+    }
+
     $this->actingAs($this->user = createSuperAdmin());
 });
 
@@ -216,14 +220,18 @@ describe('Team Resource View', function () {
         expect($component->viewFields)->toBeArray();
 
         // Check tab structure
-        expect($component->viewFields[0]['fields'])->toHaveCount(2);
+        expect($component->viewFields[0]['fields'])->toHaveCount(3);
         expect($component->viewFields[0]['fields'][0]['name'])->toBe('Team');
         expect($component->viewFields[0]['fields'][1]['name'])->toBe('Users');
+        expect($component->viewFields[0]['fields'][2]['name'])->toBe('Invitations');
 
         // Check HasMany field configuration
         expect($component->viewFields[0]['fields'][1]['fields'][0]['type'])->toBe('Aura\Base\Fields\HasMany');
         expect($component->viewFields[0]['fields'][1]['fields'][0]['name'])->toBe('Users');
         expect($component->viewFields[0]['fields'][1]['fields'][0]['resource'])->toBe('Aura\Base\Resources\User');
+        expect($component->viewFields[0]['fields'][2]['fields'][0]['type'])->toBe('Aura\Base\Fields\HasMany');
+        expect($component->viewFields[0]['fields'][2]['fields'][0]['name'])->toBe('Invitations');
+        expect($component->viewFields[0]['fields'][2]['fields'][0]['resource'])->toBe('Aura\Base\Resources\TeamInvitation');
     });
 });
 

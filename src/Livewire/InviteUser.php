@@ -40,7 +40,7 @@ class InviteUser extends Component
                 'type' => 'Aura\\Base\\Fields\\Select',
                 'validation' => 'required',
                 'slug' => 'role',
-                'options' => Role::get()->pluck('name', 'id')->toArray(),
+                'options' => config('aura.teams') ? Role::get()->pluck('name', 'id')->toArray() : [],
                 'style' => [
                     'width' => '50',
                 ],
@@ -55,13 +55,22 @@ class InviteUser extends Component
         return $this->fieldsForView($fields);
     }
 
+    public function mount(): void
+    {
+        abort_unless(config('aura.teams'), 404);
+    }
+
     public function render()
     {
+        abort_unless(config('aura.teams'), 404);
+
         return view('aura::livewire.user.invite-user');
     }
 
     public function rules()
     {
+        abort_unless(config('aura.teams'), 404);
+
         $rules = Arr::dot([
             'form.fields' => $this->validationRules(),
 
@@ -71,6 +80,12 @@ class InviteUser extends Component
             'required', 'email',
             function ($attribute, $value, $fail) {
                 $team = auth()->user()->currentTeam;
+
+                if (! $team) {
+                    $fail('Teams are disabled.');
+
+                    return;
+                }
 
                 if ($team->users()->where('email', $value)->exists()) {
                     $fail('User already exists.');
@@ -87,9 +102,13 @@ class InviteUser extends Component
 
     public function save()
     {
+        abort_unless(config('aura.teams'), 404);
+
         $this->validate();
 
         $team = auth()->user()->currentTeam;
+
+        abort_unless($team, 404);
 
         $this->authorize('invite-users', $team);
 

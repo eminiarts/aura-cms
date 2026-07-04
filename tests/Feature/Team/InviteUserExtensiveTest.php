@@ -20,6 +20,10 @@ use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 uses(RefreshDatabase::class);
 
 beforeEach(function () {
+    if (! config('aura.teams')) {
+        $this->markTestSkipped('Team invitation tests require teams enabled.');
+    }
+
     $this->actingAs($this->user = createSuperAdmin());
     config(['aura.teams' => true]);
     config(['aura.auth.user_invitations' => true]);

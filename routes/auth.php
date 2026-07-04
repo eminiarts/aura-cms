@@ -88,6 +88,11 @@ Route::middleware('auth')->name('aura.')->group(function () {
 
     Route::get('/team-invitations/{invitation}', [TeamInvitationController::class, 'accept'])->middleware(['signed'])->name('team-invitations.accept');
 
+    if (config('aura.teams')) {
+        Route::delete('/teams/{team}/team-invitations/{invitation}', [TeamInvitationController::class, 'destroy'])->middleware('can:invite-users,team')->name('team-invitations.destroy');
+        Route::post('/teams/{team}/team-invitations/{invitation}/resend', [TeamInvitationController::class, 'resend'])->middleware('can:invite-users,team')->name('team-invitations.resend');
+    }
+
     if (config('aura.auth.2fa')) {
         $twoFactorMiddleware = ['auth:web', 'password.confirm'];
 

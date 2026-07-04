@@ -15,6 +15,10 @@ use function Pest\Livewire\livewire;
 uses(RefreshDatabase::class);
 
 beforeEach(function () {
+    if (! config('aura.teams')) {
+        $this->markTestSkipped('Team invitation tests require teams enabled.');
+    }
+
     $this->withoutExceptionHandling();
     $this->actingAs($this->user = createSuperAdmin());
     config(['aura.teams' => true]);
@@ -124,9 +128,7 @@ describe('User Invitation Registration', function () {
         $this->assertAuthenticated();
         $response->assertRedirect(config('aura.auth.redirect'));
 
-        $this->assertDatabaseMissing('team_invitations', [
-            'email' => 'invitee@test.ch',
-        ]);
+        expect(TeamInvitation::withoutGlobalScopes()->whereMeta('email', 'invitee@test.ch')->exists())->toBeFalse();
 
         $user = User::where('email', 'invitee@test.ch')->first();
 
@@ -177,7 +179,7 @@ describe('User Invitation Registration', function () {
 
         expect($user->roles->first()->id)->toEqual($invitation->role);
 
-        $this->assertDatabaseMissing('team_invitations', ['id' => $invitation->id]);
+        expect(TeamInvitation::withoutGlobalScopes()->whereKey($invitation->id)->exists())->toBeFalse();
     });
 });
 

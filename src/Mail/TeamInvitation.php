@@ -7,6 +7,7 @@ use Aura\Base\Resources\User;
 use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\URL;
 
 class TeamInvitation extends Mailable
@@ -16,16 +17,11 @@ class TeamInvitation extends Mailable
 
     /**
      * The team invitation instance.
-     *
-     * @var \Laravel\Jetstream\TeamInvitation
      */
     public $invitation;
 
     /**
      * Create a new message instance.
-     *
-     * @param  \Laravel\Jetstream\TeamInvitation  $invitation
-     * @return void
      */
     public function __construct(TeamInvitationResource $invitation)
     {
@@ -40,13 +36,18 @@ class TeamInvitation extends Mailable
     public function build()
     {
         return $this->markdown('aura::emails.team-invitation', [
-            'registerUrl' => URL::signedRoute('aura.invitation.register', [
+            'registerUrl' => URL::temporarySignedRoute('aura.invitation.register', $this->expiresAt(), [
                 'team' => $this->invitation->team,
                 'teamInvitation' => $this->invitation,
             ]),
-            'userExists' => User::where('email', $this->invitation->email)->exists(),
-            'acceptUrl' => URL::signedRoute('aura.team-invitations.accept', ['invitation' => $this->invitation]),
+            'userExists' => User::withoutGlobalScopes()->where('email', $this->invitation->email)->exists(),
+            'acceptUrl' => URL::temporarySignedRoute('aura.team-invitations.accept', $this->expiresAt(), ['invitation' => $this->invitation]),
         ])
             ->subject(__('You have been invited to join the :team team!', ['team' => $this->invitation->team->name]));
+    }
+
+    protected function expiresAt(): Carbon
+    {
+        return now()->addDays((int) config('aura.auth.invitation_expiry', 7));
     }
 }

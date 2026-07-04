@@ -2,61 +2,90 @@
 
 namespace Aura\Base\Http\Controllers\Auth;
 
+use Aura\Base\Mail\TeamInvitation as TeamInvitationMail;
+use Aura\Base\Resources\Role;
+use Aura\Base\Resources\Team;
 use Aura\Base\Resources\TeamInvitation;
-use Illuminate\Auth\Access\AuthorizationException;
+use Aura\Base\Resources\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
-use Illuminate\Support\Facades\Gate;
-use Laravel\Jetstream\Contracts\AddsTeamMembers;
-use Laravel\Jetstream\Jetstream;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Mail;
 
 class TeamInvitationController extends Controller
 {
     /**
      * Accept a team invitation.
-     *
-     * @param  int  $invitationId
-     * @return RedirectResponse
      */
-    public function accept(Request $request, $invitationId)
+    public function accept(Request $request, string|int $invitation): RedirectResponse
     {
-        $model = new TeamInvitation;
+        abort_unless(config('aura.teams'), 404);
 
-        $invitation = $model::whereKey($invitationId)->firstOrFail();
+        $invitation = TeamInvitation::withoutGlobalScopes()->findOrFail($invitation);
+        $team = Team::withoutGlobalScopes()->findOrFail($invitation->team_id);
+        $userId = $request->user()->getAuthIdentifier();
 
-        app(AddsTeamMembers::class)->add(
-            $invitation->team->owner,
-            $invitation->team,
-            $invitation->email,
-            $invitation->role
-        );
+        abort_unless(is_int($userId) || is_string($userId), 403);
+
+        $user = User::withoutGlobalScopes()->whereKey($userId)->firstOrFail();
+        $userEmail = $user->getAttribute('email');
+
+        abort_unless(is_string($userEmail) && strcasecmp($userEmail, $invitation->email) === 0, 403);
+
+        if (! $user->teams()->whereKey($team->id)->exists()) {
+            $role = Role::withoutGlobalScopes()
+                ->whereKey($invitation->role)
+                ->where('team_id', $team->id)
+                ->firstOrFail();
+
+            $user->roles()->attach($role->id, ['team_id' => $team->id]);
+            Cache::forget('user.'.$user->id.'.teams');
+            $user->unsetRelation('teams');
+        }
+
+        $user->switchTeam($team);
 
         $invitation->delete();
 
-        return redirect(config('fortify.home'))->banner(
-            __('Great! You have accepted the invitation to join the :team team.', ['team' => $invitation->team->name]),
-        );
+        return redirect()
+            ->route('aura.dashboard')
+            ->with('status', __('Great! You have accepted the invitation to join the :team team.', ['team' => $team->getAttribute('name')]));
     }
 
     /**
      * Cancel the given team invitation.
-     *
-     * @param  int  $invitationId
-     * @return RedirectResponse
      */
-    public function destroy(Request $request, $invitationId)
+    public function destroy(Request $request, Team $team, string|int $invitation): RedirectResponse
     {
-        $model = Jetstream::teamInvitationModel();
+        abort_unless(config('aura.teams'), 404);
 
-        $invitation = $model::whereKey($invitationId)->firstOrFail();
-
-        if (! Gate::forUser($request->user())->check('removeTeamMember', $invitation->team)) {
-            throw new AuthorizationException;
-        }
+        $invitation = $this->invitationForTeam($team, $invitation);
 
         $invitation->delete();
 
-        return back(303);
+        return back(303)->with('status', __('Team invitation revoked.'));
+    }
+
+    /**
+     * Resend the given team invitation.
+     */
+    public function resend(Request $request, Team $team, string|int $invitation): RedirectResponse
+    {
+        abort_unless(config('aura.teams'), 404);
+
+        $invitation = $this->invitationForTeam($team, $invitation);
+
+        Mail::to($invitation->email)->send(new TeamInvitationMail($invitation));
+
+        return back(303)->with('status', __('Team invitation resent.'));
+    }
+
+    protected function invitationForTeam(Team $team, string|int $invitation): TeamInvitation
+    {
+        return TeamInvitation::withoutGlobalScopes()
+            ->whereKey($invitation)
+            ->where('team_id', $team->id)
+            ->firstOrFail();
     }
 }

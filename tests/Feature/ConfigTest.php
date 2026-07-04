@@ -27,6 +27,7 @@ test('auth config has correct default values', function () {
         'redirect' => '/admin',
         '2fa' => true,
         'user_invitations' => true,
+        'invitation_expiry' => 7,
         'create_teams' => true,
     ]);
 });

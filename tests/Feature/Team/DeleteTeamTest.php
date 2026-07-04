@@ -13,6 +13,10 @@ use Illuminate\Support\Facades\Schema;
 use function Pest\Livewire\livewire;
 
 beforeEach(function () {
+    if (! config('aura.teams')) {
+        $this->markTestSkipped('Team tests require teams enabled.');
+    }
+
     $this->actingAs($this->user = createSuperAdmin());
 });
 
