@@ -156,6 +156,15 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
         Cache::forget($option);
     }
 
+    public static function clearCurrentTeamCache(string|int|null $userId): void
+    {
+        if (! $userId) {
+            return;
+        }
+
+        Cache::forget(static::currentTeamCacheKey($userId));
+    }
+
     // // Reset to default create Method from Laravel
     // public static function create($fields)
     // {
@@ -186,6 +195,11 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
         }
 
         return $this->belongsTo(config('aura.resources.team'), 'current_team_id');
+    }
+
+    public static function currentTeamCacheKey(string|int $userId): string
+    {
+        return "user_{$userId}_current_team_id";
     }
 
     public function deleteOption($option)
@@ -791,6 +805,12 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
     protected static function booted()
     {
         parent::booted();
+
+        static::saved(function ($user) {
+            if ($user->wasChanged('current_team_id')) {
+                static::clearCurrentTeamCache($user->id);
+            }
+        });
 
         // static::saving(function ($user) {
         //     // If we marked to prevent password update, remove it from attributes

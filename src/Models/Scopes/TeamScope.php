@@ -2,6 +2,7 @@
 
 namespace Aura\Base\Models\Scopes;
 
+use Aura\Base\Resources\User;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Scope;
@@ -100,13 +101,19 @@ class TeamScope implements Scope
         }
 
         $userId = Auth::id();
-        $cacheKey = "user_{$userId}_current_team_id";
+        $cacheKey = User::currentTeamCacheKey($userId);
 
-        // Cache the result indefinitely. Invalidation should happen when the user's team changes.
-        return Cache::rememberForever($cacheKey, function () use ($userId) {
-            // Direct database query to avoid triggering scopes
-            // Use value() for slightly better performance if only one column is needed
-            return DB::table('users')->where('id', $userId)->value('current_team_id');
-        });
+        if (Cache::has($cacheKey)) {
+            return Cache::get($cacheKey);
+        }
+
+        // Direct database query to avoid triggering scopes.
+        $currentTeamId = DB::table('users')->where('id', $userId)->value('current_team_id');
+
+        if ($currentTeamId !== null) {
+            Cache::forever($cacheKey, $currentTeamId);
+        }
+
+        return $currentTeamId;
     }
 }

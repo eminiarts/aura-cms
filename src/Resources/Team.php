@@ -311,14 +311,23 @@ class Team extends Resource
         });
 
         static::deleted(function ($team) {
+            $affectedMemberIds = $team->users()
+                ->withoutGlobalScopes()
+                ->pluck('users.id');
+
             // Get all users who had the deleted team as their current team
-            $users = User::where('current_team_id', $team->id)->get();
+            $users = User::withoutGlobalScopes()
+                ->where('current_team_id', $team->id)
+                ->get();
+            $reassignedUserIds = $users->pluck('id');
 
             // Loop through the users and update their current_team_id
             foreach ($users as $user) {
                 $firstTeam = $user->teams()->first();
                 $user->current_team_id = $firstTeam ? $firstTeam->id : null;
                 $user->save();
+
+                User::clearCurrentTeamCache($user->id);
             }
 
             // Delete all the team's roles
@@ -333,11 +342,16 @@ class Team extends Resource
             // Delete all the team's options
             Option::where('name', 'like', 'team.'.$team->id.'.%')->delete();
 
-            // Clear cache of Cache('user.'.$this->id.'.teams')
-            Cache::forget('user.'.auth()->user()->id.'.teams');
+            $reassignedUserIds->each(function ($userId) {
+                User::clearCurrentTeamCache($userId);
+            });
 
-            // Redirect to the dashboard
-            return redirect()->route('aura.dashboard');
+            $affectedMemberIds
+                ->merge($reassignedUserIds)
+                ->unique()
+                ->each(function ($userId) {
+                    Cache::forget('user.'.$userId.'.teams');
+                });
         });
 
     }
