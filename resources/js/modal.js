@@ -29,14 +29,10 @@ function handleRoot(el, Alpine) {
                     
                     (Alpine.bound(el, 'open') !== undefined) && Alpine.effect(() => {
                         this.__isOpenState = Alpine.bound(el, 'open')
-
-                        console.log('init modal here');
                     })
 
                     if (Alpine.bound(el, 'initial-focus') !== undefined) this.$watch('__isOpenState', () => {
                         if (!this.__isOpenState) return
-
-                        console.log('init modal here');
 
                         setTimeout(() => {
                             Alpine.bound(el, 'initial-focus').focus()

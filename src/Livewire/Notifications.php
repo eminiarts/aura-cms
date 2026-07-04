@@ -46,7 +46,7 @@ class Notifications extends Component
             [
                 'type' => 'Aura\\Base\\Fields\\View',
                 'name' => 'read',
-                'slug' => 'view-unread',
+                'slug' => 'view-read',
                 'view' => 'aura::livewire.notifications-read',
             ],
         ];
