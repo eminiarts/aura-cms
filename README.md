@@ -1,107 +1,110 @@
 ![Aura CMS](/resources/public/img/aura.png)
 
-# Aura CMS - The Modern CMS for Laravel Developers
+# Aura CMS
 
-> **Note**: Official documentation and launch will be available in the first week of January 2025. Stay tuned!
+**A content management system for Laravel developers.** Define your content types as PHP classes — Aura generates the admin panel around them: forms, tables, search, media, and permissions. Built on the TALL stack (Tailwind CSS, Alpine.js, Laravel, Livewire).
 
 ![Aura CMS Screenshot](/resources/public/img/screenshot.png)
 
 [![Latest Version on Packagist](https://img.shields.io/packagist/v/eminiarts/aura-cms.svg?style=flat-square)](https://packagist.org/packages/eminiarts/aura-cms)
-[![GitHub Tests Action Status](https://img.shields.io/github/workflow/status/eminiarts/aura-cms/run-tests?label=tests)](https://github.com/eminiarts/aura-cms/actions?query=workflow%3Arun-tests+branch%3Amain)
-[![GitHub Code Style Action Status](https://img.shields.io/github/workflow/status/eminiarts/aura-cms/Fix%20PHP%20code%20style%20issues?label=code%20style)](https://github.com/eminiarts/aura-cms/actions?query=workflow%3A"Fix+PHP+code+style+issues"+branch%3Amain)
+[![Tests](https://img.shields.io/github/actions/workflow/status/eminiarts/aura-cms/run-tests.yml?branch=main&label=tests&style=flat-square)](https://github.com/eminiarts/aura-cms/actions/workflows/run-tests.yml)
 [![Total Downloads](https://img.shields.io/packagist/dt/eminiarts/aura-cms.svg?style=flat-square)](https://packagist.org/packages/eminiarts/aura-cms)
+[![License](https://img.shields.io/badge/license-MIT-blue.svg?style=flat-square)](LICENSE.md)
 
-Aura CMS is a powerful, flexible content management system built on the TALL stack (Tailwind CSS, Alpine.js, Laravel, and Livewire). It combines the best practices of modern Laravel development with an intuitive admin interface, making it perfect for developers who want to build custom applications quickly without sacrificing flexibility.
+## How it works
 
-## ✨ Features
+A resource is an Eloquent model that declares its fields. This class is a complete, working content type:
 
-### 🎯 Core Features
-- **Resource System**: Similar to WordPress post types but supercharged with Laravel's Eloquent
-- **Dynamic Fields**: Powerful field system with 25+ customizable field types for building complex content structures
-- **Team Management**: Built-in multi-tenancy support (optional)
-- **Role-Based Access Control**: Comprehensive permissions system
-- **Media Management**: Built-in media library with image optimization
-- **Theme System**: Customizable themes with dark mode support
+```php
+<?php
 
-### 💡 Developer Experience
-- **Visual Resource Editor**: Build your resources and fields visually
-- **Custom Fields API**: Create your own field types
-- **Plugin System**: Extend functionality with custom plugins
-- **Flexible Storage**: Start with posts table, migrate to custom tables when ready
-- **TALL Stack**: Leverage the power of Tailwind, Alpine.js, Laravel, and Livewire
+namespace App\Aura\Resources;
 
-### 🚀 User Experience
-- **Global Search**: Quick navigation with keyboard shortcuts (⇧⌘K)
-- **Bookmarks**: Save frequently accessed pages
-- **Recent Pages**: Track last visited pages
-- **Customizable Tables**: Sort, filter, and save views
-- **Responsive Design**: Works seamlessly on all devices
+use Aura\Base\Resource;
 
-## 🛠 Installation
+class Article extends Resource
+{
+    public static string $type = 'Article';
+
+    public static ?string $slug = 'article';
+
+    public static function getFields()
+    {
+        return [
+            [
+                'type' => 'Aura\\Base\\Fields\\Text',
+                'name' => 'Title',
+                'slug' => 'title',
+                'validation' => 'required|max:255',
+            ],
+            [
+                'type' => 'Aura\\Base\\Fields\\Wysiwyg',
+                'name' => 'Content',
+                'slug' => 'content',
+            ],
+            [
+                'type' => 'Aura\\Base\\Fields\\BelongsTo',
+                'name' => 'Author',
+                'slug' => 'author_id',
+                'resource' => 'Aura\\Base\\Resources\\User',
+            ],
+        ];
+    }
+}
+```
+
+Drop it in `app/Aura/Resources` and `/admin/article` serves a full CRUD interface — index table with sorting, filtering and search, create/edit forms with validation, and policy-based permissions. No migration needed: fields are stored as meta by default, and you can move a resource to its own table when it grows.
+
+## Features
+
+- **42 field types** — text, dates, media, relationships, repeaters, tabs and panels — plus your own via `php artisan aura:field`
+- **Table views** — list, grid, and kanban, with saved filters and per-user column settings
+- **Media manager** — drag-and-drop uploads with automatic thumbnails
+- **Roles & permissions** — per-resource permissions enforced by policies
+- **Teams** — optional multi-tenancy with automatic scoping of every resource
+- **Global search** — Cmd+K across all resources, with bookmarks and recent pages
+- **Visual resource editor** — edit fields in the browser during local development; changes are written back to your PHP classes
+- **Plugins** — package resources, fields, and pages with `php artisan aura:plugin`
+
+## Requirements
+
+- PHP 8.2+
+- Laravel 10, 11, or 12
+
+## Installation
 
 ```bash
-# Create a new Laravel project
-laravel new my-project
-cd my-project
-
-# Install Aura CMS
 composer require eminiarts/aura-cms
 
-# Run the installer
 php artisan aura:install
 ```
 
-The installer will guide you through:
-- Publishing configuration files
-- Running migrations
-- Setting up your first admin user
-- Configuring themes and features
+The installer publishes config, assets, and migrations, extends your `User` model, and offers to run the migrations and create your first admin user. Then log in and open `/admin`.
 
-## 📚 Documentation
+## Documentation
 
-Visit our [documentation](docs/installation.md) for detailed guides on:
+Full documentation at **[aura-cms.com/docs](https://aura-cms.com/docs)** — from the [15-minute quick start](https://aura-cms.com/docs/quick-start) to the [complete field reference](https://aura-cms.com/docs/fields).
 
-- [Getting Started](docs/installation.md)
-- [Creating Resources](docs/resource.md)
-- [Field Types](docs/fields.md)
-- [Relationships](docs/relationships.md)
-- [Actions](docs/resource_actions.md)
-- [Plugins](docs/plugins.md)
-- [Customization](docs/customizing-post-view.md)
+Working with an AI assistant? The docs are LLM-friendly: [aura-cms.com/llms.txt](https://aura-cms.com/llms.txt) indexes every page, and every page is available as raw markdown by appending `.md` to its URL.
 
-## 🧪 Testing
+## Testing
 
 ```bash
-# Run all tests
 composer test
-
-# Run tests with Pest
-vendor/bin/pest
-
-# Run tests without teams
-vendor/bin/pest -c phpunit-without-teams.xml
-
-# Run tests with coverage
-XDEBUG_MODE=coverage vendor/bin/pest --coverage --min=80
 ```
 
-## 🤝 Contributing
+## Contributing
 
-We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) for details.
+Please see [CONTRIBUTING](CONTRIBUTING.md) for details.
 
-## 🔒 Security
+## Security
 
-If you discover any security-related issues, please email support@eminiarts.ch instead of using the issue tracker.
+If you discover a security issue, please email info@eminiarts.ch instead of using the issue tracker.
 
-## 📄 License
+## Credits
 
-Aura CMS is open-source software licensed under the [MIT license](LICENSE.md).
+Built by [Emini Arts](https://eminiarts.ch) and [all contributors](../../contributors). Aura CMS runs production applications for agencies and startups.
 
-## 🙏 Credits
+## License
 
-- [Emini Arts](https://github.com/eminiarts)
-- [All Contributors](../../contributors)
-
----
-
-Built with ❤️ by [Emini Arts](https://eminiarts.ch)
+MIT. See [LICENSE](LICENSE.md).
