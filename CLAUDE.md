@@ -10,6 +10,16 @@ Aura CMS is a Laravel package built on the **TALL stack** (Tailwind CSS, Alpine.
 **PHP Version**: 8.2+
 **Laravel**: 10.x, 11.x, 12.x
 
+## Aura Demo Application
+
+See `../aura-demo`for a demo application, demo resources, etc. you can use the demo, reseed etc. aura-demo.test, login via aura-demo.test/login-as/1
+
+## Aura Documentation
+
+See `../aura-cms.com`
+
+This is at the same time the main homepage of aura-cms (incl docs).
+
 ## Development Commands
 
 ### Testing (Pest)
