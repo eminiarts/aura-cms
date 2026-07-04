@@ -9,7 +9,7 @@
                 {{-- @dump( app('App\\Aura')->findResourceBySlug($notification->data['resource']['type'])) --}}
                 <span class="flex justify-center items-center mr-2 w-10 h-10 text-white rounded-full ring-8 ring-white bg-primary-400">
                     <!-- Get the SVG of the Post Resource -->
-                    @if(class_exists($notification->data['type']))
+                    @if(($notification->data['type'] ?? false) && class_exists($notification->data['type']))
                         {!! app($notification->data['type'])->getIcon() !!}
                     @else
                         {{-- Default or fallback behavior here --}}
@@ -20,14 +20,19 @@
                 <div class="flex-1 space-y-1">
 
 
-                    @if(optional($notification->data)['message'] && optional($notification->data)['id'] )
-                    {{-- <p class="text-sm text-gray-500">{{ $notification->data['message'] }}</p> --}}
+                    @if(($notification->data['message'] ?? false) && ($notification->data['id'] ?? false) && ($notification->data['type'] ?? false) && class_exists($notification->data['type']))
                     <div class="flex justify-between items-center">
                         <a href="{{ route('aura.' . app($notification->data['type'])->getType() . '.edit', ['id' => $notification->data['id']]) }}" class="hover:underline"><h3 class="text-sm font-medium">{{ $notification->data['message'] }}</h3></a>
                         <p class="text-sm text-gray-500">{{ $notification->created_at->diffForHumans() }}</p>
                     </div>
                     @else
-                    <p class="text-sm text-gray-500">{{ $notification->type }}</p>
+                    <div class="flex justify-between items-center">
+                        <h3 class="text-sm font-medium">{{ $notification->data['title'] ?? $notification->type }}</h3>
+                        <p class="text-sm text-gray-500">{{ $notification->created_at->diffForHumans() }}</p>
+                    </div>
+                        @if($notification->data['body'] ?? false)
+                        <p class="text-sm text-gray-500">{{ $notification->data['body'] }}</p>
+                        @endif
                     @endif
                 </div>
             </div>
