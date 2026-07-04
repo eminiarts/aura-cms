@@ -725,7 +725,7 @@ class MediaUploadService
 namespace App\Services;
 
 use Aura\Base\Services\ThumbnailGenerator as BaseThumbnailGenerator;
-use Intervention\Image\Facades\Image;
+use Intervention\Image\Laravel\Facades\Image;
 
 class ThumbnailGenerator extends BaseThumbnailGenerator
 {
@@ -735,12 +735,12 @@ class ThumbnailGenerator extends BaseThumbnailGenerator
         $thumbnailPath = parent::generate($path, $width, $height);
         
         // Additional processing
-        $image = Image::make(Storage::disk('public')->path($thumbnailPath));
+        $image = Image::read(Storage::disk('public')->path($thumbnailPath));
         
         // Add watermark
         if ($width > 600) {
-            $watermark = Image::make(public_path('watermark.png'));
-            $image->insert($watermark, 'bottom-right', 10, 10);
+            $watermark = Image::read(public_path('watermark.png'));
+            $image->place($watermark, 'bottom-right', 10, 10);
         }
         
         // Apply filters

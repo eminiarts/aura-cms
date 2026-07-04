@@ -123,7 +123,7 @@ This is the first official tagged release of Aura CMS, marking a stable checkpoi
 - **Dependencies**:
   - Laravel Fortify ^1.20
   - Laravel Sanctum ^4.0
-  - Intervention Image ^2.7
+  - Intervention Image ^3.0
   - Spatie Laravel Package Tools ^1.16
   
 

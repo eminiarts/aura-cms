@@ -866,7 +866,7 @@ class ThumbnailGenerator
 {
     public function generate(string $path, int $width, ?int $height = null): string
     {
-        $quality = Config::get('aura.media.quality', 80) / 100;
+        $quality = (int) Config::get('aura.media.quality', 80);
         
         // Validate dimensions if restricted
         if (Config::get('aura.media.restrict_to_dimensions', true)) {
@@ -884,9 +884,9 @@ class ThumbnailGenerator
         }
         
         // Generate and save thumbnail
-        $image->resize($width, null, fn ($constraint) => $constraint->aspectRatio());
-        $image->encode('jpg', $quality * 100);
-        Storage::disk('public')->put($thumbnailPath, (string) $image);
+        $image->scale($width);
+        $encodedImage = $image->encodeByExtension('jpg', $quality);
+        Storage::disk('public')->put($thumbnailPath, (string) $encodedImage);
         
         return $thumbnailPath;
     }

@@ -5,7 +5,7 @@ namespace Aura\Base\Services;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
-use Intervention\Image\Facades\Image;
+use Intervention\Image\Laravel\Facades\Image;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 class ThumbnailGenerator
@@ -16,7 +16,7 @@ class ThumbnailGenerator
     public function generate(string $path, int $width, ?int $height = null): string
     {
         // Get config values
-        $quality = Config::get('aura.media.quality', 80) / 100;
+        $quality = (int) Config::get('aura.media.quality', 80);
         $restrictDimensions = Config::get('aura.media.restrict_to_dimensions', true);
 
         // If dimensions are restricted, validate the requested dimensions
@@ -73,7 +73,7 @@ class ThumbnailGenerator
 
         // Create thumbnail
         $imageContents = Storage::disk('public')->get($path);
-        $image = Image::make($imageContents);
+        $image = Image::read($imageContents);
 
         // Get original dimensions
         $originalWidth = $image->width();
@@ -87,9 +87,7 @@ class ThumbnailGenerator
             }
 
             // Resize image to specified width, maintaining aspect ratio
-            $image->resize($width, null, function ($constraint) {
-                $constraint->aspectRatio();
-            });
+            $image->scale($width);
         } else {
             // When both dimensions are specified
             if ($width > $originalWidth && $height > $originalHeight) {
@@ -98,10 +96,10 @@ class ThumbnailGenerator
                 $ratio = min($originalWidth / $width, $originalHeight / $height);
                 $targetWidth = (int) ($width * $ratio);
                 $targetHeight = (int) ($height * $ratio);
-                $image->fit($targetWidth, $targetHeight);
+                $image->cover($targetWidth, $targetHeight);
             } else {
                 // Otherwise use the requested dimensions
-                $image->fit($width, $height);
+                $image->cover($width, $height);
             }
         }
 
@@ -111,8 +109,8 @@ class ThumbnailGenerator
         }
 
         // Save the thumbnail image with quality from config
-        $image->encode('jpg', $quality * 100);
-        Storage::disk('public')->put($thumbnailPath, (string) $image);
+        $encodedImage = $image->encodeByExtension('jpg', $quality);
+        Storage::disk('public')->put($thumbnailPath, (string) $encodedImage);
 
         return $thumbnailPath;
     }
