@@ -13,16 +13,7 @@ trait Kanban
 
     public function mountKanban()
     {
-        if ($this->currentView != 'kanban') {
-            return;
-        }
-
-        $this->initializeKanbanStatuses();
-
-        if (method_exists($this->model, 'kanbanPagination')) {
-            $this->perPage = $this->model->kanbanPagination();
-        }
-
+        $this->prepareKanban();
     }
 
     public function reorderKanbanColumns($newOrder)
@@ -102,6 +93,26 @@ trait Kanban
         $userPreferences = auth()->user()->getOption('kanban_statuses.'.$this->model()->getType());
         if ($userPreferences) {
             $this->kanbanStatuses = $userPreferences;
+        }
+    }
+
+    /**
+     * Also called from Table::rowsQuery(): trait mount hooks fire in trait
+     * declaration order, so mountKanban() can run before mountSwitchView()
+     * has set $currentView — and switchView() never re-initializes statuses.
+     */
+    protected function prepareKanban()
+    {
+        if ($this->currentView != 'kanban') {
+            return;
+        }
+
+        if (empty($this->kanbanStatuses)) {
+            $this->initializeKanbanStatuses();
+        }
+
+        if (method_exists($this->model, 'kanbanPagination')) {
+            $this->perPage = $this->model->kanbanPagination();
         }
     }
 

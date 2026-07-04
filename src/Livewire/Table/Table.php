@@ -474,6 +474,7 @@ class Table extends Component
 
         // Kanban Query
         if ($this->currentView == 'kanban') {
+            $this->prepareKanban();
             $query = $this->applyKanbanQuery($query);
         }
 
