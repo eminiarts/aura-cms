@@ -43,6 +43,8 @@ class TestCase extends Orchestra
 
     public function getEnvironmentSetUp($app)
     {
+        $this->useIsolatedFilesystemPaths($app);
+
         config()->set('database.default', 'testing');
 
         // Add these lines
@@ -61,6 +63,8 @@ class TestCase extends Orchestra
 
     protected function defineEnvironment($app)
     {
+        $this->useIsolatedFilesystemPaths($app);
+
         // Prevent actual file upload handling
         $app['config']->set('livewire.temporary_file_upload.disk', 'local');
         $app['config']->set('livewire.temporary_file_upload.middleware', null);
@@ -82,6 +86,8 @@ class TestCase extends Orchestra
 
     protected function getPackageProviders($app)
     {
+        $this->useIsolatedFilesystemPaths($app);
+
         // Disable file uploads in Livewire before loading the provider
         $app['config']->set('livewire.temporary_file_upload.directory', null);
         $app['config']->set('livewire.temporary_file_upload.middleware', null);
@@ -97,5 +103,36 @@ class TestCase extends Orchestra
             RayServiceProvider::class,
             ImageServiceProvider::class,
         ];
+    }
+
+    private function useIsolatedFilesystemPaths($app): void
+    {
+        $basePath = sys_get_temp_dir().'/aura-cms-testbench-'.getmypid();
+
+        $paths = [
+            'bootstrap',
+            'bootstrap/cache',
+            'config',
+            'database/migrations',
+            'public',
+            'storage',
+            'storage/framework/cache/data',
+            'storage/framework/sessions',
+            'storage/framework/testing',
+            'storage/framework/views',
+            'storage/logs',
+        ];
+
+        foreach ($paths as $path) {
+            if (! is_dir($basePath.'/'.$path)) {
+                mkdir($basePath.'/'.$path, 0755, true);
+            }
+        }
+
+        $app->useBootstrapPath($basePath.'/bootstrap');
+        $app->useConfigPath($basePath.'/config');
+        $app->useDatabasePath($basePath.'/database');
+        $app->usePublicPath($basePath.'/public');
+        $app->useStoragePath($basePath.'/storage');
     }
 }

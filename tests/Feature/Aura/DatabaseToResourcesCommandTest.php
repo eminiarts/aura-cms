@@ -1,148 +1,98 @@
 <?php
 
+use Aura\Base\Commands\DatabaseToResources;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\Artisan;
-use Illuminate\Support\Facades\Schema;
+use Symfony\Component\Console\Tester\CommandTester;
 
 uses(RefreshDatabase::class);
 
-beforeEach(function () {
-    // Set up default column mocks that all tests will need
-    Schema::shouldReceive('getColumnListing')
-        ->andReturn(['id', 'name', 'email', 'created_at', 'updated_at']);
+function runDatabaseToResourcesCommandForTest(array $tables): array
+{
+    $command = new class($tables) extends DatabaseToResources
+    {
+        public array $processedTables = [];
 
-    Schema::shouldReceive('getColumnType')
-        ->with(Mockery::any(), 'id')
-        ->andReturn('integer');
-    Schema::shouldReceive('getColumnType')
-        ->with(Mockery::any(), 'name')
-        ->andReturn('string');
-    Schema::shouldReceive('getColumnType')
-        ->with(Mockery::any(), 'email')
-        ->andReturn('string');
-    Schema::shouldReceive('getColumnType')
-        ->with(Mockery::any(), 'created_at')
-        ->andReturn('datetime');
-    Schema::shouldReceive('getColumnType')
-        ->with(Mockery::any(), 'updated_at')
-        ->andReturn('datetime');
-});
+        public function __construct(private array $tables)
+        {
+            parent::__construct();
+        }
+
+        protected function getAllTables()
+        {
+            return $this->tables;
+        }
+
+        protected function transformTable(string $table): int
+        {
+            $this->processedTables[] = $table;
+
+            return self::SUCCESS;
+        }
+    };
+
+    $command->setLaravel(app());
+
+    $tester = new CommandTester($command);
+    $exitCode = $tester->execute([]);
+
+    return [
+        'exitCode' => $exitCode,
+        'output' => $tester->getDisplay(),
+        'processedTables' => $command->processedTables,
+    ];
+}
 
 describe('resource generation', function () {
     it('executes database to resources command successfully', function () {
-        Schema::shouldReceive('getConnection->getDoctrineSchemaManager->listTableNames')
-            ->andReturn(['users', 'posts', 'comments', 'migrations', 'failed_jobs', 'password_resets', 'settions']);
+        $result = runDatabaseToResourcesCommandForTest(['users', 'posts', 'comments', 'migrations', 'failed_jobs', 'password_resets', 'settions']);
 
-        $commandLog = [];
-
-        Artisan::command('aura:transform-table-to-resource {table}', function ($table) use (&$commandLog) {
-            $commandLog[] = $table;
-
-            return 0;
-        });
-
-        $this->artisan('aura:database-to-resources')
-            ->assertSuccessful()
-            ->assertExitCode(0);
-
-        expect($commandLog)->toHaveCount(3)
+        expect($result['exitCode'])->toBe(0);
+        expect($result['processedTables'])->toHaveCount(3)
             ->toContain('users', 'posts', 'comments')
             ->not->toContain('migrations', 'failed_jobs', 'password_resets', 'settions');
     });
 
     it('processes all non-system tables', function () {
-        Schema::shouldReceive('getConnection->getDoctrineSchemaManager->listTableNames')
-            ->andReturn(['users', 'posts', 'comments', 'migrations', 'failed_jobs', 'password_resets', 'settions']);
-
         $expectedTables = ['users', 'posts', 'comments'];
-        $processedTables = [];
+        $result = runDatabaseToResourcesCommandForTest(['users', 'posts', 'comments', 'migrations', 'failed_jobs', 'password_resets', 'settions']);
 
-        Artisan::command('aura:transform-table-to-resource {table}', function ($table) use (&$processedTables) {
-            $processedTables[] = $table;
-
-            return 0;
-        });
-
-        $this->artisan('aura:database-to-resources')
-            ->assertSuccessful();
-
-        expect($processedTables)
+        expect($result['processedTables'])
             ->toHaveCount(3)
             ->toEqual($expectedTables);
     });
 
     it('shows success message after completion', function () {
-        Schema::shouldReceive('getConnection->getDoctrineSchemaManager->listTableNames')
-            ->andReturn(['users', 'posts', 'comments']);
+        $result = runDatabaseToResourcesCommandForTest(['users', 'posts', 'comments']);
 
-        Artisan::command('aura:transform-table-to-resource {table}', function () {
-            return 0;
-        });
-
-        $this->artisan('aura:database-to-resources')
-            ->expectsOutput('Resources generated successfully')
-            ->assertSuccessful();
+        expect($result['exitCode'])->toBe(0);
+        expect($result['output'])->toContain('Resources generated successfully');
     });
 });
 
 describe('system tables filtering', function () {
     it('skips system tables', function () {
-        Schema::shouldReceive('getConnection->getDoctrineSchemaManager->listTableNames')
-            ->andReturn(['users', 'posts', 'comments', 'migrations', 'failed_jobs', 'password_resets', 'settions']);
-
-        $commandLog = [];
-
-        Artisan::command('aura:transform-table-to-resource {table}', function ($table) use (&$commandLog) {
-            $commandLog[] = $table;
-
-            return 0;
-        });
-
-        $this->artisan('aura:database-to-resources')
-            ->assertSuccessful();
+        $result = runDatabaseToResourcesCommandForTest(['users', 'posts', 'comments', 'migrations', 'failed_jobs', 'password_resets', 'settions']);
 
         $systemTables = ['migrations', 'failed_jobs', 'password_resets', 'settions'];
         foreach ($systemTables as $table) {
-            expect($commandLog)->not->toContain($table);
+            expect($result['processedTables'])->not->toContain($table);
         }
     });
 });
 
 describe('edge cases', function () {
     it('handles empty database gracefully', function () {
-        Schema::shouldReceive('getConnection->getDoctrineSchemaManager->listTableNames')
-            ->andReturn([]);
+        $result = runDatabaseToResourcesCommandForTest([]);
 
-        $commandLog = [];
-
-        Artisan::command('aura:transform-table-to-resource {table}', function ($table) use (&$commandLog) {
-            $commandLog[] = $table;
-
-            return 0;
-        });
-
-        $this->artisan('aura:database-to-resources')
-            ->assertSuccessful()
-            ->expectsOutput('Resources generated successfully');
-
-        expect($commandLog)->toBeEmpty();
+        expect($result['exitCode'])->toBe(0);
+        expect($result['output'])->toContain('Resources generated successfully');
+        expect($result['processedTables'])->toBeEmpty();
     });
 
     it('handles database with only system tables', function () {
-        Schema::shouldReceive('getConnection->getDoctrineSchemaManager->listTableNames')
-            ->andReturn(['migrations', 'failed_jobs', 'password_resets', 'settions']);
+        $result = runDatabaseToResourcesCommandForTest(['migrations', 'failed_jobs', 'password_resets', 'settions']);
 
-        $commandLog = [];
-
-        Artisan::command('aura:transform-table-to-resource {table}', function ($table) use (&$commandLog) {
-            $commandLog[] = $table;
-
-            return 0;
-        });
-
-        $this->artisan('aura:database-to-resources')
-            ->assertSuccessful();
-
-        expect($commandLog)->toBeEmpty();
+        expect($result['exitCode'])->toBe(0);
+        expect($result['processedTables'])->toBeEmpty();
     });
 });

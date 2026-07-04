@@ -19,9 +19,9 @@ beforeEach(function () {
 
 class DoNotDeferConditionalLogicTestModel extends Resource
 {
-    public static string $type = 'TestModel';
+    public static string $type = 'DoNotDeferConditionalLogicTestModel';
 
-    protected static ?string $slug = 'test';
+    protected static ?string $slug = 'do-not-defer-conditional-logic-test';
 
     public static function getFields()
     {
@@ -118,7 +118,7 @@ test('defer should be false on field that is in conditional logic - create view'
     Aura::fake();
     Aura::setModel($model);
 
-    $component = Livewire::test(Create::class, ['slug' => 'test'])
+    $component = Livewire::test(Create::class, ['slug' => $model->getSlug()])
         ->assertSee('Title*')
         ->assertSee('Type')
         ->assertSeeHtml('wire:model="form.fields.select_type"')
@@ -155,7 +155,7 @@ test('defer should be false on field that is in conditional logic - edit view', 
     Aura::fake();
     Aura::setModel($post);
 
-    $component = Livewire::test(Edit::class, ['slug' => 'TestModel', 'id' => $post->id])
+    $component = Livewire::test(Edit::class, ['slug' => $model->getSlug(), 'id' => $post->id])
         ->assertSee('Title')
         ->assertSee('Type')
         ->assertSeeHtml('wire:model="form.fields.select_type"')

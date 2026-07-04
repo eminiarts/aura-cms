@@ -17,13 +17,13 @@ describe('Team Creation Authorization', function () {
         $teams = $this->user->getTeams();
         expect($teams->count())->toBe(1);
         expect(Role::count())->toBe(1);
+        $initialTeamCount = Team::withoutGlobalScopes()->count();
 
         livewire(Create::class, ['slug' => 'team'])
-            ->set('form.fields.name', 'Test Team')
-            ->set('form.fields.description', 'Test Description')
-            ->call('save')
-            ->assertHasNoErrors();
-    })->throws(Exception::class);
+            ->assertForbidden();
+
+        expect(Team::withoutGlobalScopes()->count())->toBe($initialTeamCount);
+    });
 
     it('can create team as global admin', function () {
         Gate::define('AuraGlobalAdmin', fn (User $user) => true);

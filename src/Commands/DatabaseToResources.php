@@ -16,18 +16,30 @@ class DatabaseToResources extends Command
         $tables = $this->getAllTables();
 
         foreach ($tables as $table) {
-            if (in_array($table, ['migrations', 'failed_jobs', 'password_resets', 'settions'])) {
+            if ($this->isSystemTable($table)) {
                 continue;
             }
 
-            $this->call('aura:transform-table-to-resource', ['table' => $table]);
+            $this->transformTable($table);
         }
 
         $this->info('Resources generated successfully');
+
+        return self::SUCCESS;
     }
 
-    private function getAllTables()
+    protected function getAllTables()
     {
         return Schema::getConnection()->getDoctrineSchemaManager()->listTableNames();
+    }
+
+    protected function isSystemTable(string $table): bool
+    {
+        return in_array($table, ['migrations', 'failed_jobs', 'password_resets', 'settions']);
+    }
+
+    protected function transformTable(string $table): int
+    {
+        return $this->call('aura:transform-table-to-resource', ['table' => $table]);
     }
 }

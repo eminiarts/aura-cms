@@ -143,6 +143,7 @@ class AuraServiceProvider extends PackageServiceProvider
             'aura::bookmark-page' => BookmarkPage::class,
             'aura::notifications' => Notifications::class,
             'aura::edit-resource-field' => EditResourceField::class,
+            'edit-field' => EditResourceField::class,
             'aura::media-manager' => MediaManager::class,
             'aura::media-uploader' => MediaUploader::class,
             'aura::create-resource' => CreateResource::class,
