@@ -2,6 +2,8 @@
 
 namespace Aura\Base\Livewire\Table\Traits;
 
+use Aura\Base\Fields\AdvancedSelect;
+use Aura\Base\Fields\Tags;
 use Illuminate\Database\Eloquent\Builder;
 
 trait QueryFilters
@@ -62,7 +64,11 @@ trait QueryFilters
 
     protected function applyFilterBasedOnType(Builder $query, array $filter): void
     {
-        if ($this->model->usesCustomTable() || $this->model->isTableField($filter['name'])) {
+        if ($this->isRelationBackedFilter($filter)) {
+            $this->applyRelationFieldFilter($query, $filter);
+        } elseif ($this->model->isMetaField($filter['name'])) {
+            $this->applyMetaFieldFilter($query, $filter);
+        } elseif ($this->model->isTableField($filter['name']) || $this->model->usesCustomTable()) {
             $this->applyTableFieldFilter($query, $filter);
         } else {
             $this->applyMetaFieldFilter($query, $filter);
@@ -210,34 +216,45 @@ trait QueryFilters
         }
     }
 
+    protected function applyRelationFieldFilter(Builder $query, array $filter): void
+    {
+        $field = $this->model->fieldBySlug($filter['name']);
+        $resourceType = $filter['options']['resource_type'] ?? optional($field)['resource'];
+
+        if (! $resourceType) {
+            return;
+        }
+
+        $qualifiedKeyName = $query->getModel()->getQualifiedKeyName();
+        $relatedType = $query->getModel()->getMorphClass();
+        $slug = $filter['name'];
+        $values = (array) $filter['value'];
+
+        if ($filter['operator'] === 'contains') {
+            $query->whereIn($qualifiedKeyName, function ($subQuery) use ($resourceType, $values, $slug, $relatedType) {
+                $subQuery->select('related_id')
+                    ->from('post_relations')
+                    ->where('post_relations.related_type', $relatedType)
+                    ->where('post_relations.resource_type', $resourceType)
+                    ->where('post_relations.slug', $slug)
+                    ->whereIn('post_relations.resource_id', $values);
+            });
+        } elseif ($filter['operator'] === 'does_not_contain') {
+            $query->whereNotIn($qualifiedKeyName, function ($subQuery) use ($resourceType, $values, $slug, $relatedType) {
+                $subQuery->select('related_id')
+                    ->from('post_relations')
+                    ->where('post_relations.related_type', $relatedType)
+                    ->where('post_relations.resource_type', $resourceType)
+                    ->where('post_relations.slug', $slug)
+                    ->whereIn('post_relations.resource_id', $values);
+            });
+        }
+    }
+
     protected function applyStandardMetaFilter(Builder $query, array $filter): void
     {
         if (isset($filter['options']) && isset($filter['options']['resource_type'])) {
-            $resourceType = $filter['options']['resource_type'];
-            $values = (array) $filter['value'];
-
-            $slug = $filter['name'];
-            $relatedType = get_class($query->getModel());
-
-            if ($filter['operator'] === 'contains') {
-                $query->whereIn('id', function ($subQuery) use ($resourceType, $values, $slug, $relatedType) {
-                    $subQuery->select('related_id')
-                        ->from('post_relations')
-                        ->where('post_relations.related_type', $relatedType)
-                        ->where('post_relations.resource_type', $resourceType)
-                        ->where('post_relations.slug', $slug)
-                        ->whereIn('post_relations.resource_id', $values);
-                });
-            } elseif ($filter['operator'] === 'does_not_contain') {
-                $query->whereNotIn('id', function ($subQuery) use ($resourceType, $values, $slug, $relatedType) {
-                    $subQuery->select('related_id')
-                        ->from('post_relations')
-                        ->where('post_relations.related_type', $relatedType)
-                        ->where('post_relations.resource_type', $resourceType)
-                        ->where('post_relations.slug', $slug)
-                        ->whereIn('post_relations.resource_id', $values);
-                });
-            }
+            $this->applyRelationFieldFilter($query, $filter);
 
             return;
         }
@@ -345,6 +362,21 @@ trait QueryFilters
         }
 
         return $query;
+    }
+
+    protected function isRelationBackedFilter(array $filter): bool
+    {
+        $fieldClass = $this->model->fieldClassBySlug($filter['name']);
+
+        if ($fieldClass instanceof Tags) {
+            return true;
+        }
+
+        if ($fieldClass instanceof AdvancedSelect) {
+            return $fieldClass->isRelation($this->model->fieldBySlug($filter['name']));
+        }
+
+        return false;
     }
 
     protected function isValidFilter(array $filter): bool

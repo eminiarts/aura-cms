@@ -4,6 +4,7 @@ use Aura\Base\Facades\Aura;
 use Aura\Base\Livewire\Table\Table;
 use Aura\Base\Models\Scopes\TeamScope;
 use Aura\Base\Resource;
+use Aura\Base\Resources\Tag;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
@@ -34,34 +35,32 @@ beforeEach(function () {
     Aura::fake();
     Aura::setModel($model);
 
+    $this->tag1 = Tag::create(['title' => 'Tag 1', 'slug' => 'tag-1']);
+    $this->tag2 = Tag::create(['title' => 'Tag 2', 'slug' => 'tag-2']);
+    $this->tag3 = Tag::create(['title' => 'Tag 3', 'slug' => 'tag-3']);
+
     $this->resource = CustomTableFilterModel::create([
         'name' => 'Test Post 1',
         'status' => 'publish',
         'enabled' => 1,
+        'meta_1' => 'Alpha Meta',
         'options' => [
             'option1' => 'Option 1',
             'option2' => 'Option 2',
         ],
-        'terms' => [
-            'tag' => [
-                'Tag 1', 'Tag 2', 'Tag 3',
-            ],
-        ],
+        'tags' => [$this->tag1->id, $this->tag2->id],
     ]);
 
     $this->resource2 = CustomTableFilterModel::create([
         'name' => 'Test Post 2',
         'status' => 'draft',
         'enabled' => 0,
+        'meta_1' => 'Beta Meta',
         'options' => [
             'option1' => 'Option 3',
             'option2' => 'Option 4',
         ],
-        'terms' => [
-            'tag' => [
-                'Tag 3', 'Tag 4', 'Tag 5',
-            ],
-        ],
+        'tags' => [$this->tag2->id, $this->tag3->id],
     ]);
 });
 
@@ -117,6 +116,13 @@ class CustomTableFilterModel extends Resource
                 'validation' => '',
                 'conditional_logic' => [],
                 'slug' => 'options',
+            ],
+            [
+                'name' => 'Meta 1',
+                'type' => 'Aura\\Base\\Fields\\Text',
+                'validation' => '',
+                'conditional_logic' => [],
+                'slug' => 'meta_1',
             ],
             [
                 'name' => 'Tags',
@@ -188,6 +194,44 @@ describe('contains filter on custom table', function () {
         $component->assertViewHas('rows', fn ($rows) => count($rows->items()) === 1 && $rows->items()[0]->id === $this->resource->id);
 
         $component->set('filters.custom.0.filters.0.value', 'draft');
+        $component->assertViewHas('rows', fn ($rows) => count($rows->items()) === 1 && $rows->items()[0]->id === $this->resource2->id);
+    });
+
+    test('filter by meta-backed field on custom table', function () {
+        $component = livewire(Table::class, ['query' => null, 'model' => $this->resource]);
+
+        $component->call('addFilterGroup');
+
+        $component->set('filters.custom.0.filters.0.name', 'meta_1');
+        $component->set('filters.custom.0.filters.0.operator', 'contains');
+        $component->set('filters.custom.0.filters.0.value', 'Alpha');
+
+        $component->assertViewHas('rows', fn ($rows) => count($rows->items()) === 1 && $rows->items()[0]->id === $this->resource->id);
+
+        $component->set('filters.custom.0.filters.0.value', 'Beta');
+        $component->assertViewHas('rows', fn ($rows) => count($rows->items()) === 1 && $rows->items()[0]->id === $this->resource2->id);
+    });
+
+    test('filter by tags field on custom table', function () {
+        $component = livewire(Table::class, ['query' => null, 'model' => $this->resource]);
+
+        $component->set('filters.custom', [[
+            'filters' => [[
+                'name' => 'tags',
+                'operator' => 'contains',
+                'value' => [$this->tag1->id],
+                'options' => [
+                    'resource_type' => 'Aura\\Base\\Resources\\Tag',
+                ],
+            ]],
+        ]]);
+
+        $component->assertViewHas('rows', fn ($rows) => count($rows->items()) === 1 && $rows->items()[0]->id === $this->resource->id);
+
+        $component->set('filters.custom.0.filters.0.value', [$this->tag2->id]);
+        $component->assertViewHas('rows', fn ($rows) => count($rows->items()) === 2);
+
+        $component->set('filters.custom.0.filters.0.value', [$this->tag3->id]);
         $component->assertViewHas('rows', fn ($rows) => count($rows->items()) === 1 && $rows->items()[0]->id === $this->resource2->id);
     });
 });

@@ -27,16 +27,18 @@ class BelongsTo extends Field
 
     public function api($request)
     {
-        // Get $searchable from $request->model
-        $searchableFields = app($request->model)->getSearchableFields()->pluck('slug');
+        $model = app($request->model);
 
-        $metaFields = $searchableFields->filter(function ($field) use ($request) {
+        // Get $searchable from $request->model
+        $searchableFields = $model->getSearchableFields()->pluck('slug');
+
+        $metaFields = $searchableFields->filter(function ($field) use ($model) {
             // check if it is a meta field
-            return app($request->model)->isMetaField($field);
+            return $model->isMetaField($field);
         });
 
-        if (app($request->model)->usesCustomTable()) {
-            $results = app($request->model)->searchIn($searchableFields->toArray(), $request->search)->take(50)->get()->map(function ($item) {
+        if ($model->usesCustomTable()) {
+            $results = $model->searchIn($searchableFields->toArray(), $request->search, $model)->take(50)->get()->map(function ($item) {
                 return [
                     'id' => $item->id,
                     'title' => $item->title(),
@@ -45,14 +47,14 @@ class BelongsTo extends Field
 
         } else {
 
-            $results = app($request->model)->select('posts.*')
-                ->leftJoin('meta', function ($join) use ($metaFields, $request) {
-                    $join->on('posts.id', '=', 'meta.metable_id')
-                        ->where('meta.metable_type', app($request->model)->getMorphClass())
+            $results = $model->select($model->getTable().'.*')
+                ->leftJoin('meta', function ($join) use ($metaFields, $model) {
+                    $join->on($model->getQualifiedKeyName(), '=', 'meta.metable_id')
+                        ->where('meta.metable_type', $model->getMorphClass())
                         ->whereIn('meta.key', $metaFields);
                 })
-                ->where(function ($query) use ($request) {
-                    $query->where('posts.title', 'like', '%'.$request->search.'%')
+                ->where(function ($query) use ($model, $request) {
+                    $query->where($model->getTable().'.title', 'like', '%'.$request->search.'%')
                         ->orWhere(function ($query) use ($request) {
                             $query->where('meta.value', 'LIKE', '%'.$request->search.'%');
                         });
@@ -71,7 +73,7 @@ class BelongsTo extends Field
         // Fetch the model instance using the ID from $request->value
         if ($request->id) {
 
-            $modelInstance = app($request->model)->find($request->id);
+            $modelInstance = $model->find($request->id);
 
             // Append the model instance to the results
             $results[] = [
@@ -85,7 +87,7 @@ class BelongsTo extends Field
 
         return collect($results)->unique('id')->values()->toArray();
 
-        return app($request->model)->searchIn($searchableFields, $request->search)->take(20)->get()->map(function ($item) {
+        return $model->searchIn($searchableFields, $request->search, $model)->take(20)->get()->map(function ($item) {
             return [
                 'id' => $item->id,
                 'title' => $item->title(),

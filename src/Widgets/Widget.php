@@ -88,4 +88,22 @@ class Widget extends Component
             $this->loaded = true;
         }
     }
+
+    /**
+     * Determine whether a column is a real, known field of the widget's model.
+     *
+     * The widget config (column/method/queryScope) is developer-defined and the
+     * config properties are #[Locked], but this additionally guards the raw-SQL
+     * identifier paths in the concrete widgets so a tampered or unknown column can
+     * never reach selectRaw()/DB::raw() as an interpolated identifier.
+     */
+    protected function isSafeColumn($column): bool
+    {
+        if (! is_string($column) || $column === '') {
+            return false;
+        }
+
+        return in_array($column, $this->model->getBaseFillable(), true)
+            || in_array($column, $this->model->inputFieldsSlugs(), true);
+    }
 }

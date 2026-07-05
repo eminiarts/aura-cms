@@ -2,6 +2,7 @@
 
 namespace Aura\Base\Livewire;
 
+use Aura\Base\Resource;
 use Aura\Base\Resources\User;
 use Livewire\Component;
 
@@ -40,33 +41,39 @@ class GlobalSearch extends Component
 
         // Search in each resource model
         foreach ($resources as $resource) {
-            $model = $resource::query();
-
             // if no resource then continue
             if (! $resource) {
                 continue;
             }
 
-            $searchableFields = app($resource)->getSearchableFields()->pluck('slug');
+            $model = app($resource);
+            $searchableFields = $model->getSearchableFields()->pluck('slug');
 
-            $metaFields = $searchableFields->filter(function ($field) use ($resource) {
-                // check if it is a meta field
-                return app($resource)->isMetaField($field);
-            });
+            if ($searchableFields->isEmpty()) {
+                continue;
+            }
 
-            $results = $model->select('posts.*')
-                ->leftJoin('meta', function ($join) use ($metaFields, $resource) {
-                    $join->on('posts.id', '=', 'meta.metable_id')
-                        ->where('meta.metable_type', $resource)
-                        ->whereIn('meta.key', $metaFields);
+            $results = $resource::query()
+                ->select($model->getTable().'.*')
+                ->where(function ($query) use ($model, $searchableFields) {
+                    foreach ($searchableFields as $field) {
+                        if ($model->isMetaField($field)) {
+                            $metaTable = $model->getMetaTable();
+                            $metaForeignKey = $model->getMetaForeignKey();
+
+                            $query->orWhereExists(function ($subquery) use ($field, $metaForeignKey, $metaTable, $model) {
+                                $subquery->selectRaw('1')
+                                    ->from($metaTable)
+                                    ->whereColumn($model->getQualifiedKeyName(), $metaTable.'.'.$metaForeignKey)
+                                    ->where($metaTable.'.metable_type', $model->getMorphClass())
+                                    ->where($metaTable.'.key', $field)
+                                    ->where($metaTable.'.value', 'like', '%'.$this->search.'%');
+                            });
+                        } else {
+                            $query->orWhere($model->getTable().'.'.$field, 'like', '%'.$this->search.'%');
+                        }
+                    }
                 })
-                ->where(function ($query) {
-                    $query->where('posts.title', 'like', '%'.$this->search.'%')
-                        ->orWhere(function ($query) {
-                            $query->where('meta.value', 'LIKE', '%'.$this->search.'%');
-                        });
-                })
-                ->distinct()
                 ->get();
 
             $searchResults->push(...$results);
@@ -79,9 +86,11 @@ class GlobalSearch extends Component
         $searchResults->push(...$userResults);
 
         $searchResults = $searchResults->flatten()->map(function ($item) {
-            // return route aura.resource.view with slug and id
-            if (isset($item->type)) {
-                $item['view_url'] = route('aura.'.strtolower($item->type).'.view', ['id' => $item->id]);
+            if ($item instanceof User) {
+                $item['view_url'] = route('aura.user.view', ['id' => $item->id]);
+            } elseif ($item instanceof Resource) {
+                $item['type'] = $item->getType();
+                $item['view_url'] = route('aura.'.$item->getSlug().'.view', ['id' => $item->getKey()]);
             } else {
                 $item['view_url'] = route('aura.user.view', ['id' => $item->id]);
             }

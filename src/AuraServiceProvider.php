@@ -296,12 +296,13 @@ class AuraServiceProvider extends PackageServiceProvider
                         $query->orWhereExists(function ($subquery) use ($metaTable, $metaForeignKey, $column, $search, $model) {
                             $subquery->select(DB::raw(1))
                                 ->from($metaTable)
-                                ->whereColumn($model->getTable().'.id', $metaTable.'.'.$metaForeignKey)
+                                ->whereColumn($model->getQualifiedKeyName(), $metaTable.'.'.$metaForeignKey)
+                                ->where($metaTable.'.metable_type', $model->getMorphClass())
                                 ->where($metaTable.'.key', $column)
                                 ->where($metaTable.'.value', 'like', '%'.$search.'%');
                         });
                     } else {
-                        $query->orWhere($column, 'like', '%'.$search.'%');
+                        $query->orWhere($model->getTable().'.'.$column, 'like', '%'.$search.'%');
                     }
                 }
             });

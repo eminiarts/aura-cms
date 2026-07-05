@@ -33,53 +33,75 @@ return new class extends Migration
 
     public function up()
     {
-        Schema::dropIfExists('users');
+        // IMPORTANT: This migration is published into the host application. It must
+        // NEVER drop the app's existing users/auth tables (that would destroy data).
+        // Create the users table only when it is absent (greenfield); otherwise add
+        // just the columns Aura requires to the existing table.
+        if (! Schema::hasTable('users')) {
+            Schema::create('users', function (Blueprint $table) {
+                $table->id();
+                $table->string('name');
+                $table->string('email')->unique();
+                $table->timestamp('email_verified_at')->nullable();
+                $table->string('password');
+                $table->text('two_factor_secret')->nullable();
+                $table->text('two_factor_recovery_codes')->nullable();
+                $table->timestamp('two_factor_confirmed_at')->nullable();
+                $table->rememberToken();
+                if (config('aura.teams')) {
+                    $table->foreignId('current_team_id')->nullable();
+                }
+                $table->timestamps();
+                $table->softDeletes();
+            });
+        } else {
+            Schema::table('users', function (Blueprint $table) {
+                if (! Schema::hasColumn('users', 'two_factor_secret')) {
+                    $table->text('two_factor_secret')->nullable();
+                }
+                if (! Schema::hasColumn('users', 'two_factor_recovery_codes')) {
+                    $table->text('two_factor_recovery_codes')->nullable();
+                }
+                if (! Schema::hasColumn('users', 'two_factor_confirmed_at')) {
+                    $table->timestamp('two_factor_confirmed_at')->nullable();
+                }
+                if (config('aura.teams') && ! Schema::hasColumn('users', 'current_team_id')) {
+                    $table->foreignId('current_team_id')->nullable();
+                }
+                if (! Schema::hasColumn('users', 'deleted_at')) {
+                    $table->softDeletes();
+                }
+            });
+        }
 
-        Schema::create('users', function (Blueprint $table) {
-            $table->id();
-            $table->string('name');
-            $table->string('email')->unique();
-            $table->timestamp('email_verified_at')->nullable();
-            $table->string('password');
-            $table->text('two_factor_secret')->nullable();
-            $table->text('two_factor_recovery_codes')->nullable();
-            $table->timestamp('two_factor_confirmed_at')->nullable();
-            $table->rememberToken();
-            if (config('aura.teams')) {
-                $table->foreignId('current_team_id')->nullable();
-            }
-            $table->timestamps();
-            $table->softDeletes();
-        });
+        if (! Schema::hasTable('password_resets')) {
+            Schema::create('password_resets', function (Blueprint $table) {
+                $table->string('email')->index();
+                $table->string('token');
+                $table->timestamp('created_at')->nullable();
+            });
+        }
 
-        Schema::dropIfExists('password_resets');
+        if (! Schema::hasTable('personal_access_tokens')) {
+            Schema::create('personal_access_tokens', function (Blueprint $table) {
+                $table->id();
+                $table->morphs('tokenable');
+                $table->string('name');
+                $table->string('token', 64)->unique();
+                $table->text('abilities')->nullable();
+                $table->timestamp('last_used_at')->nullable();
+                $table->timestamp('expires_at')->nullable();
+                $table->timestamps();
+            });
+        }
 
-        Schema::create('password_resets', function (Blueprint $table) {
-            $table->string('email')->index();
-            $table->string('token');
-            $table->timestamp('created_at')->nullable();
-        });
-
-        Schema::dropIfExists('personal_access_tokens');
-
-        Schema::create('personal_access_tokens', function (Blueprint $table) {
-            $table->id();
-            $table->morphs('tokenable');
-            $table->string('name');
-            $table->string('token', 64)->unique();
-            $table->text('abilities')->nullable();
-            $table->timestamp('last_used_at')->nullable();
-            $table->timestamp('expires_at')->nullable();
-            $table->timestamps();
-        });
-
-        Schema::dropIfExists('password_reset_tokens');
-
-        Schema::create('password_reset_tokens', function (Blueprint $table) {
-            $table->string('email')->primary();
-            $table->string('token');
-            $table->timestamp('created_at')->nullable();
-        });
+        if (! Schema::hasTable('password_reset_tokens')) {
+            Schema::create('password_reset_tokens', function (Blueprint $table) {
+                $table->string('email')->primary();
+                $table->string('token');
+                $table->timestamp('created_at')->nullable();
+            });
+        }
 
         if (config('aura.teams')) {
             Schema::create('teams', function (Blueprint $table) {

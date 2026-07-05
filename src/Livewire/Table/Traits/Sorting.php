@@ -57,6 +57,12 @@ trait Sorting
         }
 
         foreach ($this->sorts as $field => $direction) {
+            // Normalize direction to a strict allow-list: it is interpolated into
+            // orderByRaw() below and $this->sorts is client-controllable.
+            $direction = strtolower((string) $direction) === 'desc' ? 'desc' : 'asc';
+
+            $qualifiedKeyName = $this->model->getQualifiedKeyName();
+            $table = $this->model->getTable();
 
             // We want to add custom Sorting. If the model has a custom sorting method, we want to use that instead of the default one. Name of the method is sort_{$field}
             if (method_exists($this->model, 'sort_'.$field)) {
@@ -68,34 +74,34 @@ trait Sorting
             if ($this->model->isTaxonomyField($field)) {
                 $resourceType = $this->model->fieldBySlug($field)['resource'];
 
-                $query->leftJoin('post_relations as pr', function ($join) use ($resourceType) {
-                    $join->on('posts.id', '=', 'pr.related_id')
+                $query->leftJoin('post_relations as pr', function ($join) use ($qualifiedKeyName, $resourceType) {
+                    $join->on($qualifiedKeyName, '=', 'pr.related_id')
                         ->where('pr.related_type', '=', $this->model->getMorphClass())
                         ->where('pr.resource_type', '=', $resourceType)
                         ->where('pr.slug', '=', Str::plural(Str::lower(class_basename($resourceType))));
                 })
-                    ->select('posts.*')
-                    ->groupBy('posts.id')
+                    ->select($table.'.*')
+                    ->groupBy($qualifiedKeyName)
                     ->orderByRaw('MIN(pr.resource_id) '.$direction)
-                    ->orderBy('posts.id', 'desc');
+                    ->orderBy($qualifiedKeyName, 'desc');
 
                 return $query;
             }
 
             if ($this->model->usesMeta() && $this->model->isMetaField($field)) {
-                $query->leftJoin('meta', function ($join) use ($field) {
-                    $join->on('posts.id', '=', 'meta.metable_id')
+                $query->leftJoin('meta', function ($join) use ($field, $qualifiedKeyName) {
+                    $join->on($qualifiedKeyName, '=', 'meta.metable_id')
                         ->where('meta.metable_type', '=', $this->model->getMorphClass())
                         ->where('meta.key', '=', "$field");
                 })
-                    ->select('posts.*')
+                    ->select($table.'.*')
                     ->when($this->model->isNumberField($field), function ($query) use ($direction) {
                         $query->orderByRaw('CAST(meta.value AS DECIMAL(10,2)) '.$direction);
                     })
                     ->when(! $this->model->isNumberField($field), function ($query) use ($direction) {
                         $query->orderByRaw('CAST(meta.value AS CHAR) '.$direction);
                     })
-                    ->orderBy('id', 'desc');
+                    ->orderBy($qualifiedKeyName, 'desc');
 
                 return $query;
             } else {

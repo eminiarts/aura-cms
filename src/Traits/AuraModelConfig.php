@@ -318,7 +318,16 @@ trait AuraModelConfig
         return Str::startsWith(get_class($this), 'App');
     }
 
-    public function isMetaField($key)
+    /**
+     * Determine whether a field is stored in the meta table.
+     *
+     * Storage combinations:
+     * - posts table + meta: base fillable fields stay on posts; input fields outside base fillable use meta.
+     * - posts table without meta: no fields use meta.
+     * - custom table without meta: input field slugs are custom-table columns.
+     * - custom table + meta: base fillable fields are custom-table columns; remaining input fields use meta.
+     */
+    public function isMetaField($key): bool
     {
         if ($key === 'id') {
             return false;
@@ -330,14 +339,16 @@ trait AuraModelConfig
         }
 
         // If the key is in Base fillable, it is not a meta field
-        if (in_array($key, $this->getBaseFillable())) {
+        if (in_array($key, $this->getBaseFillable(), true)) {
             return false;
         }
 
         // If the key is in the fields, it is a meta field
-        if (in_array($key, $this->inputFieldsSlugs())) {
+        if (in_array($key, $this->inputFieldsSlugs(), true)) {
             return true;
         }
+
+        return false;
     }
 
     public function isNumberField($key)
@@ -349,11 +360,21 @@ trait AuraModelConfig
         return false;
     }
 
-    // Is the Field in the table?
-    public function isTableField($key)
+    /**
+     * Determine whether a field is stored directly on the model table.
+     *
+     * For posts-mode resources this means the base posts columns. For custom-table resources without meta,
+     * every input field slug is a table column. For custom-table resources with meta, only base fillable
+     * fields are table columns and remaining input fields are stored in meta.
+     */
+    public function isTableField($key): bool
     {
-        if (in_array($key, $this->getBaseFillable())) {
+        if (in_array($key, $this->getBaseFillable(), true)) {
             return true;
+        }
+
+        if ($this->usesCustomTable() && ! $this->usesMeta()) {
+            return in_array($key, $this->inputFieldsSlugs(), true);
         }
 
         return false;
@@ -603,7 +624,7 @@ trait AuraModelConfig
         return static::$customTable;
     }
 
-    public static function usesMeta(): string
+    public static function usesMeta(): bool
     {
         return static::$usesMeta;
     }

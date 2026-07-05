@@ -4,18 +4,22 @@ namespace Aura\Base\Widgets;
 
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
+use Livewire\Attributes\Locked;
 use Livewire\Attributes\On;
 
 class Sparkline extends Widget
 {
     public $end;
 
+    #[Locked]
     public $method = 'area';
 
+    #[Locked]
     public $model;
 
     public $start;
 
+    #[Locked]
     public $widget;
 
     public function getCarbonDate($date)
@@ -26,19 +30,25 @@ class Sparkline extends Widget
     public function getValue($start, $end)
     {
         $column = optional($this->widget)['column'];
+        $createdAtColumn = $this->model->getTable().'.created_at';
+
+        // Never let an unknown/tampered column reach the meta-join / raw-SQL path.
+        if ($column && ! $this->isSafeColumn($column)) {
+            $column = null;
+        }
         $method = $this->method;
 
         $query = $this->model->query()
-            ->where('created_at', '>=', $start)
-            ->where('created_at', '<', $end)
-            ->groupBy(DB::raw('DATE(created_at)'))
-            ->select(DB::raw('DATE(created_at) as date'));
+            ->where($createdAtColumn, '>=', $start)
+            ->where($createdAtColumn, '<', $end)
+            ->groupBy(DB::raw('DATE('.$createdAtColumn.')'))
+            ->select(DB::raw('DATE('.$createdAtColumn.') as date'));
 
         if ($column && $this->model->isMetaField($column)) {
             $query->leftJoin('meta', function ($join) use ($column) {
-                $join->on('posts.id', '=', 'meta.metable_id')
+                $join->on($this->model->getQualifiedKeyName(), '=', 'meta.metable_id')
                     ->where('meta.key', '=', $column)
-                    ->where('meta.metable_type', '=', get_class($this->model));
+                    ->where('meta.metable_type', '=', $this->model->getMorphClass());
             });
 
             if (in_array($method, ['avg', 'sum', 'min', 'max'])) {

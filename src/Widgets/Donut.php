@@ -4,52 +4,64 @@ namespace Aura\Base\Widgets;
 
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
+use Livewire\Attributes\Locked;
 use Livewire\Attributes\On;
 
 class Donut extends Widget
 {
     public $end;
 
+    #[Locked]
     public $method = 'count';
 
+    #[Locked]
     public $model;
 
     public $start;
 
+    #[Locked]
     public $widget;
 
     public function getValue($start, $end)
     {
-        return [
-            'tag-1' => rand(10, 50),
-            'tag-2' => rand(10, 50),
-            'tag-3' => rand(10, 50),
-            'tag-4' => rand(10, 50),
-        ];
-
         $column = optional($this->widget)['column'];
-        $taxonomy = optional($this->widget)['taxonomy'];
+        $table = $this->model->getTable();
 
-        $posts = $this->model->query()
-            ->where('created_at', '>=', $start)
-            ->where('created_at', '<', $end);
-
-        if ($column && $this->model->isMetaField($column)) {
-            $posts->select('posts.*', DB::raw("CAST(meta.value as SIGNED) as $column"))
-                ->leftJoin('meta', function ($join) use ($column) {
-                    $join->on('posts.id', '=', 'meta.metable_id')
-                        ->where('meta.key', '=', $column)
-                        ->where('meta.metable_type', '=', get_class($this->model));
-                });
+        // Never let an unknown/tampered column reach the raw-SQL identifier path.
+        if ($column && ! $this->isSafeColumn($column)) {
+            $column = null;
         }
 
-        return match ($this->method) {
-            'avg' => $posts->avg($this->model->isMetaField($column) ? DB::raw('CAST(meta.value as SIGNED)') : $column),
-            'sum' => $posts->sum($this->model->isMetaField($column) ? DB::raw('CAST(meta.value as SIGNED)') : $column),
-            'min' => $posts->min($this->model->isMetaField($column) ? DB::raw('CAST(meta.value as SIGNED)') : $column),
-            'max' => $posts->max($this->model->isMetaField($column) ? DB::raw('CAST(meta.value as SIGNED)') : $column),
-            default => $posts->count(),
-        };
+        $posts = $this->model->query()
+            ->where($table.'.created_at', '>=', $start)
+            ->where($table.'.created_at', '<', $end);
+
+        if (! $column) {
+            return ['Total' => $posts->count()];
+        }
+
+        if ($column && $this->model->isMetaField($column)) {
+            $posts->leftJoin('meta', function ($join) use ($column) {
+                $join->on($this->model->getQualifiedKeyName(), '=', 'meta.metable_id')
+                    ->where('meta.key', '=', $column)
+                    ->where('meta.metable_type', '=', $this->model->getMorphClass());
+            });
+
+            $aggregateExpression = 'CAST(meta.value as SIGNED)';
+            $labelExpression = 'meta.value';
+        } else {
+            $aggregateExpression = $table.'.'.$column;
+            $labelExpression = $table.'.'.$column;
+        }
+
+        $method = in_array($this->method, ['avg', 'sum', 'min', 'max'], true) ? strtoupper($this->method) : 'COUNT';
+        $aggregateSelect = $method === 'COUNT' ? 'COUNT(*)' : $method.'('.$aggregateExpression.')';
+
+        return $posts->selectRaw($labelExpression.' as label, '.$aggregateSelect.' as aggregate')
+            ->groupBy(DB::raw($labelExpression))
+            ->pluck('aggregate', 'label')
+            ->mapWithKeys(fn ($value, $label) => [(string) ($label ?: 'Empty') => $value])
+            ->toArray();
     }
 
     public function getValuesProperty()

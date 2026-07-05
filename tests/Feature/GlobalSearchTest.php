@@ -3,7 +3,13 @@
 use Aura\Base\Facades\Aura;
 use Aura\Base\Livewire\GlobalSearch;
 use Aura\Base\Resource;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
 use Livewire\Livewire;
+
+afterEach(function () {
+    Schema::dropIfExists('global_search_projects');
+});
 
 beforeEach(function () {
     Aura::fake();
@@ -52,6 +58,52 @@ class GlobalSearchModel extends Resource
     public function title()
     {
         return $this->title;
+    }
+}
+
+class GlobalSearchCustomTableModel extends Resource
+{
+    public static $customTable = true;
+
+    public static $singularName = 'Global Search Project';
+
+    public static ?string $slug = 'global-search-project';
+
+    public static string $type = 'GlobalSearchProject';
+
+    protected $fillable = [
+        'name',
+        'user_id',
+        'team_id',
+        'created_at',
+        'updated_at',
+    ];
+
+    protected $table = 'global_search_projects';
+
+    public static function getFields()
+    {
+        return [
+            [
+                'name' => 'Name',
+                'type' => 'Aura\\Base\\Fields\\Text',
+                'validation' => '',
+                'searchable' => true,
+                'slug' => 'name',
+            ],
+            [
+                'name' => 'Meta 1',
+                'type' => 'Aura\\Base\\Fields\\Text',
+                'validation' => '',
+                'searchable' => true,
+                'slug' => 'meta_1',
+            ],
+        ];
+    }
+
+    public function title()
+    {
+        return $this->name;
     }
 }
 
@@ -162,4 +214,34 @@ test('returns empty when no matches found', function () {
         ->assertSee('No results')
         ->assertDontSee('First Post')
         ->assertDontSee('Second Post');
+});
+
+test('can find custom table resource records by table and meta fields', function () {
+    Schema::create('global_search_projects', function (Blueprint $table) {
+        $table->id();
+        $table->string('name')->nullable();
+        $table->foreignId('user_id');
+        $table->foreignId('team_id');
+        $table->timestamps();
+    });
+
+    Aura::registerResources([
+        GlobalSearchCustomTableModel::class,
+    ]);
+    Aura::setModel(new GlobalSearchCustomTableModel);
+
+    GlobalSearchCustomTableModel::create([
+        'name' => 'Custom Search Alpha',
+        'meta_1' => 'Hidden Needle',
+        'user_id' => $this->user->id,
+        'team_id' => $this->user->current_team_id,
+    ]);
+
+    Livewire::test(GlobalSearch::class)
+        ->set('search', 'Custom Search Alpha')
+        ->assertSee('Custom Search Alpha');
+
+    Livewire::test(GlobalSearch::class)
+        ->set('search', 'Hidden Needle')
+        ->assertSee('Custom Search Alpha');
 });
