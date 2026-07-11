@@ -13,13 +13,13 @@
             @if ($this->settings['title'])
                 <div>
                     @if (optional(optional($this)->field)['name'])
-                        <h1 class="text-2xl font-semibold">{{ __($this->field['name']) }}</h1>
+                        <h1 class="text-xl font-semibold tracking-tight text-gray-900 dark:text-white">{{ __($this->field['name']) }}</h1>
                     @else
-                        <h1 class="text-2xl font-semibold">{{ __($model->pluralName()) }}</h1>
+                        <h1 class="text-xl font-semibold tracking-tight text-gray-900 dark:text-white">{{ __($model->pluralName()) }}</h1>
                     @endif
 
                     @if (optional(optional($this)->field)['description'])
-                        <span class="text-primary-500">{{ __($this->field['description']) }}</span>
+                        <span class="text-sm text-gray-500 dark:text-gray-400">{{ __($this->field['description']) }}</span>
                     @endif
                 </div>
             @endif

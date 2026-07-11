@@ -94,7 +94,7 @@ describe('header settings', function () {
         $component = livewire(Table::class, ['model' => $this->post, 'settings' => ['header' => true]]);
 
         expect($component->settings)->toHaveKey('header', true);
-        $component->assertSeeHtml('<h1 class="text-2xl font-semibold">Posts</h1>');
+        $component->assertSeeHtml('<h1 class="text-xl font-semibold tracking-tight text-gray-900 dark:text-white">Posts</h1>');
         $component->assertSeeHtml('href="'.url('/admin/post/create').'"');
     });
 
@@ -102,7 +102,7 @@ describe('header settings', function () {
         $component = livewire(Table::class, ['model' => $this->post, 'settings' => ['header' => false]]);
 
         expect($component->settings)->toHaveKey('header', false);
-        $component->assertDontSeeHtml('<h1 class="text-2xl font-semibold">Posts</h1>');
+        $component->assertDontSeeHtml('<h1 class="text-xl font-semibold tracking-tight text-gray-900 dark:text-white">Posts</h1>');
         $component->assertDontSeeHtml('href="'.url('/admin/Post/create').'"');
     });
 });
@@ -370,14 +370,14 @@ describe('title settings', function () {
         $component = livewire(Table::class, ['model' => $this->post, 'settings' => ['title' => true]]);
 
         expect($component->settings)->toHaveKey('title', true);
-        $component->assertSeeHtml('<h1 class="text-2xl font-semibold">Posts</h1>');
+        $component->assertSeeHtml('<h1 class="text-xl font-semibold tracking-tight text-gray-900 dark:text-white">Posts</h1>');
     });
 
     test('title can be disabled', function () {
         $component = livewire(Table::class, ['model' => $this->post, 'settings' => ['title' => false]]);
 
         expect($component->settings)->toHaveKey('title', false);
-        $component->assertDontSeeHtml('<h1 class="text-2xl font-semibold">Posts</h1>');
+        $component->assertDontSeeHtml('<h1 class="text-xl font-semibold tracking-tight text-gray-900 dark:text-white">Posts</h1>');
     });
 });
 

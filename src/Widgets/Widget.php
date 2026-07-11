@@ -4,6 +4,7 @@ namespace Aura\Base\Widgets;
 
 use Aura\Base\Resources\User;
 use Illuminate\Support\Facades\Auth;
+use Livewire\Attributes\Locked;
 use Livewire\Component;
 
 class Widget extends Component
@@ -30,6 +31,12 @@ class Widget extends Component
     public $loaded = false;
 
     /**
+     * The resource model the widget operates on.
+     */
+    #[Locked]
+    public $model;
+
+    /**
      * The start date/time for the widget data.
      *
      * @var string|null
@@ -42,13 +49,6 @@ class Widget extends Component
      * @var array
      */
     public $widget;
-
-    /**
-     * The cache key for the widget.
-     *
-     * @var string|null
-     */
-    protected $cacheKey;
 
     public function format($value)
     {
@@ -72,7 +72,10 @@ class Widget extends Component
         $user = Auth::user();
         $teamId = $user->current_team_id ?? 0;
 
-        return md5($teamId.$this->widget['slug'].$this->start.$this->end);
+        // Scope by model type as well — different resources may reuse the same widget slug.
+        $modelType = $this->model ? $this->model->getType() : '';
+
+        return md5($teamId.$modelType.$this->widget['slug'].$this->start.$this->end);
     }
 
     public function loadWidget()
@@ -83,7 +86,7 @@ class Widget extends Component
     public function mount()
     {
         // Check if the widget is cached
-        if (cache()->has($this->cacheKey)) {
+        if (cache()->has($this->getCacheKeyProperty())) {
             $this->isCached = true;
             $this->loaded = true;
         }

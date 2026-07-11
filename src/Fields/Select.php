@@ -6,6 +6,8 @@ class Select extends Field
 {
     public $edit = 'aura::fields.select';
 
+    public $index = 'aura::fields.select-index';
+
     public $optionGroup = 'Choice Fields';
 
     public $view = 'aura::fields.view-value';

@@ -14,9 +14,6 @@ class Donut extends Widget
     #[Locked]
     public $method = 'count';
 
-    #[Locked]
-    public $model;
-
     public $start;
 
     #[Locked]
@@ -76,7 +73,7 @@ class Donut extends Widget
         $previousStart = $currentStart->copy()->subDays($duration);
         $previousEnd = $currentStart;
 
-        return cache()->remember($this->cacheKey, $this->cacheDuration, function () use ($currentStart, $currentEnd, $previousStart, $previousEnd) {
+        return cache()->remember($this->getCacheKeyProperty(), $this->getCacheDurationProperty(), function () use ($currentStart, $currentEnd, $previousStart, $previousEnd) {
             $current = $this->getValue($currentStart, $currentEnd);
             $previous = $this->getValue($previousStart, $previousEnd);
 

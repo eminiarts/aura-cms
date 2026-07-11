@@ -26,18 +26,18 @@
 }
 
 .aura-card {
-    @apply p-4 mb-8 bg-white rounded-xl border shadow-sm border-gray-400/30;
+    @apply p-5 bg-white rounded-xl shadow-sm ring-1 ring-gray-950/10;
 }
 
 .dark .aura-card {
-    @apply bg-gray-900 border-gray-700;
+    @apply bg-gray-800 ring-white/10;
 }
 
 .aura-card-small {
-    @apply p-2 bg-white rounded-lg border shadow-sm border-gray-400/30;
+    @apply p-2 bg-white rounded-lg shadow-sm ring-1 ring-gray-950/5;
 }
 .dark .aura-card-small {
-    @apply bg-gray-900 border-gray-700;
+    @apply bg-gray-800 ring-white/10;
 }
 
 

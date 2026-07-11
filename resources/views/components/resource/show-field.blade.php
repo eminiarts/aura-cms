@@ -9,7 +9,7 @@
   @error($validation) <span class="text-sm font-semibold text-red-500 error">{{ $message }}</span> @enderror
 
   @if (optional($field)['field']->group)
-    <div class="aura-card">
+    <div class="mb-8 aura-card">
       <div class="flex justify-between mb-4 flex-start">
 
         <div class="mt-1 mr-2 draggable-handle">

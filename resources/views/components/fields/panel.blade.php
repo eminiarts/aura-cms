@@ -14,7 +14,7 @@
 
 
 <div class="px-2" id="resource-field-{{ optional($field)['slug'] }}-wrapper">
-    <div class="{{ $field['style']['class'] ?? 'aura-card' }}">
+    <div class="{{ $field['style']['class'] ?? 'aura-card mb-8' }}">
         <div class="mb-2">
           @if(isset($field['name']) && (!isset($field['hide_title']) || $field['hide_title'] === false))
             <div class="px-2 mt-1">

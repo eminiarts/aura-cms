@@ -1,14 +1,8 @@
-<div class="aura-card" wire:key="chart" @if (!$isCached) wire:init="loadWidget" @endif>
+<div class="h-full aura-card" wire:key="donut-{{ $widget['slug'] ?? '' }}" @if (!$isCached) wire:init="loadWidget" @endif>
   @if($loaded)
-  <div class="p-2">
-    <div class="flex justify-between items-start mb-4">
-      <span class="text-sm font-semibold">{{ $widget['name'] }}</span>
-
-      <div class="">
-        {{-- <div class="flex items-baseline text-4xl font-medium">
-          {{ collect($this->values['current'])->last() ?? 'N/A' }}
-        </div> --}}
-      </div>
+  <div>
+    <div class="flex gap-2 justify-between items-center mb-4">
+      <span class="text-sm font-medium text-gray-500 truncate dark:text-gray-400">{{ __($widget['name']) }}</span>
     </div>
 
     <div class="w-full">

@@ -14,9 +14,6 @@ class Sparkline extends Widget
     #[Locked]
     public $method = 'area';
 
-    #[Locked]
-    public $model;
-
     public $start;
 
     #[Locked]
