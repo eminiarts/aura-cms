@@ -16,11 +16,13 @@
     ],
     "homepage": "https://github.com/eminiarts/aura-cms",
     "license": "MIT",
-    "authors": [{
-        "name": "Emini Arts GmbH",
-        "email": "support@eminiarts.ch",
-        "role": "Developer"
-    }],
+    "authors": [
+        {
+            "name": "Emini Arts GmbH",
+            "email": "support@eminiarts.ch",
+            "role": "Developer"
+        }
+    ],
     "require": {
         "php": "^8.2",
         "doctrine/dbal": "^3.6|^4.0",
@@ -35,11 +37,11 @@
     "require-dev": {
         "intervention/image-laravel": "^1.0",
         "laravel/dusk": "^8.0",
-        "laravel/framework": "^10.0|^11.0|^12.0",
+        "laravel/framework": "^10.0|^11.0|^12.0|^13.0",
         "laravel/pint": "^1.18",
         "nunomaduro/collision": "^8.1",
         "larastan/larastan": "^2.0|^3.0",
-        "orchestra/testbench": "^9.0|^10.0",
+        "orchestra/testbench": "^9.0|^10.0|^11.0",
         "pestphp/pest": "^3.0|^4.0",
         "pestphp/pest-plugin-laravel": "^3.0|^4.0",
         "pestphp/pest-plugin-livewire": "^4.0",
