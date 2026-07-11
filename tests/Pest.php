@@ -28,6 +28,10 @@ uses()->afterEach(function () {
     app()->forgetInstance(Aura\Base\Aura::class);
     app()->singleton(Aura\Base\Aura::class);
     Aura\Base\Facades\Aura::clearResolvedInstances();
+
+    // Flush process-static field caches so field definitions cannot leak
+    // between tests (see InputFieldsHelpers::flushFieldCache()).
+    Aura\Base\Resource::flushFieldCache();
 })->in('Feature', 'FeatureWithDatabaseMigrations');
 
 // uses(\Illuminate\Foundation\Testing\RefreshDatabase::class);

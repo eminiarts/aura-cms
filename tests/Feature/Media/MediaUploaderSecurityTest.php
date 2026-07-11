@@ -136,14 +136,16 @@ test('accepts webp image uploads', function () {
     expect(Attachment::first()->mime_type)->toBe('image/webp');
 });
 
-test('accepts svg image uploads', function () {
+test('rejects svg uploads (stored XSS vector)', function () {
+    // SVGs can embed <script> and are served inline from the public disk, so
+    // they are blocked at upload. See MediaUploader validation/blocklist.
     $svgFile = UploadedFile::fake()->create('icon.svg', 100, 'image/svg+xml');
 
     Livewire::test(MediaUploader::class)
         ->set('media', [$svgFile])
-        ->assertHasNoErrors();
+        ->assertHasErrors('media.0');
 
-    expect(Attachment::count())->toBe(1);
+    expect(Attachment::count())->toBe(0);
 });
 
 // Safe Document File Tests

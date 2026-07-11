@@ -7,13 +7,24 @@ use Aura\Base\Resources\User;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Scope;
+use WeakMap;
 
 class ScopedScope implements Scope
 {
     /**
-     * Apply the scope to a given Eloquent query builder.
+     * Per-request cache of the resolved scope decision.
      *
-     * @return void
+     * Keyed by the authenticated user object instance so it resets naturally
+     * between requests and between tests: when a user instance is garbage
+     * collected the WeakMap entry disappears with it, and every test resolves
+     * a fresh user instance, so no state can leak across tests.
+     *
+     * @var WeakMap<User, array<string, array{super: bool, scoped: bool}>>|null
+     */
+    protected static ?WeakMap $decisionCache = null;
+
+    /**
+     * Apply the scope to a given Eloquent query builder.
      */
     public function apply(Builder $builder, Model $model)
     {
@@ -24,16 +35,49 @@ class ScopedScope implements Scope
             return $builder;
         }
 
-        // Superadmin
-        if (auth()->user() && auth()->user() instanceof User && auth()->user()->isSuperAdmin()) {
+        $user = auth()->user();
+
+        if (! $user instanceof User) {
             return $builder;
         }
 
-        if (auth()->user() && auth()->user() instanceof User && auth()->user()->hasPermissionTo('scope', $model)) {
-            $builder->where($model->getTable().'.user_id', auth()->user()->id);
+        ['super' => $isSuperAdmin, 'scoped' => $isScoped] = $this->decisionFor($user, $model);
+
+        // Superadmin
+        if ($isSuperAdmin) {
+            return $builder;
+        }
+
+        if ($isScoped) {
+            $builder->where($model->getTable().'.user_id', $user->id);
         }
 
         // Check access?
         return $builder;
+    }
+
+    /**
+     * Resolve (and memoize) the scope decision for the given user and model.
+     *
+     * @return array{super: bool, scoped: bool}
+     */
+    protected function decisionFor(User $user, Model $model): array
+    {
+        static::$decisionCache ??= new WeakMap;
+
+        $userCache = static::$decisionCache[$user] ?? [];
+
+        $key = $model->getMorphClass();
+
+        if (! array_key_exists($key, $userCache)) {
+            $userCache[$key] = [
+                'super' => $user->isSuperAdmin(),
+                'scoped' => $user->hasPermissionTo('scope', $model),
+            ];
+
+            static::$decisionCache[$user] = $userCache;
+        }
+
+        return $userCache[$key];
     }
 }

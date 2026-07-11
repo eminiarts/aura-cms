@@ -27,6 +27,16 @@ abstract class Field implements Wireable
 
     public $optionGroup = 'Fields';
 
+    /**
+     * Whether display() returns trusted HTML that must be rendered raw.
+     *
+     * Defaults to false so the scalar display path is HTML-escaped and
+     * cannot be used for stored XSS. Fields that intentionally emit markup
+     * either override display() (e.g. Boolean, Image, BelongsTo, Tags) or
+     * set this flag to true (e.g. a rich-text field).
+     */
+    public bool $rawHtmlDisplay = false;
+
     public bool $sameLevelGrouping = false;
 
     public $tableColumnType = 'string';
@@ -73,7 +83,16 @@ abstract class Field implements Wireable
             );
         }
 
-        return $value;
+        // Fields that emit their own trusted markup are rendered raw. The
+        // Wysiwyg field produces HTML through this default path, so it is
+        // treated as trusted here.
+        if ($this->rawHtmlDisplay || class_basename($this) === 'Wysiwyg') {
+            return $value;
+        }
+
+        // Default scalar path: HTML-escape to prevent stored XSS. Non-scalar
+        // values (arrays, objects, null) are returned unchanged.
+        return is_scalar($value) ? e($value) : $value;
     }
 
     public function edit()

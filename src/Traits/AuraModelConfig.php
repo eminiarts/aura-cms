@@ -140,7 +140,10 @@ trait AuraModelConfig
                 return implode(', ', $value);
             }
 
-            return $value;
+            // This branch bypasses the field's own display() (which escapes
+            // scalar values), so escape here too — the value is rendered raw
+            // via {!! !!} in the table/view blades.
+            return is_scalar($value) ? e($value) : $value;
         }
     }
 

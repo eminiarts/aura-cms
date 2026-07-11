@@ -4,6 +4,7 @@ namespace Aura\Base\Livewire;
 
 use Aura\Base\Resource;
 use Aura\Base\Resources\User;
+use Illuminate\Support\Facades\Gate;
 use Livewire\Component;
 
 class GlobalSearch extends Component
@@ -31,6 +32,11 @@ class GlobalSearch extends Component
             }
 
             if ($resource::getGlobalSearch() === false) {
+                return false;
+            }
+
+            // Skip any resource the current user is not allowed to view.
+            if (! Gate::allows('viewAny', app($resource))) {
                 return false;
             }
 
@@ -79,11 +85,13 @@ class GlobalSearch extends Component
             $searchResults->push(...$results);
         }
 
-        // Search in User model
-        $userResults = User::where('name', 'like', '%'.$this->search.'%')
-            ->orWhere('email', 'like', '%'.$this->search.'%')
-            ->get();
-        $searchResults->push(...$userResults);
+        // Search in User model, but only if the current user may view users.
+        if (Gate::allows('viewAny', app(User::class))) {
+            $userResults = User::where('name', 'like', '%'.$this->search.'%')
+                ->orWhere('email', 'like', '%'.$this->search.'%')
+                ->get();
+            $searchResults->push(...$userResults);
+        }
 
         $searchResults = $searchResults->flatten()->map(function ($item) {
             if ($item instanceof User) {

@@ -184,7 +184,9 @@ class Create extends Component
 
         } else {
 
-            $model = $this->model->create($this->form);
+            // Never trust client-supplied ownership/tenancy columns. team_id,
+            // user_id and type are assigned server-side (see InitialPostFields).
+            $model = $this->model->create(collect($this->form)->except(['team_id', 'user_id', 'type'])->all());
 
         }
 

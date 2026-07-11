@@ -181,7 +181,8 @@ class Edit extends Component
         if ($this->model->usesCustomTable()) {
             $this->model->update($this->form['fields']);
         } else {
-            $this->model->update($this->form);
+            // Never trust client-supplied ownership/tenancy columns.
+            $this->model->update(collect($this->form)->except(['team_id', 'user_id', 'type'])->all());
         }
 
         $this->notify(__('Successfully updated'));
