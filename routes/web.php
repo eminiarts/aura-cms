@@ -10,6 +10,7 @@ use Aura\Base\Livewire\Resource\Edit;
 use Aura\Base\Livewire\Resource\Index;
 use Aura\Base\Livewire\Resource\View;
 use Aura\Base\Livewire\ResourceEditor;
+use Aura\Base\Livewire\Styleguide;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware(config('aura-settings.middleware.aura-guest'))->group(function () {
@@ -40,6 +41,8 @@ Route::domain(config('aura.domain'))
             Route::get('/settings', config('aura.components.settings'))->name('settings');
 
             Route::get('/plugins', PluginsPage::class)->name('plugins');
+
+            Route::get('/styleguide', Styleguide::class)->name('styleguide');
 
             Route::get('/img/{path}', ImageController::class)->where('path', '.*')->name('image');
 
