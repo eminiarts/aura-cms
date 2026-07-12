@@ -98,7 +98,7 @@ return [
         'darkmode-type' => 'auto',
 
         'sidebar-size' => 'standard',
-        'sidebar-type' => 'primary',
+        'sidebar-type' => 'dark',
         'sidebar-darkmode-type' => 'dark',
 
         'login-bg' => false,

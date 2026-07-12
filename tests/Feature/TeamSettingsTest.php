@@ -41,7 +41,7 @@ test('Default Team Settings are created', function () {
         ->assertSee('Settings')
         ->assertSee('primary')
         ->assertSet('form.fields.darkmode-type', 'auto')
-        ->assertSet('form.fields.sidebar-type', 'primary')
+        ->assertSet('form.fields.sidebar-type', 'dark')
         ->assertSet('form.fields.color-palette', 'aura')
         ->assertSet('form.fields.gray-color-palette', 'slate');
 
@@ -59,7 +59,7 @@ test('Default Team Settings are created', function () {
     $this->assertIsArray($option->value);
 
     // assertJSON option value matches expected JSON structure
-    $this->assertJsonStringEqualsJsonString(json_encode($option->value), '{"darkmode-type":"auto","sidebar-type":"primary","color-palette":"aura","gray-color-palette":"slate","sidebar-size":"standard","sidebar-darkmode-type":"dark"}');
+    $this->assertJsonStringEqualsJsonString(json_encode($option->value), '{"darkmode-type":"auto","sidebar-type":"dark","color-palette":"aura","gray-color-palette":"slate","sidebar-size":"standard","sidebar-darkmode-type":"dark"}');
 });
 
 test('Team Settings can be saved2', function () {

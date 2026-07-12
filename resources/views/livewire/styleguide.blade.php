@@ -221,7 +221,7 @@
                 </div>
                 <div class="flex flex-col gap-1 sm:flex-row sm:items-baseline sm:gap-6">
                     <span class="w-64 text-xs text-gray-400 shrink-0 dark:text-gray-500">table header</span>
-                    <span class="text-xs font-semibold text-gray-500 dark:text-gray-400">CREATED AT</span>
+                    <span class="text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">CREATED AT</span>
                 </div>
                 <div class="flex flex-col gap-1 sm:flex-row sm:items-baseline sm:gap-6">
                     <span class="w-64 text-xs text-gray-400 shrink-0 dark:text-gray-500">help text</span>
@@ -572,7 +572,10 @@
                     <tbody class="divide-y divide-gray-100 dark:divide-white/5">
                         @foreach ($tableRows as $row)
                             <tr class="transition-colors duration-150 ease-in-out cm-table-row hover:bg-gray-50/80 dark:hover:bg-white/[0.04] {{ $row['selected'] ? 'bg-primary-50/60 dark:bg-primary-500/10' : '' }}">
-                                <td class="py-3 pr-0 pl-6">
+                                <td class="relative py-3 pr-0 pl-6">
+                                    @if ($row['selected'])
+                                        <span class="absolute inset-y-0 left-0 w-0.5 bg-primary-600" aria-hidden="true"></span>
+                                    @endif
                                     <x-aura::input.checkbox hideLabel :label="'Row '.$row['id']" :checked="$row['selected']" />
                                 </td>
                                 <td class="px-6 py-3 text-sm font-medium text-gray-900 dark:text-white">{{ $row['title'] }}</td>
@@ -611,7 +614,7 @@
                     <span class="inline-flex items-center justify-center h-8 w-8 rounded-lg text-gray-300 dark:text-gray-600">
                         <svg class="size-4" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M12.79 5.23a.75.75 0 0 1-.02 1.06L8.832 10l3.938 3.71a.75.75 0 1 1-1.04 1.08l-4.5-4.25a.75.75 0 0 1 0-1.08l4.5-4.25a.75.75 0 0 1 1.06.02Z" clip-rule="evenodd" /></svg>
                     </span>
-                    <span class="inline-flex items-center justify-center h-8 min-w-8 px-2 text-sm font-medium rounded-lg bg-white text-gray-900 shadow-xs ring-1 ring-gray-950/10 dark:bg-white/10 dark:text-white dark:ring-white/10">1</span>
+                    <span class="inline-flex items-center justify-center h-8 min-w-8 px-2 text-sm font-medium rounded-lg bg-primary-50 text-primary-700 ring-1 ring-primary-200 dark:bg-primary-500/15 dark:text-primary-300 dark:ring-primary-500/20">1</span>
                     <button type="button" class="inline-flex items-center justify-center h-8 min-w-8 px-2 text-sm font-medium rounded-lg text-gray-600 hover:bg-gray-950/5 dark:text-gray-400 dark:hover:bg-white/5 transition-colors duration-150">2</button>
                     <button type="button" class="inline-flex items-center justify-center h-8 min-w-8 px-2 text-sm font-medium rounded-lg text-gray-600 hover:bg-gray-950/5 dark:text-gray-400 dark:hover:bg-white/5 transition-colors duration-150">3</button>
                     <button type="button" class="inline-flex items-center justify-center h-8 min-w-8 px-2 text-sm font-medium rounded-lg text-gray-600 hover:bg-gray-950/5 dark:text-gray-400 dark:hover:bg-white/5 transition-colors duration-150">4</button>
