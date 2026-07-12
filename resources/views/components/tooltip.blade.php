@@ -17,7 +17,7 @@ if (!isset($positions[$position])) {
 
 <div class="relative group">
   <div class="z-10 pointer-events-none select-none group-hover:delay-200 opacity-0 group-hover:opacity-100 transition duration-200 absolute transform {{ optional($positions)[$position] }}">
-    <div class="bg-black/50 text-white text-xs py-1 px-2 rounded whitespace-nowrap">{{ $text }}</div>
+    <div class="bg-gray-900/95 text-white text-xs font-medium py-1.5 px-2.5 rounded-md shadow-md whitespace-nowrap dark:bg-gray-700/95 dark:ring-1 dark:ring-white/10">{{ $text }}</div>
   </div>
   {{ $slot }}
 </div>

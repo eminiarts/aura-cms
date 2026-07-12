@@ -7,14 +7,6 @@
 
     <title>{{ config('app.name', 'Aura CMS') }}</title>
 
-    <!-- Scripts -->
-    {{-- @vite(['resources/css/app.css', 'resources/js/app.js']) --}}
-    {{-- <link rel="stylesheet" href="/css/app.css"> --}}
-    {{-- <script defer src="/js/app.js"></script> --}}
-    {{-- @vite(['resources/css/app.css', 'resources/js/app.js'], 'vendor/aura') --}}
-
-    {{-- @vite(['resources/css/app.css', 'resources/js/app.js', 'vendor/aura']) --}}
-
     @auraStyles
 
     @include('aura::components.layout.favicon')
@@ -25,7 +17,7 @@
     @endphp
 
 </head>
-<body class="font-sans antialiased text-gray-800 bg-white dark:bg-black dark:text-gray-100">
+<body class="font-sans antialiased text-gray-800 bg-gray-50 dark:bg-gray-900 dark:text-gray-100">
 
     @if ($loginBgUrl && $loginBgDarkUrl)
         <script>
@@ -42,7 +34,7 @@
         </script>
     @endif
 
-    <div class="isolate overflow-hidden relative bg-gray-100 bg-bottom bg-no-repeat bg-cover group dark:bg-gray-900"
+    <div class="isolate overflow-hidden relative bg-gray-50 bg-bottom bg-no-repeat bg-cover dark:bg-gray-900"
         @if ($loginBgUrl && $loginBgDarkUrl)
             style="background-image: url('{{ $loginBgUrl }}');"
             data-darkmode-image="{{ $loginBgDarkUrl }}"
@@ -53,10 +45,14 @@
         @endif
     >
         @if (!$loginBgUrl && !$loginBgDarkUrl)
-            <div class="pointer-events-none">
-                <div class="absolute inset-0 transition duration-300" style="mask-image: radial-gradient(circle, rgba(255,255,255,0.8) 10%, rgba(255,255,255,0) 85%); transform: opacity-90 group-hover:opacity-100;">
+            <div class="absolute inset-0 pointer-events-none" aria-hidden="true">
+                {{-- Soft radial glow behind the card --}}
+                <div class="absolute top-1/2 left-1/2 w-[42rem] h-[42rem] rounded-full -translate-x-1/2 -translate-y-1/2 bg-primary-500/[0.06] blur-3xl dark:bg-primary-500/[0.07]"></div>
+
+                {{-- Triangle grid, faded out towards the edges --}}
+                <div class="absolute inset-0" style="mask-image: radial-gradient(ellipse 80% 70% at 50% 45%, rgba(255,255,255,0.7) 0%, rgba(255,255,255,0) 80%); -webkit-mask-image: radial-gradient(ellipse 80% 70% at 50% 45%, rgba(255,255,255,0.7) 0%, rgba(255,255,255,0) 80%);">
                     <svg aria-hidden="true"
-                        class="absolute inset-x-0 inset-y-0 w-full h-full text-gray-200 dark:text-gray-700/70"
+                        class="absolute inset-x-0 inset-y-0 w-full h-full text-gray-950/[0.07] dark:text-white/[0.06]"
                         fill="none" stroke-width="1">
                         <defs>
                             <pattern id="trianglePatternEven" viewBox="0 0 30 52" width="60" height="104" patternUnits="userSpaceOnUse"
@@ -81,20 +77,19 @@
             </div>
         @endif
 
-        <div class="absolute inset-0 bg-transparent dark:bg-transparent -z-10"></div>
-
-        <div class="flex relative flex-col items-center pt-6 min-h-screen bg-bottom bg-no-repeat bg-cover sm:justify-center sm:pt-0">
-            <div class="flex justify-center px-6 w-full sm:max-w-md">
-                <div class="w-2/3">
-                    <a href="/">
+        <main class="flex relative flex-col justify-center items-center px-6 py-12 min-h-screen">
+            <div class="w-full sm:max-w-md">
+                <div class="flex justify-center">
+                    <a href="/" class="block w-2/3 rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500">
                         <x-dynamic-component :component="config('aura.views.logo')" />
                     </a>
                 </div>
+
+                <div class="p-8 mt-8 w-full ring-1 shadow-xl backdrop-blur-xl bg-white/95 rounded-2xl ring-gray-950/5 shadow-gray-950/[0.08] dark:bg-gray-800/90 dark:ring-white/10 dark:shadow-black/40 sm:p-10">
+                    {{ $slot }}
+                </div>
             </div>
-            <div class="overflow-hidden px-6 py-4 pb-6 mt-6 w-full border border-gray-300 shadow-md backdrop-blur-sm dark:border-gray-700 bg-white/50 dark:bg-gray-800/80 sm:max-w-md sm:rounded-2xl">
-                {{ $slot }}
-            </div>
-        </div>
+        </main>
     </div>
 </body>
 </html>

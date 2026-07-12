@@ -55,12 +55,12 @@
 }">
 
 <div x-show="visible" x-ref="contextMenu"
-    class="fixed z-10 py-2 mt-1 w-48 bg-white rounded-md ring-1 ring-black ring-opacity-5 shadow-lg dark:bg-gray-800"
+    class="fixed z-10 p-1 mt-1 w-48 bg-white rounded-lg ring-1 shadow-lg ring-gray-950/5 dark:bg-gray-800 dark:ring-white/10"
     @click.away="closeContextMenu" x-cloak>
 
     @can('update', $model)
     <a href="#"
-        class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700"
+        class="block px-3 py-1.5 text-sm text-gray-700 rounded-md transition-colors duration-150 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-white/5"
         @click="editAction">
         <div class="flex justify-start items-center space-x-2">
             <div class="shrink-0">
@@ -73,7 +73,7 @@
 
     @can('view', $model)
     <a href="#"
-        class="block px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700"
+        class="block px-3 py-1.5 text-sm font-medium text-gray-700 rounded-md transition-colors duration-150 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-white/5"
         @click="viewAction">
         <div class="flex justify-start items-center space-x-2">
             <div class="shrink-0">

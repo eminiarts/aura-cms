@@ -6,7 +6,7 @@
   'compact' => false,
   'block' => false,
   'size' => 'base',
-  'class' => 'text-white bg-primary-600 hover:bg-primary-700 focus:ring-primary-500 shadow-none',
+  'class' => 'text-white bg-primary-600 hover:bg-primary-500 active:bg-primary-700 shadow-[inset_0_1px_0_0_rgb(255_255_255/0.12),0_1px_2px_0_rgb(0_8_24/0.10)] focus-visible:ring-primary-500',
   'type' => 'button',
   'navigate' => true,
   'disabled' => false,
@@ -15,34 +15,36 @@
 @php
 
 if ($block) {
-  $class = 'inline-flex justify-center w-full' . ' ' . $class;
+  $class = 'flex w-full' . ' ' . $class;
 } else {
   $class = 'inline-flex' . ' ' . $class;
 }
 
 $sizes = [
-  'icon-xs' => 'px-1 py-1 text-xs font-semibold rounded-md',
-  'xs' => 'px-3.5 py-1.5 text-xs font-semibold rounded-md',
-  'sm' => 'px-4 py-2.5 text-sm leading-4 font-semibold rounded-lg',
-  'base' => 'px-4 py-2.5 text-sm font-semibold rounded-lg',
-  'lg' => 'px-5 py-3 text-base font-semibold rounded-lg',
-  'xl' => 'px-7 py-3.5 text-lg font-semibold rounded-lg',
+  'icon-xs' => 'gap-1 p-1 text-xs font-medium rounded-md',
+  'xs' => 'gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-md',
+  'sm' => 'gap-1.5 px-3 py-1.5 text-sm leading-5 font-medium rounded-lg',
+  'base' => 'gap-2 px-4 py-2 text-sm font-medium rounded-lg',
+  'lg' => 'gap-2 px-4 py-2.5 text-base font-medium rounded-lg',
+  'xl' => 'gap-2.5 px-5 py-3 text-lg font-medium rounded-xl',
 ];
 $iconSizes = [
   'icon-xs' => 'w-4',
   'xs' => 'w-4',
-  'sm' => 'w-5',
+  'sm' => 'w-4',
   'base' => 'w-5',
-  'lg' => 'w-6',
-  'xl' => 'w-7',
+  'lg' => 'w-5',
+  'xl' => 'w-6',
 ];
 
 if (!isset($sizes[$size])) {
   $size = 'base';
 }
 
-$disabledClass = $disabled ? 'opacity-50 cursor-not-allowed' : '';
+$disabledClass = $disabled ? 'opacity-50 cursor-not-allowed pointer-events-none' : '';
 $class .= ' ' . $disabledClass;
+
+$sharedClass = ' relative items-center justify-center whitespace-nowrap select-none transition-colors duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-gray-900 ';
 
 @endphp
 
@@ -54,32 +56,31 @@ $class .= ' ' . $disabledClass;
   href="{{ $disabled ? '#' : $href }}"
   @if($navigate && !$disabled) wire:navigate @endif
   {{$attributes->merge([
-    'class' => $class . ' relative items-center focus:outline-none focus:ring-2 focus:ring-opacity-50 focus:ring-offset-2 dark:focus:ring-offset-gray-900 select-none active:scale-95 transition-transform duration-150 ease-in-out' . ' ' .  optional($sizes)[$size],
+    'class' => $class . $sharedClass . $sizes[$size],
   ])}}
   @if($disabled) aria-disabled="true" @endif
 >
   @if ($icon ?? false)
-    <div class="absolute -ml-1">
+    <span class="inline-flex items-center justify-center shrink-0 -ml-0.5 {{ $iconSizes[$size] }}">
       {{ $icon }}
-    </div>
-    <span class="block {{ $iconSizes[$size] }} mr-2 -ml-1"></span>
+    </span>
   @endif
   {{ $slot }}
 </a>
 @else
 <button
+  @if(isset($id)) id="{{ $id }}" @endif
   tabindex="{{ $disabled ? '-1' : ($attributes->has('tabindex') ? $attributes->get('tabindex') : '0') }}"
   type="{{ $type }}"
   {{$attributes->merge([
-    'class' => $class . ' relative items-center focus:outline-none focus:ring-2 focus:ring-opacity-50 focus:ring-offset-2 dark:focus:ring-offset-gray-900 select-none active:scale-95 transition-transform duration-150 ease-in-out ' . ' ' .  optional($sizes)[$size],
+    'class' => $class . $sharedClass . $sizes[$size],
   ])}}
   @if($disabled) disabled aria-disabled="true" @endif
 >
   @if ($icon ?? false)
-    <div class="absolute -ml-1">
+    <span class="inline-flex items-center justify-center shrink-0 -ml-0.5 {{ $iconSizes[$size] }}">
       {{ $icon }}
-    </div>
-    <span class="block mr-2 -ml-1 w-6"></span>
+    </span>
   @endif
   {{ $slot }}
 </button>

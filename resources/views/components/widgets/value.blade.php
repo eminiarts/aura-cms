@@ -15,7 +15,7 @@
                         $goal = str_replace("'", '', $widget['goal']);
                         $change = round(($currentValue / $goal) * 100, 2);
                     @endphp
-                    <span class="inline-flex items-baseline px-2 py-0.5 text-xs font-medium rounded-full bg-primary-50 text-primary-700 dark:bg-primary-900/40 dark:text-primary-400 shrink-0">
+                    <span class="inline-flex items-center px-2 py-0.5 text-xs font-medium rounded-full bg-primary-50 text-primary-700 dark:bg-primary-900/40 dark:text-primary-400 shrink-0">
                         {{ $change }}%
                     </span>
                 @elseif($hasPrevious)
@@ -54,8 +54,8 @@
                 <div class="mt-4">
                     <x-aura::tippy text="{{ $currentValue }} / {{ intval($widget['goal']) }}" class="bg-primary-100">
                         <div class="block">
-                            <div class="w-full h-1.5 bg-gray-100 rounded-full dark:bg-gray-700">
-                                <div class="h-1.5 rounded-full bg-primary-500" style="max-width: 100%; width: {{ intval($currentValue) / intval($widget['goal']) * 100 }}%"></div>
+                            <div class="overflow-hidden w-full h-2 bg-gray-100 rounded-full dark:bg-gray-700/60">
+                                <div class="h-2 rounded-full bg-primary-500 dark:bg-primary-400 transition-[width] duration-300" style="max-width: 100%; width: {{ intval($currentValue) / intval($widget['goal']) * 100 }}%"></div>
                             </div>
                         </div>
                     </x-aura::tippy>
@@ -63,12 +63,12 @@
             @endif
         </div>
     @else
-        <div class="animate-pulse">
+        <div class="animate-pulse" aria-hidden="true">
             <div class="flex justify-between items-center">
-                <div class="w-1/3 h-4 bg-gray-100 rounded dark:bg-gray-700"></div>
-                <div class="w-12 h-4 bg-gray-100 rounded-full dark:bg-gray-700"></div>
+                <div class="w-1/3 h-4 bg-gray-100 rounded-md dark:bg-gray-700/60"></div>
+                <div class="w-12 h-5 bg-gray-100 rounded-full dark:bg-gray-700/60"></div>
             </div>
-            <div class="mt-4 w-20 h-8 bg-gray-100 rounded dark:bg-gray-700"></div>
+            <div class="mt-4 w-24 h-9 bg-gray-100 rounded-lg dark:bg-gray-700/60"></div>
         </div>
     @endif
 </div>

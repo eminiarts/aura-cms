@@ -31,20 +31,20 @@
 
         <x-slot name="content">
             <div class="w-60">
-                <div class="p-4 kanban-wrapper" drag-root="reorderKanbanStatuses" role="none">
+                <div class="p-2 kanban-wrapper" drag-root="reorderKanbanStatuses" role="none">
                     @foreach($this->kanbanStatuses as $key => $status)
-                        <label class="flex items-center py-2 cursor-pointer space-x-2 hover:bg-gray-100 dark:hover:bg-gray-900 sortable"
+                        <label class="flex gap-2 items-center px-2 py-1.5 rounded-md transition-colors duration-150 cursor-pointer hover:bg-gray-100 dark:hover:bg-white/5 sortable"
                             for="status_{{$key}}" id="{{ $key }}">
 
                             <x-aura::input.checkbox wire:model.live="kanbanStatuses.{{ $key }}.visible" value="true" id="status_{{$key}}" />
 
-                            <span class="flex flex-1 items-center px-4 text-sm text-gray-700 dark:text-gray-200 group" role="menuitem"
+                            <span class="flex flex-1 items-center text-sm text-gray-700 dark:text-gray-200 group" role="menuitem"
                                 tabindex="-1" id="menu-item-{{$key}}">
                                 {{ __($status['value']) }}
                             </span>
 
                             <div class="cursor-move drag-handle move-kanban-status">
-                                <svg class="mr-2 w-4 h-4 text-gray-400" viewBox="0 0 24 24" fill="none"
+                                <svg class="w-4 h-4 text-gray-400 dark:text-gray-500" viewBox="0 0 24 24" fill="none"
                                     xmlns="http://www.w3.org/2000/svg">
                                     <path d="M3 8.5H21M3 15.5H21" stroke="currentColor" stroke-width="2"
                                         stroke-linecap="round" stroke-linejoin="round" />

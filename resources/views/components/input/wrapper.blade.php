@@ -23,7 +23,7 @@
 
     @if($help)
 
-    <div class="text-gray-300">
+    <div class="text-gray-400 dark:text-gray-500">
       <x-aura::tooltip text="{{ $help }}" position="bottom" class="text-sm text-gray-400 bg-white">
         <x-aura::icon icon="info" size='sm' />
       </x-aura::tooltip>
@@ -41,7 +41,7 @@
     @endif
 
     @if($error)
-      @error($error) <span class="error text-red-500 font-semibold text-sm">{{ $message }}</span> @enderror
+      @error($error) <span class="error mt-1 block text-sm text-red-600 dark:text-red-400">{{ $message }}</span> @enderror
     @endif
 
   </div>

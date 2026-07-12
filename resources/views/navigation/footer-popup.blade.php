@@ -2,7 +2,7 @@
     @if(config('aura.teams'))
         @can('update', Auth::user()->currentTeam)
             <!-- Team Management -->
-            <div class="block px-4 py-2 text-xs text-gray-400 dark:text-gray-400">
+            <div class="block px-4 pt-2 pb-1 text-2xs font-medium tracking-wider uppercase text-gray-400 dark:text-gray-400 select-none">
                 {{ __('Manage Team') }}
             </div>
 
@@ -17,24 +17,24 @@
             </x-aura::dropdown-link>
         @endcan
 
-            <div class="my-2 border-t border-gray-100 dark:border-gray-600"></div>
+            <div class="my-2 border-t border-gray-100 dark:border-white/10"></div>
         @endcan
 
         @if(Auth::user()->getTeams()->count() > 1)
             <!-- Team Switcher -->
-            <div class="block px-4 py-2 text-xs text-gray-400 dark:text-gray-400">
+            <div class="block px-4 pt-2 pb-1 text-2xs font-medium tracking-wider uppercase text-gray-400 dark:text-gray-400 select-none">
                 {{ __('Switch Teams') }}
             </div>
             @foreach (Auth::user()->getTeams() as $team)
                 <x-aura::switchable-team :team="$team" />
             @endforeach
 
-            <div class="my-2 border-t border-gray-100 dark:border-gray-600"></div>
+            <div class="my-2 border-t border-gray-100 dark:border-white/10"></div>
         @endif
     @endif
 
   @if(config('aura.features.profile'))
-  <div class="block px-4 py-2 text-xs font-semibold text-gray-400 dark:text-gray-400">
+  <div class="block px-4 pt-2 pb-1 text-2xs font-medium tracking-wider uppercase text-gray-400 dark:text-gray-400 select-none">
       {{ __('Manage Profile') }}
   </div>
 

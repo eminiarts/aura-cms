@@ -98,13 +98,13 @@
         </div>
     </div>
     @else
-    <div class="animate-pulse">
+    <div class="animate-pulse" aria-hidden="true">
         <div class="flex justify-between items-center">
-            <div class="w-1/3 h-4 bg-gray-100 rounded dark:bg-gray-700"></div>
-            <div class="w-10 h-4 bg-gray-100 rounded dark:bg-gray-700"></div>
+            <div class="w-1/3 h-4 bg-gray-100 rounded-md dark:bg-gray-700/60"></div>
+            <div class="w-10 h-4 bg-gray-100 rounded-md dark:bg-gray-700/60"></div>
         </div>
         <div class="mt-6 -mx-5 -mb-5">
-            <svg viewBox="0 0 300 80" preserveAspectRatio="none" class="w-full h-16 text-gray-100 dark:text-gray-700">
+            <svg viewBox="0 0 300 80" preserveAspectRatio="none" class="w-full h-16 text-gray-100 dark:text-gray-700/60">
                 <defs>
                     <linearGradient id="grad" x1="0%" y1="0%" x2="0%" y2="100%">
                         <stop offset="0%"  style="stop-color:currentColor;stop-opacity:1" />

@@ -23,7 +23,7 @@
         class="fixed inset-0 z-10 w-screen"
     >
         <!-- Overlay -->
-        <div x-show="open" x-on:click="open = false" x-transition.opacity class="fixed inset-0 bg-black bg-opacity-20 blur-md cursor-pointer"></div>
+        <div x-show="open" x-on:click="open = false" x-transition.opacity class="fixed inset-0 backdrop-blur-[2px] cursor-pointer bg-gray-950/30"></div>
 
         <!-- Panel -->
         <div
@@ -39,13 +39,13 @@
             <div
                 x-on:click.stop
                 x-aura::trap.noscroll.inert="open"
-                class="overflow-y-auto relative p-12 w-full h-screen bg-white origin-right dark:bg-gray-900"
+                class="overflow-y-auto relative p-8 w-full h-screen bg-white border-l shadow-2xl origin-right border-gray-950/5 ring-1 ring-gray-950/5 dark:bg-gray-800 dark:border-white/10 dark:ring-white/10 sm:p-12"
             >
 
             <div class="flex relative justify-end items-start">
                  <!-- Title -->
                 <div class="flex absolute items-center ml-3 h-7">
-                  <button type="button" class="text-gray-400 rounded-md dark:text-gray-400 dark:hover:text-gray-300 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 dark:focus:ring-offset-gray-900" x-on:click="open = false">
+                  <button type="button" class="flex justify-center items-center w-8 h-8 text-gray-400 rounded-lg transition duration-150 ease-out hover:bg-gray-950/5 hover:text-gray-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 dark:text-gray-500 dark:hover:bg-white/10 dark:hover:text-gray-300" x-on:click="open = false">
                     <span class="sr-only">Close panel</span>
                     <x-aura::icon icon="close" />
                   </button>

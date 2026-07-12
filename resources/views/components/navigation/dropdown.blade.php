@@ -19,8 +19,8 @@
 
     $sidebarType = $settings['sidebar-type'] ?? 'primary';
     $isActive = Request::fullUrlIs($route ? route($route, $id) : '');
-    $compactClass = $compact ? 'sidebar-item-compact px-2 h-8' : 'sidebar-item px-3 h-10';
-    $fontClass = $compact ? 'space-x-2 text-sm' : 'space-x-3 text-base';
+    $compactClass = $compact ? 'sidebar-item-compact px-2 h-8' : 'sidebar-item px-3 h-9';
+    $fontClass = $compact ? 'space-x-2 text-sm' : 'space-x-2.5 text-sm';
 @endphp
 
 <div>
@@ -37,22 +37,22 @@
             <button
                     x-on:click="expanded = !expanded"
                     :aria-expanded="expanded.toString()"
-                    class="{{ $compactClass }} flex justify-between items-center w-full rounded-lg transition duration-150 ease-in-out"
+                    class="{{ $compactClass }} group flex justify-between items-center w-full rounded-lg transition-colors duration-150"
                     :class="expanded ? 'aura-sidebar-dropdown-button-expanded' : 'aura-sidebar-dropdown-button'"
             >
-                <div class="flex items-center ml-0 font-semibold {{ $fontClass }}">
+                <div class="flex items-center ml-0 font-medium {{ $fontClass }}">
                     {{ $title }}
                 </div>
 
-                <span x-cloak x-show="expanded" aria-hidden="true" class="ml-4">
-                <x-aura::icon.chevron-up class="w-6 h-6"/>
+                <span x-cloak x-show="expanded" aria-hidden="true" class="ml-3 opacity-60 aura-sidebar-chevron">
+                <x-aura::icon.chevron-up class="w-4 h-4"/>
                 </span>
-                <span x-cloak x-show="!expanded" aria-hidden="true" class="ml-4">
-                <x-aura::icon.chevron-down class="w-6 h-6"/>
+                <span x-cloak x-show="!expanded" aria-hidden="true" class="ml-3 opacity-60 aura-sidebar-chevron">
+                <x-aura::icon.chevron-down class="w-4 h-4"/>
                 </span>
             </button>
 
-            <div x-show="expanded" x-ref="container" x-cloak class="p-2" x-aura::collapse>
+            <div x-show="expanded" x-ref="container" x-cloak class="p-1.5" x-aura::collapse>
                 {{ $slot }}
             </div>
         </div>
@@ -73,10 +73,10 @@
             interactive: true,
             })" x-ref="this">
             <button
-                    class="flex justify-center items-center py-2 w-full rounded-lg transition duration-150 ease-in-out aura-sidebar-dropdown-collapsed"
+                    class="group flex justify-center items-center py-2 w-full rounded-lg transition-colors duration-150 aura-sidebar-dropdown-collapsed"
             >
-                <div class="flex items-center ml-0 space-x-3 text-base font-semibold">
-                    <div class="flex items-center ml-0 space-x-3 text-base font-semibold">
+                <div class="flex items-center ml-0 space-x-2.5 text-sm font-medium">
+                    <div class="flex items-center ml-0 space-x-2.5 text-sm font-medium">
                         <div class="{{ $compact ? 'sidebar-item-compact' : 'sidebar-item-icon' }}">
                             {{ $title }}
                         </div>

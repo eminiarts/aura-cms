@@ -5,20 +5,20 @@
     @endphp
 
     @foreach ($statuses as $status)
-        <div class="kanban-column flex-shrink-0 w-80 bg-gray-100 rounded-lg p-4">
-            <h3 class="font-bold mb-4">{{ $status }}</h3>
-            <div class="space-y-4">
+        <div class="kanban-column flex-shrink-0 w-80 bg-gray-950/[0.04] dark:bg-white/5 rounded-xl p-4">
+            <h3 class="text-sm font-semibold text-gray-900 dark:text-white mb-4">{{ $status }}</h3>
+            <div class="space-y-3">
                 @foreach ($rows->filter(function ($row) use ($status) {
                     return $row->status == $status;
                 }) as $row)
-                    <div class="bg-white p-4 rounded shadow">
-                        <h4 class="font-semibold">{{ $row->subject }}</h4>
-                        <p class="text-sm text-gray-600">{{ $row->from }}</p>
-                        <p class="text-sm text-gray-600">Due: {{ $row->due_date }}</p>
+                    <div class="bg-white dark:bg-gray-800 p-4 rounded-lg ring-1 ring-gray-950/5 dark:ring-white/10 shadow-xs">
+                        <h4 class="text-sm font-semibold text-gray-900 dark:text-white">{{ $row->subject }}</h4>
+                        <p class="text-sm text-gray-600 dark:text-gray-400">{{ $row->from }}</p>
+                        <p class="text-sm text-gray-600 dark:text-gray-400">Due: {{ $row->due_date }}</p>
                         <div class="mt-2 flex justify-between items-center">
-                            <span class="text-xs bg-gray-200 rounded-full px-2 py-1">{{ $row->category }}</span>
+                            <span class="text-xs text-gray-700 dark:text-gray-300 bg-gray-950/5 dark:bg-white/10 rounded-full px-2 py-1">{{ $row->category }}</span>
                             @if($row->assigned_to)
-                                <span class="text-xs text-gray-600">Assigned: {{ $row->assigned_to }}</span>
+                                <span class="text-xs text-gray-600 dark:text-gray-400">Assigned: {{ $row->assigned_to }}</span>
                             @endif
                         </div>
                     </div>

@@ -1,4 +1,5 @@
-   <div class="w-full justify-between mt-4">
-       {{ $rows->links() }}
-   </div>
-            
+<div class="mt-4 w-full">
+    @if (method_exists($rows, 'links'))
+        {{ $rows->links('aura::components.table.pagination') }}
+    @endif
+</div>

@@ -30,12 +30,15 @@
         $isActive = true;
     }
 
+    // Normalize badge color (a null prop should fall back to the default)
+    $badgeColor = $badgeColor ?: 'primary';
+
     // Define simple functions to return class strings
     $getBaseClasses = fn() => 'aura-sidebar-item group';
 
-    $getCompactClasses = fn() => $compact ? 'sidebar-item-compact px-2 h-8' : 'sidebar-item px-3 h-10';
+    $getCompactClasses = fn() => $compact ? 'sidebar-item-compact px-2 h-8' : 'sidebar-item px-3 h-9';
 
-    $getCompactClassesIcon = fn() => $compact ? 'sidebar-item-compact flex justify-center h-8' : 'sidebar-item flex justify-center h-10';
+    $getCompactClassesIcon = fn() => $compact ? 'sidebar-item-compact flex justify-center h-8' : 'sidebar-item flex justify-center h-9';
 
     $getActiveClasses = fn() => $isActive ? 'is-active' : '';
 
@@ -70,7 +73,7 @@
                     $attributes->get('class')
                 ])
             >
-                <div class="flex items-center ml-0 font-semibold {{ $compact ? 'space-x-2 text-sm' : 'space-x-3 text-base' }}">
+                <div class="flex items-center ml-0 font-medium {{ $compact ? 'space-x-2 text-sm' : 'space-x-2.5 text-sm' }}">
                     {{ $slot }}
                 </div>
             </a>
@@ -102,8 +105,8 @@
                     onclick="{!! $onclick !!}"
                 @endif
         >
-            <div class="flex justify-between w-full">
-                <div class="flex justify-between items-center ml-0 font-medium truncate {{ $compact ? 'space-x-2 text-sm' : 'space-x-3 text-base' }}">{{ $slot }}</div>
+            <div class="flex justify-between items-center w-full">
+                <div class="flex justify-between items-center ml-0 font-medium truncate {{ $compact ? 'space-x-2 text-sm' : 'space-x-2.5 text-sm' }}">{{ $slot }}</div>
 
                 @php
                     $badgeColorClasses = [
@@ -119,7 +122,7 @@
                     ];
                 @endphp
                 @if($badge)
-                    <span class="inline-flex items-center rounded-md px-1.5 py-0.5 text-xs font-medium {{ $badgeColorClasses[$badgeColor] ?? 'bg-gray-100 text-gray-600' }}">{{ $badge }}</span>
+                    <span class="aura-sidebar-badge aura-sidebar-badge-{{ $badgeColor }} inline-flex shrink-0 items-center justify-center rounded-full px-1.5 py-0.5 ml-2 min-w-[1.25rem] text-xs font-medium leading-4 tabular-nums {{ $badgeColorClasses[$badgeColor] ?? 'bg-gray-100 text-gray-600' }}">{{ $badge }}</span>
                 @endif
             </div>
         </a>

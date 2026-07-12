@@ -127,15 +127,15 @@
 
                         @if(config('aura.features.search'))
                             <button type="button" @click="$dispatch('search')"
-                                    class="hidden items-center py-1.5 pr-3 pl-2 w-full text-sm leading-6 rounded-md ring-1 shadow-sm aura-sidebar-search lg:flex">
-                                <svg width="24" height="24" fill="none" aria-hidden="true" class="flex-none mr-3">
+                                    class="hidden items-center py-1.5 pr-3 pl-2.5 w-full text-sm leading-6 rounded-lg ring-1 shadow-sm aura-sidebar-search lg:flex">
+                                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" aria-hidden="true" class="flex-none mr-2.5 w-5 h-5">
                                     <path d="m19 19-3.5-3.5" stroke="currentColor" stroke-width="2"
                                           stroke-linecap="round" stroke-linejoin="round"></path>
                                     <circle cx="11" cy="11" r="6" stroke="currentColor" stroke-width="2"
                                             stroke-linecap="round" stroke-linejoin="round"></circle>
                                 </svg>
                                 {{ __('Search') }}
-                                <span class="flex-none pl-3 ml-auto text-xs font-semibold">⌘K</span>
+                                <span class="flex-none pl-3 ml-auto font-medium text-2xs opacity-80">⌘K</span>
                             </button>
                         @endif
 
@@ -168,15 +168,15 @@
                         <div class="flex justify-between items-center pb-20 w-full md:pb-0">
                             <x-aura::navigation.team-switcher>
                                 <x-slot:title>
-                                    <div class="block flex-shrink w-full group">
-                                        <div class="flex items-center">
-                                            <div>
-                                                <img class="inline-block w-9 h-9 rounded-full"
+                                    <div class="block min-w-0 flex-1 group">
+                                        <div class="flex min-w-0 items-center">
+                                            <div class="shrink-0">
+                                                <img class="inline-block object-cover w-9 h-9 rounded-full"
                                                      src="{{ auth()->user()->avatarUrl }}" alt="">
                                             </div>
-                                            <div class="ml-3 hide-collapsed">
-                                                <p class="text-sm font-medium aura-sidebar-user-name">{{ Auth::user()->name }}</p>
-                                                <p class="text-xs font-medium aura-sidebar-team-name">{{ Auth::user()->currentTeam->name }}</p>
+                                            <div class="ml-3 min-w-0 hide-collapsed">
+                                                <p class="truncate text-sm font-medium aura-sidebar-user-name">{{ Auth::user()->name }}</p>
+                                                <p class="truncate text-xs font-medium aura-sidebar-team-name">{{ Auth::user()->currentTeam->name }}</p>
                                             </div>
                                         </div>
                                     </div>
@@ -202,14 +202,14 @@
 
                             <x-aura::navigation.team-switcher>
                                 <x-slot:title>
-                                    <div class="block flex-shrink w-full group">
-                                        <div class="flex items-center">
-                                            <div>
-                                                <img class="inline-block w-9 h-9 rounded-full"
+                                    <div class="block min-w-0 flex-1 group">
+                                        <div class="flex min-w-0 items-center">
+                                            <div class="shrink-0">
+                                                <img class="inline-block object-cover w-9 h-9 rounded-full"
                                                     src="{{ auth()->user()->avatarUrl }}" alt="">
                                             </div>
-                                            <div class="ml-3 hide-collapsed">
-                                                <p class="text-sm font-medium aura-sidebar-user-name">{{ Auth::user()->name }}</p>
+                                            <div class="ml-3 min-w-0 hide-collapsed">
+                                                <p class="truncate text-sm font-medium aura-sidebar-user-name">{{ Auth::user()->name }}</p>
                                             </div>
                                         </div>
                                     </div>

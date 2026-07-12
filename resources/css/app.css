@@ -26,7 +26,7 @@
 }
 
 .aura-card {
-    @apply p-5 bg-white rounded-xl shadow-sm ring-1 ring-gray-950/10;
+    @apply p-5 bg-white rounded-xl shadow-sm ring-1 ring-gray-950/5;
 }
 
 .dark .aura-card {
@@ -50,15 +50,24 @@
 }
 
 .sidebar-item svg {
-    width: 24px;
+    width: 20px;
+    height: 20px;
 }
 
 .sidebar-item-compact svg {
-    width: 20px;
+    width: 18px;
+    height: 18px;
 }
 
 .sidebar-item-icon svg {
-    @apply w-6 h-6;
+    @apply w-5 h-5;
+}
+
+/* Dropdown chevrons stay smaller than nav icons */
+.sidebar-item .aura-sidebar-chevron svg,
+.sidebar-item-compact .aura-sidebar-chevron svg {
+    width: 16px;
+    height: 16px;
 }
 
 .open-sidebar {
@@ -105,23 +114,23 @@
 
 /* .aura-sidebar-bg */
 .aura-sidebar-type-primary .aura-sidebar-bg {
-    @apply text-white border-white border-opacity-20 bg-sidebar-bg shadow-gray-400 md:shadow-none;
+    @apply text-white border-white/15 bg-sidebar-bg shadow-gray-400 md:shadow-none;
 }
 .aura-sidebar-type-light .aura-sidebar-bg {
-    @apply text-gray-900 bg-gray-50 border-opacity-20 border-gray-500/30 shadow-gray-400 md:shadow-none;
+    @apply text-gray-900 bg-gray-50 border-gray-950/10 shadow-gray-400 md:shadow-none;
 }
 .aura-sidebar-type-dark .aura-sidebar-bg {
-    @apply text-white bg-gray-800 border-white border-opacity-10 shadow-gray-400 md:shadow-none;
+    @apply text-white bg-gray-800 border-white/10 shadow-gray-400 md:shadow-none;
 }
 /* Dark */
 .aura-sidebar-darkmode-type-primary .aura-sidebar-bg {
-    @apply dark:text-white dark:border-white dark:border-opacity-10 dark:bg-sidebar-bg dark:shadow-gray-400 md:dark:shadow-none;
+    @apply dark:text-white dark:border-white/10 dark:bg-sidebar-bg dark:shadow-gray-400 md:dark:shadow-none;
 }
 .aura-sidebar-darkmode-type-light .aura-sidebar-bg {
-    @apply dark:text-gray-900 dark:border-gray-500/30 dark:border-opacity-10 dark:bg-gray-50 dark:shadow-gray-400 md:dark:shadow-none;
+    @apply dark:text-gray-900 dark:border-gray-950/10 dark:bg-gray-50 dark:shadow-gray-400 md:dark:shadow-none;
 }
 .aura-sidebar-darkmode-type-dark .aura-sidebar-bg {
-    @apply dark:text-white dark:border-white dark:border-opacity-10 dark:bg-gray-800 dark:shadow-gray-400 md:dark:shadow-none;
+    @apply dark:text-white dark:border-white/10 dark:bg-gray-800 dark:shadow-gray-400 md:dark:shadow-none;
 }
 
 
@@ -198,70 +207,74 @@
 
 /* .aura-sidebar-toggle */
 
-.aura-sidebar-toggle {}
+.aura-sidebar-toggle {
+    @apply transition-colors duration-150;
+}
 .aura-sidebar-type-primary .aura-sidebar-toggle{
-    @apply focus:ring-primary-400 text-primary-200 hover:text-white;
+    @apply text-white/60 hover:text-white hover:bg-white/10 focus:ring-white/50;
 }
 .aura-sidebar-type-light .aura-sidebar-toggle{
-    @apply text-gray-600 focus:ring-primary-500 border-gray-400/30 hover:text-gray-300;
+    @apply text-gray-400 hover:text-gray-700 hover:bg-gray-950/5 focus:ring-primary-500;
 }
 .aura-sidebar-type-dark .aura-sidebar-toggle{
-    @apply text-gray-600 border-gray-700 focus:ring-primary-500 hover:text-gray-200;
+    @apply text-gray-500 hover:text-gray-200 hover:bg-white/10 focus:ring-primary-500;
 }
 /* Dark */
 .aura-sidebar-darkmode-type-primary .aura-sidebar-toggle{
-    @apply dark:focus:ring-primary-500 dark:border-primary-600 dark:text-primary-200 dark:hover:text-white;
+    @apply dark:text-white/60 dark:hover:text-white dark:hover:bg-white/10 dark:focus:ring-white/50;
 }
 .aura-sidebar-darkmode-type-light .aura-sidebar-toggle{
-    @apply dark:text-gray-600 dark:focus:dark:ring-primary-500 dark:border-gray-400/30 dark:hover:text-gray-300;
+    @apply dark:text-gray-400 dark:hover:text-gray-700 dark:hover:bg-gray-950/5 dark:focus:ring-primary-500;
 }
 .aura-sidebar-darkmode-type-dark .aura-sidebar-toggle {
-    @apply dark:text-gray-600 dark:border-gray-700 dark:focus:dark:ring-primary-500 dark:hover:text-gray-200;
+    @apply dark:text-gray-500 dark:hover:text-gray-200 dark:hover:bg-white/10 dark:focus:ring-primary-500;
 }
 
 /* .aura-sidebar-search */
-.aura-sidebar-search {}
+.aura-sidebar-search {
+    @apply transition-colors duration-150 focus:outline-none focus-visible:ring-2;
+}
 .aura-sidebar-type-primary .aura-sidebar-search{
-    @apply text-primary-200/40 hover:text-primary-200/70 ring-primary-200/40 hover:ring-primary-200/70;
+    @apply bg-white/5 text-white/60 ring-white/20 hover:text-white/90 hover:ring-white/40 focus-visible:ring-white/50;
 }
 .aura-sidebar-type-light .aura-sidebar-search{
-    @apply text-gray-400/60 hover:text-gray-400/90 ring-gray-400/40 hover:ring-gray-400/70;
+    @apply bg-white text-gray-500 ring-gray-950/10 hover:text-gray-700 hover:ring-gray-950/20 focus-visible:ring-primary-500;
 }
 .aura-sidebar-type-dark .aura-sidebar-search {
-    @apply bg-gray-800 text-white/40 hover:text-white/70 ring-white/30 hover:ring-white/70;
+    @apply bg-white/5 text-white/60 ring-white/10 hover:text-white/90 hover:ring-white/25 focus-visible:ring-primary-500;
 }
 /* Dark */
 .aura-sidebar-darkmode-type-primary .aura-sidebar-search{
-    @apply dark:text-primary-200/40 dark:hover:dark:text-primary-200/70 dark:ring-primary-200/40 dark:hover:ring-primary-200/70;
+    @apply dark:bg-white/5 dark:text-white/60 dark:ring-white/20 dark:hover:text-white/90 dark:hover:ring-white/40 dark:focus-visible:ring-white/50;
 }
 .aura-sidebar-darkmode-type-light .aura-sidebar-search{
-    @apply dark:text-gray-400/60 dark:hover:dark:text-gray-400/90 dark:ring-gray-400/40 dark:hover:ring-gray-400/70;
+    @apply dark:bg-white dark:text-gray-500 dark:ring-gray-950/10 dark:hover:text-gray-700 dark:hover:ring-gray-950/20 dark:focus-visible:ring-primary-500;
 }
 .aura-sidebar-darkmode-type-dark .aura-sidebar-search {
-    @apply dark:bg-gray-800 dark:text-white/40 dark:hover:dark:text-white/70 dark:ring-white/30 dark:hover:ring-white/70;
+    @apply dark:bg-white/5 dark:text-white/60 dark:ring-white/10 dark:hover:text-white/90 dark:hover:ring-white/25 dark:focus-visible:ring-primary-500;
 }
 
 
 /* .aura-sidebar-footer */
 .aura-sidebar-footer {}
 .aura-sidebar-type-primary .aura-sidebar-footer{
-    @apply border-white/20;
+    @apply border-white/15;
 }
 .aura-sidebar-type-light .aura-sidebar-footer{
-    @apply border-gray-500/30;
+    @apply border-gray-950/10;
 }
 .aura-sidebar-type-dark .aura-sidebar-footer {
-    @apply border-gray-700/20;
+    @apply border-white/10;
 }
 /* Dark */
 .aura-sidebar-darkmode-type-primary .aura-sidebar-footer{
-    @apply dark:border-white/20;
+    @apply dark:border-white/15;
 }
 .aura-sidebar-darkmode-type-light .aura-sidebar-footer{
-    @apply dark:border-gray-500/30;
+    @apply dark:border-gray-950/10;
 }
 .aura-sidebar-darkmode-type-dark .aura-sidebar-footer {
-    @apply dark:border-gray-700/20;
+    @apply dark:border-white/10;
 }
 
 
@@ -291,23 +304,23 @@
 /* .aura-sidebar-team-name */
 .aura-sidebar-team-name {}
 .aura-sidebar-type-primary .aura-sidebar-team-name{
-    @apply text-primary-200;
+    @apply text-white/60;
 }
 .aura-sidebar-type-light .aura-sidebar-team-name{
-    @apply text-gray-400;
+    @apply text-gray-500;
 }
 .aura-sidebar-type-dark .aura-sidebar-team-name {
-    @apply text-gray-500;
+    @apply text-gray-400;
 }
 /* Dark */
 .aura-sidebar-darkmode-type-primary .aura-sidebar-team-name{
-    @apply dark:text-primary-200;
+    @apply dark:text-white/60;
 }
 .aura-sidebar-darkmode-type-light .aura-sidebar-team-name{
-    @apply dark:text-gray-400;
+    @apply dark:text-gray-500;
 }
 .aura-sidebar-darkmode-type-dark .aura-sidebar-team-name {
-    @apply dark:text-gray-500;
+    @apply dark:text-gray-400;
 }
 
 
@@ -336,8 +349,9 @@
 /* .aura-sidebar-dropdown-button and .aura-sidebar-dropdown-container */
 
 /* Base Styles */
-.aura-sidebar-dropdown-button {
-    @apply bg-transparent;
+.aura-sidebar-dropdown-button,
+.aura-sidebar-dropdown-button-expanded {
+    @apply bg-transparent focus:outline-none focus-visible:ring-2;
 }
 .aura-sidebar-dropdown-container-expanded {
     @apply bg-transparent rounded-lg;
@@ -345,102 +359,125 @@
 
 /* Primary Sidebar Type */
 .aura-sidebar-type-primary .aura-sidebar-dropdown-button {
-    @apply bg-sidebar-bg hover:bg-sidebar-bg-hover;
+    @apply text-white/70 bg-transparent hover:text-white hover:bg-white/10 focus-visible:ring-white/50;
 }
 .aura-sidebar-type-primary .aura-sidebar-dropdown-button-expanded {
-    @apply bg-transparent hover:bg-sidebar-bg-hover;
+    @apply text-white bg-transparent hover:bg-white/10 focus-visible:ring-white/50;
 }
 .aura-sidebar-type-primary .aura-sidebar-dropdown-container-expanded {
-    @apply rounded-lg bg-sidebar-bg-dropdown/70;
+    @apply rounded-lg bg-sidebar-bg-dropdown/60;
+}
+.aura-sidebar-type-primary .aura-sidebar-dropdown-collapsed {
+    @apply text-white/70 hover:text-white hover:bg-white/10;
 }
 
 /* Light Sidebar Type */
 .aura-sidebar-type-light .aura-sidebar-dropdown-button {
-    @apply text-gray-900 bg-gray-50 hover:bg-gray-200;
+    @apply text-gray-500 bg-transparent hover:text-gray-900 hover:bg-gray-950/5 focus-visible:ring-primary-500;
 }
 .aura-sidebar-type-light .aura-sidebar-dropdown-button-expanded {
-    @apply text-gray-900 bg-transparent hover:bg-gray-200;
+    @apply text-gray-900 bg-transparent hover:bg-gray-950/5 focus-visible:ring-primary-500;
 }
 .aura-sidebar-type-light .aura-sidebar-dropdown-container-expanded {
-    @apply rounded-lg bg-gray-200/50;
+    @apply rounded-lg bg-gray-950/[0.03];
+}
+.aura-sidebar-type-light .aura-sidebar-dropdown-collapsed {
+    @apply text-gray-500 hover:text-gray-900 hover:bg-gray-950/5;
 }
 
 /* Dark Sidebar Type */
 .aura-sidebar-type-dark .aura-sidebar-dropdown-button {
-    @apply text-white bg-gray-800 hover:bg-gray-900;
+    @apply text-gray-400 bg-transparent hover:text-white hover:bg-white/5 focus-visible:ring-primary-500;
 }
 .aura-sidebar-type-dark .aura-sidebar-dropdown-button-expanded {
-    @apply bg-transparent hover:bg-gray-900;
+    @apply text-white bg-transparent hover:bg-white/5 focus-visible:ring-primary-500;
 }
 .aura-sidebar-type-dark .aura-sidebar-dropdown-container-expanded {
-    @apply rounded-lg bg-gray-700/50;
+    @apply rounded-lg bg-white/[0.04];
+}
+.aura-sidebar-type-dark .aura-sidebar-dropdown-collapsed {
+    @apply text-gray-400 hover:text-white hover:bg-white/5;
 }
 
 /* Darkmode Primary Sidebar Type */
 .aura-sidebar-darkmode-type-primary .aura-sidebar-dropdown-button {
-    @apply dark:bg-sidebar-bg dark:hover:bg-sidebar-bg-hover;
+    @apply dark:text-white/70 dark:bg-transparent dark:hover:text-white dark:hover:bg-white/10 dark:focus-visible:ring-white/50;
 }
 
 .aura-sidebar-darkmode-type-primary .aura-sidebar-dropdown-button-expanded {
-    @apply dark:bg-transparent dark:hover:bg-sidebar-bg-hover;
+    @apply dark:text-white dark:bg-transparent dark:hover:bg-white/10 dark:focus-visible:ring-white/50;
 }
 
 .aura-sidebar-darkmode-type-primary .aura-sidebar-dropdown-container-expanded {
-    @apply dark:rounded-lg dark:bg-sidebar-bg-dropdown/70;
+    @apply dark:rounded-lg dark:bg-sidebar-bg-dropdown/60;
+}
+
+.aura-sidebar-darkmode-type-primary .aura-sidebar-dropdown-collapsed {
+    @apply dark:text-white/70 dark:hover:text-white dark:hover:bg-white/10;
 }
 
 /* Darkmode Light Sidebar Type */
 .aura-sidebar-darkmode-type-light .aura-sidebar-dropdown-button {
-    @apply dark:text-gray-900 dark:bg-gray-50 dark:hover:bg-gray-200;
+    @apply dark:text-gray-500 dark:bg-transparent dark:hover:text-gray-900 dark:hover:bg-gray-950/5 dark:focus-visible:ring-primary-500;
 }
 
 .aura-sidebar-darkmode-type-light .aura-sidebar-dropdown-button-expanded {
-    @apply dark:text-gray-900 dark:bg-transparent dark:hover:bg-gray-200;
+    @apply dark:text-gray-900 dark:bg-transparent dark:hover:bg-gray-950/5 dark:focus-visible:ring-primary-500;
 }
 
 .aura-sidebar-darkmode-type-light .aura-sidebar-dropdown-container-expanded {
-    @apply dark:rounded-lg dark:bg-gray-200/50;
+    @apply dark:rounded-lg dark:bg-gray-950/[0.03];
+}
+
+.aura-sidebar-darkmode-type-light .aura-sidebar-dropdown-collapsed {
+    @apply dark:text-gray-500 dark:hover:text-gray-900 dark:hover:bg-gray-950/5;
 }
 
 /* Darkmode Dark Sidebar Type */
 .aura-sidebar-darkmode-type-dark .aura-sidebar-dropdown-button {
-    @apply dark:text-white dark:bg-gray-800 dark:hover:bg-gray-900;
+    @apply dark:text-gray-400 dark:bg-transparent dark:hover:text-white dark:hover:bg-white/5 dark:focus-visible:ring-primary-500;
 }
 
 .aura-sidebar-darkmode-type-dark .aura-sidebar-dropdown-button-expanded {
-    @apply dark:text-white dark:bg-transparent dark:hover:bg-gray-900;
+    @apply dark:text-white dark:bg-transparent dark:hover:bg-white/5 dark:focus-visible:ring-primary-500;
 }
 
 .aura-sidebar-darkmode-type-dark .aura-sidebar-dropdown-container-expanded {
-    @apply dark:rounded-lg dark:bg-gray-700/50;
+    @apply dark:rounded-lg dark:bg-white/[0.04];
+}
+
+.aura-sidebar-darkmode-type-dark .aura-sidebar-dropdown-collapsed {
+    @apply dark:text-gray-400 dark:hover:text-white dark:hover:bg-white/5;
 }
 
 
 /* .aura-sidebar-icon */
+.aura-sidebar-icon {
+    @apply transition-colors duration-150;
+}
 /* Primary Sidebar Type */
 .aura-sidebar-type-primary .aura-sidebar-icon {
-    @apply group-[.is-active]:text-white text-sidebar-icon group-hover:text-sidebar-icon-hover;
+    @apply text-sidebar-icon group-hover:text-sidebar-icon-hover group-[.is-active]:text-white;
 }
 /* Light Sidebar Type */
 .aura-sidebar-type-light .aura-sidebar-icon {
-    @apply group-[.is-active]:text-primary-500 text-primary-500
-    group-hover:text-primary-500;
+    @apply text-gray-400 group-hover:text-gray-500 group-[.is-active]:text-primary-600;
 }
 /* Dark Sidebar Type */
 .aura-sidebar-type-dark .aura-sidebar-icon {
-    @apply group-[.is-active]:text-primary-500 text-primary-500;
+    @apply text-gray-500 group-hover:text-gray-400 group-[.is-active]:text-primary-400;
 }
 /* Dark */
 .aura-sidebar-darkmode-type-primary .aura-sidebar-icon {
-    @apply dark:group-[.is-active]:text-white dark:text-sidebar-icon dark:group-hover:text-sidebar-icon-hover;
+    @apply dark:text-sidebar-icon dark:group-hover:text-sidebar-icon-hover dark:group-[.is-active]:text-white;
 }
 
 .aura-sidebar-darkmode-type-light .aura-sidebar-icon {
-    @apply dark:group-[.is-active]:text-primary-500 dark:text-primary-500 dark:group-hover:text-primary-500;
+    @apply dark:text-gray-400 dark:group-hover:text-gray-500 dark:group-[.is-active]:text-primary-600;
 }
 
 .aura-sidebar-darkmode-type-dark .aura-sidebar-icon {
-    @apply dark:group-[.is-active]:text-primary-500 dark:text-primary-500;
+    @apply dark:text-gray-500 dark:group-hover:text-gray-400 dark:group-[.is-active]:text-primary-400;
 }
 
 /* .aura-sidebar-heading */
@@ -490,81 +527,142 @@
 
 /* .aura-sidebar-item */
 .aura-sidebar-item {
-    @apply flex items-center bg-transparent rounded-lg transition duration-150 ease-in-out cursor-pointer hover:bg-sidebar-bg-hover;
+    @apply flex items-center bg-transparent rounded-lg transition-colors duration-150 cursor-pointer text-white/70 hover:text-white hover:bg-white/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/50;
 }
 .aura-sidebar-item.is-active {
-    @apply text-white bg-sidebar-bg-hover hover:bg-sidebar-bg-hover;
+    @apply text-white bg-white/15 hover:bg-white/15;
 }
 
 .aura-sidebar-type-primary .aura-sidebar-item {
-    @apply bg-transparent hover:bg-sidebar-bg-hover;
+    @apply text-white/70 bg-transparent hover:text-white hover:bg-white/10 focus-visible:ring-white/50;
 }
 .aura-sidebar-type-primary .aura-sidebar-item.is-active {
-    @apply text-white bg-sidebar-bg-hover hover:bg-sidebar-bg-hover;
+    @apply text-white bg-white/15 hover:bg-white/15;
 }
 
 .aura-sidebar-type-light .aura-sidebar-item {
-    @apply text-gray-900 bg-transparent;
+    @apply text-gray-500 bg-transparent hover:text-gray-900 hover:bg-gray-950/5 focus-visible:ring-primary-500;
 }
 .aura-sidebar-type-light .aura-sidebar-item.is-active {
-    @apply text-gray-900 bg-gray-200 hover:bg-gray-200;
+    @apply text-gray-900 bg-gray-950/5 hover:bg-gray-950/5;
 }
 
 .aura-sidebar-type-dark .aura-sidebar-item {
-    @apply text-white bg-transparent hover:bg-gray-900;
+    @apply text-gray-400 bg-transparent hover:text-white hover:bg-white/5 focus-visible:ring-primary-500;
 }
 .aura-sidebar-type-dark .aura-sidebar-item.is-active {
-    @apply text-white bg-gray-900 hover:bg-gray-900;
+    @apply text-white bg-white/10 hover:bg-white/10;
 }
 
 /* Dark */
 .aura-sidebar-darkmode-type-primary .aura-sidebar-item {
-    @apply dark:bg-transparent;
-}
-
-.aura-sidebar-darkmode-type-primary .aura-sidebar-item {
-    @apply dark:bg-transparent dark:hover:bg-sidebar-bg-hover;
+    @apply dark:text-white/70 dark:bg-transparent dark:hover:text-white dark:hover:bg-white/10 dark:focus-visible:ring-white/50;
 }
 .aura-sidebar-darkmode-type-primary .aura-sidebar-item.is-active {
-    @apply dark:text-white dark:bg-sidebar-bg-hover dark:hover:bg-sidebar-bg-hover;
+    @apply dark:text-white dark:bg-white/15 dark:hover:bg-white/15;
 }
 
 .aura-sidebar-darkmode-type-light .aura-sidebar-item {
-    @apply dark:text-gray-900 dark:bg-transparent dark:hover:bg-gray-200;
+    @apply dark:text-gray-500 dark:bg-transparent dark:hover:text-gray-900 dark:hover:bg-gray-950/5 dark:focus-visible:ring-primary-500;
 }
 .aura-sidebar-darkmode-type-light .aura-sidebar-item.is-active {
-    @apply dark:text-gray-900 dark:bg-gray-200 dark:hover:bg-gray-200;
+    @apply dark:text-gray-900 dark:bg-gray-950/5 dark:hover:bg-gray-950/5;
 }
 
 .aura-sidebar-darkmode-type-dark .aura-sidebar-item {
-    @apply dark:text-white dark:bg-transparent dark:hover:bg-gray-900;
+    @apply dark:text-gray-400 dark:bg-transparent dark:hover:text-white dark:hover:bg-white/5 dark:focus-visible:ring-primary-500;
 }
 .aura-sidebar-darkmode-type-dark .aura-sidebar-item.is-active {
-    @apply dark:text-white dark:bg-gray-900 dark:hover:bg-gray-900;
+    @apply dark:text-white dark:bg-white/10 dark:hover:bg-white/10;
+}
+
+/* .aura-sidebar-badge — theme-aware nav badge pill.
+   On the light sidebar the color map from item.blade.php applies untouched;
+   on primary/dark sidebars these overrides keep badges legible on colored/dark
+   backgrounds (red/yellow/green stay semantic, everything else goes translucent). */
+.aura-sidebar-type-primary .aura-sidebar-badge {
+    @apply bg-white/15 text-white;
+}
+.aura-sidebar-type-primary .aura-sidebar-badge-red {
+    @apply bg-red-500 text-white;
+}
+.aura-sidebar-type-primary .aura-sidebar-badge-yellow {
+    @apply bg-yellow-400 text-yellow-950;
+}
+.aura-sidebar-type-primary .aura-sidebar-badge-green {
+    @apply bg-green-500 text-white;
+}
+
+.aura-sidebar-type-dark .aura-sidebar-badge {
+    @apply bg-white/10 text-gray-200;
+}
+.aura-sidebar-type-dark .aura-sidebar-badge-red {
+    @apply bg-red-500/20 text-red-300;
+}
+.aura-sidebar-type-dark .aura-sidebar-badge-yellow {
+    @apply bg-yellow-400/20 text-yellow-300;
+}
+.aura-sidebar-type-dark .aura-sidebar-badge-green {
+    @apply bg-green-500/20 text-green-300;
+}
+
+/* Dark */
+.aura-sidebar-darkmode-type-primary .aura-sidebar-badge {
+    @apply dark:bg-white/15 dark:text-white;
+}
+.aura-sidebar-darkmode-type-primary .aura-sidebar-badge-red {
+    @apply dark:bg-red-500 dark:text-white;
+}
+.aura-sidebar-darkmode-type-primary .aura-sidebar-badge-yellow {
+    @apply dark:bg-yellow-400 dark:text-yellow-950;
+}
+.aura-sidebar-darkmode-type-primary .aura-sidebar-badge-green {
+    @apply dark:bg-green-500 dark:text-white;
+}
+
+.aura-sidebar-darkmode-type-dark .aura-sidebar-badge {
+    @apply dark:bg-white/10 dark:text-gray-200;
+}
+.aura-sidebar-darkmode-type-dark .aura-sidebar-badge-red {
+    @apply dark:bg-red-500/20 dark:text-red-300;
+}
+.aura-sidebar-darkmode-type-dark .aura-sidebar-badge-yellow {
+    @apply dark:bg-yellow-400/20 dark:text-yellow-300;
+}
+.aura-sidebar-darkmode-type-dark .aura-sidebar-badge-green {
+    @apply dark:bg-green-500/20 dark:text-green-300;
+}
+
+/* darkmode-type-light keeps the blade color map, but reset badges that were
+   themed for a colored/dark sidebar in light mode (auto darkmode switching) */
+.aura-sidebar-darkmode-type-light .aura-sidebar-badge {
+    @apply dark:bg-gray-950/5 dark:text-gray-600;
 }
 
 
 
 /* .aura-sidebar-team-switcher */
-.aura-sidebar-team-switcher {}
+.aura-sidebar-team-switcher {
+    @apply transition-colors duration-150 focus:outline-none focus-visible:ring-2;
+}
 .aura-sidebar-type-primary .aura-sidebar-team-switcher {
-    @apply text-white bg-sidebar-bg;
+    @apply text-white bg-transparent hover:bg-white/10 focus-visible:ring-white/50;
 }
 .aura-sidebar-type-light .aura-sidebar-team-switcher {
-    @apply text-gray-700 bg-gray-50;
+    @apply text-gray-700 bg-transparent hover:bg-gray-950/5 focus-visible:ring-primary-500;
 }
 .aura-sidebar-type-dark .aura-sidebar-team-switcher {
-    @apply text-white bg-gray-800;
+    @apply text-white bg-transparent hover:bg-white/5 focus-visible:ring-primary-500;
 }
 
 /* Dark */
 .aura-sidebar-darkmode-type-primary .aura-sidebar-team-switcher {
-    @apply dark:text-white dark:bg-sidebar-bg;
+    @apply dark:text-white dark:bg-transparent dark:hover:bg-white/10 dark:focus-visible:ring-white/50;
 }
 .aura-sidebar-darkmode-type-light .aura-sidebar-team-switcher {
-    @apply dark:text-gray-700 dark:bg-gray-50;
+    @apply dark:text-gray-700 dark:bg-transparent dark:hover:bg-gray-950/5 dark:focus-visible:ring-primary-500;
 }
 .aura-sidebar-darkmode-type-dark .aura-sidebar-team-switcher {
-    @apply dark:text-white dark:bg-gray-800;
+    @apply dark:text-white dark:bg-transparent dark:hover:bg-white/5 dark:focus-visible:ring-primary-500;
 }
 

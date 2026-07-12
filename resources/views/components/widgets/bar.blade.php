@@ -105,6 +105,7 @@
                     plotOptions: {
                       bar: {
                         columnWidth: '80%',
+                        borderRadius: 3,
                       }
                     },
 
@@ -158,14 +159,14 @@
 
   </div>
   @else
-  <div class="p-2 animate-pulse">
-    <div class="flex justify-between items-baseline mt-2 mb-6">
-        <div class="w-32 h-4 bg-gray-200 rounded dark:bg-gray-700"></div>
-        <div class="w-8 h-4 bg-gray-200 rounded dark:bg-gray-700"></div>
+  <div class="animate-pulse" aria-hidden="true">
+    <div class="flex justify-between items-center">
+        <div class="w-32 h-4 bg-gray-100 rounded-md dark:bg-gray-700/60"></div>
+        <div class="w-8 h-4 bg-gray-100 rounded-md dark:bg-gray-700/60"></div>
     </div>
 
-    <div class="-mx-6 -mb-6">
-      <svg viewBox="0 0 300 80" preserveAspectRatio="none" class="w-full h-16 text-gray-200 dark:text-gray-600">
+    <div class="mt-6 -mx-5 -mb-5">
+      <svg viewBox="0 0 300 80" preserveAspectRatio="none" class="w-full h-16 text-gray-100 dark:text-gray-700/60">
           <g fill="none" fill-rule="evenodd">
               <rect x="0" y="0" width="10" height="80" fill="currentColor"/>
               <rect x="15" y="20" width="10" height="60" fill="currentColor"/>

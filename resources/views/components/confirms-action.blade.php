@@ -12,7 +12,7 @@
 
     <x-aura::dialog>
 
-<div {{ $attributes->wire('then') }} x-on:action-confirmed.window="setTimeout(() => $event.detail.id === '{{ $confirmableId }}' && $dispatch('then'), 250); dialogOpen = false; console.log('confirmed')">
+<div {{ $attributes->wire('then') }} x-on:action-confirmed.window="setTimeout(() => $event.detail.id === '{{ $confirmableId }}' && $dispatch('then'), 250); dialogOpen = false;">
 
 
     <x-aura::dialog.open>
@@ -24,7 +24,7 @@
         <x-aura::dialog.panel>
             <x-aura::dialog.title>{{ $title }}</x-aura::dialog.title>
 
-            <div class="mt-5 text-gray-600">
+            <div class="mt-4 text-sm text-gray-600 dark:text-gray-400">
                 {!! $content !!}
             </div>
 

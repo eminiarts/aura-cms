@@ -54,10 +54,10 @@
         });
       }
     }">
-        <div x-ref="this" role="button" tabindex="0" class="flex justify-between items-center w-full text-sm font-semibold rounded-lg cursor-pointer aura-sidebar-team-switcher">
-            <span>{{ $title }}</span>
+        <div x-ref="this" role="button" tabindex="0" class="flex justify-between items-center px-2 py-1.5 w-full text-sm font-medium rounded-lg cursor-pointer aura-sidebar-team-switcher">
+            <span class="min-w-0 flex-1">{{ $title }}</span>
 
-            <div class="hide-collapsed">
+            <div class="ml-2 opacity-50 hide-collapsed">
                 <!-- svg chevron up down -->
                 <x-aura::icon.chevron-up class="w-4 h-4"/>
             </div>

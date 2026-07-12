@@ -1,27 +1,45 @@
 .tippy-box[data-theme~='aura'] {
-  background-color: rgba(255,255,255, 0.85);
-  color: black;
-  @apply p-0 text-sm font-semibold text-gray-700 rounded-lg border border-gray-100 shadow-lg backdrop-blur-xl;
+  @apply p-0 text-xs font-medium text-white rounded-md shadow-md bg-gray-900/95;
 }
 
 .tippy-box[data-theme~='aura'] .tippy-content {
-  @apply px-3 py-2 text-gray-700;
+  @apply px-2.5 py-1.5 text-white;
 }
 
 .tippy-box[data-theme~='aura'][data-placement^='top']>.tippy-arrow::before {
-  border-top-color:white;
+  @apply border-t-gray-900;
 }
 
 .tippy-box[data-theme~='aura'][data-placement^='bottom']>.tippy-arrow::before {
-  border-bottom-color:white;
+  @apply border-b-gray-900;
 }
 
 .tippy-box[data-theme~='aura'][data-placement^='left']>.tippy-arrow::before {
-  border-left-color:white;
+  @apply border-l-gray-900;
 }
 
 .tippy-box[data-theme~='aura'][data-placement^='right']>.tippy-arrow::before {
-  border-right-color:white;
+  @apply border-r-gray-900;
+}
+
+.dark .tippy-box[data-theme~='aura'] {
+  @apply ring-1 bg-gray-700/95 ring-white/10;
+}
+
+.dark .tippy-box[data-theme~='aura'][data-placement^='top']>.tippy-arrow::before {
+  @apply border-t-gray-700;
+}
+
+.dark .tippy-box[data-theme~='aura'][data-placement^='bottom']>.tippy-arrow::before {
+  @apply border-b-gray-700;
+}
+
+.dark .tippy-box[data-theme~='aura'][data-placement^='left']>.tippy-arrow::before {
+  @apply border-l-gray-700;
+}
+
+.dark .tippy-box[data-theme~='aura'][data-placement^='right']>.tippy-arrow::before {
+  @apply border-r-gray-700;
 }
 
 .dark .tippy-box[data-theme~='aura-small'] {

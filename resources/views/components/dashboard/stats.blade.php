@@ -2,10 +2,10 @@
 
 @foreach ($stats as $stat)
     <a href="{{ $stat['url'] }}" wire:navigate
-        class="flex overflow-hidden relative flex-col col-span-12 rounded-xl ring-1 shadow-sm transition sm:col-span-6 xl:col-span-3 bg-white dark:bg-gray-800 ring-gray-950/5 dark:ring-white/10 hover:shadow-md hover:ring-gray-950/10 dark:hover:ring-white/20 group">
+        class="flex overflow-hidden relative flex-col col-span-12 rounded-xl ring-1 shadow-sm transition duration-150 sm:col-span-6 xl:col-span-3 bg-white dark:bg-gray-800 ring-gray-950/5 dark:ring-white/10 hover:shadow-md hover:ring-gray-950/10 dark:hover:ring-white/20 hover:-translate-y-0.5 group">
         <div class="flex-1 p-5 pb-0">
             <div class="flex gap-3 items-center">
-                <div class="p-2 rounded-lg text-primary-600 bg-primary-50 dark:bg-primary-900/50 dark:text-primary-400 [&>svg]:w-5 [&>svg]:h-5 shrink-0">
+                <div class="p-2 rounded-lg text-primary-600 bg-primary-50 ring-1 ring-inset ring-primary-600/10 dark:bg-primary-900/50 dark:text-primary-400 dark:ring-primary-400/10 [&>svg]:w-5 [&>svg]:h-5 shrink-0">
                     {!! $stat['icon'] !!}
                 </div>
                 <span class="text-sm font-medium text-gray-500 truncate dark:text-gray-400">{{ $stat['name'] }}</span>
@@ -29,7 +29,7 @@
         </div>
 
         <svg viewBox="0 0 100 28" preserveAspectRatio="none" class="mt-4 w-full h-9" aria-hidden="true">
-            <polygon points="{{ $stat['sparkline']['area'] }}" class="fill-primary-100/80 dark:fill-primary-900/40" />
+            <polygon points="{{ $stat['sparkline']['area'] }}" class="fill-primary-100/60 transition-colors duration-150 dark:fill-primary-900/30 group-hover:fill-primary-100 dark:group-hover:fill-primary-900/50" />
             <polyline points="{{ $stat['sparkline']['line'] }}" fill="none" vector-effect="non-scaling-stroke"
                 stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"
                 class="stroke-primary-500 dark:stroke-primary-400" />

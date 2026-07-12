@@ -53,7 +53,7 @@
 
                     stroke: {
                       width: isDarkMode ? 2 : 2,
-                      colors: isDarkMode ? [getCssVariableValue('--gray-900')] : [getCssVariableValue('--gray-100')]
+                      colors: isDarkMode ? [getCssVariableValue('--gray-800')] : ['#ffffff']
                     },
 
                     dataLabels: {
@@ -87,18 +87,18 @@
                   }
                 }
               }" class="w-full">
-                <div x-ref="chart" class="bg-white rounded-lg dark:bg-gray-900"></div>
+                <div x-ref="chart" class="bg-white rounded-lg dark:bg-gray-800"></div>
             </div>
         </div>
     </div>
     @else
-    <div class="p-2 animate-pulse">
-        <div class="flex justify-between items-baseline mt-2 mb-6">
-            <div class="w-32 h-4 bg-gray-200 rounded dark:bg-gray-700"></div>
-            <div class="w-8 h-4 bg-gray-200 rounded dark:bg-gray-700"></div>
+    <div class="animate-pulse" aria-hidden="true">
+        <div class="flex justify-between items-center mb-6">
+            <div class="w-32 h-4 bg-gray-100 rounded-md dark:bg-gray-700/60"></div>
+            <div class="w-8 h-4 bg-gray-100 rounded-md dark:bg-gray-700/60"></div>
         </div>
 
-        <svg viewBox="0 0 36 36" class="mx-auto w-64 h-64 text-gray-200 rounded-full dark:text-gray-700">
+        <svg viewBox="0 0 36 36" class="mx-auto w-64 h-64 text-gray-100 rounded-full dark:text-gray-700/60">
             <circle class="donut-ring" cx="18" cy="18" r="15.91549430918954" fill="transparent" stroke="currentColor"
                 stroke-width="3"></circle>
         </svg>

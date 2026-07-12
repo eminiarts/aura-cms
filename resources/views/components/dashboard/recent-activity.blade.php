@@ -7,7 +7,7 @@
                 <h2 class="text-base font-semibold text-gray-900 dark:text-white">{{ __('Recently edited') }}</h2>
                 <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ __('Pick up where you left off') }}</p>
             </div>
-            <div class="p-2 rounded-lg bg-primary-50 dark:bg-primary-900/50">
+            <div class="p-2 rounded-lg bg-primary-50 ring-1 ring-inset ring-primary-600/10 dark:bg-primary-900/50 dark:ring-primary-400/10">
                 <svg class="size-5 text-primary-600 dark:text-primary-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none">
                     <path d="M12 8V12L14.5 14.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
                     <path d="M5.04798 8.60657L2.53784 8.45376C4.33712 3.70477 9.503 0.999914 14.5396 2.34474C19.904 3.77711 23.0904 9.26107 21.6565 14.5935C20.2227 19.926 14.7116 23.0876 9.3472 21.6553C5.36419 20.5917 2.58192 17.2946 2 13.4844" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />

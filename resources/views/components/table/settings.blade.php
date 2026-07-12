@@ -11,23 +11,23 @@
 
         <x-slot name="content">
             <div class="w-60">
-                <div class="p-4 sortable-wrapper" drag-root="reorder" role="none">
+                <div class="p-2 sortable-wrapper" drag-root="reorder" role="none">
 
                     @if($this->headers)
                     @foreach($this->headers as $key => $label)
-                    <label class="flex items-center py-2 cursor-pointer space-1-2 hover:bg-gray-100 dark:hover:bg-gray-900 sortable"
+                    <label class="flex gap-2 items-center px-2 py-1.5 rounded-md transition-colors duration-150 cursor-pointer hover:bg-gray-100 dark:hover:bg-white/5 sortable"
                         for="column_{{$key}}" id="{{ $key }}">
 
                         <x-aura::input.checkbox wire:model.live="columns.{{ $key }}" value="true" id="column_{{$key}}" />
 
-                        <span class="flex flex-1 items-center px-4 text-sm text-gray-700 dark:text-gray-200 group" role="menuitem"
+                        <span class="flex flex-1 items-center text-sm text-gray-700 dark:text-gray-200 group" role="menuitem"
                             tabindex="-1" id="menu-item-6">
                             {{ __($label) }}
                         </span>
 
                         @if($this->settings['sort_columns'])
                         <div class="cursor-move drag-handle move-table-row">
-                            <svg class="mr-2 w-4 h-4 text-gray-400" viewBox="0 0 24 24" fill="none"
+                            <svg class="w-4 h-4 text-gray-400 dark:text-gray-500" viewBox="0 0 24 24" fill="none"
                                 xmlns="http://www.w3.org/2000/svg">
                                 <path d="M3 8.5H21M3 15.5H21" stroke="currentColor" stroke-width="2"
                                     stroke-linecap="round" stroke-linejoin="round" />
@@ -39,13 +39,12 @@
                     @endforeach
                     @endif
 
-                    <div class="flex justify-between items-center">
+                    <div class="flex justify-between items-center px-2 pt-3 mt-2 border-t border-gray-100 dark:border-white/10">
                         <x-aura::label value="{{ __('Per page') }}" />
                         <x-aura::input.group borderless inline paddingless for="perPage" label="">
-                            <x-aura::input.select 
-                                wire:model.live="perPage" 
-                                id="perPage" 
-                                class="bg-gray-50 rounded-md"
+                            <x-aura::input.select
+                                wire:model.live="perPage"
+                                id="perPage"
                                 :options="[
                                     10 => '10',
                                     25 => '25',

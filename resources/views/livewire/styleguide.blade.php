@@ -98,7 +98,7 @@
     </div>
 
     {{-- Anchor navigation --}}
-    <nav class="sticky top-0 z-[5] -mx-4 px-4 py-3 mt-6 bg-white/90 backdrop-blur border-b border-gray-950/5 dark:bg-gray-900/90 dark:border-white/10">
+    <nav class="sticky top-0 z-[5] -mx-4 px-4 py-3 mt-6 bg-white/95 backdrop-blur-md border-b border-gray-950/5 dark:bg-gray-900/95 dark:border-white/10">
         <div class="flex flex-wrap gap-1">
             @foreach ($sections as $id => $label)
                 <a href="#{{ $id }}"
@@ -433,7 +433,7 @@
                             </svg>
                         </div>
                         <input type="text"
-                            class="block py-2 pl-9 pr-3 w-64 max-w-full text-sm text-gray-900 bg-white rounded-lg border-0 ring-1 shadow-sm transition appearance-none placeholder:text-gray-400 ring-gray-950/10 dark:bg-gray-800 dark:text-gray-100 dark:ring-white/10 focus:outline-none focus:ring-2 focus:ring-primary-500 z-[1]"
+                            class="block py-2 pl-9 pr-3 w-64 max-w-full text-sm text-gray-900 bg-white rounded-lg border-0 ring-1 shadow-xs transition appearance-none placeholder:text-gray-400 ring-gray-950/10 dark:bg-gray-800 dark:text-gray-100 dark:ring-white/10 dark:placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-500 z-[1]"
                             placeholder="{{ __('Search for items') }}">
                     </div>
                 </div>
@@ -449,23 +449,26 @@
         <span class="text-xs font-semibold tracking-wider uppercase text-primary-600 dark:text-primary-400">06</span>
         <h2 class="mt-1 text-xl font-semibold text-gray-900 dark:text-white">{{ __('Badges & Pills') }}</h2>
         <p class="mt-1 max-w-2xl text-sm text-gray-500 dark:text-gray-400">
-            {{ __('Three badge shapes are in use: status pills (rounded), sidebar badges (rounded-md) and trend pills (rounded-full).') }}
+            {{ __('Three badge shapes are in use: status pills (dot + ring), sidebar badges and trend pills (both rounded-full).') }}
         </p>
 
         <div class="p-6 mt-6 bg-white rounded-xl ring-1 shadow-sm dark:bg-gray-800 ring-gray-950/10 dark:ring-white/10">
             <span class="text-xs font-medium tracking-wide text-gray-400 uppercase">{{ __('Status pills (fields/status-index)') }}</span>
             <div class="flex flex-wrap gap-2 mt-4">
                 @foreach ($statusPills as $label => $classes)
-                    <span class="text-xs font-medium px-2.5 py-0.5 rounded {{ $classes }}">{{ $label }}</span>
+                    <span class="inline-flex items-center gap-x-1.5 whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-medium ring-1 ring-inset ring-gray-950/10 dark:ring-white/10 {{ $classes }}">
+                        <svg class="size-1.5 shrink-0 fill-current opacity-70" viewBox="0 0 6 6" aria-hidden="true"><circle cx="3" cy="3" r="3" /></svg>
+                        {{ $label }}
+                    </span>
                 @endforeach
             </div>
         </div>
 
         <div class="p-6 mt-4 bg-white rounded-xl ring-1 shadow-sm dark:bg-gray-800 ring-gray-950/10 dark:ring-white/10">
-            <span class="text-xs font-medium tracking-wide text-gray-400 uppercase">{{ __('Sidebar badges (navigation/item)') }}</span>
+            <span class="text-xs font-medium tracking-wide text-gray-400 uppercase">{{ __('Sidebar badges (navigation/item, light-sidebar color map)') }}</span>
             <div class="flex flex-wrap gap-2 mt-4">
                 @foreach ($navBadgeColors as $color => $classes)
-                    <span class="inline-flex items-center rounded-md px-1.5 py-0.5 text-xs font-medium {{ $classes }}">{{ $color }}</span>
+                    <span class="inline-flex items-center justify-center rounded-full px-1.5 py-0.5 min-w-[1.25rem] text-xs font-medium tabular-nums {{ $classes }}">{{ $color }}</span>
                 @endforeach
             </div>
         </div>
@@ -500,7 +503,7 @@
         <div class="grid grid-cols-1 gap-4 mt-6 sm:grid-cols-2">
             <div class="aura-card">
                 <h3 class="text-sm font-semibold text-gray-900 dark:text-white">.aura-card</h3>
-                <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">p-5, rounded-xl, shadow-sm, ring-1 ring-gray-950/10.</p>
+                <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">p-5, rounded-xl, shadow-sm, ring-1 ring-gray-950/5.</p>
             </div>
             <div class="flex items-center aura-card-small">
                 <p class="text-sm text-gray-500 dark:text-gray-400"><span class="font-semibold text-gray-900 dark:text-white">.aura-card-small</span> — p-2, rounded-lg, ring-gray-950/5.</p>
@@ -553,32 +556,35 @@
         {{-- Table card (specimen of table/list-view) --}}
         <div class="overflow-hidden mt-4 bg-white rounded-xl ring-1 shadow-sm dark:bg-gray-800 ring-gray-950/10 dark:ring-white/10">
             <div class="overflow-x-auto">
-                <table class="min-w-full divide-y divide-gray-100 dark:divide-white/5">
+                <table class="min-w-full">
                     <thead>
-                        <tr class="bg-gray-50 dark:bg-white/[0.03]">
-                            <th class="py-3 pr-0 pl-6 w-px">
+                        <tr class="bg-gray-50/80 dark:bg-white/[0.03] border-b border-gray-200/80 dark:border-white/10">
+                            <th class="py-2.5 pr-0 pl-6 w-px">
                                 <x-aura::input.checkbox hideLabel label="Select all" />
                             </th>
                             <x-aura::table.heading sortable direction="asc">{{ __('Title') }}</x-aura::table.heading>
                             <x-aura::table.heading sortable>{{ __('Status') }}</x-aura::table.heading>
                             <x-aura::table.heading>{{ __('Author') }}</x-aura::table.heading>
                             <x-aura::table.heading sortable direction="desc">{{ __('Created at') }}</x-aura::table.heading>
-                            <th class="px-3 py-3"><span class="sr-only">{{ __('Actions') }}</span></th>
+                            <th class="px-3 py-2.5"><span class="sr-only">{{ __('Actions') }}</span></th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-gray-100 dark:divide-white/5">
                         @foreach ($tableRows as $row)
-                            <tr class="transition-colors duration-150 ease-in-out cm-table-row hover:bg-gray-50 dark:hover:bg-white/[0.04] {{ $row['selected'] ? 'bg-primary-50/60 dark:bg-primary-900/30' : '' }}">
-                                <td class="py-3.5 pr-0 pl-6">
+                            <tr class="transition-colors duration-150 ease-in-out cm-table-row hover:bg-gray-50/80 dark:hover:bg-white/[0.04] {{ $row['selected'] ? 'bg-primary-50/60 dark:bg-primary-500/10' : '' }}">
+                                <td class="py-3 pr-0 pl-6">
                                     <x-aura::input.checkbox hideLabel :label="'Row '.$row['id']" :checked="$row['selected']" />
                                 </td>
-                                <td class="px-6 py-3.5 text-sm font-medium text-gray-900 dark:text-white">{{ $row['title'] }}</td>
-                                <td class="px-6 py-3.5 text-sm">
-                                    <span class="text-xs font-medium px-2.5 py-0.5 rounded {{ $row['statusClass'] }}">{{ $row['status'] }}</span>
+                                <td class="px-6 py-3 text-sm font-medium text-gray-900 dark:text-white">{{ $row['title'] }}</td>
+                                <td class="px-6 py-3 text-sm">
+                                    <span class="inline-flex items-center gap-x-1.5 whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-medium ring-1 ring-inset ring-gray-950/10 dark:ring-white/10 {{ $row['statusClass'] }}">
+                                        <svg class="size-1.5 shrink-0 fill-current opacity-70" viewBox="0 0 6 6" aria-hidden="true"><circle cx="3" cy="3" r="3" /></svg>
+                                        {{ $row['status'] }}
+                                    </span>
                                 </td>
-                                <td class="px-6 py-3.5 text-sm text-gray-600 dark:text-gray-300">{{ $row['author'] }}</td>
-                                <td class="px-6 py-3.5 text-sm text-gray-600 dark:text-gray-300">{{ $row['date'] }}</td>
-                                <td class="px-3 py-3.5 text-right">
+                                <td class="px-6 py-3 text-sm text-gray-600 dark:text-gray-300">{{ $row['author'] }}</td>
+                                <td class="px-6 py-3 text-sm text-gray-600 dark:text-gray-300">{{ $row['date'] }}</td>
+                                <td class="px-3 py-2 text-right">
                                     <x-aura::dropdown align="right" width="48">
                                         <x-slot:trigger>
                                             <button type="button" class="p-1.5 text-gray-400 rounded-md transition hover:text-gray-600 hover:bg-gray-100 dark:hover:text-gray-200 dark:hover:bg-white/10">
@@ -598,12 +604,20 @@
                 </table>
             </div>
 
-            {{-- Pagination (specimen) --}}
+            {{-- Pagination (specimen of table/pagination) --}}
             <div class="flex justify-between items-center px-6 py-3 border-t border-gray-100 dark:border-white/5">
-                <span class="text-sm text-gray-500 dark:text-gray-400">{{ __('Showing') }} <span class="font-medium text-gray-900 dark:text-white">1</span> {{ __('to') }} <span class="font-medium text-gray-900 dark:text-white">4</span> {{ __('of') }} <span class="font-medium text-gray-900 dark:text-white">42</span> {{ __('results') }}</span>
-                <div class="flex gap-2">
-                    <x-aura::button.border size="xs" disabled>{{ __('Previous') }}</x-aura::button.border>
-                    <x-aura::button.border size="xs">{{ __('Next') }}</x-aura::button.border>
+                <span class="text-sm text-gray-600 dark:text-gray-400">{{ __('Showing') }} <span class="font-medium text-gray-900 dark:text-white">1</span> {{ __('to') }} <span class="font-medium text-gray-900 dark:text-white">10</span> {{ __('of') }} <span class="font-medium text-gray-900 dark:text-white">42</span> {{ __('results') }}</span>
+                <div class="flex gap-1">
+                    <span class="inline-flex items-center justify-center h-8 w-8 rounded-lg text-gray-300 dark:text-gray-600">
+                        <svg class="size-4" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M12.79 5.23a.75.75 0 0 1-.02 1.06L8.832 10l3.938 3.71a.75.75 0 1 1-1.04 1.08l-4.5-4.25a.75.75 0 0 1 0-1.08l4.5-4.25a.75.75 0 0 1 1.06.02Z" clip-rule="evenodd" /></svg>
+                    </span>
+                    <span class="inline-flex items-center justify-center h-8 min-w-8 px-2 text-sm font-medium rounded-lg bg-white text-gray-900 shadow-xs ring-1 ring-gray-950/10 dark:bg-white/10 dark:text-white dark:ring-white/10">1</span>
+                    <button type="button" class="inline-flex items-center justify-center h-8 min-w-8 px-2 text-sm font-medium rounded-lg text-gray-600 hover:bg-gray-950/5 dark:text-gray-400 dark:hover:bg-white/5 transition-colors duration-150">2</button>
+                    <button type="button" class="inline-flex items-center justify-center h-8 min-w-8 px-2 text-sm font-medium rounded-lg text-gray-600 hover:bg-gray-950/5 dark:text-gray-400 dark:hover:bg-white/5 transition-colors duration-150">3</button>
+                    <button type="button" class="inline-flex items-center justify-center h-8 min-w-8 px-2 text-sm font-medium rounded-lg text-gray-600 hover:bg-gray-950/5 dark:text-gray-400 dark:hover:bg-white/5 transition-colors duration-150">4</button>
+                    <button type="button" class="inline-flex items-center justify-center h-8 w-8 rounded-lg text-gray-600 hover:bg-gray-950/5 dark:text-gray-400 dark:hover:bg-white/5 transition-colors duration-150">
+                        <svg class="size-4" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M7.21 14.77a.75.75 0 0 1 .02-1.06L11.168 10 7.23 6.29a.75.75 0 1 1 1.04-1.08l4.5 4.25a.75.75 0 0 1 0 1.08l-4.5 4.25a.75.75 0 0 1-1.06-.02Z" clip-rule="evenodd" /></svg>
+                    </button>
                 </div>
             </div>
         </div>
@@ -787,29 +801,30 @@
 
         <div class="p-6 mt-4 bg-gray-50 rounded-xl ring-1 dark:bg-white/5 ring-gray-950/5 dark:ring-white/10">
             <span class="text-xs font-medium tracking-wide text-gray-400 uppercase">{{ __('Toast card (static specimen)') }}</span>
-            <div class="mt-4 w-full max-w-sm bg-white rounded-lg shadow-lg dark:bg-gray-800">
-                <div class="overflow-hidden rounded-lg shadow-xs">
+            <div class="mt-4 w-full max-w-sm bg-white rounded-xl shadow-lg ring-1 ring-gray-950/5 dark:bg-gray-800 dark:ring-white/10">
+                <div class="overflow-hidden rounded-xl">
                     <div class="p-4">
                         <div class="flex items-center">
-                            <div class="flex-shrink-0 text-green-500">
-                                <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                    <path d="M7.5 12L10.5 15L16.5 9M22 12C22 17.5228 17.5228 22 12 22C6.47715 22 2 17.5228 2 12C2 6.47715 6.47715 2 12 2C17.5228 2 22 6.47715 22 12Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                                </svg>
+                            <div class="flex-shrink-0">
+                                <div class="flex justify-center items-center w-6 h-6 text-green-600 bg-green-100 rounded-full dark:bg-green-500/15 dark:text-green-400">
+                                    <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M5 13L9.5 17.5L19 7" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                                </div>
                             </div>
-                            <div class="flex-1 pt-0.5 ml-3 w-0">
-                                <p class="text-sm text-gray-900 dark:text-gray-200 font-regular">{{ __('Changes saved successfully.') }}</p>
+                            <div class="flex-1 ml-3 w-0">
+                                <p class="text-sm font-medium text-gray-900 dark:text-gray-100">{{ __('Changes saved successfully.') }}</p>
                             </div>
                             <div class="flex flex-shrink-0 ml-4">
-                                <button class="inline-flex text-gray-400 transition duration-150 ease-in-out dark:text-gray-600 focus:outline-none focus:text-gray-500">
-                                    <svg class="w-5 h-5" viewBox="0 0 20 20" fill="currentColor">
+                                <button class="inline-flex p-1 -m-1 text-gray-400 rounded-md transition duration-150 ease-out hover:bg-gray-950/5 hover:text-gray-600 dark:text-gray-500 dark:hover:bg-white/10 dark:hover:text-gray-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500">
+                                    <span class="sr-only">{{ __('Dismiss notification') }}</span>
+                                    <svg class="w-4 h-4" viewBox="0 0 20 20" fill="currentColor">
                                         <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"></path>
                                     </svg>
                                 </button>
                             </div>
                         </div>
                     </div>
-                    <div class="relative h-0.5 bg-white dark:bg-gray-800">
-                        <div class="absolute left-0 h-0.5 bg-gray-300 dark:bg-gray-600" style="width: 60%"></div>
+                    <div class="relative h-0.5 bg-transparent">
+                        <div class="absolute left-0 h-0.5 bg-primary-500/80 dark:bg-primary-400/80" style="width: 65%"></div>
                     </div>
                 </div>
             </div>
@@ -863,21 +878,23 @@
             {{ __('The login form composition, as rendered on /login (same components on register, reset password and 2FA).') }}
         </p>
 
-        <div class="flex justify-center p-8 mt-6 bg-gray-100 rounded-xl ring-1 dark:bg-gray-900 ring-gray-950/5 dark:ring-white/10 sm:p-12">
-            <div class="p-8 w-full max-w-md bg-white rounded-xl ring-1 shadow-sm dark:bg-gray-800 ring-gray-950/10 dark:ring-white/10">
-                <h3 class="text-xl font-semibold text-gray-900 dark:text-white">{{ __('Sign in') }}</h3>
-                <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ __('Welcome back. Please enter your details.') }}</p>
+        <div class="flex justify-center p-8 mt-6 bg-gray-50 rounded-xl ring-1 dark:bg-gray-900 ring-gray-950/5 dark:ring-white/10 sm:p-12">
+            <div class="w-full max-w-md rounded-2xl bg-white/95 backdrop-blur-xl ring-1 ring-gray-950/5 shadow-xl shadow-gray-950/[0.08] dark:bg-gray-800/90 dark:ring-white/10 dark:shadow-black/40 p-8 sm:p-10">
+                <h3 class="text-2xl font-semibold tracking-tight text-gray-900 dark:text-white">{{ __('Welcome back') }}</h3>
+                <p class="mt-2 text-sm text-gray-500 dark:text-gray-400">{{ __('Login to your account to continue.') }}</p>
 
-                <div class="mt-6 space-y-5">
+                <div class="mt-8 space-y-5">
                     <x-aura::input.email label="Email" placeholder="you@example.com" />
                     <x-aura::input.text label="Password" type="password" placeholder="••••••••" />
 
                     <div class="flex justify-between items-center">
                         <x-aura::input.checkbox label="{{ __('Remember me') }}" />
-                        <a href="#auth" class="text-sm font-semibold text-primary-600 hover:text-primary-700 dark:text-primary-400">{{ __('Forgot password?') }}</a>
+                        <a href="#auth" class="text-sm font-medium text-primary-600 hover:text-primary-500 dark:text-primary-400">{{ __('Forgot your password?') }}</a>
                     </div>
 
-                    <x-aura::button block>{{ __('Log in') }}</x-aura::button>
+                    <div class="pt-1">
+                        <x-aura::button block>{{ __('Log in') }}</x-aura::button>
+                    </div>
                 </div>
             </div>
         </div>
