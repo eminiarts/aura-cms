@@ -16,7 +16,7 @@
         <!-- Email Address -->
         <div>
             <x-aura::input-label class="!mt-0" for="email" :value="__('Email')" />
-            <x-aura::input.text id="email" placeholder="{{ __('Enter your email') }}" class="block w-full" type="email" name="email" :value="old('email')" required autofocus />
+            <x-aura::input.text id="email" placeholder="{{ __('Enter your email') }}" class="block w-full" type="email" name="email" :value="old('email')" required autofocus autocomplete="username" />
             <x-aura::input-error :for="optional($errors)->get('email')" class="mt-2" />
         </div>
 
@@ -36,13 +36,13 @@
         <div class="flex justify-between items-center">
             <!-- Remember Me -->
             <label for="remember_me" class="inline-flex gap-2 items-center">
-                <input id="remember_me" type="checkbox" class="w-4 h-4 rounded border-gray-300 shadow-xs text-primary-600 focus:ring-primary-500 dark:border-white/20 dark:bg-gray-900/50 dark:checked:bg-primary-600 dark:focus:ring-offset-gray-800" name="remember">
+                <input id="remember_me" type="checkbox" class="w-4 h-4 rounded border-gray-300 shadow-xs text-primary-600 focus:ring-primary-500 dark:border-white/20 dark:bg-gray-800 dark:checked:bg-primary-600 dark:focus:ring-offset-gray-900" name="remember">
                 <span class="text-sm text-gray-600 select-none dark:text-gray-300">{{ __('Remember me') }}</span>
             </label>
 
             <!-- Forgot Password? -->
             @if (Route::has('aura.password.request'))
-                <a class="text-sm font-medium rounded-md text-primary-600 hover:text-primary-500 dark:text-primary-400 dark:hover:text-primary-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 dark:focus:ring-offset-gray-800" href="{{ route('aura.password.request') }}">
+                <a class="text-sm font-medium rounded-md text-primary-600 hover:text-primary-500 dark:text-primary-400 dark:hover:text-primary-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 dark:focus:ring-offset-gray-900" href="{{ route('aura.password.request') }}">
                     {{ __('Forgot your password?') }}
                 </a>
             @endif
@@ -55,7 +55,7 @@
 
     @if(config('aura.auth.registration'))
         <p class="mt-6 text-sm text-center text-gray-500 dark:text-gray-400">
-            You don't have an account yet? <a class="font-medium rounded-md text-primary-600 hover:text-primary-500 dark:text-primary-400 dark:hover:text-primary-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 dark:focus:ring-offset-gray-800" href="/register">Register.</a>
+            {{ __("Don't have an account yet?") }} <a class="font-medium rounded-md text-primary-600 hover:text-primary-500 dark:text-primary-400 dark:hover:text-primary-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 dark:focus:ring-offset-gray-900" href="/register">{{ __('Register') }}</a>
         </p>
     @endif
 

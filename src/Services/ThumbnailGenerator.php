@@ -5,7 +5,8 @@ namespace Aura\Base\Services;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
-use Intervention\Image\Laravel\Facades\Image;
+use Intervention\Image\Drivers\Gd\Driver;
+use Intervention\Image\ImageManager;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 class ThumbnailGenerator
@@ -71,9 +72,10 @@ class ThumbnailGenerator
             throw new \Exception('Original image not found: '.$path);
         }
 
-        // Create thumbnail
+        // Create thumbnail via Intervention ImageManager (no Laravel facade package required)
         $imageContents = Storage::disk('public')->get($path);
-        $image = Image::read($imageContents);
+        $manager = new ImageManager(new Driver);
+        $image = $manager->read($imageContents);
 
         // Get original dimensions
         $originalWidth = $image->width();
@@ -109,7 +111,7 @@ class ThumbnailGenerator
         }
 
         // Save the thumbnail image with quality from config
-        $encodedImage = $image->encodeByExtension('jpg', $quality);
+        $encodedImage = $image->encodeByExtension('jpg', quality: $quality);
         Storage::disk('public')->put($thumbnailPath, (string) $encodedImage);
 
         return $thumbnailPath;
