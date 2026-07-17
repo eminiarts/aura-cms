@@ -21,6 +21,15 @@ class Wysiwyg extends Field
             return $value;
         }
 
+        return static::sanitize($value);
+    }
+
+    public static function sanitize(?string $value): string
+    {
+        if ($value === null || $value === '') {
+            return '';
+        }
+
         $sanitizer = new HtmlSanitizer(
             (new HtmlSanitizerConfig)->allowSafeElements()
         );

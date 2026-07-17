@@ -28,7 +28,7 @@
             },
             disabled: @json($field['disabled'] ?? false)
         }" x-ref="quill">
-            {!! $this->form['fields'][$field['slug']] ?? '' !!}
+            {!! \Aura\Base\Fields\Wysiwyg::sanitize($this->form['fields'][$field['slug']] ?? '') !!}
         </div>
     </div>
     </div>

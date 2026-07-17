@@ -779,23 +779,23 @@ Aura CMS provides several artisan commands for development and maintenance:
 | `php artisan aura:resource` | Create a new Aura resource |
 | `php artisan aura:field` | Create a new custom field type |
 | `php artisan aura:plugin` | Create a new Aura plugin |
-| `php artisan aura:resource-migration` | Create migration for a resource |
-| `php artisan aura:resource-permissions` | Generate permissions for a resource |
-| `php artisan aura:resource-factory` | Create a factory for a resource |
+| `php artisan aura:create-resource-migration` | Create migration for a resource |
+| `php artisan aura:create-resource-permissions` | Generate permissions for a resource |
+| `php artisan aura:create-resource-factory` | Create a factory for a resource |
 
 ### Data Migration
 | Command | Description |
 |---------|-------------|
-| `php artisan aura:migrate-to-custom-table` | Migrate data from posts table to custom table |
-| `php artisan aura:transfer-to-custom-table` | Transfer resource data to custom table |
-| `php artisan aura:migrate-postmeta-to-meta` | Migrate post meta to meta table |
+| `php artisan aura:migrate-from-posts-to-custom-table` | Migrate data from posts table to custom table |
+| `php artisan aura:transfer-from-posts-to-custom-table` | Transfer resource data to custom table |
+| `php artisan aura:migrate-post-meta-to-meta` | Migrate post meta to meta table |
 
 ### Utilities
 | Command | Description |
 |---------|-------------|
 | `php artisan aura:customize-component` | Customize a Livewire component |
 | `php artisan aura:database-to-resources` | Generate resources from database tables |
-| `php artisan aura:table-to-resource` | Transform a database table into a resource |
+| `php artisan aura:transform-table-to-resource` | Transform a database table into a resource |
 | `php artisan aura:layout` | Generate Aura layout files |
 
 <a name="next-steps"></a>

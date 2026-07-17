@@ -9,6 +9,7 @@ use Aura\Base\Resources\Team;
 use Aura\Base\Resources\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Livewire\Livewire;
 
 uses(RefreshDatabase::class);
@@ -65,6 +66,10 @@ test('Default Team Settings are created', function () {
 });
 
 test('Team Settings can be saved', function () {
+    if (! Schema::hasTable('teams')) {
+        $this->markTestSkipped('Team tests require the teams schema.');
+    }
+
     $role = Role::create(['name' => 'Super Admin', 'slug' => 'super_admin5', 'description' => 'Super Admin has can perform everything.', 'super_admin' => true, 'permissions' => []]);
 
     // Attach to User

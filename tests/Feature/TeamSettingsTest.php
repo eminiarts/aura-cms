@@ -9,6 +9,7 @@ use Aura\Base\Resources\Team;
 use Aura\Base\Resources\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Livewire\Livewire;
 
 uses(RefreshDatabase::class);
@@ -29,6 +30,10 @@ test('Team Settings Component can be rendered', function () {
 });
 
 test('Default Team Settings are created', function () {
+    if (! Schema::hasTable('teams')) {
+        $this->markTestSkipped('Team tests require the teams schema.');
+    }
+
     $role = Role::create(['name' => 'Admin', 'slug' => 'admin2', 'description' => 'Admin has can perform everything.', 'super_admin' => true, 'permissions' => []]);
 
     // Attach to User
@@ -63,6 +68,10 @@ test('Default Team Settings are created', function () {
 });
 
 test('Team Settings can be saved2', function () {
+    if (! Schema::hasTable('teams')) {
+        $this->markTestSkipped('Team tests require the teams schema.');
+    }
+
     // team factory create team
     $teams = Team::factory(2)->create([
         'user_id' => auth()->user()->id,

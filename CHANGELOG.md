@@ -105,14 +105,14 @@ This is the first official tagged release of Aura CMS, marking a stable checkpoi
 
 - Visual Resource Editor for building resources and fields
 - Artisan commands for scaffolding:
-  - `aura:install` - Interactive installation wizard
+  - `aura:install-config` - Interactive installation wizard
   - `aura:resource` - Generate new resources
   - `aura:field` - Create custom field types
   - `aura:plugin` - Scaffold new plugins
   - `aura:user` - Create admin users
-  - `aura:permission` - Generate resource permissions
+  - `aura:create-resource-permissions` - Generate resource permissions
   - `aura:database-to-resources` - Generate resources from existing database tables
-  - `aura:customize` - Customize components
+  - `aura:customize-component` - Customize components
   - `aura:publish` - Publish assets and views
   
 - Custom field API for extending functionality

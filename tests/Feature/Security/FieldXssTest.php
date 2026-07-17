@@ -4,6 +4,7 @@ use Aura\Base\Facades\Aura;
 use Aura\Base\Fields\Boolean;
 use Aura\Base\Fields\Text;
 use Aura\Base\Fields\Wysiwyg;
+use Aura\Base\Livewire\Resource\Edit;
 use Aura\Base\Livewire\Table\Table;
 use Aura\Base\Resource;
 
@@ -74,6 +75,14 @@ describe('Field::display escaping', function () {
         expect($result)->toBe($html);
     });
 
+    test('Wysiwyg::sanitize strips dangerous handlers but keeps safe formatting', function () {
+        $clean = Wysiwyg::sanitize('<img src=x onerror=alert(1)><p>Hello <strong>World</strong></p>');
+
+        expect($clean)
+            ->not->toContain('onerror')
+            ->toContain('<p>Hello <strong>World</strong></p>');
+    });
+
     test('Boolean field keeps its icon markup raw', function () {
         $result = (new Boolean)->display(['slug' => 'active'], true, new XssResourceModel);
 
@@ -108,6 +117,24 @@ describe('model->display escaping', function () {
             ->toBe('&lt;script&gt;alert(1)&lt;/script&gt;');
 
         expect((string) $post->display('body'))->toBe('<p>Trusted <em>markup</em></p>');
+    });
+});
+
+describe('wysiwyg edit view rendering', function () {
+    test('a stored script payload is sanitized before the edit view renders it raw', function () {
+        Aura::fake();
+        Aura::registerResources([XssResourceModel::class]);
+        Aura::setModel(new XssResourceModel);
+
+        $post = XssResourceModel::create([
+            'type' => 'XssModel',
+            'text' => 'ok',
+            'body' => '<img src=x onerror=alert(document.cookie)><p>Hello</p>',
+        ]);
+
+        livewire(Edit::class, ['slug' => 'xssmodel', 'id' => $post->id])
+            ->assertDontSee('onerror=alert', false)
+            ->assertSee('<p>Hello</p>', false);
     });
 });
 
