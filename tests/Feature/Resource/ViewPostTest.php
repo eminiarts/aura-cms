@@ -103,9 +103,9 @@ test('resource view - can be customized via viewView method', function () {
     $customViewPath = resource_path('views/custom/resource/view.blade.php');
     $customViewContent = '<div>Custom Resource View: {{ $model->title }}</div>';
 
-    // Ensure the directory exists
+    // Ensure the directory exists (race-safe under parallel test runs).
     if (! file_exists(dirname($customViewPath))) {
-        mkdir(dirname($customViewPath), 0777, true);
+        @mkdir(dirname($customViewPath), 0777, true);
     }
 
     file_put_contents($customViewPath, $customViewContent);
