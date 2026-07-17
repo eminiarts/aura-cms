@@ -4,8 +4,15 @@ use Aura\Base\Resources\Role;
 use Aura\Base\Resources\Team;
 use Aura\Base\Resources\User;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Schema;
 
 use function Pest\Laravel\post;
+
+beforeEach(function () {
+    if (! Schema::hasTable('teams')) {
+        $this->markTestSkipped('Team tests require the teams schema.');
+    }
+});
 
 beforeEach(function () {
     $this->actingAs($this->user = createSuperAdmin());

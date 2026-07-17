@@ -3,7 +3,7 @@
 <template x-if="selected && selected.length > 0" key="bulk-select">
 
         <div class="flex z-[1] absolute bottom-0 left-1/2 justify-center w-full max-w-2xl transform -translate-x-1/2 ">
-            <div class="px-4 py-3 mb-6 w-full text-sm text-gray-800 rounded-xl ring-1 shadow-lg backdrop-blur-md transform bg-white/85 ring-gray-950/5 dark:bg-gray-800/85 dark:ring-white/10 dark:text-gray-200">
+            <div class="px-4 py-3 mb-6 w-full text-sm text-gray-800 rounded-xl ring-1 shadow-lg backdrop-blur-md transform bg-white/85 ring-gray-950/10 dark:bg-gray-800/85 dark:ring-white/10 dark:text-gray-200">
 
             <template x-if="!selectAll">
                 <div class="flex justify-between items-center">

@@ -22,7 +22,8 @@ class Image extends Field
             $values = is_array($value) ? $value : [$value];
 
             $firstImageValue = array_shift($values);
-            $attachment = Attachment::find($firstImageValue);
+            $attachmentClass = config('aura.resources.attachment', Attachment::class);
+            $attachment = $attachmentClass::find($firstImageValue);
 
             if ($attachment) {
                 $url = $attachment->thumbnail('xs');

@@ -85,7 +85,5 @@ class Repeater extends Field
         }
 
         return $new;
-
-        return $new->flatten(1);
     }
 }

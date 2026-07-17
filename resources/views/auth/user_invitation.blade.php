@@ -59,6 +59,6 @@
     </form>
 
     <p class="mt-6 text-sm text-center text-gray-500 dark:text-gray-400">
-        <a class="font-medium rounded-md text-primary-600 hover:text-primary-500 dark:text-primary-400 dark:hover:text-primary-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 dark:focus:ring-offset-gray-800" href="/login">{{ __('Already registered?') }}</a>
+        <a class="font-medium rounded-md text-primary-600 hover:text-primary-500 dark:text-primary-400 dark:hover:text-primary-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 dark:focus:ring-offset-gray-900" href="/login">{{ __('Already registered?') }}</a>
     </p>
 </x-aura::layout.guest>

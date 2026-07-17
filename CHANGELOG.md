@@ -5,7 +5,25 @@ All notable changes to `aura-cms` will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Aura CMS v0.2.0](https://github.com/eminiarts/aura-cms/releases/tag/v0.1.0/compare/v0.1.0...Aura CMS v0.2.0) - 2026-06-03
+## [Unreleased](https://github.com/eminiarts/aura-cms/compare/v0.2.0...HEAD)
+
+### Changed
+
+- Raised the support matrix to PHP 8.4+, Laravel 12/13, and Livewire 4.
+- Made package migrations ownership-aware so rollback preserves host-owned tables and columns.
+- Added a central `Aura::flushState()` reset point for tests and long-running queue workers.
+- Made the Resource Editor a local-development-only tool.
+- Restored and enforced the teams-disabled test suite.
+
+### Security
+
+- Hardened role assignment, stored rich content, saved-filter rendering, logout, and media access authorization.
+
+### Upgrade notes
+
+Aura 1.0 is a fresh baseline and does not provide an automated 0.x data migration. See [UPGRADING.md](UPGRADING.md).
+
+## [0.2.0](https://github.com/eminiarts/aura-cms/compare/v0.1.0...v0.2.0) - 2026-06-03
 
 ### What changed
 
@@ -87,14 +105,14 @@ This is the first official tagged release of Aura CMS, marking a stable checkpoi
 
 - Visual Resource Editor for building resources and fields
 - Artisan commands for scaffolding:
-  - `aura:install` - Interactive installation wizard
+  - `aura:install-config` - Interactive installation wizard
   - `aura:resource` - Generate new resources
   - `aura:field` - Create custom field types
   - `aura:plugin` - Scaffold new plugins
   - `aura:user` - Create admin users
-  - `aura:permission` - Generate resource permissions
+  - `aura:create-resource-permissions` - Generate resource permissions
   - `aura:database-to-resources` - Generate resources from existing database tables
-  - `aura:customize` - Customize components
+  - `aura:customize-component` - Customize components
   - `aura:publish` - Publish assets and views
   
 - Custom field API for extending functionality
@@ -186,7 +204,7 @@ Version 1.0.0 will include:
 - API stability guarantees
 - Potential breaking changes from framework upgrades
 
-**Recommendation**: Use version constraint `^0.1.0` in your `composer.json` to receive bug fixes while avoiding breaking changes.
+**Recommendation**: Use version constraint `^0.2.0` in your `composer.json` to receive 0.x bug fixes while avoiding the 1.0 support-matrix change.
 
 
 ---
@@ -194,11 +212,11 @@ Version 1.0.0 will include:
 ## Versioning Strategy
 
 - **0.1.x**: Current stable state, bug fixes and minor improvements only
-- **1.0.0**: Laravel/Livewire upgrades, full documentation, API stability commitment
+- **1.0.0**: PHP 8.4+, Laravel 12/13, Livewire 4, and the supported V1 baseline
 - **Breaking changes**: Expected between 0.x and 1.0, plan accordingly
 
 ## Support
 
 - **Issues**: [GitHub Issues](https://github.com/eminiarts/aura-cms/issues)
-- **Security**: support@eminiarts.ch
+- **Security**: [SECURITY.md](SECURITY.md)
 - **Documentation**: [docs/](docs/)

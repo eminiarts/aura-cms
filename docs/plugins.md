@@ -818,7 +818,6 @@ class StockLevelChanged
 StockLevelChanged::dispatch($product, $oldStock, $newStock);
 ```
 
-> 📹 **Video Placeholder**: [Working with hooks and events - practical examples of extending Aura functionality]
 
 ## Testing Plugins
 
@@ -1248,7 +1247,6 @@ class SeoServiceProvider extends PackageServiceProvider
 }
 ```
 
-> 📹 **Video Placeholder**: [Building a complete plugin from scratch - showing real-world example with all features]
 
 ### Pro Tips
 

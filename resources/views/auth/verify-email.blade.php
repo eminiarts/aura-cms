@@ -24,7 +24,7 @@
     <form method="POST" action="{{ route('aura.logout') }}" class="mt-6 text-center">
         @csrf
 
-        <button type="submit" class="text-sm font-medium rounded-md text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 dark:focus:ring-offset-gray-800">
+        <button type="submit" class="text-sm font-medium rounded-md text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 dark:focus:ring-offset-gray-900">
             {{ __('Log Out') }}
         </button>
     </form>

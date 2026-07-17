@@ -166,11 +166,7 @@ The Resource Editor is automatically disabled outside of local environments for 
 
 **Problem:** Resource Editor not visible in staging/production
 
-**Solution:** This is intentional. To enable in other environments (not recommended for production):
-```php
-// In config/aura.php
-'resource_editor' => env('AURA_RESOURCE_EDITOR', false),
-```
+**Solution:** This is intentional and cannot be overridden by configuration. Use the editor locally, commit the generated PHP changes, and deploy those reviewed source changes.
 
 ## Installation Problems
 
@@ -1020,7 +1016,7 @@ A: Yes, Aura CMS has built-in team support for multi-tenancy. Enable it during i
 A: Absolutely! Aura CMS supports custom tables. Use `php artisan aura:resource Product --custom-table` to create resources with custom tables.
 
 **Q: Is Aura CMS compatible with Laravel Octane?**
-A: Yes, but ensure you clear stateful services between requests. Add Aura facades to the `flush` array in `config/octane.php`.
+A: Octane is not officially supported in Aura CMS 1.0 because it is not part of the tested matrix. Aura provides `Aura::flushState()` as a deterministic reset point for tests and long-running integrations, and queue workers invoke it after jobs. Full Octane support is planned for a later release.
 
 ### Development Questions
 
@@ -1045,7 +1041,7 @@ class CustomUser extends \Aura\Base\Resources\User
 ```
 
 **Q: Can I disable the Resource Editor in production?**
-A: The Resource Editor is automatically disabled in non-local environments (see [Common Gotchas](#4-resource-editor-environment-restriction)). You can control it with `AURA_RESOURCE_EDITOR=false`.
+A: The Resource Editor is always unavailable outside the `local` environment. The `aura.features.resource_editor` flag can additionally disable it during local development, but cannot enable it in production.
 
 ### Performance Questions
 
@@ -1079,7 +1075,6 @@ A: This is a CSRF token mismatch. Ensure:
 - Session configuration is correct
 - APP_URL matches your actual URL
 
-> 📹 **Video Placeholder**: [Comprehensive troubleshooting walkthrough showing common issues and their solutions]
 
 ## Getting Help
 

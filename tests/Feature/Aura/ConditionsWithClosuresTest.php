@@ -116,6 +116,8 @@ test('Conditional Logic with Closures - false', function () {
 });
 
 test('Conditional Logic with Closures - config true', function () {
+    config(['aura.teams' => true]);
+
     $model = new ConditionalLogicWithClosuresModel;
 
     $field = collect($model->getFields())->firstWhere('slug', 'text2');

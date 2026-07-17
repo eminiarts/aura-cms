@@ -29,6 +29,13 @@ class TestCase extends Orchestra
 
         $this->withoutVite();
 
+        // Race-safe: parallel test processes can create this directory between the
+        // is_dir() check and mkdir(), which would raise a "File exists" warning
+        // (an ErrorException under Pest) on Linux CI. @ swallows that lost race.
+        if (! is_dir(app_path('Aura/Resources'))) {
+            @mkdir(app_path('Aura/Resources'), 0755, true);
+        }
+
         // Mock file uploads are handled by the mock file in tests/Mocks/
         // Laravel's real-time facade system will automatically use the mock class
 
@@ -125,7 +132,7 @@ class TestCase extends Orchestra
 
         foreach ($paths as $path) {
             if (! is_dir($basePath.'/'.$path)) {
-                mkdir($basePath.'/'.$path, 0755, true);
+                @mkdir($basePath.'/'.$path, 0755, true);
             }
         }
 

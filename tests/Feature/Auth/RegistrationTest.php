@@ -6,17 +6,16 @@ use Aura\Base\Resources\Team;
 use Aura\Base\Resources\User;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\Schema;
 
 beforeEach(function () {
     config(['aura.auth.registration' => true]);
-    config(['aura.teams' => true]);
 });
 
 describe('Registration Screen', function () {
     test('registration page renders successfully', function () {
         $this->get(route('aura.register'))
             ->assertSuccessful()
-            ->assertSee('Team')
             ->assertSee('Name')
             ->assertSee('Email')
             ->assertSee('Password');
@@ -31,7 +30,7 @@ describe('Registration Screen', function () {
 
     test('register link is visible on login page when enabled', function () {
         $this->get(route('aura.login'))
-            ->assertSee('Register.');
+            ->assertSee('Register');
     });
 
     test('register link is hidden on login page when disabled', function () {
@@ -42,6 +41,12 @@ describe('Registration Screen', function () {
     });
 
     test('team input is shown when teams feature is enabled', function () {
+        if (! Schema::hasTable('teams')) {
+            $this->markTestSkipped('The teams schema is disabled.');
+        }
+
+        config(['aura.teams' => true]);
+
         $this->get(route('aura.register'))
             ->assertSee('Team');
     });
@@ -56,6 +61,10 @@ describe('Registration Screen', function () {
 
 describe('Registration With Teams', function () {
     beforeEach(function () {
+        if (! Schema::hasTable('teams')) {
+            $this->markTestSkipped('Registration with teams requires the teams schema.');
+        }
+
         config(['aura.teams' => true]);
     });
 

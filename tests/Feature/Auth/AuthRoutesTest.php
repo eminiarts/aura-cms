@@ -32,7 +32,7 @@ describe('Registration Routes', function () {
 
     test('register link is visible on login page when registration enabled', function () {
         $this->get(route('aura.login'))
-            ->assertSee('Register.');
+            ->assertSee('Register');
     });
 });
 
@@ -107,14 +107,14 @@ describe('Login Routes', function () {
 });
 
 describe('Logout Routes', function () {
-    test('authenticated user can logout via GET', function () {
+    test('authenticated user cannot logout via GET', function () {
         $user = User::factory()->create();
 
         $this->actingAs($user)
             ->get(route('aura.logout'))
-            ->assertRedirect('/');
+            ->assertMethodNotAllowed();
 
-        $this->assertGuest();
+        $this->assertAuthenticated();
     });
 
     test('authenticated user can logout via POST', function () {

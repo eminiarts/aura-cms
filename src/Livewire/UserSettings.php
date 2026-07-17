@@ -2,7 +2,7 @@
 
 namespace Aura\Base\Livewire;
 
-use Aura\Base\Models\Option;
+use Aura\Base\Resources\Option;
 use Aura\Base\Traits\InputFields;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Str;

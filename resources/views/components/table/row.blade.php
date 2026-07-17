@@ -5,7 +5,9 @@
     >
 
     @if ($this->settings['selectable'])
-        <x-aura::table.cell class="pr-0">
+        <x-aura::table.cell class="relative pr-0">
+            <span x-show="selected.includes('{{ $row->id }}')" x-cloak
+                  class="absolute inset-y-0 left-0 w-0.5 bg-primary-600" aria-hidden="true"></span>
             <x-aura::input.checkbox
     id="checkbox_{{ $row->id }}"
     x-bind:checked="selected.includes({{ $row->id }})"

@@ -140,7 +140,10 @@ trait AuraModelConfig
                 return implode(', ', $value);
             }
 
-            return $value;
+            // This branch bypasses the field's own display() (which escapes
+            // scalar values), so escape here too — the value is rendered raw
+            // via {!! !!} in the table/view blades.
+            return is_scalar($value) ? e($value) : $value;
         }
     }
 
@@ -592,32 +595,6 @@ trait AuraModelConfig
             return __($this->getType())." (#{$this->id})";
         }
     }
-
-    /**
-     * @param  string  $key
-     * @return mixed
-     */
-    // public function __get($key)
-    // {
-    //     // // Title is a special case, for now
-    //     if ($key == 'title') {
-    //         return $this->getAttributeValue($key);
-    //     }
-
-    //     // Does not work atm
-    //     // if ($key == 'roles') {
-    //     //     return;
-    //     //     return $this->getRolesField();
-    //     // }
-
-    //     $value = parent::__get($key);
-
-    //     if ($value) {
-    //         return $value;
-    //     }
-
-    //     return $this->displayFieldValue($key, $value);
-    // }
 
     public static function usesCustomTable(): bool
     {

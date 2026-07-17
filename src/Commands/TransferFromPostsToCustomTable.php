@@ -76,8 +76,11 @@ class TransferFromPostsToCustomTable extends Command
                 'created_at' => $post->created_at,
                 'updated_at' => $post->updated_at,
                 'user_id' => $post->user_id,
-                'team_id' => $post->team_id,
             ];
+
+            if (property_exists($post, 'team_id')) {
+                $newRecord['team_id'] = $post->team_id;
+            }
 
             foreach ($metas as $meta) {
                 $newRecord[$meta->key] = $meta->value;

@@ -79,6 +79,9 @@ class Role extends Resource
                 'searchable' => true,
                 'on_forms' => true,
                 'on_view' => true,
+                'style' => [
+                    'width' => '50',
+                ],
             ],
             [
                 'name' => 'Slug',
@@ -90,7 +93,7 @@ class Role extends Resource
                 'validation' => 'required',
                 'on_index' => true,
                 'style' => [
-                    'width' => '100',
+                    'width' => '50',
                 ],
             ],
             [

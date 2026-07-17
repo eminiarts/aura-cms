@@ -1,6 +1,5 @@
 # Quick Start Guide: Build a Blog in 15 Minutes
 
-> 📹 **Video Placeholder**: Complete walkthrough of building a fully functional blog with Aura CMS in under 15 minutes
 
 Welcome to Aura CMS! This guide will walk you through building a complete blog application with categories, tags, authors, and media management. By the end of this tutorial, you'll understand the core concepts and be ready to build your own applications.
 
@@ -29,7 +28,8 @@ We'll create a modern blog with:
 ## Prerequisites
 
 Before starting, ensure you have:
-- PHP 8.2+ with required extensions
+- PHP 8.4+ with required extensions
+- Laravel 12 or 13 with Livewire 4
 - Composer installed
 - MySQL or PostgreSQL database
 - Basic Laravel knowledge
@@ -56,18 +56,23 @@ DB_PASSWORD=
 # Install Aura CMS
 composer require eminiarts/aura-cms
 
-# Run the interactive installer
-php artisan aura:install
+# Publish, configure, and initialize Aura
+php artisan vendor:publish --tag=aura-config
+php artisan aura:install-config
+php artisan aura:extend-user-model
+php artisan vendor:publish --tag=aura-migrations
+php artisan migrate
+php artisan aura:publish
+php artisan aura:user
 ```
 
-The installer will guide you through several options:
+The configuration command guides you through the main options:
 
-1. **Modify aura configuration?** - Recommended for first-time setup
-   - Teams: Choose whether to enable multi-tenancy
-   - Features: Enable/disable global search, bookmarks, notifications, etc.
-   - Theme: Customize colors, sidebar style, and dark mode
-2. **Run migrations?** - Yes (creates required database tables)
-3. **Create a user?** - Yes (creates your admin account)
+1. **Teams**: Choose whether to enable multi-tenancy.
+2. **Features**: Enable or disable global search, bookmarks, notifications, and other optional features.
+3. **Registration and theme**: Choose the public registration and visual defaults.
+
+The remaining commands connect the application user model, migrate the database, publish assets, and create the first administrator.
 
 ### Step 3: Start the Development Server
 
@@ -77,7 +82,6 @@ php artisan serve
 
 Visit `http://localhost:8000/admin` and log in with your admin credentials.
 
-> 📹 **Video Placeholder**: Installation process from start to first login
 
 ## Creating the Blog Structure
 
@@ -445,7 +449,6 @@ class Article extends Resource
 }
 ```
 
-> 📹 **Video Placeholder**: Creating resources using the CLI and customizing field configurations
 
 ## Working with Content
 
@@ -869,7 +872,6 @@ Congratulations! You've built a fully functional blog with Aura CMS. Here's what
 ### 3. Advanced Features
 - 👥 **[Teams & Multi-tenancy](teams.md)** - Build SaaS applications
 - 🔒 **[Roles & Permissions](roles-permissions.md)** - Fine-grained access control
-- 🔄 **[Flows](flows.md)** - Automate workflows
 
 ### 4. Production
 - 🚀 **[Deployment Guide](installation.md#deployment)** - Deploy to production
@@ -888,5 +890,3 @@ Congratulations! You've built a fully functional blog with Aura CMS. Here's what
 **Happy building with Aura CMS!** 🚀
 
 Remember, this is just the beginning. Aura CMS is incredibly flexible and can be adapted to build any type of content-driven application. Experiment, explore, and enjoy the journey!
-
-> 📹 **Video Placeholder**: Summary and next steps after completing the blog tutorial

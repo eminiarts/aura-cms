@@ -39,8 +39,10 @@ describe('Login Screen', function () {
     });
 
     test('login page shows registration link when enabled', function () {
+        config(['aura.auth.registration' => true]);
+
         $this->get(route('aura.login'))
-            ->assertSee('Register.');
+            ->assertSee('Register');
     });
 
     test('login page hides registration link when disabled', function () {
@@ -203,7 +205,7 @@ describe('Logout', function () {
         $user = User::factory()->create();
 
         $this->actingAs($user)
-            ->get(route('aura.logout'))
+            ->post(route('aura.logout'))
             ->assertRedirect('/');
 
         $this->assertGuest();
@@ -214,7 +216,7 @@ describe('Logout', function () {
         $this->actingAs($user);
         $oldSessionId = session()->getId();
 
-        $this->get(route('aura.logout'));
+        $this->post(route('aura.logout'));
 
         expect(session()->getId())->not->toBe($oldSessionId);
     });

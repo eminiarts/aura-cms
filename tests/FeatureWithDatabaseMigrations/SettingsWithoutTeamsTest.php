@@ -48,7 +48,7 @@ describe('default settings without teams', function () {
     it('has correct default theme values', function () {
         Livewire::test(Settings::class)
             ->assertSet('form.fields.darkmode-type', 'auto')
-            ->assertSet('form.fields.sidebar-type', 'primary')
+            ->assertSet('form.fields.sidebar-type', 'dark')
             ->assertSet('form.fields.color-palette', 'aura')
             ->assertSet('form.fields.gray-color-palette', 'slate');
     });

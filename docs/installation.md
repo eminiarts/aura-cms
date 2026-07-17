@@ -1,7 +1,5 @@
 # Installation
 
-> 📹 **Video Placeholder**: Complete walkthrough of Aura CMS installation from creating a new Laravel project to accessing the admin panel for the first time
-
 Aura CMS transforms your Laravel application into a powerful content management system with just a few commands. This guide covers multiple installation methods, troubleshooting common issues, and deployment best practices.
 
 ## Table of Contents
@@ -24,11 +22,12 @@ Aura CMS transforms your Laravel application into a powerful content management 
 
 | Component | Version | Notes |
 |-----------|---------|-------|
-| **PHP** | >= 8.2 | With extensions: BCMath, Ctype, JSON, Mbstring, OpenSSL, PDO, Tokenizer, XML |
-| **Laravel** | 10.x, 11.x, or 12.x | Fresh or existing installation |
+| **PHP** | >= 8.4 | With extensions: BCMath, Ctype, JSON, Mbstring, OpenSSL, PDO, Tokenizer, XML |
+| **Laravel** | 12.x or 13.x | Fresh or existing installation |
+| **Livewire** | 4.x | Livewire 3 is not supported |
 | **Composer** | >= 2.0 | Latest version recommended |
 | **Database** | MySQL 8.0+, PostgreSQL 12+, SQLite 3.8.8+, SQL Server 2017+ | MySQL/PostgreSQL recommended for production |
-| **Node.js** | >= 18.x | For asset compilation (optional but recommended) |
+| **Node.js** | >= 20.19 or >= 22.12 | For asset compilation (optional) |
 | **NPM/Yarn** | Latest | For frontend dependencies |
 
 ### PHP Extensions
@@ -59,16 +58,20 @@ cd my-aura-project
 # Install Aura CMS
 composer require eminiarts/aura-cms
 
-# Run interactive installer
-php artisan aura:install
+# Publish and configure Aura
+php artisan vendor:publish --tag=aura-config
+php artisan aura:install-config
+php artisan aura:extend-user-model
+php artisan vendor:publish --tag=aura-migrations
+php artisan migrate
+php artisan aura:publish
+php artisan aura:user
 
 # Start development server
 php artisan serve
 
 # Visit http://localhost:8000/admin
 ```
-
-> 📹 **Video Placeholder**: 60-second speed run of Aura CMS installation
 
 <a name="detailed-installation-steps"></a>
 ## Detailed Installation Steps
@@ -93,7 +96,7 @@ Ensure your existing application meets the requirements:
 
 ```bash
 # Check Laravel version
-php artisan --version  # Should be 10.x, 11.x, or 12.x
+php artisan --version  # Should be 12.x or 13.x
 
 # Update dependencies
 composer update
@@ -139,66 +142,37 @@ composer require eminiarts/aura-cms
 COMPOSER_MEMORY_LIMIT=-1 composer require eminiarts/aura-cms
 ```
 
-### Step 4: Run the Interactive Installer
+### Step 4: Publish and Configure Aura
 
-The installer guides you through the entire setup:
+Publish the package configuration, then run Aura's interactive configuration command:
 
 ```bash
-php artisan aura:install
+php artisan vendor:publish --tag=aura-config
+php artisan aura:install-config
 ```
 
-You'll see output like this:
+The command asks about teams, feature flags, registration, and theme settings. Review the resulting `config/aura.php` before continuing.
 
-```
-Hello, thank you for installing Aura!
+### Step 5: Connect the User Model and Database
 
-Publishing config file...
-Publishing assets...
-Publishing migrations...
-Copying Service Provider...
-
-Do you want to extend the User model with AuraUser? (yes/no) [yes]:
-> yes
-
-User model successfully extended with AuraUser.
-
-Do you want to modify the aura configuration? (yes/no) [yes]:
-> yes
-
-Do you want to use teams? (yes/no) [yes]:
-> 
+```bash
+php artisan aura:extend-user-model
+php artisan vendor:publish --tag=aura-migrations
+php artisan migrate
 ```
 
-#### Installation Options Explained
+The first command updates `App\Models\User` to extend Aura's user resource. Publishing the migrations copies Aura's timestamped migration into your application's `database/migrations` directory; `migrate` then creates Aura-owned tables and augments compatible host tables without taking ownership of those host tables.
 
-The installer performs the following steps in order:
+### Step 6: Publish Assets and Create an Administrator
 
-1. **Publish Files** (Automatic)
-   - Publishes configuration files (`config/aura.php`, `config/aura-settings.php`)
-   - Publishes assets to `public/vendor/aura`
-   - Publishes migrations
-   - Copies and registers the Aura service provider
+```bash
+php artisan aura:publish
+php artisan aura:user
+```
 
-2. **Extend User Model** (Prompted)
-   - The installer asks if you want to extend your `App\Models\User` model with `AuraUser`
-   - This adds necessary traits and relationships for Aura CMS functionality
+The user command creates the first super administrator and, when teams are enabled, its initial team.
 
-3. **Modify Configuration** (Prompted)
-   - **Teams**: Enable multi-tenancy support
-   - **Features**: Toggle individual features (global search, bookmarks, notifications, etc.)
-   - **Registration**: Allow public user registration
-   - **Theme**: Customize colors and appearance
-
-4. **Run Migrations** (Prompted)
-   - Creates all necessary database tables
-   - Includes: users, posts, meta, post_relations, roles, permissions, options, teams (if enabled), team_invitations, notifications, jobs, job_batches, failed_jobs
-
-5. **Create Admin User** (Prompted)
-   - Runs `php artisan aura:user` to set up your first super admin account
-   - Creates a team (if teams enabled) and assigns the Super Admin role
-   - You'll need this account to access the admin panel
-
-### Step 5: Verify Installation
+### Step 7: Verify Installation
 
 After installation, verify everything is working:
 
@@ -362,7 +336,13 @@ docker-compose up -d --build
 
 # Install Aura CMS in container
 docker-compose exec app composer require eminiarts/aura-cms
-docker-compose exec app php artisan aura:install
+docker-compose exec app php artisan vendor:publish --tag=aura-config
+docker-compose exec app php artisan aura:install-config
+docker-compose exec app php artisan aura:extend-user-model
+docker-compose exec app php artisan vendor:publish --tag=aura-migrations
+docker-compose exec app php artisan migrate
+docker-compose exec app php artisan aura:publish
+docker-compose exec app php artisan aura:user
 
 # Access at http://localhost:8080/admin
 ```
@@ -372,7 +352,7 @@ docker-compose exec app php artisan aura:install
 <a name="configuration-during-installation"></a>
 ## Configuration During Installation
 
-The interactive installer allows you to configure Aura CMS during installation:
+The `aura:install-config` command allows you to configure Aura CMS during installation:
 
 ### Published Configuration Files
 
@@ -791,7 +771,6 @@ Aura CMS provides several artisan commands for development and maintenance:
 ### Installation & Setup
 | Command | Description |
 |---------|-------------|
-| `php artisan aura:install` | Run the interactive installer |
 | `php artisan aura:install-config` | Configure Aura settings interactively |
 | `php artisan aura:extend-user-model` | Extend User model with AuraUser |
 | `php artisan aura:user` | Create a new super admin user |
@@ -803,23 +782,23 @@ Aura CMS provides several artisan commands for development and maintenance:
 | `php artisan aura:resource` | Create a new Aura resource |
 | `php artisan aura:field` | Create a new custom field type |
 | `php artisan aura:plugin` | Create a new Aura plugin |
-| `php artisan aura:resource-migration` | Create migration for a resource |
-| `php artisan aura:resource-permissions` | Generate permissions for a resource |
-| `php artisan aura:resource-factory` | Create a factory for a resource |
+| `php artisan aura:create-resource-migration` | Create migration for a resource |
+| `php artisan aura:create-resource-permissions` | Generate permissions for a resource |
+| `php artisan aura:create-resource-factory` | Create a factory for a resource |
 
 ### Data Migration
 | Command | Description |
 |---------|-------------|
-| `php artisan aura:migrate-to-custom-table` | Migrate data from posts table to custom table |
-| `php artisan aura:transfer-to-custom-table` | Transfer resource data to custom table |
-| `php artisan aura:migrate-postmeta-to-meta` | Migrate post meta to meta table |
+| `php artisan aura:migrate-from-posts-to-custom-table` | Migrate data from posts table to custom table |
+| `php artisan aura:transfer-from-posts-to-custom-table` | Transfer resource data to custom table |
+| `php artisan aura:migrate-post-meta-to-meta` | Migrate post meta to meta table |
 
 ### Utilities
 | Command | Description |
 |---------|-------------|
 | `php artisan aura:customize-component` | Customize a Livewire component |
 | `php artisan aura:database-to-resources` | Generate resources from database tables |
-| `php artisan aura:table-to-resource` | Transform a database table into a resource |
+| `php artisan aura:transform-table-to-resource` | Transform a database table into a resource |
 | `php artisan aura:layout` | Generate Aura layout files |
 
 <a name="next-steps"></a>

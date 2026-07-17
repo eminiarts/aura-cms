@@ -1,6 +1,7 @@
 <?php
 
 use Aura\Base\Livewire\Dashboard;
+use Aura\Base\Livewire\MediaManager;
 use Aura\Base\Livewire\Profile;
 use Aura\Base\Livewire\Settings;
 use Aura\Base\Resources\Attachment;
@@ -62,6 +63,11 @@ return [
         'dashboard' => Dashboard::class,
         'profile' => Profile::class,
         'settings' => Settings::class,
+
+        // The media-manager modal component. Plugins (e.g. the Media Library)
+        // may override this with a drop-in replacement by publishing/setting
+        // `aura.components.media-manager` to their own Livewire component.
+        'media-manager' => MediaManager::class,
     ],
 
     /*
@@ -98,7 +104,7 @@ return [
         'darkmode-type' => 'auto',
 
         'sidebar-size' => 'standard',
-        'sidebar-type' => 'primary',
+        'sidebar-type' => 'dark',
         'sidebar-darkmode-type' => 'dark',
 
         'login-bg' => false,

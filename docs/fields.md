@@ -1,6 +1,5 @@
 # Fields Reference
 
-> 📹 **Video Placeholder**: Complete overview of all 42 Aura CMS field types with live demonstrations
 
 Fields are the building blocks of Aura CMS, transforming your resources into powerful, feature-rich forms and interfaces. With 42 field types available out of the box, you can handle any data requirement from simple text inputs to complex relationships and media management.
 
@@ -1679,6 +1678,5 @@ Aura CMS provides a comprehensive field system that handles virtually any data r
 
 Whether you're building a simple blog or a complex enterprise application, Aura's field system provides the flexibility and power you need while maintaining a clean, intuitive API.
 
-> 📹 **Video Placeholder**: Building custom fields and extending the Aura CMS field system
 
 For more information on using fields in resources, see the [Resources Documentation](resources.md) and [Creating Resources Guide](creating-resources.md).

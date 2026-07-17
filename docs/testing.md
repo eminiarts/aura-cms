@@ -988,20 +988,14 @@ test('make:resource command', function () {
 ### Interactive Command Testing
 
 ```php
-test('aura:install command', function () {
-    $this->artisan('aura:install')
+test('aura:install-config command', function () {
+    $this->artisan('aura:install-config')
         ->expectsQuestion('Do you want to use teams?', true)
-        ->expectsQuestion('Do you want to install sample data?', false)
-        ->expectsOutput('Publishing Aura assets...')
-        ->expectsOutput('Running migrations...')
-        ->expectsOutput('Aura CMS installed successfully!')
         ->assertSuccessful();
     
     // Verify configuration
     expect(config('aura.teams'))->toBeTrue();
     
-    // Verify migrations ran
-    expect(Schema::hasTable('teams'))->toBeTrue();
 });
 ```
 
@@ -1039,10 +1033,11 @@ jobs:
       fail-fast: true
       matrix:
         os: [ubuntu-latest]
-        php: [8.2]
+        php: [8.4]
+        laravel: [12, 13]
         stability: [prefer-stable]
 
-    name: P${{ matrix.php }} - ${{ matrix.stability }} - ${{ matrix.os }}
+    name: P${{ matrix.php }} - L${{ matrix.laravel }} - ${{ matrix.stability }} - ${{ matrix.os }}
 
     steps:
       - name: Checkout code
@@ -1062,7 +1057,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          composer require "laravel/framework:11.*" "orchestra/testbench:^9.0" --no-interaction --no-update
+          composer require "laravel/framework:${{ matrix.laravel }}.*" --no-interaction --no-update
           composer update --${{ matrix.stability }} --prefer-dist --no-interaction
 
       - name: Execute tests
@@ -1071,7 +1066,7 @@ jobs:
 
 Additional CI workflows available:
 - `phpstan.yml` - Static analysis with PHPStan
-- `fix-php-code-style-issues.yml` - Code formatting with Pint (auto-commits fixes)
+- `code-style.yml` - Code style check with Pint (`vendor/bin/pint --test`); fails the build on violations, does not auto-commit
 
 ### GitLab CI Configuration
 
@@ -1088,7 +1083,7 @@ variables:
 
 test:
   stage: test
-  image: php:8.2-cli
+  image: php:8.4-cli
   services:
     - mysql:8.0
   before_script:
@@ -1362,7 +1357,6 @@ expect()->extend('toBeActiveResource', function () {
 expect($product)->toBeActiveResource();
 ```
 
-> 📹 **Video Placeholder**: [Complete walkthrough of setting up and running tests in Aura CMS, including CI/CD integration]
 
 ## Common Gotchas
 

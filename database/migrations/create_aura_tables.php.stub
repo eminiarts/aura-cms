@@ -2,37 +2,135 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
+    private const OWNERSHIP_KEY = 'create_aura_tables';
+
+    private const OWNERSHIP_TABLE = 'aura_migration_ownership';
+
     /**
      * Reverse the migrations.
      *
      * @return void
      */
-    public function down()
+    public function down(): void
     {
-        Schema::dropIfExists('users');
-        Schema::dropIfExists('password_resets');
-        Schema::dropIfExists('sessions');
-        Schema::dropIfExists('jobs');
-        Schema::dropIfExists('job_batches');
-        Schema::dropIfExists('failed_jobs');
-        Schema::dropIfExists('personal_access_tokens');
-        Schema::dropIfExists('teams');
-        Schema::dropIfExists('user_role');
-        Schema::dropIfExists('options');
-        Schema::dropIfExists('notifications');
-        Schema::dropIfExists('posts');
-        Schema::dropIfExists('meta');
-        Schema::dropIfExists('post_relations');
-        Schema::dropIfExists('roles');
-        Schema::dropIfExists('permissions');
+        if (! Schema::hasTable(self::OWNERSHIP_TABLE)) {
+            return;
+        }
+
+        $record = DB::table(self::OWNERSHIP_TABLE)
+            ->where('migration', self::OWNERSHIP_KEY)
+            ->first();
+
+        if (! $record) {
+            return;
+        }
+
+        $ownership = json_decode($record->ownership, true, flags: JSON_THROW_ON_ERROR);
+
+        foreach ($ownership['added_columns'] ?? [] as $table => $columns) {
+            $existingColumns = array_values(array_filter(
+                $columns,
+                fn (string $column): bool => Schema::hasColumn($table, $column)
+            ));
+
+            if ($existingColumns !== [] && Schema::hasTable($table)) {
+                Schema::table($table, function (Blueprint $blueprint) use ($existingColumns) {
+                    $blueprint->dropColumn($existingColumns);
+                });
+            }
+        }
+
+        foreach (array_reverse($ownership['created_tables'] ?? []) as $table) {
+            Schema::dropIfExists($table);
+        }
+
+        DB::table(self::OWNERSHIP_TABLE)
+            ->where('migration', self::OWNERSHIP_KEY)
+            ->delete();
+
+        if (($ownership['owns_registry'] ?? false)
+            && DB::table(self::OWNERSHIP_TABLE)->doesntExist()) {
+            Schema::drop(self::OWNERSHIP_TABLE);
+        }
     }
 
-    public function up()
+    public function up(): void
     {
+        $exclusiveTables = [
+            'user_role',
+            'posts',
+            'meta',
+            'post_relations',
+            'roles',
+            'permissions',
+            'options',
+        ];
+
+        if (config('aura.teams')) {
+            $exclusiveTables[] = 'teams';
+        }
+
+        $conflictingTables = collect($exclusiveTables)
+            ->filter(fn (string $table): bool => Schema::hasTable($table))
+            ->values();
+
+        if ($conflictingTables->isNotEmpty()) {
+            throw new RuntimeException(
+                'Aura cannot install because these package-owned tables already exist: '
+                .$conflictingTables->implode(', ')
+            );
+        }
+
+        $managedTables = [
+            'users',
+            'password_resets',
+            'personal_access_tokens',
+            'password_reset_tokens',
+            'teams',
+            'user_role',
+            'posts',
+            'meta',
+            'post_relations',
+            'roles',
+            'permissions',
+            'options',
+            'notifications',
+            'jobs',
+            'job_batches',
+            'failed_jobs',
+        ];
+        $existingTables = collect($managedTables)
+            ->filter(fn (string $table): bool => Schema::hasTable($table))
+            ->values()
+            ->all();
+        $managedUserColumns = [
+            'two_factor_secret',
+            'two_factor_recovery_codes',
+            'two_factor_confirmed_at',
+            'current_team_id',
+            'deleted_at',
+        ];
+        $existingUserColumns = Schema::hasTable('users')
+            ? collect($managedUserColumns)
+                ->filter(fn (string $column): bool => Schema::hasColumn('users', $column))
+                ->values()
+                ->all()
+            : [];
+        $ownsRegistry = ! Schema::hasTable(self::OWNERSHIP_TABLE);
+
+        if ($ownsRegistry) {
+            Schema::create(self::OWNERSHIP_TABLE, function (Blueprint $table) {
+                $table->id();
+                $table->string('migration')->unique();
+                $table->longText('ownership');
+            });
+        }
+
         // IMPORTANT: This migration is published into the host application. It must
         // NEVER drop the app's existing users/auth tables (that would destroy data).
         // Create the users table only when it is absent (greenfield); otherwise add
@@ -233,14 +331,16 @@ return new class extends Migration
             }
         });
 
-        Schema::create('notifications', function (Blueprint $table) {
-            $table->uuid('id')->primary();
-            $table->string('type');
-            $table->morphs('notifiable');
-            $table->text('data');
-            $table->timestamp('read_at')->nullable();
-            $table->timestamps();
-        });
+        if (! Schema::hasTable('notifications')) {
+            Schema::create('notifications', function (Blueprint $table) {
+                $table->uuid('id')->primary();
+                $table->string('type');
+                $table->morphs('notifiable');
+                $table->text('data');
+                $table->timestamp('read_at')->nullable();
+                $table->timestamps();
+            });
+        }
 
         if (! Schema::hasTable('jobs')) {
             Schema::create('jobs', function (Blueprint $table) {
@@ -280,5 +380,29 @@ return new class extends Migration
                 $table->timestamp('failed_at')->useCurrent();
             });
         }
+
+        $createdTables = collect($managedTables)
+            ->reject(fn (string $table): bool => in_array($table, $existingTables, true))
+            ->filter(fn (string $table): bool => Schema::hasTable($table))
+            ->values()
+            ->all();
+        $addedUserColumns = Schema::hasTable('users')
+            ? collect($managedUserColumns)
+                ->reject(fn (string $column): bool => in_array($column, $existingUserColumns, true))
+                ->filter(fn (string $column): bool => Schema::hasColumn('users', $column))
+                ->values()
+                ->all()
+            : [];
+
+        DB::table(self::OWNERSHIP_TABLE)->updateOrInsert(
+            ['migration' => self::OWNERSHIP_KEY],
+            ['ownership' => json_encode([
+                'created_tables' => $createdTables,
+                'added_columns' => in_array('users', $existingTables, true) && $addedUserColumns !== []
+                    ? ['users' => $addedUserColumns]
+                    : [],
+                'owns_registry' => $ownsRegistry,
+            ], JSON_THROW_ON_ERROR)]
+        );
     }
 };

@@ -15,7 +15,7 @@
         @endif
 
         @if($this->settings['actions'])
-        <th class="table-row-actions px-6 py-2.5 text-xs font-semibold text-right text-gray-500 dark:text-gray-400">
+        <th class="table-row-actions px-6 py-2.5 text-[11px] font-semibold uppercase tracking-wide text-right text-gray-500 dark:text-gray-400">
             <span class="sr-only">{{ __('Actions') }}</span>
         </th>
         @endif

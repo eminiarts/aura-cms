@@ -1,6 +1,6 @@
 @props(['items'])
 
-<div {{ $attributes->merge(['class' => 'rounded-xl bg-white dark:bg-gray-800 shadow-sm ring-1 ring-gray-950/5 dark:ring-white/10']) }}>
+<div {{ $attributes->merge(['class' => 'rounded-xl bg-white dark:bg-gray-800 shadow-sm ring-1 ring-gray-950/10 dark:ring-white/10']) }}>
     <div class="flex flex-col p-6 h-full">
         <div class="flex justify-between items-center">
             <div>

@@ -7,13 +7,14 @@ use Aura\Base\Resources\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\URL;
 
 uses(RefreshDatabase::class);
 
 beforeEach(function () {
-    if (! config('aura.teams')) {
-        $this->markTestSkipped('Team invitation controller tests require teams enabled.');
+    if (! Schema::hasTable('teams')) {
+        $this->markTestSkipped('Team invitation controller tests require the teams schema.');
     }
 
     $this->actingAs($this->user = createSuperAdmin());

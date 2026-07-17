@@ -1,43 +1,102 @@
-name: run-tests
+name: tests
 
 on:
   push:
-    branches: [main]
+    branches:
+      - main
+      - 'release/**'
   pull_request:
-    branches: [main]
+    branches:
+      - main
+      - 'release/**'
 
 jobs:
   test:
-    runs-on: ${{ matrix.os }}
+    name: PHP ${{ matrix.php }} / Laravel ${{ matrix.laravel }}
+    runs-on: ubuntu-latest
     strategy:
-      fail-fast: true
+      fail-fast: false
       matrix:
-        os: [ubuntu-latest]
-        php: [8.2]
-        stability: [prefer-stable]
-
-    name: P${{ matrix.php }} - ${{ matrix.stability }} - ${{ matrix.os }}
+        # PHP 8.5 is allowed by composer.json (^8.4) but not yet gated in CI:
+        # it deterministically triggers pre-existing parallel-test isolation
+        # pollution (see the follow-up issue). Re-add '8.5' once that is fixed.
+        php: ['8.4']
+        laravel: ['12', '13']
+        include:
+          - laravel: '12'
+            testbench: '^10.0'
+          - laravel: '13'
+            testbench: '^11.0'
 
     steps:
-      - name: Checkout code
+      - name: Checkout
         uses: actions/checkout@v4
 
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
           php-version: ${{ matrix.php }}
-          extensions: dom, curl, libxml, mbstring, zip, pcntl, pdo, sqlite, pdo_sqlite, bcmath, soap, intl, gd, exif, iconv, imagick, fileinfo
+          extensions: dom, curl, libxml, mbstring, zip, pcntl, pdo_sqlite, bcmath, intl, gd, exif, iconv, fileinfo
           coverage: none
 
-      - name: Setup problem matchers
-        run: |
-          echo "::add-matcher::${{ runner.tool_cache }}/php.json"
-          echo "::add-matcher::${{ runner.tool_cache }}/phpunit.json"
+      - name: Select Laravel version
+        run: composer require "laravel/framework:^${{ matrix.laravel }}.0" "orchestra/testbench:${{ matrix.testbench }}" --no-interaction --no-update
 
       - name: Install dependencies
-        run: |
-          composer require "laravel/framework:11.*" "orchestra/testbench:^9.0" --no-interaction --no-update
-          composer update --${{ matrix.stability }} --prefer-dist --no-interaction
+        run: composer update --prefer-dist --no-interaction --no-progress
 
-      - name: Execute tests
-        run: vendor/bin/pest
+      - name: Run tests in parallel
+        run: php -d memory_limit=1G vendor/bin/pest --no-coverage --parallel
+
+  teams-off:
+    name: Teams-off
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: dom, curl, libxml, mbstring, zip, pcntl, pdo_sqlite, bcmath, intl, gd, exif, iconv, fileinfo
+          coverage: none
+
+      - name: Install dependencies
+        uses: ramsey/composer-install@v3
+
+      - name: Run teams-off suite
+        run: php -d memory_limit=1G vendor/bin/pest --no-coverage -c phpunit-without-teams.xml
+
+  fresh-install:
+    name: Fresh Laravel install
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: dom, curl, libxml, mbstring, zip, pdo_sqlite, intl, gd, fileinfo
+          coverage: none
+
+      - name: Create Laravel application
+        run: composer create-project laravel/laravel:^13.0 "$RUNNER_TEMP/aura-app" --no-interaction --prefer-dist
+
+      - name: Install Aura from checkout
+        working-directory: ${{ runner.temp }}/aura-app
+        run: |
+          composer config repositories.aura path "$GITHUB_WORKSPACE"
+          composer require eminiarts/aura-cms:@dev --with-all-dependencies --no-interaction
+          php artisan vendor:publish --tag=aura-config --force
+          php artisan aura:install-config --no-interaction
+          php artisan aura:extend-user-model --no-interaction
+          php artisan vendor:publish --tag=aura-migrations --force
+          php artisan migrate --force
+          php artisan aura:publish
+          php artisan aura:user --name="CI Admin" --email="ci@example.com" --password="CI-Test-Password-2026!"
+          php artisan about

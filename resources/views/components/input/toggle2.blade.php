@@ -43,7 +43,7 @@
     >
         <span
             :class="value ? 'translate-x-[22px]' : 'translate-x-0.5'"
-            class="pointer-events-none inline-block size-5 rounded-full bg-white shadow-sm ring-1 ring-gray-950/5 transition-transform duration-150"
+            class="pointer-events-none inline-block size-5 rounded-full bg-white shadow-sm ring-1 ring-gray-950/10 transition-transform duration-150"
             aria-hidden="true"
         ></span>
     </button>

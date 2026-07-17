@@ -19,6 +19,17 @@ uses()->group('flows')->in('Feature/Flows');
 uses()->group('table')->in('Feature/Table');
 uses()->group('resource')->in('Feature/Resource');
 
+uses()->beforeEach(function () {
+    if (env('AURA_TEAMS') === false) {
+        $this->markTestSkipped('This test exercises team-only behavior.');
+    }
+})->in(
+    'Feature/UserRoleConditionalIndexFieldsTest.php',
+    'Feature/Aura/MakeUserCommandTest.php',
+    'Feature/ThemeTest.php',
+    'Feature/TeamSettingsTest.php'
+);
+
 uses(RefreshDatabase::class)->in('Feature');
 uses(DatabaseMigrations::class)->in('FeatureWithDatabaseMigrations');
 
@@ -28,6 +39,8 @@ uses()->afterEach(function () {
     app()->forgetInstance(Aura\Base\Aura::class);
     app()->singleton(Aura\Base\Aura::class);
     Aura\Base\Facades\Aura::clearResolvedInstances();
+
+    Aura\Base\Facades\Aura::flushState();
 })->in('Feature', 'FeatureWithDatabaseMigrations');
 
 // uses(\Illuminate\Foundation\Testing\RefreshDatabase::class);
@@ -52,6 +65,10 @@ function createPost(array $attributes = []): Post
 
 function createSuperAdmin()
 {
+    if (! config('aura.teams')) {
+        return createSuperAdminWithoutTeam();
+    }
+
     $user = User::factory()->create();
 
     auth()->login($user);
@@ -145,15 +162,13 @@ function createAdmin()
 {
     $user = User::factory()->create();
 
-    // Create Team
-    if (! $team = Team::first()) {
-        $team = Team::factory()->create();
+    $team = null;
+    if (config('aura.teams')) {
+        $team = Team::first() ?: Team::factory()->create();
+        $user->update(['current_team_id' => $team->id]);
     }
 
-    // Set current_team_id of the user
-    $user->update(['current_team_id' => $team->id]);
-
-    $role = Role::create(['team_id' => $team->id, 'type' => 'Role', 'title' => 'Editor', 'slug' => 'editor', 'name' => 'Editor', 'description' => 'Editor has limited permissions.', 'super_admin' => false, 'permissions' => [
+    $role = Role::create([...($team ? ['team_id' => $team->id] : []), 'type' => 'Role', 'title' => 'Editor', 'slug' => 'editor', 'name' => 'Editor', 'description' => 'Editor has limited permissions.', 'super_admin' => false, 'permissions' => [
         'view-attachment' => true,
         'viewAny-attachment' => true,
         'create-attachment' => true,

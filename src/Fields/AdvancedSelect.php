@@ -54,29 +54,6 @@ class AdvancedSelect extends Field
         ];
     }
 
-    // public function display($field, $value, $model)
-    // {
-    //     if (! $value) {
-    //         return;
-    //     }
-
-    //     $items = app($field['resource'])->find($value);
-
-    //     if (! $items) {
-    //         return;
-    //     }
-
-    //     // return $item->title;
-
-    //     if ($items instanceof \Illuminate\Support\Collection) {
-    //         return $items->map(function ($item) {
-    //             return $item->title();
-    //         })->implode(', ');
-    //     }
-
-    //     return $items->title();
-    // }
-
     public function get($class, $value, $field = null)
     {
         if (isset($field['polymorphic_relation']) && $field['polymorphic_relation'] === false) {

@@ -4,6 +4,7 @@ namespace Aura\Base\Http\Controllers;
 
 use Aura\Base\Services\ThumbnailGenerator;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Storage;
 
 class ImageController extends Controller
@@ -17,6 +18,11 @@ class ImageController extends Controller
      */
     public function __invoke(Request $request, $path)
     {
+        $attachmentClass = config('aura.resources.attachment');
+        $attachment = $attachmentClass::query()->where('url', $path)->firstOrFail();
+
+        Gate::authorize('view', $attachment);
+
         // Get query parameters for width and height if set
         $width = $request->query('width', 200);
         $height = $request->query('height');

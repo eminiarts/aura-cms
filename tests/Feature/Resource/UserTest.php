@@ -117,8 +117,8 @@ test('user has actions defined', function () {
 
 test('user can have team relationship', function () {
     expect($this->user->currentTeam)->not->toBeNull();
-});
+})->skip(fn () => ! config('aura.teams'), 'The current team relationship requires teams enabled.');
 
 test('user has current_team_id attribute', function () {
     expect($this->user->current_team_id)->not->toBeNull();
-});
+})->skip(fn () => ! config('aura.teams'), 'The current_team_id column requires teams enabled.');

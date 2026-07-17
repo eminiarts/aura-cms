@@ -28,7 +28,6 @@ Aura's view system provides:
 - **Component System**: Reusable Blade and Livewire components
 - **Layout Control**: Full control over page structure
 
-> 📹 **Video Placeholder**: [Overview of Aura's view customization system showing different customization methods and live examples]
 
 ## View Architecture
 
@@ -341,7 +340,6 @@ class Product extends Resource
 </div>
 ```
 
-> 📹 **Video Placeholder**: [Creating custom resource views with different layouts and components]
 
 ## Table Views
 
@@ -856,7 +854,6 @@ class AppServiceProvider extends ServiceProvider
 }
 ```
 
-> 📹 **Video Placeholder**: [Using the view injection system to add custom content and functionality]
 
 ## Blade Components
 
@@ -1530,7 +1527,6 @@ resources/views/
 </button>
 ```
 
-> 📹 **Video Placeholder**: [Best practices for view customization including performance optimization and maintainability]
 
 ### Pro Tips
 

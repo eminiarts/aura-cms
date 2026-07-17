@@ -8,7 +8,7 @@ beforeEach(function () {
         'id' => 1,
         'type' => 'test-resource',
         'user_id' => 1,
-        'team_id' => 1,
+        ...config('aura.teams') ? ['team_id' => 1] : [],
         'created_at' => now(),
         'updated_at' => now(),
     ]);
@@ -62,7 +62,7 @@ it('can transfer data from posts to custom table', function () {
     // Verify that data was transferred correctly
     $this->assertDatabaseHas('test_resources', [
         'user_id' => 1,
-        'team_id' => 1,
+        'team_id' => config('aura.teams') ? 1 : null,
         'test_field' => 'test_value',
     ]);
 });

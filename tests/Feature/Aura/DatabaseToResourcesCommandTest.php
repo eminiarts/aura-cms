@@ -2,6 +2,7 @@
 
 use Aura\Base\Commands\DatabaseToResources;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Schema;
 use Symfony\Component\Console\Tester\CommandTester;
 
 uses(RefreshDatabase::class);
@@ -17,7 +18,7 @@ function runDatabaseToResourcesCommandForTest(array $tables): array
             parent::__construct();
         }
 
-        protected function getAllTables()
+        protected function getAllTables(): array
         {
             return $this->tables;
         }
@@ -44,17 +45,17 @@ function runDatabaseToResourcesCommandForTest(array $tables): array
 
 describe('resource generation', function () {
     it('executes database to resources command successfully', function () {
-        $result = runDatabaseToResourcesCommandForTest(['users', 'posts', 'comments', 'migrations', 'failed_jobs', 'password_resets', 'settions']);
+        $result = runDatabaseToResourcesCommandForTest(['users', 'posts', 'comments', 'migrations', 'failed_jobs', 'password_resets', 'sessions']);
 
         expect($result['exitCode'])->toBe(0);
         expect($result['processedTables'])->toHaveCount(3)
             ->toContain('users', 'posts', 'comments')
-            ->not->toContain('migrations', 'failed_jobs', 'password_resets', 'settions');
+            ->not->toContain('migrations', 'failed_jobs', 'password_resets', 'sessions');
     });
 
     it('processes all non-system tables', function () {
         $expectedTables = ['users', 'posts', 'comments'];
-        $result = runDatabaseToResourcesCommandForTest(['users', 'posts', 'comments', 'migrations', 'failed_jobs', 'password_resets', 'settions']);
+        $result = runDatabaseToResourcesCommandForTest(['users', 'posts', 'comments', 'migrations', 'failed_jobs', 'password_resets', 'sessions']);
 
         expect($result['processedTables'])
             ->toHaveCount(3)
@@ -71,9 +72,9 @@ describe('resource generation', function () {
 
 describe('system tables filtering', function () {
     it('skips system tables', function () {
-        $result = runDatabaseToResourcesCommandForTest(['users', 'posts', 'comments', 'migrations', 'failed_jobs', 'password_resets', 'settions']);
+        $result = runDatabaseToResourcesCommandForTest(['users', 'posts', 'comments', 'migrations', 'failed_jobs', 'password_resets', 'sessions']);
 
-        $systemTables = ['migrations', 'failed_jobs', 'password_resets', 'settions'];
+        $systemTables = ['migrations', 'failed_jobs', 'password_resets', 'sessions'];
         foreach ($systemTables as $table) {
             expect($result['processedTables'])->not->toContain($table);
         }
@@ -90,9 +91,25 @@ describe('edge cases', function () {
     });
 
     it('handles database with only system tables', function () {
-        $result = runDatabaseToResourcesCommandForTest(['migrations', 'failed_jobs', 'password_resets', 'settions']);
+        $result = runDatabaseToResourcesCommandForTest(['migrations', 'failed_jobs', 'password_resets', 'sessions']);
 
         expect($result['exitCode'])->toBe(0);
         expect($result['processedTables'])->toBeEmpty();
     });
+});
+
+it('discovers tables without Doctrine DBAL', function () {
+    Schema::create('command_source', function ($table) {
+        $table->id();
+    });
+
+    $command = new class extends DatabaseToResources
+    {
+        public function tableNames(): array
+        {
+            return $this->getAllTables();
+        }
+    };
+
+    expect($command->tableNames())->toContain('command_source');
 });

@@ -25,6 +25,13 @@ test('check Role Fields', function () {
     expect($fields->firstWhere('slug', 'permissions'))->not->toBeNull();
 });
 
+test('role name and slug fields share the first row', function () {
+    $fields = collect(Role::getFields());
+
+    expect($fields->firstWhere('slug', 'name')['style']['width'])->toBe('50')
+        ->and($fields->firstWhere('slug', 'slug')['style']['width'])->toBe('50');
+});
+
 test('role uses custom table', function () {
     $role = new Role;
 
@@ -47,7 +54,7 @@ test('role can be created', function () {
         'slug' => 'test-role',
         'description' => 'A test role',
         'super_admin' => false,
-        'team_id' => 1,
+        ...config('aura.teams') ? ['team_id' => 1] : [],
     ]);
 
     expect($role->name)->toBe('Test Role');
@@ -65,7 +72,7 @@ test('role can be updated', function () {
     $role = Role::create([
         'name' => 'Original Role',
         'slug' => 'original-role',
-        'team_id' => 1,
+        ...config('aura.teams') ? ['team_id' => 1] : [],
     ]);
 
     $role->update([
@@ -84,7 +91,7 @@ test('role permissions field is cast to array', function () {
         'name' => 'Permissions Role',
         'slug' => 'permissions-role',
         'permissions' => ['read', 'write', 'delete'],
-        'team_id' => 1,
+        ...config('aura.teams') ? ['team_id' => 1] : [],
     ]);
 
     expect($role->permissions)->toBeArray();
@@ -98,7 +105,7 @@ test('role super_admin is cast to boolean', function () {
         'name' => 'Admin Role',
         'slug' => 'admin-role',
         'super_admin' => true,
-        'team_id' => 1,
+        ...config('aura.teams') ? ['team_id' => 1] : [],
     ]);
 
     expect($role->super_admin)->toBe(true);
@@ -113,7 +120,7 @@ test('role title method returns formatted name', function () {
     $role = Role::create([
         'name' => 'Editor',
         'slug' => 'editor',
-        'team_id' => 1,
+        ...config('aura.teams') ? ['team_id' => 1] : [],
     ]);
 
     expect($role->title())->toContain('Editor');

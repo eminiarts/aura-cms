@@ -21,7 +21,7 @@ beforeEach(function () {
         $table->id();
         $table->string('name')->nullable();
         $table->foreignId('user_id');
-        $table->foreignId('team_id');
+        $table->foreignId('team_id')->nullable();
         $table->timestamps();
     });
 
@@ -88,14 +88,14 @@ test('custom table resource can sort by a meta field', function () {
         'name' => 'Project B',
         'meta_1' => 'B',
         'user_id' => $this->user->id,
-        'team_id' => $this->user->current_team_id,
+        ...config('aura.teams') ? ['team_id' => $this->user->current_team_id] : [],
     ]);
 
     $projectA = CustomTableSortingModel::create([
         'name' => 'Project A',
         'meta_1' => 'A',
         'user_id' => $this->user->id,
-        'team_id' => $this->user->current_team_id,
+        ...config('aura.teams') ? ['team_id' => $this->user->current_team_id] : [],
     ]);
 
     $component = livewire(Table::class, ['query' => null, 'model' => $projectB]);
@@ -119,14 +119,14 @@ test('custom table resource can sort by a taxonomy field', function () {
         'name' => 'Project 1',
         'tags' => [$tag1->id, $tag2->id],
         'user_id' => $this->user->id,
-        'team_id' => $this->user->current_team_id,
+        ...config('aura.teams') ? ['team_id' => $this->user->current_team_id] : [],
     ]);
 
     $project2 = CustomTableSortingModel::create([
         'name' => 'Project 2',
         'tags' => [$tag3->id],
         'user_id' => $this->user->id,
-        'team_id' => $this->user->current_team_id,
+        ...config('aura.teams') ? ['team_id' => $this->user->current_team_id] : [],
     ]);
 
     $component = livewire(Table::class, ['query' => null, 'model' => $project1]);

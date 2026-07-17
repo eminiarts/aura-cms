@@ -24,12 +24,12 @@ class RoleFactory extends Factory
      */
     public function definition()
     {
-        return [
+        return array_filter([
             'name' => $name = $this->faker->name(),
             'slug' => str($name)->slug(),
             'user_id' => 1,
-            'team_id' => 1,
+            'team_id' => config('aura.teams') ? 1 : null,
             // 'order' => null,
-        ];
+        ], fn ($value, $key) => $key !== 'team_id' || $value !== null, ARRAY_FILTER_USE_BOTH);
     }
 }

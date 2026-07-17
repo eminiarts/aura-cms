@@ -1,6 +1,5 @@
 # Configuration
 
-> 📹 **Video Placeholder**: Deep dive into Aura CMS configuration, showing real-time changes to themes, features, and settings with live preview
 
 Aura CMS provides a powerful configuration system that lets you customize every aspect of your CMS. This comprehensive guide covers all configuration options, best practices, and real-world examples to help you tailor Aura CMS to your exact needs.
 
@@ -78,7 +77,6 @@ php artisan aura:install-config
 # - Set authentication options
 ```
 
-> 📹 **Video Placeholder**: Using the interactive configuration command to customize Aura CMS settings
 
 <a name="main-configuration"></a>
 ## Main Configuration (aura.php)
@@ -447,7 +445,7 @@ Override any view to customize the UI:
 ```php
 'features' => [
     'global_search' => true,
-    'resource_editor' => true,  // Visual resource builder
+    'resource_editor' => true,  // Visual resource builder (local environment only)
     'plugins' => true,
     'custom_tables_for_resources' => true,
     // ... all other features enabled
@@ -852,7 +850,7 @@ AWS_BUCKET=my-bucket
 ```php
 // config/aura.php
 'features' => [
-    'resource_editor' => env('APP_DEBUG', false),
+    'resource_editor' => app()->environment('local'),
     'debug_bar' => env('APP_DEBUG', false),
 ],
 
@@ -963,7 +961,7 @@ php artisan view:clear
 ```php
 'teams' => true,                     // Per client
 'features' => [
-    'resource_editor' => true,       // Rapid development
+    'resource_editor' => app()->environment('local'), // Rapid local development
     'custom_tables_for_resources' => true,
 ],
 'theme' => [

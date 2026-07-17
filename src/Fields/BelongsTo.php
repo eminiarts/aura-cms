@@ -86,13 +86,6 @@ class BelongsTo extends Field
         // $results = app($request->model)->searchIn($searchableFields, $request->search)->take(20)->get();
 
         return collect($results)->unique('id')->values()->toArray();
-
-        return $model->searchIn($searchableFields, $request->search, $model)->take(20)->get()->map(function ($item) {
-            return [
-                'id' => $item->id,
-                'title' => $item->title(),
-            ];
-        })->toArray();
     }
 
     public function display($field, $value, $model)

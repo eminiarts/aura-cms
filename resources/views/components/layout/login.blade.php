@@ -14,16 +14,16 @@
     @php
         $loginBgUrl = $appSettings['theme']['login-bg'] ?? null;
         $loginBgDarkUrl = $appSettings['theme']['login-bg-darkmode'] ?? null;
+        $hasCustomBg = $loginBgUrl || $loginBgDarkUrl;
     @endphp
 
 </head>
-<body class="font-sans antialiased text-gray-800 bg-gray-50 dark:bg-gray-900 dark:text-gray-100">
+<body class="font-sans antialiased text-gray-800 bg-gray-50 dark:bg-gray-950 dark:text-gray-100">
 
     @if ($loginBgUrl && $loginBgDarkUrl)
         <script>
             document.addEventListener('DOMContentLoaded', function () {
                 const images = document.querySelectorAll('[data-darkmode-image]')
-                const darkmode = window.matchMedia('(prefers-color-scheme: dark)').matches
 
                 images.forEach(image => {
                     if (document.documentElement.classList.contains('dark')) {
@@ -34,7 +34,7 @@
         </script>
     @endif
 
-    <div class="isolate overflow-hidden relative bg-gray-50 bg-bottom bg-no-repeat bg-cover dark:bg-gray-900"
+    <div class="isolate relative bg-bottom bg-no-repeat bg-cover"
         @if ($loginBgUrl && $loginBgDarkUrl)
             style="background-image: url('{{ $loginBgUrl }}');"
             data-darkmode-image="{{ $loginBgDarkUrl }}"
@@ -44,50 +44,32 @@
             style="background-image: url('{{ $loginBgDarkUrl }}');"
         @endif
     >
-        @if (!$loginBgUrl && !$loginBgDarkUrl)
-            <div class="absolute inset-0 pointer-events-none" aria-hidden="true">
-                {{-- Soft radial glow behind the card --}}
-                <div class="absolute top-1/2 left-1/2 w-[42rem] h-[42rem] rounded-full -translate-x-1/2 -translate-y-1/2 bg-primary-500/[0.06] blur-3xl dark:bg-primary-500/[0.07]"></div>
-
-                {{-- Triangle grid, faded out towards the edges --}}
-                <div class="absolute inset-0" style="mask-image: radial-gradient(ellipse 80% 70% at 50% 45%, rgba(255,255,255,0.7) 0%, rgba(255,255,255,0) 80%); -webkit-mask-image: radial-gradient(ellipse 80% 70% at 50% 45%, rgba(255,255,255,0.7) 0%, rgba(255,255,255,0) 80%);">
-                    <svg aria-hidden="true"
-                        class="absolute inset-x-0 inset-y-0 w-full h-full text-gray-950/[0.07] dark:text-white/[0.06]"
-                        fill="none" stroke-width="1">
-                        <defs>
-                            <pattern id="trianglePatternEven" viewBox="0 0 30 52" width="60" height="104" patternUnits="userSpaceOnUse"
-                                    patternTransform="translate(0, -2)">
-                                <g>
-                                    <path d="M 15 1 L 30 26 L 0 26 Z" stroke="currentColor"></path>
-                                    <use href="#tri" x="15" y="13"></use>
-                                </g>
-                            </pattern>
-                            <pattern id="trianglePatternOdd" viewBox="0 0 30 52" width="60" height="104" patternUnits="userSpaceOnUse"
-                                    patternTransform="translate(30, 0)">
-                                <g>
-                                    <path d="M 15 26 L 30 51 L 0 51 Z" stroke="currentColor"></path>
-                                    <use href="#tri" x="15" y="39"></use>
-                                </g>
-                            </pattern>
-                        </defs>
-                        <rect width="100%" height="100%" fill="url(#trianglePatternEven)"></rect>
-                        <rect y="50" width="100%" height="100%" fill="url(#trianglePatternOdd)"></rect>
-                    </svg>
-                </div>
+        @unless ($hasCustomBg)
+            <div aria-hidden="true" class="overflow-hidden absolute inset-0 -z-10 pointer-events-none">
+                <div class="absolute inset-x-0 top-0 h-96 bg-gradient-to-b to-transparent from-white dark:from-white/[0.04]"></div>
+                <div class="absolute top-0 left-1/2 -translate-x-1/2 w-[64rem] h-[32rem] rounded-full opacity-60 blur-3xl bg-gradient-to-b from-primary-100/60 to-transparent dark:from-primary-500/[0.07] dark:opacity-100"></div>
             </div>
-        @endif
+        @endunless
 
         <main class="flex relative flex-col justify-center items-center px-6 py-12 min-h-screen">
             <div class="w-full sm:max-w-md">
                 <div class="flex justify-center">
-                    <a href="/" class="block w-2/3 rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500">
+                    <a href="/" class="block w-32 rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500">
                         <x-dynamic-component :component="config('aura.views.logo')" />
                     </a>
                 </div>
 
-                <div class="p-8 mt-8 w-full ring-1 shadow-xl backdrop-blur-xl bg-white/95 rounded-2xl ring-gray-950/5 shadow-gray-950/[0.08] dark:bg-gray-800/90 dark:ring-white/10 dark:shadow-black/40 sm:p-10">
+                <div @class([
+                    'mt-8 w-full px-6 py-8 sm:px-10 sm:py-10 rounded-2xl ring-1',
+                    'bg-white ring-gray-950/10 shadow-xl shadow-gray-950/[0.04] dark:bg-gray-900 dark:ring-white/10 dark:shadow-black/30' => ! $hasCustomBg,
+                    'backdrop-blur-xl bg-white/95 ring-gray-950/10 shadow-xl shadow-gray-950/[0.08] dark:bg-gray-900/90 dark:ring-white/10 dark:shadow-black/40' => $hasCustomBg,
+                ])>
                     {{ $slot }}
                 </div>
+
+                <p class="mt-8 text-xs text-center text-gray-400 dark:text-gray-500">
+                    &copy; {{ date('Y') }} {{ config('app.name') }}
+                </p>
             </div>
         </main>
     </div>

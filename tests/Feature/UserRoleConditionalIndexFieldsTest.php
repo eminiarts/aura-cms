@@ -4,8 +4,13 @@ use Aura\Base\Resource;
 use Aura\Base\Resources\Role;
 use Aura\Base\Resources\Team;
 use Aura\Base\Resources\User;
+use Illuminate\Support\Facades\Schema;
 
 beforeEach(function () {
+    if (! Schema::hasTable('teams')) {
+        $this->markTestSkipped('Team tests require the teams schema.');
+    }
+
     config()->set('aura.teams', true);
     $this->actingAs($this->user = User::factory()->create());
 

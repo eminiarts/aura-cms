@@ -34,7 +34,7 @@
             </div>
 
             <div class="text-center">
-                <button type="button" class="text-sm font-medium rounded-md cursor-pointer text-primary-600 hover:text-primary-500 dark:text-primary-400 dark:hover:text-primary-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 dark:focus:ring-offset-gray-800"
+                <button type="button" class="text-sm font-medium rounded-md cursor-pointer text-primary-600 hover:text-primary-500 dark:text-primary-400 dark:hover:text-primary-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 dark:focus:ring-offset-gray-900"
                                 x-show="! recovery"
                                 x-on:click="
                                     recovery = true;
@@ -43,7 +43,7 @@
                     {{ __('Use a recovery code') }}
                 </button>
 
-                <button type="button" class="text-sm font-medium rounded-md cursor-pointer text-primary-600 hover:text-primary-500 dark:text-primary-400 dark:hover:text-primary-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 dark:focus:ring-offset-gray-800"
+                <button type="button" class="text-sm font-medium rounded-md cursor-pointer text-primary-600 hover:text-primary-500 dark:text-primary-400 dark:hover:text-primary-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 dark:focus:ring-offset-gray-900"
                                 x-show="recovery"
                                 x-on:click="
                                     recovery = false;

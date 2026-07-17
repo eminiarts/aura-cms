@@ -46,7 +46,7 @@ describe('table rendering', function () {
             ->assertSee('Number')
             ->assertSee('Date')
             ->assertSee('Description')
-            ->assertSee('Team')
+            ->when(config('aura.teams'), fn ($component) => $component->assertSee('Team'))
             ->assertSee('User');
     });
 });

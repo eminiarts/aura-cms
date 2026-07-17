@@ -50,7 +50,7 @@ class ResourceEditor extends Component
 
     public function addField($id, $slug, $type, $children, $model)
     {
-        $this->dispatch('openSlideOver', component: 'edit-field', parameters: ['create' => true, 'type' => $type, 'id' => $id, 'slug' => $slug, 'children' => $children, 'model' => $model]);
+        $this->dispatch('openSlideOver', target: 'edit-field', parameters: ['create' => true, 'type' => $type, 'id' => $id, 'slug' => $slug, 'children' => $children, 'model' => $model]);
     }
 
     public function addNewTab()
@@ -88,7 +88,7 @@ class ResourceEditor extends Component
 
         // $this->dispatch('refreshComponent');
 
-        $this->dispatch('openSlideOver', component: 'edit-field', parameters: ['fieldSlug' => $globalTab['slug'], 'slug' => $this->slug, 'field' => $globalTab, 'model' => $this->slug]);
+        $this->dispatch('openSlideOver', target: 'edit-field', parameters: ['fieldSlug' => $globalTab['slug'], 'slug' => $this->slug, 'field' => $globalTab, 'model' => $this->slug]);
 
         $this->dispatch('finishedSavingFields');
         $this->dispatch('refreshComponent');
@@ -133,9 +133,17 @@ class ResourceEditor extends Component
         $this->dispatch('refreshComponent');
     }
 
+    public function boot(): void
+    {
+        abort_unless(
+            app()->environment(['local', 'testing']) && config('aura.features.resource_editor'),
+            404
+        );
+    }
+
     public function checkAuthorization()
     {
-        if (config('aura.features.resource_editor') == false) {
+        if (! app()->environment(['local', 'testing']) || config('aura.features.resource_editor') == false) {
             abort(404);
         }
 
@@ -216,7 +224,7 @@ class ResourceEditor extends Component
 
         $this->newFields = $this->model->mapToGroupedFields($this->fieldsArray);
 
-        $this->dispatch('openSlideOver', component: 'edit-field', parameters: ['fieldSlug' => $field['slug'], 'slug' => $this->slug, 'field' => $field, 'model' => $model]);
+        $this->dispatch('openSlideOver', target: 'edit-field', parameters: ['fieldSlug' => $field['slug'], 'slug' => $this->slug, 'field' => $field, 'model' => $model]);
 
         $this->dispatch('finishedSavingFields');
 
@@ -391,7 +399,7 @@ class ResourceEditor extends Component
         // get field with fieldSlug from this fieldsarray
         $field = collect($this->fieldsArray)->where('slug', $fieldSlug)->first();
 
-        $this->dispatch('openSlideOver', component: 'edit-field', parameters: ['fieldSlug' => $fieldSlug, 'field' => $field, 'model' => $slug]);
+        $this->dispatch('openSlideOver', target: 'edit-field', parameters: ['fieldSlug' => $fieldSlug, 'field' => $field, 'model' => $slug]);
     }
 
     #[On('refreshComponent')]

@@ -42,7 +42,7 @@ test('user can not get all users for other teams', function () {
     $users = User::all();
 
     expect($users)->toHaveCount(1);
-});
+})->skip(fn () => ! config('aura.teams'), 'Cross-team user scoping requires teams enabled.');
 
 test('users can be filtered by role', function () {
     $role = Role::first();

@@ -5,6 +5,13 @@ use Aura\Base\Resources\Team;
 use Aura\Base\Resources\User;
 use Aura\Base\Tests\Resources\Post;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Schema;
+
+beforeEach(function () {
+    if (! Schema::hasTable('teams')) {
+        $this->markTestSkipped('Team tests require the teams schema.');
+    }
+});
 
 beforeEach(function () {
     config(['cache.default' => 'array']);

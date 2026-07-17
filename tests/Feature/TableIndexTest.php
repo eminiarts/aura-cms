@@ -36,6 +36,10 @@ test('posts table index test', function () {
     expect($indexNames)->toContain('posts_parent_id_index');
     expect($indexNames)->toContain('posts_user_id_index');
     expect($indexNames)->toContain('posts_slug_index');
-    expect($indexNames)->toContain('posts_team_id_type_index');
+    if (config('aura.teams')) {
+        expect($indexNames)->toContain('posts_team_id_type_index');
+    } else {
+        expect($indexNames)->toContain('posts_type_status_created_at_id_index');
+    }
     // Additional checks can be added based on specific index requirements
 });

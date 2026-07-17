@@ -96,6 +96,21 @@ it('can mount the resource component', function () {
     Livewire::test(ResourceEditorFake::class, ['slug' => 'Model'])->assertStatus(200);
 });
 
+it('rejects component actions after the resource editor is disabled', function () {
+    $component = Livewire::test(ResourceEditorFake::class, ['slug' => 'Model']);
+
+    config(['aura.features.resource_editor' => false]);
+
+    $component->call('addNewTab')->assertNotFound();
+});
+
+it('rejects the component in staging even when the feature flag is enabled', function () {
+    $this->app->detectEnvironment(fn () => 'staging');
+
+    Livewire::test(ResourceEditorFake::class, ['slug' => 'Model'])
+        ->assertNotFound();
+});
+
 it('can add new tab', function () {
     Livewire::test(ResourceEditorFake::class, ['slug' => 'Model'])
         ->call('addNewTab')

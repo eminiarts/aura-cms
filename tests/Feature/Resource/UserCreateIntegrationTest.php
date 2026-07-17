@@ -3,6 +3,7 @@
 use Aura\Base\Livewire\Resource\Create;
 use Aura\Base\Models\Scopes\TeamScope;
 use Aura\Base\Resources\Role;
+use Aura\Base\Resources\Team;
 use Aura\Base\Resources\User;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -89,7 +90,28 @@ test('user created in a team context is assigned to the correct team', function 
     $userRoles = $newUser->roles;
     expect($userRoles)->not->toBeEmpty();
     expect($userRoles->first()->team_id)->toBe($team->id);
-});
+    expect($newUser->current_team_id)->toBe($team->id);
+})->skip(fn () => ! config('aura.teams'), 'Team assignment requires teams enabled.');
+
+test('client cannot assign a new user to another team', function () {
+    $otherTeam = Team::factory()->createQuietly();
+
+    Livewire::test(Create::class, ['slug' => 'user'])
+        ->set('form.fields.name', 'Tampered Team User')
+        ->set('form.fields.email', 'tampered-team@example.com')
+        ->set('form.fields.password', 'Str0ng!Pass#2024')
+        ->set('form.fields.current_team_id', $otherTeam->id)
+        ->call('save')
+        ->assertHasNoErrors();
+
+    $newUser = User::withoutGlobalScope(TeamScope::class)
+        ->where('email', 'tampered-team@example.com')
+        ->firstOrFail();
+
+    expect($newUser->current_team_id)
+        ->toBe($this->user->current_team_id)
+        ->not->toBe($otherTeam->id);
+})->skip(fn () => ! config('aura.teams'), 'Team assignment requires teams enabled.');
 
 test('user created with a role can log in and access the correct team', function () {
     $team = $this->user->currentTeam;
@@ -129,7 +151,7 @@ test('user created with a role can log in and access the correct team', function
     $loggedInUser->refresh();
     expect($loggedInUser->current_team_id)->toBe($team->id);
     expect($loggedInUser->currentTeam->id)->toBe($team->id);
-});
+})->skip(fn () => ! config('aura.teams'), 'Team access requires teams enabled.');
 
 test('user creation requires name and email', function () {
     Livewire::test(Create::class, ['slug' => 'user'])

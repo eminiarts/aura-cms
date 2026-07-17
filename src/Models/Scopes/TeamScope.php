@@ -22,6 +22,10 @@ class TeamScope implements Scope
      */
     public function apply(Builder $builder, Model $model)
     {
+        if (! config('aura.teams')) {
+            return;
+        }
+
         // Prevent recursive calls
         if (self::$applying) {
             return;
@@ -55,13 +59,6 @@ class TeamScope implements Scope
 
             // --- Rest of your scope (for other models) ---
 
-            // For teams disabled, no additional filtering needed for other models
-            if (config('aura.teams') === false) {
-                self::$applying = false;
-
-                return;
-            }
-
             // For team-enabled filtering
             if (! $currentTeamId) {
                 self::$applying = false;
@@ -87,6 +84,11 @@ class TeamScope implements Scope
             self::$applying = false;
             throw $e;
         }
+    }
+
+    public static function flushState(): void
+    {
+        self::$applying = false;
     }
 
     /**

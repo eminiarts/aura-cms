@@ -1682,7 +1682,6 @@ class Product extends Model
 }
 ```
 
-> 📹 **Video Placeholder**: [Best practices walkthrough showing real-world implementation of these patterns in an Aura CMS application]
 
 ## Common Gotchas
 

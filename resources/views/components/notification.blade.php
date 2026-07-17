@@ -64,7 +64,7 @@
             x-transition:leave="transition ease-in duration-100"
             x-transition:leave-start="opacity-100"
             x-transition:leave-end="opacity-0"
-            class="w-full max-w-sm bg-white rounded-xl shadow-lg ring-1 pointer-events-auto ring-gray-950/5 dark:bg-gray-800 dark:ring-white/10"
+            class="w-full max-w-sm bg-white rounded-xl shadow-lg ring-1 pointer-events-auto ring-gray-950/10 dark:bg-gray-800 dark:ring-white/10"
             @mouseenter="clearTimer(message)"
             @mouseleave="addTimer(message)"
         >

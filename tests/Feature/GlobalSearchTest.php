@@ -221,7 +221,7 @@ test('can find custom table resource records by table and meta fields', function
         $table->id();
         $table->string('name')->nullable();
         $table->foreignId('user_id');
-        $table->foreignId('team_id');
+        $table->foreignId('team_id')->nullable();
         $table->timestamps();
     });
 
@@ -234,7 +234,7 @@ test('can find custom table resource records by table and meta fields', function
         'name' => 'Custom Search Alpha',
         'meta_1' => 'Hidden Needle',
         'user_id' => $this->user->id,
-        'team_id' => $this->user->current_team_id,
+        ...config('aura.teams') ? ['team_id' => $this->user->current_team_id] : [],
     ]);
 
     Livewire::test(GlobalSearch::class)

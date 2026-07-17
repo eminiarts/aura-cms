@@ -148,3 +148,17 @@ Uses Laravel Pint with `ordered_class_elements` rule - methods sorted alphabetic
 - `config/aura.php` - Main package config (teams, features, theme)
 - Teams enabled by default via `AURA_TEAMS` env var
 - Resources stored in `posts` table by default; set `$customTable = true` for dedicated tables
+
+## Agent skills
+
+### Issue tracker
+
+Issues live in GitHub Issues (`eminiarts/aura-cms`), managed via the `gh` CLI. See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+Default canonical labels: `needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, `wontfix`. See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Single-context: `CONTEXT.md` + `docs/adr/` at the repo root. See `docs/agents/domain.md`.
