@@ -1,0 +1,578 @@
+# Bewerte Aura CMS für V1
+
+> Kannst du eine Einschätzung machen, wie ist die Codequalität von Aura CMS und wo stehen wir, bevor wir es als V1 releasen können? Du darfst ehrlich sein mit deiner Meinung über Codequalität etc.
+
+<details><summary>14 previous messages</summary>
+
+> Ich mache eine ehrliche Release-Readiness-Prüfung: Architektur und Wartbarkeit, Test-/Analysezustand, Security, Packaging/Upgrade-Pfad und V1-Dokumentation. Ich ändere dabei nichts; am Ende bekommst du ein klares Urteil mit priorisierten Blockern und einer realistischen V1-Checkliste.
+>
+> <details><summary>Explored 4 files, a search, a list, ran 2 commands</summary>
+>
+> - Ran `pwd && git status --short --branch && rg --files -g '!*vendor*' -g '!node_modules' | sed -n '1,240p'`
+>
+> - Ran `git log -12 --oneline --decorate && git tag --sort=-version:refname | head -20 && git branch -vv && sed -n '1,240p' composer.json && sed -n '1,220p' package.json && sed -n '1,260p' README.md && sed -n '1,220p' CHANGELOG.md`
+>
+> <details><summary>Explored 4 files, a search, a list</summary>
+>
+> - Listed files in `.github`
+> - Searched for `CONTRIBUTING*` in `.`
+> - Read `./phpunit.xml.dist`
+> - Read `./phpstan.neon.dist`
+> - Read `./phpstan-baseline.neon`
+> - Read `./pint.json`
+>
+> </details>
+>
+> </details>
+>
+> Der erste Befund ist bereits wichtig: Der aktuelle Prüfstand ist kein sauberer Release-Candidate, sondern ein Feature-Branch mit vielen uncommitteten UI-/Media-Änderungen und einem „WIP“-Commit. Ich bewerte deshalb sowohl die grundsätzliche Codebasis als auch den konkreten Zustand, der heute vor mir liegt—und trenne Produktreife von Release-Prozess.
+>
+> <details><summary>Ran 2 commands</summary>
+>
+> - Ran `php -v | head -2 && composer validate --strict && composer check-platform-reqs && printf '%s\n' '--- counts ---' && printf 'PHP source files: ' && find src -name '*.php' | wc -l && printf 'Test files: ' && find tests -name '*.php' | wc -l && printf 'Source LOC: ' && find src -name '*.php' -print0 | xargs -0 wc -l | tail -1 && printf 'Test LOC: ' && find tests -name '*.php' -print0 | xargs -0 wc -l | tail -1 && printf '%s\n' '--- markers/debug ---' && rg -n "TODO|FIXME|HACK|XXX|\bdd\(|\bdump\(|\bray\(|var_dump\(|print_r\(|console\.log" src tests resources/views resources/js 2>/dev/null | head -200`
+> - Ran `composer test`
+>
+> </details>
+>
+> Die Testbasis ist deutlich besser als bei einem typischen frühen CMS: 1.315 Tests laufen grün. Aber der aktuelle Stand ist nicht grün: 4 Tests scheitern (drei Auth-UI-Verträge, einmal Berechtigungs/Scoping-Ausgabe). Ich prüfe jetzt, ob das echte Regressionen, veraltete Assertions oder Parallelisierungs-Flakiness sind—für V1 sind alle drei Kategorien relevant, nur unterschiedlich kritisch.
+>
+> <details><summary>Explored 19 files, 2 searches, ran 12 commands</summary>
+>
+> - Ran `vendor/bin/pest tests/Feature/Auth/RegistrationTest.php tests/Feature/Auth/AuthenticationTest.php tests/Feature/Auth/AuthRoutesTest.php tests/Feature/PermissionsTest.php --no-coverage`
+>
+> - Ran `vendor/bin/phpstan analyse --no-progress --error-format=table`
+>
+> - Ran `vendor/bin/phpstan analyse --no-progress --error-format=json 2>/dev/null | jq -r '[.files[].messages[]] | "errors=\(length)", (group_by(.identifier) | map({id: (.[0].identifier // "none"), count:length}) | sort_by(-.count) | .[:15][] | "\(.count)\t\(.id)"), "top files:", (.files | to_entries | map({file:.key,count:(.value.messages|length)}) | sort_by(-.count) | .[:15][] | "\(.count)\t\(.file)")'`
+>
+> - Ran `vendor/bin/pint --test`
+>
+> - Ran `npm run build -- --outDir /tmp/aura-cms-release-audit-build --emptyOutDir`
+>
+> - Ran `composer audit --locked --no-interaction && npm audit --omit=dev`
+>
+> - Ran `npm audit`
+>
+> <details><summary>Explored 2 files, 2 searches</summary>
+>
+> - Searched for `*.php` in `src`
+> - Searched for `eval\(|unserialize\(|shell_exec\(|exec\(|system\(|passthru\(|DB::raw|whereRaw|orderByRaw|selectRaw|File::put|Storage::put|move\(|storeAs\(|getClientOriginal|request\(|\$request->all\(|->validate\(|authorize\(|Gate::|can\(` in `src`
+> - Read `./routes/web.php`
+> - Read `./routes/auth.php`
+>
+> </details>
+>
+> - Ran `sed -n '1,260p' src/Http/Controllers/ImageController.php && sed -n '1,220p' src/Http/Controllers/Api/FieldsController.php && sed -n '1,220p' src/Livewire/MediaUploader.php && sed -n '1,220p' src/Services/ThumbnailGenerator.php && for f in src/Http/Requests/*.php; do printf '\n### %s\n' "$f"; sed -n '1,140p' "$f"; done`
+>
+> <details><summary>Explored 7 files</summary>
+>
+> - Read `./config/aura-settings.php`
+> - Read `./config/aura.php`
+> - Read `./src/Policies/ResourcePolicy.php`
+> - Read `./src/Models/Scopes/TeamScope.php`
+> - Read `./src/Models/Scopes/ScopedScope.php`
+> - Read `./src/Http/Controllers/SwitchTeamController.php`
+> - Read `./src/Http/Controllers/Auth/TeamInvitationController.php`
+>
+> </details>
+>
+> - Ran `rg -n "current_team_id|without team|withoutTeam|TeamScope" tests/Feature tests/Unit tests 2>/dev/null | sed -n '1,280p' && rg -n "function switchTeam|currentTeamCacheKey|belongsToTeam|allTeams" src/Resources/User.php src/Traits -n && sed -n '500,760p' src/Resources/User.php && sed -n '1,260p' tests/Feature/TeamScopeTest.php 2>/dev/null`
+>
+> <details><summary>Explored 4 files</summary>
+>
+> - Read `./src/Resources/User.php`
+> - Read `./src/Resources/User.php`
+> - Read `./tests/Feature/Team/CurrentTeamCacheTest.php`
+> - Read `./tests/Pest.php`
+>
+> </details>
+>
+> - Ran `composer show laravel/framework livewire/livewire orchestra/testbench pestphp/pest --format=json | jq -r '.installed[] | "\(.name) \(.version)"' 2>/dev/null || true; composer show -D --locked | sed -n '1,200p'; printf '%s\n' '--- migrations ---'; find database/migrations -maxdepth 1 -type f -print | sort; printf '%s\n' '--- install tests ---'; rg -n "aura:install|Installation|install" tests | sed -n '1,220p'; printf '%s\n' '--- compatibility refs ---'; rg -n "Laravel 1[0123]|Livewire [34]|PHP 8\.[1234]|v1\.0|1\.0\.0" README.md CHANGELOG.md composer.json .github AGENTS.md CLAUDE.md | sed -n '1,260p'`
+>
+> <details><summary>Explored 8 files</summary>
+>
+> - Read `./tests/Feature/Aura/InstallationTest.php`
+> - Read `./tests/Feature/Aura/InstallConfigCommandTest.php`
+> - Read `./src/Commands/Installation.php`
+> - Read `./src/Commands/InstallConfigCommand.php`
+> - Read `./src/AuraServiceProvider.php`
+> - Read `./src/AuraServiceProvider.php`
+> - Read `./database/migrations/create_aura_tables.php.stub`
+> - Read `./src/Commands/ExtendUserModel.php`
+>
+> </details>
+>
+> - Ran `sed -n '260,560p' database/migrations/create_aura_tables.php.stub && rg -n "Schema::(create|table|drop|dropIfExists)" database/migrations tests -g '*.php*' | sed -n '1,240p' && git log --oneline -- database/migrations/create_aura_tables.php.stub | head -20`
+>
+> - Ran `git log --oneline --decorate main..security-performance-hardening && git diff --stat main...security-performance-hardening && git diff main...security-performance-hardening -- routes/auth.php database/migrations/create_aura_tables.php.stub src/Http/Controllers/Api/FieldsController.php src/Models/Scopes/TeamScope.php | sed -n '1,320p'`
+>
+> </details>
+>
+> Ein ernster Punkt: Im Repository liegt bereits ein separater Branch `security-performance-hardening` mit nicht integrierten Fixes und Regressionstests für genau die kritischen Flächen (Fields-API, Bulk Actions, Global Search, XSS/Mass Assignment, Scoping). Der aktuelle V1-Kandidat enthält diese Härtung nicht. Das ist kein theoretischer „Clean Code“-Wunsch, sondern ein klarer Release-Blocker.
+>
+> <details><summary>Explored 2 files, ran a command</summary>
+>
+> - Ran `git show --stat --oneline b411ea2f && git show --format=fuller --no-ext-diff b411ea2f -- src/Livewire/Table/Traits/BulkActions.php src/Livewire/GlobalSearch.php src/Models/Scopes/ScopedScope.php src/Resource.php src/Traits/AuraModelConfig.php src/Fields/Field.php src/Traits/InputFieldsHelpers.php | sed -n '1,520p'`
+>
+> <details><summary>Explored 2 files</summary>
+>
+> - Read `./src/Resource.php`
+> - Read `./src/Aura.php`
+>
+> </details>
+>
+> </details>
+>
+> Als Nächstes prüfe ich die öffentlich versprochene Oberfläche: Installation, Dokumentation, Versions-/Upgrade-Aussagen und CI-Kompatibilitätsmatrix. Für V1 zählt nicht nur, ob der Code intern funktioniert, sondern ob ein fremdes Laravel-Projekt Aura sicher installieren, aktualisieren und betreiben kann.
+>
+> <details><summary>Explored 10 files, 14 searches, ran 18 commands, searched the web</summary>
+>
+> <details><summary>Searched the web</summary>
+>
+> - Searched the web for `https://aura-cms.com/docs`
+> - Searched the web for `site:aura-cms.com/docs Aura CMS quick start ...`
+>
+> </details>
+>
+> - Ran `curl -L --max-time 20 -sS -D - https://aura-cms.com/docs -o /dev/null | sed -n '1,40p'; curl -L --max-time 20 -sS https://aura-cms.com/llms.txt | sed -n '1,220p'; curl -L --max-time 20 -sS https://aura-cms.com/docs/quick-start.md | sed -n '1,260p'`
+>
+> - Ran `dig +short aura-cms.com A; dig +short www.aura-cms.com A; curl -I -L --max-time 20 -sS https://www.aura-cms.com/docs | sed -n '1,60p'`
+>
+> - Ran `gh pr list --repo eminiarts/aura-cms --state open --limit 30 --json number,title,headRefName,baseRefName,isDraft,mergeStateStatus,reviewDecision,statusCheckRollup,updatedAt,url | jq -r '.[] | "PR #\(.number) [\(.headRefName) -> \(.baseRefName)] draft=\(.isDraft) merge=\(.mergeStateStatus) review=\(.reviewDecision // "-") updated=\(.updatedAt)\n  \(.title)\n  checks: \([.statusCheckRollup[]? | (.name // .context)+"="+(.conclusion // .state)] | join(", "))\n  \(.url)"'`
+>
+> - Ran `gh pr checks 25 --repo eminiarts/aura-cms || true; gh pr checks 24 --repo eminiarts/aura-cms || true; gh pr view 23 --repo eminiarts/aura-cms --json body,commits,files,url | jq -r '"URL: \(.url)\n\(.body)\nCommits:\n" + ([.commits[].messageHeadline] | join("\n")) + "\nFiles:\n" + ([.files[].path] | join("\n"))' | sed -n '1,360p'`
+>
+> - Ran `git branch -a --list '*audit*' '*fix/ci*' '*develop*'; git ls-tree -r --name-only origin/audit/remediation 2>/dev/null | rg 'audit|REMEDIATION|V1|release' | sed -n '1,200p'; git show origin/audit/remediation:audit/REMEDIATION_PLAN.md 2>/dev/null | sed -n '1,420p'`
+>
+> - Ran `git show origin/audit/remediation:audit/FINDINGS.md | sed -n '1,560p'; printf '%s\n' '--- SECURITY PLAN ---'; git show origin/audit/remediation:audit/REMEDIATION_PLAN_SECURITY.md | sed -n '1,520p'`
+>
+> - Ran `sed -n '1,260p' src/Livewire/PluginsPage.php && git log --oneline --all -- src/Livewire/PluginsPage.php src/Models/Scopes/TeamScope.php | head -40 && git branch -a --contains $(git log -1 --format=%H -- src/Models/Scopes/TeamScope.php)`
+>
+> <details><summary>Explored 4 files, 2 searches</summary>
+>
+> - Searched for `function (mount|checkAuthorization|save|delete|remove|create|update|.*Action)|authorize|abort_unless|unlink|file_put_contents|preg_replace` in `ResourceEditor.php`
+> - Read `./src/Livewire/ResourceEditor.php`
+> - Read `./src/Traits/SaveFields.php`
+> - Read `./src/Livewire/ResourceEditor.php`
+> - Read `./src/Livewire/EditResourceField.php`
+> - Searched for `ResourceEditor|resource_editor|resource editor` in `Feature`
+>
+> </details>
+>
+> - Ran `vendor/bin/pest -c phpunit-without-teams.xml --no-coverage`
+>
+> - Ran `sed -n '1,260p' phpunit-without-teams.xml && git diff -- phpunit-without-teams.xml tests/Pest.php | sed -n '1,260p' && git status --short --branch`
+>
+> - Ran `php -m | rg -i 'xdebug|pcov' || true; find build -maxdepth 3 -type f -print 2>/dev/null | sed -n '1,100p'; if [ -f build/coverage.txt ]; then tail -60 build/coverage.txt; fi; rg -n "coverage|min=80|test-coverage" .github composer.json README.md AGENTS.md | sed -n '1,180p'`
+>
+> - Ran `printf '%s\n' 'Fields without obvious dedicated test:'; for f in src/Fields/*.php; do b=$(basename "$f" .php); if ! rg -l "\\b${b}(Field)?\\b|Fields\\\\${b}" tests/Feature/Fields tests/Feature 2>/dev/null | head -1 >/dev/null; then echo "$b"; fi; done; printf '%s\n' 'Field class count:'; find src/Fields -maxdepth 1 -name '*.php' | wc -l; printf '%s\n' 'Field test files:'; find tests/Feature/Fields -maxdepth 1 -name '*.php' | wc -l; printf '%s\n' 'Dusk/browser/e2e tests:'; find tests -type f \( -path '*Browser*' -o -name '*Dusk*' -o -name '*E2E*' \) -print`
+>
+> - Ran `for f in src/Fields/*.php; do b=$(basename "$f" .php); if ! rg -q "\\b${b}(Field)?\\b|Fields\\\\${b}" tests/Feature; then echo "$b"; fi; done`
+>
+> - Ran `printf 'WIP commits in last 100 on main: '; git log -100 --format=%s main | rg -i '^wip|checkpoint|fixing tests|fix styling$' | wc -l; printf 'Total commits on main: '; git rev-list --count main; printf '%s\n' 'Recent WIP-like commits:'; git log -100 --oneline main | rg -i 'wip|checkpoint|fixing tests|fix styling$' | sed -n '1,60p'; printf '%s\n' 'Branch protection:'; gh api repos/eminiarts/aura-cms/branches/main/protection --jq '{required_checks:.required_status_checks.contexts,enforce_admins:.enforce_admins.enabled,required_reviews:.required_pull_request_reviews,restrictions:.restrictions}' 2>&1`
+>
+> - Ran `ls -la | sed -n '1,180p'; if [ -f .gitattributes ]; then sed -n '1,220p' .gitattributes; fi; if [ -f .gitignore ]; then sed -n '1,220p' .gitignore; fi; git ls-files | rg '^(LICENSE|SECURITY|CONTRIBUTING|UPGRADING|docs/|composer.lock|resources/dist)' | sed -n '1,260p'; git ls-files resources/dist | xargs -r ls -lh`
+>
+> <details><summary>Explored 6 files, 5 searches</summary>
+>
+> - Read `./docs/installation.md`
+> - Read `./docs/quick-start.md`
+> - Read `./docs/authentication.md`
+> - Read `./docs/teams.md`
+> - Read `./docs/resource-editor.md`
+> - Read `./docs/api-reference.md`
+> - Searched for `video placeholder` in `docs`
+> - Searched for `TODO|placeholder|coming soon|not implemented|future` in `docs`
+> - Searched for `enterprise|production.ready|api.ready|full.text search|complete.*api|REST API` in `docs`
+> - Searched for `flows|headless|REST API|API Ready|full-text|enterprise-grade|SQL Server|PostgreSQL|Docker` in `docs`
+> - Searched for `\[[^]]+\]\(([^)#?]+\.md)(#[^)]+)?\)` in `docs`
+>
+> </details>
+>
+> - Ran `gh run view 29188336058 --repo eminiarts/aura-cms --log-failed | sed -n '1,320p'; printf '%s\n' '--- phpstan failure ---'; gh run view 29188335326 --repo eminiarts/aura-cms --log-failed | sed -n '1,220p'`
+>
+> - Ran `gh run view 29188336058 --repo eminiarts/aura-cms --log-failed | rg -n -i "problem [0-9]|your requirements|requires php|could not be resolved|error|failed|conflict|pest|tests:" | tail -100; printf '%s\n' '--- phpstan actual ---'; gh run view 29188335326 --repo eminiarts/aura-cms --log-failed | rg -n -i "problem [0-9]|your requirements|requires php|could not be resolved|error|failed|conflict|phpstan|found [0-9]+ errors" | tail -120`
+>
+> - Ran `gh run view 29188336058 --repo eminiarts/aura-cms --log-failed | sed -n '196,224p'`
+>
+> <details><summary>Explored a file, 3 searches</summary>
+>
+> - Read `./src/Resources/TeamInvitation.php`
+> - Searched for `team_invitations` in `database`
+> - Searched for `password_reset_tokens|password_resets` in `database`
+> - Searched for `foreignId\('current_team_id'|constrained\(\).*current_team|current_team_id` in `create_aura_tables.php.stub`
+>
+> </details>
+>
+> - Ran `perl -0777 -ne 'while (/\b(public|protected|private)\s+function\s+\w+\s*\([^)]*\)\s*(:\s*[^\s{]+)?/sg) { $total++; $typed++ if defined $2 } END { print "methods=$total typed_returns=$typed untyped=".($total-$typed)." typed_pct=".sprintf("%.1f",100*$typed/$total)."%\n" }' $(find src -name '*.php' -type f); perl -0777 -ne 'while (/\b(public|protected|private)\s+(?:static\s+)?(?:\??[A-Za-z_\\][A-Za-z0-9_\\|?]*\s+)?\$\w+/sg) { $total++; } END { print "declared_properties_rough=$total\n" }' $(find src -name '*.php' -type f); printf '%s\n' 'Catch-all exceptions:'; rg -n "catch \(\\Exception|catch \(\\Throwable" src | wc -l; printf '%s\n' 'Empty methods/branches rough:'; rg -n "function[^\n]*\{\}|if \([^\n]+\) \{\s*\}" src | sed -n '1,120p'; printf '%s\n' 'Static mutable caches/flags:'; rg -n "static \$|protected static \$|private static \$|public static \$" src | sed -n '1,220p'`
+>
+> <details><summary>Explored 4 searches</summary>
+>
+> - Searched for `catch (\Exception` in `src`
+> - Searched for `catch (\Throwable` in `src`
+> - Searched for `function .*: mixed` in `src`
+> - Searched for `static $` in `Traits`
+>
+> </details>
+>
+> <details><summary>Searched the web</summary>
+>
+> - Searched the web for `site:laravel.com/docs releases Laravel 13 support policy PHP 8.3 ...`
+>
+> </details>
+>
+> </details>
+>
+> Context compaction
+>
+> Source: automatic
+> Status: completed
+>
+> Die Analyse ist abgeschlossen. Das Bild ist ziemlich klar: Aura CMS hat ein gutes Produktfundament und ungewöhnlich viele Tests, aber der aktuelle Stand ist noch kein belastbarer V1-Release-Candidate – vor allem wegen Migrationen, Security-Härtung und nicht vertrauenswürdiger CI-Gates.
+>
+> ## Ehrliches Fazit
+>
+> Aura CMS ist ein starkes Produkt mit einer brauchbaren Architekturidee – aber der aktuelle Stand ist noch kein verantwortbarer V1-Release-Candidate.
+>
+> Meine grobe Bewertung:
+>
+> | Bereich | Bewertung |
+> |---|---:|
+> | Produktidee und Funktionsumfang | 8/10 |
+> | Testkultur und Abdeckung der Kernfunktionen | 7/10 |
+> | Architektur | 5,5/10 |
+> | Wartbarkeit und Typensicherheit | 4,5/10 |
+> | Security im aktuellen Branch | 4/10 |
+> | Release-Prozess/CI | 3/10 |
+> | **Gesamte Codequalität** | **ca. 5,5/10** |
+> | **V1-Readiness** | **ca. 40 %** |
+>
+> Das ist kein „wir müssen alles neu schreiben“. Eher: Das Produkt ist deutlich näher an V1 als der Engineering- und Release-Prozess.
+>
+> ## Was gut ist
+>
+> Aura hat echte Substanz:
+>
+> - Das Resource-/Field-Konzept ist flexibel und als Package gut erweiterbar.
+> - Mit 157 Testdateien und mehr als 1.300 erfolgreichen Tests existiert eine viel bessere Basis als bei vielen vergleichbaren CMS-Projekten.
+> - Die Aufteilung in Fields, Resources, Livewire-Komponenten, Policies und Traits ist grundsätzlich sinnvoll.
+> - Laravel- und Package-Konventionen werden weitgehend eingehalten.
+> - Pint läuft sauber.
+> - Der Produktions-Build funktioniert.
+> - `composer audit` meldet aktuell keine bekannten PHP-Sicherheitslücken.
+> - Die bereits gefundenen kritischen Plugin-RCE- und Team-Cache-Probleme wurden auf `main` behoben.
+>
+> Das Projekt wirkt nicht wie ein Prototyp. Es wirkt wie ein gewachsenes Produkt, das jetzt eine gezielte Stabilisierungsphase braucht.
+>
+> ## Die größten V1-Blocker
+>
+> ### 1. Die Migration kann Daten der Host-Anwendung löschen
+>
+> Das ist für mich der schwerwiegendste Fund.
+>
+> Die zentrale Aura-Migration löscht bei einem Rollback unter anderem Tabellen wie `users`, `sessions`, `jobs`, `password_resets` und `personal_access_tokens` – also Tabellen, die möglicherweise der einbindenden Laravel-Anwendung gehören: [create_aura_tables.php.stub](./database/migrations/create_aura_tables.php.stub:14).
+>
+> Ein `migrate:rollback` eines Packages darf niemals fremde Benutzer-, Auth- oder Queue-Daten zerstören. Zusätzlich ist die Installation in bestehende Laravel-Anwendungen nur teilweise kollisionssicher.
+>
+> Vor V1 braucht es:
+>
+> - getrennte, versionierte Aura-Migrationen;
+> - Ownership nur über Aura-eigene Tabellen und Spalten;
+> - sichere Rollbacks;
+> - Tests für frische Installation, bestehende Anwendung und Upgrade von 0.2 auf 1.0;
+> - Tests mit SQLite, MySQL und idealerweise PostgreSQL;
+> - Teams an und aus.
+>
+> Das ist ein absoluter P0-Blocker.
+>
+> ### 2. Bekannte Security-Härtungen sind noch nicht integriert
+>
+> PR [#24 – Security & Performance Hardening](https://github.com/eminiarts/aura-cms/pull/24) behebt mehrere ernsthafte Punkte, ist aber noch nicht gemergt. Im aktuellen Code sehe ich unter anderem:
+>
+> - client-gesteuerte Klassenauflösung über `app($request->field)` ohne ausreichende Ressourcen-Autorisierung: [FieldsController.php](./src/Http/Controllers/Api/FieldsController.php:10)
+> - client-gesteuerte Bulk-Action-Methoden ohne saubere Allowlist und Autorisierung pro Datensatz: [BulkActions.php](./src/Livewire/Table/Traits/BulkActions.php:16)
+> - unzureichend geschützte Systemfelder wie `team_id`, `user_id` und `type`;
+> - gespeicherte XSS-Pfade bei roher Feldausgabe;
+> - SVG-Uploads;
+> - Global Search ohne konsequente Berechtigungsprüfung je Ressource.
+>
+> Zusätzlich unterstützt die Auth-Route Logout über GET, was eine unnötige CSRF-/Security-Schwäche ist.
+>
+> ### 3. Der Resource Editor ist zu riskant für eine stabile V1
+>
+> Der Resource Editor verändert PHP-Quelldateien zur Laufzeit, verwendet Regex-basierte Code-Umschreibung und bietet öffentliche Livewire-Aktionen zum Schreiben und Löschen: [ResourceEditor.php](./src/Livewire/ResourceEditor.php:136).
+>
+> Wenn das Feature aktiviert ist, ist die Autorisierung aus meiner Sicht nicht robust genug. Außerdem fehlen:
+>
+> - atomare Schreibvorgänge;
+> - Syntaxprüfung vor dem Ersetzen;
+> - Backups und sichere Wiederherstellung;
+> - klare Superadmin-Grenzen;
+> - Allowlisting von Aktionen.
+>
+> Meine Empfehlung für V1: entweder deaktivieren/als experimentell markieren oder vor dem Release grundlegend absichern. Als prominentes V1-Feature würde ich es derzeit nicht ausliefern.
+>
+> ### 4. Die CI gibt momentan keine verlässliche Aussage
+>
+> Der lokale Stand ergibt:
+>
+> - `composer test`: **1.315 erfolgreich, 4 fehlgeschlagen, 1 übersprungen**
+> - Drei Fehler sind veraltete bzw. geänderte Login-Texte.
+> - Ein Permissions-Test war nur parallel instabil und lief seriell erfolgreich.
+> - Die Konfiguration ohne Teams erzeugt zahlreiche Fehler und endet schließlich mit einem Speicherfehler.
+> - PHPStan meldet auf Level 3 **330 Fehler**.
+> - Pint ist grün.
+> - Der Vite-Produktions-Build ist grün.
+>
+> Die GitHub-Workflows sind zusätzlich falsch ausgerichtet:
+>
+> - Der PHPStan-Workflow verwendet PHP 8.1, obwohl das Package PHP 8.2+ verlangt.
+> - Der Test-Workflow erzwingt Laravel 11 und scheitert bereits während Composer wegen Security-Advisories.
+> - Branch Protection erwartet einen Check-Namen, den die aktuellen Workflows gar nicht liefern.
+> - Pint verändert und committet Code, anstatt nur als Gate zu prüfen.
+>
+> Der CI-Fix in [PR #23](https://github.com/eminiarts/aura-cms/pull/23) geht in die richtige Richtung, zielt aber aktuell auf `develop`. Der Zustand der Workflows ist unter [GitHub Actions](https://github.com/eminiarts/aura-cms/actions) sichtbar.
+>
+> ### 5. Die Wartbarkeit ist für eine öffentliche V1 noch zu dynamisch
+>
+> Die Hauptprobleme sind nicht Formatierung, sondern fehlende Verträge:
+>
+> - PHPStan findet 330 Fehler, darunter viele nicht vorhandene Properties und Methoden sowie fehlende Rückgabewerte.
+> - Große Klassen wie `User`, `AuraModelConfig`, `ResourceEditor`, `Settings`, `Aura`, `Table` und der Service Provider tragen sehr viel Verantwortung.
+> - Traits und magische Properties machen den Datenfluss schwer nachvollziehbar.
+> - Es gibt totes beziehungsweise unerreichbares Verhalten, beispielsweise mehrere Methoden mit einem frühen `return`, hinter dem alter Cache- oder Implementierungscode liegen bleibt.
+> - Eine grobe Methodenzählung zeigt, dass nur ein kleiner Teil der Methoden explizite Rückgabetypen besitzt – entgegen den eigenen Projektkonventionen.
+>
+> Ich würde nicht verlangen, vor V1 alle 330 PHPStan-Meldungen zu beseitigen. Aber die echten Contract-, Security- und Public-API-Fehler müssen behoben werden. Anschließend kann eine begründete Baseline eingeführt werden, die zumindest keine neuen Fehler zulässt.
+>
+> ## Abhängigkeiten und Dokumentation
+>
+> Der Node-Audit meldet aktuell:
+>
+> - ohne Development-Abhängigkeiten: 4 Schwachstellen, darunter eine hohe;
+> - vollständig: 21 Schwachstellen, davon eine kritische und neun hohe.
+>
+> Vieles betrifft den Build-Prozess, trotzdem sollte es vor V1 aktualisiert oder sauber als nicht zur Laufzeit exponiert dokumentiert werden.
+>
+> Die Dokumentation ist umfangreich, verspricht aber stellenweise mehr als durch Tests oder Implementierung abgesichert ist. Es gibt zahlreiche Video-, TODO- und „Coming soon“-Platzhalter. Außerdem fehlen unter anderem:
+>
+> - `SECURITY.md`;
+> - ein V1-Upgrade-Guide;
+> - eine Deprecation-Policy;
+> - die verlinkte `CONTRIBUTING.md`;
+> - konsistente Changelog- und Versionsangaben.
+>
+> Die öffentliche Dokumentationsseite war zum Prüfzeitpunkt nicht erreichbar. Packagist zeigt derzeit Version 0.2.0 und teilweise veraltete Metadaten: [Aura CMS auf Packagist](https://packagist.org/packages/eminiarts/aura-cms).
+>
+> ## Empfohlene Support-Matrix
+>
+> Für V1 würde ich den Scope bewusst verkleinern:
+>
+> - PHP 8.3+
+> - Laravel 12 und 13
+> - Livewire 4
+>
+> Laravel 10 und 11 befinden sich inzwischen außerhalb ihres Security-Supports. PHP 8.2 erhält nur noch bis Ende 2026 Security-Fixes. Siehe [Laravel Support Policy](https://laravel.com/docs/13.x/releases) und [PHP Supported Versions](https://www.php.net/supported-versions.php).
+>
+> Laravel 10–13, Livewire 3–4 und PHP 8.2+ gleichzeitig zuverlässig zu unterstützen, erhöht die Testmatrix und den Wartungsaufwand massiv, ohne für eine neue V1 besonders viel Nutzen zu bringen.
+>
+> ## Mein Weg zu V1
+>
+> In dieser Reihenfolge:
+>
+> 1. Sichere Migrationen und Installations-/Upgrade-Tests.
+> 2. CI reparieren und `main` wirklich schützen.
+> 3. PR #24 integrieren und Security-Regressions-Tests ergänzen.
+> 4. Resource Editor absichern oder aus dem stabilen V1-Scope nehmen.
+> 5. Alle unterstützten Testvarianten grün bekommen, inklusive Teams-off und Parallelbetrieb.
+> 6. Support-Matrix festlegen und Composer auf stabile Abhängigkeiten
+>
+> <details><summary>Plan</summary>
+>
+> Repository, automatisierte Checks, Architektur/Security sowie Release-Prozess sind geprüft. Die Ergebnisse sind zu einer priorisierten V1-Einschätzung konsolidiert.
+>
+> - [x] Repository, Konfiguration, CI und Git-Zustand erfassen
+> - [x] Tests, Static Analysis, Formatierung, Build und Dependency-Audits ausführen
+> - [x] Architektur, Security, Installationspfad und öffentliche APIs stichprobenartig prüfen
+> - [x] V1-Reife bewerten und priorisierten Release-Plan formulieren
+>
+> </details>
+</details>
+
+## Ehrliches Fazit
+
+Aura CMS ist ein starkes Produkt mit einem guten Konzept, aber aktuell noch kein belastbarer V1-Release-Candidate.
+
+Meine grobe Einschätzung:
+
+| Bereich | Bewertung |
+|---|---:|
+| Produktidee und Funktionsumfang | 8/10 |
+| Testabdeckung in der Breite | 7/10 |
+| Architektur | 5,5/10 |
+| Wartbarkeit und Typensicherheit | 4,5/10 |
+| Security im aktuellen Branch | 4/10 |
+| Release-Prozess und CI | 3/10 |
+| V1-Reife insgesamt | ca. 40 % |
+
+Das ist kein „alles neu schreiben“-Projekt. Im Gegenteil: Der funktionale Kern ist wertvoll und wirkt über Jahre organisch entwickelt. Aber genau diese Entwicklung sieht man auch – viele dynamische Abkürzungen, große Klassen, implizite Verträge und Release-Infrastruktur, die mit dem Produktumfang nicht mitgewachsen ist.
+
+Kurz gesagt: Das Produkt ist näher an V1 als der Engineering- und Release-Prozess.
+
+## Was bereits gut ist
+
+- Die Resource-/Field-Abstraktion ist eine gute Grundlage für ein erweiterbares CMS.
+- Der Funktionsumfang ist für ein Laravel-Package beachtlich: Teams, Rollen, dynamische Felder, Tabellen, Media, Settings und Livewire-UI.
+- 157 Testdateien mit rund 28.000 Testzeilen zeigen eine echte Testkultur.
+- `composer validate`, Composer Security Audit, Pint und der Production-Frontend-Build laufen erfolgreich.
+- Die Tests sind nicht komplett rot: Im normalen Lauf bestanden 1.315 Tests mit 4.087 Assertions.
+- Der PHP-Code ist überwiegend nachvollziehbar organisiert. Es gibt klare Module für Fields, Resources, Models und Livewire-Komponenten.
+- Bereits bekannte kritische Probleme wie Plugin-RCE und Team-Cache-Invalidierung wurden auf `main` behoben.
+
+Aura CMS ist also keine instabile Demo. Es ist ein ernsthaftes Produkt – nur noch nicht ausreichend gehärtet und releasefähig verpackt.
+
+## Die wichtigsten V1-Blocker
+
+### 1. Die Package-Migration ist momentan gefährlich
+
+Das ist für mich der härteste Blocker.
+
+Der Rollback in [create_aura_tables.php.stub](./database/migrations/create_aura_tables.php.stub:14) löscht nicht nur Aura-Tabellen, sondern unter anderem auch `users`, Sessions, Jobs und Auth-Tabellen. In einer bestehenden Laravel-Anwendung könnte ein Package-Rollback somit Daten der Host-Anwendung vernichten.
+
+Zusätzlich:
+
+- `up()` legt mehrere generisch benannte Tabellen ohne ausreichende Kollisionsstrategie an.
+- Es gibt keine automatisierten Tests für Installation, Rollback und Upgrade.
+- Teile des Installers schreiben per Regex in das `User`-Model und verändern `.env` beziehungsweise Config-Dateien.
+- Die Migration ist monolithisch, was spätere V1-Upgrades unnötig riskant macht.
+
+Vor V1 müssen Aura-eigene Migrationen klar von Host-Tabellen getrennt sein. Ein Rollback darf niemals Tabellen löschen, die Aura nicht eindeutig besitzt.
+
+### 2. Bekannte Security-Härtung ist noch nicht integriert
+
+Der offene [Security-Hardening-PR #24](https://github.com/eminiarts/aura-cms/pull/24) enthält relevante Fixes, die im geprüften Stand noch fehlen:
+
+- Stored-XSS-Ausgaben
+- Mass Assignment von Systemfeldern wie `team_id`, `user_id` und `type`
+- Bulk Actions mit clientseitig bestimmter Methode und fehlender Autorisierung pro Datensatz
+- fehlende Resource-Berechtigungen in Global Search
+- SVG-Upload-Härtung
+- frei wählbare Container-Auflösung in [FieldsController.php](./src/Http/Controllers/Api/FieldsController.php:10)
+
+Auch [BulkActions.php](./src/Livewire/Table/Traits/BulkActions.php:16) sollte nur explizit registrierte Aktionen ausführen.
+
+Der Resource Editor ist ein eigener Risikobereich. Er verändert PHP-Dateien zur Laufzeit, nutzt reguläre Ausdrücke und direkte Dateischreibvorgänge und besitzt öffentliche, dynamische Aktionspfade. Siehe [ResourceEditor.php](./src/Livewire/ResourceEditor.php:136). Für V1 würde ich ihn entweder:
+
+- standardmäßig komplett deaktivieren und als experimentell markieren, oder
+- nur für Super-Admins zugänglich machen und mit atomarem Schreiben, Backups, PHP-Parsing und expliziten Action-Allowlisten absichern.
+
+Zusätzlich sollte `GET /logout` entfernt werden; zustandsverändernde Aktionen gehören hinter POST und CSRF-Schutz.
+
+### 3. CI vermittelt derzeit falsche Sicherheit
+
+Die aktuellen GitHub-Workflows prüfen den tatsächlichen Supportvertrag nicht zuverlässig:
+
+- Der Test-Workflow erzwingt Laravel 11 und scheitert bereits beim Installieren wegen Composer-Security-Regeln.
+- Der PHPStan-Workflow verwendet PHP 8.1, obwohl das Package PHP 8.2+ verlangt.
+- Es gibt keine belastbare Laravel-/PHP-Matrix.
+- Frontend-Build und JavaScript-Audit fehlen als verpflichtende Checks.
+- Pint verändert und committet Code, statt nur als Release-Gate zu prüfen.
+- Die konfigurierte Branch Protection erwartet einen Check-Namen, den der aktuelle Workflow nicht erzeugt.
+
+Der Zustand ist auf [GitHub Actions](https://github.com/eminiarts/aura-cms/actions) sichtbar. CI muss zuerst repariert werden, bevor grüne oder rote PR-Anzeigen eine echte Aussage haben.
+
+### 4. Die Testbasis ist groß, aber noch nicht releasevertrauenswürdig
+
+Mein lokaler Lauf ergab:
+
+- 1.315 bestanden
+- 4 fehlgeschlagen
+- 1 übersprungen
+- 4.087 Assertions
+
+Drei Fehler sind offenbar veraltete Login-/Register-Erwartungen. Ein Permissions-Test schlug nur parallel fehl und bestand anschließend seriell – also wahrscheinlich ein Scope-, Cache- oder Isolation-Flake.
+
+Wesentlich problematischer ist die Konfiguration ohne Teams: Sie produziert zahlreiche Fehler und endet schließlich mit einem 128-MB-Out-of-memory-Fehler. Entweder „Teams optional“ ist ein unterstützter Modus und muss vollständig grün sein, oder diese Option sollte für V1 entfernt werden.
+
+Es fehlen außerdem echte Browser-Smoke-Tests für:
+
+- Installation
+- Login/Logout
+- Resource CRUD
+- Media Upload
+- Team-Wechsel
+- Rollen und Berechtigungen
+- Upgrade und Rollback
+
+### 5. PHPStan zeigt erhebliche technische Schulden
+
+PHPStan meldet auf Level 3 aktuell 330 Fehler. Darunter befinden sich viele dynamische Laravel-/Livewire-Befunde, aber auch echte Probleme:
+
+- fehlende Return Types
+- unbekannte Properties und Methoden
+- falsche Facade-/Fake-Verträge
+- unerreichbarer Code
+- widersprüchliche Rückgabetypen
+
+Große Klassen wie `User`, `AuraModelConfig`, `ResourceEditor`, `Settings`, `Aura`, `Table` und der Service Provider bündeln zu viele Verantwortlichkeiten.
+
+Ein paar Beispiele für die Art der Schulden:
+
+- Methoden, die sofort zurückkehren und darunter toten Cache-Code enthalten
+- `__get()`-Logik, die `0`, `false` und leere Strings wie fehlende Werte behandelt
+- statische Prozesszustände in Team-Scopes, die unter Octane oder paralleler Ausführung problematisch sein können
+- viel Verhalten über Traits und Magic Properties statt über explizite Verträge
+
+Für V1 muss PHPStan nicht zwingend bei Level 9 fehlerfrei sein. Aber 330 Fehler auf Level 3 sind zu viel. Mindestens die Core-, Security- und Public-API-Pfade sollten sauber sein; verbleibende Framework-Dynamik kann vorübergehend sauber baselined werden.
+
+## Empfohlene V1-Supportmatrix
+
+Ich würde den Scope bewusst reduzieren:
+
+- PHP 8.3+
+- Laravel 12 und 13
+- Livewire 4
+- Teams entweder verbindlich aktiv oder vollständig getestet optional
+
+Laravel 11 erhält seit März 2026 keine Security-Fixes mehr; Laravel 10 ist schon länger aus dem Support. Siehe [Laravel Support Policy](https://laravel.com/docs/13.x/releases). PHP 8.2 erhält nur noch bis Ende 2026 Security-Support, während 8.3 länger getragen wird. Siehe [PHP Supported Versions](https://www.php.net/supported-versions.php).
+
+Laravel 10/11, PHP 8.2 und Livewire 3 weiter mitzuschleppen würde V1 deutlich verzögern und kaum nachhaltigen Nutzen bringen.
+
+## Konkreter Weg zu V1
+
+Meine Reihenfolge wäre:
+
+1. CI reparieren und echte Required Checks etablieren.
+2. Migration und Installer sicher neu strukturieren.
+3. Security-Hardening-PR integrieren und Resource Editor entscheiden.
+4. Alle normalen und Teams-off-Tests stabil grün machen.
+5. Fresh-Install-, Rollback- und Upgrade-Tests ergänzen.
+6. Supportmatrix auf PHP 8.3, Laravel 12/13 und Livewire 4 festlegen.
+7. PHPStan-Schulden im öffentlichen und sicherheitsrelevanten Kern abbauen.
+8. Browser-Smoke-Suite für die kritischen User Journeys ergänzen.
+9. Node-Abhängigkeiten aktualisieren: `npm audit` meldet derzeit 21 Befunde, darunter 1 Critical und 9 High; auch wenn viele Build-Abhängigkeiten betreffen, müssen sie vor V1 bewertet werden.
+10. Dokumentation und Paketmetadaten bereinigen.
+
+Zur Dokumentation gehören insbesondere:
+
+- `SECURITY.md`
+- `UPGRADING.md`
+- dokumentierter Upgradepfad von 0.2 auf 1.0
+- korrekte README- und Changelog-Links
+- Entfernung unfertiger API-/Workflow-Versprechen
+- ein reproduzierbar getesteter Quickstart
+- wieder erreichbare öffentliche Dokumentation
+
+Zum Prüfzeitpunkt war die Aura-Dokumentationsseite von hier aus nicht erreichbar. Auf [Packagist](https://packagist.org/packages/eminiarts/aura-cms) ist weiterhin 0.2.0 der öffentliche Stand.
+
+## Meine Release-Empfehlung
+
+Ich würde jetzt keinen V1-Termin ankündigen. Stattdessen:
+
+- `1.0.0-alpha.1`, sobald Migration und Security grundsätzlich korrigiert sind
+- `1.0.0-beta.1`, sobald CI, Supportmatrix und Installationspfade grün sind
+- `1.0.0-rc.1`, wenn alle verpflichtenden Checks zweimal reproduzierbar grün sind
+- danach mindestens zwei Wochen Dogfooding in einer echten Anwendung inklusive Backup-/Rollback-Test
+
+Mit einem fokussierten, erfahrenen Entwickler halte ich eine glaubwürdige V1 in etwa 4–6 Wochen für erreichbar, wenn die Supportmatrix reduziert und der Resource Editor für V1 deaktiviert wird. Mit vollständiger Härtung des Editors, breiter Rückwärtskompatibilität und sauberem Upgradepfad würde ich eher 8–12 Wochen ansetzen.
+
+Mein Gesamturteil: Aura CMS hat genug Substanz für eine gute V1. Die nächsten Wochen sollten aber fast ausschließlich in Release Engineering, Migration Safety, Security und verlässliche Tests fließen – nicht in neue Features. Ich habe bei der Prüfung keine Dateien verändert und den vorhandenen uncommitted Stand unangetastet gelassen.
