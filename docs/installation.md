@@ -62,6 +62,7 @@ composer require eminiarts/aura-cms
 php artisan vendor:publish --tag=aura-config
 php artisan aura:install-config
 php artisan aura:extend-user-model
+php artisan vendor:publish --tag=aura-migrations
 php artisan migrate
 php artisan aura:publish
 php artisan aura:user
@@ -156,10 +157,11 @@ The command asks about teams, feature flags, registration, and theme settings. R
 
 ```bash
 php artisan aura:extend-user-model
+php artisan vendor:publish --tag=aura-migrations
 php artisan migrate
 ```
 
-The first command updates `App\Models\User` to extend Aura's user resource. The migration creates Aura-owned tables and augments compatible host tables without taking ownership of those host tables.
+The first command updates `App\Models\User` to extend Aura's user resource. Publishing the migrations copies Aura's timestamped migration into your application's `database/migrations` directory; `migrate` then creates Aura-owned tables and augments compatible host tables without taking ownership of those host tables.
 
 ### Step 6: Publish Assets and Create an Administrator
 
@@ -337,6 +339,7 @@ docker-compose exec app composer require eminiarts/aura-cms
 docker-compose exec app php artisan vendor:publish --tag=aura-config
 docker-compose exec app php artisan aura:install-config
 docker-compose exec app php artisan aura:extend-user-model
+docker-compose exec app php artisan vendor:publish --tag=aura-migrations
 docker-compose exec app php artisan migrate
 docker-compose exec app php artisan aura:publish
 docker-compose exec app php artisan aura:user

@@ -60,6 +60,7 @@ composer require eminiarts/aura-cms
 php artisan vendor:publish --tag=aura-config
 php artisan aura:install-config
 php artisan aura:extend-user-model
+php artisan vendor:publish --tag=aura-migrations
 php artisan migrate
 php artisan aura:publish
 php artisan aura:user

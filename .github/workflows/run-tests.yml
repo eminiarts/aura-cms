@@ -92,6 +92,7 @@ jobs:
           php artisan vendor:publish --tag=aura-config --force
           php artisan aura:install-config --no-interaction
           php artisan aura:extend-user-model --no-interaction
+          php artisan vendor:publish --tag=aura-migrations --force
           php artisan migrate --force
           php artisan aura:publish
           php artisan aura:user --name="CI Admin" --email="ci@example.com" --password="CI-Test-Password-2026!"
