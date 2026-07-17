@@ -37,10 +37,9 @@ Welcome to the comprehensive documentation for Aura CMS - a modern, flexible con
 - [Customizing Views](/customizing-views) - Override default views
 - [Widgets](/widgets) - Dashboard widgets and analytics
 - [Plugins](/plugins) - Extend functionality with plugins
-- [Flows](/flows) - Workflow automation (coming soon)
 
 ## 🔌 API & Integration
-- [API Reference](/api-reference) - REST API endpoints
+- [API Integration Guide](/api-reference) - Build application-specific endpoints around Aura resources
 
 ## 🚀 Developer Resources
 - [Testing Guide](/testing) - Write tests for your Aura applications

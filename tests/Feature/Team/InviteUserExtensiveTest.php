@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\URL;
 use Livewire\Livewire;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
@@ -20,8 +21,8 @@ use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 uses(RefreshDatabase::class);
 
 beforeEach(function () {
-    if (! config('aura.teams')) {
-        $this->markTestSkipped('Team invitation tests require teams enabled.');
+    if (! Schema::hasTable('teams')) {
+        $this->markTestSkipped('Team invitation tests require the teams schema.');
     }
 
     $this->actingAs($this->user = createSuperAdmin());

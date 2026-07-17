@@ -6,6 +6,7 @@ use Aura\Base\Livewire\Resource\Create;
 use Aura\Base\Livewire\Resource\Edit;
 use Aura\Base\Livewire\Resource\Index;
 use Aura\Base\Livewire\Resource\View;
+use Aura\Base\Models\Scopes\ScopedScope;
 use Aura\Base\Models\Scopes\TeamScope;
 use Aura\Base\Resources\Attachment;
 use Aura\Base\Resources\Option;
@@ -27,16 +28,20 @@ class Aura
 {
     use DefaultFields;
 
-    // public function __construct()
-    // {
-    // }
-
     /**
      * The user model that should be used by Jetstream.
      *
      * @var string
      */
     public static $userModel = User::class;
+
+    protected array $baselineFields = [];
+
+    protected array $baselineInjectViews = [];
+
+    protected array $baselineResources = [];
+
+    protected array $baselineWidgets = [];
 
     protected array $config = [];
 
@@ -68,6 +73,17 @@ class Aura
         }
 
         return File::get($publishedPath) === File::get(__DIR__.'/../resources/dist/manifest.json');
+    }
+
+    /**
+     * Capture registrations made while the application boots.
+     */
+    public function captureBaselineState(): void
+    {
+        $this->baselineFields = $this->fields;
+        $this->baselineInjectViews = $this->injectViews;
+        $this->baselineResources = $this->resources;
+        $this->baselineWidgets = $this->widgets;
     }
 
     public static function checkCondition($model, $field, $post = null)
@@ -123,6 +139,23 @@ class Aura
         return app('Aura\Base\Templates\\'.str($slug)->title);
     }
 
+    /**
+     * Reset process state that may otherwise leak between requests or jobs.
+     */
+    public function flushState(): void
+    {
+        $this->fields = $this->baselineFields;
+        $this->injectViews = $this->baselineInjectViews;
+        $this->resources = $this->baselineResources;
+        $this->widgets = $this->baselineWidgets;
+
+        ConditionalLogic::clearConditionsCache();
+        Resource::flushFieldCache();
+        ScopedScope::flushState();
+        TeamScope::flushState();
+        static::$userModel = User::class;
+    }
+
     public function getAppFields()
     {
         $path = config('aura.fields.path');
@@ -151,7 +184,7 @@ class Aura
      * Register the App resources
      *
      * @param  array  $resources
-     * @return static
+     * @return array<class-string<resource>>
      */
     public function getAppResources()
     {
@@ -277,9 +310,6 @@ class Aura
 
     public function injectView(string $name): Htmlable
     {
-        if (isset($this->injectViews[$name])) {
-        }
-
         $hooks = array_map(
             fn (callable $hook): string => (string) app()->call($hook),
             $this->injectViews[$name] ?? [],
@@ -421,24 +451,6 @@ class Aura
             return $files;
         });
     }
-
-    // public function setOption($key, $value)
-    // {
-    //     $option = $this->getGlobalOptions();
-
-    //     if ($option && is_string($option->value)) {
-    //         $settings = json_decode($option->value, true);
-    //     } else {
-    //         $settings = [];
-    //     }
-
-    //     $settings[$key] = $value;
-
-    //     $option->value = json_encode($settings);
-    //     $option->save();
-
-    //     Cache::forget('aura-settings');
-    // }
 
     public function updateOption($key, $value)
     {

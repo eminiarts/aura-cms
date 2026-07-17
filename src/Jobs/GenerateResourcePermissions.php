@@ -2,8 +2,8 @@
 
 namespace Aura\Base\Jobs;
 
+use Aura\Base\Resource;
 use Aura\Base\Resources\Permission;
-use Aura\Base\Resources\resource;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -20,7 +20,7 @@ class GenerateResourcePermissions implements ShouldQueue
     /**
      * The resource to generate the permissions for.
      *
-     * @var resource
+     * @var class-string<\Aura\Base\Resource>
      */
     public $resource;
 

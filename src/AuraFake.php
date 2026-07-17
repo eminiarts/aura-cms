@@ -15,6 +15,13 @@ class AuraFake extends Aura
         return $slug;
     }
 
+    public function flushState(): void
+    {
+        parent::flushState();
+
+        $this->model = null;
+    }
+
     public function setModel($model)
     {
         $this->model = $model;

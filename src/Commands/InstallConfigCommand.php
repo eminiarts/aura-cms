@@ -3,7 +3,6 @@
 namespace Aura\Base\Commands;
 
 use Illuminate\Console\Command;
-use Symfony\Component\Process\Process;
 
 use function Laravel\Prompts\confirm;
 use function Laravel\Prompts\select;
@@ -128,17 +127,6 @@ class InstallConfigCommand extends Command
         file_put_contents($configPath, $code);
 
         $this->info('Aura configuration has been updated.');
-
-        // Run Pint on the file after the file has been written
-        $process = new Process(['vendor/bin/pint', $configPath]);
-        $process->run();
-
-        // Check if the process was successful
-        if (! $process->isSuccessful()) {
-            $this->error('Pint formatting failed: '.$process->getErrorOutput());
-        } else {
-            $this->info('Pint formatting completed.');
-        }
 
         // Cache clear
         $this->info('Clearing cache...');

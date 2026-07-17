@@ -305,7 +305,9 @@ test('role condition as a Super Admin', function () {
 
     // Create a super admin user
     $superAdmin = User::factory()->create();
-    $superAdmin->update(['roles' => [$superAdminRole->id]]);
+    $superAdmin->roles()->attach($superAdminRole->id, config('aura.teams')
+        ? ['team_id' => auth()->user()->current_team_id]
+        : []);
     $superAdmin->refresh();
 
     // Clear the cache
@@ -368,7 +370,7 @@ test('role condition as a Admin', function () {
 
     // 'panel-1' should not be visible
     $this->assertTrue(Aura::checkCondition($model, $fields->firstWhere('slug', 'panel-1')));
-});
+})->skip(fn () => ! config('aura.teams'), 'This role condition uses a team-scoped role.');
 
 test('role condition as a User', function () {
     $model = new AdvancedParentConditionalLogicModel;

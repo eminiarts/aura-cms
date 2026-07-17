@@ -28,6 +28,9 @@ class TestCase extends Orchestra
         parent::setUp();
 
         $this->withoutVite();
+        if (! is_dir(app_path('Aura/Resources'))) {
+            mkdir(app_path('Aura/Resources'), 0755, true);
+        }
 
         // Mock file uploads are handled by the mock file in tests/Mocks/
         // Laravel's real-time facade system will automatically use the mock class

@@ -1,6 +1,5 @@
 # Resources
 
-> 📹 **Video Placeholder**: Complete overview of Aura CMS Resources - from basic concepts to advanced features
 
 Resources are the heart of Aura CMS, transforming Laravel's Eloquent models into powerful, feature-rich content management entities. This comprehensive guide covers everything from basic resource creation to advanced patterns like soft deletes, versioning, and custom storage strategies.
 
@@ -1962,7 +1961,6 @@ class ResourceFactory
    public static bool $customTable = true;
    ```
 
-> 📹 **Video Placeholder**: Debugging common Resource issues and performance optimization techniques
 
 ## Next Steps
 

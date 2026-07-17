@@ -59,12 +59,11 @@ use Aura\Base\Widgets\SparklineBar;
 use Aura\Base\Widgets\ValueWidget;
 use Aura\Base\Widgets\Widgets;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
-use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Queue;
 use Livewire\Component;
 use Livewire\Livewire;
 use Spatie\LaravelPackageTools\Commands\InstallCommand;
@@ -74,14 +73,14 @@ use Spatie\LaravelPackageTools\PackageServiceProvider;
 class AuraServiceProvider extends PackageServiceProvider
 {
     protected $commands = [
-        // ... other commands ...
         AuraLayoutCommand::class,
     ];
 
-    // boot
     public function boot()
     {
         parent::boot();
+
+        $this->app->booted(fn () => Aura::captureBaselineState());
     }
 
     public function bootGate()
@@ -92,16 +91,6 @@ class AuraServiceProvider extends PackageServiceProvider
 
         Gate::policy(Resource::class, ResourcePolicy::class);
         Gate::policy(User::class, UserPolicy::class);
-
-        Gate::before(function ($user, $ability) {
-            //  if ($ability == 'view' && config('aura.resource-view-enabled') === false) {
-            //     return false;
-            // }
-
-            // if ($user->isSuperAdmin()) {
-            //     return true;
-            // }
-        });
 
         return $this;
     }
@@ -276,6 +265,9 @@ class AuraServiceProvider extends PackageServiceProvider
 
     public function packageBooted()
     {
+        Queue::after(fn () => Aura::flushState());
+        Queue::exceptionOccurred(fn () => Aura::flushState());
+
         if ($this->app->runningInConsole()) {
             $this->publishes([
                 $this->package->basePath('/../resources/dist') => public_path("vendor/{$this->package->shortName()}"),
@@ -335,28 +327,6 @@ class AuraServiceProvider extends PackageServiceProvider
         Blade::directive('auraScripts', function (string $expression) {
             return "<?php echo app('aura')::scripts(); ?>";
         });
-
-        // Register the morph map for the resources
-        // $resources = Aura::resources()->mapWithKeys(function ($resource) {
-        //     return [$resource => 'Aura\Base\Resources\\'.str($resource)->title];
-        // })->toArray();
-
-        // Defer route loading until after all providers have booted
-        // TEMP: DISABLED ROUTES
-        // $this->app->booted(function () {
-        //     $this->loadRoutesFrom(__DIR__.'/../routes/web.php');
-        // });
-
-        // Register the morph map to handle both user classes
-        // Relation::morphMap([
-        //     'Aura\Base\Resources\User' => 'App\Models\User',
-        //     'Aura\Base\Resources\User' => 'Aura\Base\Resources\User',
-        // ]);
-
-        // Relation::morphMap([
-        //     'Aura\Base\Resources\User' => 'App\Models\User',
-        //     'Aura\Base\Resources\User' => 'Aura\Base\Resources\User',
-        // ]);
 
         $this
             ->bootGate()
@@ -420,11 +390,7 @@ class AuraServiceProvider extends PackageServiceProvider
         app('aura')::registerFields(app('aura')::getAppFields());
     }
 
-    public function registeringPackage()
-    {
-        // $package->hasRoute('web');
-        // $this->loadRoutesFrom(__DIR__.'/../routes/web.php');
-    }
+    public function registeringPackage() {}
 
     protected function getResources(): array
     {

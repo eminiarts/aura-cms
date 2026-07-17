@@ -36,7 +36,15 @@ test('a super admin can perform any action', function () {
     // Attach to User
     $user = $this->user;
 
-    $user->update(['roles' => [$r->id]]);
+    if (config('aura.teams')) {
+        $team = Team::factory()->create();
+        $user->update(['current_team_id' => $team->id]);
+        $r->update(['team_id' => $team->id]);
+        $user->roles()->syncWithPivotValues([$r->id], ['team_id' => $team->id]);
+    } else {
+        $user->roles()->sync([$r->id]);
+    }
+    $user->unsetRelation('roles');
 
     // Assert User can do everything with users
     expect($this->user->can('viewAny', $user))->toBeTrue();
@@ -348,9 +356,9 @@ test('a admin can access users', function () {
 
     // Attach to User
     $user = $this->user;
-    // $user->roles()->sync([$role->id], false, ['team_id' => $team->id]);
-
-    $user->update(['roles' => [$role->id]]);
+    $user->forceFill(['current_team_id' => $team->id])->save();
+    $user->roles()->wherePivot('team_id', $team->id)->detach();
+    $user->roles()->attach($role->id, ['team_id' => $team->id]);
 
     // Assert role was synced
     $this->assertDatabaseHas('user_role', [

@@ -115,13 +115,21 @@ test('edit resource should not be available for vendor resources', function () {
 });
 
 test('edit resource should not be available in production', function () {
-    // Set env to production
-    config(['app.env' => 'production']);
+    $this->app->detectEnvironment(fn () => 'production');
+    config(['aura.features.resource_editor' => true]);
 
-    // Set aura.resource_editor to true
-    config(['aura.features.resource_editor' => false]);
+    createSuperAdmin();
 
-    $config = config('aura.features.resource_editor');
+    $this->get(route('aura.resource.editor', 'user'))
+        ->assertNotFound();
+});
 
-    $this->assertFalse($config);
+test('edit resource should not be available in staging', function () {
+    $this->app->detectEnvironment(fn () => 'staging');
+    config(['aura.features.resource_editor' => true]);
+
+    createSuperAdmin();
+
+    $this->get(route('aura.resource.editor', 'user'))
+        ->assertNotFound();
 });

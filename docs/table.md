@@ -1,6 +1,5 @@
 # Table Component
 
-> 📹 **Video Placeholder**: Complete walkthrough of Aura CMS Table component features including filtering, searching, bulk actions, and view modes
 
 The Table component is the powerhouse of data presentation in Aura CMS. Built on Livewire and Alpine.js, it provides a feature-rich, reactive interface for managing resource data with advanced capabilities like multi-column sorting, complex filtering, bulk operations, and multiple view modes—all without page refreshes.
 

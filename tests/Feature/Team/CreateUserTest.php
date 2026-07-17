@@ -6,8 +6,15 @@ use Aura\Base\Livewire\Resource\Edit;
 use Aura\Base\Resources\Role;
 use Aura\Base\Resources\User;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Schema;
 
 use function Pest\Livewire\livewire;
+
+beforeEach(function () {
+    if (! Schema::hasTable('teams')) {
+        $this->markTestSkipped('Team tests require the teams schema.');
+    }
+});
 
 beforeEach(function () {
     $this->actingAs($this->user = createSuperAdmin());

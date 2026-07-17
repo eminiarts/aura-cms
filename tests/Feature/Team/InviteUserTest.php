@@ -7,6 +7,7 @@ use Aura\Base\Resources\TeamInvitation;
 use Aura\Base\Resources\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\URL;
 use Livewire\Livewire;
 
@@ -15,8 +16,8 @@ use function Pest\Livewire\livewire;
 uses(RefreshDatabase::class);
 
 beforeEach(function () {
-    if (! config('aura.teams')) {
-        $this->markTestSkipped('Team invitation tests require teams enabled.');
+    if (! Schema::hasTable('teams')) {
+        $this->markTestSkipped('Team invitation tests require the teams schema.');
     }
 
     $this->withoutExceptionHandling();

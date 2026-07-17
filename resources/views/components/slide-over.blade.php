@@ -3,7 +3,7 @@
     $wire.on('openSlideOver', (data) => {
         {{-- console.log('open slide over', data); --}}
 
-        if(data.component == this.key) {
+        if(data.target == this.key) {
             @this.activate(data.parameters);
         }
     });

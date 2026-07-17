@@ -147,7 +147,7 @@ describe('deleting filters', function () {
         DB::table('options')->insert([
             'name' => 'user.'.$this->user->id.'.Post.filters.test-filter',
             'value' => '{"custom":[{"filters":[{"name":"tags","operator":"contains","value":[303],"options":{"resource_type":"Aura\\\\Base\\\\Resources\\\\Tag"}}]}],"name":"Test Filter","public":false,"global":false,"slug":"test-filter"}',
-            'team_id' => $this->user->currentTeam->id,
+            ...config('aura.teams') ? ['team_id' => $this->user->currentTeam->id] : [],
         ]);
 
         $component = livewire(Table::class, ['query' => null, 'model' => $this->resource]);
@@ -206,7 +206,7 @@ describe('filter selection', function () {
         DB::table('options')->insert([
             'name' => 'user.'.$this->user->id.'.Post.filters.meta-b-filter',
             'value' => '{"custom":[{"filters":[{"name":"metafield","operator":"is","value":"B","options":{}}]}],"name":"Meta B Filter","public":false,"global":false,"slug":"meta-b-filter"}',
-            'team_id' => $this->user->currentTeam->id,
+            ...config('aura.teams') ? ['team_id' => $this->user->currentTeam->id] : [],
         ]);
 
         $component = livewire(Table::class, ['query' => null, 'model' => $this->resource]);

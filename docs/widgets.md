@@ -29,7 +29,6 @@ The widget system provides:
 - **Goal Tracking**: Progress bars for target-based metrics
 - **Custom Widgets**: Extend base classes for custom functionality
 
-> 📹 **Video Placeholder**: [Overview of the widget system showing different widget types, date filtering, and real-time updates]
 
 ## Widget Architecture
 
@@ -320,7 +319,6 @@ All sparkline widgets automatically:
 - Fill missing dates with zero values
 - Show current and previous period comparison
 
-> 📹 **Video Placeholder**: [Demonstration of each widget type with real data and configuration options]
 
 ## Dashboard System
 
@@ -1114,7 +1112,6 @@ class SecureWidget extends Widget
 }
 ```
 
-> 📹 **Video Placeholder**: [Advanced widget features including real-time updates, interactivity, and exports]
 
 ## Best Practices
 

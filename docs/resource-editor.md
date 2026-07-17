@@ -52,15 +52,9 @@ The Resource Editor is controlled by the `resource_editor` feature flag in your 
 ],
 ```
 
-To enable the Resource Editor in other environments:
+The editor cannot be enabled outside the `local` environment. Both the route and Livewire component enforce that boundary even if a deployed configuration mistakenly sets the feature flag to `true`.
 
-```php
-'features' => [
-    'resource_editor' => true,
-],
-```
-
-**Warning**: Enabling the Resource Editor in production is not recommended as it modifies PHP class files directly.
+The editor rewrites PHP resource classes and can delete resource files. Keep the affected source files under version control and review the generated diff before committing it.
 
 ---
 
@@ -280,7 +274,7 @@ When editing a field, the following properties are available (varies by field ty
 
 - **Vendor Resources**: Resources provided by third-party packages (in the `vendor/` directory) cannot be edited through the Resource Editor.
 - **Fields with Closures**: If a resource's `getFields()` method uses closures for dynamic field definitions, the Resource Editor cannot process them. You'll see an error: "Your fields have closures. You can not use the Resource Builder with Closures."
-- **Production Environment**: Creating new resources is disabled in production environments by default.
+- **Environment Boundary**: The Resource Editor route and component are unavailable outside the `local` environment.
 - **File Modifications**: The editor writes directly to PHP class files. Ensure proper file permissions and use version control.
 - **Migration Generation**: When generating migrations for custom tables, review the generated migration file before running it. The editor automatically sets `$customTable = true` on your resource class.
 

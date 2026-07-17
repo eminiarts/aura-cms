@@ -43,7 +43,10 @@
   </x-aura::dropdown-link>
   @endif
 
-  <x-aura::dropdown-link href="{{ route('aura.logout') }}">
-      {{ __('Logout') }}
-  </x-aura::dropdown-link>
+  <form method="POST" action="{{ route('aura.logout') }}">
+      @csrf
+      <button type="submit" class="block px-4 py-2 w-full text-sm text-left text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800">
+          {{ __('Logout') }}
+      </button>
+  </form>
 </div>

@@ -1,5 +1,8 @@
 {
     "private": true,
+    "engines": {
+        "node": "^20.19.0 || >=22.12.0"
+    },
     "scripts": {
         "dev": "vite",
         "build": "vite build",
@@ -18,26 +21,23 @@
         "alpinejs": "^3.12",
         "apexcharts": "^3.39.0",
         "autoprefixer": "^10.4.2",
-        "axios": "^1.1.2",
+        "axios": "^1.18.1",
         "choices.js": "^10.1.0",
         "flatpickr": "^4.6.13",
-        "laravel-vite-plugin": "^0.7.2",
-        "lodash": "^4.17.19",
+        "laravel-vite-plugin": "^3.1.3",
+        "lodash": "^4.18.1",
         "monaco-themes": "^0.4.4",
         "nodemon": "^3.0.3",
-        "postcss": "^8.1.14",
+        "postcss": "^8.5.19",
         "postcss-import": "^14.0.1",
-        "quill": "^2.0.2",
+        "quill": "2.0.2",
         "tailwind-scrollbar": "^2.0.1",
         "tailwindcss": "^3.4.13",
         "tippy.js": "^6.3.7",
-        "vite": "^4.0.0",
-        "vite-plugin-monaco-editor": "^1.1.0",
-        "vite-plugin-static-copy": "^0.14.0"
+        "vite": "^8.1.5"
     },
     "dependencies": {
         "@simonwep/pickr": "^1.9.0",
-        "monaco-editor": "^0.46.0",
-        "monaco-editor-webpack-plugin": "^7.1.0"
+        "monaco-editor": "^0.46.0"
     }
 }

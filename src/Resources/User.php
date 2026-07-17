@@ -133,10 +133,6 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
     public function cachedRoles(): mixed
     {
         return $this->roles;
-
-        return Cache::remember($this->getCacheKeyForRoles(), now()->addMinutes(60), function () {
-            return $this->roles;
-        });
     }
 
     public function canBeImpersonated()
@@ -164,16 +160,6 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
 
         Cache::forget(static::currentTeamCacheKey($userId));
     }
-
-    // // Reset to default create Method from Laravel
-    // public static function create($fields)
-    // {
-    //     $model = new static;
-
-    //     return tap($model->newModelInstance($fields), function ($instance) {
-    //         $instance->save();
-    //     });
-    // }
 
     /**
      * Get the current team of the user's context.
@@ -214,31 +200,7 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
     public function getAvatarUrlAttribute()
     {
         return 'https://ui-avatars.com/api/?name='.$this->getInitials().'';
-
-        // Does not work atm
-        if (! $this->fields['avatar']) {
-            return 'https://ui-avatars.com/api/?name='.$this->getInitials().'';
-        }
-
-        // json decode the meta value
-        $meta = is_string($this->fields['avatar']) ? json_decode($this->fields['avatar']) : $this->fields['avatar'];
-
-        // get the attachment from the meta
-        $attachments = Attachment::find($meta);
-
-        if ($attachments && count($attachments) > 0) {
-            $attachment = $attachments->first();
-
-            return $attachment->path('thumbnail');
-        }
-
-        return 'https://ui-avatars.com/api/?name='.$this->getInitials().'';
     }
-
-    // public function getEmailField($value)
-    // {
-    //     return "<a class='font-bold text-primary-500' href='mailto:".$value."'>".$value.'</a>';
-    // }
 
     public static function getFields()
     {
@@ -721,24 +683,6 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
             // ->withPivot('team_id')
             ->withTimestamps();
     }
-
-    // public function setRolesField($value)
-    // {
-    //     // Save the roles
-    //     if (config('aura.teams')) {
-    //         $this->roles()->syncWithPivotValues($value, ['key' => 'roles', 'team_id' => $this->current_team_id]);
-    //     } else {
-    //         $this->roles()->syncWithPivotValues($value, ['key' => 'roles']);
-    //     }
-
-    //     // Unset the roles field
-    //     unset($this->attributes['fields']['roles']);
-
-    //     // Clear Cache 'user.' . $this->id . '.roles'
-    //     Cache::forget('user.'.$this->id.'.roles');
-
-    //     return $this;
-    // }
 
     /**
      * Switch the user's context to the given team.

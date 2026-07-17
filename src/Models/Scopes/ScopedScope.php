@@ -56,6 +56,11 @@ class ScopedScope implements Scope
         return $builder;
     }
 
+    public static function flushState(): void
+    {
+        static::$decisionCache = null;
+    }
+
     /**
      * Resolve (and memoize) the scope decision for the given user and model.
      *

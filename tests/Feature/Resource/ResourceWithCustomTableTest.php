@@ -27,7 +27,7 @@ beforeEach(function () {
         $table->boolean('enabled')->nullable();
         $table->text('options')->nullable();
         $table->foreignId('user_id');
-        $table->foreignId('team_id');
+        $table->foreignId('team_id')->nullable();
         $table->timestamps();
     });
 });

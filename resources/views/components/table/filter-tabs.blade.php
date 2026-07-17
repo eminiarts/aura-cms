@@ -17,10 +17,10 @@
                             : 'text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-200' }}">
 
                 @if(optional($userFilter)['icon'])
-                    <span class="[&>svg]:w-4 [&>svg]:h-4">{!! $userFilter['icon'] !!}</span>
+                    <span>{{ $userFilter['icon'] }}</span>
                 @endif
 
-                <span>{!! $userFilter['name'] !!}</span>
+                <span>{{ $userFilter['name'] }}</span>
             </button>
         @endforeach
     </div>

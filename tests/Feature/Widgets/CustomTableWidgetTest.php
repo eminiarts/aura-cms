@@ -20,7 +20,7 @@ beforeEach(function () {
         $table->id();
         $table->string('status')->nullable();
         $table->foreignId('user_id');
-        $table->foreignId('team_id');
+        $table->foreignId('team_id')->nullable();
         $table->timestamps();
     });
 
@@ -28,7 +28,7 @@ beforeEach(function () {
         'status' => 'active',
         'score' => 10,
         'user_id' => $this->user->id,
-        'team_id' => $this->user->current_team_id,
+        ...config('aura.teams') ? ['team_id' => $this->user->current_team_id] : [],
         'created_at' => Carbon::now()->subDays(5),
     ]);
 
@@ -36,7 +36,7 @@ beforeEach(function () {
         'status' => 'active',
         'score' => 20,
         'user_id' => $this->user->id,
-        'team_id' => $this->user->current_team_id,
+        ...config('aura.teams') ? ['team_id' => $this->user->current_team_id] : [],
         'created_at' => Carbon::now()->subDays(10),
     ]);
 
@@ -44,7 +44,7 @@ beforeEach(function () {
         'status' => 'draft',
         'score' => 10,
         'user_id' => $this->user->id,
-        'team_id' => $this->user->current_team_id,
+        ...config('aura.teams') ? ['team_id' => $this->user->current_team_id] : [],
         'created_at' => Carbon::now()->subDays(15),
     ]);
 });

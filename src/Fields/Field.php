@@ -4,7 +4,6 @@ namespace Aura\Base\Fields;
 
 use Aura\Base\Traits\InputFields;
 use Illuminate\Support\Facades\Blade;
-use Illuminate\Support\Str;
 use Illuminate\Support\Traits\Macroable;
 use Illuminate\Support\Traits\Tappable;
 use Livewire\Wireable;
@@ -62,15 +61,6 @@ abstract class Field implements Wireable
 
         if ($this->index) {
             $componentName = $this->index;
-            // If the component name starts with 'aura::', remove it
-            if (Str::startsWith($componentName, 'aura::')) {
-                //   $componentName = Str::after($componentName, 'aura::');
-            }
-
-            // Ensure the component name starts with 'fields.'
-            if (! Str::startsWith($componentName, 'fields.')) {
-                // $componentName = 'fields.' . $componentName;
-            }
 
             return Blade::render(
                 '<x-dynamic-component :component="$componentName" :row="$row" :field="$field" :value="$value" />',
@@ -102,15 +92,9 @@ abstract class Field implements Wireable
         }
     }
 
-    // public $edit;
-
     public function field($field)
     {
-        // $this->field = $field;
-        // $this->withAttributes($field);
         return $this;
-
-        return get_class($this);
     }
 
     public function filterOptions()
@@ -309,13 +293,6 @@ abstract class Field implements Wireable
 
         ];
     }
-
-    // public function view($view, $data = [], $mergeData = [])
-    // {
-    //     $this->view = $view;
-
-    //     return $this;
-    // }
 
     public function getFilterValues($model, $field)
     {

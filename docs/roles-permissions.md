@@ -1,6 +1,5 @@
 # Roles & Permissions
 
-> 📹 **Video Placeholder**: Complete guide to Aura CMS role-based access control including creating roles, assigning permissions, and implementing custom authorization logic
 
 Aura CMS provides a sophisticated role-based access control (RBAC) system that seamlessly integrates with teams, resources, and custom authorization logic. The system is designed to be both powerful and intuitive, supporting everything from simple role assignments to complex, team-scoped permissions.
 
@@ -125,16 +124,10 @@ The Role resource is stored in a dedicated `roles` table with the following prop
 
 ### Built-in Roles
 
-Aura CMS includes several pre-configured roles:
+The `php artisan aura:user` command and team creation each provision one `admin` role with super-admin access. Create any additional editor or member roles explicitly for your application.
 
-```php
-// During installation
-php artisan aura:install
-
-// Creates default roles:
-// - Super Admin (system-wide access)
-// - Admin (team administration)
-// - Member (basic access)
+```text
+Admin (super-admin access)
 ```
 
 ### Role Assignment
@@ -1154,6 +1147,5 @@ Aura CMS's RBAC system provides:
 
 The system is designed to scale from simple role assignments to complex, multi-tenant applications with fine-grained access control.
 
-> 📹 **Video Placeholder**: Advanced authorization patterns and custom permission systems in Aura CMS
 
 For authentication setup, see the [Authentication Documentation](authentication.md).

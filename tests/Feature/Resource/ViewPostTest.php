@@ -93,7 +93,7 @@ test('resource view - can be customized via viewView method', function () {
     $customResource = CustomViewResource::create([
         'title' => 'Custom Resource Title',
         'content' => 'Custom Resource Content',
-        'team_id' => 1,
+        ...config('aura.teams') ? ['team_id' => 1] : [],
         'type' => 'CustomViewResource',
     ]);
 

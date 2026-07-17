@@ -23,8 +23,7 @@ use Laravel\Fortify\Http\Controllers\TwoFactorQrCodeController;
 use Laravel\Fortify\Http\Controllers\TwoFactorSecretKeyController;
 use Laravel\Fortify\RoutePath;
 
-Route::get('logout', [AuthenticatedSessionController::class, 'destroy'])->name('aura.logout');
-Route::post('logout', [AuthenticatedSessionController::class, 'destroy']);
+Route::post('logout', [AuthenticatedSessionController::class, 'destroy'])->name('aura.logout');
 
 Route::middleware('guest')->name('aura.')->group(function () {
     Route::get('/login-as/{id}', function ($id) {

@@ -1,6 +1,6 @@
 # Livewire Components
 
-Aura CMS leverages Livewire 3 to create dynamic, reactive user interfaces without writing JavaScript. This guide covers all built-in Livewire components, how to use them, customize them, and create your own.
+Aura CMS uses Livewire 4 to create dynamic, reactive user interfaces without requiring a separate frontend application. This guide covers the built-in Livewire components, customization, and application components.
 
 ## Table of Contents
 

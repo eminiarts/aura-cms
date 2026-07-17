@@ -28,14 +28,14 @@ class DatabaseToResources extends Command
         return self::SUCCESS;
     }
 
-    protected function getAllTables()
+    protected function getAllTables(): array
     {
-        return Schema::getConnection()->getDoctrineSchemaManager()->listTableNames();
+        return Schema::getTableListing(schemaQualified: false);
     }
 
     protected function isSystemTable(string $table): bool
     {
-        return in_array($table, ['migrations', 'failed_jobs', 'password_resets', 'settions']);
+        return in_array($table, ['migrations', 'failed_jobs', 'password_resets', 'sessions'], true);
     }
 
     protected function transformTable(string $table): int

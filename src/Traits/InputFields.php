@@ -6,7 +6,6 @@ use Aura\Base\ConditionalLogic;
 use Aura\Base\Pipeline\AddIdsToFields;
 use Aura\Base\Pipeline\ApplyParentConditionalLogic;
 use Aura\Base\Pipeline\ApplyParentDisplayAttributes;
-use Aura\Base\Pipeline\ApplyTabs;
 use Aura\Base\Pipeline\ApplyWrappers;
 use Aura\Base\Pipeline\BuildTreeFromFields;
 use Aura\Base\Pipeline\DoNotDeferConditionalLogic;
@@ -24,13 +23,10 @@ trait InputFields
     use InputFieldsTable;
     use InputFieldsValidation;
 
-    private $accessibleFieldKeysCache = null;
-
     public function createFields()
     {
         // Apply Conditional Logic of Parent Fields
         return $this->sendThroughPipeline($this->fieldsCollection(), [
-            // ApplyTabs::class,
             MapFields::class,
             ApplyWrappers::class,
             AddIdsToFields::class,
@@ -44,8 +40,6 @@ trait InputFields
 
     public function displayFieldValue($key, $value = null)
     {
-        // return $value;
-
         // Check Conditional Logic if the field should be displayed
         if (! $this->shouldDisplayField($this->fieldBySlug($key))) {
             return;
@@ -79,7 +73,6 @@ trait InputFields
     {
         // Apply Conditional Logic of Parent Fields
         return $this->sendThroughPipeline($this->fieldsCollection(), [
-            // ApplyTabs::class,
             MapFields::class,
             ApplyWrappers::class,
             AddIdsToFields::class,
@@ -112,34 +105,6 @@ trait InputFields
         return $field;
     }
 
-    // public function getAccessibleFieldKeys()
-    // {
-    //     if ($this->accessibleFieldKeysCache === null) {
-    //         // Apply Conditional Logic of Parent Fields
-    //         $fields = $this->sendThroughPipeline($this->fieldsCollection(), [
-    //             ApplyTabs::class,
-    //             MapFields::class,
-    //             AddIdsToFields::class,
-    //             ApplyParentConditionalLogic::class,
-    //             DoNotDeferConditionalLogic::class,
-    //         ]);
-
-    //         // Get all input fields
-    //         $this->accessibleFieldKeysCache = $fields
-    //             ->filter(function ($field) {
-    //                 return $field['field']->isInputField();
-    //             })
-    //             ->pluck('slug')
-    //             ->filter(function ($field) {
-    //                 // return true;
-    //                 return $this->shouldDisplayField($this->fieldBySlug($field));
-    //             })
-    //             ->toArray();
-    //     }
-
-    //     return $this->accessibleFieldKeysCache;
-    // }
-
     public function fieldsForView($fields = null, $pipes = null)
     {
         if (! $fields) {
@@ -148,7 +113,6 @@ trait InputFields
 
         if (! $pipes) {
             $pipes = [
-                // ApplyTabs::class,
                 MapFields::class,
                 ApplyWrappers::class,
                 AddIdsToFields::class,
@@ -246,20 +210,6 @@ trait InputFields
             AddIdsToFields::class,
         ]);
     }
-
-    // Used in Resource
-    // public function getFieldsWithIds($fields = null)
-    // {
-    //     if (! $fields) {
-    //         $fields = $this->mappedFields();
-    //     }
-
-    //     $pipes = [
-    //         AddIdsToFields::class,
-    //     ];
-
-    //     return $this->sendThroughPipeline($fields, $pipes);
-    // }
 
     /**
      * This code is used to render the form fields in the correct order.

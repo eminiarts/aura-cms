@@ -2,6 +2,8 @@
 
 namespace Aura\Base\Fields;
 
+use Aura\Base\Resources\Role;
+
 class Roles extends AdvancedSelect
 {
     public function display($field, $value, $model)
@@ -56,6 +58,40 @@ class Roles extends AdvancedSelect
         // Flatten nested arrays (e.g. [[1]] -> [1])
         $roleIds = collect($value)->flatten()->filter()->values()->all();
 
+        $currentRoles = $post->roles();
+        $assignableRoles = Role::query();
+
+        if (config('aura.teams')) {
+            $teamId = $post->current_team_id ?? optional(auth()->user())->current_team_id;
+            $currentRoles->wherePivot('team_id', $teamId);
+            $assignableRoles->where('team_id', $teamId);
+        }
+
+        $requestedRoles = $assignableRoles->whereKey($roleIds)->get();
+        $existingRoles = $currentRoles->get();
+
+        abort_unless($requestedRoles->count() === count(array_unique($roleIds)), 403);
+
+        $currentRoleIds = $existingRoles->pluck('id')->all();
+        $rolesToAdd = array_diff($roleIds, $currentRoleIds);
+        $rolesToRemove = array_diff($currentRoleIds, $roleIds);
+
+        $changesSuperAdminAccess = $requestedRoles
+            ->whereIn('id', $rolesToAdd)
+            ->contains('super_admin', true)
+            || $existingRoles
+                ->whereIn('id', $rolesToRemove)
+                ->contains('super_admin', true);
+
+        if ($changesSuperAdminAccess) {
+            $actingUser = auth()->user();
+            if ($actingUser && ! method_exists($actingUser, 'isSuperAdmin')) {
+                $actingUser = app(config('aura.resources.user'))->find($actingUser->getAuthIdentifier());
+            }
+
+            abort_if($actingUser && (! method_exists($actingUser, 'isSuperAdmin') || ! $actingUser->isSuperAdmin()), 403);
+        }
+
         if (empty($roleIds)) {
             // Remove all roles for this user in the current team
             if (config('aura.teams')) {
@@ -66,24 +102,6 @@ class Roles extends AdvancedSelect
 
             return;
         }
-
-        // Get current roles for this user in the current team
-        if (config('aura.teams')) {
-            $currentRoleIds = $post->roles()
-                ->wherePivot('team_id', $post->current_team_id)
-                ->pluck('roles.id')
-                ->toArray();
-        } else {
-            $currentRoleIds = $post->roles()
-                ->pluck('roles.id')
-                ->toArray();
-        }
-
-        // Roles to add
-        $rolesToAdd = array_diff($roleIds, $currentRoleIds);
-
-        // Roles to remove
-        $rolesToRemove = array_diff($currentRoleIds, $roleIds);
 
         // Remove roles
         if (! empty($rolesToRemove)) {

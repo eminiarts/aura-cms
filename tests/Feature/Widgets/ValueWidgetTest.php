@@ -15,7 +15,7 @@ beforeEach(function () {
         'slug' => 'post-1',
         'number' => 10,
         'user_id' => $this->user->id,
-        'team_id' => $this->user->team_id,
+        ...config('aura.teams') ? ['team_id' => $this->user->team_id] : [],
         'created_at' => Carbon::now()->subDays(15),
     ]);
 
@@ -24,7 +24,7 @@ beforeEach(function () {
         'slug' => 'post-2',
         'number' => 20,
         'user_id' => $this->user->id,
-        'team_id' => $this->user->team_id,
+        ...config('aura.teams') ? ['team_id' => $this->user->team_id] : [],
         'created_at' => Carbon::now()->subDays(25),
     ]);
 
@@ -33,7 +33,7 @@ beforeEach(function () {
         'slug' => 'post-3',
         'number' => 30,
         'user_id' => $this->user->id,
-        'team_id' => $this->user->team_id,
+        ...config('aura.teams') ? ['team_id' => $this->user->team_id] : [],
         'created_at' => Carbon::now()->subDays(35),
     ]);
 

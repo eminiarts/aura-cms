@@ -107,7 +107,7 @@ class Create extends Component
                 'user_id' => auth()->id(),
                 'parent_id' => null,
                 'order' => null,
-                'team_id' => config('aura.teams') && auth()->user() ? auth()->user()->current_team_id : null,
+                'team_id' => config('aura.teams') ? data_get(auth()->user(), 'current_team_id') : null,
                 'type' => $this->model::$type ?? null,
                 'fields' => [],
             ];
@@ -178,15 +178,24 @@ class Create extends Component
     {
         $this->validate();
 
+        $attributes = collect($this->form['fields'])
+            ->except(['team_id', 'user_id', 'type', 'current_team_id'])
+            ->all();
+
+        $userClass = config('aura.resources.user');
+        if (config('aura.teams') && $this->model instanceof $userClass) {
+            $attributes['current_team_id'] = data_get(auth()->user(), 'current_team_id');
+        }
+
         if ($this->model->usesCustomTable()) {
 
-            $model = $this->model->create($this->form['fields']);
+            $model = $this->model->create($attributes);
 
         } else {
 
             // Never trust client-supplied ownership/tenancy columns. team_id,
             // user_id and type are assigned server-side (see InitialPostFields).
-            $model = $this->model->create(collect($this->form)->except(['team_id', 'user_id', 'type'])->all());
+            $model = $this->model->create(['fields' => $attributes]);
 
         }
 

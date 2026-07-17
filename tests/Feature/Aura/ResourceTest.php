@@ -1,6 +1,7 @@
 <?php
 
 use Aura\Base\Facades\Aura;
+use Aura\Base\Resource;
 use Aura\Base\Resources\Attachment;
 use Aura\Base\Resources\User;
 use Illuminate\Support\Facades\Artisan;
@@ -55,4 +56,17 @@ test('Aura config of Resources', function () {
     $path = config('aura-settings.paths.resources.path');
 
     expect($path)->toBe(app_path('Aura/Resources'));
+});
+
+test('resource accessors do not have their exceptions suppressed', function () {
+    $resource = new class extends Resource
+    {
+        public function getExplodingAttribute(): never
+        {
+            throw new RuntimeException('Accessor failed');
+        }
+    };
+
+    expect(fn () => $resource->exploding)
+        ->toThrow(RuntimeException::class, 'Accessor failed');
 });

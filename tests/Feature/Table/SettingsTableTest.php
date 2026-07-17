@@ -342,13 +342,14 @@ describe('global columns settings', function () {
         expect($component->settings)->toHaveKey('columns_global_key');
         expect($component->headers)->toHaveKey('title');
 
-        $option = Option::where('name', 'team.1.globalPosts')->first();
+        $optionName = config('aura.teams') ? 'team.1.globalPosts' : 'globalPosts';
+        $option = Option::where('name', $optionName)->first();
         expect($option)->toBeNull();
 
         // Reorder columns
         $component->call('reorder', ['image', 'slug', 'title', 'user_id']);
 
-        $option = Option::where('name', 'team.1.globalPosts')->first();
+        $option = Option::where('name', $optionName)->first();
 
         expect($option->value)
             ->toMatchArray([

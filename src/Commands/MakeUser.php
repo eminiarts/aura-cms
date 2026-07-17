@@ -55,8 +55,9 @@ class MakeUser extends Command
                 'permissions' => [],
             ]);
 
-            // Attach the user to the role
-            $user->update(['roles' => [$role->id]]);
+            // This bootstrap command creates the first administrator, so attach
+            // the role directly instead of going through delegated role editing.
+            $user->roles()->sync([$role->id]);
         }
 
         $this->info('User created successfully.');

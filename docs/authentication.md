@@ -1,6 +1,5 @@
 # Authentication
 
-> 📹 **Video Placeholder**: Complete authentication workflow in Aura CMS including registration, login, 2FA setup, and team invitations
 
 Aura CMS provides a comprehensive authentication system built on Laravel Fortify, enhanced with team support, two-factor authentication, and flexible role-based access control. The system seamlessly integrates with your application while providing enterprise-grade security features.
 
@@ -1244,6 +1243,5 @@ Aura CMS's authentication system provides:
 
 The system is designed to be secure by default while remaining flexible enough for any authentication requirement.
 
-> 📹 **Video Placeholder**: Implementing custom authentication flows and security features in Aura CMS
 
 For permission management, see the [Roles & Permissions Documentation](roles-permissions.md).

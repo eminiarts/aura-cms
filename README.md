@@ -68,18 +68,26 @@ Drop it in `app/Aura/Resources` and `/admin/article` serves a full CRUD interfac
 
 ## Requirements
 
-- PHP 8.2+
-- Laravel 10, 11, or 12
+- PHP 8.4+
+- Laravel 12 or 13
+- Livewire 4
 
 ## Installation
 
 ```bash
 composer require eminiarts/aura-cms
 
-php artisan aura:install
+php artisan vendor:publish --tag=aura-config
+php artisan aura:install-config
+php artisan aura:extend-user-model
+php artisan migrate
+php artisan aura:publish
+php artisan aura:user
 ```
 
-The installer publishes config, assets, and migrations, extends your `User` model, and offers to run the migrations and create your first admin user. Then log in and open `/admin`.
+These commands publish and configure Aura, connect your application user model, run the package migration, publish the frontend assets, and create the first administrator. Then log in and open `/admin`.
+
+Aura 1.0 is a fresh baseline rather than an automated upgrade from 0.x. Existing 0.x applications should read [UPGRADING.md](UPGRADING.md) before changing constraints.
 
 ## Documentation
 
@@ -99,7 +107,7 @@ Please see [CONTRIBUTING](CONTRIBUTING.md) for details.
 
 ## Security
 
-If you discover a security issue, please email info@eminiarts.ch instead of using the issue tracker.
+Please follow the private reporting process in [SECURITY.md](SECURITY.md).
 
 ## Credits
 

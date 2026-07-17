@@ -1,6 +1,5 @@
 # Introduction to Aura CMS
 
-> 📹 **Video Placeholder**: A comprehensive walkthrough of Aura CMS, showcasing the admin interface, resource creation, field management, and live editing capabilities using the TALL stack
 
 Welcome to **Aura CMS** – a modern, developer-first content management system built on the TALL stack (Tailwind CSS, Alpine.js, Laravel, and Livewire). Unlike traditional CMS platforms, Aura CMS is designed specifically for Laravel developers who want the power of a custom application with the convenience of a full-featured CMS.
 
@@ -35,7 +34,6 @@ Aura CMS is a powerful content management system that brings together the best o
 4. **Real-time by Default**: Powered by Livewire for instant reactivity
 5. **Convention with Configuration**: Sensible defaults, infinite customization
 
-> 📹 **Video Placeholder**: Quick 2-minute demo showing the creation of a blog resource with custom fields, setting up relationships, and publishing content – all without writing code
 
 ---
 
@@ -79,7 +77,7 @@ That's it! You now have a fully functional article management system with:
 
 1. **No Learning Curve**: If you know Laravel, you know Aura CMS
 2. **Full Control**: Unlike WordPress or other PHP CMS platforms, you have complete control
-3. **Modern Stack**: Built on Laravel 10, 11, or 12, Livewire 3, and Tailwind CSS
+3. **Modern Stack**: Built on Laravel 12 or 13, Livewire 4, and Tailwind CSS
 4. **Performance**: Optimized queries, lazy loading, and smart caching
 5. **Extensible**: Every component can be extended or replaced
 
@@ -355,8 +353,13 @@ cd my-awesome-cms
 # Install Aura CMS
 composer require eminiarts/aura-cms
 
-# Run the interactive installer
-php artisan aura:install
+# Publish, configure, and initialize Aura
+php artisan vendor:publish --tag=aura-config
+php artisan aura:install-config
+php artisan aura:extend-user-model
+php artisan migrate
+php artisan aura:publish
+php artisan aura:user
 
 # Create your first resource
 php artisan aura:resource Article
@@ -367,7 +370,6 @@ php artisan serve
 
 Visit `http://localhost:8000/admin` and start building!
 
-> 📹 **Video Placeholder**: Screen recording of the 5-minute quick start process, from installation to creating the first resource
 
 ### What You Get Out of the Box
 

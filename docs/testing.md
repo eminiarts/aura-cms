@@ -988,20 +988,14 @@ test('make:resource command', function () {
 ### Interactive Command Testing
 
 ```php
-test('aura:install command', function () {
-    $this->artisan('aura:install')
+test('aura:install-config command', function () {
+    $this->artisan('aura:install-config')
         ->expectsQuestion('Do you want to use teams?', true)
-        ->expectsQuestion('Do you want to install sample data?', false)
-        ->expectsOutput('Publishing Aura assets...')
-        ->expectsOutput('Running migrations...')
-        ->expectsOutput('Aura CMS installed successfully!')
         ->assertSuccessful();
     
     // Verify configuration
     expect(config('aura.teams'))->toBeTrue();
     
-    // Verify migrations ran
-    expect(Schema::hasTable('teams'))->toBeTrue();
 });
 ```
 
@@ -1362,7 +1356,6 @@ expect()->extend('toBeActiveResource', function () {
 expect($product)->toBeActiveResource();
 ```
 
-> 📹 **Video Placeholder**: [Complete walkthrough of setting up and running tests in Aura CMS, including CI/CD integration]
 
 ## Common Gotchas
 

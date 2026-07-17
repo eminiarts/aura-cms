@@ -30,7 +30,6 @@ The Aura theme system provides:
 - **Login Page Customization**: Custom backgrounds and favicons
 - **Live Preview**: Real-time theme updates
 
-> 📹 **Video Placeholder**: [Overview of Aura's theme system showing color palette selection, dark mode switching, and live preview functionality]
 
 ## Theme Architecture
 
@@ -220,7 +219,6 @@ $shades = [
 ];
 ```
 
-> 📹 **Video Placeholder**: [Interactive color palette selector showing all available palettes with live preview]
 
 ## Dark Mode
 
@@ -766,7 +764,6 @@ class ThemePreview extends Component
 }
 ```
 
-> 📹 **Video Placeholder**: [Creating a custom theme from scratch, including color selection, testing, and packaging]
 
 ### Pro Tips
 

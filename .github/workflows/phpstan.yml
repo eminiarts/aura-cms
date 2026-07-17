@@ -1,26 +1,33 @@
-name: PHPStan
+name: static-analysis
 
 on:
   push:
+    branches:
+      - main
+      - 'release/**'
     paths:
       - '**.php'
-      - 'phpstan.neon.dist'
+      - 'composer.*'
+      - 'phpstan*.neon*'
+  pull_request:
+    branches:
+      - main
+      - 'release/**'
 
 jobs:
   phpstan:
-    name: phpstan
+    name: PHPStan
     runs-on: ubuntu-latest
+
     steps:
       - uses: actions/checkout@v4
 
-      - name: Setup PHP
-        uses: shivammathur/setup-php@v2
+      - uses: shivammathur/setup-php@v2
         with:
-          php-version: '8.1'
+          php-version: '8.4'
           coverage: none
 
-      - name: Install composer dependencies
-        uses: ramsey/composer-install@v3
+      - uses: ramsey/composer-install@v3
 
       - name: Run PHPStan
-        run: ./vendor/bin/phpstan --error-format=github
+        run: vendor/bin/phpstan analyse --memory-limit=1G --error-format=github --no-progress

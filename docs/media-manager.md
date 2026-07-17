@@ -27,7 +27,6 @@ The Media Manager provides:
 - **Rich Metadata**: File information, custom attributes, tags
 - **Seamless Integration**: Works with Image and File fields
 
-> 📹 **Video Placeholder**: [Overview of Media Manager interface showing upload process, file organization, and integration with resource forms]
 
 ## Architecture
 
@@ -269,7 +268,6 @@ public function rules()
 }
 ```
 
-> 📹 **Video Placeholder**: [Demonstration of file upload process including drag-and-drop, progress indicators, and error handling]
 
 ## File Management
 
@@ -446,7 +444,6 @@ $this->dispatch('openModal',
 - **Preview**: Image thumbnails for visual files
 - **Integration**: Syncs selection with parent form via Livewire events
 
-> 📹 **Video Placeholder**: [Media Manager modal interface showing selection process, search, filtering, and multi-select functionality]
 
 ## Programmatic Usage
 

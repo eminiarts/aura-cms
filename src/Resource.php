@@ -81,28 +81,19 @@ class Resource extends Model
         return parent::__call($method, $parameters);
     }
 
-    // public function getMorphClass(): string
-    // {
-    //     return $this->getType();
-    // }
-
     /**
      * @param  string  $key
      * @return mixed
      */
     public function __get($key)
     {
-        try {
-            $value = parent::__get($key);
+        $value = parent::__get($key);
 
-            // Return the real attribute even when it is falsy (0, '', false);
-            // only a genuinely absent (null) attribute should fall through to
-            // the relation/field resolution below.
-            if (! is_null($value)) {
-                return $value;
-            }
-        } catch (\Exception $e) {
-            $value = null;
+        // Return the real attribute even when it is falsy (0, '', false);
+        // only a genuinely absent (null) attribute should fall through to
+        // the relation/field resolution below.
+        if (! is_null($value)) {
+            return $value;
         }
 
         if ($this->getFieldSlugs()->contains($key)) {
@@ -122,26 +113,6 @@ class Resource extends Model
 
         return $value;
     }
-
-    // public function __isset($key)
-    // {
-    //     if(parent::__isset($key)) {
-    //         return true;
-    //     }
-
-    //     if ($this->getFieldSlugs()->contains($key)) {
-    //         $fieldClass = $this->fieldClassBySlug($key);
-    //         if ($fieldClass->isRelation()) {
-    //             $field = $this->fieldBySlug($key);
-    //             $relation = $fieldClass->getRelation($this, $field);
-    //             return $relation && $relation->count() > 0;
-    //         }
-    //     }
-
-    //     return parent::__isset($key);
-
-    //     return isset($this->attributes[$key]) || isset($this->relations[$key]) || $this->hasGetMutator($key);
-    // }
 
     /**
      * @return HasMany
@@ -168,21 +139,10 @@ class Resource extends Model
             $this->load('meta'); // This will refresh only the 'meta' relationship
         }
 
-        // $this->refresh();
     }
 
     public function getBulkActions()
     {
-        // get all flows with type "manual"
-
-        // $flows = Flow::where('trigger', 'manual')
-        //     ->where('options->resource', $this->type)
-        //     ->get();
-
-        // foreach ($flows as $flow) {
-        //     $this->bulkActions['callManualFlow'] = $flow->name;
-        // }
-
         return $this->bulkActions;
     }
 
