@@ -1054,12 +1054,6 @@ parameters:
 			path: src/Providers/RouteServiceProvider.php
 
 		-
-			message: '#^Access to an undefined property Aura\\Base\\Resource\:\:\$meta\.$#'
-			identifier: property.notFound
-			count: 3
-			path: src/Resource.php
-
-		-
 			message: '#^Access to an undefined property Illuminate\\Foundation\\Auth\\User\:\:\$current_team_id\.$#'
 			identifier: property.notFound
 			count: 1

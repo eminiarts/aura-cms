@@ -21,6 +21,24 @@ use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 
+/**
+ * Dynamic property access on a Resource resolves in a fixed precedence order,
+ * centralized in resolveDynamicAttribute() as the single source of truth (the
+ * __get magic method is a thin delegate to it):
+ *
+ *   1. Real Eloquent state via parent::__get — a declared attribute, an
+ *      accessor, or a loaded/lazy relation.
+ *   2. Any non-null result from (1) wins as-is, including falsy 0/''/false.
+ *   3. Otherwise, if $key is a relation field slug, the field's getRelation()
+ *      result (with any falsy value coerced to an empty collection).
+ *   4. Otherwise, the computed value from the `fields` accessor, if present.
+ *   5. Otherwise null.
+ *
+ * See resolveDynamicAttribute() for the annotated control flow.
+ *
+ * @property-read Collection $fields  Computed input-field map (getFieldsAttribute()).
+ * @property-read mixed $meta  The meta relation / normalized meta map (see getMeta()).
+ */
 class Resource extends Model implements DefinesFields
 {
     use AuraModelConfig;
@@ -115,31 +133,7 @@ class Resource extends Model implements DefinesFields
      */
     public function __get($key)
     {
-        $value = parent::__get($key);
-
-        // Return the real attribute even when it is falsy (0, '', false);
-        // only a genuinely absent (null) attribute should fall through to
-        // the relation/field resolution below.
-        if (! is_null($value)) {
-            return $value;
-        }
-
-        if ($this->getFieldSlugs()->contains($key)) {
-            $fieldClass = $this->fieldClassBySlug($key);
-            if ($fieldClass->isRelation()) {
-                $field = $this->fieldBySlug($key);
-                $relation = $fieldClass->getRelation($this, $field);
-
-                return $relation ?: collect();  // Return an empty collection if relation is null
-            }
-        }
-
-        // If the key is in the fields array, then we want to return that
-        if (is_null($value) && isset($this->fields[$key])) {
-            return $this->fields[$key];
-        }
-
-        return $value;
+        return $this->resolveDynamicAttribute($key);
     }
 
     /**
@@ -450,5 +444,53 @@ class Resource extends Model implements DefinesFields
         static::saved(function ($model) {
             $model->clearFieldsAttributeCache();
         });
+    }
+
+    /**
+     * Resolve dynamic property access — the single source of truth behind
+     * __get. The precedence ladder (documented on the class) is annotated
+     * inline below; the control flow is byte-identical to the previous __get
+     * body, including the deliberately-kept redundant is_null() guard in
+     * step 4.
+     *
+     * The $key parameter is intentionally untyped to match __get's surface.
+     *
+     * @param  mixed  $key
+     * @return mixed
+     */
+    private function resolveDynamicAttribute($key)
+    {
+        // 1. Real Eloquent state: parent::__get resolves a declared attribute,
+        //    an accessor, or a loaded/lazy relation for this key.
+        $value = parent::__get($key);
+
+        // 2. Any non-null result from (1) wins as-is — including falsy
+        //    0/''/false; only a genuinely absent (null) attribute falls
+        //    through to the relation/field resolution below.
+        if (! is_null($value)) {
+            return $value;
+        }
+
+        // 3. Relation field slug: return the field's getRelation() result,
+        //    coercing ANY falsy value (null/empty) to an empty collection.
+        if ($this->getFieldSlugs()->contains($key)) {
+            $fieldClass = $this->fieldClassBySlug($key);
+            if ($fieldClass->isRelation()) {
+                $field = $this->fieldBySlug($key);
+                $relation = $fieldClass->getRelation($this, $field);
+
+                return $relation ?: collect();  // Return an empty collection if relation is null
+            }
+        }
+
+        // 4. Computed field value from the `fields` accessor, if present. The
+        //    is_null($value) guard is redundant here (step 2 already returned
+        //    on any non-null $value) but is preserved verbatim.
+        if (is_null($value) && isset($this->fields[$key])) {
+            return $this->fields[$key];
+        }
+
+        // 5. Nothing matched: return the (null) $value.
+        return $value;
     }
 }
