@@ -2,10 +2,11 @@
 
 namespace Aura\Base\Fields;
 
+use Aura\Base\Contracts\ProvidesTableEagerLoad;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
 
-class AdvancedSelect extends Field
+class AdvancedSelect extends Field implements ProvidesTableEagerLoad
 {
     public $edit = 'aura::fields.advanced-select';
 
@@ -364,6 +365,22 @@ class AdvancedSelect extends Field
         }
 
         return json_encode($value);
+    }
+
+    public function tableEagerLoad(array $field): string|array|null
+    {
+        // Only polymorphic relations resolve through the dynamic morphToMany
+        // relation and can be safely eager-loaded via the field slug. A
+        // non-polymorphic AdvancedSelect stores ids/json and has no relation.
+        if (! $this->isRelation($field)) {
+            return null;
+        }
+
+        if (empty($field['resource']) || empty($field['slug'])) {
+            return null;
+        }
+
+        return $field['slug'];
     }
 
     public function values($model, $field)

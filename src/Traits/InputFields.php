@@ -278,6 +278,13 @@ trait InputFields
 
     public function shouldDisplayField($field)
     {
+        // Fast path: a field with no conditional logic is always displayed.
+        // Short-circuit before touching getMeta(), which is called for every
+        // rendered cell and otherwise forces a meta-map build per field.
+        if (! $field || empty($field['conditional_logic'])) {
+            return true;
+        }
+
         return ConditionalLogic::shouldDisplayField($this, $field, $this->getMeta());
     }
 

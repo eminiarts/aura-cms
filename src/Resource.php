@@ -17,6 +17,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\Relation;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 
 class Resource extends Model
@@ -41,11 +42,29 @@ class Resource extends Model
     protected $hidden = ['meta'];
 
     /**
+     * Per-instance cache of the normalized meta map (see getMeta()).
+     *
+     * @var Collection|null
+     */
+    protected $normalizedMetaCache;
+
+    /**
      * The table associated with the model.
      *
      * @var string
      */
     protected $table = 'posts';
+
+    /**
+     * Per-instance cache of preloaded table-display values, keyed by field slug.
+     *
+     * Primed by PreloadsTableDisplay implementations after pagination so that
+     * a field's display() can resolve without a per-row query. array_key_exists
+     * distinguishes "primed but resolved to null" from "not primed".
+     *
+     * @var array<string, mixed>
+     */
+    protected array $tableDisplayCache = [];
 
     protected $with = [];
 
@@ -134,6 +153,7 @@ class Resource extends Model
     public function clearFieldsAttributeCache()
     {
         $this->fieldsAttributeCache = null;
+        $this->normalizedMetaCache = null;
 
         if ($this->usesMeta()) {
             $this->load('meta'); // This will refresh only the 'meta' relationship
@@ -235,26 +255,34 @@ class Resource extends Model
 
         if ($this->usesMeta() && optional($this)->meta && ! is_string($this->meta)) {
 
-            $meta = $this->meta->pluck('value', 'key');
+            // Build (and cache) the normalized meta map once per instance. The
+            // pluck/cast/map scan is otherwise repeated for every displayed
+            // cell. The cache is invalidated whenever the meta relation is
+            // replaced (setRelation/unsetRelation) or fields are cleared.
+            if ($this->normalizedMetaCache === null) {
+                $meta = $this->meta->pluck('value', 'key');
 
-            // Cast Attributes
-            $meta = $meta->map(function ($meta, $key) {
-                $field = $this->fieldBySlug($key);
+                // Cast Attributes
+                $meta = $meta->map(function ($meta, $key) {
+                    $field = $this->fieldBySlug($key);
 
-                $class = $this->fieldClassBySlug($key);
+                    $class = $this->fieldClassBySlug($key);
 
-                if ($class && method_exists($class, 'get')) {
-                    return $class->get($class, $meta, $field);
-                }
+                    if ($class && method_exists($class, 'get')) {
+                        return $class->get($class, $meta, $field);
+                    }
 
-                return $meta;
-            });
+                    return $meta;
+                });
 
-            if ($key) {
-                return $meta[$key] ?? null;
+                $this->normalizedMetaCache = $meta;
             }
 
-            return $meta;
+            if ($key) {
+                return $this->normalizedMetaCache[$key] ?? null;
+            }
+
+            return $this->normalizedMetaCache;
         }
 
         return collect();
@@ -273,6 +301,16 @@ class Resource extends Model
         });
 
         return $fields;
+    }
+
+    public function getTableDisplayValue(string $slug): mixed
+    {
+        return $this->tableDisplayCache[$slug] ?? null;
+    }
+
+    public function hasTableDisplayValue(string $slug): bool
+    {
+        return array_key_exists($slug, $this->tableDisplayCache);
     }
 
     public function isBaseFillable($key)
@@ -312,6 +350,31 @@ class Resource extends Model
     {
         return $this->hasMany(self::class, 'parent_id')
             ->where('post_type', 'revision');
+    }
+
+    public function setRelation($relation, $value)
+    {
+        if ($relation === 'meta') {
+            $this->normalizedMetaCache = null;
+            $this->fieldsAttributeCache = null;
+        }
+
+        return parent::setRelation($relation, $value);
+    }
+
+    public function setTableDisplayValue(string $slug, mixed $value): void
+    {
+        $this->tableDisplayCache[$slug] = $value;
+    }
+
+    public function unsetRelation($relation)
+    {
+        if ($relation === 'meta') {
+            $this->normalizedMetaCache = null;
+            $this->fieldsAttributeCache = null;
+        }
+
+        return parent::unsetRelation($relation);
     }
 
     /**

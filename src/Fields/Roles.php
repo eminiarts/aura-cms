@@ -2,9 +2,12 @@
 
 namespace Aura\Base\Fields;
 
+use Aura\Base\Contracts\PreloadsTableDisplay;
+use Aura\Base\Resource;
 use Aura\Base\Resources\Role;
+use Illuminate\Database\Eloquent\Collection;
 
-class Roles extends AdvancedSelect
+class Roles extends AdvancedSelect implements PreloadsTableDisplay
 {
     public function display($field, $value, $model)
     {
@@ -12,7 +15,14 @@ class Roles extends AdvancedSelect
             return '';
         }
 
-        $roles = $this->relationship($model, $field)->get();
+        $slug = $field['slug'] ?? null;
+
+        // Reuse the batch-loaded, team-filtered roles primed by the table.
+        if ($slug && $model instanceof Resource && $model->hasTableDisplayValue($slug)) {
+            $roles = $model->getTableDisplayValue($slug);
+        } else {
+            $roles = $this->relationship($model, $field)->get();
+        }
 
         if ($roles->isEmpty()) {
             return '';
@@ -33,6 +43,38 @@ class Roles extends AdvancedSelect
     public function isRelation($field = null)
     {
         return true;
+    }
+
+    public function preloadTableDisplay(Collection $rows, array $field): void
+    {
+        $slug = $field['slug'];
+        $existing = $rows->filter(fn ($row) => $row->exists);
+
+        $first = $existing->first();
+
+        // The team constraint on the base roles() relationship depends on each
+        // row's current_team_id, which is unavailable during generic Eloquent
+        // eager loading. Load the unconstrained roles relation once for the
+        // whole page, then filter per-row by team here.
+        if (! $first || ! method_exists($first, 'roles')) {
+            return;
+        }
+
+        $existing->loadMissing('roles');
+
+        foreach ($existing as $row) {
+            if (! $row instanceof Resource || ! $row->relationLoaded('roles')) {
+                continue;
+            }
+
+            $roles = $row->getRelation('roles');
+
+            if (config('aura.teams')) {
+                $roles = $roles->where('team_id', $row->getAttribute('current_team_id'))->values();
+            }
+
+            $row->setTableDisplayValue($slug, $roles);
+        }
     }
 
     public function relationship($model, $field)
@@ -122,5 +164,12 @@ class Roles extends AdvancedSelect
                 $post->roles()->attach($roleId);
             }
         }
+    }
+
+    public function tableEagerLoad(array $field): string|array|null
+    {
+        // Roles use a per-row team constraint that generic eager loading cannot
+        // express; they are batched via preloadTableDisplay() instead.
+        return null;
     }
 }

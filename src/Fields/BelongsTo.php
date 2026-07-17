@@ -2,9 +2,12 @@
 
 namespace Aura\Base\Fields;
 
+use Aura\Base\Contracts\PreloadsTableDisplay;
 use Aura\Base\Models\Meta;
+use Aura\Base\Resource;
+use Illuminate\Database\Eloquent\Collection;
 
-class BelongsTo extends Field
+class BelongsTo extends Field implements PreloadsTableDisplay
 {
     public $edit = 'aura::fields.belongsto';
 
@@ -96,11 +99,13 @@ class BelongsTo extends Field
 
         if ($field['resource'] && $value) {
 
-            $slug = app($field['resource'])->getSlug();
+            $resourceClass = $field['resource'];
 
-            // return $value;
+            $slug = $resourceClass::getSlug();
 
-            return "<a class='font-semibold' href='".route('aura.'.$slug.'.edit', $value)."'>".optional(app($field['resource'])::find($value))->title().'</a>';
+            $related = $this->resolveDisplayModel($field, $value, $model);
+
+            return "<a class='font-semibold' href='".route('aura.'.$slug.'.edit', $value)."'>".optional($related)->title().'</a>';
         }
 
         return $value;
@@ -131,6 +136,56 @@ class BelongsTo extends Field
                 'slug' => 'resource',
             ],
         ]);
+    }
+
+    public function preloadTableDisplay(Collection $rows, array $field): void
+    {
+        // display_view and field-level display closures take precedence over
+        // the class display() and never issue the batched lookup, so skip.
+        if (empty($field['resource']) || ! empty($field['display_view']) || ! empty($field['display'])) {
+            return;
+        }
+
+        $slug = $field['slug'];
+        $resourceClass = $field['resource'];
+
+        $ids = [];
+
+        foreach ($rows as $row) {
+            if (! $row instanceof Resource) {
+                continue;
+            }
+
+            $id = $this->tableDisplayForeignId($row, $slug);
+
+            if ($id !== null && $id !== '') {
+                $ids[$id] = $id;
+            }
+        }
+
+        $related = collect();
+
+        if (! empty($ids)) {
+            $keyName = (new $resourceClass)->getKeyName();
+
+            // Scoped query: keep TeamScope/TypeScope/ScopedScope intact so that
+            // rows the viewer may not see resolve to null, not to a foreign title.
+            $related = $resourceClass::query()
+                ->whereKey(array_values($ids))
+                ->get()
+                ->keyBy($keyName);
+        }
+
+        foreach ($rows as $row) {
+            if (! $row instanceof Resource) {
+                continue;
+            }
+
+            $id = $this->tableDisplayForeignId($row, $slug);
+            $model = ($id !== null && $id !== '') ? $related->get($id) : null;
+
+            $row->setTableDisplayValue($slug, $model);
+        }
     }
 
     public function queryFor($model)
@@ -201,5 +256,30 @@ class BelongsTo extends Field
         }
 
         return collect($results)->unique('id')->values()->toArray();
+    }
+
+    protected function resolveDisplayModel($field, $value, $model)
+    {
+        $slug = $field['slug'] ?? null;
+
+        // Use the value primed by preloadTableDisplay() when rendering inside a
+        // table; array_key_exists semantics mean a scoped-out row resolves to
+        // null (no query, no foreign title) rather than re-querying.
+        if ($slug && $model instanceof Resource && $model->hasTableDisplayValue($slug)) {
+            return $model->getTableDisplayValue($slug);
+        }
+
+        return $field['resource']::find($value);
+    }
+
+    protected function tableDisplayForeignId(Resource $row, string $slug)
+    {
+        $value = $row->fields[$slug] ?? null;
+
+        if (is_array($value)) {
+            $value = $value[0] ?? null;
+        }
+
+        return $value;
     }
 }

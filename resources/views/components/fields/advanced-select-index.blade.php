@@ -1,12 +1,18 @@
 @php
-    $fieldItemIds = $row->fields[$field['slug']] ?? [];
-    $fieldItems = [];
+    $slug = $field['slug'];
+    $fieldItems = collect();
 
-    if (!is_array($fieldItemIds)) {
-        $fieldItemIds = [$fieldItemIds];
-    }
+    // Reuse the relation eager-loaded by the table when available, otherwise
+    // fall back to a scoped id lookup.
+    if ($row instanceof \Illuminate\Database\Eloquent\Model && $row->relationLoaded($slug)) {
+        $fieldItems = $row->getRelation($slug);
+    } elseif (!empty($field['resource'])) {
+        $fieldItemIds = $row->fields[$slug] ?? [];
 
-    if ($field['resource']) {
+        if (!is_array($fieldItemIds)) {
+            $fieldItemIds = [$fieldItemIds];
+        }
+
         $resourceClass = $field['resource'];
         $fieldItems = $resourceClass::whereIn('id', $fieldItemIds)->get();
     }
