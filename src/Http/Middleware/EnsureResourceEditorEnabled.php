@@ -15,6 +15,8 @@ class EnsureResourceEditorEnabled
             404
         );
 
+        abort_unless($request->user()?->isSuperAdmin(), 403);
+
         return $next($request);
     }
 }

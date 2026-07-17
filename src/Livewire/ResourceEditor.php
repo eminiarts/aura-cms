@@ -139,6 +139,8 @@ class ResourceEditor extends Component
             app()->environment(['local', 'testing']) && config('aura.features.resource_editor'),
             404
         );
+
+        abort_unless(auth()->user()?->isSuperAdmin(), 403);
     }
 
     public function checkAuthorization()
