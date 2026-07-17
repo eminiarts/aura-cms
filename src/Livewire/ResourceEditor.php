@@ -3,6 +3,7 @@
 namespace Aura\Base\Livewire;
 
 use Aura\Base\Facades\Aura;
+use Aura\Base\Resources\User;
 use Aura\Base\Traits\HasActions;
 use Aura\Base\Traits\SaveFields;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
@@ -140,7 +141,9 @@ class ResourceEditor extends Component
             404
         );
 
-        abort_unless(auth()->user()?->isSuperAdmin(), 403);
+        $user = auth()->user();
+
+        abort_unless($user instanceof User && $user->isSuperAdmin(), 403);
     }
 
     public function checkAuthorization()

@@ -2,6 +2,7 @@
 
 namespace Aura\Base\Http\Middleware;
 
+use Aura\Base\Resources\User;
 use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -15,7 +16,9 @@ class EnsureResourceEditorEnabled
             404
         );
 
-        abort_unless($request->user()?->isSuperAdmin(), 403);
+        $user = $request->user();
+
+        abort_unless($user instanceof User && $user->isSuperAdmin(), 403);
 
         return $next($request);
     }

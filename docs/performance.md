@@ -10,11 +10,12 @@ Aura CMS is built with performance in mind, utilizing multi-layered caching, opt
 4. [Query Optimization](#query-optimization)
 5. [Asset Optimization](#asset-optimization)
 6. [Queue Configuration](#queue-configuration)
-7. [Livewire Performance](#livewire-performance)
-8. [Media Optimization](#media-optimization)
-9. [Server Configuration](#server-configuration)
-10. [Monitoring & Profiling](#monitoring--profiling)
-11. [Best Practices](#best-practices)
+7. [Laravel Octane](#laravel-octane)
+8. [Livewire Performance](#livewire-performance)
+9. [Media Optimization](#media-optimization)
+10. [Server Configuration](#server-configuration)
+11. [Monitoring & Profiling](#monitoring--profiling)
+12. [Best Practices](#best-practices)
 
 ## Introduction
 
@@ -722,6 +723,76 @@ numprocs=4
 redirect_stderr=true
 stdout_logfile=/path/to/logs/worker.log
 ```
+
+## Laravel Octane
+
+**Aura CMS supports [Laravel Octane](https://laravel.com/docs/octane) (Swoole / RoadRunner / FrankenPHP).**
+
+Octane boots your application once and then keeps a single PHP worker alive to
+serve many requests. This is a large performance win, but it means anything kept
+in process-level *static* state normally survives between requests. Aura keeps a
+small amount of such state (field-definition caches, the resource/field/widget
+registry, the conditional-logic cache, the team/scope guards and the configured
+user model), so leaving it untouched could leak fields, scopes, or the user model
+between requests for different users and teams.
+
+Aura handles this automatically. No configuration is required — as long as
+`laravel/octane` is installed, Aura resets its process state on **every** worker
+boundary.
+
+### What Aura flushes per request
+
+When Octane is installed, Aura listens for its lifecycle events
+(`RequestReceived`, `TaskReceived`, `TickReceived`) and calls
+`Aura::flushState()` on each one. `flushState()`:
+
+- Resets the resource, field, widget and inject-view registries back to the
+  baseline captured when the worker booted.
+- Clears the field-definition caches (`fieldsBySlug`, `fieldClassesBySlug`,
+  `fieldsCollectionCache`, `inputFieldSlugs`, `mappedFields`).
+- Clears the conditional-logic evaluation cache.
+- Resets the `TeamScope` and `ScopedScope` guards.
+- Resets the user model back to `Aura::$userModel`'s default.
+
+The same reset already runs after every queued job (`Queue::after` /
+`Queue::exceptionOccurred`), so long-running workers of both kinds stay isolated.
+
+The Aura container instance itself is registered as a process-persistent
+singleton, so the resource/field registrations captured at boot survive across
+requests while the per-request mutable state above is reset each time.
+
+### The one caveat: don't hold `Resource` instances across requests
+
+Aura's per-request reset covers Aura's own state. The one pattern to avoid is
+manually caching a resolved `Resource` instance (or its fields) in your own
+static property or singleton and reusing it across requests:
+
+```php
+// ❌ Don't do this under Octane — the instance (and its cached meta/fields)
+//    will be shared by every subsequent request in the same worker.
+class MyService
+{
+    protected static ?Post $post = null;
+
+    public function post(): Post
+    {
+        return static::$post ??= Post::find(1);
+    }
+}
+
+// ✅ Resolve resources per request instead.
+class MyService
+{
+    public function post(): Post
+    {
+        return Post::find(1);
+    }
+}
+```
+
+If you write a custom Octane task or long-running loop that resolves Aura
+resources outside the normal request lifecycle, call `Aura::flushState()` at your
+own boundary to get the same isolation.
 
 ## Livewire Performance
 

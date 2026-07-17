@@ -1016,7 +1016,7 @@ A: Yes, Aura CMS has built-in team support for multi-tenancy. Enable it during i
 A: Absolutely! Aura CMS supports custom tables. Use `php artisan aura:resource Product --custom-table` to create resources with custom tables.
 
 **Q: Is Aura CMS compatible with Laravel Octane?**
-A: Octane is not officially supported in Aura CMS 1.0 because it is not part of the tested matrix. Aura provides `Aura::flushState()` as a deterministic reset point for tests and long-running integrations, and queue workers invoke it after jobs. Full Octane support is planned for a later release.
+A: Yes. Aura supports Laravel Octane (Swoole / RoadRunner / FrankenPHP). When `laravel/octane` is installed, Aura automatically resets its process-level static state (field caches, resource registry, conditional-logic cache, team/scope guards and the user model) on every `RequestReceived`/`TaskReceived`/`TickReceived` event via `Aura::flushState()`, so requests for different users and teams stay isolated. No configuration is required. The only caveat is to not hold resolved `Resource` instances in your own static properties across requests. See the [Laravel Octane](performance.md#laravel-octane) section of the performance guide.
 
 ### Development Questions
 
