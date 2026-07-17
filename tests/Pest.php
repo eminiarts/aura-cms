@@ -12,7 +12,9 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Cache;
 
-uses(TestCase::class)->in(__DIR__);
+uses(TestCase::class)->in(__DIR__.'/Feature', __DIR__.'/FeatureWithDatabaseMigrations', __DIR__.'/Unit');
+
+uses(Aura\Base\Tests\BrowserTestCase::class)->group('browser')->in(__DIR__.'/Browser');
 
 uses()->group('fields')->in('Feature/Fields');
 uses()->group('flows')->in('Feature/Flows');
@@ -245,4 +247,43 @@ function createAdmin()
     $user->refresh();
 
     return $user;
+}
+
+/**
+ * Attach real files to a file input in a Pest browser test.
+ *
+ * Playwright's remote server rejects local file paths (`localPaths are not
+ * allowed when the client is not local`), so this injects the file contents
+ * into the input via JavaScript and fires a `change` event — the same thing
+ * a user's file-picker selection does.
+ *
+ * @param  \Pest\Browser\Api\Webpage  $page
+ * @param  string  $selector  CSS selector of the file input
+ * @param  array<int, string>|string  $paths  Fixture file path(s)
+ */
+function browserAttachFiles($page, string $selector, array|string $paths): void
+{
+    $payload = collect((array) $paths)->map(fn (string $path) => [
+        'name' => basename($path),
+        'type' => mime_content_type($path) ?: 'application/octet-stream',
+        'data' => base64_encode((string) file_get_contents($path)),
+    ])->toJson();
+
+    $files = json_encode($payload);
+    $target = json_encode($selector);
+
+    $page->script(<<<JS
+        (() => {
+            const input = document.querySelector({$target});
+            const dataTransfer = new DataTransfer();
+
+            for (const file of JSON.parse({$files})) {
+                const bytes = Uint8Array.from(atob(file.data), (c) => c.charCodeAt(0));
+                dataTransfer.items.add(new File([bytes], file.name, { type: file.type }));
+            }
+
+            input.files = dataTransfer.files;
+            input.dispatchEvent(new Event('change', { bubbles: true }));
+        })()
+    JS);
 }
