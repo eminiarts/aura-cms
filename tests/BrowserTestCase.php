@@ -2,9 +2,31 @@
 
 namespace Aura\Base\Tests;
 
+use Aura\Base\Facades\Aura;
+use Illuminate\Contracts\Http\Kernel;
+
 class BrowserTestCase extends TestCase
 {
     protected bool $enableVite = true;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->app[Kernel::class]
+            ->prependMiddleware(Browser\Support\ParseMultipartBody::class);
+
+        // Browser tests exercise real resource pages; boot-time route
+        // generation has already run, so add this resource's routes now.
+        // Re-capture the baseline afterwards: Queue::after triggers
+        // Aura::flushState(), which would otherwise drop the registration
+        // as soon as any sync job (e.g. thumbnail generation) runs.
+        Aura::registerResources([Resources\GalleryPage::class]);
+        Aura::registerRoutes('gallery-page');
+        Aura::captureBaselineState();
+
+        $this->serveBuiltAssets();
+    }
 
     protected function defineEnvironment($app)
     {
@@ -21,16 +43,7 @@ class BrowserTestCase extends TestCase
             'driver' => 'local',
             'root' => storage_path('framework/testing/disks/tmp-for-tests'),
         ]);
-    }
 
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->app[\Illuminate\Contracts\Http\Kernel::class]
-            ->prependMiddleware(Browser\Support\ParseMultipartBody::class);
-
-        $this->serveBuiltAssets();
     }
 
     /**

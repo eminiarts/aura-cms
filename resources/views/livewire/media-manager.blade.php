@@ -1,4 +1,4 @@
-<div class="" x-data="{
+<div class="" data-media-picker-root x-data="{
     selected: @entangle('selected'),
     _updatingFromEvent: false,
 
@@ -42,7 +42,7 @@
         <x-aura::button class="ml-4" x-on:click="$dialog.close()">
             {{ __('Close') }}
         </x-aura::button>
-        <x-aura::button.primary class="ml-4" x-on:click="$wire.select([...selected]).then(() => { setTimeout(() => $dialog.close(), 100) })">
+        <x-aura::button.primary class="ml-4" data-picker-select x-on:click="$wire.select([...selected]).then(() => { setTimeout(() => $dialog.close(), 100) })">
             {{ __('Select') }}
         </x-aura::button.primary>
     </div>

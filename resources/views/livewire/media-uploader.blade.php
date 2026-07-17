@@ -311,11 +311,12 @@
         @if ($button && ! $disabled)
             <div class="z-[2] relative mt-2">
                 <x-aura::button.light
+                    data-media-picker-button="{{ $field['slug'] }}"
                     wire:click="$dispatch('openModal', { component: 'aura::media-manager', arguments: { model: {{ json_encode($for) }}, slug: '{{ $field['slug'] }}', selected: {{ json_encode($selected) }} }})">
                     <x-slot:icon>
                         <x-aura::icon icon="media" class="" />
                     </x-slot>
-                    <span>{{ __('Media Manager') }}</span>
+                    <span>{{ __('Media Library') }}</span>
                 </x-aura::button.light>
             </div>
         @elseif ($disabled)
@@ -324,7 +325,7 @@
                     <x-slot:icon>
                         <x-aura::icon icon="media" class="" />
                     </x-slot>
-                    <span>{{ __('Media Manager is disabled') }}</span>
+                    <span>{{ __('Media Library is disabled') }}</span>
                 </x-aura::button.light>
             </div>
         @endif

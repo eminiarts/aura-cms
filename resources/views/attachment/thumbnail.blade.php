@@ -1,4 +1,5 @@
-@if ($row->isImage())
+{{-- The grid view can render non-Attachment resources; only Attachment-likes have isImage(). --}}
+@if (method_exists($row, 'isImage') && $row->isImage())
     <img src="{{ $row->thumbnail('sm') }}" alt="{{ $row->alt_text ?: $row->name }}" loading="lazy"
         class="object-cover pointer-events-none transition duration-300 group-hover:scale-[1.03]">
 @else

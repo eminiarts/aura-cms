@@ -5,12 +5,24 @@ namespace Aura\Base\Resources;
 use Aura\Base\Jobs\GenerateImageThumbnail;
 use Aura\Base\Resource;
 use Illuminate\Foundation\Bus\DispatchesJobs;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 class Attachment extends Resource
 {
     use DispatchesJobs;
+
+    /**
+     * Quick-filter media types: filter key => label.
+     * 'document' means everything that is not image, video, or audio.
+     */
+    public const MEDIA_TYPES = [
+        'image' => 'Images',
+        'video' => 'Video',
+        'audio' => 'Audio',
+        'document' => 'Documents',
+    ];
 
     public array $actions = [
         'deleteAttachment' => [
@@ -26,11 +38,10 @@ class Attachment extends Resource
     ];
 
     public array $bulkActions = [
-        // 'deleteSelected' => 'Delete',
-        // 'deleteSelected' => [
-        //     'label' => 'Delete',
-        //     'method' => 'collection',
-        // ],
+        'deleteSelected' => [
+            'label' => 'Delete',
+            'method' => 'collection',
+        ],
     ];
 
     public static $contextMenu = false;
@@ -42,17 +53,6 @@ class Attachment extends Resource
     public static ?int $sort = 2;
 
     public static string $type = 'Attachment';
-
-    /**
-     * Quick-filter media types: filter key => label.
-     * 'document' means everything that is not image, video, or audio.
-     */
-    public const MEDIA_TYPES = [
-        'image' => 'Images',
-        'video' => 'Video',
-        'audio' => 'Audio',
-        'document' => 'Documents',
-    ];
 
     protected static ?string $group = 'Aura';
 
@@ -264,69 +264,6 @@ class Attachment extends Resource
         ];
     }
 
-    /**
-     * Apply the table's quick filters (media type, upload month).
-     */
-    public function indexQuery($query, $table = null)
-    {
-        $filters = $table->quickFilters ?? [];
-
-        $type = $filters['type'] ?? null;
-
-        if ($type !== null && array_key_exists($type, self::MEDIA_TYPES)) {
-            $query->whereHas('meta', function ($meta) use ($type) {
-                $meta->where('key', 'mime_type');
-
-                if ($type === 'document') {
-                    $meta->where(function ($value) {
-                        foreach (['image/%', 'video/%', 'audio/%'] as $prefix) {
-                            $value->where('value', 'not like', $prefix);
-                        }
-                    });
-                } else {
-                    $meta->where('value', 'like', $type.'/%');
-                }
-            });
-        }
-
-        $month = $filters['month'] ?? null;
-
-        if (is_string($month) && preg_match('/^\d{4}-(0[1-9]|1[0-2])$/', $month)) {
-            $start = \Illuminate\Support\Carbon::createFromFormat('Y-m-d', $month.'-01')->startOfDay();
-
-            $query->whereBetween($this->getTable().'.created_at', [$start, $start->copy()->endOfMonth()]);
-        }
-
-        return $query;
-    }
-
-    /**
-     * Distinct upload months ('YYYY-MM', newest first) for the date quick filter.
-     *
-     * @return array<int, string>
-     */
-    public static function uploadMonths(): array
-    {
-        $expression = match ((new static)->getConnection()->getDriverName()) {
-            'sqlite' => "strftime('%Y-%m', created_at)",
-            'mysql', 'mariadb' => "DATE_FORMAT(created_at, '%Y-%m')",
-            'pgsql' => "to_char(created_at, 'YYYY-MM')",
-            default => null,
-        };
-
-        if ($expression === null) {
-            return [];
-        }
-
-        return static::query()
-            ->whereNotNull('created_at')
-            ->selectRaw("{$expression} as month")
-            ->distinct()
-            ->orderByDesc('month')
-            ->pluck('month')
-            ->all();
-    }
-
     public function getIcon()
     {
         return view('aura::components.icon.attachment')->render();
@@ -414,6 +351,42 @@ class Attachment extends Resource
         return $attachment;
     }
 
+    /**
+     * Apply the table's quick filters (media type, upload month).
+     */
+    public function indexQuery($query, $table = null)
+    {
+        $filters = $table->quickFilters ?? [];
+
+        $type = $filters['type'] ?? null;
+
+        if ($type !== null && array_key_exists($type, self::MEDIA_TYPES)) {
+            $query->whereHas('meta', function ($meta) use ($type) {
+                $meta->where('key', 'mime_type');
+
+                if ($type === 'document') {
+                    $meta->where(function ($value) {
+                        foreach (['image/%', 'video/%', 'audio/%'] as $prefix) {
+                            $value->where('value', 'not like', $prefix);
+                        }
+                    });
+                } else {
+                    $meta->where('value', 'like', $type.'/%');
+                }
+            });
+        }
+
+        $month = $filters['month'] ?? null;
+
+        if (is_string($month) && preg_match('/^\d{4}-(0[1-9]|1[0-2])$/', $month)) {
+            $start = Carbon::createFromFormat('Y-m-d', $month.'-01')->startOfDay();
+
+            $query->whereBetween($this->getTable().'.created_at', [$start, $start->copy()->endOfMonth()]);
+        }
+
+        return $query;
+    }
+
     public function isImage()
     {
         return Str::startsWith($this->mime_type, 'image/');
@@ -489,6 +462,33 @@ class Attachment extends Resource
     public function thumbnail_path()
     {
         return asset('storage/'.$this->thumbnail_url);
+    }
+
+    /**
+     * Distinct upload months ('YYYY-MM', newest first) for the date quick filter.
+     *
+     * @return array<int, string>
+     */
+    public static function uploadMonths(): array
+    {
+        $expression = match ((new static)->getConnection()->getDriverName()) {
+            'sqlite' => "strftime('%Y-%m', created_at)",
+            'mysql', 'mariadb' => "DATE_FORMAT(created_at, '%Y-%m')",
+            'pgsql' => "to_char(created_at, 'YYYY-MM')",
+            default => null,
+        };
+
+        if ($expression === null) {
+            return [];
+        }
+
+        return static::query()
+            ->whereNotNull('created_at')
+            ->selectRaw("{$expression} as month")
+            ->distinct()
+            ->orderByDesc('month')
+            ->pluck('month')
+            ->all();
     }
 
     protected static function booted()
