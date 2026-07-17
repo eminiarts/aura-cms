@@ -1,6 +1,6 @@
 @props(['cols' => 'full'])
 
-<div {{ $attributes->merge(['class' => 'col-span-12 rounded-xl bg-white dark:bg-gray-800 shadow-sm ring-1 ring-gray-950/5 dark:ring-white/10']) }}>
+<div {{ $attributes->merge(['class' => 'col-span-12 rounded-xl bg-white dark:bg-gray-800 shadow-sm ring-1 ring-gray-950/10 dark:ring-white/10']) }}>
     <div class="flex flex-col items-center px-6 py-14 text-center">
         <div class="p-3 rounded-xl bg-primary-50 ring-1 ring-inset ring-primary-600/10 dark:bg-primary-900/50 dark:ring-primary-400/10">
             <svg class="size-7 text-primary-600 dark:text-primary-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none">
@@ -14,7 +14,7 @@
             {{ __('Resources are the content types of your site — posts, products, projects, anything. Define one and Aura generates the admin UI for it.') }}
         </p>
 
-        <code class="px-3 py-1.5 mt-5 font-mono text-xs text-gray-600 bg-gray-50 rounded-lg ring-1 ring-gray-950/5 dark:bg-gray-900/50 dark:text-gray-300 dark:ring-white/10">
+        <code class="px-3 py-1.5 mt-5 font-mono text-xs text-gray-600 bg-gray-50 rounded-lg ring-1 ring-gray-950/10 dark:bg-gray-900/50 dark:text-gray-300 dark:ring-white/10">
             php artisan aura:resource Article
         </code>
 

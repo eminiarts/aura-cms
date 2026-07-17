@@ -26,7 +26,7 @@
 }
 
 .aura-card {
-    @apply p-5 bg-white rounded-xl shadow-sm ring-1 ring-gray-950/5;
+    @apply p-5 bg-white rounded-xl shadow-sm ring-1 ring-gray-950/10;
 }
 
 .dark .aura-card {
@@ -34,7 +34,7 @@
 }
 
 .aura-card-small {
-    @apply p-2 bg-white rounded-lg shadow-sm ring-1 ring-gray-950/5;
+    @apply p-2 bg-white rounded-lg shadow-sm ring-1 ring-gray-950/10;
 }
 .dark .aura-card-small {
     @apply bg-gray-800 ring-white/10;

@@ -55,7 +55,7 @@
 }">
 
 <div x-show="visible" x-ref="contextMenu"
-    class="fixed z-10 p-1 mt-1 w-48 bg-white rounded-lg ring-1 shadow-lg ring-gray-950/5 dark:bg-gray-800 dark:ring-white/10"
+    class="fixed z-10 p-1 mt-1 w-48 bg-white rounded-lg ring-1 shadow-lg ring-gray-950/10 dark:bg-gray-800 dark:ring-white/10"
     @click.away="closeContextMenu" x-cloak>
 
     @can('update', $model)

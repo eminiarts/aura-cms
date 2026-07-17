@@ -10,7 +10,7 @@
                 x-transition:enter-start="translate-x-full" x-transition:enter-end="translate-x-0"
                 x-transition:leave="transition ease-in duration-300" x-transition:leave-start="translate-x-0"
                 x-transition:leave-end="translate-x-full" class="w-full h-full" x-on:click.outside="$dialog.close()">
-                <div class="flex overflow-y-auto flex-col justify-between h-full bg-white border-l shadow-2xl border-gray-950/5 ring-1 ring-gray-950/5 dark:bg-gray-800 dark:border-white/10 dark:ring-white/10">
+                <div class="flex overflow-y-auto flex-col justify-between h-full bg-white border-l shadow-2xl border-gray-950/5 ring-1 ring-gray-950/10 dark:bg-gray-800 dark:border-white/10 dark:ring-white/10">
 
                     <!-- Close Button -->
                     <div class="absolute top-0 right-0 pt-4 pr-4 z-[3]">

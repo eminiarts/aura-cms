@@ -39,7 +39,7 @@
             <div
                 x-on:click.stop
                 x-aura::trap.noscroll.inert="open"
-                class="overflow-y-auto relative p-8 w-full h-screen bg-white border-l shadow-2xl origin-right border-gray-950/5 ring-1 ring-gray-950/5 dark:bg-gray-800 dark:border-white/10 dark:ring-white/10 sm:p-12"
+                class="overflow-y-auto relative p-8 w-full h-screen bg-white border-l shadow-2xl origin-right border-gray-950/5 ring-1 ring-gray-950/10 dark:bg-gray-800 dark:border-white/10 dark:ring-white/10 sm:p-12"
             >
 
             <div class="flex relative justify-end items-start">

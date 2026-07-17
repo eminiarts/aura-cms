@@ -16,7 +16,7 @@
             'ring-1 ring-gray-950/10 transition duration-150 hover:ring-gray-950/20',
             'focus:outline-none focus:ring-2 focus:ring-primary-500',
             'dark:bg-gray-800 dark:text-gray-100 dark:ring-white/10 dark:hover:ring-white/20',
-            'disabled:cursor-not-allowed disabled:bg-gray-50 disabled:text-gray-500 disabled:ring-gray-950/5',
+            'disabled:cursor-not-allowed disabled:bg-gray-50 disabled:text-gray-500 disabled:ring-gray-950/10',
             'dark:disabled:bg-gray-800/50 dark:disabled:text-gray-500 dark:disabled:ring-white/5',
             'pl-3 pr-9 py-2 rounded-lg text-sm' => $size === 'default',
             'pl-2 pr-7 py-1 rounded-md text-xs' => $size === 'xs',

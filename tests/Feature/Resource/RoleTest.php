@@ -25,6 +25,13 @@ test('check Role Fields', function () {
     expect($fields->firstWhere('slug', 'permissions'))->not->toBeNull();
 });
 
+test('role name and slug fields share the first row', function () {
+    $fields = collect(Role::getFields());
+
+    expect($fields->firstWhere('slug', 'name')['style']['width'])->toBe('50')
+        ->and($fields->firstWhere('slug', 'slug')['style']['width'])->toBe('50');
+});
+
 test('role uses custom table', function () {
     $role = new Role;
 

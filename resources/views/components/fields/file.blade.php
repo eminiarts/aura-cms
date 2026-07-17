@@ -11,7 +11,8 @@
 
 @php
     if($selected) {
-        $files = \Aura\Base\Resources\Attachment::find($selected)?->sortBy(function($item) use ($selected) {
+        $attachmentClass = config('aura.resources.attachment', \Aura\Base\Resources\Attachment::class);
+        $files = $attachmentClass::find($selected)?->sortBy(function($item) use ($selected) {
             return array_search($item->id, $selected);
         });
     }

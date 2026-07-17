@@ -2,10 +2,10 @@
 
 @foreach ($stats as $stat)
     <a href="{{ $stat['url'] }}" wire:navigate
-        class="flex overflow-hidden relative flex-col col-span-12 rounded-lg ring-1 shadow-sm transition duration-150 sm:col-span-6 xl:col-span-3 bg-white dark:bg-gray-800 ring-gray-950/5 dark:ring-white/10 hover:ring-gray-950/10 dark:hover:ring-white/20 group">
+        class="flex overflow-hidden relative flex-col col-span-12 rounded-lg ring-1 shadow-sm transition duration-150 sm:col-span-6 xl:col-span-3 bg-white dark:bg-gray-800 ring-gray-950/10 dark:ring-white/10 hover:ring-gray-950/10 dark:hover:ring-white/20 group">
         <div class="flex-1 p-5 pb-0">
             <div class="flex gap-3 items-center">
-                <div class="p-2 rounded-lg text-gray-500 bg-gray-100 ring-1 ring-inset ring-gray-950/5 dark:bg-white/5 dark:text-gray-400 dark:ring-white/10 [&>svg]:w-5 [&>svg]:h-5 shrink-0">
+                <div class="p-2 rounded-lg text-gray-500 bg-gray-100 ring-1 ring-inset ring-gray-950/10 dark:bg-white/5 dark:text-gray-400 dark:ring-white/10 [&>svg]:w-5 [&>svg]:h-5 shrink-0">
                     {!! $stat['icon'] !!}
                 </div>
                 <span class="text-sm font-medium text-gray-500 truncate dark:text-gray-400">{{ $stat['name'] }}</span>

@@ -11,7 +11,7 @@
                 @foreach ($rows->filter(function ($row) use ($status) {
                     return $row->status == $status;
                 }) as $row)
-                    <div class="bg-white dark:bg-gray-800 p-4 rounded-lg ring-1 ring-gray-950/5 dark:ring-white/10 shadow-xs">
+                    <div class="bg-white dark:bg-gray-800 p-4 rounded-lg ring-1 ring-gray-950/10 dark:ring-white/10 shadow-xs">
                         <h4 class="text-sm font-semibold text-gray-900 dark:text-white">{{ $row->subject }}</h4>
                         <p class="text-sm text-gray-600 dark:text-gray-400">{{ $row->from }}</p>
                         <p class="text-sm text-gray-600 dark:text-gray-400">Due: {{ $row->due_date }}</p>

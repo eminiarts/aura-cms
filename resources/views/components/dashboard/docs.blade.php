@@ -9,7 +9,7 @@
     };
 @endphp
 
-<div {{ $attributes->merge(['class' => trim("{$colSpan} rounded-xl bg-white dark:bg-gray-800 shadow-sm ring-1 ring-gray-950/5 dark:ring-white/10")]) }}>
+<div {{ $attributes->merge(['class' => trim("{$colSpan} rounded-xl bg-white dark:bg-gray-800 shadow-sm ring-1 ring-gray-950/10 dark:ring-white/10")]) }}>
     <div class="p-6">
         <div class="flex justify-between items-center">
             <div>

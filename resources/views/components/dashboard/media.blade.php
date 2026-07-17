@@ -1,6 +1,6 @@
 @props(['media', 'cols' => 'full'])
 
-<div {{ $attributes->merge(['class' => 'col-span-12 rounded-xl bg-white dark:bg-gray-800 shadow-sm ring-1 ring-gray-950/5 dark:ring-white/10']) }}>
+<div {{ $attributes->merge(['class' => 'col-span-12 rounded-xl bg-white dark:bg-gray-800 shadow-sm ring-1 ring-gray-950/10 dark:ring-white/10']) }}>
     <div class="p-6">
         <div class="flex justify-between items-center">
             <div>
@@ -19,7 +19,7 @@
         <div class="grid grid-cols-3 gap-3 mt-4 sm:grid-cols-4 md:grid-cols-6 xl:grid-cols-12">
             @foreach ($media as $file)
                 <a href="{{ $file->viewUrl() ?? route('aura.attachment.index') }}" wire:navigate title="{{ $file->name }}"
-                    class="block overflow-hidden relative rounded-lg ring-1 transition aspect-square ring-gray-950/5 dark:ring-white/10 group hover:ring-primary-500/50">
+                    class="block overflow-hidden relative rounded-lg ring-1 transition aspect-square ring-gray-950/10 dark:ring-white/10 group hover:ring-primary-500/50">
                     @if ($file->isImage())
                         <img src="{{ $file->path('thumbnail') }}" alt="{{ $file->name }}" loading="lazy"
                             class="object-cover w-full h-full transition duration-300 group-hover:scale-105" />

@@ -17,7 +17,7 @@
           {{ $prefix }}
       </span>
     @endif
-    <textarea {{ $attributes->merge(['class' => $class . ' w-full appearance-none border-0 bg-white rounded-none text-gray-900 placeholder:text-gray-400 shadow-xs ring-1 ring-gray-950/10 transition duration-150 hover:ring-gray-950/20 focus:outline-none focus:ring-2 focus:ring-primary-500 disabled:cursor-not-allowed disabled:bg-gray-50 disabled:text-gray-500 disabled:ring-gray-950/5 dark:bg-gray-800 dark:text-gray-100 dark:placeholder:text-gray-500 dark:ring-white/10 dark:hover:ring-white/20 dark:disabled:bg-gray-800/50 dark:disabled:text-gray-500 dark:disabled:ring-white/5 z-[1] ' .
+    <textarea {{ $attributes->merge(['class' => $class . ' w-full appearance-none border-0 bg-white rounded-none text-gray-900 placeholder:text-gray-400 shadow-xs ring-1 ring-gray-950/10 transition duration-150 hover:ring-gray-950/20 focus:outline-none focus:ring-2 focus:ring-primary-500 disabled:cursor-not-allowed disabled:bg-gray-50 disabled:text-gray-500 disabled:ring-gray-950/10 dark:bg-gray-800 dark:text-gray-100 dark:placeholder:text-gray-500 dark:ring-white/10 dark:hover:ring-white/20 dark:disabled:bg-gray-800/50 dark:disabled:text-gray-500 dark:disabled:ring-white/5 z-[1] ' .
     ($prefix ? '' : 'rounded-l-lg ') .
     ($suffix ? '' : 'rounded-r-lg') .
     ($size === 'xs' ? ' px-2 py-1 text-xs' : ' px-3 py-2 text-sm')

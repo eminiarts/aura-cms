@@ -256,7 +256,7 @@
 
         <div class="grid grid-cols-3 gap-2 mt-6 sm:grid-cols-5 lg:grid-cols-8">
             @foreach ($icons as $icon)
-                <div class="flex flex-col gap-2 items-center py-4 px-2 text-gray-600 bg-white rounded-lg ring-1 shadow-sm dark:text-gray-300 dark:bg-gray-800 ring-gray-950/5 dark:ring-white/10">
+                <div class="flex flex-col gap-2 items-center py-4 px-2 text-gray-600 bg-white rounded-lg ring-1 shadow-sm dark:text-gray-300 dark:bg-gray-800 ring-gray-950/10 dark:ring-white/10">
                     <x-aura::icon :icon="$icon" size="sm" />
                     <span class="text-xs text-gray-400 truncate max-w-full dark:text-gray-500">{{ $icon }}</span>
                 </div>
@@ -503,10 +503,10 @@
         <div class="grid grid-cols-1 gap-4 mt-6 sm:grid-cols-2">
             <div class="aura-card">
                 <h3 class="text-sm font-semibold text-gray-900 dark:text-white">.aura-card</h3>
-                <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">p-5, rounded-xl, shadow-sm, ring-1 ring-gray-950/5.</p>
+                <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">p-5, rounded-xl, shadow-sm, ring-1 ring-gray-950/10.</p>
             </div>
             <div class="flex items-center aura-card-small">
-                <p class="text-sm text-gray-500 dark:text-gray-400"><span class="font-semibold text-gray-900 dark:text-white">.aura-card-small</span> — p-2, rounded-lg, ring-gray-950/5.</p>
+                <p class="text-sm text-gray-500 dark:text-gray-400"><span class="font-semibold text-gray-900 dark:text-white">.aura-card-small</span> — p-2, rounded-lg, ring-gray-950/10.</p>
             </div>
         </div>
 
@@ -548,7 +548,7 @@
 
         {{-- Filter tabs (specimen of table/filter-tabs) --}}
         <div class="flex flex-wrap gap-1 items-center p-1 mt-6 max-w-full bg-gray-50 rounded-lg dark:bg-white/5 w-fit">
-            <button type="button" class="flex items-center px-3 py-1.5 space-x-2 text-sm font-medium text-gray-900 bg-white rounded-md ring-1 shadow-sm transition cursor-pointer ring-gray-950/5 dark:bg-gray-700 dark:text-white dark:ring-white/10">{{ __('All') }}</button>
+            <button type="button" class="flex items-center px-3 py-1.5 space-x-2 text-sm font-medium text-gray-900 bg-white rounded-md ring-1 shadow-sm transition cursor-pointer ring-gray-950/10 dark:bg-gray-700 dark:text-white dark:ring-white/10">{{ __('All') }}</button>
             <button type="button" class="flex items-center px-3 py-1.5 space-x-2 text-sm text-gray-500 rounded-md transition cursor-pointer hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">{{ __('My drafts') }}</button>
             <button type="button" class="flex items-center px-3 py-1.5 space-x-2 text-sm text-gray-500 rounded-md transition cursor-pointer hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">{{ __('Published') }}</button>
         </div>
@@ -802,9 +802,9 @@
             </x-aura::button.danger>
         </div>
 
-        <div class="p-6 mt-4 bg-gray-50 rounded-xl ring-1 dark:bg-white/5 ring-gray-950/5 dark:ring-white/10">
+        <div class="p-6 mt-4 bg-gray-50 rounded-xl ring-1 dark:bg-white/5 ring-gray-950/10 dark:ring-white/10">
             <span class="text-xs font-medium tracking-wide text-gray-400 uppercase">{{ __('Toast card (static specimen)') }}</span>
-            <div class="mt-4 w-full max-w-sm bg-white rounded-xl shadow-lg ring-1 ring-gray-950/5 dark:bg-gray-800 dark:ring-white/10">
+            <div class="mt-4 w-full max-w-sm bg-white rounded-xl shadow-lg ring-1 ring-gray-950/10 dark:bg-gray-800 dark:ring-white/10">
                 <div class="overflow-hidden rounded-xl">
                     <div class="p-4">
                         <div class="flex items-center">
@@ -881,8 +881,8 @@
             {{ __('The login form composition, as rendered on /login (same components on register, reset password and 2FA).') }}
         </p>
 
-        <div class="flex justify-center p-8 mt-6 bg-gray-50 rounded-xl ring-1 dark:bg-gray-900 ring-gray-950/5 dark:ring-white/10 sm:p-12">
-            <div class="w-full max-w-md rounded-2xl bg-white/95 backdrop-blur-xl ring-1 ring-gray-950/5 shadow-xl shadow-gray-950/[0.08] dark:bg-gray-800/90 dark:ring-white/10 dark:shadow-black/40 p-8 sm:p-10">
+        <div class="flex justify-center p-8 mt-6 bg-gray-50 rounded-xl ring-1 dark:bg-gray-900 ring-gray-950/10 dark:ring-white/10 sm:p-12">
+            <div class="w-full max-w-md rounded-2xl bg-white/95 backdrop-blur-xl ring-1 ring-gray-950/10 shadow-xl shadow-gray-950/[0.08] dark:bg-gray-800/90 dark:ring-white/10 dark:shadow-black/40 p-8 sm:p-10">
                 <h3 class="text-2xl font-semibold tracking-tight text-gray-900 dark:text-white">{{ __('Welcome back') }}</h3>
                 <p class="mt-2 text-sm text-gray-500 dark:text-gray-400">{{ __('Login to your account to continue.') }}</p>
 

@@ -16,7 +16,8 @@
 
 @php
     if($selected) {
-        $files = \Aura\Base\Resources\Attachment::find($selected)->sortBy(function($item) use ($selected) {
+        $attachmentClass = config('aura.resources.attachment', \Aura\Base\Resources\Attachment::class);
+        $files = $attachmentClass::find($selected)?->sortBy(function($item) use ($selected) {
             return array_search($item->id, $selected);
         });
     }
@@ -59,7 +60,7 @@
                                     class="overflow-hidden w-full bg-gray-50 rounded-lg {{ !($field['disabled'] ?? false) ? 'cursor-move' : '' }} draggable-handle group aspect-w-10 aspect-h-7 focus-within:ring-2 focus-within:ring-primary-500 focus-within:ring-offset-2 focus-within:ring-offset-gray-100"
                                 >
                                     @if(in_array($file->mime_type, ['image/jpeg', 'image/png', 'image/jpg']))
-                                        <img src="/storage/{{ $file->url }}" alt=""
+                                        <img src="{{ $file->thumbnail('xs') }}" alt=""
                                              class="object-cover pointer-events-none group-hover:opacity-75">
                                     @else
 

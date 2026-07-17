@@ -44,7 +44,7 @@ switch ($width) {
             @click="open = false"
             @endif
             >
-        <div class="rounded-lg ring-1 ring-gray-950/5 dark:ring-white/10 {{ $contentClasses }}">
+        <div class="rounded-lg ring-1 ring-gray-950/10 dark:ring-white/10 {{ $contentClasses }}">
             {{ $content }}
         </div>
     </div>
