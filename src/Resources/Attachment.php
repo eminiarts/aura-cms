@@ -471,7 +471,7 @@ class Attachment extends Resource
      */
     public static function uploadMonths(): array
     {
-        $expression = match ((new static)->getConnection()->getDriverName()) {
+        $expression = match (static::query()->getModel()->getConnection()->getDriverName()) {
             'sqlite' => "strftime('%Y-%m', created_at)",
             'mysql', 'mariadb' => "DATE_FORMAT(created_at, '%Y-%m')",
             'pgsql' => "to_char(created_at, 'YYYY-MM')",

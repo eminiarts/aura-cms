@@ -24,8 +24,9 @@ This is at the same time the main homepage of aura-cms (incl docs).
 
 ### Testing (Pest)
 ```bash
-composer test                                    # Run all tests (parallel)
-vendor/bin/pest --filter "test name"             # Run single test by name
+composer test                                    # Run all tests (parallel, excludes browser tests)
+composer test-browser                            # Run Pest v4 browser tests (real Chromium; needs `npm install` + `npx playwright install chromium`)
+vendor/bin/pest --filter "test name"             # Run single test by name (always pass --no-coverage on direct pest calls)
 vendor/bin/pest tests/Feature/Fields/            # Run tests in directory
 vendor/bin/pest --group=fields                   # Run test group (fields, flows, table, resource)
 vendor/bin/pest -c phpunit-without-teams.xml     # Run without teams feature

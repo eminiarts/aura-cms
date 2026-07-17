@@ -51,7 +51,7 @@ class AttachmentDetails extends Component
         $this->rowIds = array_values(array_diff($this->rowIds, [$this->attachmentId]));
 
         $this->dispatch('refreshTable');
-        $this->notify(__('Attachment deleted'));
+        $this->dispatch('notify', message: __('Attachment deleted'), type: 'success');
 
         if ($next) {
             $this->show($next);
