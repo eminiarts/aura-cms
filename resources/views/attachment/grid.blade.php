@@ -5,7 +5,10 @@
     <div class="grid grid-cols-2 gap-2 my-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 sm:gap-3 md:gap-4 lg:gap-5 sm:my-3 md:my-4 lg:my-5">
         @forelse($rows as $row)
         <div class="relative select-none" wire:key="grid_{{ $row->id }}">
-            <label for="checkbox_{{ $row->id }}" class="block cursor-pointer" x-on:click="toggleRow($event, {{ $row->id }})">
+            {{-- In the picker a card click selects AND shows details; on the index it only opens details (the checkbox handles selection). --}}
+            <label for="checkbox_{{ $row->id }}" class="block cursor-pointer"
+                x-on:click="@if ($field) toggleRow($event, {{ $row->id }}); @endif Livewire.dispatch('open-attachment-details', { id: {{ $row->id }}, ids: rows.map(Number) })"
+                data-attachment-card="{{ $row->id }}">
                 <div class="relative">
                     <div class="overflow-hidden relative w-full bg-gray-100 rounded-lg transition-all duration-300 ease-in-out dark:bg-gray-800 group aspect-w-10 aspect-h-7 focus-within:ring-2 focus-within:ring-primary-500 focus-within:ring-offset-2 focus-within:ring-offset-gray-100"
                         :class="{

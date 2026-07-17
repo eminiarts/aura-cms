@@ -22,6 +22,7 @@ use Aura\Base\Commands\TransformTableToResource;
 use Aura\Base\Commands\UpdateSchemaFromMigration;
 use Aura\Base\Facades\Aura;
 use Aura\Base\Livewire\Attachment\Index as AttachmentIndex;
+use Aura\Base\Livewire\AttachmentDetails;
 use Aura\Base\Livewire\BookmarkPage;
 use Aura\Base\Livewire\ChooseTemplate;
 use Aura\Base\Livewire\CreateResource;
@@ -136,6 +137,7 @@ class AuraServiceProvider extends PackageServiceProvider
             'edit-field' => EditResourceField::class,
             'aura::media-manager' => config('aura.components.media-manager', MediaManager::class),
             'aura::media-uploader' => MediaUploader::class,
+            'aura::attachment-details' => AttachmentDetails::class,
             'aura::create-resource' => CreateResource::class,
             'aura::resource-editor' => ResourceEditor::class,
             'aura::invite-user' => InviteUser::class,
