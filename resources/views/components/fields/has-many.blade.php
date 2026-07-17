@@ -14,9 +14,11 @@
             ];
 
             if(optional($field)['foreign_key']) {
-                $defaultSettings['create_url']  = app($field['resource'])->createUrl() . '?' . $field['foreign_key']  . '=' . $this->model->id;
-                
-                $defaultSettings['create_url']  = app($field['resource'])->createUrl() . '?' . http_build_query([$field['foreign_key'] => [$this->model->id]]);
+                $createUrl = app($field['resource'])->createUrl();
+
+                if ($createUrl) {
+                    $defaultSettings['create_url'] = $createUrl . '?' . http_build_query([$field['foreign_key'] => [$this->model->id]]);
+                }
             }
 
             $mergedSettings = array_merge($defaultSettings, $field['table_settings'] ?? []);

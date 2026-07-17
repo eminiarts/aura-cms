@@ -58,6 +58,13 @@ Route::domain(config('aura.domain'))
                 }
 
                 $slug = app($resource)->getSlug();
+
+                // Attachment uses a dedicated media index and deliberately has no
+                // generic create/edit/view routes (see AttachmentIndex).
+                if ($slug === 'attachment') {
+                    continue;
+                }
+
                 Route::get("/{$slug}", Index::class)->name("{$slug}.index");
                 Route::get("/{$slug}/create", Create::class)->name("{$slug}.create");
                 Route::get("/{$slug}/{id}/edit", Edit::class)->name("{$slug}.edit");

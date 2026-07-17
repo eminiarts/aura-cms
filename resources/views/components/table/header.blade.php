@@ -46,12 +46,14 @@
                                     </x-aura::button>
                                 </a>
                             @else
-                                <x-aura::button href="{{ $this->createLink }}">
-                                    <x-slot:icon>
-                                        <x-aura::icon icon="plus" />
-                                    </x-slot>
-                                    <span>{{ __('Create') }} {{ $model->getName() }}</span>
-                                </x-aura::button>
+                                @if($this->createLink)
+                                    <x-aura::button href="{{ $this->createLink }}">
+                                        <x-slot:icon>
+                                            <x-aura::icon icon="plus" />
+                                        </x-slot>
+                                        <span>{{ __('Create') }} {{ $model->getName() }}</span>
+                                    </x-aura::button>
+                                @endif
                             @endif
                         </div>
                     </div>

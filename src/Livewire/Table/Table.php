@@ -17,6 +17,7 @@ use Aura\Base\Resource;
 use Aura\Base\Resources\User;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Route;
 use Illuminate\View\View;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\On;
@@ -143,7 +144,7 @@ class Table extends Component
     /**
      * Get the create link.
      *
-     * @return string
+     * @return string|null
      */
     #[Computed]
     public function createLink()
@@ -153,17 +154,19 @@ class Table extends Component
         }
 
         if ($this->parent) {
-            return route('aura.'.$this->model()->getSlug().'.create', [
+            $name = 'aura.'.$this->model()->getSlug().'.create';
+
+            if (! Route::has($name)) {
+                return null;
+            }
+
+            return route($name, [
                 'for' => $this->parent->getType(),
                 'id' => $this->parent->id,
             ]);
         }
 
-        if ($this->model()->createUrl()) {
-            return $this->model()->createUrl();
-        }
-
-        return route('aura.'.$this->model()->getSlug().'.create');
+        return $this->model()->createUrl();
     }
 
     /**

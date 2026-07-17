@@ -6,6 +6,7 @@ use Aura\Base\ConditionalLogic;
 use Aura\Base\Models\Meta;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Str;
 
 trait AuraModelConfig
@@ -93,7 +94,13 @@ trait AuraModelConfig
 
     public function createUrl()
     {
-        return route('aura.'.$this->getSlug().'.create');
+        $name = 'aura.'.$this->getSlug().'.create';
+
+        if (! Route::has($name)) {
+            return;
+        }
+
+        return route($name);
     }
 
     public function createView()
@@ -154,9 +161,17 @@ trait AuraModelConfig
 
     public function editUrl()
     {
-        if ($this->getType() && $this->id) {
-            return route('aura.'.$this->getSlug().'.edit', ['id' => $this->id]);
+        if (! $this->getType() || ! $this->id) {
+            return;
         }
+
+        $name = 'aura.'.$this->getSlug().'.edit';
+
+        if (! Route::has($name)) {
+            return;
+        }
+
+        return route($name, ['id' => $this->id]);
     }
 
     public function editView()
@@ -308,7 +323,13 @@ trait AuraModelConfig
 
     public function indexUrl()
     {
-        return route('aura.'.$this->getSlug().'.index');
+        $name = 'aura.'.$this->getSlug().'.index';
+
+        if (! Route::has($name)) {
+            return;
+        }
+
+        return route($name);
     }
 
     public function indexView()
@@ -554,9 +575,20 @@ trait AuraModelConfig
     public function scopeWhereMetaContains($query, $key, $value)
     {
         return $query->whereHas('meta', function ($query) use ($key, $value) {
-            $value = is_numeric($value) ? (int) $value : $value;
+            // Qualify as meta.value: SQLite's json_each() also exposes a "value"
+            // column, so an unqualified whereJsonContains('value', ...) is ambiguous
+            // and never matches on the test driver.
+            $column = $query->getModel()->getTable().'.value';
+
             $query->where('key', $key)
-                ->whereRaw('JSON_CONTAINS(value, ?)', [json_encode($value)]);
+                ->where(function ($query) use ($column, $value) {
+                    // Match either string or numeric JSON array elements (e.g. "1" and 1).
+                    $query->whereJsonContains($column, (string) $value);
+
+                    if (is_numeric($value)) {
+                        $query->orWhereJsonContains($column, (int) $value);
+                    }
+                });
         });
     }
 
@@ -618,9 +650,17 @@ trait AuraModelConfig
 
     public function viewUrl()
     {
-        if ($this->getType() && $this->id) {
-            return route('aura.'.$this->getSlug().'.view', ['id' => $this->id]);
+        if (! $this->getType() || ! $this->id) {
+            return;
         }
+
+        $name = 'aura.'.$this->getSlug().'.view';
+
+        if (! Route::has($name)) {
+            return;
+        }
+
+        return route($name, ['id' => $this->id]);
     }
 
     public function viewView()
