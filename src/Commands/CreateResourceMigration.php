@@ -71,12 +71,12 @@ class CreateResourceMigration extends Command
             ],
             [
                 'name' => 'created_at',
-                'type' => 'Aura\\Base\\Fields\\DateTime',
+                'type' => 'Aura\\Base\\Fields\\Datetime',
                 'slug' => 'created_at',
             ],
             [
                 'name' => 'updated_at',
-                'type' => 'Aura\\Base\\Fields\\DateTime',
+                'type' => 'Aura\\Base\\Fields\\Datetime',
                 'slug' => 'updated_at',
             ],
         ]));
