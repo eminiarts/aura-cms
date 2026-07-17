@@ -499,6 +499,48 @@ foreach (Product::cursor() as $product) {
 }
 ```
 
+### Serialization (`fields` append)
+
+Every resource historically appends a computed `fields` accessor to its
+array/JSON serialization (`toArray()` / `toJson()`). Resolving `fields` builds
+**every** input field's value — casting meta, resolving relationships and
+evaluating conditional logic — for the model. When many models are serialized at
+once (large tables under Livewire, JSON/API responses, exports) this runs the
+full field pipeline once per model and dominates the request.
+
+Table cell rendering itself no longer needs the whole collection: `display()`
+resolves only the requested field for plain (non-conditional-logic) columns. The
+remaining cost of the implicit append is therefore pure serialization overhead.
+
+You can make the append opt-in with the `legacy_fields_append` feature flag in
+`config/aura.php`:
+
+```php
+'features' => [
+    // ...
+
+    // true  (default) — keep appending `fields` to every serialization.
+    // false           — omit it; opt in per model with $model->append('fields').
+    'legacy_fields_append' => true,
+],
+```
+
+- **Default (`true`)** preserves the historical behavior: `fields` appears in
+  every serialized resource. Keep this if existing code or external API
+  consumers rely on `fields` being present in serialized output.
+- **`false`** removes the implicit append. `toArray()` / `toJson()` no longer
+  pay to resolve every field, which is a meaningful win for large tables and
+  bulk serialization. Table rendering is unaffected. Any caller that still needs
+  the serialized structure can opt in explicitly:
+
+  ```php
+  $data = $post->append('fields')->toArray();
+  ```
+
+**Recommendation:** new applications that don't depend on `fields` appearing in
+serialized output should set `legacy_fields_append => false` for better
+large-table performance.
+
 ## Asset Optimization
 
 ### Vite Configuration

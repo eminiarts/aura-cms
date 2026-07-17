@@ -80,6 +80,14 @@ class Resource extends Model
         if ($this->usesMeta()) {
             $this->with[] = 'meta';
         }
+
+        // The 'fields' accessor is expensive to serialize (it resolves every
+        // input field value). Appending it to every array/JSON serialization is
+        // opt-in behind a config flag. Default (true) keeps the legacy behavior;
+        // when disabled, callers can still opt in per-model via ->append('fields').
+        if (! config('aura.features.legacy_fields_append', true)) {
+            $this->appends = array_values(array_diff($this->appends, ['fields']));
+        }
     }
 
     public function __call($method, $parameters)
@@ -204,44 +212,7 @@ class Resource extends Model
                 return strpos($key, '.') === false;
             })
             ->map(function ($value, $key) use ($meta) {
-                $class = $this->fieldClassBySlug($key);
-                $field = $this->fieldBySlug($key);
-
-                if ($class && method_exists($class, 'isRelation') && $class->isRelation($field) && method_exists($class, 'get') && $field['type'] != 'Aura\\Base\\Fields\\Roles') {
-                    return $class->get($class, $this->{$key}, $field);
-                }
-
-                if ($class && isset($this->{$key}) && method_exists($class, 'get')) {
-                    return $class->get($class, $this->{$key}, $field);
-                }
-
-                if (isset($this->{$key})) {
-                    return $this->{$key};
-                }
-
-                if ($class && isset($this->attributes[$key]) && method_exists($class, 'get')) {
-                    return $class->get($class, $this->attributes[$key], $field);
-                }
-
-                if (isset($this->attributes[$key])) {
-                    return $this->attributes[$key];
-                }
-
-                $method = 'get'.Str::studly($key).'Field';
-
-                if (method_exists($this, $method)) {
-                    return $this->{$method}($value);
-                }
-
-                if ($class && isset(optional($this)->{$key}) && method_exists($class, 'get')) {
-                    return $class->get($class, $this->{$key} ?? null, $field);
-                }
-
-                if (optional($field)['polymorphic_relation'] === false && optional($field)['multiple'] === false) {
-                    return isset($meta[$key]) ? [$meta[$key]] : [];
-                }
-
-                return $meta[$key] ?? $value;
+                return $this->resolveFieldValue($key, $meta);
             });
 
         return $defaultValues->toArray();
@@ -341,6 +312,64 @@ class Resource extends Model
     public function parent()
     {
         return $this->belongsTo(get_class($this), 'parent_id');
+    }
+
+    /**
+     * Resolve a single field's raw (pre-display) value.
+     *
+     * Extracted from getFieldsWithoutConditionalLogic() so that table display
+     * can resolve just one requested field instead of building the entire
+     * fields collection for every cell. The logic is intentionally identical to
+     * the per-slug closure that previously lived inside the accessor.
+     *
+     * @param  Collection|null  $meta  The normalized meta map (defaults to getMeta()).
+     * @return mixed
+     */
+    public function resolveFieldValue(string $slug, $meta = null)
+    {
+        $meta ??= $this->getMeta();
+
+        $key = $slug;
+        $value = null;
+
+        $class = $this->fieldClassBySlug($key);
+        $field = $this->fieldBySlug($key);
+
+        if ($class && method_exists($class, 'isRelation') && $class->isRelation($field) && method_exists($class, 'get') && $field['type'] != 'Aura\\Base\\Fields\\Roles') {
+            return $class->get($class, $this->{$key}, $field);
+        }
+
+        if ($class && isset($this->{$key}) && method_exists($class, 'get')) {
+            return $class->get($class, $this->{$key}, $field);
+        }
+
+        if (isset($this->{$key})) {
+            return $this->{$key};
+        }
+
+        if ($class && isset($this->attributes[$key]) && method_exists($class, 'get')) {
+            return $class->get($class, $this->attributes[$key], $field);
+        }
+
+        if (isset($this->attributes[$key])) {
+            return $this->attributes[$key];
+        }
+
+        $method = 'get'.Str::studly($key).'Field';
+
+        if (method_exists($this, $method)) {
+            return $this->{$method}($value);
+        }
+
+        if ($class && isset(optional($this)->{$key}) && method_exists($class, 'get')) {
+            return $class->get($class, $this->{$key} ?? null, $field);
+        }
+
+        if (optional($field)['polymorphic_relation'] === false && optional($field)['multiple'] === false) {
+            return isset($meta[$key]) ? [$meta[$key]] : [];
+        }
+
+        return $meta[$key] ?? $value;
     }
 
     /**

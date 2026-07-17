@@ -127,6 +127,12 @@ parameters:
 			path: src/BaseResource.php
 
 		-
+			message: '#^Call to an undefined method Aura\\Base\\BaseResource\:\:resolveFieldValue\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: src/BaseResource.php
+
+		-
 			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$key\.$#'
 			identifier: property.notFound
 			count: 1
