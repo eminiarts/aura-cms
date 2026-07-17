@@ -108,6 +108,12 @@ class MediaUploader extends Component
             $this->selected = optional($this)->selected ? array_merge($this->selected, collect($attachments)->pluck('id')->toArray()) : collect($attachments)->pluck('id')->toArray();
         }
 
+        // Notify consumers (grid highlight, picker auto-select) about the freshly
+        // created attachments. Only dispatch when at least one was created.
+        if (! empty($attachments)) {
+            $this->dispatch('media-uploaded', ids: collect($attachments)->pluck('id')->all());
+        }
+
         $this->dispatch('refreshTable');
     }
 }

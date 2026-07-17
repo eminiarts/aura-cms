@@ -11,5 +11,5 @@ test('an authenticated super admin can open the media library', function () {
 
     $page = visit('/admin/attachment');
 
-    $page->assertSee('Attachments');
+    $page->assertSee('Media Library');
 });

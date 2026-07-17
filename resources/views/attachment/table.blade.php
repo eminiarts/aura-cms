@@ -236,6 +236,58 @@
                     </div>
                 @endif
 
+                {{-- Media type + upload month quick filters --}}
+                <div class="flex flex-wrap items-center mb-4 ml-0 space-x-1 w-full md:ml-4 md:mb-0" data-media-quick-filters>
+                    @php
+                        $activeType = $this->quickFilters['type'] ?? null;
+                        $activeMonth = $this->quickFilters['month'] ?? null;
+                        $uploadMonths = $model::uploadMonths();
+                    @endphp
+
+                    <button
+                        type="button"
+                        wire:click="setQuickFilter('type', null)"
+                        data-type-filter="all"
+                        @class([
+                            'px-3 py-1.5 text-sm font-medium rounded-full transition',
+                            'bg-primary-600 text-white shadow-sm' => $activeType === null,
+                            'text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800' => $activeType !== null,
+                        ])
+                    >
+                        {{ __('All') }}
+                    </button>
+
+                    @foreach ($model::MEDIA_TYPES as $typeKey => $typeLabel)
+                        <button
+                            type="button"
+                            wire:click="setQuickFilter('type', @js($activeType === $typeKey ? null : $typeKey))"
+                            data-type-filter="{{ $typeKey }}"
+                            @class([
+                                'px-3 py-1.5 text-sm font-medium rounded-full transition',
+                                'bg-primary-600 text-white shadow-sm' => $activeType === $typeKey,
+                                'text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800' => $activeType !== $typeKey,
+                            ])
+                        >
+                            {{ __($typeLabel) }}
+                        </button>
+                    @endforeach
+
+                    @if (count($uploadMonths))
+                        <select
+                            wire:change="setQuickFilter('month', $event.target.value)"
+                            data-month-filter
+                            class="px-3 py-1.5 ml-2 text-sm text-gray-600 bg-white rounded-lg border transition appearance-none border-gray-500/30 focus:outline-none focus:ring focus:border-primary-300 focus:ring-primary-300 focus:ring-opacity-50 dark:text-gray-300 dark:bg-transparent dark:border-gray-700"
+                        >
+                            <option value="" @selected($activeMonth === null)>{{ __('All dates') }}</option>
+                            @foreach ($uploadMonths as $month)
+                                <option value="{{ $month }}" @selected($activeMonth === $month)>
+                                    {{ \Illuminate\Support\Carbon::createFromFormat('Y-m', $month)->translatedFormat('F Y') }}
+                                </option>
+                            @endforeach
+                        </select>
+                    @endif
+                </div>
+
                 <div class="mb-4 ml-4 w-full max-w-64 md:mb-0">
                   @if($this->settings['table_before'])
                       @if (!empty($this->userFilters))
