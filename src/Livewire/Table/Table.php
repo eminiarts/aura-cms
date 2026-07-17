@@ -24,6 +24,9 @@ use Livewire\Component;
 
 /**
  * Class Table
+ *
+ * @property-read mixed $rows       Livewire computed: paginated result set.
+ * @property-read mixed $rowsQuery  Livewire computed: base query builder.
  */
 class Table extends Component
 {
@@ -186,7 +189,7 @@ class Table extends Component
 
     public function getRows()
     {
-        return $this->rows();
+        return $this->rows;
     }
 
     /**
@@ -300,7 +303,7 @@ class Table extends Component
     {
         return view($this->model->tableComponentView(), [
             'parent' => $this->parent,
-            'rows' => $this->rows(),
+            'rows' => $this->rows,
             'rowIds' => $this->rowIds,
         ]);
     }
@@ -340,7 +343,7 @@ class Table extends Component
     #[Computed]
     public function rowIds()
     {
-        $rowIds = $this->rows()->pluck('id')->toArray();
+        $rowIds = $this->rows->pluck('id')->toArray();
 
         $this->dispatch('rowIdsUpdated', $rowIds);
 
@@ -352,6 +355,7 @@ class Table extends Component
      *
      * @return mixed
      */
+    #[Computed]
     public function rowsQuery()
     {
         $query = $this->query();
@@ -491,8 +495,9 @@ class Table extends Component
      *
      * @return mixed
      */
+    #[Computed]
     protected function rows()
     {
-        return $this->rowsQuery()->paginate($this->perPage);
+        return $this->rowsQuery->paginate($this->perPage);
     }
 }

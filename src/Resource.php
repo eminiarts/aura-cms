@@ -95,7 +95,10 @@ class Resource extends Model
         try {
             $value = parent::__get($key);
 
-            if ($value) {
+            // Return the real attribute even when it is falsy (0, '', false);
+            // only a genuinely absent (null) attribute should fall through to
+            // the relation/field resolution below.
+            if (! is_null($value)) {
                 return $value;
             }
         } catch (\Exception $e) {

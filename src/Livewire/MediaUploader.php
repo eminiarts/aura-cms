@@ -55,8 +55,10 @@ class MediaUploader extends Component
             'media.*' => [
                 'required',
                 'max:102400', // 100MB Max
-                'mimes:jpg,jpeg,png,gif,webp,svg,pdf,doc,docx,xls,xlsx,ppt,pptx,txt,csv,zip,mp4,mov,avi,mp3,wav',
-                'not_in:php,phtml,php3,php4,php5,phar,sh,exe,bat,cmd,com,scr,vbs,js,jar',
+                // SVG intentionally excluded: SVGs can embed <script> and are served
+                // inline from the public disk, enabling stored XSS.
+                'mimes:jpg,jpeg,png,gif,webp,pdf,doc,docx,xls,xlsx,ppt,pptx,txt,csv,zip,mp4,mov,avi,mp3,wav',
+                'not_in:php,phtml,php3,php4,php5,phar,sh,exe,bat,cmd,com,scr,vbs,js,jar,svg',
             ],
         ]);
 
@@ -65,7 +67,7 @@ class MediaUploader extends Component
         foreach ($this->media as $key => $media) {
             // Additional security check: verify file extension
             $extension = strtolower($media->getClientOriginalExtension());
-            $blockedExtensions = ['php', 'phtml', 'php3', 'php4', 'php5', 'phar', 'sh', 'exe', 'bat', 'cmd', 'com', 'scr', 'vbs', 'js', 'jar'];
+            $blockedExtensions = ['php', 'phtml', 'php3', 'php4', 'php5', 'phar', 'sh', 'exe', 'bat', 'cmd', 'com', 'scr', 'vbs', 'js', 'jar', 'svg'];
 
             if (in_array($extension, $blockedExtensions)) {
                 unset($this->media[$key]);

@@ -88,6 +88,23 @@ trait InputFieldsHelpers
         }
     }
 
+    /**
+     * Reset all process-static field caches.
+     *
+     * These caches are keyed only by class name, so they must be flushed
+     * whenever a field definition may change within the same process — most
+     * importantly between tests (to prevent pollution) and in long-lived
+     * workers (Octane) to avoid unbounded growth and stale definitions.
+     */
+    public static function flushFieldCache(): void
+    {
+        static::$fieldClassesBySlug = [];
+        static::$fieldsBySlug = [];
+        static::$fieldsCollectionCache = [];
+        static::$inputFieldSlugs = [];
+        static::$mappedFields = [];
+    }
+
     public function getFieldSlugs()
     {
         return $this->fieldsCollection()->pluck('slug');
