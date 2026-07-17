@@ -117,6 +117,7 @@ class TestCase extends Orchestra
         $basePath = sys_get_temp_dir().'/aura-cms-testbench-'.getmypid();
 
         $paths = [
+            'app/Aura/Resources',
             'bootstrap',
             'bootstrap/cache',
             'config',
@@ -135,6 +136,18 @@ class TestCase extends Orchestra
                 @mkdir($basePath.'/'.$path, 0755, true);
             }
         }
+
+        // The app path must be isolated too: resource-generator tests create and
+        // delete files under app_path('Aura/Resources'), which otherwise lives in
+        // the shared testbench skeleton and races across parallel processes.
+        $app->useAppPath($basePath.'/app');
+
+        // Application::getNamespace() detects the namespace by matching app_path()
+        // against the skeleton composer.json's PSR-4 entries; the relocated app
+        // path can never match, so pin the namespace it would have detected.
+        (function () {
+            $this->namespace = 'App\\';
+        })->call($app);
 
         $app->useBootstrapPath($basePath.'/bootstrap');
         $app->useConfigPath($basePath.'/config');
