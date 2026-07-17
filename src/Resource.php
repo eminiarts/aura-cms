@@ -2,6 +2,7 @@
 
 namespace Aura\Base;
 
+use Aura\Base\Contracts\DefinesFields;
 use Aura\Base\Models\Scopes\ScopedScope;
 use Aura\Base\Models\Scopes\TeamScope;
 use Aura\Base\Models\Scopes\TypeScope;
@@ -20,7 +21,7 @@ use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 
-class Resource extends Model
+class Resource extends Model implements DefinesFields
 {
     use AuraModelConfig;
     use HasFactory;
