@@ -21,3 +21,4 @@ plugins/
 logs/
 prompts/
 tests/Browser/Screenshots/
+/.claude/worktrees
