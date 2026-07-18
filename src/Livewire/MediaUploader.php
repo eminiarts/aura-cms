@@ -111,7 +111,10 @@ class MediaUploader extends Component
                 continue;
             }
 
-            $url = $media->store('media', 'public');
+            $url = $media->store(
+                config('aura.media.path', 'media'),
+                config('aura.media.disk', 'public'),
+            );
 
             $payload = [
                 'url' => $url,

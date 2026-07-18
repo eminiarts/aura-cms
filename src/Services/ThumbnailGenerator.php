@@ -19,6 +19,7 @@ class ThumbnailGenerator
         // Get config values
         $quality = (int) Config::get('aura.media.quality', 80);
         $restrictDimensions = Config::get('aura.media.restrict_to_dimensions', true);
+        $disk = Config::get('aura.media.disk', 'public');
 
         // If dimensions are restricted, validate the requested dimensions
         if ($restrictDimensions) {
@@ -63,17 +64,17 @@ class ThumbnailGenerator
         }
 
         // Skip if thumbnail already exists
-        if (Storage::disk('public')->exists($thumbnailPath)) {
+        if (Storage::disk($disk)->exists($thumbnailPath)) {
             return $thumbnailPath;
         }
 
         // Check if the original image exists
-        if (! Storage::disk('public')->exists($folderPath.$basename)) {
+        if (! Storage::disk($disk)->exists($folderPath.$basename)) {
             throw new \Exception('Original image not found: '.$path);
         }
 
         // Create thumbnail via Intervention ImageManager (no Laravel facade package required)
-        $imageContents = Storage::disk('public')->get($path);
+        $imageContents = Storage::disk($disk)->get($path);
         $manager = new ImageManager(new Driver);
         $image = $manager->read($imageContents);
 
@@ -106,13 +107,13 @@ class ThumbnailGenerator
         }
 
         // Ensure the thumbnail directory exists
-        if (! Storage::disk('public')->exists($thumbnailFolder)) {
-            Storage::disk('public')->makeDirectory($thumbnailFolder, 0755, true);
+        if (! Storage::disk($disk)->exists($thumbnailFolder)) {
+            Storage::disk($disk)->makeDirectory($thumbnailFolder, 0755, true);
         }
 
         // Save the thumbnail image with quality from config
         $encodedImage = $image->encodeByExtension('jpg', quality: $quality);
-        Storage::disk('public')->put($thumbnailPath, (string) $encodedImage);
+        Storage::disk($disk)->put($thumbnailPath, (string) $encodedImage);
 
         return $thumbnailPath;
     }

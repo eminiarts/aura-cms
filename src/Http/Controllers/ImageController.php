@@ -40,13 +40,15 @@ class ImageController extends Controller
         // Generate the thumbnail
         $thumbnailPath = $this->thumbnailGenerator->generate($path, $width, $height);
 
+        $disk = config('aura.media.disk', 'public');
+
         // Get the file contents from storage
-        if (! Storage::disk('public')->exists($thumbnailPath)) {
+        if (! Storage::disk($disk)->exists($thumbnailPath)) {
             abort(404);
         }
 
         // Get the file contents and mime type
-        $contents = Storage::disk('public')->get($thumbnailPath);
+        $contents = Storage::disk($disk)->get($thumbnailPath);
 
         // Return the image with image/jpeg mime type since we're always saving as JPG
         return response($contents)

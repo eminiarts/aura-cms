@@ -87,7 +87,7 @@ class Attachment extends Resource
         $basePath = storage_path('app/public');
 
         if ($size) {
-            $relativePath = Str::after($this->url, 'media/');
+            $relativePath = Str::after($this->url, config('aura.media.path', 'media').'/');
 
             return $basePath.'/'.$size.'/'.$relativePath;
         }
@@ -334,12 +334,13 @@ class Attachment extends Resource
         $fileName = uniqid().'.jpg';
 
         // Save the image to the desired storage
+        $disk = config('aura.media.disk', 'public');
         $storagePath = "{$folder}/{$fileName}";
-        Storage::disk('public')->put($storagePath, $imageContent);
+        Storage::disk($disk)->put($storagePath, $imageContent);
 
         // Get the image size and mime type
-        $imageSize = Storage::disk('public')->size($storagePath);
-        $imageMimeType = Storage::disk('public')->mimeType($storagePath);
+        $imageSize = Storage::disk($disk)->size($storagePath);
+        $imageMimeType = Storage::disk($disk)->mimeType($storagePath);
 
         // Create a new Attachment instance
         $attachment = self::create([
@@ -410,8 +411,11 @@ class Attachment extends Resource
 
     public function path($size = null)
     {
+        $disk = config('aura.media.disk', 'public');
+        $mediaPath = config('aura.media.path', 'media');
+
         if ($size) {
-            $url = Str::after($this->url, 'media/');
+            $url = Str::after($this->url, $mediaPath.'/');
 
             $assetPath = 'storage/'.$size.'/'.$url;
 
@@ -420,7 +424,16 @@ class Attachment extends Resource
             }
         }
 
-        return asset('storage/'.$this->url);
+        // The default public disk is served through the `public/storage`
+        // symlink, so preserve the existing asset() URLs. Any other configured
+        // disk resolves its own public URL.
+        $url = $this->url;
+
+        if ($disk === 'public') {
+            return asset('storage/'.$url);
+        }
+
+        return Storage::disk($disk)->url($url);
     }
 
     public function tableComponentView()
@@ -477,7 +490,14 @@ class Attachment extends Resource
 
     public function thumbnail_path()
     {
-        return asset('storage/'.$this->thumbnail_url);
+        $disk = config('aura.media.disk', 'public');
+        $thumbnailUrl = $this->thumbnail_url;
+
+        if ($disk === 'public') {
+            return asset('storage/'.$thumbnailUrl);
+        }
+
+        return Storage::disk($disk)->url($thumbnailUrl);
     }
 
     /**
