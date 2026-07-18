@@ -87,7 +87,7 @@ describe('Team Registration with User', function () {
         expect($user->ownsTeam($team))->toBeTrue();
     });
 
-    it('creates admin role for new team during registration', function () {
+    it('attaches the registrant to the global admin role for their new team', function () {
         config(['aura.auth.registration' => true]);
         config(['aura.teams' => true]);
         config(['aura.auth.redirect' => '/admin']);
@@ -106,14 +106,21 @@ describe('Team Registration with User', function () {
         post(route('aura.register.post'), $userData);
 
         $team = Team::where('name', 'Bob Team')->first();
+        $user = User::where('email', 'bob@example.com')->first();
 
-        $adminRole = Role::withoutGlobalScopes()
-            ->where('team_id', $team->id)
-            ->where('slug', 'admin')
-            ->first();
+        // Attach-don't-mint: no per-team admin row; the registrant holds the
+        // shared global admin role, scoped to their new team via the Membership.
+        expect(Role::withoutGlobalScopes()->where('team_id', $team->id)->exists())->toBeFalse();
 
-        expect($adminRole)->not->toBeNull();
-        expect($adminRole->super_admin)->toBeTrue();
+        $globalAdmin = globalAdminRole();
+        expect($globalAdmin)->not->toBeNull();
+        expect($globalAdmin->super_admin)->toBeTrue();
+
+        $this->assertDatabaseHas('user_role', [
+            'team_id' => $team->id,
+            'user_id' => $user->id,
+            'role_id' => $globalAdmin->id,
+        ]);
     });
 
     it('assigns new user admin role for their team', function () {

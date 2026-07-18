@@ -17,8 +17,10 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Foundation\Auth\Access\Authorizable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\Rules\Password;
 use Lab404\Impersonate\Models\Impersonate;
@@ -89,6 +91,14 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
         'two_factor_secret',
     ];
 
+    /**
+     * Per-instance memo of resolved (shadow-applied) roles, keyed by
+     * "{teamId|global}:{Role::catalogVersion()}".
+     *
+     * @var array<string, Collection>
+     */
+    protected array $resolvedRolesCache = [];
+
     protected static array $searchable = ['name', 'email'];
 
     protected $table = 'users';
@@ -130,9 +140,65 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
         });
     }
 
+    /**
+     * The user's effective (shadow-resolved) roles in the current team context.
+     *
+     * This is the User-side entry to the Role Catalog resolution seam. Each of
+     * the user's Memberships is resolved by slug through Role::resolveForTeam:
+     * a Team Role (Shadow) wins over the Global Role of the same slug. Pivot
+     * rows are never rewritten.
+     *
+     * The result is memoized per instance and keyed by team context + catalog
+     * version, so repeated permission checks in a request (policies fire this
+     * per row/action) stay query-free, while creating/deleting a Shadow bumps
+     * the version and forces a recompute — instant shadow effect, no per-call
+     * queries.
+     */
     public function cachedRoles(): mixed
     {
-        return $this->roles;
+        if (! $this->id) {
+            return collect();
+        }
+
+        $teamId = config('aura.teams') ? $this->current_team_id : null;
+        $cacheKey = ($teamId ?? 'global').':'.Role::catalogVersion();
+
+        if (array_key_exists($cacheKey, $this->resolvedRolesCache)) {
+            return $this->resolvedRolesCache[$cacheKey];
+        }
+
+        // Read the raw Membership rows for the relevant team context. The team
+        // filter is strict: in Teams-on mode a non-null current team reads only
+        // that team's Memberships, and a null current team reads only Memberships
+        // with a null pivot team_id — never an unfiltered read across all teams
+        // (which would leak roles from teams the user is not currently in). In
+        // Teams-off mode the pivot has no team_id column, so it is a flat read.
+        $roleIds = DB::table('user_role')
+            ->where('user_id', $this->id)
+            ->when(
+                config('aura.teams'),
+                fn ($query) => $teamId
+                    ? $query->where('team_id', $teamId)
+                    : $query->whereNull('team_id')
+            )
+            ->pluck('role_id');
+
+        if ($roleIds->isEmpty()) {
+            return $this->resolvedRolesCache[$cacheKey] = collect();
+        }
+
+        // The Membership's identity is its role slug; resolve each slug through
+        // the catalog seam. Bypass scopes to read slugs of global rows too.
+        $slugs = Role::withoutGlobalScopes()
+            ->whereIn('id', $roleIds)
+            ->pluck('slug')
+            ->unique();
+
+        return $this->resolvedRolesCache[$cacheKey] = $slugs
+            ->map(fn ($slug) => Role::resolveForTeam($slug, $teamId))
+            ->filter()
+            ->unique('id')
+            ->values();
     }
 
     public function canBeImpersonated()
@@ -515,7 +581,7 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
                 return true;
             }
 
-            $permissions = $role->fields['permissions'];
+            $permissions = $this->normalizePermissions($role);
 
             if (empty($permissions)) {
                 continue;
@@ -544,15 +610,10 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
                 return true;
             }
 
-            $permissions = $role->fields['permissions'];
+            $permissions = $this->normalizePermissions($role);
 
             if (empty($permissions)) {
                 continue;
-            }
-
-            // Temporary Fix. To Do: It should be an array
-            if (is_string($permissions)) {
-                $permissions = json_decode($permissions, true);
             }
 
             foreach ($permissions as $permission => $value) {
@@ -590,8 +651,12 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
     public function indexQuery($query)
     {
         if (config('aura.teams')) {
+            // A user belongs to the current team when they hold a Membership for
+            // it — filter on the pivot's team_id, not the role row's team_id. A
+            // Global Role carries team_id = null, so keying off the role row would
+            // wrongly exclude members who hold a Global Role (e.g. global admin).
             return $query->whereHas('roles', function ($query) {
-                $query->where('roles.team_id', Auth::user()->current_team_id);
+                $query->where('user_role.team_id', Auth::user()->current_team_id);
             });
         }
 
@@ -650,6 +715,18 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
         }
 
         return $this->id == $team->{$this->getForeignKey()};
+    }
+
+    /**
+     * Clear the resolved-roles memo when the model is refreshed, so a pivot
+     * attached/detached directly followed by refresh() reflects fresh roles
+     * (the staleness semantics existing tests rely on).
+     */
+    public function refresh()
+    {
+        $this->resolvedRolesCache = [];
+
+        return parent::refresh();
     }
 
     public function resource()
@@ -777,5 +854,23 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
     protected static function newFactory()
     {
         return UserFactory::new();
+    }
+
+    /**
+     * Normalize a role's permission set into an array.
+     *
+     * The single place that reconciles permission sets stored as a cast array
+     * or as a JSON string (meta/field values can deliver either), so permission
+     * checks behave identically regardless of how the set was persisted.
+     */
+    protected function normalizePermissions($role): array
+    {
+        $permissions = $role->permissions;
+
+        if (is_string($permissions)) {
+            $permissions = json_decode($permissions, true);
+        }
+
+        return is_array($permissions) ? $permissions : [];
     }
 }

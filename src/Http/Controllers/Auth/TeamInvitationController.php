@@ -34,9 +34,13 @@ class TeamInvitationController extends Controller
         abort_unless(is_string($userEmail) && strcasecmp($userEmail, $invitation->email) === 0, 403);
 
         if (! $user->teams()->whereKey($team->id)->exists()) {
+            // The invitation may carry a Team Role owned by this team or a shared
+            // Global Role (team_id = null). Accept either, but still refuse a role
+            // owned by a different team so invitations cannot inject cross-team
+            // access. The Membership records the team via the pivot regardless.
             $role = Role::withoutGlobalScopes()
                 ->whereKey($invitation->role)
-                ->where('team_id', $team->id)
+                ->visibleToTeam($team->id)
                 ->firstOrFail();
 
             $user->roles()->attach($role->id, ['team_id' => $team->id]);

@@ -1158,7 +1158,7 @@ parameters:
 		-
 			message: '#^Access to an undefined property Aura\\Base\\Resources\\User\:\:\$current_team_id\.$#'
 			identifier: property.notFound
-			count: 3
+			count: 4
 			path: src/Resources/User.php
 
 		-

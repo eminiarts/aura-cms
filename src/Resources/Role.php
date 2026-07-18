@@ -43,6 +43,15 @@ class Role extends Resource
         'super_admin' => 'boolean',
     ];
 
+    /**
+     * Monotonic Role Catalog version, bumped whenever any role is written or
+     * deleted (including quiet catalog-role writes). It keys the per-instance
+     * resolved-roles memo (User::cachedRoles) so creating or deleting a Shadow
+     * invalidates every user's cache lazily — instant shadow effect without
+     * paying resolution queries on every permission check.
+     */
+    protected static int $catalogVersion = 0;
+
     protected static $dropdown = 'Users';
 
     protected $fillable = [
@@ -60,9 +69,110 @@ class Role extends Resource
 
     protected $with = [];
 
+    /**
+     * Bump the Role Catalog version, invalidating every user's resolved-roles
+     * memo. Called from Role write/delete hooks and from the quiet catalog-role
+     * writes (which fire no model events) so a Shadow or catalog role created or
+     * deleted mid-request takes effect on the next permission check.
+     */
+    public static function bumpCatalogVersion(): void
+    {
+        static::$catalogVersion++;
+    }
+
+    /**
+     * The default attributes for a base Role Catalog role, keyed by slug.
+     *
+     * Single source of truth for the seeded/self-healed catalog defaults, shared
+     * by RoleCatalogSeeder, firstOrCreateCatalogRole(), the MakeUser command and
+     * the test helpers. (The upgrade migration deliberately keeps its own copy —
+     * a migration must not depend on model code.)
+     *
+     * @return array{name: string, slug: string, description: string, super_admin: bool, permissions: array<string, bool>}
+     */
+    public static function catalogDefaults(string $slug): array
+    {
+        return match ($slug) {
+            'admin' => [
+                'name' => 'Admin',
+                'slug' => 'admin',
+                'description' => 'Admin can perform everything.',
+                'super_admin' => true,
+                'permissions' => [],
+            ],
+            'user' => [
+                'name' => 'User',
+                'slug' => 'user',
+                'description' => 'Default role with minimal permissions.',
+                'super_admin' => false,
+                'permissions' => [],
+            ],
+            default => throw new \InvalidArgumentException("Unknown catalog role slug [{$slug}]."),
+        };
+    }
+
+    /**
+     * The monotonic Role Catalog version. Keys the per-instance resolved-roles
+     * memo (User::cachedRoles) so creating or deleting a catalog role or Shadow
+     * invalidates every user's cache lazily.
+     */
+    public static function catalogVersion(): int
+    {
+        return static::$catalogVersion;
+    }
+
     public function createMissingPermissions()
     {
         GenerateAllResourcePermissions::dispatch();
+    }
+
+    /**
+     * Ensure a base Role Catalog role (Global Role, team_id = null) exists and
+     * return it. Self-heals installs whose catalog was never seeded (a bare
+     * `migrate`, or the test harness, which does not run aura:install), using the
+     * shared catalogDefaults().
+     *
+     * The row is written with saveQuietly() so the InitialPostFields saving hook
+     * — which auto-assigns the current team's id whenever team_id is unset — does
+     * not silently re-team the Global Role. In Teams-off mode the roles table has
+     * no team_id column, so the flat catalog row is used as-is. The catalog
+     * version is bumped explicitly since quiet writes fire no model events.
+     */
+    public static function firstOrCreateCatalogRole(string $slug): self
+    {
+        $query = static::withoutGlobalScopes()->where('slug', $slug);
+
+        if (config('aura.teams')) {
+            $query->whereNull('team_id');
+        }
+
+        if ($role = $query->first()) {
+            return $role;
+        }
+
+        $attributes = static::catalogDefaults($slug);
+
+        if (config('aura.teams')) {
+            // team_id is fillable, so passing it explicitly writes a Global Role.
+            $attributes['team_id'] = null;
+        }
+
+        $role = static::withoutGlobalScopes()->newModelInstance($attributes);
+        $role->saveQuietly();
+
+        static::bumpCatalogVersion();
+
+        return $role;
+    }
+
+    /**
+     * Ensure the shared global `admin` Global Role (Super Admin) exists. Backs
+     * the "attach-don't-mint" model: team creation and registration attach the
+     * creator to this single role instead of minting a per-team admin row.
+     */
+    public static function firstOrCreateGlobalAdmin(): self
+    {
+        return static::firstOrCreateCatalogRole('admin');
     }
 
     public static function getFields()
@@ -160,6 +270,66 @@ class Role extends Resource
         return $this->hasMany(Meta::class, 'post_id');
     }
 
+    /**
+     * Resolve the effective role for a given slug within a team context.
+     *
+     * This is the single Role Catalog resolution seam. Shadowing is resolved by
+     * slug at check time: when a team owns a role with the given slug (a Shadow),
+     * that Team Role wins; otherwise the Global Role (team_id = null) applies.
+     * In Teams-off mode there is only one scope, so the Global Role is the role.
+     *
+     * Membership pivot rows are never rewritten — creating or deleting a Shadow
+     * changes the resolved role (and therefore permission outcomes) instantly.
+     *
+     * @param  string  $slug  The role slug that identifies the role within a team.
+     * @param  int|null  $teamId  The team context to resolve within (null = global/Teams-off).
+     */
+    public static function resolveForTeam(string $slug, ?int $teamId = null): ?self
+    {
+        // Bypass TeamScope (and any other global scopes) so both the current
+        // team's rows and the global (team_id = null) rows are considered.
+        $base = static::withoutGlobalScopes();
+
+        // Teams-off mode: the roles table has no team_id column, so there is a
+        // single flat catalog. The global role simply is the role.
+        if (! config('aura.teams')) {
+            return (clone $base)->where('slug', $slug)->first();
+        }
+
+        // Teams-on: a Team Role (Shadow) wins over the Global Role by slug.
+        if ($teamId !== null) {
+            $teamRole = (clone $base)
+                ->where('slug', $slug)
+                ->where('team_id', $teamId)
+                ->first();
+
+            if ($teamRole) {
+                return $teamRole;
+            }
+        }
+
+        // Fall back to the Global Role definition.
+        return (clone $base)
+            ->where('slug', $slug)
+            ->whereNull('team_id')
+            ->first();
+    }
+
+    /**
+     * Constrain a role query to the roles visible within a team context: the
+     * team's own Team Roles plus the shared Global Roles (team_id = null). This
+     * is the single expression of the "team-or-global" shape used by the
+     * assignable-roles guard, invitation acceptance and TeamScope's roles branch.
+     */
+    public function scopeVisibleToTeam($query, ?int $teamId)
+    {
+        $column = $query->getModel()->getTable().'.team_id';
+
+        return $query->where(function ($query) use ($column, $teamId) {
+            $query->where($column, $teamId)->orWhereNull($column);
+        });
+    }
+
     public function teams(): BelongsToMany
     {
         return $this->belongsToMany(Team::class, 'user_role')
@@ -188,5 +358,16 @@ class Role extends Resource
 
         return $this->belongsToMany(User::class, 'user_role')
             ->withTimestamps();
+    }
+
+    protected static function booted()
+    {
+        parent::booted();
+
+        // Any catalog write (including creating or deleting a Shadow) bumps the
+        // Role Catalog version so every user's resolved-roles memo recomputes on
+        // its next permission check — instant shadow effect, no per-call queries.
+        static::saved(fn () => static::bumpCatalogVersion());
+        static::deleted(fn () => static::bumpCatalogVersion());
     }
 }

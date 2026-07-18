@@ -20,6 +20,7 @@ use Aura\Base\Commands\PublishCommand;
 use Aura\Base\Commands\TransferFromPostsToCustomTable;
 use Aura\Base\Commands\TransformTableToResource;
 use Aura\Base\Commands\UpdateSchemaFromMigration;
+use Aura\Base\Database\Seeders\RoleCatalogSeeder;
 use Aura\Base\Facades\Aura;
 use Aura\Base\Livewire\Attachment\Index as AttachmentIndex;
 use Aura\Base\Livewire\AttachmentDetails;
@@ -214,7 +215,7 @@ class AuraServiceProvider extends PackageServiceProvider
             ->hasViews('aura')
             ->hasAssets()
             ->hasRoutes('web')
-            ->hasMigrations(['create_aura_tables'])
+            ->hasMigrations(['create_aura_tables', 'consolidate_per_team_admin_roles'])
             ->runsMigrations()
             ->hasCommands([
                 InstallConfigCommand::class,
@@ -256,6 +257,11 @@ class AuraServiceProvider extends PackageServiceProvider
 
                         if ($command->confirm('Do you want to run the migrations?', true)) {
                             $command->call('migrate');
+
+                            // Seed the base Role Catalog (admin + user Global Roles)
+                            // so a fresh install works in both Teams-on and
+                            // Teams-off mode without hand-seeding. Idempotent.
+                            RoleCatalogSeeder::seed();
                         }
 
                         if ($command->confirm('Do you want to create a user?', true)) {

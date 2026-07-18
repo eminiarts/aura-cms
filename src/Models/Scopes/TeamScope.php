@@ -2,6 +2,7 @@
 
 namespace Aura\Base\Models\Scopes;
 
+use Aura\Base\Resources\Role;
 use Aura\Base\Resources\User;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
@@ -68,6 +69,19 @@ class TeamScope implements Scope
 
             // For Team model, don't apply team scope
             if ($model->getTable() === 'teams') {
+                self::$applying = false;
+
+                return;
+            }
+
+            // Roles resolve against the Role Catalog: within a team, queries see
+            // both the team's own Team Roles and the shared Global Roles
+            // (team_id = null). The merged/de-duplicated Roles UI is handled
+            // elsewhere; here we only make Global Roles visible at the query
+            // layer. Shadow resolution itself goes through Role::resolveForTeam.
+            if ($model instanceof Role) {
+                $model->scopeVisibleToTeam($builder, $currentTeamId);
+
                 self::$applying = false;
 
                 return;

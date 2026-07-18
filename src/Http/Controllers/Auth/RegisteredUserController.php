@@ -66,9 +66,15 @@ class RegisteredUserController extends Controller
 
             $user->save();
 
-            $role = $team->roles->first();
+            // Attach-don't-mint: the registrant becomes Super Admin of their new
+            // team via the shared global `admin` role rather than a per-team admin
+            // row. The team is created before login, so the Team `created` hook's
+            // auth-guarded attach does not run here — assign the role explicitly
+            // through the Roles field. The helper self-heals the Global Role when
+            // the catalog was never seeded.
+            $adminRole = app(config('aura.resources.role'))::firstOrCreateGlobalAdmin();
 
-            $user->update(['roles' => [$role->id]]);
+            $user->update(['roles' => [$adminRole->id]]);
         } else {
             // no aura.teams
             $request->validate([
@@ -83,7 +89,10 @@ class RegisteredUserController extends Controller
                 'password' => Hash::make($request->password),
             ]);
 
-            $role = app(config('aura.resources.role'))::where('slug', 'user')->firstOrFail();
+            // Self-heal the default `user` catalog role so registration works on
+            // a bare `migrate` install where the seeder never ran, instead of
+            // throwing on a missing row.
+            $role = app(config('aura.resources.role'))::firstOrCreateCatalogRole('user');
 
             $user->update(['roles' => [$role->id]]);
         }
