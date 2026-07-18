@@ -23,7 +23,7 @@ class ResourcePolicy
             return false;
         }
 
-        if ($user->isSuperAdmin()) {
+        if ($this->hasBlanketAccess($user)) {
             return true;
         }
 
@@ -42,7 +42,7 @@ class ResourcePolicy
      */
     public function delete($user, $resource)
     {
-        if ($user->isSuperAdmin()) {
+        if ($this->hasBlanketAccess($user)) {
             return true;
         }
 
@@ -70,7 +70,7 @@ class ResourcePolicy
      */
     public function forceDelete($user, $resource)
     {
-        if ($user->isSuperAdmin()) {
+        if ($this->hasBlanketAccess($user)) {
             return true;
         }
 
@@ -89,7 +89,7 @@ class ResourcePolicy
      */
     public function restore(User $user, $resource)
     {
-        if ($user->isSuperAdmin()) {
+        if ($this->hasBlanketAccess($user)) {
             return true;
         }
         if ($user->hasPermissionTo('restore', $resource)) {
@@ -111,7 +111,7 @@ class ResourcePolicy
             return false;
         }
 
-        if ($user->isSuperAdmin()) {
+        if ($this->hasBlanketAccess($user)) {
             return true;
         }
 
@@ -150,7 +150,7 @@ class ResourcePolicy
         }
 
         // Check if the user is a superadmin
-        if ($user->isSuperAdmin()) {
+        if ($this->hasBlanketAccess($user)) {
             return true;
         }
 
@@ -181,7 +181,7 @@ class ResourcePolicy
             return false;
         }
 
-        if ($user->isSuperAdmin()) {
+        if ($this->hasBlanketAccess($user)) {
             return true;
         }
 
@@ -190,5 +190,15 @@ class ResourcePolicy
         }
 
         return false;
+    }
+
+    /**
+     * Blanket access: a Super Admin (per-team) or a Global Admin (instance-wide,
+     * including a Global Admin visiting a team where they hold no role) clears
+     * every resource ability. The single gate every method funnels through.
+     */
+    protected function hasBlanketAccess($user): bool
+    {
+        return $user->isSuperAdmin() || $user->isAuraGlobalAdmin();
     }
 }

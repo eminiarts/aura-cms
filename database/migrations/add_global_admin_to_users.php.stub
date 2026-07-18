@@ -1,0 +1,51 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+/**
+ * Add the Global Admin flag to the users table (best-effort, pre-release
+ * posture per ADR 0003).
+ *
+ * Fresh installs already get `users.global_admin` from create_aura_tables. This
+ * migration covers pre-release installs whose users table predates the column:
+ * it adds the boolean (default false) only when it is missing, so existing
+ * users are non-Global-Admins until an operator grants the flag via the CLI or
+ * a Global Admin toggles it.
+ *
+ * Rollback removes only the column this migration added (ADR 0002: an
+ * added-column migration rolls back by dropping only those columns).
+ */
+return new class extends Migration
+{
+    public function up(): void
+    {
+        if (! Schema::hasTable('users')) {
+            return;
+        }
+
+        if (Schema::hasColumn('users', 'global_admin')) {
+            return;
+        }
+
+        Schema::table('users', function (Blueprint $table) {
+            $table->boolean('global_admin')->default(false);
+        });
+    }
+
+    public function down(): void
+    {
+        if (! Schema::hasTable('users')) {
+            return;
+        }
+
+        if (! Schema::hasColumn('users', 'global_admin')) {
+            return;
+        }
+
+        Schema::table('users', function (Blueprint $table) {
+            $table->dropColumn('global_admin');
+        });
+    }
+};

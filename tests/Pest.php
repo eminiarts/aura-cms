@@ -78,6 +78,44 @@ function globalAdminRole(): ?Role
         ->first();
 }
 
+/**
+ * Promote a fresh user to Global Admin the trusted way: a direct,
+ * pipeline-bypassing write (`saveQuietly`), the same posture the CLI bootstrap
+ * uses. The flag is never granted through a user-facing write path in tests.
+ */
+function createGlobalAdmin(array $attributes = []): User
+{
+    $user = User::factory()->create($attributes);
+    $user->forceFill(['global_admin' => true])->saveQuietly();
+
+    return $user->refresh();
+}
+
+/**
+ * A team owned by someone else, with the current user holding no Membership —
+ * for asserting cross-team visibility and Global Admin visitation. Created
+ * quietly so the team-creation hook does not attach the acting user.
+ */
+function foreignTeam(): Team
+{
+    return Team::factory()->createQuietly(['user_id' => User::factory()->create()->id]);
+}
+
+/**
+ * A user whose only Membership is in the given team (pivot role + current team).
+ */
+function soleMemberOf(Team $team): User
+{
+    $role = Role::where('team_id', $team->id)->first()
+        ?? Role::factory()->create(['team_id' => $team->id]);
+
+    $member = User::factory()->create();
+    $member->roles()->attach($role->id, ['team_id' => $team->id]);
+    $member->forceFill(['current_team_id' => $team->id])->save();
+
+    return $member->refresh();
+}
+
 function createSuperAdmin()
 {
     if (! config('aura.teams')) {

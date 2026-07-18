@@ -259,6 +259,14 @@ class Team extends Resource
     protected static function booted()
     {
         parent::booted();
+
+        // Any team write (create, rename, restore) can change what a Global
+        // Admin's switcher should show — drop the shared cache. created/deleted
+        // also forget it explicitly, but a plain rename only fires saved.
+        static::saved(function ($team) {
+            Cache::forget(User::GLOBAL_ADMIN_TEAMS_CACHE_KEY);
+        });
+
         static::saving(function ($team) {
             // unset title attribute
             unset($team->title);
@@ -297,6 +305,10 @@ class Team extends Resource
                 // Clear cache of Cache('user.'.$user->id.'.teams')
                 Cache::forget('user.'.$user->id.'.teams');
             }
+
+            // A Global Admin's switcher lists every team from one shared cache
+            // key — invalidate it so a newly created team appears immediately.
+            Cache::forget(User::GLOBAL_ADMIN_TEAMS_CACHE_KEY);
 
             // Create all permissions for the team
             GenerateAllResourcePermissions::dispatch($team->id);
@@ -356,6 +368,10 @@ class Team extends Resource
                 ->each(function ($userId) {
                     Cache::forget('user.'.$userId.'.teams');
                 });
+
+            // Drop the shared Global Admin switcher cache so the deleted team
+            // no longer shows up for Global Admins.
+            Cache::forget(User::GLOBAL_ADMIN_TEAMS_CACHE_KEY);
         });
 
     }
