@@ -28,7 +28,7 @@ class AuraFake extends Aura
 
         $slug = $model->getSlug();
 
-        Aura::registerRoutes($slug);
+        Aura::registerRoutes($slug, $model);
 
         Aura::clearRoutes();
     }

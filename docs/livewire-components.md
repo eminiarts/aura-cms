@@ -201,6 +201,10 @@ public function boot()
 
 ## Resource Components
 
+### Customizing a Resource Page
+
+To swap any of the four page components below for your own subclass, run `php artisan aura:customize` (see [Customizing Views](customizing-views.md#scaffolding-with-auracustomize)). It generates the component (and optionally a copy of the page's Blade view) and writes a static hook — `indexComponent()`, `createComponent()`, `editComponent()`, or `viewComponent()` — into your resource class. Route registration resolves these hooks, so the custom component is served on the existing URI and `aura.{slug}.*` route name without touching any route files.
+
 ### Resource Index
 
 Lists resources with the Table component. Uses the `AuthorizesRequests` trait for permission checks.

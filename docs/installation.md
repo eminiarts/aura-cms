@@ -796,7 +796,7 @@ Aura CMS provides several artisan commands for development and maintenance:
 ### Utilities
 | Command | Description |
 |---------|-------------|
-| `php artisan aura:customize-component` | Customize a Livewire component |
+| `php artisan aura:customize` | Customize a resource page (copy its Blade view and/or generate a custom Livewire component) |
 | `php artisan aura:database-to-resources` | Generate resources from database tables |
 | `php artisan aura:transform-table-to-resource` | Transform a database table into a resource |
 | `php artisan aura:layout` | Generate Aura layout files |

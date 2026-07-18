@@ -1,0 +1,10 @@
+<?php
+
+namespace App\Livewire;
+
+use {{ baseClass }} as Base{{ type }};
+
+class {{ class }} extends Base{{ type }}
+{
+{{ methods }}
+}

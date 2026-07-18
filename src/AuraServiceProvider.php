@@ -7,7 +7,7 @@ use Aura\Base\Commands\CreateAuraPlugin;
 use Aura\Base\Commands\CreateResourceFactory;
 use Aura\Base\Commands\CreateResourceMigration;
 use Aura\Base\Commands\CreateResourcePermissions;
-use Aura\Base\Commands\CustomizeComponent;
+use Aura\Base\Commands\CustomizeCommand;
 use Aura\Base\Commands\DatabaseToResources;
 use Aura\Base\Commands\ExtendUserModel;
 use Aura\Base\Commands\InstallConfigCommand;
@@ -234,7 +234,7 @@ class AuraServiceProvider extends PackageServiceProvider
                 InstallConfigCommand::class,
                 MakeResource::class,
                 MakeUser::class,
-                CustomizeComponent::class,
+                CustomizeCommand::class,
                 CreateAuraPlugin::class,
                 MakeField::class,
                 PublishCommand::class,

@@ -21,6 +21,7 @@ trait AuraModelConfig
 {
     use Concerns\AuraQueriesMeta;
     use Concerns\AuraResourceActions;
+    use Concerns\AuraResourceComponents;
     use Concerns\AuraResourceConfiguration;
     use Concerns\AuraResourceIdentity;
     use Concerns\AuraResourceMeta;

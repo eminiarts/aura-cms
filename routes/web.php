@@ -6,10 +6,6 @@ use Aura\Base\Http\Controllers\ImageController;
 use Aura\Base\Http\Middleware\EnsureResourceEditorEnabled;
 use Aura\Base\Livewire\Attachment\Index as AttachmentIndex;
 use Aura\Base\Livewire\PluginsPage;
-use Aura\Base\Livewire\Resource\Create;
-use Aura\Base\Livewire\Resource\Edit;
-use Aura\Base\Livewire\Resource\Index;
-use Aura\Base\Livewire\Resource\View;
 use Aura\Base\Livewire\ResourceEditor;
 use Aura\Base\Livewire\Styleguide;
 use Illuminate\Support\Facades\Route;
@@ -65,10 +61,10 @@ Route::domain(config('aura.domain'))
                     continue;
                 }
 
-                Route::get("/{$slug}", Index::class)->name("{$slug}.index");
-                Route::get("/{$slug}/create", Create::class)->name("{$slug}.create");
-                Route::get("/{$slug}/{id}/edit", Edit::class)->name("{$slug}.edit");
-                Route::get("/{$slug}/{id}", View::class)->name("{$slug}.view");
+                Route::get("/{$slug}", $resource::indexComponent())->name("{$slug}.index");
+                Route::get("/{$slug}/create", $resource::createComponent())->name("{$slug}.create");
+                Route::get("/{$slug}/{id}/edit", $resource::editComponent())->name("{$slug}.edit");
+                Route::get("/{$slug}/{id}", $resource::viewComponent())->name("{$slug}.view");
             }
 
             Route::get('/attachment', AttachmentIndex::class)->name('attachment.index');

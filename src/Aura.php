@@ -408,17 +408,19 @@ class Aura
         $this->resources = array_merge($this->resources, $resources);
     }
 
-    public function registerRoutes($slug)
+    public function registerRoutes($slug, $resource = null)
     {
+        $resource = $resource ? (is_object($resource) ? get_class($resource) : $resource) : null;
+
         Route::domain(config('aura.domain'))
             ->middleware(config('aura-settings.middleware.aura-admin'))
             ->prefix(config('aura.path')) // This is likely 'admin' from your config
             ->name('aura.')
-            ->group(function () use ($slug) {
-                Route::get("/{$slug}", Index::class)->name("{$slug}.index");
-                Route::get("/{$slug}/create", Create::class)->name("{$slug}.create");
-                Route::get("/{$slug}/{id}/edit", Edit::class)->name("{$slug}.edit");
-                Route::get("/{$slug}/{id}", View::class)->name("{$slug}.view");
+            ->group(function () use ($slug, $resource) {
+                Route::get("/{$slug}", $resource ? $resource::indexComponent() : Index::class)->name("{$slug}.index");
+                Route::get("/{$slug}/create", $resource ? $resource::createComponent() : Create::class)->name("{$slug}.create");
+                Route::get("/{$slug}/{id}/edit", $resource ? $resource::editComponent() : Edit::class)->name("{$slug}.edit");
+                Route::get("/{$slug}/{id}", $resource ? $resource::viewComponent() : View::class)->name("{$slug}.view");
             });
     }
 

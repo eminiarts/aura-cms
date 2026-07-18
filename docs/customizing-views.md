@@ -98,6 +98,26 @@ resources/views/
 
 ## Resource Views
 
+### Scaffolding with aura:customize
+
+The fastest way to customize a resource page is the `aura:customize` command. It copies the package Blade view into your project, generates a Livewire component extending the package one, or both — and wires everything to the resource so the existing route serves it:
+
+```bash
+php artisan aura:customize
+# or non-interactively:
+php artisan aura:customize Product view edit --mode=full
+```
+
+Pick what to generate with `--mode`:
+
+- `full` (default) — a component in `app/Livewire/{Type}{Resource}.php` plus a copy of the package view in `resources/views/aura/{slug}/{type}.blade.php`, wired together through `render()`.
+- `view` — only copies the Blade view and overrides the resource's `{type}View()` method (see below). No component is generated.
+- `component` — only the component subclass; it keeps rendering the package view.
+
+The command never edits route files. Resources declare their page components through static hooks (`indexComponent()`, `createComponent()`, `editComponent()`, `viewComponent()`), and route registration resolves them — the custom component is served on the existing URI under the existing `aura.{slug}.*` route name, so all generated links keep working. For package resources (User, Team, …) the command first scaffolds an app-level subclass in `app/Aura/Resources` and points `config('aura.resources.*')` at it.
+
+Everything the command generates can also be written by hand using the methods documented in the rest of this page.
+
 ### Available Resource Views
 
 Each resource has multiple customizable views:
@@ -1047,6 +1067,28 @@ class ProductEdit extends BaseEdit
     }
 }
 ```
+
+### Wiring a Custom Component to a Resource Route
+
+To have Aura serve an extended component instead of the default one, declare it on the resource via the static component hooks — no route changes needed:
+
+```php
+namespace App\Aura\Resources;
+
+use Aura\Base\Resource;
+
+class Product extends Resource
+{
+    public static function editComponent(): string
+    {
+        return \App\Livewire\EditProduct::class;
+    }
+
+    // Also available: indexComponent(), createComponent(), viewComponent()
+}
+```
+
+Route registration resolves these hooks, so `/admin/product/{id}/edit` (route name `aura.product.edit`) now renders `EditProduct`. `php artisan aura:customize Product edit --mode=component` writes exactly this override for you.
 
 ### Custom Livewire View
 
