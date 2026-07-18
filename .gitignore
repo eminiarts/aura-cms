@@ -19,4 +19,5 @@ plugins/
 .cursorrules
 .windsurfrules
 logs/
-prompts/tests/Browser/Screenshots/
+prompts/
+tests/Browser/Screenshots/
