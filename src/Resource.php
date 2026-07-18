@@ -56,6 +56,16 @@ class Resource extends Model implements DefinesFields
 
     protected $appends = ['fields'];
 
+    /**
+     * Re-entrancy guard for getFieldsAttribute(): true while the fields
+     * collection is mid-build. Building resolves each field value, which can
+     * read back into this accessor (e.g. relation loading dereferences the
+     * model's key via __get) before the cache is populated. The guard lets that
+     * nested read see an empty collection instead of triggering an unbounded
+     * rebuild.
+     */
+    protected bool $buildingFieldsAttribute = false;
+
     protected $fillable = ['title', 'content', 'type', 'status', 'fields', 'slug', 'user_id', 'parent_id', 'order', 'team_id', 'created_at', 'updated_at', 'deleted_at'];
 
     protected $hidden = ['meta'];
@@ -137,6 +147,34 @@ class Resource extends Model implements DefinesFields
     }
 
     /**
+     * Mirror __get's resolution order for isset()/empty()/null-coalescing.
+     *
+     * Eloquent's native Model::__isset only inspects real attributes and
+     * relations, so it reports meta-backed and computed field slugs as "unset"
+     * — which silently breaks `$model->metaField ?? 'default'`, `pluck()` and
+     * `empty()` for exactly those dynamic attributes. Since __get resolves a key
+     * through resolveDynamicAttribute() (Eloquent state → relation field →
+     * computed `fields` value), isset() must report true whenever that same
+     * ladder would yield a non-null value; resolving once here keeps __isset and
+     * __get in lock-step, including the empty-collection coercion for relation
+     * slugs.
+     *
+     * Recursion note: resolving a meta/computed slug builds the `fields`
+     * accessor, whose construction (resolveFieldValue) probes for a *real*
+     * Eloquent attribute. Those probes deliberately use parent::__isset() —
+     * native, meta-blind semantics — so this meta-aware resolution can never
+     * recurse into itself, and the table-display fast path is never forced into
+     * a full fields build just to test attribute presence.
+     *
+     * @param  string  $key
+     * @return bool
+     */
+    public function __isset($key)
+    {
+        return ! is_null($this->resolveDynamicAttribute($key));
+    }
+
+    /**
      * @return HasMany
      */
     public function attachment()
@@ -171,7 +209,20 @@ class Resource extends Model implements DefinesFields
 
     public function getFieldsAttribute()
     {
-        if (! isset($this->fieldsAttributeCache) || $this->fieldsAttributeCache === null) {
+        if (isset($this->fieldsAttributeCache) && $this->fieldsAttributeCache !== null) {
+            return $this->fieldsAttributeCache;
+        }
+
+        // Re-entrancy guard: a nested read of this accessor while it is still
+        // building (before the cache is populated) gets an empty collection
+        // rather than kicking off an unbounded rebuild. See the property docblock.
+        if ($this->buildingFieldsAttribute) {
+            return collect();
+        }
+
+        $this->buildingFieldsAttribute = true;
+
+        try {
             // Get fields only once and store in a variable
             $fieldsWithoutLogic = $this->getFieldsWithoutConditionalLogic();
 
@@ -192,6 +243,8 @@ class Resource extends Model implements DefinesFields
 
                     return ConditionalLogic::shouldDisplayField($this, $field, ['fields' => $fieldsWithoutLogic]);
                 });
+        } finally {
+            $this->buildingFieldsAttribute = false;
         }
 
         return $this->fieldsAttributeCache;
@@ -334,11 +387,17 @@ class Resource extends Model implements DefinesFields
             return $class->get($class, $this->{$key}, $field);
         }
 
-        if ($class && isset($this->{$key}) && method_exists($class, 'get')) {
+        // Deliberately meta-BLIND probes: this method COMPUTES the value later
+        // surfaced (meta-aware) via __get/__isset, so it must ask only whether a
+        // *real* Eloquent attribute/relation exists for this slug. parent::__isset()
+        // is the native check (identical to the historical isset($this->{$key})
+        // before Resource declared its own __isset) — using the meta-aware isset()
+        // here would recurse into the fields build and defeat the display fast path.
+        if ($class && parent::__isset($key) && method_exists($class, 'get')) {
             return $class->get($class, $this->{$key}, $field);
         }
 
-        if (isset($this->{$key})) {
+        if (parent::__isset($key)) {
             return $this->{$key};
         }
 
@@ -356,7 +415,7 @@ class Resource extends Model implements DefinesFields
             return $this->{$method}($value);
         }
 
-        if ($class && isset(optional($this)->{$key}) && method_exists($class, 'get')) {
+        if ($class && parent::__isset($key) && method_exists($class, 'get')) {
             return $class->get($class, $this->{$key} ?? null, $field);
         }
 
