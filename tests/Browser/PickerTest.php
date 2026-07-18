@@ -110,16 +110,11 @@ test('uploading inside the picker auto-selects the new attachment', function () 
 
     expect($attachment)->not->toBeNull();
 
-    // The auto-select flows through a Livewire event roundtrip; poll briefly
-    // instead of trusting a single flat wait (flaked once on a loaded runner).
-    $tries = 10;
-    while (pickerSelection($page) === [] && $tries-- > 0) {
-        $page->wait(1);
-    }
-
-    expect(pickerSelection($page))->toBe([$attachment->id]);
-
-    // The fresh upload is selected without any manual click; Select + Save
+    // Auto-select lands in the MediaManager's entangled `selected` — the
+    // scope the Select button submits. The table's Alpine scope (what
+    // pickerSelection reads) syncs through a separate selectedRows roundtrip
+    // and races on loaded runners, so assert at the outcome level instead:
+    // the fresh upload is selected without any manual click; Select + Save
     // proves it flowed into the field.
     $page->click('Select')->wait(2);
 
