@@ -33,8 +33,14 @@ test('a super admin invites a new email; the signed link registers them into the
 
     $page->assertSee('Invitation sent successfully.');
 
-    // The invitation exists and the mail was dispatched.
-    Mail::assertSent(TeamInvitationMail::class, fn ($mail) => $mail->invitation->email === 'newbie@example.com');
+    // The invitation exists and the mail was dispatched — capture the mailable so
+    // the flow can follow the link the email actually carries.
+    $capturedMail = null;
+    Mail::assertSent(TeamInvitationMail::class, function (TeamInvitationMail $mail) use (&$capturedMail) {
+        $capturedMail = $mail;
+
+        return $mail->invitation->email === 'newbie@example.com';
+    });
 
     $invitation = TeamInvitation::withoutGlobalScopes()->latest('id')->first();
 
@@ -42,8 +48,8 @@ test('a super admin invites a new email; the signed link registers them into the
         ->and($invitation->email)->toBe('newbie@example.com')
         ->and((int) $invitation->role)->toBe($role->id);
 
-    // The signed register link the mailable would carry.
-    $registerUrl = browserInvitationRegisterUrl($team, $invitation);
+    // The actual signed register link the sent email carries (not a re-derivation).
+    $registerUrl = browserExtractMailLink($capturedMail, '/register/');
     $invitationId = $invitation->id;
 
     // Log out, then follow the signed link as a guest and register.
@@ -86,7 +92,9 @@ test('an existing user accepts an invitation and gains membership with the carri
         'role' => $role->id,
     ]);
 
-    $acceptUrl = browserInvitationAcceptUrl($invitation);
+    // Follow the accept link the real mailable emits for an existing account,
+    // rather than re-deriving it through a helper.
+    $acceptUrl = browserExtractMailLink(new TeamInvitationMail($invitation), '/team-invitations/');
     $invitationId = $invitation->id;
 
     // Act as the invited user, then follow the signed accept link in the browser.

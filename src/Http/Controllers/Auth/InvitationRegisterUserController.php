@@ -28,6 +28,11 @@ class InvitationRegisterUserController extends Controller
         // If team registration is disabled, we show a 404 page.
         abort_if(! config('aura.auth.user_invitations'), 404);
 
+        // An email that already has an account must accept the invitation, not
+        // register a second one — refuse the register form outright (the mail
+        // routes existing accounts to the accept link anyway).
+        abort_if($this->emailAlreadyRegistered($teamInvitation->email), 403);
+
         return view('aura::auth.user_invitation', [
             'team' => $team,
             'teamInvitation' => $teamInvitation,
@@ -65,12 +70,7 @@ class InvitationRegisterUserController extends Controller
         // An email that already belongs to an account (any casing) must accept the
         // invitation, not register a second account. Refuse rather than mint a
         // case-variant duplicate.
-        abort_if(
-            User::withoutGlobalScopes()
-                ->whereRaw('lower(email) = ?', [mb_strtolower((string) $teamInvitation->email)])
-                ->exists(),
-            403
-        );
+        abort_if($this->emailAlreadyRegistered($teamInvitation->email), 403);
 
         // Create the user and consume the invitation atomically: a mid-flight
         // failure (e.g. the Roles field refusing the assignment) rolls the insert
@@ -94,5 +94,20 @@ class InvitationRegisterUserController extends Controller
         Auth::login($user);
 
         return redirect(config('aura.auth.redirect'));
+    }
+
+    /**
+     * Whether an account already exists for the given email, compared
+     * case-insensitively (consistent with the accept path's strcasecmp match).
+     */
+    protected function emailAlreadyRegistered(?string $email): bool
+    {
+        if ($email === null || $email === '') {
+            return false;
+        }
+
+        return User::withoutGlobalScopes()
+            ->whereRaw('lower(email) = ?', [mb_strtolower($email)])
+            ->exists();
     }
 }

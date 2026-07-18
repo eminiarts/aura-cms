@@ -19,18 +19,6 @@ require_once __DIR__.'/Support/helpers.php';
 |
 */
 
-/**
- * A team owned by a throwaway user, created quietly so no creator Membership or
- * per-team admin row is minted — a clean tenant to attach the target user into.
- */
-function browserQuietTeam(string $name): Team
-{
-    return Team::factory()->createQuietly([
-        'name' => $name,
-        'user_id' => User::factory()->create()->id,
-    ]);
-}
-
 test('a Global Admin views both Memberships and changes, attaches, and detaches through the editor', function () {
     $teamA = browserQuietTeam('Team Alpha');
     $teamB = browserQuietTeam('Team Beta');

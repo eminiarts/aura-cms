@@ -240,13 +240,10 @@ class Edit extends Component
             }, $rule);
         }
 
-        if ($rule instanceof Unique) {
-            return (clone $rule)->ignore($this->model->getKey(), $this->model->getKeyName());
-        }
-
-        // The custom case-insensitive email rule ignores the current record the
-        // same way, so editing a user without changing their email never trips it.
-        if ($rule instanceof CaseInsensitiveUniqueEmail) {
+        // Both the framework Unique rule and the custom case-insensitive email
+        // rule expose ignore($id, $keyName), so editing a record without changing
+        // the unique value never trips its own row.
+        if ($rule instanceof Unique || $rule instanceof CaseInsensitiveUniqueEmail) {
             return (clone $rule)->ignore($this->model->getKey(), $this->model->getKeyName());
         }
 

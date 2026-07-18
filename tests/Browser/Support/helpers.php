@@ -147,3 +147,63 @@ if (! function_exists('browserInvitationAcceptUrl')) {
         );
     }
 }
+
+if (! function_exists('browserExtractMailLink')) {
+    /**
+     * Pull a real link out of a rendered mailable — proving the flow follows the
+     * URL the email actually carries, not a helper's re-derivation of it. Returns
+     * the first href whose (entity-decoded) value contains $needle.
+     */
+    function browserExtractMailLink(object $mailable, string $needle): string
+    {
+        preg_match_all('/href="([^"]+)"/i', $mailable->render(), $matches);
+
+        foreach ($matches[1] as $href) {
+            $decoded = html_entity_decode($href, ENT_QUOTES);
+
+            if (str_contains($decoded, $needle)) {
+                return $decoded;
+            }
+        }
+
+        throw new RuntimeException('No link containing "'.$needle.'" was found in the rendered mail.');
+    }
+}
+
+if (! function_exists('browserQuietTeam')) {
+    /**
+     * A team owned by a throwaway user, created quietly so no creator Membership
+     * or per-team admin row is minted — a clean tenant to attach a target user
+     * into.
+     */
+    function browserQuietTeam(string $name): Team
+    {
+        return Team::factory()->createQuietly([
+            'name' => $name,
+            'user_id' => User::factory()->create()->id,
+        ]);
+    }
+}
+
+if (! function_exists('browserGlobalRole')) {
+    /**
+     * A Global Role (team_id = null) written quietly so InitialPostFields' saving
+     * hook never re-teams it to the acting user's current team. Bumps the catalog
+     * version the same way the seeder/self-heal path does.
+     */
+    function browserGlobalRole(string $slug, string $name, array $attributes = []): Role
+    {
+        $role = Role::withoutGlobalScopes()->newModelInstance(array_merge([
+            'name' => $name,
+            'slug' => $slug,
+            'super_admin' => false,
+            'permissions' => [],
+            'team_id' => null,
+        ], $attributes));
+
+        $role->saveQuietly();
+        Role::bumpCatalogVersion();
+
+        return $role->refresh();
+    }
+}

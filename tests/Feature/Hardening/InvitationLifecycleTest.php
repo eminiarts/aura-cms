@@ -9,7 +9,8 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Schema;
-use Illuminate\Support\Facades\URL;
+
+require_once __DIR__.'/helpers.php';
 
 uses(RefreshDatabase::class);
 
@@ -45,32 +46,14 @@ beforeEach(function () {
     ]);
 });
 
-function acceptUrl(TeamInvitation $invitation, ?int $days = null): string
-{
-    return URL::temporarySignedRoute(
-        'aura.team-invitations.accept',
-        now()->addDays($days ?? (int) config('aura.auth.invitation_expiry')),
-        ['invitation' => $invitation],
-    );
-}
-
-function registerUrl($team, TeamInvitation $invitation, ?int $days = null): string
-{
-    return URL::temporarySignedRoute(
-        'aura.invitation.register',
-        now()->addDays($days ?? (int) config('aura.auth.invitation_expiry')),
-        ['team' => $team, 'teamInvitation' => $invitation],
-    );
-}
-
 it('rejects an expired invitation on the new-user register path (GET and POST)', function () {
     $team = $this->user->currentTeam;
     $invitation = TeamInvitation::create([
         'team_id' => $team->id, 'email' => 'expired-register@example.com', 'role' => $this->memberRole->id,
     ]);
 
-    $getUrl = registerUrl($team, $invitation);
-    $postUrl = registerUrl($team, $invitation);
+    $getUrl = hardeningRegisterUrl($team, $invitation);
+    $postUrl = hardeningRegisterUrl($team, $invitation);
 
     // The register path is guest-only; drop the super-admin session so the guest
     // middleware does not bounce the request before the signature is validated.
@@ -97,7 +80,7 @@ it('rejects a reused accept link after the invitation was already accepted', fun
         'team_id' => $team->id, 'email' => $existingUser->email, 'role' => $this->memberRole->id,
     ]);
 
-    $url = acceptUrl($invitation);
+    $url = hardeningAcceptUrl($invitation);
 
     // First click consumes the invitation.
     $this->actingAs($existingUser)->get($url)->assertRedirect(route('aura.dashboard'));
@@ -113,8 +96,8 @@ it('rejects a reused register link after the invitation was consumed by registra
         'team_id' => $team->id, 'email' => 'reuse-register@example.com', 'role' => $this->memberRole->id,
     ]);
 
-    $postUrl = registerUrl($team, $invitation);
-    $getUrl = registerUrl($team, $invitation);
+    $postUrl = hardeningRegisterUrl($team, $invitation);
+    $getUrl = hardeningRegisterUrl($team, $invitation);
 
     // Guest-only path: drop the super-admin session for the registration itself.
     auth()->logout();
@@ -150,7 +133,7 @@ it('rejects the accept link after the invitation was revoked', function () {
         'team_id' => $team->id, 'email' => $existingUser->email, 'role' => $this->memberRole->id,
     ]);
 
-    $url = acceptUrl($invitation);
+    $url = hardeningAcceptUrl($invitation);
 
     // Super admin revokes the invitation.
     $this->delete(route('aura.team-invitations.destroy', ['team' => $team, 'invitation' => $invitation]))
@@ -167,7 +150,7 @@ it('rejects the register link after the invitation was revoked', function () {
         'team_id' => $team->id, 'email' => 'revoked-register@example.com', 'role' => $this->memberRole->id,
     ]);
 
-    $url = registerUrl($team, $invitation);
+    $url = hardeningRegisterUrl($team, $invitation);
 
     $this->delete(route('aura.team-invitations.destroy', ['team' => $team, 'invitation' => $invitation]))
         ->assertRedirect();
@@ -197,7 +180,7 @@ it('resends a pending invitation and the resent accept link works', function () 
     // the resent mail carries) accepts successfully.
     expect(TeamInvitation::withoutGlobalScopes()->whereKey($invitation->id)->exists())->toBeTrue();
 
-    $this->actingAs($existingUser)->get(acceptUrl($invitation))->assertRedirect(route('aura.dashboard'));
+    $this->actingAs($existingUser)->get(hardeningAcceptUrl($invitation))->assertRedirect(route('aura.dashboard'));
 
     $this->assertDatabaseHas('user_role', [
         'team_id' => $team->id,
@@ -213,7 +196,7 @@ it('matches the invited email case-insensitively on accept', function () {
         'team_id' => $team->id, 'email' => 'Casing@Example.com', 'role' => $this->memberRole->id,
     ]);
 
-    $this->actingAs($existingUser)->get(acceptUrl($invitation))
+    $this->actingAs($existingUser)->get(hardeningAcceptUrl($invitation))
         ->assertRedirect(route('aura.dashboard'));
 
     $this->assertDatabaseHas('user_role', [
@@ -231,7 +214,7 @@ it('refuses acceptance when the carried role was deleted before acceptance (acce
         'team_id' => $team->id, 'email' => $existingUser->email, 'role' => $this->memberRole->id,
     ]);
 
-    $url = acceptUrl($invitation);
+    $url = hardeningAcceptUrl($invitation);
 
     $this->memberRole->delete();
 
@@ -250,7 +233,7 @@ it('refuses registration and creates no orphan user when the carried role was de
         'team_id' => $team->id, 'email' => 'deleted-role-register@example.com', 'role' => $this->memberRole->id,
     ]);
 
-    $url = registerUrl($team, $invitation);
+    $url = hardeningRegisterUrl($team, $invitation);
 
     $this->memberRole->delete();
 
@@ -269,6 +252,39 @@ it('refuses registration and creates no orphan user when the carried role was de
     expect(TeamInvitation::withoutGlobalScopes()->whereKey($invitation->id)->exists())->toBeTrue();
 });
 
+it('refuses the register path when a case-variant of the invited email already has an account', function () {
+    $team = $this->user->currentTeam;
+
+    // An account already exists for this address, in a different casing.
+    User::factory()->create(['email' => 'taken@example.com']);
+
+    $invitation = TeamInvitation::create([
+        'team_id' => $team->id, 'email' => 'Taken@Example.com', 'role' => $this->memberRole->id,
+    ]);
+
+    $getUrl = hardeningRegisterUrl($team, $invitation);
+    $postUrl = hardeningRegisterUrl($team, $invitation);
+
+    $before = User::withoutGlobalScopes()->count();
+
+    auth()->logout();
+
+    // Both the register form (GET) and the submission (POST) refuse with 403 —
+    // an existing account must accept, not register a case-variant duplicate.
+    $this->get($getUrl)->assertForbidden();
+
+    $this->post($postUrl, [
+        'name' => 'Case Twin',
+        'password' => 'Password123!XX',
+        'password_confirmation' => 'Password123!XX',
+    ])->assertForbidden();
+
+    // No second account minted, invitation preserved.
+    expect(User::withoutGlobalScopes()->count())->toBe($before);
+    expect(User::withoutGlobalScopes()->whereRaw('lower(email) = ?', ['taken@example.com'])->count())->toBe(1);
+    expect(TeamInvitation::withoutGlobalScopes()->whereKey($invitation->id)->exists())->toBeTrue();
+});
+
 it('accepts an invitation carrying a shared Global Role', function () {
     $team = $this->user->currentTeam;
     $globalAdmin = Role::firstOrCreateGlobalAdmin(); // Global Role, team_id = null
@@ -278,7 +294,7 @@ it('accepts an invitation carrying a shared Global Role', function () {
         'team_id' => $team->id, 'email' => $existingUser->email, 'role' => $globalAdmin->id,
     ]);
 
-    $this->actingAs($existingUser)->get(acceptUrl($invitation))
+    $this->actingAs($existingUser)->get(hardeningAcceptUrl($invitation))
         ->assertRedirect(route('aura.dashboard'));
 
     // Membership records the team; the carried Global Role grants Super Admin there.
@@ -305,7 +321,7 @@ it('refuses an invitation carrying a role owned by another team (cross-team inje
 
     // The role is not visible to the inviting team, so acceptance is refused and
     // no cross-team access is injected.
-    $this->actingAs($existingUser)->get(acceptUrl($invitation))->assertNotFound();
+    $this->actingAs($existingUser)->get(hardeningAcceptUrl($invitation))->assertNotFound();
 
     expect(DB::table('user_role')->where('user_id', $existingUser->id)->where('team_id', $team->id)->exists())->toBeFalse();
     expect(TeamInvitation::withoutGlobalScopes()->whereKey($invitation->id)->exists())->toBeTrue();
@@ -320,7 +336,7 @@ it('is idempotent when an existing member accepts: no duplicate Membership, invi
         'team_id' => $team->id, 'email' => $existingUser->email, 'role' => $this->memberRole->id,
     ]);
 
-    $this->actingAs($existingUser)->get(acceptUrl($invitation))
+    $this->actingAs($existingUser)->get(hardeningAcceptUrl($invitation))
         ->assertRedirect(route('aura.dashboard'));
 
     // Still exactly one Membership row for this team (no duplicate), invitation gone.
@@ -341,7 +357,7 @@ it('rejects an accept link whose invitation id was tampered after signing', func
 
     // Sign for $target, then swap the path id to $other: the signature no longer
     // matches the URL, so the signed middleware refuses with a 403.
-    $signed = acceptUrl($target);
+    $signed = hardeningAcceptUrl($target);
     $tampered = str_replace(
         '/team-invitations/'.$target->id.'?',
         '/team-invitations/'.$other->id.'?',

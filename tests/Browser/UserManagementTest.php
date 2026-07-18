@@ -59,11 +59,18 @@ test('a team Super Admin creates a user with a role through the form, and that u
     $login->assertPathIs('/admin');
 });
 
-test('a Global Admin grants the Global Admin flag to another user through the user form', function () {
+test('a Global Admin grants the flag, and the newly-flagged user then sees across all teams', function () {
     $ga = browserGlobalAdmin('ga-password');
     $team = $ga->currentTeam;
 
-    // A plain member in the GA's team, not yet a Global Admin.
+    // A user whose only Membership is in a foreign team the target is not part of —
+    // invisible to a plain team Super Admin, visible to a Global Admin.
+    $foreign = foreignTeam();
+    $foreignMember = soleMemberOf($foreign);
+    $foreignMember->forceFill(['email' => 'foreign-seen@example.com'])->save();
+
+    // The target starts as a team Super Admin in the GA's team (via the global
+    // admin role) but is NOT yet a Global Admin.
     $target = User::factory()->create(['email' => 'promote-me@example.com', 'current_team_id' => $team->id]);
     browserAttachMembership($target, $team->id, globalAdminRole()->id);
     $target->refresh();
@@ -80,6 +87,16 @@ test('a Global Admin grants the Global Admin flag to another user through the us
     $page->press('Save')->wait(3);
 
     expect($target->fresh()->global_admin)->toBeTrue();
+
+    // Causal chain, one continuous journey: log in AS the newly-flagged user and
+    // confirm the grant took effect — their Users index is now unscoped and lists
+    // the foreign-team member a plain team Super Admin could never see.
+    Auth::logout();
+    $this->actingAs($target->fresh());
+
+    $promotedIndex = visit('/admin/user');
+
+    $promotedIndex->assertSee('foreign-seen@example.com');
 });
 
 test('a Global Admin sees users across all teams where a plain Super Admin does not', function () {

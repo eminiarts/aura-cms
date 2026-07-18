@@ -7,7 +7,7 @@ use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Support\Facades\DB;
 
 /**
- * Case-insensitive uniqueness for email addresses.
+ * Case-insensitive uniqueness for the users.email column.
  *
  * Laravel's built-in `unique` rule compares with the column's collation, which is
  * case-SENSITIVE on SQLite (and any binary collation). That let two accounts
@@ -26,11 +26,6 @@ class CaseInsensitiveUniqueEmail implements ValidationRule
 
     protected int|string|null $ignoreId = null;
 
-    public function __construct(
-        protected string $table = 'users',
-        protected string $column = 'email',
-    ) {}
-
     public function ignore(int|string|null $id, string $idColumn = 'id'): static
     {
         $this->ignoreId = $id;
@@ -46,8 +41,8 @@ class CaseInsensitiveUniqueEmail implements ValidationRule
             return;
         }
 
-        $query = DB::table($this->table)
-            ->whereRaw('lower('.$this->column.') = ?', [mb_strtolower($value)]);
+        $query = DB::table('users')
+            ->whereRaw('lower(email) = ?', [mb_strtolower($value)]);
 
         if ($this->ignoreId !== null) {
             $query->where($this->idColumn, '!=', $this->ignoreId);

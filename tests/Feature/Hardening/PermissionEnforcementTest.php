@@ -9,6 +9,8 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 
 use function Pest\Livewire\livewire;
 
+require_once __DIR__.'/helpers.php';
+
 uses(RefreshDatabase::class);
 
 /**
@@ -30,12 +32,6 @@ beforeEach(function () {
     Aura::setModel(new Post);
 });
 
-function attachRole(User $user, Role $role): void
-{
-    $user->update(['roles' => [$role->id]]);
-    $user->refresh();
-}
-
 it('refuses every resource page for a role with no permissions (super_admin=false, empty set)', function () {
     $role = Role::create([
         'name' => 'Powerless', 'slug' => 'powerless', 'description' => 'No permissions.',
@@ -46,7 +42,7 @@ it('refuses every resource page for a role with no permissions (super_admin=fals
         'description' => 'Locked', 'fields' => [],
     ]);
 
-    attachRole($this->user, $role);
+    hardeningAttachRole($this->user, $role);
 
     $slug = $post->getSlug();
 
@@ -66,7 +62,7 @@ it('blocks a page on the next request once its permission is removed from the ro
         ],
     ]);
 
-    attachRole($this->user, $role);
+    hardeningAttachRole($this->user, $role);
 
     $slug = (new Post)->getSlug();
 
@@ -98,7 +94,7 @@ it('gates the view page on the view permission', function () {
         'name' => 'Viewer', 'slug' => 'viewer', 'description' => 'Can view.',
         'super_admin' => false, 'permissions' => ['viewAny-post' => true, 'view-post' => true],
     ]);
-    attachRole($this->user, $viewer);
+    hardeningAttachRole($this->user, $viewer);
     $this->actingAs($this->user)->get(route('aura.'.$slug.'.view', ['id' => $post->id]))->assertSuccessful();
 
     // Remove view-post: the view page is now refused.
@@ -121,7 +117,7 @@ it('gates the edit page for a read-only (view-but-not-update) role', function ()
             'update-post' => false,
         ],
     ]);
-    attachRole($this->user, $readOnly);
+    hardeningAttachRole($this->user, $readOnly);
 
     // Can list and view, cannot edit.
     $this->actingAs($this->user)->get(route('aura.'.$slug.'.index'))->assertSuccessful();
@@ -144,7 +140,7 @@ it('blocks a delete bulk action for a role without delete permission', function 
         'description' => 'Keep me', 'fields' => [],
     ]);
 
-    attachRole($this->user, $role);
+    hardeningAttachRole($this->user, $role);
 
     livewire(Table::class, ['query' => null, 'model' => $post])
         ->set('selected', [$post->id])

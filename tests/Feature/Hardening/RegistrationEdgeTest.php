@@ -7,6 +7,8 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
+require_once __DIR__.'/helpers.php';
+
 uses(RefreshDatabase::class);
 
 /**
@@ -25,22 +27,9 @@ beforeEach(function () {
     config(['aura.auth.registration' => true]);
 });
 
-function registerGuest(string $name, string $team, string $email): void
-{
-    auth()->logout();
-
-    test()->post(route('aura.register'), [
-        'name' => $name,
-        'team' => $team,
-        'email' => $email,
-        'password' => 'Password123!XX',
-        'password_confirmation' => 'Password123!XX',
-    ])->assertRedirect(config('aura.auth.redirect'));
-}
-
 it('allows two registrants to choose the same team name (distinct teams)', function () {
-    registerGuest('First Owner', 'Acme', 'owner-one@example.com');
-    registerGuest('Second Owner', 'Acme', 'owner-two@example.com');
+    hardeningRegisterGuest('First Owner', 'Acme', 'owner-one@example.com');
+    hardeningRegisterGuest('Second Owner', 'Acme', 'owner-two@example.com');
 
     $teams = Team::withoutGlobalScopes()->where('name', 'Acme')->get();
 
@@ -49,7 +38,7 @@ it('allows two registrants to choose the same team name (distinct teams)', funct
 });
 
 it('isolates each registrant\'s content behind the tenant boundary', function () {
-    registerGuest('Owner A', 'Team A', 'iso-a@example.com');
+    hardeningRegisterGuest('Owner A', 'Team A', 'iso-a@example.com');
     $ownerA = User::withoutGlobalScopes()->where('email', 'iso-a@example.com')->first();
     $teamA = $ownerA->current_team_id;
 
@@ -59,7 +48,7 @@ it('isolates each registrant\'s content behind the tenant boundary', function ()
         'name' => 'A secret', 'description' => 'A only', 'fields' => [],
     ]);
 
-    registerGuest('Owner B', 'Team B', 'iso-b@example.com');
+    hardeningRegisterGuest('Owner B', 'Team B', 'iso-b@example.com');
     $ownerB = User::withoutGlobalScopes()->where('email', 'iso-b@example.com')->first();
     $teamB = $ownerB->current_team_id;
 
@@ -106,7 +95,7 @@ it('rejects a case-variant email at registration (no duplicate account)', functi
 });
 
 it('registers a fresh registrant into their own team as super admin', function () {
-    registerGuest('Solo Owner', 'Solo Team', 'solo@example.com');
+    hardeningRegisterGuest('Solo Owner', 'Solo Team', 'solo@example.com');
 
     $owner = User::withoutGlobalScopes()->where('email', 'solo@example.com')->first();
 

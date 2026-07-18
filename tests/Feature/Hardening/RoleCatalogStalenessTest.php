@@ -6,6 +6,8 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
+require_once __DIR__.'/helpers.php';
+
 uses(RefreshDatabase::class);
 
 /**
@@ -27,38 +29,14 @@ beforeEach(function () {
     $this->teamId = $this->admin->currentTeam->id;
 });
 
-function hardeningGlobalRole(string $slug, array $permissions): Role
-{
-    // Write a Global Role (team_id = null) the way the catalog helper does, so the
-    // InitialPostFields saving hook does not re-team it. Bump the version since a
-    // quiet write fires no model events.
-    $role = Role::withoutGlobalScopes()->newModelInstance([
-        'name' => ucfirst($slug), 'slug' => $slug, 'super_admin' => false,
-        'permissions' => $permissions, 'team_id' => null,
-    ]);
-    $role->saveQuietly();
-    Role::bumpCatalogVersion();
-
-    return $role;
-}
-
-function memberIn(int $teamId, int $roleId): User
-{
-    $user = User::factory()->create(['current_team_id' => $teamId]);
-    $user->roles()->attach($roleId, ['team_id' => $teamId]);
-    $user->refresh();
-
-    return $user;
-}
-
 it('reflects a permission change on two live user instances at once (no refresh)', function () {
     $editor = Role::create([
         'team_id' => $this->teamId, 'slug' => 'editor', 'type' => 'Role', 'title' => 'Editor',
         'name' => 'Editor', 'super_admin' => false, 'permissions' => ['create-post' => true],
     ]);
 
-    $userA = memberIn($this->teamId, $editor->id);
-    $userB = memberIn($this->teamId, $editor->id);
+    $userA = hardeningMemberIn($this->teamId, $editor->id);
+    $userB = hardeningMemberIn($this->teamId, $editor->id);
 
     expect($userA->hasPermission('create-post'))->toBeTrue();
     expect($userB->hasPermission('create-post'))->toBeTrue();
@@ -74,7 +52,7 @@ it('reflects a permission change on two live user instances at once (no refresh)
 it('applies a Shadow the moment it is created and reverts the moment it is deleted', function () {
     $global = hardeningGlobalRole('contributor', ['create-post' => true]);
 
-    $member = memberIn($this->teamId, $global->id);
+    $member = hardeningMemberIn($this->teamId, $global->id);
 
     // Global definition applies: create-post granted.
     expect($member->hasPermission('create-post'))->toBeTrue();
@@ -96,7 +74,7 @@ it('applies a Shadow the moment it is created and reverts the moment it is delet
 
 it('applies a Shadow that grants Super Admin power without rewriting the Membership', function () {
     $global = hardeningGlobalRole('lead', ['create-post' => false]);
-    $member = memberIn($this->teamId, $global->id);
+    $member = hardeningMemberIn($this->teamId, $global->id);
 
     expect($member->isSuperAdmin())->toBeFalse();
 

@@ -18,27 +18,6 @@ require_once __DIR__.'/Support/helpers.php';
 |
 */
 
-/**
- * A Global Role (team_id = null) written quietly so InitialPostFields' saving
- * hook never re-teams it to the acting user's current team. Bumps the catalog
- * version the same way the seeder/self-heal path does.
- */
-function browserGlobalRole(string $slug, string $name, array $attributes = []): Role
-{
-    $role = Role::withoutGlobalScopes()->newModelInstance(array_merge([
-        'name' => $name,
-        'slug' => $slug,
-        'super_admin' => false,
-        'permissions' => [],
-        'team_id' => null,
-    ], $attributes));
-
-    $role->saveQuietly();
-    Role::bumpCatalogVersion();
-
-    return $role->refresh();
-}
-
 test('a team Super Admin creates a Team Role with a permission through the matrix', function () {
     $admin = browserSuperAdmin('admin-password');
     $team = $admin->currentTeam;
@@ -157,10 +136,14 @@ test('removing a permission from a role blocks the affected page for a member ho
 
     expect($role->fresh()->permissions['viewAny-gallery-page'] ?? false)->toBeFalse();
 
-    // The member's next load of the same page is now blocked.
+    // The member's next load of the same page is now blocked — assert the actual
+    // refusal (the 403 page), not merely the absence of the index content, so a
+    // blank render could never pass.
     $this->actingAs($member);
 
     $blocked = visit('/admin/gallery-page');
 
-    $blocked->assertDontSee('GalleryPages');
+    $blocked->assertSee('403')
+        ->assertSee('This action is unauthorized')
+        ->assertDontSee('GalleryPages');
 });
