@@ -9,6 +9,40 @@ use Illuminate\Database\Eloquent\Collection;
 
 class Roles extends AdvancedSelect implements PreloadsTableDisplay
 {
+    /**
+     * The user-form role picker offers the merged, shadow-resolved catalog: each
+     * slug once, the team's Shadow winning over the Global Role it shadows — the
+     * same resolved set the Roles index and the invitation modal present, so a
+     * shadowed Global Role never shows up twice in the search results. Mirrors
+     * AdvancedSelect::api() with the extra shadowResolved() constraint.
+     */
+    public function api($request)
+    {
+        $model = app($request->model);
+        $searchableFields = $model->getSearchableFields()->pluck('slug')->toArray();
+
+        $field = $request->fullField;
+
+        $query = $model->searchIn($searchableFields, $request->search, $model);
+
+        if (config('aura.teams') && method_exists($model, 'scopeShadowResolved')) {
+            $query->shadowResolved(optional(auth()->user())->current_team_id);
+        }
+
+        return $query
+            ->take(5)
+            ->get()
+            ->map(function ($item) use ($field) {
+                return [
+                    'id' => $item->id,
+                    'title' => $item->title(),
+                    'view' => isset($field['view_select']) ? view($field['view_select'], ['item' => $item, 'field' => $field])->render() : view('aura::components.fields.advanced-select-view-select', ['item' => $item, 'field' => $field])->render(),
+                    'view_selected' => isset($field['view_selected']) ? view($field['view_selected'], ['item' => $item, 'field' => $field])->render() : view('aura::components.fields.advanced-select-view-selected', ['item' => $item, 'field' => $field])->render(),
+                ];
+            })
+            ->toArray();
+    }
+
     public function display($field, $value, $model)
     {
         if (! $model->exists) {
