@@ -215,7 +215,7 @@ class AuraServiceProvider extends PackageServiceProvider
             ->hasViews('aura')
             ->hasAssets()
             ->hasRoutes('web')
-            ->hasMigrations(['create_aura_tables'])
+            ->hasMigrations(['create_aura_tables', 'consolidate_per_team_admin_roles'])
             ->runsMigrations()
             ->hasCommands([
                 InstallConfigCommand::class,

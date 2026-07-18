@@ -54,9 +54,10 @@ describe('Team Creation Authorization', function () {
         expect($team->description)->toBe('Test Description');
     });
 
-    it('creates admin role when team is created via Livewire', function () {
+    it('attaches the creator to the global admin role when team is created via Livewire', function () {
         Gate::define('AuraGlobalAdmin', fn (User $user) => true);
 
+        // Attach-don't-mint: creating a team must not mint any new role row.
         $initialRoleCount = Role::withoutGlobalScopes()->count();
 
         livewire(Create::class, ['slug' => 'team'])
@@ -64,17 +65,20 @@ describe('Team Creation Authorization', function () {
             ->call('save')
             ->assertHasNoErrors();
 
-        // A new admin role should be created for the new team
-        expect(Role::withoutGlobalScopes()->count())->toBe($initialRoleCount + 1);
+        expect(Role::withoutGlobalScopes()->count())->toBe($initialRoleCount);
 
         $newTeam = Team::where('name', 'New Team')->first();
-        $adminRole = Role::withoutGlobalScopes()
-            ->where('team_id', $newTeam->id)
-            ->where('slug', 'admin')
-            ->first();
 
-        expect($adminRole)->not->toBeNull();
-        expect($adminRole->super_admin)->toBeTrue();
+        // No per-team admin row exists; the creator holds the global admin role.
+        expect(Role::withoutGlobalScopes()->where('team_id', $newTeam->id)->exists())->toBeFalse();
+
+        $globalAdmin = Role::withoutGlobalScopes()->whereNull('team_id')->where('slug', 'admin')->first();
+
+        $this->assertDatabaseHas('user_role', [
+            'team_id' => $newTeam->id,
+            'user_id' => $this->user->id,
+            'role_id' => $globalAdmin->id,
+        ]);
     });
 });
 

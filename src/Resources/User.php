@@ -663,8 +663,12 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
     public function indexQuery($query)
     {
         if (config('aura.teams')) {
+            // A user belongs to the current team when they hold a Membership for
+            // it — filter on the pivot's team_id, not the role row's team_id. A
+            // Global Role carries team_id = null, so keying off the role row would
+            // wrongly exclude members who hold a Global Role (e.g. global admin).
             return $query->whereHas('roles', function ($query) {
-                $query->where('roles.team_id', Auth::user()->current_team_id);
+                $query->where('user_role.team_id', Auth::user()->current_team_id);
             });
         }
 

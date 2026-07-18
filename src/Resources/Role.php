@@ -65,6 +65,50 @@ class Role extends Resource
         GenerateAllResourcePermissions::dispatch();
     }
 
+    /**
+     * Ensure the shared global `admin` Global Role exists and return it.
+     *
+     * This backs the "attach-don't-mint" model: team creation and registration
+     * attach the creator to this single Super Admin Global Role (team_id = null)
+     * instead of minting a per-team admin row. It self-heals installs whose
+     * catalog was never seeded (bare `migrate`, or the test harness, which does
+     * not run aura:install), using the same defaults as RoleCatalogSeeder.
+     *
+     * The row is written with saveQuietly() so the InitialPostFields saving hook
+     * — which auto-assigns the current team's id whenever team_id is not set —
+     * does not silently re-team the Global Role. The catalog version is bumped
+     * explicitly since quiet writes fire no model events.
+     */
+    public static function firstOrCreateGlobalAdmin(): self
+    {
+        $role = static::withoutGlobalScopes()
+            ->where('slug', 'admin')
+            ->whereNull('team_id')
+            ->first();
+
+        if ($role) {
+            return $role;
+        }
+
+        // team_id is passed explicitly (it is fillable) so the row is written as
+        // a Global Role. saveQuietly() skips the InitialPostFields saving hook,
+        // which would otherwise re-team it to the current team.
+        $role = static::withoutGlobalScopes()->newModelInstance([
+            'name' => 'Admin',
+            'slug' => 'admin',
+            'description' => 'Admin can perform everything.',
+            'super_admin' => true,
+            'permissions' => [],
+            'team_id' => null,
+        ]);
+
+        $role->saveQuietly();
+
+        User::bumpRoleCatalogVersion();
+
+        return $role;
+    }
+
     public static function getFields()
     {
         return [

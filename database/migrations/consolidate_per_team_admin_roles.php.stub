@@ -1,0 +1,117 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
+
+/**
+ * Attach-don't-mint upgrade (best-effort, pre-release posture per ADR 0003).
+ *
+ * Older installs minted a per-team `admin` role for every team and pointed the
+ * creator's Membership at it. The Role Catalog model instead shares a single
+ * global `admin` role (team_id = null). This migration consolidates the
+ * *untouched* per-team admin rows into that global role — remapping their
+ * Memberships (user_role.role_id) — then deletes the now-orphaned per-team row.
+ *
+ * "Untouched" means a default row nobody customized: slug `admin`, super_admin
+ * true, name `Admin`, and an empty permission set. Customized rows (renamed,
+ * permissions set, or super_admin turned off) are deliberately left in place —
+ * they become Team Roles that Shadow the global `admin` by slug.
+ *
+ * Guards:
+ *  - Teams-off installs (no `roles.team_id` / `user_role.team_id` column) are a
+ *    strict no-op: there is a single flat catalog, nothing to consolidate.
+ *  - Fresh installs (no per-team admin rows) are a strict no-op.
+ *  - The migration never touches the global row (team_id = null).
+ */
+return new class extends Migration
+{
+    public function up(): void
+    {
+        // Teams-off mode has a single flat catalog: no team scoping columns, so
+        // there is nothing to consolidate. Strict no-op.
+        if (! Schema::hasTable('roles') || ! Schema::hasTable('user_role')) {
+            return;
+        }
+
+        if (! Schema::hasColumn('roles', 'team_id') || ! Schema::hasColumn('user_role', 'team_id')) {
+            return;
+        }
+
+        // Find the untouched per-team admin rows (team_id set, default shape).
+        $candidates = DB::table('roles')
+            ->whereNotNull('team_id')
+            ->where('slug', 'admin')
+            ->where('super_admin', true)
+            ->where('name', 'Admin')
+            ->get();
+
+        $untouched = $candidates->filter(fn ($role) => $this->hasEmptyPermissions($role->permissions ?? null));
+
+        if ($untouched->isEmpty()) {
+            // Nothing to consolidate — fresh install or already migrated.
+            return;
+        }
+
+        // Ensure the shared global admin role exists, using the same defaults as
+        // RoleCatalogSeeder. Created directly via the query builder so team_id
+        // stays null (the Role model's saving hook would otherwise re-team it).
+        $globalAdminId = $this->ensureGlobalAdminId();
+
+        foreach ($untouched as $role) {
+            // Remap every Membership that points at this per-team admin row to
+            // the shared global role. The pivot's team_id already records the
+            // team, so access is preserved.
+            DB::table('user_role')
+                ->where('role_id', $role->id)
+                ->update(['role_id' => $globalAdminId]);
+
+            // The per-team admin row is now orphaned; remove it.
+            DB::table('roles')->where('id', $role->id)->delete();
+        }
+    }
+
+    private function ensureGlobalAdminId(): int
+    {
+        $existing = DB::table('roles')
+            ->whereNull('team_id')
+            ->where('slug', 'admin')
+            ->first();
+
+        if ($existing) {
+            return (int) $existing->id;
+        }
+
+        return (int) DB::table('roles')->insertGetId([
+            'name' => 'Admin',
+            'slug' => 'admin',
+            'description' => 'Admin can perform everything.',
+            'super_admin' => true,
+            'permissions' => json_encode([]),
+            'team_id' => null,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+    }
+
+    /**
+     * A permission set counts as empty (untouched) when it is null, an empty
+     * string, or decodes to an empty array/object.
+     *
+     * @param  mixed  $permissions
+     */
+    private function hasEmptyPermissions($permissions): bool
+    {
+        if ($permissions === null || $permissions === '') {
+            return true;
+        }
+
+        if (is_array($permissions)) {
+            return $permissions === [];
+        }
+
+        $decoded = json_decode((string) $permissions, true);
+
+        return empty($decoded);
+    }
+};

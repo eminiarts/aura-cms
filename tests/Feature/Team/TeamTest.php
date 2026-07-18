@@ -91,15 +91,18 @@ describe('Team SoftDeletes', function () {
 });
 
 describe('Team Creation Side Effects', function () {
-    it('creates an admin role when team is created', function () {
+    it('ensures the global admin role when team is created (attach-don\'t-mint)', function () {
         $team = Team::create([
             'name' => 'New Team With Role',
             'user_id' => $this->user->id,
         ]);
 
+        // No per-team admin row is minted; the shared global admin role is used.
+        expect(Role::withoutGlobalScopes()->where('team_id', $team->id)->exists())->toBeFalse();
+
         $role = Role::withoutGlobalScopes()
             ->where('slug', 'admin')
-            ->where('team_id', $team->id)
+            ->whereNull('team_id')
             ->first();
 
         expect($role)->not->toBeNull();
@@ -143,8 +146,9 @@ describe('Team Creation Side Effects', function () {
 
         expect($pivotData)->not->toBeNull();
 
+        // The Membership points at the shared global admin role (team_id = null).
         $role = Role::withoutGlobalScopes()
-            ->where('team_id', $team->id)
+            ->whereNull('team_id')
             ->where('slug', 'admin')
             ->first();
 
@@ -170,8 +174,17 @@ describe('Team Relationships', function () {
     it('has many roles', function () {
         $team = Team::first();
 
+        // Attach-don't-mint means a team owns no roles by default; the relation
+        // still resolves the team's own Team Roles when it has any.
+        Role::create([
+            'name' => 'Editor',
+            'slug' => 'editor',
+            'team_id' => $team->id,
+            'permissions' => [],
+        ]);
+
         expect($team->roles())->toBeInstanceOf(HasMany::class);
-        expect($team->roles->first())->toBeInstanceOf(Role::class);
+        expect($team->roles()->first())->toBeInstanceOf(Role::class);
     });
 
     it('has many team invitations', function () {

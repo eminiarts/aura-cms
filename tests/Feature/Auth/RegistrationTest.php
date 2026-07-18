@@ -91,7 +91,7 @@ describe('Registration With Teams', function () {
         expect($user->current_team_id)->toBe($team->id);
     });
 
-    test('team role is created on registration', function () {
+    test('registrant is attached to the global admin role on registration', function () {
         Team::factory()->create();
 
         $this->post(route('aura.register'), [
@@ -103,8 +103,12 @@ describe('Registration With Teams', function () {
         ]);
 
         $team = Team::where('name', 'New Team')->first();
+        $user = User::where('email', 'newuser@example.com')->first();
 
-        $this->assertDatabaseHas('roles', ['team_id' => $team->id]);
+        // Attach-don't-mint: no per-team role row; the registrant holds the
+        // shared global admin role (team_id = null) via a Membership.
+        $this->assertDatabaseMissing('roles', ['team_id' => $team->id]);
+        $this->assertDatabaseHas('user_role', ['team_id' => $team->id, 'user_id' => $user->id]);
     });
 
     test('registered event is dispatched', function () {

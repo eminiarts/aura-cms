@@ -65,17 +65,15 @@ it('clears current team and team list caches for affected users when deleting a 
         'current_team_id' => $secondTeam->id,
     ]);
 
-    $firstTeamRole = Role::withoutGlobalScopes()
-        ->where('team_id', $firstTeam->id)
-        ->where('slug', 'admin')
-        ->first();
-    $secondTeamRole = Role::withoutGlobalScopes()
-        ->where('team_id', $secondTeam->id)
+    // Attach-don't-mint: Memberships in every team point at the shared global
+    // admin role (team_id = null), scoped to the team via the pivot.
+    $globalAdmin = Role::withoutGlobalScopes()
+        ->whereNull('team_id')
         ->where('slug', 'admin')
         ->first();
 
-    $firstTeam->users()->attach($otherUser->id, ['role_id' => $firstTeamRole->id]);
-    $secondTeam->users()->attach($otherUser->id, ['role_id' => $secondTeamRole->id]);
+    $firstTeam->users()->attach($otherUser->id, ['role_id' => $globalAdmin->id]);
+    $secondTeam->users()->attach($otherUser->id, ['role_id' => $globalAdmin->id]);
 
     $firstTeamPost = createPost([
         'title' => 'Remaining Team Post',
