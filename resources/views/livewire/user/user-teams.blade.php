@@ -45,7 +45,7 @@
                                             dusk="detach-{{ $membership['team_id'] }}"
                                             class="text-red-500 hover:text-red-700"
                                         >
-                                            {{ __('Detach') }}
+                                            {{ __('Remove') }}
                                         </x-aura::button.transparent>
                                     @endif
                                 </td>

@@ -11,6 +11,7 @@ use Aura\Base\Resources\Team;
 use Aura\Base\Resources\User;
 use Aura\Base\Tests\Resources\Post;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Schema;
 
@@ -172,6 +173,29 @@ describe('Global Roles are visibly marked read-only in a team context', function
             ->assertForbidden();
     });
 
+    it('refuses a team Super Admin restoring a Global Role (policy)', function () {
+        $superAdmin = createSuperAdmin();
+        $this->actingAs($superAdmin);
+
+        $globalRole = catalogGlobalRole('auditor');
+        $teamRole = catalogTeamRole($superAdmin->current_team_id, 'reviewer');
+
+        // A soft-deleted Global Role must not be restored back into the shared
+        // catalog by a single team, even though the team Super Admin clears every
+        // ability via hasBlanketAccess. Their own Team Role stays restorable.
+        expect(Gate::forUser($superAdmin)->denies('restore', $globalRole))->toBeTrue()
+            ->and(Gate::forUser($superAdmin)->allows('restore', $teamRole))->toBeTrue();
+    });
+
+    it('lets a Global Admin restore a Global Role (policy)', function () {
+        $ga = promoteToGlobalAdmin(createSuperAdmin());
+        $this->actingAs($ga);
+
+        $globalRole = catalogGlobalRole('auditor');
+
+        expect(Gate::forUser($ga)->allows('restore', $globalRole))->toBeTrue();
+    });
+
     it('lets a Global Admin edit and delete a Global Role', function () {
         $ga = promoteToGlobalAdmin(createSuperAdmin());
         $this->actingAs($ga);
@@ -329,5 +353,94 @@ describe('cross-team assignment stays refused', function () {
         $ids = Role::shadowResolved($superAdmin->current_team_id)->pluck('id');
 
         expect($ids)->not->toContain($foreignRole->id);
+    });
+
+    it('refuses assigning another team\'s role through the user form (403, no pivot written)', function () {
+        $superAdmin = createSuperAdmin();
+        $this->actingAs($superAdmin);
+        $teamId = $superAdmin->current_team_id;
+
+        $foreign = Team::factory()->createQuietly(['user_id' => User::factory()->create()->id]);
+        $foreignRole = catalogTeamRole($foreign->id, 'foreign-role', ['name' => 'Foreign Role']);
+
+        // The target holds a benign Membership in the acting team (so the user is
+        // visible to edit); the attempt swaps in a role owned by another team.
+        $teamRole = catalogTeamRole($teamId, 'member', ['name' => 'Member']);
+        $target = User::factory()->create(['current_team_id' => $teamId]);
+        $target->roles()->attach($teamRole->id, ['team_id' => $teamId]);
+
+        livewire(Edit::class, ['slug' => 'user', 'id' => $target->id])
+            ->set('form.fields.roles', [$foreignRole->id])
+            ->call('save')
+            ->assertStatus(403);
+
+        // The foreign role was never written; the original Membership stands.
+        expect(DB::table('user_role')
+            ->where('user_id', $target->id)
+            ->where('role_id', $foreignRole->id)
+            ->exists())->toBeFalse();
+        $this->assertDatabaseHas('user_role', [
+            'team_id' => $teamId,
+            'user_id' => $target->id,
+            'role_id' => $teamRole->id,
+        ]);
+    });
+});
+
+// Spec: the merged picker must not just OFFER both origins — an assignment
+// driven end-to-end from each origin lands the correct role_id on the pivot.
+describe('assigning through the user-form picker records the right pivot per origin', function () {
+    it('assigns an unshadowed Global Role and records the global role_id', function () {
+        $superAdmin = createSuperAdmin();
+        $this->actingAs($superAdmin);
+        $teamId = $superAdmin->current_team_id;
+
+        $globalEditor = catalogGlobalRole('editor', ['name' => 'Global Editor']);
+
+        livewire(Create::class, ['slug' => 'user'])
+            ->set('form.fields.name', 'Global Assignee')
+            ->set('form.fields.email', 'global-assignee@example.com')
+            ->set('form.fields.password', 'Str0ng!Pass#2024')
+            ->set('form.fields.roles', [$globalEditor->id])
+            ->call('save')
+            ->assertHasNoErrors();
+
+        $target = User::withoutGlobalScopes()->where('email', 'global-assignee@example.com')->first();
+
+        $this->assertDatabaseHas('user_role', [
+            'team_id' => $teamId,
+            'user_id' => $target->id,
+            'role_id' => $globalEditor->id,
+        ]);
+    });
+
+    it('assigns a Shadow (Team Role) and records the shadow role_id, not the global row', function () {
+        $superAdmin = createSuperAdmin();
+        $this->actingAs($superAdmin);
+        $teamId = $superAdmin->current_team_id;
+
+        $globalEditor = catalogGlobalRole('editor', ['name' => 'Global Editor']);
+        $shadow = catalogTeamRole($teamId, 'editor', ['name' => 'Team Editor']);
+
+        livewire(Create::class, ['slug' => 'user'])
+            ->set('form.fields.name', 'Shadow Assignee')
+            ->set('form.fields.email', 'shadow-assignee@example.com')
+            ->set('form.fields.password', 'Str0ng!Pass#2024')
+            ->set('form.fields.roles', [$shadow->id])
+            ->call('save')
+            ->assertHasNoErrors();
+
+        $target = User::withoutGlobalScopes()->where('email', 'shadow-assignee@example.com')->first();
+
+        $this->assertDatabaseHas('user_role', [
+            'team_id' => $teamId,
+            'user_id' => $target->id,
+            'role_id' => $shadow->id,
+        ]);
+        $this->assertDatabaseMissing('user_role', [
+            'team_id' => $teamId,
+            'user_id' => $target->id,
+            'role_id' => $globalEditor->id,
+        ]);
     });
 });

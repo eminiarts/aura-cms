@@ -44,7 +44,7 @@ class InviteUser extends Component
                 // the team's Shadow winning over the Global Role it shadows —
                 // the same set the Roles index and the user-form picker show.
                 'options' => config('aura.teams')
-                    ? Role::shadowResolved(optional(auth()->user())->current_team_id)->get()->pluck('name', 'id')->toArray()
+                    ? Role::shadowResolvedForCurrentTeam()->get()->pluck('name', 'id')->toArray()
                     : [],
                 'style' => [
                     'width' => '50',

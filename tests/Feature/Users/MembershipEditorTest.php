@@ -4,6 +4,7 @@ use Aura\Base\Livewire\UserTeams;
 use Aura\Base\Resources\Role;
 use Aura\Base\Resources\Team;
 use Aura\Base\Resources\User;
+use Aura\Base\Tests\Resources\Post;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 
@@ -394,6 +395,60 @@ describe('Constraints and guards', function () {
             ->assertHasNoErrors();
 
         expect(Cache::has('user.'.$viewed->id.'.teams'))->toBeFalse();
+    });
+});
+
+describe('Membership changes take effect in permission checks', function () {
+    it('flips the user permission outcome when the role is changed (fresh instance)', function () {
+        $ga = createGlobalAdmin();
+        $this->actingAs($ga);
+
+        $team = Team::factory()->createQuietly(['user_id' => User::factory()->create()->id]);
+        $adminRole = membershipRole($team->id, ['name' => 'Team Admin', 'super_admin' => true]);
+        $userRole = membershipRole($team->id, [
+            'name' => 'Plain User',
+            'super_admin' => false,
+            'permissions' => ['view-post' => true],
+        ]);
+
+        $viewed = User::factory()->create(['current_team_id' => $team->id]);
+        attachMember($viewed, $team->id, $adminRole->id);
+
+        // Baseline: the Super Admin role clears every check.
+        expect(User::find($viewed->id)->isSuperAdmin())->toBeTrue();
+
+        livewire(UserTeams::class, ['userId' => $viewed->id])
+            ->call('changeRole', $team->id, $userRole->id)
+            ->assertHasNoErrors();
+
+        // A FRESH instance resolves the downgraded role: no longer Super Admin,
+        // and now bound to exactly the plain role's granted permission.
+        $fresh = User::find($viewed->id);
+        expect($fresh->isSuperAdmin())->toBeFalse()
+            ->and($fresh->hasPermissionTo('view', new Post))->toBeTrue()
+            ->and($fresh->hasPermissionTo('delete', new Post))->toBeFalse();
+    });
+
+    it('removes the user permission in a team when detached (fresh instance)', function () {
+        $ga = createGlobalAdmin();
+        $this->actingAs($ga);
+
+        $team = Team::factory()->createQuietly(['user_id' => User::factory()->create()->id]);
+        $adminRole = membershipRole($team->id, ['name' => 'Team Admin', 'super_admin' => true]);
+
+        $viewed = User::factory()->create(['current_team_id' => $team->id]);
+        attachMember($viewed, $team->id, $adminRole->id);
+
+        expect(User::find($viewed->id)->isSuperAdmin())->toBeTrue();
+
+        livewire(UserTeams::class, ['userId' => $viewed->id])
+            ->call('detach', $team->id)
+            ->assertHasNoErrors();
+
+        // The Membership is gone; the resolved role set is empty.
+        $fresh = User::find($viewed->id);
+        expect($fresh->isSuperAdmin())->toBeFalse()
+            ->and($fresh->hasPermissionTo('view', new Post))->toBeFalse();
     });
 });
 

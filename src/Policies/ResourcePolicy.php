@@ -98,6 +98,10 @@ class ResourcePolicy
      */
     public function restore(User $user, $resource)
     {
+        if ($this->deniesGlobalRoleWrite($user, $resource)) {
+            return false;
+        }
+
         if ($this->hasBlanketAccess($user)) {
             return true;
         }

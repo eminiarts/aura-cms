@@ -25,7 +25,14 @@ class AdvancedSelect extends Field implements ProvidesTableEagerLoad
 
         $field = $request->fullField;
 
-        $values = $model->searchIn($searchableFields, $request->search, $model)
+        $query = $model->searchIn($searchableFields, $request->search, $model);
+
+        // Subclasses (e.g. the Roles field) may constrain the query in place
+        // before it is fetched and mapped, without re-implementing the shared
+        // search/map plumbing.
+        $this->constrainApiQuery($query, $request);
+
+        return $query
             ->take(5)
             ->get()
             ->map(function ($item) use ($field) {
@@ -37,8 +44,6 @@ class AdvancedSelect extends Field implements ProvidesTableEagerLoad
                 ];
             })
             ->toArray();
-
-        return $values;
     }
 
     public function filter()
@@ -394,5 +399,16 @@ class AdvancedSelect extends Field implements ProvidesTableEagerLoad
 
             ];
         })->toArray();
+    }
+
+    /**
+     * Hook for subclasses to constrain the api() search query in place before it
+     * is fetched. The base field applies no extra constraint; the Roles field
+     * overrides this to add the shadow-resolved catalog constraint, so the shared
+     * search/map plumbing lives in one place.
+     */
+    protected function constrainApiQuery($query, $request): void
+    {
+        // No-op by default.
     }
 }

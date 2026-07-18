@@ -141,6 +141,18 @@ class Role extends Resource
     }
 
     /**
+     * The team id to resolve Shadows against for the acting user's current
+     * context — the single source the merged Roles index and the role pickers
+     * (invitation modal, user-form picker) funnel through when calling
+     * shadowResolved(). Null (a guest, or a Global Admin with no current team)
+     * resolves against the global catalog.
+     */
+    public static function currentTeamIdForResolution(): ?int
+    {
+        return optional(auth()->user())->current_team_id;
+    }
+
+    /**
      * Ensure a base Role Catalog role (Global Role, team_id = null) exists and
      * return it. Self-heals installs whose catalog was never seeded (a bare
      * `migrate`, or the test harness, which does not run aura:install), using the
@@ -330,7 +342,7 @@ class Role extends Resource
     public function indexQuery($query, $table = null)
     {
         if (config('aura.teams')) {
-            $query->shadowResolved(optional(auth()->user())->current_team_id);
+            $query->shadowResolved(static::currentTeamIdForResolution());
         }
 
         return $query;
@@ -391,14 +403,6 @@ class Role extends Resource
             ->first();
     }
 
-    /**
-     * Reduce the team-context role set to what the merged Roles index and the
-     * role pickers show: each slug once, with a team's Shadow winning over the
-     * Global Role it shadows. Concretely, exclude Global rows (team_id = null)
-     * whose slug is also defined as a Team Role for the given team. Team Roles
-     * and non-shadowed Global Roles are untouched. A no-op in Teams-off mode,
-     * where the flat catalog already holds one row per slug.
-     */
     public function scopeShadowResolved($query, ?int $teamId = null)
     {
         if (! config('aura.teams')) {
@@ -444,6 +448,24 @@ class Role extends Resource
     public function setIsGlobalAttribute($value): void
     {
         $this->globalIntent = filter_var($value, FILTER_VALIDATE_BOOLEAN);
+    }
+
+    /**
+     * Reduce the team-context role set to what the merged Roles index and the
+     * role pickers show: each slug once, with a team's Shadow winning over the
+     * Global Role it shadows. Concretely, exclude Global rows (team_id = null)
+     * whose slug is also defined as a Team Role for the given team. Team Roles
+     * and non-shadowed Global Roles are untouched. A no-op in Teams-off mode,
+     * where the flat catalog already holds one row per slug.
+     */
+    /**
+     * A fresh merged, shadow-resolved query for the acting user's current team —
+     * the set the invitation modal's role picker offers. Sugar over
+     * shadowResolved(currentTeamIdForResolution()).
+     */
+    public static function shadowResolvedForCurrentTeam()
+    {
+        return static::shadowResolved(static::currentTeamIdForResolution());
     }
 
     public function teams(): BelongsToMany

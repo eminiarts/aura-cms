@@ -88,6 +88,65 @@ it('lets a new user register through an invitation carrying a global role id', f
     expect(TeamInvitation::withoutGlobalScopes()->whereKey($invitation->id)->exists())->toBeFalse();
 });
 
+it('lets an existing user accept an invitation carrying a team Shadow role id', function () {
+    $team = $this->user->currentTeam;
+
+    // A Global Role and the current team's Shadow of it (same slug, team-owned).
+    // saveQuietly keeps the global row's team_id null (no auto-team from the
+    // acting user's context).
+    $global = Role::withoutGlobalScopes()->newModelInstance([
+        'name' => 'Global Editor',
+        'slug' => 'editor',
+        'super_admin' => false,
+        'permissions' => [],
+        'team_id' => null,
+    ]);
+    $global->saveQuietly();
+
+    $shadow = Role::withoutGlobalScopes()->create([
+        'name' => 'Team Editor',
+        'slug' => 'editor',
+        'super_admin' => false,
+        'permissions' => [],
+        'team_id' => $team->id,
+    ]);
+
+    $existingUser = User::factory()->create([
+        'email' => 'existing-shadow@example.com',
+        'current_team_id' => null,
+    ]);
+
+    $invitation = TeamInvitation::create([
+        'team_id' => $team->id,
+        'email' => $existingUser->email,
+        'role' => $shadow->id,
+    ]);
+
+    $url = URL::temporarySignedRoute(
+        'aura.team-invitations.accept',
+        now()->addDays(config('aura.auth.invitation_expiry')),
+        ['invitation' => $invitation],
+    );
+
+    $this->actingAs($existingUser)
+        ->get($url)
+        ->assertRedirect(route('aura.dashboard'));
+
+    // The Membership carries the Shadow (team) role id, not the global row.
+    $this->assertDatabaseHas('user_role', [
+        'team_id' => $team->id,
+        'user_id' => $existingUser->id,
+        'role_id' => $shadow->id,
+    ]);
+    $this->assertDatabaseMissing('user_role', [
+        'team_id' => $team->id,
+        'user_id' => $existingUser->id,
+        'role_id' => $global->id,
+    ]);
+
+    expect($existingUser->fresh()->current_team_id)->toBe($team->id);
+});
+
 it('still refuses an invitation whose role belongs to another team', function () {
     $team = $this->user->currentTeam;
     $otherTeam = Team::factory()->createQuietly();

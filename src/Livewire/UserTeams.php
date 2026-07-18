@@ -45,7 +45,9 @@ class UserTeams extends Component
 
     /**
      * Per-team role select state, keyed by team id — the id the row's select is
-     * bound to so a change can be submitted with changeRole().
+     * bound to so a change can be submitted with changeRole(). Seeded from the
+     * resolved Memberships in mount() and re-seeded after each mutation, so the
+     * computed render properties stay side-effect free.
      *
      * @var array<int|string, int|string|null>
      */
@@ -56,7 +58,7 @@ class UserTeams extends Component
 
     public function attach(): void
     {
-        abort_unless(config('aura.teams'), 404);
+        $this->guardTeamsEnabled();
 
         $teamId = $this->attachTeamId !== '' ? (int) $this->attachTeamId : null;
         $roleId = $this->attachRoleId !== '' ? (int) $this->attachRoleId : null;
@@ -101,7 +103,7 @@ class UserTeams extends Component
 
         $user->roles()->attach($role->id, ['team_id' => $teamId]);
 
-        $this->afterMembershipChange($user, $teamId);
+        $this->afterMembershipChange($user);
 
         $this->reset('attachTeamId', 'attachRoleId');
 
@@ -110,7 +112,7 @@ class UserTeams extends Component
 
     public function changeRole($teamId, $roleId = null): void
     {
-        abort_unless(config('aura.teams'), 404);
+        $this->guardTeamsEnabled();
 
         $teamId = (int) $teamId;
         $roleId = $roleId ?? ($this->roleSelections[$teamId] ?? null);
@@ -132,21 +134,21 @@ class UserTeams extends Component
         // currently held (in case it was a Super Admin being removed).
         $this->guardSuperAdmin($teamId, $role);
 
-        if ($current = $this->resolvedMembershipRole($teamId)) {
+        if ($current = $this->resolvedRoleForUser($this->userId, $teamId)) {
             $this->guardSuperAdmin($teamId, $current);
         }
 
         $user->roles()->wherePivot('team_id', $teamId)->detach();
         $user->roles()->attach($role->id, ['team_id' => $teamId]);
 
-        $this->afterMembershipChange($user, $teamId);
+        $this->afterMembershipChange($user);
 
         $this->notify(__('Role updated.'));
     }
 
     public function detach($teamId): void
     {
-        abort_unless(config('aura.teams'), 404);
+        $this->guardTeamsEnabled();
 
         $teamId = (int) $teamId;
 
@@ -157,7 +159,7 @@ class UserTeams extends Component
         abort_unless($user->teams()->where('teams.id', $teamId)->exists(), 404);
 
         // Guard removing a Super Admin Membership the same way granting one is.
-        if ($current = $this->resolvedMembershipRole($teamId)) {
+        if ($current = $this->resolvedRoleForUser($this->userId, $teamId)) {
             $this->guardSuperAdmin($teamId, $current);
         }
 
@@ -172,9 +174,7 @@ class UserTeams extends Component
             User::clearCurrentTeamCache($user->getKey());
         }
 
-        $this->afterMembershipChange($user, $teamId);
-
-        unset($this->roleSelections[$teamId]);
+        $this->afterMembershipChange($user);
 
         $this->notify(__('Membership removed.'));
     }
@@ -199,22 +199,17 @@ class UserTeams extends Component
     /**
      * The Memberships rendered on the tab: one row per team the user belongs to,
      * with the role resolved through the catalog seam and a per-row read-only
-     * flag reflecting whether the actor may manage that team.
+     * flag reflecting whether the actor may manage that team. Pure: it reads
+     * state only (roleSelections is seeded in mount()/after mutations).
      *
      * @return array<int, array<string, mixed>>
      */
     public function getMembershipsProperty(): array
     {
-        $user = $this->user();
-
-        return $user->teams()->get()->map(function ($team) {
+        return $this->user()->teams()->get()->map(function ($team) {
             $teamId = (int) $team->getKey();
-            $resolved = $this->resolvedMembershipRole($teamId);
+            $resolved = $this->resolvedRoleForUser($this->userId, $teamId);
             $canManage = $this->canManageTeam($teamId);
-
-            if ($canManage && ! array_key_exists($teamId, $this->roleSelections)) {
-                $this->roleSelections[$teamId] = $resolved?->getKey();
-            }
 
             return [
                 'team_id' => $teamId,
@@ -254,14 +249,16 @@ class UserTeams extends Component
 
     public function mount($userId): void
     {
-        abort_unless(config('aura.teams'), 404);
+        $this->guardTeamsEnabled();
 
         $this->userId = $userId;
+
+        $this->seedRoleSelections();
     }
 
     public function render()
     {
-        abort_unless(config('aura.teams'), 404);
+        $this->guardTeamsEnabled();
 
         return view('aura::livewire.user.user-teams');
     }
@@ -283,39 +280,17 @@ class UserTeams extends Component
     }
 
     /**
-     * The role the actor holds in the given team, resolved through the catalog
-     * seam (pivot role_id → slug → Role::resolveForTeam). Null when the actor has
-     * no Membership in that team.
-     */
-    protected function actorRoleForTeam(User $actor, int $teamId): ?Role
-    {
-        $pivot = DB::table('user_role')
-            ->where('user_id', $actor->getKey())
-            ->where('team_id', $teamId)
-            ->first();
-
-        if (! $pivot) {
-            return null;
-        }
-
-        $role = Role::withoutGlobalScopes()->find($pivot->role_id);
-
-        if (! $role) {
-            return null;
-        }
-
-        return Role::resolveForTeam($role->getAttribute('slug'), $teamId);
-    }
-
-    /**
      * Refresh the viewed user's cached team list after a Membership change so the
-     * tab and the user's permission checks reflect the new state immediately.
+     * tab and the user's permission checks reflect the new state immediately, and
+     * re-seed the per-row role selects from the new Memberships.
      */
-    protected function afterMembershipChange(User $user, int $teamId): void
+    protected function afterMembershipChange(User $user): void
     {
         Cache::forget('user.'.$user->id.'.teams');
         $user->unsetRelation('teams');
         $user->unsetRelation('roles');
+
+        $this->seedRoleSelections();
     }
 
     /**
@@ -351,7 +326,7 @@ class UserTeams extends Component
             return true;
         }
 
-        return (bool) optional($this->actorRoleForTeam($actor, $teamId))->super_admin;
+        return (bool) optional($this->resolvedRoleForUser($actor->getKey(), $teamId))->super_admin;
     }
 
     /**
@@ -368,19 +343,28 @@ class UserTeams extends Component
 
         abort_if(
             ! $actor
-            || (! $actor->isAuraGlobalAdmin() && ! optional($this->actorRoleForTeam($actor, $teamId))->super_admin),
+            || (! $actor->isAuraGlobalAdmin() && ! optional($this->resolvedRoleForUser($actor->getKey(), $teamId))->super_admin),
             403
         );
     }
 
+    /** Every entry point is teams-only; a Teams-off request 404s. */
+    protected function guardTeamsEnabled(): void
+    {
+        abort_unless(config('aura.teams'), 404);
+    }
+
     /**
-     * The viewed user's role in a team, resolved through the catalog seam so a
-     * Shadow displays as the team's version.
+     * The role a user holds in a team, resolved through the catalog seam
+     * (pivot role_id → slug → Role::resolveForTeam, so a Shadow resolves to the
+     * team's version). Null when the user has no Membership in that team. The
+     * single pivot→slug→resolve path for both the viewed user's rows and the
+     * actor's own team authority.
      */
-    protected function resolvedMembershipRole(int $teamId): ?Role
+    protected function resolvedRoleForUser($userId, int $teamId): ?Role
     {
         $pivot = DB::table('user_role')
-            ->where('user_id', $this->userId)
+            ->where('user_id', $userId)
             ->where('team_id', $teamId)
             ->first();
 
@@ -412,6 +396,22 @@ class UserTeams extends Component
             ->pluck('name', 'id')
             ->map(fn ($name) => (string) $name)
             ->all();
+    }
+
+    /**
+     * Seed the per-row role selects from the viewed user's current Memberships,
+     * keeping the computed render properties free of state mutation.
+     */
+    protected function seedRoleSelections(): void
+    {
+        $selections = [];
+
+        foreach ($this->user()->teams()->get() as $team) {
+            $teamId = (int) $team->getKey();
+            $selections[$teamId] = $this->resolvedRoleForUser($this->userId, $teamId)?->getKey();
+        }
+
+        $this->roleSelections = $selections;
     }
 
     /** The viewed user, loaded unscoped so cross-team management works. */
