@@ -5,19 +5,38 @@ All notable changes to `aura-cms` will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased](https://github.com/eminiarts/aura-cms/compare/v0.2.0...HEAD)
+## [1.0.0](https://github.com/eminiarts/aura-cms/compare/v0.2.0...v1.0.0) - 2026-07-18
+
+First stable release (pre-released as `v1.0.0-beta.1` on 2026-07-17).
 
 ### Changed
 
 - Raised the support matrix to PHP 8.4+, Laravel 12/13, and Livewire 4.
 - Made package migrations ownership-aware so rollback preserves host-owned tables and columns.
 - Added a central `Aura::flushState()` reset point for tests and long-running queue workers.
-- Made the Resource Editor a local-development-only tool.
+- Made the Resource Editor a local-development-only, super-admin-only tool.
 - Restored and enforced the teams-disabled test suite.
+- Decomposed the `AuraModelConfig` god-trait into focused concern traits behind a stable aggregator; added the `DefinesFields` contract (no behavior change).
+- Documented the dynamic attribute resolution order (`Resource::__get`) in a single place.
+
+### Added
+
+- Laravel Octane support: Aura is a container singleton and flushes its request-scoped state on Octane's request/task/tick events (`laravel/octane` stays optional).
+- Batched table rendering: `BelongsTo` and `Image` columns resolve in one query per page instead of one per row; `Tags`/`AdvancedSelect` columns eager-load once (`PreloadsTableDisplay` / `ProvidesTableEagerLoad` contracts).
+- A fast path for table cell display that avoids building the full fields collection for plain columns.
+- `aura.features.legacy_fields_append` config flag: set to `false` to stop appending the computed `fields` attribute to every model serialization (recommended for new apps).
+- Dedicated test coverage for every field type, plus a guard test that fails when a new field ships untested.
+
+### Fixed
+
+- `whereMetaContains` now uses portable JSON containment (previously MySQL-only raw SQL that failed on SQLite/Postgres).
+- Resource URL helpers (`createUrl`/`editUrl`/`indexUrl`/`viewUrl`) return `null` for unregistered routes instead of throwing; table row actions only render existing links.
+- The Attachment media grid is no longer shadowed by generically registered attachment routes.
 
 ### Security
 
 - Hardened role assignment, stored rich content, saved-filter rendering, logout, and media access authorization.
+- The Resource Editor now also requires a super admin (middleware and component).
 
 ### Upgrade notes
 
