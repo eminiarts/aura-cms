@@ -187,4 +187,20 @@ class Roles extends AdvancedSelect implements PreloadsTableDisplay
         // express; they are batched via preloadTableDisplay() instead.
         return null;
     }
+
+    /**
+     * The user-form role picker offers the merged, shadow-resolved catalog: each
+     * slug once, the team's Shadow winning over the Global Role it shadows — the
+     * same resolved set the Roles index and the invitation modal present, so a
+     * shadowed Global Role never shows up twice in the search results. The search
+     * and result-mapping plumbing lives in AdvancedSelect::api(); this field only
+     * contributes the shadowResolved() constraint through the constrainApiQuery()
+     * hook.
+     */
+    protected function constrainApiQuery($query, $request): void
+    {
+        if (config('aura.teams') && method_exists($query->getModel(), 'scopeShadowResolved')) {
+            $query->shadowResolved(Role::currentTeamIdForResolution());
+        }
+    }
 }

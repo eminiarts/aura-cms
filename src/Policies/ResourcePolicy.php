@@ -4,6 +4,7 @@ namespace Aura\Base\Policies;
 
 use App\Models\Post;
 use Aura\Base\Resource;
+use Aura\Base\Resources\Role;
 use Aura\Base\Resources\User;
 use Illuminate\Auth\Access\HandlesAuthorization;
 use Illuminate\Auth\Access\Response;
@@ -42,6 +43,10 @@ class ResourcePolicy
      */
     public function delete($user, $resource)
     {
+        if ($this->deniesGlobalRoleWrite($user, $resource)) {
+            return false;
+        }
+
         if ($this->hasBlanketAccess($user)) {
             return true;
         }
@@ -70,6 +75,10 @@ class ResourcePolicy
      */
     public function forceDelete($user, $resource)
     {
+        if ($this->deniesGlobalRoleWrite($user, $resource)) {
+            return false;
+        }
+
         if ($this->hasBlanketAccess($user)) {
             return true;
         }
@@ -89,6 +98,10 @@ class ResourcePolicy
      */
     public function restore(User $user, $resource)
     {
+        if ($this->deniesGlobalRoleWrite($user, $resource)) {
+            return false;
+        }
+
         if ($this->hasBlanketAccess($user)) {
             return true;
         }
@@ -108,6 +121,10 @@ class ResourcePolicy
     public function update($user, $resource)
     {
         if ($resource::$editEnabled === false) {
+            return false;
+        }
+
+        if ($this->deniesGlobalRoleWrite($user, $resource)) {
             return false;
         }
 
@@ -190,6 +207,30 @@ class ResourcePolicy
         }
 
         return false;
+    }
+
+    /**
+     * Refuse a mutating write to a Global Role from a team context unless the
+     * actor is a Global Admin. A Global Role (team_id = null) belongs to the
+     * shared catalog: a team Super Admin — who otherwise clears every ability
+     * via hasBlanketAccess — must not edit or delete it, or one team could
+     * silently rewrite permissions for every other team. Checked BEFORE
+     * hasBlanketAccess so a team Super Admin's blanket power does not leak here;
+     * a Global Admin passes and is then cleared normally. A team may still
+     * Shadow the global role (create its own Team Role of the same slug) — that
+     * is a separate, allowed create. No-op in Teams-off mode (no catalog).
+     */
+    protected function deniesGlobalRoleWrite($user, $resource): bool
+    {
+        if (! config('aura.teams')) {
+            return false;
+        }
+
+        if (! ($resource instanceof Role) || ! $resource->exists || $resource->getAttribute('team_id') !== null) {
+            return false;
+        }
+
+        return ! $user->isAuraGlobalAdmin();
     }
 
     /**

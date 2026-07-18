@@ -47,6 +47,7 @@ use Aura\Base\Livewire\ResourceEditor;
 use Aura\Base\Livewire\Styleguide;
 use Aura\Base\Livewire\Table\Table;
 use Aura\Base\Livewire\TwoFactorAuthenticationForm;
+use Aura\Base\Livewire\UserTeams;
 use Aura\Base\Navigation\Navigation as AuraNavigation;
 use Aura\Base\Policies\ResourcePolicy;
 use Aura\Base\Policies\TeamPolicy;
@@ -153,6 +154,7 @@ class AuraServiceProvider extends PackageServiceProvider
             'aura::create-resource' => CreateResource::class,
             'aura::resource-editor' => ResourceEditor::class,
             'aura::invite-user' => InviteUser::class,
+            'aura::user-teams' => UserTeams::class,
             'aura::modals' => Modals::class,
             'aura::plugins-page' => PluginsPage::class,
             'aura::styleguide' => Styleguide::class,
@@ -172,6 +174,7 @@ class AuraServiceProvider extends PackageServiceProvider
             'aura.base.livewire.create-resource' => CreateResource::class,
             'aura.base.livewire.resource-editor' => ResourceEditor::class,
             'aura.base.livewire.invite-user' => InviteUser::class,
+            'aura.base.livewire.user-teams' => UserTeams::class,
             'aura.base.livewire.modals' => Modals::class,
             'aura.base.livewire.plugins-page' => PluginsPage::class,
             'aura.base.livewire.styleguide' => Styleguide::class,
