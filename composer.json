@@ -52,6 +52,9 @@
         "spatie/ray": "^1.37",
         "spatie/test-time": "^1.3"
     },
+    "suggest": {
+        "laravel/octane": "To run Aura on a long-running worker (Swoole/RoadRunner). Aura flushes its process-level static state on each Octane RequestReceived/TaskReceived/TickReceived event so fields, resource registrations, team scope and the user model stay isolated between requests. Requires ^2.0."
+    },
     "autoload": {
         "psr-4": {
             "Aura\\Base\\": "src",

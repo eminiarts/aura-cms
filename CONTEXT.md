@@ -23,3 +23,19 @@ _Avoid_: single-tenant mode, no-teams
 **Resource Editor**:
 A local-development tool for editing resource definitions from the browser. Not a production feature; it only exists in local environments.
 _Avoid_: admin builder, schema editor
+
+**Attachment**:
+A stored media item: one uploaded file plus its metadata (title, alt text, mime type, size, dimensions).
+_Avoid_: media item, file record, upload
+
+**Media Library**:
+The media subsystem as a whole, and specifically the standalone index page listing all attachments. Its short navigation label is "Media".
+_Avoid_: media manager, asset library
+
+**Media Picker**:
+The modal opened from a media field (Image, File) to select attachments into that field's value.
+_Avoid_: media manager, media modal
+
+**Details Panel**:
+The drawer/sidebar showing a single attachment's preview and editable metadata. Appears on the Media Library page and inside the Media Picker.
+_Avoid_: attachment sidebar, info pane

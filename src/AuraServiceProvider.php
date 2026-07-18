@@ -65,6 +65,7 @@ use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Queue;
+use Laravel\Octane\Events\RequestReceived;
 use Livewire\Component;
 use Livewire\Livewire;
 use Spatie\LaravelPackageTools\Commands\InstallCommand;
@@ -270,6 +271,25 @@ class AuraServiceProvider extends PackageServiceProvider
         Queue::after(fn () => Aura::flushState());
         Queue::exceptionOccurred(fn () => Aura::flushState());
 
+        // Laravel Octane keeps a single PHP process alive across many requests,
+        // so Aura's process-level static state (field caches, resource registry,
+        // conditional-logic cache, team/scope statics and the user model) must be
+        // reset at every request/task/tick boundary to prevent leakage between
+        // requests, users and teams. Octane is an optional dependency, so the
+        // event classes are referenced by name (guarded by class_exists) and
+        // nothing breaks when octane is not installed.
+        if (class_exists(RequestReceived::class)) {
+            $events = $this->app['events'];
+
+            foreach ([
+                'Laravel\Octane\Events\RequestReceived',
+                'Laravel\Octane\Events\TaskReceived',
+                'Laravel\Octane\Events\TickReceived',
+            ] as $octaneEvent) {
+                $events->listen($octaneEvent, fn () => Aura::flushState());
+            }
+        }
+
         if ($this->app->runningInConsole()) {
             $this->publishes([
                 $this->package->basePath('/../resources/dist') => public_path("vendor/{$this->package->shortName()}"),
@@ -354,6 +374,15 @@ class AuraServiceProvider extends PackageServiceProvider
         $this->app->singleton('navigation', function ($app) {
             return new AuraNavigation;
         });
+
+        // Bind the concrete Aura instance as a process-persistent singleton so
+        // its resource/field registrations and captured baseline survive across
+        // requests on a long-running worker (Octane). Octane clears facade and
+        // scoped container instances on every request; without a real singleton
+        // the facade would re-resolve a fresh, empty Aura and lose every
+        // registration after the first request. Per-request mutable state is
+        // reset back to the boot baseline via Aura::flushState() instead.
+        $this->app->singleton(\Aura\Base\Aura::class);
 
         $this->app->scoped('aura', function (): Aura {
             return app(Aura::class);

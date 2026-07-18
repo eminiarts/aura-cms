@@ -2,10 +2,12 @@
 
 namespace Aura\Base\Fields;
 
+use Aura\Base\Contracts\ProvidesTableEagerLoad;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
 use InvalidArgumentException;
 
-class Tags extends Field
+class Tags extends Field implements ProvidesTableEagerLoad
 {
     public $edit = 'aura::fields.tags';
 
@@ -19,16 +21,27 @@ class Tags extends Field
 
     public function display($field, $value, $model)
     {
+        $slug = $field['slug'] ?? null;
 
-        if (is_string($value)) {
-            $value = json_decode($value, true);
+        // Reuse the relation eager-loaded by the table (ProvidesTableEagerLoad)
+        // instead of re-querying once per row.
+        if ($slug && $model instanceof Model && $model->relationLoaded($slug)) {
+            $resource = $model->getRelation($slug);
+        } else {
+            if (is_string($value)) {
+                $value = json_decode($value, true);
+            }
+
+            if (! is_array($value) || count($value) === 0) {
+                return '';
+            }
+
+            $resource = app($field['resource'])->query()->whereIn('id', $value)->get();
         }
 
-        if (! is_array($value) || count($value) === 0) {
+        if ($resource->isEmpty()) {
             return '';
         }
-
-        $resource = app($field['resource'])->query()->whereIn('id', $value)->get();
 
         return $resource->map(function ($item) {
             $title = $item->title ?? $item->title();
@@ -103,6 +116,13 @@ class Tags extends Field
             return collect();
         }
 
+        $slug = $field['slug'] ?? null;
+
+        // Reuse the eager-loaded relation when the table primed it.
+        if ($slug && $model instanceof Model && $model->relationLoaded($slug)) {
+            return $model->getRelation($slug);
+        }
+
         $relationshipQuery = $this->relationship($model, $field);
 
         return $relationshipQuery->get();
@@ -168,5 +188,14 @@ class Tags extends Field
         } else {
             $post->{$field['slug']}()->sync([]);
         }
+    }
+
+    public function tableEagerLoad(array $field): string|array|null
+    {
+        if (empty($field['resource']) || empty($field['slug'])) {
+            return null;
+        }
+
+        return $field['slug'];
     }
 }

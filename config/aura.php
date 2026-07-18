@@ -160,6 +160,16 @@ return [
         // By default, resources are using the posts and meta table.
         // If you want to use custom tables by default, you can set this to true.
 
+        // Append the resolved `fields` accessor to every resource's array/JSON
+        // serialization (toArray()/toJson()). This is the historical default
+        // (true) and is kept for backward compatibility. Resolving `fields`
+        // computes every input field's value, which is expensive when many
+        // models are serialized (e.g. large tables under Livewire). New apps
+        // that do not depend on `fields` appearing in serialized output should
+        // set this to false for better large-table performance; callers that
+        // still need it can opt in per model via `$model->append('fields')`.
+        'legacy_fields_append' => true,
+
     ],
 
     /*

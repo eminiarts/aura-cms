@@ -2,9 +2,12 @@
 
 namespace Aura\Base\Fields;
 
+use Aura\Base\Contracts\PreloadsTableDisplay;
+use Aura\Base\Resource;
 use Aura\Base\Resources\Attachment;
+use Illuminate\Database\Eloquent\Collection;
 
-class Image extends Field
+class Image extends Field implements PreloadsTableDisplay
 {
     public $edit = 'aura::fields.image';
 
@@ -22,8 +25,7 @@ class Image extends Field
             $values = is_array($value) ? $value : [$value];
 
             $firstImageValue = array_shift($values);
-            $attachmentClass = config('aura.resources.attachment', Attachment::class);
-            $attachment = $attachmentClass::find($firstImageValue);
+            $attachment = $this->resolveDisplayAttachment($field, $firstImageValue, $model);
 
             if ($attachment) {
                 $url = $attachment->thumbnail('xs');
@@ -100,8 +102,81 @@ class Image extends Field
         ]);
     }
 
+    public function preloadTableDisplay(Collection $rows, array $field): void
+    {
+        $slug = $field['slug'];
+        $attachmentClass = config('aura.resources.attachment', Attachment::class);
+
+        $ids = [];
+
+        foreach ($rows as $row) {
+            if (! $row instanceof Resource) {
+                continue;
+            }
+
+            foreach ($this->tableDisplayImageIds($row, $slug) as $id) {
+                if ($id !== null && $id !== '') {
+                    $ids[$id] = $id;
+                }
+            }
+        }
+
+        $attachments = new Collection;
+
+        if (! empty($ids)) {
+            $keyName = (new $attachmentClass)->getKeyName();
+
+            // Scoped query: mirrors the per-row ::find() (no withoutGlobalScopes)
+            // so team/permission scopes still apply.
+            $attachments = $attachmentClass::query()
+                ->whereKey(array_values($ids))
+                ->get()
+                ->keyBy($keyName);
+        }
+
+        foreach ($rows as $row) {
+            if (! $row instanceof Resource) {
+                continue;
+            }
+
+            $row->setTableDisplayValue($slug, $attachments);
+        }
+    }
+
     public function set($post, $field, $value)
     {
         return json_encode($value);
+    }
+
+    protected function resolveDisplayAttachment($field, $id, $model)
+    {
+        if ($id === null || $id === '') {
+            return;
+        }
+
+        $slug = $field['slug'] ?? null;
+
+        if ($slug && $model instanceof Resource && $model->hasTableDisplayValue($slug)) {
+            $attachments = $model->getTableDisplayValue($slug);
+
+            if ($attachments instanceof \Illuminate\Support\Collection) {
+                return $attachments->get($id);
+            }
+        }
+
+        $attachmentClass = config('aura.resources.attachment', Attachment::class);
+
+        return $attachmentClass::find($id);
+    }
+
+    protected function tableDisplayImageIds(Resource $row, string $slug): array
+    {
+        $value = $row->fields[$slug] ?? null;
+
+        if ($value === null) {
+            return [];
+        }
+
+        return is_array($value) ? $value : [$value];
     }
 }

@@ -11,7 +11,7 @@ The main breaking changes are:
 - Livewire 4 is required; Livewire 3 compatibility is not maintained.
 - The Resource Editor is available only in the `local` environment and must also be enabled by `aura.features.resource_editor`.
 - Teams-disabled installations are supported, but custom resources and application migrations must not assume team columns exist.
-- Laravel Octane is not officially supported in 1.0. Queue callbacks clear Aura's static state automatically; tests and other long-running integrations may call `Aura::flushState()` at their request or job boundary.
+- Laravel Octane is supported. When `laravel/octane` is installed, Aura resets its process-level static state on every `RequestReceived`/`TaskReceived`/`TickReceived` event; queue callbacks clear the same state after jobs. Custom long-running loops that resolve Aura resources outside the normal request lifecycle may call `Aura::flushState()` at their own boundary. See the [Laravel Octane](docs/performance.md#laravel-octane) section of the performance guide.
 
 For an existing 0.x application:
 

@@ -202,3 +202,26 @@ it('can save the resource component', function () {
         ->call('save')
         ->assertSet('resource', $resource);
 });
+
+it('rejects non-super-admin users on the editor route', function () {
+    $this->actingAs(createAdmin());
+
+    $this->get(route('aura.resource.editor', ['slug' => 'model']))
+        ->assertStatus(403);
+});
+
+it('rejects non-super-admin users mounting the editor component', function () {
+    $this->actingAs(createAdmin());
+
+    Livewire::test(ResourceEditorFake::class, ['slug' => 'Model'])
+        ->assertStatus(403);
+});
+
+it('allows super admins on the editor route gate', function () {
+    // The super admin from beforeEach passes the middleware; the underlying
+    // page needs a registered app resource, so only assert we get past the
+    // authorization gates (not 403/404 from the middleware).
+    $response = $this->get(route('aura.resource.editor', ['slug' => 'model']));
+
+    expect($response->status())->not->toBeIn([403, 404]);
+});

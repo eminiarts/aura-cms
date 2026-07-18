@@ -2,6 +2,7 @@
 
 namespace Aura\Base;
 
+use Aura\Base\Contracts\DefinesFields;
 use Aura\Base\Models\Scopes\ScopedScope;
 use Aura\Base\Models\Scopes\TeamScope;
 use Aura\Base\Models\Scopes\TypeScope;
@@ -17,9 +18,28 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\Relation;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 
-class Resource extends Model
+/**
+ * Dynamic property access on a Resource resolves in a fixed precedence order,
+ * centralized in resolveDynamicAttribute() as the single source of truth (the
+ * __get magic method is a thin delegate to it):
+ *
+ *   1. Real Eloquent state via parent::__get — a declared attribute, an
+ *      accessor, or a loaded/lazy relation.
+ *   2. Any non-null result from (1) wins as-is, including falsy 0/''/false.
+ *   3. Otherwise, if $key is a relation field slug, the field's getRelation()
+ *      result (with any falsy value coerced to an empty collection).
+ *   4. Otherwise, the computed value from the `fields` accessor, if present.
+ *   5. Otherwise null.
+ *
+ * See resolveDynamicAttribute() for the annotated control flow.
+ *
+ * @property-read Collection $fields  Computed input-field map (getFieldsAttribute()).
+ * @property-read mixed $meta  The meta relation / normalized meta map (see getMeta()).
+ */
+class Resource extends Model implements DefinesFields
 {
     use AuraModelConfig;
     use HasFactory;
@@ -41,11 +61,29 @@ class Resource extends Model
     protected $hidden = ['meta'];
 
     /**
+     * Per-instance cache of the normalized meta map (see getMeta()).
+     *
+     * @var Collection|null
+     */
+    protected $normalizedMetaCache;
+
+    /**
      * The table associated with the model.
      *
      * @var string
      */
     protected $table = 'posts';
+
+    /**
+     * Per-instance cache of preloaded table-display values, keyed by field slug.
+     *
+     * Primed by PreloadsTableDisplay implementations after pagination so that
+     * a field's display() can resolve without a per-row query. array_key_exists
+     * distinguishes "primed but resolved to null" from "not primed".
+     *
+     * @var array<string, mixed>
+     */
+    protected array $tableDisplayCache = [];
 
     protected $with = [];
 
@@ -60,6 +98,14 @@ class Resource extends Model
 
         if ($this->usesMeta()) {
             $this->with[] = 'meta';
+        }
+
+        // The 'fields' accessor is expensive to serialize (it resolves every
+        // input field value). Appending it to every array/JSON serialization is
+        // opt-in behind a config flag. Default (true) keeps the legacy behavior;
+        // when disabled, callers can still opt in per-model via ->append('fields').
+        if (! config('aura.features.legacy_fields_append', true)) {
+            $this->appends = array_values(array_diff($this->appends, ['fields']));
         }
     }
 
@@ -87,31 +133,7 @@ class Resource extends Model
      */
     public function __get($key)
     {
-        $value = parent::__get($key);
-
-        // Return the real attribute even when it is falsy (0, '', false);
-        // only a genuinely absent (null) attribute should fall through to
-        // the relation/field resolution below.
-        if (! is_null($value)) {
-            return $value;
-        }
-
-        if ($this->getFieldSlugs()->contains($key)) {
-            $fieldClass = $this->fieldClassBySlug($key);
-            if ($fieldClass->isRelation()) {
-                $field = $this->fieldBySlug($key);
-                $relation = $fieldClass->getRelation($this, $field);
-
-                return $relation ?: collect();  // Return an empty collection if relation is null
-            }
-        }
-
-        // If the key is in the fields array, then we want to return that
-        if (is_null($value) && isset($this->fields[$key])) {
-            return $this->fields[$key];
-        }
-
-        return $value;
+        return $this->resolveDynamicAttribute($key);
     }
 
     /**
@@ -134,6 +156,7 @@ class Resource extends Model
     public function clearFieldsAttributeCache()
     {
         $this->fieldsAttributeCache = null;
+        $this->normalizedMetaCache = null;
 
         if ($this->usesMeta()) {
             $this->load('meta'); // This will refresh only the 'meta' relationship
@@ -184,44 +207,7 @@ class Resource extends Model
                 return strpos($key, '.') === false;
             })
             ->map(function ($value, $key) use ($meta) {
-                $class = $this->fieldClassBySlug($key);
-                $field = $this->fieldBySlug($key);
-
-                if ($class && method_exists($class, 'isRelation') && $class->isRelation($field) && method_exists($class, 'get') && $field['type'] != 'Aura\\Base\\Fields\\Roles') {
-                    return $class->get($class, $this->{$key}, $field);
-                }
-
-                if ($class && isset($this->{$key}) && method_exists($class, 'get')) {
-                    return $class->get($class, $this->{$key}, $field);
-                }
-
-                if (isset($this->{$key})) {
-                    return $this->{$key};
-                }
-
-                if ($class && isset($this->attributes[$key]) && method_exists($class, 'get')) {
-                    return $class->get($class, $this->attributes[$key], $field);
-                }
-
-                if (isset($this->attributes[$key])) {
-                    return $this->attributes[$key];
-                }
-
-                $method = 'get'.Str::studly($key).'Field';
-
-                if (method_exists($this, $method)) {
-                    return $this->{$method}($value);
-                }
-
-                if ($class && isset(optional($this)->{$key}) && method_exists($class, 'get')) {
-                    return $class->get($class, $this->{$key} ?? null, $field);
-                }
-
-                if (optional($field)['polymorphic_relation'] === false && optional($field)['multiple'] === false) {
-                    return isset($meta[$key]) ? [$meta[$key]] : [];
-                }
-
-                return $meta[$key] ?? $value;
+                return $this->resolveFieldValue($key, $meta);
             });
 
         return $defaultValues->toArray();
@@ -235,26 +221,34 @@ class Resource extends Model
 
         if ($this->usesMeta() && optional($this)->meta && ! is_string($this->meta)) {
 
-            $meta = $this->meta->pluck('value', 'key');
+            // Build (and cache) the normalized meta map once per instance. The
+            // pluck/cast/map scan is otherwise repeated for every displayed
+            // cell. The cache is invalidated whenever the meta relation is
+            // replaced (setRelation/unsetRelation) or fields are cleared.
+            if ($this->normalizedMetaCache === null) {
+                $meta = $this->meta->pluck('value', 'key');
 
-            // Cast Attributes
-            $meta = $meta->map(function ($meta, $key) {
-                $field = $this->fieldBySlug($key);
+                // Cast Attributes
+                $meta = $meta->map(function ($meta, $key) {
+                    $field = $this->fieldBySlug($key);
 
-                $class = $this->fieldClassBySlug($key);
+                    $class = $this->fieldClassBySlug($key);
 
-                if ($class && method_exists($class, 'get')) {
-                    return $class->get($class, $meta, $field);
-                }
+                    if ($class && method_exists($class, 'get')) {
+                        return $class->get($class, $meta, $field);
+                    }
 
-                return $meta;
-            });
+                    return $meta;
+                });
 
-            if ($key) {
-                return $meta[$key] ?? null;
+                $this->normalizedMetaCache = $meta;
             }
 
-            return $meta;
+            if ($key) {
+                return $this->normalizedMetaCache[$key] ?? null;
+            }
+
+            return $this->normalizedMetaCache;
         }
 
         return collect();
@@ -273,6 +267,16 @@ class Resource extends Model
         });
 
         return $fields;
+    }
+
+    public function getTableDisplayValue(string $slug): mixed
+    {
+        return $this->tableDisplayCache[$slug] ?? null;
+    }
+
+    public function hasTableDisplayValue(string $slug): bool
+    {
+        return array_key_exists($slug, $this->tableDisplayCache);
     }
 
     public function isBaseFillable($key)
@@ -306,12 +310,95 @@ class Resource extends Model
     }
 
     /**
+     * Resolve a single field's raw (pre-display) value.
+     *
+     * Extracted from getFieldsWithoutConditionalLogic() so that table display
+     * can resolve just one requested field instead of building the entire
+     * fields collection for every cell. The logic is intentionally identical to
+     * the per-slug closure that previously lived inside the accessor.
+     *
+     * @param  Collection|null  $meta  The normalized meta map (defaults to getMeta()).
+     * @return mixed
+     */
+    public function resolveFieldValue(string $slug, $meta = null)
+    {
+        $meta ??= $this->getMeta();
+
+        $key = $slug;
+        $value = null;
+
+        $class = $this->fieldClassBySlug($key);
+        $field = $this->fieldBySlug($key);
+
+        if ($class && method_exists($class, 'isRelation') && $class->isRelation($field) && method_exists($class, 'get') && $field['type'] != 'Aura\\Base\\Fields\\Roles') {
+            return $class->get($class, $this->{$key}, $field);
+        }
+
+        if ($class && isset($this->{$key}) && method_exists($class, 'get')) {
+            return $class->get($class, $this->{$key}, $field);
+        }
+
+        if (isset($this->{$key})) {
+            return $this->{$key};
+        }
+
+        if ($class && isset($this->attributes[$key]) && method_exists($class, 'get')) {
+            return $class->get($class, $this->attributes[$key], $field);
+        }
+
+        if (isset($this->attributes[$key])) {
+            return $this->attributes[$key];
+        }
+
+        $method = 'get'.Str::studly($key).'Field';
+
+        if (method_exists($this, $method)) {
+            return $this->{$method}($value);
+        }
+
+        if ($class && isset(optional($this)->{$key}) && method_exists($class, 'get')) {
+            return $class->get($class, $this->{$key} ?? null, $field);
+        }
+
+        if (optional($field)['polymorphic_relation'] === false && optional($field)['multiple'] === false) {
+            return isset($meta[$key]) ? [$meta[$key]] : [];
+        }
+
+        return $meta[$key] ?? $value;
+    }
+
+    /**
      * @return HasMany
      */
     public function revision()
     {
         return $this->hasMany(self::class, 'parent_id')
             ->where('post_type', 'revision');
+    }
+
+    public function setRelation($relation, $value)
+    {
+        if ($relation === 'meta') {
+            $this->normalizedMetaCache = null;
+            $this->fieldsAttributeCache = null;
+        }
+
+        return parent::setRelation($relation, $value);
+    }
+
+    public function setTableDisplayValue(string $slug, mixed $value): void
+    {
+        $this->tableDisplayCache[$slug] = $value;
+    }
+
+    public function unsetRelation($relation)
+    {
+        if ($relation === 'meta') {
+            $this->normalizedMetaCache = null;
+            $this->fieldsAttributeCache = null;
+        }
+
+        return parent::unsetRelation($relation);
     }
 
     /**
@@ -357,5 +444,53 @@ class Resource extends Model
         static::saved(function ($model) {
             $model->clearFieldsAttributeCache();
         });
+    }
+
+    /**
+     * Resolve dynamic property access — the single source of truth behind
+     * __get. The precedence ladder (documented on the class) is annotated
+     * inline below; the control flow is byte-identical to the previous __get
+     * body, including the deliberately-kept redundant is_null() guard in
+     * step 4.
+     *
+     * The $key parameter is intentionally untyped to match __get's surface.
+     *
+     * @param  mixed  $key
+     * @return mixed
+     */
+    private function resolveDynamicAttribute($key)
+    {
+        // 1. Real Eloquent state: parent::__get resolves a declared attribute,
+        //    an accessor, or a loaded/lazy relation for this key.
+        $value = parent::__get($key);
+
+        // 2. Any non-null result from (1) wins as-is — including falsy
+        //    0/''/false; only a genuinely absent (null) attribute falls
+        //    through to the relation/field resolution below.
+        if (! is_null($value)) {
+            return $value;
+        }
+
+        // 3. Relation field slug: return the field's getRelation() result,
+        //    coercing ANY falsy value (null/empty) to an empty collection.
+        if ($this->getFieldSlugs()->contains($key)) {
+            $fieldClass = $this->fieldClassBySlug($key);
+            if ($fieldClass->isRelation()) {
+                $field = $this->fieldBySlug($key);
+                $relation = $fieldClass->getRelation($this, $field);
+
+                return $relation ?: collect();  // Return an empty collection if relation is null
+            }
+        }
+
+        // 4. Computed field value from the `fields` accessor, if present. The
+        //    is_null($value) guard is redundant here (step 2 already returned
+        //    on any non-null $value) but is preserved verbatim.
+        if (is_null($value) && isset($this->fields[$key])) {
+            return $this->fields[$key];
+        }
+
+        // 5. Nothing matched: return the (null) $value.
+        return $value;
     }
 }

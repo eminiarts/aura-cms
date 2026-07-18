@@ -2,6 +2,8 @@
 
 namespace Aura\Base\Livewire\Table;
 
+use Aura\Base\Contracts\PreloadsTableDisplay;
+use Aura\Base\Contracts\ProvidesTableEagerLoad;
 use Aura\Base\Facades\Aura;
 use Aura\Base\Livewire\Table\Traits\BulkActions;
 use Aura\Base\Livewire\Table\Traits\Filters;
@@ -15,6 +17,8 @@ use Aura\Base\Livewire\Table\Traits\Sorting;
 use Aura\Base\Livewire\Table\Traits\SwitchView;
 use Aura\Base\Resource;
 use Aura\Base\Resources\User;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Route;
@@ -164,14 +168,12 @@ class Table extends Component
         if ($this->parent) {
             $name = 'aura.'.$this->model()->getSlug().'.create';
 
-            if (! Route::has($name)) {
-                return;
-            }
-
-            return route($name, [
+            // Ternary instead of an early return: Pint's simplified_null_return
+            // and PHPStan's return.empty disagree about `return null;` here.
+            return Route::has($name) ? route($name, [
                 'for' => $this->parent->getType(),
                 'id' => $this->parent->id,
-            ]);
+            ]) : null;
         }
 
         return $this->model()->createUrl();
@@ -480,6 +482,45 @@ class Table extends Component
         }
     }
 
+    /**
+     * Prime batched table-display values for the paginated rows so that fields
+     * implementing PreloadsTableDisplay resolve without a per-row query.
+     */
+    protected function preloadTableDisplay(LengthAwarePaginator $paginator): void
+    {
+        // The paginator items are the exact model instances rendered by the
+        // view, so priming them here is observed at render time.
+        $rows = EloquentCollection::make($paginator->items());
+
+        if ($rows->isEmpty()) {
+            return;
+        }
+
+        $model = $this->model();
+        $columns = $this->columns;
+
+        foreach ($this->headers() as $slug => $name) {
+            // Only preload columns that are actually visible.
+            if (! optional($columns)[$slug]) {
+                continue;
+            }
+
+            $fieldClass = $model->fieldClassBySlug($slug);
+
+            if (! $fieldClass instanceof PreloadsTableDisplay) {
+                continue;
+            }
+
+            $field = $model->fieldBySlug($slug);
+
+            if (! $field) {
+                continue;
+            }
+
+            $fieldClass->preloadTableDisplay($rows, $field);
+        }
+    }
+
     protected function query()
     {
         $query = $this->model()->query()
@@ -515,6 +556,12 @@ class Table extends Component
             $query = $query->with(['meta']);
         }
 
+        // Eager-load relation fields that explicitly opt into table eager
+        // loading (ProvidesTableEagerLoad) to avoid a per-row relation query.
+        if ($eagerLoads = $this->tableEagerLoads()) {
+            $query = $query->with($eagerLoads);
+        }
+
         return $query;
     }
 
@@ -526,6 +573,42 @@ class Table extends Component
     #[Computed]
     protected function rows()
     {
-        return $this->rowsQuery->paginate($this->perPage);
+        $rows = $this->rowsQuery->paginate($this->perPage);
+
+        $this->preloadTableDisplay($rows);
+
+        return $rows;
+    }
+
+    /**
+     * Collect the eager-load relation names for input fields that opt into
+     * table eager loading via ProvidesTableEagerLoad.
+     *
+     * @return array<int, string>
+     */
+    protected function tableEagerLoads(): array
+    {
+        $model = $this->model();
+        $relations = [];
+
+        foreach ($model->inputFieldsSlugs() as $slug) {
+            $fieldClass = $model->fieldClassBySlug($slug);
+
+            if (! $fieldClass instanceof ProvidesTableEagerLoad) {
+                continue;
+            }
+
+            $eager = $fieldClass->tableEagerLoad($model->fieldBySlug($slug));
+
+            if ($eager === null) {
+                continue;
+            }
+
+            foreach ((array) $eager as $relation) {
+                $relations[] = $relation;
+            }
+        }
+
+        return array_values(array_unique($relations));
     }
 }
