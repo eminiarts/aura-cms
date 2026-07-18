@@ -200,6 +200,10 @@ return [
     */
 
     'media' => [
+        // Filesystem disk (config/filesystems.php) that uploads, thumbnails and
+        // served images live on, plus the base folder within that disk. The
+        // defaults keep media on the public disk under `media/`; point them at
+        // e.g. an S3 disk to store uploads off the local filesystem.
         'disk' => 'public',
         'path' => 'media',
         'quality' => 80,
