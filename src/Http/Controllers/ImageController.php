@@ -19,7 +19,17 @@ class ImageController extends Controller
     public function __invoke(Request $request, $path)
     {
         $attachmentClass = config('aura.resources.attachment');
-        $attachment = $attachmentClass::query()->where('url', $path)->firstOrFail();
+        $model = app($attachmentClass);
+
+        // 'url' lives in meta for the default posts-table attachment, but is
+        // a real column on custom-table attachment resources.
+        $attachment = $attachmentClass::query()
+            ->when(
+                $model->usesMeta() && $model->isMetaField('url'),
+                fn ($query) => $query->whereHas('meta', fn ($meta) => $meta->where('key', 'url')->where('value', $path)),
+                fn ($query) => $query->where('url', $path),
+            )
+            ->firstOrFail();
 
         Gate::authorize('view', $attachment);
 

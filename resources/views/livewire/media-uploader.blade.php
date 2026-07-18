@@ -1,311 +1,378 @@
 <div>
-
-    <div>
-        @if($media && count($media))
-        <div x-data="{ media: {{ json_encode($media) }}, loading: true }"
-            class="flex fixed inset-0 z-50 items-end px-4 py-6 pointer-events-none sm:items-start sm:p-6">
-            <div class="flex flex-col items-end space-y-4 w-full sm:items-end">
-
-                @foreach($media as $key => $file)
-
-                <div
-                    class="overflow-hidden relative w-full max-w-sm bg-white rounded-lg ring-1 ring-black ring-opacity-5 shadow-lg pointer-events-auto"
-                    x-data="{loading: true}" x-show="loading" x-init="setTimeout(() => { loading = false }, 3000)"
-                    x-transition:leave="transition ease-linear duration-1000" x-transition:leave-end="opacity-0">
-                    <div class="p-4">
-                        <div class="flex items-start">
-                            <div class="flex-shrink-0">
-                                <svg class="w-6 h-6 text-green-400" fill="none" viewBox="0 0 24 24"
-                                    stroke-width="1.5" stroke="currentColor" aria-hidden="true">
-                                    <path stroke-linecap="round" stroke-linejoin="round"
-                                        d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                </svg>
-                            </div>
-                            <div class="flex-1 pt-0.5 ml-3 w-0">
-                                <p class="text-sm font-medium text-gray-900">Successfully uploaded</p>
-                                <p class="mt-1 text-sm text-gray-500">{{ $file->getClientOriginalName() }}</p>
-                            </div>
-                            <div class="flex flex-shrink-0 ml-4">
-                                <button type="button"
-                                    class="inline-flex text-gray-400 bg-white rounded-md hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 dark:focus:ring-offset-gray-900">
-                                    <span class="sr-only">Close</span>
-                                    <svg class="w-5 h-5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                                        <path
-                                            d="M6.28 5.22a.75.75 0 00-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 101.06 1.06L10 11.06l3.72 3.72a.75.75 0 101.06-1.06L11.06 10l3.72-3.72a.75.75 0 00-1.06-1.06L10 8.94 6.28 5.22z" />
-                                    </svg>
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="absolute bottom-0 left-0 w-full h-1">
-                        <div class="h-1 origin-left bg-primary-200 animate-countdown"></div>
-                    </div>
-                </div>
-
-                @endforeach
-            </div>
-
-        </div>
-        @endif
-    </div>
-
-    <div>
-        @error('media')
-            <div class="mt-2 text-sm text-red-600">{{ $message }}</div>
-        @enderror
-        @error('media.*')
-            <div class="mt-2 text-sm text-red-600">{{ $message }}</div>
-        @enderror
-    </div>
-
     <div
         x-data="{
-        isDropping: false,
-        isUploading: false,
-        progress: 0,
-        disabled: {{ $disabled ? 'true' : 'false' }},
-        init() {
-            {{-- var i = 0;
-            setInterval(() => {
-                console.log(i, new Date().toLocaleTimeString());
-                i++;
-            }, 1000); --}}
-        },
-        handleFileSelect(event) {
-            if (this.disabled) return;
+            disabled: {{ $disabled ? 'true' : 'false' }},
+            maxFiles: 20,
+            maxSize: 100 * 1024 * 1024,
+            blockedExtensions: ['php', 'phtml', 'php3', 'php4', 'php5', 'phar', 'sh', 'exe', 'bat', 'cmd', 'com', 'scr', 'vbs', 'js', 'jar', 'svg'],
+            queue: [],
+            isDropping: false,
+            activeUpload: false,
+            nextId: 1,
+            pending: [],
 
-            const maxFiles = {{ 20 }};
-            if (event.target.files.length > maxFiles) {
-                alert(`{{ __('Maximum of :count files can be uploaded at once', ['count' => 20]) }}`);
+            triggerFileUpload() {
+                if (this.disabled) return;
+                this.$refs.fileInput && this.$refs.fileInput.click();
+            },
+
+            handleFileSelect(event) {
+                if (this.disabled) return;
+                this.enqueueFiles(Array.from(event.target.files || []));
                 event.target.value = '';
-                return;
-            }
+            },
 
-            if (event.target.files.length) {
-                Array.from(event.target.files).forEach(file => {
-                    @this.uploadMultiple('media', file, function (success) {
-                        $this.isUploading = false
-                        $this.progress = 0
-                    }, () => {
-                        console.error('Upload error');
-                    }, (event) => {
-                        this.progress = event.detail.progress;
-                    });
+            handleFileDrop(event) {
+                this.isDropping = false;
+                if (this.disabled) return;
+                this.enqueueFiles(Array.from(event.dataTransfer.files || []));
+            },
+
+            handleDragOver(event) {
+                if (this.disabled) return;
+                if (event.dataTransfer && Array.from(event.dataTransfer.types || []).includes('Files')) {
+                    this.isDropping = true;
+                }
+            },
+
+            enqueueFiles(files) {
+                if (!files.length) return;
+
+                if (files.length > this.maxFiles) {
+                    alert(`{{ __('Maximum of :count files can be uploaded at once', ['count' => 20]) }}`);
+                    return;
+                }
+
+                files.forEach((file) => {
+                    const item = {
+                        id: this.nextId++,
+                        name: file.name,
+                        size: this.humanSize(file.size),
+                        progress: 0,
+                        status: 'queued',
+                        reason: '',
+                    };
+
+                    const rejection = this.precheck(file);
+                    if (rejection) {
+                        item.status = 'failed';
+                        item.reason = rejection;
+                        this.queue.push(item);
+                        return;
+                    }
+
+                    this.queue.push(item);
+                    this.pending.push({ item, file });
                 });
-            }
-        },
 
-        handleFileDrop(event) {
-            if (this.disabled) return;
-
-            const maxFiles = 20;
-            if (event.dataTransfer.files.length > maxFiles) {
-                alert(`{{ __('Maximum of :count files can be uploaded at once', ['count' => 20]) }}`);
-                return;
-            }
-
-            if (event.dataTransfer.files.length > 0) {
-                this.uploadFiles(event.dataTransfer.files)
-            }
-        },
-        uploadFiles(files) {
-            const $this = this
-
-            console.log('upload multiple', files);
-
-            this.isUploading = true
-
-            @this.uploadMultiple('media', files,
-            function (success) { //upload was a success and was finished
-                console.log('upload success', success);
-                $this.isUploading = false
-                $this.progress = 0
+                this.processNext();
             },
-            function (error) { //an error occured
-                console.log('upload error', error);
+
+            precheck(file) {
+                const ext = (file.name.split('.').pop() || '').toLowerCase();
+
+                if (this.blockedExtensions.includes(ext)) {
+                    return `{{ __('This file type is not allowed for security reasons.') }}`;
+                }
+
+                if (file.size > this.maxSize) {
+                    return `{{ __('File exceeds the maximum size of 100MB.') }}`;
+                }
+
+                return null;
             },
-            function (event) { //upload progress was made
-                console.log('upload progress', event);
-                $this.progress = event.detail.progress
-            }
-            )
-        },
-        handleDragOver(event) {
-            if (event.dataTransfer.types.includes('Files')) {
-                this.isDropping = true;
-            }
-        },
-        removeUpload(filename) {
-            @this.removeUpload('files', filename)
-        },
-    }">
 
-        <div class=""
-            x-on:drop="!disabled && handleFileDrop($event)"
-            x-on:drop.prevent="!disabled && (isDropping = false)"
-            x-on:dragover.prevent="!disabled && handleDragOver($event)"
-            x-on:dragleave.prevent="!disabled && (isDropping = false)">
+            processNext() {
+                if (this.activeUpload) return;
 
-            <div
-                x-on:dragover.prevent="!disabled && handleDragOver($event)"
-                class="z-[1] absolute top-0 right-0 bottom-0 left-0"></div>
+                const next = this.pending.shift();
+                if (!next) return;
 
-            <div class="p-4 mt-2 bg-gray-50 rounded-md border border-gray-200 dark:bg-gray-800 dark:border-gray-700" x-show="isUploading" x-cloak>
-                <div class="flex justify-between items-center mb-2">
-                    <span class="text-sm font-medium text-gray-700 dark:text-gray-300 loading-ellipsis">Uploading</span>
-                </div>
-                <div class="bg-transparent dark:bg-gray-900 h-[4px] w-full" x-show="isUploading">
-                    <style>
-                        .loading-ellipsis:after {
-                            overflow: hidden;
-                            display: inline-block;
-                            vertical-align: bottom;
-                            -webkit-animation: ellipsis steps(4,end) 900ms infinite;
-                            animation: ellipsis steps(4,end) 900ms infinite;
-                            content: "\2026"; /* ascii code for the ellipsis character */
-                            width: 0px;
-                        }
+                this.activeUpload = true;
+                const item = next.item;
+                item.status = 'uploading';
+                item.progress = 0;
 
-                        @keyframes ellipsis {
-                            to {
-                                width: 1.25em;
-                            }
-                        }
+                @this.uploadMultiple('media', [next.file],
+                    () => {
+                        item.status = 'uploaded';
+                        item.progress = 100;
+                        this.activeUpload = false;
+                        this.scheduleDismiss(item);
+                        this.processNext();
+                    },
+                    (message) => {
+                        item.status = 'failed';
+                        item.reason = (typeof message === 'string' && message) ? message : `{{ __('Upload failed. Please try again.') }}`;
+                        this.activeUpload = false;
+                        this.processNext();
+                    },
+                    (event) => {
+                        item.progress = event.detail.progress;
+                    }
+                );
+            },
 
-                        @-webkit-keyframes ellipsis {
-                            to {
-                                width: 1.25em;
-                            }
-                        }
-                        .progress-bar::before {
-                            content: '';
-                            display: block;
-                            height: 100%;
-                            transition: width 0.5s;
-                            width: 0%;
-                        }
-                    </style>
-                    <div class="bg-primary-500 h-[4px] progress-bar" :style="`width: ${progress}%;`">
-                    </div>
-                </div>
+            scheduleDismiss(item) {
+                setTimeout(() => {
+                    this.queue = this.queue.filter((q) => q.id !== item.id);
+                }, 4000);
+            },
+
+            dismiss(id) {
+                this.queue = this.queue.filter((q) => q.id !== id);
+            },
+
+            hasFinished() {
+                return this.queue.some((q) => q.status === 'uploaded' || q.status === 'failed');
+            },
+
+            clearFinished() {
+                this.queue = this.queue.filter((q) => q.status === 'uploading' || q.status === 'queued');
+            },
+
+            humanSize(bytes) {
+                if (!bytes) return '0 B';
+                const units = ['B', 'KB', 'MB', 'GB', 'TB'];
+                const i = Math.min(Math.floor(Math.log(bytes) / Math.log(1024)), units.length - 1);
+                return (bytes / Math.pow(1024, i)).toFixed(i === 0 ? 0 : 1) + ' ' + units[i];
+            },
+        }"
+        class="relative"
+        x-on:drop.prevent="handleFileDrop($event)"
+        x-on:dragover.prevent="handleDragOver($event)"
+        x-on:dragleave.prevent="isDropping = false"
+    >
+        {{-- Dragover overlay --}}
+        <div
+            x-show="isDropping"
+            x-cloak
+            x-transition.opacity
+            class="flex absolute inset-0 z-40 justify-center items-center rounded-lg border-2 border-primary-500 border-dashed backdrop-blur-sm bg-primary-500/10 dark:bg-primary-500/20"
+        >
+            <div class="flex flex-col items-center text-primary-700 dark:text-primary-200">
+                <x-aura::icon.upload class="mb-2 w-8 h-8" />
+                <span class="text-lg font-semibold">{{ __('Release file to upload!') }}</span>
+            </div>
+        </div>
+
+        {{-- Upload queue panel --}}
+        <div
+            x-show="queue.length || {{ ($errors->has('media') || $errors->has('media.*')) ? 'true' : 'false' }}"
+            x-cloak
+            class="overflow-hidden mt-2 mb-4 bg-white rounded-lg border border-gray-200 shadow-xs dark:bg-gray-800 dark:border-gray-700"
+        >
+            <div class="flex justify-between items-center px-4 py-2.5 border-b border-gray-100 dark:border-gray-700/60">
+                <span class="text-sm font-medium text-gray-700 dark:text-gray-200">
+                    {{ __('Uploads') }}
+                </span>
+                <button
+                    type="button"
+                    x-show="hasFinished()"
+                    x-on:click="clearFinished()"
+                    class="text-xs font-medium text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                >
+                    {{ __('Clear finished') }}
+                </button>
             </div>
 
-            <div class="z-[2] relative">
-                @if($button && !$disabled)
-                    <div class="mt-2">
-                        <x-aura::button.light
-                            wire:click="$dispatch('openModal', { component: 'aura::media-manager', arguments: { model: {{ json_encode($for) }}, slug: '{{ $field['slug'] }}', selected: {{ json_encode($selected) }} }})">
-                            <x-slot:icon>
-                                <x-aura::icon icon="media" class="" />
-                            </x-slot>
+            <ul class="divide-y divide-gray-100 dark:divide-gray-700/60">
+                {{-- Server-side validation errors surfaced as failed rows --}}
+                @foreach ($errors->get('media') as $message)
+                    <li class="flex gap-3 items-start px-4 py-3">
+                        <span class="flex flex-shrink-0 justify-center items-center mt-0.5 w-5 h-5 text-red-500">
+                            <svg class="w-5 h-5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.28 7.22a.75.75 0 00-1.06 1.06L8.94 10l-1.72 1.72a.75.75 0 101.06 1.06L10 11.06l1.72 1.72a.75.75 0 101.06-1.06L11.06 10l1.72-1.72a.75.75 0 00-1.06-1.06L10 8.94 8.28 7.22z" clip-rule="evenodd" />
+                            </svg>
+                        </span>
+                        <div class="flex-1 min-w-0">
+                            <p class="text-sm font-medium text-gray-900 truncate dark:text-gray-100">{{ __('Upload rejected') }}</p>
+                            <p class="mt-0.5 text-xs text-red-600 dark:text-red-400">{{ $message }}</p>
+                        </div>
+                    </li>
+                @endforeach
+                @foreach ($errors->get('media.*') as $messages)
+                    @foreach ($messages as $message)
+                        <li class="flex gap-3 items-start px-4 py-3">
+                            <span class="flex flex-shrink-0 justify-center items-center mt-0.5 w-5 h-5 text-red-500">
+                                <svg class="w-5 h-5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.28 7.22a.75.75 0 00-1.06 1.06L8.94 10l-1.72 1.72a.75.75 0 101.06 1.06L10 11.06l1.72 1.72a.75.75 0 101.06-1.06L11.06 10l1.72-1.72a.75.75 0 00-1.06-1.06L10 8.94 8.28 7.22z" clip-rule="evenodd" />
+                                </svg>
+                            </span>
+                            <div class="flex-1 min-w-0">
+                                <p class="text-sm font-medium text-gray-900 truncate dark:text-gray-100">{{ __('Upload rejected') }}</p>
+                                <p class="mt-0.5 text-xs text-red-600 dark:text-red-400">{{ $message }}</p>
+                            </div>
+                        </li>
+                    @endforeach
+                @endforeach
 
-                            <span>Media Manager</span>
-                        </x-aura::button.light>
-                    </div>
-                @elseif($disabled)
-                    <div class="mt-2">
-                        <x-aura::button.light disabled>
-                            <x-slot:icon>
-                                <x-aura::icon icon="media" class="" />
-                            </x-slot>
+                <template x-for="item in queue" :key="item.id">
+                    <li class="flex gap-3 items-start px-4 py-3">
+                        {{-- Status icon --}}
+                        <span class="flex flex-shrink-0 justify-center items-center mt-0.5 w-5 h-5">
+                            {{-- queued / uploading --}}
+                            <svg
+                                x-show="item.status === 'uploading' || item.status === 'queued'"
+                                class="w-5 h-5 text-primary-500 animate-spin"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                            >
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                            </svg>
+                            {{-- uploaded --}}
+                            <svg
+                                x-show="item.status === 'uploaded'"
+                                x-cloak
+                                class="w-5 h-5 text-green-500"
+                                viewBox="0 0 20 20"
+                                fill="currentColor"
+                                aria-hidden="true"
+                            >
+                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z" clip-rule="evenodd" />
+                            </svg>
+                            {{-- failed --}}
+                            <svg
+                                x-show="item.status === 'failed'"
+                                x-cloak
+                                class="w-5 h-5 text-red-500"
+                                viewBox="0 0 20 20"
+                                fill="currentColor"
+                                aria-hidden="true"
+                            >
+                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.28 7.22a.75.75 0 00-1.06 1.06L8.94 10l-1.72 1.72a.75.75 0 101.06 1.06L10 11.06l1.72 1.72a.75.75 0 101.06-1.06L11.06 10l1.72-1.72a.75.75 0 00-1.06-1.06L10 8.94 8.28 7.22z" clip-rule="evenodd" />
+                            </svg>
+                        </span>
 
-                            <span>Media Manager is disabled</span>
-                        </x-aura::button.light>
-                    </div>
-                @endif
+                        {{-- File info + progress --}}
+                        <div class="flex-1 min-w-0">
+                            <div class="flex gap-2 justify-between items-baseline">
+                                <p class="text-sm font-medium text-gray-900 truncate dark:text-gray-100" x-text="item.name"></p>
+                                <span class="flex-shrink-0 text-xs text-gray-400 dark:text-gray-500" x-text="item.size"></span>
+                            </div>
+
+                            {{-- Per-file progress bar --}}
+                            <div
+                                x-show="item.status === 'uploading' || item.status === 'queued'"
+                                class="overflow-hidden mt-1.5 w-full h-1.5 bg-gray-100 rounded-full dark:bg-gray-700"
+                            >
+                                <div
+                                    class="h-full rounded-full transition-all duration-300 ease-out bg-primary-500"
+                                    :style="`width: ${item.progress}%`"
+                                ></div>
+                            </div>
+
+                            <p
+                                x-show="item.status === 'failed'"
+                                x-cloak
+                                class="mt-0.5 text-xs text-red-600 dark:text-red-400"
+                                x-text="item.reason"
+                            ></p>
+                            <p
+                                x-show="item.status === 'uploaded'"
+                                x-cloak
+                                class="mt-0.5 text-xs text-green-600 dark:text-green-400"
+                            >{{ __('Uploaded') }}</p>
+                        </div>
+
+                        {{-- Dismiss --}}
+                        <button
+                            type="button"
+                            x-on:click="dismiss(item.id)"
+                            class="flex flex-shrink-0 justify-center items-center mt-0.5 w-5 h-5 text-gray-400 rounded hover:text-gray-600 dark:hover:text-gray-200"
+                        >
+                            <span class="sr-only">{{ __('Dismiss') }}</span>
+                            <svg class="w-4 h-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                                <path d="M6.28 5.22a.75.75 0 00-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 101.06 1.06L10 11.06l3.72 3.72a.75.75 0 101.06-1.06L11.06 10l3.72-3.72a.75.75 0 00-1.06-1.06L10 8.94 6.28 5.22z" />
+                            </svg>
+                        </button>
+                    </li>
+                </template>
+            </ul>
+        </div>
+
+        {{-- Single hidden file input. Only rendered where an upload trigger exists
+             ($upload standalone button, or the $table view). The field-edit view
+             ($button only) uploads through the Media Manager modal instead, so it
+             must NOT render a second #file-upload. --}}
+        @if (($upload || $table) && ! $disabled)
+            <input
+                type="file"
+                id="file-upload"
+                x-ref="fileInput"
+                multiple
+                class="hidden"
+                x-on:change="handleFileSelect($event)"
+            />
+        @endif
+
+        {{-- Media Manager button (field edit views) --}}
+        @if ($button && ! $disabled)
+            <div class="z-[2] relative mt-2">
+                <x-aura::button.light
+                    data-media-picker-button="{{ $field['slug'] }}"
+                    wire:click="$dispatch('openModal', { component: 'aura::media-manager', arguments: { model: {{ json_encode($for) }}, slug: '{{ $field['slug'] }}', selected: {{ json_encode($selected) }} }})">
+                    <x-slot:icon>
+                        <x-aura::icon icon="media" class="" />
+                    </x-slot>
+                    <span>{{ __('Media Library') }}</span>
+                </x-aura::button.light>
             </div>
-
-            <div class="flex justify-center items-center w-full" x-cloak x-show="isDropping">
-                <div class="flex absolute top-0 right-0 bottom-0 left-0 z-30 justify-center items-center bg-gray-800 opacity-50"
-                    >
-                    <div
-                        x-show="isDropping"
-                    >
-                            <span class="text-3xl text-white">{{ __('Release file to upload!') }}</span>
-                    </div>
-                </div>
+        @elseif ($disabled)
+            <div class="mt-2">
+                <x-aura::button.light disabled>
+                    <x-slot:icon>
+                        <x-aura::icon icon="media" class="" />
+                    </x-slot>
+                    <span>{{ __('Media Library is disabled') }}</span>
+                </x-aura::button.light>
             </div>
+        @endif
 
-            <div class="flex justify-end mb-4">
-                @if($upload && !$disabled)
-                    <div x-data="{ 
-                        openFileUpload() {
-                            document.getElementById('file-upload').click();
-                        }
-                    }">
-                        <x-aura::button.border 
-                            type="button" 
-                            class="flex items-center space-x-2" 
-                            x-on:click="openFileUpload()">
+        {{-- Standalone Upload button (non-table upload context) --}}
+        @if ($upload && ! $table && ! $disabled)
+            <div class="z-[2] relative flex justify-end mb-4">
+                <x-aura::button.border
+                    type="button"
+                    class="flex items-center space-x-2"
+                    x-on:click="triggerFileUpload()">
+                    <x-aura::icon.upload class="w-5 h-5" />
+                    <span>{{ __('Upload Files') }}</span>
+                </x-aura::button.border>
+            </div>
+        @endif
+
+        {{-- Attachment index / media manager modal --}}
+        @if ($table && ! $disabled)
+            <div class="z-[2] relative flex flex-col">
+                <div class="flex flex-wrap gap-4 justify-between items-start">
+                    <div class="mb-6">
+                        <x-aura::breadcrumbs>
+                            <x-aura::breadcrumbs.li :href="route('aura.dashboard')" title="" icon="dashboard" iconClass="text-gray-500 w-6 h-6 mr-0" />
+                            <x-aura::breadcrumbs.li :title="__('Media Library')" />
+                        </x-aura::breadcrumbs>
+                    </div>
+
+                    <div class="flex justify-end">
+                        <x-aura::button.border
+                            type="button"
+                            class="flex items-center space-x-2"
+                            x-on:click="triggerFileUpload()">
                             <x-aura::icon.upload class="w-5 h-5" />
                             <span>{{ __('Upload Files') }}</span>
                         </x-aura::button.border>
-                        
-                        <input type="file" 
-                            id="file-upload" 
-                            multiple 
-                            @change="handleFileSelect" 
-                            class="hidden" 
-                            wire:model="media" />
                     </div>
-                @endif
-            </div>
-
-            @if($table && !$disabled)
-
-            <div class="z-[2] relative flex flex-col">
-
-                <div class="flex justify-between items-start">
-
-    <div class="mb-6">
-        <x-aura::breadcrumbs>
-            <x-aura::breadcrumbs.li :href="route('aura.dashboard')" title="" icon="dashboard" iconClass="text-gray-500 w-6 h-6 mr-0" />
-            <x-aura::breadcrumbs.li :title="__('Attachments')"  />
-        </x-aura::breadcrumbs.li>
-    </div>
-
-   <div>
-   
-    <div class="flex justify-end w-full">
-                        <div x-data="{ 
-                            openFileUpload() {
-                                document.getElementById('file-upload').click();
-                            }
-                        }">
-                            <x-aura::button.border 
-                                type="button" 
-                                class="flex items-center space-x-2" 
-                                x-on:click="openFileUpload()">
-                                <x-aura::icon.upload class="w-5 h-5" />
-                                <span>{{ __('Upload Files') }}</span>
-                            </x-aura::button.border>
-                            
-                            <input type="file" 
-                                id="file-upload" 
-                                multiple 
-                                @change="handleFileSelect" 
-                                class="hidden" 
-                                wire:model="media" />
-                        </div>
-                    </div>
-   
-   </div>
-
-    </div>
+                </div>
 
                 <div class="flex justify-between items-center mt-0">
                     <h1 class="text-2xl font-semibold">
-                        {{ __('Attachments') }}
+                        {{ __('Media Library') }}
                     </h1>
-
-                   
                 </div>
+
                 <livewire:aura::table :model="$model" :field="$field" />
             </div>
-
-            @endif
-        </div>
-
+        @endif
     </div>
 </div>

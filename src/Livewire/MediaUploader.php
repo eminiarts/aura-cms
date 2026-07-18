@@ -77,13 +77,21 @@ class MediaUploader extends Component
 
             $url = $media->store('media', 'public');
 
-            $attachments[] = app(config('aura.resources.attachment'))::create([
+            $payload = [
                 'url' => $url,
                 'name' => $media->getClientOriginalName(),
                 'title' => $media->getClientOriginalName(),
                 'size' => $media->getSize(),
                 'mime_type' => $media->getMimeType(),
-            ]);
+            ];
+
+            if (str_starts_with((string) $media->getMimeType(), 'image/')
+                && ($dimensions = @getimagesize($media->getRealPath()))) {
+                $payload['width'] = $dimensions[0];
+                $payload['height'] = $dimensions[1];
+            }
+
+            $attachments[] = app(config('aura.resources.attachment'))::create($payload);
 
             // Unset the processed file
             unset($this->media[$key]);
@@ -98,6 +106,12 @@ class MediaUploader extends Component
             ]);
 
             $this->selected = optional($this)->selected ? array_merge($this->selected, collect($attachments)->pluck('id')->toArray()) : collect($attachments)->pluck('id')->toArray();
+        }
+
+        // Notify consumers (grid highlight, picker auto-select) about the freshly
+        // created attachments. Only dispatch when at least one was created.
+        if (! empty($attachments)) {
+            $this->dispatch('media-uploaded', ids: collect($attachments)->pluck('id')->all());
         }
 
         $this->dispatch('refreshTable');

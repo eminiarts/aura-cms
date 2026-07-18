@@ -1,0 +1,1 @@
+Aura media library browser-test fixture.

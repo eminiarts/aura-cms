@@ -97,6 +97,14 @@ class Table extends Component
 
     public $query;
 
+    /**
+     * Resource-defined quick filters (e.g. media type, upload month).
+     * The resource interprets these in its indexQuery() hook.
+     *
+     * @var array<string, mixed>
+     */
+    public $quickFilters = [];
+
     public $resource;
 
     /**
@@ -408,6 +416,23 @@ class Table extends Component
     public function selectRowsRange()
     {
         // Handle select rows range event
+    }
+
+    /**
+     * Set or clear a quick filter. Passing null or '' clears the key.
+     *
+     * @param  mixed  $value
+     * @return void
+     */
+    public function setQuickFilter(string $key, $value)
+    {
+        if ($value === null || $value === '') {
+            unset($this->quickFilters[$key]);
+        } else {
+            $this->quickFilters[$key] = $value;
+        }
+
+        $this->resetPage();
     }
 
     public function updateCardStatus($cardId, $newStatus)
