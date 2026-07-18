@@ -113,6 +113,7 @@ return new class extends Migration
             'two_factor_recovery_codes',
             'two_factor_confirmed_at',
             'current_team_id',
+            'global_admin',
             'deleted_at',
         ];
         $existingUserColumns = Schema::hasTable('users')
@@ -149,6 +150,9 @@ return new class extends Migration
                 if (config('aura.teams')) {
                     $table->foreignId('current_team_id')->nullable();
                 }
+                // Instance-level operator flag (Global Admin). Never mass-assignable;
+                // set only via the CLI bootstrap or a Global Admin-guarded write.
+                $table->boolean('global_admin')->default(false);
                 $table->timestamps();
                 $table->softDeletes();
             });
@@ -165,6 +169,9 @@ return new class extends Migration
                 }
                 if (config('aura.teams') && ! Schema::hasColumn('users', 'current_team_id')) {
                     $table->foreignId('current_team_id')->nullable();
+                }
+                if (! Schema::hasColumn('users', 'global_admin')) {
+                    $table->boolean('global_admin')->default(false);
                 }
                 if (! Schema::hasColumn('users', 'deleted_at')) {
                     $table->softDeletes();

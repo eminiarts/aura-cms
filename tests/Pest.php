@@ -1,13 +1,11 @@
 <?php
 
-use Aura\Base\Models\Scopes\TeamScope;
 use Aura\Base\Resources\Role;
 use Aura\Base\Resources\Team;
 use Aura\Base\Resources\User;
 use Aura\Base\Tests\BrowserTestCase;
 use Aura\Base\Tests\Resources\Post;
 use Aura\Base\Tests\TestCase;
-use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Foundation\Testing\DatabaseMigrations;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Artisan;
@@ -67,6 +65,57 @@ function createPost(array $attributes = []): Post
     return Post::factory()->create($attributes);
 }
 
+/**
+ * The shared global `admin` Global Role (team_id = null) that backs the
+ * attach-don't-mint model. Returned unscoped so it is visible regardless of the
+ * current team context.
+ */
+function globalAdminRole(): ?Role
+{
+    return Role::withoutGlobalScopes()
+        ->whereNull('team_id')
+        ->where('slug', 'admin')
+        ->first();
+}
+
+/**
+ * Promote a fresh user to Global Admin the trusted way: a direct,
+ * pipeline-bypassing write (`saveQuietly`), the same posture the CLI bootstrap
+ * uses. The flag is never granted through a user-facing write path in tests.
+ */
+function createGlobalAdmin(array $attributes = []): User
+{
+    $user = User::factory()->create($attributes);
+    $user->forceFill(['global_admin' => true])->saveQuietly();
+
+    return $user->refresh();
+}
+
+/**
+ * A team owned by someone else, with the current user holding no Membership —
+ * for asserting cross-team visibility and Global Admin visitation. Created
+ * quietly so the team-creation hook does not attach the acting user.
+ */
+function foreignTeam(): Team
+{
+    return Team::factory()->createQuietly(['user_id' => User::factory()->create()->id]);
+}
+
+/**
+ * A user whose only Membership is in the given team (pivot role + current team).
+ */
+function soleMemberOf(Team $team): User
+{
+    $role = Role::where('team_id', $team->id)->first()
+        ?? Role::factory()->create(['team_id' => $team->id]);
+
+    $member = User::factory()->create();
+    $member->roles()->attach($role->id, ['team_id' => $team->id]);
+    $member->forceFill(['current_team_id' => $team->id])->save();
+
+    return $member->refresh();
+}
+
 function createSuperAdmin()
 {
     if (! config('aura.teams')) {
@@ -77,7 +126,9 @@ function createSuperAdmin()
 
     auth()->login($user);
 
-    // Create Team
+    // Attach-don't-mint: creating the team attaches the creator to the shared
+    // global `admin` role via Team::booted (self-healing the Global Role when the
+    // catalog was not seeded). No per-team admin row is minted.
     $team = Team::factory()->create();
 
     // Set current_team_id of the user
@@ -85,42 +136,6 @@ function createSuperAdmin()
 
     // Clear the cache for the user's current_team_id to ensure TeamScope uses the updated value
     Cache::forget("user_{$user->id}_current_team_id");
-
-    // Create or find Admin role for the team with race condition handling
-    // Use withoutGlobalScope to bypass TeamScope and avoid cache issues
-    $role = Role::withoutGlobalScope(TeamScope::class)
-        ->where('team_id', $team->id)
-        ->where('slug', 'admin')
-        ->first();
-
-    if (! $role) {
-        try {
-            $role = Role::create([
-                'team_id' => $team->id,
-                'slug' => 'admin',
-                'type' => 'Role',
-                'title' => 'Admin',
-                'name' => 'Admin',
-                'description' => 'Admin can perform everything.',
-                'super_admin' => true,
-                'permissions' => [],
-                'user_id' => $user->id,
-            ]);
-        } catch (UniqueConstraintViolationException $e) {
-            // Handle race condition: another process created the role, just fetch it
-            $role = Role::withoutGlobalScope(TeamScope::class)
-                ->where('team_id', $team->id)
-                ->where('slug', 'admin')
-                ->first();
-        }
-    }
-
-    // Associate the role with the user using the proper relationship
-    if (config('aura.teams')) {
-        $user->roles()->syncWithPivotValues([$role->id], ['team_id' => $team->id]);
-    } else {
-        $user->roles()->sync([$role->id]);
-    }
 
     $user->refresh();
 
@@ -143,10 +158,11 @@ function createSuperAdminWithoutTeam()
 
     auth()->login($user);
 
-    $role = Role::create([
+    // Reuse the seeded admin Global Role when present (Teams-off has a unique
+    // slug constraint), otherwise create it.
+    $role = Role::firstOrCreate(['slug' => 'admin'], [
         'type' => 'Role',
         'title' => 'Admin',
-        'slug' => 'admin',
         'name' => 'Admin',
         'description' => 'Admin can perform everything.',
         'super_admin' => true,

@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 
 class Team extends Resource
 {
@@ -258,6 +259,14 @@ class Team extends Resource
     protected static function booted()
     {
         parent::booted();
+
+        // Any team write (create, rename, restore) can change what a Global
+        // Admin's switcher should show — drop the shared cache. created/deleted
+        // also forget it explicitly, but a plain rename only fires saved.
+        static::saved(function ($team) {
+            Cache::forget(User::GLOBAL_ADMIN_TEAMS_CACHE_KEY);
+        });
+
         static::saving(function ($team) {
             // unset title attribute
             unset($team->title);
@@ -282,32 +291,24 @@ class Team extends Resource
                 $user->save();
             }
 
-            // Create an Admin role for the team
-            $role = Role::firstOrCreate([
-                'slug' => 'admin',
-                'team_id' => $team->id,
-            ], [
-                'name' => 'Admin',
-                'description' => 'Admin can perform everything.',
-                'super_admin' => true,
-                'permissions' => [],
-            ]);
+            // Attach-don't-mint: creating a team no longer mints a per-team admin
+            // role. The creator is attached to the shared global `admin` Global
+            // Role (team_id = null, super_admin), with the Membership recording
+            // the team. The helper self-heals the Global Role when the catalog
+            // was never seeded (bare `migrate`, or the test harness).
+            $globalAdmin = Role::firstOrCreateGlobalAdmin();
 
-            // Attach the current user to the team
+            // Attach the current user to the team via the global admin role.
             if ($user) {
-                // $role->users()->sync([$user->id]);
-
-                $team->users()->attach($user->id, ['role_id' => $role->id]);
-
-                // $fields = $user->fields;
-                // $fields['roles'] = [$role->id];
-                // $user->update([
-                //     'fields' => $fields->toArray(),
-                // ]);
+                $team->users()->attach($user->id, ['role_id' => $globalAdmin->id]);
 
                 // Clear cache of Cache('user.'.$user->id.'.teams')
                 Cache::forget('user.'.$user->id.'.teams');
             }
+
+            // A Global Admin's switcher lists every team from one shared cache
+            // key — invalidate it so a newly created team appears immediately.
+            Cache::forget(User::GLOBAL_ADMIN_TEAMS_CACHE_KEY);
 
             // Create all permissions for the team
             GenerateAllResourcePermissions::dispatch($team->id);
@@ -333,8 +334,20 @@ class Team extends Resource
                 User::clearCurrentTeamCache($user->id);
             }
 
-            // Delete all the team's roles
-            // $team->roles()->delete();
+            // A team's Memberships and its own Team Roles (including Shadows) die
+            // with the team; the shared Global Roles (team_id = null) are never
+            // touched. Remove the pivot rows first, then the team-owned roles.
+            DB::table('user_role')->where('team_id', $team->id)->delete();
+
+            // Bypass TeamScope: by this point the affected users' current team has
+            // already been reassigned above, so a scoped query would filter to the
+            // wrong team and delete nothing.
+            Role::withoutGlobalScopes()->where('team_id', $team->id)->delete();
+
+            // The role rows above were removed via a mass delete (no model
+            // events), so bump the catalog version explicitly to invalidate every
+            // user's resolved-roles memo.
+            Role::bumpCatalogVersion();
 
             // Delete all the team's metas
             $team->meta()->delete();
@@ -355,6 +368,10 @@ class Team extends Resource
                 ->each(function ($userId) {
                     Cache::forget('user.'.$userId.'.teams');
                 });
+
+            // Drop the shared Global Admin switcher cache so the deleted team
+            // no longer shows up for Global Admins.
+            Cache::forget(User::GLOBAL_ADMIN_TEAMS_CACHE_KEY);
         });
 
     }

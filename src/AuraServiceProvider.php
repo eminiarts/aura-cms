@@ -20,6 +20,7 @@ use Aura\Base\Commands\PublishCommand;
 use Aura\Base\Commands\TransferFromPostsToCustomTable;
 use Aura\Base\Commands\TransformTableToResource;
 use Aura\Base\Commands\UpdateSchemaFromMigration;
+use Aura\Base\Database\Seeders\RoleCatalogSeeder;
 use Aura\Base\Facades\Aura;
 use Aura\Base\Livewire\Attachment\Index as AttachmentIndex;
 use Aura\Base\Livewire\AttachmentDetails;
@@ -46,6 +47,7 @@ use Aura\Base\Livewire\ResourceEditor;
 use Aura\Base\Livewire\Styleguide;
 use Aura\Base\Livewire\Table\Table;
 use Aura\Base\Livewire\TwoFactorAuthenticationForm;
+use Aura\Base\Livewire\UserTeams;
 use Aura\Base\Navigation\Navigation as AuraNavigation;
 use Aura\Base\Policies\ResourcePolicy;
 use Aura\Base\Policies\TeamPolicy;
@@ -93,6 +95,16 @@ class AuraServiceProvider extends PackageServiceProvider
 
         Gate::policy(Resource::class, ResourcePolicy::class);
         Gate::policy(User::class, UserPolicy::class);
+
+        // Global Admin: an instance-level operator that transcends the tenant
+        // boundary. The package resolves it from the users.global_admin flag so
+        // the policy bypasses keyed on isAuraGlobalAdmin() become live out of the
+        // box. Host apps may redefine this gate in their own service provider —
+        // app providers boot after package providers, so a later Gate::define
+        // wins. A required $user param means guests are denied automatically.
+        Gate::define(User::GLOBAL_ADMIN_GATE, function ($user) {
+            return (bool) ($user->global_admin ?? false);
+        });
 
         return $this;
     }
@@ -142,6 +154,7 @@ class AuraServiceProvider extends PackageServiceProvider
             'aura::create-resource' => CreateResource::class,
             'aura::resource-editor' => ResourceEditor::class,
             'aura::invite-user' => InviteUser::class,
+            'aura::user-teams' => UserTeams::class,
             'aura::modals' => Modals::class,
             'aura::plugins-page' => PluginsPage::class,
             'aura::styleguide' => Styleguide::class,
@@ -161,6 +174,7 @@ class AuraServiceProvider extends PackageServiceProvider
             'aura.base.livewire.create-resource' => CreateResource::class,
             'aura.base.livewire.resource-editor' => ResourceEditor::class,
             'aura.base.livewire.invite-user' => InviteUser::class,
+            'aura.base.livewire.user-teams' => UserTeams::class,
             'aura.base.livewire.modals' => Modals::class,
             'aura.base.livewire.plugins-page' => PluginsPage::class,
             'aura.base.livewire.styleguide' => Styleguide::class,
@@ -214,7 +228,7 @@ class AuraServiceProvider extends PackageServiceProvider
             ->hasViews('aura')
             ->hasAssets()
             ->hasRoutes('web')
-            ->hasMigrations(['create_aura_tables'])
+            ->hasMigrations(['create_aura_tables', 'consolidate_per_team_admin_roles', 'add_global_admin_to_users'])
             ->runsMigrations()
             ->hasCommands([
                 InstallConfigCommand::class,
@@ -256,6 +270,11 @@ class AuraServiceProvider extends PackageServiceProvider
 
                         if ($command->confirm('Do you want to run the migrations?', true)) {
                             $command->call('migrate');
+
+                            // Seed the base Role Catalog (admin + user Global Roles)
+                            // so a fresh install works in both Teams-on and
+                            // Teams-off mode without hand-seeding. Idempotent.
+                            RoleCatalogSeeder::seed();
                         }
 
                         if ($command->confirm('Do you want to create a user?', true)) {

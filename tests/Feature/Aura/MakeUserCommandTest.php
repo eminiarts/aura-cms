@@ -27,12 +27,14 @@ describe('with teams enabled', function () {
             ->expectsQuestion('What is your name?', 'John Doe')
             ->expectsQuestion('What is your email?', 'johndoe@example.com')
             ->expectsQuestion('What is your password?', 'password')
+            ->expectsConfirmation('Should this user be a Global Admin?', 'no')
             ->expectsOutput('User created successfully.')
             ->assertExitCode(0);
 
         $this->assertDatabaseHas('users', [
             'name' => 'John Doe',
             'email' => 'johndoe@example.com',
+            'global_admin' => false,
         ]);
     });
 
@@ -41,6 +43,7 @@ describe('with teams enabled', function () {
             ->expectsQuestion('What is your name?', 'Jane Smith')
             ->expectsQuestion('What is your email?', 'jane@example.com')
             ->expectsQuestion('What is your password?', 'password')
+            ->expectsConfirmation('Should this user be a Global Admin?', 'no')
             ->assertExitCode(0);
 
         $this->assertDatabaseHas('teams', [
@@ -58,6 +61,7 @@ describe('with teams enabled', function () {
             ->expectsQuestion('What is your name?', 'Admin User')
             ->expectsQuestion('What is your email?', 'admin@example.com')
             ->expectsQuestion('What is your password?', 'password')
+            ->expectsConfirmation('Should this user be a Global Admin?', 'no')
             ->assertExitCode(0);
 
         $user = User::where('email', 'admin@example.com')->first();
@@ -74,12 +78,15 @@ describe('with teams enabled', function () {
             '--email' => 'cli@example.com',
             '--password' => 'clipassword',
         ])
+            // Partial-option interactive runs still prompt for Global Admin.
+            ->expectsConfirmation('Should this user be a Global Admin?', 'no')
             ->expectsOutput('User created successfully.')
             ->assertExitCode(0);
 
         $this->assertDatabaseHas('users', [
             'name' => 'CLI User',
             'email' => 'cli@example.com',
+            'global_admin' => false,
         ]);
     });
 
@@ -88,11 +95,53 @@ describe('with teams enabled', function () {
             ->expectsQuestion('What is your name?', 'Secure User')
             ->expectsQuestion('What is your email?', 'secure@example.com')
             ->expectsQuestion('What is your password?', 'mysecretpassword')
+            ->expectsConfirmation('Should this user be a Global Admin?', 'no')
             ->assertExitCode(0);
 
         $user = User::where('email', 'secure@example.com')->first();
 
         expect(Hash::check('mysecretpassword', $user->password))->toBeTrue();
+    });
+
+    it('creates a Global Admin via the --global-admin option', function () {
+        $this->artisan('aura:user', [
+            '--name' => 'Ops Operator',
+            '--email' => 'ops@example.com',
+            '--password' => 'opspassword',
+            '--global-admin' => true,
+        ])->assertExitCode(0);
+
+        $user = User::where('email', 'ops@example.com')->first();
+
+        expect($user->global_admin)->toBeTrue();
+    });
+
+    it('creates a Global Admin via the interactive confirmation', function () {
+        $this->artisan('aura:user')
+            ->expectsQuestion('What is your name?', 'Interactive GA')
+            ->expectsQuestion('What is your email?', 'interactive-ga@example.com')
+            ->expectsQuestion('What is your password?', 'password')
+            ->expectsConfirmation('Should this user be a Global Admin?', 'yes')
+            ->assertExitCode(0);
+
+        $user = User::where('email', 'interactive-ga@example.com')->first();
+
+        expect($user->global_admin)->toBeTrue();
+    });
+
+    it('does not grant Global Admin without the option', function () {
+        $this->artisan('aura:user', [
+            '--name' => 'Plain User',
+            '--email' => 'plain@example.com',
+            '--password' => 'plainpassword',
+        ])
+            // Declining the prompt leaves the flag off.
+            ->expectsConfirmation('Should this user be a Global Admin?', 'no')
+            ->assertExitCode(0);
+
+        $user = User::where('email', 'plain@example.com')->first();
+
+        expect($user->global_admin)->toBeFalse();
     });
 });
 

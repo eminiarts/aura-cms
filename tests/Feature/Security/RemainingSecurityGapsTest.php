@@ -88,8 +88,10 @@ it('sanitizes unsafe rich text while preserving safe formatting', function () {
 
 it('prevents a delegated user manager from assigning a super admin role', function () {
     $team = $this->user->currentTeam;
+    // Attach-don't-mint: the Super Admin role is the shared global admin
+    // (team_id = null), assignable within the team as a Global Role.
     $superAdminRole = Role::withoutGlobalScope(TeamScope::class)
-        ->where('team_id', $team->id)
+        ->whereNull('team_id')
         ->where('super_admin', true)
         ->firstOrFail();
 

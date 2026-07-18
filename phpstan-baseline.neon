@@ -1158,13 +1158,7 @@ parameters:
 		-
 			message: '#^Access to an undefined property Aura\\Base\\Resources\\User\:\:\$current_team_id\.$#'
 			identifier: property.notFound
-			count: 3
-			path: src/Resources/User.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model&object\{pivot\: Illuminate\\Database\\Eloquent\\Relations\\Pivot\}\:\:\$id\.$#'
-			identifier: property.notFound
-			count: 1
+			count: 4
 			path: src/Resources/User.php
 
 		-
