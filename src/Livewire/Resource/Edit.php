@@ -4,6 +4,7 @@ namespace Aura\Base\Livewire\Resource;
 
 use Aura\Base\Facades\Aura;
 use Aura\Base\Models\Post;
+use Aura\Base\Rules\CaseInsensitiveUniqueEmail;
 use Aura\Base\Traits\HasActions;
 use Aura\Base\Traits\InteractsWithFields;
 use Aura\Base\Traits\MediaFields;
@@ -240,6 +241,12 @@ class Edit extends Component
         }
 
         if ($rule instanceof Unique) {
+            return (clone $rule)->ignore($this->model->getKey(), $this->model->getKeyName());
+        }
+
+        // The custom case-insensitive email rule ignores the current record the
+        // same way, so editing a user without changing their email never trips it.
+        if ($rule instanceof CaseInsensitiveUniqueEmail) {
             return (clone $rule)->ignore($this->model->getKey(), $this->model->getKeyName());
         }
 

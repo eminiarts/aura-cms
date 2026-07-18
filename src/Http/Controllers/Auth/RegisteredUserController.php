@@ -4,8 +4,7 @@ namespace Aura\Base\Http\Controllers\Auth;
 
 use Aura\Base\Facades\Aura;
 use Aura\Base\Http\Controllers\Controller;
-use Aura\Base\Resources\Team;
-use Aura\Base\Resources\User;
+use Aura\Base\Rules\CaseInsensitiveUniqueEmail;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -45,7 +44,7 @@ class RegisteredUserController extends Controller
             $request->validate([
                 'name' => ['required', 'string', 'max:255'],
                 'team' => ['required', 'string', 'max:255'],
-                'email' => ['required', 'string', 'email', 'max:255', 'unique:'.User::class],
+                'email' => ['required', 'string', 'email', 'max:255', new CaseInsensitiveUniqueEmail],
                 'password' => ['required', 'confirmed', Rules\Password::defaults()],
             ]);
 
@@ -79,7 +78,7 @@ class RegisteredUserController extends Controller
             // no aura.teams
             $request->validate([
                 'name' => ['required', 'string', 'max:255'],
-                'email' => ['required', 'string', 'email', 'max:255', 'unique:'.User::class],
+                'email' => ['required', 'string', 'email', 'max:255', new CaseInsensitiveUniqueEmail],
                 'password' => ['required', 'confirmed', Rules\Password::defaults()],
             ]);
 
