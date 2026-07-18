@@ -7,6 +7,12 @@ use Livewire\Livewire;
 
 // Before each test, create a Superadmin and login
 beforeEach(function () {
+    // Freeze time: the posts are seeded relative to now() and the widget
+    // ranges are built from a later now() — crossing a second boundary in
+    // between (routine on loaded CI runners) drops the -15d post out of the
+    // window and flakes the calculation assertions.
+    Carbon::setTestNow(Carbon::now());
+
     $this->actingAs($this->user = createSuperAdmin());
 
     // Create 3 posts before each test
