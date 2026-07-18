@@ -63,6 +63,7 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
      */
     protected $casts = [
         'email_verified_at' => 'datetime',
+        'global_admin' => 'boolean',
         // 'password' => 'hashed',
     ];
 
@@ -357,6 +358,26 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
                 'on_create' => true,
                 'on_index' => false,
                 'on_view' => false,
+                'style' => [
+                    'width' => '50',
+                ],
+            ],
+            [
+                'name' => 'Global Admin',
+                'slug' => 'global_admin',
+                'type' => 'Aura\\Base\\Fields\\GlobalAdmin',
+                'instructions' => 'Instance-level operator with access across all teams. Only a Global Admin can grant or revoke this.',
+                'validation' => '',
+                'default' => false,
+                'on_index' => false,
+                'on_forms' => true,
+                'on_view' => true,
+                // Client-advisory only: the field is shown to Global Admins so
+                // they can toggle it. The authoritative guard lives server-side
+                // in the GlobalAdmin field's saved() escalation check.
+                'conditional_logic' => function ($model, $post) {
+                    return auth()->check() && Gate::allows('AuraGlobalAdmin');
+                },
                 'style' => [
                     'width' => '50',
                 ],

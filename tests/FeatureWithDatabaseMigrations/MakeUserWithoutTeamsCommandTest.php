@@ -2,6 +2,7 @@
 
 use Aura\Base\Resources\Role;
 use Aura\Base\Resources\User;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Schema;
 
@@ -26,6 +27,7 @@ describe('aura:user command without teams', function () {
             ->expectsQuestion('What is your name?', 'John Doe')
             ->expectsQuestion('What is your email?', 'johndoe@example.com')
             ->expectsQuestion('What is your password?', 'password123')
+            ->expectsConfirmation('Should this user be a Global Admin?', 'no')
             ->assertExitCode(0);
 
         $this->assertDatabaseHas('users', [
@@ -106,6 +108,38 @@ describe('aura:user command without teams', function () {
         ])
             ->expectsOutput('User created successfully.')
             ->assertExitCode(0);
+    });
+
+    it('creates a Global Admin via the --global-admin option without teams', function () {
+        $this->artisan('aura:user', [
+            '--name' => 'Ops',
+            '--email' => 'ops@example.com',
+            '--password' => 'password',
+            '--global-admin' => true,
+        ])->assertExitCode(0);
+
+        $user = User::where('email', 'ops@example.com')->first();
+
+        expect($user)->not->toBeNull()
+            ->and($user->global_admin)->toBeTrue()
+            // The package gate resolves the flag even in Teams-off mode.
+            ->and(Gate::forUser($user)->allows('AuraGlobalAdmin'))->toBeTrue();
+
+        // And it holds through the acting-user entry point too.
+        $this->actingAs($user);
+        expect($user->isAuraGlobalAdmin())->toBeTrue();
+    });
+
+    it('does not grant Global Admin without the option (teams off)', function () {
+        $this->artisan('aura:user', [
+            '--name' => 'Plain',
+            '--email' => 'plain@example.com',
+            '--password' => 'password',
+        ])->assertExitCode(0);
+
+        $user = User::where('email', 'plain@example.com')->first();
+
+        expect($user->global_admin)->toBeFalse();
     });
 
     it('enforces unique role slug constraint without teams', function () {
