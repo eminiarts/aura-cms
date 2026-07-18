@@ -37,13 +37,13 @@
     },
     "require-dev": {
         "intervention/image-laravel": "^1.0",
-        "laravel/dusk": "^8.0",
+        "larastan/larastan": "^2.0|^3.0",
         "laravel/framework": "^12.0|^13.0",
         "laravel/pint": "^1.18",
         "nunomaduro/collision": "^8.1",
-        "larastan/larastan": "^2.0|^3.0",
         "orchestra/testbench": "^10.0|^11.0",
         "pestphp/pest": "^3.0|^4.0",
+        "pestphp/pest-plugin-browser": "^4.3",
         "pestphp/pest-plugin-laravel": "^3.0|^4.0",
         "pestphp/pest-plugin-livewire": "^4.0",
         "phpstan/extension-installer": "^1.1",
@@ -68,8 +68,9 @@
     },
     "scripts": {
         "analyse": "vendor/bin/phpstan analyse --memory-limit=1G",
-        "test": "php -d memory_limit=1G vendor/bin/pest --no-coverage --parallel",
-        "test-coverage": "php -d memory_limit=1G vendor/bin/pest --coverage --parallel --min=80",
+        "test": "php -d memory_limit=1G vendor/bin/pest --no-coverage --parallel --exclude-testsuite Browser",
+        "test-browser": "php -d memory_limit=1G vendor/bin/pest --testsuite Browser --no-coverage",
+        "test-coverage": "php -d memory_limit=1G vendor/bin/pest --coverage --parallel --min=80 --exclude-testsuite Browser",
         "format": "vendor/bin/pint"
     },
     "config": {

@@ -23,11 +23,20 @@ class TestCase extends Orchestra
 
     // use WithWorkbench;
 
+    /**
+     * Browser tests serve the committed Vite builds to a real browser and
+     * therefore need the Vite facade to stay real. Everything else runs
+     * without Vite.
+     */
+    protected bool $enableVite = false;
+
     protected function setUp(): void
     {
         parent::setUp();
 
-        $this->withoutVite();
+        if (! $this->enableVite) {
+            $this->withoutVite();
+        }
 
         // Race-safe: parallel test processes can create this directory between the
         // is_dir() check and mkdir(), which would raise a "File exists" warning

@@ -3,6 +3,12 @@
   <testsuites>
     <testsuite name="Eminiarts Test Suite">
       <directory>tests</directory>
+      <exclude>tests/Browser</exclude>
+    </testsuite>
+    <!-- Kept separate: collecting these boots the Pest browser plugin's
+         Playwright server, which only exists where npm/Playwright are set up. -->
+    <testsuite name="Browser">
+      <directory>tests/Browser</directory>
     </testsuite>
   </testsuites>
   <coverage>
