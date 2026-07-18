@@ -59,7 +59,7 @@ class TeamScope implements Scope
                     // for any authenticatable, not only the Aura User model.
                     $authUser = Auth::user();
 
-                    if (! ($authUser && Gate::forUser($authUser)->allows('AuraGlobalAdmin'))) {
+                    if (! ($authUser && Gate::forUser($authUser)->allows(User::GLOBAL_ADMIN_GATE))) {
                         $builder->whereHas('teams', function ($query) use ($currentTeamId) {
                             $query->where('teams.id', $currentTeamId);
                         });

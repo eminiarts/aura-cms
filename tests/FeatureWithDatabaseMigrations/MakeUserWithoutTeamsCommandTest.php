@@ -52,7 +52,9 @@ describe('aura:user command without teams', function () {
             '--name' => 'Jane Smith',
             '--email' => 'jane@example.com',
             '--password' => 'securepass',
-        ])->assertExitCode(0);
+        ])
+            ->expectsConfirmation('Should this user be a Global Admin?', 'no')
+            ->assertExitCode(0);
 
         $this->assertDatabaseHas('users', [
             'name' => 'Jane Smith',
@@ -69,7 +71,9 @@ describe('aura:user command without teams', function () {
             '--name' => 'Admin',
             '--email' => 'admin@example.com',
             '--password' => 'password',
-        ])->assertExitCode(0);
+        ])
+            ->expectsConfirmation('Should this user be a Global Admin?', 'no')
+            ->assertExitCode(0);
 
         $role = Role::where('slug', 'admin')->first();
 
@@ -94,7 +98,9 @@ describe('aura:user command without teams', function () {
             '--name' => 'Test User',
             '--email' => 'test@example.com',
             '--password' => 'password',
-        ])->assertExitCode(0);
+        ])
+            ->expectsConfirmation('Should this user be a Global Admin?', 'no')
+            ->assertExitCode(0);
 
         expect(auth()->check())->toBeTrue()
             ->and(auth()->user()->email)->toBe('test@example.com');
@@ -106,6 +112,7 @@ describe('aura:user command without teams', function () {
             '--email' => 'success@example.com',
             '--password' => 'password',
         ])
+            ->expectsConfirmation('Should this user be a Global Admin?', 'no')
             ->expectsOutput('User created successfully.')
             ->assertExitCode(0);
     });
@@ -135,7 +142,9 @@ describe('aura:user command without teams', function () {
             '--name' => 'Plain',
             '--email' => 'plain@example.com',
             '--password' => 'password',
-        ])->assertExitCode(0);
+        ])
+            ->expectsConfirmation('Should this user be a Global Admin?', 'no')
+            ->assertExitCode(0);
 
         $user = User::where('email', 'plain@example.com')->first();
 
@@ -148,7 +157,9 @@ describe('aura:user command without teams', function () {
             '--name' => 'First User',
             '--email' => 'first@example.com',
             '--password' => 'password',
-        ])->assertExitCode(0);
+        ])
+            ->expectsConfirmation('Should this user be a Global Admin?', 'no')
+            ->assertExitCode(0);
 
         expect(Role::where('slug', 'admin')->count())->toBe(1);
 

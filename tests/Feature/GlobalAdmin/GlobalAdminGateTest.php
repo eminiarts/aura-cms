@@ -9,22 +9,11 @@ use Aura\Base\Resources\TeamInvitation;
 use Aura\Base\Resources\User;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\URL;
+use Lab404\Impersonate\Services\ImpersonateManager;
+use Symfony\Component\HttpKernel\Exception\HttpException;
 
 use function Pest\Laravel\post;
 use function Pest\Livewire\livewire;
-
-/**
- * Promote a freshly minted user to Global Admin the trusted way (direct,
- * pipeline-bypassing write), the same posture the CLI bootstrap uses. Kept in
- * the test so the flag is never granted through a user-facing write path.
- */
-function makeGlobalAdmin(array $attributes = []): User
-{
-    $user = User::factory()->create($attributes);
-    $user->forceFill(['global_admin' => true])->saveQuietly();
-
-    return $user->refresh();
-}
 
 /**
  * A user who is a member of the given team (Membership pivot + current team), so
@@ -55,7 +44,7 @@ describe('the global_admin field on the user form', function () {
 
 describe('the package AuraGlobalAdmin gate', function () {
     it('allows a user whose global_admin flag is true', function () {
-        $ga = makeGlobalAdmin();
+        $ga = createGlobalAdmin();
 
         expect(Gate::forUser($ga)->allows('AuraGlobalAdmin'))->toBeTrue();
     });
@@ -67,7 +56,7 @@ describe('the package AuraGlobalAdmin gate', function () {
     });
 
     it('reflects the flag through the acting-user entry point', function () {
-        $ga = makeGlobalAdmin();
+        $ga = createGlobalAdmin();
         $plain = User::factory()->create();
 
         $this->actingAs($ga);
@@ -86,7 +75,7 @@ describe('the package AuraGlobalAdmin gate', function () {
 
 describe('host override of the gate', function () {
     it('lets a host redefinition win over the package default (deny a flagged user)', function () {
-        $ga = makeGlobalAdmin();
+        $ga = createGlobalAdmin();
 
         // The package default would allow this flagged user; a later host
         // Gate::define replaces it (app providers boot after package providers).
@@ -119,7 +108,7 @@ describe('TeamPolicy bypasses become live for Global Admins', function () {
     });
 
     it('allows a Global Admin across the key team behaviors', function () {
-        $ga = makeGlobalAdmin();
+        $ga = createGlobalAdmin();
         $this->actingAs($ga);
 
         expect($this->policy->viewAny($ga, $this->team))->toBeTrue();
@@ -143,25 +132,47 @@ describe('TeamPolicy bypasses become live for Global Admins', function () {
 });
 
 describe('impersonation authorization keys off the flag', function () {
-    it('lets a Global Admin impersonate', function () {
-        $ga = makeGlobalAdmin();
-        $this->actingAs($ga);
-
-        expect($ga->canImpersonate())->toBeTrue();
-    });
-
-    it('does not let a non-Global-Admin impersonate', function () {
+    it('evaluates canImpersonate/canBeImpersonated on the right user, not the actor', function () {
+        $ga = createGlobalAdmin();
         $plain = User::factory()->create();
-        $this->actingAs($plain);
 
-        expect($plain->canImpersonate())->toBeFalse();
+        // No actingAs() here on purpose: the checks are instance-correct, so the
+        // authenticated user must not leak into the answer (the auth-coupling bug).
+        expect($ga->canImpersonate())->toBeTrue()
+            ->and($plain->canImpersonate())->toBeFalse()
+            ->and($ga->canBeImpersonated())->toBeFalse()
+            ->and($plain->canBeImpersonated())->toBeTrue();
     });
 
-    it('protects a Global Admin from being impersonated', function () {
-        $ga = makeGlobalAdmin();
+    it('lets a Global Admin impersonate a plain member end-to-end through the row action', function () {
+        $ga = createGlobalAdmin();
+        $member = User::factory()->create();
         $this->actingAs($ga);
 
-        expect($ga->canBeImpersonated())->toBeFalse();
+        // The row action is dispatched on the target user; the acting GA becomes
+        // the impersonator.
+        $member->impersonateAction();
+
+        expect(app(ImpersonateManager::class)->isImpersonating())->toBeTrue()
+            ->and(auth()->id())->toBe($member->id);
+    });
+
+    it('refuses a non-Global-Admin actor', function () {
+        $actor = User::factory()->create(); // flag off
+        $target = User::factory()->create();
+        $this->actingAs($actor);
+
+        expect(fn () => $target->impersonateAction())->toThrow(HttpException::class);
+        expect(app(ImpersonateManager::class)->isImpersonating())->toBeFalse();
+    });
+
+    it('protects a Global Admin from being impersonated, even by another Global Admin', function () {
+        $ga = createGlobalAdmin();
+        $otherGa = createGlobalAdmin();
+        $this->actingAs($ga);
+
+        expect(fn () => $otherGa->impersonateAction())->toThrow(HttpException::class);
+        expect(app(ImpersonateManager::class)->isImpersonating())->toBeFalse();
     });
 });
 
@@ -272,6 +283,39 @@ describe('the flag cannot be self-granted (escalation guards)', function () {
 
         expect($user)->not->toBeNull()
             ->and($user->global_admin)->toBeFalse();
+    })->skip(fn () => ! config('aura.teams'), 'Invitations are teams-on only.');
+
+    it('never grants Global Admin when an existing user accepts an invitation with the flag injected', function () {
+        config(['aura.auth.user_invitations' => true]);
+
+        $team = Team::first() ?? Team::factory()->create();
+        $role = globalAdminRole();
+
+        // An existing account whose email matches the invitation.
+        $existing = User::factory()->create(['email' => 'existing@example.com']);
+
+        $invitation = TeamInvitation::create([
+            'team_id' => $team->id,
+            'email' => 'existing@example.com',
+            'role' => $role->id,
+        ]);
+
+        // Sign the accept URL WITH the injected flag so the signature stays valid
+        // and the tampered value actually reaches the controller.
+        $url = URL::signedRoute('aura.team-invitations.accept', [
+            'invitation' => $invitation->id,
+            'global_admin' => 1,
+        ]);
+
+        $this->actingAs($existing)
+            ->get($url)
+            ->assertRedirect(route('aura.dashboard'));
+
+        $existing->refresh();
+
+        // The accept path ran (membership attached) but the flag was ignored.
+        expect($existing->teams()->whereKey($team->id)->exists())->toBeTrue()
+            ->and($existing->global_admin)->toBeFalse();
     })->skip(fn () => ! config('aura.teams'), 'Invitations are teams-on only.');
 });
 

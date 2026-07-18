@@ -3,29 +3,8 @@
 use Aura\Base\Policies\ResourcePolicy;
 use Aura\Base\Policies\TeamPolicy;
 use Aura\Base\Resources\Team;
-use Aura\Base\Resources\User;
 use Aura\Base\Tests\Resources\Post;
 use Illuminate\Support\Facades\DB;
-
-/**
- * Promote a fresh user to Global Admin the trusted way (direct, pipeline-bypassing
- * write). Mirrors the CLI bootstrap posture.
- */
-function visitingGa(array $attributes = []): User
-{
-    $user = User::factory()->create($attributes);
-    $user->forceFill(['global_admin' => true])->saveQuietly();
-
-    return $user->refresh();
-}
-
-/**
- * A team the acting user neither owns nor belongs to.
- */
-function foreignTeam(): Team
-{
-    return Team::factory()->createQuietly(['user_id' => User::factory()->create()->id]);
-}
 
 describe('Global Admin visitation via switchTeam', function () {
     beforeEach(function () {
@@ -35,7 +14,7 @@ describe('Global Admin visitation via switchTeam', function () {
     });
 
     it('lets a Global Admin enter a team they do not belong to, creating no Membership', function () {
-        $ga = visitingGa();
+        $ga = createGlobalAdmin();
         $this->actingAs($ga);
         $team = foreignTeam();
 
@@ -56,7 +35,7 @@ describe('Global Admin visitation via switchTeam', function () {
     });
 
     it('lets a Global Admin visit any team over HTTP', function () {
-        $ga = visitingGa();
+        $ga = createGlobalAdmin();
         $team = foreignTeam();
 
         $this->actingAs($ga)
@@ -84,7 +63,7 @@ describe('a visiting Global Admin acts with Super Admin power', function () {
             $this->markTestSkipped('Visitation is a teams-on power.');
         }
 
-        $this->ga = visitingGa();
+        $this->ga = createGlobalAdmin();
         $this->team = foreignTeam();
         $this->actingAs($this->ga);
         $this->ga->switchTeam($this->team);
@@ -121,7 +100,7 @@ describe('a Global Admin with zero Memberships', function () {
     });
 
     it('is not a Super Admin, is a Global Admin, and can still visit and administer', function () {
-        $ga = visitingGa(['current_team_id' => null]); // no team, no current_team_id, no roles
+        $ga = createGlobalAdmin(['current_team_id' => null]); // no team, no current_team_id, no roles
         $this->actingAs($ga);
 
         expect($ga->isSuperAdmin())->toBeFalse()
@@ -143,7 +122,7 @@ describe('Teams-off mode', function () {
     });
 
     it('grants no visitation through the flag', function () {
-        $ga = visitingGa();
+        $ga = createGlobalAdmin();
         $this->actingAs($ga);
 
         // The flag is live, but visitation is gated on teams being enabled, so a

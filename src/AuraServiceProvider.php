@@ -101,7 +101,7 @@ class AuraServiceProvider extends PackageServiceProvider
         // box. Host apps may redefine this gate in their own service provider —
         // app providers boot after package providers, so a later Gate::define
         // wins. A required $user param means guests are denied automatically.
-        Gate::define('AuraGlobalAdmin', function ($user) {
+        Gate::define(User::GLOBAL_ADMIN_GATE, function ($user) {
             return (bool) ($user->global_admin ?? false);
         });
 

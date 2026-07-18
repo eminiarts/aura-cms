@@ -30,13 +30,12 @@ class MakeUser extends Command
 
         $globalAdmin = (bool) $this->option('global-admin');
 
-        // When running interactively (no CLI options supplied) offer the choice.
-        // Passing any option keeps the command non-interactive and additive, so
-        // existing scripted invocations are unaffected.
-        if (! $globalAdmin
-            && $this->option('name') === null
-            && $this->option('email') === null
-            && $this->option('password') === null) {
+        // Offer the Global Admin choice on any interactive run that did not
+        // already pass --global-admin — including partial-option runs like
+        // `aura:user --name=X`. Non-interactive runs (scripts, CI, --no-interaction)
+        // keep the flag off unless --global-admin was passed, so automation is
+        // never blocked on a prompt.
+        if (! $globalAdmin && $this->input->isInteractive()) {
             $globalAdmin = confirm(label: 'Should this user be a Global Admin?', default: false);
         }
 

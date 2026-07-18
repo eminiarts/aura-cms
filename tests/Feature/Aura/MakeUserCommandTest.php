@@ -78,6 +78,8 @@ describe('with teams enabled', function () {
             '--email' => 'cli@example.com',
             '--password' => 'clipassword',
         ])
+            // Partial-option interactive runs still prompt for Global Admin.
+            ->expectsConfirmation('Should this user be a Global Admin?', 'no')
             ->expectsOutput('User created successfully.')
             ->assertExitCode(0);
 
@@ -132,7 +134,10 @@ describe('with teams enabled', function () {
             '--name' => 'Plain User',
             '--email' => 'plain@example.com',
             '--password' => 'plainpassword',
-        ])->assertExitCode(0);
+        ])
+            // Declining the prompt leaves the flag off.
+            ->expectsConfirmation('Should this user be a Global Admin?', 'no')
+            ->assertExitCode(0);
 
         $user = User::where('email', 'plain@example.com')->first();
 

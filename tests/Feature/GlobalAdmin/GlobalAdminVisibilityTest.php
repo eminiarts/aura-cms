@@ -1,39 +1,11 @@
 <?php
 
 use Aura\Base\Livewire\Table\Table;
-use Aura\Base\Resources\Role;
 use Aura\Base\Resources\Team;
 use Aura\Base\Resources\User;
 use Illuminate\Support\Facades\Cache;
 
 use function Pest\Livewire\livewire;
-
-/**
- * Promote a fresh user to Global Admin the trusted way (direct, pipeline-bypassing
- * write) — the flag is never granted through a user-facing write path.
- */
-function gaUser(array $attributes = []): User
-{
-    $user = User::factory()->create($attributes);
-    $user->forceFill(['global_admin' => true])->saveQuietly();
-
-    return $user->refresh();
-}
-
-/**
- * A user whose only Membership is in the given team.
- */
-function soleMemberOf(Team $team): User
-{
-    $role = Role::where('team_id', $team->id)->first()
-        ?? Role::factory()->create(['team_id' => $team->id]);
-
-    $member = User::factory()->create();
-    $member->roles()->attach($role->id, ['team_id' => $team->id]);
-    $member->forceFill(['current_team_id' => $team->id])->save();
-
-    return $member->refresh();
-}
 
 /**
  * Point the acting user's current team at $team without granting a Membership,
@@ -63,7 +35,7 @@ describe('Global Admin Users index sees every team', function () {
     });
 
     it('lists a user from another team for a Global Admin (indexQuery seam)', function () {
-        $ga = gaUser();
+        $ga = createGlobalAdmin();
         actAsWithCurrentTeam($ga, $this->currentTeam);
 
         $ids = (new User)->indexQuery(User::query())->pluck('id');
@@ -72,7 +44,7 @@ describe('Global Admin Users index sees every team', function () {
     });
 
     it('lists a user from another team for a Global Admin (table component)', function () {
-        $ga = gaUser();
+        $ga = createGlobalAdmin();
         actAsWithCurrentTeam($ga, $this->currentTeam);
 
         // The unpaginated query the table runs — robust to page size/ordering.
@@ -83,7 +55,7 @@ describe('Global Admin Users index sees every team', function () {
     });
 
     it('serves the Users index to a Global Admin over HTTP', function () {
-        $ga = gaUser();
+        $ga = createGlobalAdmin();
         actAsWithCurrentTeam($ga, $this->currentTeam);
 
         $this->get(route('aura.user.index'))
@@ -122,9 +94,9 @@ describe('Global Admin sees and can manage all teams', function () {
     });
 
     it('offers every team to a Global Admin through getTeams (switcher source)', function () {
-        $ga = gaUser();
+        $ga = createGlobalAdmin();
         $this->actingAs($ga);
-        Cache::forget('aura.global_admin.teams');
+        Cache::forget(User::GLOBAL_ADMIN_TEAMS_CACHE_KEY);
 
         $ids = $ga->getTeams()->pluck('id');
 
@@ -143,7 +115,7 @@ describe('Global Admin sees and can manage all teams', function () {
     });
 
     it('lists every team for a Global Admin in the Team index table', function () {
-        $ga = gaUser();
+        $ga = createGlobalAdmin();
         $this->actingAs($ga);
 
         $ids = livewire(Table::class, ['query' => null, 'model' => new Team])
@@ -153,16 +125,16 @@ describe('Global Admin sees and can manage all teams', function () {
     });
 
     it('reflects a newly created team in the Global Admin switcher cache immediately', function () {
-        $ga = gaUser();
+        $ga = createGlobalAdmin();
         $this->actingAs($ga);
 
         // Prime the shared cache.
         $ga->getTeams();
-        expect(Cache::has('aura.global_admin.teams'))->toBeTrue();
+        expect(Cache::has(User::GLOBAL_ADMIN_TEAMS_CACHE_KEY))->toBeTrue();
 
         // A real create fires Team::created, which invalidates the shared cache.
         $newTeam = Team::create(['name' => 'Fresh Tenant']);
-        expect(Cache::has('aura.global_admin.teams'))->toBeFalse();
+        expect(Cache::has(User::GLOBAL_ADMIN_TEAMS_CACHE_KEY))->toBeFalse();
 
         expect($ga->getTeams()->pluck('id'))->toContain($newTeam->id);
     });
@@ -176,7 +148,7 @@ describe('Teams-off mode', function () {
     });
 
     it('keeps the flag readable while team surfaces no-op', function () {
-        $ga = gaUser();
+        $ga = createGlobalAdmin();
         $this->actingAs($ga);
 
         expect($ga->isAuraGlobalAdmin())->toBeTrue()

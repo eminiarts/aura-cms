@@ -24,6 +24,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\Rules\Password;
 use Lab404\Impersonate\Models\Impersonate;
+use Lab404\Impersonate\Services\ImpersonateManager;
 use Laravel\Fortify\TwoFactorAuthenticatable;
 use Laravel\Sanctum\HasApiTokens;
 
@@ -39,6 +40,17 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
     use Notifiable;
     use ProfileFields;
     use TwoFactorAuthenticatable;
+
+    /**
+     * The gate that decides Global Admin status. Host apps may redefine it.
+     */
+    public const GLOBAL_ADMIN_GATE = 'AuraGlobalAdmin';
+
+    /**
+     * Shared cache key for the Global Admin team switcher list (identical for
+     * every Global Admin; invalidated on team create/rename/delete).
+     */
+    public const GLOBAL_ADMIN_TEAMS_CACHE_KEY = 'aura.global_admin.teams';
 
     public static $customTable = true;
 
@@ -118,7 +130,7 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
                 'label' => 'Impersonate',
                 'icon-view' => 'aura::components.actions.impersonate',
                 'conditional_logic' => function () {
-                    return auth()->user()->isAuraGlobalAdmin();
+                    return auth()->user()?->isAuraGlobalAdmin();
                 },
             ],
         ];
@@ -569,7 +581,7 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
         // identical for every Global Admin, so it is cached under one shared key
         // that Team create/delete invalidates (see Team::booted).
         if ($this->isAuraGlobalAdmin()) {
-            return Cache::remember('aura.global_admin.teams', now()->addHour(), function () {
+            return Cache::remember(self::GLOBAL_ADMIN_TEAMS_CACHE_KEY, now()->addHour(), function () {
                 return app(config('aura.resources.team'))::withoutGlobalScopes()->with('meta')->get();
             });
         }
@@ -679,7 +691,21 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
 
     public function impersonateAction()
     {
-        $this->impersonate($this);
+        // The row action is invoked on the TARGET user ($this); the acting user
+        // is the impersonator. Authorize the pair explicitly — Lab404's take()
+        // does not — so only a Global Admin may impersonate (canImpersonate), and
+        // a Global Admin can never be impersonated (canBeImpersonated). The actor
+        // side goes through the gate because auth()->user() is loosely typed.
+        $impersonator = auth()->user();
+
+        abort_unless(
+            $impersonator
+                && Gate::forUser($impersonator)->allows(self::GLOBAL_ADMIN_GATE)
+                && $this->canBeImpersonated(),
+            403
+        );
+
+        app(ImpersonateManager::class)->take($impersonator, $this);
     }
 
     public function indexQuery($query)
@@ -690,9 +716,9 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
             // (e.g. orphaned by a team deletion), who must stay reachable for
             // an instance operator. (TeamScope's users branch grants the
             // matching cross-team bypass; both seams must relax together or
-            // the index would re-restrict.) The gate is consulted directly so
-            // it stays host-overridable and safe for any authenticatable.
-            if (Auth::user() && Gate::allows('AuraGlobalAdmin')) {
+            // the index would re-restrict.) The gate is consulted directly since
+            // the authenticated user is loosely typed here.
+            if (Auth::check() && Gate::allows(self::GLOBAL_ADMIN_GATE)) {
                 return $query;
             }
 
@@ -713,7 +739,10 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
      */
     public function isAuraGlobalAdmin(): bool
     {
-        return Gate::allows('AuraGlobalAdmin');
+        // Evaluate the gate for THIS user instance, not the authenticated user —
+        // policies, switchTeam, and impersonation call this on a specific model
+        // that is not always the current actor.
+        return Gate::forUser($this)->allows(self::GLOBAL_ADMIN_GATE);
     }
 
     /**
