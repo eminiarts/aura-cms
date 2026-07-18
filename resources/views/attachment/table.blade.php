@@ -1,7 +1,6 @@
 <div
     data-attachment-table
     @selectfieldrows.window="selectRows($event.detail)"
-    x-on:picker-uploaded.window="addUploadedRows($event.detail.ids); $wire.set('selected', selected)"
     x-data="{
     selected: @entangle('selected'),
     rows: @js($rowIds),
@@ -62,28 +61,6 @@
                 this.selectPage = this.rows.every(row => this.selected.includes(row));
             });
         });
-    },
-
-    addUploadedRows(ids) {
-        if (!this.field) {
-            return;
-        }
-
-        const uploaded = (ids || []).map(String);
-
-        if (this.field.max_files === 1) {
-            this.selected = uploaded.slice(-1);
-
-            return;
-        }
-
-        let selection = [...new Set([...(this.selected || []).map(String), ...uploaded])];
-
-        if (this.field.max_files) {
-            selection = selection.slice(0, this.field.max_files);
-        }
-
-        this.selected = selection;
     },
 
     toggleRow(event, id) {

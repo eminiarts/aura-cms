@@ -133,7 +133,11 @@ class MediaUploader extends Component
             unset($this->media[$key]);
         }
 
-        if ($this->field) {
+        // Only the inline field uploader commits the field value directly. In the
+        // picker ($table) an upload merely joins the selection — the value is
+        // committed when the user confirms with Select. Dispatching updateField
+        // here would re-render the form under the open picker and tear it down.
+        if ($this->field && ! $this->table) {
             // Emit update Field - use named parameter 'data' to match listener signature
             $this->dispatch('updateField', data: [
                 'slug' => $this->field['slug'],
