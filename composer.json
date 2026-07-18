@@ -65,9 +65,9 @@
     },
     "scripts": {
         "analyse": "vendor/bin/phpstan analyse --memory-limit=1G",
-        "test": "php -d memory_limit=1G vendor/bin/pest --no-coverage --parallel --exclude-group=browser",
-        "test-browser": "php -d memory_limit=1G vendor/bin/pest tests/Browser --no-coverage",
-        "test-coverage": "php -d memory_limit=1G vendor/bin/pest --coverage --parallel --min=80 --exclude-group=browser",
+        "test": "php -d memory_limit=1G vendor/bin/pest --no-coverage --parallel --exclude-testsuite Browser",
+        "test-browser": "php -d memory_limit=1G vendor/bin/pest --testsuite Browser --no-coverage",
+        "test-coverage": "php -d memory_limit=1G vendor/bin/pest --coverage --parallel --min=80 --exclude-testsuite Browser",
         "format": "vendor/bin/pint"
     },
     "config": {

@@ -165,7 +165,7 @@ class Table extends Component
             $name = 'aura.'.$this->model()->getSlug().'.create';
 
             if (! Route::has($name)) {
-                return null;
+                return;
             }
 
             return route($name, [
@@ -399,23 +399,6 @@ class Table extends Component
     }
 
     /**
-     * Set or clear a quick filter. Passing null or '' clears the key.
-     *
-     * @param  mixed  $value
-     * @return void
-     */
-    public function setQuickFilter(string $key, $value)
-    {
-        if ($value === null || $value === '') {
-            unset($this->quickFilters[$key]);
-        } else {
-            $this->quickFilters[$key] = $value;
-        }
-
-        $this->resetPage();
-    }
-
-    /**
      * Select a single row in the table.
      *
      * @param  $id  int The id of the row to select.
@@ -431,6 +414,23 @@ class Table extends Component
     public function selectRowsRange()
     {
         // Handle select rows range event
+    }
+
+    /**
+     * Set or clear a quick filter. Passing null or '' clears the key.
+     *
+     * @param  mixed  $value
+     * @return void
+     */
+    public function setQuickFilter(string $key, $value)
+    {
+        if ($value === null || $value === '') {
+            unset($this->quickFilters[$key]);
+        } else {
+            $this->quickFilters[$key] = $value;
+        }
+
+        $this->resetPage();
     }
 
     public function updateCardStatus($cardId, $newStatus)

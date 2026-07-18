@@ -46,7 +46,7 @@ jobs:
         run: composer update --prefer-dist --no-interaction --no-progress
 
       - name: Run tests in parallel
-        run: php -d memory_limit=1G vendor/bin/pest --no-coverage --parallel --exclude-group=browser
+        run: php -d memory_limit=1G vendor/bin/pest --no-coverage --parallel --exclude-testsuite Browser
 
   teams-off:
     name: Teams-off
@@ -67,7 +67,7 @@ jobs:
         uses: ramsey/composer-install@v3
 
       - name: Run teams-off suite
-        run: php -d memory_limit=1G vendor/bin/pest --no-coverage -c phpunit-without-teams.xml --exclude-group=browser
+        run: php -d memory_limit=1G vendor/bin/pest --no-coverage -c phpunit-without-teams.xml
 
   browser:
     name: Browser tests
@@ -98,7 +98,7 @@ jobs:
           npx playwright install chromium --with-deps
 
       - name: Run browser tests
-        run: php -d memory_limit=1G vendor/bin/pest tests/Browser --no-coverage
+        run: php -d memory_limit=1G vendor/bin/pest --testsuite Browser --no-coverage
 
   fresh-install:
     name: Fresh Laravel install

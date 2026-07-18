@@ -4,6 +4,7 @@ use Aura\Base\Models\Scopes\TeamScope;
 use Aura\Base\Resources\Role;
 use Aura\Base\Resources\Team;
 use Aura\Base\Resources\User;
+use Aura\Base\Tests\BrowserTestCase;
 use Aura\Base\Tests\Resources\Post;
 use Aura\Base\Tests\TestCase;
 use Illuminate\Database\UniqueConstraintViolationException;
@@ -11,10 +12,11 @@ use Illuminate\Foundation\Testing\DatabaseMigrations;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Cache;
+use Pest\Browser\Api\Webpage;
 
 uses(TestCase::class)->in(__DIR__.'/Feature', __DIR__.'/FeatureWithDatabaseMigrations', __DIR__.'/Unit');
 
-uses(Aura\Base\Tests\BrowserTestCase::class)->group('browser')->in(__DIR__.'/Browser');
+uses(BrowserTestCase::class)->group('browser')->in(__DIR__.'/Browser');
 
 uses()->group('fields')->in('Feature/Fields');
 uses()->group('flows')->in('Feature/Flows');
@@ -257,7 +259,7 @@ function createAdmin()
  * into the input via JavaScript and fires a `change` event — the same thing
  * a user's file-picker selection does.
  *
- * @param  \Pest\Browser\Api\Webpage  $page
+ * @param  Webpage  $page
  * @param  string  $selector  CSS selector of the file input
  * @param  array<int, string>|string  $paths  Fixture file path(s)
  */

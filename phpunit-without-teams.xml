@@ -3,6 +3,7 @@
   <testsuites>
     <testsuite name="Eminiarts Test Suite">
       <directory>tests</directory>
+      <exclude>tests/Browser</exclude>
     </testsuite>
   </testsuites>
   <coverage>

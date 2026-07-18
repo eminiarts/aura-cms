@@ -32,6 +32,21 @@ class ParseMultipartBody
         return $next($request);
     }
 
+    private static function assign(array &$target, string $name, mixed $value): void
+    {
+        if (preg_match('/^([^\[]+)\[([^\]]*)\]$/', $name, $matches)) {
+            if ($matches[2] === '') {
+                $target[$matches[1]][] = $value;
+            } else {
+                $target[$matches[1]][$matches[2]] = $value;
+            }
+
+            return;
+        }
+
+        $target[$name] = $value;
+    }
+
     /**
      * @return array{0: array<string, mixed>, 1: array<string, mixed>}
      */
@@ -83,20 +98,5 @@ class ParseMultipartBody
         }
 
         return [$fields, $files];
-    }
-
-    private static function assign(array &$target, string $name, mixed $value): void
-    {
-        if (preg_match('/^([^\[]+)\[([^\]]*)\]$/', $name, $matches)) {
-            if ($matches[2] === '') {
-                $target[$matches[1]][] = $value;
-            } else {
-                $target[$matches[1]][$matches[2]] = $value;
-            }
-
-            return;
-        }
-
-        $target[$name] = $value;
     }
 }
