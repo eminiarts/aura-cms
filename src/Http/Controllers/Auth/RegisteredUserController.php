@@ -89,7 +89,10 @@ class RegisteredUserController extends Controller
                 'password' => Hash::make($request->password),
             ]);
 
-            $role = app(config('aura.resources.role'))::where('slug', 'user')->firstOrFail();
+            // Self-heal the default `user` catalog role so registration works on
+            // a bare `migrate` install where the seeder never ran, instead of
+            // throwing on a missing row.
+            $role = app(config('aura.resources.role'))::firstOrCreateCatalogRole('user');
 
             $user->update(['roles' => [$role->id]]);
         }

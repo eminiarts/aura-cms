@@ -112,7 +112,7 @@ describe('Team Registration with User', function () {
         // shared global admin role, scoped to their new team via the Membership.
         expect(Role::withoutGlobalScopes()->where('team_id', $team->id)->exists())->toBeFalse();
 
-        $globalAdmin = Role::withoutGlobalScopes()->whereNull('team_id')->where('slug', 'admin')->first();
+        $globalAdmin = globalAdminRole();
         expect($globalAdmin)->not->toBeNull();
         expect($globalAdmin->super_admin)->toBeTrue();
 

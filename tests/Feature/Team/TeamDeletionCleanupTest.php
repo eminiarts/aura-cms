@@ -29,7 +29,7 @@ it('removes a deleted team\'s Memberships and Team Roles but never the shared gl
     $member = User::factory()->create(['current_team_id' => $team->id]);
     $member->roles()->attach($shadowRole->id, ['team_id' => $team->id]);
 
-    $globalAdmin = Role::withoutGlobalScopes()->whereNull('team_id')->where('slug', 'admin')->first();
+    $globalAdmin = globalAdminRole();
 
     // Sanity: memberships and the shadow row exist pre-deletion.
     expect(DB::table('user_role')->where('team_id', $team->id)->count())->toBeGreaterThan(0);

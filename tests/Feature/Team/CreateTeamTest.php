@@ -72,7 +72,7 @@ describe('Team Creation Authorization', function () {
         // No per-team admin row exists; the creator holds the global admin role.
         expect(Role::withoutGlobalScopes()->where('team_id', $newTeam->id)->exists())->toBeFalse();
 
-        $globalAdmin = Role::withoutGlobalScopes()->whereNull('team_id')->where('slug', 'admin')->first();
+        $globalAdmin = globalAdminRole();
 
         $this->assertDatabaseHas('user_role', [
             'team_id' => $newTeam->id,

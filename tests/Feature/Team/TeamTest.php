@@ -100,10 +100,7 @@ describe('Team Creation Side Effects', function () {
         // No per-team admin row is minted; the shared global admin role is used.
         expect(Role::withoutGlobalScopes()->where('team_id', $team->id)->exists())->toBeFalse();
 
-        $role = Role::withoutGlobalScopes()
-            ->where('slug', 'admin')
-            ->whereNull('team_id')
-            ->first();
+        $role = globalAdminRole();
 
         expect($role)->not->toBeNull();
         expect($role->name)->toEqual('Admin');
@@ -147,10 +144,7 @@ describe('Team Creation Side Effects', function () {
         expect($pivotData)->not->toBeNull();
 
         // The Membership points at the shared global admin role (team_id = null).
-        $role = Role::withoutGlobalScopes()
-            ->whereNull('team_id')
-            ->where('slug', 'admin')
-            ->first();
+        $role = globalAdminRole();
 
         expect($pivotData->role_id)->toBe($role->id);
     });

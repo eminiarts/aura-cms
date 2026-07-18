@@ -46,14 +46,6 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
 
     public $preventPasswordUpdate = false;
 
-    /**
-     * Monotonic Role Catalog version, bumped whenever any Role is written or
-     * deleted. It keys the per-instance resolved-roles memo so that creating or
-     * deleting a Shadow invalidates every user's cache lazily — instant shadow
-     * effect without paying resolution queries on every permission check.
-     */
-    public static int $roleCatalogVersion = 0;
-
     public static ?string $slug = 'user';
 
     public static ?int $sort = 1;
@@ -101,7 +93,7 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
 
     /**
      * Per-instance memo of resolved (shadow-applied) roles, keyed by
-     * "{teamId|global}:{roleCatalogVersion}".
+     * "{teamId|global}:{Role::catalogVersion()}".
      *
      * @var array<string, Collection>
      */
@@ -149,16 +141,6 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
     }
 
     /**
-     * Bump the Role Catalog version, invalidating every user's resolved-roles
-     * memo. Called from Role model write/delete hooks so a Shadow created or
-     * deleted mid-request takes effect on the next permission check.
-     */
-    public static function bumpRoleCatalogVersion(): void
-    {
-        static::$roleCatalogVersion++;
-    }
-
-    /**
      * The user's effective (shadow-resolved) roles in the current team context.
      *
      * This is the User-side entry to the Role Catalog resolution seam. Each of
@@ -179,19 +161,25 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
         }
 
         $teamId = config('aura.teams') ? $this->current_team_id : null;
-        $cacheKey = ($teamId ?? 'global').':'.static::$roleCatalogVersion;
+        $cacheKey = ($teamId ?? 'global').':'.Role::catalogVersion();
 
         if (array_key_exists($cacheKey, $this->resolvedRolesCache)) {
             return $this->resolvedRolesCache[$cacheKey];
         }
 
-        // Read the raw Membership rows for the relevant team context. In
-        // Teams-off mode the pivot has no team_id column.
+        // Read the raw Membership rows for the relevant team context. The team
+        // filter is strict: in Teams-on mode a non-null current team reads only
+        // that team's Memberships, and a null current team reads only Memberships
+        // with a null pivot team_id — never an unfiltered read across all teams
+        // (which would leak roles from teams the user is not currently in). In
+        // Teams-off mode the pivot has no team_id column, so it is a flat read.
         $roleIds = DB::table('user_role')
             ->where('user_id', $this->id)
             ->when(
-                config('aura.teams') && $teamId,
-                fn ($query) => $query->where('team_id', $teamId)
+                config('aura.teams'),
+                fn ($query) => $teamId
+                    ? $query->where('team_id', $teamId)
+                    : $query->whereNull('team_id')
             )
             ->pluck('role_id');
 

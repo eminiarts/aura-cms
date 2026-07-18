@@ -49,3 +49,7 @@ keeps Membership rows immutable and makes catalog edits O(1) and atomic.
 - The merged, de-duplicated Roles index and the role pickers that present the
   resolved catalog in the UI are out of scope here (tracked separately); this ADR
   covers only identity and check-time resolution.
+- Moving existing per-team admin rows onto the shared global `admin` role ships as
+  a best-effort consolidation migration — a deliberate, narrow exception to ADR
+  0003's "no upgrade machinery" stance, justified by the pre-release posture and
+  decided in the parent spec (#45).

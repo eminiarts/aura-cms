@@ -187,7 +187,7 @@ describe('Role Team Association', function () {
         expect(Role::withoutGlobalScopes()->where('team_id', $team2->id)->count())->toBe(0);
 
         // Both teams' Memberships resolve to the same shared global admin role.
-        $globalAdmin = Role::withoutGlobalScopes()->whereNull('team_id')->where('slug', 'admin')->first();
+        $globalAdmin = globalAdminRole();
 
         $this->assertDatabaseHas('user_role', ['team_id' => $team1->id, 'role_id' => $globalAdmin->id]);
         $this->assertDatabaseHas('user_role', ['team_id' => $team2->id, 'role_id' => $globalAdmin->id]);

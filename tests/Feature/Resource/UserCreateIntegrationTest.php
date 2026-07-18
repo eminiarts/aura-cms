@@ -71,7 +71,7 @@ test('created user can log in with the provided password', function () {
 test('user created in a team context is assigned to the correct team', function () {
     $team = $this->user->currentTeam;
     // Attach-don't-mint: the assignable admin role is the shared Global Role.
-    $role = Role::withoutGlobalScopes()->whereNull('team_id')->where('slug', 'admin')->first();
+    $role = globalAdminRole();
 
     Livewire::test(Create::class, ['slug' => 'user'])
         ->set('form.fields.name', 'Team User')
@@ -118,7 +118,7 @@ test('client cannot assign a new user to another team', function () {
 test('user created with a role can log in and access the correct team', function () {
     $team = $this->user->currentTeam;
     // Attach-don't-mint: the assignable admin role is the shared Global Role.
-    $role = Role::withoutGlobalScopes()->whereNull('team_id')->where('slug', 'admin')->first();
+    $role = globalAdminRole();
 
     Livewire::test(Create::class, ['slug' => 'user'])
         ->set('form.fields.name', 'Full Flow User')

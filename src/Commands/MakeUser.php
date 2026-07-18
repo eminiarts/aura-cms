@@ -46,14 +46,9 @@ class MakeUser extends Command
 
             $user->forceFill(['current_team_id' => $team->id])->save();
         } else {
-            // Reuse the seeded admin Global Role (Teams-off has a unique slug
-            // constraint), creating it only if the catalog was not seeded.
-            $role = Role::firstOrCreate(['slug' => 'admin'], [
-                'name' => 'Admin',
-                'description' => 'Admin can perform everything.',
-                'super_admin' => true,
-                'permissions' => [],
-            ]);
+            // Reuse the seeded admin Global Role, self-healing it from the shared
+            // catalog defaults if the catalog was not seeded.
+            $role = Role::firstOrCreateCatalogRole('admin');
 
             // This bootstrap command creates the first administrator, so attach
             // the role directly instead of going through delegated role editing.

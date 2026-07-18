@@ -28,7 +28,7 @@ describe('Team creation attaches to the global admin role', function () {
         expect(Role::withoutGlobalScopes()->where('team_id', $team->id)->exists())->toBeFalse();
 
         // The single global admin row backs the Membership.
-        $globalAdmin = Role::withoutGlobalScopes()->whereNull('team_id')->where('slug', 'admin')->first();
+        $globalAdmin = globalAdminRole();
         expect($globalAdmin)->not->toBeNull();
 
         $this->assertDatabaseHas('user_role', [
@@ -67,7 +67,7 @@ describe('Registrant becomes Super Admin of their new team via the global role',
 
 describe('Roles field team-ownership and escalation guards', function () {
     it('accepts a global role id assigned within the current team', function () {
-        $globalAdmin = Role::withoutGlobalScopes()->whereNull('team_id')->where('slug', 'admin')->first();
+        $globalAdmin = globalAdminRole();
 
         livewire(Create::class, ['slug' => 'user'])
             ->set('form.fields.name', 'Global Grant')
@@ -111,7 +111,7 @@ describe('Roles field team-ownership and escalation guards', function () {
     });
 
     it('refuses a non-super-admin assigning a super admin global role (escalation)', function () {
-        $globalAdmin = Role::withoutGlobalScopes()->whereNull('team_id')->where('slug', 'admin')->first();
+        $globalAdmin = globalAdminRole();
 
         // A delegated, non-super-admin manager acting in the team.
         $managerRole = Role::create([

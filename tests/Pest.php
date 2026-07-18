@@ -65,6 +65,19 @@ function createPost(array $attributes = []): Post
     return Post::factory()->create($attributes);
 }
 
+/**
+ * The shared global `admin` Global Role (team_id = null) that backs the
+ * attach-don't-mint model. Returned unscoped so it is visible regardless of the
+ * current team context.
+ */
+function globalAdminRole(): ?Role
+{
+    return Role::withoutGlobalScopes()
+        ->whereNull('team_id')
+        ->where('slug', 'admin')
+        ->first();
+}
+
 function createSuperAdmin()
 {
     if (! config('aura.teams')) {

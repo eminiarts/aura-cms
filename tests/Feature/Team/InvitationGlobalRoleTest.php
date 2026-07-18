@@ -18,7 +18,7 @@ beforeEach(function () {
 
 it('lets an existing user accept an invitation carrying a global role id', function () {
     $team = $this->user->currentTeam;
-    $globalAdmin = Role::withoutGlobalScopes()->whereNull('team_id')->where('slug', 'admin')->first();
+    $globalAdmin = globalAdminRole();
 
     $existingUser = User::factory()->create([
         'email' => 'existing-global@example.com',
@@ -55,7 +55,7 @@ it('lets an existing user accept an invitation carrying a global role id', funct
 
 it('lets a new user register through an invitation carrying a global role id', function () {
     $team = Team::first();
-    $globalAdmin = Role::withoutGlobalScopes()->whereNull('team_id')->where('slug', 'admin')->first();
+    $globalAdmin = globalAdminRole();
 
     $invitation = TeamInvitation::create([
         'team_id' => $team->id,

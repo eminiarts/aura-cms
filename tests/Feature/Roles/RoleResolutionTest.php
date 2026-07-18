@@ -242,3 +242,37 @@ describe('permission set normalization', function () {
         expect($user->hasPermission('delete-post'))->toBeFalse();
     });
 });
+
+describe('strict team scoping of resolved roles', function () {
+    it('resolves no roles and is not super admin when the current team is null, even holding admin in other teams', function () {
+        // Reuse the seeded global admin (a second team_id=null admin would break
+        // the unique slug constraint).
+        $admin = globalAdminRole();
+
+        $teamA = Team::factory()->createQuietly();
+        $teamB = Team::factory()->createQuietly();
+
+        $user = User::factory()->create(['current_team_id' => null]);
+
+        DB::table('user_role')->insert([
+            ['user_id' => $user->id, 'team_id' => $teamA->id, 'role_id' => $admin->id, 'created_at' => now(), 'updated_at' => now()],
+            ['user_id' => $user->id, 'team_id' => $teamB->id, 'role_id' => $admin->id, 'created_at' => now(), 'updated_at' => now()],
+        ]);
+
+        Cache::forget("user_{$user->id}_current_team_id");
+        $user->refresh();
+
+        // Strict null-team rule: with a null current team, only Memberships with a
+        // null pivot team_id are read (there are none). Roles from teams the user
+        // is not currently in must not leak in.
+        expect($user->cachedRoles())->toHaveCount(0);
+        expect($user->isSuperAdmin())->toBeFalse();
+
+        // Switching into one of the teams resolves that team's Membership.
+        $user->forceFill(['current_team_id' => $teamA->id])->save();
+        Cache::forget("user_{$user->id}_current_team_id");
+        $user->refresh();
+
+        expect($user->isSuperAdmin())->toBeTrue();
+    });
+});

@@ -335,7 +335,7 @@ class Team extends Resource
             // The role rows above were removed via a mass delete (no model
             // events), so bump the catalog version explicitly to invalidate every
             // user's resolved-roles memo.
-            User::bumpRoleCatalogVersion();
+            Role::bumpCatalogVersion();
 
             // Delete all the team's metas
             $team->meta()->delete();

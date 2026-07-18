@@ -67,10 +67,7 @@ it('clears current team and team list caches for affected users when deleting a 
 
     // Attach-don't-mint: Memberships in every team point at the shared global
     // admin role (team_id = null), scoped to the team via the pivot.
-    $globalAdmin = Role::withoutGlobalScopes()
-        ->whereNull('team_id')
-        ->where('slug', 'admin')
-        ->first();
+    $globalAdmin = globalAdminRole();
 
     $firstTeam->users()->attach($otherUser->id, ['role_id' => $globalAdmin->id]);
     $secondTeam->users()->attach($otherUser->id, ['role_id' => $globalAdmin->id]);

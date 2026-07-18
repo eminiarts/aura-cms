@@ -40,9 +40,7 @@ class TeamInvitationController extends Controller
             // access. The Membership records the team via the pivot regardless.
             $role = Role::withoutGlobalScopes()
                 ->whereKey($invitation->role)
-                ->where(function ($query) use ($team) {
-                    $query->where('team_id', $team->id)->orWhereNull('team_id');
-                })
+                ->visibleToTeam($team->id)
                 ->firstOrFail();
 
             $user->roles()->attach($role->id, ['team_id' => $team->id]);

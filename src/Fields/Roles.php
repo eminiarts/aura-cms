@@ -121,9 +121,7 @@ class Roles extends AdvancedSelect implements PreloadsTableDisplay
             // shared Global Roles (team_id = null) from the catalog. Roles owned
             // by another team stay unassignable, so cross-team injection is still
             // refused. (The super_admin escalation guard below is unchanged.)
-            $assignableRoles->where(function ($query) use ($teamId) {
-                $query->where('team_id', $teamId)->orWhereNull('team_id');
-            });
+            $assignableRoles->visibleToTeam($teamId);
         }
 
         $requestedRoles = $assignableRoles->whereKey($roleIds)->get();

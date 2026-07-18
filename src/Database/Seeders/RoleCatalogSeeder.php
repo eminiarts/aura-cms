@@ -2,6 +2,7 @@
 
 namespace Aura\Base\Database\Seeders;
 
+use Aura\Base\Resources\Role;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
@@ -37,11 +38,11 @@ class RoleCatalogSeeder extends Seeder
 
         $hasTeamColumn = Schema::hasColumn('roles', 'team_id');
 
-        static::seedRole('admin', 'Admin', 'Admin can perform everything.', true, $hasTeamColumn);
-        static::seedRole('user', 'User', 'Default role with minimal permissions.', false, $hasTeamColumn);
+        static::seedRole('admin', $hasTeamColumn);
+        static::seedRole('user', $hasTeamColumn);
     }
 
-    protected static function seedRole(string $slug, string $name, string $description, bool $superAdmin, bool $hasTeamColumn): void
+    protected static function seedRole(string $slug, bool $hasTeamColumn): void
     {
         $exists = DB::table('roles')
             ->where('slug', $slug)
@@ -52,12 +53,16 @@ class RoleCatalogSeeder extends Seeder
             return;
         }
 
+        // Shared catalog defaults, so the seeded rows and the self-healed rows
+        // (Role::firstOrCreateCatalogRole) stay identical.
+        $defaults = Role::catalogDefaults($slug);
+
         $row = [
-            'name' => $name,
-            'slug' => $slug,
-            'description' => $description,
-            'super_admin' => $superAdmin,
-            'permissions' => json_encode([]),
+            'name' => $defaults['name'],
+            'slug' => $defaults['slug'],
+            'description' => $defaults['description'],
+            'super_admin' => $defaults['super_admin'],
+            'permissions' => json_encode($defaults['permissions']),
             'created_at' => now(),
             'updated_at' => now(),
         ];
