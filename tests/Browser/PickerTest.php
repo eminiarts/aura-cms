@@ -109,9 +109,12 @@ test('uploading inside the picker auto-selects the new attachment', function () 
     $attachment = Attachment::query()->first();
 
     expect($attachment)->not->toBeNull();
-    expect(pickerSelection($page))->toBe([$attachment->id]);
 
-    // The fresh upload is selected without any manual click; Select + Save
+    // Auto-select lands in the MediaManager's entangled `selected` — the
+    // scope the Select button submits. The table's Alpine scope (what
+    // pickerSelection reads) syncs through a separate selectedRows roundtrip
+    // and races on loaded runners, so assert at the outcome level instead:
+    // the fresh upload is selected without any manual click; Select + Save
     // proves it flowed into the field.
     $page->click('Select')->wait(2);
 

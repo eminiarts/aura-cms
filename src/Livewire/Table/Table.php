@@ -234,6 +234,39 @@ class Table extends Component
         $this->loaded = true;
     }
 
+    /**
+     * Merge freshly uploaded attachments into the picker selection server-side,
+     * so the selection arrives with the table re-render instead of racing it
+     * from the client after the upload.
+     */
+    #[On('media-uploaded')]
+    public function mediaUploaded($ids = [])
+    {
+        if (! $this->field) {
+            return;
+        }
+
+        $uploaded = collect($ids)->map(fn ($id) => (string) $id);
+
+        if ((int) ($this->field['max_files'] ?? 0) === 1) {
+            $this->selected = $uploaded->slice(-1)->values()->all();
+
+            return;
+        }
+
+        $selection = collect($this->selected)
+            ->map(fn ($id) => (string) $id)
+            ->merge($uploaded)
+            ->unique()
+            ->values();
+
+        if ($this->field['max_files'] ?? null) {
+            $selection = $selection->take((int) $this->field['max_files']);
+        }
+
+        $this->selected = $selection->all();
+    }
+
     #[Computed]
     public function model()
     {

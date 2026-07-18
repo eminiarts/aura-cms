@@ -100,11 +100,6 @@
                         if (result.successful) {
                             item.status = 'uploaded';
                             item.progress = 100;
-                            setTimeout(() => {
-                                window.dispatchEvent(new CustomEvent('picker-uploaded', {
-                                    detail: { ids: result.ids || [] },
-                                }));
-                            }, 500);
                             this.scheduleDismiss(item);
                         } else {
                             item.status = 'failed';
