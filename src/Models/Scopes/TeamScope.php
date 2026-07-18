@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Scope;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
 
 class TeamScope implements Scope
 {
@@ -48,9 +49,21 @@ class TeamScope implements Scope
 
                 // Only apply team scoping if teams are enabled
                 if (config('aura.teams') && $currentTeamId) {
-                    $builder->whereHas('teams', function ($query) use ($currentTeamId) {
-                        $query->where('teams.id', $currentTeamId);
-                    });
+                    // A Global Admin transcends the tenant boundary: their user
+                    // queries are never restricted to current-team members. The
+                    // bypass is gated strictly on the authenticated user being a
+                    // Global Admin, so it never leaks into ordinary requests.
+                    // (Auth::user() is already resolved here; the $applying guard
+                    // above prevents any re-entry while it is read.) The gate is
+                    // consulted directly so the check is host-overridable and safe
+                    // for any authenticatable, not only the Aura User model.
+                    $authUser = Auth::user();
+
+                    if (! ($authUser && Gate::forUser($authUser)->allows('AuraGlobalAdmin'))) {
+                        $builder->whereHas('teams', function ($query) use ($currentTeamId) {
+                            $query->where('teams.id', $currentTeamId);
+                        });
+                    }
                 }
 
                 self::$applying = false;

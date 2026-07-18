@@ -240,10 +240,13 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
         }
 
         if (is_null($this->current_team_id) && $this->id) {
-            $team_id = $this->teams()->first()->id ?? null;
+            // Fall back to the user's first Membership. A Global Admin with no
+            // Membership has no team here — current team stays null and they
+            // operate by visiting a team explicitly via switchTeam().
+            $team = $this->teams()->first();
 
-            if ($team_id) {
-                $this->switchTeam($team_id);
+            if ($team) {
+                $this->switchTeam($team);
             }
         }
 
@@ -561,6 +564,16 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
             return;
         }
 
+        // A Global Admin sees every team in the switcher, not only the teams they
+        // are a member of — visitation lets them enter any of them. The list is
+        // identical for every Global Admin, so it is cached under one shared key
+        // that Team create/delete invalidates (see Team::booted).
+        if ($this->isAuraGlobalAdmin()) {
+            return Cache::remember('aura.global_admin.teams', now()->addHour(), function () {
+                return app(config('aura.resources.team'))::withoutGlobalScopes()->with('meta')->get();
+            });
+        }
+
         // Return cached teams with meta
         return Cache::remember('user.'.$this->id.'.teams', now()->addHour(), function () {
             return $this->teams()->with('meta')->get();
@@ -672,6 +685,17 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
     public function indexQuery($query)
     {
         if (config('aura.teams')) {
+            // A Global Admin transcends the tenant boundary: the Users index
+            // lists every user — including users with no Membership at all
+            // (e.g. orphaned by a team deletion), who must stay reachable for
+            // an instance operator. (TeamScope's users branch grants the
+            // matching cross-team bypass; both seams must relax together or
+            // the index would re-restrict.) The gate is consulted directly so
+            // it stays host-overridable and safe for any authenticatable.
+            if (Auth::user() && Gate::allows('AuraGlobalAdmin')) {
+                return $query;
+            }
+
             // A user belongs to the current team when they hold a Membership for
             // it — filter on the pivot's team_id, not the role row's team_id. A
             // Global Role carries team_id = null, so keying off the role row would
@@ -700,7 +724,10 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
      */
     public function isCurrentTeam($team)
     {
-        return $team->id === $this->currentTeam->id;
+        // A Global Admin may have no current team (no Membership, not yet
+        // visiting) while the switcher still lists teams to enter — guard the
+        // null so the switcher renders instead of dereferencing a null team.
+        return $this->currentTeam && $team->id === $this->currentTeam->id;
     }
 
     /**
@@ -790,7 +817,17 @@ class User extends Resource implements AuthenticatableContract, AuthorizableCont
      */
     public function switchTeam($team)
     {
-        if (! $this->belongsToTeam($team)) {
+        // Switching the current team is a teams-only operation — a no-op in
+        // Teams-off mode (there is no teams table to switch between).
+        if (! config('aura.teams')) {
+            return false;
+        }
+
+        // Visitation: a Global Admin may enter any team without holding a
+        // Membership (no user_role row is created — switchTeam only moves the
+        // current-team pointer). Their in-team power comes from the policy gate
+        // bypasses, not from resolved roles. Everyone else must be a member.
+        if (! $this->belongsToTeam($team) && ! $this->isAuraGlobalAdmin()) {
             return false;
         }
 

@@ -1162,12 +1162,6 @@ parameters:
 			path: src/Resources/User.php
 
 		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model&object\{pivot\: Illuminate\\Database\\Eloquent\\Relations\\Pivot\}\:\:\$id\.$#'
-			identifier: property.notFound
-			count: 1
-			path: src/Resources/User.php
-
-		-
 			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
 			identifier: property.notFound
 			count: 2

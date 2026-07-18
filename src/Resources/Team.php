@@ -298,6 +298,10 @@ class Team extends Resource
                 Cache::forget('user.'.$user->id.'.teams');
             }
 
+            // A Global Admin's switcher lists every team from one shared cache
+            // key — invalidate it so a newly created team appears immediately.
+            Cache::forget('aura.global_admin.teams');
+
             // Create all permissions for the team
             GenerateAllResourcePermissions::dispatch($team->id);
         });
@@ -356,6 +360,10 @@ class Team extends Resource
                 ->each(function ($userId) {
                     Cache::forget('user.'.$userId.'.teams');
                 });
+
+            // Drop the shared Global Admin switcher cache so the deleted team
+            // no longer shows up for Global Admins.
+            Cache::forget('aura.global_admin.teams');
         });
 
     }

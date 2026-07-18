@@ -23,7 +23,7 @@ class ResourcePolicy
             return false;
         }
 
-        if ($user->isSuperAdmin()) {
+        if ($user->isSuperAdmin() || $user->isAuraGlobalAdmin()) {
             return true;
         }
 
@@ -42,7 +42,7 @@ class ResourcePolicy
      */
     public function delete($user, $resource)
     {
-        if ($user->isSuperAdmin()) {
+        if ($user->isSuperAdmin() || $user->isAuraGlobalAdmin()) {
             return true;
         }
 
@@ -70,7 +70,7 @@ class ResourcePolicy
      */
     public function forceDelete($user, $resource)
     {
-        if ($user->isSuperAdmin()) {
+        if ($user->isSuperAdmin() || $user->isAuraGlobalAdmin()) {
             return true;
         }
 
@@ -89,7 +89,7 @@ class ResourcePolicy
      */
     public function restore(User $user, $resource)
     {
-        if ($user->isSuperAdmin()) {
+        if ($user->isSuperAdmin() || $user->isAuraGlobalAdmin()) {
             return true;
         }
         if ($user->hasPermissionTo('restore', $resource)) {
@@ -111,7 +111,7 @@ class ResourcePolicy
             return false;
         }
 
-        if ($user->isSuperAdmin()) {
+        if ($user->isSuperAdmin() || $user->isAuraGlobalAdmin()) {
             return true;
         }
 
@@ -150,7 +150,7 @@ class ResourcePolicy
         }
 
         // Check if the user is a superadmin
-        if ($user->isSuperAdmin()) {
+        if ($user->isSuperAdmin() || $user->isAuraGlobalAdmin()) {
             return true;
         }
 
@@ -181,7 +181,7 @@ class ResourcePolicy
             return false;
         }
 
-        if ($user->isSuperAdmin()) {
+        if ($user->isSuperAdmin() || $user->isAuraGlobalAdmin()) {
             return true;
         }
 
