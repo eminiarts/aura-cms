@@ -89,8 +89,9 @@ test('super admin can view all headers', function () {
         'team_id' => $this->user->current_team_id,
     ]);
 
-    // Attach role to User
-    $this->user->update(['roles' => [$role->id]]);
+    // Attach the Super Admin role directly: granting a Super Admin role through
+    // the guarded form path requires the acting user to already be a Super Admin.
+    $this->user->roles()->syncWithPivotValues([$role->id], ['team_id' => $this->user->current_team_id]);
     $this->user->refresh();
     $model = new UserRoleConditionalIndexFieldsModel;
 
@@ -174,8 +175,9 @@ test('super admin can get all fields', function () {
         'team_id' => $this->user->current_team_id,
     ]);
 
-    // Attach role to User
-    $this->user->update(['roles' => [$role->id]]);
+    // Attach the Super Admin role directly: granting a Super Admin role through
+    // the guarded form path requires the acting user to already be a Super Admin.
+    $this->user->roles()->syncWithPivotValues([$role->id], ['team_id' => $this->user->current_team_id]);
     $this->user->refresh();
 
     // Test getHeaders()

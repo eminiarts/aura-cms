@@ -73,6 +73,22 @@ class TeamScope implements Scope
                 return;
             }
 
+            // Roles resolve against the Role Catalog: within a team, queries see
+            // both the team's own Team Roles and the shared Global Roles
+            // (team_id = null). The merged/de-duplicated Roles UI is handled
+            // elsewhere; here we only make Global Roles visible at the query
+            // layer. Shadow resolution itself goes through Role::resolveForTeam.
+            if ($model->getTable() === 'roles') {
+                $builder->where(function ($query) use ($currentTeamId) {
+                    $query->where('roles.team_id', $currentTeamId)
+                        ->orWhereNull('roles.team_id');
+                });
+
+                self::$applying = false;
+
+                return;
+            }
+
             // For all other models, filter by team_id
             $builder->where($model->getTable().'.team_id', $currentTeamId);
 

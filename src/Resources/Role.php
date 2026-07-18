@@ -160,6 +160,51 @@ class Role extends Resource
         return $this->hasMany(Meta::class, 'post_id');
     }
 
+    /**
+     * Resolve the effective role for a given slug within a team context.
+     *
+     * This is the single Role Catalog resolution seam. Shadowing is resolved by
+     * slug at check time: when a team owns a role with the given slug (a Shadow),
+     * that Team Role wins; otherwise the Global Role (team_id = null) applies.
+     * In Teams-off mode there is only one scope, so the Global Role is the role.
+     *
+     * Membership pivot rows are never rewritten — creating or deleting a Shadow
+     * changes the resolved role (and therefore permission outcomes) instantly.
+     *
+     * @param  string  $slug  The role slug that identifies the role within a team.
+     * @param  int|null  $teamId  The team context to resolve within (null = global/Teams-off).
+     */
+    public static function resolveForTeam(string $slug, ?int $teamId = null): ?self
+    {
+        // Bypass TeamScope (and any other global scopes) so both the current
+        // team's rows and the global (team_id = null) rows are considered.
+        $base = static::withoutGlobalScopes();
+
+        // Teams-off mode: the roles table has no team_id column, so there is a
+        // single flat catalog. The global role simply is the role.
+        if (! config('aura.teams')) {
+            return (clone $base)->where('slug', $slug)->first();
+        }
+
+        // Teams-on: a Team Role (Shadow) wins over the Global Role by slug.
+        if ($teamId !== null) {
+            $teamRole = (clone $base)
+                ->where('slug', $slug)
+                ->where('team_id', $teamId)
+                ->first();
+
+            if ($teamRole) {
+                return $teamRole;
+            }
+        }
+
+        // Fall back to the Global Role definition.
+        return (clone $base)
+            ->where('slug', $slug)
+            ->whereNull('team_id')
+            ->first();
+    }
+
     public function teams(): BelongsToMany
     {
         return $this->belongsToMany(Team::class, 'user_role')
@@ -188,5 +233,16 @@ class Role extends Resource
 
         return $this->belongsToMany(User::class, 'user_role')
             ->withTimestamps();
+    }
+
+    protected static function booted()
+    {
+        parent::booted();
+
+        // Any catalog write (including creating or deleting a Shadow) bumps the
+        // Role Catalog version so every user's resolved-roles memo recomputes on
+        // its next permission check — instant shadow effect, no per-call queries.
+        static::saved(fn () => User::bumpRoleCatalogVersion());
+        static::deleted(fn () => User::bumpRoleCatalogVersion());
     }
 }

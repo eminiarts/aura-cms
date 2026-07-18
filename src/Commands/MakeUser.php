@@ -46,10 +46,10 @@ class MakeUser extends Command
 
             $user->forceFill(['current_team_id' => $team->id])->save();
         } else {
-            // Create an Admin role without team association
-            $role = Role::create([
+            // Reuse the seeded admin Global Role (Teams-off has a unique slug
+            // constraint), creating it only if the catalog was not seeded.
+            $role = Role::firstOrCreate(['slug' => 'admin'], [
                 'name' => 'Admin',
-                'slug' => 'admin',
                 'description' => 'Admin can perform everything.',
                 'super_admin' => true,
                 'permissions' => [],

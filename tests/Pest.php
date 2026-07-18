@@ -143,10 +143,11 @@ function createSuperAdminWithoutTeam()
 
     auth()->login($user);
 
-    $role = Role::create([
+    // Reuse the seeded admin Global Role when present (Teams-off has a unique
+    // slug constraint), otherwise create it.
+    $role = Role::firstOrCreate(['slug' => 'admin'], [
         'type' => 'Role',
         'title' => 'Admin',
-        'slug' => 'admin',
         'name' => 'Admin',
         'description' => 'Admin can perform everything.',
         'super_admin' => true,
